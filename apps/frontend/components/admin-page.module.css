@@ -1,0 +1,281 @@
+.hero {
+  display: grid;
+  gap: 18px;
+  padding: 32px;
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 212, 120, 0.45), transparent 28%),
+    linear-gradient(135deg, #173058 0%, #0d2141 55%, #08162c 100%);
+  color: #f8fbff;
+  box-shadow: 0 24px 80px rgba(9, 28, 59, 0.18);
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+}
+
+.hero p {
+  margin: 0;
+  max-width: 760px;
+  line-height: 1.7;
+  color: rgba(248, 251, 255, 0.84);
+}
+
+.eyebrow,
+.sectionEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sectionEyebrow {
+  background: rgba(16, 36, 76, 0.06);
+  color: #b8621b;
+}
+
+.summaryCards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.summaryCard {
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.summaryCard span {
+  display: block;
+  font-size: 0.86rem;
+  color: rgba(248, 251, 255, 0.78);
+}
+
+.summaryCard strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.4rem;
+}
+
+.createCard,
+.listSection {
+  margin-top: 24px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  box-shadow: 0 22px 50px rgba(18, 34, 68, 0.08);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.sectionHeader h2 {
+  margin: 6px 0 0;
+  font-size: 1.5rem;
+}
+
+.formGrid,
+.hintFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field span {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #30415f;
+}
+
+.checkboxField {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #30415f;
+  font-weight: 700;
+}
+
+.checkboxField input {
+  width: 18px;
+  height: 18px;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 1px solid rgba(16, 36, 76, 0.14);
+  border-radius: 16px;
+  padding: 13px 14px;
+  font: inherit;
+  background: #ffffff;
+}
+
+.textarea {
+  resize: vertical;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #f28d35;
+  box-shadow: 0 0 0 4px rgba(242, 141, 53, 0.14);
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.promptList {
+  display: grid;
+  gap: 16px;
+}
+
+.promptCard {
+  border-radius: 22px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: #fffdf8;
+  overflow: hidden;
+}
+
+.promptToggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.promptMeta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.promptMeta span {
+  display: inline-flex;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: rgba(16, 36, 76, 0.06);
+  color: #30415f;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.promptToggle h3 {
+  margin: 0;
+  color: #10244c;
+  font-size: 1.16rem;
+}
+
+.promptToggle p {
+  margin: 8px 0 0;
+  color: #5d6c86;
+  line-height: 1.6;
+}
+
+.promptToggle strong {
+  color: #b8621b;
+  font-size: 0.92rem;
+}
+
+.promptEditor {
+  border-top: 1px solid rgba(16, 36, 76, 0.08);
+  padding: 22px 20px 20px;
+}
+
+.hintSection {
+  margin-top: 24px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.hintHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.hintHeader h4,
+.newHintCard h5 {
+  margin: 0;
+}
+
+.hintHeader span {
+  color: #b8621b;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.hintList {
+  display: grid;
+  gap: 12px;
+}
+
+.hintCard,
+.newHintCard {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(16, 36, 76, 0.03);
+  border: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.hintTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.hintTopRow strong {
+  color: #10244c;
+  font-size: 0.94rem;
+}
+
+@media (max-width: 900px) {
+  .summaryCards,
+  .formGrid,
+  .hintFormGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .promptToggle,
+  .hintTopRow,
+  .sectionHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

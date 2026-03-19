@@ -1,0 +1,14 @@
+{
+  "name": "english-learning-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Monorepo starter for an English learning app (next.js frontend + spring boot backend).",
+  "workspaces": [
+    "apps/frontend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace @english-learning/frontend",
+    "build:frontend": "npm run build --workspace @english-learning/frontend",
+    "lint:frontend": "npm run lint --workspace @english-learning/frontend"
+  }
+}

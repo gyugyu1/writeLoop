@@ -5,6 +5,7 @@ import type {
   AdminPromptRequest,
   AuthNotice,
   CommonMistake,
+  DeleteAccountRequest,
   AuthUser,
   DailyDifficulty,
   DailyPromptRecommendation,
@@ -272,6 +273,23 @@ export async function updateProfile(request: UpdateProfileRequest): Promise<Auth
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to update profile");
+  }
+
+  return response.json();
+}
+
+export async function deleteAccount(request: DeleteAccountRequest): Promise<AuthNotice> {
+  const response = await fetch(`${API_BASE}/api/auth/account`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to delete account");
   }
 
   return response.json();

@@ -240,6 +240,7 @@
 
 .primaryButton,
 .ghostButton,
+.dangerButton,
 .primaryLink,
 .ghostLink {
   display: inline-flex;
@@ -266,8 +267,14 @@
   color: #10244c;
 }
 
+.dangerButton {
+  background: linear-gradient(135deg, #d44b32 0%, #b42318 100%);
+  color: #fff;
+}
+
 .primaryButton:disabled,
-.ghostButton:disabled {
+.ghostButton:disabled,
+.dangerButton:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }

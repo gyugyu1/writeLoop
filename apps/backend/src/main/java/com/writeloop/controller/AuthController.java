@@ -2,6 +2,7 @@ package com.writeloop.controller;
 
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
+import com.writeloop.dto.DeleteAccountRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.PasswordResetAvailabilityDto;
 import com.writeloop.dto.ResetPasswordRequestDto;
@@ -16,6 +17,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -118,6 +120,18 @@ public class AuthController {
     ) {
         return authService.updateProfile(request, session);
     }
+
+    @DeleteMapping("/account")
+    @ResponseStatus(HttpStatus.OK)
+    public AuthNoticeDto deleteAccount(
+            @RequestBody DeleteAccountRequestDto request,
+            HttpSession session,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        return authService.deleteAccount(request, session, httpRequest, httpResponse);
+    }
+
     @GetMapping("/social/naver/start")
     public void startNaverLogin(
             @RequestParam(name = "returnTo", required = false) String returnTo,

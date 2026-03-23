@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
+  deleteAccount,
   getAnswerHistory,
   getCommonMistakes,
   getCurrentUser,
@@ -79,6 +80,10 @@ export function MyPageClient() {
   const [profileError, setProfileError] = useState("");
   const [profileNotice, setProfileNotice] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
+  const [deletePassword, setDeletePassword] = useState("");
+  const [deleteError, setDeleteError] = useState("");
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
 
   useEffect(() => {
     function syncTabFromUrl() {
@@ -307,6 +312,40 @@ export function MyPageClient() {
     }
   }
 
+  async function handleDeleteAccount() {
+    if (!currentUser) {
+      return;
+    }
+
+    if (deleteConfirmationText.trim() !== "탈퇴") {
+      setDeleteError("회원 탈퇴를 진행하려면 확인 문구에 '탈퇴'를 입력해 주세요.");
+      return;
+    }
+
+    if (!currentUser.socialProvider && !deletePassword.trim()) {
+      setDeleteError("회원 탈퇴를 진행하려면 현재 비밀번호를 입력해 주세요.");
+      return;
+    }
+
+    try {
+      setIsDeletingAccount(true);
+      setDeleteError("");
+      await deleteAccount({
+        confirmationText: deleteConfirmationText.trim(),
+        currentPassword: deletePassword.trim() || undefined
+      });
+      window.location.assign("/");
+    } catch (caughtError) {
+      if (caughtError instanceof Error) {
+        setDeleteError(caughtError.message);
+      } else {
+        setDeleteError("회원 탈퇴를 완료하지 못했어요.");
+      }
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  }
+
   function renderAccountTab() {
     return (
       <>
@@ -407,6 +446,57 @@ export function MyPageClient() {
           {profileNotice ? <p className={styles.notice}>{profileNotice}</p> : null}
           {profileError ? <p className={styles.error}>{profileError}</p> : null}
           {error ? <p className={styles.error}>{error}</p> : null}
+        </div>
+
+        <div className={styles.historySection}>
+          <div className={styles.historyHeader}>
+            <div>
+              <span className={styles.historyEyebrow}>위험 구역</span>
+              <h3>회원 탈퇴</h3>
+            </div>
+          </div>
+
+          <p className={styles.subText}>
+            회원 탈퇴를 진행하면 계정 정보, 작문 기록, 자동 로그인 정보가 함께 삭제되고 다시 복구할 수 없어요.
+          </p>
+
+          <div className={styles.form}>
+            <label className={styles.field}>
+              <span>확인 문구</span>
+              <input
+                className={styles.input}
+                value={deleteConfirmationText}
+                onChange={(event) => setDeleteConfirmationText(event.target.value)}
+                placeholder="탈퇴 라고 입력해 주세요"
+              />
+            </label>
+
+            {!currentUser?.socialProvider ? (
+              <label className={styles.field}>
+                <span>현재 비밀번호</span>
+                <input
+                  className={styles.input}
+                  type="password"
+                  value={deletePassword}
+                  onChange={(event) => setDeletePassword(event.target.value)}
+                  placeholder="회원 탈퇴 확인용 비밀번호를 입력해 주세요"
+                />
+              </label>
+            ) : null}
+          </div>
+
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.dangerButton}
+              onClick={() => void handleDeleteAccount()}
+              disabled={isDeletingAccount}
+            >
+              {isDeletingAccount ? "처리 중..." : "회원 탈퇴"}
+            </button>
+          </div>
+
+          {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
         </div>
       </>
     );

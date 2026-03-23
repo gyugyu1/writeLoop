@@ -165,6 +165,11 @@ export interface UpdateProfileRequest {
   newPassword?: string;
 }
 
+export interface DeleteAccountRequest {
+  confirmationText: string;
+  currentPassword?: string;
+}
+
 export interface VerifyEmailRequest {
   email: string;
   code: string;

@@ -2,6 +2,7 @@ package com.writeloop.service;
 
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
+import com.writeloop.dto.DeleteAccountRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.PasswordResetAvailabilityDto;
 import com.writeloop.dto.ResetPasswordRequestDto;
@@ -14,6 +15,9 @@ import com.writeloop.dto.VerifyEmailRequestDto;
 import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.EmailVerificationTokenEntity;
 import com.writeloop.persistence.EmailVerificationTokenRepository;
+import com.writeloop.persistence.AnswerAttemptRepository;
+import com.writeloop.persistence.AnswerSessionEntity;
+import com.writeloop.persistence.AnswerSessionRepository;
 import com.writeloop.persistence.PasswordResetTokenEntity;
 import com.writeloop.persistence.PasswordResetTokenRepository;
 import com.writeloop.persistence.UserEntity;
@@ -26,6 +30,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -54,6 +59,8 @@ public class AuthService {
     private static final String SESSION_KAKAO_REMEMBER_ME = "KAKAO_OAUTH_REMEMBER_ME";
 
     private final UserRepository userRepository;
+    private final AnswerSessionRepository answerSessionRepository;
+    private final AnswerAttemptRepository answerAttemptRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
@@ -298,6 +305,69 @@ public class AuthService {
         }
 
         return toResponse(userRepository.save(user));
+    }
+
+    @Transactional
+    public AuthNoticeDto deleteAccount(
+            DeleteAccountRequestDto request,
+            HttpSession session,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        Long userId = getCurrentUserId(session);
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+        }
+
+        UserEntity user = findUserEntity(userId);
+        String confirmationText = request.confirmationText() == null ? "" : request.confirmationText().trim();
+        if (!"탈퇴".equals(confirmationText)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "ACCOUNT_DELETE_CONFIRMATION_REQUIRED",
+                    "회원 탈퇴를 진행하려면 확인 문구에 '탈퇴'를 입력해 주세요."
+            );
+        }
+
+        if (user.getSocialProvider() == null || user.getSocialProvider().isBlank()) {
+            if (request.currentPassword() == null || request.currentPassword().isBlank()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "CURRENT_PASSWORD_REQUIRED",
+                        "회원 탈퇴를 진행하려면 현재 비밀번호를 입력해 주세요."
+                );
+            }
+
+            if (!passwordEncoder.matches(request.currentPassword().trim(), user.getPasswordHash())) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_CURRENT_PASSWORD",
+                        "현재 비밀번호가 올바르지 않아요."
+                );
+            }
+        }
+
+        var sessions = answerSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        var sessionIds = sessions.stream()
+                .map(AnswerSessionEntity::getId)
+                .toList();
+
+        if (!sessionIds.isEmpty()) {
+            answerAttemptRepository.deleteBySessionIdIn(sessionIds);
+        }
+        if (!sessions.isEmpty()) {
+            answerSessionRepository.deleteAll(sessions);
+        }
+
+        emailVerificationTokenRepository.deleteAllByUserId(userId);
+        passwordResetTokenRepository.deleteAllByUserId(userId);
+        rememberLoginService.revokeAllForUser(userId);
+        userRepository.delete(user);
+
+        rememberLoginService.clearRememberedLogin(httpRequest, httpResponse);
+        session.invalidate();
+
+        return new AuthNoticeDto(user.getEmail(), "회원 탈퇴가 완료되었어요.");
     }
 
     public Long getCurrentUserIdOrNull(HttpSession session) {

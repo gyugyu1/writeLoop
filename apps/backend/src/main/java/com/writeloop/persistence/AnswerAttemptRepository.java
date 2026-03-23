@@ -9,4 +9,6 @@ public interface AnswerAttemptRepository extends JpaRepository<AnswerAttemptEnti
     int countBySessionId(String sessionId);
 
     List<AnswerAttemptEntity> findBySessionIdInOrderByCreatedAtAsc(List<String> sessionIds);
+
+    void deleteBySessionIdIn(List<String> sessionIds);
 }

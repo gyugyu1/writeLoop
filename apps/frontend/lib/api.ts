@@ -5,6 +5,7 @@ import type {
   AdminPromptRequest,
   AuthNotice,
   CommonMistake,
+  CompleteRegistrationRequest,
   DeleteAccountRequest,
   AuthUser,
   DailyDifficulty,
@@ -19,6 +20,7 @@ import type {
   RegisterRequest,
   ResetPasswordRequest,
   SendPasswordResetCodeRequest,
+  SendRegistrationCodeRequest,
   TodayWritingStatus,
   UpdateProfileRequest,
   VerifyPasswordResetCodeRequest,
@@ -155,6 +157,23 @@ export async function register(request: RegisterRequest): Promise<AuthNotice> {
   return response.json();
 }
 
+export async function sendRegistrationCode(request: SendRegistrationCodeRequest): Promise<AuthNotice> {
+  const response = await fetch(`${API_BASE}/api/auth/register/send-code`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to send registration code");
+  }
+
+  return response.json();
+}
+
 export async function sendPasswordResetCode(request: SendPasswordResetCodeRequest): Promise<AuthNotice> {
   const response = await fetch(`${API_BASE}/api/auth/password-reset/send-code`, {
     method: "POST",
@@ -205,6 +224,23 @@ export async function verifyPasswordResetCode(
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to verify password reset code");
+  }
+
+  return response.json();
+}
+
+export async function completeRegistration(request: CompleteRegistrationRequest): Promise<AuthUser> {
+  const response = await fetch(`${API_BASE}/api/auth/register/complete`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to complete registration");
   }
 
   return response.json();

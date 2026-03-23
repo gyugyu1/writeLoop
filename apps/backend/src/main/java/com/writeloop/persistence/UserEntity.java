@@ -86,6 +86,13 @@ public class UserEntity {
         }
     }
 
+    public void completeLocalRegistration(String passwordHash, String displayName) {
+        this.passwordHash = passwordHash;
+        if (displayName != null && !displayName.isBlank()) {
+            this.displayName = displayName.trim();
+        }
+    }
+
     public void updatePasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }

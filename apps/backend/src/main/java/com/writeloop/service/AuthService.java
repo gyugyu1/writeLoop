@@ -2,6 +2,7 @@ package com.writeloop.service;
 
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
+import com.writeloop.dto.CompleteRegistrationRequestDto;
 import com.writeloop.dto.DeleteAccountRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.PasswordResetAvailabilityDto;
@@ -9,6 +10,7 @@ import com.writeloop.dto.ResetPasswordRequestDto;
 import com.writeloop.dto.RegisterRequestDto;
 import com.writeloop.dto.ResendVerificationRequestDto;
 import com.writeloop.dto.SendPasswordResetCodeRequestDto;
+import com.writeloop.dto.SendRegistrationCodeRequestDto;
 import com.writeloop.dto.UpdateProfileRequestDto;
 import com.writeloop.dto.VerifyPasswordResetCodeRequestDto;
 import com.writeloop.dto.VerifyEmailRequestDto;
@@ -96,6 +98,70 @@ public class AuthService {
                 user.getEmail(),
                 "인증 코드를 이메일로 보냈어요. 코드를 입력하면 바로 로그인할 수 있어요."
         );
+    }
+
+    public AuthNoticeDto sendRegistrationCode(SendRegistrationCodeRequestDto request) {
+        String email = normalizeEmail(request.email());
+
+        UserEntity user = userRepository.findByEmail(email)
+                .map(existing -> {
+                    if (existing.isEmailVerified()) {
+                        throw new ApiException(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "이미 가입된 이메일이에요.");
+                    }
+                    return existing;
+                })
+                .orElseGet(() -> userRepository.save(new UserEntity(
+                        email,
+                        passwordEncoder.encode(UUID.randomUUID().toString()),
+                        defaultPendingDisplayName(email)
+                )));
+
+        issueVerificationCode(user);
+        return new AuthNoticeDto(
+                user.getEmail(),
+                "인증코드를 이메일로 보냈어요. 코드를 입력하고 회원가입을 마무리해 주세요."
+        );
+    }
+
+    public AuthResponseDto completeRegistration(
+            CompleteRegistrationRequestDto request,
+            HttpSession session,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        String email = normalizeEmail(request.email());
+        String code = normalizeVerificationCode(request.code());
+        String password = normalizePassword(request.password());
+        String displayName = normalizeDisplayName(request.displayName());
+
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "가입 중인 사용자를 찾을 수 없어요."));
+
+        if (user.isEmailVerified()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "EMAIL_ALREADY_VERIFIED", "이미 이메일 인증이 완료된 계정이에요.");
+        }
+
+        EmailVerificationTokenEntity token = emailVerificationTokenRepository
+                .findFirstByEmailAndVerificationCodeAndUsedAtIsNullOrderByCreatedAtDesc(email, code)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_VERIFICATION_CODE",
+                        "인증코드가 올바르지 않아요."
+                ));
+
+        if (token.isExpired()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "VERIFICATION_CODE_EXPIRED", "인증코드가 만료됐어요. 다시 받아 주세요.");
+        }
+
+        user.completeLocalRegistration(passwordEncoder.encode(password), displayName);
+        user.markEmailVerified();
+        userRepository.save(user);
+
+        token.markUsed();
+        emailVerificationTokenRepository.save(token);
+
+        completeLogin(user, session, httpRequest, httpResponse, false);
+        return toResponse(user);
     }
 
     public AuthResponseDto login(
@@ -663,6 +729,14 @@ public class AuthService {
             return "/";
         }
         return returnTo;
+    }
+
+    private String defaultPendingDisplayName(String email) {
+        String localPart = email == null ? "" : email.split("@", 2)[0].trim();
+        if (localPart.length() >= 2) {
+            return localPart;
+        }
+        return "writeLoop user";
     }
 
     private PasswordResetAvailabilityDto toPasswordResetAvailability(UserEntity user) {

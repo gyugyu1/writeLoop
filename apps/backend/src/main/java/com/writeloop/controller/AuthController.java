@@ -2,6 +2,7 @@ package com.writeloop.controller;
 
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
+import com.writeloop.dto.CompleteRegistrationRequestDto;
 import com.writeloop.dto.DeleteAccountRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.PasswordResetAvailabilityDto;
@@ -9,6 +10,7 @@ import com.writeloop.dto.ResetPasswordRequestDto;
 import com.writeloop.dto.RegisterRequestDto;
 import com.writeloop.dto.ResendVerificationRequestDto;
 import com.writeloop.dto.SendPasswordResetCodeRequestDto;
+import com.writeloop.dto.SendRegistrationCodeRequestDto;
 import com.writeloop.dto.UpdateProfileRequestDto;
 import com.writeloop.dto.VerifyPasswordResetCodeRequestDto;
 import com.writeloop.dto.VerifyEmailRequestDto;
@@ -40,6 +42,23 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public AuthNoticeDto register(@RequestBody RegisterRequestDto request) {
         return authService.register(request);
+    }
+
+    @PostMapping("/register/send-code")
+    @ResponseStatus(HttpStatus.OK)
+    public AuthNoticeDto sendRegistrationCode(@RequestBody SendRegistrationCodeRequestDto request) {
+        return authService.sendRegistrationCode(request);
+    }
+
+    @PostMapping("/register/complete")
+    @ResponseStatus(HttpStatus.OK)
+    public AuthResponseDto completeRegistration(
+            @RequestBody CompleteRegistrationRequestDto request,
+            HttpSession session,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        return authService.completeRegistration(request, session, httpRequest, httpResponse);
     }
 
     @PostMapping("/login")

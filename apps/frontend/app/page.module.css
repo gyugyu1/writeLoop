@@ -790,11 +790,22 @@
 }
 
 @media (max-width: 900px) {
-  .stepRail,
   .difficultyGrid,
   .loginWall,
   .completeSummary {
     grid-template-columns: 1fr;
+  }
+
+  .stepRail {
+    grid-template-columns: 1fr;
+  }
+
+  .stepItem {
+    display: none;
+  }
+
+  .stepItemActive {
+    display: grid;
   }
 
   .stageFooter,

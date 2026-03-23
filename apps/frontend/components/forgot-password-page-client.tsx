@@ -12,6 +12,8 @@ import {
 import { resolveReturnTo } from "../lib/auth-flow";
 import styles from "./auth-page.module.css";
 
+const CODE_LIMIT_MS = 3 * 60 * 1000;
+
 export function ForgotPasswordPageClient() {
   const [returnTo, setReturnTo] = useState("/");
   const [email, setEmail] = useState("");
@@ -21,6 +23,8 @@ export function ForgotPasswordPageClient() {
   const [isEmailChecked, setIsEmailChecked] = useState(false);
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isCodeVerified, setIsCodeVerified] = useState(false);
+  const [codeDeadline, setCodeDeadline] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [isSendingCode, setIsSendingCode] = useState(false);
   const [isVerifyingCode, setIsVerifyingCode] = useState(false);
@@ -34,9 +38,26 @@ export function ForgotPasswordPageClient() {
   }, []);
 
   useEffect(() => {
+    if (!codeDeadline) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [codeDeadline]);
+
+  const remainingMs = codeDeadline ? Math.max(0, codeDeadline - now) : 0;
+  const isCodeExpired = codeDeadline !== null && remainingMs === 0;
+  const remainingMinutes = String(Math.floor(remainingMs / 60000)).padStart(2, "0");
+  const remainingSeconds = String(Math.floor((remainingMs % 60000) / 1000)).padStart(2, "0");
+
+  useEffect(() => {
     const trimmedCode = code.trim();
 
-    if (!isCodeSent) {
+    if (!isCodeSent || isCodeExpired) {
       return;
     }
 
@@ -69,13 +90,14 @@ export function ForgotPasswordPageClient() {
     }
 
     void verifyCompletedCode();
-  }, [code, email, isCodeSent, isCodeVerified, isVerifyingCode]);
+  }, [code, email, isCodeExpired, isCodeSent, isCodeVerified, isVerifyingCode]);
 
   function resetAfterEmailChange(nextEmail: string) {
     setEmail(nextEmail);
     setIsEmailChecked(false);
     setIsCodeSent(false);
     setIsCodeVerified(false);
+    setCodeDeadline(null);
     setCode("");
     setNewPassword("");
     setConfirmPassword("");
@@ -97,6 +119,7 @@ export function ForgotPasswordPageClient() {
       setIsEmailChecked(response.available);
       setIsCodeSent(false);
       setIsCodeVerified(false);
+      setCodeDeadline(null);
       setCode("");
       setNewPassword("");
       setConfirmPassword("");
@@ -124,6 +147,7 @@ export function ForgotPasswordPageClient() {
       });
       setIsCodeSent(true);
       setIsCodeVerified(false);
+      setCodeDeadline(Date.now() + CODE_LIMIT_MS);
       setCode("");
       setNewPassword("");
       setConfirmPassword("");
@@ -141,8 +165,13 @@ export function ForgotPasswordPageClient() {
       return;
     }
 
+    if (isCodeExpired) {
+      setError("인증번호 입력 시간이 만료됐어요. 다시 인증코드를 받아 주세요.");
+      return;
+    }
+
     if (!isCodeVerified) {
-      setError("먼저 인증 코드를 확인해 주세요.");
+      setError("먼저 인증코드를 확인해 주세요.");
       return;
     }
 
@@ -175,12 +204,13 @@ export function ForgotPasswordPageClient() {
           <div className={styles.eyebrow}>비밀번호 찾기</div>
           <h1>이메일 확인부터 코드 인증까지 차례대로 진행하면 돼요.</h1>
           <p>
-            등록된 이메일인지 먼저 확인한 뒤, 인증 코드를 보내고, 코드를 확인하면 새 비밀번호를 입력할 수 있어요.
+            등록된 이메일을 먼저 확인하고 인증코드를 받으면, 코드 확인 뒤 새 비밀번호를 설정할 수
+            있어요.
           </p>
           <ul className={styles.points}>
-            <li>등록된 이메일인지 확인되면 그때부터 인증 코드를 요청할 수 있어요.</li>
-            <li>6자리 코드를 모두 입력하면 자동으로 코드 확인이 진행돼요.</li>
-            <li>코드 확인이 끝나면 새 비밀번호 입력칸이 열립니다.</li>
+            <li>먼저 등록된 이메일인지 확인한 뒤에만 인증코드를 보낼 수 있어요.</li>
+            <li>인증코드는 3분 동안만 입력할 수 있어요.</li>
+            <li>코드 확인이 끝나면 새 비밀번호 입력칸이 열려요.</li>
           </ul>
         </div>
 
@@ -193,7 +223,7 @@ export function ForgotPasswordPageClient() {
           </div>
 
           <p className={styles.subText}>
-            이메일 확인부터 새 비밀번호 저장까지 차례대로 진행해 주세요.
+            이메일 확인부터 새 비밀번호 설정까지 순서대로 진행해 주세요.
           </p>
 
           <div className={styles.form}>
@@ -220,7 +250,7 @@ export function ForgotPasswordPageClient() {
 
             {isEmailChecked ? (
               <div className={styles.field}>
-                <span>인증 코드 받기</span>
+                <span>인증코드 받기</span>
                 <button
                   type="button"
                   className={styles.primaryButton}
@@ -234,13 +264,19 @@ export function ForgotPasswordPageClient() {
 
             {isCodeSent ? (
               <label className={styles.field}>
-                <span>인증 코드 입력</span>
+                <span>인증코드 입력</span>
                 <input
                   className={styles.input}
                   value={code}
                   onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="메일로 받은 6자리 코드를 입력해 주세요"
+                  placeholder="메일로 받은 6자리 코드를 입력해 주세요."
+                  disabled={isCodeExpired}
                 />
+                <span className={isCodeExpired ? styles.errorText : styles.timerText}>
+                  {isCodeExpired
+                    ? "인증번호 입력 시간이 만료됐어요. 다시 인증코드를 받아 주세요."
+                    : `남은 시간 ${remainingMinutes}:${remainingSeconds}`}
+                </span>
                 {isVerifyingCode ? (
                   <span className={styles.subText}>코드를 확인하는 중이에요...</span>
                 ) : isCodeVerified ? (
@@ -258,7 +294,7 @@ export function ForgotPasswordPageClient() {
                     type="password"
                     value={newPassword}
                     onChange={(event) => setNewPassword(event.target.value)}
-                    placeholder="새 비밀번호를 입력해 주세요"
+                    placeholder="새 비밀번호를 입력해 주세요."
                   />
                 </label>
 
@@ -269,7 +305,7 @@ export function ForgotPasswordPageClient() {
                     type="password"
                     value={confirmPassword}
                     onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="새 비밀번호를 한 번 더 입력해 주세요"
+                    placeholder="새 비밀번호를 한 번 더 입력해 주세요."
                   />
                 </label>
               </>
@@ -281,7 +317,7 @@ export function ForgotPasswordPageClient() {
               type="button"
               className={styles.primaryButton}
               onClick={() => void handleResetPassword()}
-              disabled={isResettingPassword || !isCodeVerified}
+              disabled={isResettingPassword || !isCodeVerified || isCodeExpired}
             >
               {isResettingPassword ? "처리 중..." : "새 비밀번호로 변경"}
             </button>

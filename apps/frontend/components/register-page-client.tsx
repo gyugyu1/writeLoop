@@ -6,6 +6,8 @@ import { ApiError, completeRegistration, resendVerification, sendRegistrationCod
 import { resolveReturnTo } from "../lib/auth-flow";
 import styles from "./auth-page.module.css";
 
+const CODE_LIMIT_MS = 3 * 60 * 1000;
+
 export function RegisterPageClient() {
   const [returnTo, setReturnTo] = useState("/");
   const [displayName, setDisplayName] = useState("");
@@ -14,6 +16,8 @@ export function RegisterPageClient() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [isCodeSent, setIsCodeSent] = useState(false);
+  const [codeDeadline, setCodeDeadline] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -23,7 +27,23 @@ export function RegisterPageClient() {
     setReturnTo(resolveReturnTo(params.get("returnTo")));
   }, []);
 
+  useEffect(() => {
+    if (!codeDeadline) {
+      return;
+    }
+
+    const timer = window.setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [codeDeadline]);
+
   const loginHref = `/login?returnTo=${encodeURIComponent(returnTo)}`;
+  const remainingMs = codeDeadline ? Math.max(0, codeDeadline - now) : 0;
+  const isCodeExpired = codeDeadline !== null && remainingMs === 0;
+  const remainingMinutes = String(Math.floor(remainingMs / 60000)).padStart(2, "0");
+  const remainingSeconds = String(Math.floor((remainingMs % 60000) / 1000)).padStart(2, "0");
 
   async function handleSendVerificationCode() {
     if (!email.trim()) {
@@ -39,6 +59,8 @@ export function RegisterPageClient() {
         email: email.trim()
       });
       setIsCodeSent(true);
+      setCodeDeadline(Date.now() + CODE_LIMIT_MS);
+      setVerificationCode("");
       setNotice(response.message);
     } catch (caughtError: unknown) {
       setError(caughtError instanceof ApiError ? caughtError.message : "인증코드를 보내지 못했어요.");
@@ -55,6 +77,11 @@ export function RegisterPageClient() {
 
     if (!verificationCode.trim()) {
       setError("인증코드를 입력해 주세요.");
+      return;
+    }
+
+    if (isCodeExpired) {
+      setError("인증번호 입력 시간이 만료됐어요. 다시 인증코드를 받아 주세요.");
       return;
     }
 
@@ -93,6 +120,8 @@ export function RegisterPageClient() {
       setNotice("");
       const response = await resendVerification(email.trim());
       setIsCodeSent(true);
+      setCodeDeadline(Date.now() + CODE_LIMIT_MS);
+      setVerificationCode("");
       setNotice(response.message);
     } catch (caughtError: unknown) {
       setError(caughtError instanceof ApiError ? caughtError.message : "인증코드를 다시 보내지 못했어요.");
@@ -106,14 +135,14 @@ export function RegisterPageClient() {
       <section className={styles.hero}>
         <div className={styles.intro}>
           <div className={styles.eyebrow}>회원가입</div>
-          <h1>이메일 인증을 마치면 바로 나만의 작문 기록이 시작돼요.</h1>
+          <h1>이메일 인증을 마치면 바로 나만의 영작 기록을 시작할 수 있어요.</h1>
           <p>
             writeLoop 계정을 만들면 오늘의 질문, 다시쓰기 기록, 자주 받는 피드백과 연속 학습일을
             내 정보에서 계속 이어서 볼 수 있어요.
           </p>
           <ul className={styles.points}>
-            <li>이메일만 먼저 입력하고 인증코드를 받아 둘 수 있어요.</li>
-            <li>코드를 받은 뒤 이름과 비밀번호를 입력해 가입을 마무리해요.</li>
+            <li>이메일을 먼저 입력하고 인증코드를 받아 둘 수 있어요.</li>
+            <li>인증코드는 3분 동안만 입력할 수 있어요.</li>
             <li>가입이 끝나면 바로 로그인된 상태로 홈으로 돌아가요.</li>
           </ul>
         </div>
@@ -127,7 +156,7 @@ export function RegisterPageClient() {
           </div>
 
           <p className={styles.subText}>
-            이메일로 인증코드를 먼저 받은 뒤, 필요한 정보를 입력하고 가입을 완료해 주세요.
+            이메일로 인증코드를 먼저 받은 뒤 필요한 정보를 입력하고 가입을 완료해 주세요.
           </p>
 
           <div className={styles.form}>
@@ -158,9 +187,15 @@ export function RegisterPageClient() {
                 <input
                   className={styles.input}
                   value={verificationCode}
-                  onChange={(event) => setVerificationCode(event.target.value)}
-                  placeholder="메일로 받은 6자리 코드를 입력해 주세요"
+                  onChange={(event) => setVerificationCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                  placeholder="메일로 받은 6자리 코드를 입력해 주세요."
+                  disabled={isCodeExpired}
                 />
+                <span className={isCodeExpired ? styles.errorText : styles.timerText}>
+                  {isCodeExpired
+                    ? "인증번호 입력 시간이 만료됐어요. 다시 인증코드를 받아 주세요."
+                    : `남은 시간 ${remainingMinutes}:${remainingSeconds}`}
+                </span>
               </label>
             ) : null}
 
@@ -170,7 +205,7 @@ export function RegisterPageClient() {
                 className={styles.input}
                 value={displayName}
                 onChange={(event) => setDisplayName(event.target.value)}
-                placeholder="표시 이름을 입력해 주세요"
+                placeholder="표시 이름을 입력해 주세요."
               />
             </label>
 
@@ -181,7 +216,7 @@ export function RegisterPageClient() {
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                placeholder="비밀번호를 입력해 주세요"
+                placeholder="비밀번호를 입력해 주세요."
               />
             </label>
 
@@ -192,7 +227,7 @@ export function RegisterPageClient() {
                 type="password"
                 value={confirmPassword}
                 onChange={(event) => setConfirmPassword(event.target.value)}
-                placeholder="비밀번호를 한 번 더 입력해 주세요"
+                placeholder="비밀번호를 한 번 더 입력해 주세요."
               />
             </label>
           </div>
@@ -202,7 +237,7 @@ export function RegisterPageClient() {
               type="button"
               className={styles.primaryButton}
               onClick={() => void handleVerify()}
-              disabled={isSubmitting || !isCodeSent}
+              disabled={isSubmitting || !isCodeSent || isCodeExpired}
             >
               {isSubmitting ? "처리 중..." : "회원가입 완료하기"}
             </button>

@@ -292,6 +292,18 @@
   line-height: 1.6;
 }
 
+.timerText {
+  color: #b8621b;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.errorText {
+  color: #b42318;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
 .socialSection {
   margin-top: 22px;
 }

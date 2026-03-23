@@ -50,6 +50,7 @@ import java.util.stream.Collectors;
 public class AuthService {
 
     public static final String SESSION_USER_ID = "AUTH_USER_ID";
+    private static final Duration VERIFICATION_CODE_TTL = Duration.ofMinutes(3);
     private static final String SESSION_NAVER_STATE = "NAVER_OAUTH_STATE";
     private static final String SESSION_NAVER_RETURN_TO = "NAVER_OAUTH_RETURN_TO";
     private static final String SESSION_NAVER_REMEMBER_ME = "NAVER_OAUTH_REMEMBER_ME";
@@ -813,7 +814,7 @@ public class AuthService {
                 user.getId(),
                 user.getEmail(),
                 code,
-                Instant.now().plus(Duration.ofMinutes(10))
+                Instant.now().plus(VERIFICATION_CODE_TTL)
         );
 
         if (!existingTokens.isEmpty()) {
@@ -829,7 +830,7 @@ public class AuthService {
                 user.getId(),
                 user.getEmail(),
                 code,
-                Instant.now().plus(Duration.ofMinutes(10))
+                Instant.now().plus(VERIFICATION_CODE_TTL)
         );
         emailVerificationTokenRepository.save(token);
         verificationMailService.sendVerificationCode(user.getEmail(), code);

@@ -121,11 +121,6 @@ export function LoginPageClient() {
           <p>
             로그인하면 오늘의 질문, 내 작문 히스토리, 자주 받는 피드백까지 모두 이어서 볼 수 있어요.
           </p>
-          <ul className={styles.points}>
-            <li>일반 로그인과 네이버, 구글, 카카오 로그인을 모두 지원해요.</li>
-            <li>로그인 상태 유지를 켜 두면 브라우저를 다시 열어도 이어서 시작할 수 있어요.</li>
-            <li>로그인 전에 보던 화면이 있으면 그 위치로 자연스럽게 돌아가요.</li>
-          </ul>
         </div>
 
         <section className={styles.card}>

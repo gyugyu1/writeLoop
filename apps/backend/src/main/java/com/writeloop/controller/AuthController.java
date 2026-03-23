@@ -5,6 +5,7 @@ import com.writeloop.dto.AuthResponseDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.RegisterRequestDto;
 import com.writeloop.dto.ResendVerificationRequestDto;
+import com.writeloop.dto.UpdateProfileRequestDto;
 import com.writeloop.dto.VerifyEmailRequestDto;
 import com.writeloop.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -79,6 +80,14 @@ public class AuthController {
         return authService.getCurrentUser(session);
     }
 
+    @PostMapping("/profile")
+    @ResponseStatus(HttpStatus.OK)
+    public AuthResponseDto updateProfile(
+            @RequestBody UpdateProfileRequestDto request,
+            HttpSession session
+    ) {
+        return authService.updateProfile(request, session);
+    }
     @GetMapping("/social/naver/start")
     public void startNaverLogin(
             @RequestParam(name = "returnTo", required = false) String returnTo,

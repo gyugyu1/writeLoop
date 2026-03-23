@@ -16,6 +16,7 @@ import type {
   Prompt,
   RegisterRequest,
   TodayWritingStatus,
+  UpdateProfileRequest,
   VerifyEmailRequest
 } from "./types";
 
@@ -178,6 +179,23 @@ export async function resendVerification(email: string): Promise<AuthNotice> {
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to resend verification");
+  }
+
+  return response.json();
+}
+
+export async function updateProfile(request: UpdateProfileRequest): Promise<AuthUser> {
+  const response = await fetch(`${API_BASE}/api/auth/profile`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to update profile");
   }
 
   return response.json();

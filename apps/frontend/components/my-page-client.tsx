@@ -7,11 +7,14 @@ import {
   getCommonMistakes,
   getCurrentUser,
   getTodayWritingStatus,
-  logout
+  logout,
+  updateProfile
 } from "../lib/api";
 import { getDifficultyLabel } from "../lib/difficulty";
 import type { AuthUser, CommonMistake, HistorySession, TodayWritingStatus } from "../lib/types";
 import styles from "./auth-page.module.css";
+
+type MyPageTab = "account" | "writing";
 
 function formatHistoryDate(dateTime: string) {
   return new Intl.DateTimeFormat("ko-KR", {
@@ -44,8 +47,22 @@ function getLoginMethodLabel(user: AuthUser) {
   }
 }
 
+function parseMyPageTab(): MyPageTab {
+  if (typeof window === "undefined") {
+    return "account";
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get("tab") === "writing" ? "writing" : "account";
+}
+
+function notifyTabChange(tab: MyPageTab) {
+  window.dispatchEvent(new CustomEvent("writeloop:tab-change", { detail: { tab } }));
+}
+
 export function MyPageClient() {
   const router = useRouter();
+  const [activeTab, setActiveTab] = useState<MyPageTab>("account");
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [history, setHistory] = useState<HistorySession[]>([]);
@@ -55,6 +72,26 @@ export function MyPageClient() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openDates, setOpenDates] = useState<Record<string, boolean>>({});
+  const [profileDisplayName, setProfileDisplayName] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [profileError, setProfileError] = useState("");
+  const [profileNotice, setProfileNotice] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  useEffect(() => {
+    function syncTabFromUrl() {
+      setActiveTab(parseMyPageTab());
+    }
+
+    syncTabFromUrl();
+    window.addEventListener("popstate", syncTabFromUrl);
+
+    return () => {
+      window.removeEventListener("popstate", syncTabFromUrl);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -125,6 +162,15 @@ export function MyPageClient() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!currentUser) {
+      setProfileDisplayName("");
+      return;
+    }
+
+    setProfileDisplayName(currentUser.displayName);
+  }, [currentUser]);
+
   const historyByDate = useMemo(() => {
     return history.reduce<Record<string, HistorySession[]>>((accumulator, session) => {
       const dateKey = formatHistoryDate(session.createdAt);
@@ -138,7 +184,7 @@ export function MyPageClient() {
     }, {});
   }, [history]);
 
-  const historyDates = Object.keys(historyByDate);
+  const historyDates = useMemo(() => Object.keys(historyByDate), [historyByDate]);
 
   useEffect(() => {
     if (historyDates.length === 0) {
@@ -168,6 +214,12 @@ export function MyPageClient() {
     });
   }, [historyDates]);
 
+  function setTab(tab: MyPageTab) {
+    setActiveTab(tab);
+    window.history.replaceState({}, "", `/me?tab=${tab}`);
+    notifyTabChange(tab);
+  }
+
   function toggleDate(dateKey: string) {
     setOpenDates((current) => ({
       ...current,
@@ -177,6 +229,65 @@ export function MyPageClient() {
 
   function goHome() {
     window.location.assign("/");
+  }
+
+  async function handleSaveProfile() {
+    if (!currentUser) {
+      return;
+    }
+
+    if (!profileDisplayName.trim()) {
+      setProfileError("이름을 입력해 주세요.");
+      return;
+    }
+
+    const wantsPasswordChange =
+      Boolean(currentPassword.trim()) ||
+      Boolean(newPassword.trim()) ||
+      Boolean(confirmNewPassword.trim());
+
+    if (wantsPasswordChange) {
+      if (currentUser.socialProvider) {
+        setProfileError("소셜 로그인 계정은 비밀번호를 변경할 수 없어요.");
+        return;
+      }
+
+      if (!currentPassword.trim() || !newPassword.trim() || !confirmNewPassword.trim()) {
+        setProfileError("비밀번호를 바꾸려면 현재 비밀번호와 새 비밀번호를 모두 입력해 주세요.");
+        return;
+      }
+
+      if (newPassword !== confirmNewPassword) {
+        setProfileError("새 비밀번호와 비밀번호 확인이 일치하지 않아요.");
+        return;
+      }
+    }
+
+    try {
+      setIsSavingProfile(true);
+      setProfileError("");
+      setProfileNotice("");
+
+      const updatedUser = await updateProfile({
+        displayName: profileDisplayName.trim(),
+        currentPassword: currentPassword.trim() || undefined,
+        newPassword: newPassword.trim() || undefined
+      });
+
+      setCurrentUser(updatedUser);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmNewPassword("");
+      setProfileNotice("계정 정보를 저장했어요.");
+    } catch (caughtError) {
+      if (caughtError instanceof Error) {
+        setProfileError(caughtError.message);
+      } else {
+        setProfileError("계정 정보를 저장하지 못했어요.");
+      }
+    } finally {
+      setIsSavingProfile(false);
+    }
   }
 
   async function handleLogout() {
@@ -196,11 +307,291 @@ export function MyPageClient() {
     }
   }
 
+  function renderAccountTab() {
+    return (
+      <>
+        <p className={styles.subText}>
+          로그인 방식과 이름을 확인하고, 필요할 때 바로 내 계정 정보를 수정할 수 있어요.
+        </p>
+
+        <div className={styles.infoGrid}>
+          <div className={styles.infoCard}>
+            <span>표시 이름</span>
+            <strong>{currentUser?.displayName}</strong>
+          </div>
+          <div className={styles.infoCard}>
+            <span>로그인 방식</span>
+            <strong>{currentUser ? getLoginMethodLabel(currentUser) : "-"}</strong>
+          </div>
+        </div>
+
+        <div className={styles.historySection}>
+          <div className={styles.historyHeader}>
+            <div>
+              <span className={styles.historyEyebrow}>계정 설정</span>
+              <h3>내 계정 수정</h3>
+            </div>
+          </div>
+
+          <div className={styles.form}>
+            <label className={styles.field}>
+              <span>이름</span>
+              <input
+                className={styles.input}
+                value={profileDisplayName}
+                onChange={(event) => setProfileDisplayName(event.target.value)}
+                placeholder="표시 이름을 입력해 주세요"
+              />
+            </label>
+
+            {currentUser?.socialProvider ? (
+              <p className={styles.subText}>소셜 로그인 계정은 현재 이름만 수정할 수 있어요.</p>
+            ) : (
+              <>
+                <label className={styles.field}>
+                  <span>현재 비밀번호</span>
+                  <input
+                    className={styles.input}
+                    type="password"
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    placeholder="비밀번호를 바꿀 때만 입력해 주세요"
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>새 비밀번호</span>
+                  <input
+                    className={styles.input}
+                    type="password"
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    placeholder="새 비밀번호를 입력해 주세요"
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>새 비밀번호 확인</span>
+                  <input
+                    className={styles.input}
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(event) => setConfirmNewPassword(event.target.value)}
+                    placeholder="새 비밀번호를 한 번 더 입력해 주세요"
+                  />
+                </label>
+              </>
+            )}
+          </div>
+
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={() => void handleSaveProfile()}
+              disabled={isSavingProfile}
+            >
+              {isSavingProfile ? "저장 중..." : "내 계정 저장"}
+            </button>
+            <button type="button" className={styles.ghostButton} onClick={goHome}>
+              홈으로 돌아가기
+            </button>
+            <button
+              type="button"
+              className={styles.ghostButton}
+              onClick={() => void handleLogout()}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "처리 중..." : "로그아웃"}
+            </button>
+          </div>
+
+          {profileNotice ? <p className={styles.notice}>{profileNotice}</p> : null}
+          {profileError ? <p className={styles.error}>{profileError}</p> : null}
+          {error ? <p className={styles.error}>{error}</p> : null}
+        </div>
+      </>
+    );
+  }
+
+  function renderWritingTab() {
+    return (
+      <>
+        <p className={styles.subText}>
+          연속 작문 상태, 자주 받은 피드백, 날짜별 작문 히스토리를 한 번에 모아 볼 수 있어요.
+        </p>
+
+        <div className={styles.infoGrid}>
+          <div className={styles.infoCard}>
+            <span>연속 작문</span>
+            <strong>{todayStatus?.streakDays ?? 0}일</strong>
+          </div>
+          <div className={styles.infoCard}>
+            <span>오늘 상태</span>
+            <strong>{todayStatus?.completed ? "완료" : "진행 중"}</strong>
+          </div>
+          <div className={styles.infoCard}>
+            <span>작문 기록</span>
+            <strong>{history.length}개</strong>
+          </div>
+          <div className={styles.infoCard}>
+            <span>자주 받은 피드백</span>
+            <strong>{commonMistakes.length}개</strong>
+          </div>
+        </div>
+
+        <div className={styles.historySection}>
+          <div className={styles.historyHeader}>
+            <div>
+              <span className={styles.historyEyebrow}>학습 분석</span>
+              <h3>자주 나오는 피드백</h3>
+            </div>
+            <strong>{commonMistakes.length}개 항목</strong>
+          </div>
+
+          {mistakeError ? <p className={styles.error}>{mistakeError}</p> : null}
+
+          {commonMistakes.length === 0 ? (
+            <div className={styles.historyEmpty}>
+              <p>아직 누적된 피드백이 많지 않아요. 몇 번 더 작문하면 자주 나오는 패턴을 모아 보여드릴게요.</p>
+            </div>
+          ) : (
+            <div className={styles.mistakeGrid}>
+              {commonMistakes.map((mistake) => (
+                <article key={mistake.issue} className={styles.mistakeCard}>
+                  <div className={styles.mistakeHeader}>
+                    <strong>{mistake.displayLabel}</strong>
+                    <span>{mistake.count}회</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.historySection}>
+          <div className={styles.historyHeader}>
+            <div>
+              <span className={styles.historyEyebrow}>학습 기록</span>
+              <h3>날짜별 작문 히스토리</h3>
+            </div>
+            <strong>{history.length}개의 질문 기록</strong>
+          </div>
+
+          {historyError ? <p className={styles.error}>{historyError}</p> : null}
+
+          {historyDates.length === 0 ? (
+            <div className={styles.historyEmpty}>
+              <p>아직 저장된 작문 기록이 없어요. 오늘의 질문으로 첫 작문을 시작해 볼까요?</p>
+              <button type="button" className={styles.primaryButton} onClick={goHome}>
+                첫 작문 시작하기
+              </button>
+            </div>
+          ) : (
+            <div className={styles.historyDateList}>
+              {historyDates.map((dateKey) => (
+                <section key={dateKey} className={styles.historyDateGroup}>
+                  <button
+                    type="button"
+                    className={styles.historyDateButton}
+                    onClick={() => toggleDate(dateKey)}
+                  >
+                    <span className={styles.historyDateTitle}>{dateKey}</span>
+                    <span className={styles.historyDateToggle}>
+                      {openDates[dateKey] ? "접기" : "펼치기"}
+                    </span>
+                  </button>
+
+                  {openDates[dateKey] ? (
+                    <div className={styles.historySessionList}>
+                      {historyByDate[dateKey].map((session) => (
+                        <article key={session.sessionId} className={styles.historySessionCard}>
+                          <div className={styles.historySessionHeader}>
+                            <div>
+                              <span className={styles.historyMeta}>
+                                {session.topic} · {getDifficultyLabel(session.difficulty)}
+                              </span>
+                              <h4>{session.questionKo}</h4>
+                              <p>{session.questionEn}</p>
+                            </div>
+                          </div>
+
+                          <div className={styles.historyAttemptList}>
+                            {session.attempts.map((attempt) => (
+                              <div key={attempt.id} className={styles.historyAttemptCard}>
+                                <div className={styles.historyAttemptMeta}>
+                                  <strong>
+                                    {attempt.attemptType === "INITIAL"
+                                      ? `첫 답변 ${attempt.attemptNo}차`
+                                      : `다시쓰기 ${attempt.attemptNo}차`}
+                                  </strong>
+                                  <span>
+                                    점수 {attempt.score} · {formatHistoryTime(attempt.createdAt)}
+                                  </span>
+                                </div>
+                                <p className={styles.historyAnswer}>{attempt.answerText}</p>
+                                <p className={styles.historySummary}>{attempt.feedbackSummary}</p>
+                                <details className={styles.historyFeedbackDetails}>
+                                  <summary>피드백 전문 보기</summary>
+                                  <div className={styles.historyFeedbackBody}>
+                                    <div className={styles.historyFeedbackBlock}>
+                                      <h5>전체 요약</h5>
+                                      <p>{attempt.feedback.summary}</p>
+                                    </div>
+                                    <div className={styles.historyFeedbackBlock}>
+                                      <h5>잘한 점</h5>
+                                      <ul>
+                                        {attempt.feedback.strengths.map((strength) => (
+                                          <li key={strength}>{strength}</li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                    <div className={styles.historyFeedbackBlock}>
+                                      <h5>개선하면 좋은 점</h5>
+                                      <ul>
+                                        {attempt.feedback.corrections.map((correction) => (
+                                          <li key={`${correction.issue}-${correction.suggestion}`}>
+                                            <strong>{correction.issue}</strong>
+                                            <span>{correction.suggestion}</span>
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </div>
+                                    <div className={styles.historyFeedbackBlock}>
+                                      <h5>모범 답안</h5>
+                                      <p>{attempt.feedback.modelAnswer}</p>
+                                    </div>
+                                    <div className={styles.historyFeedbackBlock}>
+                                      <h5>다시쓰기 가이드</h5>
+                                      <p>{attempt.feedback.rewriteChallenge}</p>
+                                    </div>
+                                    {attempt.feedback.completionMessage ? (
+                                      <div className={styles.historyFeedbackBlock}>
+                                        <h5>완료 안내</h5>
+                                        <p>{attempt.feedback.completionMessage}</p>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </details>
+                              </div>
+                            ))}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  ) : null}
+                </section>
+              ))}
+            </div>
+          )}
+        </div>
+      </>
+    );
+  }
+
   if (currentUser === undefined) {
     return (
       <main className={styles.page}>
         <section className={styles.emptyCard}>
-          <h2>내 정보를 불러오는 중이에요</h2>
+          <h2>내정보를 불러오는 중이에요</h2>
           <p>잠시만 기다려 주세요.</p>
         </section>
       </main>
@@ -217,11 +608,7 @@ export function MyPageClient() {
             <button type="button" className={styles.primaryButton} onClick={() => router.push("/login")}>
               로그인
             </button>
-            <button
-              type="button"
-              className={styles.ghostButton}
-              onClick={() => router.push("/register")}
-            >
+            <button type="button" className={styles.ghostButton} onClick={() => router.push("/register")}>
               회원가입
             </button>
           </div>
@@ -237,214 +624,42 @@ export function MyPageClient() {
           <div className={styles.eyebrow}>내정보</div>
           <h1>{currentUser.displayName}님의 학습 공간</h1>
           <p>
-            계정 정보와 날짜별 작문 히스토리를 한 번에 볼 수 있어요. 매일 어떤 질문에 답했고,
-            어떤 피드백을 받았는지 차근차근 돌아보세요.
+            계정 설정과 작문 기록을 한곳에서 관리할 수 있어요. 헤더의 <strong>작문기록</strong>과{" "}
+            <strong>내정보</strong> 버튼으로 필요한 탭으로 바로 이동할 수 있습니다.
           </p>
           <ul className={styles.points}>
-            <li>날짜별로 작문 기록을 다시 펼쳐볼 수 있어요.</li>
-            <li>자주 나오는 피드백을 모아서 약한 포인트를 확인할 수 있어요.</li>
-            <li>연속 작문 일수를 보며 매일 쓰는 흐름을 이어갈 수 있어요.</li>
+            <li>내 계정 탭에서는 이름과 비밀번호 같은 계정 정보를 관리할 수 있어요.</li>
+            <li>작문 기록 탭에서는 연속 작문, 자주 받은 피드백, 날짜별 히스토리를 확인할 수 있어요.</li>
+            <li>필요한 정보만 빠르게 볼 수 있도록 계정 정보와 학습 기록을 분리해 두었어요.</li>
           </ul>
-          <div className={styles.streakBanner}>
-            <span className={styles.streakLabel}>연속 작문</span>
-            <strong>{todayStatus?.streakDays ?? 0}일째</strong>
-            <p>
-              {todayStatus?.streakDays
-                ? "오늘도 이어 쓰면 학습 리듬을 더 단단하게 만들 수 있어요."
-                : "오늘 첫 작문을 시작하면 연속 기록이 시작돼요."}
-            </p>
-          </div>
         </div>
 
         <section className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <div className={styles.eyebrow}>계정 정보</div>
-              <h2>내 계정</h2>
-            </div>
-          </div>
-          <p className={styles.subText}>
-            현재 로그인한 계정 정보와 오늘의 학습 상태를 함께 확인할 수 있어요.
-          </p>
-          <div className={styles.infoGrid}>
-            <div className={styles.infoCard}>
-              <span>표시 이름</span>
-              <strong>{currentUser.displayName}</strong>
-            </div>
-            <div className={styles.infoCard}>
-              <span>로그인 방식</span>
-              <strong>{getLoginMethodLabel(currentUser)}</strong>
-            </div>
-            <div className={styles.infoCard}>
-              <span>연속 작문</span>
-              <strong>{todayStatus?.streakDays ?? 0}일</strong>
-            </div>
-            <div className={styles.infoCard}>
-              <span>오늘 상태</span>
-              <strong>{todayStatus?.completed ? "완료" : "진행 전"}</strong>
+              <div className={styles.eyebrow}>마이 페이지</div>
+              <h2>계정과 학습 기록</h2>
             </div>
           </div>
 
-          <div className={styles.historySection}>
-            <div className={styles.historyHeader}>
-              <div>
-                <span className={styles.historyEyebrow}>학습 분석</span>
-                <h3>자주 나오는 피드백</h3>
-              </div>
-              <strong>{commonMistakes.length}개 항목</strong>
-            </div>
-
-            {mistakeError ? <p className={styles.error}>{mistakeError}</p> : null}
-
-            {commonMistakes.length === 0 ? (
-              <div className={styles.historyEmpty}>
-                <p>아직 누적된 피드백이 많지 않아요. 몇 번 더 작문하면 자주 나오는 패턴을 모아드릴게요.</p>
-              </div>
-            ) : (
-              <div className={styles.mistakeGrid}>
-                {commonMistakes.map((mistake) => (
-                  <article key={mistake.issue} className={styles.mistakeCard}>
-                    <div className={styles.mistakeHeader}>
-                      <strong>{mistake.displayLabel}</strong>
-                      <span>{mistake.count}회</span>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className={styles.historySection}>
-            <div className={styles.historyHeader}>
-              <div>
-                <span className={styles.historyEyebrow}>학습 기록</span>
-                <h3>날짜별 작문 히스토리</h3>
-              </div>
-              <strong>{history.length}개의 질문 기록</strong>
-            </div>
-
-            {historyError ? <p className={styles.error}>{historyError}</p> : null}
-
-            {historyDates.length === 0 ? (
-              <div className={styles.historyEmpty}>
-                <p>아직 저장된 작문 기록이 없어요. 오늘의 질문으로 첫 작문을 시작해 볼까요?</p>
-                <button type="button" className={styles.primaryButton} onClick={goHome}>
-                  첫 작문 시작하기
-                </button>
-              </div>
-            ) : (
-              <div className={styles.historyDateList}>
-                {historyDates.map((dateKey) => (
-                  <section key={dateKey} className={styles.historyDateGroup}>
-                    <button
-                      type="button"
-                      className={styles.historyDateButton}
-                      onClick={() => toggleDate(dateKey)}
-                    >
-                      <span className={styles.historyDateTitle}>{dateKey}</span>
-                      <span className={styles.historyDateToggle}>
-                        {openDates[dateKey] ? "접기" : "펼치기"}
-                      </span>
-                    </button>
-
-                    {openDates[dateKey] ? (
-                      <div className={styles.historySessionList}>
-                        {historyByDate[dateKey].map((session) => (
-                          <article key={session.sessionId} className={styles.historySessionCard}>
-                            <div className={styles.historySessionHeader}>
-                              <div>
-                                <span className={styles.historyMeta}>
-                                  {session.topic} · {getDifficultyLabel(session.difficulty)}
-                                </span>
-                                <h4>{session.questionKo}</h4>
-                                <p>{session.questionEn}</p>
-                              </div>
-                            </div>
-
-                            <div className={styles.historyAttemptList}>
-                              {session.attempts.map((attempt) => (
-                                <div key={attempt.id} className={styles.historyAttemptCard}>
-                                  <div className={styles.historyAttemptMeta}>
-                                    <strong>
-                                      {attempt.attemptType === "INITIAL"
-                                        ? `첫 답변 ${attempt.attemptNo}차`
-                                        : `다시쓰기 ${attempt.attemptNo}차`}
-                                    </strong>
-                                    <span>
-                                      점수 {attempt.score} · {formatHistoryTime(attempt.createdAt)}
-                                    </span>
-                                  </div>
-                                  <p className={styles.historyAnswer}>{attempt.answerText}</p>
-                                  <p className={styles.historySummary}>{attempt.feedbackSummary}</p>
-                                  <details className={styles.historyFeedbackDetails}>
-                                    <summary>피드백 전문 보기</summary>
-                                    <div className={styles.historyFeedbackBody}>
-                                      <div className={styles.historyFeedbackBlock}>
-                                        <h5>전체 요약</h5>
-                                        <p>{attempt.feedback.summary}</p>
-                                      </div>
-                                      <div className={styles.historyFeedbackBlock}>
-                                        <h5>잘한 점</h5>
-                                        <ul>
-                                          {attempt.feedback.strengths.map((strength) => (
-                                            <li key={strength}>{strength}</li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                      <div className={styles.historyFeedbackBlock}>
-                                        <h5>개선하면 좋은 점</h5>
-                                        <ul>
-                                          {attempt.feedback.corrections.map((correction) => (
-                                            <li key={`${correction.issue}-${correction.suggestion}`}>
-                                              <strong>{correction.issue}</strong>
-                                              <span>{correction.suggestion}</span>
-                                            </li>
-                                          ))}
-                                        </ul>
-                                      </div>
-                                      <div className={styles.historyFeedbackBlock}>
-                                        <h5>모범 답안</h5>
-                                        <p>{attempt.feedback.modelAnswer}</p>
-                                      </div>
-                                      <div className={styles.historyFeedbackBlock}>
-                                        <h5>다시쓰기 가이드</h5>
-                                        <p>{attempt.feedback.rewriteChallenge}</p>
-                                      </div>
-                                      {attempt.feedback.completionMessage ? (
-                                        <div className={styles.historyFeedbackBlock}>
-                                          <h5>완료 안내</h5>
-                                          <p>{attempt.feedback.completionMessage}</p>
-                                        </div>
-                                      ) : null}
-                                    </div>
-                                  </details>
-                                </div>
-                              ))}
-                            </div>
-                          </article>
-                        ))}
-                      </div>
-                    ) : null}
-                  </section>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className={styles.actions}>
-            <button type="button" className={styles.ghostButton} onClick={goHome}>
-              홈으로 돌아가기
+          <div className={styles.tabRow}>
+            <button
+              type="button"
+              className={activeTab === "account" ? styles.tabButtonActive : styles.tabButton}
+              onClick={() => setTab("account")}
+            >
+              내 계정
             </button>
             <button
               type="button"
-              className={styles.primaryButton}
-              onClick={() => void handleLogout()}
-              disabled={isSubmitting}
+              className={activeTab === "writing" ? styles.tabButtonActive : styles.tabButton}
+              onClick={() => setTab("writing")}
             >
-              {isSubmitting ? "처리 중..." : "로그아웃"}
+              작문 기록
             </button>
           </div>
-          {error ? <p className={styles.error}>{error}</p> : null}
+
+          {activeTab === "account" ? renderAccountTab() : renderWritingTab()}
         </section>
       </section>
     </main>

@@ -7,17 +7,33 @@ import { getCurrentUser } from "../lib/api";
 import type { AuthUser } from "../lib/types";
 import styles from "./top-navigation.module.css";
 
+type MyPageTab = "account" | "writing";
+
+function parseCurrentTab(): MyPageTab | "" {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  return params.get("tab") === "writing" ? "writing" : "account";
+}
+
 function buildReturnTo(pathname: string) {
   if (pathname === "/login" || pathname === "/register") {
     return "/";
   }
 
-  return pathname;
+  if (typeof window === "undefined") {
+    return pathname;
+  }
+
+  return `${window.location.pathname}${window.location.search}`;
 }
 
 export function TopNavigation() {
   const pathname = usePathname();
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
+  const [currentTab, setCurrentTab] = useState<MyPageTab | "">("");
 
   useEffect(() => {
     let isMounted = true;
@@ -35,10 +51,29 @@ export function TopNavigation() {
       }
     }
 
+    function syncCurrentTab() {
+      if (pathname === "/me") {
+        setCurrentTab(parseCurrentTab());
+      } else {
+        setCurrentTab("");
+      }
+    }
+
+    function handleTabChange(event: Event) {
+      const detail = (event as CustomEvent<{ tab?: MyPageTab }>).detail;
+      setCurrentTab(detail?.tab === "writing" ? "writing" : "account");
+    }
+
+    syncCurrentTab();
     void loadCurrentUser();
+
+    window.addEventListener("popstate", syncCurrentTab);
+    window.addEventListener("writeloop:tab-change", handleTabChange);
 
     return () => {
       isMounted = false;
+      window.removeEventListener("popstate", syncCurrentTab);
+      window.removeEventListener("writeloop:tab-change", handleTabChange);
     };
   }, [pathname]);
 
@@ -46,17 +81,30 @@ export function TopNavigation() {
 
   const menuItems = currentUser
     ? [
-        ...(currentUser.admin ? [{ href: "/admin", label: "관리" }] : []),
-        { href: "/me", label: "내정보" }
+        ...(currentUser.admin ? [{ href: "/admin", label: "관리", active: pathname === "/admin" }] : []),
+        {
+          href: "/me?tab=writing",
+          label: "작문기록",
+          active: pathname === "/me" && currentTab === "writing",
+          onClick: () => setCurrentTab("writing")
+        },
+        {
+          href: "/me?tab=account",
+          label: "내정보",
+          active: pathname === "/me" && currentTab !== "writing",
+          onClick: () => setCurrentTab("account")
+        }
       ]
     : [
         {
           href: `/login?returnTo=${encodeURIComponent(returnTo)}`,
-          label: "로그인"
+          label: "로그인",
+          active: pathname === "/login"
         },
         {
           href: `/register?returnTo=${encodeURIComponent(returnTo)}`,
-          label: "회원가입"
+          label: "회원가입",
+          active: pathname === "/register"
         }
       ];
 
@@ -75,7 +123,8 @@ export function TopNavigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={pathname === item.href ? styles.menuLinkActive : styles.menuLink}
+                className={item.active ? styles.menuLinkActive : styles.menuLink}
+                onClick={item.onClick}
               >
                 {item.label}
               </Link>

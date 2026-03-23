@@ -138,6 +138,12 @@ export interface RegisterRequest extends LoginRequest {
   displayName: string;
 }
 
+export interface UpdateProfileRequest {
+  displayName: string;
+  currentPassword?: string;
+  newPassword?: string;
+}
+
 export interface VerifyEmailRequest {
   email: string;
   code: string;

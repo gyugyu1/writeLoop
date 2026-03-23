@@ -5,6 +5,7 @@ import com.writeloop.dto.AuthResponseDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.RegisterRequestDto;
 import com.writeloop.dto.ResendVerificationRequestDto;
+import com.writeloop.dto.UpdateProfileRequestDto;
 import com.writeloop.dto.VerifyEmailRequestDto;
 import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.EmailVerificationTokenEntity;
@@ -171,6 +172,47 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }
         return toResponse(findUserEntity(userId));
+    }
+
+    public AuthResponseDto updateProfile(UpdateProfileRequestDto request, HttpSession session) {
+        Long userId = getCurrentUserId(session);
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "濡쒓렇?몄씠 ?꾩슂?댁슂.");
+        }
+
+        UserEntity user = findUserEntity(userId);
+        user.updateDisplayName(normalizeDisplayName(request.displayName()));
+
+        boolean wantsPasswordChange = request.newPassword() != null && !request.newPassword().isBlank();
+        if (wantsPasswordChange) {
+            if (user.getSocialProvider() != null && !user.getSocialProvider().isBlank()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "SOCIAL_PASSWORD_CHANGE_UNSUPPORTED",
+                        "소셜 로그인 계정은 비밀번호를 변경할 수 없어요."
+                );
+            }
+
+            if (request.currentPassword() == null || request.currentPassword().isBlank()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "CURRENT_PASSWORD_REQUIRED",
+                        "현재 비밀번호를 입력해 주세요."
+                );
+            }
+
+            if (!passwordEncoder.matches(request.currentPassword().trim(), user.getPasswordHash())) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_CURRENT_PASSWORD",
+                        "현재 비밀번호가 올바르지 않아요."
+                );
+            }
+
+            user.updatePasswordHash(passwordEncoder.encode(normalizePassword(request.newPassword())));
+        }
+
+        return toResponse(userRepository.save(user));
     }
 
     public Long getCurrentUserIdOrNull(HttpSession session) {

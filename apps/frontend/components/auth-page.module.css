@@ -108,6 +108,36 @@
   margin-bottom: 18px;
 }
 
+.tabRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.tabButton,
+.tabButtonActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 999px;
+  padding: 11px 16px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tabButton {
+  background: rgba(16, 36, 76, 0.06);
+  color: #10244c;
+}
+
+.tabButtonActive {
+  background: linear-gradient(135deg, #ef7d27 0%, #f4a340 100%);
+  color: #fff;
+}
+
 .subText {
   margin: 0;
   color: var(--text-sub);
@@ -588,4 +618,5 @@
     flex-direction: column;
     align-items: flex-start;
   }
+
 }

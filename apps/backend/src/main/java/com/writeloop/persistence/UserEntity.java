@@ -85,4 +85,8 @@ public class UserEntity {
             this.displayName = displayName.trim();
         }
     }
+
+    public void updatePasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 }

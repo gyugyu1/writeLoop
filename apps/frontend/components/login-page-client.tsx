@@ -119,7 +119,7 @@ export function LoginPageClient() {
           <div className={styles.eyebrow}>로그인</div>
           <h1>기존 학습 흐름을 그대로 이어서 다시 시작해 보세요.</h1>
           <p>
-            로그인하면 오늘의 질문, 내 작문 히스토리, 자주 받는 피드백까지 모두 이어서 볼 수 있어요.
+            로그인하면 오늘의 질문, 내 작문 기록, 자주 받는 피드백까지 모두 이어서 볼 수 있어요.
           </p>
         </div>
 
@@ -134,7 +134,13 @@ export function LoginPageClient() {
           {!showVerify ? (
             <>
               <p className={styles.subText}>가입한 이메일과 비밀번호를 입력해 주세요.</p>
-              <div className={styles.form}>
+              <form
+                className={styles.form}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  void handleLogin();
+                }}
+              >
                 <label className={styles.field}>
                   <span>이메일</span>
                   <input
@@ -152,7 +158,7 @@ export function LoginPageClient() {
                     type="password"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    placeholder="비밀번호를 입력해 주세요"
+                    placeholder="비밀번호를 입력해 주세요."
                   />
                 </label>
                 <label className={styles.checkboxField}>
@@ -163,18 +169,17 @@ export function LoginPageClient() {
                   />
                   <span>로그인 상태 유지</span>
                 </label>
-              </div>
 
-              <div className={styles.primaryActionRow}>
-                <button
-                  type="button"
-                  className={`${styles.primaryButton} ${styles.primaryButtonWide}`}
-                  onClick={() => void handleLogin()}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "처리 중..." : "이메일로 로그인"}
-                </button>
-              </div>
+                <div className={styles.primaryActionRow}>
+                  <button
+                    type="submit"
+                    className={`${styles.primaryButton} ${styles.primaryButtonWide}`}
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "처리 중..." : "이메일로 로그인"}
+                  </button>
+                </div>
+              </form>
 
               <div className={styles.secondaryActionRow}>
                 <Link href={forgotPasswordHref} className={styles.secondaryActionLink}>
@@ -205,7 +210,7 @@ export function LoginPageClient() {
           ) : (
             <>
               <p className={styles.subText}>
-                이메일 인증이 완료되면 바로 로그인돼요. 메일로 받은 6자리 코드를 입력해 주세요.
+                이메일 인증을 마치면 바로 로그인돼요. 메일로 받은 6자리 코드를 입력해 주세요.
               </p>
               <div className={styles.form}>
                 <label className={styles.field}>
@@ -227,7 +232,7 @@ export function LoginPageClient() {
                     className={styles.input}
                     value={verificationCode}
                     onChange={(event) => setVerificationCode(event.target.value)}
-                    placeholder="메일로 받은 6자리 코드를 입력해 주세요"
+                    placeholder="메일로 받은 6자리 코드를 입력해 주세요."
                   />
                 </label>
               </div>

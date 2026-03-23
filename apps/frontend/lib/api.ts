@@ -8,6 +8,7 @@ import type {
   AuthUser,
   DailyDifficulty,
   DailyPromptRecommendation,
+  PasswordResetAvailability,
   Feedback,
   FeedbackRequest,
   HistorySession,
@@ -15,8 +16,11 @@ import type {
   PromptHint,
   Prompt,
   RegisterRequest,
+  ResetPasswordRequest,
+  SendPasswordResetCodeRequest,
   TodayWritingStatus,
   UpdateProfileRequest,
+  VerifyPasswordResetCodeRequest,
   VerifyEmailRequest
 } from "./types";
 
@@ -145,6 +149,78 @@ export async function register(request: RegisterRequest): Promise<AuthNotice> {
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to register");
+  }
+
+  return response.json();
+}
+
+export async function sendPasswordResetCode(request: SendPasswordResetCodeRequest): Promise<AuthNotice> {
+  const response = await fetch(`${API_BASE}/api/auth/password-reset/send-code`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to send password reset code");
+  }
+
+  return response.json();
+}
+
+export async function checkPasswordResetEmail(
+  request: SendPasswordResetCodeRequest
+): Promise<PasswordResetAvailability> {
+  const response = await fetch(`${API_BASE}/api/auth/password-reset/check-email`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to check password reset email");
+  }
+
+  return response.json();
+}
+
+export async function verifyPasswordResetCode(
+  request: VerifyPasswordResetCodeRequest
+): Promise<AuthNotice> {
+  const response = await fetch(`${API_BASE}/api/auth/password-reset/verify-code`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to verify password reset code");
+  }
+
+  return response.json();
+}
+
+export async function resetPassword(request: ResetPasswordRequest): Promise<AuthNotice> {
+  const response = await fetch(`${API_BASE}/api/auth/password-reset/complete`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to reset password");
   }
 
   return response.json();

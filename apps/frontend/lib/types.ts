@@ -138,6 +138,27 @@ export interface RegisterRequest extends LoginRequest {
   displayName: string;
 }
 
+export interface SendPasswordResetCodeRequest {
+  email: string;
+}
+
+export interface PasswordResetAvailability {
+  email: string;
+  available: boolean;
+  message: string;
+}
+
+export interface ResetPasswordRequest {
+  email: string;
+  code: string;
+  newPassword: string;
+}
+
+export interface VerifyPasswordResetCodeRequest {
+  email: string;
+  code: string;
+}
+
 export interface UpdateProfileRequest {
   displayName: string;
   currentPassword?: string;

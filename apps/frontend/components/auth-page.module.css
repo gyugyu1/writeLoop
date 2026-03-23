@@ -155,6 +155,16 @@
   gap: 8px;
 }
 
+.inlineFieldRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.inlineFieldInput {
+  flex: 1;
+}
+
 .field span {
   font-size: 0.92rem;
   font-weight: 700;
@@ -195,6 +205,37 @@
   align-items: center;
   flex-wrap: wrap;
   margin-top: 18px;
+}
+
+.primaryActionRow {
+  display: flex;
+  width: 100%;
+  margin-top: 18px;
+}
+
+.primaryButtonWide {
+  width: 100%;
+}
+
+.secondaryActionRow {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.secondaryActionLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: rgba(16, 36, 76, 0.06);
+  color: #10244c;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
 }
 
 .primaryButton,
@@ -619,4 +660,17 @@
     align-items: flex-start;
   }
 
+  .inlineFieldRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .secondaryActionRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .secondaryActionLink {
+    width: 100%;
+  }
 }

@@ -18,6 +18,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -82,6 +83,16 @@ public class RememberLoginService {
         entity.rotate(hash(nextRawToken), Instant.now().plus(Duration.ofDays(rememberMeDays)));
         rememberLoginTokenRepository.save(entity);
         writeRememberCookie(response, nextRawToken, rememberMeDays);
+    }
+
+    public void revokeAllForUser(Long userId) {
+        List<RememberLoginTokenEntity> activeTokens = rememberLoginTokenRepository.findAllByUserIdAndRevokedAtIsNull(userId);
+        for (RememberLoginTokenEntity activeToken : activeTokens) {
+            activeToken.revoke();
+        }
+        if (!activeTokens.isEmpty()) {
+            rememberLoginTokenRepository.saveAll(activeTokens);
+        }
     }
 
     private void revokeByRawToken(String rawToken) {

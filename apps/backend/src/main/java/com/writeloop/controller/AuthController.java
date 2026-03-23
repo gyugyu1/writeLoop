@@ -3,9 +3,13 @@ package com.writeloop.controller;
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
 import com.writeloop.dto.LoginRequestDto;
+import com.writeloop.dto.PasswordResetAvailabilityDto;
+import com.writeloop.dto.ResetPasswordRequestDto;
 import com.writeloop.dto.RegisterRequestDto;
 import com.writeloop.dto.ResendVerificationRequestDto;
+import com.writeloop.dto.SendPasswordResetCodeRequestDto;
 import com.writeloop.dto.UpdateProfileRequestDto;
+import com.writeloop.dto.VerifyPasswordResetCodeRequestDto;
 import com.writeloop.dto.VerifyEmailRequestDto;
 import com.writeloop.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -62,6 +66,32 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     public AuthNoticeDto resendVerification(@RequestBody ResendVerificationRequestDto request) {
         return authService.resendVerificationEmail(request);
+    }
+
+    @PostMapping("/password-reset/check-email")
+    @ResponseStatus(HttpStatus.OK)
+    public PasswordResetAvailabilityDto checkPasswordResetEmail(
+            @RequestBody SendPasswordResetCodeRequestDto request
+    ) {
+        return authService.checkPasswordResetEmail(request);
+    }
+
+    @PostMapping("/password-reset/send-code")
+    @ResponseStatus(HttpStatus.OK)
+    public AuthNoticeDto sendPasswordResetCode(@RequestBody SendPasswordResetCodeRequestDto request) {
+        return authService.sendPasswordResetCode(request);
+    }
+
+    @PostMapping("/password-reset/verify-code")
+    @ResponseStatus(HttpStatus.OK)
+    public AuthNoticeDto verifyPasswordResetCode(@RequestBody VerifyPasswordResetCodeRequestDto request) {
+        return authService.verifyPasswordResetCode(request);
+    }
+
+    @PostMapping("/password-reset/complete")
+    @ResponseStatus(HttpStatus.OK)
+    public AuthNoticeDto resetPassword(@RequestBody ResetPasswordRequestDto request) {
+        return authService.resetPassword(request);
     }
 
     @PostMapping("/logout")

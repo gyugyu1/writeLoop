@@ -23,9 +23,14 @@ export function LoginPageClient() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     setReturnTo(resolveReturnTo(params.get("returnTo")));
+
+    if (params.get("reset") === "done") {
+      setNotice("비밀번호를 재설정했어요. 새 비밀번호로 로그인해 주세요.");
+    }
   }, []);
 
   const registerHref = `/register?returnTo=${encodeURIComponent(returnTo)}`;
+  const forgotPasswordHref = `/forgot-password?returnTo=${encodeURIComponent(returnTo)}`;
   const socialLoginQuery = useMemo(() => {
     const params = new URLSearchParams({
       returnTo,
@@ -112,14 +117,14 @@ export function LoginPageClient() {
       <section className={styles.hero}>
         <div className={styles.intro}>
           <div className={styles.eyebrow}>로그인</div>
-          <h1>기존 학습 흐름을 그대로 이어서 다시 써보세요.</h1>
+          <h1>기존 학습 흐름을 그대로 이어서 다시 시작해 보세요.</h1>
           <p>
-            로그인하면 오늘의 질문, 내 작문 히스토리, 자주 받는 피드백까지 한 흐름으로 이어서 볼 수 있어요.
+            로그인하면 오늘의 질문, 내 작문 히스토리, 자주 받는 피드백까지 모두 이어서 볼 수 있어요.
           </p>
           <ul className={styles.points}>
-            <li>일반 로그인과 네이버 로그인을 모두 지원해요.</li>
-            <li>로그인 상태 유지로 브라우저를 다시 열어도 이어서 시작할 수 있어요.</li>
-            <li>로그인 후에는 원래 보던 화면으로 자연스럽게 돌아가요.</li>
+            <li>일반 로그인과 네이버, 구글, 카카오 로그인을 모두 지원해요.</li>
+            <li>로그인 상태 유지를 켜 두면 브라우저를 다시 열어도 이어서 시작할 수 있어요.</li>
+            <li>로그인 전에 보던 화면이 있으면 그 위치로 자연스럽게 돌아가요.</li>
           </ul>
         </div>
 
@@ -133,7 +138,7 @@ export function LoginPageClient() {
 
           {!showVerify ? (
             <>
-              <p className={styles.subText}>등록한 이메일과 비밀번호를 입력해 주세요.</p>
+              <p className={styles.subText}>가입한 이메일과 비밀번호를 입력해 주세요.</p>
               <div className={styles.form}>
                 <label className={styles.field}>
                   <span>이메일</span>
@@ -165,17 +170,23 @@ export function LoginPageClient() {
                 </label>
               </div>
 
-              <div className={styles.actions}>
+              <div className={styles.primaryActionRow}>
                 <button
                   type="button"
-                  className={styles.primaryButton}
+                  className={`${styles.primaryButton} ${styles.primaryButtonWide}`}
                   onClick={() => void handleLogin()}
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "처리 중..." : "이메일로 로그인"}
                 </button>
-                <Link href={registerHref} className={styles.ghostLink}>
-                  회원가입으로 이동
+              </div>
+
+              <div className={styles.secondaryActionRow}>
+                <Link href={forgotPasswordHref} className={styles.secondaryActionLink}>
+                  비밀번호 찾기
+                </Link>
+                <Link href={registerHref} className={styles.secondaryActionLink}>
+                  회원가입
                 </Link>
               </div>
 
@@ -199,7 +210,7 @@ export function LoginPageClient() {
           ) : (
             <>
               <p className={styles.subText}>
-                이메일 인증을 완료하면 바로 로그인돼요. 메일로 받은 6자리 코드를 입력해 주세요.
+                이메일 인증이 완료되면 바로 로그인돼요. 메일로 받은 6자리 코드를 입력해 주세요.
               </p>
               <div className={styles.form}>
                 <label className={styles.field}>
@@ -221,7 +232,7 @@ export function LoginPageClient() {
                     className={styles.input}
                     value={verificationCode}
                     onChange={(event) => setVerificationCode(event.target.value)}
-                    placeholder="메일로 받은 6자리 코드"
+                    placeholder="메일로 받은 6자리 코드를 입력해 주세요"
                   />
                 </label>
               </div>

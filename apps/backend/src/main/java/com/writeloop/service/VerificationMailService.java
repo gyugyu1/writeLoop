@@ -54,4 +54,34 @@ public class VerificationMailService {
             log.warn("Failed to send verification email to {}. Fallback code log: {}", email, code, exception);
         }
     }
+
+    public void sendPasswordResetCode(String email, String code) {
+        if (smtpHost == null || smtpHost.isBlank()) {
+            log.info("Password reset code for {} -> {}", email, code);
+            return;
+        }
+
+        JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+        if (mailSender == null) {
+            log.info("Password reset code for {} -> {}", email, code);
+            return;
+        }
+
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(fromAddress);
+            message.setTo(email);
+            message.setSubject("[writeLoop] 비밀번호 재설정 코드");
+            message.setText("""
+                    writeLoop 비밀번호 재설정 코드입니다.
+
+                    재설정 코드: %s
+
+                    비밀번호 찾기 화면에서 위 코드를 입력하고 새 비밀번호를 설정해 주세요.
+                    """.formatted(code));
+            mailSender.send(message);
+        } catch (Exception exception) {
+            log.warn("Failed to send password reset email to {}. Fallback code log: {}", email, code, exception);
+        }
+    }
 }

@@ -3,13 +3,19 @@ package com.writeloop.service;
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
 import com.writeloop.dto.LoginRequestDto;
+import com.writeloop.dto.PasswordResetAvailabilityDto;
+import com.writeloop.dto.ResetPasswordRequestDto;
 import com.writeloop.dto.RegisterRequestDto;
 import com.writeloop.dto.ResendVerificationRequestDto;
+import com.writeloop.dto.SendPasswordResetCodeRequestDto;
 import com.writeloop.dto.UpdateProfileRequestDto;
+import com.writeloop.dto.VerifyPasswordResetCodeRequestDto;
 import com.writeloop.dto.VerifyEmailRequestDto;
 import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.EmailVerificationTokenEntity;
 import com.writeloop.persistence.EmailVerificationTokenRepository;
+import com.writeloop.persistence.PasswordResetTokenEntity;
+import com.writeloop.persistence.PasswordResetTokenRepository;
 import com.writeloop.persistence.UserEntity;
 import com.writeloop.persistence.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,6 +55,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationMailService verificationMailService;
     private final RememberLoginService rememberLoginService;
@@ -159,6 +166,84 @@ public class AuthService {
 
         issueVerificationCode(user);
         return new AuthNoticeDto(user.getEmail(), "인증 코드를 다시 보냈어요.");
+    }
+
+    public PasswordResetAvailabilityDto checkPasswordResetEmail(SendPasswordResetCodeRequestDto request) {
+        String email = normalizeEmail(request.email());
+
+        return userRepository.findByEmail(email)
+                .map(this::toPasswordResetAvailability)
+                .orElseGet(() -> new PasswordResetAvailabilityDto(
+                        email,
+                        false,
+                        "등록된 이메일을 찾지 못했어요."
+                ));
+    }
+
+    public AuthNoticeDto sendPasswordResetCode(SendPasswordResetCodeRequestDto request) {
+        String email = normalizeEmail(request.email());
+        UserEntity user = requirePasswordResetEligibleUser(email);
+        issuePasswordResetCode(user);
+
+        return new AuthNoticeDto(
+                email,
+                "비밀번호 재설정 코드를 보냈어요."
+        );
+    }
+
+    public AuthNoticeDto verifyPasswordResetCode(VerifyPasswordResetCodeRequestDto request) {
+        String email = normalizeEmail(request.email());
+        String code = normalizeVerificationCode(request.code());
+
+        requirePasswordResetEligibleUser(email);
+        PasswordResetTokenEntity token = findValidPasswordResetToken(email, code);
+
+        if (token.isExpired()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "PASSWORD_RESET_CODE_EXPIRED",
+                    "재설정 코드가 만료되었어요. 다시 받아 주세요."
+            );
+        }
+
+        return new AuthNoticeDto(
+                email,
+                "코드를 확인했어요. 새 비밀번호를 입력해 주세요."
+        );
+    }
+
+    public AuthNoticeDto resetPassword(ResetPasswordRequestDto request) {
+        String email = normalizeEmail(request.email());
+        String code = normalizeVerificationCode(request.code());
+        String newPassword = normalizePassword(request.newPassword());
+
+        UserEntity user = requirePasswordResetEligibleUser(email);
+        PasswordResetTokenEntity token = findValidPasswordResetToken(email, code);
+
+        if (token.isExpired()) {
+            throw new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "PASSWORD_RESET_CODE_EXPIRED",
+                    "재설정 코드가 만료되었어요. 다시 받아 주세요."
+            );
+        }
+
+        user.updatePasswordHash(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+
+        var activeTokens = passwordResetTokenRepository.findAllByEmailAndUsedAtIsNull(email);
+        for (PasswordResetTokenEntity activeToken : activeTokens) {
+            activeToken.markUsed();
+        }
+        if (!activeTokens.isEmpty()) {
+            passwordResetTokenRepository.saveAll(activeTokens);
+        }
+        rememberLoginService.revokeAllForUser(user.getId());
+
+        return new AuthNoticeDto(
+                user.getEmail(),
+                "비밀번호를 재설정했어요. 새 비밀번호로 로그인해 주세요."
+        );
     }
 
     public void logout(HttpSession session, HttpServletRequest request, HttpServletResponse response) {
@@ -508,6 +593,90 @@ public class AuthService {
             return "/";
         }
         return returnTo;
+    }
+
+    private PasswordResetAvailabilityDto toPasswordResetAvailability(UserEntity user) {
+        String email = user.getEmail();
+
+        if (!user.isEmailVerified()) {
+            return new PasswordResetAvailabilityDto(
+                    email,
+                    false,
+                    "이메일 인증이 아직 완료되지 않은 계정이에요."
+            );
+        }
+
+        if (user.getSocialProvider() != null && !user.getSocialProvider().isBlank()) {
+            return new PasswordResetAvailabilityDto(
+                    email,
+                    false,
+                    "소셜 로그인 계정은 해당 서비스에서 비밀번호를 재설정해 주세요."
+            );
+        }
+
+        return new PasswordResetAvailabilityDto(
+                email,
+                true,
+                "등록된 이메일을 확인했어요. 인증 코드를 보낼 수 있어요."
+        );
+    }
+
+    private UserEntity requirePasswordResetEligibleUser(String email) {
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_PASSWORD_RESET_REQUEST",
+                        "비밀번호 재설정 요청이 올바르지 않아요."
+                ));
+
+        if (!user.isEmailVerified()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "EMAIL_NOT_VERIFIED",
+                    "이메일 인증이 아직 완료되지 않은 계정이에요."
+            );
+        }
+
+        if (user.getSocialProvider() != null && !user.getSocialProvider().isBlank()) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "SOCIAL_PASSWORD_RESET_UNSUPPORTED",
+                    "소셜 로그인 계정은 해당 서비스에서 비밀번호를 재설정해 주세요."
+            );
+        }
+
+        return user;
+    }
+
+    private PasswordResetTokenEntity findValidPasswordResetToken(String email, String code) {
+        return passwordResetTokenRepository
+                .findFirstByEmailAndResetCodeAndUsedAtIsNullOrderByCreatedAtDesc(email, code)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_PASSWORD_RESET_CODE",
+                        "재설정 코드가 올바르지 않아요."
+                ));
+    }
+
+    private void issuePasswordResetCode(UserEntity user) {
+        var existingTokens = passwordResetTokenRepository.findAllByEmailAndUsedAtIsNull(user.getEmail());
+        for (PasswordResetTokenEntity existingToken : existingTokens) {
+            existingToken.markUsed();
+        }
+
+        String code = generateVerificationCode();
+        PasswordResetTokenEntity token = new PasswordResetTokenEntity(
+                user.getId(),
+                user.getEmail(),
+                code,
+                Instant.now().plus(Duration.ofMinutes(10))
+        );
+
+        if (!existingTokens.isEmpty()) {
+            passwordResetTokenRepository.saveAll(existingTokens);
+        }
+        passwordResetTokenRepository.save(token);
+        verificationMailService.sendPasswordResetCode(user.getEmail(), code);
     }
 
     private void issueVerificationCode(UserEntity user) {

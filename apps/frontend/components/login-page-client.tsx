@@ -170,6 +170,8 @@ export function LoginPageClient() {
                   <span>로그인 상태 유지</span>
                 </label>
 
+                {!showVerify && error ? <p className={styles.error}>{error}</p> : null}
+
                 <div className={styles.primaryActionRow}>
                   <button
                     type="submit"
@@ -273,7 +275,7 @@ export function LoginPageClient() {
           )}
 
           {notice ? <p className={styles.notice}>{notice}</p> : null}
-          {error ? <p className={styles.error}>{error}</p> : null}
+          {showVerify && error ? <p className={styles.error}>{error}</p> : null}
         </section>
       </section>
     </main>

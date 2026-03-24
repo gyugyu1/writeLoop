@@ -13,6 +13,11 @@ export const metadata: Metadata = {
     template: `%s | ${siteTitle}`
   },
   description: siteDescription,
+  icons: {
+    icon: "/brand-symbol.png",
+    shortcut: "/brand-symbol.png",
+    apple: "/brand-symbol.png"
+  },
   openGraph: {
     title: siteTitle,
     description: siteDescription,
@@ -22,10 +27,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "writeLoop 로고와 서비스 소개 이미지"
+        url: "/brand-symbol.png",
+        width: 1024,
+        height: 1024,
+        alt: "writeLoop 로고"
       }
     ]
   },
@@ -33,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteTitle,
     description: siteDescription,
-    images: ["/opengraph-image"]
+    images: ["/brand-symbol.png"]
   }
 };
 

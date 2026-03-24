@@ -1,12 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../lib/api";
 import type { AuthUser } from "../lib/types";
 import styles from "./top-navigation.module.css";
-import { WriteLoopSymbol } from "./write-loop-symbol";
 
 type MyPageTab = "account" | "writing";
 
@@ -114,7 +114,14 @@ export function TopNavigation() {
       <div className={styles.inner}>
         <Link href="/" className={styles.logo}>
           <span className={styles.logoMark}>
-            <WriteLoopSymbol className={styles.logoSymbol} />
+            <Image
+              src="/brand-symbol.png"
+              alt="writeLoop 로고"
+              width={48}
+              height={48}
+              className={styles.logoSymbol}
+              priority
+            />
           </span>
           <span className={styles.logoText}>writeLoop</span>
         </Link>

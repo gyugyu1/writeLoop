@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getCurrentUser } from "../lib/api";
 import type { AuthUser } from "../lib/types";
 import styles from "./top-navigation.module.css";
+import { WriteLoopSymbol } from "./write-loop-symbol";
 
 type MyPageTab = "account" | "writing";
 
@@ -112,7 +113,9 @@ export function TopNavigation() {
     <header className={styles.topBar}>
       <div className={styles.inner}>
         <Link href="/" className={styles.logo}>
-          <span className={styles.logoMark}>W</span>
+          <span className={styles.logoMark}>
+            <WriteLoopSymbol className={styles.logoSymbol} />
+          </span>
           <span className={styles.logoText}>writeLoop</span>
         </Link>
         <nav className={styles.menu} aria-label="상단 메뉴">

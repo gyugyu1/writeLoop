@@ -22,7 +22,7 @@
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   text-decoration: none;
 }
 
@@ -30,14 +30,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #ef7d27 0%, #f4a340 100%);
-  color: #fff;
-  font-weight: 800;
-  font-size: 1rem;
-  box-shadow: 0 12px 24px rgba(242, 141, 53, 0.24);
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.logoSymbol {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 12px 24px rgba(42, 76, 138, 0.18));
 }
 
 .logoText {
@@ -88,6 +89,11 @@
 
   .logoText {
     font-size: 1rem;
+  }
+
+  .logoMark {
+    width: 44px;
+    height: 44px;
   }
 
   .menu {

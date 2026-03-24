@@ -1,0 +1,47 @@
+type WriteLoopSymbolProps = {
+  className?: string;
+};
+
+export function WriteLoopSymbol({ className }: WriteLoopSymbolProps) {
+  return (
+    <svg
+      viewBox="0 0 128 128"
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <defs>
+        <linearGradient id="wl-blue" x1="23" y1="38" x2="63" y2="89" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#3D86F6" />
+          <stop offset="1" stopColor="#1D57B8" />
+        </linearGradient>
+        <linearGradient id="wl-orange" x1="67" y1="39" x2="107" y2="89" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFBC42" />
+          <stop offset="1" stopColor="#FF8A00" />
+        </linearGradient>
+        <linearGradient id="wl-pencil" x1="44" y1="94" x2="94" y2="33" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#184AA3" />
+          <stop offset="1" stopColor="#2F74D2" />
+        </linearGradient>
+      </defs>
+
+      <path
+        d="M53 93c-16.5 0-30-12-30-27s13.5-27 30-27c11.7 0 19.4 4.5 26 12l-8 7.5c-4.8-5.2-9.9-8.2-18-8.2-9.8 0-17.7 7.2-17.7 15.7S43.2 81.7 53 81.7c7.7 0 12.8-2.6 17.7-8.2l8 7.4C72.4 88.4 64.7 93 53 93Z"
+        fill="url(#wl-blue)"
+      />
+      <path
+        d="M75 39c16.5 0 30 12 30 27S91.5 93 75 93c-11.7 0-19.4-4.5-26-12l8-7.5c4.8 5.2 9.9 8.2 18 8.2 9.8 0 17.7-7.2 17.7-15.7S84.8 50.3 75 50.3c-7.7 0-12.8 2.6-17.7 8.2l-8-7.4C55.6 43.6 63.3 39 75 39Z"
+        fill="url(#wl-orange)"
+      />
+      <g transform="rotate(40 64 64)">
+        <rect x="56" y="17" width="16" height="82" rx="8" fill="url(#wl-pencil)" />
+        <rect x="56" y="17" width="16" height="10" rx="5" fill="#2A6CC6" />
+        <rect x="56" y="27" width="16" height="6" fill="#FFA21E" />
+        <rect x="56" y="74" width="16" height="6" fill="#FFA21E" />
+        <path d="M56 99H72L64 112L56 99Z" fill="#214E97" />
+        <path d="M61 112H67L64 118L61 112Z" fill="#7C8AA5" />
+      </g>
+    </svg>
+  );
+}

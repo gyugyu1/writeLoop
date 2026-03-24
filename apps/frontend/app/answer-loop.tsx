@@ -317,6 +317,25 @@ export function AnswerLoop() {
     () => prompts.find((prompt) => prompt.id === selectedPromptId) ?? null,
     [prompts, selectedPromptId]
   );
+  const suggestedFollowUpPrompt = useMemo(() => {
+    if (prompts.length < 2) {
+      return null;
+    }
+
+    const currentIndex = prompts.findIndex((prompt) => prompt.id === selectedPromptId);
+    if (currentIndex < 0) {
+      return prompts[0] ?? null;
+    }
+
+    for (let offset = 1; offset < prompts.length; offset += 1) {
+      const candidate = prompts[(currentIndex + offset) % prompts.length];
+      if (candidate && candidate.id !== selectedPromptId) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }, [prompts, selectedPromptId]);
 
   const isLoggedIn = Boolean(currentUser);
   const activeDraftType: WritingDraftType | null =
@@ -1334,9 +1353,38 @@ export function AnswerLoop() {
             </p>
           </div>
         ) : null}
+        {suggestedFollowUpPrompt ? (
+          <div className={styles.completeFollowUpCard}>
+            <div className={styles.completeFollowUpCopy}>
+              <strong>비슷한 질문 하나 더 이어서 써볼까요?</strong>
+              <p>
+                같은 흐름을 유지하기 좋은 다음 질문이에요. 지금 바로 이어서 쓰면 오늘의 작문 감각을 더
+                길게 가져갈 수 있어요.
+              </p>
+            </div>
+            <div className={styles.completeFollowUpPrompt}>
+              <span>{suggestedFollowUpPrompt.topic}</span>
+              <p>{suggestedFollowUpPrompt.questionEn}</p>
+            </div>
+          </div>
+        ) : null}
         <div className={styles.completeActions}>
-          <button type="button" className={styles.primaryButton} onClick={handleTryAnotherPrompt}>
-            다른 추천 보기
+          {suggestedFollowUpPrompt ? (
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={() => void handlePickPrompt(suggestedFollowUpPrompt.id)}
+              disabled={isLoadingPrompts}
+            >
+              비슷한 질문 하나 더 답변하기
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className={suggestedFollowUpPrompt ? styles.ghostButton : styles.primaryButton}
+            onClick={handleTryAnotherPrompt}
+          >
+            다른 질문 보기
           </button>
           <button type="button" className={styles.ghostButton} onClick={() => setStep("feedback")}>
             마지막 피드백 다시 보기

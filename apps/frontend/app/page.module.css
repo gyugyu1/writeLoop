@@ -721,6 +721,79 @@
   color: #8b4a1a;
 }
 
+.completeFollowUpCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(260px, 0.8fr);
+  gap: 16px;
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  border: 1px solid rgba(16, 36, 76, 0.1);
+  background:
+    linear-gradient(135deg, rgba(22, 58, 122, 0.08) 0%, rgba(242, 141, 53, 0.12) 100%),
+    rgba(255, 255, 255, 0.82);
+}
+
+.completeFollowUpCopy {
+  display: grid;
+  gap: 8px;
+}
+
+.completeFollowUpEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(36, 87, 245, 0.1);
+  color: #214ba9;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.completeFollowUpCopy strong {
+  font-size: 1.18rem;
+  color: #10244c;
+}
+
+.completeFollowUpCopy p {
+  margin: 0;
+  color: #5b6887;
+}
+
+.completeFollowUpPrompt {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.completeFollowUpPrompt span {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(242, 141, 53, 0.14);
+  color: #9b4f16;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.completeFollowUpPrompt p {
+  margin: 0;
+  color: #10244c;
+  font-size: 1.04rem;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
 .completeActions {
   display: flex;
   gap: 12px;
@@ -1334,7 +1407,8 @@
 @media (max-width: 900px) {
   .difficultyGrid,
   .loginWall,
-  .completeSummary {
+  .completeSummary,
+  .completeFollowUpCard {
     grid-template-columns: 1fr;
   }
 

@@ -21,10 +21,13 @@ import type {
   ResetPasswordRequest,
   SendPasswordResetCodeRequest,
   SendRegistrationCodeRequest,
+  SaveWritingDraftRequest,
   TodayWritingStatus,
   UpdateProfileRequest,
   VerifyPasswordResetCodeRequest,
-  VerifyEmailRequest
+  VerifyEmailRequest,
+  WritingDraft,
+  WritingDraftType
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
@@ -379,6 +382,57 @@ export async function getCommonMistakes(): Promise<CommonMistake[]> {
   }
 
   return response.json();
+}
+
+export async function getWritingDraft(
+  promptId: string,
+  draftType: WritingDraftType
+): Promise<WritingDraft | null> {
+  const response = await fetch(`${API_BASE}/api/drafts/${promptId}?draftType=${draftType}`, {
+    cache: "no-store",
+    credentials: "include"
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to load writing draft");
+  }
+
+  return response.json();
+}
+
+export async function saveWritingDraft(
+  promptId: string,
+  request: SaveWritingDraftRequest
+): Promise<WritingDraft> {
+  const response = await fetch(`${API_BASE}/api/drafts/${promptId}`, {
+    method: "PUT",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to save writing draft");
+  }
+
+  return response.json();
+}
+
+export async function deleteWritingDraft(promptId: string, draftType: WritingDraftType): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/drafts/${promptId}?draftType=${draftType}`, {
+    method: "DELETE",
+    credentials: "include"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to delete writing draft");
+  }
 }
 
 export async function getAdminPrompts(): Promise<AdminPrompt[]> {

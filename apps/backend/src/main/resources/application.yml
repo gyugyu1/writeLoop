@@ -9,6 +9,10 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/writeloop?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
     username: ${SPRING_DATASOURCE_USERNAME:writeloop}
     password: ${SPRING_DATASOURCE_PASSWORD:writeloop}
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
   mail:
     host: ${SPRING_MAIL_HOST:}
     port: ${SPRING_MAIL_PORT:587}
@@ -43,6 +47,8 @@ app:
     emails: ${APP_ADMIN_EMAILS:}
   mail:
     from: ${APP_MAIL_FROM:no-reply@writeloop.local}
+  drafts:
+    ttl-days: ${APP_DRAFT_TTL_DAYS:7}
   oauth:
     google:
       client-id: ${GOOGLE_CLIENT_ID:}

@@ -1,13 +1,21 @@
 services:
+  writeloop-redis:
+    image: redis:7-alpine
+    container_name: writeLoop-redis
+
   writeloop-backend:
     build:
       context: ./apps/backend
       dockerfile: Dockerfile
     container_name: writeLoop-backend
+    depends_on:
+      - writeloop-redis
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:mysql://host.docker.internal:3306/writeloop?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-writeloop}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-writeloop}
+      SPRING_DATA_REDIS_HOST: ${SPRING_DATA_REDIS_HOST:-writeloop-redis}
+      SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o}
       OPENAI_API_URL: ${OPENAI_API_URL:-https://api.openai.com/v1/responses}
@@ -22,6 +30,7 @@ services:
       SPRING_MAIL_SMTP_AUTH: ${SPRING_MAIL_SMTP_AUTH:-true}
       SPRING_MAIL_SMTP_STARTTLS_ENABLE: ${SPRING_MAIL_SMTP_STARTTLS_ENABLE:-true}
       APP_MAIL_FROM: ${APP_MAIL_FROM:-no-reply@writeloop.local}
+      APP_DRAFT_TTL_DAYS: ${APP_DRAFT_TTL_DAYS:-7}
       NAVER_CLIENT_ID: ${NAVER_CLIENT_ID:-}
       NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET:-}
       NAVER_AUTHORIZATION_URI: ${NAVER_AUTHORIZATION_URI:-https://nid.naver.com/oauth2.0/authorize}

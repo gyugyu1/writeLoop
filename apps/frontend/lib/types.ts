@@ -1,5 +1,7 @@
 export type PromptDifficulty = "A" | "B" | "C";
 export type DailyDifficulty = "A" | "B" | "C";
+export type HomeFlowStep = "pick" | "answer" | "feedback" | "rewrite" | "complete";
+export type WritingDraftType = "ANSWER" | "REWRITE";
 
 export interface Prompt {
   id: string;
@@ -74,6 +76,34 @@ export interface Feedback {
   correctedAnswer: string | null;
   modelAnswer: string;
   rewriteChallenge: string;
+}
+
+export interface HomeDraftSnapshot {
+  selectedDifficulty: DailyDifficulty;
+  selectedPromptId: string;
+  sessionId: string;
+  answer: string;
+  rewrite: string;
+  lastSubmittedAnswer: string;
+  feedback: Feedback | null;
+  step: HomeFlowStep;
+}
+
+export interface SaveWritingDraftRequest {
+  draftType: WritingDraftType;
+  selectedDifficulty: DailyDifficulty;
+  sessionId: string;
+  answer: string;
+  rewrite: string;
+  lastSubmittedAnswer: string;
+  feedback: Feedback | null;
+  step: HomeFlowStep;
+}
+
+export interface WritingDraft extends HomeDraftSnapshot {
+  promptId: string;
+  draftType: WritingDraftType;
+  updatedAt: string;
 }
 
 export interface StoredFeedback {

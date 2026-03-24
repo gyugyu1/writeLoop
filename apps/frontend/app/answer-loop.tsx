@@ -1,24 +1,36 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ApiError,
+  deleteWritingDraft,
   getCurrentUser,
   getDailyPrompts,
   getPromptHints,
   getTodayWritingStatus,
+  getWritingDraft,
+  saveWritingDraft,
   submitFeedback
 } from "../lib/api";
 import { saveHomeDraftForLogin, takeHomeDraftForLogin } from "../lib/auth-flow";
+import {
+  deleteLocalWritingDraft,
+  getPreferredLocalWritingDraft,
+  saveLocalWritingDraft
+} from "../lib/home-writing-drafts";
 import { getDifficultyLabel } from "../lib/difficulty";
 import type {
   AuthUser,
   DailyDifficulty,
   DailyPromptRecommendation,
   Feedback,
+  HomeDraftSnapshot,
+  HomeFlowStep,
   PromptHint,
-  TodayWritingStatus
+  TodayWritingStatus,
+  WritingDraft,
+  WritingDraftType
 } from "../lib/types";
 import { InlineFeedbackPreview } from "../components/inline-feedback-preview";
 import styles from "./page.module.css";
@@ -107,6 +119,7 @@ export function AnswerLoop() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>("pick");
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
+  const [isResolvingCurrentUser, setIsResolvingCurrentUser] = useState(true);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [showRewriteFeedback, setShowRewriteFeedback] = useState(false);
   const [showAnswerTranslation, setShowAnswerTranslation] = useState(false);
@@ -114,8 +127,11 @@ export function AnswerLoop() {
   const [hints, setHints] = useState<PromptHint[]>([]);
   const [isLoadingHints, setIsLoadingHints] = useState(false);
   const [didRestoreDraft, setDidRestoreDraft] = useState(false);
+  const [didAttemptPersistedDraftRestore, setDidAttemptPersistedDraftRestore] = useState(false);
+  const [draftStatusMessage, setDraftStatusMessage] = useState("");
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
   const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const knownPersistedDraftKeysRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     setGuestId(getOrCreateGuestId());
@@ -140,6 +156,10 @@ export function AnswerLoop() {
       } catch {
         if (isMounted) {
           setCurrentUser(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsResolvingCurrentUser(false);
         }
       }
     }
@@ -177,6 +197,10 @@ export function AnswerLoop() {
     setShowAnswerTranslation(false);
     setShowHints(false);
   }, [currentUser, didRestoreDraft]);
+
+  useEffect(() => {
+    setDidAttemptPersistedDraftRestore(false);
+  }, [selectedDifficulty, currentUser?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -295,6 +319,8 @@ export function AnswerLoop() {
   );
 
   const isLoggedIn = Boolean(currentUser);
+  const activeDraftType: WritingDraftType | null =
+    step === "answer" ? "ANSWER" : step === "rewrite" ? "REWRITE" : null;
   const isGuestCycleComplete = Boolean(feedback && guestSessionId && feedback.attemptNo >= 2);
   const shouldSuggestFinish = Boolean(feedback?.loopComplete);
   const streakDays = todayStatus?.streakDays ?? 0;
@@ -399,7 +425,29 @@ export function AnswerLoop() {
     }));
   }
 
-  function buildHomeDraft() {
+  const applyDraftSnapshot = useCallback((
+    draft: HomeDraftSnapshot | WritingDraft,
+    message = "이전 초안을 복원했어요."
+  ) => {
+    const nextPromptId = "promptId" in draft ? draft.promptId : draft.selectedPromptId;
+
+    setSelectedDifficulty(draft.selectedDifficulty);
+    setSelectedPromptId(nextPromptId);
+    setSessionId(draft.sessionId);
+    setAnswer(draft.answer);
+    setRewrite(draft.rewrite);
+    setLastSubmittedAnswer(draft.lastSubmittedAnswer);
+    setFeedback(draft.feedback);
+    setStep(draft.step as Step);
+    setShowLoginWall(false);
+    setError("");
+    setShowRewriteFeedback(false);
+    setShowAnswerTranslation(false);
+    setShowHints(false);
+    setDraftStatusMessage(message);
+  }, []);
+
+  const buildHomeDraft = useCallback((): HomeDraftSnapshot => {
     return {
       selectedDifficulty,
       selectedPromptId,
@@ -408,13 +456,115 @@ export function AnswerLoop() {
       rewrite,
       lastSubmittedAnswer,
       feedback,
-      step
-    } as const;
-  }
+      step: step as HomeFlowStep
+    };
+  }, [answer, feedback, lastSubmittedAnswer, rewrite, selectedDifficulty, selectedPromptId, sessionId, step]);
 
   function persistDraftForLogin() {
     saveHomeDraftForLogin(buildHomeDraft());
   }
+
+  const buildPersistedDraftKey = useCallback(
+    (promptId: string, draftType: WritingDraftType) => `${promptId}:${draftType}`,
+    []
+  );
+
+  const markPersistedDraftKnown = useCallback(
+    (promptId: string, draftType: WritingDraftType, exists: boolean) => {
+      const key = buildPersistedDraftKey(promptId, draftType);
+      if (exists) {
+        knownPersistedDraftKeysRef.current.add(key);
+        return;
+      }
+
+      knownPersistedDraftKeysRef.current.delete(key);
+    },
+    [buildPersistedDraftKey]
+  );
+
+  const hasKnownPersistedDraft = useCallback(
+    (promptId: string, draftType: WritingDraftType) =>
+      knownPersistedDraftKeysRef.current.has(buildPersistedDraftKey(promptId, draftType)),
+    [buildPersistedDraftKey]
+  );
+
+  const buildSaveDraftRequest = useCallback((draftType: WritingDraftType) => {
+    const snapshot = buildHomeDraft();
+
+    return {
+      draftType,
+      selectedDifficulty: snapshot.selectedDifficulty,
+      sessionId: snapshot.sessionId,
+      answer: snapshot.answer,
+      rewrite: snapshot.rewrite,
+      lastSubmittedAnswer: snapshot.lastSubmittedAnswer,
+      feedback: snapshot.feedback,
+      step: snapshot.step
+    } as const;
+  }, [buildHomeDraft]);
+
+  const loadPersistedDraft = useCallback(async (promptId: string): Promise<WritingDraft | null> => {
+    if (isLoggedIn) {
+      try {
+        const rewriteDraft = await getWritingDraft(promptId, "REWRITE");
+        if (rewriteDraft) {
+          markPersistedDraftKnown(promptId, "REWRITE", true);
+          return rewriteDraft;
+        }
+
+        markPersistedDraftKnown(promptId, "REWRITE", false);
+
+        const answerDraft = await getWritingDraft(promptId, "ANSWER");
+        if (answerDraft) {
+          markPersistedDraftKnown(promptId, "ANSWER", true);
+          return answerDraft;
+        }
+
+        markPersistedDraftKnown(promptId, "ANSWER", false);
+      } catch {
+        // Fall back to a local draft if the server-side draft store is temporarily unavailable.
+      }
+    }
+
+    const localDraft = getPreferredLocalWritingDraft(promptId);
+    if (localDraft) {
+      markPersistedDraftKnown(promptId, localDraft.draftType, true);
+      return localDraft;
+    }
+
+    markPersistedDraftKnown(promptId, "ANSWER", false);
+    markPersistedDraftKnown(promptId, "REWRITE", false);
+    return null;
+  }, [isLoggedIn, markPersistedDraftKnown]);
+
+  const clearPersistedDraft = useCallback(async (promptId: string, draftType: WritingDraftType) => {
+    if (isLoggedIn) {
+      try {
+        await deleteWritingDraft(promptId, draftType);
+      } finally {
+        deleteLocalWritingDraft(promptId, draftType);
+        markPersistedDraftKnown(promptId, draftType, false);
+      }
+      return;
+    }
+
+    deleteLocalWritingDraft(promptId, draftType);
+    markPersistedDraftKnown(promptId, draftType, false);
+  }, [isLoggedIn, markPersistedDraftKnown]);
+
+  const restorePersistedDraft = useCallback(async (promptId: string): Promise<boolean> => {
+    try {
+      const draft = await loadPersistedDraft(promptId);
+      if (!draft) {
+        return false;
+      }
+
+      applyDraftSnapshot(draft);
+      return true;
+    } catch {
+      return false;
+    }
+  }, [applyDraftSnapshot, loadPersistedDraft]);
 
   function resetFlowForPrompt(promptId: string) {
     setSelectedPromptId(promptId);
@@ -428,15 +578,20 @@ export function AnswerLoop() {
     setShowRewriteFeedback(false);
     setShowAnswerTranslation(false);
     setShowHints(false);
+    setDraftStatusMessage("");
     setStep("answer");
   }
 
-  function handlePickPrompt(promptId: string) {
+  async function handlePickPrompt(promptId: string) {
     if (!isLoggedIn && guestSessionId && guestPromptId && promptId !== guestPromptId) {
       setShowLoginWall(true);
       setError(
         "게스트는 질문 1개만 시작할 수 있어요. 다른 질문으로 이어서 학습하려면 로그인해 주세요."
       );
+      return;
+    }
+
+    if (await restorePersistedDraft(promptId)) {
       return;
     }
 
@@ -458,8 +613,147 @@ export function AnswerLoop() {
     setShowLoginWall(false);
     setShowRewriteFeedback(false);
     setShowAnswerTranslation(false);
+    setDraftStatusMessage("");
     setStep("pick");
   }
+
+  useEffect(() => {
+    if (
+      isResolvingCurrentUser ||
+      didAttemptPersistedDraftRestore ||
+      step !== "pick" ||
+      !selectedPromptId ||
+      answer.trim() ||
+      rewrite.trim() ||
+      feedback
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+    setDidAttemptPersistedDraftRestore(true);
+
+    async function tryRestorePersistedDraft() {
+      const restored = await restorePersistedDraft(selectedPromptId);
+      if (!restored && !cancelled) {
+        setDraftStatusMessage("");
+      }
+    }
+
+    void tryRestorePersistedDraft();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    answer,
+    didAttemptPersistedDraftRestore,
+    feedback,
+    isResolvingCurrentUser,
+    rewrite,
+    restorePersistedDraft,
+    selectedPromptId,
+    step
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || isResolvingCurrentUser || !selectedPromptId || !activeDraftType) {
+      return;
+    }
+
+    const currentContent = activeDraftType === "ANSWER" ? answer : rewrite;
+    let cancelled = false;
+
+    const timeoutId = window.setTimeout(() => {
+      const persist = async () => {
+        if (!currentContent.trim()) {
+          if (!hasKnownPersistedDraft(selectedPromptId, activeDraftType)) {
+            if (!cancelled) {
+              setDraftStatusMessage("");
+            }
+            return;
+          }
+
+          try {
+            await clearPersistedDraft(selectedPromptId, activeDraftType);
+            if (!cancelled) {
+              setDraftStatusMessage("");
+            }
+          } catch {
+            if (!cancelled) {
+              setDraftStatusMessage("");
+            }
+          }
+          return;
+        }
+
+        try {
+          if (isLoggedIn) {
+            try {
+              const savedDraft = await saveWritingDraft(
+                selectedPromptId,
+                buildSaveDraftRequest(activeDraftType)
+              );
+              deleteLocalWritingDraft(selectedPromptId, activeDraftType);
+              if (!cancelled) {
+                markPersistedDraftKnown(selectedPromptId, activeDraftType, true);
+                const savedAt = new Date(savedDraft.updatedAt).toLocaleTimeString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit"
+                });
+                setDraftStatusMessage(`임시저장됨 · ${savedAt}`);
+              }
+              return;
+            } catch {
+              saveLocalWritingDraft(selectedPromptId, activeDraftType, buildHomeDraft());
+              if (!cancelled) {
+                markPersistedDraftKnown(selectedPromptId, activeDraftType, true);
+                setDraftStatusMessage("서버 저장이 불안정해 이 기기에 임시저장했어요.");
+              }
+            }
+
+            return;
+          }
+
+          saveLocalWritingDraft(selectedPromptId, activeDraftType, buildHomeDraft());
+          if (!cancelled) {
+            markPersistedDraftKnown(selectedPromptId, activeDraftType, true);
+            setDraftStatusMessage("이 기기에 임시저장됨");
+          }
+        } catch {
+          if (!cancelled) {
+            setDraftStatusMessage(
+              isLoggedIn ? "임시저장에 실패했어요." : "이 기기에 임시저장하지 못했어요."
+            );
+          }
+        }
+      };
+
+      void persist();
+    }, 900);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    activeDraftType,
+    answer,
+    buildHomeDraft,
+    buildSaveDraftRequest,
+    clearPersistedDraft,
+    feedback,
+    hasKnownPersistedDraft,
+    isLoggedIn,
+    isResolvingCurrentUser,
+    lastSubmittedAnswer,
+    markPersistedDraftKnown,
+    rewrite,
+    selectedDifficulty,
+    selectedPromptId,
+    sessionId,
+    step
+  ]);
 
   function renderTodayStatusCard() {
     return (
@@ -524,6 +818,11 @@ export function AnswerLoop() {
         setSessionId(result.sessionId);
         setLastSubmittedAnswer(nextAnswer.trim());
         setStep("feedback");
+        setDraftStatusMessage("");
+
+        void clearPersistedDraft(selectedPromptId, mode === "INITIAL" ? "ANSWER" : "REWRITE").catch(
+          () => undefined
+        );
 
         if (isLoggedIn && result.loopComplete) {
           setTodayStatus((current) => ({
@@ -752,6 +1051,7 @@ export function AnswerLoop() {
           placeholder="여기에 영어로 첫 답변을 작성해 주세요."
           rows={9}
         />
+        {draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
         <div className={styles.stageFooter}>
           <p>
             {isLoggedIn
@@ -975,6 +1275,7 @@ export function AnswerLoop() {
           placeholder="피드백을 반영한 영어 답변을 다시 작성해 주세요."
           rows={9}
         />
+        {draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
         <div className={styles.stageFooter}>
           <p>표현은 유지하되, 더 자연스럽고 구체적으로 문장을 다듬어 보세요.</p>
           <div className={styles.actionRow}>

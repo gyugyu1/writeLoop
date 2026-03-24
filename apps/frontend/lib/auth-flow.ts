@@ -1,17 +1,8 @@
-import type { DailyDifficulty, Feedback } from "./types";
+import type { HomeDraftSnapshot } from "./types";
 
 const HOME_DRAFT_KEY = "writeloop_post_login_home_draft";
 
-export interface HomeDraft {
-  selectedDifficulty: DailyDifficulty;
-  selectedPromptId: string;
-  sessionId: string;
-  answer: string;
-  rewrite: string;
-  lastSubmittedAnswer: string;
-  feedback: Feedback | null;
-  step: "pick" | "answer" | "feedback" | "rewrite" | "complete";
-}
+export type HomeDraft = HomeDraftSnapshot;
 
 export function resolveReturnTo(returnTo: string | null | undefined): string {
   if (!returnTo || !returnTo.startsWith("/")) {

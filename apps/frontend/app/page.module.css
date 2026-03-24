@@ -1166,6 +1166,13 @@
   box-shadow: 0 0 0 4px rgba(242, 141, 53, 0.14);
 }
 
+.draftStatusText {
+  margin: 10px 4px 0;
+  color: rgba(16, 36, 76, 0.7);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
 .primaryButton,
 .ghostButton,
 .primaryLink,

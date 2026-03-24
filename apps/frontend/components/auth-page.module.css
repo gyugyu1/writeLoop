@@ -62,8 +62,11 @@
   margin-top: 22px;
   padding: 18px 20px;
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(242, 141, 53, 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(255, 210, 140, 0.45), transparent 36%),
+    linear-gradient(135deg, #fff7ea 0%, #fff1d7 60%, #ffe5bf 100%);
+  color: #10244c;
 }
 
 .streakLabel {
@@ -71,7 +74,8 @@
   width: fit-content;
   padding: 5px 9px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(135deg, #ffd79f 0%, #ffb85c 100%);
+  color: #6c3107;
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -80,11 +84,12 @@
 
 .streakBanner strong {
   font-size: 1.5rem;
+  color: #10244c;
 }
 
 .streakBanner p {
   margin: 0;
-  color: rgba(248, 251, 255, 0.84);
+  color: #8b4a1a;
 }
 
 .card {

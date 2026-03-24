@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/brand-symbol.png",
+        url: "/og-image.png",
         width: 1024,
         height: 1024,
         alt: "writeLoop 로고"
@@ -38,7 +38,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: siteTitle,
     description: siteDescription,
-    images: ["/brand-symbol.png"]
+    images: ["/og-image.png"]
   }
 };
 

@@ -9,6 +9,8 @@ public record AnswerHistoryFeedbackDto(
         String summary,
         List<String> strengths,
         List<CorrectionDto> corrections,
+        List<InlineFeedbackSegmentDto> inlineFeedback,
+        String correctedAnswer,
         String modelAnswer,
         String rewriteChallenge
 ) {

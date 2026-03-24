@@ -2,6 +2,7 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -95,6 +96,20 @@ public class OpenAiFeedbackClient {
                                         "required", List.of("issue", "suggestion")
                                 )
                         ),
+                        "inlineFeedback", Map.of(
+                                "type", "array",
+                                "items", Map.of(
+                                        "type", "object",
+                                        "additionalProperties", false,
+                                        "properties", Map.of(
+                                                "type", Map.of("type", "string", "enum", List.of("KEEP", "REPLACE", "ADD", "REMOVE")),
+                                                "originalText", Map.of("type", "string"),
+                                                "revisedText", Map.of("type", "string")
+                                        ),
+                                        "required", List.of("type", "originalText", "revisedText")
+                                )
+                        ),
+                        "correctedAnswer", Map.of("type", "string"),
                         "modelAnswer", Map.of("type", "string"),
                         "rewriteChallenge", Map.of("type", "string")
                 ),
@@ -103,6 +118,8 @@ public class OpenAiFeedbackClient {
                         "summary",
                         "strengths",
                         "corrections",
+                        "inlineFeedback",
+                        "correctedAnswer",
                         "modelAnswer",
                         "rewriteChallenge"
                 )
@@ -135,9 +152,18 @@ public class OpenAiFeedbackClient {
                 - summary, strengths, corrections.issue, corrections.suggestion, and rewriteChallenge must be written in Korean.
                 - Never write English sentences in summary, strengths, corrections.issue, corrections.suggestion, or rewriteChallenge.
                 - If you need to mention an English expression, quote only the expression itself and explain it in Korean.
-                - modelAnswer must be written in English.
+                - correctedAnswer, modelAnswer, and inlineFeedback.originalText/revisedText must be written in English.
                 - strengths should have 2 to 3 concise bullets in Korean.
                 - corrections should focus on natural English, grammar, clarity, and expansion.
+                - correctedAnswer should minimally revise the learner answer. Preserve the learner's meaning and structure as much as possible while fixing grammar and natural phrasing.
+                - inlineFeedback must cover the learner answer in reading order using these types only: KEEP, REPLACE, ADD, REMOVE.
+                - For KEEP, REPLACE, and REMOVE, originalText must copy the learner answer exactly, including spaces and punctuation.
+                - KEEP: valid text that stays as-is. originalText and revisedText should be the same.
+                - REPLACE: text that should be changed. originalText is the learner text, revisedText is the improved text.
+                - ADD: extra text that should be added without marking the nearby original text as wrong. originalText should be "" and revisedText should contain only the added text.
+                - REMOVE: text that should be deleted. originalText should contain the learner text and revisedText should be "".
+                - Prefer ADD instead of REPLACE when the learner text is acceptable but can be expanded with more detail.
+                - Do not rewrite the whole answer as one REPLACE unless the whole answer is actually wrong. Use the smallest natural segment possible.
                 - modelAnswer should sound natural for the learner's level.
                 - rewriteChallenge should tell the learner how to improve in the next attempt in Korean.
 
@@ -189,7 +215,17 @@ public class OpenAiFeedbackClient {
                 )
         ));
 
+        List<InlineFeedbackSegmentDto> inlineFeedback = new ArrayList<>();
+        feedbackNode.path("inlineFeedback").forEach(node -> inlineFeedback.add(
+                new InlineFeedbackSegmentDto(
+                        node.path("type").asText(),
+                        node.path("originalText").asText(),
+                        node.path("revisedText").asText()
+                )
+        ));
+
         int rawScore = feedbackNode.path("score").asInt();
+        String correctedAnswer = feedbackNode.path("correctedAnswer").asText();
         String modelAnswer = feedbackNode.path("modelAnswer").asText();
         boolean loopComplete = isLoopComplete(rawScore, corrections);
         String completionMessage = buildCompletionMessage(rawScore, corrections);
@@ -204,6 +240,8 @@ public class OpenAiFeedbackClient {
                 feedbackNode.path("summary").asText(),
                 strengths,
                 corrections,
+                inlineFeedback,
+                correctedAnswer,
                 modelAnswer,
                 feedbackNode.path("rewriteChallenge").asText()
         );

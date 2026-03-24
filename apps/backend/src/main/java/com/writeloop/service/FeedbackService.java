@@ -3,6 +3,7 @@ package com.writeloop.service;
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.exception.GuestLimitExceededException;
 import com.writeloop.persistence.AnswerAttemptEntity;
@@ -58,6 +59,8 @@ public class FeedbackService {
                 feedback.summary(),
                 feedback.strengths(),
                 feedback.corrections(),
+                feedback.inlineFeedback(),
+                feedback.correctedAnswer(),
                 feedback.modelAnswer(),
                 feedback.rewriteChallenge()
         );
@@ -203,6 +206,8 @@ public class FeedbackService {
                 ? "답변이 자연스럽고 전달력도 좋아요. 다음 단계에서는 구체적인 예시를 하나 더 넣어 답변을 더 풍부하게 만들어 보세요."
                 : "핵심 내용은 잘 전달됐지만, 문장 연결과 구체성을 조금 더 보완하면 훨씬 자연스러운 답변이 됩니다.";
 
+        String correctedAnswer = buildCorrectedAnswer(answer);
+        List<InlineFeedbackSegmentDto> inlineFeedback = buildInlineFeedback(answer, correctedAnswer);
         String modelAnswer = buildModelAnswer(prompt);
         String rewriteChallenge = buildRewriteChallenge(prompt, corrections.isEmpty());
         int finalScore = Math.min(score, 96);
@@ -221,6 +226,8 @@ public class FeedbackService {
                 summary,
                 strengths,
                 corrections,
+                inlineFeedback,
+                correctedAnswer,
                 modelAnswer,
                 rewriteChallenge
         );
@@ -251,6 +258,35 @@ public class FeedbackService {
             default ->
                     "I want to answer this question clearly and naturally. First, I will give my main idea, then I will add a reason and one specific example to support it.";
         };
+    }
+
+    private String buildCorrectedAnswer(String answer) {
+        if (answer == null || answer.isBlank()) {
+            return "";
+        }
+
+        String normalized = answer.trim().replaceAll("\\s+", " ");
+        if (!normalized.isEmpty()) {
+            normalized = Character.toUpperCase(normalized.charAt(0)) + normalized.substring(1);
+        }
+
+        if (!normalized.endsWith(".") && !normalized.endsWith("!") && !normalized.endsWith("?")) {
+            normalized += ".";
+        }
+
+        return normalized;
+    }
+
+    private List<InlineFeedbackSegmentDto> buildInlineFeedback(String answer, String correctedAnswer) {
+        if (answer == null || answer.isBlank()) {
+            return List.of();
+        }
+
+        if (correctedAnswer == null || correctedAnswer.isBlank() || correctedAnswer.equals(answer)) {
+            return List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer));
+        }
+
+        return List.of(new InlineFeedbackSegmentDto("REPLACE", answer, correctedAnswer));
     }
 
     private String buildRewriteChallenge(PromptDto prompt, boolean alreadyStrong) {

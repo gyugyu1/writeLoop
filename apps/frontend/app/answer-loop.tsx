@@ -20,6 +20,7 @@ import type {
   PromptHint,
   TodayWritingStatus
 } from "../lib/types";
+import { InlineFeedbackPreview } from "../components/inline-feedback-preview";
 import styles from "./page.module.css";
 
 const GUEST_ID_KEY = "writeloop_guest_id";
@@ -747,6 +748,11 @@ export function AnswerLoop() {
               <h3>내가 제출한 답변</h3>
               <p>{lastSubmittedAnswer}</p>
             </div>
+            <InlineFeedbackPreview
+              originalAnswer={lastSubmittedAnswer}
+              correctedAnswer={feedback.correctedAnswer}
+              inlineFeedback={feedback.inlineFeedback}
+            />
             <div className={styles.feedbackBlock}>
               <h3>전체 요약</h3>
               <p>{feedback.summary}</p>
@@ -877,6 +883,12 @@ export function AnswerLoop() {
             </div>
             {showRewriteFeedback ? (
               <div className={styles.rewriteFeedbackBody}>
+                <InlineFeedbackPreview
+                  originalAnswer={lastSubmittedAnswer}
+                  correctedAnswer={feedback.correctedAnswer}
+                  inlineFeedback={feedback.inlineFeedback}
+                  compact
+                />
                 <div className={styles.rewriteFeedbackBlock}>
                   <h3>전체 요약</h3>
                   <p>{feedback.summary}</p>

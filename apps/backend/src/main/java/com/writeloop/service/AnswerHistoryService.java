@@ -315,6 +315,8 @@ public class AnswerHistoryService {
                         feedback.summary(),
                         feedback.strengths(),
                         feedback.corrections(),
+                        feedback.inlineFeedback(),
+                        feedback.correctedAnswer(),
                         feedback.modelAnswer(),
                         feedback.rewriteChallenge()
                 );
@@ -331,6 +333,8 @@ public class AnswerHistoryService {
                     attempt.getFeedbackSummary(),
                     objectMapper.readValue(attempt.getStrengthsJson(), STRING_LIST_TYPE),
                     objectMapper.readValue(attempt.getCorrectionsJson(), CORRECTION_LIST_TYPE),
+                    List.of(),
+                    attempt.getAnswerText(),
                     attempt.getModelAnswer(),
                     attempt.getRewriteChallenge()
             );

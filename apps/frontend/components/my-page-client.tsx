@@ -11,6 +11,7 @@ import {
   logout,
   updateProfile
 } from "../lib/api";
+import { InlineFeedbackPreview } from "./inline-feedback-preview";
 import { getDifficultyLabel } from "../lib/difficulty";
 import type { AuthUser, CommonMistake, HistorySession, TodayWritingStatus } from "../lib/types";
 import styles from "./auth-page.module.css";
@@ -634,6 +635,12 @@ export function MyPageClient() {
                                 <details className={styles.historyFeedbackDetails}>
                                   <summary>피드백 전문 보기</summary>
                                   <div className={styles.historyFeedbackBody}>
+                                    <InlineFeedbackPreview
+                                      originalAnswer={attempt.answerText}
+                                      correctedAnswer={attempt.feedback.correctedAnswer}
+                                      inlineFeedback={attempt.feedback.inlineFeedback}
+                                      compact
+                                    />
                                     <div className={styles.historyFeedbackBlock}>
                                       <h5>전체 요약</h5>
                                       <p>{attempt.feedback.summary}</p>

@@ -44,6 +44,14 @@ export interface Correction {
   suggestion: string;
 }
 
+export type InlineFeedbackType = "KEEP" | "REPLACE" | "ADD" | "REMOVE";
+
+export interface FeedbackInlineSegment {
+  type: InlineFeedbackType;
+  originalText: string;
+  revisedText: string;
+}
+
 export interface FeedbackRequest {
   promptId: string;
   answer: string;
@@ -62,6 +70,8 @@ export interface Feedback {
   summary: string;
   strengths: string[];
   corrections: Correction[];
+  inlineFeedback: FeedbackInlineSegment[] | null;
+  correctedAnswer: string | null;
   modelAnswer: string;
   rewriteChallenge: string;
 }
@@ -73,6 +83,8 @@ export interface StoredFeedback {
   summary: string;
   strengths: string[];
   corrections: Correction[];
+  inlineFeedback: FeedbackInlineSegment[] | null;
+  correctedAnswer: string | null;
   modelAnswer: string;
   rewriteChallenge: string;
 }

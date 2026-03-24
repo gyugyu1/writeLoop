@@ -353,6 +353,18 @@ export function MyPageClient() {
           로그인 방식과 이름을 확인하고, 필요할 때 바로 내 계정 정보를 수정할 수 있어요.
         </p>
 
+        <div className={styles.streakBanner}>
+          <span className={styles.streakLabel}>
+            {todayStatus?.completed ? "오늘의 완료 배지 획득" : "오늘의 완료 배지 진행 중"}
+          </span>
+          <strong>{todayStatus?.streakDays ?? 0}일 연속으로 writeLoop를 이어가고 있어요.</strong>
+          <p>
+            {todayStatus?.completed
+              ? "오늘의 작문을 끝까지 마쳐 배지를 받았어요. 지금 흐름을 내일도 이어가 보세요."
+              : "오늘의 질문 하나만 마쳐도 완료 배지를 받고 연속 학습일을 더 길게 이어갈 수 있어요."}
+          </p>
+        </div>
+
         <div className={styles.infoGrid}>
           <div className={styles.infoCard}>
             <span>표시 이름</span>

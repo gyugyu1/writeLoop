@@ -62,6 +62,36 @@
   line-height: 1.6;
 }
 
+.todayStatusHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.todayRewardBadge,
+.todayStreakPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.todayRewardBadge {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff7d8;
+}
+
+.todayStreakPill {
+  background: rgba(12, 24, 48, 0.22);
+  color: #ffffff;
+}
+
 .todayStatusComplete {
   background: rgba(214, 255, 233, 0.16);
   border-color: rgba(164, 241, 193, 0.28);
@@ -184,6 +214,56 @@
   margin-top: 8px;
   font-size: 1.2rem;
   color: #5a2807;
+}
+
+.completionRewardCard {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  border: 1px solid rgba(108, 49, 7, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.completionRewardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.completionRewardBadge,
+.completionRewardStreak {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.completionRewardBadge {
+  background: rgba(242, 141, 53, 0.16);
+  color: #8d430f;
+}
+
+.completionRewardStreak {
+  background: rgba(108, 49, 7, 0.08);
+  color: #8d430f;
+}
+
+.completionRewardCard strong {
+  font-size: 1.1rem;
+  color: #6c3107;
+}
+
+.completionRewardCard p {
+  margin: 0;
+  color: #8b4a1a;
 }
 
 .completeActions {

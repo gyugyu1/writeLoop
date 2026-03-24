@@ -295,6 +295,8 @@ export function AnswerLoop() {
   const isLoggedIn = Boolean(currentUser);
   const isGuestCycleComplete = Boolean(feedback && guestSessionId && feedback.attemptNo >= 2);
   const shouldSuggestFinish = Boolean(feedback?.loopComplete);
+  const streakDays = todayStatus?.streakDays ?? 0;
+  const todayCompleted = Boolean(todayStatus?.completed);
 
   function togglePromptTranslation(promptId: string) {
     setRevealedTranslations((current) => ({
@@ -877,6 +879,20 @@ export function AnswerLoop() {
             <strong>{feedback?.score ?? "-"}/100</strong>
           </div>
         </div>
+        {isLoggedIn ? (
+          <div className={styles.completionRewardCard}>
+            <div className={styles.completionRewardHeader}>
+              <span className={styles.completionRewardBadge}>오늘의 완료 배지</span>
+              <span className={styles.completionRewardStreak}>{streakDays}일 연속 학습</span>
+            </div>
+            <strong>오늘의 질문을 끝까지 마쳐 완료 배지를 받았어요.</strong>
+            <p>
+              {streakDays > 1
+                ? `${streakDays}일째 writeLoop를 이어가고 있어요. 내일도 같은 흐름으로 이어가 보세요.`
+                : "오늘부터 다시 연속 학습을 시작했어요. 내일도 짧게라도 이어가 보세요."}
+            </p>
+          </div>
+        ) : null}
         <div className={styles.completeActions}>
           <button type="button" className={styles.primaryButton} onClick={handleTryAnotherPrompt}>
             다른 추천 보기
@@ -898,11 +914,13 @@ export function AnswerLoop() {
         </h1>
 
         {isLoggedIn ? (
-          <div
-            className={
-              todayStatus?.completed ? styles.todayStatusComplete : styles.todayStatusPending
-            }
-          >
+          <div className={todayCompleted ? styles.todayStatusComplete : styles.todayStatusPending}>
+            <div className={styles.todayStatusHeader}>
+              <span className={styles.todayRewardBadge}>
+                {todayCompleted ? "오늘의 완료 배지 획득" : "오늘의 완료 배지 도전 중"}
+              </span>
+              <span className={styles.todayStreakPill}>{streakDays}일 연속 학습</span>
+            </div>
             <strong>
               {todayStatus?.completed
                 ? "오늘의 작문을 완료했어요."

@@ -150,6 +150,8 @@
 }
 
 .completeStage {
+  position: relative;
+  overflow: hidden;
   margin-top: 20px;
   padding: 32px;
   border-radius: 30px;
@@ -158,6 +160,20 @@
     linear-gradient(135deg, #fff8ee 0%, #fff1d7 55%, #ffe3ba 100%);
   border: 1px solid rgba(242, 141, 53, 0.22);
   box-shadow: 0 28px 56px rgba(193, 118, 30, 0.14);
+}
+
+.celebrationCanvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.completeStage > :not(.celebrationCanvas) {
+  position: relative;
+  z-index: 1;
 }
 
 .completeStage h2 {

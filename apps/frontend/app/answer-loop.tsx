@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ApiError,
   getCurrentUser,
@@ -114,6 +114,7 @@ export function AnswerLoop() {
   const [isLoadingHints, setIsLoadingHints] = useState(false);
   const [didRestoreDraft, setDidRestoreDraft] = useState(false);
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
+  const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     setGuestId(getOrCreateGuestId());
@@ -297,6 +298,88 @@ export function AnswerLoop() {
   const shouldSuggestFinish = Boolean(feedback?.loopComplete);
   const streakDays = todayStatus?.streakDays ?? 0;
   const todayCompleted = Boolean(todayStatus?.completed);
+
+  useEffect(() => {
+    if (step !== "complete") {
+      return;
+    }
+
+    const canvas = celebrationCanvasRef.current;
+    if (!canvas) {
+      return;
+    }
+
+    let cancelled = false;
+    let timeoutId: number | null = null;
+
+    async function runCelebration() {
+      const { default: confetti } = await import("canvas-confetti");
+      if (cancelled || !celebrationCanvasRef.current) {
+        return;
+      }
+
+      const fire = confetti.create(celebrationCanvasRef.current, {
+        resize: true,
+        useWorker: true
+      });
+
+      const colors = ["#ff9f1a", "#ffd57a", "#2f7cf6", "#173058", "#ffffff"];
+      const endAt = Date.now() + 2600;
+
+      const launch = () => {
+        fire({
+          particleCount: 38,
+          angle: 58,
+          spread: 72,
+          startVelocity: 56,
+          gravity: 0.92,
+          scalar: 1.18,
+          origin: { x: 0.04, y: 0.92 },
+          colors,
+          zIndex: 0
+        });
+
+        fire({
+          particleCount: 38,
+          angle: 122,
+          spread: 72,
+          startVelocity: 56,
+          gravity: 0.92,
+          scalar: 1.18,
+          origin: { x: 0.96, y: 0.92 },
+          colors,
+          zIndex: 0
+        });
+
+        fire({
+          particleCount: 24,
+          angle: 90,
+          spread: 110,
+          startVelocity: 46,
+          gravity: 0.88,
+          scalar: 0.96,
+          origin: { x: 0.5, y: 0.78 },
+          colors,
+          zIndex: 0
+        });
+
+        if (Date.now() < endAt && !cancelled) {
+          timeoutId = window.setTimeout(launch, 260);
+        }
+      };
+
+      launch();
+    }
+
+    void runCelebration();
+
+    return () => {
+      cancelled = true;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [step]);
 
   function togglePromptTranslation(promptId: string) {
     setRevealedTranslations((current) => ({
@@ -863,6 +946,7 @@ export function AnswerLoop() {
   function renderCompleteStep() {
     return (
       <section className={styles.completeStage}>
+        <canvas ref={celebrationCanvasRef} className={styles.celebrationCanvas} aria-hidden="true" />
         <div className={styles.completeBadge}>오늘의 글쓰기 완료</div>
         <h2>오늘의 글쓰기를 완료했어요.</h2>
         <p>

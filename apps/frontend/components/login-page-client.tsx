@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -119,7 +119,7 @@ export function LoginPageClient() {
           <div className={styles.eyebrow}>로그인</div>
           <h1>기존 학습 흐름을 그대로 이어서 다시 시작해 보세요.</h1>
           <p>
-            로그인하면 오늘의 질문, 내 작문 기록, 자주 받는 피드백까지 모두 이어서 볼 수 있어요.
+            로그인하면 오늘의 질문, 답변 기록, 자주 받은 피드백까지 모두 이어서 볼 수 있어요.
           </p>
         </div>
 
@@ -196,13 +196,28 @@ export function LoginPageClient() {
                 </div>
                 <div className={styles.socialGrid}>
                   <a href={`${API_BASE}/api/auth/social/naver/start?${socialLoginQuery}`} className={styles.naverButton}>
-                    네이버
+                    <span className={styles.socialButtonContent}>
+                      <span className={styles.socialButtonIcon}>
+                        <img src="/login/naver.png" alt="" />
+                      </span>
+                      <span>네이버로 계속하기</span>
+                    </span>
                   </a>
                   <a href={`${API_BASE}/api/auth/social/google/start?${socialLoginQuery}`} className={styles.googleButton}>
-                    구글
+                    <span className={styles.socialButtonContent}>
+                      <span className={styles.socialButtonIcon}>
+                        <img src="/login/google.png" alt="" />
+                      </span>
+                      <span>구글로 계속하기</span>
+                    </span>
                   </a>
                   <a href={`${API_BASE}/api/auth/social/kakao/start?${socialLoginQuery}`} className={styles.kakaoButton}>
-                    카카오
+                    <span className={styles.socialButtonContent}>
+                      <span className={styles.socialButtonIcon}>
+                        <img src="/login/kakao.png" alt="" />
+                      </span>
+                      <span>카카오로 계속하기</span>
+                    </span>
                   </a>
                 </div>
               </div>

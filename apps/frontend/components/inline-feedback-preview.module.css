@@ -107,15 +107,28 @@
   font-weight: 700;
 }
 
+.replaceGroup {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  vertical-align: middle;
+  margin: 0 2px;
+}
+
+.replaceBelow {
+  display: inline-flex;
+  width: fit-content;
+  color: #cf3243;
+  font-weight: 700;
+  line-height: 1.5;
+  background: rgba(207, 50, 67, 0.08);
+  border-radius: 8px;
+  padding: 1px 3px;
+}
+
 .add {
   color: #1e5fe9;
   font-weight: 700;
-}
-
-.arrow {
-  color: #cf3243;
-  font-weight: 700;
-  margin: 0 4px;
 }
 
 @media (max-width: 900px) {

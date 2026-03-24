@@ -40,7 +40,7 @@ export function InlineFeedbackPreview({
           <span className={styles.legendSample}>현재 문장</span>
         </span>
         <span className={styles.legendItem}>
-          <span className={styles.legendRemove}>삭제/교체 전</span>
+          <span className={styles.legendRemove}>수정 전 표현</span>
         </span>
         <span className={styles.legendItem}>
           <span className={styles.legendReplace}>수정 표현</span>
@@ -61,10 +61,9 @@ export function InlineFeedbackPreview({
 
           if (segment.kind === "replace") {
             return (
-              <span key={`replace-${index}`}>
+              <span key={`replace-${index}`} className={styles.replaceGroup}>
                 <span className={styles.remove}>{segment.removed}</span>
-                <span className={styles.arrow}>→</span>
-                <span className={styles.replace}>{segment.added}</span>
+                <span className={styles.replaceBelow}>{segment.added}</span>
               </span>
             );
           }

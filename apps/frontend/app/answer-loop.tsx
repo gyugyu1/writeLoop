@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -299,7 +299,17 @@ export function AnswerLoop() {
   const shouldSuggestFinish = Boolean(feedback?.loopComplete);
   const streakDays = todayStatus?.streakDays ?? 0;
   const todayCompleted = Boolean(todayStatus?.completed);
-
+  const streakDisplayDays = Math.max(streakDays, todayCompleted ? 1 : 0);
+  const streakTierLabel =
+    streakDisplayDays >= 30
+      ? "30일 챔피언"
+      : streakDisplayDays >= 7
+        ? "7일 루틴"
+        : streakDisplayDays >= 3
+          ? "3일 연속"
+          : todayCompleted
+            ? "첫 완료"
+            : "오늘 시작";
   useEffect(() => {
     if (step !== "complete") {
       return;
@@ -449,6 +459,40 @@ export function AnswerLoop() {
     setShowRewriteFeedback(false);
     setShowAnswerTranslation(false);
     setStep("pick");
+  }
+
+  function renderTodayStatusCard() {
+    return (
+      <div className={todayCompleted ? styles.todayStatusComplete : styles.todayStatusPending}>
+        <div className={styles.todayStatusGlow} aria-hidden="true" />
+        <div className={styles.todayStatusHeader}>
+          <span className={styles.todayRewardBadge}>
+            {todayCompleted ? "오늘의 완료 배지 획득" : "오늘의 완료 배지 진행 중"}
+          </span>
+          <span className={styles.todayStreakPill}>{streakTierLabel}</span>
+        </div>
+        <div className={styles.todayStatusHeroRow}>
+          <div className={styles.todayStatusMetric}>
+            <span className={styles.todayStatusNumber}>{streakDisplayDays}</span>
+            <div className={styles.todayStatusMetricText}>
+              <strong>{todayCompleted ? "오늘도 기록 갱신 중" : "연속 기록을 이어갈 차례"}</strong>
+              <span>{todayCompleted ? "DAY STREAK" : "NEXT STREAK"}</span>
+            </div>
+          </div>
+          <div className={styles.todayStatusStamp}>{todayCompleted ? "COMPLETE" : "READY"}</div>
+        </div>
+        <strong className={styles.todayStatusHeadline}>
+          {todayCompleted
+            ? `${streakDisplayDays}일째 writeLoop를 이어가고 있어요.`
+            : `지금 ${streakDisplayDays}일 기록 중이에요.`}
+        </strong>
+        <span className={styles.todayStatusDescription}>
+          {todayCompleted
+            ? `오늘 ${todayStatus?.completedSessions ?? 0}개의 작문 루프를 마쳤어요. 이 흐름을 내일도 이어가 보세요.`
+            : "질문 하나를 골라 오늘의 작문을 시작하면 연속 기록이 더 길어져요."}
+        </span>
+      </div>
+    );
   }
 
   function handleSubmit(nextAnswer: string, mode: "INITIAL" | "REWRITE") {
@@ -1004,31 +1048,18 @@ export function AnswerLoop() {
   return (
     <main className={styles.main}>
       <section className={styles.hero}>
-        <div className={styles.eyebrow}>오늘의 영어 작문</div>
-        <h1>
-          {currentUser ? `${currentUser.displayName}님 반가워요!` : "반가워요! 오늘의 영어 작문을 시작해 볼까요?"}
-        </h1>
-
-        {isLoggedIn ? (
-          <div className={todayCompleted ? styles.todayStatusComplete : styles.todayStatusPending}>
-            <div className={styles.todayStatusHeader}>
-              <span className={styles.todayRewardBadge}>
-                {todayCompleted ? "오늘의 완료 배지 획득" : "오늘의 완료 배지 도전 중"}
-              </span>
-              <span className={styles.todayStreakPill}>{streakDays}일 연속 학습</span>
-            </div>
-            <strong>
-              {todayStatus?.completed
-                ? "오늘의 작문을 완료했어요."
-                : "오늘의 작문이 아직 남아 있어요."}
-            </strong>
-            <span>
-              {todayStatus?.completed
-                ? `오늘 ${todayStatus.completedSessions}개의 작문 루프를 마쳤고, ${todayStatus.streakDays}일째 이어가고 있어요.`
-                : `질문 하나를 골라 오늘의 첫 작문을 시작해 보세요. 지금 연속 작문은 ${todayStatus?.streakDays ?? 0}일이에요.`}
-            </span>
+        <div className={isLoggedIn ? styles.heroLayout : styles.heroStack}>
+          <div className={styles.heroCopy}>
+            <div className={styles.eyebrow}>오늘의 영어 작문</div>
+            <h1>
+              {currentUser
+                ? `${currentUser.displayName}님 반가워요!`
+                : "반가워요! 오늘의 영어 작문을 시작해 볼까요?"}
+            </h1>
           </div>
-        ) : null}
+
+          {isLoggedIn ? <div className={styles.heroStatusColumn}>{renderTodayStatusCard()}</div> : null}
+        </div>
       </section>
 
       {renderStepNavigation()}

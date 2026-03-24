@@ -14,6 +14,27 @@
   box-shadow: 0 24px 80px rgba(9, 28, 59, 0.18);
 }
 
+.heroLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 420px);
+  gap: 24px;
+  align-items: start;
+}
+
+.heroStack {
+  display: grid;
+}
+
+.heroCopy {
+  display: grid;
+  align-content: start;
+}
+
+.heroStatusColumn {
+  display: grid;
+  align-content: start;
+}
+
 .eyebrow {
   display: inline-flex;
   border-radius: 999px;
@@ -41,14 +62,39 @@
 
 .todayStatusPending,
 .todayStatusComplete {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   display: grid;
-  gap: 6px;
+  gap: 14px;
   margin-top: 20px;
-  max-width: 520px;
-  padding: 16px 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.1);
+  max-width: 100%;
+  padding: 20px 22px;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 22px 48px rgba(7, 19, 42, 0.2);
+}
+
+.todayStatusGlow {
+  position: absolute;
+  inset: -30% -10% auto auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(255, 203, 107, 0.5) 0%, rgba(255, 203, 107, 0.18) 36%, transparent 72%);
+  filter: blur(16px);
+  opacity: 0.85;
+  pointer-events: none;
+  z-index: 0;
+  animation: heroGlowPulse 5.6s ease-in-out infinite;
+}
+
+.todayStatusPending > :not(.todayStatusGlow),
+.todayStatusComplete > :not(.todayStatusGlow) {
+  position: relative;
+  z-index: 1;
 }
 
 .todayStatusPending strong,
@@ -75,26 +121,349 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 10px;
+  padding: 7px 12px;
   border-radius: 999px;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
 }
 
 .todayRewardBadge {
-  background: rgba(255, 255, 255, 0.16);
-  color: #fff7d8;
+  background: linear-gradient(135deg, rgba(255, 226, 164, 0.94) 0%, rgba(255, 180, 94, 0.94) 100%);
+  color: #6c3107;
 }
 
 .todayStreakPill {
-  background: rgba(12, 24, 48, 0.22);
+  background: rgba(9, 21, 44, 0.36);
   color: #ffffff;
 }
 
 .todayStatusComplete {
-  background: rgba(214, 255, 233, 0.16);
-  border-color: rgba(164, 241, 193, 0.28);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(46, 124, 246, 0.34), transparent 28%),
+    radial-gradient(circle at 84% 22%, rgba(255, 193, 94, 0.34), transparent 34%),
+    linear-gradient(135deg, rgba(14, 34, 67, 0.92) 0%, rgba(19, 48, 88, 0.94) 45%, rgba(240, 126, 39, 0.9) 100%);
+  border-color: rgba(255, 219, 167, 0.28);
+}
+
+.todayStatusPending {
+  background:
+    radial-gradient(circle at 18% 18%, rgba(46, 124, 246, 0.24), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(255, 193, 94, 0.2), transparent 32%),
+    linear-gradient(135deg, rgba(12, 26, 52, 0.9) 0%, rgba(18, 42, 79, 0.94) 62%, rgba(25, 38, 67, 0.95) 100%);
+}
+
+.todayStatusHeroRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.todayStatusMetric {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.todayStatusNumber {
+  font-size: clamp(3rem, 6vw, 4.8rem);
+  line-height: 0.9;
+  font-weight: 900;
+  color: #ffffff;
+  text-shadow: 0 10px 28px rgba(9, 18, 37, 0.34);
+}
+
+.todayStatusMetricText {
+  display: grid;
+  gap: 6px;
+}
+
+.todayStatusMetricText strong {
+  font-size: 1.15rem;
+  color: #ffffff;
+}
+
+.todayStatusMetricText span {
+  color: rgba(248, 251, 255, 0.72);
+  font-size: 0.82rem;
+  letter-spacing: 0.14em;
+  font-weight: 800;
+}
+
+.todayStatusStamp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 116px;
+  min-height: 116px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 240, 214, 0.45);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff5d9;
+  font-size: 0.98rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  transform: rotate(-10deg);
+  box-shadow: 0 18px 34px rgba(7, 18, 38, 0.2);
+}
+
+.todayStatusHeadline {
+  font-size: clamp(1.25rem, 2.4vw, 1.9rem);
+  line-height: 1.15;
+  color: #ffffff;
+}
+
+.todayStatusDescription {
+  max-width: 620px;
+  color: rgba(248, 251, 255, 0.82);
+  line-height: 1.7;
+  font-size: 1rem;
+}
+
+.todayStatusCalendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+  width: min(100%, 472px);
+  margin-inline: auto;
+}
+
+.todayStatusDay {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  justify-items: center;
+  align-items: center;
+  min-height: 124px;
+  padding: 12px 8px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.todayStatusDayToday {
+  border-color: rgba(255, 225, 168, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 1px rgba(255, 207, 124, 0.12),
+    0 16px 34px rgba(255, 131, 32, 0.14);
+}
+
+.todayStatusDayStamped {
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 214, 130, 0.2), transparent 44%),
+    rgba(255, 255, 255, 0.12);
+}
+
+.todayStatusDayLabel {
+  justify-self: center;
+  text-align: center;
+  color: rgba(248, 251, 255, 0.72);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: 1;
+}
+
+.todayStatusDayCenter {
+  position: relative;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  min-height: 58px;
+}
+
+.todayStatusDayFlame {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 58px;
+  height: 74px;
+  transform: translate(-50%, -50%);
+  border-radius: 50% 50% 42% 42%;
+  background:
+    radial-gradient(circle at 50% 80%, rgba(255, 245, 221, 0.96) 0%, rgba(255, 219, 148, 0.94) 18%, rgba(255, 170, 58, 0.84) 40%, rgba(255, 111, 17, 0.58) 60%, transparent 78%);
+  filter: blur(7px);
+  opacity: 0.84;
+  z-index: 0;
+  animation: todayBadgeFlame 1s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.todayStatusDayBadge {
+  position: relative;
+  justify-self: center;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.todayStatusDayStamped .todayStatusDayBadge {
+  background: linear-gradient(135deg, rgba(255, 187, 91, 0.2) 0%, rgba(255, 132, 45, 0.22) 100%);
+}
+
+.todayStatusDayToday .todayStatusDayBadge {
+  background: linear-gradient(135deg, rgba(255, 223, 171, 0.28) 0%, rgba(255, 161, 52, 0.5) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 0 0 1px rgba(255, 231, 192, 0.12),
+    0 0 24px rgba(255, 129, 28, 0.22);
+  animation: todayBadgeFloat 1.45s ease-in-out infinite;
+}
+
+.todayStatusDayToday .todayStatusDayBadge::before {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 216, 154, 0.48);
+  opacity: 0.42;
+  animation: todayBadgePulse 2.8s ease-out infinite;
+}
+
+.todayStatusDayToday .todayStatusDayBadge::after {
+  content: "";
+  position: absolute;
+  inset: -16px;
+  border-radius: inherit;
+  background: radial-gradient(circle, rgba(255, 176, 61, 0.42) 0%, rgba(255, 125, 24, 0.12) 46%, transparent 72%);
+  filter: blur(8px);
+  opacity: 0.72;
+  z-index: -1;
+  animation: todayBadgeGlow 1.2s ease-in-out infinite;
+}
+
+.todayStatusDayDate {
+  position: relative;
+  z-index: 1;
+  font-size: 1.22rem;
+  line-height: 1;
+  color: #ffffff;
+}
+
+.todayStatusDayMarker {
+  display: inline-flex;
+  align-self: end;
+  justify-self: center;
+  width: 16px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  z-index: 1;
+}
+
+.todayStatusDayMarkerSpacer {
+  display: inline-flex;
+  align-self: end;
+  justify-self: center;
+  width: 16px;
+  height: 4px;
+  opacity: 0;
+}
+
+.todayStatusDayStamped .todayStatusDayMarker {
+  background: linear-gradient(135deg, rgba(255, 211, 145, 0.94) 0%, rgba(255, 159, 74, 0.92) 100%);
+  box-shadow: 0 4px 12px rgba(241, 145, 50, 0.18);
+}
+
+.todayStatusDayToday .todayStatusDayMarker {
+  width: 24px;
+  height: 6px;
+  background: linear-gradient(135deg, rgba(255, 225, 176, 0.98) 0%, rgba(255, 164, 70, 0.96) 100%);
+  box-shadow:
+    0 0 0 1px rgba(255, 227, 181, 0.18),
+    0 8px 16px rgba(240, 136, 41, 0.26);
+  animation: todayMarkerPulse 1.15s ease-in-out infinite;
+}
+
+@keyframes heroGlowPulse {
+  0%,
+  100% {
+    transform: scale(0.94) translate3d(0, 0, 0);
+    opacity: 0.72;
+  }
+
+  50% {
+    transform: scale(1.08) translate3d(-8px, 8px, 0);
+    opacity: 0.96;
+  }
+}
+
+@keyframes todayBadgeFloat {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  50% {
+    transform: translateY(-2px) scale(1.05);
+  }
+}
+
+@keyframes todayBadgePulse {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.5;
+  }
+
+  65%,
+  100% {
+    transform: scale(1.22);
+    opacity: 0;
+  }
+}
+
+@keyframes todayBadgeGlow {
+  0%,
+  100% {
+    transform: scale(0.9);
+    opacity: 0.46;
+  }
+
+  50% {
+    transform: scale(1.16);
+    opacity: 1;
+  }
+}
+
+@keyframes todayBadgeFlame {
+  0%,
+  100% {
+    transform: translate(-50%, -28%) scale(0.94, 0.96);
+    opacity: 0.82;
+  }
+
+  35% {
+    transform: translate(-51%, -34%) scale(1.02, 1.08);
+    opacity: 0.98;
+  }
+
+  70% {
+    transform: translate(-49%, -30%) scale(0.98, 1.12);
+    opacity: 0.9;
+  }
+}
+
+@keyframes todayMarkerPulse {
+  0%,
+  100% {
+    transform: scaleX(0.9);
+    opacity: 0.84;
+  }
+
+  50% {
+    transform: scaleX(1.16);
+    opacity: 1;
+  }
 }
 
 .stepRail {
@@ -892,6 +1261,10 @@
     grid-template-columns: 1fr;
   }
 
+  .heroLayout {
+    grid-template-columns: 1fr;
+  }
+
   .stepRail {
     grid-template-columns: 1fr;
   }
@@ -920,6 +1293,58 @@
   .stage,
   .completeStage {
     padding: 24px;
+  }
+
+  .todayStatusPending,
+  .todayStatusComplete {
+    padding: 18px;
+  }
+
+  .todayStatusHeroRow {
+    align-items: flex-start;
+  }
+
+  .todayStatusMetric {
+    gap: 12px;
+  }
+
+  .todayStatusNumber {
+    font-size: 3.2rem;
+  }
+
+  .todayStatusStamp {
+    min-width: 92px;
+    min-height: 92px;
+    font-size: 0.82rem;
+  }
+
+  .todayStatusTrack {
+    gap: 8px;
+  }
+
+  .todayStatusCalendar {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .todayStatusDay {
+    min-height: 82px;
+  }
+
+  .todayStatusDayLabel {
+    top: 10px;
+  }
+
+  .todayStatusDayDate {
+    font-size: 1.08rem;
+  }
+
+  .todayStatusDayBadge {
+    width: 38px;
+    height: 38px;
+  }
+
+  .todayStatusDayToday .todayStatusDayMarker {
+    width: 20px;
   }
 
   .main {

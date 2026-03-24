@@ -356,13 +356,13 @@ export function MyPageClient() {
 
         <div className={styles.streakBanner}>
           <span className={styles.streakLabel}>
-            {todayStatus?.completed ? "오늘의 완료 배지 획득" : "오늘의 완료 배지 진행 중"}
+            {todayStatus?.completed ? "오늘의 완료 도장 획득" : "오늘의 완료 도장 진행 중"}
           </span>
           <strong>{todayStatus?.streakDays ?? 0}일 연속으로 writeLoop를 이어가고 있어요.</strong>
           <p>
             {todayStatus?.completed
-              ? "오늘의 작문을 끝까지 마쳐 배지를 받았어요. 지금 흐름을 내일도 이어가 보세요."
-              : "오늘의 질문 하나만 마쳐도 완료 배지를 받고 연속 학습일을 더 길게 이어갈 수 있어요."}
+              ? "오늘의 작문을 끝까지 마쳐 도장을 받았어요. 지금 흐름을 내일도 이어가 보세요."
+              : "오늘의 질문 하나만 마쳐도 완료 도장을 받고 연속 학습일을 더 길게 이어갈 수 있어요."}
           </p>
         </div>
 

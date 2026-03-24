@@ -467,7 +467,7 @@ export function AnswerLoop() {
         <div className={styles.todayStatusGlow} aria-hidden="true" />
         <div className={styles.todayStatusHeader}>
           <span className={styles.todayRewardBadge}>
-            {todayCompleted ? "오늘의 완료 배지 획득" : "오늘의 완료 배지 진행 중"}
+            {todayCompleted ? "오늘의 완료 도장 획득" : "오늘의 완료 도장 진행 중"}
           </span>
           <span className={styles.todayStreakPill}>{streakTierLabel}</span>
         </div>
@@ -1022,10 +1022,10 @@ export function AnswerLoop() {
         {isLoggedIn ? (
           <div className={styles.completionRewardCard}>
             <div className={styles.completionRewardHeader}>
-              <span className={styles.completionRewardBadge}>오늘의 완료 배지</span>
+              <span className={styles.completionRewardBadge}>오늘의 완료 도장</span>
               <span className={styles.completionRewardStreak}>{streakDays}일 연속 학습</span>
             </div>
-            <strong>오늘의 질문을 끝까지 마쳐 완료 배지를 받았어요.</strong>
+            <strong>오늘의 질문을 끝까지 마쳐 완료 도장을 받았어요.</strong>
             <p>
               {streakDays > 1
                 ? `${streakDays}일째 writeLoop를 이어가고 있어요. 내일도 같은 흐름으로 이어가 보세요.`

@@ -42,6 +42,7 @@ const GUEST_PROMPT_ID_KEY = "writeloop_guest_prompt_id";
 const HOME_RETURN_TO = "/";
 
 type Step = "pick" | "answer" | "feedback" | "rewrite" | "complete";
+type PickFlowScreen = "difficulty" | "prompt";
 
 const DIFFICULTY_OPTIONS: Array<{
   value: DailyDifficulty;
@@ -103,6 +104,7 @@ function getHintTypeLabel(hintType: string) {
 
 export function AnswerLoop() {
   const [selectedDifficulty, setSelectedDifficulty] = useState<DailyDifficulty>("A");
+  const [pendingDifficultySelection, setPendingDifficultySelection] = useState<DailyDifficulty | null>(null);
   const [dailyRecommendation, setDailyRecommendation] =
     useState<DailyPromptRecommendation | null>(null);
   const [selectedPromptId, setSelectedPromptId] = useState("");
@@ -119,6 +121,7 @@ export function AnswerLoop() {
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>("pick");
+  const [pickFlowScreen, setPickFlowScreen] = useState<PickFlowScreen>("difficulty");
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isResolvingCurrentUser, setIsResolvingCurrentUser] = useState(true);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
@@ -185,6 +188,7 @@ export function AnswerLoop() {
     }
 
     setSelectedDifficulty(draft.selectedDifficulty);
+    setPendingDifficultySelection(draft.selectedDifficulty);
     setSelectedPromptId(draft.selectedPromptId);
     setSessionId(draft.sessionId);
     setAnswer(draft.answer);
@@ -192,6 +196,7 @@ export function AnswerLoop() {
     setLastSubmittedAnswer(draft.lastSubmittedAnswer);
     setFeedback(draft.feedback);
     setStep(draft.step);
+    setPickFlowScreen("prompt");
     setShowLoginWall(false);
     setError("");
     setShowRewriteFeedback(false);
@@ -314,6 +319,10 @@ export function AnswerLoop() {
   }, [selectedPromptId]);
 
   const prompts = useMemo(() => dailyRecommendation?.prompts ?? [], [dailyRecommendation]);
+  const pendingDifficultyOption = useMemo(
+    () => DIFFICULTY_OPTIONS.find((option) => option.value === pendingDifficultySelection) ?? null,
+    [pendingDifficultySelection]
+  );
   const selectedPrompt = useMemo(
     () => prompts.find((prompt) => prompt.id === selectedPromptId) ?? null,
     [prompts, selectedPromptId]
@@ -453,6 +462,7 @@ export function AnswerLoop() {
     const nextPromptId = "promptId" in draft ? draft.promptId : draft.selectedPromptId;
 
     setSelectedDifficulty(draft.selectedDifficulty);
+    setPendingDifficultySelection(draft.selectedDifficulty);
     setSelectedPromptId(nextPromptId);
     setSessionId(draft.sessionId);
     setAnswer(draft.answer);
@@ -460,6 +470,7 @@ export function AnswerLoop() {
     setLastSubmittedAnswer(draft.lastSubmittedAnswer);
     setFeedback(draft.feedback);
     setStep(draft.step as Step);
+    setPickFlowScreen("prompt");
     setShowLoginWall(false);
     setError("");
     setShowRewriteFeedback(false);
@@ -619,6 +630,27 @@ export function AnswerLoop() {
     resetFlowForPrompt(promptId);
   }
 
+  function handleSelectDifficulty(nextDifficulty: DailyDifficulty) {
+    setPendingDifficultySelection((current) => (current === nextDifficulty ? null : nextDifficulty));
+    setError("");
+  }
+
+  function handleConfirmDifficultySelection() {
+    if (!pendingDifficultySelection) {
+      return;
+    }
+
+    if (pendingDifficultySelection !== selectedDifficulty) {
+      setDailyRecommendation(null);
+      setSelectedPromptId("");
+      setIsLoadingPrompts(true);
+    }
+
+    setSelectedDifficulty(pendingDifficultySelection);
+    setPickFlowScreen("prompt");
+    setError("");
+  }
+
   function handleFinishLoop() {
     setShowLoginWall(false);
     setError("");
@@ -635,6 +667,8 @@ export function AnswerLoop() {
     setShowRewriteFeedback(false);
     setShowAnswerTranslation(false);
     setDraftStatusMessage("");
+    setPendingDifficultySelection(selectedDifficulty);
+    setPickFlowScreen("prompt");
     setStep("pick");
   }
 
@@ -881,19 +915,23 @@ export function AnswerLoop() {
   }
 
   function renderStepNavigation() {
-    const labels: Array<{ id: Step; label: string }> = [
-      { id: "pick", label: "오늘의 질문" },
+    const labels = [
+      { id: "difficulty", label: "난이도" },
+      { id: "prompt", label: "질문 선택" },
       { id: "answer", label: "첫 답변" },
       { id: "feedback", label: "피드백" },
       { id: "rewrite", label: "다시쓰기" },
       { id: "complete", label: "완료" }
     ];
+    const activeStepId =
+      step === "pick" ? (pickFlowScreen === "difficulty" ? "difficulty" : "prompt") : step;
+    const activeIndex = labels.findIndex((item) => item.id === activeStepId);
 
     return (
       <div className={styles.stepRail}>
         {labels.map((item, index) => {
-          const isActive = item.id === step;
-          const isComplete = labels.findIndex((entry) => entry.id === step) > index;
+          const isActive = item.id === activeStepId;
+          const isComplete = activeIndex > index;
 
           return (
             <div
@@ -912,40 +950,86 @@ export function AnswerLoop() {
   }
 
   function renderPickStep() {
+    if (pickFlowScreen === "difficulty") {
+      return (
+        <section className={styles.pickFlow}>
+          <article className={styles.welcomeCard}>
+            <span className={styles.welcomeBadge}>첫 화면</span>
+            <h1>{currentUser ? `${currentUser.displayName}님, 반가워요.` : "writeLoop에 온 걸 환영해요."}</h1>
+            <p>
+              어느 정도 난이도로 시작할지 먼저 골라볼까요? 원하는 난이도를 고른 뒤 확인 버튼을 누르면
+              질문 고르기로 넘어갑니다.
+            </p>
+          </article>
+
+          <section className={styles.pickStage}>
+            <div className={styles.pickStageHeader}>
+              <div>
+                <p className={styles.stageEyebrow}>1단계</p>
+                <h2>난이도를 선택해볼까요?</h2>
+              </div>
+            </div>
+
+            <div className={styles.difficultyStageGrid}>
+              {DIFFICULTY_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={
+                    pendingDifficultySelection === option.value
+                      ? styles.difficultyStageButtonActive
+                      : styles.difficultyStageButton
+                  }
+                  onClick={() => handleSelectDifficulty(option.value)}
+                >
+                  <strong>{option.label}</strong>
+                  <span>{option.description}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.stageFooter}>
+              <p>
+                {pendingDifficultyOption
+                  ? `${pendingDifficultyOption.label} 난이도로 시작할 준비가 됐어요.`
+                  : "원하는 난이도를 먼저 선택해 주세요."}
+              </p>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={handleConfirmDifficultySelection}
+                disabled={!pendingDifficultySelection}
+              >
+                이 난이도로 시작하기
+              </button>
+            </div>
+          </section>
+        </section>
+      );
+    }
+
     return (
-      <section className={styles.stage}>
-        <div className={styles.stageHeader}>
+      <section className={styles.pickStage}>
+        <div className={styles.pickStageHeader}>
           <div>
-            <p className={styles.stageEyebrow}>1단계</p>
-            <h2>난이도를 고르고 오늘의 질문 3개를 받아보세요.</h2>
+            <p className={styles.stageEyebrow}>2단계</p>
+            <h2>이제 오늘의 질문을 골라볼까요?</h2>
+            <p className={styles.pickStageDescription}>
+              {dailyRecommendation
+                ? `${dailyRecommendation.recommendedDate} 기준 추천 질문이에요.`
+                : "선택한 난이도에 맞는 질문을 준비하고 있어요."}
+            </p>
           </div>
-          <span>
-            {dailyRecommendation ? `${dailyRecommendation.recommendedDate} 추천` : "오늘의 질문 준비 중"}
-          </span>
-        </div>
-
-        <div className={styles.difficultyGrid}>
-          {DIFFICULTY_OPTIONS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={
-                selectedDifficulty === option.value
-                  ? styles.difficultyButtonActive
-                  : styles.difficultyButton
-              }
-              onClick={() => setSelectedDifficulty(option.value)}
-            >
-              <strong>{option.label}</strong>
-              <span>{option.description}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className={styles.dailyPromptHeader}>
-          <div>
-            <h3>오늘의 추천 질문 3개</h3>
-          </div>
+          <button
+            type="button"
+            className={styles.ghostButton}
+            onClick={() => {
+              setPendingDifficultySelection(selectedDifficulty);
+              setPickFlowScreen("difficulty");
+            }}
+          >
+            난이도 다시 고르기
+          </button>
         </div>
 
         <div className={styles.promptList}>
@@ -991,7 +1075,7 @@ export function AnswerLoop() {
           <button
             type="button"
             className={styles.primaryButton}
-            onClick={() => handlePickPrompt(selectedPromptId)}
+            onClick={() => void handlePickPrompt(selectedPromptId)}
             disabled={!selectedPromptId || isLoadingPrompts}
           >
             이 질문으로 시작하기
@@ -1006,7 +1090,7 @@ export function AnswerLoop() {
       <section className={styles.stage}>
         <div className={styles.stageHeader}>
           <div>
-            <p className={styles.stageEyebrow}>2단계</p>
+            <p className={styles.stageEyebrow}>3단계</p>
             <h2>첫 답변을 작성해 보세요.</h2>
           </div>
           <span>{selectedPrompt ? getDifficultyLabel(selectedPrompt.difficulty) : "..."}</span>
@@ -1101,7 +1185,7 @@ export function AnswerLoop() {
       <section className={styles.stage}>
         <div className={styles.stageHeader}>
           <div>
-            <p className={styles.stageEyebrow}>3단계</p>
+            <p className={styles.stageEyebrow}>4단계</p>
             <h2>피드백을 확인해 보세요.</h2>
           </div>
           <span>
@@ -1197,7 +1281,7 @@ export function AnswerLoop() {
       <section className={styles.stage}>
         <div className={styles.stageHeader}>
           <div>
-            <p className={styles.stageEyebrow}>4단계</p>
+            <p className={styles.stageEyebrow}>5단계</p>
             <h2>피드백을 반영해서 다시 써 보세요.</h2>
           </div>
           <span>{sessionId ? "같은 질문 이어가기" : "다시쓰기"}</span>
@@ -1412,22 +1496,26 @@ export function AnswerLoop() {
 
   return (
     <main className={styles.main}>
-      <section className={styles.hero}>
-        <div className={isLoggedIn ? styles.heroLayout : styles.heroStack}>
-          <div className={styles.heroCopy}>
-            <div className={styles.eyebrow}>오늘의 영어 작문</div>
-            <h1>
-              {currentUser
-                ? `${currentUser.displayName}님 반가워요!`
-                : "반가워요! 오늘의 영어 작문을 시작해 볼까요?"}
-            </h1>
-          </div>
+      {step !== "pick" ? (
+        <>
+          <section className={styles.hero}>
+            <div className={isLoggedIn ? styles.heroLayout : styles.heroStack}>
+              <div className={styles.heroCopy}>
+                <div className={styles.eyebrow}>오늘의 영어 작문</div>
+                <h1>
+                  {currentUser
+                    ? `${currentUser.displayName}님 반가워요!`
+                    : "반가워요! 오늘의 영어 작문을 시작해 볼까요?"}
+                </h1>
+              </div>
 
-          {isLoggedIn ? <div className={styles.heroStatusColumn}>{renderTodayStatusCard()}</div> : null}
-        </div>
-      </section>
+              {isLoggedIn ? <div className={styles.heroStatusColumn}>{renderTodayStatusCard()}</div> : null}
+            </div>
+          </section>
 
-      {renderStepNavigation()}
+          {renderStepNavigation()}
+        </>
+      ) : null}
 
       {showLoginWall ? (
         <section className={styles.loginWall}>

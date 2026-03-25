@@ -10,6 +10,7 @@ type InlineFeedbackPreviewProps = {
   title?: string;
   description?: string;
   compact?: boolean;
+  variant?: "default" | "embedded";
 };
 
 export function InlineFeedbackPreview({
@@ -17,7 +18,8 @@ export function InlineFeedbackPreview({
   correctedAnswer,
   inlineFeedback,
   title = "문장별 피드백",
-  compact = false
+  compact = false,
+  variant = "default"
 }: InlineFeedbackPreviewProps) {
   const segments = useMemo(
     () => buildInlineFeedbackSegments(originalAnswer, correctedAnswer, inlineFeedback),
@@ -29,7 +31,11 @@ export function InlineFeedbackPreview({
   }
 
   return (
-    <section className={`${styles.panel} ${compact ? styles.compact : ""}`}>
+    <section
+      className={`${styles.panel} ${compact ? styles.compact : ""} ${
+        variant === "embedded" ? styles.embedded : ""
+      }`}
+    >
       <div className={styles.header}>
         <strong>{title}</strong>
       </div>

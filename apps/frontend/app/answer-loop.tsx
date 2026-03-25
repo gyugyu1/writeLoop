@@ -1,7 +1,15 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode
+} from "react";
 import {
   ApiError,
   deleteWritingDraft,
@@ -1067,6 +1075,36 @@ export function AnswerLoop() {
     );
   }
 
+  function renderStageHeader({
+    stepNumber,
+    title,
+    description,
+    meta,
+    action
+  }: {
+    stepNumber: number;
+    title: string;
+    description?: string;
+    meta?: string;
+    action?: ReactNode;
+  }) {
+    return (
+      <div className={styles.stageHeader}>
+        <div className={styles.stageHeaderMain}>
+          <div className={styles.stageHeaderTopRow}>
+            <div className={styles.stageHeaderLead}>
+              <span className={styles.stageStepLabel}>{stepNumber}단계</span>
+              <h2>{title}</h2>
+            </div>
+            {meta ? <span className={styles.stageHeaderMeta}>{meta}</span> : null}
+          </div>
+          {description ? <p className={styles.stageHeaderDescription}>{description}</p> : null}
+        </div>
+        {action ? <div className={styles.stageHeaderAction}>{action}</div> : null}
+      </div>
+    );
+  }
+
   function renderPickStep() {
     if (pickFlowScreen === "difficulty") {
       return (
@@ -1080,12 +1118,11 @@ export function AnswerLoop() {
           </article>
 
           <section className={styles.pickStage}>
-            <div className={styles.pickStageHeader}>
-              <div>
-                <p className={styles.stageEyebrow}>1단계</p>
-                <h2>난이도를 선택해볼까요?</h2>
-              </div>
-            </div>
+            {renderStageHeader({
+              stepNumber: 1,
+              title: "난이도 선택",
+              description: "오늘은 어느 정도 길이와 난이도로 시작할지 먼저 골라보세요."
+            })}
 
             <div className={styles.difficultyStageGrid}>
               {DIFFICULTY_OPTIONS.map((option) => (
@@ -1127,27 +1164,26 @@ export function AnswerLoop() {
 
     return (
       <section className={styles.pickStage}>
-        <div className={styles.pickStageHeader}>
-          <div>
-            <p className={styles.stageEyebrow}>2단계</p>
-            <h2>이제 오늘의 질문을 골라볼까요?</h2>
-            <p className={styles.pickStageDescription}>
-              {dailyRecommendation
-                ? `${dailyRecommendation.recommendedDate} 기준 추천 질문이에요.`
-                : "선택한 난이도에 맞는 질문을 준비하고 있어요."}
-            </p>
-          </div>
-          <button
-            type="button"
-            className={styles.ghostButton}
-            onClick={() => {
-              setPendingDifficultySelection(selectedDifficulty);
-              setPickFlowScreen("difficulty");
-            }}
-          >
-            난이도 다시 고르기
-          </button>
-        </div>
+        {renderStageHeader({
+          stepNumber: 2,
+          title: "질문 선택",
+          description: dailyRecommendation
+            ? `${dailyRecommendation.recommendedDate} 기준 추천 질문이에요.`
+            : "선택한 난이도에 맞는 질문을 준비하고 있어요.",
+          meta: getDifficultyLabel(selectedDifficulty),
+          action: (
+            <button
+              type="button"
+              className={styles.ghostButton}
+              onClick={() => {
+                setPendingDifficultySelection(selectedDifficulty);
+                setPickFlowScreen("difficulty");
+              }}
+            >
+              난이도 다시 고르기
+            </button>
+          )
+        })}
 
         <div className={styles.promptList}>
           {prompts.map((prompt) => {
@@ -1296,13 +1332,12 @@ export function AnswerLoop() {
   function renderAnswerStep() {
     return (
       <section className={styles.stage} style={mobileQuestionBarStyle}>
-        <div className={styles.stageHeader}>
-          <div>
-            <p className={styles.stageEyebrow}>3단계</p>
-            <h2>첫 답변을 작성해 보세요.</h2>
-          </div>
-          <span>{selectedPrompt ? getDifficultyLabel(selectedPrompt.difficulty) : "..."}</span>
-        </div>
+        {renderStageHeader({
+          stepNumber: 3,
+          title: "첫 답변",
+          description: "질문을 보고 영어로 짧고 분명하게 답해 보세요.",
+          meta: selectedPrompt ? getDifficultyLabel(selectedPrompt.difficulty) : "..."
+        })}
         {renderMobileQuestionBar()}
         <div className={`${styles.questionBox} ${styles.desktopQuestionBox}`}>
           <p>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</p>
@@ -1430,15 +1465,12 @@ export function AnswerLoop() {
   function renderFeedbackStep() {
     return (
       <section className={styles.stage}>
-        <div className={styles.stageHeader}>
-          <div>
-            <p className={styles.stageEyebrow}>4단계</p>
-            <h2>피드백을 확인해 보세요.</h2>
-          </div>
-          <span>
-            {feedback ? `${feedback.attemptNo}번째 시도 · ${feedbackLevel?.label ?? "대기 중"}` : "대기 중"}
-          </span>
-        </div>
+        {renderStageHeader({
+          stepNumber: 4,
+          title: "피드백",
+          description: "내가 쓴 답변에서 잘한 점과 다듬을 부분을 확인해 보세요.",
+          meta: feedback ? `${feedback.attemptNo}번째 시도 · ${feedbackLevel?.label ?? "대기 중"}` : "대기 중"
+        })}
         {feedback ? (
           <div className={styles.feedbackBody}>
             <div className={styles.responseCard}>
@@ -1528,13 +1560,12 @@ export function AnswerLoop() {
   function renderRewriteStep() {
     return (
       <section className={styles.stage} style={mobileQuestionBarStyle}>
-        <div className={styles.stageHeader}>
-          <div>
-            <p className={styles.stageEyebrow}>5단계</p>
-            <h2>피드백을 반영해서 다시 써 보세요.</h2>
-          </div>
-          <span>{sessionId ? "같은 질문 이어가기" : "다시쓰기"}</span>
-        </div>
+        {renderStageHeader({
+          stepNumber: 5,
+          title: "다시쓰기",
+          description: "피드백을 반영해서 더 자연스럽고 구체적으로 다듬어 보세요.",
+          meta: sessionId ? "같은 질문 이어쓰기" : "다시쓰기"
+        })}
         {renderMobileQuestionBar(
           feedback?.rewriteChallenge ?? "다시쓰기 가이드를 불러오는 중입니다."
         )}

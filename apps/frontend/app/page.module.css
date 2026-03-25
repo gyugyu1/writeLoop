@@ -8,7 +8,7 @@
   padding: 32px;
   border-radius: 28px;
   background:
-    radial-gradient(circle at top right, rgba(255, 212, 120, 0.45), transparent 28%),
+    radial-gradient(circle at top right, rgba(var(--warm-accent-light-rgb), 0.34), transparent 28%),
     linear-gradient(135deg, #173058 0%, #0d2141 55%, #08162c 100%);
   color: #f8fbff;
   box-shadow: 0 24px 80px rgba(9, 28, 59, 0.18);
@@ -83,7 +83,7 @@
   height: 220px;
   border-radius: 999px;
   background:
-    radial-gradient(circle, rgba(255, 203, 107, 0.5) 0%, rgba(255, 203, 107, 0.18) 36%, transparent 72%);
+    radial-gradient(circle, rgba(var(--warm-accent-light-rgb), 0.36) 0%, rgba(var(--warm-accent-light-rgb), 0.16) 36%, transparent 72%);
   filter: blur(16px);
   opacity: 0.85;
   pointer-events: none;
@@ -129,8 +129,8 @@
 }
 
 .todayRewardBadge {
-  background: linear-gradient(135deg, rgba(255, 226, 164, 0.94) 0%, rgba(255, 180, 94, 0.94) 100%);
-  color: #6c3107;
+  background: rgba(var(--warm-accent-light-rgb), 0.22);
+  color: var(--warm-accent-deep);
 }
 
 .todayStreakPill {
@@ -141,9 +141,9 @@
 .todayStatusComplete {
   background:
     radial-gradient(circle at 18% 18%, rgba(46, 124, 246, 0.34), transparent 28%),
-    radial-gradient(circle at 84% 22%, rgba(255, 193, 94, 0.34), transparent 34%),
-    linear-gradient(135deg, rgba(14, 34, 67, 0.92) 0%, rgba(19, 48, 88, 0.94) 45%, rgba(240, 126, 39, 0.9) 100%);
-  border-color: rgba(255, 219, 167, 0.28);
+    radial-gradient(circle at 84% 22%, rgba(var(--warm-accent-light-rgb), 0.24), transparent 34%),
+    linear-gradient(135deg, rgba(14, 34, 67, 0.92) 0%, rgba(19, 48, 88, 0.94) 45%, rgba(var(--warm-accent-rgb), 0.82) 100%);
+  border-color: rgba(var(--warm-accent-light-rgb), 0.22);
 }
 
 .todayStatusComplete::before {
@@ -154,10 +154,10 @@
   background:
     conic-gradient(
       from 0deg,
-      rgba(255, 194, 96, 0.24) 0deg,
+      rgba(var(--warm-accent-light-rgb), 0.18) 0deg,
       rgba(73, 139, 255, 0.28) 110deg,
-      rgba(255, 141, 58, 0.34) 220deg,
-      rgba(255, 194, 96, 0.24) 360deg
+      rgba(var(--warm-accent-rgb), 0.26) 220deg,
+      rgba(var(--warm-accent-light-rgb), 0.18) 360deg
     );
   filter: blur(26px);
   opacity: 0.92;
@@ -173,8 +173,8 @@
   border-radius: 32px;
   background:
     radial-gradient(circle at 20% 24%, rgba(58, 128, 255, 0.34) 0%, transparent 28%),
-    radial-gradient(circle at 78% 28%, rgba(255, 189, 90, 0.34) 0%, transparent 30%),
-    radial-gradient(circle at 66% 72%, rgba(255, 118, 34, 0.26) 0%, transparent 26%);
+    radial-gradient(circle at 78% 28%, rgba(var(--warm-accent-light-rgb), 0.24) 0%, transparent 30%),
+    radial-gradient(circle at 66% 72%, rgba(var(--warm-accent-rgb), 0.2) 0%, transparent 26%);
   filter: blur(22px);
   opacity: 0.78;
   pointer-events: none;
@@ -185,7 +185,7 @@
 .todayStatusPending {
   background:
     radial-gradient(circle at 18% 18%, rgba(46, 124, 246, 0.24), transparent 28%),
-    radial-gradient(circle at 82% 18%, rgba(255, 193, 94, 0.2), transparent 32%),
+    radial-gradient(circle at 82% 18%, rgba(var(--warm-accent-light-rgb), 0.16), transparent 32%),
     linear-gradient(135deg, rgba(12, 26, 52, 0.9) 0%, rgba(18, 42, 79, 0.94) 62%, rgba(25, 38, 67, 0.95) 100%);
 }
 
@@ -235,9 +235,9 @@
   min-width: 116px;
   min-height: 116px;
   border-radius: 999px;
-  border: 2px solid rgba(255, 240, 214, 0.45);
+  border: 2px solid rgba(214, 221, 230, 0.45);
   background: rgba(255, 255, 255, 0.1);
-  color: #fff5d9;
+  color: var(--warm-accent-surface-4);
   font-size: 0.98rem;
   font-weight: 900;
   letter-spacing: 0.16em;
@@ -588,26 +588,6 @@
   box-shadow: 0 22px 50px rgba(18, 34, 68, 0.08);
 }
 
-.pickStageHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.pickStageHeader h2 {
-  margin: 6px 0 0;
-  font-size: clamp(1.6rem, 4.2vw, 2.2rem);
-  line-height: 1.15;
-}
-
-.pickStageDescription {
-  margin: 10px 0 0;
-  color: var(--text-sub);
-  line-height: 1.6;
-}
-
 .difficultyStageGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -627,13 +607,13 @@
 
 .difficultyStageButton {
   border: 1px solid rgba(16, 36, 76, 0.1);
-  background: linear-gradient(180deg, #fffdf8 0%, #fffaf2 100%);
+  background: var(--warm-accent-paper);
 }
 
 .difficultyStageButtonActive {
-  border: 1px solid #f28d35;
-  background: linear-gradient(180deg, #fff3e0 0%, #fffaf2 100%);
-  box-shadow: 0 18px 34px rgba(242, 141, 53, 0.16);
+  border: 1px solid var(--warm-accent-light);
+  background: var(--warm-accent-surface-2);
+  box-shadow: 0 18px 34px rgba(var(--warm-accent-rgb), 0.16);
 }
 
 .difficultyStageButton:hover,
@@ -686,9 +666,9 @@
 }
 
 .stepItemActive {
-  border-color: #f28d35;
-  background: linear-gradient(180deg, #fff4e7 0%, #fffdfa 100%);
-  box-shadow: 0 18px 36px rgba(242, 141, 53, 0.12);
+  border-color: var(--warm-accent-light);
+  background: var(--warm-accent-surface-2);
+  box-shadow: 0 18px 36px rgba(var(--warm-accent-rgb), 0.12);
 }
 
 .stepItemComplete {
@@ -711,10 +691,8 @@
   margin-top: 20px;
   padding: 32px;
   border-radius: 30px;
-  background:
-    radial-gradient(circle at top right, rgba(255, 214, 160, 0.58), transparent 30%),
-    linear-gradient(135deg, #fff8ee 0%, #fff1d7 55%, #ffe3ba 100%);
-  border: 1px solid rgba(242, 141, 53, 0.22);
+  background: var(--warm-accent-surface-2);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.22);
   box-shadow: 0 28px 56px rgba(193, 118, 30, 0.14);
 }
 
@@ -736,14 +714,14 @@
   margin: 14px 0 0;
   font-size: clamp(2rem, 3vw, 3rem);
   line-height: 1.1;
-  color: #6c3107;
+  color: var(--warm-accent-deep);
 }
 
 .completeStage p {
   margin: 14px 0 0;
   max-width: 720px;
   line-height: 1.7;
-  color: #8b4a1a;
+  color: var(--warm-accent-deep);
 }
 
 .completeBadge {
@@ -774,7 +752,7 @@
   background:
     radial-gradient(circle at top right, rgba(255, 210, 142, 0.46), transparent 34%),
     linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(255, 246, 225, 0.92) 100%);
-  border: 1px solid rgba(242, 141, 53, 0.2);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.2);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
 }
 
@@ -785,7 +763,7 @@
   justify-content: center;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(242, 141, 53, 0.14);
+  background: rgba(var(--warm-accent-rgb), 0.14);
   color: #9b4f16;
   font-size: 0.78rem;
   font-weight: 800;
@@ -799,7 +777,7 @@
 
 .completeHighlightCard p {
   margin: 0;
-  color: #8b4a1a;
+  color: var(--warm-accent-deep);
 }
 
 .completeSummary div {
@@ -856,7 +834,7 @@
 }
 
 .completionRewardBadge {
-  background: rgba(242, 141, 53, 0.16);
+  background: rgba(var(--warm-accent-rgb), 0.16);
   color: #8d430f;
 }
 
@@ -867,12 +845,12 @@
 
 .completionRewardCard strong {
   font-size: 1.1rem;
-  color: #6c3107;
+  color: var(--warm-accent-deep);
 }
 
 .completionRewardCard p {
   margin: 0;
-  color: #8b4a1a;
+  color: var(--warm-accent-deep);
 }
 
 .completeFollowUpCard {
@@ -883,9 +861,7 @@
   padding: 18px 20px;
   border-radius: 22px;
   border: 1px solid rgba(16, 36, 76, 0.1);
-  background:
-    linear-gradient(135deg, rgba(22, 58, 122, 0.08) 0%, rgba(242, 141, 53, 0.12) 100%),
-    rgba(255, 255, 255, 0.82);
+  background: var(--warm-accent-surface-1);
 }
 
 .completeFollowUpCopy {
@@ -934,7 +910,7 @@
   justify-content: center;
   padding: 5px 10px;
   border-radius: 999px;
-  background: rgba(242, 141, 53, 0.14);
+  background: rgba(var(--warm-accent-rgb), 0.14);
   color: #9b4f16;
   font-size: 0.78rem;
   font-weight: 800;
@@ -961,25 +937,62 @@
   align-items: flex-start;
   gap: 16px;
   margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.stageHeaderMain {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.stageHeaderTopRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 16px;
+}
+
+.stageHeaderLead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.stageStepLabel {
+  flex-shrink: 0;
+  color: var(--warm-accent-deep);
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .stageHeader h2 {
-  margin: 6px 0 0;
-  font-size: clamp(1.5rem, 2vw, 2rem);
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 1.72rem);
+  line-height: 1.18;
 }
 
-.stageHeader span {
+.stageHeaderMeta {
+  flex-shrink: 0;
+  justify-self: end;
+  text-align: right;
   color: var(--text-sub);
   font-weight: 700;
 }
 
-.stageEyebrow {
+.stageHeaderDescription {
   margin: 0;
-  color: #b8621b;
-  font-size: 0.82rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  color: var(--text-sub);
+  line-height: 1.55;
+}
+
+.stageHeaderAction {
+  flex-shrink: 0;
 }
 
 .stageFooter {
@@ -1002,11 +1015,9 @@
   max-width: 520px;
   padding: 16px 18px;
   border-radius: 20px;
-  background:
-    radial-gradient(circle at top right, rgba(255, 221, 171, 0.38), transparent 38%),
-    linear-gradient(135deg, #fff8ee 0%, #fff3de 100%);
-  border: 1px solid rgba(242, 141, 53, 0.18);
-  box-shadow: 0 14px 30px rgba(242, 141, 53, 0.08);
+  background: var(--warm-accent-surface-2);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.18);
+  box-shadow: 0 14px 30px rgba(var(--warm-accent-rgb), 0.08);
 }
 
 .completionCalloutBadge {
@@ -1016,7 +1027,7 @@
   justify-content: center;
   padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(242, 141, 53, 0.14);
+  background: rgba(var(--warm-accent-rgb), 0.14);
   color: #a25317;
   font-size: 0.78rem;
   font-weight: 800;
@@ -1024,13 +1035,13 @@
 }
 
 .completionCallout strong {
-  color: #6c3107;
+  color: var(--warm-accent-deep);
   font-size: 1.18rem;
 }
 
 .completionCallout p {
   margin: 0;
-  color: #8b4a1a;
+  color: var(--warm-accent-deep);
 }
 
 .actionRow {
@@ -1046,10 +1057,8 @@
   margin-top: 20px;
   padding: 24px;
   border-radius: 24px;
-  background:
-    radial-gradient(circle at top left, rgba(255, 215, 153, 0.55), transparent 34%),
-    linear-gradient(135deg, #fff7ea 0%, #fff1d6 52%, #ffe4bf 100%);
-  border: 1px solid rgba(242, 141, 53, 0.24);
+  background: var(--warm-accent-surface-2);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.24);
   box-shadow: 0 18px 48px rgba(192, 116, 34, 0.12);
 }
 
@@ -1057,14 +1066,14 @@
   margin: 10px 0 0;
   font-size: clamp(1.5rem, 2vw, 2rem);
   line-height: 1.2;
-  color: #6c3107;
+  color: var(--warm-accent-deep);
 }
 
 .loginWall p {
   margin: 12px 0 0;
   max-width: 640px;
   line-height: 1.7;
-  color: #8b4a1a;
+  color: var(--warm-accent-deep);
 }
 
 .loginBadge {
@@ -1109,13 +1118,13 @@
 
 .difficultyButton {
   border: 1px solid var(--border);
-  background: #fffdf8;
+  background: var(--warm-accent-paper);
 }
 
 .difficultyButtonActive {
-  border: 1px solid #f28d35;
-  background: linear-gradient(180deg, #fff5e9 0%, #fffaf4 100%);
-  box-shadow: 0 16px 28px rgba(242, 141, 53, 0.14);
+  border: 1px solid var(--warm-accent-light);
+  background: var(--warm-accent-surface-2);
+  box-shadow: 0 16px 28px rgba(var(--warm-accent-rgb), 0.14);
 }
 
 .difficultyButton strong,
@@ -1161,13 +1170,13 @@
 
 .promptCard {
   border: 1px solid var(--border);
-  background: #fffdf8;
+  background: var(--warm-accent-paper);
 }
 
 .promptActive {
-  border: 1px solid #f28d35;
-  background: linear-gradient(180deg, #fff5e9 0%, #fffaf4 100%);
-  box-shadow: 0 16px 28px rgba(242, 141, 53, 0.14);
+  border: 1px solid var(--warm-accent-light);
+  background: var(--warm-accent-surface-2);
+  box-shadow: 0 16px 28px rgba(var(--warm-accent-rgb), 0.14);
 }
 
 .promptCard:hover,
@@ -1185,7 +1194,7 @@
 .promptActive span {
   display: inline-block;
   margin-top: 6px;
-  color: #b8621b;
+  color: var(--warm-accent-deep);
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -1233,12 +1242,12 @@
 }
 
 .promptSelectButton {
-  background: rgba(242, 141, 53, 0.14);
+  background: rgba(var(--warm-accent-rgb), 0.14);
   color: #9f541a;
 }
 
 .promptSelectButtonActive {
-  background: linear-gradient(135deg, #ef7d27 0%, #f4a340 100%);
+  background: var(--warm-accent);
   color: #fff;
 }
 
@@ -1319,7 +1328,7 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  background: rgba(242, 141, 53, 0.14);
+  background: rgba(var(--warm-accent-rgb), 0.14);
   color: #a25317;
   font-size: 0.84rem;
   font-weight: 800;
@@ -1546,7 +1555,7 @@
   border-radius: 18px;
   padding: 16px;
   border: 1px solid rgba(16, 36, 76, 0.08);
-  background: #fffaf4;
+  background: var(--warm-accent-surface-1);
 }
 
 .responseCard h3 {
@@ -1574,8 +1583,8 @@
 
 .textarea:focus {
   outline: none;
-  border-color: #f28d35;
-  box-shadow: 0 0 0 4px rgba(242, 141, 53, 0.14);
+  border-color: var(--warm-accent-light);
+  box-shadow: 0 0 0 4px rgba(var(--warm-accent-rgb), 0.14);
 }
 
 .draftStatusText {
@@ -1603,7 +1612,7 @@
 
 .primaryButton,
 .primaryLink {
-  background: linear-gradient(135deg, #ef7d27 0%, #f4a340 100%);
+  background: var(--warm-accent);
   color: #fff;
 }
 
@@ -1744,6 +1753,18 @@
 }
 
 @media (max-width: 900px) {
+  .main {
+    --mobile-section-header: var(--warm-accent-surface-3);
+    --mobile-section-neutral: var(--warm-accent-surface-1);
+    --mobile-section-cool: linear-gradient(180deg, #f1f6ff 0%, #fbfdff 100%);
+    --mobile-section-warm: var(--warm-accent-surface-2);
+    --mobile-section-accent: var(--warm-accent-surface-3);
+    --mobile-section-paper: var(--warm-accent-paper);
+    --mobile-section-radius: 18px;
+    --mobile-section-border: rgba(16, 36, 76, 0.08);
+    --mobile-section-shadow: 0 10px 24px rgba(16, 36, 76, 0.06);
+  }
+
   .difficultyGrid,
   .loginWall,
   .completeSummary,
@@ -1764,16 +1785,7 @@
   }
 
   .stepRail {
-    grid-template-columns: 1fr;
-    margin-top: 0;
-  }
-
-  .stepItem {
     display: none;
-  }
-
-  .stepItemActive {
-    display: grid;
   }
 
   .stageFooter,
@@ -1784,7 +1796,6 @@
   .rewriteFeedbackHeader,
   .promptActionRow,
   .questionActionRow {
-    width: 100%;
     flex-direction: column;
     align-items: stretch;
   }
@@ -1801,27 +1812,38 @@
     box-shadow: none;
   }
 
-  .pickStageHeader,
+  .pickFlow {
+    gap: 14px;
+  }
+
+  .welcomeCard {
+    position: relative;
+    overflow: hidden;
+    gap: 12px;
+    padding: 20px 18px;
+    border: 1px solid rgba(22, 49, 94, 0.12);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at top right, rgba(255, 205, 120, 0.4), transparent 34%),
+      radial-gradient(circle at bottom left, rgba(72, 122, 255, 0.12), transparent 38%),
+      linear-gradient(145deg, #18335d 0%, #102748 56%, #0a1730 100%);
+    box-shadow: 0 18px 38px rgba(12, 27, 54, 0.16);
+  }
+
+  .welcomeCard h1 {
+    font-size: 1.72rem;
+    line-height: 1.12;
+  }
+
+  .welcomeCard p {
+    color: rgba(248, 251, 255, 0.88);
+    font-size: 0.96rem;
+    line-height: 1.65;
+  }
+
   .stageHeader {
     margin-bottom: 12px;
     padding-bottom: 10px;
-    border-bottom: 1px solid rgba(16, 36, 76, 0.08);
-  }
-
-  .stepItemActive {
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: center;
-    padding: 0 0 10px;
-    border: 0;
-    border-bottom: 1px solid rgba(16, 36, 76, 0.08);
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    gap: 10px;
-  }
-
-  .stepItemActive strong {
-    font-size: 0.92rem;
   }
 
   .difficultyStageButton,
@@ -1839,7 +1861,7 @@
   .difficultyStageButtonActive,
   .promptActive {
     padding-left: 12px;
-    border-left: 3px solid #f28d35;
+    border-left: 3px solid var(--warm-accent-light);
   }
 
   .promptCard p,
@@ -1859,25 +1881,22 @@
     display: grid;
     gap: 10px;
     margin-bottom: 12px;
-    padding: 12px 0 10px;
-    border: 0;
-    border-bottom: 1px solid rgba(36, 87, 245, 0.16);
-    border-radius: 0;
-    background: rgba(250, 247, 240, 0.92);
-    box-shadow: none;
-    backdrop-filter: blur(14px);
+    padding: 12px 12px 10px;
+    border: 1px solid rgba(36, 87, 245, 0.12);
+    border-radius: var(--mobile-section-radius);
+    background: var(--mobile-section-cool);
+    box-shadow: var(--mobile-section-shadow);
   }
 
   .writingGuideStarterTip {
     position: sticky;
     top: calc(84px + var(--mobile-question-bar-height, 0px) + 10px);
     z-index: 20;
-    padding: 0 0 10px;
-    border: 0;
-    border-bottom: 1px solid rgba(47, 124, 246, 0.16);
-    border-radius: 0;
-    background: rgba(250, 247, 240, 0.94);
-    box-shadow: none;
+    padding: 10px 12px;
+    border: 1px solid rgba(47, 124, 246, 0.12);
+    border-radius: 16px;
+    background: var(--warm-accent-surface-2);
+    box-shadow: 0 10px 22px rgba(16, 36, 76, 0.06);
   }
 
   .composerDesktopActions {
@@ -1940,11 +1959,11 @@
   }
 
   .inlineHintDrawer {
-    padding: 10px 0 0;
-    border: 0;
-    border-top: 1px solid rgba(16, 36, 76, 0.08);
-    border-radius: 0;
-    background: transparent;
+    padding: 12px;
+    border: 1px solid var(--mobile-section-border);
+    border-radius: var(--mobile-section-radius);
+    background: var(--mobile-section-cool);
+    box-shadow: var(--mobile-section-shadow);
   }
 
   .mobileComposerBar {
@@ -1954,13 +1973,11 @@
     display: grid;
     gap: 12px;
     margin-top: 16px;
-    padding: 12px 0 0;
-    border: 0;
-    border-top: 1px solid rgba(16, 36, 76, 0.08);
-    border-radius: 0;
-    background: rgba(250, 247, 240, 0.94);
-    box-shadow: none;
-    backdrop-filter: blur(14px);
+    padding: 12px;
+    border: 1px solid var(--mobile-section-border);
+    border-radius: 20px;
+    background: var(--mobile-section-neutral);
+    box-shadow: 0 14px 30px rgba(16, 36, 76, 0.08);
   }
 
   .mobileComposerMeta {
@@ -2004,7 +2021,7 @@
   }
 
   .mobileComposerPrimary {
-    background: linear-gradient(135deg, #ef7d27 0%, #f4a340 100%);
+    background: var(--warm-accent);
     color: #fff;
   }
 
@@ -2044,9 +2061,181 @@
     margin-top: 18px;
   }
 
-  .pickStageHeader {
+  .difficultyStageButton,
+  .difficultyStageButtonActive,
+  .promptCard,
+  .promptActive,
+  .writingGuideToggleRow,
+  .writingGuidePanel,
+  .inlineHintRow,
+  .responseCard,
+  .feedbackBlock,
+  .rewriteFeedbackPanel,
+  .rewriteFeedbackBody .rewriteFeedbackBlock,
+  .completionCallout,
+  .completeHighlightCard,
+  .completionRewardCard,
+  .completeFollowUpCard,
+  .completeFollowUpPrompt,
+  .completeSummary div,
+  .stageFooter {
+    margin-inline: 0;
+    padding-inline: 12px;
+    border-radius: var(--mobile-section-radius);
+  }
+
+  .difficultyStageButton,
+  .promptCard {
+    background: var(--mobile-section-neutral);
+  }
+
+  .difficultyStageButtonActive,
+  .promptActive {
+    background: var(--mobile-section-accent);
+  }
+
+  .writingGuideToggleRow,
+  .writingGuidePanel {
+    background: var(--mobile-section-warm);
+  }
+
+  .writingGuideToggleRow {
+    padding-block: 12px;
+    border: 1px solid rgba(var(--warm-accent-rgb), 0.1);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .writingGuidePanel {
+    padding-block: 10px;
+    border: 1px solid rgba(var(--warm-accent-rgb), 0.08);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .inlineHintRow {
+    padding-block: 12px;
+    background: var(--mobile-section-cool);
+    border: 1px solid var(--mobile-section-border);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .textarea {
+    background: var(--mobile-section-paper);
+    border-color: rgba(16, 36, 76, 0.1);
+    border-radius: 20px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  }
+
+  .responseCard {
+    padding: 12px;
+    border-top: 0;
+    background: var(--mobile-section-warm);
+    border: 1px solid rgba(var(--warm-accent-rgb), 0.08);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .feedbackBlock {
+    padding: 12px;
+    border-top: 0;
+    background: var(--mobile-section-cool);
+    border: 1px solid var(--mobile-section-border);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .rewriteFeedbackPanel {
+    padding: 12px;
+    border-top: 0;
+    background: var(--mobile-section-warm);
+    border: 1px solid rgba(var(--warm-accent-rgb), 0.08);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .rewriteFeedbackBody .rewriteFeedbackBlock {
+    padding: 10px 12px;
+    border-top: 0;
+    background: rgba(255, 252, 247, 0.76);
+    border: 1px solid rgba(16, 36, 76, 0.06);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  }
+
+  .completionCallout,
+  .completeHighlightCard {
+    padding: 12px;
+    border-top: 0;
+    background: var(--mobile-section-accent);
+    border: 1px solid rgba(var(--warm-accent-rgb), 0.12);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .completionRewardCard {
+    padding: 12px;
+    border-top: 0;
+    background: var(--mobile-section-warm);
+    border: 1px solid rgba(var(--warm-accent-rgb), 0.08);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .completeFollowUpCard,
+  .completeFollowUpPrompt {
+    padding: 12px;
+    border-top: 0;
+    background: var(--mobile-section-cool);
+    border: 1px solid var(--mobile-section-border);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .completeSummary div,
+  .stageFooter {
+    padding-block: 12px;
+    border-top: 0;
+    background: var(--mobile-section-neutral);
+    border: 1px solid var(--mobile-section-border);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .stageHeader {
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(16, 36, 76, 0.08);
+    border-radius: 20px;
+    box-shadow: var(--mobile-section-shadow);
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+  }
+
+  .stageHeaderTopRow,
+  .stageHeaderLead {
+    align-items: flex-start;
+  }
+
+  .stageHeaderTopRow {
+    gap: 10px;
+  }
+
+  .stageHeaderLead {
+    gap: 8px;
+  }
+
+  .stageStepLabel {
+    font-size: 0.82rem;
+    white-space: nowrap;
+  }
+
+  .stageHeader h2 {
+    font-size: 1.12rem;
+  }
+
+  .stageHeaderMeta {
+    white-space: nowrap;
+  }
+
+  .stageHeaderMeta,
+  .stageHeaderDescription {
+    font-size: 0.92rem;
+  }
+
+  .stageHeaderAction {
+    width: 100%;
   }
 
   .todayStatusPending,

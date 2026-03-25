@@ -75,6 +75,7 @@ export function MyPageClient() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openDates, setOpenDates] = useState<Record<string, boolean>>({});
+  const [openSessions, setOpenSessions] = useState<Record<string, boolean>>({});
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -221,6 +222,34 @@ export function MyPageClient() {
     });
   }, [historyDates]);
 
+  useEffect(() => {
+    if (history.length === 0) {
+      setOpenSessions({});
+      return;
+    }
+
+    setOpenSessions((current) => {
+      const next = { ...current };
+      let changed = false;
+
+      for (const session of history) {
+        if (!(session.sessionId in next)) {
+          next[session.sessionId] = false;
+          changed = true;
+        }
+      }
+
+      for (const existingKey of Object.keys(next)) {
+        if (!history.some((session) => session.sessionId === existingKey)) {
+          delete next[existingKey];
+          changed = true;
+        }
+      }
+
+      return changed ? next : current;
+    });
+  }, [history]);
+
   function setTab(tab: MyPageTab) {
     setActiveTab(tab);
     window.history.replaceState({}, "", `/me?tab=${tab}`);
@@ -231,6 +260,13 @@ export function MyPageClient() {
     setOpenDates((current) => ({
       ...current,
       [dateKey]: !current[dateKey]
+    }));
+  }
+
+  function toggleSession(sessionId: string) {
+    setOpenSessions((current) => ({
+      ...current,
+      [sessionId]: !current[sessionId]
     }));
   }
 
@@ -608,21 +644,44 @@ export function MyPageClient() {
                     <div className={styles.historySessionList}>
                       {historyByDate[dateKey].map((session) => (
                         <article key={session.sessionId} className={styles.historySessionCard}>
-                          <div className={styles.historySessionHeader}>
-                            <div>
+                          <button
+                            type="button"
+                            className={styles.historySessionButton}
+                            onClick={() => toggleSession(session.sessionId)}
+                          >
+                            <div className={styles.historySessionInfo}>
                               <span className={styles.historyMeta}>
                                 {session.topic} · {getDifficultyLabel(session.difficulty)}
                               </span>
                               <h4>{session.questionKo}</h4>
                               <p>{session.questionEn}</p>
                             </div>
-                          </div>
-
-                          <div className={styles.historyAttemptList}>
+                            <span className={styles.historySessionToggle}>
+                              {openSessions[session.sessionId]
+                                ? "답변 접기"
+                                : `답변 ${session.attempts.length}개 보기`}
+                            </span>
+                          </button>
+                          {openSessions[session.sessionId] ? (
+                            <div className={styles.historySessionBody}>
+                              <div className={styles.historyAttemptList}>
                             {session.attempts.map((attempt) => (
-                              <div key={attempt.id} className={styles.historyAttemptCard}>
+                              <div
+                                key={attempt.id}
+                                className={`${styles.historyAttemptCard} ${
+                                  attempt.attemptType === "INITIAL"
+                                    ? styles.historyAttemptInitial
+                                    : styles.historyAttemptRewrite
+                                }`}
+                              >
                                 <div className={styles.historyAttemptMeta}>
-                                  <strong>
+                                  <strong
+                                    className={
+                                      attempt.attemptType === "INITIAL"
+                                        ? styles.historyAttemptTypeInitial
+                                        : styles.historyAttemptTypeRewrite
+                                    }
+                                  >
                                     {attempt.attemptType === "INITIAL"
                                       ? `첫 답변 ${attempt.attemptNo}차`
                                       : `다시쓰기 ${attempt.attemptNo}차`}
@@ -644,6 +703,7 @@ export function MyPageClient() {
                                       correctedAnswer={attempt.feedback.correctedAnswer}
                                       inlineFeedback={attempt.feedback.inlineFeedback}
                                       compact
+                                      variant="embedded"
                                     />
                                     <div className={styles.historyFeedbackBlock}>
                                       <h5>전체 요약</h5>
@@ -686,7 +746,9 @@ export function MyPageClient() {
                                 </details>
                               </div>
                             ))}
-                          </div>
+                              </div>
+                            </div>
+                          ) : null}
                         </article>
                       ))}
                     </div>
@@ -702,7 +764,7 @@ export function MyPageClient() {
 
   if (currentUser === undefined) {
     return (
-      <main className={styles.page}>
+      <main className={`${styles.page} ${styles.myPageShell}`}>
         <section className={styles.emptyCard}>
           <h2>내정보를 불러오는 중이에요</h2>
           <p>잠시만 기다려 주세요.</p>
@@ -713,7 +775,7 @@ export function MyPageClient() {
 
   if (!currentUser) {
     return (
-      <main className={styles.page}>
+      <main className={`${styles.page} ${styles.myPageShell}`}>
         <section className={styles.emptyCard}>
           <h2>로그인이 필요해요</h2>
           <p>내정보 페이지는 로그인한 뒤에 확인할 수 있어요.</p>
@@ -731,7 +793,7 @@ export function MyPageClient() {
   }
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} ${styles.myPageShell}`}>
       <section className={styles.stackedHero}>
         <div className={styles.intro}>
           <div className={styles.eyebrow}>내정보</div>

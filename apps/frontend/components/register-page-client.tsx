@@ -131,7 +131,7 @@ export function RegisterPageClient() {
   }
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} ${styles.authShell}`}>
       <section className={styles.hero}>
         <div className={styles.intro}>
           <div className={styles.eyebrow}>회원가입</div>
@@ -140,11 +140,6 @@ export function RegisterPageClient() {
             writeLoop 계정을 만들면 오늘의 질문, 다시쓰기 기록, 자주 받는 피드백과 연속 학습일을
             내 정보에서 계속 이어서 볼 수 있어요.
           </p>
-          <ul className={styles.points}>
-            <li>이메일을 먼저 입력하고 인증코드를 받아 둘 수 있어요.</li>
-            <li>인증코드는 3분 동안만 입력할 수 있어요.</li>
-            <li>가입이 끝나면 바로 로그인된 상태로 홈으로 돌아가요.</li>
-          </ul>
         </div>
 
         <section className={styles.card}>
@@ -155,9 +150,6 @@ export function RegisterPageClient() {
             </div>
           </div>
 
-          <p className={styles.subText}>
-            이메일로 인증코드를 먼저 받은 뒤 필요한 정보를 입력하고 가입을 완료해 주세요.
-          </p>
 
           <div className={styles.form}>
             <label className={styles.field}>

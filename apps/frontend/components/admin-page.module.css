@@ -4,7 +4,7 @@
   padding: 32px;
   border-radius: 28px;
   background:
-    radial-gradient(circle at top right, rgba(255, 212, 120, 0.45), transparent 28%),
+    radial-gradient(circle at top right, rgba(var(--warm-accent-light-rgb), 0.34), transparent 28%),
     linear-gradient(135deg, #173058 0%, #0d2141 55%, #08162c 100%);
   color: #f8fbff;
   box-shadow: 0 24px 80px rgba(9, 28, 59, 0.18);
@@ -36,7 +36,7 @@
 
 .sectionEyebrow {
   background: rgba(16, 36, 76, 0.06);
-  color: #b8621b;
+  color: var(--warm-accent-deep);
 }
 
 .summaryCards {
@@ -135,8 +135,8 @@
 .input:focus,
 .textarea:focus {
   outline: none;
-  border-color: #f28d35;
-  box-shadow: 0 0 0 4px rgba(242, 141, 53, 0.14);
+  border-color: var(--warm-accent-light);
+  box-shadow: 0 0 0 4px rgba(var(--warm-accent-rgb), 0.14);
 }
 
 .fullWidth {
@@ -159,7 +159,7 @@
 .promptCard {
   border-radius: 22px;
   border: 1px solid rgba(16, 36, 76, 0.08);
-  background: #fffdf8;
+  background: var(--warm-accent-paper);
   overflow: hidden;
 }
 
@@ -205,7 +205,7 @@
 }
 
 .promptToggle strong {
-  color: #b8621b;
+  color: var(--warm-accent-deep);
   font-size: 0.92rem;
 }
 
@@ -234,7 +234,7 @@
 }
 
 .hintHeader span {
-  color: #b8621b;
+  color: var(--warm-accent-deep);
   font-size: 0.9rem;
   font-weight: 700;
 }

@@ -4,13 +4,30 @@
   padding: 18px;
   border-radius: 18px;
   border: 1px solid rgba(16, 36, 76, 0.08);
-  background:
-    radial-gradient(circle at top right, rgba(255, 214, 160, 0.22), transparent 36%),
-    linear-gradient(180deg, #fffdf8 0%, #fff8ee 100%);
+  background: var(--warm-accent-paper);
 }
 
 .compact {
   padding: 16px;
+}
+
+.embedded {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.embedded .header {
+  gap: 0;
+}
+
+.embedded .header strong {
+  font-size: 0.94rem;
+}
+
+.embedded .legend {
+  gap: 8px;
 }
 
 .header {

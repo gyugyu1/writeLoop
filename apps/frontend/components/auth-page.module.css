@@ -4,6 +4,33 @@
   padding: 116px 20px 96px;
 }
 
+.myPageShell {
+}
+
+.authShell {
+}
+
+.authShell .cardHeader > div {
+  display: grid;
+  gap: 6px;
+}
+
+.authShell .cardHeader .eyebrow {
+  display: block;
+  width: fit-content;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--warm-accent-deep);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.authShell .cardHeader h2 {
+  margin: 0;
+}
+
 .hero {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
@@ -20,7 +47,7 @@
   padding: 32px;
   border-radius: 28px;
   background:
-    radial-gradient(circle at top right, rgba(255, 212, 120, 0.45), transparent 28%),
+    radial-gradient(circle at top right, rgba(var(--warm-accent-light-rgb), 0.34), transparent 28%),
     linear-gradient(135deg, #173058 0%, #0d2141 55%, #08162c 100%);
   color: #f8fbff;
   box-shadow: 0 24px 80px rgba(9, 28, 59, 0.18);
@@ -62,10 +89,8 @@
   margin-top: 22px;
   padding: 18px 20px;
   border-radius: 20px;
-  border: 1px solid rgba(242, 141, 53, 0.18);
-  background:
-    radial-gradient(circle at top right, rgba(255, 210, 140, 0.45), transparent 36%),
-    linear-gradient(135deg, #fff7ea 0%, #fff1d7 60%, #ffe5bf 100%);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.18);
+  background: var(--warm-accent-surface-2);
   color: #10244c;
 }
 
@@ -74,8 +99,8 @@
   width: fit-content;
   padding: 5px 9px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #ffd79f 0%, #ffb85c 100%);
-  color: #6c3107;
+  background: var(--warm-accent);
+  color: var(--warm-accent-deep);
   font-size: 0.76rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -89,7 +114,7 @@
 
 .streakBanner p {
   margin: 0;
-  color: #8b4a1a;
+  color: var(--warm-accent-deep);
 }
 
 .card {
@@ -139,7 +164,7 @@
 }
 
 .tabButtonActive {
-  background: linear-gradient(135deg, #ef7d27 0%, #f4a340 100%);
+  background: var(--warm-accent);
   color: #fff;
 }
 
@@ -200,8 +225,8 @@
 
 .input:focus {
   outline: none;
-  border-color: #f28d35;
-  box-shadow: 0 0 0 4px rgba(242, 141, 53, 0.14);
+  border-color: var(--warm-accent-light);
+  box-shadow: 0 0 0 4px rgba(var(--warm-accent-rgb), 0.14);
 }
 
 .actions {
@@ -262,7 +287,7 @@
 
 .primaryButton,
 .primaryLink {
-  background: linear-gradient(135deg, #ef7d27 0%, #f4a340 100%);
+  background: var(--warm-accent);
   color: #fff;
 }
 
@@ -298,7 +323,7 @@
 }
 
 .timerText {
-  color: #b8621b;
+  color: var(--warm-accent-deep);
   font-size: 0.9rem;
   font-weight: 700;
 }
@@ -416,7 +441,7 @@
   padding: 18px;
   border-radius: 18px;
   border: 1px solid rgba(16, 36, 76, 0.08);
-  background: #fffdf8;
+  background: var(--warm-accent-paper);
 }
 
 .infoCard span {
@@ -452,7 +477,7 @@
 
 .historyEyebrow {
   display: inline-flex;
-  color: #b8621b;
+  color: var(--warm-accent-deep);
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -475,7 +500,7 @@
   padding: 16px;
   border-radius: 18px;
   border: 1px solid rgba(16, 36, 76, 0.08);
-  background: #fffdf8;
+  background: var(--warm-accent-paper);
 }
 
 .mistakeHeader {
@@ -491,7 +516,7 @@
 }
 
 .mistakeHeader span {
-  color: #b8621b;
+  color: var(--warm-accent-deep);
   font-size: 0.88rem;
   font-weight: 700;
 }
@@ -532,39 +557,95 @@
 }
 
 .historySessionCard {
-  padding: 18px;
+  overflow: hidden;
   border-radius: 20px;
   border: 1px solid rgba(16, 36, 76, 0.08);
-  background: #fffdf8;
+  background: var(--warm-accent-paper);
 }
 
-.historySessionHeader h4 {
+.historySessionButton {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  padding: 18px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.historySessionInfo h4 {
   margin: 8px 0 0;
   font-size: 1.08rem;
 }
 
-.historySessionHeader p {
+.historySessionInfo p {
   margin: 8px 0 0;
   color: var(--text-sub);
   line-height: 1.6;
 }
 
+.historySessionToggle {
+  justify-self: end;
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.historySessionBody {
+  padding: 0 18px 18px;
+  border-top: 1px solid rgba(16, 36, 76, 0.08);
+}
+
 .historyMeta {
-  color: #b8621b;
+  color: var(--warm-accent-deep);
   font-size: 0.84rem;
   font-weight: 700;
 }
 
 .historyAttemptList {
   display: grid;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 0;
+  margin-top: 0;
 }
 
 .historyAttemptCard {
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: rgba(16, 36, 76, 0.03);
+  position: relative;
+  padding: 14px 0 0 12px;
+  border-radius: 0;
+  border-top: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.historyAttemptCard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 0;
+  width: 8px;
+  border-top: 3px solid var(--history-attempt-accent, rgba(177, 111, 66, 0.82));
+  border-bottom: 3px solid var(--history-attempt-accent, rgba(177, 111, 66, 0.82));
+  border-left: 3px solid var(--history-attempt-accent, rgba(177, 111, 66, 0.82));
+  pointer-events: none;
+}
+
+.historyAttemptCard:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.historyAttemptCard:first-child::before {
+  top: 0;
+}
+
+.historyAttemptInitial {
+  --history-attempt-accent: rgba(var(--warm-accent-rgb), 0.82);
+  background: rgba(var(--warm-accent-light-rgb), 0.14);
+}
+
+.historyAttemptRewrite {
+  --history-attempt-accent: rgba(90, 123, 116, 0.78);
+  background: rgba(234, 242, 239, 0.9);
 }
 
 .historyAttemptMeta {
@@ -576,6 +657,32 @@
 
 .historyAttemptMeta strong {
   font-size: 0.96rem;
+}
+
+.historyAttemptTypeInitial,
+.historyAttemptTypeRewrite {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.historyAttemptTypeInitial {
+  border-color: rgba(var(--warm-accent-rgb), 0.16);
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: var(--warm-accent-deep);
+}
+
+.historyAttemptTypeRewrite {
+  border-color: rgba(90, 123, 116, 0.18);
+  background: rgba(90, 123, 116, 0.12);
+  color: #48615c;
 }
 
 .historyAttemptMeta span {
@@ -601,9 +708,31 @@
 }
 
 .historyFeedbackDetails summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   cursor: pointer;
+  list-style: none;
+  border-radius: 0;
   font-weight: 700;
   color: #10244c;
+}
+
+.historyFeedbackDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.historyFeedbackDetails summary::after {
+  content: "+";
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+  color: rgba(16, 36, 76, 0.54);
+}
+
+.historyFeedbackDetails[open] summary::after {
+  content: "-";
 }
 
 .historyFeedbackBody {
@@ -723,5 +852,450 @@
 
   .secondaryActionLink {
     width: 100%;
+  }
+
+  .page.authShell {
+    --auth-section-header: var(--warm-accent-surface-3);
+    --auth-section-paper: var(--warm-accent-paper);
+    --auth-section-soft: var(--warm-accent-surface-1);
+    --auth-section-cool: linear-gradient(180deg, #f2f6ff 0%, #fbfdff 100%);
+    --auth-section-border: rgba(16, 36, 76, 0.08);
+    --auth-section-shadow: 0 10px 24px rgba(16, 36, 76, 0.06);
+    padding: 108px 10px 72px;
+  }
+
+  .authShell .hero {
+    gap: 16px;
+  }
+
+  .authShell .intro {
+    padding: 24px 18px;
+    border-radius: 24px;
+    box-shadow: 0 18px 44px rgba(9, 28, 59, 0.16);
+  }
+
+  .authShell .intro h1 {
+    font-size: 1.9rem;
+    line-height: 1.12;
+  }
+
+  .authShell .intro p {
+    font-size: 0.96rem;
+  }
+
+  .authShell .card,
+  .authShell .emptyCard {
+    display: grid;
+    gap: 12px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .authShell .cardHeader {
+    margin-bottom: 0;
+    padding: 14px 14px 12px;
+    border: 1px solid rgba(var(--warm-accent-rgb), 0.12);
+    border-radius: 20px;
+    background: var(--auth-section-header);
+    box-shadow: var(--auth-section-shadow);
+  }
+
+  .authShell .card h2,
+  .authShell .emptyCard h2 {
+    font-size: 1.18rem;
+    line-height: 1.2;
+  }
+
+  .authShell .subText {
+    padding: 0 2px;
+  }
+
+  .authShell .form,
+  .authShell .socialSection {
+    margin-top: 0;
+    padding: 14px;
+    border: 1px solid var(--auth-section-border);
+    border-radius: 20px;
+    background: var(--auth-section-paper);
+    box-shadow: var(--auth-section-shadow);
+  }
+
+  .authShell .field span {
+    font-size: 0.88rem;
+  }
+
+  .authShell .inlineFieldRow {
+    gap: 10px;
+  }
+
+  .authShell .checkboxField {
+    padding: 2px 2px 0;
+  }
+
+  .authShell .input {
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  .authShell .primaryActionRow,
+  .authShell .secondaryActionRow,
+  .authShell .actions {
+    margin-top: 0;
+    padding: 0 2px;
+  }
+
+  .authShell .actions {
+    display: grid;
+    gap: 10px;
+  }
+
+  .authShell .secondaryActionRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .authShell .primaryActionRow > *,
+  .authShell .secondaryActionRow > *,
+  .authShell .actions > * {
+    width: 100%;
+  }
+
+  .authShell .primaryButton,
+  .authShell .ghostButton,
+  .authShell .primaryLink,
+  .authShell .ghostLink,
+  .authShell .secondaryActionLink {
+    min-height: 46px;
+    border-radius: 16px;
+  }
+
+  .authShell .secondaryActionLink {
+    background: var(--auth-section-soft);
+  }
+
+  .authShell .socialSection {
+    background: var(--auth-section-cool);
+  }
+
+  .authShell .socialDivider {
+    margin-bottom: 12px;
+  }
+
+  .authShell .socialDivider span {
+    background: transparent;
+  }
+
+  .authShell .notice,
+  .authShell .error {
+    margin: 0;
+    padding: 12px 14px;
+    border-radius: 18px;
+    border: 1px solid var(--auth-section-border);
+    box-shadow: var(--auth-section-shadow);
+  }
+
+  .authShell .notice {
+    background: linear-gradient(180deg, rgba(225, 247, 237, 0.96) 0%, rgba(246, 252, 249, 0.98) 100%);
+  }
+
+  .authShell .error {
+    background: linear-gradient(180deg, rgba(254, 239, 236, 0.96) 0%, rgba(255, 249, 247, 0.98) 100%);
+  }
+
+  .page.myPageShell {
+    --my-page-section-header: var(--warm-accent-surface-3);
+    --my-page-section-neutral: var(--warm-accent-surface-1);
+    --my-page-section-cool: linear-gradient(180deg, #f1f6ff 0%, #fbfdff 100%);
+    --my-page-section-warm: var(--warm-accent-surface-2);
+    --my-page-section-paper: var(--warm-accent-paper);
+    --my-page-section-border: rgba(16, 36, 76, 0.08);
+    --my-page-section-shadow: 0 10px 24px rgba(16, 36, 76, 0.06);
+    padding: 108px 10px 72px;
+  }
+
+  .myPageShell .stackedHero {
+    gap: 16px;
+  }
+
+  .myPageShell .intro {
+    padding: 24px 18px;
+    border-radius: 24px;
+    box-shadow: 0 18px 44px rgba(9, 28, 59, 0.16);
+  }
+
+  .myPageShell .intro h1 {
+    font-size: 1.9rem;
+  }
+
+  .myPageShell .intro p {
+    font-size: 0.96rem;
+  }
+
+  .myPageShell .points {
+    margin-top: 18px;
+    gap: 8px;
+    padding-left: 16px;
+  }
+
+  .myPageShell .card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .myPageShell .cardHeader {
+    margin-bottom: 14px;
+    padding: 14px 14px 12px;
+    border: 1px solid rgba(var(--warm-accent-rgb), 0.12);
+    border-radius: 20px;
+    background: var(--my-page-section-header);
+    box-shadow: var(--my-page-section-shadow);
+  }
+
+  .myPageShell .card h2 {
+    font-size: 1.18rem;
+    line-height: 1.2;
+  }
+
+  .myPageShell .tabRow {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+    padding: 4px;
+    border-radius: 18px;
+    background: rgba(16, 36, 76, 0.05);
+  }
+
+  .myPageShell .tabButton,
+  .myPageShell .tabButtonActive {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+  }
+
+  .myPageShell .streakBanner,
+  .myPageShell .historySection,
+  .myPageShell .infoCard,
+  .myPageShell .mistakeCard,
+  .myPageShell .historyDateButton,
+  .myPageShell .historySessionCard,
+  .myPageShell .historyAttemptCard,
+  .myPageShell .historyFeedbackBlock,
+  .myPageShell .historyEmpty,
+  .myPageShell .emptyCard {
+    border-radius: 20px;
+    box-shadow: var(--my-page-section-shadow);
+  }
+
+  .myPageShell .streakBanner {
+    margin-top: 16px;
+    padding: 16px;
+  }
+
+  .myPageShell .streakBanner strong {
+    font-size: 1.22rem;
+  }
+
+  .myPageShell .infoGrid {
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .myPageShell .infoCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 14px 16px;
+    border-color: var(--my-page-section-border);
+    background: var(--my-page-section-neutral);
+  }
+
+  .myPageShell .infoCard strong {
+    margin-top: 0;
+    text-align: right;
+  }
+
+  .myPageShell .historySection {
+    margin-top: 16px;
+    padding: 14px 12px;
+    border: 1px solid var(--my-page-section-border);
+    background: var(--my-page-section-neutral);
+  }
+
+  .myPageShell .historyHeader {
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(16, 36, 76, 0.08);
+  }
+
+  .myPageShell .historyHeader h3 {
+    font-size: 1.08rem;
+    line-height: 1.25;
+  }
+
+  .myPageShell .historyHeader > strong {
+    font-size: 0.92rem;
+    color: var(--text-sub);
+  }
+
+  .myPageShell .form {
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .myPageShell .input {
+    border-radius: 18px;
+    background: var(--my-page-section-paper);
+  }
+
+  .myPageShell .actions,
+  .myPageShell .linkRow {
+    display: grid;
+    gap: 10px;
+  }
+
+  .myPageShell .actions > *,
+  .myPageShell .linkRow > * {
+    width: 100%;
+  }
+
+  .myPageShell .mistakeGrid,
+  .myPageShell .historyDateList {
+    gap: 12px;
+    margin-top: 14px;
+  }
+
+  .myPageShell .mistakeCard {
+    padding: 14px 16px;
+    border: 1px solid var(--my-page-section-border);
+    background: var(--my-page-section-cool);
+  }
+
+  .myPageShell .historyDateGroup {
+    gap: 10px;
+  }
+
+  .myPageShell .historyDateButton {
+    padding: 13px 14px;
+    border-color: rgba(var(--warm-accent-rgb), 0.12);
+    background: var(--my-page-section-header);
+  }
+
+  .myPageShell .historySessionList {
+    gap: 12px;
+  }
+
+  .myPageShell .historySessionCard {
+    border: 1px solid var(--my-page-section-border);
+    background: var(--my-page-section-cool);
+  }
+
+  .myPageShell .historySessionButton {
+    padding: 14px 16px;
+  }
+
+  .myPageShell .historySessionToggle {
+    font-size: 0.88rem;
+  }
+
+  .myPageShell .historySessionBody {
+    padding: 0 16px 14px;
+  }
+
+  .myPageShell .historyAttemptList {
+    gap: 0;
+    margin-top: 0;
+  }
+
+  .myPageShell .historyAttemptCard {
+    padding: 12px 0 0 10px;
+    border-radius: 0;
+    border-top: 1px solid rgba(16, 36, 76, 0.08);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .myPageShell .historyAttemptCard::before {
+    left: 0;
+    top: 12px;
+    width: 7px;
+  }
+
+  .myPageShell .historyAttemptCard:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .myPageShell .historyAttemptCard:first-child::before {
+    top: 0;
+  }
+
+  .myPageShell .historyAttemptInitial {
+    --history-attempt-accent: rgba(var(--warm-accent-rgb), 0.86);
+    background: rgba(var(--warm-accent-light-rgb), 0.18);
+  }
+
+  .myPageShell .historyAttemptRewrite {
+    border-left-color: rgba(90, 123, 116, 0.82);
+    background: rgba(234, 242, 239, 0.94);
+  }
+
+  .myPageShell .historyAttemptTypeInitial,
+  .myPageShell .historyAttemptTypeRewrite {
+    font-size: 0.8rem;
+  }
+
+  .myPageShell .historyAttemptMeta {
+    gap: 4px;
+  }
+
+  .myPageShell .historyFeedbackDetails {
+    margin-top: 10px;
+  }
+
+  .myPageShell .historyFeedbackDetails summary {
+    padding: 10px 12px;
+    border-radius: 0;
+    background: rgba(16, 36, 76, 0.05);
+  }
+
+  .myPageShell .historyFeedbackBody {
+    gap: 0;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(16, 36, 76, 0.08);
+  }
+
+  .myPageShell .historyFeedbackBlock {
+    padding: 10px 0 0;
+    border: 0;
+    border-top: 1px solid rgba(16, 36, 76, 0.08);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .myPageShell .historyFeedbackBlock h5 {
+    margin-bottom: 6px;
+  }
+
+  .myPageShell .historyFeedbackBlock ul {
+    gap: 6px;
+  }
+
+  .myPageShell .historyEmpty,
+  .myPageShell .emptyCard {
+    padding: 18px 16px;
+    border-style: solid;
+    border-color: var(--my-page-section-border);
+    background: var(--my-page-section-neutral);
   }
 }

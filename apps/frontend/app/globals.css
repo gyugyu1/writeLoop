@@ -3,6 +3,18 @@
   --surface: #ffffff;
   --primary: #1d4ed8;
   --primary-soft: #dbe7ff;
+  --warm-accent: #e56a1f;
+  --warm-accent-light: #f0993a;
+  --warm-accent-deep: #8c3f10;
+  --warm-accent-rgb: 229, 106, 31;
+  --warm-accent-light-rgb: 240, 153, 58;
+  --warm-accent-deep-rgb: 140, 63, 16;
+  --warm-accent-paper: #fffaf4;
+  --warm-accent-surface-1: #fff3e7;
+  --warm-accent-surface-2: #ffe9d1;
+  --warm-accent-surface-3: #ffdcc0;
+  --warm-accent-surface-4: #ffcdab;
+  --warm-accent-surface-5: #ffbc8c;
   --text-main: #162033;
   --text-sub: #5a6a87;
   --border: #d8deea;

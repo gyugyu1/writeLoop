@@ -113,7 +113,7 @@ export function LoginPageClient() {
   }
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} ${styles.authShell}`}>
       <section className={styles.hero}>
         <div className={styles.intro}>
           <div className={styles.eyebrow}>로그인</div>
@@ -133,7 +133,6 @@ export function LoginPageClient() {
 
           {!showVerify ? (
             <>
-              <p className={styles.subText}>가입한 이메일과 비밀번호를 입력해 주세요.</p>
               <form
                 className={styles.form}
                 onSubmit={(event) => {

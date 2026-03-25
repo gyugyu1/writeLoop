@@ -5,7 +5,7 @@
   right: 0;
   z-index: 30;
   backdrop-filter: blur(16px);
-  background: rgba(250, 247, 240, 0.82);
+  background: rgba(252, 247, 239, 0.84);
   border-bottom: 1px solid rgba(16, 36, 76, 0.08);
 }
 
@@ -73,7 +73,7 @@
 }
 
 .menuLinkActive {
-  background: linear-gradient(135deg, #ef7d27 0%, #f4a340 100%);
+  background: var(--warm-accent);
   color: #fff;
 }
 

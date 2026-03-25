@@ -286,6 +286,20 @@ public class FeedbackService {
             return List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer));
         }
 
+        if (correctedAnswer.startsWith(answer) && correctedAnswer.length() > answer.length()) {
+            return List.of(
+                    new InlineFeedbackSegmentDto("KEEP", answer, answer),
+                    new InlineFeedbackSegmentDto("ADD", "", correctedAnswer.substring(answer.length()))
+            );
+        }
+
+        if (correctedAnswer.endsWith(answer) && correctedAnswer.length() > answer.length()) {
+            return List.of(
+                    new InlineFeedbackSegmentDto("ADD", "", correctedAnswer.substring(0, correctedAnswer.length() - answer.length())),
+                    new InlineFeedbackSegmentDto("KEEP", answer, answer)
+            );
+        }
+
         return List.of(new InlineFeedbackSegmentDto("REPLACE", answer, correctedAnswer));
     }
 

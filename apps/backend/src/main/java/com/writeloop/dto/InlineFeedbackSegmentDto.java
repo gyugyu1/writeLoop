@@ -5,4 +5,9 @@ public record InlineFeedbackSegmentDto(
         String originalText,
         String revisedText
 ) {
+    public InlineFeedbackSegmentDto {
+        type = type == null ? "" : type.trim().toUpperCase();
+        originalText = originalText == null ? "" : originalText;
+        revisedText = revisedText == null ? "" : revisedText;
+    }
 }

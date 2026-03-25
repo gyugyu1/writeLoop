@@ -17,7 +17,6 @@ export function InlineFeedbackPreview({
   correctedAnswer,
   inlineFeedback,
   title = "문장별 피드백",
-  description = "검정은 유지, 빨강은 수정, 파랑은 추가 표현이에요.",
   compact = false
 }: InlineFeedbackPreviewProps) {
   const segments = useMemo(
@@ -33,7 +32,6 @@ export function InlineFeedbackPreview({
     <section className={`${styles.panel} ${compact ? styles.compact : ""}`}>
       <div className={styles.header}>
         <strong>{title}</strong>
-        <p>{description}</p>
       </div>
       <div className={styles.legend}>
         <span className={styles.legendItem}>

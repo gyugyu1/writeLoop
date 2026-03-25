@@ -943,7 +943,6 @@ export function AnswerLoop() {
         <div className={styles.dailyPromptHeader}>
           <div>
             <h3>오늘의 추천 질문 3개</h3>
-            <p>같은 날에는 같은 추천이 보이고, 다음 날이 되면 새로운 질문 조합으로 바뀝니다.</p>
           </div>
         </div>
 
@@ -1376,7 +1375,7 @@ export function AnswerLoop() {
               onClick={() => void handlePickPrompt(suggestedFollowUpPrompt.id)}
               disabled={isLoadingPrompts}
             >
-              비슷한 질문 하나 더 답변하기
+              비슷한 질문에 한번 더 답변하기
             </button>
           ) : null}
           <button

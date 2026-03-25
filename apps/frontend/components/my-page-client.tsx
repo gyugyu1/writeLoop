@@ -387,23 +387,14 @@ export function MyPageClient() {
   function renderAccountTab() {
     return (
       <>
-
-        <div className={styles.streakBanner}>
-          <span className={styles.streakLabel}>
-            {todayStatus?.completed ? "오늘의 완료 도장 획득" : "오늘의 완료 도장 진행 중"}
-          </span>
-          <strong>{todayStatus?.streakDays ?? 0}일 연속으로 writeLoop를 이어가고 있어요.</strong>
-          <p>
-            {todayStatus?.completed
-              ? "오늘의 작문을 끝까지 마쳐 도장을 받았어요. 지금 흐름을 내일도 이어가 보세요."
-              : "오늘의 질문 하나만 마쳐도 완료 도장을 받고 연속 학습일을 더 길게 이어갈 수 있어요."}
-          </p>
-        </div>
-
         <div className={styles.infoGrid}>
           <div className={styles.infoCard}>
             <span>표시 이름</span>
             <strong>{currentUser?.displayName}</strong>
+          </div>
+          <div className={styles.infoCard}>
+            <span>이메일</span>
+            <strong>{currentUser?.email}</strong>
           </div>
           <div className={styles.infoCard}>
             <span>로그인 방식</span>
@@ -552,6 +543,18 @@ export function MyPageClient() {
   function renderWritingTab() {
     return (
       <>
+        <div className={styles.streakBanner}>
+          <span className={styles.streakLabel}>
+            {todayStatus?.completed ? "오늘의 완료 도장 획득" : "오늘의 완료 도장 진행 중"}
+          </span>
+          <strong>{todayStatus?.streakDays ?? 0}일 연속으로 writeLoop를 이어가고 있어요.</strong>
+          <p>
+            {todayStatus?.completed
+              ? "오늘의 작문을 끝까지 마쳐 도장을 받았어요. 지금 흐름을 내일도 이어가 보세요."
+              : "오늘의 질문 하나만 마쳐도 완료 도장을 받고 연속 학습일을 더 길게 이어갈 수 있어요."}
+          </p>
+        </div>
+
         <div className={styles.infoGrid}>
           <div className={styles.infoCard}>
             <span>연속 작문</span>
@@ -789,19 +792,26 @@ export function MyPageClient() {
     <main className={`${styles.page} ${styles.myPageShell}`}>
       <section className={styles.stackedHero}>
         <div className={styles.intro}>
-          <div className={styles.eyebrow}>내정보</div>
-          <h1>{currentUser.displayName}님의 학습 공간</h1>
+          <div className={styles.eyebrow}>{activeTab === "account" ? "내 계정" : "작문 기록"}</div>
+          <h1>
+            {activeTab === "account"
+              ? `${currentUser.displayName}님의 계정 설정`
+              : `${currentUser.displayName}님의 작문 기록`}
+          </h1>
           <p>
-            계정 설정과 작문 기록을 한곳에서 관리할 수 있어요. 헤더의 <strong>작문기록</strong>과{" "}
-            <strong>내정보</strong> 버튼으로 필요한 탭으로 바로 이동할 수 있습니다.
+            {activeTab === "account"
+              ? "표시 이름, 이메일, 로그인 방식과 비밀번호 변경처럼 계정 관련 설정만 이 화면에서 관리할 수 있어요."
+              : "날짜별 작문 히스토리와 자주 받은 피드백을 모아 보고, 반복되는 패턴을 한눈에 확인할 수 있어요."}
           </p>
         </div>
 
         <section className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <div className={styles.eyebrow}>마이 페이지</div>
-              <h2>계정과 학습 기록</h2>
+              <div className={styles.eyebrow}>
+                {activeTab === "account" ? "계정 설정" : "학습 기록"}
+              </div>
+              <h2>{activeTab === "account" ? "내 계정" : "작문 기록"}</h2>
             </div>
           </div>
 

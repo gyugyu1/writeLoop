@@ -86,6 +86,75 @@ function expandReplaceIntoKeepAndAdd(
   return hasEqual && hasAdd ? segments : null;
 }
 
+function flushChangeSegments(
+  segments: RenderedInlineFeedbackSegment[],
+  removed: string,
+  added: string
+) {
+  if (removed && added) {
+    segments.push({ kind: "replace", removed, added });
+    return;
+  }
+
+  if (removed) {
+    segments.push({ kind: "remove", text: removed });
+    return;
+  }
+
+  if (added) {
+    segments.push({ kind: "add", text: added });
+  }
+}
+
+function splitReplaceIntoFineGrainedSegments(
+  removed: string,
+  added: string
+): RenderedInlineFeedbackSegment[] | null {
+  if (!removed || !added || removed === added) {
+    return null;
+  }
+
+  const expandedKeepAndAdd = expandReplaceIntoKeepAndAdd(removed, added);
+  if (expandedKeepAndAdd) {
+    return expandedKeepAndAdd;
+  }
+
+  const operations = buildDiffOperations(tokenize(removed), tokenize(added));
+  const segments: RenderedInlineFeedbackSegment[] = [];
+  let removedBuffer = "";
+  let addedBuffer = "";
+  let hasEqual = false;
+
+  const flushBuffers = () => {
+    if (!removedBuffer && !addedBuffer) {
+      return;
+    }
+
+    flushChangeSegments(segments, removedBuffer, addedBuffer);
+    removedBuffer = "";
+    addedBuffer = "";
+  };
+
+  for (const operation of operations) {
+    if (operation.kind === "equal") {
+      flushBuffers();
+      hasEqual = true;
+      appendEqualSegment(segments, operation.text);
+      continue;
+    }
+
+    if (operation.kind === "remove") {
+      removedBuffer += operation.text;
+      continue;
+    }
+
+    addedBuffer += operation.text;
+  }
+
+  flushBuffers();
+  return hasEqual ? segments : null;
+}
+
 function tokenize(text: string): string[] {
   const tokens = text.match(/[A-Za-z0-9']+|[^\sA-Za-z0-9']+|\s+/g);
   return tokens ?? (text ? [text] : []);
@@ -227,7 +296,7 @@ function buildSegmentsFromDiff(
       }
 
       if (added.trim()) {
-        const expandedSegments = expandReplaceIntoKeepAndAdd(removed, added);
+        const expandedSegments = splitReplaceIntoFineGrainedSegments(removed, added);
         if (expandedSegments) {
           segments.push(...expandedSegments);
         } else {
@@ -300,7 +369,7 @@ function buildSegmentsFromModel(
         }
         const removed = originalAnswer.slice(match.start, match.end);
         const added = normalizeSuggestionText(segment.revisedText);
-        const expandedSegments = expandReplaceIntoKeepAndAdd(removed, added);
+        const expandedSegments = splitReplaceIntoFineGrainedSegments(removed, added);
         if (expandedSegments) {
           segments.push(...expandedSegments);
         } else {

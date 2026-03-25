@@ -76,6 +76,34 @@ public class OpenAiFeedbackClient {
         }
     }
 
+    List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String originalText, String revisedText) {
+        String safeOriginalText = originalText == null ? "" : originalText;
+        String safeRevisedText = revisedText == null ? "" : revisedText;
+
+        if (safeOriginalText.isBlank() && safeRevisedText.isBlank()) {
+            return List.of();
+        }
+
+        if (safeOriginalText.isBlank()) {
+            return List.of(new InlineFeedbackSegmentDto("ADD", "", safeRevisedText));
+        }
+
+        if (safeRevisedText.isBlank()) {
+            return List.of(new InlineFeedbackSegmentDto("REMOVE", safeOriginalText, ""));
+        }
+
+        if (safeOriginalText.equals(safeRevisedText)) {
+            return List.of(new InlineFeedbackSegmentDto("KEEP", safeOriginalText, safeOriginalText));
+        }
+
+        List<InlineFeedbackSegmentDto> expanded = expandReplaceSegment(safeOriginalText, safeRevisedText);
+        if (expanded != null && !expanded.isEmpty()) {
+            return mergeSegments(expanded);
+        }
+
+        return List.of(new InlineFeedbackSegmentDto("REPLACE", safeOriginalText, safeRevisedText));
+    }
+
     private String buildRequestBody(PromptDto prompt, String answer) throws IOException {
         Map<String, Object> schema = Map.of(
                 "type", "object",
@@ -330,13 +358,7 @@ public class OpenAiFeedbackClient {
                 if (originalText.equals(revisedText)) {
                     yield List.of(new InlineFeedbackSegmentDto("KEEP", originalText, originalText));
                 }
-
-                List<InlineFeedbackSegmentDto> expanded = expandReplaceSegment(originalText, revisedText);
-                if (expanded != null) {
-                    yield expanded;
-                }
-
-                yield List.of(new InlineFeedbackSegmentDto("REPLACE", originalText, revisedText));
+                yield buildPreciseInlineFeedback(originalText, revisedText);
             }
             default -> null;
         };
@@ -371,27 +393,31 @@ public class OpenAiFeedbackClient {
                 tokenizeForInlineDiff(originalText),
                 tokenizeForInlineDiff(revisedText)
         );
-        if (operations.stream().anyMatch(operation -> operation.kind().equals("remove"))) {
-            return null;
-        }
-
         List<InlineFeedbackSegmentDto> expanded = new ArrayList<>();
+        StringBuilder removedBuffer = new StringBuilder();
+        StringBuilder addedBuffer = new StringBuilder();
         boolean hasEqual = false;
-        boolean hasAdd = false;
+
         for (TokenDiffOperation operation : operations) {
             if (operation.kind().equals("equal")) {
                 hasEqual = true;
+                flushInlineChange(expanded, removedBuffer, addedBuffer);
                 appendMergedSegment(expanded, new InlineFeedbackSegmentDto("KEEP", operation.text(), operation.text()));
                 continue;
             }
 
+            if (operation.kind().equals("remove")) {
+                removedBuffer.append(operation.text());
+                continue;
+            }
+
             if (operation.kind().equals("add")) {
-                hasAdd = true;
-                appendMergedSegment(expanded, new InlineFeedbackSegmentDto("ADD", "", operation.text()));
+                addedBuffer.append(operation.text());
             }
         }
 
-        return hasEqual && hasAdd ? expanded : null;
+        flushInlineChange(expanded, removedBuffer, addedBuffer);
+        return hasEqual ? expanded : null;
     }
 
     private boolean isSafeBoundary(String text, int boundaryIndex) {
@@ -493,6 +519,39 @@ public class OpenAiFeedbackClient {
             );
             default -> segment;
         });
+    }
+
+    private void flushInlineChange(
+            List<InlineFeedbackSegmentDto> segments,
+            StringBuilder removedBuffer,
+            StringBuilder addedBuffer
+    ) {
+        if (removedBuffer.isEmpty() && addedBuffer.isEmpty()) {
+            return;
+        }
+
+        if (!removedBuffer.isEmpty() && !addedBuffer.isEmpty()) {
+            appendMergedSegment(segments, new InlineFeedbackSegmentDto(
+                    "REPLACE",
+                    removedBuffer.toString(),
+                    addedBuffer.toString()
+            ));
+        } else if (!removedBuffer.isEmpty()) {
+            appendMergedSegment(segments, new InlineFeedbackSegmentDto(
+                    "REMOVE",
+                    removedBuffer.toString(),
+                    ""
+            ));
+        } else {
+            appendMergedSegment(segments, new InlineFeedbackSegmentDto(
+                    "ADD",
+                    "",
+                    addedBuffer.toString()
+            ));
+        }
+
+        removedBuffer.setLength(0);
+        addedBuffer.setLength(0);
     }
 
     private record TokenDiffOperation(String kind, String text) {

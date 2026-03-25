@@ -13,6 +13,7 @@ import {
 } from "../lib/api";
 import { InlineFeedbackPreview } from "./inline-feedback-preview";
 import { getDifficultyLabel } from "../lib/difficulty";
+import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import type { AuthUser, CommonMistake, HistorySession, TodayWritingStatus } from "../lib/types";
 import styles from "./auth-page.module.css";
 
@@ -627,7 +628,10 @@ export function MyPageClient() {
                                       : `다시쓰기 ${attempt.attemptNo}차`}
                                   </strong>
                                   <span>
-                                    점수 {attempt.score} · {formatHistoryTime(attempt.createdAt)}
+                                    {getFeedbackLevelInfo(
+                                      attempt.score,
+                                      attempt.feedback.loopComplete
+                                    ).label} · {formatHistoryTime(attempt.createdAt)}
                                   </span>
                                 </div>
                                 <p className={styles.historyAnswer}>{attempt.answerText}</p>

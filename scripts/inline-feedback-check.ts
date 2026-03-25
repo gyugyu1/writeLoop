@@ -76,6 +76,42 @@ const cases: Case[] = [
     original: "tasty",
     corrected: "tasty and has many flavors",
     inlineFeedback: [{ type: "REPLACE", originalText: "tasty", revisedText: "tasty and has many flavors" }]
+  },
+  {
+    name: "broad replace should become punctuation-only removal",
+    original: "I usually take a nap,",
+    corrected: "I usually take a nap",
+    inlineFeedback: [
+      { type: "REPLACE", originalText: "I usually take a nap,", revisedText: "I usually take a nap" }
+    ]
+  },
+  {
+    name: "broad replace should isolate article removal",
+    original: "and have a tea",
+    corrected: "and have tea",
+    inlineFeedback: [
+      { type: "REPLACE", originalText: "and have a tea", revisedText: "and have tea" }
+    ]
+  },
+  {
+    name: "broad replace should isolate misspelled word",
+    original: "in the moring",
+    corrected: "in the morning",
+    inlineFeedback: [
+      { type: "REPLACE", originalText: "in the moring", revisedText: "in the morning" }
+    ]
+  },
+  {
+    name: "combined sentence should isolate comma article and spelling fixes",
+    original: "On weekends, I usually take a nap, and have a tea in the moring.",
+    corrected: "On weekends, I usually take a nap and have tea in the morning.",
+    inlineFeedback: [
+      {
+        type: "REPLACE",
+        originalText: "I usually take a nap, and have a tea in the moring",
+        revisedText: "I usually take a nap and have tea in the morning"
+      }
+    ]
   }
 ];
 

@@ -20,6 +20,7 @@ import {
   saveLocalWritingDraft
 } from "../lib/home-writing-drafts";
 import { getDifficultyLabel } from "../lib/difficulty";
+import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import type {
   AuthUser,
   DailyDifficulty,
@@ -342,6 +343,7 @@ export function AnswerLoop() {
     step === "answer" ? "ANSWER" : step === "rewrite" ? "REWRITE" : null;
   const isGuestCycleComplete = Boolean(feedback && guestSessionId && feedback.attemptNo >= 2);
   const shouldSuggestFinish = Boolean(feedback?.loopComplete);
+  const feedbackLevel = feedback ? getFeedbackLevelInfo(feedback.score, feedback.loopComplete) : null;
   const streakDays = todayStatus?.streakDays ?? 0;
   const todayCompleted = Boolean(todayStatus?.completed);
   const streakDisplayDays = Math.max(streakDays, todayCompleted ? 1 : 0);
@@ -1102,7 +1104,9 @@ export function AnswerLoop() {
             <p className={styles.stageEyebrow}>3단계</p>
             <h2>피드백을 확인해 보세요.</h2>
           </div>
-          <span>{feedback ? `${feedback.attemptNo}번째 시도 · ${feedback.score}/100` : "대기 중"}</span>
+          <span>
+            {feedback ? `${feedback.attemptNo}번째 시도 · ${feedbackLevel?.label ?? "대기 중"}` : "대기 중"}
+          </span>
         </div>
         {feedback ? (
           <div className={styles.feedbackBody}>
@@ -1151,15 +1155,23 @@ export function AnswerLoop() {
           <p className={styles.placeholderText}>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
         )}
         <div className={styles.stageFooter}>
-          <p>
-            {shouldSuggestFinish
-              ? feedback?.completionMessage ?? "이 답변은 지금 단계에서 마무리해도 충분해요."
-              : "준비가 되면 피드백을 반영해서 다시 써 보세요."}
-          </p>
+          {shouldSuggestFinish ? (
+            <div className={styles.completionCallout}>
+              <span className={styles.completionCalloutBadge}>루프 완료 가능</span>
+              <strong>{feedbackLevel?.label ?? "충분히 좋음"}</strong>
+              <p>
+                {feedback?.completionMessage ??
+                  feedbackLevel?.summary ??
+                  "이 답변은 지금 단계에서 마무리해도 충분해요."}
+              </p>
+            </div>
+          ) : (
+            <p>준비가 되면 피드백을 반영해서 다시 써 보세요.</p>
+          )}
           <div className={styles.actionRow}>
             {shouldSuggestFinish ? (
               <button type="button" className={styles.primaryButton} onClick={handleFinishLoop}>
-                오늘 글쓰기 마무리하기
+                오늘 루프 완료하고 도장 받기
               </button>
             ) : null}
             <button
@@ -1172,7 +1184,7 @@ export function AnswerLoop() {
               }}
               disabled={!feedback}
             >
-              {shouldSuggestFinish ? "그래도 다시 써보기" : "다시 써보기"}
+              {shouldSuggestFinish ? "한 번 더 다듬기" : "다시 써보기"}
             </button>
           </div>
         </div>
@@ -1322,20 +1334,25 @@ export function AnswerLoop() {
     return (
       <section className={styles.completeStage}>
         <canvas ref={celebrationCanvasRef} className={styles.celebrationCanvas} aria-hidden="true" />
-        <div className={styles.completeBadge}>오늘의 글쓰기 완료</div>
-        <h2>오늘의 글쓰기를 완료했어요.</h2>
+        <div className={styles.completeBadge}>오늘의 루프 완주</div>
+        <h2>오늘 writeLoop를 끝까지 완주했어요.</h2>
         <p>
-          질문 선택부터 첫 답변, 피드백, 다시쓰기까지 한 사이클을 마쳤어요. 지금의 흐름을 유지하면서
-          다음 질문으로 이어가 보세요.
+          질문 선택부터 첫 답변, 피드백, 다시쓰기까지 한 사이클을 모두 마쳤어요. 오늘의 작문을 끝까지
+          밀고 간 흐름이 그대로 남아 있을 때 다음 질문으로 이어가면 더 좋아요.
         </p>
+        <div className={styles.completeHighlightCard}>
+          <span className={styles.completeHighlightBadge}>오늘의 평가</span>
+          <strong>{feedbackLevel?.label ?? "충분히 좋음"}</strong>
+          <p>{feedbackLevel?.loopSummary ?? "오늘 루프를 끝까지 마친 것만으로도 충분히 의미 있어요."}</p>
+        </div>
         <div className={styles.completeSummary}>
           <div>
             <span>질문 주제</span>
             <strong>{selectedPrompt?.topic ?? "선택한 질문"}</strong>
           </div>
           <div>
-            <span>최종 점수</span>
-            <strong>{feedback?.score ?? "-"}/100</strong>
+            <span>최종 평가</span>
+            <strong>{feedbackLevel?.label ?? "-"}</strong>
           </div>
         </div>
         {isLoggedIn ? (

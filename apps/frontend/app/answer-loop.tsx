@@ -954,7 +954,6 @@ export function AnswerLoop() {
       return (
         <section className={styles.pickFlow}>
           <article className={styles.welcomeCard}>
-            <span className={styles.welcomeBadge}>첫 화면</span>
             <h1>{currentUser ? `${currentUser.displayName}님, 반가워요.` : "writeLoop에 온 걸 환영해요!"}</h1>
             <p>
               어느 정도 난이도로 시작할지 먼저 골라볼까요? 원하는 난이도를 고른 뒤 확인 버튼을 누르면
@@ -1085,6 +1084,37 @@ export function AnswerLoop() {
     );
   }
 
+  function renderMobileQuestionBar(supportingText?: string) {
+    return (
+      <div className={styles.mobileQuestionBar}>
+        <div className={styles.mobileQuestionBarHeader}>
+          <div className={styles.mobileQuestionBarMeta}>
+            <span className={styles.mobileQuestionBarBadge}>현재 질문</span>
+            <strong>{selectedPrompt?.topic ?? "질문"}</strong>
+          </div>
+          <button
+            type="button"
+            className={`${styles.promptTranslationButton} ${styles.mobileQuestionBarToggle}`}
+            onClick={() => setShowAnswerTranslation((current) => !current)}
+          >
+            {showAnswerTranslation ? "번역 숨기기" : "번역 보기"}
+          </button>
+        </div>
+        <p className={styles.mobileQuestionBarQuestion}>
+          {selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}
+        </p>
+        {showAnswerTranslation ? (
+          <small className={styles.mobileQuestionBarTranslation}>
+            {selectedPrompt?.questionKo ?? "질문 해석을 불러오는 중입니다."}
+          </small>
+        ) : null}
+        {supportingText ? (
+          <small className={styles.mobileQuestionBarCaption}>{supportingText}</small>
+        ) : null}
+      </div>
+    );
+  }
+
   function renderAnswerStep() {
     return (
       <section className={styles.stage}>
@@ -1095,7 +1125,8 @@ export function AnswerLoop() {
           </div>
           <span>{selectedPrompt ? getDifficultyLabel(selectedPrompt.difficulty) : "..."}</span>
         </div>
-        <div className={styles.questionBox}>
+        {renderMobileQuestionBar()}
+        <div className={`${styles.questionBox} ${styles.desktopQuestionBox}`}>
           <p>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</p>
           {showAnswerTranslation ? (
             <small className={styles.questionTranslation}>
@@ -1286,9 +1317,28 @@ export function AnswerLoop() {
           </div>
           <span>{sessionId ? "같은 질문 이어가기" : "다시쓰기"}</span>
         </div>
-        <div className={styles.questionBox}>
+        {renderMobileQuestionBar(
+          feedback?.rewriteChallenge ?? "다시쓰기 가이드를 불러오는 중입니다."
+        )}
+        <div className={`${styles.questionBox} ${styles.desktopQuestionBox}`}>
           <p>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</p>
-          <small>{feedback?.rewriteChallenge ?? "다시쓰기 가이드를 불러오는 중입니다."}</small>
+          {showAnswerTranslation ? (
+            <small className={styles.questionTranslation}>
+              {selectedPrompt?.questionKo ?? "질문 해석을 불러오는 중입니다."}
+            </small>
+          ) : null}
+          <small className={styles.questionSupportText}>
+            {feedback?.rewriteChallenge ?? "다시쓰기 가이드를 불러오는 중입니다."}
+          </small>
+          <div className={styles.questionActionRow}>
+            <button
+              type="button"
+              className={styles.promptTranslationButton}
+              onClick={() => setShowAnswerTranslation((current) => !current)}
+            >
+              {showAnswerTranslation ? "번역 숨기기" : "번역 보기"}
+            </button>
+          </div>
         </div>
         <div className={styles.hintPanel}>
           <div className={styles.hintPanelHeader}>

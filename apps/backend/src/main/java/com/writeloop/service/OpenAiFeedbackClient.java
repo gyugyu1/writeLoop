@@ -20,9 +20,12 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class OpenAiFeedbackClient {
+    private static final Pattern INLINE_TOKEN_PATTERN = Pattern.compile("[A-Za-z0-9']+|[^\\sA-Za-z0-9']+|\\s+");
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -64,7 +67,7 @@ public class OpenAiFeedbackClient {
                 throw new IllegalStateException("OpenAI API request failed with status " + response.statusCode());
             }
 
-            return parseResponse(prompt.id(), response.body());
+            return parseResponse(prompt.id(), answer, response.body());
         } catch (IOException | InterruptedException exception) {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
@@ -157,12 +160,20 @@ public class OpenAiFeedbackClient {
                 - corrections should focus on natural English, grammar, clarity, and expansion.
                 - correctedAnswer should minimally revise the learner answer. Preserve the learner's meaning and structure as much as possible while fixing grammar and natural phrasing.
                 - inlineFeedback must cover the learner answer in reading order using these types only: KEEP, REPLACE, ADD, REMOVE.
+                - inlineFeedback must reconstruct the learner answer exactly in order. Do not skip or overlap original text.
+                - ADD segments do not consume original characters. They only insert extra text at the current reading position.
                 - For KEEP, REPLACE, and REMOVE, originalText must copy the learner answer exactly, including spaces and punctuation.
                 - KEEP: valid text that stays as-is. originalText and revisedText should be the same.
                 - REPLACE: text that should be changed. originalText is the learner text, revisedText is the improved text.
                 - ADD: extra text that should be added without marking the nearby original text as wrong. originalText should be "" and revisedText should contain only the added text.
                 - REMOVE: text that should be deleted. originalText should contain the learner text and revisedText should be "".
-                - Prefer ADD instead of REPLACE when the learner text is acceptable but can be expanded with more detail.
+                - For ADD, include any spaces or punctuation needed so the inserted text fits naturally at that position.
+                - Prefer ADD instead of REPLACE when the learner text is grammatically acceptable and you are only appending detail, reason, example, connector, or emphasis.
+                - Use REPLACE only when the learner text itself is wrong, unnatural, misleading, or must be rewritten.
+                - Use REMOVE only when text should disappear without replacement because it is unnecessary or duplicated.
+                - Example 1: original "tasty", revised "tasty and has many flavors" -> KEEP "tasty", ADD " and has many flavors".
+                - Example 2: original "I go school" -> KEEP "I ", REPLACE "go school", "go to school".
+                - Example 3: original "I like pizza", revised "I like pizza." -> KEEP "I like pizza", ADD ".".
                 - Do not rewrite the whole answer as one REPLACE unless the whole answer is actually wrong. Use the smallest natural segment possible.
                 - modelAnswer should sound natural for the learner's level.
                 - rewriteChallenge should tell the learner how to improve in the next attempt in Korean.
@@ -185,7 +196,7 @@ public class OpenAiFeedbackClient {
         );
     }
 
-    private FeedbackResponseDto parseResponse(String promptId, String body) throws IOException {
+    private FeedbackResponseDto parseResponse(String promptId, String answer, String body) throws IOException {
         JsonNode root = objectMapper.readTree(body);
         String outputText = root.path("output_text").asText("");
 
@@ -215,8 +226,8 @@ public class OpenAiFeedbackClient {
                 )
         ));
 
-        List<InlineFeedbackSegmentDto> inlineFeedback = new ArrayList<>();
-        feedbackNode.path("inlineFeedback").forEach(node -> inlineFeedback.add(
+        List<InlineFeedbackSegmentDto> rawInlineFeedback = new ArrayList<>();
+        feedbackNode.path("inlineFeedback").forEach(node -> rawInlineFeedback.add(
                 new InlineFeedbackSegmentDto(
                         node.path("type").asText(),
                         node.path("originalText").asText(),
@@ -226,6 +237,7 @@ public class OpenAiFeedbackClient {
 
         int rawScore = feedbackNode.path("score").asInt();
         String correctedAnswer = feedbackNode.path("correctedAnswer").asText();
+        List<InlineFeedbackSegmentDto> inlineFeedback = normalizeInlineFeedback(answer, correctedAnswer, rawInlineFeedback);
         String modelAnswer = feedbackNode.path("modelAnswer").asText();
         boolean loopComplete = isLoopComplete(rawScore, corrections);
         String completionMessage = buildCompletionMessage(rawScore, corrections);
@@ -245,6 +257,344 @@ public class OpenAiFeedbackClient {
                 modelAnswer,
                 feedbackNode.path("rewriteChallenge").asText()
         );
+    }
+
+    private List<InlineFeedbackSegmentDto> normalizeInlineFeedback(
+            String originalAnswer,
+            String correctedAnswer,
+            List<InlineFeedbackSegmentDto> rawInlineFeedback
+    ) {
+        if (rawInlineFeedback == null || rawInlineFeedback.isEmpty()) {
+            return List.of();
+        }
+
+        List<InlineFeedbackSegmentDto> normalized = new ArrayList<>();
+        for (InlineFeedbackSegmentDto segment : rawInlineFeedback) {
+            List<InlineFeedbackSegmentDto> expanded = normalizeSegment(segment);
+            if (expanded == null) {
+                return List.of();
+            }
+            normalized.addAll(expanded);
+        }
+
+        List<InlineFeedbackSegmentDto> merged = mergeSegments(normalized);
+        if (!coversOriginalAnswer(originalAnswer, merged)) {
+            return List.of();
+        }
+
+        if (!matchesCorrectedAnswer(correctedAnswer, merged)) {
+            return List.of();
+        }
+
+        return merged;
+    }
+
+    private List<InlineFeedbackSegmentDto> normalizeSegment(InlineFeedbackSegmentDto segment) {
+        String type = segment.type();
+        String originalText = segment.originalText();
+        String revisedText = segment.revisedText();
+
+        if (originalText.isBlank() && revisedText.isBlank()) {
+            return List.of();
+        }
+
+        return switch (type) {
+            case "KEEP" -> {
+                if (originalText.isBlank()) {
+                    yield null;
+                }
+                yield List.of(new InlineFeedbackSegmentDto("KEEP", originalText, originalText));
+            }
+            case "ADD" -> {
+                if (revisedText.isBlank() || !originalText.isBlank()) {
+                    yield null;
+                }
+                yield List.of(new InlineFeedbackSegmentDto("ADD", "", revisedText));
+            }
+            case "REMOVE" -> {
+                if (originalText.isBlank()) {
+                    yield null;
+                }
+                yield List.of(new InlineFeedbackSegmentDto("REMOVE", originalText, ""));
+            }
+            case "REPLACE" -> {
+                if (originalText.isBlank() && revisedText.isBlank()) {
+                    yield List.of();
+                }
+                if (originalText.isBlank()) {
+                    yield List.of(new InlineFeedbackSegmentDto("ADD", "", revisedText));
+                }
+                if (revisedText.isBlank()) {
+                    yield List.of(new InlineFeedbackSegmentDto("REMOVE", originalText, ""));
+                }
+                if (originalText.equals(revisedText)) {
+                    yield List.of(new InlineFeedbackSegmentDto("KEEP", originalText, originalText));
+                }
+
+                List<InlineFeedbackSegmentDto> expanded = expandReplaceSegment(originalText, revisedText);
+                if (expanded != null) {
+                    yield expanded;
+                }
+
+                yield List.of(new InlineFeedbackSegmentDto("REPLACE", originalText, revisedText));
+            }
+            default -> null;
+        };
+    }
+
+    private List<InlineFeedbackSegmentDto> expandReplaceSegment(String originalText, String revisedText) {
+        int matchIndex = revisedText.indexOf(originalText);
+        if (matchIndex >= 0) {
+            if (!isSafeBoundary(revisedText, matchIndex) ||
+                    !isSafeBoundary(revisedText, matchIndex + originalText.length())) {
+                return null;
+            }
+
+            String prefix = revisedText.substring(0, matchIndex);
+            String suffix = revisedText.substring(matchIndex + originalText.length());
+            if (prefix.isEmpty() && suffix.isEmpty()) {
+                return null;
+            }
+
+            List<InlineFeedbackSegmentDto> expanded = new ArrayList<>();
+            if (!prefix.isEmpty()) {
+                expanded.add(new InlineFeedbackSegmentDto("ADD", "", prefix));
+            }
+            expanded.add(new InlineFeedbackSegmentDto("KEEP", originalText, originalText));
+            if (!suffix.isEmpty()) {
+                expanded.add(new InlineFeedbackSegmentDto("ADD", "", suffix));
+            }
+            return expanded;
+        }
+
+        List<TokenDiffOperation> operations = buildTokenDiffOperations(
+                tokenizeForInlineDiff(originalText),
+                tokenizeForInlineDiff(revisedText)
+        );
+        if (operations.stream().anyMatch(operation -> operation.kind().equals("remove"))) {
+            return null;
+        }
+
+        List<InlineFeedbackSegmentDto> expanded = new ArrayList<>();
+        boolean hasEqual = false;
+        boolean hasAdd = false;
+        for (TokenDiffOperation operation : operations) {
+            if (operation.kind().equals("equal")) {
+                hasEqual = true;
+                appendMergedSegment(expanded, new InlineFeedbackSegmentDto("KEEP", operation.text(), operation.text()));
+                continue;
+            }
+
+            if (operation.kind().equals("add")) {
+                hasAdd = true;
+                appendMergedSegment(expanded, new InlineFeedbackSegmentDto("ADD", "", operation.text()));
+            }
+        }
+
+        return hasEqual && hasAdd ? expanded : null;
+    }
+
+    private boolean isSafeBoundary(String text, int boundaryIndex) {
+        if (boundaryIndex <= 0 || boundaryIndex >= text.length()) {
+            return true;
+        }
+
+        char previous = text.charAt(boundaryIndex - 1);
+        char next = text.charAt(boundaryIndex);
+        return !Character.isLetterOrDigit(previous) || !Character.isLetterOrDigit(next);
+    }
+
+    private List<String> tokenizeForInlineDiff(String text) {
+        List<String> tokens = new ArrayList<>();
+        Matcher matcher = INLINE_TOKEN_PATTERN.matcher(text);
+        while (matcher.find()) {
+            tokens.add(matcher.group());
+        }
+
+        if (tokens.isEmpty() && !text.isEmpty()) {
+            tokens.add(text);
+        }
+        return tokens;
+    }
+
+    private List<TokenDiffOperation> buildTokenDiffOperations(List<String> originalTokens, List<String> revisedTokens) {
+        int[][] dp = new int[originalTokens.size() + 1][revisedTokens.size() + 1];
+
+        for (int originalIndex = originalTokens.size() - 1; originalIndex >= 0; originalIndex--) {
+            for (int revisedIndex = revisedTokens.size() - 1; revisedIndex >= 0; revisedIndex--) {
+                dp[originalIndex][revisedIndex] =
+                        originalTokens.get(originalIndex).equals(revisedTokens.get(revisedIndex))
+                                ? dp[originalIndex + 1][revisedIndex + 1] + 1
+                                : Math.max(dp[originalIndex + 1][revisedIndex], dp[originalIndex][revisedIndex + 1]);
+            }
+        }
+
+        List<TokenDiffOperation> operations = new ArrayList<>();
+        int originalIndex = 0;
+        int revisedIndex = 0;
+
+        while (originalIndex < originalTokens.size() && revisedIndex < revisedTokens.size()) {
+            if (originalTokens.get(originalIndex).equals(revisedTokens.get(revisedIndex))) {
+                operations.add(new TokenDiffOperation("equal", originalTokens.get(originalIndex)));
+                originalIndex += 1;
+                revisedIndex += 1;
+                continue;
+            }
+
+            if (dp[originalIndex + 1][revisedIndex] >= dp[originalIndex][revisedIndex + 1]) {
+                operations.add(new TokenDiffOperation("remove", originalTokens.get(originalIndex)));
+                originalIndex += 1;
+            } else {
+                operations.add(new TokenDiffOperation("add", revisedTokens.get(revisedIndex)));
+                revisedIndex += 1;
+            }
+        }
+
+        while (originalIndex < originalTokens.size()) {
+            operations.add(new TokenDiffOperation("remove", originalTokens.get(originalIndex)));
+            originalIndex += 1;
+        }
+
+        while (revisedIndex < revisedTokens.size()) {
+            operations.add(new TokenDiffOperation("add", revisedTokens.get(revisedIndex)));
+            revisedIndex += 1;
+        }
+
+        return operations;
+    }
+
+    private void appendMergedSegment(List<InlineFeedbackSegmentDto> segments, InlineFeedbackSegmentDto segment) {
+        if (segments.isEmpty()) {
+            segments.add(segment);
+            return;
+        }
+
+        InlineFeedbackSegmentDto previous = segments.get(segments.size() - 1);
+        if (!previous.type().equals(segment.type())) {
+            segments.add(segment);
+            return;
+        }
+
+        segments.set(segments.size() - 1, switch (segment.type()) {
+            case "KEEP" -> new InlineFeedbackSegmentDto(
+                    "KEEP",
+                    previous.originalText() + segment.originalText(),
+                    previous.revisedText() + segment.revisedText()
+            );
+            case "ADD" -> new InlineFeedbackSegmentDto(
+                    "ADD",
+                    "",
+                    previous.revisedText() + segment.revisedText()
+            );
+            case "REMOVE" -> new InlineFeedbackSegmentDto(
+                    "REMOVE",
+                    previous.originalText() + segment.originalText(),
+                    ""
+            );
+            default -> segment;
+        });
+    }
+
+    private record TokenDiffOperation(String kind, String text) {
+    }
+
+    private List<InlineFeedbackSegmentDto> mergeSegments(List<InlineFeedbackSegmentDto> segments) {
+        if (segments.isEmpty()) {
+            return List.of();
+        }
+
+        List<InlineFeedbackSegmentDto> merged = new ArrayList<>();
+        for (InlineFeedbackSegmentDto segment : segments) {
+            if (segment.type().equals("KEEP") && segment.originalText().isBlank()) {
+                continue;
+            }
+            if (segment.type().equals("ADD") && segment.revisedText().isBlank()) {
+                continue;
+            }
+            if (segment.type().equals("REMOVE") && segment.originalText().isBlank()) {
+                continue;
+            }
+
+            InlineFeedbackSegmentDto previous = merged.isEmpty() ? null : merged.get(merged.size() - 1);
+            if (previous != null && previous.type().equals(segment.type())) {
+                if ("KEEP".equals(segment.type())) {
+                    merged.set(merged.size() - 1, new InlineFeedbackSegmentDto(
+                            "KEEP",
+                            previous.originalText() + segment.originalText(),
+                            previous.revisedText() + segment.revisedText()
+                    ));
+                    continue;
+                }
+
+                if ("ADD".equals(segment.type())) {
+                    merged.set(merged.size() - 1, new InlineFeedbackSegmentDto(
+                            "ADD",
+                            "",
+                            previous.revisedText() + segment.revisedText()
+                    ));
+                    continue;
+                }
+
+                if ("REMOVE".equals(segment.type())) {
+                    merged.set(merged.size() - 1, new InlineFeedbackSegmentDto(
+                            "REMOVE",
+                            previous.originalText() + segment.originalText(),
+                            ""
+                    ));
+                    continue;
+                }
+            }
+
+            merged.add(segment);
+        }
+
+        return merged;
+    }
+
+    private boolean coversOriginalAnswer(String originalAnswer, List<InlineFeedbackSegmentDto> segments) {
+        int cursor = 0;
+
+        for (InlineFeedbackSegmentDto segment : segments) {
+            switch (segment.type()) {
+                case "KEEP", "REPLACE", "REMOVE" -> {
+                    String originalText = segment.originalText();
+                    if (!originalAnswer.startsWith(originalText, cursor)) {
+                        return false;
+                    }
+                    cursor += originalText.length();
+                }
+                case "ADD" -> {
+                    // ADD segments do not consume original characters.
+                }
+                default -> {
+                    return false;
+                }
+            }
+        }
+
+        return cursor == originalAnswer.length();
+    }
+
+    private boolean matchesCorrectedAnswer(String correctedAnswer, List<InlineFeedbackSegmentDto> segments) {
+        StringBuilder reconstructed = new StringBuilder();
+        for (InlineFeedbackSegmentDto segment : segments) {
+            switch (segment.type()) {
+                case "KEEP" -> reconstructed.append(segment.originalText());
+                case "REPLACE", "ADD" -> reconstructed.append(segment.revisedText());
+                case "REMOVE" -> {
+                    // Skip removed text.
+                }
+                default -> {
+                    return false;
+                }
+            }
+        }
+
+        return normalizeForComparison(correctedAnswer).equals(normalizeForComparison(reconstructed.toString()));
+    }
+
+    private String normalizeForComparison(String value) {
+        return value == null ? "" : value.replaceAll("\\s+", " ").trim();
     }
 
     private boolean isLoopComplete(int score, List<CorrectionDto> corrections) {

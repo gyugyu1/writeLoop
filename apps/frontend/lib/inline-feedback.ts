@@ -11,8 +11,83 @@ type DiffOperation =
   | { kind: "add"; text: string }
   | { kind: "remove"; text: string };
 
+function isSafeBoundary(text: string, boundaryIndex: number): boolean {
+  if (boundaryIndex <= 0 || boundaryIndex >= text.length) {
+    return true;
+  }
+
+  const previous = text[boundaryIndex - 1];
+  const next = text[boundaryIndex];
+  if (!previous || !next) {
+    return true;
+  }
+
+  return !/[A-Za-z0-9]/.test(previous) || !/[A-Za-z0-9]/.test(next);
+}
+
+function expandReplaceIntoKeepAndAdd(
+  removed: string,
+  added: string
+): RenderedInlineFeedbackSegment[] | null {
+  if (!removed || !added || removed === added) {
+    return null;
+  }
+
+  const matchIndex = added.indexOf(removed);
+  if (matchIndex >= 0) {
+    if (!isSafeBoundary(added, matchIndex) || !isSafeBoundary(added, matchIndex + removed.length)) {
+      return null;
+    }
+
+    const prefix = added.slice(0, matchIndex);
+    const suffix = added.slice(matchIndex + removed.length);
+    if (!prefix && !suffix) {
+      return null;
+    }
+
+    const segments: RenderedInlineFeedbackSegment[] = [];
+    if (prefix) {
+      segments.push({ kind: "add", text: prefix });
+    }
+    segments.push({ kind: "equal", text: removed });
+    if (suffix) {
+      segments.push({ kind: "add", text: suffix });
+    }
+    return segments;
+  }
+
+  const operations = buildDiffOperations(tokenize(removed), tokenize(added));
+  if (operations.some((operation) => operation.kind === "remove")) {
+    return null;
+  }
+
+  const segments: RenderedInlineFeedbackSegment[] = [];
+  let hasEqual = false;
+  let hasAdd = false;
+
+  for (const operation of operations) {
+    if (operation.kind === "equal") {
+      hasEqual = true;
+      appendEqualSegment(segments, operation.text);
+      continue;
+    }
+
+    if (operation.kind === "add") {
+      hasAdd = true;
+      const previous = segments.at(-1);
+      if (previous?.kind === "add") {
+        previous.text += operation.text;
+      } else {
+        segments.push({ kind: "add", text: operation.text });
+      }
+    }
+  }
+
+  return hasEqual && hasAdd ? segments : null;
+}
+
 function tokenize(text: string): string[] {
-  const tokens = text.match(/\S+\s*/g);
+  const tokens = text.match(/[A-Za-z0-9']+|[^\sA-Za-z0-9']+|\s+/g);
   return tokens ?? (text ? [text] : []);
 }
 
@@ -73,90 +148,8 @@ function appendEqualSegment(segments: RenderedInlineFeedbackSegment[], text: str
   segments.push({ kind: "equal", text });
 }
 
-function collapseWhitespace(text: string): string {
-  return text.replace(/\s+/g, " ");
-}
-
 function normalizeSuggestionText(text: string): string {
-  return collapseWhitespace(text).trim();
-}
-
-function canInsertReadableSpace(previousText: string, nextText: string): boolean {
-  if (!previousText || !nextText) {
-    return false;
-  }
-
-  if (/\s$/.test(previousText) || /^\s/.test(nextText)) {
-    return false;
-  }
-
-  return /[A-Za-z0-9]$/.test(previousText) && /^[A-Za-z0-9]/.test(nextText);
-}
-
-function getLeadingText(segment: RenderedInlineFeedbackSegment): string {
-  switch (segment.kind) {
-    case "equal":
-    case "add":
-    case "remove":
-      return segment.text;
-    case "replace":
-      return segment.removed || segment.added;
-    default:
-      return "";
-  }
-}
-
-function getTrailingText(segment: RenderedInlineFeedbackSegment): string {
-  switch (segment.kind) {
-    case "equal":
-    case "add":
-    case "remove":
-      return segment.text;
-    case "replace":
-      return segment.added || segment.removed;
-    default:
-      return "";
-  }
-}
-
-function prependSpace(segment: RenderedInlineFeedbackSegment) {
-  switch (segment.kind) {
-    case "equal":
-    case "add":
-    case "remove":
-      segment.text = ` ${segment.text}`;
-      break;
-    case "replace":
-      if (segment.removed) {
-        segment.removed = ` ${segment.removed}`;
-      } else if (segment.added) {
-        segment.added = ` ${segment.added}`;
-      }
-      break;
-    default:
-      break;
-  }
-}
-
-function ensureReadableBoundaries(
-  segments: RenderedInlineFeedbackSegment[]
-): RenderedInlineFeedbackSegment[] {
-  const normalizedSegments = segments.map((segment) => ({ ...segment }));
-
-  for (let index = 1; index < normalizedSegments.length; index += 1) {
-    const previous = normalizedSegments[index - 1];
-    const current = normalizedSegments[index];
-
-    if (!previous || !current) {
-      continue;
-    }
-
-    if (canInsertReadableSpace(getTrailingText(previous), getLeadingText(current))) {
-      prependSpace(current);
-    }
-  }
-
-  return normalizedSegments;
+  return text.replace(/\r\n/g, "\n");
 }
 
 function findOriginalSlice(
@@ -234,11 +227,16 @@ function buildSegmentsFromDiff(
       }
 
       if (added.trim()) {
-        segments.push({
-          kind: "replace",
-          removed,
-          added: collapseWhitespace(added)
-        });
+        const expandedSegments = expandReplaceIntoKeepAndAdd(removed, added);
+        if (expandedSegments) {
+          segments.push(...expandedSegments);
+        } else {
+          segments.push({
+            kind: "replace",
+            removed,
+            added
+          });
+        }
       } else if (removed.trim()) {
         segments.push({ kind: "remove", text: removed });
       }
@@ -253,11 +251,11 @@ function buildSegmentsFromDiff(
     }
 
     if (added.trim()) {
-      segments.push({ kind: "add", text: collapseWhitespace(added) });
+      segments.push({ kind: "add", text: added });
     }
   }
 
-  return ensureReadableBoundaries(segments);
+  return segments;
 }
 
 function buildSegmentsFromModel(
@@ -300,11 +298,18 @@ function buildSegmentsFromModel(
         if (!segment.originalText && !segment.revisedText) {
           break;
         }
-        segments.push({
-          kind: "replace",
-          removed: originalAnswer.slice(match.start, match.end),
-          added: normalizeSuggestionText(segment.revisedText)
-        });
+        const removed = originalAnswer.slice(match.start, match.end);
+        const added = normalizeSuggestionText(segment.revisedText);
+        const expandedSegments = expandReplaceIntoKeepAndAdd(removed, added);
+        if (expandedSegments) {
+          segments.push(...expandedSegments);
+        } else {
+          segments.push({
+            kind: "replace",
+            removed,
+            added
+          });
+        }
         cursor = match.end;
         break;
       }
@@ -336,7 +341,7 @@ function buildSegmentsFromModel(
     appendEqualSegment(segments, originalAnswer.slice(cursor));
   }
 
-  return ensureReadableBoundaries(segments);
+  return segments;
 }
 
 export function buildInlineFeedbackSegments(

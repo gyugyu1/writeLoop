@@ -955,7 +955,7 @@ export function AnswerLoop() {
         <section className={styles.pickFlow}>
           <article className={styles.welcomeCard}>
             <span className={styles.welcomeBadge}>첫 화면</span>
-            <h1>{currentUser ? `${currentUser.displayName}님, 반가워요.` : "writeLoop에 온 걸 환영해요."}</h1>
+            <h1>{currentUser ? `${currentUser.displayName}님, 반가워요.` : "writeLoop에 온 걸 환영해요!"}</h1>
             <p>
               어느 정도 난이도로 시작할지 먼저 골라볼까요? 원하는 난이도를 고른 뒤 확인 버튼을 누르면
               질문 고르기로 넘어갑니다.

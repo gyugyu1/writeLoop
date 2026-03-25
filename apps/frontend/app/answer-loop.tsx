@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ApiError,
   deleteWritingDraft,
@@ -83,22 +83,112 @@ function getOrCreateGuestId() {
   return created;
 }
 
-function getHintTypeLabel(hintType: string) {
-  switch (hintType) {
-    case "STARTER":
-      return "시작 문장";
-    case "VOCAB":
-      return "단어 힌트";
-    case "STRUCTURE":
-      return "구조 힌트";
-    case "DETAIL":
-      return "내용 힌트";
-    case "LINKER":
-      return "연결 표현";
-    case "BALANCE":
-      return "답변 방향";
+type WritingGuide = {
+  title: string;
+  description: string;
+  sentenceRange: [number, number];
+  wordRange: [number, number];
+  starter: string;
+  checklist: Array<{
+    title: string;
+    description: string;
+  }>;
+};
+
+function countWords(text: string) {
+  return text.trim() ? text.trim().split(/\s+/).length : 0;
+}
+
+function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | null): WritingGuide {
+  switch (difficulty) {
+    case "A":
+      return {
+        title: "짧고 분명한 답변부터 시작해 보세요.",
+        description: "완벽한 표현보다 내 의견을 한 줄로 말하는 게 먼저예요.",
+        sentenceRange: [2, 3],
+        wordRange: [20, 40],
+        starter: starterHint ?? "I think ... because ...",
+        checklist: [
+          {
+            title: "의견 한 줄 쓰기",
+            description: "먼저 내 생각을 짧고 분명하게 적어보세요."
+          },
+          {
+            title: "이유 하나 붙이기",
+            description: "왜 그렇게 생각하는지 한 문장만 더해도 충분해요."
+          },
+          {
+            title: "짧은 예시 더하기",
+            description: "내 경험이나 간단한 상황을 하나 넣으면 더 자연스러워져요."
+          }
+        ]
+      };
+    case "B":
+      return {
+        title: "의견, 이유, 예시를 한 흐름으로 묶어보세요.",
+        description: "한 문장씩 차근차근 이어 쓰면 훨씬 안정적인 답변이 돼요.",
+        sentenceRange: [3, 4],
+        wordRange: [35, 60],
+        starter: starterHint ?? "In my opinion, ... One reason is that ...",
+        checklist: [
+          {
+            title: "내 입장 먼저 밝히기",
+            description: "질문에 대한 내 생각을 첫 문장에 분명히 적어보세요."
+          },
+          {
+            title: "이유 하나 설명하기",
+            description: "왜 그런지 구체적인 이유를 한두 문장으로 이어가세요."
+          },
+          {
+            title: "예시나 경험 추가하기",
+            description: "짧은 사례를 붙이면 답변이 더 설득력 있어져요."
+          }
+        ]
+      };
+    case "C":
+      return {
+        title: "주장과 근거를 구조적으로 풀어보세요.",
+        description: "길게 쓰기보다 흐름이 보이게 정리하면 훨씬 강한 답변이 돼요.",
+        sentenceRange: [4, 6],
+        wordRange: [55, 90],
+        starter: starterHint ?? "I believe ... because ... For example, ...",
+        checklist: [
+          {
+            title: "주장을 먼저 세우기",
+            description: "답변의 중심 생각을 첫 문장에 분명하게 잡아주세요."
+          },
+          {
+            title: "근거를 두텁게 만들기",
+            description: "이유를 한 문장으로 끝내지 말고 한 번 더 풀어보세요."
+          },
+          {
+            title: "예시나 비교 넣기",
+            description: "구체적인 사례나 다른 관점을 덧붙이면 답변이 깊어져요."
+          }
+        ]
+      };
     default:
-      return "힌트";
+      return {
+        title: "의견을 한 줄로 시작해 보세요.",
+        description: "짧게 시작해도 충분히 좋은 첫 답변이 될 수 있어요.",
+        sentenceRange: [2, 3],
+        wordRange: [20, 40],
+        starter: starterHint ?? "I think ... because ...",
+        checklist: [
+          {
+            title: "의견 먼저 쓰기",
+            description: "내 생각을 한 문장으로 먼저 적어보세요."
+          },
+          {
+            title: "이유 하나 붙이기",
+            description: "왜 그렇게 생각하는지 한 줄을 이어보세요."
+          },
+          {
+            title: "예시 하나 더하기",
+            description: "짧은 경험이나 상황을 덧붙여 답변을 완성해 보세요."
+          }
+        ]
+      };
   }
 }
 
@@ -126,6 +216,8 @@ export function AnswerLoop() {
   const [isResolvingCurrentUser, setIsResolvingCurrentUser] = useState(true);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [showRewriteFeedback, setShowRewriteFeedback] = useState(false);
+  const [showWritingGuide, setShowWritingGuide] = useState(false);
+  const [showPreviousRewriteAnswer, setShowPreviousRewriteAnswer] = useState(false);
   const [showAnswerTranslation, setShowAnswerTranslation] = useState(false);
   const [showHints, setShowHints] = useState(false);
   const [hints, setHints] = useState<PromptHint[]>([]);
@@ -135,7 +227,9 @@ export function AnswerLoop() {
   const [draftStatusMessage, setDraftStatusMessage] = useState("");
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
   const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const mobileQuestionBarRef = useRef<HTMLDivElement | null>(null);
   const knownPersistedDraftKeysRef = useRef<Set<string>>(new Set());
+  const [mobileQuestionBarHeight, setMobileQuestionBarHeight] = useState(0);
 
   useEffect(() => {
     setGuestId(getOrCreateGuestId());
@@ -327,6 +421,46 @@ export function AnswerLoop() {
     () => prompts.find((prompt) => prompt.id === selectedPromptId) ?? null,
     [prompts, selectedPromptId]
   );
+  const vocabularyHints = useMemo(
+    () => hints.filter((hint) => hint.hintType === "VOCAB"),
+    [hints]
+  );
+  const starterHint = useMemo(
+    () => hints.find((hint) => hint.hintType === "STARTER")?.content ?? null,
+    [hints]
+  );
+  const answerGuide = useMemo(
+    () => getWritingGuide(selectedPrompt?.difficulty ?? selectedDifficulty, starterHint),
+    [selectedDifficulty, selectedPrompt?.difficulty, starterHint]
+  );
+  const answerWordCount = useMemo(() => countWords(answer), [answer]);
+  const answerProgressMessage = useMemo(() => {
+    if (!answer.trim()) {
+      return "완벽하게 쓰려고 하기보다 의견 한 줄부터 적어보세요.";
+    }
+
+    if (answerWordCount < answerGuide.wordRange[0]) {
+      return "좋아요. 이제 이유 한 줄만 더하면 권장 길이에 가까워져요.";
+    }
+
+    if (answerWordCount <= answerGuide.wordRange[1]) {
+      return "지금 길이가 딱 좋아요. 짧은 예시를 하나 더하면 더 탄탄해져요.";
+    }
+
+    return "충분히 잘 쓰고 있어요. 표현만 한번 다듬고 제출해 보세요.";
+  }, [answer, answerGuide, answerWordCount]);
+  const answerChecklistSummary = useMemo(
+    () => answerGuide.checklist.map((item) => item.title).join(" · "),
+    [answerGuide]
+  );
+  const rewriteWordCount = useMemo(() => countWords(rewrite), [rewrite]);
+  const mobileQuestionBarStyle = useMemo(
+    () =>
+      ({
+        "--mobile-question-bar-height": `${mobileQuestionBarHeight}px`
+      }) as CSSProperties,
+    [mobileQuestionBarHeight]
+  );
   const suggestedFollowUpPrompt = useMemo(() => {
     if (prompts.length < 2) {
       return null;
@@ -354,18 +488,6 @@ export function AnswerLoop() {
   const shouldSuggestFinish = Boolean(feedback?.loopComplete);
   const feedbackLevel = feedback ? getFeedbackLevelInfo(feedback.score, feedback.loopComplete) : null;
   const streakDays = todayStatus?.streakDays ?? 0;
-  const todayCompleted = Boolean(todayStatus?.completed);
-  const streakDisplayDays = Math.max(streakDays, todayCompleted ? 1 : 0);
-  const streakTierLabel =
-    streakDisplayDays >= 30
-      ? "30일 챔피언"
-      : streakDisplayDays >= 7
-        ? "7일 루틴"
-        : streakDisplayDays >= 3
-          ? "3일 연속"
-          : todayCompleted
-            ? "첫 완료"
-            : "오늘 시작";
   useEffect(() => {
     if (step !== "complete") {
       return;
@@ -448,6 +570,30 @@ export function AnswerLoop() {
     };
   }, [step]);
 
+  useEffect(() => {
+    const node = mobileQuestionBarRef.current;
+    if (!node || typeof window === "undefined") {
+      return;
+    }
+
+    const updateHeight = () => {
+      setMobileQuestionBarHeight(Math.ceil(node.getBoundingClientRect().height));
+    };
+
+    updateHeight();
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => updateHeight()) : null;
+
+    resizeObserver?.observe(node);
+    window.addEventListener("resize", updateHeight);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, [step, selectedPromptId, showAnswerTranslation, feedback?.rewriteChallenge]);
+
   function togglePromptTranslation(promptId: string) {
     setRevealedTranslations((current) => ({
       ...current,
@@ -474,6 +620,8 @@ export function AnswerLoop() {
     setShowLoginWall(false);
     setError("");
     setShowRewriteFeedback(false);
+    setShowWritingGuide(false);
+    setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setShowHints(false);
     setDraftStatusMessage(message);
@@ -608,6 +756,8 @@ export function AnswerLoop() {
     setError("");
     setShowLoginWall(false);
     setShowRewriteFeedback(false);
+    setShowWritingGuide(false);
+    setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setShowHints(false);
     setDraftStatusMessage("");
@@ -665,6 +815,8 @@ export function AnswerLoop() {
     setError("");
     setShowLoginWall(false);
     setShowRewriteFeedback(false);
+    setShowWritingGuide(false);
+    setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setDraftStatusMessage("");
     setPendingDifficultySelection(selectedDifficulty);
@@ -809,40 +961,6 @@ export function AnswerLoop() {
     sessionId,
     step
   ]);
-
-  function renderTodayStatusCard() {
-    return (
-      <div className={todayCompleted ? styles.todayStatusComplete : styles.todayStatusPending}>
-        <div className={styles.todayStatusGlow} aria-hidden="true" />
-        <div className={styles.todayStatusHeader}>
-          <span className={styles.todayRewardBadge}>
-            {todayCompleted ? "오늘의 완료 도장 획득" : "오늘의 완료 도장 진행 중"}
-          </span>
-          <span className={styles.todayStreakPill}>{streakTierLabel}</span>
-        </div>
-        <div className={styles.todayStatusHeroRow}>
-          <div className={styles.todayStatusMetric}>
-            <span className={styles.todayStatusNumber}>{streakDisplayDays}</span>
-            <div className={styles.todayStatusMetricText}>
-              <strong>{todayCompleted ? "오늘도 기록 갱신 중" : "연속 기록을 이어갈 차례"}</strong>
-              <span>{todayCompleted ? "DAY STREAK" : "NEXT STREAK"}</span>
-            </div>
-          </div>
-          <div className={styles.todayStatusStamp}>{todayCompleted ? "COMPLETE" : "READY"}</div>
-        </div>
-        <strong className={styles.todayStatusHeadline}>
-          {todayCompleted
-            ? `${streakDisplayDays}일째 writeLoop를 이어가고 있어요.`
-            : `지금 ${streakDisplayDays}일 기록 중이에요.`}
-        </strong>
-        <span className={styles.todayStatusDescription}>
-          {todayCompleted
-            ? `오늘 ${todayStatus?.completedSessions ?? 0}개의 작문 루프를 마쳤어요. 이 흐름을 내일도 이어가 보세요.`
-            : "질문 하나를 골라 오늘의 작문을 시작하면 연속 기록이 더 길어져요."}
-        </span>
-      </div>
-    );
-  }
 
   function handleSubmit(nextAnswer: string, mode: "INITIAL" | "REWRITE") {
     if (!selectedPromptId || !nextAnswer.trim()) {
@@ -1086,7 +1204,7 @@ export function AnswerLoop() {
 
   function renderMobileQuestionBar(supportingText?: string) {
     return (
-      <div className={styles.mobileQuestionBar}>
+      <div ref={mobileQuestionBarRef} className={styles.mobileQuestionBar}>
         <div className={styles.mobileQuestionBarHeader}>
           <div className={styles.mobileQuestionBarMeta}>
             <span className={styles.mobileQuestionBarBadge}>현재 질문</span>
@@ -1115,9 +1233,69 @@ export function AnswerLoop() {
     );
   }
 
+  function renderVocabularyHintDrawer(emptyMessage: string) {
+    if (vocabularyHints.length === 0) {
+      return (
+        <div className={styles.inlineHintDrawer}>
+          <p className={styles.inlineHintEmpty}>{emptyMessage}</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className={styles.inlineHintDrawer}>
+        <span className={styles.inlineHintBadge}>단어 힌트</span>
+        <div className={styles.inlineHintList}>
+          {vocabularyHints.map((hint) => (
+            <p key={hint.id} className={styles.inlineHintItem}>
+              {hint.content}
+            </p>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function renderMobileComposerBar({
+    wordCount,
+    secondaryLabel,
+    onSecondary,
+    primaryLabel,
+    onPrimary,
+    primaryDisabled
+  }: {
+    wordCount: number;
+    secondaryLabel: string;
+    onSecondary: () => void;
+    primaryLabel: string;
+    onPrimary: () => void;
+    primaryDisabled: boolean;
+  }) {
+    return (
+      <div className={styles.mobileComposerBar}>
+        <div className={styles.mobileComposerMeta}>
+          <strong>{wordCount}단어</strong>
+        </div>
+        <div className={styles.mobileComposerActions}>
+          <button type="button" className={styles.mobileComposerGhost} onClick={onSecondary}>
+            {secondaryLabel}
+          </button>
+          <button
+            type="button"
+            className={styles.mobileComposerPrimary}
+            onClick={onPrimary}
+            disabled={primaryDisabled}
+          >
+            {primaryLabel}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   function renderAnswerStep() {
     return (
-      <section className={styles.stage}>
+      <section className={styles.stage} style={mobileQuestionBarStyle}>
         <div className={styles.stageHeader}>
           <div>
             <p className={styles.stageEyebrow}>3단계</p>
@@ -1143,42 +1321,50 @@ export function AnswerLoop() {
             </button>
           </div>
         </div>
-        <div className={styles.questionTip}>
-          <span className={styles.questionTipLabel}>TIP</span>
-          <p className={styles.questionTipText}>
-            {selectedPrompt?.tip ?? "답변 팁을 불러오는 중입니다."}
-          </p>
+        <div className={styles.writingGuideToggleRow}>
+          <button
+            type="button"
+            className={styles.writingGuideButton}
+            onClick={() => setShowWritingGuide((current) => !current)}
+          >
+            {showWritingGuide ? "가이드 숨기기" : "가이드 보기"}
+          </button>
+          <span className={styles.writingGuideToggleMeta}>막힐 때만 짧게 열어보면 돼요.</span>
         </div>
-        <div className={styles.hintPanel}>
-          <div className={styles.hintPanelHeader}>
-            <div>
-              <strong>힌트</strong>
-              <p>필요할 때만 열어서 단어와 문장 구조 힌트를 확인해 보세요.</p>
-            </div>
-            <button
-              type="button"
-              className={styles.hintToggleButton}
-              onClick={() => setShowHints((current) => !current)}
-              disabled={isLoadingHints || hints.length === 0}
-            >
-              {isLoadingHints ? "불러오는 중..." : showHints ? "힌트 숨기기" : "힌트 보기"}
-            </button>
-          </div>
-          {showHints ? (
-            hints.length > 0 ? (
-              <div className={styles.hintList}>
-                {hints.map((hint) => (
-                  <article key={hint.id} className={styles.hintCard}>
-                    <span className={styles.hintLabel}>{getHintTypeLabel(hint.hintType)}</span>
-                    <p>{hint.content}</p>
-                  </article>
-                ))}
+        {showWritingGuide ? (
+          <section className={styles.writingGuidePanel}>
+            <div className={`${styles.writingGuideTipLine} ${styles.writingGuideStarterTip}`}>
+              <span className={styles.writingGuideStarterIcon} aria-hidden="true">
+                &gt;
+              </span>
+              <div className={styles.writingGuideTipCopy}>
+                <strong>첫 문장 스타터</strong>
+                <span className={styles.writingGuideStarterValue}>{answerGuide.starter}</span>
               </div>
-            ) : (
-              <p className={styles.hintEmpty}>이 질문에는 아직 준비된 힌트가 없어요.</p>
-            )
-          ) : null}
-        </div>
+            </div>
+            <div className={styles.writingGuideTipLine}>
+              <span className={styles.writingGuideTipIcon} aria-hidden="true">
+                !
+              </span>
+              <div className={styles.writingGuideTipCopy}>
+                <strong>
+                  {answerGuide.sentenceRange[0]}-{answerGuide.sentenceRange[1]}문장 /{" "}
+                  {answerGuide.wordRange[0]}-{answerGuide.wordRange[1]}단어 권장
+                </strong>
+                <span>짧아도 흐름만 보이면 충분해요.</span>
+              </div>
+            </div>
+            <div className={styles.writingGuideTipLine}>
+              <span className={styles.writingGuideTipIcon} aria-hidden="true">
+                !
+              </span>
+              <div className={styles.writingGuideTipCopy}>
+                <strong>{answerChecklistSummary}</strong>
+                <span>{answerProgressMessage}</span>
+              </div>
+            </div>
+          </section>
+        ) : null}
         <textarea
           className={styles.textarea}
           value={answer}
@@ -1186,14 +1372,44 @@ export function AnswerLoop() {
           placeholder="여기에 영어로 첫 답변을 작성해 주세요."
           rows={9}
         />
+        <div className={styles.inlineHintRow}>
+          <button
+            type="button"
+            className={styles.inlineHintButton}
+            onClick={() => setShowHints((current) => !current)}
+            disabled={isLoadingHints || vocabularyHints.length === 0}
+          >
+            {isLoadingHints
+              ? "단어 힌트 불러오는 중..."
+              : showHints
+                ? "단어 힌트 숨기기"
+                : "단어 힌트 보기"}
+          </button>
+          <span className={styles.inlineHintMeta}>
+            {isLoadingHints
+              ? "지금 단어 힌트를 준비하고 있어요."
+              : vocabularyHints.length > 0
+                ? "표현이 막힐 때 단어 힌트만 짧게 확인해 보세요."
+                : "이 질문에는 준비된 단어 힌트가 없어요."}
+          </span>
+        </div>
+        {showHints ? renderVocabularyHintDrawer("이 질문에는 준비된 단어 힌트가 없어요.") : null}
         {draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
+        {renderMobileComposerBar({
+          wordCount: answerWordCount,
+          secondaryLabel: "질문 목록",
+          onSecondary: () => setStep("pick"),
+          primaryLabel: isSubmitting ? "피드백 생성 중..." : "답변 제출",
+          onPrimary: () => handleSubmit(answer, "INITIAL"),
+          primaryDisabled: isSubmitting || isLoadingPrompts
+        })}
         <div className={styles.stageFooter}>
           <p>
             {isLoggedIn
               ? "로그인 상태에서는 질문 수 제한 없이 계속 학습할 수 있어요."
               : "게스트는 질문 1개와 다시쓰기 1회까지만 체험할 수 있어요."}
           </p>
-          <div className={styles.actionRow}>
+          <div className={`${styles.actionRow} ${styles.composerDesktopActions}`}>
             <button type="button" className={styles.ghostButton} onClick={() => setStep("pick")}>
               오늘의 질문으로
             </button>
@@ -1294,7 +1510,9 @@ export function AnswerLoop() {
               className={shouldSuggestFinish ? styles.ghostButton : styles.primaryButton}
               onClick={() => {
                 setRewrite(lastSubmittedAnswer);
+                setShowHints(false);
                 setShowRewriteFeedback(false);
+                setShowPreviousRewriteAnswer(false);
                 setStep("rewrite");
               }}
               disabled={!feedback}
@@ -1309,7 +1527,7 @@ export function AnswerLoop() {
 
   function renderRewriteStep() {
     return (
-      <section className={styles.stage}>
+      <section className={styles.stage} style={mobileQuestionBarStyle}>
         <div className={styles.stageHeader}>
           <div>
             <p className={styles.stageEyebrow}>5단계</p>
@@ -1340,39 +1558,24 @@ export function AnswerLoop() {
             </button>
           </div>
         </div>
-        <div className={styles.hintPanel}>
-          <div className={styles.hintPanelHeader}>
-            <div>
-              <strong>힌트</strong>
-              <p>다시쓰기 전에 표현과 구조 힌트를 가볍게 확인해 보세요.</p>
-            </div>
+        <div className={styles.responseCard}>
+          <div className={styles.mobileSectionHeader}>
+            <h3>이전 답변</h3>
             <button
               type="button"
-              className={styles.hintToggleButton}
-              onClick={() => setShowHints((current) => !current)}
-              disabled={isLoadingHints || hints.length === 0}
+              className={styles.mobileSectionToggle}
+              onClick={() => setShowPreviousRewriteAnswer((current) => !current)}
             >
-              {isLoadingHints ? "불러오는 중..." : showHints ? "힌트 숨기기" : "힌트 보기"}
+              {showPreviousRewriteAnswer ? "접기" : "보기"}
             </button>
           </div>
-          {showHints ? (
-            hints.length > 0 ? (
-              <div className={styles.hintList}>
-                {hints.map((hint) => (
-                  <article key={hint.id} className={styles.hintCard}>
-                    <span className={styles.hintLabel}>{getHintTypeLabel(hint.hintType)}</span>
-                    <p>{hint.content}</p>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <p className={styles.hintEmpty}>이 질문에는 아직 준비된 힌트가 없어요.</p>
-            )
-          ) : null}
-        </div>
-        <div className={styles.responseCard}>
-          <h3>이전 답변</h3>
-          <p>{lastSubmittedAnswer || "먼저 첫 답변을 제출해 주세요."}</p>
+          <div
+            className={`${styles.mobileSectionBody} ${
+              showPreviousRewriteAnswer ? styles.mobileSectionBodyOpen : ""
+            }`}
+          >
+            <p>{lastSubmittedAnswer || "먼저 첫 답변을 제출해 주세요."}</p>
+          </div>
         </div>
         {feedback ? (
           <section className={styles.rewriteFeedbackPanel}>
@@ -1439,10 +1642,40 @@ export function AnswerLoop() {
           placeholder="피드백을 반영한 영어 답변을 다시 작성해 주세요."
           rows={9}
         />
+        <div className={styles.inlineHintRow}>
+          <button
+            type="button"
+            className={styles.inlineHintButton}
+            onClick={() => setShowHints((current) => !current)}
+            disabled={isLoadingHints || vocabularyHints.length === 0}
+          >
+            {isLoadingHints
+              ? "단어 힌트 불러오는 중..."
+              : showHints
+                ? "단어 힌트 숨기기"
+                : "단어 힌트 보기"}
+          </button>
+          <span className={styles.inlineHintMeta}>
+            {isLoadingHints
+              ? "지금 단어 힌트를 준비하고 있어요."
+              : vocabularyHints.length > 0
+                ? "다시쓰기 전에 필요한 단어 표현만 가볍게 보고 이어서 써보세요."
+                : "이 질문에는 준비된 단어 힌트가 없어요."}
+          </span>
+        </div>
+        {showHints ? renderVocabularyHintDrawer("이 질문에는 준비된 단어 힌트가 없어요.") : null}
         {draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
+        {renderMobileComposerBar({
+          wordCount: rewriteWordCount,
+          secondaryLabel: "피드백",
+          onSecondary: () => setStep("feedback"),
+          primaryLabel: isSubmitting ? "피드백 생성 중..." : "다시쓰기 제출",
+          onPrimary: () => handleSubmit(rewrite, "REWRITE"),
+          primaryDisabled: isSubmitting || !feedback
+        })}
         <div className={styles.stageFooter}>
           <p>표현은 유지하되, 더 자연스럽고 구체적으로 문장을 다듬어 보세요.</p>
-          <div className={styles.actionRow}>
+          <div className={`${styles.actionRow} ${styles.composerDesktopActions}`}>
             <button
               type="button"
               className={styles.ghostButton}
@@ -1471,8 +1704,7 @@ export function AnswerLoop() {
         <div className={styles.completeBadge}>오늘의 루프 완주</div>
         <h2>오늘 writeLoop를 끝까지 완주했어요.</h2>
         <p>
-          질문 선택부터 첫 답변, 피드백, 다시쓰기까지 한 사이클을 모두 마쳤어요. 오늘의 작문을 끝까지
-          밀고 간 흐름이 그대로 남아 있을 때 다음 질문으로 이어가면 더 좋아요.
+          질문 선택부터 첫 답변, 피드백, 다시쓰기까지 한 사이클을 모두 마쳤어요.
         </p>
         <div className={styles.completeHighlightCard}>
           <span className={styles.completeHighlightBadge}>오늘의 평가</span>
@@ -1546,26 +1778,7 @@ export function AnswerLoop() {
 
   return (
     <main className={styles.main}>
-      {step !== "pick" ? (
-        <>
-          <section className={styles.hero}>
-            <div className={isLoggedIn ? styles.heroLayout : styles.heroStack}>
-              <div className={styles.heroCopy}>
-                <div className={styles.eyebrow}>오늘의 영어 작문</div>
-                <h1>
-                  {currentUser
-                    ? `${currentUser.displayName}님 반가워요!`
-                    : "반가워요! 오늘의 영어 작문을 시작해 볼까요?"}
-                </h1>
-              </div>
-
-              {isLoggedIn ? <div className={styles.heroStatusColumn}>{renderTodayStatusCard()}</div> : null}
-            </div>
-          </section>
-
-          {renderStepNavigation()}
-        </>
-      ) : null}
+      {step !== "pick" ? renderStepNavigation() : null}
 
       {showLoginWall ? (
         <section className={styles.loginWall}>

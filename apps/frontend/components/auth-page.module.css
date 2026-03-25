@@ -896,9 +896,9 @@
   .authShell .cardHeader {
     margin-bottom: 0;
     padding: 14px 14px 12px;
-    border: 1px solid rgba(var(--warm-accent-rgb), 0.12);
+    border: 1px solid rgba(16, 36, 76, 0.08);
     border-radius: 20px;
-    background: var(--auth-section-header);
+    background: rgba(255, 255, 255, 0.94);
     box-shadow: var(--auth-section-shadow);
   }
 

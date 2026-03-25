@@ -387,9 +387,6 @@ export function MyPageClient() {
   function renderAccountTab() {
     return (
       <>
-        <p className={styles.subText}>
-          로그인 방식과 이름을 확인하고, 필요할 때 바로 내 계정 정보를 수정할 수 있어요.
-        </p>
 
         <div className={styles.streakBanner}>
           <span className={styles.streakLabel}>
@@ -555,10 +552,6 @@ export function MyPageClient() {
   function renderWritingTab() {
     return (
       <>
-        <p className={styles.subText}>
-          연속 작문 상태, 자주 받은 피드백, 날짜별 작문 히스토리를 한 번에 모아 볼 수 있어요.
-        </p>
-
         <div className={styles.infoGrid}>
           <div className={styles.infoCard}>
             <span>연속 작문</span>
@@ -802,11 +795,6 @@ export function MyPageClient() {
             계정 설정과 작문 기록을 한곳에서 관리할 수 있어요. 헤더의 <strong>작문기록</strong>과{" "}
             <strong>내정보</strong> 버튼으로 필요한 탭으로 바로 이동할 수 있습니다.
           </p>
-          <ul className={styles.points}>
-            <li>내 계정 탭에서는 이름과 비밀번호 같은 계정 정보를 관리할 수 있어요.</li>
-            <li>작문 기록 탭에서는 연속 작문, 자주 받은 피드백, 날짜별 히스토리를 확인할 수 있어요.</li>
-            <li>필요한 정보만 빠르게 볼 수 있도록 계정 정보와 학습 기록을 분리해 두었어요.</li>
-          </ul>
         </div>
 
         <section className={styles.card}>

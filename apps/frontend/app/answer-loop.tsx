@@ -235,9 +235,11 @@ export function AnswerLoop() {
   const [draftStatusMessage, setDraftStatusMessage] = useState("");
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
   const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const mobileQuestionBarRef = useRef<HTMLDivElement | null>(null);
+  const mobileComposerBarRef = useRef<HTMLDivElement | null>(null);
+  const inlineHintDrawerRef = useRef<HTMLDivElement | null>(null);
   const knownPersistedDraftKeysRef = useRef<Set<string>>(new Set());
-  const [mobileQuestionBarHeight, setMobileQuestionBarHeight] = useState(0);
+  const [mobileComposerBarHeight, setMobileComposerBarHeight] = useState(0);
+  const [mobileInlineHintHeight, setMobileInlineHintHeight] = useState(0);
 
   useEffect(() => {
     setGuestId(getOrCreateGuestId());
@@ -462,12 +464,13 @@ export function AnswerLoop() {
     [answerGuide]
   );
   const rewriteWordCount = useMemo(() => countWords(rewrite), [rewrite]);
-  const mobileQuestionBarStyle = useMemo(
+  const mobileComposerBarStyle = useMemo(
     () =>
       ({
-        "--mobile-question-bar-height": `${mobileQuestionBarHeight}px`
+        "--mobile-composer-bar-height": `${mobileComposerBarHeight}px`,
+        "--mobile-inline-hint-height": `${mobileInlineHintHeight}px`
       }) as CSSProperties,
-    [mobileQuestionBarHeight]
+    [mobileComposerBarHeight, mobileInlineHintHeight]
   );
   const suggestedFollowUpPrompt = useMemo(() => {
     if (prompts.length < 2) {
@@ -579,13 +582,13 @@ export function AnswerLoop() {
   }, [step]);
 
   useEffect(() => {
-    const node = mobileQuestionBarRef.current;
+    const node = mobileComposerBarRef.current;
     if (!node || typeof window === "undefined") {
       return;
     }
 
     const updateHeight = () => {
-      setMobileQuestionBarHeight(Math.ceil(node.getBoundingClientRect().height));
+      setMobileComposerBarHeight(Math.ceil(node.getBoundingClientRect().height));
     };
 
     updateHeight();
@@ -600,7 +603,36 @@ export function AnswerLoop() {
       resizeObserver?.disconnect();
       window.removeEventListener("resize", updateHeight);
     };
-  }, [step, selectedPromptId, showAnswerTranslation, feedback?.rewriteChallenge]);
+  }, [step, answerWordCount, rewriteWordCount, isSubmitting]);
+
+  useEffect(() => {
+    if (!showHints) {
+      setMobileInlineHintHeight(0);
+      return;
+    }
+
+    const node = inlineHintDrawerRef.current;
+    if (!node || typeof window === "undefined") {
+      return;
+    }
+
+    const updateHeight = () => {
+      setMobileInlineHintHeight(Math.ceil(node.getBoundingClientRect().height));
+    };
+
+    updateHeight();
+
+    const resizeObserver =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => updateHeight()) : null;
+
+    resizeObserver?.observe(node);
+    window.addEventListener("resize", updateHeight);
+
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, [showHints, step, vocabularyHints.length, isLoadingHints]);
 
   function togglePromptTranslation(promptId: string) {
     setRevealedTranslations((current) => ({
@@ -1238,48 +1270,17 @@ export function AnswerLoop() {
     );
   }
 
-  function renderMobileQuestionBar(supportingText?: string) {
-    return (
-      <div ref={mobileQuestionBarRef} className={styles.mobileQuestionBar}>
-        <div className={styles.mobileQuestionBarHeader}>
-          <div className={styles.mobileQuestionBarMeta}>
-            <span className={styles.mobileQuestionBarBadge}>현재 질문</span>
-            <strong>{selectedPrompt?.topic ?? "질문"}</strong>
-          </div>
-          <button
-            type="button"
-            className={`${styles.promptTranslationButton} ${styles.mobileQuestionBarToggle}`}
-            onClick={() => setShowAnswerTranslation((current) => !current)}
-          >
-            {showAnswerTranslation ? "번역 숨기기" : "번역 보기"}
-          </button>
-        </div>
-        <p className={styles.mobileQuestionBarQuestion}>
-          {selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}
-        </p>
-        {showAnswerTranslation ? (
-          <small className={styles.mobileQuestionBarTranslation}>
-            {selectedPrompt?.questionKo ?? "질문 해석을 불러오는 중입니다."}
-          </small>
-        ) : null}
-        {supportingText ? (
-          <small className={styles.mobileQuestionBarCaption}>{supportingText}</small>
-        ) : null}
-      </div>
-    );
-  }
-
   function renderVocabularyHintDrawer(emptyMessage: string) {
     if (vocabularyHints.length === 0) {
       return (
-        <div className={styles.inlineHintDrawer}>
+        <div ref={inlineHintDrawerRef} className={styles.inlineHintDrawer}>
           <p className={styles.inlineHintEmpty}>{emptyMessage}</p>
         </div>
       );
     }
 
     return (
-      <div className={styles.inlineHintDrawer}>
+      <div ref={inlineHintDrawerRef} className={styles.inlineHintDrawer}>
         <span className={styles.inlineHintBadge}>단어 힌트</span>
         <div className={styles.inlineHintList}>
           {vocabularyHints.map((hint) => (
@@ -1308,7 +1309,7 @@ export function AnswerLoop() {
     primaryDisabled: boolean;
   }) {
     return (
-      <div className={styles.mobileComposerBar}>
+      <div ref={mobileComposerBarRef} className={styles.mobileComposerBar}>
         <div className={styles.mobileComposerMeta}>
           <strong>{wordCount}단어</strong>
         </div>
@@ -1329,33 +1330,64 @@ export function AnswerLoop() {
     );
   }
 
+  function renderWritingComposer({
+    value,
+    onChange,
+    placeholder
+  }: {
+    value: string;
+    onChange: (nextValue: string) => void;
+    placeholder: string;
+  }) {
+    return (
+      <section className={styles.writingComposer}>
+        <div className={styles.writingComposerQuestion}>
+          <div className={styles.writingComposerHeader}>
+            <span className={styles.writingComposerBadge}>{selectedPrompt?.topic ?? "오늘의 질문"}</span>
+            <button
+              type="button"
+              className={`${styles.promptTranslationButton} ${styles.writingComposerToggle}`}
+              onClick={() => setShowAnswerTranslation((current) => !current)}
+            >
+              {showAnswerTranslation ? "번역 숨기기" : "번역 보기"}
+            </button>
+          </div>
+          <p className={styles.writingComposerQuestionText}>
+            {selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}
+          </p>
+          {showAnswerTranslation ? (
+            <small className={styles.writingComposerTranslation}>
+              {selectedPrompt?.questionKo ?? "질문 해석을 불러오는 중입니다."}
+            </small>
+          ) : null}
+        </div>
+        <div className={styles.writingComposerAnswer}>
+          <textarea
+            className={`${styles.textarea} ${styles.composerTextarea}`}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={placeholder}
+            rows={8}
+          />
+        </div>
+      </section>
+    );
+  }
+
   function renderAnswerStep() {
     return (
-      <section className={styles.stage} style={mobileQuestionBarStyle}>
+      <section className={styles.stage} style={mobileComposerBarStyle}>
         {renderStageHeader({
           stepNumber: 3,
           title: "첫 답변",
           description: "질문을 보고 영어로 짧고 분명하게 답해 보세요.",
           meta: selectedPrompt ? getDifficultyLabel(selectedPrompt.difficulty) : "..."
         })}
-        {renderMobileQuestionBar()}
-        <div className={`${styles.questionBox} ${styles.desktopQuestionBox}`}>
-          <p>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</p>
-          {showAnswerTranslation ? (
-            <small className={styles.questionTranslation}>
-              {selectedPrompt?.questionKo ?? "질문 해석을 불러오는 중입니다."}
-            </small>
-          ) : null}
-          <div className={styles.questionActionRow}>
-            <button
-              type="button"
-              className={styles.promptTranslationButton}
-              onClick={() => setShowAnswerTranslation((current) => !current)}
-            >
-              {showAnswerTranslation ? "번역 숨기기" : "번역 보기"}
-            </button>
-          </div>
-        </div>
+        {renderWritingComposer({
+          value: answer,
+          onChange: setAnswer,
+          placeholder: "여기에 영어로 첫 답변을 작성해 주세요."
+        })}
         <div className={styles.writingGuideToggleRow}>
           <button
             type="button"
@@ -1367,7 +1399,7 @@ export function AnswerLoop() {
           <span className={styles.writingGuideToggleMeta}>막힐 때만 짧게 열어보면 돼요.</span>
         </div>
         {showWritingGuide ? (
-          <section className={styles.writingGuidePanel}>
+          <>
             <div className={`${styles.writingGuideTipLine} ${styles.writingGuideStarterTip}`}>
               <span className={styles.writingGuideStarterIcon} aria-hidden="true">
                 &gt;
@@ -1377,6 +1409,7 @@ export function AnswerLoop() {
                 <span className={styles.writingGuideStarterValue}>{answerGuide.starter}</span>
               </div>
             </div>
+            <section className={styles.writingGuidePanel}>
             <div className={styles.writingGuideTipLine}>
               <span className={styles.writingGuideTipIcon} aria-hidden="true">
                 !
@@ -1398,15 +1431,9 @@ export function AnswerLoop() {
                 <span>{answerProgressMessage}</span>
               </div>
             </div>
-          </section>
+            </section>
+          </>
         ) : null}
-        <textarea
-          className={styles.textarea}
-          value={answer}
-          onChange={(event) => setAnswer(event.target.value)}
-          placeholder="여기에 영어로 첫 답변을 작성해 주세요."
-          rows={9}
-        />
         <div className={styles.inlineHintRow}>
           <button
             type="button"
@@ -1559,36 +1586,18 @@ export function AnswerLoop() {
 
   function renderRewriteStep() {
     return (
-      <section className={styles.stage} style={mobileQuestionBarStyle}>
+      <section className={styles.stage} style={mobileComposerBarStyle}>
         {renderStageHeader({
           stepNumber: 5,
           title: "다시쓰기",
           description: "피드백을 반영해서 더 자연스럽고 구체적으로 다듬어 보세요.",
           meta: sessionId ? "같은 질문 이어쓰기" : "다시쓰기"
         })}
-        {renderMobileQuestionBar(
-          feedback?.rewriteChallenge ?? "다시쓰기 가이드를 불러오는 중입니다."
-        )}
-        <div className={`${styles.questionBox} ${styles.desktopQuestionBox}`}>
-          <p>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</p>
-          {showAnswerTranslation ? (
-            <small className={styles.questionTranslation}>
-              {selectedPrompt?.questionKo ?? "질문 해석을 불러오는 중입니다."}
-            </small>
-          ) : null}
-          <small className={styles.questionSupportText}>
-            {feedback?.rewriteChallenge ?? "다시쓰기 가이드를 불러오는 중입니다."}
-          </small>
-          <div className={styles.questionActionRow}>
-            <button
-              type="button"
-              className={styles.promptTranslationButton}
-              onClick={() => setShowAnswerTranslation((current) => !current)}
-            >
-              {showAnswerTranslation ? "번역 숨기기" : "번역 보기"}
-            </button>
-          </div>
-        </div>
+        {renderWritingComposer({
+          value: rewrite,
+          onChange: setRewrite,
+          placeholder: "피드백을 반영한 영어 답변을 다시 작성해 주세요."
+        })}
         <div className={styles.responseCard}>
           <div className={styles.mobileSectionHeader}>
             <h3>이전 답변</h3>
@@ -1613,7 +1622,9 @@ export function AnswerLoop() {
             <div className={styles.rewriteFeedbackHeader}>
               <div>
                 <strong>이전 피드백</strong>
-                <p>첫 답변에서 받은 피드백을 다시 보면서 문장을 다듬어 보세요.</p>
+                <p>
+                  {feedback.rewriteChallenge ?? "첫 답변에서 받은 피드백을 다시 보면서 문장을 다듬어 보세요."}
+                </p>
               </div>
               <button
                 type="button"
@@ -1666,13 +1677,6 @@ export function AnswerLoop() {
             ) : null}
           </section>
         ) : null}
-        <textarea
-          className={styles.textarea}
-          value={rewrite}
-          onChange={(event) => setRewrite(event.target.value)}
-          placeholder="피드백을 반영한 영어 답변을 다시 작성해 주세요."
-          rows={9}
-        />
         <div className={styles.inlineHintRow}>
           <button
             type="button"

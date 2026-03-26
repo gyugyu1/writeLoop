@@ -1256,6 +1256,69 @@
   color: #10244c;
 }
 
+.writingComposer {
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(36, 87, 245, 0.14);
+  background: linear-gradient(180deg, #eff5ff 0%, #ffffff 46%, #ffffff 100%);
+  box-shadow: 0 22px 48px rgba(16, 36, 76, 0.08);
+}
+
+.writingComposerQuestion {
+  padding: 20px 22px 18px;
+  background: linear-gradient(180deg, rgba(238, 244, 255, 0.98) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.writingComposerHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.writingComposerBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(47, 124, 246, 0.12);
+  color: #2750bc;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.writingComposerToggle {
+  flex-shrink: 0;
+}
+
+.writingComposerQuestionText {
+  margin: 0;
+  color: #10244c;
+  font-size: clamp(1.32rem, 2.1vw, 1.78rem);
+  font-weight: 700;
+  line-height: 1.52;
+}
+
+.writingComposerTranslation {
+  display: block;
+  margin-top: 12px;
+  color: #5b6887;
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.writingComposerAnswer {
+  display: grid;
+  gap: 0;
+  padding: 24px 24px 26px;
+  border-top: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(255, 255, 255, 0.98);
+}
+
 .questionBox {
   border-radius: 18px;
   padding: 16px;
@@ -1316,9 +1379,10 @@
 
 .writingGuideTipLine {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: 22px minmax(0, 1fr);
   gap: 10px;
   align-items: flex-start;
+  padding-inline: 12px;
 }
 
 .writingGuideTipIcon {
@@ -1351,10 +1415,17 @@
 }
 
 .writingGuideStarterTip {
+  position: -webkit-sticky;
+  position: sticky;
+  top: 96px;
+  z-index: 20;
+  align-self: start;
+  margin-top: 10px;
   padding: 10px 12px;
   border: 1px solid rgba(47, 124, 246, 0.12);
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(244, 247, 255, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+  box-shadow: 0 12px 24px rgba(16, 36, 76, 0.06);
 }
 
 .writingGuideStarterIcon {
@@ -1492,9 +1563,17 @@
   gap: 10px;
   margin-top: 10px;
   padding: 12px 14px;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 96px;
+  z-index: 19;
+  max-height: calc(100svh - 124px);
+  overflow: auto;
+  overscroll-behavior: contain;
   border-radius: 16px;
   border: 1px solid rgba(16, 36, 76, 0.08);
   background: linear-gradient(180deg, #f9fbff 0%, #ffffff 100%);
+  box-shadow: 0 12px 24px rgba(16, 36, 76, 0.06);
 }
 
 .inlineHintBadge {
@@ -1581,10 +1660,32 @@
   background: #ffffff;
 }
 
+.composerTextarea {
+  margin-top: 0;
+  min-height: 180px;
+  border: 0;
+  border-radius: 0;
+  padding: 12px 10px 16px;
+  background: transparent;
+  box-shadow: none;
+  color: #10244c;
+  font-size: 1.24rem;
+  line-height: 1.72;
+}
+
+.composerTextarea::placeholder {
+  color: rgba(16, 36, 76, 0.38);
+}
+
 .textarea:focus {
   outline: none;
   border-color: var(--warm-accent-light);
   box-shadow: 0 0 0 4px rgba(var(--warm-accent-rgb), 0.14);
+}
+
+.composerTextarea:focus {
+  border-color: transparent;
+  box-shadow: none;
 }
 
 .draftStatusText {
@@ -1874,29 +1975,63 @@
     display: none;
   }
 
-  .mobileQuestionBar {
-    position: sticky;
-    top: 84px;
-    z-index: 22;
-    display: grid;
-    gap: 10px;
-    margin-bottom: 12px;
-    padding: 12px 12px 10px;
-    border: 1px solid rgba(36, 87, 245, 0.12);
+  .writingComposer {
     border-radius: var(--mobile-section-radius);
-    background: var(--mobile-section-cool);
     box-shadow: var(--mobile-section-shadow);
   }
 
+  .writingComposerQuestion {
+    padding: 16px 16px 14px;
+  }
+
+  .writingComposerHeader {
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .writingComposerQuestionText {
+    font-size: 1.14rem;
+    line-height: 1.58;
+  }
+
+  .writingComposerTranslation {
+    margin-top: 10px;
+    font-size: 0.92rem;
+  }
+
+  .writingComposerAnswer {
+    padding: 20px 18px 22px;
+  }
+
+  .composerTextarea {
+    min-height: 156px;
+    padding: 14px 10px 18px;
+    font-size: 1.08rem;
+    line-height: 1.74;
+  }
+
   .writingGuideStarterTip {
+    position: -webkit-sticky;
     position: sticky;
-    top: calc(84px + var(--mobile-question-bar-height, 0px) + 10px);
+    top: auto;
+    bottom: calc(
+      14px + var(--mobile-composer-bar-height, 0px) + var(--mobile-inline-hint-height, 0px) + 20px
+    );
     z-index: 20;
+    margin-top: 10px;
     padding: 10px 12px;
     border: 1px solid rgba(47, 124, 246, 0.12);
     border-radius: 16px;
     background: var(--warm-accent-surface-2);
     box-shadow: 0 10px 22px rgba(16, 36, 76, 0.06);
+  }
+
+  .inlineHintDrawer {
+    position: -webkit-sticky;
+    position: sticky;
+    top: auto;
+    bottom: calc(14px + var(--mobile-composer-bar-height, 0px) + 10px);
+    max-height: calc(100svh - var(--mobile-composer-bar-height, 0px) - 140px);
   }
 
   .composerDesktopActions {
@@ -2111,6 +2246,10 @@
     box-shadow: var(--mobile-section-shadow);
   }
 
+  .writingGuideTipLine {
+    padding-inline: 0;
+  }
+
   .inlineHintRow {
     padding-block: 12px;
     background: var(--mobile-section-cool);
@@ -2123,6 +2262,28 @@
     border-color: rgba(16, 36, 76, 0.1);
     border-radius: 20px;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  }
+
+  .composerTextarea {
+    padding: 14px 10px 18px;
+  }
+
+  .stage .writingGuideStarterTip {
+    position: -webkit-sticky;
+    position: sticky;
+    top: auto;
+    bottom: calc(
+      14px + var(--mobile-composer-bar-height, 0px) + var(--mobile-inline-hint-height, 0px) + 20px
+    );
+    z-index: 24;
+  }
+
+  .stage .inlineHintDrawer {
+    position: -webkit-sticky;
+    position: sticky;
+    top: auto;
+    bottom: calc(14px + var(--mobile-composer-bar-height, 0px) + 10px);
+    z-index: 23;
   }
 
   .responseCard {

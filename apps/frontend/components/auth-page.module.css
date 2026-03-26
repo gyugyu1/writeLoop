@@ -611,6 +611,103 @@
   border-top: 1px solid rgba(16, 36, 76, 0.08);
 }
 
+.historyComparisonPanel {
+  display: grid;
+  gap: 14px;
+  margin: 14px 0 16px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.historyComparisonHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.historyComparisonHeader strong {
+  display: block;
+  font-size: 1rem;
+  color: #10244c;
+}
+
+.historyComparisonHeader p {
+  margin: 6px 0 0;
+  color: var(--text-sub);
+  line-height: 1.55;
+}
+
+.historyComparisonCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: var(--warm-accent-deep);
+  font-size: 0.84rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.historyComparisonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.historyComparisonColumn {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(245, 247, 252, 0.86);
+  border: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.historyComparisonMeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.historyComparisonMeta span {
+  color: var(--text-sub);
+  font-size: 0.84rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.historyComparisonAnswer {
+  line-height: 1.75;
+  color: #10244c;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+
+.historyComparisonChangedBefore,
+.historyComparisonChangedAfter {
+  padding: 0.02em 0.04em;
+  border-radius: 8px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.historyComparisonChangedBefore {
+  background: rgba(var(--warm-accent-rgb), 0.2);
+  color: #9a4d18;
+}
+
+.historyComparisonChangedAfter {
+  background: rgba(90, 123, 116, 0.18);
+  color: #365850;
+}
+
 .historyMeta {
   color: var(--warm-accent-deep);
   font-size: 0.84rem;
@@ -1222,6 +1319,43 @@
 
   .myPageShell .historySessionBody {
     padding: 0 16px 14px;
+  }
+
+  .myPageShell .historyComparisonPanel {
+    gap: 12px;
+    margin: 12px 0 14px;
+    padding: 14px 0 12px;
+    border: 0;
+    border-top: 1px solid rgba(16, 36, 76, 0.08);
+    border-bottom: 1px solid rgba(16, 36, 76, 0.08);
+    border-radius: 0;
+    background: rgba(255, 252, 248, 0.82);
+  }
+
+  .myPageShell .historyComparisonHeader {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .myPageShell .historyComparisonGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .myPageShell .historyComparisonColumn {
+    padding: 12px 0 0;
+    border: 0;
+    border-top: 1px solid rgba(16, 36, 76, 0.08);
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .myPageShell .historyComparisonColumn:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .myPageShell .historyComparisonMeta {
+    align-items: flex-start;
   }
 
   .myPageShell .historyAttemptList {

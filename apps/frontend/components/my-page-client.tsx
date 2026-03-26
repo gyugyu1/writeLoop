@@ -18,6 +18,18 @@ import type { AuthUser, CommonMistake, HistorySession, TodayWritingStatus } from
 import styles from "./auth-page.module.css";
 
 type MyPageTab = "account" | "writing";
+type HistoryDiffSegment = {
+  text: string;
+  changed: boolean;
+};
+
+type HistoryComparisonView = {
+  initialAttempt: HistorySession["attempts"][number];
+  rewriteAttempt: HistorySession["attempts"][number];
+  initialSegments: HistoryDiffSegment[];
+  rewriteSegments: HistoryDiffSegment[];
+  changedChunkCount: number;
+};
 
 function formatHistoryDateKey(dateTime: string) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -53,6 +65,128 @@ function formatHistoryTime(dateTime: string) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(new Date(dateTime));
+}
+
+function buildHistoryDiffUnits(text: string) {
+  const tokens = text.match(/\s+|[^\s]+/g) ?? [];
+  const units: Array<{ text: string; token: string }> = [];
+  let pendingWhitespace = "";
+
+  for (const part of tokens) {
+    if (/^\s+$/.test(part)) {
+      pendingWhitespace += part;
+      continue;
+    }
+
+    units.push({
+      text: pendingWhitespace + part,
+      token: part
+    });
+    pendingWhitespace = "";
+  }
+
+  if (pendingWhitespace && units.length > 0) {
+    units[units.length - 1] = {
+      ...units[units.length - 1],
+      text: units[units.length - 1].text + pendingWhitespace
+    };
+  }
+
+  return units;
+}
+
+function mergeHistoryDiffSegments(segments: HistoryDiffSegment[]) {
+  return segments.reduce<HistoryDiffSegment[]>((accumulator, segment) => {
+    if (!segment.text) {
+      return accumulator;
+    }
+
+    const previous = accumulator[accumulator.length - 1];
+    if (previous && previous.changed === segment.changed) {
+      previous.text += segment.text;
+      return accumulator;
+    }
+
+    accumulator.push({ ...segment });
+    return accumulator;
+  }, []);
+}
+
+function buildHistoryComparisonView(session: HistorySession): HistoryComparisonView | null {
+  const initialAttempt =
+    session.attempts.find((attempt) => attempt.attemptType === "INITIAL") ?? session.attempts[0];
+  const rewriteAttempts = session.attempts.filter((attempt) => attempt.attemptType === "REWRITE");
+  const rewriteAttempt = rewriteAttempts[rewriteAttempts.length - 1];
+
+  if (!initialAttempt || !rewriteAttempt) {
+    return null;
+  }
+
+  const initialUnits = buildHistoryDiffUnits(initialAttempt.answerText);
+  const rewriteUnits = buildHistoryDiffUnits(rewriteAttempt.answerText);
+  const lcs = Array.from({ length: initialUnits.length + 1 }, () =>
+    Array<number>(rewriteUnits.length + 1).fill(0)
+  );
+
+  for (let leftIndex = initialUnits.length - 1; leftIndex >= 0; leftIndex -= 1) {
+    for (let rightIndex = rewriteUnits.length - 1; rightIndex >= 0; rightIndex -= 1) {
+      if (initialUnits[leftIndex].token === rewriteUnits[rightIndex].token) {
+        lcs[leftIndex][rightIndex] = lcs[leftIndex + 1][rightIndex + 1] + 1;
+      } else {
+        lcs[leftIndex][rightIndex] = Math.max(
+          lcs[leftIndex + 1][rightIndex],
+          lcs[leftIndex][rightIndex + 1]
+        );
+      }
+    }
+  }
+
+  const initialSegments: HistoryDiffSegment[] = [];
+  const rewriteSegments: HistoryDiffSegment[] = [];
+  let changedChunkCount = 0;
+  let leftCursor = 0;
+  let rightCursor = 0;
+
+  while (leftCursor < initialUnits.length && rightCursor < rewriteUnits.length) {
+    if (initialUnits[leftCursor].token === rewriteUnits[rightCursor].token) {
+      initialSegments.push({ text: initialUnits[leftCursor].text, changed: false });
+      rewriteSegments.push({ text: rewriteUnits[rightCursor].text, changed: false });
+      leftCursor += 1;
+      rightCursor += 1;
+      continue;
+    }
+
+    if (lcs[leftCursor + 1][rightCursor] >= lcs[leftCursor][rightCursor + 1]) {
+      initialSegments.push({ text: initialUnits[leftCursor].text, changed: true });
+      changedChunkCount += 1;
+      leftCursor += 1;
+      continue;
+    }
+
+    rewriteSegments.push({ text: rewriteUnits[rightCursor].text, changed: true });
+    changedChunkCount += 1;
+    rightCursor += 1;
+  }
+
+  while (leftCursor < initialUnits.length) {
+    initialSegments.push({ text: initialUnits[leftCursor].text, changed: true });
+    changedChunkCount += 1;
+    leftCursor += 1;
+  }
+
+  while (rightCursor < rewriteUnits.length) {
+    rewriteSegments.push({ text: rewriteUnits[rightCursor].text, changed: true });
+    changedChunkCount += 1;
+    rightCursor += 1;
+  }
+
+  return {
+    initialAttempt,
+    rewriteAttempt,
+    initialSegments: mergeHistoryDiffSegments(initialSegments),
+    rewriteSegments: mergeHistoryDiffSegments(rewriteSegments),
+    changedChunkCount
+  };
 }
 
 function getLoginMethodLabel(user: AuthUser) {
@@ -720,7 +854,10 @@ export function MyPageClient() {
 
                   {openDates[dateKey] ? (
                     <div className={styles.historySessionList}>
-                      {historyByDate[dateKey].map((session) => (
+                      {historyByDate[dateKey].map((session) => {
+                        const comparisonView = buildHistoryComparisonView(session);
+
+                        return (
                         <article key={session.sessionId} className={styles.historySessionCard}>
                           <button
                             type="button"
@@ -742,6 +879,67 @@ export function MyPageClient() {
                           </button>
                           {openSessions[session.sessionId] ? (
                             <div className={styles.historySessionBody}>
+                              {comparisonView ? (
+                                <section className={styles.historyComparisonPanel}>
+                                  <div className={styles.historyComparisonHeader}>
+                                    <div>
+                                      <strong>다시쓰기로 달라진 부분</strong>
+                                      <p>
+                                        첫 답변과 최근 다시쓰기를 나란히 보면서 바뀐 표현을 바로 확인해보세요.
+                                      </p>
+                                    </div>
+                                    <span className={styles.historyComparisonCount}>
+                                      바뀐 표현 {comparisonView.changedChunkCount}곳
+                                    </span>
+                                  </div>
+                                  <div className={styles.historyComparisonGrid}>
+                                    <section className={styles.historyComparisonColumn}>
+                                      <div className={styles.historyComparisonMeta}>
+                                        <strong className={styles.historyAttemptTypeInitial}>
+                                          첫 답변 {comparisonView.initialAttempt.attemptNo}차
+                                        </strong>
+                                        <span>{formatHistoryTime(comparisonView.initialAttempt.createdAt)}</span>
+                                      </div>
+                                      <div className={styles.historyComparisonAnswer}>
+                                        {comparisonView.initialSegments.map((segment, index) => (
+                                          <span
+                                            key={`initial-${comparisonView.initialAttempt.id}-${index}`}
+                                            className={
+                                              segment.changed
+                                                ? styles.historyComparisonChangedBefore
+                                                : undefined
+                                            }
+                                          >
+                                            {segment.text}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </section>
+                                    <section className={styles.historyComparisonColumn}>
+                                      <div className={styles.historyComparisonMeta}>
+                                        <strong className={styles.historyAttemptTypeRewrite}>
+                                          다시쓰기 {comparisonView.rewriteAttempt.attemptNo}차
+                                        </strong>
+                                        <span>{formatHistoryTime(comparisonView.rewriteAttempt.createdAt)}</span>
+                                      </div>
+                                      <div className={styles.historyComparisonAnswer}>
+                                        {comparisonView.rewriteSegments.map((segment, index) => (
+                                          <span
+                                            key={`rewrite-${comparisonView.rewriteAttempt.id}-${index}`}
+                                            className={
+                                              segment.changed
+                                                ? styles.historyComparisonChangedAfter
+                                                : undefined
+                                            }
+                                          >
+                                            {segment.text}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    </section>
+                                  </div>
+                                </section>
+                              ) : null}
                               <div className={styles.historyAttemptList}>
                             {session.attempts.map((attempt) => (
                               <div
@@ -828,7 +1026,8 @@ export function MyPageClient() {
                             </div>
                           ) : null}
                         </article>
-                      ))}
+                        );
+                      })}
                     </div>
                   ) : null}
                 </section>

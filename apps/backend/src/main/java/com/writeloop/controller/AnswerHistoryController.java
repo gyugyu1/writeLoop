@@ -2,6 +2,7 @@ package com.writeloop.controller;
 
 import com.writeloop.dto.AnswerHistorySessionDto;
 import com.writeloop.dto.CommonMistakeDto;
+import com.writeloop.dto.MonthWritingStatusDto;
 import com.writeloop.dto.TodayWritingStatusDto;
 import com.writeloop.service.AnswerHistoryService;
 import com.writeloop.service.AuthService;
@@ -10,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
@@ -44,6 +46,21 @@ public class AnswerHistoryController {
         }
 
         return answerHistoryService.getTodayStatus(currentUserId);
+    }
+
+    @GetMapping("/month-status")
+    @ResponseStatus(HttpStatus.OK)
+    public MonthWritingStatusDto getMonthStatus(
+            @RequestParam int year,
+            @RequestParam int month,
+            HttpSession session
+    ) {
+        Long currentUserId = authService.getCurrentUserIdOrNull(session);
+        if (currentUserId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+        }
+
+        return answerHistoryService.getMonthStatus(currentUserId, year, month);
     }
 
     @GetMapping("/common-mistakes")

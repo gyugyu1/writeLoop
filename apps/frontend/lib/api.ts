@@ -10,6 +10,7 @@ import type {
   AuthUser,
   DailyDifficulty,
   DailyPromptRecommendation,
+  HistoryMonthStatus,
   PasswordResetAvailability,
   Feedback,
   FeedbackRequest,
@@ -366,6 +367,19 @@ export async function getTodayWritingStatus(): Promise<TodayWritingStatus> {
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to load today writing status");
+  }
+
+  return response.json();
+}
+
+export async function getMonthStatus(year: number, month: number): Promise<HistoryMonthStatus> {
+  const response = await fetch(`${API_BASE}/api/history/month-status?year=${year}&month=${month}`, {
+    cache: "no-store",
+    credentials: "include"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to load month status");
   }
 
   return response.json();

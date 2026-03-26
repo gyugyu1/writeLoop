@@ -19,14 +19,32 @@ import styles from "./auth-page.module.css";
 
 type MyPageTab = "account" | "writing";
 
-function formatHistoryDate(dateTime: string) {
+function formatHistoryDateKey(dateTime: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  });
+  const parts = formatter.formatToParts(new Date(dateTime));
+  const lookup = Object.fromEntries(
+    parts
+      .filter((part) => part.type === "year" || part.type === "month" || part.type === "day")
+      .map((part) => [part.type, part.value])
+  ) as Record<"year" | "month" | "day", string>;
+
+  return `${lookup.year}-${lookup.month}-${lookup.day}`;
+}
+
+function formatHistoryDateLabel(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map(Number);
   return new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
     year: "numeric",
     month: "long",
     day: "numeric",
     weekday: "short"
-  }).format(new Date(dateTime));
+  }).format(new Date(Date.UTC(year ?? 0, (month ?? 1) - 1, day ?? 1, 12)));
 }
 
 function formatHistoryTime(dateTime: string) {
@@ -59,6 +77,16 @@ function parseMyPageTab(): MyPageTab {
   return params.get("tab") === "writing" ? "writing" : "account";
 }
 
+function parseHistoryDateParam() {
+  if (typeof window === "undefined") {
+    return "";
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const date = params.get("date") ?? "";
+  return /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : "";
+}
+
 function notifyTabChange(tab: MyPageTab) {
   window.dispatchEvent(new CustomEvent("writeloop:tab-change", { detail: { tab } }));
 }
@@ -76,6 +104,7 @@ export function MyPageClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openDates, setOpenDates] = useState<Record<string, boolean>>({});
   const [openSessions, setOpenSessions] = useState<Record<string, boolean>>({});
+  const [selectedHistoryDate, setSelectedHistoryDate] = useState("");
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -91,6 +120,7 @@ export function MyPageClient() {
   useEffect(() => {
     function syncTabFromUrl() {
       setActiveTab(parseMyPageTab());
+      setSelectedHistoryDate(parseHistoryDateParam());
     }
 
     syncTabFromUrl();
@@ -181,18 +211,29 @@ export function MyPageClient() {
 
   const historyByDate = useMemo(() => {
     return history.reduce<Record<string, HistorySession[]>>((accumulator, session) => {
-      const dateKey = formatHistoryDate(session.createdAt);
+      const dateKeys = new Set<string>([
+        formatHistoryDateKey(session.createdAt),
+        ...session.attempts.map((attempt) => formatHistoryDateKey(attempt.createdAt))
+      ]);
 
-      if (!accumulator[dateKey]) {
-        accumulator[dateKey] = [];
+      for (const dateKey of dateKeys) {
+        if (!accumulator[dateKey]) {
+          accumulator[dateKey] = [];
+        }
+
+        if (!accumulator[dateKey].some((existingSession) => existingSession.sessionId === session.sessionId)) {
+          accumulator[dateKey].push(session);
+        }
       }
 
-      accumulator[dateKey].push(session);
       return accumulator;
     }, {});
   }, [history]);
 
-  const historyDates = useMemo(() => Object.keys(historyByDate), [historyByDate]);
+  const historyDates = useMemo(
+    () => Object.keys(historyByDate).sort((left, right) => right.localeCompare(left)),
+    [historyByDate]
+  );
 
   useEffect(() => {
     if (historyDates.length === 0) {
@@ -249,6 +290,43 @@ export function MyPageClient() {
       return changed ? next : current;
     });
   }, [history]);
+
+  useEffect(() => {
+    if (!selectedHistoryDate || !historyDates.includes(selectedHistoryDate)) {
+      return;
+    }
+
+    setOpenDates((current) => {
+      if (current[selectedHistoryDate]) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [selectedHistoryDate]: true
+      };
+    });
+
+    setOpenSessions((current) => {
+      const next = { ...current };
+      let changed = false;
+
+      for (const session of historyByDate[selectedHistoryDate] ?? []) {
+        if (!next[session.sessionId]) {
+          next[session.sessionId] = true;
+          changed = true;
+        }
+      }
+
+      return changed ? next : current;
+    });
+
+    window.requestAnimationFrame(() => {
+      document
+        .querySelector<HTMLElement>(`[data-history-date="${selectedHistoryDate}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }, [historyByDate, historyDates, selectedHistoryDate]);
 
   function setTab(tab: MyPageTab) {
     setActiveTab(tab);
@@ -624,13 +702,17 @@ export function MyPageClient() {
           ) : (
             <div className={styles.historyDateList}>
               {historyDates.map((dateKey) => (
-                <section key={dateKey} className={styles.historyDateGroup}>
+                <section
+                  key={dateKey}
+                  className={styles.historyDateGroup}
+                  data-history-date={dateKey}
+                >
                   <button
                     type="button"
                     className={styles.historyDateButton}
                     onClick={() => toggleDate(dateKey)}
                   >
-                    <span className={styles.historyDateTitle}>{dateKey}</span>
+                    <span className={styles.historyDateTitle}>{formatHistoryDateLabel(dateKey)}</span>
                     <span className={styles.historyDateToggle}>
                       {openDates[dateKey] ? "접기" : "펼치기"}
                     </span>

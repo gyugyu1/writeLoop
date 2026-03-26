@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -15,6 +16,7 @@ import {
   deleteWritingDraft,
   getCurrentUser,
   getDailyPrompts,
+  getMonthStatus,
   getPromptHints,
   getTodayWritingStatus,
   getWritingDraft,
@@ -34,6 +36,7 @@ import type {
   DailyDifficulty,
   DailyPromptRecommendation,
   Feedback,
+  HistoryMonthStatus,
   HomeDraftSnapshot,
   HomeFlowStep,
   PromptHint,
@@ -42,6 +45,7 @@ import type {
   WritingDraftType
 } from "../lib/types";
 import { InlineFeedbackPreview } from "../components/inline-feedback-preview";
+import { StreakSparkleEffect } from "../components/streak-sparkle-effect";
 import styles from "./page.module.css";
 
 const GUEST_ID_KEY = "writeloop_guest_id";
@@ -105,6 +109,163 @@ type WritingGuide = {
 
 function countWords(text: string) {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
+}
+
+function parseLocalDate(dateString: string) {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, (month ?? 1) - 1, day ?? 1);
+}
+
+function addDays(baseDate: Date, days: number) {
+  const nextDate = new Date(baseDate);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function formatDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+
+function buildWelcomeWeek(todayStatus: TodayWritingStatus | null) {
+  const today = todayStatus ? parseLocalDate(todayStatus.date) : new Date();
+  const todayKey = formatDateKey(today);
+  const completedKeys = new Set<string>();
+
+  if (todayStatus && todayStatus.streakDays > 0) {
+    const streakEndDate = todayStatus.completed ? today : addDays(today, -1);
+    for (let offset = 0; offset < todayStatus.streakDays; offset += 1) {
+      completedKeys.add(formatDateKey(addDays(streakEndDate, -offset)));
+    }
+  }
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(today, index - 6);
+    const dateKey = formatDateKey(date);
+    return {
+      key: dateKey,
+      label: WEEKDAY_LABELS[date.getDay()] ?? "",
+      isToday: dateKey === todayKey,
+      isCompleted: completedKeys.has(dateKey)
+    };
+  });
+}
+
+type MonthCalendarCell = {
+  key: string;
+  dayNumber: number;
+  status: {
+    started: boolean;
+    completed: boolean;
+    startedSessions: number;
+    completedSessions: number;
+    isToday: boolean;
+  } | null;
+  isFuture: boolean;
+};
+
+type MonthView = {
+  year: number;
+  month: number;
+};
+
+function buildMonthCalendar(
+  monthStatus: HistoryMonthStatus | null,
+  monthView: MonthView | null,
+  referenceDateString?: string | null
+) {
+  const referenceDate = referenceDateString ? parseLocalDate(referenceDateString) : new Date();
+  const year = monthStatus?.year ?? monthView?.year ?? referenceDate.getFullYear();
+  const month = monthStatus?.month ?? monthView?.month ?? referenceDate.getMonth() + 1;
+  const monthStart = new Date(year, month - 1, 1);
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const todayKey = formatDateKey(referenceDate);
+  const dayMap = new Map((monthStatus?.days ?? []).map((day) => [day.date, day]));
+  const cells: Array<MonthCalendarCell | null> = Array.from({ length: monthStart.getDay() }, () => null);
+
+  for (let dayNumber = 1; dayNumber <= daysInMonth; dayNumber += 1) {
+    const date = new Date(year, month - 1, dayNumber);
+    const key = formatDateKey(date);
+    const status = dayMap.get(key) ?? null;
+
+    cells.push({
+      key,
+      dayNumber,
+      status,
+      isFuture: key > todayKey
+    });
+  }
+
+  return {
+    year,
+    month,
+    monthLabel: new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long" }).format(monthStart),
+    streakDays: monthStatus?.streakDays ?? 0,
+    cells
+  };
+}
+
+function createMonthView(date: Date): MonthView {
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1
+  };
+}
+
+function addMonthsToView(view: MonthView, delta: number): MonthView {
+  const date = new Date(view.year, view.month - 1 + delta, 1);
+  return createMonthView(date);
+}
+
+function isSameMonthView(left: MonthView, right: MonthView) {
+  return left.year === right.year && left.month === right.month;
+}
+
+function getMonthStatusDayStyle(cell: MonthCalendarCell): CSSProperties | undefined {
+  if (cell.status?.completed) {
+    const count = Math.max(cell.status.completedSessions, 1);
+    const clampedCount = Math.min(count, 5);
+    const backgroundAlpha = Math.min(0.18 + clampedCount * 0.09, 0.6);
+    const borderAlpha = Math.min(0.24 + clampedCount * 0.12, 0.78);
+    const numberColor =
+      clampedCount >= 4 ? "#6e2904" : clampedCount === 3 ? "#7b3510" : clampedCount === 2 ? "#8c4617" : "#9d5a25";
+    const stateColor =
+      clampedCount >= 4 ? "#7a3410" : clampedCount === 3 ? "#8a4218" : clampedCount === 2 ? "#9a5425" : "#9f6b3b";
+
+    return {
+      "--month-status-day-bg": `rgba(229, 106, 31, ${backgroundAlpha})`,
+      "--month-status-day-border": `rgba(229, 106, 31, ${borderAlpha})`,
+      "--month-status-day-number-color": numberColor,
+      "--month-status-day-state-color": stateColor
+    } as CSSProperties;
+  }
+
+  if (cell.status?.started) {
+    const count = Math.max(cell.status.startedSessions, 1);
+    const background =
+      count >= 3
+        ? "rgba(255, 196, 94, 0.34)"
+        : count === 2
+          ? "rgba(255, 208, 123, 0.24)"
+          : "rgba(255, 229, 179, 0.18)";
+    const border =
+      count >= 3
+        ? "rgba(217, 132, 35, 0.44)"
+        : count === 2
+          ? "rgba(217, 132, 35, 0.32)"
+          : "rgba(217, 132, 35, 0.22)";
+
+    return {
+      "--month-status-day-bg": background,
+      "--month-status-day-border": border
+    } as CSSProperties;
+  }
+
+  return undefined;
 }
 
 function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | null): WritingGuide {
@@ -201,6 +362,7 @@ function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | nul
 }
 
 export function AnswerLoop() {
+  const router = useRouter();
   const [selectedDifficulty, setSelectedDifficulty] = useState<DailyDifficulty>("A");
   const [pendingDifficultySelection, setPendingDifficultySelection] = useState<DailyDifficulty | null>(null);
   const [dailyRecommendation, setDailyRecommendation] =
@@ -228,8 +390,13 @@ export function AnswerLoop() {
   const [showPreviousRewriteAnswer, setShowPreviousRewriteAnswer] = useState(false);
   const [showAnswerTranslation, setShowAnswerTranslation] = useState(false);
   const [showHints, setShowHints] = useState(false);
+  const [showMonthStatus, setShowMonthStatus] = useState(false);
+  const [monthView, setMonthView] = useState<MonthView | null>(null);
   const [hints, setHints] = useState<PromptHint[]>([]);
   const [isLoadingHints, setIsLoadingHints] = useState(false);
+  const [monthStatus, setMonthStatus] = useState<HistoryMonthStatus | null>(null);
+  const [isLoadingMonthStatus, setIsLoadingMonthStatus] = useState(false);
+  const [monthStatusError, setMonthStatusError] = useState("");
   const [didRestoreDraft, setDidRestoreDraft] = useState(false);
   const [didAttemptPersistedDraftRestore, setDidAttemptPersistedDraftRestore] = useState(false);
   const [draftStatusMessage, setDraftStatusMessage] = useState("");
@@ -240,6 +407,13 @@ export function AnswerLoop() {
   const knownPersistedDraftKeysRef = useRef<Set<string>>(new Set());
   const [mobileComposerBarHeight, setMobileComposerBarHeight] = useState(0);
   const [mobileInlineHintHeight, setMobileInlineHintHeight] = useState(0);
+  const monthStatusCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const currentMonthView = useMemo(
+    () => createMonthView(todayStatus?.date ? parseLocalDate(todayStatus.date) : new Date()),
+    [todayStatus?.date]
+  );
+  const activeMonthView = monthView ?? currentMonthView;
+  const isCurrentMonthView = isSameMonthView(activeMonthView, currentMonthView);
 
   useEffect(() => {
     setGuestId(getOrCreateGuestId());
@@ -341,6 +515,72 @@ export function AnswerLoop() {
       isMounted = false;
     };
   }, [currentUser]);
+
+  useEffect(() => {
+    if (!showMonthStatus) {
+      return;
+    }
+
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowMonthStatus(false);
+      }
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    window.requestAnimationFrame(() => {
+      monthStatusCloseButtonRef.current?.focus();
+    });
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousActiveElement && typeof previousActiveElement.focus === "function") {
+        window.requestAnimationFrame(() => {
+          previousActiveElement.focus();
+        });
+      }
+    };
+  }, [showMonthStatus]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadMonthStatus() {
+      if (!currentUser || !showMonthStatus) {
+        return;
+      }
+
+      try {
+        setIsLoadingMonthStatus(true);
+        setMonthStatusError("");
+        setMonthStatus(null);
+        const targetView = monthView ?? currentMonthView;
+        const status = await getMonthStatus(targetView.year, targetView.month);
+        if (isMounted) {
+          setMonthStatus(status);
+        }
+      } catch {
+        if (isMounted) {
+          setMonthStatus(null);
+          setMonthStatusError("학습 기록을 불러오지 못했어요.");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingMonthStatus(false);
+        }
+      }
+    }
+
+    void loadMonthStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentMonthView, currentUser, monthView, showMonthStatus]);
 
   useEffect(() => {
     let isMounted = true;
@@ -464,6 +704,23 @@ export function AnswerLoop() {
     [answerGuide]
   );
   const rewriteWordCount = useMemo(() => countWords(rewrite), [rewrite]);
+  const welcomeWeekDays = useMemo(() => buildWelcomeWeek(todayStatus), [todayStatus]);
+  const monthCalendar = buildMonthCalendar(monthStatus, activeMonthView, todayStatus?.date);
+  const welcomeStreakMessage = useMemo(() => {
+    if (!todayStatus) {
+      return "이번 주 흐름을 채워보세요.";
+    }
+
+    if (todayStatus.completed) {
+      return "오늘도 연속 학습을 이어가고 있어요.";
+    }
+
+    if (todayStatus.streakDays > 0) {
+      return "오늘 한 번 더 쓰면 연속 기록이 이어져요.";
+    }
+
+    return "오늘부터 다시 연속 학습을 시작해보세요.";
+  }, [todayStatus]);
   const mobileComposerBarStyle = useMemo(
     () =>
       ({
@@ -604,6 +861,27 @@ export function AnswerLoop() {
       window.removeEventListener("resize", updateHeight);
     };
   }, [step, answerWordCount, rewriteWordCount, isSubmitting]);
+
+  useEffect(() => {
+    if (!showLoginWall || typeof document === "undefined" || typeof window === "undefined") {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowLoginWall(false);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showLoginWall]);
 
   useEffect(() => {
     if (!showHints) {
@@ -1137,16 +1415,59 @@ export function AnswerLoop() {
     );
   }
 
+  function openMonthStatus() {
+    setMonthView(currentMonthView);
+    setShowMonthStatus(true);
+  }
+
+  function moveMonth(delta: number) {
+    setMonthView((current) => addMonthsToView(current ?? currentMonthView, delta));
+  }
+
   function renderPickStep() {
     if (pickFlowScreen === "difficulty") {
       return (
         <section className={styles.pickFlow}>
           <article className={styles.welcomeCard}>
-            <h1>{currentUser ? `${currentUser.displayName}님, 반가워요.` : "writeLoop에 온 걸 환영해요!"}</h1>
-            <p>
-              어느 정도 난이도로 시작할지 먼저 골라볼까요? 원하는 난이도를 고른 뒤 확인 버튼을 누르면
-              질문 고르기로 넘어갑니다.
-            </p>
+            <h1>{currentUser ? `${currentUser.displayName}님, 반가워요.` : "오늘의 질문에 답해보세요."}</h1>
+            {currentUser ? (
+                <button
+                  type="button"
+                  className={`${styles.welcomeStreakCard} ${styles.welcomeStreakCardInteractive}`}
+                  aria-label="이번 달 학습 기록 열기"
+                  aria-haspopup="dialog"
+                  aria-expanded={showMonthStatus}
+                  onClick={openMonthStatus}
+                >
+                <div className={styles.welcomeStreakHeader}>
+                  <div className={styles.welcomeStreakIcon} aria-hidden="true">
+                    <span className={styles.welcomeStreakIconCore} />
+                  </div>
+                  <div className={styles.welcomeStreakCopy}>
+                    <strong>연속 학습 {todayStatus?.streakDays ?? 0}일</strong>
+                    <span>{welcomeStreakMessage}</span>
+                  </div>
+                </div>
+                <div className={styles.welcomeStreakWeek}>
+                  {welcomeWeekDays.map((day) => (
+                    <div
+                      key={day.key}
+                      className={`${styles.welcomeStreakDay} ${
+                        day.isCompleted ? styles.welcomeStreakDayCompleted : ""
+                      } ${day.isToday ? styles.welcomeStreakDayToday : ""}`}
+                    >
+                      <span className={styles.welcomeStreakDayLabel}>{day.label}</span>
+                      <span className={styles.welcomeStreakDayDot} aria-hidden="true" />
+                    </div>
+                  ))}
+                </div>
+              </button>
+            ) : (
+              <p>
+                어느 정도 난이도로 시작할지 먼저 골라볼까요? 원하는 난이도를 고른 뒤 확인 버튼을 누르면
+                질문 고르기로 넘어갑니다.
+              </p>
+            )}
           </article>
 
           <section className={styles.pickStage}>
@@ -1811,40 +2132,221 @@ export function AnswerLoop() {
     );
   }
 
+  function renderMonthStatusModal() {
+    if (!showMonthStatus || !currentUser) {
+      return null;
+    }
+
+    const streakDays = isLoadingMonthStatus ? todayStatus?.streakDays ?? 0 : monthCalendar.streakDays;
+
+    return (
+      <div className={styles.monthStatusOverlay} onClick={() => setShowMonthStatus(false)}>
+        <section
+          className={styles.monthStatusDialog}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="month-status-title"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            type="button"
+            className={styles.monthStatusClose}
+            ref={monthStatusCloseButtonRef}
+            aria-label="학습 캘린더 닫기"
+            onClick={() => setShowMonthStatus(false)}
+          >
+            ×
+          </button>
+          <div className={styles.monthStatusCopy}>
+            <div className={styles.monthStatusBadge}>전체 이력 달력</div>
+            <h2 id="month-status-title">학습 캘린더</h2>
+            <div className={styles.monthStatusMonthRail} aria-label="달 이동">
+              <button
+                type="button"
+                className={styles.monthStatusNavButton}
+                aria-label="이전 달 보기"
+                onClick={() => moveMonth(-1)}
+              >
+                ‹
+              </button>
+              <div className={styles.monthStatusMonthDisplay} aria-live="polite">
+                <span className={styles.monthStatusMonthYear}>{monthCalendar.year}</span>
+                <strong className={styles.monthStatusMonthValue}>{monthCalendar.month}</strong>
+              </div>
+              <button
+                type="button"
+                className={styles.monthStatusNavButton}
+                aria-label={isCurrentMonthView ? "다음 달은 아직 볼 수 없어요" : "다음 달 보기"}
+                onClick={() => moveMonth(1)}
+                disabled={isCurrentMonthView}
+              >
+                ›
+              </button>
+            </div>
+            <div className={styles.monthStatusSummary}>
+              <div className={styles.monthStatusSummaryItem}>
+                <div className={styles.monthStatusSummaryCard}>
+                  <StreakSparkleEffect
+                    className={styles.monthStatusSummarySparkleLayer}
+                    streakDays={streakDays}
+                  />
+                  <div className={styles.monthStatusSummaryCopy}>
+                    <span>현재 연속 학습일</span>
+                    <strong>{streakDays}일</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.monthStatusBody}>
+            {isLoadingMonthStatus ? (
+              <div className={styles.monthStatusStatePanel}>
+                <strong>달력을 불러오는 중이에요.</strong>
+                <p>선택한 달의 학습 흐름을 정리하고 있어요. 잠시만 기다려 주세요.</p>
+              </div>
+            ) : monthStatusError ? (
+              <div className={styles.monthStatusStatePanel}>
+                <strong>달력을 불러오지 못했어요.</strong>
+                <p>{monthStatusError}</p>
+              </div>
+            ) : (
+              <>
+                <div className={styles.monthStatusWeekdays} aria-hidden="true">
+                  {WEEKDAY_LABELS.map((label) => (
+                    <span key={label}>{label}</span>
+                  ))}
+                </div>
+                <div className={styles.monthStatusCalendar} aria-label={`${monthCalendar.monthLabel} 달력`}>
+                  {monthCalendar.cells.map((cell, index) =>
+                    cell ? (
+                      (() => {
+                        const statusLabel = cell.status?.completed
+                          ? cell.status.isToday
+                            ? "오늘 완료"
+                            : "완료"
+                          : cell.status?.started
+                            ? cell.status.isToday
+                              ? "오늘 진행 중"
+                              : "진행 중"
+                            : cell.status?.isToday
+                              ? "오늘"
+                              : cell.isFuture
+                                ? ""
+                                : "기록 없음";
+                        const visibleStatusLabel = statusLabel === "기록 없음" ? "" : statusLabel;
+                        const canOpenHistory = Boolean(cell.status?.started || cell.status?.completed);
+                        const className = `${styles.monthStatusDay} ${
+                          cell.status?.completed ? styles.monthStatusDayCompleted : ""
+                        } ${cell.status?.started && !cell.status.completed ? styles.monthStatusDayStarted : ""} ${
+                          cell.status?.isToday ? styles.monthStatusDayToday : ""
+                        } ${cell.isFuture ? styles.monthStatusDayFuture : ""} ${
+                          !cell.status && !cell.isFuture ? styles.monthStatusDayIdle : ""
+                        } ${canOpenHistory ? styles.monthStatusDayInteractive : ""}`;
+
+                        if (canOpenHistory) {
+                          return (
+                            <button
+                              key={cell.key}
+                              type="button"
+                              className={className}
+                              style={getMonthStatusDayStyle(cell)}
+                              aria-label={`${monthCalendar.monthLabel} ${cell.dayNumber}일, ${statusLabel} 기록 보기`}
+                              onClick={() => {
+                                setShowMonthStatus(false);
+                                router.push(`/me?tab=writing&date=${cell.key}`);
+                              }}
+                            >
+                              <span className={styles.monthStatusDayHeader}>
+                                <span className={styles.monthStatusDayNumber}>{cell.dayNumber}</span>
+                              </span>
+                              {visibleStatusLabel ? (
+                                <span className={styles.monthStatusDayState}>{visibleStatusLabel}</span>
+                              ) : null}
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <div
+                            key={cell.key}
+                            className={className}
+                            style={getMonthStatusDayStyle(cell)}
+                            aria-label={`${monthCalendar.monthLabel} ${cell.dayNumber}일, ${statusLabel}`}
+                          >
+                            <span className={styles.monthStatusDayHeader}>
+                              <span className={styles.monthStatusDayNumber}>{cell.dayNumber}</span>
+                            </span>
+                            {visibleStatusLabel ? (
+                              <span className={styles.monthStatusDayState}>{visibleStatusLabel}</span>
+                            ) : null}
+                          </div>
+                        );
+                      })()
+                    ) : (
+                      <span key={`month-empty-${index}`} className={styles.monthStatusEmptyCell} aria-hidden="true" />
+                    )
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <main className={styles.main}>
       {step !== "pick" ? renderStepNavigation() : null}
 
       {showLoginWall ? (
-        <section className={styles.loginWall}>
-          <div>
-            <div className={styles.loginBadge}>게스트 체험 한도 도달</div>
-            <h2>로그인하면 매일 더 많은 질문과 답변 기록을 이어갈 수 있어요.</h2>
-            <p>
-              게스트는 한 번의 질문 루프만 체험할 수 있어요. 로그인하면 여러 질문을 계속 풀고, 내 답변
-              히스토리와 피드백도 한곳에서 확인할 수 있습니다.
-            </p>
-          </div>
-          <div className={styles.loginActions}>
-            <Link
-              href={`/login?returnTo=${encodeURIComponent(HOME_RETURN_TO)}`}
-              className={styles.primaryLink}
-              onClick={persistDraftForLogin}
+        <div className={styles.loginWallOverlay} onClick={() => setShowLoginWall(false)}>
+          <section
+            className={styles.loginWall}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="guest-limit-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className={styles.loginWallClose}
+              aria-label="로그인 안내 닫기"
+              onClick={() => setShowLoginWall(false)}
             >
-              로그인하러 가기
-            </Link>
-            <Link
-              href={`/register?returnTo=${encodeURIComponent(HOME_RETURN_TO)}`}
-              className={styles.ghostLink}
-              onClick={persistDraftForLogin}
-            >
-              회원가입하러 가기
-            </Link>
-            <button type="button" className={styles.ghostButton} onClick={() => setShowLoginWall(false)}>
-              지금은 둘러보기
+              ×
             </button>
-          </div>
-        </section>
+            <div className={styles.loginWallCopy}>
+              <div className={styles.loginBadge}>게스트 체험 한도 도달</div>
+              <h2 id="guest-limit-title">로그인하면 지금 쓰던 흐름을 그대로 이어갈 수 있어요.</h2>
+              <p>
+                게스트는 한 번의 질문 루프만 체험할 수 있어요. 로그인하면 여러 질문을 계속 풀고, 내 답변
+                히스토리와 피드백도 한곳에서 확인할 수 있습니다.
+              </p>
+              <p className={styles.loginWallHint}>작성 중이던 내용은 이어서 복원할 수 있게 저장해둘게요.</p>
+            </div>
+            <div className={styles.loginActions}>
+              <Link
+                href={`/login?returnTo=${encodeURIComponent(HOME_RETURN_TO)}`}
+                className={styles.primaryLink}
+                onClick={persistDraftForLogin}
+              >
+                로그인하러 가기
+              </Link>
+              <Link
+                href={`/register?returnTo=${encodeURIComponent(HOME_RETURN_TO)}`}
+                className={styles.ghostLink}
+                onClick={persistDraftForLogin}
+              >
+                회원가입하러 가기
+              </Link>
+              <button type="button" className={styles.ghostButton} onClick={() => setShowLoginWall(false)}>
+                지금은 둘러보기
+              </button>
+            </div>
+          </section>
+        </div>
       ) : null}
 
       {error ? <p className={styles.errorText}>{error}</p> : null}
@@ -1854,6 +2356,7 @@ export function AnswerLoop() {
       {step === "feedback" && renderFeedbackStep()}
       {step === "rewrite" && renderRewriteStep()}
       {step === "complete" && renderCompleteStep()}
+      {renderMonthStatusModal()}
     </main>
   );
 }

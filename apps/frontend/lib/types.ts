@@ -34,6 +34,22 @@ export interface TodayWritingStatus {
   streakDays: number;
 }
 
+export interface MonthStatusDay {
+  date: string;
+  started: boolean;
+  completed: boolean;
+  startedSessions: number;
+  completedSessions: number;
+  isToday: boolean;
+}
+
+export interface HistoryMonthStatus {
+  year: number;
+  month: number;
+  streakDays: number;
+  days: MonthStatusDay[];
+}
+
 export interface CommonMistake {
   issue: string;
   displayLabel: string;

@@ -579,6 +579,149 @@
   line-height: 1.7;
 }
 
+.welcomeStreakCard {
+  display: grid;
+  gap: 16px;
+  max-width: 560px;
+  padding: 18px 18px 16px;
+  border-radius: 24px;
+  background: rgba(248, 251, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(16px);
+}
+
+.welcomeStreakCardInteractive {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border: none;
+  color: inherit;
+  font: inherit;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+  appearance: none;
+}
+
+.welcomeStreakCardInteractive:hover {
+  transform: translateY(-1px);
+  border-color: rgba(255, 255, 255, 0.22);
+  box-shadow: 0 20px 38px rgba(7, 19, 42, 0.12);
+  background: rgba(248, 251, 255, 0.14);
+}
+
+.welcomeStreakCardInteractive:focus-visible {
+  outline: 3px solid rgba(var(--warm-accent-light-rgb), 0.38);
+  outline-offset: 3px;
+}
+
+.welcomeStreakHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.welcomeStreakIcon {
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.welcomeStreakIconCore {
+  width: 19px;
+  height: 24px;
+  background: linear-gradient(180deg, rgba(var(--warm-accent-light-rgb), 0.96) 0%, rgba(var(--warm-accent-rgb), 1) 100%);
+  clip-path: polygon(50% 0%, 85% 28%, 100% 58%, 84% 88%, 50% 100%, 16% 88%, 0% 58%, 15% 28%);
+}
+
+.welcomeStreakCopy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.welcomeStreakCopy strong {
+  color: #ffffff;
+  font-size: 1.08rem;
+  line-height: 1.2;
+}
+
+.welcomeStreakCopy span {
+  color: rgba(248, 251, 255, 0.78);
+  font-size: 0.94rem;
+  line-height: 1.55;
+}
+
+.welcomeStreakWeek {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.welcomeStreakDay {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.welcomeStreakDayLabel {
+  color: rgba(248, 251, 255, 0.6);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.welcomeStreakDayDot {
+  position: relative;
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.welcomeStreakDayCompleted .welcomeStreakDayLabel {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.welcomeStreakDayCompleted .welcomeStreakDayDot {
+  border-color: rgba(var(--warm-accent-light-rgb), 0.4);
+  background: linear-gradient(180deg, rgba(var(--warm-accent-light-rgb), 0.92) 0%, rgba(var(--warm-accent-rgb), 0.98) 100%);
+  box-shadow: 0 8px 16px rgba(var(--warm-accent-rgb), 0.24);
+}
+
+.welcomeStreakDayToday .welcomeStreakDayLabel {
+  color: #ffffff;
+}
+
+.welcomeStreakDayToday .welcomeStreakDayDot {
+  box-shadow:
+    0 0 0 4px rgba(255, 255, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.welcomeStreakDayToday .welcomeStreakDayDot::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 8px;
+  height: 6px;
+  background: rgba(var(--warm-accent-light-rgb), 0.96);
+  clip-path: polygon(50% 100%, 0 0, 100% 0);
+  transform: translateX(-50%);
+}
+
 .pickStage {
   margin-top: 20px;
   border: 1px solid rgba(16, 36, 76, 0.08);
@@ -1050,30 +1193,74 @@
   align-items: center;
 }
 
-.loginWall {
+.loginWallOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 84;
   display: grid;
-  grid-template-columns: 1.4fr 0.9fr;
-  gap: 20px;
-  margin-top: 20px;
+  place-items: center;
   padding: 24px;
-  border-radius: 24px;
-  background: var(--warm-accent-surface-2);
-  border: 1px solid rgba(var(--warm-accent-rgb), 0.24);
-  box-shadow: 0 18px 48px rgba(192, 116, 34, 0.12);
+  background: rgba(11, 22, 42, 0.28);
+  backdrop-filter: blur(14px);
+  animation: loginWallOverlayIn 0.22s ease;
+}
+
+.loginWall {
+  position: relative;
+  width: min(780px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1.24fr) minmax(240px, 0.76fr);
+  gap: 24px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 251, 246, 0.98);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.22);
+  box-shadow: 0 28px 64px rgba(18, 34, 68, 0.18);
+  animation: loginWallDialogIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.loginWallCopy {
+  display: grid;
+  gap: 10px;
+  align-content: start;
 }
 
 .loginWall h2 {
-  margin: 10px 0 0;
+  margin: 0;
   font-size: clamp(1.5rem, 2vw, 2rem);
-  line-height: 1.2;
+  line-height: 1.18;
   color: var(--warm-accent-deep);
 }
 
 .loginWall p {
-  margin: 12px 0 0;
+  margin: 0;
   max-width: 640px;
   line-height: 1.7;
   color: var(--warm-accent-deep);
+}
+
+.loginWallHint {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(var(--warm-accent-rgb), 0.1);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.14);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.loginWallClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(16, 36, 76, 0.06);
+  color: #10244c;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
 }
 
 .loginBadge {
@@ -1092,6 +1279,408 @@
   display: grid;
   align-content: center;
   gap: 10px;
+}
+
+.loginActions > * {
+  width: 100%;
+}
+
+.monthStatusOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(11, 22, 42, 0.28);
+  backdrop-filter: blur(14px);
+  animation: loginWallOverlayIn 0.22s ease;
+}
+
+.monthStatusDialog {
+  position: relative;
+  width: min(860px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 22px;
+  padding: 28px;
+  border-radius: 28px;
+  background: rgba(255, 251, 246, 0.98);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.22);
+  box-shadow: 0 28px 64px rgba(18, 34, 68, 0.18);
+  max-height: min(82svh, 820px);
+  overflow: auto;
+  animation: loginWallDialogIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.monthStatusCopy {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  position: relative;
+  z-index: 2;
+}
+
+.monthStatusBody {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.monthStatusBadge {
+  display: inline-flex;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: rgba(108, 49, 7, 0.08);
+  color: #8d430f;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.monthStatusCopy h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: 1.18;
+  color: var(--warm-accent-deep);
+}
+
+.monthStatusMonthRail {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 16px;
+}
+
+.monthStatusMonthDisplay {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.monthStatusMonthYear {
+  color: rgba(16, 36, 76, 0.48);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.monthStatusMonthValue {
+  color: #10244c;
+  font-size: clamp(2.5rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 0.95;
+}
+
+.monthStatusNavButton {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.18);
+  background: rgba(var(--warm-accent-rgb), 0.08);
+  color: var(--warm-accent-deep);
+  font: inherit;
+  font-size: 1.2rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.monthStatusNavButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: rgba(var(--warm-accent-rgb), 0.14);
+}
+
+.monthStatusNavButton:focus-visible {
+  outline: 2px solid rgba(var(--warm-accent-rgb), 0.22);
+  outline-offset: 2px;
+}
+
+.monthStatusNavButton:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.monthStatusSummary {
+  display: grid;
+  padding: 30px 22px 28px;
+  position: relative;
+  z-index: 1;
+}
+
+.monthStatusSummaryItem {
+  position: relative;
+  overflow: visible;
+  isolation: isolate;
+  min-height: 0;
+}
+
+.monthStatusSummaryCard {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 4px;
+  padding: 18px 20px;
+  border-radius: 20px;
+  background: rgba(255, 244, 232, 0.96);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.24),
+    0 0 0 1px rgba(var(--warm-accent-rgb), 0.1),
+    0 18px 40px rgba(255, 156, 38, 0.16),
+    0 0 26px rgba(255, 188, 108, 0.16);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.monthStatusSummarySparkleLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.monthStatusSummaryCopy {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 2px;
+}
+
+.monthStatusSummaryCopy span {
+  color: #8a5728;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.monthStatusSummaryCopy strong {
+  color: var(--warm-accent-deep);
+  font-size: clamp(1.5rem, 2.4vw, 1.9rem);
+  line-height: 1.1;
+}
+
+.monthStatusLegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 12px;
+}
+
+.monthStatusLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--warm-accent-deep);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.monthStatusLegendMark {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 36, 76, 0.12);
+}
+
+.monthStatusLegendMarkComplete {
+  background: linear-gradient(180deg, rgba(var(--warm-accent-light-rgb), 0.92) 0%, rgba(var(--warm-accent-rgb), 0.98) 100%);
+  border-color: rgba(var(--warm-accent-rgb), 0.2);
+}
+
+.monthStatusLegendMarkStarted {
+  background: linear-gradient(180deg, rgba(255, 231, 185, 0.96) 0%, rgba(247, 171, 64, 0.9) 100%);
+  border-color: rgba(217, 132, 35, 0.2);
+}
+
+.monthStatusLegendMarkToday {
+  background: linear-gradient(180deg, rgba(190, 222, 255, 0.96) 0%, rgba(79, 138, 255, 0.92) 100%);
+  border-color: rgba(46, 124, 246, 0.2);
+}
+
+.monthStatusLegendMarkFuture {
+  background: rgba(16, 36, 76, 0.08);
+  border-style: dashed;
+}
+
+.monthStatusWeekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  padding: 0 2px;
+  color: #7b4a1e;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.monthStatusWeekdays span {
+  text-align: center;
+}
+
+.monthStatusCalendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.monthStatusEmptyCell {
+  min-height: 84px;
+}
+
+.monthStatusDay {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  gap: 8px;
+  min-height: 84px;
+  padding: 12px 10px 11px;
+  border-radius: 18px;
+  border: 1px solid var(--month-status-day-border, rgba(16, 36, 76, 0.08));
+  background: var(--month-status-day-bg, #ffffff);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.monthStatusDayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.monthStatusDayNumber {
+  color: var(--month-status-day-number-color, #10244c);
+  font-size: 1.04rem;
+  font-weight: 800;
+}
+
+.monthStatusDayState {
+  color: var(--month-status-day-state-color, var(--text-sub));
+  font-size: 0.82rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.monthStatusDayInteractive {
+  cursor: pointer;
+  text-align: left;
+  appearance: none;
+  font: inherit;
+}
+
+.monthStatusDayInteractive:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 16px rgba(16, 36, 76, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.monthStatusDayInteractive:focus-visible {
+  outline: 2px solid rgba(46, 124, 246, 0.24);
+  outline-offset: 2px;
+}
+
+.monthStatusDayCompleted {
+  color: #7a3a11;
+}
+
+.monthStatusDayStarted {
+  color: #8b5a18;
+}
+
+.monthStatusDayToday {
+  box-shadow:
+    0 0 0 1px rgba(46, 124, 246, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.monthStatusDayFuture {
+  opacity: 0.58;
+  border-style: dashed;
+  background: rgba(16, 36, 76, 0.03);
+}
+
+.monthStatusDayIdle {
+  background: rgba(16, 36, 76, 0.02);
+}
+
+.monthStatusStatePanel {
+  display: grid;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(16, 36, 76, 0.04);
+  border: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.monthStatusStatePanel strong {
+  color: var(--warm-accent-deep);
+  font-size: 1rem;
+}
+
+.monthStatusStatePanel p {
+  margin: 0;
+  color: var(--warm-accent-deep);
+  line-height: 1.65;
+}
+
+.monthStatusClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(16, 36, 76, 0.06);
+  color: #10244c;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+@keyframes loginWallOverlayIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes loginWallDialogIn {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes loginWallSheetIn {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .promptList {
@@ -1881,6 +2470,129 @@
     display: none;
   }
 
+  .loginWallOverlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .loginWall {
+    width: 100%;
+    max-height: min(82svh, 680px);
+    overflow: auto;
+    gap: 18px;
+    padding: 54px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    border-radius: 24px 24px 0 0;
+    animation: loginWallSheetIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .loginWallCopy {
+    gap: 8px;
+    padding-right: 0;
+  }
+
+  .loginWallClose {
+    top: 10px;
+    right: 10px;
+  }
+
+  .loginWallHint {
+    padding: 11px 12px;
+    font-size: 0.92rem;
+  }
+
+  .monthStatusOverlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .monthStatusDialog {
+    width: 100%;
+    max-height: min(86svh, 760px);
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 54px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    border-radius: 24px 24px 0 0;
+    animation: loginWallSheetIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .monthStatusCopy {
+    gap: 8px;
+    padding-right: 0;
+  }
+
+  .monthStatusMonthRail {
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+    gap: 10px;
+  }
+
+  .monthStatusNavButton {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+
+  .monthStatusMonthValue {
+    font-size: 3rem;
+  }
+
+  .monthStatusBody {
+    gap: 12px;
+  }
+
+  .monthStatusClose {
+    top: 10px;
+    right: 10px;
+  }
+
+  .monthStatusSummary {
+    grid-template-columns: 1fr;
+    padding: 24px 12px 18px;
+  }
+
+  .monthStatusSummaryItem {
+    min-height: 0;
+  }
+
+  .monthStatusSummaryCard {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .monthStatusSummaryCopy strong {
+    font-size: 1.45rem;
+  }
+
+  .monthStatusLegend {
+    gap: 8px 10px;
+  }
+
+  .monthStatusWeekdays {
+    gap: 6px;
+    font-size: 0.72rem;
+  }
+
+  .monthStatusCalendar {
+    gap: 6px;
+  }
+
+  .monthStatusEmptyCell,
+  .monthStatusDay {
+    min-height: 72px;
+  }
+
+  .monthStatusDay {
+    padding: 10px 8px 9px;
+    border-radius: 16px;
+  }
+
+  .monthStatusDayNumber {
+    font-size: 0.98rem;
+  }
+
+  .monthStatusDayState {
+    font-size: 0.74rem;
+  }
+
   .difficultyStageGrid {
     grid-template-columns: 1fr;
   }
@@ -1940,6 +2652,56 @@
     color: rgba(248, 251, 255, 0.88);
     font-size: 0.96rem;
     line-height: 1.65;
+  }
+
+  .welcomeStreakCard {
+    gap: 14px;
+    padding: 16px 14px 14px;
+    border-radius: 22px;
+  }
+
+  .welcomeStreakHeader {
+    gap: 12px;
+  }
+
+  .welcomeStreakIcon {
+    width: 42px;
+    height: 42px;
+    border-radius: 16px;
+  }
+
+  .welcomeStreakIconCore {
+    width: 16px;
+    height: 20px;
+  }
+
+  .welcomeStreakCopy strong {
+    font-size: 1rem;
+  }
+
+  .welcomeStreakCopy span {
+    font-size: 0.88rem;
+  }
+
+  .welcomeStreakWeek {
+    gap: 6px;
+  }
+
+  .welcomeStreakDay {
+    gap: 6px;
+  }
+
+  .welcomeStreakDayLabel {
+    font-size: 0.74rem;
+  }
+
+  .welcomeStreakDayDot {
+    width: 28px;
+    height: 28px;
+  }
+
+  .welcomeStreakDayToday .welcomeStreakDayDot::after {
+    bottom: -8px;
   }
 
   .stageHeader {

@@ -8,6 +8,8 @@ import com.writeloop.dto.AnswerHistorySessionDto;
 import com.writeloop.dto.CommonMistakeDto;
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.MonthWritingStatusDayDto;
+import com.writeloop.dto.MonthWritingStatusDto;
 import com.writeloop.dto.TodayWritingStatusDto;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
@@ -18,9 +20,12 @@ import com.writeloop.persistence.PromptRepository;
 import com.writeloop.persistence.SessionStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Comparator;
@@ -87,7 +92,7 @@ public class AnswerHistoryService {
                 start,
                 end
         );
-        long completedSessions = answerSessionRepository.countByUserIdAndStatusAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+        long completedSessions = answerSessionRepository.countByUserIdAndStatusAndUpdatedAtGreaterThanEqualAndUpdatedAtLessThan(
                 userId,
                 SessionStatus.COMPLETED,
                 start,
@@ -100,6 +105,76 @@ public class AnswerHistoryService {
                 completedSessions,
                 startedSessions,
                 calculateStreakDays(userId, today)
+        );
+    }
+
+    public MonthWritingStatusDto getMonthStatus(Long userId, int year, int month) {
+        YearMonth yearMonth;
+        try {
+            yearMonth = YearMonth.of(year, month);
+        } catch (Exception exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid year or month", exception);
+        }
+
+        LocalDate monthStart = yearMonth.atDay(1);
+        LocalDate monthEnd = yearMonth.atEndOfMonth();
+        Instant start = monthStart.atStartOfDay(KOREA_ZONE).toInstant();
+        Instant end = monthEnd.plusDays(1).atStartOfDay(KOREA_ZONE).toInstant();
+        LocalDate today = LocalDate.now(KOREA_ZONE);
+
+        List<AnswerSessionEntity> startedSessions = answerSessionRepository
+                .findByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAsc(userId, start, end);
+        List<AnswerSessionEntity> completedSessions = answerSessionRepository
+                .findByUserIdAndStatusAndUpdatedAtGreaterThanEqualAndUpdatedAtLessThanOrderByUpdatedAtAsc(
+                        userId,
+                        SessionStatus.COMPLETED,
+                        start,
+                        end
+                );
+
+        Map<LocalDate, DayAggregate> aggregates = new LinkedHashMap<>();
+        LocalDate cursor = monthStart;
+        while (!cursor.isAfter(monthEnd)) {
+            aggregates.put(cursor, new DayAggregate(cursor.equals(today)));
+            cursor = cursor.plusDays(1);
+        }
+
+        for (AnswerSessionEntity session : startedSessions) {
+            LocalDate sessionDate = session.getCreatedAt().atZone(KOREA_ZONE).toLocalDate();
+            DayAggregate aggregate = aggregates.get(sessionDate);
+            if (aggregate == null) {
+                continue;
+            }
+
+            aggregate.startedSessions += 1;
+            aggregate.started = true;
+        }
+
+        for (AnswerSessionEntity session : completedSessions) {
+            LocalDate sessionDate = session.getUpdatedAt().atZone(KOREA_ZONE).toLocalDate();
+            DayAggregate aggregate = aggregates.get(sessionDate);
+            if (aggregate == null) {
+                continue;
+            }
+
+            aggregate.completedSessions += 1;
+            aggregate.completed = true;
+        }
+
+        return new MonthWritingStatusDto(
+                yearMonth.getYear(),
+                yearMonth.getMonthValue(),
+                calculateStreakDays(userId, today),
+                aggregates.entrySet().stream()
+                        .map(entry -> new MonthWritingStatusDayDto(
+                                entry.getKey().toString(),
+                                entry.getValue().started,
+                                entry.getValue().completed,
+                                entry.getValue().startedSessions,
+                                entry.getValue().completedSessions,
+                                entry.getValue().isToday
+                        ))
+                        .toList()
         );
     }
 
@@ -151,14 +226,14 @@ public class AnswerHistoryService {
 
     private long calculateStreakDays(Long userId, LocalDate today) {
         List<AnswerSessionEntity> completedSessions = answerSessionRepository
-                .findByUserIdAndStatusOrderByCreatedAtDesc(userId, SessionStatus.COMPLETED);
+                .findByUserIdAndStatusOrderByUpdatedAtDesc(userId, SessionStatus.COMPLETED);
 
         if (completedSessions.isEmpty()) {
             return 0;
         }
 
         Set<LocalDate> completedDates = completedSessions.stream()
-                .map(session -> session.getCreatedAt().atZone(KOREA_ZONE).toLocalDate())
+                .map(session -> session.getUpdatedAt().atZone(KOREA_ZONE).toLocalDate())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         if (completedDates.isEmpty()) {
@@ -174,6 +249,18 @@ public class AnswerHistoryService {
         }
 
         return streak;
+    }
+
+    private static final class DayAggregate {
+        private boolean started;
+        private boolean completed;
+        private long startedSessions;
+        private long completedSessions;
+        private final boolean isToday;
+
+        private DayAggregate(boolean isToday) {
+            this.isToday = isToday;
+        }
     }
 
     private List<CorrectionDto> extractCorrections(AnswerAttemptEntity attempt) {

@@ -20,7 +20,29 @@ public interface AnswerSessionRepository extends JpaRepository<AnswerSessionEnti
             Instant end
     );
 
+    long countByUserIdAndStatusAndUpdatedAtGreaterThanEqualAndUpdatedAtLessThan(
+            Long userId,
+            SessionStatus status,
+            Instant start,
+            Instant end
+    );
+
+    List<AnswerSessionEntity> findByUserIdAndCreatedAtGreaterThanEqualAndCreatedAtLessThanOrderByCreatedAtAsc(
+            Long userId,
+            Instant start,
+            Instant end
+    );
+
+    List<AnswerSessionEntity> findByUserIdAndStatusAndUpdatedAtGreaterThanEqualAndUpdatedAtLessThanOrderByUpdatedAtAsc(
+            Long userId,
+            SessionStatus status,
+            Instant start,
+            Instant end
+    );
+
     List<AnswerSessionEntity> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, SessionStatus status);
+
+    List<AnswerSessionEntity> findByUserIdAndStatusOrderByUpdatedAtDesc(Long userId, SessionStatus status);
 
     List<AnswerSessionEntity> findByUserIdOrderByCreatedAtDesc(Long userId);
 }

@@ -20,6 +20,52 @@ export interface PromptHint {
   displayOrder: number;
 }
 
+export interface CoachExpression {
+  id: string;
+  expression: string;
+  meaningKo: string;
+  usageTip: string;
+  example: string;
+}
+
+export interface CoachHelpRequest {
+  promptId: string;
+  question: string;
+  sessionId?: string;
+  answer?: string;
+}
+
+export interface CoachHelpResponse {
+  promptId: string;
+  userQuestion: string;
+  coachReply: string;
+  expressions: CoachExpression[];
+}
+
+export type CoachExpressionMatchType = "EXACT" | "NORMALIZED" | "PARAPHRASED" | "UNUSED";
+
+export interface CoachUsageExpression extends CoachExpression {
+  matched: boolean;
+  matchType: CoachExpressionMatchType;
+  matchedText?: string | null;
+}
+
+export interface CoachUsageCheckRequest {
+  promptId: string;
+  answer: string;
+  sessionId?: string;
+  attemptType?: "INITIAL" | "REWRITE";
+  expressions: CoachExpression[];
+}
+
+export interface CoachUsageCheckResponse {
+  promptId: string;
+  praiseMessage: string;
+  usedExpressions: CoachUsageExpression[];
+  unusedExpressions: CoachUsageExpression[];
+  relatedPromptIds: string[];
+}
+
 export interface DailyPromptRecommendation {
   recommendedDate: string;
   difficulty: DailyDifficulty;

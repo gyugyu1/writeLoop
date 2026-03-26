@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,15 +13,18 @@ import {
   type ReactNode
 } from "react";
 import {
+  checkCoachExpressionUsage,
   ApiError,
   deleteWritingDraft,
   getCurrentUser,
   getDailyPrompts,
   getMonthStatus,
+  getPrompts,
   getPromptHints,
   getTodayWritingStatus,
   getWritingDraft,
   saveWritingDraft,
+  requestCoachHelp,
   submitFeedback
 } from "../lib/api";
 import { saveHomeDraftForLogin, takeHomeDraftForLogin } from "../lib/auth-flow";
@@ -31,14 +35,18 @@ import {
 } from "../lib/home-writing-drafts";
 import { getDifficultyLabel } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
+import { buildLocalCoachHelp, buildLocalCoachUsage } from "../lib/coach";
 import type {
   AuthUser,
   DailyDifficulty,
   DailyPromptRecommendation,
+  CoachHelpResponse,
+  CoachUsageCheckResponse,
   Feedback,
   HistoryMonthStatus,
   HomeDraftSnapshot,
   HomeFlowStep,
+  Prompt,
   PromptHint,
   TodayWritingStatus,
   WritingDraft,
@@ -385,18 +393,26 @@ export function AnswerLoop() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isResolvingCurrentUser, setIsResolvingCurrentUser] = useState(true);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
+  const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
   const [showRewriteFeedback, setShowRewriteFeedback] = useState(false);
-  const [showWritingGuide, setShowWritingGuide] = useState(false);
   const [showPreviousRewriteAnswer, setShowPreviousRewriteAnswer] = useState(false);
   const [showAnswerTranslation, setShowAnswerTranslation] = useState(false);
   const [showHints, setShowHints] = useState(false);
   const [showMonthStatus, setShowMonthStatus] = useState(false);
+  const [showCoachAssistant, setShowCoachAssistant] = useState(false);
+  const [showHelpSheet, setShowHelpSheet] = useState(false);
   const [monthView, setMonthView] = useState<MonthView | null>(null);
   const [hints, setHints] = useState<PromptHint[]>([]);
   const [isLoadingHints, setIsLoadingHints] = useState(false);
   const [monthStatus, setMonthStatus] = useState<HistoryMonthStatus | null>(null);
   const [isLoadingMonthStatus, setIsLoadingMonthStatus] = useState(false);
   const [monthStatusError, setMonthStatusError] = useState("");
+  const [coachQuestion, setCoachQuestion] = useState("");
+  const [coachHelp, setCoachHelp] = useState<CoachHelpResponse | null>(null);
+  const [coachHelpError, setCoachHelpError] = useState("");
+  const [isLoadingCoachHelp, setIsLoadingCoachHelp] = useState(false);
+  const [coachUsage, setCoachUsage] = useState<CoachUsageCheckResponse | null>(null);
+  const [isCheckingCoachUsage, setIsCheckingCoachUsage] = useState(false);
   const [didRestoreDraft, setDidRestoreDraft] = useState(false);
   const [didAttemptPersistedDraftRestore, setDidAttemptPersistedDraftRestore] = useState(false);
   const [draftStatusMessage, setDraftStatusMessage] = useState("");
@@ -404,6 +420,9 @@ export function AnswerLoop() {
   const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mobileComposerBarRef = useRef<HTMLDivElement | null>(null);
   const inlineHintDrawerRef = useRef<HTMLDivElement | null>(null);
+  const coachPromptInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const coachDialogCloseButtonRef = useRef<HTMLButtonElement | null>(null);
+  const helpSheetCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const knownPersistedDraftKeysRef = useRef<Set<string>>(new Set());
   const [mobileComposerBarHeight, setMobileComposerBarHeight] = useState(0);
   const [mobileInlineHintHeight, setMobileInlineHintHeight] = useState(0);
@@ -476,6 +495,7 @@ export function AnswerLoop() {
     setStep(draft.step);
     setPickFlowScreen("prompt");
     setShowLoginWall(false);
+    setShowCoachAssistant(false);
     setError("");
     setShowRewriteFeedback(false);
     setShowAnswerTranslation(false);
@@ -517,6 +537,29 @@ export function AnswerLoop() {
   }, [currentUser]);
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function loadAllPrompts() {
+      try {
+        const nextPrompts = await getPrompts();
+        if (isMounted) {
+          setAllPrompts(nextPrompts);
+        }
+      } catch {
+        if (isMounted) {
+          setAllPrompts([]);
+        }
+      }
+    }
+
+    void loadAllPrompts();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!showMonthStatus) {
       return;
     }
@@ -545,6 +588,66 @@ export function AnswerLoop() {
       }
     };
   }, [showMonthStatus]);
+
+  useEffect(() => {
+    if (!showCoachAssistant || typeof document === "undefined" || typeof window === "undefined") {
+      return;
+    }
+
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowCoachAssistant(false);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    window.requestAnimationFrame(() => {
+      coachPromptInputRef.current?.focus();
+    });
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+      if (previousActiveElement && typeof previousActiveElement.focus === "function") {
+        window.requestAnimationFrame(() => {
+          previousActiveElement.focus();
+        });
+      }
+    };
+  }, [showCoachAssistant]);
+
+  useEffect(() => {
+    if (!showHelpSheet || typeof document === "undefined" || typeof window === "undefined") {
+      return;
+    }
+
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowHelpSheet(false);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    window.requestAnimationFrame(() => {
+      helpSheetCloseButtonRef.current?.focus();
+    });
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+      if (previousActiveElement && typeof previousActiveElement.focus === "function") {
+        window.requestAnimationFrame(() => {
+          previousActiveElement.focus();
+        });
+      }
+    };
+  }, [showHelpSheet]);
 
   useEffect(() => {
     let isMounted = true;
@@ -668,9 +771,15 @@ export function AnswerLoop() {
     [pendingDifficultySelection]
   );
   const selectedPrompt = useMemo(
-    () => prompts.find((prompt) => prompt.id === selectedPromptId) ?? null,
-    [prompts, selectedPromptId]
+    () =>
+      prompts.find((prompt) => prompt.id === selectedPromptId) ??
+      allPrompts.find((prompt) => prompt.id === selectedPromptId) ??
+      null,
+    [allPrompts, prompts, selectedPromptId]
   );
+  const promptById = useMemo(() => {
+    return new Map(allPrompts.map((prompt) => [prompt.id, prompt] as const));
+  }, [allPrompts]);
   const vocabularyHints = useMemo(
     () => hints.filter((hint) => hint.hintType === "VOCAB"),
     [hints]
@@ -703,6 +812,23 @@ export function AnswerLoop() {
     () => answerGuide.checklist.map((item) => item.title).join(" · "),
     [answerGuide]
   );
+  const coachQuickQuestions = useMemo(() => {
+    const base = [
+      "이 질문에서 쓸 수 있는 이유 표현 알려줘",
+      "첫 문장을 시작하는 자연스러운 표현 알려줘",
+      "짧은 예시를 붙일 때 쓸 표현 알려줘"
+    ];
+
+    if (selectedPrompt?.difficulty === "C") {
+      return [...base, "비교하거나 반대 의견을 넣는 표현 알려줘"];
+    }
+
+    if (selectedPrompt?.difficulty === "A") {
+      return base;
+    }
+
+    return [...base, "답변을 더 자연스럽게 이어주는 연결 표현 알려줘"];
+  }, [selectedPrompt?.difficulty]);
   const rewriteWordCount = useMemo(() => countWords(rewrite), [rewrite]);
   const welcomeWeekDays = useMemo(() => buildWelcomeWeek(todayStatus), [todayStatus]);
   const monthCalendar = buildMonthCalendar(monthStatus, activeMonthView, todayStatus?.date);
@@ -748,6 +874,31 @@ export function AnswerLoop() {
 
     return null;
   }, [prompts, selectedPromptId]);
+  const coachRelatedPrompts = useMemo(() => {
+    const sourceIds = coachUsage?.relatedPromptIds ?? [];
+    const sourcePrompts = allPrompts.length > 0 ? allPrompts : prompts;
+    const related = sourceIds
+      .map((promptId) => promptById.get(promptId) ?? sourcePrompts.find((prompt) => prompt.id === promptId))
+      .filter((candidate): candidate is Prompt => {
+        if (!candidate) {
+          return false;
+        }
+
+        return candidate.id !== selectedPromptId;
+      });
+
+    if (related.length > 0) {
+      return related;
+    }
+
+    if (!selectedPrompt) {
+      return sourcePrompts.filter((prompt) => prompt.id !== selectedPromptId).slice(0, 3);
+    }
+
+    return sourcePrompts
+      .filter((prompt) => prompt.id !== selectedPromptId && prompt.difficulty === selectedPrompt.difficulty)
+      .slice(0, 3);
+  }, [allPrompts, coachUsage?.relatedPromptIds, promptById, prompts, selectedPrompt, selectedPromptId]);
 
   const isLoggedIn = Boolean(currentUser);
   const activeDraftType: WritingDraftType | null =
@@ -912,6 +1063,12 @@ export function AnswerLoop() {
     };
   }, [showHints, step, vocabularyHints.length, isLoadingHints]);
 
+  useEffect(() => {
+    if (step !== "answer" && step !== "rewrite") {
+      setShowHelpSheet(false);
+    }
+  }, [step]);
+
   function togglePromptTranslation(promptId: string) {
     setRevealedTranslations((current) => ({
       ...current,
@@ -936,9 +1093,10 @@ export function AnswerLoop() {
     setStep(draft.step as Step);
     setPickFlowScreen("prompt");
     setShowLoginWall(false);
+    setShowCoachAssistant(false);
+    setShowHelpSheet(false);
     setError("");
     setShowRewriteFeedback(false);
-    setShowWritingGuide(false);
     setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setShowHints(false);
@@ -1050,6 +1208,17 @@ export function AnswerLoop() {
     markPersistedDraftKnown(promptId, draftType, false);
   }, [isLoggedIn, markPersistedDraftKnown]);
 
+  function clearCoachState() {
+    setShowCoachAssistant(false);
+    setShowHelpSheet(false);
+    setCoachQuestion("");
+    setCoachHelp(null);
+    setCoachHelpError("");
+    setCoachUsage(null);
+    setIsLoadingCoachHelp(false);
+    setIsCheckingCoachUsage(false);
+  }
+
   const restorePersistedDraft = useCallback(async (promptId: string): Promise<boolean> => {
     try {
       const draft = await loadPersistedDraft(promptId);
@@ -1068,13 +1237,13 @@ export function AnswerLoop() {
     setSelectedPromptId(promptId);
     setSessionId(promptId === guestPromptId ? guestSessionId : "");
     setFeedback(null);
+    clearCoachState();
     setAnswer("");
     setRewrite("");
     setLastSubmittedAnswer("");
     setError("");
     setShowLoginWall(false);
     setShowRewriteFeedback(false);
-    setShowWritingGuide(false);
     setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setShowHints(false);
@@ -1089,6 +1258,16 @@ export function AnswerLoop() {
         "게스트는 질문 1개만 시작할 수 있어요. 다른 질문으로 이어서 학습하려면 로그인해 주세요."
       );
       return;
+    }
+
+    if (promptId !== selectedPromptId) {
+      clearCoachState();
+    }
+
+    const targetPrompt = promptById.get(promptId);
+    if (targetPrompt && targetPrompt.difficulty !== selectedDifficulty) {
+      setSelectedDifficulty(targetPrompt.difficulty);
+      setPendingDifficultySelection(targetPrompt.difficulty);
     }
 
     if (await restorePersistedDraft(promptId)) {
@@ -1109,6 +1288,7 @@ export function AnswerLoop() {
     }
 
     if (pendingDifficultySelection !== selectedDifficulty) {
+      clearCoachState();
       setDailyRecommendation(null);
       setSelectedPromptId("");
       setIsLoadingPrompts(true);
@@ -1127,13 +1307,13 @@ export function AnswerLoop() {
 
   function handleTryAnotherPrompt() {
     setFeedback(null);
+    clearCoachState();
     setAnswer("");
     setRewrite("");
     setLastSubmittedAnswer("");
     setError("");
     setShowLoginWall(false);
     setShowRewriteFeedback(false);
-    setShowWritingGuide(false);
     setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setDraftStatusMessage("");
@@ -1295,7 +1475,13 @@ export function AnswerLoop() {
     }
 
     setError("");
+    setShowCoachAssistant(false);
+    setShowHelpSheet(false);
     setIsSubmitting(true);
+
+    const coachHelpSnapshot = coachHelp;
+    const promptSnapshot = selectedPrompt;
+    const promptPoolSnapshot = allPrompts.length > 0 ? allPrompts : prompts;
 
     void submitFeedback({
       promptId: selectedPromptId,
@@ -1335,6 +1521,39 @@ export function AnswerLoop() {
         }
 
         setShowLoginWall(false);
+
+        if (coachHelpSnapshot && promptSnapshot && coachHelpSnapshot.expressions.length > 0) {
+          setIsCheckingCoachUsage(true);
+          void (async () => {
+            try {
+              const usageRequest = {
+                promptId: selectedPromptId,
+                answer: nextAnswer.trim(),
+                sessionId: result.sessionId,
+                attemptType: mode,
+                expressions: coachHelpSnapshot.expressions
+              };
+
+              let usageResult: CoachUsageCheckResponse;
+              try {
+                usageResult = await checkCoachExpressionUsage(usageRequest);
+              } catch {
+                usageResult = buildLocalCoachUsage(
+                  promptSnapshot,
+                  nextAnswer.trim(),
+                  coachHelpSnapshot.expressions,
+                  promptPoolSnapshot
+                );
+              }
+
+              setCoachUsage(usageResult);
+            } finally {
+              setIsCheckingCoachUsage(false);
+            }
+          })();
+        } else {
+          setCoachUsage(null);
+        }
       })
       .catch((caughtError: unknown) => {
         if (caughtError instanceof ApiError && caughtError.code === "GUEST_LIMIT_REACHED") {
@@ -1388,13 +1607,11 @@ export function AnswerLoop() {
   function renderStageHeader({
     stepNumber,
     title,
-    description,
     meta,
     action
   }: {
     stepNumber: number;
     title: string;
-    description?: string;
     meta?: string;
     action?: ReactNode;
   }) {
@@ -1408,7 +1625,6 @@ export function AnswerLoop() {
             </div>
             {meta ? <span className={styles.stageHeaderMeta}>{meta}</span> : null}
           </div>
-          {description ? <p className={styles.stageHeaderDescription}>{description}</p> : null}
         </div>
         {action ? <div className={styles.stageHeaderAction}>{action}</div> : null}
       </div>
@@ -1473,8 +1689,7 @@ export function AnswerLoop() {
           <section className={styles.pickStage}>
             {renderStageHeader({
               stepNumber: 1,
-              title: "난이도 선택",
-              description: "오늘은 어느 정도 길이와 난이도로 시작할지 먼저 골라보세요."
+              title: "난이도 선택"
             })}
 
             <div className={styles.difficultyStageGrid}>
@@ -1520,9 +1735,6 @@ export function AnswerLoop() {
         {renderStageHeader({
           stepNumber: 2,
           title: "질문 선택",
-          description: dailyRecommendation
-            ? `${dailyRecommendation.recommendedDate} 기준 추천 질문이에요.`
-            : "선택한 난이도에 맞는 질문을 준비하고 있어요.",
           meta: getDifficultyLabel(selectedDifficulty),
           action: (
             <button
@@ -1615,14 +1827,12 @@ export function AnswerLoop() {
   }
 
   function renderMobileComposerBar({
-    wordCount,
     secondaryLabel,
     onSecondary,
     primaryLabel,
     onPrimary,
     primaryDisabled
   }: {
-    wordCount: number;
     secondaryLabel: string;
     onSecondary: () => void;
     primaryLabel: string;
@@ -1631,9 +1841,6 @@ export function AnswerLoop() {
   }) {
     return (
       <div ref={mobileComposerBarRef} className={styles.mobileComposerBar}>
-        <div className={styles.mobileComposerMeta}>
-          <strong>{wordCount}단어</strong>
-        </div>
         <div className={styles.mobileComposerActions}>
           <button type="button" className={styles.mobileComposerGhost} onClick={onSecondary}>
             {secondaryLabel}
@@ -1654,24 +1861,37 @@ export function AnswerLoop() {
   function renderWritingComposer({
     value,
     onChange,
-    placeholder
+    placeholder,
+    wordCount
   }: {
     value: string;
     onChange: (nextValue: string) => void;
     placeholder: string;
+    wordCount: number;
   }) {
     return (
       <section className={styles.writingComposer}>
         <div className={styles.writingComposerQuestion}>
           <div className={styles.writingComposerHeader}>
             <span className={styles.writingComposerBadge}>{selectedPrompt?.topic ?? "오늘의 질문"}</span>
-            <button
-              type="button"
-              className={`${styles.promptTranslationButton} ${styles.writingComposerToggle}`}
-              onClick={() => setShowAnswerTranslation((current) => !current)}
-            >
-              {showAnswerTranslation ? "번역 숨기기" : "번역 보기"}
-            </button>
+            <div className={styles.writingComposerHeaderActions}>
+              <button
+                type="button"
+                className={`${styles.promptTranslationButton} ${styles.writingComposerToggle}`}
+                onClick={() => setShowAnswerTranslation((current) => !current)}
+              >
+                {showAnswerTranslation ? "번역 숨기기" : "번역 보기"}
+              </button>
+              <button
+                type="button"
+                className={styles.writingComposerHelpButton}
+                aria-haspopup="dialog"
+                aria-expanded={showHelpSheet}
+                onClick={() => setShowHelpSheet(true)}
+              >
+                작성 가이드
+              </button>
+            </div>
           </div>
           <p className={styles.writingComposerQuestionText}>
             {selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}
@@ -1690,8 +1910,331 @@ export function AnswerLoop() {
             placeholder={placeholder}
             rows={8}
           />
+          <span className={styles.composerWordCount}>{wordCount}단어</span>
+          <div className={styles.coachTriggerDock}>
+            {!showCoachAssistant && !value.trim() ? (
+              <div className={styles.coachTriggerBubble}>
+                <span>표현이 막히면</span>
+                <span>AI 코치에게 물어봐요.</span>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className={styles.coachTriggerButton}
+              aria-label="AI 코치 열기"
+              aria-haspopup="dialog"
+              aria-expanded={showCoachAssistant}
+              onClick={() => setShowCoachAssistant(true)}
+            >
+              <Image
+                src="/coach/mascote-face.png"
+                alt=""
+                width={42}
+                height={42}
+                className={styles.coachTriggerMascot}
+              />
+            </button>
+          </div>
         </div>
       </section>
+    );
+  }
+
+  async function handleCoachQuestionSubmit() {
+    if (!selectedPrompt) {
+      setCoachHelpError("질문을 먼저 선택해 주세요.");
+      return;
+    }
+
+    const question = coachQuestion.trim();
+    if (!question) {
+      setCoachHelpError("AI에게 물어볼 표현 질문을 입력해 주세요.");
+      return;
+    }
+
+    setIsLoadingCoachHelp(true);
+    setCoachHelpError("");
+    setCoachUsage(null);
+
+    try {
+      const request = {
+        promptId: selectedPrompt.id,
+        question,
+        sessionId: sessionId || undefined,
+        answer: (step === "rewrite" ? rewrite : answer).trim() || undefined
+      };
+
+      let result: CoachHelpResponse;
+      try {
+        result = await requestCoachHelp(request);
+      } catch {
+        result = buildLocalCoachHelp(selectedPrompt, question);
+      }
+
+      setCoachHelp(result);
+    } catch {
+      setCoachHelpError("표현 코치를 불러오지 못했어요.");
+    } finally {
+      setIsLoadingCoachHelp(false);
+    }
+  }
+
+  function renderCoachAssistantPanel({ inDialog = false }: { inDialog?: boolean } = {}) {
+    return (
+      <section className={`${styles.coachPanel} ${inDialog ? styles.coachPanelDialog : ""}`}>
+        <div className={styles.coachPanelHeader}>
+          <div>
+            <span className={styles.coachEyebrow}>AI 코치</span>
+            <strong id={inDialog ? "coach-assistant-title" : undefined}>
+              AI에게 표현 물어보기
+            </strong>
+            <p>
+              사용자가 질문을 하면, 바로 쓸 수 있는 표현과 짧은 예문을 추천해 드려요.
+            </p>
+          </div>
+        </div>
+
+        <div className={styles.coachPromptArea}>
+          <textarea
+            ref={coachPromptInputRef}
+            className={styles.coachPromptInput}
+            value={coachQuestion}
+            onChange={(event) => setCoachQuestion(event.target.value)}
+            placeholder="예: 이 질문에서 이유를 자연스럽게 말하는 표현 알려줘"
+            rows={2}
+          />
+          <div className={styles.coachQuickActions}>
+            {coachQuickQuestions.map((question) => (
+              <button
+                key={question}
+                type="button"
+                className={styles.coachQuickChip}
+                onClick={() => setCoachQuestion(question)}
+              >
+                {question}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className={styles.coachActionRow}>
+          <button
+            type="button"
+            className={styles.coachPrimaryButton}
+            onClick={() => void handleCoachQuestionSubmit()}
+            disabled={isLoadingCoachHelp || !selectedPrompt}
+          >
+            {isLoadingCoachHelp ? "표현을 고르는 중..." : "표현 추천받기"}
+          </button>
+          <span className={styles.coachActionMeta}>
+            표현을 그대로 붙이지 말고, 내 문장 안에서 직접 풀어 써보세요.
+          </span>
+        </div>
+
+        {coachHelpError ? <p className={styles.coachError}>{coachHelpError}</p> : null}
+
+        {coachHelp ? (
+          <div className={styles.coachResult}>
+            <div className={styles.coachReplyCard}>
+              <span className={styles.coachReplyBadge}>코치 답변</span>
+              <p>{coachHelp.coachReply}</p>
+            </div>
+            <div className={styles.coachExpressionList}>
+              {coachHelp.expressions.map((expression) => (
+                <article key={expression.id} className={styles.coachExpressionCard}>
+                  <div className={styles.coachExpressionTop}>
+                    <strong>{expression.expression}</strong>
+                    <span>{expression.meaningKo}</span>
+                  </div>
+                  <p>{expression.usageTip}</p>
+                  <small>{expression.example}</small>
+                </article>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </section>
+    );
+  }
+
+  function renderCoachUsagePanel() {
+    if (!coachHelp) {
+      return null;
+    }
+
+    const usedExpressions = coachUsage?.usedExpressions ?? [];
+    const unusedExpressions = coachUsage?.unusedExpressions ?? [];
+
+    return (
+      <section className={styles.coachUsagePanel}>
+        <div className={styles.coachUsageHeader}>
+          <div>
+            <span className={styles.coachEyebrow}>AI 코치 결과</span>
+            <strong>
+              {isCheckingCoachUsage
+                ? "추천 표현이 답변에 쓰였는지 확인하고 있어요."
+                : coachUsage?.praiseMessage ?? "추천 표현이 어떻게 쓰였는지 확인해요."}
+            </strong>
+            <p>
+              {isCheckingCoachUsage
+                ? "잠시만 기다려 주세요."
+                : "썼던 표현은 칭찬해 주고, 아직 안 쓴 표현은 다음 시도에서 다시 볼 수 있어요."}
+            </p>
+          </div>
+          <span className={styles.coachUsageBadge}>
+            {coachHelp.expressions.length}개 추천
+          </span>
+        </div>
+
+        {coachUsage ? (
+          <>
+            <div className={styles.coachUsageGrid}>
+              <div className={styles.coachUsageColumn}>
+                <strong>잘 사용한 표현</strong>
+                {usedExpressions.length > 0 ? (
+                  <div className={styles.coachUsageCards}>
+                    {usedExpressions.map((expression) => (
+                      <article key={expression.id} className={styles.coachUsageCardUsed}>
+                        <span>{expression.expression}</span>
+                        {expression.matchedText ? <p>{expression.matchedText}</p> : null}
+                        <small>{expression.usageTip}</small>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.coachUsageEmpty}>이번 제출에서는 아직 추천 표현이 안 보였어요.</p>
+                )}
+              </div>
+
+              <div className={styles.coachUsageColumn}>
+                <strong>다음에 써볼 표현</strong>
+                {unusedExpressions.length > 0 ? (
+                  <div className={styles.coachUsageCards}>
+                    {unusedExpressions.map((expression) => (
+                      <article key={expression.id} className={styles.coachUsageCardUnused}>
+                        <span>{expression.expression}</span>
+                        <p>{expression.meaningKo}</p>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className={styles.coachUsageEmpty}>추천 표현을 모두 활용했어요.</p>
+                )}
+              </div>
+            </div>
+
+            {coachRelatedPrompts.length > 0 ? (
+              <div className={styles.coachRelatedSection}>
+                <strong>이 표현을 더 써볼 질문</strong>
+                <div className={styles.coachRelatedList}>
+                  {coachRelatedPrompts.map((prompt) => (
+                    <button
+                      key={prompt.id}
+                      type="button"
+                      className={styles.coachRelatedCard}
+                      onClick={() => void handlePickPrompt(prompt.id)}
+                    >
+                      <span>{getDifficultyLabel(prompt.difficulty)}</span>
+                      <strong>{prompt.topic}</strong>
+                      <p>{prompt.questionEn}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </>
+        ) : isCheckingCoachUsage ? (
+          <p className={styles.coachUsageEmpty}>추천 표현이 답변에 쓰였는지 확인하고 있어요.</p>
+        ) : (
+          <p className={styles.coachUsageEmpty}>추천 표현을 쓰면 여기서 칭찬과 다음 질문을 바로 볼 수 있어요.</p>
+        )}
+      </section>
+    );
+  }
+
+  function renderHelpSheet() {
+    if (!showHelpSheet || (step !== "answer" && step !== "rewrite")) {
+      return null;
+    }
+
+    return (
+      <div className={styles.helpOverlay} onClick={() => setShowHelpSheet(false)}>
+        <section
+          className={styles.helpSheet}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="writing-help-title"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            ref={helpSheetCloseButtonRef}
+            type="button"
+            className={styles.helpSheetClose}
+            aria-label="작성 가이드 닫기"
+            onClick={() => setShowHelpSheet(false)}
+          >
+            ×
+          </button>
+          <div className={styles.helpSheetHeader}>
+            <span className={styles.guideEyebrow}>작성 가이드</span>
+            <strong id="writing-help-title">바로 참고하는 가이드</strong>
+          </div>
+          <div className={styles.helpSheetBody}>
+            <section className={styles.helpSheetSection}>
+              <strong className={styles.helpSheetSectionTitle}>가이드</strong>
+              <div className={styles.helpSheetGuideList}>
+                <div className={`${styles.writingGuideTipLine} ${styles.helpSheetGuideLine}`}>
+                  <span className={styles.writingGuideStarterIcon} aria-hidden="true">
+                    &gt;
+                  </span>
+                  <div className={styles.writingGuideTipCopy}>
+                    <strong>첫 문장 스타터</strong>
+                    <span className={styles.writingGuideStarterValue}>{answerGuide.starter}</span>
+                  </div>
+                </div>
+                <div className={`${styles.writingGuideTipLine} ${styles.helpSheetGuideLine}`}>
+                  <span className={styles.writingGuideTipIcon} aria-hidden="true">
+                    !
+                  </span>
+                  <div className={styles.writingGuideTipCopy}>
+                    <strong>
+                      {answerGuide.sentenceRange[0]}-{answerGuide.sentenceRange[1]}문장 /{" "}
+                      {answerGuide.wordRange[0]}-{answerGuide.wordRange[1]}단어 권장
+                    </strong>
+                    <span>짧아도 흐름만 보이면 충분해요.</span>
+                  </div>
+                </div>
+                <div className={`${styles.writingGuideTipLine} ${styles.helpSheetGuideLine}`}>
+                  <span className={styles.writingGuideTipIcon} aria-hidden="true">
+                    !
+                  </span>
+                  <div className={styles.writingGuideTipCopy}>
+                    <strong>{answerChecklistSummary}</strong>
+                    <span>{answerProgressMessage}</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section className={styles.helpSheetSection}>
+              <strong className={styles.helpSheetSectionTitle}>단어 힌트</strong>
+              {isLoadingHints ? (
+                <p className={styles.helpSheetEmpty}>지금 단어 힌트를 준비하고 있어요.</p>
+              ) : vocabularyHints.length > 0 ? (
+                <div className={styles.helpSheetHintList}>
+                  {vocabularyHints.map((hint) => (
+                    <p key={hint.id} className={styles.helpSheetHintItem}>
+                      {hint.content}
+                    </p>
+                  ))}
+                </div>
+              ) : (
+                <p className={styles.helpSheetEmpty}>이 질문에는 준비된 단어 힌트가 없어요.</p>
+              )}
+            </section>
+          </div>
+        </section>
+      </div>
     );
   }
 
@@ -1701,36 +2244,25 @@ export function AnswerLoop() {
         {renderStageHeader({
           stepNumber: 3,
           title: "첫 답변",
-          description: "질문을 보고 영어로 짧고 분명하게 답해 보세요.",
           meta: selectedPrompt ? getDifficultyLabel(selectedPrompt.difficulty) : "..."
         })}
         {renderWritingComposer({
           value: answer,
           onChange: setAnswer,
-          placeholder: "여기에 영어로 첫 답변을 작성해 주세요."
+          placeholder: "여기에 영어로 첫 답변을 작성해 주세요.",
+          wordCount: answerWordCount
         })}
-        <div className={styles.writingGuideToggleRow}>
-          <button
-            type="button"
-            className={styles.writingGuideButton}
-            onClick={() => setShowWritingGuide((current) => !current)}
-          >
-            {showWritingGuide ? "가이드 숨기기" : "가이드 보기"}
-          </button>
-          <span className={styles.writingGuideToggleMeta}>막힐 때만 짧게 열어보면 돼요.</span>
-        </div>
-        {showWritingGuide ? (
-          <>
-            <div className={`${styles.writingGuideTipLine} ${styles.writingGuideStarterTip}`}>
-              <span className={styles.writingGuideStarterIcon} aria-hidden="true">
-                &gt;
-              </span>
-              <div className={styles.writingGuideTipCopy}>
-                <strong>첫 문장 스타터</strong>
-                <span className={styles.writingGuideStarterValue}>{answerGuide.starter}</span>
-              </div>
+        <div className={styles.writingGuideSummary}>
+          <div className={`${styles.writingGuideTipLine} ${styles.writingGuideStarterTip}`}>
+            <span className={styles.writingGuideStarterIcon} aria-hidden="true">
+              &gt;
+            </span>
+            <div className={styles.writingGuideTipCopy}>
+              <strong>첫 문장 스타터</strong>
+              <span className={styles.writingGuideStarterValue}>{answerGuide.starter}</span>
             </div>
-            <section className={styles.writingGuidePanel}>
+          </div>
+          <section className={styles.writingGuidePanel}>
             <div className={styles.writingGuideTipLine}>
               <span className={styles.writingGuideTipIcon} aria-hidden="true">
                 !
@@ -1752,9 +2284,8 @@ export function AnswerLoop() {
                 <span>{answerProgressMessage}</span>
               </div>
             </div>
-            </section>
-          </>
-        ) : null}
+          </section>
+        </div>
         <div className={styles.inlineHintRow}>
           <button
             type="button"
@@ -1779,7 +2310,6 @@ export function AnswerLoop() {
         {showHints ? renderVocabularyHintDrawer("이 질문에는 준비된 단어 힌트가 없어요.") : null}
         {draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
         {renderMobileComposerBar({
-          wordCount: answerWordCount,
           secondaryLabel: "질문 목록",
           onSecondary: () => setStep("pick"),
           primaryLabel: isSubmitting ? "피드백 생성 중..." : "답변 제출",
@@ -1816,7 +2346,6 @@ export function AnswerLoop() {
         {renderStageHeader({
           stepNumber: 4,
           title: "피드백",
-          description: "내가 쓴 답변에서 잘한 점과 다듬을 부분을 확인해 보세요.",
           meta: feedback ? `${feedback.attemptNo}번째 시도 · ${feedbackLevel?.label ?? "대기 중"}` : "대기 중"
         })}
         {feedback ? (
@@ -1825,6 +2354,7 @@ export function AnswerLoop() {
               <h3>내가 제출한 답변</h3>
               <p>{lastSubmittedAnswer}</p>
             </div>
+            {renderCoachUsagePanel()}
             <InlineFeedbackPreview
               originalAnswer={lastSubmittedAnswer}
               correctedAnswer={feedback.correctedAnswer}
@@ -1911,13 +2441,13 @@ export function AnswerLoop() {
         {renderStageHeader({
           stepNumber: 5,
           title: "다시쓰기",
-          description: "피드백을 반영해서 더 자연스럽고 구체적으로 다듬어 보세요.",
           meta: sessionId ? "같은 질문 이어쓰기" : "다시쓰기"
         })}
         {renderWritingComposer({
           value: rewrite,
           onChange: setRewrite,
-          placeholder: "피드백을 반영한 영어 답변을 다시 작성해 주세요."
+          placeholder: "피드백을 반영한 영어 답변을 다시 작성해 주세요.",
+          wordCount: rewriteWordCount
         })}
         <div className={styles.responseCard}>
           <div className={styles.mobileSectionHeader}>
@@ -2022,7 +2552,6 @@ export function AnswerLoop() {
         {showHints ? renderVocabularyHintDrawer("이 질문에는 준비된 단어 힌트가 없어요.") : null}
         {draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
         {renderMobileComposerBar({
-          wordCount: rewriteWordCount,
           secondaryLabel: "피드백",
           onSecondary: () => setStep("feedback"),
           primaryLabel: isSubmitting ? "피드백 생성 중..." : "다시쓰기 제출",
@@ -2296,6 +2825,35 @@ export function AnswerLoop() {
     );
   }
 
+  function renderCoachAssistantModal() {
+    if (!showCoachAssistant || (step !== "answer" && step !== "rewrite")) {
+      return null;
+    }
+
+    return (
+      <div className={styles.coachOverlay} onClick={() => setShowCoachAssistant(false)}>
+        <section
+          className={styles.coachDialog}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="coach-assistant-title"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <button
+            ref={coachDialogCloseButtonRef}
+            type="button"
+            className={styles.coachDialogClose}
+            aria-label="AI 코치 닫기"
+            onClick={() => setShowCoachAssistant(false)}
+          >
+            ×
+          </button>
+          {renderCoachAssistantPanel({ inDialog: true })}
+        </section>
+      </div>
+    );
+  }
+
   return (
     <main className={styles.main}>
       {step !== "pick" ? renderStepNavigation() : null}
@@ -2356,6 +2914,8 @@ export function AnswerLoop() {
       {step === "feedback" && renderFeedbackStep()}
       {step === "rewrite" && renderRewriteStep()}
       {step === "complete" && renderCompleteStep()}
+      {renderHelpSheet()}
+      {renderCoachAssistantModal()}
       {renderMonthStatusModal()}
     </main>
   );

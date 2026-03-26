@@ -660,6 +660,33 @@
   gap: 12px;
 }
 
+.historyComparisonStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.historyComparisonStat {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(var(--warm-accent-light-rgb), 0.14);
+  border: 1px solid rgba(16, 36, 76, 0.06);
+}
+
+.historyComparisonStat strong {
+  color: var(--warm-accent-deep);
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.historyComparisonStat span {
+  color: var(--text-sub);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .historyComparisonColumn {
   display: grid;
   gap: 12px;
@@ -1339,6 +1366,14 @@
 
   .myPageShell .historyComparisonGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .myPageShell .historyComparisonStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .myPageShell .historyComparisonStat:last-child {
+    grid-column: 1 / -1;
   }
 
   .myPageShell .historyComparisonColumn {

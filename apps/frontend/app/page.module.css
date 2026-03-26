@@ -1297,6 +1297,140 @@
   animation: loginWallOverlayIn 0.22s ease;
 }
 
+.helpOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 85;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(11, 22, 42, 0.24);
+  backdrop-filter: blur(14px);
+  animation: loginWallOverlayIn 0.22s ease;
+}
+
+.helpSheet {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: min(82svh, 760px);
+  overflow: auto;
+  border-radius: 28px;
+  background: rgba(255, 251, 246, 0.98);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.22);
+  box-shadow: 0 28px 64px rgba(18, 34, 68, 0.18);
+  animation: loginWallDialogIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.helpSheetClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(16, 36, 76, 0.06);
+  color: #10244c;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.helpSheetHeader {
+  display: grid;
+  gap: 8px;
+  padding: 28px 28px 18px;
+}
+
+.helpSheetHeader strong {
+  color: #10244c;
+  font-size: 1.06rem;
+  line-height: 1.45;
+}
+
+.helpSheetHeader p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.helpSheetBody {
+  display: grid;
+  gap: 14px;
+  padding: 0 28px 28px;
+}
+
+.helpSheetSection {
+  display: grid;
+  gap: 10px;
+  padding: 16px 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.helpSheetSectionTitle {
+  color: #10244c;
+  font-size: 0.96rem;
+}
+
+.helpSheetGuideList,
+.helpSheetHintList {
+  display: grid;
+  gap: 10px;
+}
+
+.helpSheetGuideLine {
+  padding: 0;
+}
+
+.helpSheetHintItem,
+.helpSheetEmpty {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.coachOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 86;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(11, 22, 42, 0.24);
+  backdrop-filter: blur(14px);
+  animation: loginWallOverlayIn 0.22s ease;
+}
+
+.coachDialog {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: min(82svh, 820px);
+  overflow: auto;
+  border-radius: 28px;
+  background: rgba(255, 251, 246, 0.98);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.22);
+  box-shadow: 0 28px 64px rgba(18, 34, 68, 0.18);
+  animation: loginWallDialogIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.coachDialogClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(16, 36, 76, 0.06);
+  color: #10244c;
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 2;
+}
+
 .monthStatusDialog {
   position: relative;
   width: min(860px, 100%);
@@ -1818,13 +1952,16 @@
 
 .promptSelectButton,
 .promptSelectButtonActive,
-.promptTranslationButton {
+.promptTranslationButton,
+.writingComposerHelpButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 40px;
   border: none;
   border-radius: 999px;
   padding: 10px 14px;
+  box-sizing: border-box;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -1866,6 +2003,13 @@
   margin-bottom: 14px;
 }
 
+.writingComposerHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .writingComposerBadge {
   display: inline-flex;
   width: fit-content;
@@ -1882,6 +2026,13 @@
 
 .writingComposerToggle {
   flex-shrink: 0;
+}
+
+.writingComposerHelpButton {
+  display: none;
+  border: 1px solid rgba(47, 124, 246, 0.16);
+  background: rgba(47, 124, 246, 0.1);
+  color: #2750bc;
 }
 
 .writingComposerQuestionText {
@@ -1901,11 +2052,485 @@
 }
 
 .writingComposerAnswer {
+  position: relative;
   display: grid;
   gap: 0;
   padding: 24px 24px 26px;
   border-top: 1px solid rgba(16, 36, 76, 0.08);
   background: rgba(255, 255, 255, 0.98);
+}
+
+.coachPanel {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.14);
+  background: linear-gradient(180deg, rgba(255, 250, 242, 0.98) 0%, rgba(255, 255, 255, 0.98) 100%);
+  box-shadow: 0 18px 34px rgba(193, 118, 30, 0.08);
+}
+
+.coachPanelDialog {
+  margin-top: 0;
+  padding: 28px;
+  border: 0;
+  border-radius: 28px;
+  background: transparent;
+  box-shadow: none;
+}
+
+.coachPanelDialog .coachPanelHeader {
+  padding-right: 52px;
+}
+
+.coachPanelHeader {
+  display: grid;
+  gap: 8px;
+}
+
+.coachEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: #9a4d18;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.guideEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(47, 124, 246, 0.12);
+  color: #2750bc;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+
+.coachPanelHeader strong,
+.coachUsageHeader strong {
+  color: #10244c;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.coachPanelHeader p,
+.coachUsageHeader p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.coachPromptArea {
+  display: grid;
+  gap: 12px;
+}
+
+.coachPromptInput {
+  width: 100%;
+  min-height: 82px;
+  resize: vertical;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 36, 76, 0.12);
+  background: rgba(255, 255, 255, 0.98);
+  color: #10244c;
+  font: inherit;
+  line-height: 1.6;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.84);
+}
+
+.coachPromptInput:focus {
+  outline: 2px solid rgba(var(--warm-accent-rgb), 0.18);
+  outline-offset: 2px;
+}
+
+.coachTriggerDock {
+  position: absolute;
+  right: 20px;
+  bottom: 22px;
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  z-index: 2;
+}
+
+.coachTriggerBubble {
+  position: relative;
+  display: grid;
+  gap: 2px;
+  max-width: 178px;
+  padding: 10px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.16);
+  background: rgba(255, 253, 248, 0.98);
+  color: var(--warm-accent-deep);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  pointer-events: none;
+  box-shadow: 0 12px 22px rgba(193, 118, 30, 0.12);
+  animation: coachBubbleFloat 2.4s ease-in-out infinite;
+}
+
+.coachTriggerBubble::after {
+  content: "";
+  position: absolute;
+  right: 22px;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  border-right: 1px solid rgba(var(--warm-accent-rgb), 0.16);
+  border-bottom: 1px solid rgba(var(--warm-accent-rgb), 0.16);
+  background: rgba(255, 253, 248, 0.98);
+  transform: rotate(45deg);
+}
+
+.coachTriggerButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: 0 12px 24px rgba(193, 118, 30, 0.12);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.coachTriggerButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(193, 118, 30, 0.16);
+}
+
+.coachTriggerMascot {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid rgba(var(--warm-accent-rgb), 0.72);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.coachTriggerButton:focus-visible,
+.coachDialogClose:focus-visible,
+.helpSheetClose:focus-visible,
+.writingComposerHelpButton:focus-visible {
+  outline: 2px solid rgba(var(--warm-accent-rgb), 0.34);
+  outline-offset: 2px;
+}
+
+@keyframes coachBubbleFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+.coachQuickActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.coachQuickChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.12);
+  background: rgba(var(--warm-accent-light-rgb), 0.1);
+  color: var(--warm-accent-deep);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.coachActionRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.coachPrimaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 999px;
+  background: var(--warm-accent);
+  color: #fff;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(193, 118, 30, 0.14);
+}
+
+.coachPrimaryButton:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.coachActionMeta {
+  color: var(--text-sub);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.coachError {
+  margin: 0;
+  color: #b33a18;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.coachResult {
+  display: grid;
+  gap: 12px;
+}
+
+.coachReplyCard {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(var(--warm-accent-light-rgb), 0.12);
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.12);
+}
+
+.coachReplyBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: #9a4d18;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.coachReplyCard p {
+  margin: 0;
+  color: #10244c;
+  line-height: 1.65;
+}
+
+.coachExpressionList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.coachExpressionCard {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.coachExpressionTop {
+  display: grid;
+  gap: 4px;
+}
+
+.coachExpressionTop strong {
+  color: #10244c;
+  font-size: 0.98rem;
+}
+
+.coachExpressionTop span {
+  color: var(--warm-accent-deep);
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.coachExpressionCard p,
+.coachExpressionCard small {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.coachExpressionCard p {
+  color: var(--text-sub);
+}
+
+.coachExpressionCard small {
+  color: #10244c;
+}
+
+.coachUsagePanel {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.12);
+  background: rgba(255, 251, 245, 0.96);
+}
+
+.coachUsageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.coachUsageBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: #9a4d18;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.coachUsageGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.coachUsageColumn {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.coachUsageColumn strong {
+  color: #10244c;
+  font-size: 0.95rem;
+}
+
+.coachUsageCards {
+  display: grid;
+  gap: 10px;
+}
+
+.coachUsageCardUsed,
+.coachUsageCardUnused {
+  display: grid;
+  gap: 4px;
+  padding: 12px 13px;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.coachUsageCardUsed {
+  background: rgba(var(--warm-accent-light-rgb), 0.14);
+}
+
+.coachUsageCardUnused {
+  background: rgba(16, 36, 76, 0.03);
+}
+
+.coachUsageCardUsed span,
+.coachUsageCardUnused span {
+  color: #10244c;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.coachUsageCardUsed p,
+.coachUsageCardUnused p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.5;
+}
+
+.coachUsageCardUsed small {
+  color: #9a4d18;
+  line-height: 1.45;
+}
+
+.coachUsageEmpty {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.coachRelatedSection {
+  display: grid;
+  gap: 10px;
+}
+
+.coachRelatedSection strong {
+  color: #10244c;
+  font-size: 0.95rem;
+}
+
+.coachRelatedList {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.coachRelatedCard {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+  text-align: left;
+  cursor: pointer;
+}
+
+.coachRelatedCard span {
+  color: var(--warm-accent-deep);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.coachRelatedCard strong {
+  color: #10244c;
+  font-size: 0.94rem;
+}
+
+.coachRelatedCard p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.55;
+  font-size: 0.88rem;
 }
 
 .questionBox {
@@ -1929,6 +2554,12 @@
 .questionTranslation {
   font-size: 0.95rem;
   color: #5b6887;
+}
+
+.writingGuideSummary {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
 }
 
 .writingGuideToggleRow {
@@ -1963,7 +2594,6 @@
 .writingGuidePanel {
   display: grid;
   gap: 10px;
-  margin-top: 10px;
 }
 
 .writingGuideTipLine {
@@ -2004,17 +2634,13 @@
 }
 
 .writingGuideStarterTip {
-  position: -webkit-sticky;
-  position: sticky;
-  top: 96px;
-  z-index: 20;
-  align-self: start;
-  margin-top: 10px;
+  position: relative;
+  align-self: stretch;
   padding: 10px 12px;
-  border: 1px solid rgba(47, 124, 246, 0.12);
+  border: 0;
   border-radius: 14px;
-  background: linear-gradient(180deg, rgba(244, 247, 255, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
-  box-shadow: 0 12px 24px rgba(16, 36, 76, 0.06);
+  background: transparent;
+  box-shadow: none;
 }
 
 .writingGuideStarterIcon {
@@ -2254,12 +2880,29 @@
   min-height: 180px;
   border: 0;
   border-radius: 0;
-  padding: 12px 10px 16px;
+  padding: 14px 84px 42px 14px;
   background: transparent;
   box-shadow: none;
   color: #10244c;
   font-size: 1.24rem;
   line-height: 1.72;
+}
+
+.composerWordCount {
+  display: none;
+  position: absolute;
+  left: 14px;
+  bottom: 14px;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(16, 36, 76, 0.06);
+  color: #5b6887;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .composerTextarea::placeholder {
@@ -2453,6 +3096,7 @@
     --mobile-section-radius: 18px;
     --mobile-section-border: rgba(16, 36, 76, 0.08);
     --mobile-section-shadow: 0 10px 24px rgba(16, 36, 76, 0.06);
+    padding: 96px 14px 72px;
   }
 
   .difficultyGrid,
@@ -2513,6 +3157,55 @@
     padding: 54px 18px calc(18px + env(safe-area-inset-bottom, 0px));
     border-radius: 24px 24px 0 0;
     animation: loginWallSheetIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .helpOverlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .helpSheet {
+    width: 100%;
+    max-height: min(86svh, 760px);
+    border-radius: 24px 24px 0 0;
+    animation: loginWallSheetIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .helpSheetClose {
+    top: 10px;
+    right: 10px;
+  }
+
+  .helpSheetHeader {
+    gap: 8px;
+    padding: 54px 18px 16px;
+  }
+
+  .helpSheetBody {
+    gap: 12px;
+    padding: 0 18px calc(18px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .helpSheetSection {
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .coachOverlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .coachDialog {
+    width: 100%;
+    max-height: min(86svh, 760px);
+    border-radius: 24px 24px 0 0;
+    animation: loginWallSheetIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .coachDialogClose {
+    top: 10px;
+    right: 10px;
   }
 
   .monthStatusCopy {
@@ -2705,8 +3398,12 @@
   }
 
   .stageHeader {
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     padding-bottom: 10px;
+  }
+
+  .stage {
+    margin-top: 8px;
   }
 
   .difficultyStageButton,
@@ -2751,6 +3448,10 @@
     margin-bottom: 12px;
   }
 
+  .writingComposerHeaderActions {
+    gap: 6px;
+  }
+
   .writingComposerQuestionText {
     font-size: 1.14rem;
     line-height: 1.58;
@@ -2761,31 +3462,100 @@
     font-size: 0.92rem;
   }
 
+  .writingComposerHelpButton {
+    display: inline-flex;
+  }
+
   .writingComposerAnswer {
     padding: 20px 18px 22px;
   }
 
+  .coachPanel {
+    padding: 16px 16px 18px;
+    border-radius: var(--mobile-section-radius);
+    box-shadow: var(--mobile-section-shadow);
+  }
+
+  .coachPanelDialog {
+    padding: 54px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+    border-radius: 24px 24px 0 0;
+    box-shadow: none;
+  }
+
+  .coachActionRow,
+  .coachUsageHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .coachExpressionList,
+  .coachUsageGrid,
+  .coachRelatedList {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .coachExpressionCard,
+  .coachUsageColumn,
+  .coachRelatedCard {
+    padding: 12px;
+  }
+
+  .coachUsagePanel {
+    padding: 14px 14px 16px;
+    border-radius: 22px;
+  }
+
   .composerTextarea {
-    min-height: 156px;
-    padding: 14px 10px 18px;
+    min-height: 108px;
+    height: 108px;
+    padding: 12px 72px 38px 10px;
     font-size: 1.08rem;
     line-height: 1.74;
   }
 
+  .composerWordCount {
+    display: inline-flex;
+    left: 10px;
+    bottom: 12px;
+    font-size: 0.76rem;
+  }
+
+  .coachTriggerDock {
+    right: 14px;
+    bottom: 16px;
+    gap: 8px;
+  }
+
+  .coachTriggerBubble {
+    max-width: 144px;
+    padding: 9px 10px;
+    border-radius: 16px;
+    font-size: 0.76rem;
+    line-height: 1.32;
+  }
+
+  .coachTriggerBubble::after {
+    right: 18px;
+  }
+
+  .coachTriggerButton {
+    width: 50px;
+    height: 50px;
+  }
+
   .writingGuideStarterTip {
-    position: -webkit-sticky;
-    position: sticky;
-    top: auto;
-    bottom: calc(
-      14px + var(--mobile-composer-bar-height, 0px) + var(--mobile-inline-hint-height, 0px) + 20px
-    );
-    z-index: 20;
     margin-top: 10px;
     padding: 10px 12px;
-    border: 1px solid rgba(47, 124, 246, 0.12);
+    border: 0;
     border-radius: 16px;
-    background: var(--warm-accent-surface-2);
-    box-shadow: 0 10px 22px rgba(16, 36, 76, 0.06);
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .writingGuideSummary,
+  .inlineHintRow,
+  .inlineHintDrawer {
+    display: none;
   }
 
   .inlineHintDrawer {
@@ -2868,9 +3638,9 @@
     bottom: 14px;
     z-index: 21;
     display: grid;
-    gap: 12px;
+    gap: 0;
     margin-top: 16px;
-    padding: 12px;
+    padding: 10px 12px;
     border: 1px solid var(--mobile-section-border);
     border-radius: 20px;
     background: var(--mobile-section-neutral);
@@ -2962,6 +3732,7 @@
   .difficultyStageButtonActive,
   .promptCard,
   .promptActive,
+  .writingGuideSummary,
   .writingGuideToggleRow,
   .writingGuidePanel,
   .inlineHintRow,
@@ -2991,9 +3762,16 @@
     background: var(--mobile-section-accent);
   }
 
+  .writingGuideSummary,
   .writingGuideToggleRow,
   .writingGuidePanel {
     background: var(--mobile-section-warm);
+  }
+
+  .writingGuideSummary {
+    padding: 10px 12px 12px;
+    border: 1px solid rgba(var(--warm-accent-rgb), 0.1);
+    box-shadow: var(--mobile-section-shadow);
   }
 
   .writingGuideToggleRow {
@@ -3003,9 +3781,9 @@
   }
 
   .writingGuidePanel {
-    padding-block: 10px;
-    border: 1px solid rgba(var(--warm-accent-rgb), 0.08);
-    box-shadow: var(--mobile-section-shadow);
+    padding-block: 0;
+    border: 0;
+    box-shadow: none;
   }
 
   .writingGuideTipLine {
@@ -3027,17 +3805,11 @@
   }
 
   .composerTextarea {
-    padding: 14px 10px 18px;
+    padding: 14px 72px 38px 10px;
   }
 
   .stage .writingGuideStarterTip {
-    position: -webkit-sticky;
-    position: sticky;
-    top: auto;
-    bottom: calc(
-      14px + var(--mobile-composer-bar-height, 0px) + var(--mobile-inline-hint-height, 0px) + 20px
-    );
-    z-index: 24;
+    position: relative;
   }
 
   .stage .inlineHintDrawer {
@@ -3214,6 +3986,6 @@
   }
 
   .main {
-    padding: 108px 10px 72px;
+    padding: 92px 10px 72px;
   }
 }

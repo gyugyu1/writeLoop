@@ -1,0 +1,493 @@
+import type {
+  CoachExpression,
+  CoachExpressionMatchType,
+  CoachHelpResponse,
+  CoachUsageCheckResponse,
+  CoachUsageExpression,
+  Prompt
+} from "./types";
+
+type CoachIntent = "reason" | "example" | "compare" | "opinion" | "structure";
+
+type TopicExpressionSeed = Pick<CoachExpression, "expression" | "meaningKo" | "usageTip" | "example">;
+
+type ExpressionTopicBundle = {
+  key: string;
+  labelKo: string;
+  keywords: string[];
+  expressions: TopicExpressionSeed[];
+};
+
+const COACH_INTENT_ORDER: CoachIntent[] = ["reason", "example", "compare", "opinion", "structure"];
+
+const COACH_INTENT_KEYWORDS: Record<CoachIntent, string[]> = {
+  reason: ["reason", "why", "because", "이유", "왜", "왜냐하면", "때문", "근거"],
+  example: ["example", "for instance", "for example", "예시", "예를 들어", "예를들어", "경험"],
+  compare: ["compare", "difference", "on the other hand", "비교", "반면", "반대로", "차이"],
+  opinion: ["opinion", "think", "view", "의견", "생각", "입장", "주장"],
+  structure: ["structure", "organize", "flow", "구조", "흐름", "정리", "이어"]
+};
+
+const EXPRESSION_TOPIC_BUNDLES: ExpressionTopicBundle[] = [
+  {
+    key: "sleep",
+    labelKo: "잠",
+    keywords: ["잠", "자다", "잔다", "잠들", "취침", "수면", "sleep", "asleep", "bed"],
+    expressions: [
+      {
+        expression: "go to bed",
+        meaningKo: "잠자리에 들 때 가장 기본적으로 쓸 수 있는 표현이에요.",
+        usageTip: "몇 시에 자러 가는지 말할 때 제일 무난하게 쓸 수 있어요.",
+        example: "I usually go to bed around eleven."
+      },
+      {
+        expression: "go to sleep",
+        meaningKo: "자러 가거나 잠이 들기 직전 상황을 말할 때 좋아요.",
+        usageTip: "go to bed보다 실제로 잠드는 느낌이 더 가까워요.",
+        example: "I go to sleep right after reading."
+      },
+      {
+        expression: "fall asleep",
+        meaningKo: "잠이 드는 순간이나 과정 자체를 말할 때 쓰는 표현이에요.",
+        usageTip: "쉽게 잠드는지, 늦게 잠드는지 말할 때 특히 잘 맞아요.",
+        example: "I fall asleep quickly after a shower."
+      },
+      {
+        expression: "get some sleep",
+        meaningKo: "잠을 좀 자야 한다는 느낌으로 말할 때 유용해요.",
+        usageTip: "조언하거나 피곤한 상황을 말할 때 자연스럽게 들려요.",
+        example: "I need to get some sleep tonight."
+      },
+      {
+        expression: "sleep well",
+        meaningKo: "푹 자다, 잠을 잘 자다를 말할 때 쓰는 표현이에요.",
+        usageTip: "잠의 질이나 컨디션과 연결해서 말하기 좋아요.",
+        example: "I sleep well when the room is quiet."
+      }
+    ]
+  },
+  {
+    key: "study",
+    labelKo: "공부",
+    keywords: ["공부", "공부하다", "배우다", "학습", "study", "learn", "practice"],
+    expressions: [
+      {
+        expression: "study for",
+        meaningKo: "무엇을 위해 공부하는지 말할 때 좋아요.",
+        usageTip: "시험, 목표, 과목과 함께 붙이면 자연스러워요.",
+        example: "I study for my English test every night."
+      },
+      {
+        expression: "work on",
+        meaningKo: "어떤 부분을 집중해서 연습하거나 다듬는다는 뜻으로 좋아요.",
+        usageTip: "skills, pronunciation, writing 같은 말과 잘 어울려요.",
+        example: "I work on my pronunciation every day."
+      },
+      {
+        expression: "practice by ...ing",
+        meaningKo: "어떤 방식으로 연습하는지 구체적으로 말할 때 유용해요.",
+        usageTip: "공부 방법을 함께 말하고 싶을 때 자연스러워요.",
+        example: "I practice by rewriting my answers."
+      },
+      {
+        expression: "review",
+        meaningKo: "복습하다를 짧고 자연스럽게 말할 때 쓰는 표현이에요.",
+        usageTip: "notes, words, mistakes와 함께 쓰면 좋아요.",
+        example: "I review new words before bed."
+      },
+      {
+        expression: "keep studying",
+        meaningKo: "계속 공부한다는 흐름을 말할 때 좋아요.",
+        usageTip: "습관이나 꾸준함을 강조할 때 잘 맞아요.",
+        example: "I want to keep studying every day."
+      }
+    ]
+  },
+  {
+    key: "rest",
+    labelKo: "쉬다",
+    keywords: ["쉬다", "휴식", "휴가", "rest", "relax", "break"],
+    expressions: [
+      {
+        expression: "take a break",
+        meaningKo: "잠깐 쉬다를 가장 자연스럽게 말할 때 쓰는 표현이에요.",
+        usageTip: "공부나 일 사이에 쉬는 상황에 특히 잘 맞아요.",
+        example: "I take a short break after lunch."
+      },
+      {
+        expression: "get some rest",
+        meaningKo: "충분히 쉬다, 좀 쉬다를 말할 때 좋아요.",
+        usageTip: "피곤한 상황이나 건강과 연결해 말하기 좋아요.",
+        example: "I need to get some rest this weekend."
+      },
+      {
+        expression: "relax at home",
+        meaningKo: "집에서 편하게 쉰다는 느낌을 줄 때 쓰는 표현이에요.",
+        usageTip: "주말 루틴을 말할 때 잘 어울려요.",
+        example: "I usually relax at home on Sundays."
+      },
+      {
+        expression: "rest for a while",
+        meaningKo: "잠깐 쉬고 있다는 흐름을 말할 때 자연스러워요.",
+        usageTip: "짧은 휴식을 설명할 때 부담 없이 쓸 수 있어요.",
+        example: "I rest for a while before dinner."
+      },
+      {
+        expression: "unwind",
+        meaningKo: "긴장을 풀고 쉬다를 조금 더 자연스럽게 말할 때 좋아요.",
+        usageTip: "하루를 마무리하며 쉬는 장면에 잘 맞아요.",
+        example: "I unwind by listening to music."
+      }
+    ]
+  }
+];
+
+const DEFAULT_HELP_EXPRESSIONS: TopicExpressionSeed[] = [
+  {
+    expression: "One reason is that ...",
+    meaningKo: "이유를 자연스럽게 이어 말할 때 쓰는 표현이에요.",
+    usageTip: "의견 뒤에 이유를 하나 붙일 때 가장 무난하게 쓸 수 있어요.",
+    example: "One reason is that it helps me stay focused."
+  },
+  {
+    expression: "I think ...",
+    meaningKo: "내 생각이나 입장을 먼저 꺼낼 때 쓰는 표현이에요.",
+    usageTip: "답변을 시작할 때 부담 없이 의견을 열어주기 좋아요.",
+    example: "I think learning English every day is important."
+  },
+  {
+    expression: "For example, ...",
+    meaningKo: "예시를 붙여 설명을 더 구체적으로 만들 때 써요.",
+    usageTip: "이유 뒤에 짧은 경험이나 사례를 덧붙일 때 좋아요.",
+    example: "For example, I practice speaking with my friends."
+  },
+  {
+    expression: "On the other hand, ...",
+    meaningKo: "반대 관점이나 다른 면을 이어 말할 때 쓰는 표현이에요.",
+    usageTip: "비교하거나 균형 있게 답하고 싶을 때 유용해요.",
+    example: "On the other hand, some people prefer studying alone."
+  }
+];
+
+function normalizeText(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/\.\.\./g, " ")
+    .replace(/[^a-z0-9\s가-힣]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function includesNormalized(answer: string, expression: string) {
+  const normalizedAnswer = normalizeText(answer);
+  const normalizedExpression = normalizeText(expression);
+  if (!normalizedAnswer || !normalizedExpression) {
+    return false;
+  }
+
+  return normalizedAnswer.includes(normalizedExpression);
+}
+
+function markUsage(answer: string, expression: CoachExpression): CoachUsageExpression {
+  const exactMatch = answer.includes(expression.expression);
+  const normalizedMatch = !exactMatch && includesNormalized(answer, expression.expression);
+
+  let matchType: CoachExpressionMatchType = "UNUSED";
+  let matched = false;
+
+  if (exactMatch) {
+    matchType = "EXACT";
+    matched = true;
+  } else if (normalizedMatch) {
+    matchType = "NORMALIZED";
+    matched = true;
+  }
+
+  return {
+    ...expression,
+    matched,
+    matchType,
+    matchedText: matched ? expression.expression : null
+  };
+}
+
+function addExpression(bucket: TopicExpressionSeed[], expression: TopicExpressionSeed) {
+  if (bucket.some((item) => item.expression === expression.expression)) {
+    return;
+  }
+
+  bucket.push(expression);
+}
+
+function includesKeyword(text: string, keywords: string[]) {
+  return keywords.some((keyword) => text.includes(keyword));
+}
+
+function looksLikeExpressionLookup(normalizedQuestion: string) {
+  if (
+    includesKeyword(normalizedQuestion, [
+      "영어로",
+      "표현",
+      "말하고 싶",
+      "어떻게 말",
+      "뭐라고",
+      "라고 말",
+      "라고 하고",
+      "단어",
+      "how do i say",
+      "want to say",
+      "expression",
+      "phrase",
+      "word"
+    ])
+  ) {
+    return true;
+  }
+
+  return normalizedQuestion.split(/\s+/).length <= 2;
+}
+
+function resolveExpressionTopic(question: string) {
+  const normalized = normalizeText(question);
+  if (!normalized || !looksLikeExpressionLookup(normalized)) {
+    return null;
+  }
+
+  return (
+    EXPRESSION_TOPIC_BUNDLES.find((bundle) => bundle.keywords.some((keyword) => normalized.includes(keyword))) ?? null
+  );
+}
+
+function detectCoachIntentsFromText(text: string) {
+  const normalized = text.toLowerCase();
+  return COACH_INTENT_ORDER.filter((intent) => includesKeyword(normalized, COACH_INTENT_KEYWORDS[intent]));
+}
+
+function detectCoachIntents(question: string, prompt: Prompt) {
+  const explicitIntents = detectCoachIntentsFromText(question);
+  if (explicitIntents.length > 0) {
+    return explicitIntents;
+  }
+
+  return detectCoachIntentsFromText(`${prompt.questionEn} ${prompt.questionKo} ${prompt.tip}`);
+}
+
+function buildIntentExpressions(intent: CoachIntent) {
+  switch (intent) {
+    case "reason":
+      return [
+        {
+          expression: "One reason is that ...",
+          meaningKo: "이유를 하나 분명하게 제시할 때 쓰는 표현이에요.",
+          usageTip: "의견을 먼저 말한 뒤 바로 이유를 붙이고 싶을 때 좋아요.",
+          example: "One reason is that it helps me stay focused."
+        },
+        {
+          expression: "This is because ...",
+          meaningKo: "앞문장의 이유를 바로 이어 설명할 때 쓰는 표현이에요.",
+          usageTip: "짧고 직접적으로 이유를 붙이고 싶을 때 잘 맞아요.",
+          example: "This is because it saves time."
+        },
+        {
+          expression: "The main reason is that ...",
+          meaningKo: "가장 중요한 이유를 강조할 때 쓰는 표현이에요.",
+          usageTip: "이유가 여러 개 있을 수 있어도 핵심 한 가지를 먼저 잡아줄 수 있어요.",
+          example: "The main reason is that it gives me more confidence."
+        }
+      ];
+    case "example":
+      return [
+        {
+          expression: "For example, ...",
+          meaningKo: "예시를 바로 덧붙일 때 쓰는 표현이에요.",
+          usageTip: "이유 뒤에 짧은 사례를 이어주면 답변이 더 구체적으로 보여요.",
+          example: "For example, I practice speaking with my friends."
+        },
+        {
+          expression: "For instance, ...",
+          meaningKo: "예시를 조금 더 자연스럽게 이어줄 때 쓰는 표현이에요.",
+          usageTip: "같은 예시 표현이지만 문장이 덜 반복되게 바꿔 쓰기 좋아요.",
+          example: "For instance, I read English articles every morning."
+        },
+        {
+          expression: "A good example is ...",
+          meaningKo: "대표적인 사례를 소개할 때 쓰는 표현이에요.",
+          usageTip: "짧은 경험보다 구체적 사례를 강조하고 싶을 때 좋아요.",
+          example: "A good example is studying with a friend."
+        }
+      ];
+    case "compare":
+      return [
+        {
+          expression: "On the other hand, ...",
+          meaningKo: "반대되는 면이나 다른 관점을 이어 말할 때 쓰는 표현이에요.",
+          usageTip: "한쪽 의견만 말하지 않고 균형 있게 보여주고 싶을 때 좋아요.",
+          example: "On the other hand, some people prefer studying alone."
+        },
+        {
+          expression: "Compared with ...",
+          meaningKo: "무언가와 비교해 차이를 보여줄 때 쓰는 표현이에요.",
+          usageTip: "과거와 현재, 두 선택지를 비교할 때 자연스럽게 쓸 수 있어요.",
+          example: "Compared with last year, I speak more confidently now."
+        },
+        {
+          expression: "In contrast, ...",
+          meaningKo: "대조되는 내용을 또렷하게 이어줄 때 쓰는 표현이에요.",
+          usageTip: "비슷한 점보다 차이점을 선명하게 보여주고 싶을 때 좋아요.",
+          example: "In contrast, I prefer quiet places."
+        }
+      ];
+    case "opinion":
+      return [
+        {
+          expression: "I think ...",
+          meaningKo: "내 생각을 가장 가볍게 시작할 수 있는 표현이에요.",
+          usageTip: "첫 문장을 열 때 부담이 적어서 거의 모든 질문에 무난해요.",
+          example: "I think this habit is helpful."
+        },
+        {
+          expression: "In my opinion, ...",
+          meaningKo: "조금 더 분명하게 내 입장을 밝힐 때 쓰는 표현이에요.",
+          usageTip: "의견형 질문에서 답변의 방향을 처음부터 또렷하게 잡아줘요.",
+          example: "In my opinion, exercising every day is important."
+        },
+        {
+          expression: "From my perspective, ...",
+          meaningKo: "내 관점에서 말한다는 느낌을 줄 때 쓰는 표현이에요.",
+          usageTip: "조금 더 자연스럽고 성숙한 톤으로 의견을 말하고 싶을 때 좋아요.",
+          example: "From my perspective, reading every day is worth it."
+        }
+      ];
+    case "structure":
+      return [
+        {
+          expression: "First, ...",
+          meaningKo: "답변의 흐름을 차례대로 열어줄 때 쓰는 표현이에요.",
+          usageTip: "생각이 길어질 때 첫 포인트를 잡아주면 문장이 훨씬 쓰기 쉬워져요.",
+          example: "First, I try to understand the topic clearly."
+        },
+        {
+          expression: "Another point is that ...",
+          meaningKo: "다른 포인트를 하나 더 이어 말할 때 쓰는 표현이에요.",
+          usageTip: "두 번째 이유나 보충 포인트를 자연스럽게 붙일 수 있어요.",
+          example: "Another point is that it saves time."
+        },
+        {
+          expression: "As a result, ...",
+          meaningKo: "앞의 이유가 어떤 결과로 이어지는지 보여줄 때 쓰는 표현이에요.",
+          usageTip: "이유와 결과를 연결하면 답변이 더 논리적으로 보여요.",
+          example: "As a result, I feel more confident when I speak."
+        }
+      ];
+    default:
+      return [];
+  }
+}
+
+function buildIntentFirstExpressions(prompt: Prompt, question: string) {
+  const detectedIntents = detectCoachIntents(question, prompt);
+  const bucket: TopicExpressionSeed[] = [];
+
+  if (detectedIntents.length > 0) {
+    for (const intent of detectedIntents) {
+      for (const expression of buildIntentExpressions(intent)) {
+        addExpression(bucket, expression);
+      }
+    }
+    return bucket;
+  }
+
+  return DEFAULT_HELP_EXPRESSIONS.slice(0, 4);
+}
+
+function buildCoachExpressions(prompt: Prompt, question: string): CoachExpression[] {
+  const topicBundle = resolveExpressionTopic(question);
+
+  const bucket = topicBundle ? [...topicBundle.expressions] : buildIntentFirstExpressions(prompt, question);
+
+  if (bucket.length === 0) {
+    bucket.push(...DEFAULT_HELP_EXPRESSIONS.slice(0, 4));
+  }
+
+  const unique = new Map<string, CoachExpression>();
+  for (const item of bucket) {
+    if (!unique.has(item.expression)) {
+      unique.set(item.expression, {
+        id: `coach-${topicBundle?.key ?? prompt.id}-${unique.size + 1}`,
+        ...item
+      });
+    }
+  }
+
+  return Array.from(unique.values()).slice(0, 5);
+}
+
+function buildRelatedPromptIds(prompts: Prompt[], promptId: string, limit = 3) {
+  const current = prompts.find((prompt) => prompt.id === promptId);
+  const primaryPool = current
+    ? prompts.filter((prompt) => prompt.id !== promptId && prompt.difficulty === current.difficulty)
+    : prompts.filter((prompt) => prompt.id !== promptId);
+
+  const fallbackPool = primaryPool.length > 0 ? primaryPool : prompts.filter((prompt) => prompt.id !== promptId);
+
+  return fallbackPool.slice(0, limit).map((prompt) => prompt.id);
+}
+
+function buildCoachReply(intentLabel: CoachIntent | "general", topicBundle: ExpressionTopicBundle | null) {
+  if (topicBundle) {
+    return `${topicBundle.labelKo}을(를) 말할 때 바로 가져다 쓸 수 있는 표현을 중심으로 골랐어요. 비슷해 보여도 쓰임이 조금씩 다르니 예문까지 같이 보고 골라보세요.`;
+  }
+
+  switch (intentLabel) {
+    case "reason":
+      return "이유를 말할 때 바로 쓸 수 있는 표현부터 골랐어요. 그대로 붙이지 말고 내 문장 안에서 자연스럽게 풀어 써보세요.";
+    case "example":
+      return "예시를 붙일 때 잘 맞는 표현을 먼저 골랐어요. 이유 뒤에 짧게 붙이면 답변이 더 구체적으로 보여요.";
+    case "compare":
+      return "비교나 반대 관점을 보여줄 때 쓸 수 있는 표현을 모았어요. 한쪽만 말하지 않고 균형을 줄 때 좋아요.";
+    case "opinion":
+      return "의견을 또렷하게 시작할 수 있는 표현부터 골랐어요. 첫 문장을 열 때 써보면 편해요.";
+    case "structure":
+      return "답변 흐름을 정리할 때 도움이 되는 표현을 먼저 골랐어요. 문장 순서를 잡고 싶을 때 써보세요.";
+    default:
+      return "이 질문에 맞는 표현을 먼저 골랐어요. 내 문장 안에서 자연스럽게 풀어 써보세요.";
+  }
+}
+
+export function buildLocalCoachHelp(prompt: Prompt, question: string): CoachHelpResponse {
+  const topicBundle = resolveExpressionTopic(question);
+  const expressions = buildCoachExpressions(prompt, question);
+  const detectedIntents = detectCoachIntents(question, prompt);
+  const intentLabel = detectedIntents[0] ?? "general";
+
+  return {
+    promptId: prompt.id,
+    userQuestion: question,
+    coachReply: buildCoachReply(intentLabel, topicBundle),
+    expressions
+  };
+}
+
+export function buildLocalCoachUsage(
+  prompt: Prompt,
+  answer: string,
+  expressions: CoachExpression[],
+  prompts: Prompt[]
+): CoachUsageCheckResponse {
+  const marked = expressions.map((expression) => markUsage(answer, expression));
+  const usedExpressions = marked.filter((expression) => expression.matched);
+  const unusedExpressions = marked.filter((expression) => !expression.matched);
+  const praiseMessage =
+    usedExpressions.length > 0
+      ? `${usedExpressions[0].expression} 표현을 자연스럽게 살렸어요.`
+      : "추천 표현이 아직 직접 보이진 않지만, 답변 방향은 잘 잡혀 있어요.";
+
+  return {
+    promptId: prompt.id,
+    praiseMessage,
+    usedExpressions,
+    unusedExpressions,
+    relatedPromptIds: buildRelatedPromptIds(prompts, prompt.id)
+  };
+}

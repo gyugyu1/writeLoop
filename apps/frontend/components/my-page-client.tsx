@@ -29,6 +29,10 @@ type HistoryComparisonView = {
   initialSegments: HistoryDiffSegment[];
   rewriteSegments: HistoryDiffSegment[];
   changedChunkCount: number;
+  addedWordCount: number;
+  removedWordCount: number;
+  beforeWordCount: number;
+  afterWordCount: number;
 };
 
 function formatHistoryDateKey(dateTime: string) {
@@ -144,6 +148,8 @@ function buildHistoryComparisonView(session: HistorySession): HistoryComparisonV
   const initialSegments: HistoryDiffSegment[] = [];
   const rewriteSegments: HistoryDiffSegment[] = [];
   let changedChunkCount = 0;
+  let addedWordCount = 0;
+  let removedWordCount = 0;
   let leftCursor = 0;
   let rightCursor = 0;
 
@@ -159,24 +165,28 @@ function buildHistoryComparisonView(session: HistorySession): HistoryComparisonV
     if (lcs[leftCursor + 1][rightCursor] >= lcs[leftCursor][rightCursor + 1]) {
       initialSegments.push({ text: initialUnits[leftCursor].text, changed: true });
       changedChunkCount += 1;
+      removedWordCount += 1;
       leftCursor += 1;
       continue;
     }
 
     rewriteSegments.push({ text: rewriteUnits[rightCursor].text, changed: true });
     changedChunkCount += 1;
+    addedWordCount += 1;
     rightCursor += 1;
   }
 
   while (leftCursor < initialUnits.length) {
     initialSegments.push({ text: initialUnits[leftCursor].text, changed: true });
     changedChunkCount += 1;
+    removedWordCount += 1;
     leftCursor += 1;
   }
 
   while (rightCursor < rewriteUnits.length) {
     rewriteSegments.push({ text: rewriteUnits[rightCursor].text, changed: true });
     changedChunkCount += 1;
+    addedWordCount += 1;
     rightCursor += 1;
   }
 
@@ -185,7 +195,11 @@ function buildHistoryComparisonView(session: HistorySession): HistoryComparisonV
     rewriteAttempt,
     initialSegments: mergeHistoryDiffSegments(initialSegments),
     rewriteSegments: mergeHistoryDiffSegments(rewriteSegments),
-    changedChunkCount
+    changedChunkCount,
+    addedWordCount,
+    removedWordCount,
+    beforeWordCount: initialUnits.length,
+    afterWordCount: rewriteUnits.length
   };
 }
 
@@ -891,6 +905,25 @@ export function MyPageClient() {
                                     <span className={styles.historyComparisonCount}>
                                       바뀐 표현 {comparisonView.changedChunkCount}곳
                                     </span>
+                                  </div>
+                                  <div className={styles.historyComparisonStats}>
+                                    <div className={styles.historyComparisonStat}>
+                                      <strong>+{comparisonView.addedWordCount}</strong>
+                                      <span>추가한 표현</span>
+                                    </div>
+                                    <div className={styles.historyComparisonStat}>
+                                      <strong>-{comparisonView.removedWordCount}</strong>
+                                      <span>정리한 표현</span>
+                                    </div>
+                                    <div className={styles.historyComparisonStat}>
+                                      <strong>
+                                        {comparisonView.afterWordCount - comparisonView.beforeWordCount >= 0
+                                          ? "+"
+                                          : ""}
+                                        {comparisonView.afterWordCount - comparisonView.beforeWordCount}
+                                      </strong>
+                                      <span>전체 길이 변화</span>
+                                    </div>
                                   </div>
                                   <div className={styles.historyComparisonGrid}>
                                     <section className={styles.historyComparisonColumn}>

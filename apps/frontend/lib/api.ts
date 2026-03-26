@@ -4,6 +4,10 @@ import type {
   AdminPromptHintRequest,
   AdminPromptRequest,
   AuthNotice,
+  CoachHelpRequest,
+  CoachHelpResponse,
+  CoachUsageCheckRequest,
+  CoachUsageCheckResponse,
   CommonMistake,
   CompleteRegistrationRequest,
   DeleteAccountRequest,
@@ -32,6 +36,111 @@ import type {
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+
+function createCoachExpressionId(promptId: string, expression: string, index: number) {
+  const base = expression
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return `coach-${promptId}-${base || index + 1}`;
+}
+
+function normalizeCoachHelpResponse(
+  payload: {
+    promptId?: string;
+    userQuestion?: string;
+    coachReply?: string;
+    expressions?: Array<{
+      id?: string;
+      expression?: string;
+      meaningKo?: string;
+      usageTip?: string;
+      example?: string;
+    }>;
+  },
+  fallbackPromptId: string,
+  fallbackQuestion: string
+): CoachHelpResponse {
+  const promptId = payload.promptId ?? fallbackPromptId;
+  const userQuestion = payload.userQuestion ?? fallbackQuestion;
+  const expressions = (payload.expressions ?? [])
+    .filter((expression): expression is NonNullable<typeof expression> => Boolean(expression?.expression))
+    .map((expression, index) => ({
+      id: expression.id ?? createCoachExpressionId(promptId, expression.expression ?? "", index),
+      expression: expression.expression ?? "",
+      meaningKo: expression.meaningKo ?? "이 질문에 바로 가져다 쓸 수 있는 표현이에요.",
+      usageTip: expression.usageTip ?? "답변 흐름 안에 자연스럽게 한 번 넣어보세요.",
+      example: expression.example ?? expression.expression ?? ""
+    }));
+
+  return {
+    promptId,
+    userQuestion,
+    coachReply: payload.coachReply ?? "이 질문에 맞는 표현을 골라 답변에 자연스럽게 넣어보세요.",
+    expressions
+  };
+}
+
+function normalizeCoachUsageResponse(
+  payload: {
+    promptId?: string;
+    coachReply?: string;
+    usedExpressions?: Array<{
+      expression?: string;
+      matched?: boolean;
+      matchType?: string;
+      matchedText?: string | null;
+    }>;
+    unusedExpressions?: Array<{
+      expression?: string;
+      matched?: boolean;
+      matchType?: string;
+      matchedText?: string | null;
+    }>;
+    suggestedPromptIds?: string[];
+  },
+  request: CoachUsageCheckRequest
+): CoachUsageCheckResponse {
+  const expressionLookup = new Map(
+    request.expressions.map((expression) => [expression.expression, expression] as const)
+  );
+
+  const hydrate = (
+    items: Array<{
+      expression?: string;
+      matched?: boolean;
+      matchType?: string;
+      matchedText?: string | null;
+    }> = []
+  ) =>
+    items
+      .filter((item): item is NonNullable<typeof item> => Boolean(item?.expression))
+      .map((item, index) => {
+        const source = expressionLookup.get(item.expression ?? "");
+
+        return {
+          id:
+            source?.id ??
+            createCoachExpressionId(request.promptId, item.expression ?? "", index),
+          expression: item.expression ?? "",
+          meaningKo: source?.meaningKo ?? "이 질문에 맞는 표현이에요.",
+          usageTip: source?.usageTip ?? "답변 안에서 자연스럽게 연결해보세요.",
+          example: source?.example ?? item.expression ?? "",
+          matched: Boolean(item.matched),
+          matchType: (item.matchType ?? "UNUSED") as CoachUsageCheckResponse["usedExpressions"][number]["matchType"],
+          matchedText: item.matchedText ?? null
+        };
+      });
+
+  return {
+    promptId: payload.promptId ?? request.promptId,
+    praiseMessage: payload.coachReply ?? "추천 표현이 어떻게 쓰였는지 확인해요.",
+    usedExpressions: hydrate(payload.usedExpressions),
+    unusedExpressions: hydrate(payload.unusedExpressions),
+    relatedPromptIds: payload.suggestedPromptIds ?? []
+  };
+}
 
 export class ApiError extends Error {
   code?: string;
@@ -91,6 +200,80 @@ export async function getPromptHints(promptId: string): Promise<PromptHint[]> {
   }
 
   return response.json();
+}
+
+export async function requestCoachHelp(request: CoachHelpRequest): Promise<CoachHelpResponse> {
+  const response = await fetch(`${API_BASE}/api/coach/help`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      promptId: request.promptId,
+      question: request.question
+    })
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to fetch coach help");
+  }
+
+  const payload = (await response.json()) as {
+    promptId?: string;
+    userQuestion?: string;
+    coachReply?: string;
+    expressions?: Array<{
+      id?: string;
+      expression?: string;
+      meaningKo?: string;
+      usageTip?: string;
+      example?: string;
+    }>;
+  };
+
+  return normalizeCoachHelpResponse(payload, request.promptId, request.question);
+}
+
+export async function checkCoachExpressionUsage(
+  request: CoachUsageCheckRequest
+): Promise<CoachUsageCheckResponse> {
+  const response = await fetch(`${API_BASE}/api/coach/usage-check`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      promptId: request.promptId,
+      answer: request.answer,
+      expressions: request.expressions.map((expression) => expression.expression)
+    })
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to check coach expression usage");
+  }
+
+  const payload = (await response.json()) as {
+    promptId?: string;
+    coachReply?: string;
+    usedExpressions?: Array<{
+      expression?: string;
+      matched?: boolean;
+      matchType?: string;
+      matchedText?: string | null;
+    }>;
+    unusedExpressions?: Array<{
+      expression?: string;
+      matched?: boolean;
+      matchType?: string;
+      matchedText?: string | null;
+    }>;
+    suggestedPromptIds?: string[];
+  };
+
+  return normalizeCoachUsageResponse(payload, request);
 }
 
 export async function submitFeedback(request: FeedbackRequest): Promise<Feedback> {

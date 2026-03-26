@@ -217,7 +217,9 @@ export function ForgotPasswordPageClient() {
         <section className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <div className={styles.eyebrow}>writeLoop 계정</div>
+              <Link href="/" className={`${styles.eyebrow} ${styles.brandLink}`}>
+                writeLoop 계정
+              </Link>
               <h2>비밀번호 재설정</h2>
             </div>
           </div>

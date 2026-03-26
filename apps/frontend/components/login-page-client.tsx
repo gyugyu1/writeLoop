@@ -126,7 +126,9 @@ export function LoginPageClient() {
         <section className={styles.card}>
           <div className={styles.cardHeader}>
             <div>
-              <div className={styles.eyebrow}>writeLoop 계정</div>
+              <Link href="/" className={`${styles.eyebrow} ${styles.brandLink}`}>
+                writeLoop 계정
+              </Link>
               <h2>{showVerify ? "이메일 인증" : "로그인"}</h2>
             </div>
           </div>

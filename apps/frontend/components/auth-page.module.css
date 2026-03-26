@@ -63,6 +63,19 @@
   text-transform: uppercase;
 }
 
+.brandLink {
+  text-decoration: none;
+}
+
+.brandLink:hover {
+  color: inherit;
+}
+
+.brandLink:focus-visible {
+  outline: 2px solid rgba(var(--warm-accent-rgb), 0.35);
+  outline-offset: 3px;
+}
+
 .intro h1 {
   margin: 18px 0 0;
   font-size: clamp(2rem, 3vw, 3rem);

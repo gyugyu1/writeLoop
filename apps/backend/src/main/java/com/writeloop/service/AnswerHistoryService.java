@@ -421,6 +421,7 @@ public class AnswerHistoryService {
                         feedback.corrections(),
                         feedback.inlineFeedback(),
                         feedback.correctedAnswer(),
+                        feedback.refinementExpressions(),
                         feedback.modelAnswer(),
                         feedback.rewriteChallenge()
                 );
@@ -439,6 +440,7 @@ public class AnswerHistoryService {
                     objectMapper.readValue(attempt.getCorrectionsJson(), CORRECTION_LIST_TYPE),
                     List.of(),
                     attempt.getAnswerText(),
+                    List.of(),
                     attempt.getModelAnswer(),
                     attempt.getRewriteChallenge()
             );

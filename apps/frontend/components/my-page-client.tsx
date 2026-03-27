@@ -1144,6 +1144,23 @@ export function MyPageClient() {
                                     </div>
                                     <div className={styles.historyFeedbackBlock}>
                                       <h5>모범 답안</h5>
+                                      {attempt.feedback.refinementExpressions &&
+                                      attempt.feedback.refinementExpressions.length > 0 ? (
+                                        <div className={styles.historyFeedbackBlock}>
+                                          <h5>모범답안에서 가져오면 좋은 표현</h5>
+                                          <ul>
+                                            {attempt.feedback.refinementExpressions.map((expression, index) => (
+                                              <li key={`${expression.expression}-${index}`}>
+                                                <strong>{expression.expression}</strong>
+                                                <span>{expression.guidance}</span>
+                                                <span className={styles.historyRefinementExample}>
+                                                  {expression.example}
+                                                </span>
+                                              </li>
+                                            ))}
+                                          </ul>
+                                        </div>
+                                      ) : null}
                                       <p>{attempt.feedback.modelAnswer}</p>
                                     </div>
                                     <div className={styles.historyFeedbackBlock}>

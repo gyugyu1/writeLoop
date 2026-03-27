@@ -14,6 +14,7 @@ public record FeedbackResponseDto(
         List<CorrectionDto> corrections,
         List<InlineFeedbackSegmentDto> inlineFeedback,
         String correctedAnswer,
+        List<RefinementExpressionDto> refinementExpressions,
         String modelAnswer,
         String rewriteChallenge
 ) {

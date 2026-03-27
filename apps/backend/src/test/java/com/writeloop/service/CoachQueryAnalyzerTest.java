@@ -64,6 +64,75 @@ class CoachQueryAnalyzerTest {
     }
 
     @Test
+    void analyze_detects_growth_family_for_implicit_strength_lookup() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "근력을 키우고 싶다"
+        );
+
+        assertThat(analysis.lookup()).isPresent();
+        assertThat(analysis.lookup().orElseThrow().frame().family())
+                .isEqualTo(CoachQueryAnalyzer.ActionFamily.GROWTH_CAPABILITY);
+        assertThat(
+                analysis.lookup().orElseThrow().translations().get(CoachQueryAnalyzer.MeaningSlot.TARGET).englishText()
+        ).isEqualTo("strength");
+    }
+
+    @Test
+    void analyze_detects_growth_family_for_confidence_lookup() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "자신감을 높이고 싶다"
+        );
+
+        assertThat(analysis.lookup()).isPresent();
+        assertThat(analysis.lookup().orElseThrow().frame().family())
+                .isEqualTo(CoachQueryAnalyzer.ActionFamily.GROWTH_CAPABILITY);
+        assertThat(
+                analysis.lookup().orElseThrow().translations().get(CoachQueryAnalyzer.MeaningSlot.TARGET).englishText()
+        ).isEqualTo("confidence");
+    }
+
+    @Test
+    void analyze_detects_reduce_manage_family_for_stress_lookup() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "스트레스를 줄이고 싶다"
+        );
+
+        assertThat(analysis.lookup()).isPresent();
+        assertThat(analysis.lookup().orElseThrow().frame().family())
+                .isEqualTo(CoachQueryAnalyzer.ActionFamily.REDUCE_MANAGE);
+        assertThat(
+                analysis.lookup().orElseThrow().translations().get(CoachQueryAnalyzer.MeaningSlot.TARGET).englishText()
+        ).isEqualTo("stress");
+    }
+
+    @Test
+    void analyze_detects_lookup_for_generic_desire_state_statement() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "매력적으로 보이고 싶다"
+        );
+
+        assertThat(analysis.lookup()).isPresent();
+        assertThat(analysis.lookup().orElseThrow().frame().family())
+                .isEqualTo(CoachQueryAnalyzer.ActionFamily.UNKNOWN);
+    }
+
+    @Test
+    void analyze_marks_hybrid_when_support_meta_and_meaning_lookup_coexist() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "이 질문에서 근력을 키우고 싶을 때 쓸 표현 알려줘"
+        );
+
+        assertThat(analysis.lookup()).isPresent();
+        assertThat(analysis.lookup().orElseThrow().detection().cue())
+                .isEqualTo("hybrid_meaning_support");
+    }
+
+    @Test
     void analyze_extracts_state_change_family_for_online_relationship_lookup() {
         CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
                 prompt,

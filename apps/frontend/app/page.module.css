@@ -3131,6 +3131,12 @@
   margin-top: 4px;
 }
 
+.refinementExpressionExample {
+  margin-top: 8px;
+  font-size: 0.93rem;
+  color: #10244c;
+}
+
 .errorText {
   margin: 14px 0 0;
   color: #b42318;

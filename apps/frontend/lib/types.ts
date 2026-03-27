@@ -127,6 +127,12 @@ export interface FeedbackInlineSegment {
   revisedText: string;
 }
 
+export interface RefinementExpression {
+  expression: string;
+  guidance: string;
+  example: string;
+}
+
 export interface FeedbackRequest {
   promptId: string;
   answer: string;
@@ -147,6 +153,7 @@ export interface Feedback {
   corrections: Correction[];
   inlineFeedback: FeedbackInlineSegment[] | null;
   correctedAnswer: string | null;
+  refinementExpressions?: RefinementExpression[] | null;
   modelAnswer: string;
   rewriteChallenge: string;
 }
@@ -188,6 +195,7 @@ export interface StoredFeedback {
   corrections: Correction[];
   inlineFeedback: FeedbackInlineSegment[] | null;
   correctedAnswer: string | null;
+  refinementExpressions?: RefinementExpression[] | null;
   modelAnswer: string;
   rewriteChallenge: string;
 }

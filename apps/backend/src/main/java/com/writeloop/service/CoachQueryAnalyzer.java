@@ -59,6 +59,35 @@ class CoachQueryAnalyzer {
             Map.entry("\uACF3", "place")
     );
 
+    private static final Map<String, String> GROWTH_TARGET_TRANSLATIONS = Map.ofEntries(
+            Map.entry("근력", "strength"),
+            Map.entry("체력", "stamina"),
+            Map.entry("지구력", "endurance"),
+            Map.entry("유연성", "flexibility"),
+            Map.entry("자신감", "confidence"),
+            Map.entry("집중력", "focus"),
+            Map.entry("영향력", "influence"),
+            Map.entry("면역력", "immunity"),
+            Map.entry("근육", "muscle"),
+            Map.entry("실력", "skills"),
+            Map.entry("영어 실력", "English skills"),
+            Map.entry("말하기 실력", "speaking skills"),
+            Map.entry("발음", "pronunciation")
+    );
+
+    private static final Map<String, String> REDUCE_TARGET_TRANSLATIONS = Map.ofEntries(
+            Map.entry("스트레스", "stress"),
+            Map.entry("불안", "anxiety"),
+            Map.entry("걱정", "worry"),
+            Map.entry("지출", "spending"),
+            Map.entry("소비", "spending"),
+            Map.entry("스크린 타임", "screen time"),
+            Map.entry("체지방", "body fat"),
+            Map.entry("체중", "weight"),
+            Map.entry("피로", "fatigue"),
+            Map.entry("압박감", "pressure")
+    );
+
     enum QueryMode {
         WRITING_SUPPORT,
         MEANING_LOOKUP
@@ -93,6 +122,8 @@ class CoachQueryAnalyzer {
         SLEEP,
         STUDY,
         REST,
+        GROWTH_CAPABILITY,
+        REDUCE_MANAGE,
         STATE_CHANGE,
         VISIT_INTEREST
     }
@@ -222,24 +253,41 @@ class CoachQueryAnalyzer {
             return new LookupDetection(QueryMode.WRITING_SUPPORT, "empty");
         }
 
-        if (hasLookupSayCue(normalizedQuestion, compactQuestion)) {
-            return new LookupDetection(QueryMode.MEANING_LOOKUP, "say_in_english");
+        boolean structureCue = hasStructureCue(normalizedQuestion, compactQuestion);
+        boolean supportMeta = hasSupportMetaCue(normalizedQuestion, compactQuestion);
+        boolean explicitLookup = hasLookupSayCue(normalizedQuestion, compactQuestion);
+        boolean meaningKeyword = hasMeaningKeywordCue(normalizedQuestion, compactQuestion);
+        boolean expressionLookupCue = hasMeaningExpressionCue(normalizedQuestion, compactQuestion, intents);
+        boolean implicitLookup = looksLikeImplicitMeaningLookup(normalizedQuestion, compactQuestion, intents);
+        boolean hybridRequest = (supportMeta || structureCue)
+                && (explicitLookup || meaningKeyword || expressionLookupCue || implicitLookup);
+
+        if (hybridRequest) {
+            return new LookupDetection(QueryMode.MEANING_LOOKUP, "hybrid_meaning_support");
         }
 
-        if (hasMeaningKeywordCue(normalizedQuestion, compactQuestion)) {
-            return new LookupDetection(QueryMode.MEANING_LOOKUP, "meaning_keyword");
-        }
-
-        if (hasStructureCue(normalizedQuestion, compactQuestion)) {
+        if (structureCue) {
             return new LookupDetection(QueryMode.WRITING_SUPPORT, "structure_override");
         }
 
-        if (hasSupportMetaCue(normalizedQuestion, compactQuestion) && hasSupportStyleIntent(intents)) {
+        if (explicitLookup) {
+            return new LookupDetection(QueryMode.MEANING_LOOKUP, "say_in_english");
+        }
+
+        if (meaningKeyword) {
+            return new LookupDetection(QueryMode.MEANING_LOOKUP, "meaning_keyword");
+        }
+
+        if (supportMeta) {
             return new LookupDetection(QueryMode.WRITING_SUPPORT, "support_meta");
         }
 
-        if (hasMeaningExpressionCue(normalizedQuestion, compactQuestion, intents)) {
+        if (expressionLookupCue) {
             return new LookupDetection(QueryMode.MEANING_LOOKUP, "expression_lookup");
+        }
+
+        if (implicitLookup) {
+            return new LookupDetection(QueryMode.MEANING_LOOKUP, "implicit_meaning_statement");
         }
 
         if (containsAny(normalizedQuestion, "\uD45C\uD604", "\uB2E8\uC5B4", "expression", "phrase", "word")
@@ -336,6 +384,18 @@ class CoachQueryAnalyzer {
             return new MeaningFrame(ActionFamily.LEARN, surfaceMeaning, slots);
         }
 
+        if (looksLikeGrowthMeaning(familyContext)) {
+            String growthTarget = stripGrowthScaffold(normalizedSurface.isBlank() ? familyContext : normalizedSurface);
+            slots.put(MeaningSlot.TARGET, growthTarget.isBlank() ? surfaceMeaning : growthTarget);
+            return new MeaningFrame(ActionFamily.GROWTH_CAPABILITY, surfaceMeaning, slots);
+        }
+
+        if (looksLikeReduceManageMeaning(familyContext)) {
+            String manageTarget = stripReduceManageScaffold(normalizedSurface.isBlank() ? familyContext : normalizedSurface);
+            slots.put(MeaningSlot.TARGET, manageTarget.isBlank() ? surfaceMeaning : manageTarget);
+            return new MeaningFrame(ActionFamily.REDUCE_MANAGE, surfaceMeaning, slots);
+        }
+
         if (looksLikeSleepMeaning(familyContext)) {
             return new MeaningFrame(ActionFamily.SLEEP, surfaceMeaning, slots);
         }
@@ -374,6 +434,24 @@ class CoachQueryAnalyzer {
             case LEARN -> {
                 String sourceTarget = frame.sourceSlots().getOrDefault(MeaningSlot.TARGET, "");
                 String translatedTarget = translateLearnTarget(sourceTarget);
+                translations.put(MeaningSlot.TARGET, new TranslationResult(
+                        sourceTarget,
+                        translatedTarget,
+                        !translatedTarget.isBlank()
+                ));
+            }
+            case GROWTH_CAPABILITY -> {
+                String sourceTarget = frame.sourceSlots().getOrDefault(MeaningSlot.TARGET, "");
+                String translatedTarget = translateGrowthTarget(sourceTarget);
+                translations.put(MeaningSlot.TARGET, new TranslationResult(
+                        sourceTarget,
+                        translatedTarget,
+                        !translatedTarget.isBlank()
+                ));
+            }
+            case REDUCE_MANAGE -> {
+                String sourceTarget = frame.sourceSlots().getOrDefault(MeaningSlot.TARGET, "");
+                String translatedTarget = translateReduceTarget(sourceTarget);
                 translations.put(MeaningSlot.TARGET, new TranslationResult(
                         sourceTarget,
                         translatedTarget,
@@ -431,6 +509,32 @@ class CoachQueryAnalyzer {
                 "\uBC30\uC6CC\uC57C", "\uBC30\uC6B0\uB824\uACE0", "\uBC30\uC6B0\uAC8C", "\uC775\uD788",
                 "want to learn", "start learning", "learning", "learn"
         );
+    }
+
+    private boolean looksLikeGrowthMeaning(String normalizedText) {
+        boolean hasGrowthVerb = containsAny(
+                normalizedText,
+                "키우", "늘리", "높이", "기르", "강화", "향상", "개선", "발전", "발달", "boost", "build up", "increase", "improve", "develop"
+        );
+        boolean hasGrowthTarget = containsAny(
+                normalizedText,
+                "근력", "체력", "지구력", "유연성", "자신감", "집중력", "영향력", "면역력", "근육", "실력", "발음",
+                "strength", "stamina", "endurance", "flexibility", "confidence", "focus", "influence", "immunity", "muscle", "skills", "skill", "pronunciation"
+        );
+        return hasGrowthVerb && (hasGrowthTarget || normalizedText.contains("싶"));
+    }
+
+    private boolean looksLikeReduceManageMeaning(String normalizedText) {
+        boolean hasReduceVerb = containsAny(
+                normalizedText,
+                "줄이", "낮추", "완화", "관리", "조절", "통제", "억제", "cut down", "reduce", "lower", "manage", "control"
+        );
+        boolean hasReduceTarget = containsAny(
+                normalizedText,
+                "스트레스", "불안", "걱정", "지출", "소비", "스크린 타임", "체지방", "체중", "피로", "압박감",
+                "stress", "anxiety", "worry", "spending", "screen time", "body fat", "weight", "fatigue", "pressure"
+        );
+        return hasReduceVerb && (hasReduceTarget || normalizedText.contains("싶"));
     }
 
     private boolean looksLikeSleepMeaning(String normalizedText) {
@@ -503,6 +607,26 @@ class CoachQueryAnalyzer {
         );
     }
 
+    private String stripGrowthScaffold(String normalizedText) {
+        return stripTrailingParticles(
+                normalizedText
+                        .replaceAll("(?:더\\s*)?(?:키우(?:고\\s*싶(?:어|다)?|려고|고|는|다)?|늘리(?:고\\s*싶(?:어|다)?|려고|고|는|다)?|높이(?:고\\s*싶(?:어|다)?|려고|고|는|다)?|기르(?:고\\s*싶(?:어|다)?|려고|고|는|다)?|강화(?:하(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|향상(?:시키(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|개선(?:하(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|발전(?:시키(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|발달(?:시키(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|build up|boost|increase|improve|develop)", " ")
+                        .replaceAll("(?:\\uB77C\\uACE0|\\uACE0|\\uC774\\uB77C\\uACE0)$", " ")
+                        .replaceAll("\\s+", " ")
+                        .trim()
+        );
+    }
+
+    private String stripReduceManageScaffold(String normalizedText) {
+        return stripTrailingParticles(
+                normalizedText
+                        .replaceAll("(?:더\\s*)?(?:줄이(?:고\\s*싶(?:어|다)?|려고|고|는|다)?|낮추(?:고\\s*싶(?:어|다)?|려고|고|는|다)?|완화(?:하(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|관리(?:하(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|조절(?:하(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|통제(?:하(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|억제(?:하(?:고\\s*싶(?:어|다)?|려고|고|는|다)?)|cut down on|cut down|reduce|lower|manage|control)", " ")
+                        .replaceAll("(?:\\uB77C\\uACE0|\\uACE0|\\uC774\\uB77C\\uACE0)$", " ")
+                        .replaceAll("\\s+", " ")
+                        .trim()
+        );
+    }
+
     private String stripSocializeScaffold(String normalizedText) {
         return stripTrailingParticles(
                 normalizedText
@@ -531,6 +655,36 @@ class CoachQueryAnalyzer {
 
     private String translateLearnTarget(String sourceTarget) {
         for (Map.Entry<String, String> entry : LEARN_TARGET_TRANSLATIONS.entrySet()) {
+            if (sourceTarget.contains(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+
+        Matcher englishMatcher = ENGLISH_PHRASE_PATTERN.matcher(sourceTarget);
+        if (englishMatcher.find()) {
+            return englishMatcher.group().trim();
+        }
+
+        return "";
+    }
+
+    private String translateGrowthTarget(String sourceTarget) {
+        for (Map.Entry<String, String> entry : GROWTH_TARGET_TRANSLATIONS.entrySet()) {
+            if (sourceTarget.contains(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+
+        Matcher englishMatcher = ENGLISH_PHRASE_PATTERN.matcher(sourceTarget);
+        if (englishMatcher.find()) {
+            return englishMatcher.group().trim();
+        }
+
+        return "";
+    }
+
+    private String translateReduceTarget(String sourceTarget) {
+        for (Map.Entry<String, String> entry : REDUCE_TARGET_TRANSLATIONS.entrySet()) {
             if (sourceTarget.contains(entry.getKey())) {
                 return entry.getValue();
             }
@@ -641,6 +795,54 @@ class CoachQueryAnalyzer {
                 "\uC774\uC9C8\uBB38\uC5D0\uC11C", "\uB9D0\uD560\uB54C", "\uC4F8\uB54C", "\uC4F8\uC218\uC788\uB294",
                 "\uBD99\uC77C\uB54C", "\uCCAB\uBB38\uC7A5", "\uB2F5\uAD6C\uC870"
         );
+    }
+
+    private boolean looksLikeImplicitMeaningLookup(
+            String normalizedQuestion,
+            String compactQuestion,
+            EnumSet<IntentCategory> intents
+    ) {
+        if (hasSupportStyleIntent(intents) || hasSupportMetaCue(normalizedQuestion, compactQuestion)) {
+            return false;
+        }
+
+        if (!normalizedQuestion.matches(".*[\\uAC00-\\uD7A3].*")) {
+            return false;
+        }
+
+        if (normalizedQuestion.split("\\s+").length > 8) {
+            return false;
+        }
+
+        return looksLikeLearningMeaning(normalizedQuestion)
+                || looksLikeGrowthMeaning(normalizedQuestion)
+                || looksLikeReduceManageMeaning(normalizedQuestion)
+                || looksLikeSleepMeaning(normalizedQuestion)
+                || looksLikeStudyMeaning(normalizedQuestion)
+                || looksLikeRestMeaning(normalizedQuestion)
+                || looksLikeOnlineRelationshipStateChange(normalizedQuestion)
+                || looksLikeSocializeMeaning(normalizedQuestion)
+                || looksLikeVisitInterestMeaning(normalizedQuestion)
+                || looksLikeGenericDesireStateMeaning(normalizedQuestion, compactQuestion);
+    }
+
+    private boolean looksLikeGenericDesireStateMeaning(String normalizedQuestion, String compactQuestion) {
+        boolean hasDesireEnding = containsAny(
+                normalizedQuestion,
+                "고 싶다", "고 싶어", "고 싶", "싶다", "싶어", "되고 싶", "보이고 싶", "느껴지고 싶",
+                "want to", "would like to"
+        ) || containsAny(
+                compactQuestion,
+                "고싶다", "고싶어", "되고싶", "보이고싶", "느껴지고싶"
+        );
+
+        boolean hasMeaningContent = containsAny(
+                normalizedQuestion,
+                "보이", "되", "느껴지", "같아 보이", "매력적", "자연스러", "편안", "건강해", "성숙해", "professional",
+                "confident", "attractive", "natural", "comfortable", "healthy", "mature"
+        );
+
+        return hasDesireEnding && hasMeaningContent;
     }
 
     private String extractRelationshipTopic(String normalizedText) {

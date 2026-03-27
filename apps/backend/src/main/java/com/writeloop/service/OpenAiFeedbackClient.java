@@ -4,6 +4,7 @@ import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
+import com.writeloop.dto.RefinementExpressionDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -141,6 +142,19 @@ public class OpenAiFeedbackClient {
                                 )
                         ),
                         "correctedAnswer", Map.of("type", "string"),
+                        "refinementExpressions", Map.of(
+                                "type", "array",
+                                "items", Map.of(
+                                        "type", "object",
+                                        "additionalProperties", false,
+                                        "properties", Map.of(
+                                                "expression", Map.of("type", "string"),
+                                                "guidance", Map.of("type", "string"),
+                                                "example", Map.of("type", "string")
+                                        ),
+                                        "required", List.of("expression", "guidance", "example")
+                                )
+                        ),
                         "modelAnswer", Map.of("type", "string"),
                         "rewriteChallenge", Map.of("type", "string")
                 ),
@@ -151,6 +165,7 @@ public class OpenAiFeedbackClient {
                         "corrections",
                         "inlineFeedback",
                         "correctedAnswer",
+                        "refinementExpressions",
                         "modelAnswer",
                         "rewriteChallenge"
                 )
@@ -184,8 +199,10 @@ public class OpenAiFeedbackClient {
                 - Never write English sentences in summary, strengths, corrections.issue, corrections.suggestion, or rewriteChallenge.
                 - If you need to mention an English expression, quote only the expression itself and explain it in Korean.
                 - correctedAnswer, modelAnswer, and inlineFeedback.originalText/revisedText must be written in English.
+                - refinementExpressions.expression and refinementExpressions.example must be written in English.
                 - strengths should have 2 to 3 concise bullets in Korean.
                 - corrections should focus on natural English, grammar, clarity, and expansion.
+                - refinementExpressions.guidance must be written in Korean.
                 - correctedAnswer should minimally revise the learner answer. Preserve the learner's meaning and structure as much as possible while fixing grammar and natural phrasing.
                 - inlineFeedback must cover the learner answer in reading order using these types only: KEEP, REPLACE, ADD, REMOVE.
                 - inlineFeedback must reconstruct the learner answer exactly in order. Do not skip or overlap original text.
@@ -204,6 +221,11 @@ public class OpenAiFeedbackClient {
                 - Example 3: original "I like pizza", revised "I like pizza." -> KEEP "I like pizza", ADD ".".
                 - Do not rewrite the whole answer as one REPLACE unless the whole answer is actually wrong. Use the smallest natural segment possible.
                 - modelAnswer should sound natural for the learner's level.
+                - refinementExpressions should list 2 to 4 short reusable expressions from modelAnswer that the learner can borrow to polish their own answer.
+                - refinementExpressions.expression must be a short phrase, not a full sentence.
+                - refinementExpressions.example should show a short snippet from modelAnswer using that expression.
+                - Do not include expressions that already appear clearly in the learner answer.
+                - Prefer expressions that improve clarity, detail, reason, example, or natural flow.
                 - rewriteChallenge should tell the learner how to improve in the next attempt in Korean.
 
                 Prompt topic: %s
@@ -266,6 +288,14 @@ public class OpenAiFeedbackClient {
         int rawScore = feedbackNode.path("score").asInt();
         String correctedAnswer = feedbackNode.path("correctedAnswer").asText();
         List<InlineFeedbackSegmentDto> inlineFeedback = normalizeInlineFeedback(answer, correctedAnswer, rawInlineFeedback);
+        List<RefinementExpressionDto> refinementExpressions = new ArrayList<>();
+        feedbackNode.path("refinementExpressions").forEach(node -> refinementExpressions.add(
+                new RefinementExpressionDto(
+                        node.path("expression").asText(),
+                        node.path("guidance").asText(),
+                        node.path("example").asText()
+                )
+        ));
         String modelAnswer = feedbackNode.path("modelAnswer").asText();
         boolean loopComplete = isLoopComplete(rawScore, corrections);
         String completionMessage = buildCompletionMessage(rawScore, corrections);
@@ -282,6 +312,7 @@ public class OpenAiFeedbackClient {
                 corrections,
                 inlineFeedback,
                 correctedAnswer,
+                refinementExpressions,
                 modelAnswer,
                 feedbackNode.path("rewriteChallenge").asText()
         );

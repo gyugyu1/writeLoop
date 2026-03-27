@@ -156,6 +156,7 @@ public class CoachService {
         Set<String> intentCategories = analysis.intentKeys();
         boolean expressionLookup = analysis.lookup().isPresent();
         CoachQueryAnalyzer.MeaningLookupSpec effectiveLookupSpec = analysis.lookup().orElse(null);
+        boolean hybridSupportRequest = isHybridMeaningSupportRequest(effectiveLookupSpec);
         CoachHelpBuildResult buildResult;
 
         if (expressionLookup) {
@@ -167,30 +168,58 @@ public class CoachService {
             effectiveLookupSpec = enrichmentResult.lookupSpec();
             List<CoachExpressionDto> expressions = buildMeaningLookupExpressions(effectiveLookupSpec);
             if (!expressions.isEmpty()) {
+                List<CoachExpressionDto> finalExpressions = hybridSupportRequest
+                        ? buildHybridExpressions(prompt, userQuestion, hints, intentCategories, expressions)
+                        : expressions;
                 buildResult = new CoachHelpBuildResult(
-                        buildCoachReply(prompt, userQuestion, expressions),
-                        expressions,
+                        buildCoachReply(prompt, userQuestion, finalExpressions),
+                        finalExpressions,
                         enrichmentResult.usedSlotTranslation()
                                 ? CoachResponseSource.DETERMINISTIC_WITH_SLOT_TRANSLATION
                                 : CoachResponseSource.DETERMINISTIC,
                         enrichmentResult.usedSlotTranslation() ? openAiCoachClient.configuredModel() : null
                 );
             } else {
-                CoachHelpBuildResult openAiResult = tryOpenAiHelp(prompt, userQuestion, hints, intentCategories, true);
+                CoachHelpBuildResult openAiResult = tryOpenAiHelp(
+                        prompt,
+                        userQuestion,
+                        hints,
+                        intentCategories,
+                        true,
+                        effectiveLookupSpec
+                );
                 if (openAiResult != null) {
-                    buildResult = openAiResult;
+                    buildResult = hybridSupportRequest
+                            ? withHybridSupport(prompt, userQuestion, hints, intentCategories, openAiResult)
+                            : openAiResult;
                 } else {
-                    List<CoachExpressionDto> fallbackExpressions = limitExpressions(fallbackExpressions());
-                    buildResult = new CoachHelpBuildResult(
-                            buildCoachReply(prompt, userQuestion, fallbackExpressions),
-                            fallbackExpressions,
-                            CoachResponseSource.LOCAL_FALLBACK,
-                            null
-                    );
+                    CoachHelpBuildResult downgradedSupportResult =
+                            shouldDowngradeMeaningLookupToWritingSupport(effectiveLookupSpec)
+                                    ? tryOpenAiHelp(prompt, userQuestion, hints, intentCategories, false, null)
+                                    : null;
+                    if (downgradedSupportResult != null) {
+                        buildResult = downgradedSupportResult;
+                    } else {
+                        List<CoachExpressionDto> fallbackExpressions = hybridSupportRequest
+                                ? buildHybridExpressions(
+                                prompt,
+                                userQuestion,
+                                hints,
+                                intentCategories,
+                                limitExpressions(fallbackExpressions())
+                        )
+                                : limitExpressions(fallbackExpressions());
+                        buildResult = new CoachHelpBuildResult(
+                                buildCoachReply(prompt, userQuestion, fallbackExpressions),
+                                fallbackExpressions,
+                                CoachResponseSource.LOCAL_FALLBACK,
+                                null
+                        );
+                    }
                 }
             }
         } else {
-            CoachHelpBuildResult openAiResult = tryOpenAiHelp(prompt, userQuestion, hints, intentCategories, false);
+            CoachHelpBuildResult openAiResult = tryOpenAiHelp(prompt, userQuestion, hints, intentCategories, false, null);
             if (openAiResult != null) {
                 buildResult = openAiResult;
             } else {
@@ -230,7 +259,8 @@ public class CoachService {
             String userQuestion,
             List<PromptHintDto> hints,
             Set<String> intentCategories,
-            boolean meaningLookup
+            boolean meaningLookup,
+            CoachQueryAnalyzer.MeaningLookupSpec lookupSpec
     ) {
         if (!openAiCoachClient.isConfigured()) {
             return null;
@@ -243,6 +273,9 @@ public class CoachService {
                     ? normalized
                     : filterExpressionsByIntent(normalized, intentCategories);
             if (prioritized.size() < 3) {
+                return null;
+            }
+            if (meaningLookup && isGenericMeaningLookupOpenAiResponse(prioritized, lookupSpec)) {
                 return null;
             }
 
@@ -258,6 +291,116 @@ public class CoachService {
         } catch (RuntimeException ignored) {
             return null;
         }
+    }
+
+    private boolean isHybridMeaningSupportRequest(CoachQueryAnalyzer.MeaningLookupSpec lookupSpec) {
+        return lookupSpec != null && "hybrid_meaning_support".equals(lookupSpec.detection().cue());
+    }
+
+    private boolean shouldDowngradeMeaningLookupToWritingSupport(CoachQueryAnalyzer.MeaningLookupSpec lookupSpec) {
+        if (lookupSpec == null) {
+            return false;
+        }
+
+        return isHybridMeaningSupportRequest(lookupSpec)
+                || lookupSpec.frame().family() == CoachQueryAnalyzer.ActionFamily.UNKNOWN;
+    }
+
+    private CoachHelpBuildResult withHybridSupport(
+            PromptDto prompt,
+            String userQuestion,
+            List<PromptHintDto> hints,
+            Set<String> intentCategories,
+            CoachHelpBuildResult baseResult
+    ) {
+        List<CoachExpressionDto> merged = buildHybridExpressions(
+                prompt,
+                userQuestion,
+                hints,
+                intentCategories,
+                baseResult.expressions()
+        );
+        return new CoachHelpBuildResult(
+                baseResult.coachReply(),
+                merged,
+                baseResult.responseSource(),
+                baseResult.responseModel()
+        );
+    }
+
+    private List<CoachExpressionDto> buildHybridExpressions(
+            PromptDto prompt,
+            String userQuestion,
+            List<PromptHintDto> hints,
+            Set<String> intentCategories,
+            List<CoachExpressionDto> baseExpressions
+    ) {
+        List<CoachExpressionDto> merged = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        appendExpressions(merged, seen, baseExpressions);
+        appendExpressions(merged, seen, buildLocalExpressions(prompt, userQuestion, hints, intentCategories));
+        return limitExpressions(merged);
+    }
+
+    private boolean isGenericMeaningLookupOpenAiResponse(
+            List<CoachExpressionDto> expressions,
+            CoachQueryAnalyzer.MeaningLookupSpec lookupSpec
+    ) {
+        long genericCount = expressions.stream()
+                .filter(this::isGenericSupportExpression)
+                .count();
+        if (genericCount < 2) {
+            return false;
+        }
+
+        return !hasMeaningSignal(expressions, lookupSpec);
+    }
+
+    private boolean hasMeaningSignal(
+            List<CoachExpressionDto> expressions,
+            CoachQueryAnalyzer.MeaningLookupSpec lookupSpec
+    ) {
+        if (lookupSpec == null) {
+            return false;
+        }
+
+        List<String> translatedSignals = lookupSpec.translations().values().stream()
+                .filter(CoachQueryAnalyzer.TranslationResult::resolved)
+                .map(CoachQueryAnalyzer.TranslationResult::englishText)
+                .filter(value -> value != null && !value.isBlank())
+                .map(this::normalizeKey)
+                .filter(value -> !value.isBlank())
+                .toList();
+
+        if (translatedSignals.isEmpty()) {
+            return false;
+        }
+
+        for (CoachExpressionDto expression : expressions) {
+            String haystack = normalizeKey(expression.expression() + " " + expression.example());
+            for (String signal : translatedSignals) {
+                if (haystack.contains(signal)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isGenericSupportExpression(CoachExpressionDto expression) {
+        String normalized = normalizeKey(expression.expression());
+        return normalized.startsWith("one reason is that")
+                || normalized.startsWith("this is because")
+                || normalized.startsWith("for example")
+                || normalized.startsWith("for instance")
+                || normalized.startsWith("i think")
+                || normalized.startsWith("in my opinion")
+                || normalized.startsWith("on the other hand")
+                || normalized.startsWith("i usually")
+                || normalized.startsWith("in the long run")
+                || normalized.startsWith("first")
+                || normalized.startsWith("another point is that");
     }
 
     private SlotEnrichmentResult enrichLookupSpecWithFallback(
@@ -339,6 +482,18 @@ public class CoachService {
             String sourceText
     ) {
         return family.name() + "|" + slot.name() + "|" + normalizeKey(sourceText);
+    }
+
+    private String withMyPrefix(String target) {
+        if (target == null || target.isBlank()) {
+            return "";
+        }
+
+        String trimmed = target.trim();
+        if (trimmed.startsWith("my ")) {
+            return trimmed;
+        }
+        return "my " + trimmed;
     }
 
     private String persistCoachInteraction(
@@ -1409,6 +1564,8 @@ public class CoachService {
             case SLEEP -> appendExpressions(expressions, seen, expressionsForTopicKey("sleep"));
             case STUDY -> appendExpressions(expressions, seen, expressionsForTopicKey("study"));
             case REST -> appendExpressions(expressions, seen, expressionsForTopicKey("rest"));
+            case GROWTH_CAPABILITY -> appendExpressions(expressions, seen, buildGrowthCapabilityExpressions(lookupSpec));
+            case REDUCE_MANAGE -> appendExpressions(expressions, seen, buildReduceManageExpressions(lookupSpec));
             case STATE_CHANGE -> appendExpressions(expressions, seen, buildStateChangeExpressions(lookupSpec));
             case VISIT_INTEREST -> appendExpressions(expressions, seen, buildVisitInterestExpressions(lookupSpec));
             case UNKNOWN -> {
@@ -1509,6 +1666,98 @@ public class CoachService {
                         "\uB2E8\uC21C\uD788 \uBC29\uBB38\uD558\uB294 \uAC83\uBCF4\uB2E4 \uCCB4\uD5D8\uD558\uACE0 \uC2F6\uB2E4\uB294 \uB290\uB08C\uC744 \uC904 \uB54C \uC88B\uC544\uC694.",
                         "\uCD95\uC81C, \uBB38\uD654, \uD65C\uB3D9 \uAC19\uC774 \uBB34\uC5B8\uAC00\uB97C \uACAA\uC5B4 \uBCF4\uACE0 \uC2F6\uB2E4\uB294 \uD750\uB984\uC5D0 \uB9DE\uC2B5\uB2C8\uB2E4.",
                         "I want to experience " + translatedTarget + " in person.",
+                        "COACH"
+                )
+        );
+    }
+
+    private List<CoachExpressionDto> buildGrowthCapabilityExpressions(CoachQueryAnalyzer.MeaningLookupSpec lookupSpec) {
+        CoachQueryAnalyzer.TranslationResult targetTranslation = lookupSpec.translations()
+                .get(CoachQueryAnalyzer.MeaningSlot.TARGET);
+        if (targetTranslation == null || !targetTranslation.resolved() || targetTranslation.englishText().isBlank()) {
+            return List.of();
+        }
+
+        String translatedTarget = targetTranslation.englishText();
+        String possessiveTarget = withMyPrefix(translatedTarget);
+        String capitalizedTarget = translatedTarget.substring(0, 1).toUpperCase(Locale.ROOT) + translatedTarget.substring(1);
+
+        return List.of(
+                new CoachExpressionDto(
+                        "I want to improve " + possessiveTarget + ".",
+                        "'~을 더 키우고 싶다'를 가장 무난하게 말할 때 쓰기 좋아요.",
+                        "근력, 체력, 자신감, 실력처럼 더 좋아지고 싶은 능력이나 상태를 말할 때 잘 맞습니다.",
+                        "I want to improve " + possessiveTarget + " this year.",
+                        "COACH"
+                ),
+                new CoachExpressionDto(
+                        "I want to work on " + possessiveTarget + ".",
+                        "조금씩 다듬고 키워 가고 있다는 느낌을 줄 때 자연스러워요.",
+                        "당장 완벽해지기보다 꾸준히 관리하고 키워 가는 흐름을 말할 때 유용합니다.",
+                        "I want to work on " + possessiveTarget + " every week.",
+                        "COACH"
+                ),
+                new CoachExpressionDto(
+                        "I want to develop " + possessiveTarget + ".",
+                        "조금 더 성장과 발전의 느낌을 강조하고 싶을 때 쓰기 좋아요.",
+                        "실력이나 자신감처럼 시간이 지나면서 더 단단해지는 대상을 말할 때 잘 어울립니다.",
+                        "I want to develop " + possessiveTarget + " through regular practice.",
+                        "COACH"
+                ),
+                new CoachExpressionDto(
+                        "I want to build up " + possessiveTarget + ".",
+                        "기초부터 차근차근 쌓아 올리고 싶다는 느낌을 줄 때 좋아요.",
+                        "근력, 체력, 집중력처럼 꾸준히 쌓아 가는 느낌의 목표와 특히 잘 맞습니다.",
+                        "I want to build up " + possessiveTarget + " little by little.",
+                        "COACH"
+                ),
+                new CoachExpressionDto(
+                        capitalizedTarget,
+                        "핵심 단어 자체를 먼저 확인해 두고 싶을 때 보기 좋은 표현이에요.",
+                        "이 단어를 기억해 두면 improve, build up, work on 같은 표현과 자연스럽게 이어 쓸 수 있어요.",
+                        capitalizedTarget + " is something I want to improve.",
+                        "COACH"
+                )
+        );
+    }
+
+    private List<CoachExpressionDto> buildReduceManageExpressions(CoachQueryAnalyzer.MeaningLookupSpec lookupSpec) {
+        CoachQueryAnalyzer.TranslationResult targetTranslation = lookupSpec.translations()
+                .get(CoachQueryAnalyzer.MeaningSlot.TARGET);
+        if (targetTranslation == null || !targetTranslation.resolved() || targetTranslation.englishText().isBlank()) {
+            return List.of();
+        }
+
+        String translatedTarget = targetTranslation.englishText();
+        String possessiveTarget = withMyPrefix(translatedTarget);
+
+        return List.of(
+                new CoachExpressionDto(
+                        "I want to reduce " + possessiveTarget + ".",
+                        "'~을 줄이고 싶다'를 가장 직접적으로 말할 때 쓰기 좋아요.",
+                        "스트레스, 지출, 스크린 타임처럼 줄이고 싶은 대상을 간단하게 말할 수 있어요.",
+                        "I want to reduce " + possessiveTarget + " this year.",
+                        "COACH"
+                ),
+                new CoachExpressionDto(
+                        "I want to manage " + possessiveTarget + " better.",
+                        "단순히 줄이는 것보다 더 잘 다루고 싶다는 느낌을 줄 때 자연스러워요.",
+                        "스트레스나 불안처럼 완전히 없애기보다 조절하고 싶은 대상을 말할 때 특히 잘 맞습니다.",
+                        "I want to manage " + possessiveTarget + " better in my daily life.",
+                        "COACH"
+                ),
+                new CoachExpressionDto(
+                        "I want to work on lowering " + possessiveTarget + ".",
+                        "꾸준히 줄여 가는 과정에 초점을 둘 때 쓰기 좋아요.",
+                        "습관이나 생활 패턴을 조금씩 바꾸면서 낮추고 싶은 목표와 잘 어울립니다.",
+                        "I want to work on lowering " + possessiveTarget + " little by little.",
+                        "COACH"
+                ),
+                new CoachExpressionDto(
+                        "I want to cut down on " + possessiveTarget + ".",
+                        "일상에서 소비하거나 너무 많이 하는 것을 줄이고 싶을 때 자연스러워요.",
+                        "지출, 사용 시간, 간식처럼 생활 습관과 연결된 대상을 말할 때 특히 많이 씁니다.",
+                        "I want to cut down on " + possessiveTarget + " after work.",
                         "COACH"
                 )
         );

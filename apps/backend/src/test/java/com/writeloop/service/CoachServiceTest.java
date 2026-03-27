@@ -32,6 +32,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -406,6 +407,7 @@ class CoachServiceTest {
                         "I want to learn Spanish this year."
                 )),
                 "I want to learn Spanish this year.",
+                List.of(),
                 "Model answer",
                 "Rewrite it with one more detail."
         );
@@ -505,6 +507,7 @@ class CoachServiceTest {
                         "Online conversations feel less awkward now."
                 )),
                 "Online conversations feel less awkward now.",
+                List.of(),
                 "Model answer",
                 "Add one supporting detail."
         );
@@ -886,6 +889,193 @@ class CoachServiceTest {
                 org.mockito.ArgumentMatchers.eq(lookup),
                 org.mockito.ArgumentMatchers.anyList()
         );
+    }
+
+    @Test
+    void help_returns_growth_capability_expressions_for_strength_lookup() {
+        PromptDto prompt = new PromptDto(
+                "prompt-growth-strength",
+                "Growth",
+                "EASY",
+                "What is one skill you want to improve this year, and how will you practice it?",
+                "\uC62C\uD574 \uB298\uB9AC\uACE0 \uC2F6\uC740 \uAE30\uC220 \uD558\uB098\uC640 \uC5B4\uB5BB\uAC8C \uC5F0\uC2B5\uD560\uC9C0 \uC4F0\uC138\uC694.",
+                "Talk about a skill and your practice plan."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(true);
+
+        String lookup = "근력을 키우고 싶다";
+        CoachHelpResponseDto response = coachService.help(new CoachHelpRequestDto(prompt.id(), lookup));
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "i want to improve my strength.",
+                        "i want to work on my strength.",
+                        "i want to develop my strength.",
+                        "i want to build up my strength.",
+                        "strength"
+                );
+        verify(openAiCoachClient, never()).help(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq(lookup),
+                org.mockito.ArgumentMatchers.anyList()
+        );
+    }
+
+    @Test
+    void help_returns_reduce_manage_expressions_for_stress_lookup() {
+        PromptDto prompt = new PromptDto(
+                "prompt-reduce-stress",
+                "Daily Life",
+                "MEDIUM",
+                "What habit would you like to change this year?",
+                "\uC62C\uD574 \uBC14\uAFB8\uACE0 \uC2F6\uC740 \uC2B5\uAD00 \uD558\uB098\uB97C \uC368 \uBCF4\uC138\uC694.",
+                "Talk about one habit you want to change."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(true);
+
+        String lookup = "스트레스를 줄이고 싶다";
+        CoachHelpResponseDto response = coachService.help(new CoachHelpRequestDto(prompt.id(), lookup));
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "i want to reduce my stress.",
+                        "i want to manage my stress better.",
+                        "i want to work on lowering my stress.",
+                        "i want to cut down on my stress."
+                );
+        verify(openAiCoachClient, never()).help(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq(lookup),
+                org.mockito.ArgumentMatchers.anyList()
+        );
+    }
+
+    @Test
+    void help_uses_slot_translation_fallback_for_unknown_growth_target() {
+        PromptDto prompt = new PromptDto(
+                "prompt-growth-unknown",
+                "Growth",
+                "EASY",
+                "What would you like to improve this year?",
+                "\uC62C\uD574 \uB354 \uC88B\uAC8C \uB9CC\uB4E4\uACE0 \uC2F6\uC740 \uAC83\uC744 \uC368 \uBCF4\uC138\uC694.",
+                "Talk about something you want to improve."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(true);
+
+        String lookup = "회복력을 키우고 싶다";
+        when(openAiCoachClient.translateMeaningSlot(
+                org.mockito.ArgumentMatchers.eq(prompt),
+                org.mockito.ArgumentMatchers.eq(lookup),
+                org.mockito.ArgumentMatchers.eq(CoachQueryAnalyzer.ActionFamily.GROWTH_CAPABILITY),
+                org.mockito.ArgumentMatchers.eq(CoachQueryAnalyzer.MeaningSlot.TARGET),
+                org.mockito.ArgumentMatchers.anyString()
+        )).thenReturn("resilience");
+
+        CoachHelpResponseDto response = coachService.help(new CoachHelpRequestDto(prompt.id(), lookup));
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "i want to improve my resilience.",
+                        "i want to work on my resilience.",
+                        "i want to develop my resilience.",
+                        "i want to build up my resilience.",
+                        "resilience"
+                );
+        verify(openAiCoachClient, never()).help(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq(lookup),
+                org.mockito.ArgumentMatchers.anyList()
+        );
+    }
+
+    @Test
+    void help_uses_openai_meaning_lookup_for_generic_desire_state_statement() {
+        PromptDto prompt = new PromptDto(
+                "prompt-desire-state",
+                "Self image",
+                "MEDIUM",
+                "How would you like to present yourself to others?",
+                "\uB2E4\uB978 \uC0AC\uB78C\uC5D0\uAC8C \uC5B4\uB5A4 \uC778\uC0C1\uC73C\uB85C \uBCF4\uC774\uACE0 \uC2F6\uB098\uC694?",
+                "Talk about the impression you want to give."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(true);
+
+        String lookup = "매력적으로 보이고 싶다";
+        when(openAiCoachClient.help(prompt, lookup, List.of())).thenReturn(
+                new CoachHelpResponseDto(
+                        prompt.id(),
+                        lookup,
+                        "표현하고 싶은 인상에 가까운 표현을 골랐어요.",
+                        List.of(
+                                new com.writeloop.dto.CoachExpressionDto("I want to look attractive.", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("I want to come across as attractive.", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("I want to seem more attractive.", "a", "b", "c", "COACH")
+                        )
+                )
+        );
+
+        CoachHelpResponseDto response = coachService.help(new CoachHelpRequestDto(prompt.id(), lookup));
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "i want to look attractive.",
+                        "i want to come across as attractive.",
+                        "i want to seem more attractive."
+        );
+        verify(openAiCoachClient).help(prompt, lookup, List.of());
+    }
+
+    @Test
+    void help_downgrades_generic_meaning_lookup_openai_response_to_writing_support() {
+        PromptDto prompt = new PromptDto(
+                "prompt-hybrid-downgrade",
+                "Self image",
+                "MEDIUM",
+                "How would you like to present yourself to others?",
+                "\uB2E4\uB978 \uC0AC\uB78C\uC5D0\uAC8C \uC5B4\uB5A4 \uC778\uC0C1\uC73C\uB85C \uBCF4\uC774\uACE0 \uC2F6\uB098\uC694?",
+                "Talk about the impression you want to give."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(true);
+
+        String lookup = "이 질문에서 매력적으로 보이고 싶을 때 쓸 표현 알려줘";
+        when(openAiCoachClient.help(prompt, lookup, List.of())).thenReturn(
+                new CoachHelpResponseDto(
+                        prompt.id(),
+                        lookup,
+                        "generic",
+                        List.of(
+                                new com.writeloop.dto.CoachExpressionDto("One reason is that ...", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("For example, ...", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("I think ...", "a", "b", "c", "COACH")
+                        )
+                ),
+                new CoachHelpResponseDto(
+                        prompt.id(),
+                        lookup,
+                        "support",
+                        List.of(
+                                new com.writeloop.dto.CoachExpressionDto("I want to look attractive.", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("I want to come across as attractive.", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("To sound more natural, ...", "a", "b", "c", "COACH")
+                        )
+                )
+        );
+
+        CoachHelpResponseDto response = coachService.help(new CoachHelpRequestDto(prompt.id(), lookup));
+
+        assertThat(lowerExpressions(response))
+                .contains("i want to look attractive.", "i want to come across as attractive.");
+        verify(openAiCoachClient, times(2)).help(prompt, lookup, List.of());
     }
 
     @Test

@@ -5,6 +5,7 @@ import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
+import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.exception.GuestLimitExceededException;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
@@ -18,12 +19,26 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
 public class FeedbackService {
+    private static final List<Pattern> MODEL_EXPRESSION_PATTERNS = List.of(
+            Pattern.compile("\\bI want to [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bI would like to [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bI plan to [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bI usually [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bbecause [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bby [A-Za-z]+ing [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bso that [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bto [a-z]+ [^,.!?;]+", Pattern.CASE_INSENSITIVE)
+    );
 
     private final PromptService promptService;
     private final OpenAiFeedbackClient openAiFeedbackClient;
@@ -61,6 +76,7 @@ public class FeedbackService {
                 feedback.corrections(),
                 feedback.inlineFeedback(),
                 feedback.correctedAnswer(),
+                feedback.refinementExpressions(),
                 feedback.modelAnswer(),
                 feedback.rewriteChallenge()
         );
@@ -209,6 +225,7 @@ public class FeedbackService {
         String correctedAnswer = buildCorrectedAnswer(answer);
         List<InlineFeedbackSegmentDto> inlineFeedback = buildInlineFeedback(answer, correctedAnswer);
         String modelAnswer = buildModelAnswer(prompt);
+        List<RefinementExpressionDto> refinementExpressions = buildRefinementExpressions(answer, modelAnswer);
         String rewriteChallenge = buildRewriteChallenge(prompt, corrections.isEmpty());
         int finalScore = Math.min(score, 96);
         boolean loopComplete = shouldCompleteLoop(finalScore, corrections);
@@ -228,9 +245,133 @@ public class FeedbackService {
                 corrections,
                 inlineFeedback,
                 correctedAnswer,
+                refinementExpressions,
                 modelAnswer,
                 rewriteChallenge
         );
+    }
+
+    private List<RefinementExpressionDto> buildRefinementExpressions(String learnerAnswer, String modelAnswer) {
+        if (modelAnswer == null || modelAnswer.isBlank()) {
+            return List.of();
+        }
+
+        String normalizedLearnerAnswer = normalizeForComparison(learnerAnswer);
+        LinkedHashSet<String> candidates = new LinkedHashSet<>();
+
+        for (Pattern pattern : MODEL_EXPRESSION_PATTERNS) {
+            Matcher matcher = pattern.matcher(modelAnswer);
+            while (matcher.find()) {
+                String candidate = cleanExpressionCandidate(matcher.group());
+                if (shouldKeepExpressionCandidate(candidate, normalizedLearnerAnswer)) {
+                    candidates.add(candidate);
+                }
+            }
+        }
+
+        if (candidates.isEmpty()) {
+            for (String clause : modelAnswer.split("[.!?]")) {
+                String candidate = cleanExpressionCandidate(clause);
+                if (shouldKeepExpressionCandidate(candidate, normalizedLearnerAnswer)) {
+                    candidates.add(candidate);
+                }
+                if (candidates.size() >= 3) {
+                    break;
+                }
+            }
+        }
+
+        List<RefinementExpressionDto> expressions = new ArrayList<>();
+        for (String candidate : candidates) {
+            expressions.add(new RefinementExpressionDto(
+                    candidate,
+                    buildRefinementGuidance(candidate),
+                    buildRefinementExample(modelAnswer, candidate)
+            ));
+            if (expressions.size() >= 3) {
+                break;
+            }
+        }
+
+        return expressions;
+    }
+
+    private String buildRefinementGuidance(String expression) {
+        String lower = expression.toLowerCase(Locale.ROOT);
+        if (lower.startsWith("because ")) {
+            return "이유를 한 번 더 또렷하게 덧붙일 때 가져오면 좋아요.";
+        }
+        if (lower.startsWith("by ")) {
+            return "어떻게 실천하는지 방법을 구체적으로 붙일 때 잘 어울려요.";
+        }
+        if (lower.startsWith("i would like to ") || lower.startsWith("i want to ")) {
+            return "하고 싶은 행동이나 계획을 더 자연스럽게 말할 때 써볼 수 있어요.";
+        }
+        if (lower.startsWith("i plan to ")) {
+            return "앞으로의 계획이나 실천 의지를 더 분명하게 보여줄 때 좋아요.";
+        }
+        if (lower.startsWith("i usually ")) {
+            return "평소 습관이나 반복 행동을 더 자연스럽게 설명할 때 유용해요.";
+        }
+        if (lower.startsWith("so that ")) {
+            return "목적이나 기대 효과를 조금 더 선명하게 붙일 때 좋아요.";
+        }
+        return "모범 답안에서 가져온 표현이라 답변을 조금 더 자연스럽고 구체적으로 다듬는 데 도움이 돼요.";
+    }
+
+    private String buildRefinementExample(String modelAnswer, String expression) {
+        if (modelAnswer == null || modelAnswer.isBlank()) {
+            return expression;
+        }
+
+        String normalizedExpression = expression.toLowerCase(Locale.ROOT);
+        for (String sentence : modelAnswer.split("(?<=[.!?])\\s+")) {
+            if (sentence.toLowerCase(Locale.ROOT).contains(normalizedExpression)) {
+                return sentence.trim();
+            }
+        }
+
+        return expression;
+    }
+
+    private boolean shouldKeepExpressionCandidate(String candidate, String normalizedLearnerAnswer) {
+        if (candidate == null || candidate.isBlank()) {
+            return false;
+        }
+
+        String normalizedCandidate = normalizeForComparison(candidate);
+        if (normalizedCandidate.isBlank()) {
+            return false;
+        }
+
+        int tokenCount = normalizedCandidate.split("\\s+").length;
+        if (tokenCount < 3 || tokenCount > 10) {
+            return false;
+        }
+
+        return !normalizedLearnerAnswer.contains(normalizedCandidate);
+    }
+
+    private String cleanExpressionCandidate(String raw) {
+        if (raw == null) {
+            return "";
+        }
+
+        return raw
+                .replaceAll("\\s+", " ")
+                .replaceAll("^[,;:\\-\\s]+|[,;:\\-\\s]+$", "")
+                .trim();
+    }
+
+    private String normalizeForComparison(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        return value.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9\\s']", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private boolean shouldCompleteLoop(int score, List<CorrectionDto> corrections) {

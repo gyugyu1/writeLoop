@@ -2136,6 +2136,30 @@ export function AnswerLoop() {
     );
   }
 
+  function renderRefinementExpressionsBlock(
+    expressions: Feedback["refinementExpressions"] | null | undefined,
+    className: string
+  ) {
+    if (!expressions || expressions.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className={className}>
+        <h3>모범답안에서 가져오면 좋은 표현</h3>
+        <ul className={styles.list}>
+          {expressions.map((expression, index) => (
+            <li key={`${expression.expression}-${index}`}>
+              <strong>{expression.expression}</strong>
+              <span>{expression.guidance}</span>
+              <span className={styles.refinementExpressionExample}>{expression.example}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   function renderHelpSheet() {
     if (!showHelpSheet || !isMobileViewport || (step !== "answer" && step !== "rewrite")) {
       return null;
@@ -2360,6 +2384,10 @@ export function AnswerLoop() {
                 ))}
               </ul>
             </div>
+            {renderRefinementExpressionsBlock(
+              feedback.refinementExpressions,
+              styles.feedbackBlock
+            )}
             <div className={styles.feedbackBlock}>
               <h3>모범 답안</h3>
               <p>{feedback.modelAnswer}</p>
@@ -2493,6 +2521,10 @@ export function AnswerLoop() {
                     ))}
                   </ul>
                 </div>
+                {renderRefinementExpressionsBlock(
+                  feedback.refinementExpressions,
+                  styles.rewriteFeedbackBlock
+                )}
                 <div className={styles.rewriteFeedbackBlock}>
                   <h3>모범 답안</h3>
                   <p>{feedback.modelAnswer}</p>

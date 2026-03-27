@@ -40,10 +40,42 @@ const LEARN_TARGET_TRANSLATIONS: Record<string, string> = {
   "\uC601\uC5B4": "English",
   "\uC77C\uBCF8\uC5B4": "Japanese",
   "\uC911\uAD6D\uC5B4": "Chinese",
+  "\uC2A4\uD398\uC778\uC5B4": "Spanish",
+  "\uD504\uB791\uC2A4\uC5B4": "French",
+  "\uB3C5\uC77C\uC5B4": "German",
   "\uC694\uB9AC": "cooking",
   "\uCD95\uAD6C": "soccer",
   "\uB18D\uAD6C": "basketball",
   "\uD14C\uB2C8\uC2A4": "tennis"
+};
+
+const GROWTH_TARGET_TRANSLATIONS: Record<string, string> = {
+  "근력": "strength",
+  "체력": "stamina",
+  "지구력": "endurance",
+  "유연성": "flexibility",
+  "자신감": "confidence",
+  "집중력": "focus",
+  "영향력": "influence",
+  "면역력": "immunity",
+  "근육": "muscle",
+  "실력": "skills",
+  "영어 실력": "English skills",
+  "말하기 실력": "speaking skills",
+  "발음": "pronunciation"
+};
+
+const REDUCE_TARGET_TRANSLATIONS: Record<string, string> = {
+  "스트레스": "stress",
+  "불안": "anxiety",
+  "걱정": "worry",
+  "지출": "spending",
+  "소비": "spending",
+  "스크린 타임": "screen time",
+  "체지방": "body fat",
+  "체중": "weight",
+  "피로": "fatigue",
+  "압박감": "pressure"
 };
 
 const EXPRESSION_TOPIC_BUNDLES: ExpressionTopicBundle[] = [
@@ -265,26 +297,7 @@ function isMeaningLookupQuestion(normalizedQuestion: string) {
     return true;
   }
 
-  return normalizedQuestion.split(/\s+/).length <= 2 && /[가-힣]/.test(normalizedQuestion);
-
-  if (
-    includesKeyword(normalizedQuestion, [
-      "영어로",
-      "표현",
-      "말하고 싶어",
-      "말하고 싶",
-      "어떻게 말",
-      "뭐라고",
-      "라고 말",
-      "라고 하고",
-      "단어",
-      "how do i say",
-      "want to say",
-      "expression",
-      "phrase",
-      "word"
-    ])
-  ) {
+  if (looksLikeImplicitMeaningLookup(normalizedQuestion)) {
     return true;
   }
 
@@ -293,28 +306,6 @@ function isMeaningLookupQuestion(normalizedQuestion: string) {
 
 function looksLikeExpressionLookup(normalizedQuestion: string) {
   return isMeaningLookupQuestion(normalizedQuestion);
-
-  if (
-    includesKeyword(normalizedQuestion, [
-      "영어로",
-      "표현",
-      "말하고 싶",
-      "어떻게 말",
-      "뭐라고",
-      "라고 말",
-      "라고 하고",
-      "단어",
-      "how do i say",
-      "want to say",
-      "expression",
-      "phrase",
-      "word"
-    ])
-  ) {
-    return true;
-  }
-
-  return normalizedQuestion.split(/\s+/).length <= 2 && /[가-힣]/.test(normalizedQuestion);
 }
 
 function resolveExpressionTopic(question: string) {
@@ -353,6 +344,166 @@ function extractMeaningLookupTarget(question: string) {
     .trim();
 
   return extracted || normalized;
+}
+
+function looksLikeGrowthMeaning(normalizedTarget: string) {
+  const hasGrowthVerb = includesKeyword(normalizedTarget, [
+    "키우",
+    "늘리",
+    "높이",
+    "기르",
+    "강화",
+    "향상",
+    "개선",
+    "발전",
+    "발달",
+    "boost",
+    "build up",
+    "increase",
+    "improve",
+    "develop"
+  ]);
+  const hasGrowthTarget = includesKeyword(normalizedTarget, [
+    "근력",
+    "체력",
+    "지구력",
+    "유연성",
+    "자신감",
+    "집중력",
+    "영향력",
+    "면역력",
+    "근육",
+    "실력",
+    "발음",
+    "strength",
+    "stamina",
+    "endurance",
+    "flexibility",
+    "confidence",
+    "focus",
+    "influence",
+    "immunity",
+    "muscle",
+    "skills",
+    "skill",
+    "pronunciation"
+  ]);
+
+  return hasGrowthVerb && (hasGrowthTarget || normalizedTarget.includes("싶"));
+}
+
+function looksLikeReduceManageMeaning(normalizedTarget: string) {
+  const hasReduceVerb = includesKeyword(normalizedTarget, [
+    "줄이",
+    "낮추",
+    "완화",
+    "관리",
+    "조절",
+    "통제",
+    "억제",
+    "cut down",
+    "reduce",
+    "lower",
+    "manage",
+    "control"
+  ]);
+  const hasReduceTarget = includesKeyword(normalizedTarget, [
+    "스트레스",
+    "불안",
+    "걱정",
+    "지출",
+    "소비",
+    "스크린 타임",
+    "체지방",
+    "체중",
+    "피로",
+    "압박감",
+    "stress",
+    "anxiety",
+    "worry",
+    "spending",
+    "screen time",
+    "body fat",
+    "weight",
+    "fatigue",
+    "pressure"
+  ]);
+
+  return hasReduceVerb && (hasReduceTarget || normalizedTarget.includes("싶"));
+}
+
+function looksLikeImplicitMeaningLookup(normalizedQuestion: string) {
+  if (!/[가-힣]/.test(normalizedQuestion)) {
+    return false;
+  }
+
+  if (normalizedQuestion.split(/\s+/).length > 8) {
+    return false;
+  }
+
+  return (
+    looksLikeLearningMeaning(normalizedQuestion) ||
+    looksLikeGrowthMeaning(normalizedQuestion) ||
+    looksLikeReduceManageMeaning(normalizedQuestion) ||
+    looksLikeGenericDesireStateMeaning(normalizedQuestion) ||
+    includesKeyword(normalizedQuestion, [
+      "잠",
+      "자다",
+      "잔다",
+      "잠들",
+      "취침",
+      "수면",
+      "공부",
+      "쉬다",
+      "휴식",
+      "친구",
+      "만남",
+      "온라인",
+      "인터넷",
+      "가보고 싶",
+      "관심",
+      "궁금"
+    ])
+  );
+}
+
+function looksLikeGenericDesireStateMeaning(normalizedQuestion: string) {
+  const compactQuestion = normalizedQuestion.replace(/\s+/g, "");
+  const hasDesireEnding =
+    includesKeyword(normalizedQuestion, [
+      "고 싶다",
+      "고 싶어",
+      "고 싶",
+      "싶다",
+      "싶어",
+      "되고 싶",
+      "보이고 싶",
+      "느껴지고 싶",
+      "want to",
+      "would like to"
+    ]) ||
+    includesKeyword(compactQuestion, ["고싶다", "고싶어", "되고싶", "보이고싶", "느껴지고싶"]);
+
+  const hasMeaningContent = includesKeyword(normalizedQuestion, [
+    "보이",
+    "되",
+    "느껴지",
+    "같아 보이",
+    "매력적",
+    "자연스러",
+    "편안",
+    "건강해",
+    "성숙해",
+    "professional",
+    "confident",
+    "attractive",
+    "natural",
+    "comfortable",
+    "healthy",
+    "mature"
+  ]);
+
+  return hasDesireEnding && hasMeaningContent;
 }
 
 function isMeetFriendsMeaning(normalizedTarget: string) {
@@ -397,6 +548,16 @@ function buildMeaningLookupExpressions(question: string): TopicExpressionSeed[] 
   const learnExpressions = buildLearnTargetExpressions(normalizedTarget);
   if (learnExpressions.length > 0) {
     return learnExpressions;
+  }
+
+  const growthExpressions = buildGrowthExpressions(normalizedTarget);
+  if (growthExpressions.length > 0) {
+    return growthExpressions;
+  }
+
+  const reduceExpressions = buildReduceExpressions(normalizedTarget);
+  if (reduceExpressions.length > 0) {
+    return reduceExpressions;
   }
 
   return [];
@@ -529,6 +690,176 @@ function resolveLearnTargetTranslation(normalizedTarget: string) {
 
   const englishMatch = candidate.match(/[A-Za-z][A-Za-z0-9' -]{1,}/);
   return englishMatch?.[0]?.trim() ?? "";
+}
+
+function buildGrowthExpressions(normalizedTarget: string): TopicExpressionSeed[] {
+  if (!looksLikeGrowthMeaning(normalizedTarget)) {
+    return [];
+  }
+
+  const translatedTarget = resolveMappedTranslation(normalizedTarget, GROWTH_TARGET_TRANSLATIONS, [
+    "키우고 싶다",
+    "키우고 싶어",
+    "키우고 싶",
+    "키우고",
+    "키우다",
+    "늘리고 싶다",
+    "늘리고 싶어",
+    "늘리고 싶",
+    "늘리고",
+    "늘리다",
+    "높이고 싶다",
+    "높이고 싶어",
+    "높이고 싶",
+    "높이고",
+    "높이다",
+    "기르고 싶다",
+    "기르고 싶어",
+    "기르고 싶",
+    "기르고",
+    "기르다",
+    "강화하고 싶다",
+    "강화하고 싶어",
+    "강화하고",
+    "향상시키고 싶다",
+    "향상시키고 싶어",
+    "향상시키고",
+    "개선하고 싶다",
+    "개선하고 싶어",
+    "개선하고",
+    "build up",
+    "boost",
+    "increase",
+    "improve",
+    "develop"
+  ]);
+  if (!translatedTarget) {
+    return [];
+  }
+
+  const possessiveTarget = withMyPrefix(translatedTarget);
+  const capitalizedTarget = translatedTarget.charAt(0).toUpperCase() + translatedTarget.slice(1);
+
+  return [
+    {
+      expression: `I want to improve ${possessiveTarget}.`,
+      meaningKo: "'~을 더 키우고 싶다'를 가장 무난하게 말할 때 쓰기 좋아요.",
+      usageTip: "근력, 체력, 자신감, 실력처럼 더 좋아지고 싶은 능력이나 상태를 말할 때 잘 맞습니다.",
+      example: `I want to improve ${possessiveTarget} this year.`
+    },
+    {
+      expression: `I want to work on ${possessiveTarget}.`,
+      meaningKo: "조금씩 다듬고 키워 가고 있다는 느낌을 줄 때 자연스러워요.",
+      usageTip: "당장 완벽해지기보다 꾸준히 관리하고 키워 가는 흐름을 말할 때 유용합니다.",
+      example: `I want to work on ${possessiveTarget} every week.`
+    },
+    {
+      expression: `I want to develop ${possessiveTarget}.`,
+      meaningKo: "조금 더 성장과 발전의 느낌을 강조하고 싶을 때 쓰기 좋아요.",
+      usageTip: "실력이나 자신감처럼 시간이 지나면서 더 단단해지는 대상을 말할 때 잘 어울립니다.",
+      example: `I want to develop ${possessiveTarget} through regular practice.`
+    },
+    {
+      expression: `I want to build up ${possessiveTarget}.`,
+      meaningKo: "기초부터 차근차근 쌓아 올리고 싶다는 느낌을 줄 때 좋아요.",
+      usageTip: "근력, 체력, 집중력처럼 꾸준히 쌓아 가는 느낌의 목표와 특히 잘 맞습니다.",
+      example: `I want to build up ${possessiveTarget} little by little.`
+    },
+    {
+      expression: capitalizedTarget,
+      meaningKo: "핵심 단어 자체를 먼저 확인해 두고 싶을 때 보기 좋은 표현이에요.",
+      usageTip: "이 단어를 기억해 두면 improve, build up, work on 같은 표현과 자연스럽게 이어 쓸 수 있어요.",
+      example: `${capitalizedTarget} is something I want to improve.`
+    }
+  ];
+}
+
+function buildReduceExpressions(normalizedTarget: string): TopicExpressionSeed[] {
+  if (!looksLikeReduceManageMeaning(normalizedTarget)) {
+    return [];
+  }
+
+  const translatedTarget = resolveMappedTranslation(normalizedTarget, REDUCE_TARGET_TRANSLATIONS, [
+    "줄이고 싶다",
+    "줄이고 싶어",
+    "줄이고 싶",
+    "줄이고",
+    "줄이다",
+    "낮추고 싶다",
+    "낮추고 싶어",
+    "낮추고 싶",
+    "낮추고",
+    "낮추다",
+    "완화하고 싶다",
+    "완화하고 싶어",
+    "완화하고",
+    "관리하고 싶다",
+    "관리하고 싶어",
+    "관리하고",
+    "조절하고 싶다",
+    "조절하고 싶어",
+    "조절하고",
+    "cut down on",
+    "cut down",
+    "reduce",
+    "lower",
+    "manage",
+    "control"
+  ]);
+  if (!translatedTarget) {
+    return [];
+  }
+
+  const possessiveTarget = withMyPrefix(translatedTarget);
+
+  return [
+    {
+      expression: `I want to reduce ${possessiveTarget}.`,
+      meaningKo: "'~을 줄이고 싶다'를 가장 직접적으로 말할 때 쓰기 좋아요.",
+      usageTip: "스트레스, 지출, 스크린 타임처럼 줄이고 싶은 대상을 간단하게 말할 수 있어요.",
+      example: `I want to reduce ${possessiveTarget} this year.`
+    },
+    {
+      expression: `I want to manage ${possessiveTarget} better.`,
+      meaningKo: "단순히 줄이는 것보다 더 잘 다루고 싶다는 느낌을 줄 때 자연스러워요.",
+      usageTip: "스트레스나 불안처럼 완전히 없애기보다 조절하고 싶은 대상을 말할 때 특히 잘 맞습니다.",
+      example: `I want to manage ${possessiveTarget} better in my daily life.`
+    },
+    {
+      expression: `I want to work on lowering ${possessiveTarget}.`,
+      meaningKo: "꾸준히 줄여 가는 과정에 초점을 둘 때 쓰기 좋아요.",
+      usageTip: "습관이나 생활 패턴을 조금씩 바꾸면서 낮추고 싶은 목표와 잘 어울립니다.",
+      example: `I want to work on lowering ${possessiveTarget} little by little.`
+    },
+    {
+      expression: `I want to cut down on ${possessiveTarget}.`,
+      meaningKo: "일상에서 소비하거나 너무 많이 하는 것을 줄이고 싶을 때 자연스러워요.",
+      usageTip: "지출, 사용 시간, 간식처럼 생활 습관과 연결된 대상을 말할 때 특히 많이 씁니다.",
+      example: `I want to cut down on ${possessiveTarget} after work.`
+    }
+  ];
+}
+
+function resolveMappedTranslation(normalizedTarget: string, dictionary: Record<string, string>, scaffoldTokens: string[]) {
+  const candidate = scaffoldTokens
+    .reduce((value, token) => value.replace(new RegExp(token, "g"), " "), normalizedTarget)
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/(을|를|은|는|이|가|과|와)$/g, "")
+    .trim();
+
+  for (const [key, value] of Object.entries(dictionary)) {
+    if (candidate.includes(key)) {
+      return value;
+    }
+  }
+
+  const englishMatch = candidate.match(/[A-Za-z][A-Za-z0-9' -]{1,}/);
+  return englishMatch?.[0]?.trim() ?? "";
+}
+
+function withMyPrefix(target: string) {
+  return target.startsWith("my ") ? target : `my ${target}`;
 }
 
 function detectCoachIntents(question: string, prompt: Prompt) {

@@ -1644,6 +1644,13 @@ public class CoachService {
         List<CoachExpressionDto> expressions = new ArrayList<>();
         for (String category : categories) {
             CoachExpressionDto expression = switch (category) {
+                case "starter" -> new CoachExpressionDto(
+                        "These days, ...",
+                        "첫 문장을 부담 없이 자연스럽게 열 때 쓰기 좋은 표현이에요.",
+                        "질문 주제로 바로 들어가기 전에 배경을 짧게 깔아 주고 싶을 때 좋아요.",
+                        "These days, technology plays a big role in how people connect.",
+                        "COACH"
+                );
                 case "reason" -> new CoachExpressionDto(
                         "One reason is that ...",
                         "이유를 자연스럽게 말할 때 쓰는 표현이에요.",
@@ -1739,6 +1746,30 @@ public class CoachService {
 
     private List<CoachExpressionDto> fallbackExpressionsForIntent(Set<String> intentCategories) {
         List<CoachExpressionDto> expressions = new ArrayList<>();
+
+        if (intentCategories.contains("starter")) {
+            expressions.add(new CoachExpressionDto(
+                    "These days, ...",
+                    "첫 문장을 가볍게 열면서 주제로 자연스럽게 들어갈 때 좋은 표현이에요.",
+                    "질문의 배경이나 현재 상황을 짧게 소개하고 싶을 때 바로 써 보세요.",
+                    "These days, technology has a big influence on relationships.",
+                    "COACH"
+            ));
+            expressions.add(new CoachExpressionDto(
+                    "In modern society, ...",
+                    "조금 더 정리된 톤으로 첫 문장을 시작하고 싶을 때 잘 맞아요.",
+                    "사회 변화나 일반적인 현상을 다루는 질문에서 특히 무난하게 쓸 수 있어요.",
+                    "In modern society, people often build relationships online.",
+                    "COACH"
+            ));
+            expressions.add(new CoachExpressionDto(
+                    "I think ...",
+                    "의견형 질문에서 첫 문장을 바로 시작할 때 가장 기본적으로 쓰기 좋아요.",
+                    "입장을 먼저 또렷하게 보여 주고 싶을 때 부담 없이 열 수 있어요.",
+                    "I think technology has changed relationships in both good and bad ways.",
+                    "COACH"
+            ));
+        }
 
         if (intentCategories.contains("reason")) {
             expressions.add(new CoachExpressionDto(
@@ -1995,6 +2026,10 @@ public class CoachService {
     ) {
         List<String> categories = new ArrayList<>(resolveIntentCategories(prompt, userQuestion));
 
+        if (categories.contains("starter")) {
+            return "첫 문장을 자연스럽게 열 수 있는 표현부터 골랐어요. 도입 한 줄로 바로 시작해 보세요.";
+        }
+
         if (queryMode == CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT) {
             if (categories.contains("reason")) {
                 return "이 질문에 넣을 만한 이유 아이디어를 먼저 골랐어요. 내 답에 맞는 포인트를 골라 한두 줄로 풀어 써 보세요.";
@@ -2055,6 +2090,10 @@ public class CoachService {
             return true;
         }
 
+        if (intentCategories.contains("starter")) {
+            return isStarterExpression(expression);
+        }
+
         Set<String> expressionCategories = inferCategories(expression.expression() + " " + expression.example());
         for (String category : expressionCategories) {
             if (intentCategories.contains(category)) {
@@ -2062,6 +2101,55 @@ public class CoachService {
             }
         }
         return false;
+    }
+
+    private boolean isStarterExpression(CoachExpressionDto expression) {
+        if ("STARTER".equalsIgnoreCase(expression.sourceHintType())) {
+            return true;
+        }
+
+        String normalized = normalizeKey(expression.expression());
+        if (normalized.isBlank()) {
+            return false;
+        }
+
+        if (normalized.startsWith("one reason is that")
+                || normalized.startsWith("this is because")
+                || normalized.startsWith("for example")
+                || normalized.startsWith("for instance")
+                || normalized.startsWith("specifically")
+                || normalized.startsWith("to be more specific")
+                || normalized.startsWith("for more detail")
+                || normalized.startsWith("overall")
+                || normalized.startsWith("on the one hand")
+                || normalized.startsWith("on one hand")
+                || normalized.startsWith("on the other hand")
+                || normalized.startsWith("in contrast")
+                || normalized.startsWith("compared with")
+                || normalized.startsWith("as a result")
+                || normalized.startsWith("another point is that")
+                || normalized.startsWith("first")) {
+            return false;
+        }
+
+        if (normalized.startsWith("i think")
+                || normalized.startsWith("in my opinion")
+                || normalized.startsWith("from my perspective")
+                || normalized.startsWith("these days")
+                || normalized.startsWith("nowadays")
+                || normalized.startsWith("today")
+                || normalized.startsWith("in modern society")
+                || normalized.startsWith("technology has")
+                || normalized.startsWith("technology plays")
+                || normalized.startsWith("many people")
+                || normalized.startsWith("more and more people")
+                || normalized.startsWith("it is true that")
+                || normalized.startsWith("when it comes to")) {
+            return true;
+        }
+
+        int tokenCount = normalized.split("\\s+").length;
+        return tokenCount >= 5 && tokenCount <= 16;
     }
 
     private Set<String> resolveIntentCategories(PromptDto prompt, String userQuestion) {

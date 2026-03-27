@@ -180,6 +180,7 @@ public class OpenAiCoachClient {
         CoachQueryAnalyzer.CoachQueryAnalysis analysis = coachQueryAnalyzer.analyze(prompt, userQuestion);
         String intentCategories = String.join(", ", analysis.intents().stream().map(CoachQueryAnalyzer.IntentCategory::key).toList());
         CoachQueryAnalyzer.QueryMode queryMode = analysis.queryMode();
+        boolean starterIntent = analysis.intents().contains(CoachQueryAnalyzer.IntentCategory.STARTER);
         String targetMeaning = analysis.lookup()
                 .map(spec -> spec.frame().surfaceMeaning())
                 .orElse("");
@@ -210,6 +211,7 @@ public class OpenAiCoachClient {
                 - For idea-support questions, recommend concrete answer ideas the learner can adapt for this prompt.
                 - For idea-support questions, do not answer with only generic starters like "One reason is that ..." or "For example, ...".
                 - For idea-support questions, each expression should contain an actual content point, reason, example, or claim tied to the prompt topic.
+                %s
                 - Prefer short, reusable chunks over long sentences.
                 - sourceHintType should be the hint type name if the expression comes from a hint, otherwise "COACH".
                 - Keep the tone encouraging and practical.
@@ -226,6 +228,9 @@ public class OpenAiCoachClient {
                 Prompt hints:
                 %s
                 """.formatted(
+                starterIntent
+                        ? "- If the learner asks for a first-sentence starter, recommend only opener expressions or opener sentences for the very first sentence. Exclude conclusion phrases, contrast markers, example linkers, detail markers, and body-paragraph transitions."
+                        : "",
                 prompt.topic(),
                 prompt.difficulty(),
                 prompt.questionEn(),

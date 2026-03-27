@@ -494,4 +494,46 @@ class CoachQueryAnalyzerTest {
         assertThat(analysis.lookup().orElseThrow().frame().family())
                 .isEqualTo(CoachQueryAnalyzer.ActionFamily.SOCIALIZE);
     }
+
+    @Test
+    void analyze_detects_starter_intent_for_first_sentence_request() {
+        PromptDto relationshipPrompt = new PromptDto(
+                "prompt-starter-1",
+                "Technology and relationships",
+                "EASY",
+                "How has technology changed the way people build relationships, and do you think that change is mostly positive?",
+                "기술이 사람들이 관계를 맺는 방식을 어떻게 바꿨는지, 그 변화가 대체로 긍정적인지 말해 보세요.",
+                "Start with your main point."
+        );
+
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                relationshipPrompt,
+                "첫 문장을 시작하는 자연스러운 표현 알려줘"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.WRITING_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("starter");
+    }
+
+    @Test
+    void analyze_detects_starter_intent_for_compact_start_question() {
+        PromptDto skillPrompt = new PromptDto(
+                "prompt-starter-compact",
+                "Skills",
+                "EASY",
+                "What is one skill you want to improve this year, and how will you practice it?",
+                "\uC62C\uD574 \uD5A5\uC0C1\uD558\uACE0 \uC2F6\uC740 \uAE30\uC220 \uD558\uB098\uC640 \uC5F0\uC2B5 \uACC4\uD68D\uC744 \uB9D0\uD574 \uBCF4\uC138\uC694.",
+                "Start with your main point."
+        );
+
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                skillPrompt,
+                "\uBB50\uB77C \uC2DC\uC791\uD574"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.WRITING_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("starter");
+    }
 }

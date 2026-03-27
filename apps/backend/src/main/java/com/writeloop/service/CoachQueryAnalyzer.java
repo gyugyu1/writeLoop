@@ -202,12 +202,21 @@ class CoachQueryAnalyzer {
 
     EnumSet<IntentCategory> inferIntentCategories(String text) {
         String normalized = normalizeText(text);
+        String compact = compactText(text);
         EnumSet<IntentCategory> categories = EnumSet.noneOf(IntentCategory.class);
 
         if (containsAny(normalized,
                 "\uCCAB \uBB38\uC7A5", "\uCCAB \uBB38\uB2E8", "\uC2DC\uC791 \uBB38\uC7A5", "\uBB38\uC7A5 \uC2DC\uC791", "\uB3C4\uC785",
-                "\uB3C4\uC785\UBD80", "\uC2A4\uD0C0\uD130", "\uC624\uD504\uB2DD", "\uC5B4\uB5BB\uAC8C \uC2DC\uC791",
-                "starter", "first sentence", "opening sentence", "open with", "how should i start", "start with")) {
+                "\uB3C4\uC785\uBD80", "\uC2A4\uD0C0\uD130", "\uC624\uD504\uB2DD", "\uC5B4\uB5BB\uAC8C \uC2DC\uC791",
+                "\uBB50\uB77C \uC2DC\uC791", "\uBB50\uB85C \uC2DC\uC791", "\uCCAB \uC904", "\uCCAB\uC904",
+                "\uCCAB \uBB38\uC7A5 \uBB50\uB77C", "\uCCAB \uBB38\uC7A5 \uBB50\uB85C",
+                "\uB3C4\uC785 \uBB50\uB77C", "\uB3C4\uC785 \uC5B4\uB5BB\uAC8C",
+                "starter", "first sentence", "opening sentence", "open with", "how should i start", "start with")
+                || containsAny(compact,
+                "\uBB50\uB77C\uC2DC\uC791", "\uBB50\uB85C\uC2DC\uC791", "\uBB50\uB77C\uC2DC\uC791\uD574", "\uBB50\uB85C\uC2DC\uC791\uD574",
+                "\uCCAB\uC904", "\uCCAB\uC904\uBB50\uB77C", "\uCCAB\uC904\uBB50\uB85C",
+                "\uCCAB\uBB38\uC7A5\uBB50\uB77C", "\uCCAB\uBB38\uC7A5\uBB50\uB85C",
+                "\uB3C4\uC785\uBB50\uB77C", "\uB3C4\uC785\uC5B4\uB5BB\uAC8C")) {
             categories.add(IntentCategory.STARTER);
         }
         if (containsAny(normalized,

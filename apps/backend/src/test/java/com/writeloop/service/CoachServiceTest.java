@@ -1618,6 +1618,72 @@ class CoachServiceTest {
         );
     }
 
+    @Test
+    void help_filters_mixed_openai_response_to_starter_only_expressions() {
+        PromptDto prompt = new PromptDto(
+                "prompt-starter-support",
+                "Technology",
+                "HARD",
+                "How has technology changed the way people build relationships, and do you think that change is mostly positive?",
+                "湲곗닠???ъ엺?ㅼ씠 愿怨꾨? 留뚮뱶???⑸땲寃??대? ?대뼸寃?諛붾퓭?덉뒗吏, 洹?蹂?붽? ???濡?湲띿젙?곸씤吏 留먰빐 蹂댁꽭??",
+                "Start with your main point."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(true);
+        when(openAiCoachClient.help(prompt, "泥?臾몄옣???쒖옉?섎뒗 ?먯뿰?ㅻ읇? ?쒗쁽 ?뚮젮以?", List.of())).thenReturn(
+                new CoachHelpResponseDto(
+                        prompt.id(),
+                        "泥?臾몄옣???쒖옉?섎뒗 ?먯뿰?ㅻ읇? ?쒗쁽 ?뚮젮以?",
+                        "",
+                        List.of(
+                                new com.writeloop.dto.CoachExpressionDto("Technology has completely transformed how we connect with each other.", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("On one hand, technology has made staying in touch easier than ever.", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("Overall, these changes have reshaped the way relationships develop.", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("I think ...", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("Specifically, ...", "a", "b", "c", "COACH")
+                        )
+                )
+        );
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "泥?臾몄옣???쒖옉?섎뒗 ?먯뿰?ㅻ읇? ?쒗쁽 ?뚮젮以?")
+        );
+
+        assertThat(lowerExpressions(response))
+                .anyMatch(expression -> expression.contains("technology has completely transformed"))
+                .anyMatch(expression -> expression.equals("i think ..."))
+                .noneMatch(expression -> expression.startsWith("on one hand"))
+                .noneMatch(expression -> expression.startsWith("overall"))
+                .noneMatch(expression -> expression.startsWith("specifically"));
+        assertThat(response.coachReply()).contains("첫 문장");
+    }
+
+    @Test
+    void help_treats_compact_start_question_as_starter_request() {
+        PromptDto prompt = new PromptDto(
+                "prompt-starter-compact-help",
+                "Skills",
+                "EASY",
+                "What is one skill you want to improve this year, and how will you practice it?",
+                "\uC62C\uD574 \uD5A5\uC0C1\uD558\uACE0 \uC2F6\uC740 \uAE30\uC220 \uD558\uB098\uC640 \uC5F0\uC2B5 \uACC4\uD68D\uC744 \uB9D0\uD574 \uBCF4\uC138\uC694.",
+                "Start with your main point."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(false);
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "\uBB50\uB77C \uC2DC\uC791\uD574")
+        );
+
+        assertThat(lowerExpressions(response))
+                .contains("these days, ...", "in modern society, ...", "i think ...")
+                .noneMatch(expression -> expression.equals("one reason is that ..."))
+                .noneMatch(expression -> expression.equals("for example, ..."));
+        assertThat(response.coachReply()).contains("\uCCAB \uBB38\uC7A5");
+    }
+
     private List<String> lowerExpressions(CoachHelpResponseDto response) {
         return response.expressions().stream()
                 .map(expression -> expression.expression().toLowerCase())

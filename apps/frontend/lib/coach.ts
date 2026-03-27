@@ -7,7 +7,7 @@ import type {
   Prompt
 } from "./types";
 
-type CoachIntent = "reason" | "example" | "compare" | "opinion" | "structure";
+type CoachIntent = "starter" | "reason" | "example" | "compare" | "opinion" | "structure";
 
 type TopicExpressionSeed = Pick<CoachExpression, "expression" | "meaningKo" | "usageTip" | "example">;
 
@@ -18,9 +18,33 @@ type ExpressionTopicBundle = {
   expressions: TopicExpressionSeed[];
 };
 
-const COACH_INTENT_ORDER: CoachIntent[] = ["reason", "example", "compare", "opinion", "structure"];
+const COACH_INTENT_ORDER: CoachIntent[] = ["starter", "reason", "example", "compare", "opinion", "structure"];
 
 const COACH_INTENT_KEYWORDS: Record<CoachIntent, string[]> = {
+  starter: [
+    "starter",
+    "first sentence",
+    "opening sentence",
+    "open with",
+    "how should i start",
+    "start with",
+    "\uBB50\uB77C \uC2DC\uC791",
+    "\uBB50\uB85C \uC2DC\uC791",
+    "\uCCAB \uC904",
+    "\uCCAB\uC904",
+    "\uCCAB \uBB38\uC7A5 \uBB50\uB77C",
+    "\uCCAB \uBB38\uC7A5 \uBB50\uB85C",
+    "\uB3C4\uC785 \uBB50\uB77C",
+    "\uB3C4\uC785 \uC5B4\uB5BB\uAC8C",
+    "첫 문장",
+    "첫문장",
+    "문장 시작",
+    "시작 문장",
+    "도입",
+    "오프닝",
+    "스타터",
+    "어떻게 시작"
+  ],
   reason: ["reason", "why", "because", "이유", "왜", "왜냐하면", "때문", "근거"],
   example: ["example", "for instance", "for example", "예시", "예를 들어", "예를들어", "경험"],
   compare: ["compare", "difference", "on the other hand", "비교", "반면", "반대로", "차이"],
@@ -605,8 +629,32 @@ function looksLikeMeetFriendsLookup(question: string) {
 }
 
 function detectCoachIntentsFromText(text: string) {
-  const normalized = text.toLowerCase();
-  return COACH_INTENT_ORDER.filter((intent) => includesKeyword(normalized, COACH_INTENT_KEYWORDS[intent]));
+  const normalized = normalizeText(text);
+  const compact = normalized.replace(/\s+/g, "");
+
+  return COACH_INTENT_ORDER.filter((intent) => {
+    if (includesKeyword(normalized, COACH_INTENT_KEYWORDS[intent])) {
+      return true;
+    }
+
+    if (intent !== "starter") {
+      return false;
+    }
+
+    return includesKeyword(compact, [
+      "\uBB50\uB77C\uC2DC\uC791",
+      "\uBB50\uB85C\uC2DC\uC791",
+      "\uBB50\uB77C\uC2DC\uC791\uD574",
+      "\uBB50\uB85C\uC2DC\uC791\uD574",
+      "\uCCAB\uC904",
+      "\uCCAB\uC904\uBB50\uB77C",
+      "\uCCAB\uC904\uBB50\uB85C",
+      "\uCCAB\uBB38\uC7A5\uBB50\uB77C",
+      "\uCCAB\uBB38\uC7A5\uBB50\uB85C",
+      "\uB3C4\uC785\uBB50\uB77C",
+      "\uB3C4\uC785\uC5B4\uB5BB\uAC8C"
+    ]);
+  });
 }
 
 function buildLearnTargetExpressions(normalizedTarget: string): TopicExpressionSeed[] {
@@ -873,6 +921,27 @@ function detectCoachIntents(question: string, prompt: Prompt) {
 
 function buildIntentExpressions(intent: CoachIntent) {
   switch (intent) {
+    case "starter":
+      return [
+        {
+          expression: "These days, ...",
+          meaningKo: "첫 문장을 부담 없이 자연스럽게 열 때 쓰기 좋은 표현이에요.",
+          usageTip: "질문 주제로 바로 들어가기 전에 배경을 짧게 깔아 주고 싶을 때 좋아요.",
+          example: "These days, technology plays a big role in how people connect."
+        },
+        {
+          expression: "In modern society, ...",
+          meaningKo: "조금 더 정리된 톤으로 첫 문장을 시작하고 싶을 때 잘 맞아요.",
+          usageTip: "사회 변화나 일반적인 현상을 다루는 질문에서 특히 무난하게 쓸 수 있어요.",
+          example: "In modern society, people often build relationships online."
+        },
+        {
+          expression: "I think ...",
+          meaningKo: "의견형 질문에서 첫 문장을 바로 시작할 때 가장 기본적으로 쓰기 좋아요.",
+          usageTip: "입장을 먼저 또렷하게 보여 주고 싶을 때 부담 없이 열 수 있어요.",
+          example: "I think technology has changed relationships in both good and bad ways."
+        }
+      ];
     case "reason":
       return [
         {
@@ -1052,6 +1121,8 @@ function buildCoachReply(
   }
 
   switch (intentLabel) {
+    case "starter":
+      return "첫 문장을 자연스럽게 열 수 있는 표현부터 골랐어요. 도입 한 줄로 바로 시작해 보세요.";
     case "reason":
       return "이유를 말할 때 바로 쓸 수 있는 표현부터 골랐어요. 그대로 붙이지 말고 내 문장 안에서 자연스럽게 풀어 써보세요.";
     case "example":

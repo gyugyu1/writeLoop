@@ -133,6 +133,42 @@ class CoachQueryAnalyzerTest {
     }
 
     @Test
+    void analyze_detects_idea_support_for_reason_brainstorm_question() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "이 질문에 쓸 수 있는 이유가 뭐가 있을까"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("reason");
+    }
+
+    @Test
+    void analyze_keeps_reason_expression_request_as_writing_support() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "이 질문에서 쓸 수 있는 이유 표현 알려줘"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.WRITING_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("reason");
+    }
+
+    @Test
+    void analyze_detects_idea_support_for_example_brainstorm_question() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "이 질문에 넣을 만한 예시가 뭐가 있을까"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("example");
+    }
+
+    @Test
     void analyze_extracts_state_change_family_for_online_relationship_lookup() {
         CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
                 prompt,
@@ -338,5 +374,88 @@ class CoachQueryAnalyzerTest {
 
         assertThat(analysis.lookup()).isEmpty();
         assertThat(analysis.intentKeys()).contains("example");
+    }
+
+    @Test
+    void analyze_detects_idea_support_for_reason_points_variant() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "성공한 기업 책임에 대한 이유 포인트 뭐가 있어?"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("reason");
+    }
+
+    @Test
+    void analyze_detects_idea_support_for_example_idea_variant() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "답에 쓸 예시 아이디어 알려줘"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("example");
+    }
+
+    @Test
+    void analyze_marks_hybrid_when_lookup_and_example_help_coexist_without_support_meta() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "친구 만난다고 말하고 싶어 예시도 같이 알려줘"
+        );
+
+        assertThat(analysis.lookup()).isPresent();
+        assertThat(analysis.lookup().orElseThrow().detection().cue())
+                .isEqualTo("hybrid_meaning_support");
+        assertThat(analysis.lookup().orElseThrow().frame().family())
+                .isEqualTo(CoachQueryAnalyzer.ActionFamily.SOCIALIZE);
+    }
+
+    @Test
+    void analyze_detects_state_change_from_prompt_scoped_relationship_change() {
+        PromptDto techPrompt = new PromptDto(
+                "prompt-tech",
+                "Technology",
+                "HARD",
+                "How has technology changed the way people build relationships, and is that change mostly positive?",
+                "기술이 관계를 맺는 방식을 어떻게 바꿨는지 말해 보세요.",
+                "Discuss one clear change."
+        );
+
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                techPrompt,
+                "멀리 사는 사람과도 자연스럽게 친해진다"
+        );
+
+        assertThat(analysis.lookup()).isPresent();
+        assertThat(analysis.lookup().orElseThrow().frame().family())
+                .isEqualTo(CoachQueryAnalyzer.ActionFamily.STATE_CHANGE);
+    }
+
+    @Test
+    void analyze_detects_state_change_for_less_awkward_online_first_contact() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "온라인에서 처음 말 거는 게 덜 어색하다"
+        );
+
+        assertThat(analysis.lookup()).isPresent();
+        assertThat(analysis.lookup().orElseThrow().frame().family())
+                .isEqualTo(CoachQueryAnalyzer.ActionFamily.STATE_CHANGE);
+    }
+
+    @Test
+    void analyze_detects_socialize_family_for_getting_closer_to_friends() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "친구와 더 가까워지고 싶다"
+        );
+
+        assertThat(analysis.lookup()).isPresent();
+        assertThat(analysis.lookup().orElseThrow().frame().family())
+                .isEqualTo(CoachQueryAnalyzer.ActionFamily.SOCIALIZE);
     }
 }

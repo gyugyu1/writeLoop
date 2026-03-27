@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -154,7 +155,9 @@ public class CoachService {
         List<PromptHintDto> hints = promptService.findHintsByPromptId(prompt.id());
         CoachQueryAnalyzer.CoachQueryAnalysis analysis = coachQueryAnalyzer.analyze(prompt, userQuestion);
         Set<String> intentCategories = analysis.intentKeys();
-        boolean expressionLookup = analysis.lookup().isPresent();
+        CoachQueryAnalyzer.QueryMode queryMode = analysis.queryMode();
+        boolean expressionLookup = queryMode == CoachQueryAnalyzer.QueryMode.MEANING_LOOKUP;
+        boolean ideaSupport = queryMode == CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT;
         CoachQueryAnalyzer.MeaningLookupSpec effectiveLookupSpec = analysis.lookup().orElse(null);
         boolean hybridSupportRequest = isHybridMeaningSupportRequest(effectiveLookupSpec);
         CoachHelpBuildResult buildResult;
@@ -172,7 +175,7 @@ public class CoachService {
                         ? buildHybridExpressions(prompt, userQuestion, hints, intentCategories, expressions)
                         : expressions;
                 buildResult = new CoachHelpBuildResult(
-                        buildCoachReply(prompt, userQuestion, finalExpressions),
+                        buildCoachReply(prompt, userQuestion, finalExpressions, queryMode),
                         finalExpressions,
                         enrichmentResult.usedSlotTranslation()
                                 ? CoachResponseSource.DETERMINISTIC_WITH_SLOT_TRANSLATION
@@ -185,7 +188,7 @@ public class CoachService {
                         userQuestion,
                         hints,
                         intentCategories,
-                        true,
+                        queryMode,
                         effectiveLookupSpec
                 );
                 if (openAiResult != null) {
@@ -195,7 +198,14 @@ public class CoachService {
                 } else {
                     CoachHelpBuildResult downgradedSupportResult =
                             shouldDowngradeMeaningLookupToWritingSupport(effectiveLookupSpec)
-                                    ? tryOpenAiHelp(prompt, userQuestion, hints, intentCategories, false, null)
+                                    ? tryOpenAiHelp(
+                                    prompt,
+                                    userQuestion,
+                                    hints,
+                                    intentCategories,
+                                    CoachQueryAnalyzer.QueryMode.WRITING_SUPPORT,
+                                    null
+                            )
                                     : null;
                     if (downgradedSupportResult != null) {
                         buildResult = downgradedSupportResult;
@@ -210,7 +220,7 @@ public class CoachService {
                         )
                                 : limitExpressions(fallbackExpressions());
                         buildResult = new CoachHelpBuildResult(
-                                buildCoachReply(prompt, userQuestion, fallbackExpressions),
+                                buildCoachReply(prompt, userQuestion, fallbackExpressions, queryMode),
                                 fallbackExpressions,
                                 CoachResponseSource.LOCAL_FALLBACK,
                                 null
@@ -218,18 +228,45 @@ public class CoachService {
                     }
                 }
             }
+        } else if (ideaSupport) {
+            CoachHelpBuildResult openAiResult = tryOpenAiHelp(
+                    prompt,
+                    userQuestion,
+                    hints,
+                    intentCategories,
+                    queryMode,
+                    null
+            );
+            if (openAiResult != null) {
+                buildResult = openAiResult;
+            } else {
+                List<CoachExpressionDto> expressions = buildIdeaSupportExpressions(prompt, userQuestion, intentCategories);
+                buildResult = new CoachHelpBuildResult(
+                        buildCoachReply(prompt, userQuestion, expressions, queryMode),
+                        expressions,
+                        CoachResponseSource.LOCAL_FALLBACK,
+                        null
+                );
+            }
         } else {
-            CoachHelpBuildResult openAiResult = tryOpenAiHelp(prompt, userQuestion, hints, intentCategories, false, null);
+            CoachHelpBuildResult openAiResult = tryOpenAiHelp(
+                    prompt,
+                    userQuestion,
+                    hints,
+                    intentCategories,
+                    queryMode,
+                    null
+            );
             if (openAiResult != null) {
                 buildResult = openAiResult;
             } else {
                 List<CoachExpressionDto> expressions = buildLocalExpressions(prompt, userQuestion, hints, intentCategories);
                 buildResult = new CoachHelpBuildResult(
-                        buildCoachReply(prompt, userQuestion, expressions),
+                        buildCoachReply(prompt, userQuestion, expressions, queryMode),
                         expressions,
                         CoachResponseSource.LOCAL_FALLBACK,
                         null
-                );
+                    );
             }
         }
 
@@ -259,7 +296,7 @@ public class CoachService {
             String userQuestion,
             List<PromptHintDto> hints,
             Set<String> intentCategories,
-            boolean meaningLookup,
+            CoachQueryAnalyzer.QueryMode queryMode,
             CoachQueryAnalyzer.MeaningLookupSpec lookupSpec
     ) {
         if (!openAiCoachClient.isConfigured()) {
@@ -269,18 +306,24 @@ public class CoachService {
         try {
             CoachHelpResponseDto response = openAiCoachClient.help(prompt, userQuestion, hints);
             List<CoachExpressionDto> normalized = normalizeHelpExpressions(response.expressions());
-            List<CoachExpressionDto> prioritized = meaningLookup
-                    ? normalized
-                    : filterExpressionsByIntent(normalized, intentCategories);
+            List<CoachExpressionDto> prioritized = switch (queryMode) {
+                case MEANING_LOOKUP, IDEA_SUPPORT -> normalized;
+                case WRITING_SUPPORT -> filterExpressionsByIntent(normalized, intentCategories);
+            };
             if (prioritized.size() < 3) {
                 return null;
             }
-            if (meaningLookup && isGenericMeaningLookupOpenAiResponse(prioritized, lookupSpec)) {
+            if (queryMode == CoachQueryAnalyzer.QueryMode.MEANING_LOOKUP
+                    && isGenericMeaningLookupOpenAiResponse(prioritized, lookupSpec)) {
+                return null;
+            }
+            if (queryMode == CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT
+                    && isGenericIdeaSupportOpenAiResponse(prioritized, prompt)) {
                 return null;
             }
 
             String coachReply = response.coachReply() == null || response.coachReply().isBlank()
-                    ? buildCoachReply(prompt, userQuestion, prioritized)
+                    ? buildCoachReply(prompt, userQuestion, prioritized, queryMode)
                     : response.coachReply();
             return new CoachHelpBuildResult(
                     coachReply,
@@ -335,11 +378,37 @@ public class CoachService {
             Set<String> intentCategories,
             List<CoachExpressionDto> baseExpressions
     ) {
+        List<CoachExpressionDto> supportExpressions = buildLocalExpressions(prompt, userQuestion, hints, intentCategories);
         List<CoachExpressionDto> merged = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
+        appendExpressionsUpTo(merged, seen, baseExpressions, 3);
+        appendExpressionsUpTo(merged, seen, supportExpressions, 2);
         appendExpressions(merged, seen, baseExpressions);
-        appendExpressions(merged, seen, buildLocalExpressions(prompt, userQuestion, hints, intentCategories));
+        appendExpressions(merged, seen, supportExpressions);
         return limitExpressions(merged);
+    }
+
+    private void appendExpressionsUpTo(
+            List<CoachExpressionDto> target,
+            Set<String> seen,
+            List<CoachExpressionDto> candidates,
+            int limit
+    ) {
+        int appended = 0;
+        for (CoachExpressionDto candidate : candidates) {
+            if (candidate == null) {
+                continue;
+            }
+            String key = normalizeKey(candidate.expression());
+            if (key.isBlank() || !seen.add(key)) {
+                continue;
+            }
+            target.add(candidate);
+            appended += 1;
+            if (appended >= limit) {
+                return;
+            }
+        }
     }
 
     private boolean isGenericMeaningLookupOpenAiResponse(
@@ -354,6 +423,20 @@ public class CoachService {
         }
 
         return !hasMeaningSignal(expressions, lookupSpec);
+    }
+
+    private boolean isGenericIdeaSupportOpenAiResponse(
+            List<CoachExpressionDto> expressions,
+            PromptDto prompt
+    ) {
+        long genericCount = expressions.stream()
+                .filter(this::isGenericSupportExpression)
+                .count();
+        if (genericCount < 2) {
+            return false;
+        }
+
+        return !hasPromptTopicSignal(expressions, prompt);
     }
 
     private boolean hasMeaningSignal(
@@ -401,6 +484,41 @@ public class CoachService {
                 || normalized.startsWith("in the long run")
                 || normalized.startsWith("first")
                 || normalized.startsWith("another point is that");
+    }
+
+    private boolean hasPromptTopicSignal(List<CoachExpressionDto> expressions, PromptDto prompt) {
+        Set<String> stopwords = Set.of(
+                "what", "which", "when", "where", "why", "how",
+                "your", "their", "have", "with", "that", "this",
+                "about", "there", "should", "could", "would",
+                "people", "share", "tell", "write", "answer",
+                "prompt", "question", "modern", "mostly"
+        );
+        Set<String> promptSignals = Arrays.stream(
+                        normalizeKey(prompt.topic() + " " + prompt.questionEn() + " " + prompt.questionKo())
+                                .split("\\s+")
+                )
+                .filter(token -> token.length() >= 3)
+                .filter(token -> !stopwords.contains(token))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (promptSignals.isEmpty()) {
+            return false;
+        }
+
+        for (CoachExpressionDto expression : expressions) {
+            String haystack = normalizeKey(
+                    expression.expression() + " " + expression.example() + " "
+                            + expression.meaningKo() + " " + expression.usageTip()
+            );
+            for (String signal : promptSignals) {
+                if (haystack.contains(signal)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private SlotEnrichmentResult enrichLookupSpecWithFallback(
@@ -530,9 +648,7 @@ public class CoachService {
                 request.question().trim(),
                 analysis.normalizedQuestion(),
                 blankToNull(answerSnapshot),
-                effectiveLookupSpec != null
-                        ? effectiveLookupSpec.detection().mode().name()
-                        : CoachQueryAnalyzer.QueryMode.WRITING_SUPPORT.name(),
+                analysis.queryMode().name(),
                 meaningFamily,
                 analysisPayloadJson,
                 buildResult.coachReply(),
@@ -558,7 +674,8 @@ public class CoachService {
                 ? effectiveLookupSpec
                 : analysis.lookup().orElse(null);
         if (lookupSpec == null) {
-            payload.put("queryMode", CoachQueryAnalyzer.QueryMode.WRITING_SUPPORT.name());
+            payload.put("queryMode", analysis.queryMode().name());
+            payload.put("lookupCue", analysis.detection().cue());
             return payload;
         }
 
@@ -1047,6 +1164,289 @@ public class CoachService {
         return limitExpressions(expressions);
     }
 
+    private List<CoachExpressionDto> buildIdeaSupportExpressions(
+            PromptDto prompt,
+            String userQuestion,
+            Set<String> intentCategories
+    ) {
+        String promptText = normalizeKey(
+                prompt.topic() + " " + prompt.questionEn() + " " + prompt.questionKo() + " " + prompt.tip()
+        );
+        String normalizedQuestion = normalizeKey(userQuestion);
+        boolean reasonFocus = normalizedQuestion.contains("이유")
+                || normalizedQuestion.contains("근거")
+                || normalizedQuestion.contains("reason")
+                || normalizedQuestion.contains("why")
+                || intentCategories.contains("reason");
+        boolean exampleFocus = normalizedQuestion.contains("예시")
+                || normalizedQuestion.contains("사례")
+                || normalizedQuestion.contains("example")
+                || intentCategories.contains("example");
+
+        if (containsAny(promptText, "social responsibility", "successful companies", "low income", "modern society")) {
+            return limitExpressions(List.of(
+                    ideaExpression(
+                            "companies can provide educational opportunities",
+                            "교육 기회를 제공한다는 이유나 포인트로 바로 쓸 수 있어요.",
+                            "사회적 책임을 구체적으로 설명할 때 붙이기 좋아요.",
+                            "For example, companies can provide educational opportunities for low-income students."
+                    ),
+                    ideaExpression(
+                            "companies can create job opportunities in local communities",
+                            "지역 사회에 일자리를 만든다는 방향으로 답을 풀 때 잘 맞아요.",
+                            "성공한 기업이 사회에 직접 기여하는 방식을 보여주기 좋아요.",
+                            "They can create job opportunities in local communities."
+                    ),
+                    ideaExpression(
+                            "companies should protect the environment through sustainable policies",
+                            "환경 보호를 사회적 책임의 한 부분으로 말할 때 유용해요.",
+                            "현대 사회에서 기업의 책임 범위를 넓게 보여줄 수 있어요.",
+                            "Companies should protect the environment through sustainable policies."
+                    ),
+                    ideaExpression(
+                            "successful companies can support public services and local programs",
+                            "공공 서비스나 지역 프로그램을 지원한다는 이유로 이어가기 좋아요.",
+                            "교육, 복지, 커뮤니티 지원 쪽으로 예시를 확장하기 쉽습니다.",
+                            "Successful companies can support public services and local programs."
+                    ),
+                    ideaExpression(
+                            "they should treat workers fairly and invest in long-term well-being",
+                            "직원과 노동 환경까지 포함해서 책임을 말하고 싶을 때 자연스러워요.",
+                            "단순 기부가 아니라 내부 책임까지 말할 수 있어요.",
+                            "They should treat workers fairly and invest in long-term well-being."
+                    )
+            ));
+        }
+
+        if (containsAny(promptText, "technology", "relationships", "stay in touch", "build relationships")) {
+            return limitExpressions(List.of(
+                    ideaExpression(
+                            "technology makes it easier to stay in touch with people",
+                            "연락을 더 쉽게 이어 준다는 변화로 답을 열기 좋아요.",
+                            "가장 무난하고 넓게 쓸 수 있는 핵심 아이디어예요.",
+                            "Technology makes it easier to stay in touch with people who live far away."
+                    ),
+                    ideaExpression(
+                            "people can meet others online beyond their local area",
+                            "온라인에서 새로운 사람을 만날 수 있다는 점을 말할 때 잘 맞아요.",
+                            "관계 범위가 넓어졌다는 방향으로 이어가기 좋습니다.",
+                            "People can meet others online beyond their local area."
+                    ),
+                    ideaExpression(
+                            "long-distance relationships are easier to maintain now",
+                            "멀리 사는 사람과의 관계를 유지하기 쉬워졌다는 이유로 쓸 수 있어요.",
+                            "기술 변화의 긍정적인 면을 보여 주기 좋습니다.",
+                            "Long-distance relationships are easier to maintain now."
+                    ),
+                    ideaExpression(
+                            "online communication is faster, but it can feel less personal",
+                            "긍정과 부정을 같이 말하고 싶을 때 균형 잡힌 포인트예요.",
+                            "질문 끝의 mostly positive 여부까지 자연스럽게 연결할 수 있어요.",
+                            "Online communication is faster, but it can feel less personal."
+                    ),
+                    ideaExpression(
+                            "people can build communities around shared interests online",
+                            "취향이나 관심사 기반 관계를 말할 때 활용하기 좋아요.",
+                            "단순 연락을 넘어서 커뮤니티 형성까지 확장할 수 있어요.",
+                            "People can build communities around shared interests online."
+                    )
+            ));
+        }
+
+        if (containsAny(promptText, "skill you want to improve", "habit you want to build", "this year", "goal")) {
+            List<CoachExpressionDto> ideas = new ArrayList<>(List.of(
+                    ideaExpression(
+                            "it can help me feel more confident over time",
+                            "꾸준히 하면 자신감이 생긴다는 이유로 자주 쓰기 좋아요.",
+                            "성장형 질문에서 가장 무난하게 연결되는 이유예요.",
+                            "It can help me feel more confident over time."
+                    ),
+                    ideaExpression(
+                            "it will be useful in my daily life",
+                            "일상에서 직접 도움이 된다는 이유로 붙이기 좋아요.",
+                            "너무 추상적이지 않아서 초안에 바로 넣기 쉽습니다.",
+                            "It will be useful in my daily life and future work."
+                    ),
+                    ideaExpression(
+                            "small daily practice can lead to steady progress",
+                            "실천 계획과 이유를 한 번에 묶고 싶을 때 잘 맞아요.",
+                            "어떻게 연습할지까지 자연스럽게 이어질 수 있어요.",
+                            "Small daily practice can lead to steady progress."
+                    ),
+                    ideaExpression(
+                            "it can improve the way I communicate with other people",
+                            "언어, 발표, 자신감 같은 질문에 넓게 쓸 수 있는 이유예요.",
+                            "대인관계나 실용성을 강조할 때 유용합니다.",
+                            "It can improve the way I communicate with other people."
+                    ),
+                    ideaExpression(
+                            "building this habit can make my routine more organized",
+                            "습관 질문이라면 정리된 루틴을 만든다는 방향으로 쓰기 좋아요.",
+                            "habit 질문일 때 특히 잘 맞습니다.",
+                            "Building this habit can make my routine more organized."
+                    )
+            ));
+            if (exampleFocus) {
+                ideas.add(0, ideaExpression(
+                        "for example, I can practice a little every morning",
+                        "예시 한 줄을 바로 붙이고 싶을 때 참고하기 좋아요.",
+                        "아이디어를 실제 실천 예시로 바꾸는 데 도움이 됩니다.",
+                        "For example, I can practice a little every morning before school."
+                ));
+            }
+            return limitExpressions(ideas);
+        }
+
+        if (containsAny(promptText, "place you want to visit", "travel", "want to do there", "city you want to visit")) {
+            return limitExpressions(List.of(
+                    ideaExpression(
+                            "I want to experience a different culture in person",
+                            "여행 이유를 가장 자연스럽게 설명할 수 있는 아이디어예요.",
+                            "장소와 활동을 함께 붙이기 쉬워요.",
+                            "I want to experience a different culture in person."
+                    ),
+                    ideaExpression(
+                            "I would like to try local food and explore new places",
+                            "활동과 이유를 함께 넣고 싶을 때 잘 맞아요.",
+                            "travel 질문에서 매우 자주 쓸 수 있는 포인트예요.",
+                            "I would like to try local food and explore new places."
+                    ),
+                    ideaExpression(
+                            "it looks like a good place to make special memories",
+                            "가 보고 싶은 감정을 부드럽게 설명하기 좋습니다.",
+                            "친구, 가족, 혼자 여행 모두에 넓게 쓸 수 있어요.",
+                            "It looks like a good place to make special memories."
+                    ),
+                    ideaExpression(
+                            "I want to see the atmosphere with my own eyes",
+                            "사진으로만 본 곳을 직접 보고 싶다는 흐름에 잘 맞아요.",
+                            "가 보고 싶다는 감정을 조금 더 생생하게 만들어 줍니다.",
+                            "I want to see the atmosphere with my own eyes."
+                    ),
+                    ideaExpression(
+                            "visiting there would be a refreshing break from my routine",
+                            "일상에서 벗어나고 싶다는 이유로 답을 풀 때 좋아요.",
+                            "여행의 감정적 이유를 넣을 때 유용합니다.",
+                            "Visiting there would be a refreshing break from my routine."
+                    )
+            ));
+        }
+
+        if (containsAny(promptText, "challenge", "work or school", "deal with it")) {
+            return limitExpressions(List.of(
+                    ideaExpression(
+                            "I try to break the problem into smaller steps",
+                            "문제를 해결하는 방법을 차분하게 설명할 때 좋아요.",
+                            "challenge 질문에서 가장 무난한 대응 방식입니다.",
+                            "I try to break the problem into smaller steps."
+                    ),
+                    ideaExpression(
+                            "I make a simple plan so I do not feel overwhelmed",
+                            "계획을 세워서 해결한다는 방향으로 답을 만들기 쉬워요.",
+                            "문제 해결과 감정 관리가 함께 드러납니다.",
+                            "I make a simple plan so I do not feel overwhelmed."
+                    ),
+                    ideaExpression(
+                            "I ask for help when I need a different perspective",
+                            "혼자 해결하기보다 도움을 요청한다는 포인트로 좋아요.",
+                            "직장과 학교 둘 다에 쓸 수 있는 아이디어입니다.",
+                            "I ask for help when I need a different perspective."
+                    ),
+                    ideaExpression(
+                            "I practice a little every day instead of waiting too long",
+                            "꾸준함을 해결책으로 잡고 싶을 때 잘 맞아요.",
+                            "특히 공부나 기술 관련 challenge에 유용합니다.",
+                            "I practice a little every day instead of waiting too long."
+                    ),
+                    ideaExpression(
+                            "I review my mistakes and try not to repeat them",
+                            "실수를 돌아보며 개선한다는 흐름으로 답을 마무리하기 좋아요.",
+                            "자기 관리와 성장 포인트를 함께 보여줄 수 있어요.",
+                            "I review my mistakes and try not to repeat them."
+                    )
+            ));
+        }
+
+        if (containsAny(promptText, "weekend", "daily life", "usually spend your weekend", "rest well", "busy day")) {
+            return limitExpressions(List.of(
+                    ideaExpression(
+                            "I want to relax after a busy week",
+                            "주말이나 휴식 질문에서 가장 기본적인 이유로 쓰기 좋아요.",
+                            "daily-life 답변을 자연스럽게 시작할 수 있습니다.",
+                            "I want to relax after a busy week."
+                    ),
+                    ideaExpression(
+                            "I like spending quiet time at home to recharge",
+                            "집에서 쉬는 흐름을 조금 더 자연스럽게 풀어줍니다.",
+                            "rest와 routine 둘 다에 잘 맞아요.",
+                            "I like spending quiet time at home to recharge."
+                    ),
+                    ideaExpression(
+                            "meeting my friends helps me feel refreshed",
+                            "사람을 만나며 에너지를 얻는다는 방향으로 이어가기 좋아요.",
+                            "주말 활동과 감정을 함께 넣을 수 있어요.",
+                            "Meeting my friends helps me feel refreshed."
+                    ),
+                    ideaExpression(
+                            "I try to clear my mind and reduce stress",
+                            "휴식의 목적을 설명할 때 바로 쓰기 좋은 포인트예요.",
+                            "busy day 이후 휴식을 설명할 때 특히 잘 맞습니다.",
+                            "I try to clear my mind and reduce stress."
+                    ),
+                    ideaExpression(
+                            "taking time for my hobbies makes my routine feel balanced",
+                            "취미와 균형을 연결해서 말하고 싶을 때 자연스러워요.",
+                            "weekend 질문을 조금 더 풍부하게 만들어 줍니다.",
+                            "Taking time for my hobbies makes my routine feel balanced."
+                    )
+            ));
+        }
+
+        List<CoachExpressionDto> fallbackIdeas = List.of(
+                ideaExpression(
+                        "it can make daily life easier and more comfortable",
+                        "일상적인 장점을 말할 때 두루 쓸 수 있는 아이디어예요.",
+                        "구체적인 이유가 바로 떠오르지 않을 때 무난하게 시작할 수 있습니다.",
+                        "It can make daily life easier and more comfortable."
+                ),
+                ideaExpression(
+                        "it can help me grow little by little",
+                        "성장과 변화의 흐름을 부드럽게 넣고 싶을 때 좋아요.",
+                        "목표, 습관, 기술 질문에 넓게 적용할 수 있어요.",
+                        "It can help me grow little by little."
+                ),
+                ideaExpression(
+                        "it gives me a clear reason to keep going",
+                        "꾸준함이나 동기를 이유로 말하고 싶을 때 잘 맞아요.",
+                        "why 질문에도 자연스럽게 이어집니다.",
+                        "It gives me a clear reason to keep going."
+                ),
+                ideaExpression(
+                        "it can have a positive effect in the long run",
+                        "장기적인 장점을 말할 때 무난하게 쓸 수 있어요.",
+                        "결론 문장으로 연결하기도 좋습니다.",
+                        "It can have a positive effect in the long run."
+                ),
+                ideaExpression(
+                        "it can make my routine feel more meaningful",
+                        "조금 더 감정적인 이유를 넣고 싶을 때 활용하기 좋아요.",
+                        "습관, 일상, 목표 질문에 넓게 적용할 수 있습니다.",
+                        "It can make my routine feel more meaningful."
+                )
+        );
+
+        return reasonFocus || exampleFocus ? fallbackIdeas : limitExpressions(fallbackIdeas);
+    }
+
+    private CoachExpressionDto ideaExpression(
+            String expression,
+            String meaningKo,
+            String usageTip,
+            String example
+    ) {
+        return new CoachExpressionDto(expression, meaningKo, usageTip, example, "COACH");
+    }
+
     private void appendHintExpressions(
             List<CoachExpressionDto> expressions,
             Set<String> seen,
@@ -1486,10 +1886,25 @@ public class CoachService {
                 .toList();
     }
 
-    private String buildCoachReply(PromptDto prompt, String userQuestion, List<CoachExpressionDto> expressions) {
+    private String buildCoachReply(
+            PromptDto prompt,
+            String userQuestion,
+            List<CoachExpressionDto> expressions,
+            CoachQueryAnalyzer.QueryMode queryMode
+    ) {
         List<String> categories = new ArrayList<>(resolveIntentCategories(prompt, userQuestion));
 
-        if (coachQueryAnalyzer.analyze(prompt, userQuestion).lookup().isPresent()) {
+        if (queryMode == CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT) {
+            if (categories.contains("reason")) {
+                return "이 질문에 넣을 만한 이유 아이디어를 먼저 골랐어요. 내 답에 맞는 포인트를 골라 한두 줄로 풀어 써 보세요.";
+            }
+            if (categories.contains("example")) {
+                return "이 질문에 붙일 만한 예시 아이디어를 먼저 골랐어요. 내 답에 바로 넣기 쉬운 흐름으로 골라 봤어요.";
+            }
+            return "이 질문에 넣기 좋은 답 아이디어를 먼저 골랐어요. 아래 포인트를 참고해서 내 문장으로 바꿔 써 보세요.";
+        }
+
+        if (queryMode == CoachQueryAnalyzer.QueryMode.MEANING_LOOKUP) {
             return "표현하고 싶은 뜻에 바로 가까운 표현을 먼저 골랐어요. 예문을 같이 보면서 내 문장에 맞는 걸 골라보세요.";
         }
 
@@ -1883,6 +2298,13 @@ public class CoachService {
                         "\uCE5C\uAD6C\uC640 \uC774\uC57C\uAE30\uD558\uB294 \uAC83 \uC790\uCCB4\uB97C \uC27D\uAC8C \uB9D0\uD560 \uB54C \uC720\uC6A9\uD574\uC694.",
                         "\uB300\uD654\uD558\uAC70\uB098 \uC18C\uD1B5\uD55C\uB2E4\uB294 \uB9D0\uC744 \uC9E7\uACE0 \uB2F4\uBC31\uD558\uAC8C \uB123\uC744 \uC218 \uC788\uC5B4\uC694.",
                         "I like to talk with my friends after dinner.",
+                        "COACH"
+                ),
+                new CoachExpressionDto(
+                        "get closer to my friends",
+                        "친구들과 더 가까워지고 싶다는 느낌을 직접 보여줄 때 잘 맞아요.",
+                        "관계를 더 깊게 만들고 싶다는 뉘앙스를 담고 싶을 때 자연스럽습니다.",
+                        "I want to get closer to my friends by spending more time with them.",
                         "COACH"
                 )
         );

@@ -179,7 +179,7 @@ public class OpenAiCoachClient {
     private String buildPrompt(PromptDto prompt, String userQuestion, List<PromptHintDto> hints) {
         CoachQueryAnalyzer.CoachQueryAnalysis analysis = coachQueryAnalyzer.analyze(prompt, userQuestion);
         String intentCategories = String.join(", ", analysis.intents().stream().map(CoachQueryAnalyzer.IntentCategory::key).toList());
-        boolean expressionLookup = analysis.lookup().isPresent();
+        CoachQueryAnalyzer.QueryMode queryMode = analysis.queryMode();
         String targetMeaning = analysis.lookup()
                 .map(spec -> spec.frame().surfaceMeaning())
                 .orElse("");
@@ -207,6 +207,9 @@ public class OpenAiCoachClient {
                 - For meaning-lookup questions, recommend close, natural English expressions around that meaning.
                 - For meaning-lookup questions, do not switch to generic topic starters unless they directly express the requested meaning.
                 - For meaning-lookup questions, make the expressions distinct in nuance, not repetitive.
+                - For idea-support questions, recommend concrete answer ideas the learner can adapt for this prompt.
+                - For idea-support questions, do not answer with only generic starters like "One reason is that ..." or "For example, ...".
+                - For idea-support questions, each expression should contain an actual content point, reason, example, or claim tied to the prompt topic.
                 - Prefer short, reusable chunks over long sentences.
                 - sourceHintType should be the hint type name if the expression comes from a hint, otherwise "COACH".
                 - Keep the tone encouraging and practical.
@@ -229,7 +232,7 @@ public class OpenAiCoachClient {
                 prompt.questionKo(),
                 prompt.tip(),
                 userQuestion == null ? "" : userQuestion,
-                expressionLookup ? "meaning_lookup" : "writing_support",
+                queryMode.name().toLowerCase(Locale.ROOT),
                 targetMeaning.isBlank() ? "none" : targetMeaning,
                 intentCategories.isBlank() ? "none" : intentCategories,
                 hintText

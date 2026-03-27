@@ -832,6 +832,8 @@ export function AnswerLoop() {
   );
   const coachQuickQuestions = useMemo(() => {
     const base = [
+      '"~를 어떻게 말해?"처럼 바로 물어봐도 돼',
+      '"~라고 말하고 싶어"처럼 물어봐도 돼',
       "이 질문에서 쓸 수 있는 이유 표현 알려줘",
       "첫 문장을 시작하는 자연스러운 표현 알려줘",
       "짧은 예시를 붙일 때 쓸 표현 알려줘"
@@ -1973,7 +1975,7 @@ export function AnswerLoop() {
             className={styles.coachPromptInput}
             value={coachQuestion}
             onChange={(event) => setCoachQuestion(event.target.value)}
-            placeholder="예: 이 질문에서 이유를 자연스럽게 말하는 표현 알려줘"
+            placeholder={'예: "근력을 키우고 싶다"를 어떻게 말해?'}
             rows={2}
           />
           <div className={styles.coachQuickActions}>

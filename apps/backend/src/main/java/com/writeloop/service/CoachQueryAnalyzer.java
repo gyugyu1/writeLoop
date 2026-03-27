@@ -90,6 +90,7 @@ class CoachQueryAnalyzer {
 
     enum QueryMode {
         WRITING_SUPPORT,
+        IDEA_SUPPORT,
         MEANING_LOOKUP
     }
 
@@ -158,12 +159,17 @@ class CoachQueryAnalyzer {
             String rawQuestion,
             String normalizedQuestion,
             EnumSet<IntentCategory> intents,
+            LookupDetection detection,
             Optional<MeaningLookupSpec> lookup
     ) {
         Set<String> intentKeys() {
             return intents.stream()
                     .map(IntentCategory::key)
                     .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+        }
+
+        QueryMode queryMode() {
+            return detection.mode();
         }
     }
 
@@ -174,12 +180,15 @@ class CoachQueryAnalyzer {
         EnumSet<IntentCategory> intents = userIntents.isEmpty()
                 ? inferIntentCategories(prompt.questionEn() + " " + prompt.questionKo() + " " + prompt.tip())
                 : userIntents;
-        LookupDetection detection = detectLookup(rawQuestion, normalizedQuestion, userIntents);
+        String promptContext = normalizeText(
+                prompt.topic() + " " + prompt.questionEn() + " " + prompt.questionKo() + " " + prompt.tip()
+        );
+        LookupDetection detection = detectLookup(rawQuestion, normalizedQuestion, promptContext, userIntents);
         Optional<MeaningLookupSpec> lookup = detection.mode() == QueryMode.MEANING_LOOKUP
-                ? Optional.of(buildLookupSpec(rawQuestion, normalizedQuestion, detection))
+                ? Optional.of(buildLookupSpec(promptContext, rawQuestion, normalizedQuestion, detection))
                 : Optional.empty();
 
-        return new CoachQueryAnalysis(rawQuestion, normalizedQuestion, intents, lookup);
+        return new CoachQueryAnalysis(rawQuestion, normalizedQuestion, intents, detection, lookup);
     }
 
     EnumSet<IntentCategory> resolveIntentCategories(PromptDto prompt, String userQuestion) {
@@ -231,7 +240,7 @@ class CoachQueryAnalyzer {
         }
         if (containsAny(normalized,
                 "\uAD6C\uC870", "\uD750\uB984", "\uC815\uB9AC", "\uBB50\uBD80\uD130", "\uC21C\uC11C",
-                "structure", "flow", "organize", "order", "what to write first")) {
+                "structure", "flow", "organize", "order", "guide", "what to write first")) {
             categories.add(IntentCategory.STRUCTURE);
         }
         if (containsAny(normalized,
@@ -246,6 +255,7 @@ class CoachQueryAnalyzer {
     private LookupDetection detectLookup(
             String rawQuestion,
             String normalizedQuestion,
+            String promptContext,
             EnumSet<IntentCategory> intents
     ) {
         String compactQuestion = compactText(rawQuestion);
@@ -255,12 +265,15 @@ class CoachQueryAnalyzer {
 
         boolean structureCue = hasStructureCue(normalizedQuestion, compactQuestion);
         boolean supportMeta = hasSupportMetaCue(normalizedQuestion, compactQuestion);
+        boolean ideaSupportCue = hasIdeaSupportCue(normalizedQuestion, compactQuestion);
         boolean explicitLookup = hasLookupSayCue(normalizedQuestion, compactQuestion);
         boolean meaningKeyword = hasMeaningKeywordCue(normalizedQuestion, compactQuestion);
         boolean expressionLookupCue = hasMeaningExpressionCue(normalizedQuestion, compactQuestion, intents);
-        boolean implicitLookup = looksLikeImplicitMeaningLookup(normalizedQuestion, compactQuestion, intents);
-        boolean hybridRequest = (supportMeta || structureCue)
-                && (explicitLookup || meaningKeyword || expressionLookupCue || implicitLookup);
+        boolean implicitLookup = looksLikeImplicitMeaningLookup(normalizedQuestion, compactQuestion, promptContext, intents);
+        boolean hybridCompanionCue = hasHybridCompanionCue(normalizedQuestion, compactQuestion);
+        boolean meaningLikeCue = explicitLookup || meaningKeyword || expressionLookupCue || implicitLookup;
+        boolean hybridRequest = ((supportMeta || structureCue) && meaningLikeCue)
+                || (hybridCompanionCue && hasSupportStyleIntent(intents) && meaningLikeCue);
 
         if (hybridRequest) {
             return new LookupDetection(QueryMode.MEANING_LOOKUP, "hybrid_meaning_support");
@@ -268,6 +281,10 @@ class CoachQueryAnalyzer {
 
         if (structureCue) {
             return new LookupDetection(QueryMode.WRITING_SUPPORT, "structure_override");
+        }
+
+        if (ideaSupportCue) {
+            return new LookupDetection(QueryMode.IDEA_SUPPORT, "idea_support");
         }
 
         if (explicitLookup) {
@@ -295,7 +312,8 @@ class CoachQueryAnalyzer {
                 && containsAny(
                         compactQuestion,
                         "\uB77C\uB294\uD45C\uD604", "\uB2E4\uB294\uD45C\uD604", "\uB77C\uACE0\uD45C\uD604", "\uB2E4\uACE0\uD45C\uD604",
-                        "\uC774\uBB38\uC7A5", "\uC774\uB9D0", "\uC601\uC5B4\uD45C\uD604"
+                        "\uC774\uBB38\uC7A5", "\uC774\uB9D0", "\uC601\uC5B4\uD45C\uD604",
+                        "\uD45C\uD604\uC880", "\uD45C\uD604\uC54C\uB824", "\uD45C\uD604\uCD94\uCC9C", "\uD45C\uD604\uC8FC\uB77C"
                 )) {
             return new LookupDetection(QueryMode.MEANING_LOOKUP, "expression_keyword");
         }
@@ -310,12 +328,13 @@ class CoachQueryAnalyzer {
     }
 
     private MeaningLookupSpec buildLookupSpec(
+            String promptContext,
             String rawQuestion,
             String normalizedQuestion,
             LookupDetection detection
     ) {
         String surfaceMeaning = extractMeaningLookupTarget(rawQuestion);
-        MeaningFrame frame = classifyMeaningFrame(surfaceMeaning, normalizedQuestion);
+        MeaningFrame frame = classifyMeaningFrame(surfaceMeaning, normalizedQuestion, promptContext);
         return new MeaningLookupSpec(detection, frame, translateFrame(frame));
     }
 
@@ -372,7 +391,11 @@ class CoachQueryAnalyzer {
         return extracted.isBlank() ? normalized : extracted;
     }
 
-    private MeaningFrame classifyMeaningFrame(String surfaceMeaning, String normalizedQuestion) {
+    private MeaningFrame classifyMeaningFrame(
+            String surfaceMeaning,
+            String normalizedQuestion,
+            String promptContext
+    ) {
         String normalizedSurface = normalizeText(surfaceMeaning);
         String familyContext = (normalizedSurface + " " + normalizedQuestion).trim();
         EnumMap<MeaningSlot, String> slots = new EnumMap<>(MeaningSlot.class);
@@ -406,13 +429,13 @@ class CoachQueryAnalyzer {
             return new MeaningFrame(ActionFamily.REST, surfaceMeaning, slots);
         }
 
-        if (looksLikeOnlineRelationshipStateChange(familyContext)) {
+        if (looksLikeStateChangeMeaning(familyContext, promptContext)) {
             slots.put(MeaningSlot.TOPIC, extractRelationshipTopic(familyContext));
             slots.put(MeaningSlot.QUALIFIER, extractStateQualifier(familyContext));
             return new MeaningFrame(ActionFamily.STATE_CHANGE, surfaceMeaning, slots);
         }
 
-        if (looksLikeSocializeMeaning(familyContext)) {
+        if (looksLikeSocializeMeaning(familyContext) || looksLikeExpandedSocializeMeaning(familyContext)) {
             String socializeTarget = stripSocializeScaffold(normalizedSurface.isBlank() ? familyContext : normalizedSurface);
             slots.put(MeaningSlot.TARGET, socializeTarget.isBlank() ? surfaceMeaning : socializeTarget);
             return new MeaningFrame(ActionFamily.SOCIALIZE, surfaceMeaning, slots);
@@ -501,6 +524,20 @@ class CoachQueryAnalyzer {
         return hasPerson && hasSocialAction;
     }
 
+    private boolean looksLikeExpandedSocializeMeaning(String normalizedText) {
+        boolean hasPerson = containsAny(
+                normalizedText,
+                "친구", "친구들", "사람", "사람들", "동료", "지인", "상대", "누군가",
+                "friend", "friends", "people", "person", "coworker", "coworkers", "classmate", "classmates"
+        );
+        boolean hasClosenessAction = containsAny(
+                normalizedText,
+                "가까워", "가까워지", "친밀", "친해지", "말 걸", "사귀",
+                "get closer", "become closer", "get close"
+        );
+        return hasPerson && hasClosenessAction;
+    }
+
     private boolean looksLikeLearningMeaning(String normalizedText) {
         return LEARN_FAMILY_PATTERN.matcher(normalizedText).find()
                 || containsAny(
@@ -512,6 +549,10 @@ class CoachQueryAnalyzer {
     }
 
     private boolean looksLikeGrowthMeaning(String normalizedText) {
+        if (containsAny(normalizedText, "좋게 만들", "더 좋게", "좋아지게")
+                && containsAny(normalizedText, "발음", "pronunciation")) {
+            return true;
+        }
         boolean hasGrowthVerb = containsAny(
                 normalizedText,
                 "키우", "늘리", "높이", "기르", "강화", "향상", "개선", "발전", "발달", "boost", "build up", "increase", "improve", "develop"
@@ -578,6 +619,54 @@ class CoachQueryAnalyzer {
                 "natural", "normal", "comfortable", "common", "easier"
         );
         return hasOnline && hasRelationship && hasQualifier;
+    }
+
+    private boolean looksLikeStateChangeMeaning(String normalizedText, String promptContext) {
+        return looksLikeOnlineRelationshipStateChange(normalizedText)
+                || looksLikeExpandedOnlineRelationshipStateChange(normalizedText)
+                || looksLikePromptScopedOnlineRelationshipStateChange(normalizedText, promptContext);
+    }
+
+    private boolean looksLikeExpandedOnlineRelationshipStateChange(String normalizedText) {
+        boolean hasOnline = containsAny(normalizedText, "인터넷", "온라인", "internet", "online");
+        boolean hasRelationship = containsAny(
+                normalizedText,
+                "만남", "만나", "관계", "연결", "연락", "대화",
+                "친해", "가까워", "말 걸", "말 거", "맺", "만들",
+                "meet", "meeting", "relationship", "relationships", "connect", "contact", "talk"
+        );
+        boolean hasQualifier = containsAny(
+                normalizedText,
+                "자연스럽", "익숙", "편해", "편하다", "편안", "쉬워",
+                "덜 어색", "어색하지 않", "어색해", "부담없",
+                "natural", "normal", "comfortable", "common", "easier", "less awkward", "awkward"
+        );
+        return hasOnline && hasRelationship && hasQualifier;
+    }
+
+    private boolean looksLikePromptScopedOnlineRelationshipStateChange(String normalizedQuestion, String promptContext) {
+        boolean promptSignalsRelationshipChange = containsAny(
+                promptContext,
+                "technology", "online", "internet", "relationship", "relationships", "stay in touch",
+                "technology changed", "온라인", "인터넷", "관계", "연락", "대화", "만남"
+        );
+        if (!promptSignalsRelationshipChange) {
+            return false;
+        }
+
+        boolean hasRelationship = containsAny(
+                normalizedQuestion,
+                "사람", "사람들", "친구", "친구들", "연락", "대화", "만남", "만나",
+                "친해", "친해지", "가까워", "가까워지", "말 걸", "말 거", "멀리 사는",
+                "relationship", "people", "friends", "contact", "talk", "meet", "closer"
+        );
+        boolean hasQualifier = containsAny(
+                normalizedQuestion,
+                "자연스럽", "익숙", "편해", "편하다", "편안", "쉬워",
+                "덜 어색", "어색하지 않", "어색해", "부담없",
+                "natural", "comfortable", "normal", "easier", "less awkward", "awkward"
+        );
+        return hasRelationship && hasQualifier;
     }
 
     private boolean looksLikeVisitInterestMeaning(String normalizedText) {
@@ -716,8 +805,8 @@ class CoachQueryAnalyzer {
     private boolean hasStructureCue(String normalizedQuestion, String compactQuestion) {
         return containsAny(
                 normalizedQuestion,
-                "\uAD6C\uC870", "\uD750\uB984", "\uC21C\uC11C", "\uBB50\uBD80\uD130", "\uC2DC\uC791",
-                "structure", "flow", "order", "how should i start", "what to write first"
+                "\uAD6C\uC870", "\uD750\uB984", "\uC21C\uC11C", "\uBB50\uBD80\uD130", "\uC2DC\uC791", "\uAC00\uC774\uB4DC",
+                "structure", "flow", "order", "guide", "how should i start", "what to write first"
         ) || containsAny(compactQuestion, "\uBB50\uBD80\uD130", "\uC5B4\uB5BB\uAC8C\uC2DC\uC791");
     }
 
@@ -797,9 +886,78 @@ class CoachQueryAnalyzer {
         );
     }
 
+    private boolean hasIdeaSupportCue(String normalizedQuestion, String compactQuestion) {
+        boolean hasIdeaNoun = containsAny(
+                normalizedQuestion,
+                "\uC774\uC720", "\uADFC\uAC70", "\uC608\uC2DC", "\uC544\uC774\uB514\uC5B4", "\uD3EC\uC778\uD2B8", "\uC18C\uC7AC",
+                "reason", "reasons", "example", "examples", "idea", "ideas", "point", "points"
+        );
+        boolean hasIdeaQuestionForm = containsAny(
+                normalizedQuestion,
+                "\uBB50\uAC00 \uC788\uC744\uAE4C", "\uBB50\uAC00 \uC788\uC744\uC9C0", "\uBB50\uAC00 \uC88B\uC744\uAE4C",
+                "\uBB34\uC2A8 \uC774\uC720", "\uC5B4\uB5A4 \uC774\uC720", "\uBB34\uC2A8 \uC608\uC2DC", "\uC5B4\uB5A4 \uC608\uC2DC",
+                "\uB2F5\uC73C\uB85C \uC4F8 \uB9CC\uD55C", "\uB4E4 \uC218 \uC788\uC744\uAE4C", "\uC4F8 \uC218 \uC788\uB294 \uC774\uC720\uAC00",
+                "\uC4F8 \uC218 \uC788\uB294 \uC608\uC2DC\uAC00", "\uC0DD\uAC01\uD574 \uBCFC", "\uD3EC\uC778\uD2B8\uAC00 \uBB50",
+                "what reasons", "what ideas", "what points", "what examples",
+                "what could i say", "what can i say", "ideas for this question", "reasons i can use"
+        ) || containsAny(
+                compactQuestion,
+                "\uBB50\uAC00\uC788\uC744\uAE4C", "\uBB50\uAC00\uC88B\uC744\uAE4C", "\uBB34\uC2A8\uC774\uC720", "\uC5B4\uB5A4\uC774\uC720",
+                "\uBB34\uC2A8\uC608\uC2DC", "\uC5B4\uB5A4\uC608\uC2DC", "\uC774\uC720\uAC00\uBB50", "\uC608\uC2DC\uAC00\uBB50",
+                "\uD3EC\uC778\uD2B8\uAC00\uBB50", "\uC4F8\uC218\uC788\uB294\uC774\uC720\uAC00", "\uC4F8\uC218\uC788\uB294\uC608\uC2DC\uAC00"
+        );
+
+        hasIdeaNoun = hasIdeaNoun || containsAny(normalizedQuestion, "사례", "내용", "case", "cases");
+        hasIdeaQuestionForm = hasIdeaQuestionForm
+                || containsAny(normalizedQuestion, "뭐가 있어", "들 수 있어", "추천할 만한", "알려줄 만한")
+                || containsAny(compactQuestion, "뭐가있어", "들수있어");
+
+        boolean hasIdeaContextCue = containsAny(
+                normalizedQuestion,
+                "이 질문", "답에", "넣을", "넣으면", "쓸 만한", "들 수", "아이디어", "포인트", "사례"
+        );
+        boolean hasIdeaRequestVerb = containsAny(
+                normalizedQuestion,
+                "알려줘", "추천해줘", "추천해 줘", "추천 좀", "정리해줘", "뽑아줘", "줄래", "줘",
+                "show me", "give me", "suggest", "brainstorm"
+        ) || containsAny(
+                compactQuestion,
+                "알려줘", "추천해줘", "추천좀", "정리해줘", "뽑아줘"
+        );
+
+        return hasIdeaNoun
+                && (hasIdeaQuestionForm || hasIdeaRequestVerb || hasIdeaContextCue)
+                && !looksLikePhraseSupportRequest(normalizedQuestion, compactQuestion);
+    }
+
+    private boolean looksLikePhraseSupportRequest(String normalizedQuestion, String compactQuestion) {
+        return containsAny(
+                normalizedQuestion,
+                "표현", "문장", "영어로", "어떻게 말", "어떻게 표현", "스타터", "첫 문장", "연결 표현",
+                "expression", "phrase", "sentence", "how do i say", "how to say", "starter"
+        ) || containsAny(
+                compactQuestion,
+                "표현", "문장", "영어로", "어떻게말", "어떻게표현", "첫문장", "연결표현"
+        );
+    }
+
+    private boolean hasHybridCompanionCue(String normalizedQuestion, String compactQuestion) {
+        return containsAny(
+                normalizedQuestion,
+                "같이", "함께", "도 같이", "도 알려", "도 추천", "도 필요", "도 보고 싶", "도 궁금",
+                "필요해", "있으면 좋겠", "한 줄", "도 원해",
+                "also", "as well", "together", "along with"
+        ) || containsAny(
+                compactQuestion,
+                "같이", "함께", "도같이", "도알려", "도추천", "도필요", "도보고싶",
+                "필요해", "있으면좋겠", "한줄", "도원해"
+        );
+    }
+
     private boolean looksLikeImplicitMeaningLookup(
             String normalizedQuestion,
             String compactQuestion,
+            String promptContext,
             EnumSet<IntentCategory> intents
     ) {
         if (hasSupportStyleIntent(intents) || hasSupportMetaCue(normalizedQuestion, compactQuestion)) {
@@ -820,8 +978,9 @@ class CoachQueryAnalyzer {
                 || looksLikeSleepMeaning(normalizedQuestion)
                 || looksLikeStudyMeaning(normalizedQuestion)
                 || looksLikeRestMeaning(normalizedQuestion)
-                || looksLikeOnlineRelationshipStateChange(normalizedQuestion)
+                || looksLikeStateChangeMeaning(normalizedQuestion, promptContext)
                 || looksLikeSocializeMeaning(normalizedQuestion)
+                || looksLikeExpandedSocializeMeaning(normalizedQuestion)
                 || looksLikeVisitInterestMeaning(normalizedQuestion)
                 || looksLikeGenericDesireStateMeaning(normalizedQuestion, compactQuestion);
     }
@@ -851,6 +1010,9 @@ class CoachQueryAnalyzer {
         }
         if (containsAny(normalizedText, "\uB300\uD654", "talk")) {
             return "\uC628\uB77C\uC778\uC5D0\uC11C \uB300\uD654\uD558\uB294 \uAC83";
+        }
+        if (containsAny(normalizedText, "\uCE5C\uD574", "\uAC00\uAE4C\uC6CC")) {
+            return "\uC628\uB77C\uC778 \uAD00\uACC4";
         }
         if (containsAny(normalizedText, "\uAD00\uACC4", "relationship", "relationships")) {
             return "\uC628\uB77C\uC778 \uAD00\uACC4";

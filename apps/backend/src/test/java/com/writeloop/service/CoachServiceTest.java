@@ -1079,6 +1079,111 @@ class CoachServiceTest {
     }
 
     @Test
+    void help_returns_prompt_specific_ideas_for_reason_brainstorm_question() {
+        PromptDto prompt = new PromptDto(
+                "prompt-idea-society",
+                "Society",
+                "HARD",
+                "What kind of social responsibility should successful companies have in modern society?",
+                "성공한 기업이 현대 사회에서 어떤 사회적 책임을 가져야 하는지 써 보세요.",
+                "State your opinion and support it."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "이 질문에 쓸 수 있는 이유가 뭐가 있을까")
+        );
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "companies can provide educational opportunities",
+                        "companies can create job opportunities in local communities",
+                        "companies should protect the environment through sustainable policies"
+                )
+                .doesNotContain("one reason is that ...", "this is because ...", "i think ...");
+        assertThat(response.coachReply()).contains("이유 아이디어");
+    }
+
+    @Test
+    void help_uses_openai_for_idea_support_when_available() {
+        PromptDto prompt = new PromptDto(
+                "prompt-idea-growth",
+                "Growth",
+                "MEDIUM",
+                "What is one skill you want to improve this year, and how will you practice it?",
+                "올해 늘리고 싶은 기술 하나와 어떻게 연습할지 써 보세요.",
+                "Talk about a skill and your practice plan."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(true);
+
+        String question = "이 질문에 넣을 만한 이유가 뭐가 있을까";
+        when(openAiCoachClient.help(prompt, question, List.of())).thenReturn(
+                new CoachHelpResponseDto(
+                        prompt.id(),
+                        question,
+                        "ideas",
+                        List.of(
+                                new com.writeloop.dto.CoachExpressionDto("it can help me feel more confident over time", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("it will be useful in my daily life", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("small daily practice can lead to steady progress", "a", "b", "c", "COACH")
+                        )
+                )
+        );
+
+        CoachHelpResponseDto response = coachService.help(new CoachHelpRequestDto(prompt.id(), question));
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "it can help me feel more confident over time",
+                        "it will be useful in my daily life",
+                        "small daily practice can lead to steady progress"
+                );
+        verify(openAiCoachClient).help(prompt, question, List.of());
+    }
+
+    @Test
+    void help_rejects_generic_openai_response_for_idea_support_and_uses_local_ideas() {
+        PromptDto prompt = new PromptDto(
+                "prompt-idea-tech",
+                "Technology",
+                "HARD",
+                "How has technology changed the way people build relationships, and is that change mostly positive?",
+                "기술이 사람들이 관계를 맺는 방식을 어떻게 바꿨는지, 그리고 그 변화가 대체로 긍정적인지 써 보세요.",
+                "Discuss one clear change and your opinion."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(true);
+
+        String question = "이 질문에 쓸 수 있는 이유가 뭐가 있을까";
+        when(openAiCoachClient.help(prompt, question, List.of())).thenReturn(
+                new CoachHelpResponseDto(
+                        prompt.id(),
+                        question,
+                        "generic",
+                        List.of(
+                                new com.writeloop.dto.CoachExpressionDto("One reason is that ...", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("For example, ...", "a", "b", "c", "COACH"),
+                                new com.writeloop.dto.CoachExpressionDto("I think ...", "a", "b", "c", "COACH")
+                        )
+                )
+        );
+
+        CoachHelpResponseDto response = coachService.help(new CoachHelpRequestDto(prompt.id(), question));
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "technology makes it easier to stay in touch with people",
+                        "people can meet others online beyond their local area",
+                        "long-distance relationships are easier to maintain now"
+                )
+                .doesNotContain("one reason is that ...", "for example, ...", "i think ...");
+    }
+
+    @Test
     void help_uses_slot_translation_fallback_for_unknown_learn_target_variant() {
         PromptDto prompt = new PromptDto(
                 "prompt-learn-spanish",
@@ -1337,6 +1442,81 @@ class CoachServiceTest {
         assertThat(interaction.getUsagePayloadJson()).contains("usedExpressions");
         verify(coachInteractionRepository).save(interaction);
         verify(answerAttemptRepository).save(any(AnswerAttemptEntity.class));
+    }
+
+    @Test
+    void help_returns_idea_support_for_reason_points_variant() {
+        PromptDto prompt = new PromptDto(
+                "prompt-idea-society-2",
+                "Society",
+                "HARD",
+                "What kind of social responsibility should successful companies have in modern society?",
+                "성공한 기업이 현대 사회에서 어떤 사회적 책임을 가져야 하는지 써 보세요.",
+                "State your opinion and support it."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "성공한 기업 책임에 대한 이유 포인트 뭐가 있어?")
+        );
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "companies can provide educational opportunities",
+                        "companies can create job opportunities in local communities"
+                )
+                .doesNotContain("one reason is that ...", "this is because ...");
+    }
+
+    @Test
+    void help_blends_support_expressions_for_hybrid_lookup_request() {
+        PromptDto prompt = new PromptDto(
+                "prompt-hybrid-social",
+                "Daily life",
+                "MEDIUM",
+                "How do you usually spend time with your friends?",
+                "친구들과 보통 어떻게 시간을 보내는지 써 보세요.",
+                "Mention one example."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(false);
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "친구 만난다고 말하고 싶어 예시도 같이 알려줘")
+        );
+
+        assertThat(lowerExpressions(response))
+                .contains("meet my friends")
+                .contains("for example, ...");
+    }
+
+    @Test
+    void help_uses_prompt_scoped_state_change_for_relationship_change_statement() {
+        PromptDto prompt = new PromptDto(
+                "prompt-tech-state",
+                "Technology",
+                "HARD",
+                "How has technology changed the way people build relationships, and is that change mostly positive?",
+                "기술이 사람들이 관계를 맺는 방식을 어떻게 바꿨는지 말해 보세요.",
+                "Discuss one clear change."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(false);
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "멀리 사는 사람과도 자연스럽게 친해진다")
+        );
+
+        assertThat(lowerExpressions(response))
+                .anySatisfy(expression -> assertThat(expression).contains("more natural"));
+        verify(openAiCoachClient, never()).help(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.eq("멀리 사는 사람과도 자연스럽게 친해진다"),
+                org.mockito.ArgumentMatchers.anyList()
+        );
     }
 
     private List<String> lowerExpressions(CoachHelpResponseDto response) {

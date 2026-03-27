@@ -1470,6 +1470,56 @@ class CoachServiceTest {
     }
 
     @Test
+    void help_returns_idea_support_for_compact_reason_idea_label() {
+        PromptDto prompt = new PromptDto(
+                "prompt-idea-society-compact",
+                "Society",
+                "HARD",
+                "What kind of social responsibility should successful companies have in modern society?",
+                "성공한 기업은 현대 사회에서 어떤 사회적 책임을 가져야 하는지 써 보세요.",
+                "State your opinion and support it."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "이 질문 이유 아이디어")
+        );
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "companies can provide educational opportunities",
+                        "companies can create job opportunities in local communities"
+                )
+                .doesNotContain("one reason is that ...", "this is because ...");
+    }
+
+    @Test
+    void help_returns_idea_support_for_compact_case_question() {
+        PromptDto prompt = new PromptDto(
+                "prompt-idea-tech-compact",
+                "Technology",
+                "HARD",
+                "How has technology changed the way people build relationships, and is that change mostly positive?",
+                "기술이 사람들이 관계를 맺는 방식을 어떻게 바꿨는지 말해 보세요.",
+                "Discuss one clear change."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "사례 뭐 넣지")
+        );
+
+        assertThat(lowerExpressions(response))
+                .contains(
+                        "technology makes it easier to stay in touch with people",
+                        "people can meet others online beyond their local area"
+                )
+                .doesNotContain("for example, ...", "for instance, ...");
+    }
+
+    @Test
     void help_blends_support_expressions_for_hybrid_lookup_request() {
         PromptDto prompt = new PromptDto(
                 "prompt-hybrid-social",
@@ -1489,7 +1539,56 @@ class CoachServiceTest {
 
         assertThat(lowerExpressions(response))
                 .contains("meet my friends")
-                .contains("for example, ...");
+                .anyMatch(expression -> expression.equals("for example, ...") || expression.equals("for instance, ..."));
+    }
+
+    @Test
+    void help_blends_structure_support_for_hybrid_lookup_request() {
+        PromptDto prompt = new PromptDto(
+                "prompt-hybrid-visit-structure",
+                "Travel",
+                "MEDIUM",
+                "Tell me about a place you want to visit and what you want to do there.",
+                "가 보고 싶은 곳과 거기서 하고 싶은 일을 말해 보세요.",
+                "Share one place and one activity."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(false);
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "메이드카페에 가보고 싶다고 하고 싶은데 첫 문장도 추천해줘")
+        );
+
+        assertThat(lowerExpressions(response))
+                .contains("i want to visit maid cafe.")
+                .contains("first, ...");
+    }
+
+    @Test
+    void help_blends_balance_support_for_hybrid_lookup_request() {
+        PromptDto prompt = new PromptDto(
+                "prompt-hybrid-balance",
+                "Technology",
+                "HARD",
+                "How has technology changed the way people build relationships, and is that change mostly positive?",
+                "기술이 사람들이 관계를 맺는 방식을 어떻게 바꿨는지 말해 보세요.",
+                "Discuss one clear change."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of());
+        when(openAiCoachClient.isConfigured()).thenReturn(false);
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "온라인 관계가 더 자연스럽다고 말하고 싶은데 반대 의견 표현도 있으면 좋겠어")
+        );
+
+        assertThat(lowerExpressions(response))
+                .anyMatch(expression -> expression.contains("more natural"))
+                .anyMatch(expression -> expression.equals("on the one hand, ...")
+                        || expression.equals("on the other hand, ...")
+                        || expression.equals("overall, ...")
+                        || expression.equals("in contrast, ..."));
     }
 
     @Test

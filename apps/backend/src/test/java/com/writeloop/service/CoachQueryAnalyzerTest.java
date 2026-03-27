@@ -389,10 +389,34 @@ class CoachQueryAnalyzerTest {
     }
 
     @Test
+    void analyze_detects_idea_support_for_compact_reason_idea_label() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "이 질문 이유 아이디어"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("reason");
+    }
+
+    @Test
     void analyze_detects_idea_support_for_example_idea_variant() {
         CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
                 prompt,
                 "답에 쓸 예시 아이디어 알려줘"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("example");
+    }
+
+    @Test
+    void analyze_detects_idea_support_for_compact_case_question() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "사례 뭐 넣지"
         );
 
         assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.IDEA_SUPPORT);
@@ -412,6 +436,18 @@ class CoachQueryAnalyzerTest {
                 .isEqualTo("hybrid_meaning_support");
         assertThat(analysis.lookup().orElseThrow().frame().family())
                 .isEqualTo(CoachQueryAnalyzer.ActionFamily.SOCIALIZE);
+    }
+
+    @Test
+    void analyze_keeps_structure_support_for_order_question_with_reason_and_example_words() {
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = analyzer.analyze(
+                prompt,
+                "의견 이유 예시 순서 알려줘"
+        );
+
+        assertThat(analysis.queryMode()).isEqualTo(CoachQueryAnalyzer.QueryMode.WRITING_SUPPORT);
+        assertThat(analysis.lookup()).isEmpty();
+        assertThat(analysis.intentKeys()).contains("reason", "example", "structure");
     }
 
     @Test

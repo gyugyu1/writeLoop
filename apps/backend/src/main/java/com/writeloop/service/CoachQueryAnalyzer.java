@@ -95,6 +95,7 @@ class CoachQueryAnalyzer {
     }
 
     enum IntentCategory {
+        STARTER("starter"),
         REASON("reason"),
         EXAMPLE("example"),
         OPINION("opinion"),
@@ -204,6 +205,12 @@ class CoachQueryAnalyzer {
         EnumSet<IntentCategory> categories = EnumSet.noneOf(IntentCategory.class);
 
         if (containsAny(normalized,
+                "\uCCAB \uBB38\uC7A5", "\uCCAB \uBB38\uB2E8", "\uC2DC\uC791 \uBB38\uC7A5", "\uBB38\uC7A5 \uC2DC\uC791", "\uB3C4\uC785",
+                "\uB3C4\uC785\UBD80", "\uC2A4\uD0C0\uD130", "\uC624\uD504\uB2DD", "\uC5B4\uB5BB\uAC8C \uC2DC\uC791",
+                "starter", "first sentence", "opening sentence", "open with", "how should i start", "start with")) {
+            categories.add(IntentCategory.STARTER);
+        }
+        if (containsAny(normalized,
                 "\uC65C", "\uC774\uC720", "\uB54C\uBB38", "\uADF8\uB798\uC11C",
                 "why", "reason", "because", "one reason is that")) {
             categories.add(IntentCategory.REASON);
@@ -263,14 +270,14 @@ class CoachQueryAnalyzer {
             return new LookupDetection(QueryMode.WRITING_SUPPORT, "empty");
         }
 
-        boolean structureCue = hasStructureCue(normalizedQuestion, compactQuestion);
+        boolean structureCue = hasExpandedStructureCue(normalizedQuestion, compactQuestion);
         boolean supportMeta = hasSupportMetaCue(normalizedQuestion, compactQuestion);
-        boolean ideaSupportCue = hasIdeaSupportCue(normalizedQuestion, compactQuestion);
+        boolean ideaSupportCue = hasExpandedIdeaSupportCue(normalizedQuestion, compactQuestion);
         boolean explicitLookup = hasLookupSayCue(normalizedQuestion, compactQuestion);
         boolean meaningKeyword = hasMeaningKeywordCue(normalizedQuestion, compactQuestion);
         boolean expressionLookupCue = hasMeaningExpressionCue(normalizedQuestion, compactQuestion, intents);
         boolean implicitLookup = looksLikeImplicitMeaningLookup(normalizedQuestion, compactQuestion, promptContext, intents);
-        boolean hybridCompanionCue = hasHybridCompanionCue(normalizedQuestion, compactQuestion);
+        boolean hybridCompanionCue = hasExpandedHybridCompanionCue(normalizedQuestion, compactQuestion);
         boolean meaningLikeCue = explicitLookup || meaningKeyword || expressionLookupCue || implicitLookup;
         boolean hybridRequest = ((supportMeta || structureCue) && meaningLikeCue)
                 || (hybridCompanionCue && hasSupportStyleIntent(intents) && meaningLikeCue);
@@ -952,6 +959,113 @@ class CoachQueryAnalyzer {
                 "같이", "함께", "도같이", "도알려", "도추천", "도필요", "도보고싶",
                 "필요해", "있으면좋겠", "한줄", "도원해"
         );
+    }
+
+    private boolean hasExpandedStructureCue(String normalizedQuestion, String compactQuestion) {
+        return hasStructureCue(normalizedQuestion, compactQuestion)
+                || containsAny(
+                        normalizedQuestion,
+                        "\uAD6C\uC131", "\uD2C0", "\uC5B4\uB5A4 \uC21C\uC11C", "\uBB34\uC5C7\uBD80\uD130",
+                        "framework", "outline", "what should come first"
+                )
+                || containsAny(
+                        compactQuestion,
+                        "\uAD6C\uC131", "\uD2C0", "\uC21C\uC11C\uC54C\uB824", "\uAC00\uC774\uB4DC\uC918", "\uAD6C\uC870\uC54C\uB824"
+                );
+    }
+
+    private boolean hasExpandedIdeaSupportCue(String normalizedQuestion, String compactQuestion) {
+        boolean hasIdeaNoun = containsAny(
+                normalizedQuestion,
+                "\uC774\uC720", "\uADFC\uAC70", "\uC608\uC2DC", "\uC0AC\uB840", "\uC544\uC774\uB514\uC5B4", "\uD3EC\uC778\uD2B8",
+                "\uC18C\uC7AC", "\uB0B4\uC6A9", "reason", "reasons", "example", "examples", "case", "cases",
+                "idea", "ideas", "point", "points", "content"
+        );
+        boolean hasIdeaQuestionForm = containsAny(
+                normalizedQuestion,
+                "\uBB50\uAC00 \uC788\uC744\uAE4C", "\uBB50\uAC00 \uC788\uC744\uC9C0", "\uBB50\uAC00 \uC88B\uC744\uAE4C",
+                "\uBB50 \uB123\uC9C0", "\uBB50 \uB123\uC744\uAE4C", "\uBB54 \uB123\uC9C0", "\uBB54 \uB123\uC744\uAE4C",
+                "\uBB34\uC2A8 \uC774\uC720", "\uC5B4\uB5A4 \uC774\uC720", "\uBB34\uC2A8 \uC608\uC2DC", "\uC5B4\uB5A4 \uC608\uC2DC",
+                "\uBB34\uC2A8 \uC0AC\uB840", "\uC5B4\uB5A4 \uC0AC\uB840", "\uC0AC\uB840\uAC00 \uBB50", "\uC608\uC2DC\uAC00 \uBB50",
+                "\uADFC\uAC70\uAC00 \uBB50", "\uC774\uC720\uAC00 \uBB50", "\uD3EC\uC778\uD2B8\uAC00 \uBB50",
+                "\uB2F5\uC73C\uB85C \uC4F8 \uB9CC\uD55C", "\uC4F8 \uC218 \uC788\uB294", "\uB4E4 \uC218 \uC788\uC744\uAE4C",
+                "what reasons", "what ideas", "what points", "what examples", "what cases",
+                "what should i add", "what could i include", "ideas for this question"
+        ) || containsAny(
+                compactQuestion,
+                "\uBB50\uAC00\uC788\uC744\uAE4C", "\uBB50\uAC00\uC88B\uC744\uAE4C", "\uBB50\uB123\uC9C0", "\uBB50\uB123\uC744\uAE4C",
+                "\uBB54\uB123\uC9C0", "\uBB54\uB123\uC744\uAE4C", "\uC774\uC720\uAC00\uBB50", "\uC608\uC2DC\uAC00\uBB50",
+                "\uC0AC\uB840\uAC00\uBB50", "\uADFC\uAC70\uAC00\uBB50", "\uD3EC\uC778\uD2B8\uAC00\uBB50",
+                "\uC0AC\uB840\uBB50", "\uC608\uC2DC\uBB50", "\uADFC\uAC70\uBB50", "\uC774\uC720\uBB50"
+        );
+        boolean hasIdeaContextCue = containsAny(
+                normalizedQuestion,
+                "\uC774 \uC9C8\uBB38", "\uB2F5\uC5D0", "\uB2F5\uBCC0\uC5D0", "\uB123\uC744", "\uB123\uC73C\uBA74", "\uBD99\uC77C",
+                "\uC4F8 \uB9CC\uD55C", "\uC4F8\uB9CC\uD55C", "\uB4E4 \uC218", "\uC544\uC774\uB514\uC5B4", "\uD3EC\uC778\uD2B8",
+                "\uC0AC\uB840", "\uC608\uC2DC", "\uADFC\uAC70", "\uC774\uC720"
+        ) || containsAny(
+                compactQuestion,
+                "\uC774\uC9C8\uBB38", "\uB2F5\uC5D0", "\uB2F5\uBCC0\uC5D0", "\uB123\uC744", "\uB123\uC73C\uBA74", "\uBD99\uC77C",
+                "\uC4F8\uB9CC\uD55C"
+        );
+        boolean hasIdeaRequestVerb = containsAny(
+                normalizedQuestion,
+                "\uC54C\uB824\uC918", "\uC54C\uB824\uC8FC", "\uCD94\uCC9C", "\uC815\uB9AC", "\uBF51\uC544", "\uB5A0\uC62C\uB824",
+                "\uC0DD\uAC01\uD574", "\uBE0C\uB808\uC778\uC2A4\uD1A0\uBC0D", "show me", "give me", "suggest", "brainstorm"
+        ) || containsAny(
+                compactQuestion,
+                "\uC54C\uB824\uC918", "\uC54C\uB824\uC8FC", "\uCD94\uCC9C", "\uC815\uB9AC", "\uBF51\uC544\uC918"
+        );
+
+        return hasIdeaNoun
+                && (hasIdeaQuestionForm || hasIdeaContextCue || hasIdeaRequestVerb)
+                && !looksLikeExpandedPhraseSupportRequest(normalizedQuestion, compactQuestion)
+                && !looksLikeSupportActionQuestion(normalizedQuestion, compactQuestion)
+                && !hasExpandedStructureCue(normalizedQuestion, compactQuestion);
+    }
+
+    private boolean looksLikeExpandedPhraseSupportRequest(String normalizedQuestion, String compactQuestion) {
+        return containsAny(
+                normalizedQuestion,
+                "\uD45C\uD604", "\uBB38\uC7A5", "\uC601\uC5B4\uB85C", "\uC5B4\uB5BB\uAC8C \uB9D0", "\uC5B4\uB5BB\uAC8C \uD45C\uD604",
+                "\uC2A4\uD0C0\uD130", "\uCCAB \uBB38\uC7A5", "\uC5F0\uACB0 \uD45C\uD604",
+                "expression", "phrase", "sentence", "how do i say", "how to say", "starter"
+        ) || containsAny(
+                compactQuestion,
+                "\uD45C\uD604", "\uBB38\uC7A5", "\uC601\uC5B4\uB85C", "\uC5B4\uB5BB\uAC8C\uB9D0", "\uC5B4\uB5BB\uAC8C\uD45C\uD604",
+                "\uCCAB\uBB38\uC7A5", "\uC5F0\uACB0\uD45C\uD604"
+        );
+    }
+
+    private boolean looksLikeSupportActionQuestion(String normalizedQuestion, String compactQuestion) {
+        return containsAny(
+                normalizedQuestion,
+                "\uBD99\uC77C \uB54C", "\uC4F8 \uB54C", "\uB9D0\uD560 \uB54C", "\uC2DC\uC791\uD560 \uB54C",
+                "\uC774\uC5B4\uC8FC\uB294", "\uC5F0\uACB0 \uD45C\uD604", "\uCCAB \uBB38\uC7A5", "\uC4F0\uB294 \uD45C\uD604",
+                "\uC4F8 \uD45C\uD604", "when i write", "when i say", "what can i use", "how should i start"
+        ) || containsAny(
+                compactQuestion,
+                "\uBD99\uC77C\uB54C", "\uC4F8\uB54C", "\uB9D0\uD560\uB54C", "\uC2DC\uC791\uD560\uB54C",
+                "\uC774\uC5B4\uC8FC\uB294", "\uC5F0\uACB0\uD45C\uD604", "\uCCAB\uBB38\uC7A5", "\uC4F0\uB294\uD45C\uD604",
+                "\uC4F8\uD45C\uD604"
+        );
+    }
+
+    private boolean hasExpandedHybridCompanionCue(String normalizedQuestion, String compactQuestion) {
+        return hasHybridCompanionCue(normalizedQuestion, compactQuestion)
+                || containsAny(
+                        normalizedQuestion,
+                        "\uC608\uC2DC\uB3C4", "\uC774\uC720\uB3C4", "\uAD6C\uC870\uB3C4", "\uCCAB \uBB38\uC7A5\uB3C4",
+                        "\uBC18\uB300 \uC758\uACAC", "\uC5F0\uACB0 \uD45C\uD604", "\uD55C \uC904", "\uD558\uB098 \uBD99\uC774\uACE0",
+                        "\uD544\uC694\uD574", "\uC788\uC73C\uBA74 \uC88B\uACA0", "\uD568\uAED8", "\uAC19\uC774",
+                        "also", "as well", "along with", "one more", "first sentence too"
+                )
+                || containsAny(
+                        compactQuestion,
+                        "\uC608\uC2DC\uB3C4", "\uC774\uC720\uB3C4", "\uAD6C\uC870\uB3C4", "\uCCAB\uBB38\uC7A5\uB3C4",
+                        "\uBC18\uB300\uC758\uACAC", "\uC5F0\uACB0\uD45C\uD604", "\uD55C\uC904", "\uD544\uC694\uD574",
+                        "\uC788\uC73C\uBA74\uC88B\uACA0"
+                );
     }
 
     private boolean looksLikeImplicitMeaningLookup(

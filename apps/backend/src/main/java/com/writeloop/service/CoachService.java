@@ -310,6 +310,9 @@ public class CoachService {
                 case MEANING_LOOKUP, IDEA_SUPPORT -> normalized;
                 case WRITING_SUPPORT -> filterExpressionsByIntent(normalized, intentCategories);
             };
+            if (queryMode == CoachQueryAnalyzer.QueryMode.WRITING_SUPPORT && intentCategories.contains("starter")) {
+                prioritized = topUpStarterExpressions(prompt, userQuestion, hints, prioritized);
+            }
             if (prioritized.size() < 3) {
                 return null;
             }
@@ -378,7 +381,12 @@ public class CoachService {
             Set<String> intentCategories,
             List<CoachExpressionDto> baseExpressions
     ) {
-        List<CoachExpressionDto> supportExpressions = buildLocalExpressions(prompt, userQuestion, hints, intentCategories);
+        List<CoachExpressionDto> supportExpressions = buildFocusedHybridSupportExpressions(
+                prompt,
+                userQuestion,
+                hints,
+                intentCategories
+        );
         List<CoachExpressionDto> merged = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         appendExpressionsUpTo(merged, seen, baseExpressions, 3);
@@ -409,6 +417,68 @@ public class CoachService {
                 return;
             }
         }
+    }
+
+    private List<CoachExpressionDto> buildFocusedHybridSupportExpressions(
+            PromptDto prompt,
+            String userQuestion,
+            List<PromptHintDto> hints,
+            Set<String> intentCategories
+    ) {
+        List<CoachExpressionDto> expressions = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+
+        for (String category : resolveHybridSupportPriority(userQuestion, intentCategories)) {
+            appendExpressionsUpTo(expressions, seen, fallbackExpressionsForIntent(Set.of(category)), 1);
+            if (expressions.size() >= 3) {
+                break;
+            }
+        }
+
+        appendHintExpressions(expressions, seen, hints, intentCategories);
+        appendExpressions(expressions, seen, filterExpressionsByIntent(buildGenericExpressions(prompt, userQuestion), intentCategories));
+        appendExpressions(expressions, seen, buildLocalExpressions(prompt, userQuestion, hints, intentCategories));
+        return limitExpressions(expressions);
+    }
+
+    private List<String> resolveHybridSupportPriority(String userQuestion, Set<String> intentCategories) {
+        String normalizedQuestion = normalizeKey(userQuestion);
+        List<String> priorities = new ArrayList<>();
+
+        if (containsAny(normalizedQuestion, "예시", "example", "for example", "한 줄")) {
+            priorities.add("example");
+        }
+        if (containsAny(normalizedQuestion, "구조", "순서", "가이드", "첫 문장", "structure", "order", "guide", "starter")) {
+            priorities.add("structure");
+        }
+        if (containsAny(normalizedQuestion, "반대", "찬반", "장단점", "균형", "balance", "however", "on the other hand")) {
+            priorities.add("balance");
+            priorities.add("comparison");
+        }
+        if (containsAny(normalizedQuestion, "비교", "comparison", "compare", "contrast")) {
+            priorities.add("comparison");
+        }
+        if (containsAny(normalizedQuestion, "연결", "이어", "자연스럽게 이어", "link", "transition")) {
+            priorities.add("detail");
+            priorities.add("structure");
+        }
+        if (containsAny(normalizedQuestion, "이유", "reason", "because")) {
+            priorities.add("reason");
+        }
+        if (containsAny(normalizedQuestion, "의견", "opinion", "i think", "입장")) {
+            priorities.add("opinion");
+        }
+        if (containsAny(normalizedQuestion, "더 구체", "구체적", "detail", "specifically")) {
+            priorities.add("detail");
+        }
+
+        for (String category : intentCategories) {
+            if (!priorities.contains(category)) {
+                priorities.add(category);
+            }
+        }
+
+        return priorities;
     }
 
     private boolean isGenericMeaningLookupOpenAiResponse(
@@ -469,6 +539,37 @@ public class CoachService {
         }
 
         return false;
+    }
+
+    private List<CoachExpressionDto> topUpStarterExpressions(
+            PromptDto prompt,
+            String userQuestion,
+            List<PromptHintDto> hints,
+            List<CoachExpressionDto> expressions
+    ) {
+        List<CoachExpressionDto> merged = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+
+        for (CoachExpressionDto expression : expressions) {
+            if (isStarterExpression(expression) && seen.add(normalizeKey(expression.expression()))) {
+                merged.add(expression);
+            }
+        }
+
+        if (merged.size() >= 3) {
+            return limitExpressions(merged);
+        }
+
+        for (CoachExpressionDto expression : buildLocalExpressions(prompt, userQuestion, hints, Set.of("starter"))) {
+            if (seen.add(normalizeKey(expression.expression()))) {
+                merged.add(expression);
+            }
+            if (merged.size() >= 5) {
+                break;
+            }
+        }
+
+        return limitExpressions(merged);
     }
 
     private boolean isGenericSupportExpression(CoachExpressionDto expression) {

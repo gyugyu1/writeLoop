@@ -4,6 +4,7 @@ build
 .gradle
 .gradle-user-home
 out
+apps/backend/bin/
 .expo
 .next
 .env

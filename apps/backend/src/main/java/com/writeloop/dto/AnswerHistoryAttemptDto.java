@@ -10,6 +10,7 @@ public record AnswerHistoryAttemptDto(
         Integer score,
         String feedbackSummary,
         AnswerHistoryFeedbackDto feedback,
+        java.util.List<AnswerHistoryUsedExpressionDto> usedExpressions,
         Instant createdAt
 ) {
 }

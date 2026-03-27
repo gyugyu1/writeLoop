@@ -51,6 +51,7 @@ function normalizeCoachHelpResponse(
     promptId?: string;
     userQuestion?: string;
     coachReply?: string;
+    interactionId?: string;
     expressions?: Array<{
       id?: string;
       expression?: string;
@@ -78,7 +79,8 @@ function normalizeCoachHelpResponse(
     promptId,
     userQuestion,
     coachReply: payload.coachReply ?? "이 질문에 맞는 표현을 골라 답변에 자연스럽게 넣어보세요.",
-    expressions
+    expressions,
+    interactionId: payload.interactionId
   };
 }
 
@@ -91,12 +93,16 @@ function normalizeCoachUsageResponse(
       matched?: boolean;
       matchType?: string;
       matchedText?: string | null;
+      source?: string;
+      usageTip?: string | null;
     }>;
     unusedExpressions?: Array<{
       expression?: string;
       matched?: boolean;
       matchType?: string;
       matchedText?: string | null;
+      source?: string;
+      usageTip?: string | null;
     }>;
     suggestedPromptIds?: string[];
   },
@@ -112,24 +118,42 @@ function normalizeCoachUsageResponse(
       matched?: boolean;
       matchType?: string;
       matchedText?: string | null;
+      source?: string;
+      usageTip?: string | null;
     }> = []
   ) =>
     items
       .filter((item): item is NonNullable<typeof item> => Boolean(item?.expression))
       .map((item, index) => {
         const source = expressionLookup.get(item.expression ?? "");
+        const expressionSource =
+          (item.source as "RECOMMENDED" | "SELF_DISCOVERED" | undefined) ??
+          "RECOMMENDED";
+        const overrides = {
+          meaningKo:
+            source?.meaningKo ??
+            (expressionSource === "SELF_DISCOVERED"
+              ? "답변 안에서 스스로 잘 살린 표현이에요."
+              : "질문에 맞는 표현이에요."),
+          usageTip:
+            item.usageTip ??
+            source?.usageTip ??
+            (expressionSource === "SELF_DISCOVERED"
+              ? "AI가 추천하지 않아도, 이런 표현은 다음 답변에서도 다시 써볼 수 있어요."
+              : "답변 안에서 자연스럽게 연결해 보세요."),
+          example: source?.example ?? item.matchedText ?? item.expression ?? "",
+          source: expressionSource
+        };
 
         return {
           id:
             source?.id ??
             createCoachExpressionId(request.promptId, item.expression ?? "", index),
           expression: item.expression ?? "",
-          meaningKo: source?.meaningKo ?? "이 질문에 맞는 표현이에요.",
-          usageTip: source?.usageTip ?? "답변 안에서 자연스럽게 연결해보세요.",
-          example: source?.example ?? item.expression ?? "",
           matched: Boolean(item.matched),
           matchType: (item.matchType ?? "UNUSED") as CoachUsageCheckResponse["usedExpressions"][number]["matchType"],
-          matchedText: item.matchedText ?? null
+          matchedText: item.matchedText ?? null,
+          ...overrides
         };
       });
 
@@ -211,7 +235,10 @@ export async function requestCoachHelp(request: CoachHelpRequest): Promise<Coach
     },
     body: JSON.stringify({
       promptId: request.promptId,
-      question: request.question
+      question: request.question,
+      sessionId: request.sessionId,
+      answer: request.answer,
+      attemptType: request.attemptType
     })
   });
 
@@ -223,6 +250,7 @@ export async function requestCoachHelp(request: CoachHelpRequest): Promise<Coach
     promptId?: string;
     userQuestion?: string;
     coachReply?: string;
+    interactionId?: string;
     expressions?: Array<{
       id?: string;
       expression?: string;
@@ -247,7 +275,10 @@ export async function checkCoachExpressionUsage(
     body: JSON.stringify({
       promptId: request.promptId,
       answer: request.answer,
-      expressions: request.expressions.map((expression) => expression.expression)
+      sessionId: request.sessionId,
+      attemptNo: request.attemptNo,
+      expressions: request.expressions.map((expression) => expression.expression),
+      interactionId: request.interactionId
     })
   });
 
@@ -539,7 +570,18 @@ export async function getAnswerHistory(): Promise<HistorySession[]> {
     throw await parseApiError(response, "Failed to load answer history");
   }
 
-  return response.json();
+  const sessions = (await response.json()) as HistorySession[];
+
+  return sessions.map((session) => ({
+    ...session,
+    attempts: (session.attempts ?? []).map((attempt) => ({
+      ...attempt,
+      usedExpressions: (attempt.usedExpressions ?? []).map((expression) => ({
+        ...expression,
+        source: expression.source ?? "RECOMMENDED"
+      }))
+    }))
+  }));
 }
 
 export async function getTodayWritingStatus(): Promise<TodayWritingStatus> {

@@ -509,6 +509,54 @@
   margin-top: 18px;
 }
 
+.expressionHistoryGrid {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.expressionHistoryCard {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.expressionHistoryCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.expressionHistoryCardTop strong {
+  color: #10244c;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.expressionHistoryCardTop span {
+  flex-shrink: 0;
+  color: var(--warm-accent-deep);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.expressionHistoryCard p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.expressionHistoryCard small {
+  color: var(--text-sub);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
 .mistakeCard {
   padding: 16px;
   border-radius: 18px;
@@ -841,6 +889,38 @@
   line-height: 1.6;
 }
 
+.historyUsedExpressionSection {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.historyUsedExpressionLabel {
+  color: var(--warm-accent-deep);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.historyUsedExpressionList {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.historyUsedExpressionChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: var(--warm-accent-deep);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
 .historyFeedbackDetails {
   margin-top: 12px;
 }
@@ -974,6 +1054,15 @@
 
   .historyHeader,
   .historyAttemptMeta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .expressionHistoryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .expressionHistoryCardTop {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -1220,6 +1309,7 @@
   .myPageShell .streakBanner,
   .myPageShell .historySection,
   .myPageShell .infoCard,
+  .myPageShell .expressionHistoryCard,
   .myPageShell .mistakeCard,
   .myPageShell .historyDateButton,
   .myPageShell .historySessionCard,
@@ -1305,10 +1395,17 @@
     width: 100%;
   }
 
+  .myPageShell .expressionHistoryGrid,
   .myPageShell .mistakeGrid,
   .myPageShell .historyDateList {
     gap: 12px;
     margin-top: 14px;
+  }
+
+  .myPageShell .expressionHistoryCard {
+    padding: 14px 16px;
+    border: 1px solid var(--my-page-section-border);
+    background: var(--my-page-section-paper);
   }
 
   .myPageShell .mistakeCard {

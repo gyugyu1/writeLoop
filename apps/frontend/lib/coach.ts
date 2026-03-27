@@ -28,6 +28,24 @@ const COACH_INTENT_KEYWORDS: Record<CoachIntent, string[]> = {
   structure: ["structure", "organize", "flow", "구조", "흐름", "정리", "이어"]
 };
 
+const LEARN_TARGET_TRANSLATIONS: Record<string, string> = {
+  "\uC720\uB3C4": "judo",
+  "\uD0DC\uAD8C\uB3C4": "taekwondo",
+  "\uAC80\uB3C4": "kendo",
+  "\uC218\uC601": "swimming",
+  "\uD53C\uC544\uB178": "piano",
+  "\uAE30\uD0C0": "guitar",
+  "\uCF54\uB529": "coding",
+  "\uD504\uB85C\uADF8\uB798\uBC0D": "programming",
+  "\uC601\uC5B4": "English",
+  "\uC77C\uBCF8\uC5B4": "Japanese",
+  "\uC911\uAD6D\uC5B4": "Chinese",
+  "\uC694\uB9AC": "cooking",
+  "\uCD95\uAD6C": "soccer",
+  "\uB18D\uAD6C": "basketball",
+  "\uD14C\uB2C8\uC2A4": "tennis"
+};
+
 const EXPRESSION_TOPIC_BUNDLES: ExpressionTopicBundle[] = [
   {
     key: "sleep",
@@ -208,7 +226,8 @@ function markUsage(answer: string, expression: CoachExpression): CoachUsageExpre
     ...expression,
     matched,
     matchType,
-    matchedText: matched ? expression.expression : null
+    matchedText: matched ? expression.expression : null,
+    source: "RECOMMENDED"
   };
 }
 
@@ -224,7 +243,57 @@ function includesKeyword(text: string, keywords: string[]) {
   return keywords.some((keyword) => text.includes(keyword));
 }
 
+function isMeaningLookupQuestion(normalizedQuestion: string) {
+  if (
+    includesKeyword(normalizedQuestion, [
+      "영어로",
+      "표현",
+      "말하고 싶어",
+      "말하고 싶",
+      "어떻게 말",
+      "뭐라고",
+      "라고 말",
+      "라고 하고",
+      "단어",
+      "how do i say",
+      "want to say",
+      "expression",
+      "phrase",
+      "word"
+    ])
+  ) {
+    return true;
+  }
+
+  return normalizedQuestion.split(/\s+/).length <= 2 && /[가-힣]/.test(normalizedQuestion);
+
+  if (
+    includesKeyword(normalizedQuestion, [
+      "영어로",
+      "표현",
+      "말하고 싶어",
+      "말하고 싶",
+      "어떻게 말",
+      "뭐라고",
+      "라고 말",
+      "라고 하고",
+      "단어",
+      "how do i say",
+      "want to say",
+      "expression",
+      "phrase",
+      "word"
+    ])
+  ) {
+    return true;
+  }
+
+  return normalizedQuestion.split(/\s+/).length <= 2 && /[가-힣]/.test(normalizedQuestion);
+}
+
 function looksLikeExpressionLookup(normalizedQuestion: string) {
+  return isMeaningLookupQuestion(normalizedQuestion);
+
   if (
     includesKeyword(normalizedQuestion, [
       "영어로",
@@ -245,7 +314,7 @@ function looksLikeExpressionLookup(normalizedQuestion: string) {
     return true;
   }
 
-  return normalizedQuestion.split(/\s+/).length <= 2;
+  return normalizedQuestion.split(/\s+/).length <= 2 && /[가-힣]/.test(normalizedQuestion);
 }
 
 function resolveExpressionTopic(question: string) {
@@ -259,9 +328,207 @@ function resolveExpressionTopic(question: string) {
   );
 }
 
+function extractMeaningLookupTarget(question: string) {
+  const normalized = normalizeText(question);
+  if (!normalized) {
+    return "";
+  }
+
+  const extracted = normalized
+    .replace(/영어로/g, " ")
+    .replace(/표현/g, " ")
+    .replace(/말하고 싶어/g, " ")
+    .replace(/말하고 싶/g, " ")
+    .replace(/어떻게 말/g, " ")
+    .replace(/뭐라고/g, " ")
+    .replace(/라고 말/g, " ")
+    .replace(/라고 하고/g, " ")
+    .replace(/단어/g, " ")
+    .replace(/how do i say/g, " ")
+    .replace(/want to say/g, " ")
+    .replace(/expression/g, " ")
+    .replace(/phrase/g, " ")
+    .replace(/word/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return extracted || normalized;
+}
+
+function isMeetFriendsMeaning(normalizedTarget: string) {
+  if (!normalizedTarget) {
+    return false;
+  }
+
+  const hasFriend = includesKeyword(normalizedTarget, ["친구", "friend", "friends", "buddy", "buddies"]);
+  const hasMeet = includesKeyword(normalizedTarget, [
+    "만나",
+    "만날",
+    "만남",
+    "어울",
+    "놀",
+    "보러",
+    "보다",
+    "meet",
+    "see",
+    "hang out",
+    "catch up",
+    "get together"
+  ]);
+
+  return hasFriend && hasMeet;
+}
+
+function buildMeaningLookupExpressions(question: string): TopicExpressionSeed[] {
+  const normalizedQuestion = normalizeText(question);
+  if (!normalizedQuestion || !looksLikeExpressionLookup(normalizedQuestion)) {
+    return [];
+  }
+
+  if (looksLikeMeetFriendsLookup(question)) {
+    return buildMeetFriendsExpressions();
+  }
+
+  const normalizedTarget = extractMeaningLookupTarget(question);
+  if (isMeetFriendsMeaning(normalizedQuestion) || isMeetFriendsMeaning(normalizedTarget)) {
+    return buildMeetFriendsExpressions();
+  }
+
+  const learnExpressions = buildLearnTargetExpressions(normalizedTarget);
+  if (learnExpressions.length > 0) {
+    return learnExpressions;
+  }
+
+  return [];
+}
+
+function buildMeetFriendsExpressions(): TopicExpressionSeed[] {
+  return [
+    {
+      expression: "meet my friends",
+      meaningKo: "친구들을 만난다고 가장 기본적으로 말할 때 쓰기 좋아요.",
+      usageTip: "일정이나 평소 루틴을 담백하게 말할 때 자연스럽습니다.",
+      example: "I usually meet my friends after work."
+    },
+    {
+      expression: "hang out with my friends",
+      meaningKo: "친구들과 어울리거나 같이 시간을 보낸다고 말할 때 잘 맞아요.",
+      usageTip: "조금 더 편하고 일상적인 분위기로 말하고 싶을 때 써 보세요.",
+      example: "I like to hang out with my friends on weekends."
+    },
+    {
+      expression: "catch up with my friends",
+      meaningKo: "오랜만에 친구들과 만나 근황을 나눈다는 느낌이 있을 때 좋아요.",
+      usageTip: "그냥 만나는 것보다 대화와 근황 공유를 강조할 때 자연스럽습니다.",
+      example: "I catch up with my friends over coffee."
+    },
+    {
+      expression: "get together with my friends",
+      meaningKo: "친구들과 한자리에 모인다고 말할 때 쓰기 좋아요.",
+      usageTip: "약속을 잡거나 같이 모이는 상황을 설명할 때 잘 어울립니다.",
+      example: "I get together with my friends once or twice a month."
+    },
+    {
+      expression: "spend time with my friends",
+      meaningKo: "친구들과 시간을 보낸다는 의미를 가장 넓게 담을 수 있어요.",
+      usageTip: "꼭 만나기뿐 아니라 같이 놀고 이야기하는 느낌까지 폭넓게 담습니다.",
+      example: "I spend time with my friends after class."
+    }
+  ];
+}
+
+function looksLikeMeetFriendsLookup(question: string) {
+  return /(친구|friend|friends).*(만나|만날|만난|어울|놀|meet|see|hang out|catch up|get together)/.test(
+    question
+  );
+}
+
 function detectCoachIntentsFromText(text: string) {
   const normalized = text.toLowerCase();
   return COACH_INTENT_ORDER.filter((intent) => includesKeyword(normalized, COACH_INTENT_KEYWORDS[intent]));
+}
+
+function buildLearnTargetExpressions(normalizedTarget: string): TopicExpressionSeed[] {
+  if (!looksLikeLearningMeaning(normalizedTarget)) {
+    return [];
+  }
+
+  const translatedTarget = resolveLearnTargetTranslation(normalizedTarget);
+  if (!translatedTarget) {
+    return [];
+  }
+
+  const capitalizedTarget = translatedTarget.charAt(0).toUpperCase() + translatedTarget.slice(1);
+
+  return [
+    {
+      expression: `I want to learn ${translatedTarget}.`,
+      meaningKo: "'~를 배우고 싶다'를 가장 직접적으로 말할 때 쓰기 좋아요.",
+      usageTip: "올해 새로 배우고 싶은 기술이나 취미를 말할 때 바로 쓰기 좋습니다.",
+      example: `I want to learn ${translatedTarget} this year.`
+    },
+    {
+      expression: `I want to start learning ${translatedTarget}.`,
+      meaningKo: "지금부터 배우기 시작하고 싶다는 느낌을 주기 좋아요.",
+      usageTip: "처음 시작하는 목표나 계획을 말할 때 자연스럽습니다.",
+      example: `I want to start learning ${translatedTarget} after work.`
+    },
+    {
+      expression: translatedTarget,
+      meaningKo: "핵심 단어 자체를 먼저 확인하고 싶을 때 보기 좋아요.",
+      usageTip: "앞에 want to learn, practice, get better at 같은 표현을 붙여 보세요.",
+      example: `${capitalizedTarget} is a skill I want to learn.`
+    },
+    {
+      expression: `practice ${translatedTarget}`,
+      meaningKo: "배운 것을 연습한다는 흐름으로 이어 말할 때 좋아요.",
+      usageTip: "어떻게 연습할지 함께 말하고 싶을 때 잘 맞습니다.",
+      example: `I plan to practice ${translatedTarget} every weekend.`
+    },
+    {
+      expression: `get better at ${translatedTarget}`,
+      meaningKo: "실력을 늘리고 싶다는 느낌까지 함께 담고 싶을 때 유용해요.",
+      usageTip: "단순히 배우는 것을 넘어 늘고 싶다는 목표를 말하기 좋습니다.",
+      example: `I want to get better at ${translatedTarget} this year.`
+    }
+  ];
+}
+
+function looksLikeLearningMeaning(normalizedTarget: string) {
+  return includesKeyword(normalizedTarget, [
+    "\uBC30\uC6B0\uACE0 \uC2F6",
+    "\uBC30\uC6B0\uACE0",
+    "\uBC30\uC6B0\uB2E4",
+    "want to learn",
+    "start learning",
+    "learn"
+  ]);
+}
+
+function resolveLearnTargetTranslation(normalizedTarget: string) {
+  const candidate = normalizedTarget
+    .replace(/\uBC30\uC6B0\uACE0 \uC2F6\uB2E4\uACE0/g, " ")
+    .replace(/\uBC30\uC6B0\uACE0 \uC2F6\uC5B4\uC11C/g, " ")
+    .replace(/\uBC30\uC6B0\uACE0 \uC2F6\uC5B4/g, " ")
+    .replace(/\uBC30\uC6B0\uACE0 \uC2F6/g, " ")
+    .replace(/\uBC30\uC6B0\uACE0/g, " ")
+    .replace(/\uBC30\uC6B0\uB2E4/g, " ")
+    .replace(/want to learn/g, " ")
+    .replace(/start learning/g, " ")
+    .replace(/learn/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/(\uC744|\uB97C|\uC740|\uB294|\uC774|\uAC00|\uACFC|\uC640)$/g, "")
+    .trim();
+
+  for (const [key, value] of Object.entries(LEARN_TARGET_TRANSLATIONS)) {
+    if (candidate.includes(key)) {
+      return value;
+    }
+  }
+
+  const englishMatch = candidate.match(/[A-Za-z][A-Za-z0-9' -]{1,}/);
+  return englishMatch?.[0]?.trim() ?? "";
 }
 
 function detectCoachIntents(question: string, prompt: Prompt) {
@@ -402,9 +669,15 @@ function buildIntentFirstExpressions(prompt: Prompt, question: string) {
 }
 
 function buildCoachExpressions(prompt: Prompt, question: string): CoachExpression[] {
-  const topicBundle = resolveExpressionTopic(question);
+  const meaningLookupExpressions = buildMeaningLookupExpressions(question);
+  const topicBundle = meaningLookupExpressions.length === 0 ? resolveExpressionTopic(question) : null;
 
-  const bucket = topicBundle ? [...topicBundle.expressions] : buildIntentFirstExpressions(prompt, question);
+  const bucket =
+    meaningLookupExpressions.length > 0
+      ? [...meaningLookupExpressions]
+      : topicBundle
+        ? [...topicBundle.expressions]
+        : buildIntentFirstExpressions(prompt, question);
 
   if (bucket.length === 0) {
     bucket.push(...DEFAULT_HELP_EXPRESSIONS.slice(0, 4));
@@ -434,7 +707,15 @@ function buildRelatedPromptIds(prompts: Prompt[], promptId: string, limit = 3) {
   return fallbackPool.slice(0, limit).map((prompt) => prompt.id);
 }
 
-function buildCoachReply(intentLabel: CoachIntent | "general", topicBundle: ExpressionTopicBundle | null) {
+function buildCoachReply(
+  intentLabel: CoachIntent | "general",
+  topicBundle: ExpressionTopicBundle | null,
+  question: string
+) {
+  if (looksLikeExpressionLookup(normalizeText(question))) {
+    return "표현하고 싶은 뜻에 바로 가까운 표현을 먼저 골랐어요. 예문을 같이 보면서 내 문장에 맞는 걸 골라보세요.";
+  }
+
   if (topicBundle) {
     return `${topicBundle.labelKo}을(를) 말할 때 바로 가져다 쓸 수 있는 표현을 중심으로 골랐어요. 비슷해 보여도 쓰임이 조금씩 다르니 예문까지 같이 보고 골라보세요.`;
   }
@@ -456,7 +737,8 @@ function buildCoachReply(intentLabel: CoachIntent | "general", topicBundle: Expr
 }
 
 export function buildLocalCoachHelp(prompt: Prompt, question: string): CoachHelpResponse {
-  const topicBundle = resolveExpressionTopic(question);
+  const meaningLookupExpressions = buildMeaningLookupExpressions(question);
+  const topicBundle = meaningLookupExpressions.length === 0 ? resolveExpressionTopic(question) : null;
   const expressions = buildCoachExpressions(prompt, question);
   const detectedIntents = detectCoachIntents(question, prompt);
   const intentLabel = detectedIntents[0] ?? "general";
@@ -464,7 +746,7 @@ export function buildLocalCoachHelp(prompt: Prompt, question: string): CoachHelp
   return {
     promptId: prompt.id,
     userQuestion: question,
-    coachReply: buildCoachReply(intentLabel, topicBundle),
+    coachReply: buildCoachReply(intentLabel, topicBundle, question),
     expressions
   };
 }

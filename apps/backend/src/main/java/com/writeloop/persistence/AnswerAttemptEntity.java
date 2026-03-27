@@ -59,6 +59,9 @@ public class AnswerAttemptEntity {
     @Column(name = "feedback_payload_json", columnDefinition = "JSON")
     private String feedbackPayloadJson;
 
+    @Column(name = "used_coach_expressions_json", columnDefinition = "JSON")
+    private String usedCoachExpressionsJson;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -91,5 +94,9 @@ public class AnswerAttemptEntity {
     @PrePersist
     void onCreate() {
         createdAt = Instant.now();
+    }
+
+    public void updateUsedCoachExpressions(String usedCoachExpressionsJson) {
+        this.usedCoachExpressionsJson = usedCoachExpressionsJson;
     }
 }

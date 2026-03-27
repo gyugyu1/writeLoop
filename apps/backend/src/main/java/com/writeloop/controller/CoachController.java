@@ -4,7 +4,9 @@ import com.writeloop.dto.CoachHelpRequestDto;
 import com.writeloop.dto.CoachHelpResponseDto;
 import com.writeloop.dto.CoachUsageCheckRequestDto;
 import com.writeloop.dto.CoachUsageCheckResponseDto;
+import com.writeloop.service.AuthService;
 import com.writeloop.service.CoachService;
+import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +25,11 @@ import java.util.Map;
 public class CoachController {
 
     private final CoachService coachService;
+    private final AuthService authService;
 
     @PostMapping("/help")
     @ResponseStatus(HttpStatus.OK)
-    public CoachHelpResponseDto help(@RequestBody CoachHelpRequestDto request) {
+    public CoachHelpResponseDto help(@RequestBody CoachHelpRequestDto request, HttpSession session) {
         if (request == null || request.promptId() == null || request.promptId().isBlank()) {
             throw new IllegalArgumentException("promptId is required");
         }
@@ -34,7 +37,7 @@ public class CoachController {
             throw new IllegalArgumentException("question is required");
         }
 
-        return coachService.help(request);
+        return coachService.help(request, authService.getCurrentUserIdOrNull(session), session.getId());
     }
 
     @PostMapping("/usage-check")

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.CoachExpressionDto;
 import com.writeloop.dto.CoachHelpResponseDto;
+import com.writeloop.dto.CoachSelfDiscoveredCandidateDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,7 @@ public class OpenAiCoachClient {
     private static final Pattern NON_WORD_PATTERN = Pattern.compile("[^\\p{L}\\p{N}\\s']");
 
     private final ObjectMapper objectMapper;
+    private final CoachQueryAnalyzer coachQueryAnalyzer;
     private final HttpClient httpClient;
     private final String apiKey;
     private final String model;
@@ -38,11 +40,13 @@ public class OpenAiCoachClient {
 
     public OpenAiCoachClient(
             ObjectMapper objectMapper,
+            CoachQueryAnalyzer coachQueryAnalyzer,
             @Value("${openai.api-key:}") String apiKey,
             @Value("${openai.model:gpt-4o}") String model,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl
     ) {
         this.objectMapper = objectMapper;
+        this.coachQueryAnalyzer = coachQueryAnalyzer;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(20))
                 .build();
@@ -55,27 +59,70 @@ public class OpenAiCoachClient {
         return apiKey != null && !apiKey.isBlank();
     }
 
+    public String configuredModel() {
+        return model;
+    }
+
     public CoachHelpResponseDto help(PromptDto prompt, String userQuestion, List<PromptHintDto> hints) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl))
-                    .timeout(Duration.ofSeconds(60))
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(prompt, userQuestion, hints)))
-                    .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() >= 400) {
-                throw new IllegalStateException("OpenAI coach API request failed with status " + response.statusCode());
-            }
-
-            return parseResponse(prompt.id(), userQuestion, response.body());
+            String responseBody = sendResponsesRequest(buildRequestBody(prompt, userQuestion, hints));
+            return parseResponse(prompt.id(), userQuestion, responseBody);
         } catch (IOException | InterruptedException exception) {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
             throw new IllegalStateException("OpenAI coach API request failed", exception);
+        }
+    }
+
+    public String translateMeaningSlot(
+            PromptDto prompt,
+            String userQuestion,
+            CoachQueryAnalyzer.ActionFamily family,
+            CoachQueryAnalyzer.MeaningSlot slot,
+            String sourceText
+    ) {
+        if (!isConfigured() || sourceText == null || sourceText.isBlank()) {
+            return "";
+        }
+
+        try {
+            String responseBody = sendResponsesRequest(
+                    buildSlotTranslationRequestBody(prompt, userQuestion, family, slot, sourceText)
+            );
+            return parseSlotTranslationResponse(responseBody);
+        } catch (IOException | InterruptedException exception) {
+            if (exception instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            return "";
+        } catch (RuntimeException exception) {
+            return "";
+        }
+    }
+
+    public List<CoachSelfDiscoveredCandidateDto> extractSelfDiscoveredExpressions(
+            PromptDto prompt,
+            String answer,
+            List<String> recommendedExpressions,
+            List<String> preservedSegments
+    ) {
+        if (!isConfigured() || answer == null || answer.isBlank()) {
+            return List.of();
+        }
+
+        try {
+            String responseBody = sendResponsesRequest(
+                    buildSelfDiscoveredExtractionRequestBody(prompt, answer, recommendedExpressions, preservedSegments)
+            );
+            return parseSelfDiscoveredExtractionResponse(responseBody);
+        } catch (IOException | InterruptedException exception) {
+            if (exception instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            return List.of();
+        } catch (RuntimeException exception) {
+            return List.of();
         }
     }
 
@@ -130,9 +177,12 @@ public class OpenAiCoachClient {
     }
 
     private String buildPrompt(PromptDto prompt, String userQuestion, List<PromptHintDto> hints) {
-        String intentCategories = String.join(", ", inferLearnerIntentCategories(prompt, userQuestion));
-        boolean expressionLookup = isExpressionLookupQuestion(userQuestion);
-        String targetMeaning = expressionLookup ? extractExpressionLookupTarget(userQuestion) : "";
+        CoachQueryAnalyzer.CoachQueryAnalysis analysis = coachQueryAnalyzer.analyze(prompt, userQuestion);
+        String intentCategories = String.join(", ", analysis.intents().stream().map(CoachQueryAnalyzer.IntentCategory::key).toList());
+        boolean expressionLookup = analysis.lookup().isPresent();
+        String targetMeaning = analysis.lookup()
+                .map(spec -> spec.frame().surfaceMeaning())
+                .orElse("");
         StringBuilder hintText = new StringBuilder();
         for (PromptHintDto hint : hints) {
             hintText.append("- [")
@@ -186,6 +236,157 @@ public class OpenAiCoachClient {
         );
     }
 
+    private String buildSlotTranslationRequestBody(
+            PromptDto prompt,
+            String userQuestion,
+            CoachQueryAnalyzer.ActionFamily family,
+            CoachQueryAnalyzer.MeaningSlot slot,
+            String sourceText
+    ) throws IOException {
+        Map<String, Object> schema = Map.of(
+                "type", "object",
+                "additionalProperties", false,
+                "properties", Map.of(
+                        "englishText", Map.of("type", "string")
+                ),
+                "required", List.of("englishText")
+        );
+
+        String promptText = """
+                You are helping a Korean learner express one specific meaning in English.
+                Translate only the requested slot into concise, natural English.
+
+                Rules:
+                - Return valid JSON only.
+                - The value must be short and reusable.
+                - Do not explain anything.
+                - Do not return a full sentence unless the slot itself is a sentence-like topic.
+                - Keep noun targets as noun phrases or canonical labels when possible.
+                - Keep topic slots as natural English chunks that can be inserted into a sentence.
+                - Keep qualifier slots as a short adjective or short descriptive phrase.
+
+                Prompt topic: %s
+                Prompt question: %s
+                Learner question: %s
+                Meaning family: %s
+                Slot type: %s
+                Source text: %s
+                """.formatted(
+                prompt.topic(),
+                prompt.questionEn(),
+                userQuestion == null ? "" : userQuestion,
+                family.name().toLowerCase(Locale.ROOT),
+                slot.name().toLowerCase(Locale.ROOT),
+                sourceText
+        );
+
+        Map<String, Object> payload = Map.of(
+                "model", model,
+                "input", promptText,
+                "text", Map.of(
+                        "format", Map.of(
+                                "type", "json_schema",
+                                "name", "meaning_slot_translation",
+                                "schema", schema,
+                                "strict", true
+                        )
+                )
+        );
+
+        return objectMapper.writeValueAsString(payload);
+    }
+
+    private String buildSelfDiscoveredExtractionRequestBody(
+            PromptDto prompt,
+            String answer,
+            List<String> recommendedExpressions,
+            List<String> preservedSegments
+    ) throws IOException {
+        Map<String, Object> schema = Map.of(
+                "type", "object",
+                "additionalProperties", false,
+                "properties", Map.of(
+                        "candidates", Map.of(
+                                "type", "array",
+                                "maxItems", 3,
+                                "items", Map.of(
+                                        "type", "object",
+                                        "additionalProperties", false,
+                                        "properties", Map.of(
+                                                "matchedSpan", Map.of("type", "string"),
+                                                "usageTip", Map.of("type", "string"),
+                                                "confidence", Map.of(
+                                                        "type", "string",
+                                                        "enum", List.of("HIGH", "MEDIUM", "LOW")
+                                                )
+                                        ),
+                                        "required", List.of("matchedSpan", "usageTip", "confidence")
+                                )
+                        )
+                ),
+                "required", List.of("candidates")
+        );
+
+        String promptText = """
+                You are reviewing an English learner's submitted answer.
+                Find short English expressions that the learner used well on their own.
+                Return valid JSON only.
+
+                Rules:
+                - Return at most 3 candidates.
+                - Each matchedSpan must be an exact span copied from the learner answer.
+                - Do not invent or paraphrase a new expression.
+                - Prefer reusable chunks, not a full long sentence.
+                - Exclude any span that is the same as a recommended expression or only a trivial variation of it.
+                - If no good self-discovered expression exists, return an empty array.
+                - usageTip must be written in Korean.
+                - confidence should reflect how clearly this is a reusable, well-used expression.
+
+                Prompt topic: %s
+                Prompt difficulty: %s
+                Prompt question (EN): %s
+                Prompt question (KO): %s
+                Prompt tip: %s
+
+                Recommended expressions:
+                %s
+
+                Feedback KEEP segments:
+                %s
+
+                Learner answer:
+                %s
+                """.formatted(
+                prompt.topic(),
+                prompt.difficulty(),
+                prompt.questionEn(),
+                prompt.questionKo(),
+                prompt.tip(),
+                recommendedExpressions == null || recommendedExpressions.isEmpty()
+                        ? "- none"
+                        : recommendedExpressions.stream().map(expression -> "- " + expression).reduce((a, b) -> a + "\n" + b).orElse("- none"),
+                preservedSegments == null || preservedSegments.isEmpty()
+                        ? "- none"
+                        : preservedSegments.stream().map(segment -> "- " + segment).reduce((a, b) -> a + "\n" + b).orElse("- none"),
+                answer
+        );
+
+        Map<String, Object> payload = Map.of(
+                "model", model,
+                "input", promptText,
+                "text", Map.of(
+                        "format", Map.of(
+                                "type", "json_schema",
+                                "name", "coach_self_discovered_expressions",
+                                "schema", schema,
+                                "strict", true
+                        )
+                )
+        );
+
+        return objectMapper.writeValueAsString(payload);
+    }
+
     private List<String> inferLearnerIntentCategories(PromptDto prompt, String userQuestion) {
         List<String> userCategories = inferCategories(userQuestion);
         if (!userCategories.isEmpty()) {
@@ -203,10 +404,29 @@ public class OpenAiCoachClient {
 
         if (containsAny(
                 normalized,
-                "\uC601\uC5B4\uB85C", "\uD45C\uD604", "\uB9D0\uD558\uACE0 \uC2F6", "\uC5B4\uB5BB\uAC8C \uB9D0",
+                "\uC601\uC5B4\uB85C", "\uB9D0\uD558\uACE0 \uC2F6", "\uC5B4\uB5BB\uAC8C \uB9D0",
                 "\uBB50\uB77C\uACE0", "\uB77C\uACE0 \uB9D0", "\uB77C\uACE0 \uD558\uACE0", "\uB2E8\uC5B4",
-                "how do i say", "want to say", "expression", "phrase", "word")) {
+                "how do i say", "want to say")) {
             return true;
+        }
+
+        if (containsAny(
+                normalized,
+                "\uB73B", "\uC758\uBBF8", "\uBB34\uC2A8 \uB73B", "\uB73B\uC774 \uBB50\uC57C", "\uB73B\uC774 \uBB54\uC9C0",
+                "meaning", "what does", "means", "mean")) {
+            return true;
+        }
+
+        if (containsAny(normalized, "\uD45C\uD604", "\uB2E8\uC5B4", "expression", "phrase", "word")
+                && inferCategories(userQuestion).isEmpty()) {
+            return true;
+        }
+
+        if (containsAny(
+                normalized,
+                "\uAD6C\uC870", "\uD750\uB984", "\uC21C\uC11C", "\uBB50\uBD80\uD130", "\uC2DC\uC791",
+                "structure", "flow", "order", "how should i start", "what to write first")) {
+            return false;
         }
 
         return normalized.split("\\s+").length <= 2;
@@ -233,9 +453,19 @@ public class OpenAiCoachClient {
                 .replace("expression", " ")
                 .replace("phrase", " ")
                 .replace("word", " ")
+                .replace("\uB73B\uC774 \uBB50\uC57C", " ")
+                .replace("\uB73B\uC774 \uBB54\uC9C0", " ")
+                .replace("\uBB34\uC2A8 \uB73B", " ")
+                .replace("\uB73B", " ")
+                .replace("\uC758\uBBF8", " ")
+                .replace("what is the meaning of", " ")
+                .replace("what does", " ")
+                .replace("meaning", " ")
+                .replace("means", " ")
                 .replaceAll("\\s+", " ")
                 .trim();
 
+        extracted = extracted.replaceAll("\\bmean\\b", " ").replaceAll("\\s+", " ").trim();
         return extracted.isBlank() ? normalized : extracted;
     }
 
@@ -284,6 +514,52 @@ public class OpenAiCoachClient {
             categories.add("balance");
         }
 
+        if (containsAny(normalized,
+                "\uC65C", "\uC774\uC720", "\uB54C\uBB38", "\uADF8\uB798\uC11C",
+                "why", "reason", "because")) {
+            categories.add("reason");
+        }
+        if (containsAny(normalized,
+                "\uC608\uC2DC", "\uC608\uB97C \uB4E4\uC5B4", "\uC0AC\uB840", "\uACBD\uD5D8",
+                "example", "for example", "for instance", "case", "sample")) {
+            categories.add("example");
+        }
+        if (containsAny(normalized,
+                "\uAC1C\uC778\uC801\uC73C\uB85C", "\uB0B4 \uC0DD\uAC01", "\uC81C \uC0DD\uAC01",
+                "personally", "from my perspective", "in my opinion", "i think", "opinion")) {
+            categories.add("opinion");
+        }
+        if (containsAny(normalized,
+                "\uBE44\uAD50", "\uCC28\uC774", "\uBC18\uBA74", "\uBC18\uB300\uB85C",
+                "compare", "difference", "similar", "on the other hand", "whereas")) {
+            categories.add("comparison");
+        }
+        if (containsAny(normalized,
+                "\uC2B5\uAD00", "\uB8E8\uD2F4", "\uC77C\uC0C1", "\uB9E4\uC77C", "\uC790\uC8FC",
+                "habit", "routine", "usually", "every day", "often")) {
+            categories.add("habit");
+        }
+        if (containsAny(normalized,
+                "\uACC4\uD68D", "\uBAA9\uD45C", "\uC55E\uC73C\uB85C", "\uC62C\uD574", "\uC7A5\uAE30\uC801",
+                "future", "plan", "goal", "long run", "in the long run", "this year")) {
+            categories.add("future");
+        }
+        if (containsAny(normalized,
+                "\uAD6C\uCCB4", "\uC790\uC138\uD788", "\uC124\uBA85", "\uD55C \uBC88 \uB354", "\uB354 \uAD6C\uCCB4",
+                "detail", "specific", "specifically", "more clearly", "explain")) {
+            categories.add("detail");
+        }
+        if (containsAny(normalized,
+                "\uAD6C\uC870", "\uD750\uB984", "\uC815\uB9AC", "\uBB50\uBD80\uD130", "\uC21C\uC11C",
+                "structure", "flow", "organize", "order", "what to write first")) {
+            categories.add("structure");
+        }
+        if (containsAny(normalized,
+                "\uC7A5\uB2E8\uC810", "\uCC2C\uBC18", "\uD55C\uD3B8", "\uB2E4\uB978 \uD55C\uD3B8",
+                "pros and cons", "advantage", "disadvantage", "on the one hand", "overall")) {
+            categories.add("balance");
+        }
+
         return categories;
     }
 
@@ -308,7 +584,23 @@ public class OpenAiCoachClient {
         return normalized;
     }
 
-    private CoachHelpResponseDto parseResponse(String promptId, String userQuestion, String body) throws IOException {
+    private String sendResponsesRequest(String requestBody) throws IOException, InterruptedException {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(apiUrl))
+                .timeout(Duration.ofSeconds(60))
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
+                .build();
+
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 400) {
+            throw new IllegalStateException("OpenAI coach API request failed with status " + response.statusCode());
+        }
+        return response.body();
+    }
+
+    private String extractStructuredOutputText(String body) throws IOException {
         JsonNode root = objectMapper.readTree(body);
         String outputText = root.path("output_text").asText("");
 
@@ -326,7 +618,37 @@ public class OpenAiCoachClient {
             throw new IllegalStateException("OpenAI coach response did not include structured text");
         }
 
-        JsonNode coachNode = objectMapper.readTree(outputText);
+        return outputText;
+    }
+
+    private String parseSlotTranslationResponse(String body) throws IOException {
+        JsonNode node = objectMapper.readTree(extractStructuredOutputText(body));
+        return normalizeSlotTranslation(node.path("englishText").asText(""));
+    }
+
+    private List<CoachSelfDiscoveredCandidateDto> parseSelfDiscoveredExtractionResponse(String body) throws IOException {
+        JsonNode node = objectMapper.readTree(extractStructuredOutputText(body));
+        List<CoachSelfDiscoveredCandidateDto> candidates = new ArrayList<>();
+        node.path("candidates").forEach(candidate -> candidates.add(
+                new CoachSelfDiscoveredCandidateDto(
+                        normalizeSlotTranslation(candidate.path("matchedSpan").asText("")),
+                        candidate.path("usageTip").asText(""),
+                        candidate.path("confidence").asText("LOW")
+                )
+        ));
+        return candidates;
+    }
+
+    private String normalizeSlotTranslation(String value) {
+        String normalized = value == null ? "" : value.trim();
+        normalized = normalized.replaceAll("^[\"']+|[\"']+$", "");
+        normalized = normalized.replaceAll("\\s+", " ").trim();
+        normalized = normalized.replaceAll("[.?!]+$", "");
+        return normalized;
+    }
+
+    private CoachHelpResponseDto parseResponse(String promptId, String userQuestion, String body) throws IOException {
+        JsonNode coachNode = objectMapper.readTree(extractStructuredOutputText(body));
         List<CoachExpressionDto> expressions = new ArrayList<>();
         coachNode.path("expressions").forEach(node -> expressions.add(
                 new CoachExpressionDto(

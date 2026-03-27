@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.AnswerHistoryAttemptDto;
 import com.writeloop.dto.AnswerHistoryFeedbackDto;
 import com.writeloop.dto.AnswerHistorySessionDto;
+import com.writeloop.dto.AnswerHistoryUsedExpressionDto;
 import com.writeloop.dto.CommonMistakeDto;
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackResponseDto;
@@ -47,6 +48,9 @@ public class AnswerHistoryService {
     };
     private static final TypeReference<List<CorrectionDto>> CORRECTION_LIST_TYPE = new TypeReference<>() {
     };
+    private static final TypeReference<List<AnswerHistoryUsedExpressionDto>> USED_EXPRESSION_LIST_TYPE =
+            new TypeReference<>() {
+            };
 
     private final AnswerSessionRepository answerSessionRepository;
     private final AnswerAttemptRepository answerAttemptRepository;
@@ -384,8 +388,21 @@ public class AnswerHistoryService {
                 attempt.getScore(),
                 attempt.getFeedbackSummary(),
                 toHistoryFeedback(attempt),
+                extractUsedExpressions(attempt),
                 attempt.getCreatedAt()
         );
+    }
+
+    private List<AnswerHistoryUsedExpressionDto> extractUsedExpressions(AnswerAttemptEntity attempt) {
+        if (attempt.getUsedCoachExpressionsJson() == null || attempt.getUsedCoachExpressionsJson().isBlank()) {
+            return List.of();
+        }
+
+        try {
+            return objectMapper.readValue(attempt.getUsedCoachExpressionsJson(), USED_EXPRESSION_LIST_TYPE);
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to deserialize stored coach expressions", exception);
+        }
     }
 
     private AnswerHistoryFeedbackDto toHistoryFeedback(AnswerAttemptEntity attempt) {

@@ -35,6 +35,15 @@ type HistoryComparisonView = {
   afterWordCount: number;
 };
 
+type UsedExpressionHistoryItem = {
+  expression: string;
+  count: number;
+  lastUsedAt: string;
+  latestTopic: string;
+  latestQuestionKo: string;
+  matchedText: string | null;
+};
+
 function formatHistoryDateKey(dateTime: string) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
@@ -68,6 +77,14 @@ function formatHistoryTime(dateTime: string) {
     timeZone: "Asia/Seoul",
     hour: "2-digit",
     minute: "2-digit"
+  }).format(new Date(dateTime));
+}
+
+function formatExpressionHistoryDate(dateTime: string) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul",
+    month: "long",
+    day: "numeric"
   }).format(new Date(dateTime));
 }
 
@@ -356,6 +373,46 @@ export function MyPageClient() {
 
     setProfileDisplayName(currentUser.displayName);
   }, [currentUser]);
+
+  const usedExpressionHistory = useMemo(() => {
+    const items = new Map<string, UsedExpressionHistoryItem>();
+
+    for (const session of history) {
+      for (const attempt of session.attempts) {
+        for (const expression of attempt.usedExpressions ?? []) {
+          const key = expression.expression.trim().toLowerCase();
+          if (!key) {
+            continue;
+          }
+
+          const existing = items.get(key);
+          if (!existing) {
+            items.set(key, {
+              expression: expression.expression,
+              count: 1,
+              lastUsedAt: attempt.createdAt,
+              latestTopic: session.topic,
+              latestQuestionKo: session.questionKo,
+              matchedText: expression.matchedText ?? null
+            });
+            continue;
+          }
+
+          existing.count += 1;
+          if (attempt.createdAt > existing.lastUsedAt) {
+            existing.lastUsedAt = attempt.createdAt;
+            existing.latestTopic = session.topic;
+            existing.latestQuestionKo = session.questionKo;
+            existing.matchedText = expression.matchedText ?? null;
+          }
+        }
+      }
+    }
+
+    return Array.from(items.values()).sort(
+      (left, right) => right.count - left.count || right.lastUsedAt.localeCompare(left.lastUsedAt)
+    );
+  }, [history]);
 
   const historyByDate = useMemo(() => {
     return history.reduce<Record<string, HistorySession[]>>((accumulator, session) => {
@@ -803,6 +860,37 @@ export function MyPageClient() {
         <div className={styles.historySection}>
           <div className={styles.historyHeader}>
             <div>
+              <span className={styles.historyEyebrow}>표현 히스토리</span>
+              <h3>내가 실제로 써본 표현</h3>
+            </div>
+            <strong>{usedExpressionHistory.length}개 표현</strong>
+          </div>
+
+          {usedExpressionHistory.length === 0 ? (
+            <div className={styles.historyEmpty}>
+              <p>AI 코치가 추천한 표현을 실제 답변에 쓰면, 여기서 내가 써본 표현이 차곡차곡 쌓여요.</p>
+            </div>
+          ) : (
+            <div className={styles.expressionHistoryGrid}>
+              {usedExpressionHistory.map((expression) => (
+                <article key={expression.expression} className={styles.expressionHistoryCard}>
+                  <div className={styles.expressionHistoryCardTop}>
+                    <strong>{expression.expression}</strong>
+                    <span>{expression.count}회 사용</span>
+                  </div>
+                  <p>{expression.matchedText ?? expression.latestQuestionKo}</p>
+                  <small>
+                    {formatExpressionHistoryDate(expression.lastUsedAt)} · {expression.latestTopic}
+                  </small>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className={styles.historySection}>
+          <div className={styles.historyHeader}>
+            <div>
               <span className={styles.historyEyebrow}>학습 분석</span>
               <h3>자주 나오는 피드백</h3>
             </div>
@@ -1004,6 +1092,23 @@ export function MyPageClient() {
                                 </div>
                                 <p className={styles.historyAnswer}>{attempt.answerText}</p>
                                 <p className={styles.historySummary}>{attempt.feedbackSummary}</p>
+                                {attempt.usedExpressions.length > 0 ? (
+                                  <div className={styles.historyUsedExpressionSection}>
+                                    <span className={styles.historyUsedExpressionLabel}>
+                                      이번에 실제로 써본 표현
+                                    </span>
+                                    <div className={styles.historyUsedExpressionList}>
+                                      {attempt.usedExpressions.map((expression) => (
+                                        <span
+                                          key={`${attempt.id}-${expression.expression}`}
+                                          className={styles.historyUsedExpressionChip}
+                                        >
+                                          {expression.expression}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                ) : null}
                                 <details className={styles.historyFeedbackDetails}>
                                   <summary>피드백 전문 보기</summary>
                                   <div className={styles.historyFeedbackBody}>

@@ -49,6 +49,9 @@ app:
     from: ${APP_MAIL_FROM:no-reply@writeloop.local}
   drafts:
     ttl-days: ${APP_DRAFT_TTL_DAYS:7}
+  coach-evaluation:
+    scheduled-enabled: ${APP_COACH_EVALUATION_SCHEDULED_ENABLED:false}
+    fixed-delay-ms: ${APP_COACH_EVALUATION_FIXED_DELAY_MS:900000}
   oauth:
     google:
       client-id: ${GOOGLE_CLIENT_ID:}

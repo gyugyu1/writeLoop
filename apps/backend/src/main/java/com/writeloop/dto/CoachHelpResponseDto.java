@@ -6,6 +6,15 @@ public record CoachHelpResponseDto(
         String promptId,
         String userQuestion,
         String coachReply,
-        List<CoachExpressionDto> expressions
+        List<CoachExpressionDto> expressions,
+        String interactionId
 ) {
+    public CoachHelpResponseDto(
+            String promptId,
+            String userQuestion,
+            String coachReply,
+            List<CoachExpressionDto> expressions
+    ) {
+        this(promptId, userQuestion, coachReply, expressions, null);
+    }
 }

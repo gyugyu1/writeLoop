@@ -33,6 +33,7 @@ export interface CoachHelpRequest {
   question: string;
   sessionId?: string;
   answer?: string;
+  attemptType?: "INITIAL" | "REWRITE";
 }
 
 export interface CoachHelpResponse {
@@ -40,22 +41,32 @@ export interface CoachHelpResponse {
   userQuestion: string;
   coachReply: string;
   expressions: CoachExpression[];
+  interactionId?: string;
 }
 
-export type CoachExpressionMatchType = "EXACT" | "NORMALIZED" | "PARAPHRASED" | "UNUSED";
+export type CoachExpressionMatchType =
+  | "EXACT"
+  | "NORMALIZED"
+  | "PARAPHRASED"
+  | "SELF_DISCOVERED"
+  | "UNUSED";
+export type CoachUsageExpressionSource = "RECOMMENDED" | "SELF_DISCOVERED";
 
 export interface CoachUsageExpression extends CoachExpression {
   matched: boolean;
   matchType: CoachExpressionMatchType;
   matchedText?: string | null;
+  source: CoachUsageExpressionSource;
 }
 
 export interface CoachUsageCheckRequest {
   promptId: string;
   answer: string;
   sessionId?: string;
+  attemptNo?: number;
   attemptType?: "INITIAL" | "REWRITE";
   expressions: CoachExpression[];
+  interactionId?: string;
 }
 
 export interface CoachUsageCheckResponse {
@@ -298,7 +309,15 @@ export interface HistoryAttempt {
   score: number;
   feedbackSummary: string;
   feedback: StoredFeedback;
+  usedExpressions: HistoryUsedExpression[];
   createdAt: string;
+}
+
+export interface HistoryUsedExpression {
+  expression: string;
+  matchType: CoachExpressionMatchType;
+  matchedText?: string | null;
+  source?: CoachUsageExpressionSource | null;
 }
 
 export interface HistorySession {

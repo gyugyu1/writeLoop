@@ -20,6 +20,7 @@ import com.writeloop.persistence.EmailVerificationTokenRepository;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionEntity;
 import com.writeloop.persistence.AnswerSessionRepository;
+import com.writeloop.persistence.CoachInteractionRepository;
 import com.writeloop.persistence.PasswordResetTokenEntity;
 import com.writeloop.persistence.PasswordResetTokenRepository;
 import com.writeloop.persistence.UserEntity;
@@ -64,6 +65,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final AnswerSessionRepository answerSessionRepository;
     private final AnswerAttemptRepository answerAttemptRepository;
+    private final CoachInteractionRepository coachInteractionRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final PasswordEncoder passwordEncoder;
@@ -426,6 +428,7 @@ public class AuthService {
             answerSessionRepository.deleteAll(sessions);
         }
 
+        coachInteractionRepository.deleteAllByUserId(userId);
         emailVerificationTokenRepository.deleteAllByUserId(userId);
         passwordResetTokenRepository.deleteAllByUserId(userId);
         rememberLoginService.revokeAllForUser(userId);

@@ -2029,7 +2029,7 @@
 }
 
 .writingComposerHelpButton {
-  display: none;
+  display: inline-flex;
   border: 1px solid rgba(47, 124, 246, 0.16);
   background: rgba(47, 124, 246, 0.1);
   color: #2750bc;
@@ -2469,6 +2469,35 @@
   font-weight: 700;
 }
 
+.coachUsageCardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.coachUsageOriginRecommended,
+.coachUsageOriginSelf {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.coachUsageOriginRecommended {
+  background: rgba(16, 36, 76, 0.08);
+  color: #10244c;
+}
+
+.coachUsageOriginSelf {
+  background: rgba(var(--warm-accent-rgb), 0.16);
+  color: var(--warm-accent-deep);
+}
+
 .coachUsageCardUsed p,
 .coachUsageCardUnused p {
   margin: 0;
@@ -2594,6 +2623,34 @@
 .writingGuidePanel {
   display: grid;
   gap: 10px;
+}
+
+.writingGuideHintSection {
+  display: grid;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.writingGuideHintTitle {
+  color: #10244c;
+  font-size: 0.96rem;
+  line-height: 1.4;
+}
+
+.writingGuideHintList {
+  display: grid;
+  gap: 8px;
+}
+
+.writingGuideHintItem,
+.writingGuideHintEmpty {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.93rem;
+  line-height: 1.6;
 }
 
 .writingGuideTipLine {
@@ -2824,6 +2881,7 @@
 
 .composerDesktopActions {
   display: flex;
+  margin-top: 20px;
 }
 
 .mobileSectionHeader {
@@ -3460,10 +3518,6 @@
   .writingComposerTranslation {
     margin-top: 10px;
     font-size: 0.92rem;
-  }
-
-  .writingComposerHelpButton {
-    display: inline-flex;
   }
 
   .writingComposerAnswer {

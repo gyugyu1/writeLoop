@@ -1,11 +1,9 @@
 package com.writeloop.dto;
 
-public record CoachExpressionUsageDto(
+public record AnswerHistoryUsedExpressionDto(
         String expression,
-        boolean matched,
         String matchType,
         String matchedText,
-        String source,
-        String usageTip
+        String source
 ) {
 }

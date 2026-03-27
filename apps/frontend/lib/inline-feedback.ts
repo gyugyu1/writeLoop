@@ -91,6 +91,12 @@ function flushChangeSegments(
   removed: string,
   added: string
 ) {
+  if (removed && !removed.trim() && added.trim()) {
+    appendEqualSegment(segments, removed);
+    segments.push({ kind: "add", text: added });
+    return;
+  }
+
   if (removed && added) {
     segments.push({ kind: "replace", removed, added });
     return;
@@ -112,6 +118,13 @@ function splitReplaceIntoFineGrainedSegments(
 ): RenderedInlineFeedbackSegment[] | null {
   if (!removed || !added || removed === added) {
     return null;
+  }
+
+  if (!removed.trim() && added.trim()) {
+    return [
+      { kind: "equal", text: removed },
+      { kind: "add", text: added }
+    ];
   }
 
   const expandedKeepAndAdd = expandReplaceIntoKeepAndAdd(removed, added);
@@ -369,6 +382,12 @@ function buildSegmentsFromModel(
         }
         const removed = originalAnswer.slice(match.start, match.end);
         const added = normalizeSuggestionText(segment.revisedText);
+        if (!removed.trim() && added.trim()) {
+          appendEqualSegment(segments, removed);
+          segments.push({ kind: "add", text: added });
+          cursor = match.end;
+          break;
+        }
         const expandedSegments = splitReplaceIntoFineGrainedSegments(removed, added);
         if (expandedSegments) {
           segments.push(...expandedSegments);

@@ -17,12 +17,22 @@ import type {
   AdminPromptHintRequest,
   AdminPromptRequest,
   AuthUser,
+  PromptCoachProfile,
   PromptDifficulty
 } from "../lib/types";
 import authStyles from "./auth-page.module.css";
 import styles from "./admin-page.module.css";
 
 const difficultyOptions: PromptDifficulty[] = ["A", "B", "C"];
+
+const emptyCoachProfile: PromptCoachProfile = {
+  primaryCategory: "GENERAL",
+  secondaryCategories: [],
+  preferredExpressionFamilies: [],
+  avoidFamilies: [],
+  starterStyle: "DIRECT",
+  notes: ""
+};
 
 const emptyPromptForm: AdminPromptRequest = {
   topic: "",
@@ -31,7 +41,8 @@ const emptyPromptForm: AdminPromptRequest = {
   questionKo: "",
   tip: "",
   displayOrder: 0,
-  active: true
+  active: true,
+  coachProfile: { ...emptyCoachProfile }
 };
 
 const emptyHintForm: AdminPromptHintRequest = {
@@ -49,7 +60,11 @@ function toPromptForm(prompt: AdminPrompt): AdminPromptRequest {
     questionKo: prompt.questionKo,
     tip: prompt.tip,
     displayOrder: prompt.displayOrder,
-    active: prompt.active
+    active: prompt.active,
+    coachProfile: {
+      ...emptyCoachProfile,
+      ...(prompt.coachProfile ?? {})
+    }
   };
 }
 
@@ -60,6 +75,17 @@ function toHintForm(hint: AdminPromptHint): AdminPromptHintRequest {
     displayOrder: hint.displayOrder,
     active: hint.active
   };
+}
+
+function parseListInput(value: string) {
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function formatListInput(values: string[] | undefined) {
+  return (values ?? []).join(", ");
 }
 
 export function AdminPageClient() {
@@ -157,6 +183,16 @@ export function AdminPageClient() {
     }));
   }
 
+  function updatePromptCoachProfile(
+    promptId: string,
+    updater: (current: PromptCoachProfile) => PromptCoachProfile
+  ) {
+    updatePromptForm(promptId, (current) => ({
+      ...current,
+      coachProfile: updater(current.coachProfile ?? emptyCoachProfile)
+    }));
+  }
+
   function updateHintForm(hintId: string, updater: (current: AdminPromptHintRequest) => AdminPromptHintRequest) {
     setHintForms((current) => ({
       ...current,
@@ -187,7 +223,7 @@ export function AdminPageClient() {
       setError("");
       setNotice("");
       await createAdminPrompt(newPromptForm);
-      setNewPromptForm({ ...emptyPromptForm });
+      setNewPromptForm({ ...emptyPromptForm, coachProfile: { ...emptyCoachProfile } });
       await refreshPrompts("질문을 추가했어요.");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "질문을 추가하지 못했어요.");
@@ -404,6 +440,111 @@ export function AdminPageClient() {
               }
             />
           </label>
+          <div className={`${styles.fullWidth} ${styles.profilePanel}`}>
+            <div className={styles.profileHeader}>
+              <strong>코치 프로필</strong>
+              <span>질문 분류와 추천 표현 방향을 저장합니다.</span>
+            </div>
+            <div className={styles.profileGrid}>
+              <label className={styles.field}>
+                <span>Primary Category</span>
+                <input
+                  className={styles.input}
+                  value={newPromptForm.coachProfile?.primaryCategory ?? emptyCoachProfile.primaryCategory}
+                  onChange={(event) =>
+                    setNewPromptForm((current) => ({
+                      ...current,
+                      coachProfile: {
+                        ...(current.coachProfile ?? emptyCoachProfile),
+                        primaryCategory: event.target.value
+                      }
+                    }))
+                  }
+                />
+              </label>
+              <label className={styles.field}>
+                <span>Starter Style</span>
+                <input
+                  className={styles.input}
+                  value={newPromptForm.coachProfile?.starterStyle ?? emptyCoachProfile.starterStyle}
+                  onChange={(event) =>
+                    setNewPromptForm((current) => ({
+                      ...current,
+                      coachProfile: {
+                        ...(current.coachProfile ?? emptyCoachProfile),
+                        starterStyle: event.target.value
+                      }
+                    }))
+                  }
+                />
+              </label>
+              <label className={`${styles.field} ${styles.fullWidth}`}>
+                <span>Secondary Categories</span>
+                <input
+                  className={styles.input}
+                  value={formatListInput(newPromptForm.coachProfile?.secondaryCategories)}
+                  onChange={(event) =>
+                    setNewPromptForm((current) => ({
+                      ...current,
+                      coachProfile: {
+                        ...(current.coachProfile ?? emptyCoachProfile),
+                        secondaryCategories: parseListInput(event.target.value)
+                      }
+                    }))
+                  }
+                />
+              </label>
+              <label className={`${styles.field} ${styles.fullWidth}`}>
+                <span>Preferred Expression Families</span>
+                <input
+                  className={styles.input}
+                  value={formatListInput(newPromptForm.coachProfile?.preferredExpressionFamilies)}
+                  onChange={(event) =>
+                    setNewPromptForm((current) => ({
+                      ...current,
+                      coachProfile: {
+                        ...(current.coachProfile ?? emptyCoachProfile),
+                        preferredExpressionFamilies: parseListInput(event.target.value)
+                      }
+                    }))
+                  }
+                />
+              </label>
+              <label className={`${styles.field} ${styles.fullWidth}`}>
+                <span>Avoid Families</span>
+                <input
+                  className={styles.input}
+                  value={formatListInput(newPromptForm.coachProfile?.avoidFamilies)}
+                  onChange={(event) =>
+                    setNewPromptForm((current) => ({
+                      ...current,
+                      coachProfile: {
+                        ...(current.coachProfile ?? emptyCoachProfile),
+                        avoidFamilies: parseListInput(event.target.value)
+                      }
+                    }))
+                  }
+                />
+              </label>
+              <label className={`${styles.field} ${styles.fullWidth}`}>
+                <span>Notes</span>
+                <textarea
+                  className={styles.textarea}
+                  rows={2}
+                  value={newPromptForm.coachProfile?.notes ?? ""}
+                  onChange={(event) =>
+                    setNewPromptForm((current) => ({
+                      ...current,
+                      coachProfile: {
+                        ...(current.coachProfile ?? emptyCoachProfile),
+                        notes: event.target.value
+                      }
+                    }))
+                  }
+                />
+              </label>
+            </div>
+          </div>
         </div>
         <div className={styles.actions}>
           <button type="button" className={authStyles.primaryButton} onClick={() => void handleCreatePrompt()}>
@@ -551,6 +692,93 @@ export function AdminPageClient() {
                           }
                         />
                       </label>
+                      <div className={`${styles.fullWidth} ${styles.profilePanel}`}>
+                        <div className={styles.profileHeader}>
+                          <strong>코치 프로필</strong>
+                          <span>질문 분류와 추천 표현 방향을 저장합니다.</span>
+                        </div>
+                        <div className={styles.profileGrid}>
+                          <label className={styles.field}>
+                            <span>Primary Category</span>
+                            <input
+                              className={styles.input}
+                              value={form.coachProfile?.primaryCategory ?? emptyCoachProfile.primaryCategory}
+                              onChange={(event) =>
+                                updatePromptCoachProfile(prompt.id, (current) => ({
+                                  ...current,
+                                  primaryCategory: event.target.value
+                                }))
+                              }
+                            />
+                          </label>
+                          <label className={styles.field}>
+                            <span>Starter Style</span>
+                            <input
+                              className={styles.input}
+                              value={form.coachProfile?.starterStyle ?? emptyCoachProfile.starterStyle}
+                              onChange={(event) =>
+                                updatePromptCoachProfile(prompt.id, (current) => ({
+                                  ...current,
+                                  starterStyle: event.target.value
+                                }))
+                              }
+                            />
+                          </label>
+                          <label className={`${styles.field} ${styles.fullWidth}`}>
+                            <span>Secondary Categories</span>
+                            <input
+                              className={styles.input}
+                              value={formatListInput(form.coachProfile?.secondaryCategories)}
+                              onChange={(event) =>
+                                updatePromptCoachProfile(prompt.id, (current) => ({
+                                  ...current,
+                                  secondaryCategories: parseListInput(event.target.value)
+                                }))
+                              }
+                            />
+                          </label>
+                          <label className={`${styles.field} ${styles.fullWidth}`}>
+                            <span>Preferred Expression Families</span>
+                            <input
+                              className={styles.input}
+                              value={formatListInput(form.coachProfile?.preferredExpressionFamilies)}
+                              onChange={(event) =>
+                                updatePromptCoachProfile(prompt.id, (current) => ({
+                                  ...current,
+                                  preferredExpressionFamilies: parseListInput(event.target.value)
+                                }))
+                              }
+                            />
+                          </label>
+                          <label className={`${styles.field} ${styles.fullWidth}`}>
+                            <span>Avoid Families</span>
+                            <input
+                              className={styles.input}
+                              value={formatListInput(form.coachProfile?.avoidFamilies)}
+                              onChange={(event) =>
+                                updatePromptCoachProfile(prompt.id, (current) => ({
+                                  ...current,
+                                  avoidFamilies: parseListInput(event.target.value)
+                                }))
+                              }
+                            />
+                          </label>
+                          <label className={`${styles.field} ${styles.fullWidth}`}>
+                            <span>Notes</span>
+                            <textarea
+                              className={styles.textarea}
+                              rows={2}
+                              value={form.coachProfile?.notes ?? ""}
+                              onChange={(event) =>
+                                updatePromptCoachProfile(prompt.id, (current) => ({
+                                  ...current,
+                                  notes: event.target.value
+                                }))
+                              }
+                            />
+                          </label>
+                        </div>
+                      </div>
                     </div>
 
                     <div className={styles.actions}>

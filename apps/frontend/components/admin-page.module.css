@@ -220,6 +220,35 @@
   border-top: 1px solid rgba(16, 36, 76, 0.08);
 }
 
+.profilePanel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(16, 36, 76, 0.03);
+  border: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.profileHeader {
+  display: grid;
+  gap: 4px;
+}
+
+.profileHeader strong {
+  color: #10244c;
+}
+
+.profileHeader span {
+  color: #5d6c86;
+  font-size: 0.92rem;
+}
+
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
 .hintHeader {
   display: flex;
   align-items: center;
@@ -268,7 +297,8 @@
 @media (max-width: 900px) {
   .summaryCards,
   .formGrid,
-  .hintFormGrid {
+  .hintFormGrid,
+  .profileGrid {
     grid-template-columns: 1fr;
   }
 

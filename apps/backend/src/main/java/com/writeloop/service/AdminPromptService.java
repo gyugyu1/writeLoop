@@ -23,6 +23,7 @@ public class AdminPromptService {
 
     private final PromptRepository promptRepository;
     private final PromptHintRepository promptHintRepository;
+    private final PromptCoachProfileSupport promptCoachProfileSupport;
 
     public List<AdminPromptDto> findAll() {
         List<PromptEntity> prompts = promptRepository.findAllByOrderByDisplayOrderAsc();
@@ -34,7 +35,7 @@ public class AdminPromptService {
 
     public AdminPromptDto createPrompt(AdminPromptRequestDto request) {
         String difficulty = normalizeDifficulty(request.difficulty());
-        PromptEntity prompt = promptRepository.save(new PromptEntity(
+        PromptEntity prompt = new PromptEntity(
                 generatePromptId(difficulty),
                 normalizeRequiredText(request.topic(), "주제를 입력해 주세요."),
                 difficulty,
@@ -43,7 +44,9 @@ public class AdminPromptService {
                 normalizeRequiredText(request.tip(), "팁을 입력해 주세요."),
                 normalizeDisplayOrder(request.displayOrder()),
                 request.active() == null || request.active()
-        ));
+        );
+        promptCoachProfileSupport.upsertProfile(prompt, request.coachProfile());
+        prompt = promptRepository.save(prompt);
 
         return toDto(prompt, List.of());
     }
@@ -60,6 +63,7 @@ public class AdminPromptService {
                 normalizeDisplayOrder(request.displayOrder()),
                 request.active() == null || request.active()
         );
+        promptCoachProfileSupport.upsertProfile(prompt, request.coachProfile());
 
         PromptEntity saved = promptRepository.save(prompt);
         return toDto(saved, promptHintRepository.findAllByPromptIdOrderByDisplayOrderAsc(promptId));
@@ -126,7 +130,7 @@ public class AdminPromptService {
     }
 
     private PromptEntity findPrompt(String promptId) {
-        return promptRepository.findById(promptId)
+        return promptRepository.findByIdWithCoachProfile(promptId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "질문을 찾을 수 없어요."));
     }
 
@@ -140,6 +144,7 @@ public class AdminPromptService {
                 prompt.getTip(),
                 prompt.getDisplayOrder(),
                 Boolean.TRUE.equals(prompt.getActive()),
+                promptCoachProfileSupport.toDto(prompt),
                 hints.stream()
                         .sorted(Comparator.comparing(PromptHintEntity::getDisplayOrder).thenComparing(PromptHintEntity::getId))
                         .map(this::toHintDto)

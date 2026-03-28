@@ -1,8 +1,11 @@
 package com.writeloop.persistence;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -38,6 +41,9 @@ public class PromptEntity {
 
     @Column(name = "is_active", nullable = false)
     private Boolean active;
+
+    @OneToOne(mappedBy = "prompt", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private PromptCoachProfileEntity coachProfile;
 
     public PromptEntity(
             String id,
@@ -77,4 +83,13 @@ public class PromptEntity {
         this.active = active;
     }
 
+    public void upsertCoachProfile(PromptCoachProfileEntity coachProfile) {
+        if (coachProfile == null) {
+            this.coachProfile = null;
+            return;
+        }
+
+        coachProfile.attachPrompt(this);
+        this.coachProfile = coachProfile;
+    }
 }

@@ -26,6 +26,7 @@ public class PromptService {
 
     private final PromptRepository promptRepository;
     private final PromptHintRepository promptHintRepository;
+    private final PromptCoachProfileSupport promptCoachProfileSupport;
 
     public List<PromptDto> findAll() {
         return promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc().stream()
@@ -34,7 +35,7 @@ public class PromptService {
     }
 
     public PromptDto findById(String promptId) {
-        return promptRepository.findById(promptId)
+        return promptRepository.findByIdWithCoachProfile(promptId)
                 .filter(prompt -> Boolean.TRUE.equals(prompt.getActive()))
                 .map(this::toDto)
                 .orElseGet(() -> promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc().stream()
@@ -82,7 +83,8 @@ public class PromptService {
                 prompt.getDifficulty(),
                 prompt.getQuestionEn(),
                 prompt.getQuestionKo(),
-                prompt.getTip()
+                prompt.getTip(),
+                promptCoachProfileSupport.toDto(prompt)
         );
     }
 

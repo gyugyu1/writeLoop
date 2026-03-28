@@ -33,6 +33,7 @@ import {
   getPreferredLocalWritingDraft,
   saveLocalWritingDraft
 } from "../lib/home-writing-drafts";
+import { buildCoachQuickQuestions } from "../lib/coach-quick-questions";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getDifficultyLabel } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
@@ -831,24 +832,10 @@ export function AnswerLoop() {
     () => answerGuide.checklist.map((item) => item.title).join(" · "),
     [answerGuide]
   );
-  const coachQuickQuestions = useMemo(() => {
-    const base = [
-      '"~를 어떻게 말해?"처럼 바로 물어봐도 돼',
-      "이 질문에서 쓸 수 있는 이유 표현 알려줘",
-      "첫 문장을 시작하는 자연스러운 표현 알려줘",
-      "짧은 예시를 붙일 때 쓸 표현 알려줘"
-    ];
-
-    if (selectedPrompt?.difficulty === "C") {
-      return [...base, "비교하거나 반대 의견을 넣는 표현 알려줘"];
-    }
-
-    if (selectedPrompt?.difficulty === "A") {
-      return base;
-    }
-
-    return [...base, "답변을 더 자연스럽게 이어주는 연결 표현 알려줘"];
-  }, [selectedPrompt?.difficulty]);
+  const coachQuickQuestions = useMemo(
+    () => buildCoachQuickQuestions(selectedPrompt),
+    [selectedPrompt]
+  );
   const rewriteWordCount = useMemo(() => countWords(rewrite), [rewrite]);
   const welcomeWeekDays = useMemo(() => buildWelcomeWeek(todayStatus), [todayStatus]);
   const monthCalendar = buildMonthCalendar(monthStatus, activeMonthView, todayStatus?.date);

@@ -10,6 +10,16 @@ export interface Prompt {
   questionEn: string;
   questionKo: string;
   tip: string;
+  coachProfile?: PromptCoachProfile | null;
+}
+
+export interface PromptCoachProfile {
+  primaryCategory: string;
+  secondaryCategories: string[];
+  preferredExpressionFamilies: string[];
+  avoidFamilies: string[];
+  starterStyle: string;
+  notes: string;
 }
 
 export interface PromptHint {
@@ -234,6 +244,7 @@ export interface AdminPrompt {
   tip: string;
   displayOrder: number;
   active: boolean;
+  coachProfile?: PromptCoachProfile | null;
   hints: AdminPromptHint[];
 }
 
@@ -245,6 +256,7 @@ export interface AdminPromptRequest {
   tip: string;
   displayOrder: number;
   active: boolean;
+  coachProfile?: PromptCoachProfile | null;
 }
 
 export interface AdminPromptHintRequest {

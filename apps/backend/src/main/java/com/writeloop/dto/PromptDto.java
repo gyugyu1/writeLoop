@@ -6,6 +6,17 @@ public record PromptDto(
         String difficulty,
         String questionEn,
         String questionKo,
-        String tip
+        String tip,
+        PromptCoachProfileDto coachProfile
 ) {
+    public PromptDto(
+            String id,
+            String topic,
+            String difficulty,
+            String questionEn,
+            String questionKo,
+            String tip
+    ) {
+        this(id, topic, difficulty, questionEn, questionKo, tip, null);
+    }
 }

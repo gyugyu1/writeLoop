@@ -1,9 +1,11 @@
 package com.writeloop.config;
 
 import com.writeloop.persistence.PromptEntity;
+import com.writeloop.persistence.PromptCoachProfileRepository;
 import com.writeloop.persistence.PromptHintEntity;
 import com.writeloop.persistence.PromptHintRepository;
 import com.writeloop.persistence.PromptRepository;
+import com.writeloop.service.PromptCoachProfileSupport;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,8 +19,10 @@ public class PromptSeedConfig {
     @Bean
     ApplicationRunner promptSeeder(
             PromptRepository promptRepository,
+            PromptCoachProfileRepository promptCoachProfileRepository,
             PromptHintRepository promptHintRepository,
-            JdbcTemplate jdbcTemplate
+            JdbcTemplate jdbcTemplate,
+            PromptCoachProfileSupport promptCoachProfileSupport
     ) {
         return args -> {
             normalizeLegacyPrompts(jdbcTemplate);
@@ -119,7 +123,7 @@ public class PromptSeedConfig {
             promptHintRepository.saveAll(List.of(
                     new PromptHintEntity("hint-a-1-1", "prompt-a-1", "STARTER", "\"After dinner, I usually...\"로 시작해 보세요.", 1, true),
                     new PromptHintEntity("hint-a-1-2", "prompt-a-1", "VOCAB", "활용 단어: relax, watch videos, clean up, take a walk", 2, true),
-                    new PromptHintEntity("hint-a-1-3", "prompt-a-1", "STARTER", "\"I often spend my evening by...\"처럼 시작해도 자연스러워요.", 3, true),
+                    new PromptHintEntity("hint-a-1-3", "prompt-a-1", "STARTER", "\"In the evening, I usually...\"처럼 시작해도 자연스러워요.", 3, true),
                     new PromptHintEntity("hint-a-1-4", "prompt-a-1", "VOCAB", "활용 표현: after dinner, in the evening, before bed, every day", 4, true),
                     new PromptHintEntity("hint-a-2-1", "prompt-a-2", "STRUCTURE", "\"My favorite food is ... because ...\" 같은 단순한 구조로 써 보세요.", 1, true),
                     new PromptHintEntity("hint-a-2-2", "prompt-a-2", "DETAIL", "좋아하는 이유 1개와 짧은 예시 1개를 넣으면 답변이 더 분명해져요.", 2, true),
@@ -127,18 +131,18 @@ public class PromptSeedConfig {
                     new PromptHintEntity("hint-a-2-4", "prompt-a-2", "VOCAB", "활용 단어: spicy, sweet, soft, delicious, comforting", 4, true),
                     new PromptHintEntity("hint-a-3-1", "prompt-a-3", "STARTER", "\"On weekends, I usually...\"로 시작하면 자연스러워요.", 1, true),
                     new PromptHintEntity("hint-a-3-2", "prompt-a-3", "VOCAB", "활용 단어: stay home, meet friends, rest, study, exercise", 2, true),
-                    new PromptHintEntity("hint-a-3-3", "prompt-a-3", "STARTER", "\"My weekend is usually...\"처럼 시작해도 좋아요.", 3, true),
+                    new PromptHintEntity("hint-a-3-3", "prompt-a-3", "STARTER", "\"I usually spend my weekend...\"처럼 시작해도 좋아요.", 3, true),
                     new PromptHintEntity("hint-a-3-4", "prompt-a-3", "VOCAB", "활용 표현: on Saturday, on Sunday, in the morning, in the afternoon", 4, true),
                     new PromptHintEntity("hint-b-1-1", "prompt-b-1", "STRUCTURE", "문제 상황 -> 나에게 미치는 영향 -> 해결 방법 순서로 써 보세요.", 1, true),
                     new PromptHintEntity("hint-b-1-2", "prompt-b-1", "STARTER", "\"One challenge I often face is...\"로 시작해도 좋아요.", 2, true),
                     new PromptHintEntity("hint-b-1-3", "prompt-b-1", "STARTER", "\"At work/school, I sometimes struggle with...\"도 좋은 시작이에요.", 3, true),
                     new PromptHintEntity("hint-b-1-4", "prompt-b-1", "VOCAB", "활용 단어: deadline, pressure, teamwork, schedule, solve", 4, true),
                     new PromptHintEntity("hint-b-2-1", "prompt-b-2", "DETAIL", "먼저 도시 이름을 말하고, 그곳에서 보고 싶은 것과 하고 싶은 일을 이어서 설명해 보세요.", 1, true),
-                    new PromptHintEntity("hint-b-2-2", "prompt-b-2", "LINKER", "because, also, especially 같은 연결 표현을 써 보세요.", 2, true),
+                    new PromptHintEntity("hint-b-2-2", "prompt-b-2", "LINKER", "for example, also, especially 같은 연결 표현을 써 보세요.", 2, true),
                     new PromptHintEntity("hint-b-2-3", "prompt-b-2", "STARTER", "\"I want to visit ... because...\"로 시작하면 편해요.", 3, true),
                     new PromptHintEntity("hint-b-2-4", "prompt-b-2", "VOCAB", "활용 단어: explore, local food, historic place, culture, scenery", 4, true),
                     new PromptHintEntity("hint-b-3-1", "prompt-b-3", "STRUCTURE", "습관이 무엇인지, 왜 중요한지, 어떻게 유지할지 순서로 쓰면 좋아요.", 1, true),
-                    new PromptHintEntity("hint-b-3-2", "prompt-b-3", "VOCAB", "활용 단어: routine, consistency, goal, improve, stay focused", 2, true),
+                    new PromptHintEntity("hint-b-3-2", "prompt-b-3", "VOCAB", "활용 단어: routine, consistency, goal, improve, stick to", 2, true),
                     new PromptHintEntity("hint-b-3-3", "prompt-b-3", "STARTER", "\"One habit I want to build this year is...\"로 시작해 보세요.", 3, true),
                     new PromptHintEntity("hint-b-3-4", "prompt-b-3", "VOCAB", "활용 표현: every morning, little by little, in the long run, keep going", 4, true),
                     new PromptHintEntity("hint-c-1-1", "prompt-c-1", "BALANCE", "긍정적인 변화와 부정적인 변화를 모두 언급한 뒤 내 의견을 말해 보세요.", 1, true),
@@ -154,6 +158,17 @@ public class PromptSeedConfig {
                     new PromptHintEntity("hint-c-3-3", "prompt-c-3", "STARTER", "\"I used to believe that..., but now I think...\"로 시작해 보세요.", 3, true),
                     new PromptHintEntity("hint-c-3-4", "prompt-c-3", "VOCAB", "활용 단어: perspective, realize, experience, change my mind, value", 4, true)
             ));
+
+            promptRepository.findAllByOrderByDisplayOrderAsc().forEach(prompt -> {
+                if (promptCoachProfileSupport.shouldRefreshSeededProfile(prompt)) {
+                    promptCoachProfileRepository.save(
+                            promptCoachProfileSupport.toEntity(
+                                    prompt,
+                                    promptCoachProfileSupport.defaultProfileForPrompt(prompt)
+                            )
+                    );
+                }
+            });
         };
     }
 

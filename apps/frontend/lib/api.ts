@@ -46,6 +46,66 @@ function createCoachExpressionId(promptId: string, expression: string, index: nu
   return `coach-${promptId}-${base || index + 1}`;
 }
 
+function normalizeCoachUsageExpression(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9\s']/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function getMeaningfulCoachUsageTokens(value: string) {
+  return normalizeCoachUsageExpression(value)
+    .split(" ")
+    .filter((token) => token.length >= 3);
+}
+
+function dedupeUsedCoachUsageExpressions<T extends { expression: string }>(expressions: T[]) {
+  if (expressions.length < 2) {
+    return expressions;
+  }
+
+  const specificityScore = (expression: T) => {
+    const normalized = normalizeCoachUsageExpression(expression.expression);
+    const meaningfulTokenCount = getMeaningfulCoachUsageTokens(expression.expression).length;
+    const totalTokenCount = normalized ? normalized.split(" ").length : 0;
+    return meaningfulTokenCount * 100 + totalTokenCount * 10 + normalized.length;
+  };
+
+  const overlaps = (left: T, right: T) => {
+    const leftNormalized = normalizeCoachUsageExpression(left.expression);
+    const rightNormalized = normalizeCoachUsageExpression(right.expression);
+
+    if (!leftNormalized || !rightNormalized) {
+      return false;
+    }
+
+    if (leftNormalized === rightNormalized) {
+      return true;
+    }
+
+    const leftTokens = new Set(getMeaningfulCoachUsageTokens(left.expression));
+    const rightTokens = new Set(getMeaningfulCoachUsageTokens(right.expression));
+    const sharedTokens = [...leftTokens].filter((token) => rightTokens.has(token));
+    if (sharedTokens.length < Math.min(2, leftTokens.size, rightTokens.size)) {
+      return false;
+    }
+
+    return leftNormalized.includes(rightNormalized) || rightNormalized.includes(leftNormalized);
+  };
+
+  const prioritized = [...expressions].sort((left, right) => specificityScore(right) - specificityScore(left));
+  const selected: T[] = [];
+
+  for (const expression of prioritized) {
+    if (!selected.some((existing) => overlaps(expression, existing))) {
+      selected.push(expression);
+    }
+  }
+
+  return expressions.filter((expression) => selected.includes(expression));
+}
+
 function normalizeCoachHelpResponse(
   payload: {
     promptId?: string;
@@ -160,7 +220,7 @@ function normalizeCoachUsageResponse(
   return {
     promptId: payload.promptId ?? request.promptId,
     praiseMessage: payload.coachReply ?? "추천 표현이 어떻게 쓰였는지 확인해요.",
-    usedExpressions: hydrate(payload.usedExpressions),
+    usedExpressions: dedupeUsedCoachUsageExpressions(hydrate(payload.usedExpressions)),
     unusedExpressions: hydrate(payload.unusedExpressions),
     relatedPromptIds: payload.suggestedPromptIds ?? []
   };

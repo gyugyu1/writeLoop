@@ -894,6 +894,7 @@ public class CoachService {
                 usedExpressions
         );
         usedExpressions.addAll(selfDiscoveredExpressions);
+        usedExpressions = deduplicateUsedExpressions(usedExpressions);
         selfDiscoveredExpressions.forEach(expression -> usedCategories.addAll(inferCategories(expression.expression())));
 
         if (usedCategories.isEmpty()) {
@@ -912,6 +913,69 @@ public class CoachService {
                 unusedExpressions,
                 suggestedPromptIds
         );
+    }
+
+    private List<CoachExpressionUsageDto> deduplicateUsedExpressions(List<CoachExpressionUsageDto> usedExpressions) {
+        if (usedExpressions.size() < 2) {
+            return usedExpressions;
+        }
+
+        List<CoachExpressionUsageDto> prioritized = new ArrayList<>(usedExpressions);
+        prioritized.sort(Comparator.comparingInt(this::usedExpressionSpecificityScore).reversed());
+
+        List<CoachExpressionUsageDto> selected = new ArrayList<>();
+        for (CoachExpressionUsageDto candidate : prioritized) {
+            boolean overlapsExisting = selected.stream()
+                    .anyMatch(existing -> areOverlappingUsedExpressions(candidate, existing));
+            if (!overlapsExisting) {
+                selected.add(candidate);
+            }
+        }
+
+        return usedExpressions.stream()
+                .filter(selected::contains)
+                .toList();
+    }
+
+    private boolean areOverlappingUsedExpressions(
+            CoachExpressionUsageDto candidate,
+            CoachExpressionUsageDto existing
+    ) {
+        String candidateCore = normalizeExpressionCore(candidate.expression());
+        String existingCore = normalizeExpressionCore(existing.expression());
+        if (candidateCore.isBlank() || existingCore.isBlank()) {
+            return false;
+        }
+
+        if (candidateCore.equals(existingCore)) {
+            return true;
+        }
+
+        if (!hasMeaningfulTokenOverlap(candidateCore, existingCore)) {
+            return false;
+        }
+
+        return candidateCore.contains(existingCore) || existingCore.contains(candidateCore);
+    }
+
+    private boolean hasMeaningfulTokenOverlap(String left, String right) {
+        Set<String> leftTokens = extractMeaningfulTokens(left);
+        Set<String> rightTokens = extractMeaningfulTokens(right);
+        if (leftTokens.isEmpty() || rightTokens.isEmpty()) {
+            return false;
+        }
+
+        Set<String> intersection = new LinkedHashSet<>(leftTokens);
+        intersection.retainAll(rightTokens);
+        return intersection.size() >= Math.min(2, Math.min(leftTokens.size(), rightTokens.size()));
+    }
+
+    private int usedExpressionSpecificityScore(CoachExpressionUsageDto expression) {
+        String normalized = normalizeExpressionCore(expression.expression());
+        int meaningfulTokenCount = extractMeaningfulTokens(normalized).size();
+        int totalTokenCount = normalized.isBlank() ? 0 : normalized.split("\\s+").length;
+        int sourceWeight = EXPRESSION_SOURCE_SELF_DISCOVERED.equalsIgnoreCase(expression.source()) ? 2 : 1;
+        return meaningfulTokenCount * 100 + totalTokenCount * 10 + normalized.length() + sourceWeight;
     }
 
     private void persistUsedExpressions(

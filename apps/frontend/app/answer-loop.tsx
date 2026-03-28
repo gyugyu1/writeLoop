@@ -33,6 +33,7 @@ import {
   getPreferredLocalWritingDraft,
   saveLocalWritingDraft
 } from "../lib/home-writing-drafts";
+import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getDifficultyLabel } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import { buildLocalCoachHelp, buildLocalCoachUsage } from "../lib/coach";
@@ -2032,35 +2033,22 @@ export function AnswerLoop() {
   }
 
   function renderCoachUsagePanel() {
-    if (!coachHelp) {
+    const fallbackUsedExpressions = (feedback?.usedExpressions ?? []).map((expression) => ({
+      expression: expression.expression,
+      matchedText: expression.matchedText ?? null,
+      usageTip: expression.usageTip ?? "답변 안에서 자연스럽게 살린 표현이에요."
+    }));
+    const hasCoachContext = Boolean(coachHelp);
+    if (!hasCoachContext && fallbackUsedExpressions.length === 0) {
       return null;
     }
 
-    const usedExpressions = coachUsage?.usedExpressions ?? [];
+    const usedExpressions = coachUsage?.usedExpressions ?? fallbackUsedExpressions;
     const unusedExpressions = coachUsage?.unusedExpressions ?? [];
 
     return (
       <section className={styles.coachUsagePanel}>
-        <div className={styles.coachUsageHeader}>
-          <div>
-            <span className={styles.coachEyebrow}>AI 코치 결과</span>
-            <strong>
-              {isCheckingCoachUsage
-                ? "추천 표현이 답변에 쓰였는지 확인하고 있어요."
-                : coachUsage?.praiseMessage ?? "추천 표현이 어떻게 쓰였는지 확인해요."}
-            </strong>
-            <p>
-              {isCheckingCoachUsage
-                ? "잠시만 기다려 주세요."
-                : "썼던 표현은 칭찬해 주고, 아직 안 쓴 표현은 다음 시도에서 다시 볼 수 있어요."}
-            </p>
-          </div>
-          <span className={styles.coachUsageBadge}>
-            {coachHelp.expressions.length}개 추천
-          </span>
-        </div>
-
-        {coachUsage ? (
+        {coachUsage || !hasCoachContext ? (
           <>
             <div className={styles.coachUsageGrid}>
               <div className={styles.coachUsageColumn}>
@@ -2068,18 +2056,12 @@ export function AnswerLoop() {
                 {usedExpressions.length > 0 ? (
                   <div className={styles.coachUsageCards}>
                     {usedExpressions.map((expression) => (
-                      <article key={expression.id} className={styles.coachUsageCardUsed}>
+                      <article
+                        key={"id" in expression ? expression.id : expression.expression}
+                        className={styles.coachUsageCardUsed}
+                      >
                         <div className={styles.coachUsageCardHeader}>
                           <span>{expression.expression}</span>
-                          <small
-                            className={
-                              expression.source === "SELF_DISCOVERED"
-                                ? styles.coachUsageOriginSelf
-                                : styles.coachUsageOriginRecommended
-                            }
-                          >
-                            {expression.source === "SELF_DISCOVERED" ? "직접 사용" : "AI 추천"}
-                          </small>
                         </div>
                         {expression.matchedText ? <p>{expression.matchedText}</p> : null}
                         <small>{expression.usageTip}</small>
@@ -2091,24 +2073,26 @@ export function AnswerLoop() {
                 )}
               </div>
 
-              <div className={styles.coachUsageColumn}>
-                <strong>다음에 써볼 표현</strong>
-                {unusedExpressions.length > 0 ? (
-                  <div className={styles.coachUsageCards}>
-                    {unusedExpressions.map((expression) => (
-                      <article key={expression.id} className={styles.coachUsageCardUnused}>
-                        <span>{expression.expression}</span>
-                        <p>{expression.meaningKo}</p>
-                      </article>
-                    ))}
-                  </div>
-                ) : (
-                  <p className={styles.coachUsageEmpty}>추천 표현을 모두 활용했어요.</p>
-                )}
-              </div>
+              {hasCoachContext ? (
+                <div className={styles.coachUsageColumn}>
+                  <strong>다음에 써볼 표현</strong>
+                  {unusedExpressions.length > 0 ? (
+                    <div className={styles.coachUsageCards}>
+                      {unusedExpressions.map((expression) => (
+                        <article key={expression.id} className={styles.coachUsageCardUnused}>
+                          <span>{expression.expression}</span>
+                          <p>{expression.meaningKo}</p>
+                        </article>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={styles.coachUsageEmpty}>추천 표현을 모두 활용했어요.</p>
+                  )}
+                </div>
+              ) : null}
             </div>
 
-            {coachRelatedPrompts.length > 0 ? (
+            {hasCoachContext && coachRelatedPrompts.length > 0 ? (
               <div className={styles.coachRelatedSection}>
                 <strong>이 표현을 더 써볼 질문</strong>
                 <div className={styles.coachRelatedList}>
@@ -2141,19 +2125,70 @@ export function AnswerLoop() {
     expressions: Feedback["refinementExpressions"] | null | undefined,
     className: string
   ) {
-    if (!expressions || expressions.length === 0) {
+    const suggestedExpressions = filterSuggestedRefinementExpressions(
+      expressions,
+      lastSubmittedAnswer,
+      feedback?.correctedAnswer
+    );
+
+    if (suggestedExpressions.length === 0) {
       return null;
     }
 
     return (
       <div className={className}>
-        <h3>모범답안에서 가져오면 좋은 표현</h3>
+        <h3>다음 답변에서 써보면 좋은 표현 틀·단어</h3>
         <ul className={styles.list}>
-          {expressions.map((expression, index) => (
+          {suggestedExpressions.map((expression, index) => (
             <li key={`${expression.expression}-${index}`}>
               <strong>{expression.expression}</strong>
               <span>{expression.guidance}</span>
               <span className={styles.refinementExpressionExample}>{expression.example}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  function renderFeedbackGroup(children: ReactNode) {
+    return (
+      <section className={styles.feedbackGroup}>
+        <div className={styles.feedbackGroupBody}>{children}</div>
+      </section>
+    );
+  }
+
+  function renderFeedbackStrengthsBlock(className: string) {
+    if (!feedback) {
+      return null;
+    }
+
+    return (
+      <div className={className}>
+        <h3>잘한 점</h3>
+        <ul className={styles.list}>
+          {feedback.strengths.map((strength) => (
+            <li key={strength}>{strength}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
+  function renderFeedbackCorrectionsBlock(className: string) {
+    if (!feedback) {
+      return null;
+    }
+
+    return (
+      <div className={className}>
+        <h3>개선 포인트</h3>
+        <ul className={styles.list}>
+          {feedback.corrections.map((correction) => (
+            <li key={correction.issue}>
+              <strong>{correction.issue}</strong>
+              <span>{correction.suggestion}</span>
             </li>
           ))}
         </ul>
@@ -2352,51 +2387,50 @@ export function AnswerLoop() {
         })}
         {feedback ? (
           <div className={styles.feedbackBody}>
-            <div className={styles.responseCard}>
-              <h3>내가 제출한 답변</h3>
-              <p>{lastSubmittedAnswer}</p>
-            </div>
-            {renderCoachUsagePanel()}
-            <InlineFeedbackPreview
-              originalAnswer={lastSubmittedAnswer}
-              correctedAnswer={feedback.correctedAnswer}
-              inlineFeedback={feedback.inlineFeedback}
-            />
-            <div className={styles.feedbackBlock}>
-              <h3>전체 요약</h3>
-              <p>{feedback.summary}</p>
-            </div>
-            <div className={styles.feedbackBlock}>
-              <h3>잘한 점</h3>
-              <ul className={styles.list}>
-                {feedback.strengths.map((strength) => (
-                  <li key={strength}>{strength}</li>
-                ))}
-              </ul>
-            </div>
-            <div className={styles.feedbackBlock}>
-              <h3>개선하면 좋은 점</h3>
-              <ul className={styles.list}>
-                {feedback.corrections.map((correction) => (
-                  <li key={correction.issue}>
-                    <strong>{correction.issue}</strong>
-                    <span>{correction.suggestion}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            {renderRefinementExpressionsBlock(
-              feedback.refinementExpressions,
-              styles.feedbackBlock
+            {renderFeedbackGroup(
+              <div className={styles.responseCard}>
+                <h3>내가 제출한 답변</h3>
+                <p>{lastSubmittedAnswer}</p>
+              </div>
             )}
-            <div className={styles.feedbackBlock}>
-              <h3>모범 답안</h3>
-              <p>{feedback.modelAnswer}</p>
-            </div>
-            <div className={styles.feedbackBlock}>
-              <h3>다시쓰기 가이드</h3>
-              <p>{feedback.rewriteChallenge}</p>
-            </div>
+            {renderFeedbackGroup(
+              <>
+                {renderCoachUsagePanel()}
+                {renderFeedbackStrengthsBlock(styles.feedbackBlock)}
+              </>
+            )}
+            {renderFeedbackGroup(
+              <>
+                <InlineFeedbackPreview
+                  originalAnswer={lastSubmittedAnswer}
+                  correctedAnswer={feedback.correctedAnswer}
+                  inlineFeedback={feedback.inlineFeedback}
+                />
+                {renderFeedbackCorrectionsBlock(styles.feedbackBlock)}
+                {renderRefinementExpressionsBlock(
+                  feedback.refinementExpressions,
+                  styles.feedbackBlock
+                )}
+              </>
+            )}
+            {renderFeedbackGroup(
+              <div className={styles.feedbackBlock}>
+                <h3>전체 요약</h3>
+                <p>{feedback.summary}</p>
+              </div>
+            )}
+            {renderFeedbackGroup(
+              <div className={styles.feedbackBlock}>
+                <h3>다시쓰기 가이드</h3>
+                <p>{feedback.rewriteChallenge}</p>
+              </div>
+            )}
+            {renderFeedbackGroup(
+              <div className={styles.feedbackBlock}>
+                <h3>모범답안</h3>
+                <p>{feedback.modelAnswer}</p>
+              </div>
+            )}
           </div>
         ) : (
           <p className={styles.placeholderText}>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
@@ -2493,47 +2527,45 @@ export function AnswerLoop() {
             </div>
             {showRewriteFeedback ? (
               <div className={styles.rewriteFeedbackBody}>
-                <InlineFeedbackPreview
-                  originalAnswer={lastSubmittedAnswer}
-                  correctedAnswer={feedback.correctedAnswer}
-                  inlineFeedback={feedback.inlineFeedback}
-                  compact
-                />
-                <div className={styles.rewriteFeedbackBlock}>
-                  <h3>전체 요약</h3>
-                  <p>{feedback.summary}</p>
-                </div>
-                <div className={styles.rewriteFeedbackBlock}>
-                  <h3>잘한 점</h3>
-                  <ul className={styles.list}>
-                    {feedback.strengths.map((strength) => (
-                      <li key={strength}>{strength}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className={styles.rewriteFeedbackBlock}>
-                  <h3>개선하면 좋은 점</h3>
-                  <ul className={styles.list}>
-                    {feedback.corrections.map((correction) => (
-                      <li key={correction.issue}>
-                        <strong>{correction.issue}</strong>
-                        <span>{correction.suggestion}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                {renderRefinementExpressionsBlock(
-                  feedback.refinementExpressions,
-                  styles.rewriteFeedbackBlock
+                {renderFeedbackGroup(
+                  <>
+                    {renderCoachUsagePanel()}
+                    {renderFeedbackStrengthsBlock(styles.rewriteFeedbackBlock)}
+                  </>
                 )}
-                <div className={styles.rewriteFeedbackBlock}>
-                  <h3>모범 답안</h3>
-                  <p>{feedback.modelAnswer}</p>
-                </div>
-                <div className={styles.rewriteFeedbackBlock}>
-                  <h3>다시쓰기 가이드</h3>
-                  <p>{feedback.rewriteChallenge}</p>
-                </div>
+                {renderFeedbackGroup(
+                  <>
+                    <InlineFeedbackPreview
+                      originalAnswer={lastSubmittedAnswer}
+                      correctedAnswer={feedback.correctedAnswer}
+                      inlineFeedback={feedback.inlineFeedback}
+                      compact
+                    />
+                    {renderFeedbackCorrectionsBlock(styles.rewriteFeedbackBlock)}
+                    {renderRefinementExpressionsBlock(
+                      feedback.refinementExpressions,
+                      styles.rewriteFeedbackBlock
+                    )}
+                  </>
+                )}
+                {renderFeedbackGroup(
+                  <div className={styles.rewriteFeedbackBlock}>
+                    <h3>전체 요약</h3>
+                    <p>{feedback.summary}</p>
+                  </div>
+                )}
+                {renderFeedbackGroup(
+                  <div className={styles.rewriteFeedbackBlock}>
+                    <h3>다시쓰기 가이드</h3>
+                    <p>{feedback.rewriteChallenge}</p>
+                  </div>
+                )}
+                {renderFeedbackGroup(
+                  <div className={styles.rewriteFeedbackBlock}>
+                    <h3>모범답안</h3>
+                    <p>{feedback.modelAnswer}</p>
+                  </div>
+                )}
               </div>
             ) : null}
           </section>

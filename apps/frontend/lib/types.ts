@@ -77,6 +77,12 @@ export interface CoachUsageCheckResponse {
   relatedPromptIds: string[];
 }
 
+export interface FeedbackUsedExpression {
+  expression: string;
+  matchedText?: string | null;
+  usageTip?: string | null;
+}
+
 export interface DailyPromptRecommendation {
   recommendedDate: string;
   difficulty: DailyDifficulty;
@@ -154,6 +160,7 @@ export interface Feedback {
   inlineFeedback: FeedbackInlineSegment[] | null;
   correctedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
+  usedExpressions?: FeedbackUsedExpression[] | null;
   modelAnswer: string;
   rewriteChallenge: string;
 }
@@ -196,6 +203,7 @@ export interface StoredFeedback {
   inlineFeedback: FeedbackInlineSegment[] | null;
   correctedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
+  usedExpressions?: FeedbackUsedExpression[] | null;
   modelAnswer: string;
   rewriteChallenge: string;
 }

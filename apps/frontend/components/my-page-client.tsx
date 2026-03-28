@@ -11,6 +11,7 @@ import {
   logout,
   updateProfile
 } from "../lib/api";
+import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { InlineFeedbackPreview } from "./inline-feedback-preview";
 import { getDifficultyLabel } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
@@ -1144,12 +1145,19 @@ export function MyPageClient() {
                                     </div>
                                     <div className={styles.historyFeedbackBlock}>
                                       <h5>모범 답안</h5>
-                                      {attempt.feedback.refinementExpressions &&
-                                      attempt.feedback.refinementExpressions.length > 0 ? (
+                                      {filterSuggestedRefinementExpressions(
+                                        attempt.feedback.refinementExpressions,
+                                        attempt.answerText,
+                                        attempt.feedback.correctedAnswer
+                                      ).length > 0 ? (
                                         <div className={styles.historyFeedbackBlock}>
                                           <h5>모범답안에서 가져오면 좋은 표현</h5>
                                           <ul>
-                                            {attempt.feedback.refinementExpressions.map((expression, index) => (
+                                            {filterSuggestedRefinementExpressions(
+                                              attempt.feedback.refinementExpressions,
+                                              attempt.answerText,
+                                              attempt.feedback.correctedAnswer
+                                            ).map((expression, index) => (
                                               <li key={`${expression.expression}-${index}`}>
                                                 <strong>{expression.expression}</strong>
                                                 <span>{expression.guidance}</span>

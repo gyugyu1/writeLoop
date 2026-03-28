@@ -2117,15 +2117,13 @@
   letter-spacing: 0.05em;
 }
 
-.coachPanelHeader strong,
-.coachUsageHeader strong {
+.coachPanelHeader strong {
   color: #10244c;
   font-size: 1rem;
   line-height: 1.45;
 }
 
-.coachPanelHeader p,
-.coachUsageHeader p {
+.coachPanelHeader p {
   margin: 0;
   color: var(--text-sub);
   line-height: 1.6;
@@ -2406,20 +2404,6 @@
   gap: 14px;
 }
 
-.coachUsageBadge {
-  display: inline-flex;
-  width: fit-content;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(var(--warm-accent-rgb), 0.12);
-  color: #9a4d18;
-  font-size: 0.78rem;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
 .coachUsageGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2474,28 +2458,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-}
-
-.coachUsageOriginRecommended,
-.coachUsageOriginSelf {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.coachUsageOriginRecommended {
-  background: rgba(16, 36, 76, 0.08);
-  color: #10244c;
-}
-
-.coachUsageOriginSelf {
-  background: rgba(var(--warm-accent-rgb), 0.16);
-  color: var(--warm-accent-deep);
 }
 
 .coachUsageCardUsed p,
@@ -3024,6 +2986,16 @@
   gap: 16px;
 }
 
+.feedbackGroup {
+  display: grid;
+  gap: 10px;
+}
+
+.feedbackGroupBody {
+  display: grid;
+  gap: 12px;
+}
+
 .feedbackBlock {
   padding: 16px;
   border-radius: 18px;
@@ -3542,8 +3514,7 @@
     box-shadow: none;
   }
 
-  .coachActionRow,
-  .coachUsageHeader {
+  .coachActionRow {
     flex-direction: column;
     align-items: stretch;
   }

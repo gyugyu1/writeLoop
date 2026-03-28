@@ -6,6 +6,7 @@ import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.CoachHelpRequestDto;
 import com.writeloop.dto.CoachHelpResponseDto;
 import com.writeloop.dto.CoachSelfDiscoveredCandidateDto;
+import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.CoachUsageCheckResponseDto;
 import com.writeloop.dto.CoachUsageCheckRequestDto;
 import com.writeloop.dto.PromptDto;
@@ -568,6 +569,34 @@ class CoachServiceTest {
                 .filteredOn(usage -> "SELF_DISCOVERED".equalsIgnoreCase(usage.source()))
                 .extracting(usage -> usage.expression().toLowerCase())
                 .contains("i'm curious about maid cafes");
+    }
+
+    @Test
+    void checkUsage_removes_overlapping_shorter_used_expression_when_longer_phrase_exists() {
+        PromptDto prompt = new PromptDto(
+                "prompt-usage-overlap",
+                "Weekend",
+                "EASY",
+                "How do you usually spend your weekend?",
+                "주말을 보통 어떻게 보내나요?",
+                "장소나 함께 있는 사람을 함께 말하면 더 좋아요."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+
+        CoachUsageCheckResponseDto response = coachService.checkUsage(
+                new CoachUsageCheckRequestDto(
+                        prompt.id(),
+                        "On weekends, I usually work out and spend time with my family at the park.",
+                        "session-overlap",
+                        1,
+                        List.of("On weekends, I usually...", "spend time with my family")
+                )
+        );
+
+        assertThat(response.usedExpressions())
+                .extracting(CoachExpressionUsageDto::expression)
+                .contains("On weekends, I usually...", "spend time with my family at the park")
+                .doesNotContain("spend time with my family");
     }
 
     @Test
@@ -1427,7 +1456,7 @@ class CoachServiceTest {
         CoachUsageCheckResponseDto response = coachService.checkUsage(
                 new CoachUsageCheckRequestDto(
                         prompt.id(),
-                        "I want to learn Spanish this year.",
+                        "I want to learn Spanish.",
                         "session-1",
                         1,
                         List.of("I want to learn Spanish.", "practice Spanish"),

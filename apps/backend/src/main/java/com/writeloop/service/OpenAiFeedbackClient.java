@@ -221,11 +221,15 @@ public class OpenAiFeedbackClient {
                 - Example 3: original "I like pizza", revised "I like pizza." -> KEEP "I like pizza", ADD ".".
                 - Do not rewrite the whole answer as one REPLACE unless the whole answer is actually wrong. Use the smallest natural segment possible.
                 - modelAnswer should sound natural for the learner's level.
-                - refinementExpressions should list 2 to 4 short reusable expressions from modelAnswer that the learner can borrow to polish their own answer.
-                - refinementExpressions.expression must be a short phrase, not a full sentence.
-                - refinementExpressions.example should show a short snippet from modelAnswer using that expression.
+                - refinementExpressions should list 2 to 4 useful reusable expression frames or vocabulary items from modelAnswer that the learner can try in the next revision.
+                - refinementExpressions.expression must be a reusable frame, pattern, or vocabulary item, not a full sentence.
+                - Prefer slot-style frames such as "[thing]", "[adj]", "[verb]", "[reason]" when useful.
+                - Good examples: "I want to [verb] so that I can [result].", "because it is [adj] and [adj]", "by [verb]ing [method]".
+                - Avoid returning a fully filled-out sentence like "My favorite food is pizza because it is delicious."
+                - refinementExpressions.example should show a short snippet from modelAnswer using that frame or word.
                 - Do not include expressions that already appear clearly in the learner answer.
-                - Prefer expressions that improve clarity, detail, reason, example, or natural flow.
+                - Do not include expressions that merely repeat the learner's current wording with only a tiny grammar fix.
+                - Prefer frames that improve clarity, detail, reason, example, vocabulary, or natural flow.
                 - rewriteChallenge should tell the learner how to improve in the next attempt in Korean.
 
                 Prompt topic: %s

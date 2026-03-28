@@ -1160,7 +1160,7 @@ export function buildLocalCoachUsage(
   prompts: Prompt[]
 ): CoachUsageCheckResponse {
   const marked = expressions.map((expression) => markUsage(answer, expression));
-  const usedExpressions = marked.filter((expression) => expression.matched);
+  const usedExpressions = dedupeUsedExpressions(marked.filter((expression) => expression.matched));
   const unusedExpressions = marked.filter((expression) => !expression.matched);
   const praiseMessage =
     usedExpressions.length > 0
@@ -1174,4 +1174,58 @@ export function buildLocalCoachUsage(
     unusedExpressions,
     relatedPromptIds: buildRelatedPromptIds(prompts, prompt.id)
   };
+}
+
+function dedupeUsedExpressions(expressions: CoachUsageExpression[]) {
+  if (expressions.length < 2) {
+    return expressions;
+  }
+
+  const normalize = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9\s']/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  const meaningfulTokens = (value: string) =>
+    normalize(value)
+      .split(" ")
+      .filter((token) => token.length >= 3);
+
+  const overlaps = (left: CoachUsageExpression, right: CoachUsageExpression) => {
+    const leftNormalized = normalize(left.expression);
+    const rightNormalized = normalize(right.expression);
+    if (!leftNormalized || !rightNormalized) {
+      return false;
+    }
+    if (leftNormalized === rightNormalized) {
+      return true;
+    }
+
+    const leftTokens = new Set(meaningfulTokens(left.expression));
+    const rightTokens = new Set(meaningfulTokens(right.expression));
+    const sharedTokens = [...leftTokens].filter((token) => rightTokens.has(token));
+    if (sharedTokens.length < Math.min(2, leftTokens.size, rightTokens.size)) {
+      return false;
+    }
+
+    return leftNormalized.includes(rightNormalized) || rightNormalized.includes(leftNormalized);
+  };
+
+  const specificityScore = (expression: CoachUsageExpression) => {
+    const normalized = normalize(expression.expression);
+    return meaningfulTokens(expression.expression).length * 100 + normalized.split(" ").length * 10 + normalized.length;
+  };
+
+  const prioritized = [...expressions].sort((left, right) => specificityScore(right) - specificityScore(left));
+  const selected: CoachUsageExpression[] = [];
+
+  for (const expression of prioritized) {
+    if (!selected.some((existing) => overlaps(expression, existing))) {
+      selected.push(expression);
+    }
+  }
+
+  return expressions.filter((expression) => selected.includes(expression));
 }

@@ -2166,7 +2166,7 @@ export function AnswerLoop() {
   }
 
   function renderFeedbackCorrectionsBlock(className: string) {
-    if (!feedback) {
+    if (!feedback || feedback.corrections.length === 0) {
       return null;
     }
 

@@ -609,4 +609,56 @@ class FeedbackServiceTest {
                 .extracting(RefinementExpressionDto::expression)
                 .contains("I especially like [season] because ...", "pleasant");
     }
+
+    @Test
+    void review_supplements_corrections_from_capitalization_plural_and_determiner_inline_feedback() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-1",
+                "Problem Solving - Time Management",
+                "B",
+                "What is one challenge you often face with time management, and how do you handle it?",
+                "What time-management challenge do you face, and how do you handle it?",
+                "Explain the problem and your response."
+        );
+        String answer = "i have a problem meeting friend on time. i set an alarm.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                78,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(
+                        new InlineFeedbackSegmentDto("REPLACE", "i", "I"),
+                        new InlineFeedbackSegmentDto("KEEP", " have a problem meeting ", " have a problem meeting "),
+                        new InlineFeedbackSegmentDto("ADD", "", "my "),
+                        new InlineFeedbackSegmentDto("REPLACE", "friend", "friends"),
+                        new InlineFeedbackSegmentDto("KEEP", " on time. ", " on time. "),
+                        new InlineFeedbackSegmentDto("REPLACE", "i", "I"),
+                        new InlineFeedbackSegmentDto("KEEP", " set an alarm.", " set an alarm.")
+                ),
+                "I have a problem meeting my friends on time. I set an alarm.",
+                List.of(),
+                "I have a problem meeting my friends on time. I set an alarm.",
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.corrections()).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(response.corrections())
+                .extracting(CorrectionDto::suggestion)
+                .anySatisfy(suggestion -> assertThat(suggestion).contains("I"))
+                .anySatisfy(suggestion -> assertThat(suggestion).contains("friends"))
+                .anySatisfy(suggestion -> assertThat(suggestion).contains("my"));
+    }
 }

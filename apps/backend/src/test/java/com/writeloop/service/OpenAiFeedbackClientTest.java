@@ -45,6 +45,9 @@ class OpenAiFeedbackClientTest {
 
         assertThat(text).contains("Do not recommend the same frame, the same wording, or a simpler version of a structure the learner already used.");
         assertThat(text).contains("If the learner already used a simple frame in a family, you may recommend a clearly richer or more specific frame in that same family when it adds new value.");
+        assertThat(text).contains("If inlineFeedback contains clear local edits, reflect the important ones in corrections as Korean coaching points.");
+        assertThat(text).contains("Include correction guidance for small but meaningful edits such as capitalization, singular/plural, article use, determiner insertion, pronoun choice, preposition choice, and missing punctuation when they improve the sentence.");
+        assertThat(text).contains("Do not leave corrections effectively empty when the learner answer still has clear edit-worthy issues.");
         assertThat(text).contains("Use prompt hints as idea sources, not as text to copy.");
         assertThat(text).contains("Do not copy a prompt hint verbatim unless it is still clearly novel and useful for this learner.");
         assertThat(text).contains("Prompt coaching strategy:");

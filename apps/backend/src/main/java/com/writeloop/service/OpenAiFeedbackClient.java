@@ -211,6 +211,11 @@ public class OpenAiFeedbackClient {
                 - refinementExpressions.expression and refinementExpressions.example must be written in English.
                 - strengths should have 2 to 3 concise bullets in Korean.
                 - corrections should focus on natural English, grammar, clarity, and expansion.
+                - corrections should summarize the most useful improvement points, not just the biggest errors.
+                - If inlineFeedback contains clear local edits, reflect the important ones in corrections as Korean coaching points.
+                - Include correction guidance for small but meaningful edits such as capitalization, singular/plural, article use, determiner insertion, pronoun choice, preposition choice, and missing punctuation when they improve the sentence.
+                - If there are several concrete edits, prefer giving 2 to 5 corrections that mix sentence-level fixes and content-level improvement when relevant.
+                - Do not leave corrections effectively empty when the learner answer still has clear edit-worthy issues.
                 - refinementExpressions.guidance must be written in Korean.
                 - correctedAnswer should minimally revise the learner answer. Preserve the learner's meaning and structure as much as possible while fixing grammar and natural phrasing.
                 - inlineFeedback must cover the learner answer in reading order using these types only: KEEP, REPLACE, ADD, REMOVE.

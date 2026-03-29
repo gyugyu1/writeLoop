@@ -46,6 +46,10 @@ public class FeedbackService {
     private static final Set<String> ARTICLE_TOKENS = Set.of(
             "a", "an", "the"
     );
+    private static final Set<String> DETERMINER_TOKENS = Set.of(
+            "a", "an", "the", "this", "that", "these", "those",
+            "my", "your", "his", "her", "our", "their"
+    );
     private static final Set<String> PREPOSITION_TOKENS = Set.of(
             "to", "for", "of", "in", "on", "at", "with", "by", "from", "about"
     );
@@ -564,11 +568,11 @@ public class FeedbackService {
 
         List<CorrectionDto> supplemental = new ArrayList<>();
         for (InlineFeedbackSegmentDto segment : inlineFeedback) {
-            if (segment == null || !"REPLACE".equalsIgnoreCase(segment.type())) {
+            if (segment == null) {
                 continue;
             }
 
-            CorrectionDto correction = buildSupplementalCorrection(segment);
+            CorrectionDto correction = buildSupplementalCorrectionCandidate(segment);
             if (correction == null || isCoveredByExistingCorrections(correction, existingCorrections)) {
                 continue;
             }
@@ -619,6 +623,137 @@ public class FeedbackService {
         }
 
         return null;
+    }
+
+    private CorrectionDto buildSupplementalCorrectionCandidate(InlineFeedbackSegmentDto segment) {
+        String type = segment.type() == null ? "" : segment.type().trim().toUpperCase(Locale.ROOT);
+        return switch (type) {
+            case "REPLACE" -> buildSupplementalReplacementCorrection(segment);
+            case "ADD" -> buildSupplementalAdditionCorrection(segment);
+            default -> null;
+        };
+    }
+
+    private CorrectionDto buildSupplementalReplacementCorrection(InlineFeedbackSegmentDto segment) {
+        String original = cleanSegmentPhrase(segment.originalText());
+        String revised = cleanSegmentPhrase(segment.revisedText());
+        if (original.isBlank() || revised.isBlank()) {
+            return null;
+        }
+
+        if (isCapitalizationOnlyChange(original, revised)) {
+            return new CorrectionDto(
+                    "'"
+                            + original
+                            + "'\uC740 \uB300\uBB38\uC790 \uD45C\uAE30\uB97C \uB9DE\uCD94\uBA74 \uD6E8\uC52C \uC790\uC5F0\uC2A4\uB7FD\uC2B5\uB2C8\uB2E4.",
+                    "'"
+                            + revised
+                            + "'\uCC98\uB7FC \uB300\uBB38\uC790\uB97C \uC54C\uB9DE\uAC8C \uC368 \uC8FC\uC138\uC694."
+            );
+        }
+
+        CorrectionDto specificCorrection = buildSupplementalCorrection(segment);
+        if (specificCorrection != null) {
+            return specificCorrection;
+        }
+
+        List<String> originalTokens = tokenList(normalizeForComparison(original));
+        List<String> revisedTokens = tokenList(normalizeForComparison(revised));
+        if (isPluralizationChange(originalTokens, revisedTokens)) {
+            return new CorrectionDto(
+                    "'"
+                            + original
+                            + "'\uBCF4\uB2E4 '"
+                            + revised
+                            + "'\uCC98\uB7FC \uC218\uB97C \uB9DE\uCD94\uBA74 \uB354 \uC790\uC5F0\uC2A4\uB7FD\uC2B5\uB2C8\uB2E4.",
+                    "\uD55C \uBA85\uC774 \uC544\uB2CC \uC5EC\uB7EC \uB300\uC0C1\uC744 \uB9D0\uD560 \uB54C\uB294 '"
+                            + revised
+                            + "'\uCC98\uB7FC \uBCF5\uC218\uD615\uC744 \uC368 \uBCF4\uC138\uC694."
+            );
+        }
+
+        if (originalTokens.size() > 3 || revisedTokens.size() > 3) {
+            return null;
+        }
+
+        return new CorrectionDto(
+                "'"
+                        + original
+                        + "'\uBCF4\uB2E4 '"
+                        + revised
+                        + "'\uAC00 \uBB38\uB9E5\uC5D0 \uB354 \uC790\uC5F0\uC2A4\uB7FD\uC2B5\uB2C8\uB2E4.",
+                "\uBE44\uC2B7\uD55C \uB73B\uC744 \uB9D0\uD560 \uB54C\uB294 '"
+                        + revised
+                        + "'\uCC98\uB7FC \uC790\uC5F0\uC2A4\uB7EC\uC6B4 \uD615\uD0DC\uB85C \uB2E4\uB4EC\uC5B4 \uBCF4\uC138\uC694."
+        );
+    }
+
+    private CorrectionDto buildSupplementalAdditionCorrection(InlineFeedbackSegmentDto segment) {
+        String addedText = cleanSegmentPhrase(segment.revisedText());
+        if (addedText.isBlank() || isPunctuationOnly(addedText)) {
+            return null;
+        }
+
+        List<String> addedTokens = tokenList(normalizeForComparison(addedText));
+        if (addedTokens.size() == 1 && DETERMINER_TOKENS.contains(addedTokens.get(0))) {
+            return new CorrectionDto(
+                    "\uBA85\uC0AC \uC55E\uC5D0 \uD544\uC694\uD55C \uD55C\uC815\uC5B4\uB97C \uB123\uC73C\uBA74 \uB73B\uC774 \uB354 \uBD84\uBA85\uD574\uC9D1\uB2C8\uB2E4.",
+                    "'"
+                            + addedText
+                            + "' \uAC19\uC740 \uD45C\uD604\uC744 \uD568\uAED8 \uC368\uC11C \uB204\uAD6C\uB098 \uBB34\uC5C7\uC778\uC9C0 \uB354 \uC120\uBA85\uD558\uAC8C \uB9D0\uD574 \uBCF4\uC138\uC694."
+            );
+        }
+
+        if (addedTokens.size() > 3) {
+            return null;
+        }
+
+        return new CorrectionDto(
+                "\uD544\uC694\uD55C \uD45C\uD604\uC744 \uD55C \uB369\uC5B4\uB9AC \uB354 \uCD94\uAC00\uD558\uBA74 \uBB38\uC7A5 \uD750\uB984\uC774 \uC790\uC5F0\uC2A4\uB7EC\uC6CC\uC9D1\uB2C8\uB2E4.",
+                "'"
+                        + addedText
+                        + "'\uCC98\uB7FC \uD544\uC694\uD55C \uB9D0\uC744 \uB36E\uBD99\uC5EC \uB73B\uC744 \uB354 \uBD84\uBA85\uD558\uAC8C \uD574 \uBCF4\uC138\uC694."
+        );
+    }
+
+    private boolean isCapitalizationOnlyChange(String original, String revised) {
+        return original != null
+                && revised != null
+                && !original.equals(revised)
+                && original.equalsIgnoreCase(revised);
+    }
+
+    private boolean isPluralizationChange(List<String> originalTokens, List<String> revisedTokens) {
+        if (originalTokens.size() != 1 || revisedTokens.size() != 1) {
+            return false;
+        }
+
+        String originalToken = originalTokens.get(0);
+        String revisedToken = revisedTokens.get(0);
+        return !originalToken.equals(revisedToken)
+                && singularizeToken(originalToken).equals(singularizeToken(revisedToken));
+    }
+
+    private String singularizeToken(String token) {
+        if (token == null || token.isBlank()) {
+            return "";
+        }
+
+        String normalized = token.trim().toLowerCase(Locale.ROOT);
+        if (normalized.endsWith("ies") && normalized.length() > 3) {
+            return normalized.substring(0, normalized.length() - 3) + "y";
+        }
+        if (normalized.endsWith("es") && normalized.length() > 2) {
+            return normalized.substring(0, normalized.length() - 2);
+        }
+        if (normalized.endsWith("s") && normalized.length() > 1 && !normalized.endsWith("ss")) {
+            return normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized;
+    }
+
+    private boolean isPunctuationOnly(String value) {
+        return value != null && value.replaceAll("[\\p{Punct}\\s]+", "").isBlank();
     }
 
     private boolean isCoveredByExistingCorrections(CorrectionDto candidate, List<CorrectionDto> existingCorrections) {

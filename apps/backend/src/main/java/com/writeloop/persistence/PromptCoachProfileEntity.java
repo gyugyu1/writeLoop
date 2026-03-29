@@ -3,6 +3,7 @@ package com.writeloop.persistence;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.MapsId;
@@ -19,12 +20,22 @@ import lombok.NoArgsConstructor;
 public class PromptCoachProfileEntity {
 
     @Id
-    @Column(name = "prompt_id", nullable = false, length = 64)
+    @Column(
+            name = "prompt_id",
+            nullable = false,
+            length = 64,
+            columnDefinition = "VARCHAR(64) COLLATE utf8mb4_unicode_ci"
+    )
     private String promptId;
 
     @MapsId
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "prompt_id", nullable = false)
+    @JoinColumn(
+            name = "prompt_id",
+            nullable = false,
+            columnDefinition = "VARCHAR(64) COLLATE utf8mb4_unicode_ci",
+            foreignKey = @ForeignKey(name = "fk_prompt_coach_profiles_prompt")
+    )
     private PromptEntity prompt;
 
     @Column(name = "primary_category", nullable = false, length = 64)

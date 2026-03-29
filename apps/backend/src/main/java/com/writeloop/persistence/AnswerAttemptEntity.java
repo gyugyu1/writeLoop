@@ -25,7 +25,12 @@ public class AnswerAttemptEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "session_id", nullable = false, length = 64)
+    @Column(
+            name = "session_id",
+            nullable = false,
+            length = 64,
+            columnDefinition = "VARCHAR(64) COLLATE utf8mb4_unicode_ci"
+    )
     private String sessionId;
 
     @Column(name = "attempt_no", nullable = false)

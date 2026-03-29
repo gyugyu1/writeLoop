@@ -49,7 +49,17 @@ public class PromptCoachProfileSupport {
             return true;
         }
 
-        return isSeededPrompt(prompt) && notes.isBlank();
+        if (!isSeededPrompt(prompt)) {
+            return false;
+        }
+
+        PromptCoachProfileRequestDto expected = defaultProfileForPrompt(prompt);
+        boolean mismatchedPrimary = !normalizeText(profile.getPrimaryCategory(), "GENERAL")
+                .equalsIgnoreCase(expected.primaryCategory());
+        boolean mismatchedStarterStyle = !normalizeText(profile.getStarterStyle(), "DIRECT")
+                .equalsIgnoreCase(expected.starterStyle());
+
+        return mismatchedPrimary || mismatchedStarterStyle || notes.isBlank();
     }
 
     public PromptCoachProfileRequestDto defaultProfileForPrompt(PromptEntity prompt) {
@@ -66,7 +76,7 @@ public class PromptCoachProfileSupport {
                         List.of("starter_routine", "frequency", "time_marker", "activity"),
                         List.of("generic_example_marker", "formal_conclusion", "compare_balance"),
                         "DIRECT",
-                        "저녁 이후 루틴형 질문입니다. 시간표지와 빈도 표현을 우선 추천하고, 무거운 결론형 표현은 뒤로 미룹니다."
+                        "루틴형 질문입니다. 시간 표현과 순서 표현을 우선 추천합니다."
                 );
             case "prompt-a-2":
                 return profile(
@@ -75,7 +85,7 @@ public class PromptCoachProfileSupport {
                         List.of("favorite", "reason", "adjective", "example"),
                         List.of("compare_balance", "formal_conclusion"),
                         "DIRECT",
-                        "좋아하는 대상과 이유를 함께 말하는 질문입니다. favorite, because, 형용사 표현을 우선 추천합니다."
+                        "선호형 질문입니다. favorite, because, 형용사 표현을 우선 추천합니다."
                 );
             case "prompt-a-3":
                 return profile(
@@ -84,7 +94,16 @@ public class PromptCoachProfileSupport {
                         List.of("starter_routine", "frequency", "activity", "companion", "place"),
                         List.of("generic_example_marker", "formal_conclusion", "compare_balance"),
                         "DIRECT",
-                        "주말 루틴형 질문입니다. 빈도, 활동, 함께하는 사람, 장소 표현을 우선 추천합니다."
+                        "주말 루틴형 질문입니다. 활동, 장소, 함께하는 사람 표현을 우선 추천합니다."
+                );
+            case "prompt-a-4":
+                return profile(
+                        "ROUTINE",
+                        List.of("habit", "after_work", "leisure"),
+                        List.of("starter_routine", "time_marker", "activity", "reason"),
+                        List.of("generic_example_marker", "formal_conclusion", "compare_balance"),
+                        "DIRECT",
+                        "퇴근 후 루틴형 질문입니다. 시간 표현과 활동, 간단한 이유 표현을 우선 추천합니다."
                 );
             case "prompt-b-1":
                 return profile(
@@ -93,7 +112,7 @@ public class PromptCoachProfileSupport {
                         List.of("problem", "response", "sequence", "result"),
                         List.of("generic_example_marker"),
                         "REFLECTIVE",
-                        "문제 상황과 해결 과정을 말하는 질문입니다. 문제 -> 대응 -> 결과 흐름을 살리는 표현을 우선 추천합니다."
+                        "문제 해결형 질문입니다. 문제, 대응, 결과 흐름을 우선 추천합니다."
                 );
             case "prompt-b-2":
                 return profile(
@@ -102,16 +121,34 @@ public class PromptCoachProfileSupport {
                         List.of("desire", "place", "activity", "reason"),
                         List.of("formal_conclusion"),
                         "DIRECT",
-                        "가보고 싶은 장소와 그곳에서 하고 싶은 일을 말하는 질문입니다. desire, place, activity 표현을 우선 추천합니다."
+                        "여행 계획형 질문입니다. 가고 싶은 이유와 현지 활동 표현을 우선 추천합니다."
                 );
             case "prompt-b-3":
                 return profile(
                         "GOAL_PLAN",
                         List.of("goal", "plan", "habit"),
                         List.of("goal", "plan", "process", "result"),
-                        List.of("generic_example_marker"),
+                        List.of("generic_example_marker", "formal_conclusion"),
                         "DIRECT",
-                        "올해 만들고 싶은 습관과 실천 계획을 말하는 질문입니다. 목표, 계획, 유지 과정 표현을 우선 추천합니다."
+                        "목표 계획형 질문입니다. 습관, 실천 루틴, 이유 표현을 우선 추천합니다."
+                );
+            case "prompt-b-4":
+                return profile(
+                        "GOAL_PLAN",
+                        List.of("travel", "place", "activity"),
+                        List.of("desire", "place", "activity", "linker"),
+                        List.of("formal_conclusion"),
+                        "DIRECT",
+                        "여행 계획형 질문입니다. 이유와 활동을 because, also 같은 연결 표현으로 이어 주는 구성을 우선 추천합니다."
+                );
+            case "prompt-b-5":
+                return profile(
+                        "GOAL_PLAN",
+                        List.of("goal", "plan", "growth"),
+                        List.of("goal", "plan", "process", "reason"),
+                        List.of("generic_example_marker", "formal_conclusion"),
+                        "DIRECT",
+                        "성장 목표형 질문입니다. 능력, 연습 계획, 개인적인 이유 표현을 우선 추천합니다."
                 );
             case "prompt-c-1":
                 return profile(
@@ -120,7 +157,7 @@ public class PromptCoachProfileSupport {
                         List.of("starter_topic", "contrast", "opinion", "qualification"),
                         List.of("generic_example_marker"),
                         "BALANCED",
-                        "기술 변화의 장단점을 함께 다루는 균형형 질문입니다. 대조, 입장, 조건부 평가 표현을 우선 추천합니다."
+                        "균형형 질문입니다. 장단점 비교와 조건부 평가 표현을 우선 추천합니다."
                 );
             case "prompt-c-2":
                 return profile(
@@ -129,7 +166,7 @@ public class PromptCoachProfileSupport {
                         List.of("opinion", "responsibility", "reason", "example"),
                         List.of("generic_example_marker", "casual_habit"),
                         "DIRECT",
-                        "사회적 책임에 대한 입장과 근거를 말하는 질문입니다. 주장, 책임, 근거, 구체 예시 표현을 우선 추천합니다."
+                        "입장형 질문입니다. 주장, 근거, 예시 표현을 우선 추천합니다."
                 );
             case "prompt-c-3":
                 return profile(
@@ -138,59 +175,63 @@ public class PromptCoachProfileSupport {
                         List.of("past_present", "change", "cause", "realization"),
                         List.of("generic_example_marker"),
                         "REFLECTIVE",
-                        "시간이 지나며 바뀐 생각을 돌아보는 질문입니다. 과거-현재 대비와 변화 계기 표현을 우선 추천합니다."
+                        "변화 회고형 질문입니다. 과거-현재 대비와 변화 계기 표현을 우선 추천합니다."
                 );
             default:
                 break;
         }
 
-        if (promptId.equals("prompt-a-1") || promptId.equals("prompt-a-3")
-                || combined.contains("weekend") || combined.contains("usually spend") || combined.contains("daily routine") || combined.contains("after dinner")) {
+        if (combined.contains("after dinner")
+                || combined.contains("after work")
+                || combined.contains("weekend")
+                || combined.contains("usually spend")) {
             return profile(
                     "ROUTINE",
                     List.of("habit", "personal", "leisure"),
                     List.of("starter_routine", "frequency", "activity", "companion", "time_marker"),
                     List.of("generic_example_marker", "formal_conclusion"),
                     "DIRECT",
-                    "일상 루틴형 질문입니다. 빈도와 활동 중심 표현을 먼저 추천합니다."
+                    "루틴형 질문입니다. 빈도와 활동 중심 표현을 우선 추천합니다."
             );
         }
 
-        if (promptId.equals("prompt-a-2") || combined.contains("favorite") || combined.contains("why do you like it")) {
+        if (combined.contains("favorite") || combined.contains("why do you like it")) {
             return profile(
                     "PREFERENCE",
                     List.of("preference", "reason", "personal"),
                     List.of("favorite", "reason", "adjective", "example"),
                     List.of("compare_balance", "formal_conclusion"),
                     "DIRECT",
-                    "선호와 이유를 함께 설명하는 질문입니다."
+                    "선호형 질문입니다. 좋아하는 이유를 자연스럽게 설명하는 표현을 우선 추천합니다."
             );
         }
 
-        if (promptId.equals("prompt-b-1") || (combined.contains("challenge") && combined.contains("deal with"))) {
+        if ((combined.contains("challenge") && combined.contains("deal with")) || combined.contains("problem solving")) {
             return profile(
                     "PROBLEM_SOLUTION",
                     List.of("experience", "problem", "solution"),
                     List.of("problem", "response", "sequence", "result"),
                     List.of("generic_example_marker"),
                     "REFLECTIVE",
-                    "문제와 해결 과정을 설명하는 질문입니다."
+                    "문제 해결형 질문입니다. 문제와 해결 과정을 순서대로 설명하는 표현을 우선 추천합니다."
             );
         }
 
-        if (promptId.equals("prompt-b-2") || combined.contains("visit") || combined.contains("would like to do there") || combined.contains("travel")) {
+        if (combined.contains("visit")
+                || combined.contains("would like to do there")
+                || combined.contains("want to do there")
+                || combined.contains("travel")) {
             return profile(
                     "GOAL_PLAN",
                     List.of("travel", "place", "activity"),
                     List.of("desire", "place", "activity", "reason"),
                     List.of("formal_conclusion"),
                     "DIRECT",
-                    "원하는 장소와 활동 계획을 말하는 질문입니다."
+                    "계획형 질문입니다. 가고 싶은 곳과 활동을 연결해서 설명하는 표현을 우선 추천합니다."
             );
         }
 
-        if (promptId.equals("prompt-b-3")
-                || combined.contains("habit you want to build")
+        if (combined.contains("habit you want to build")
                 || combined.contains("skill you want to improve")
                 || combined.contains("practice it")) {
             return profile(
@@ -199,40 +240,45 @@ public class PromptCoachProfileSupport {
                     List.of("goal", "plan", "process", "result"),
                     List.of("generic_example_marker"),
                     "DIRECT",
-                    "목표와 실천 계획을 함께 설명하는 질문입니다."
+                    "목표 계획형 질문입니다. 목표, 계획, 이유 표현을 우선 추천합니다."
             );
         }
 
-        if (promptId.equals("prompt-c-1") || (combined.contains("technology") && combined.contains("relationships") && combined.contains("positive"))) {
+        if ((combined.contains("technology") && combined.contains("relationships"))
+                || combined.contains("mostly positive")) {
             return profile(
                     "BALANCED_OPINION",
-                    List.of("opinion", "balance", "technology"),
+                    List.of("opinion", "balance", "issue"),
                     List.of("starter_topic", "contrast", "opinion", "qualification"),
                     List.of("generic_example_marker"),
                     "BALANCED",
-                    "장단점을 균형 있게 평가하는 질문입니다."
+                    "균형형 질문입니다. 찬반과 조건부 의견 표현을 우선 추천합니다."
             );
         }
 
-        if (promptId.equals("prompt-c-2") || combined.contains("social responsibility") || combined.contains("successful companies")) {
+        if (combined.contains("social responsibility")
+                || combined.contains("successful companies")
+                || combined.contains("responsibility should")) {
             return profile(
                     "OPINION_REASON",
                     List.of("opinion", "reason", "society"),
                     List.of("opinion", "responsibility", "reason", "example"),
                     List.of("generic_example_marker", "casual_habit"),
                     "DIRECT",
-                    "입장과 근거를 설득력 있게 전개하는 질문입니다."
+                    "입장형 질문입니다. 주장과 근거를 분명하게 전개하는 표현을 우선 추천합니다."
             );
         }
 
-        if (promptId.equals("prompt-c-3") || (combined.contains("belief") && combined.contains("changed over time"))) {
+        if (combined.contains("changed over time")
+                || combined.contains("changed your mind")
+                || combined.contains("belief")) {
             return profile(
                     "CHANGE_REFLECTION",
                     List.of("reflection", "change", "cause"),
                     List.of("past_present", "change", "cause", "realization"),
                     List.of("generic_example_marker"),
                     "REFLECTIVE",
-                    "생각이 어떻게 바뀌었는지 돌아보는 질문입니다."
+                    "회고형 질문입니다. 과거와 현재를 비교하는 표현을 우선 추천합니다."
             );
         }
 
@@ -242,7 +288,7 @@ public class PromptCoachProfileSupport {
                 List.of("starter", "reason"),
                 List.of(),
                 "DIRECT",
-                "일반 질문입니다. 기본 starter와 reason 표현을 우선 추천합니다."
+                "일반 설명형 질문입니다. 기본 starter와 reason 표현을 우선 추천합니다."
         );
     }
 
@@ -355,9 +401,12 @@ public class PromptCoachProfileSupport {
             case "prompt-a-1",
                     "prompt-a-2",
                     "prompt-a-3",
+                    "prompt-a-4",
                     "prompt-b-1",
                     "prompt-b-2",
                     "prompt-b-3",
+                    "prompt-b-4",
+                    "prompt-b-5",
                     "prompt-c-1",
                     "prompt-c-2",
                     "prompt-c-3" -> true;

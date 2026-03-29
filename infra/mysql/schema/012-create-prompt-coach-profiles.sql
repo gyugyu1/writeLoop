@@ -1,4 +1,4 @@
-CREATE TABLE prompt_coach_profiles (
+CREATE TABLE IF NOT EXISTS prompt_coach_profiles (
     prompt_id VARCHAR(64) NOT NULL,
     primary_category VARCHAR(64) NOT NULL,
     secondary_categories_json TEXT NOT NULL,
@@ -35,7 +35,7 @@ SELECT
     '["starter_routine","frequency","time_marker","activity"]',
     '["generic_example_marker","formal_conclusion","compare_balance"]',
     'DIRECT',
-    '저녁 이후 루틴형 질문입니다. 시간표지와 빈도 표현을 우선 추천하고, 무거운 결론형 표현은 뒤로 미룹니다.'
+    '루틴형 질문입니다. 시간 표현과 순서 표현을 우선 추천합니다.'
 FROM prompts
 WHERE id = 'prompt-a-1'
 ON DUPLICATE KEY UPDATE
@@ -62,7 +62,7 @@ SELECT
     '["favorite","reason","adjective","example"]',
     '["compare_balance","formal_conclusion"]',
     'DIRECT',
-    '좋아하는 대상과 이유를 함께 말하는 질문입니다. favorite, because, 형용사 표현을 우선 추천합니다.'
+    '선호형 질문입니다. favorite, because, 형용사 표현을 우선 추천합니다.'
 FROM prompts
 WHERE id = 'prompt-a-2'
 ON DUPLICATE KEY UPDATE
@@ -89,9 +89,36 @@ SELECT
     '["starter_routine","frequency","activity","companion","place"]',
     '["generic_example_marker","formal_conclusion","compare_balance"]',
     'DIRECT',
-    '주말 루틴형 질문입니다. 빈도, 활동, 함께하는 사람, 장소 표현을 우선 추천합니다.'
+    '주말 루틴형 질문입니다. 활동, 장소, 함께하는 사람 표현을 우선 추천합니다.'
 FROM prompts
 WHERE id = 'prompt-a-3'
+ON DUPLICATE KEY UPDATE
+    primary_category = VALUES(primary_category),
+    secondary_categories_json = VALUES(secondary_categories_json),
+    preferred_expression_families_json = VALUES(preferred_expression_families_json),
+    avoid_families_json = VALUES(avoid_families_json),
+    starter_style = VALUES(starter_style),
+    notes = VALUES(notes);
+
+INSERT INTO prompt_coach_profiles (
+    prompt_id,
+    primary_category,
+    secondary_categories_json,
+    preferred_expression_families_json,
+    avoid_families_json,
+    starter_style,
+    notes
+)
+SELECT
+    id,
+    'ROUTINE',
+    '["habit","after_work","leisure"]',
+    '["starter_routine","time_marker","activity","reason"]',
+    '["generic_example_marker","formal_conclusion","compare_balance"]',
+    'DIRECT',
+    '퇴근 후 루틴형 질문입니다. 시간 표현과 활동, 간단한 이유 표현을 우선 추천합니다.'
+FROM prompts
+WHERE id = 'prompt-a-4'
 ON DUPLICATE KEY UPDATE
     primary_category = VALUES(primary_category),
     secondary_categories_json = VALUES(secondary_categories_json),
@@ -116,7 +143,7 @@ SELECT
     '["problem","response","sequence","result"]',
     '["generic_example_marker"]',
     'REFLECTIVE',
-    '문제 상황과 해결 과정을 말하는 질문입니다. 문제 -> 대응 -> 결과 흐름을 살리는 표현을 우선 추천합니다.'
+    '문제 해결형 질문입니다. 문제, 대응, 결과 흐름을 우선 추천합니다.'
 FROM prompts
 WHERE id = 'prompt-b-1'
 ON DUPLICATE KEY UPDATE
@@ -143,7 +170,7 @@ SELECT
     '["desire","place","activity","reason"]',
     '["formal_conclusion"]',
     'DIRECT',
-    '가보고 싶은 장소와 그곳에서 하고 싶은 일을 말하는 질문입니다. desire, place, activity 표현을 우선 추천합니다.'
+    '여행 계획형 질문입니다. 가고 싶은 이유와 현지 활동 표현을 우선 추천합니다.'
 FROM prompts
 WHERE id = 'prompt-b-2'
 ON DUPLICATE KEY UPDATE
@@ -168,11 +195,65 @@ SELECT
     'GOAL_PLAN',
     '["goal","plan","habit"]',
     '["goal","plan","process","result"]',
-    '["generic_example_marker"]',
+    '["generic_example_marker","formal_conclusion"]',
     'DIRECT',
-    '올해 만들고 싶은 습관과 실천 계획을 말하는 질문입니다. 목표, 계획, 유지 과정 표현을 우선 추천합니다.'
+    '목표 계획형 질문입니다. 습관, 실천 루틴, 이유 표현을 우선 추천합니다.'
 FROM prompts
 WHERE id = 'prompt-b-3'
+ON DUPLICATE KEY UPDATE
+    primary_category = VALUES(primary_category),
+    secondary_categories_json = VALUES(secondary_categories_json),
+    preferred_expression_families_json = VALUES(preferred_expression_families_json),
+    avoid_families_json = VALUES(avoid_families_json),
+    starter_style = VALUES(starter_style),
+    notes = VALUES(notes);
+
+INSERT INTO prompt_coach_profiles (
+    prompt_id,
+    primary_category,
+    secondary_categories_json,
+    preferred_expression_families_json,
+    avoid_families_json,
+    starter_style,
+    notes
+)
+SELECT
+    id,
+    'GOAL_PLAN',
+    '["travel","place","activity"]',
+    '["desire","place","activity","linker"]',
+    '["formal_conclusion"]',
+    'DIRECT',
+    '여행 계획형 질문입니다. 이유와 활동을 연결 표현으로 이어 주는 구성을 우선 추천합니다.'
+FROM prompts
+WHERE id = 'prompt-b-4'
+ON DUPLICATE KEY UPDATE
+    primary_category = VALUES(primary_category),
+    secondary_categories_json = VALUES(secondary_categories_json),
+    preferred_expression_families_json = VALUES(preferred_expression_families_json),
+    avoid_families_json = VALUES(avoid_families_json),
+    starter_style = VALUES(starter_style),
+    notes = VALUES(notes);
+
+INSERT INTO prompt_coach_profiles (
+    prompt_id,
+    primary_category,
+    secondary_categories_json,
+    preferred_expression_families_json,
+    avoid_families_json,
+    starter_style,
+    notes
+)
+SELECT
+    id,
+    'GOAL_PLAN',
+    '["goal","plan","growth"]',
+    '["goal","plan","process","reason"]',
+    '["generic_example_marker","formal_conclusion"]',
+    'DIRECT',
+    '성장 목표형 질문입니다. 능력, 연습 계획, 개인적인 이유 표현을 우선 추천합니다.'
+FROM prompts
+WHERE id = 'prompt-b-5'
 ON DUPLICATE KEY UPDATE
     primary_category = VALUES(primary_category),
     secondary_categories_json = VALUES(secondary_categories_json),
@@ -197,7 +278,7 @@ SELECT
     '["starter_topic","contrast","opinion","qualification"]',
     '["generic_example_marker"]',
     'BALANCED',
-    '기술 변화의 장단점을 함께 다루는 균형형 질문입니다. 대조, 입장, 조건부 평가 표현을 우선 추천합니다.'
+    '균형형 질문입니다. 장단점 비교와 조건부 평가 표현을 우선 추천합니다.'
 FROM prompts
 WHERE id = 'prompt-c-1'
 ON DUPLICATE KEY UPDATE
@@ -224,7 +305,7 @@ SELECT
     '["opinion","responsibility","reason","example"]',
     '["generic_example_marker","casual_habit"]',
     'DIRECT',
-    '사회적 책임에 대한 입장과 근거를 말하는 질문입니다. 주장, 책임, 근거, 구체 예시 표현을 우선 추천합니다.'
+    '입장형 질문입니다. 주장, 근거, 예시 표현을 우선 추천합니다.'
 FROM prompts
 WHERE id = 'prompt-c-2'
 ON DUPLICATE KEY UPDATE
@@ -251,7 +332,7 @@ SELECT
     '["past_present","change","cause","realization"]',
     '["generic_example_marker"]',
     'REFLECTIVE',
-    '시간이 지나며 바뀐 생각을 돌아보는 질문입니다. 과거-현재 대비와 변화 계기 표현을 우선 추천합니다.'
+    '변화 회고형 질문입니다. 과거-현재 대비와 변화 계기 표현을 우선 추천합니다.'
 FROM prompts
 WHERE id = 'prompt-c-3'
 ON DUPLICATE KEY UPDATE

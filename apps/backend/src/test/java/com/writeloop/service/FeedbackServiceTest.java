@@ -6,6 +6,7 @@ import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
+import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.persistence.AnswerAttemptRepository;
@@ -20,6 +21,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +56,7 @@ class FeedbackServiceTest {
         when(answerSessionRepository.countByGuestId(any())).thenReturn(0L);
         when(answerAttemptRepository.countBySessionId(any())).thenReturn(0);
         when(answerAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(promptService.findHintsByPromptId(anyString())).thenReturn(List.of());
     }
 
     @Test
@@ -69,7 +73,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer)).thenReturn(new FeedbackResponseDto(
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -127,7 +131,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer)).thenReturn(new FeedbackResponseDto(
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -178,7 +182,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer)).thenReturn(new FeedbackResponseDto(
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -219,7 +223,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer)).thenReturn(new FeedbackResponseDto(
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -261,7 +265,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer)).thenReturn(new FeedbackResponseDto(
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -314,5 +318,52 @@ class FeedbackServiceTest {
                         "My favorite [thing] is [item] because it is [adj] and [adj].",
                         "I want to [verb] so that I can [result]."
                 );
+    }
+
+    @Test
+    void review_fetches_prompt_hints_and_forwards_them_to_openai_feedback() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-5",
+                "Goal Plan - Skill Growth",
+                "B",
+                "What is one skill you want to improve this year, and how will you work on it?",
+                "올해 더 키우고 싶은 기술 하나는 무엇이고, 어떻게 실천할 건가요?",
+                "목표와 실천 계획을 함께 말해 보세요."
+        );
+        String answer = "I want to improve my English speaking this year.";
+        List<PromptHintDto> hints = List.of(
+                new PromptHintDto("hint-1", prompt.id(), "STARTER", "I want to improve [skill] this year.", 1),
+                new PromptHintDto("hint-2", prompt.id(), "VOCAB", "practice regularly", 2)
+        );
+        FeedbackResponseDto feedback = new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                87,
+                false,
+                null,
+                "요약",
+                List.of("강점"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                answer,
+                List.of(),
+                answer,
+                "다시 써 보세요."
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(hints);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, hints)).thenReturn(feedback);
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.promptId()).isEqualTo(prompt.id());
+        verify(promptService).findHintsByPromptId(prompt.id());
+        verify(openAiFeedbackClient).review(prompt, answer, hints);
     }
 }

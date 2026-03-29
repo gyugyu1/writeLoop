@@ -6,6 +6,7 @@ import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
+import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.exception.GuestLimitExceededException;
 import com.writeloop.persistence.AnswerAttemptEntity;
@@ -88,9 +89,13 @@ public class FeedbackService {
         String answer = request.answer() == null ? "" : request.answer().trim();
         AnswerSessionEntity session = resolveSession(request, prompt.id(), currentUserId);
         AttemptType attemptType = resolveAttemptType(request);
+        boolean openAiConfigured = openAiFeedbackClient.isConfigured();
+        List<PromptHintDto> hints = openAiConfigured
+                ? promptService.findHintsByPromptId(prompt.id())
+                : List.of();
 
-        FeedbackResponseDto feedback = openAiFeedbackClient.isConfigured()
-                ? openAiFeedbackClient.review(prompt, answer)
+        FeedbackResponseDto feedback = openAiConfigured
+                ? openAiFeedbackClient.review(prompt, answer, hints)
                 : buildLocalFeedback(prompt, answer);
         feedback = sanitizeFeedbackResponse(feedback, answer);
 

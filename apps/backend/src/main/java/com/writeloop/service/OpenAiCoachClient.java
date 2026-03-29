@@ -184,14 +184,8 @@ public class OpenAiCoachClient {
         String targetMeaning = analysis.lookup()
                 .map(spec -> spec.frame().surfaceMeaning())
                 .orElse("");
-        StringBuilder hintText = new StringBuilder();
-        for (PromptHintDto hint : hints) {
-            hintText.append("- [")
-                    .append(hint.hintType())
-                    .append("] ")
-                    .append(hint.content())
-                    .append('\n');
-        }
+        String coachProfileText = PromptOpenAiContextFormatter.formatCoachProfile(prompt);
+        String hintText = PromptOpenAiContextFormatter.formatPromptHints(hints);
 
         return """
                 You are a helpful English expression coach for Korean learners.
@@ -204,6 +198,9 @@ public class OpenAiCoachClient {
                 - Prioritize the learner's explicit intent over prompt hints.
                 - Only reuse a prompt hint if it matches the detected learner intent.
                 - If the learner intent is unclear, prompt hints may be used as support.
+                - Treat the prompt coaching profile as supporting context for category, tone, starter style, and preferred expression families.
+                - If the learner request is short or ambiguous, use the prompt coaching profile to choose more fitting expressions.
+                - Avoid expression families listed in the prompt coaching profile unless the learner explicitly asks for them or they are necessary for a correct answer.
                 - If the learner is asking how to say a Korean meaning in English, infer the exact target meaning first.
                 - For meaning-lookup questions, recommend close, natural English expressions around that meaning.
                 - For meaning-lookup questions, do not switch to generic topic starters unless they directly express the requested meaning.
@@ -221,6 +218,8 @@ public class OpenAiCoachClient {
                 Question in English: %s
                 Question in Korean: %s
                 Prompt tip: %s
+                Prompt coaching profile:
+                %s
                 Learner question: %s
                 Learner query mode: %s
                 Core meaning to express: %s
@@ -232,15 +231,16 @@ public class OpenAiCoachClient {
                         ? "- If the learner asks for a first-sentence starter, recommend only opener expressions or opener sentences for the very first sentence. Exclude conclusion phrases, contrast markers, example linkers, detail markers, and body-paragraph transitions."
                         : "",
                 prompt.topic(),
-                prompt.difficulty(),
-                prompt.questionEn(),
-                prompt.questionKo(),
-                prompt.tip(),
-                userQuestion == null ? "" : userQuestion,
-                queryMode.name().toLowerCase(Locale.ROOT),
-                targetMeaning.isBlank() ? "none" : targetMeaning,
-                intentCategories.isBlank() ? "none" : intentCategories,
-                hintText
+                 prompt.difficulty(),
+                 prompt.questionEn(),
+                 prompt.questionKo(),
+                 prompt.tip(),
+                 coachProfileText,
+                 userQuestion == null ? "" : userQuestion,
+                 queryMode.name().toLowerCase(Locale.ROOT),
+                 targetMeaning.isBlank() ? "none" : targetMeaning,
+                 intentCategories.isBlank() ? "none" : intentCategories,
+                 hintText
         );
     }
 
@@ -272,20 +272,24 @@ public class OpenAiCoachClient {
                 - Keep noun targets as noun phrases or canonical labels when possible.
                 - Keep topic slots as natural English chunks that can be inserted into a sentence.
                 - Keep qualifier slots as a short adjective or short descriptive phrase.
+                - Use the prompt coaching profile only as supporting context when the slot meaning is ambiguous.
 
                 Prompt topic: %s
                 Prompt question: %s
+                Prompt coaching profile:
+                %s
                 Learner question: %s
                 Meaning family: %s
                 Slot type: %s
                 Source text: %s
                 """.formatted(
-                prompt.topic(),
-                prompt.questionEn(),
-                userQuestion == null ? "" : userQuestion,
-                family.name().toLowerCase(Locale.ROOT),
-                slot.name().toLowerCase(Locale.ROOT),
-                sourceText
+                 prompt.topic(),
+                 prompt.questionEn(),
+                 PromptOpenAiContextFormatter.formatCoachProfile(prompt),
+                 userQuestion == null ? "" : userQuestion,
+                 family.name().toLowerCase(Locale.ROOT),
+                 slot.name().toLowerCase(Locale.ROOT),
+                 sourceText
         );
 
         Map<String, Object> payload = Map.of(

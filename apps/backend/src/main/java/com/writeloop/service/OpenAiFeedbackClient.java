@@ -4,6 +4,7 @@ import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
+import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.RefinementExpressionDto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -54,13 +55,17 @@ public class OpenAiFeedbackClient {
     }
 
     public FeedbackResponseDto review(PromptDto prompt, String answer) {
+        return review(prompt, answer, List.of());
+    }
+
+    public FeedbackResponseDto review(PromptDto prompt, String answer, List<PromptHintDto> hints) {
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl))
                     .timeout(Duration.ofSeconds(60))
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                     .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(prompt, answer)))
+                    .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(prompt, answer, hints)))
                     .build();
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -105,7 +110,7 @@ public class OpenAiFeedbackClient {
         return List.of(new InlineFeedbackSegmentDto("REPLACE", safeOriginalText, safeRevisedText));
     }
 
-    private String buildRequestBody(PromptDto prompt, String answer) throws IOException {
+    private String buildRequestBody(PromptDto prompt, String answer, List<PromptHintDto> hints) throws IOException {
         Map<String, Object> schema = Map.of(
                 "type", "object",
                 "additionalProperties", false,
@@ -173,7 +178,7 @@ public class OpenAiFeedbackClient {
 
         Map<String, Object> payload = Map.of(
                 "model", model,
-                "input", buildPrompt(prompt, answer),
+                "input", buildPrompt(prompt, answer, hints),
                 "text", Map.of(
                         "format", Map.of(
                                 "type", "json_schema",
@@ -187,7 +192,10 @@ public class OpenAiFeedbackClient {
         return objectMapper.writeValueAsString(payload);
     }
 
-    private String buildPrompt(PromptDto prompt, String answer) {
+    private String buildPrompt(PromptDto prompt, String answer, List<PromptHintDto> hints) {
+        String coachProfileText = PromptOpenAiContextFormatter.formatCoachProfile(prompt);
+        String hintText = PromptOpenAiContextFormatter.formatPromptHints(hints);
+
         return """
                 You are an English speaking coach for Korean learners.
                 Evaluate the learner answer and return feedback in valid JSON only.
@@ -231,22 +239,31 @@ public class OpenAiFeedbackClient {
                 - Do not include expressions that merely repeat the learner's current wording with only a tiny grammar fix.
                 - Prefer frames that improve clarity, detail, reason, example, vocabulary, or natural flow.
                 - rewriteChallenge should tell the learner how to improve in the next attempt in Korean.
+                - Treat the prompt coaching profile and prompt hints as supporting context for modelAnswer and refinementExpressions.
+                - If the prompt coaching profile lists preferred expression families, prefer those families when they fit the learner answer and this prompt.
+                - If the prompt coaching profile lists avoid families, avoid those families unless they are necessary for a natural correction.
 
                 Prompt topic: %s
                 Difficulty: %s
                 Question in English: %s
                 Question in Korean: %s
                 Speaking tip: %s
+                Prompt coaching profile:
+                %s
+                Prompt hints:
+                %s
 
                 Learner answer:
                 %s
                 """.formatted(
-                prompt.topic(),
-                prompt.difficulty(),
-                prompt.questionEn(),
-                prompt.questionKo(),
-                prompt.tip(),
-                answer
+                 prompt.topic(),
+                 prompt.difficulty(),
+                 prompt.questionEn(),
+                 prompt.questionKo(),
+                 prompt.tip(),
+                 coachProfileText,
+                 hintText,
+                 answer
         );
     }
 

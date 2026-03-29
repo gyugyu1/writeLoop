@@ -1890,8 +1890,10 @@ export function AnswerLoop() {
               <Image
                 src="/coach/mascote-face.png"
                 alt=""
-                width={42}
-                height={42}
+                width={60}
+                height={60}
+                sizes="(max-width: 768px) 50px, 60px"
+                quality={100}
                 className={styles.coachTriggerMascot}
               />
             </button>

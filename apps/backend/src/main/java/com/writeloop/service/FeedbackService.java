@@ -77,6 +77,11 @@ public class FeedbackService {
             "a", "an", "and", "are", "as", "at", "be", "because", "for", "from", "if",
             "in", "into", "is", "my", "of", "on", "or", "our", "that", "the", "their", "to", "with", "your", "his", "her"
     );
+    private static final Set<String> REFINEMENT_OVERLAP_STOP_TOKENS = Set.of(
+            "a", "an", "and", "are", "as", "at", "be", "because", "by", "can", "for", "from",
+            "i", "if", "in", "into", "is", "it", "its", "my", "of", "on", "one", "or", "our",
+            "reason", "so", "that", "the", "their", "this", "to", "when", "with", "your", "his", "her"
+    );
 
     private final PromptService promptService;
     private final OpenAiFeedbackClient openAiFeedbackClient;
@@ -714,7 +719,15 @@ public class FeedbackService {
                 String rawCandidate = cleanExpressionCandidate(matcher.group());
                 if (shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
                     String candidate = toReusableRefinementExpression(rawCandidate);
-                    if (!candidate.isBlank()) {
+                    String example = buildRefinementExample(modelAnswer, candidate);
+                    if (!candidate.isBlank()
+                            && isNovelRefinementSuggestion(
+                            rawCandidate,
+                            candidate,
+                            example,
+                            normalizedLearnerAnswer,
+                            normalizedCorrectedAnswer
+                    )) {
                         candidates.add(candidate);
                     }
                 }
@@ -726,7 +739,15 @@ public class FeedbackService {
                 String rawCandidate = cleanExpressionCandidate(clause);
                 if (shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
                     String candidate = toReusableRefinementExpression(rawCandidate);
-                    if (!candidate.isBlank()) {
+                    String example = buildRefinementExample(modelAnswer, candidate);
+                    if (!candidate.isBlank()
+                            && isNovelRefinementSuggestion(
+                            rawCandidate,
+                            candidate,
+                            example,
+                            normalizedLearnerAnswer,
+                            normalizedCorrectedAnswer
+                    )) {
                         candidates.add(candidate);
                     }
                 }
@@ -792,6 +813,15 @@ public class FeedbackService {
                 if (normalizeForComparison(example).equals(normalizeForComparison(candidate))) {
                     example = buildRefinementExample(modelAnswer, candidate);
                 }
+                if (!isNovelRefinementSuggestion(
+                        rawCandidate,
+                        candidate,
+                        example,
+                        normalizedLearnerAnswer,
+                        normalizedCorrectedAnswer
+                )) {
+                    continue;
+                }
 
                 sanitized.add(new RefinementExpressionDto(candidate, guidance, example));
                 if (sanitized.size() >= 3) {
@@ -843,8 +873,16 @@ public class FeedbackService {
                 if (seenExpressions.contains(normalizedCandidate)) {
                     continue;
                 }
+                String example = buildRefinementExample(modelAnswer, candidate);
                 if (!candidate.isBlank()
-                        && shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
+                        && shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+                        && isNovelRefinementSuggestion(
+                        rawCandidate,
+                        candidate,
+                        example,
+                        normalizedLearnerAnswer,
+                        normalizedCorrectedAnswer
+                )) {
                     candidates.add(candidate);
                 }
             }
@@ -1049,6 +1087,300 @@ public class FeedbackService {
 
         return !normalizedLearnerAnswer.contains(normalizedCandidate)
                 && !normalizedCorrectedAnswer.contains(normalizedCandidate);
+    }
+
+    private boolean isNovelRefinementSuggestion(
+            String rawCandidate,
+            String reusableCandidate,
+            String example,
+            String normalizedLearnerAnswer,
+            String normalizedCorrectedAnswer
+    ) {
+        return !isAlreadyExpressedInAnswer(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+                && !isAlreadyExpressedInAnswer(reusableCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+                && !isAlreadyExpressedInAnswer(example, normalizedLearnerAnswer, normalizedCorrectedAnswer);
+    }
+
+    private boolean isAlreadyExpressedInAnswer(
+            String expression,
+            String normalizedLearnerAnswer,
+            String normalizedCorrectedAnswer
+    ) {
+        return isDirectlyAlreadyExpressedInAnswer(expression, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+                || hasComparableStructureOverlap(expression, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+                || hasStrongAnswerTokenOverlap(expression, normalizedLearnerAnswer, normalizedCorrectedAnswer);
+    }
+
+    private boolean isDirectlyAlreadyExpressedInAnswer(
+            String expression,
+            String normalizedLearnerAnswer,
+            String normalizedCorrectedAnswer
+    ) {
+        String cleanedExpression = cleanExpressionCandidate(expression);
+        if (cleanedExpression.isBlank()) {
+            return false;
+        }
+
+        String normalizedExpression = normalizeForComparison(cleanedExpression);
+        if (!normalizedExpression.isBlank()
+                && (normalizedLearnerAnswer.contains(normalizedExpression)
+                || normalizedCorrectedAnswer.contains(normalizedExpression))) {
+            return true;
+        }
+
+        if (!cleanedExpression.contains("[") || !cleanedExpression.contains("]")) {
+            return false;
+        }
+
+        return frameAppearsInAnswer(cleanedExpression, normalizedLearnerAnswer)
+                || frameAppearsInAnswer(cleanedExpression, normalizedCorrectedAnswer);
+    }
+
+    private boolean frameAppearsInAnswer(String expressionFrame, String normalizedAnswer) {
+        if (normalizedAnswer == null || normalizedAnswer.isBlank()) {
+            return false;
+        }
+
+        String normalizedFrame = normalizeFrameForMatching(expressionFrame);
+        if (normalizedFrame.isBlank() || !normalizedFrame.contains("[")) {
+            return false;
+        }
+
+        String[] tokens = normalizedFrame.split("\\s+");
+        StringBuilder patternBuilder = new StringBuilder("(^|\\s)");
+        boolean hasLiteralToken = false;
+        for (int index = 0; index < tokens.length; index++) {
+            if (index > 0) {
+                patternBuilder.append("\\s+");
+            }
+
+            String token = tokens[index];
+            if (token.startsWith("[") && token.endsWith("]")) {
+                patternBuilder.append("[a-z0-9']+(?:\\s+[a-z0-9']+){0,4}");
+            } else {
+                hasLiteralToken = true;
+                patternBuilder.append(Pattern.quote(token));
+            }
+        }
+        patternBuilder.append("(\\s|$)");
+
+        if (!hasLiteralToken) {
+            return false;
+        }
+
+        return Pattern.compile(patternBuilder.toString(), Pattern.CASE_INSENSITIVE)
+                .matcher(normalizedAnswer)
+                .find();
+    }
+
+    private boolean hasStrongAnswerTokenOverlap(
+            String expression,
+            String normalizedLearnerAnswer,
+            String normalizedCorrectedAnswer
+    ) {
+        LinkedHashSet<String> expressionTokens = extractRefinementOverlapTokens(expression);
+        if (expressionTokens.isEmpty()) {
+            return false;
+        }
+
+        return hasStrongTokenOverlap(expressionTokens, extractRefinementOverlapTokens(normalizedLearnerAnswer))
+                || hasStrongTokenOverlap(expressionTokens, extractRefinementOverlapTokens(normalizedCorrectedAnswer));
+    }
+
+    private boolean hasComparableStructureOverlap(
+            String expression,
+            String normalizedLearnerAnswer,
+            String normalizedCorrectedAnswer
+    ) {
+        RefinementStructureProfile expressionProfile = detectRefinementStructureProfile(expression);
+        if (expressionProfile.isNone()) {
+            return false;
+        }
+
+        return hasComparableStructureOverlap(expressionProfile, normalizedLearnerAnswer)
+                || hasComparableStructureOverlap(expressionProfile, normalizedCorrectedAnswer);
+    }
+
+    private boolean hasComparableStructureOverlap(
+            RefinementStructureProfile expressionProfile,
+            String normalizedAnswer
+    ) {
+        if (normalizedAnswer == null || normalizedAnswer.isBlank()) {
+            return false;
+        }
+
+        int answerComplexity = detectStructureComplexity(normalizedAnswer, expressionProfile.family());
+        return answerComplexity >= expressionProfile.complexity();
+    }
+
+    private boolean hasStrongTokenOverlap(Set<String> expressionTokens, Set<String> answerTokens) {
+        if (expressionTokens.isEmpty() || answerTokens.isEmpty()) {
+            return false;
+        }
+
+        LinkedHashSet<String> intersection = new LinkedHashSet<>(expressionTokens);
+        intersection.retainAll(answerTokens);
+        return intersection.size() >= requiredRefinementOverlapCount(expressionTokens.size());
+    }
+
+    private int requiredRefinementOverlapCount(int tokenCount) {
+        if (tokenCount <= 1) {
+            return 1;
+        }
+        if (tokenCount == 2) {
+            return 2;
+        }
+        return Math.max(2, (int) Math.ceil(tokenCount * (2.0 / 3.0)));
+    }
+
+    private LinkedHashSet<String> extractRefinementOverlapTokens(String value) {
+        LinkedHashSet<String> tokens = new LinkedHashSet<>();
+        String normalized = normalizeFrameForMatching(value);
+        if (normalized.isBlank()) {
+            return tokens;
+        }
+
+        for (String token : normalized.split("\\s+")) {
+            if (token.isBlank() || (token.startsWith("[") && token.endsWith("]"))) {
+                continue;
+            }
+
+            String normalizedToken = normalizeOverlapToken(token);
+            if (normalizedToken.length() >= 3 && !REFINEMENT_OVERLAP_STOP_TOKENS.contains(normalizedToken)) {
+                tokens.add(normalizedToken);
+            }
+        }
+
+        return tokens;
+    }
+
+    private String normalizeOverlapToken(String token) {
+        String normalized = token == null ? "" : token.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return "";
+        }
+
+        if (normalized.endsWith("'s") && normalized.length() > 3) {
+            normalized = normalized.substring(0, normalized.length() - 2);
+        }
+
+        if (normalized.endsWith("ies") && normalized.length() > 4) {
+            normalized = normalized.substring(0, normalized.length() - 3) + "y";
+        } else if (normalized.endsWith("ing") && normalized.length() > 5) {
+            normalized = normalized.substring(0, normalized.length() - 3);
+        } else if (normalized.endsWith("ed") && normalized.length() > 4) {
+            normalized = normalized.substring(0, normalized.length() - 2);
+        } else if (normalized.endsWith("es") && normalized.length() > 4) {
+            normalized = normalized.substring(0, normalized.length() - 2);
+        } else if (normalized.endsWith("s") && normalized.length() > 3 && !normalized.endsWith("ss")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+
+        if (normalized.endsWith("nn")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+
+        return normalized;
+    }
+
+    private RefinementStructureProfile detectRefinementStructureProfile(String value) {
+        String normalized = normalizeFrameForMatching(value);
+        if (normalized.isBlank()) {
+            return RefinementStructureProfile.none();
+        }
+
+        if ((normalized.startsWith("my favorite ") || normalized.startsWith("i like ")
+                || normalized.startsWith("i love ") || normalized.startsWith("i enjoy "))
+                && normalized.contains(" because ")) {
+            return RefinementStructureProfile.none();
+        }
+
+        int becauseComplexity = detectStructureComplexity(normalized, "because");
+        if (becauseComplexity > 0) {
+            return new RefinementStructureProfile("because", becauseComplexity);
+        }
+
+        int soThatComplexity = detectStructureComplexity(normalized, "so_that");
+        if (soThatComplexity > 0) {
+            return new RefinementStructureProfile("so_that", soThatComplexity);
+        }
+
+        int whenComplexity = detectStructureComplexity(normalized, "when");
+        if (whenComplexity > 0) {
+            return new RefinementStructureProfile("when", whenComplexity);
+        }
+
+        int byComplexity = detectStructureComplexity(normalized, "by");
+        if (byComplexity > 0) {
+            return new RefinementStructureProfile("by", byComplexity);
+        }
+
+        return RefinementStructureProfile.none();
+    }
+
+    private int detectStructureComplexity(String value, String family) {
+        String normalized = normalizeFrameForMatching(value);
+        if (normalized.isBlank()) {
+            return 0;
+        }
+
+        return switch (family) {
+            case "because" -> {
+                if (normalized.contains("because it's the ")
+                        || normalized.contains("because it s the ")
+                        || normalized.contains("because it is the ")) {
+                    if (normalized.contains(" when ")) {
+                        yield 3;
+                    }
+                    yield 2;
+                }
+                if (normalized.startsWith("this is because ") || normalized.startsWith("one reason is that ")) {
+                    yield 2;
+                }
+                if (normalized.startsWith("because ") || normalized.contains(" because ")) {
+                    yield 1;
+                }
+                yield 0;
+            }
+            case "so_that" -> {
+                if (normalized.contains(" so that i can ") || normalized.startsWith("so that i can ")) {
+                    yield 2;
+                }
+                if (normalized.contains(" so that ") || normalized.startsWith("so that ")) {
+                    yield 1;
+                }
+                yield 0;
+            }
+            case "when" -> (normalized.contains(" when ") || normalized.startsWith("when ")) ? 1 : 0;
+            case "by" -> {
+                if ((normalized.contains(" by ") || normalized.startsWith("by ")) && normalized.contains("ing ")) {
+                    yield normalized.startsWith("i plan to ") ? 2 : 1;
+                }
+                yield 0;
+            }
+            default -> 0;
+        };
+    }
+
+    private record RefinementStructureProfile(String family, int complexity) {
+        private static RefinementStructureProfile none() {
+            return new RefinementStructureProfile("", 0);
+        }
+
+        private boolean isNone() {
+            return family == null || family.isBlank() || complexity <= 0;
+        }
+    }
+
+    private String normalizeFrameForMatching(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        return value.toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9\\s'\\[\\]]", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private String buildRefinementGuidance(String expression) {

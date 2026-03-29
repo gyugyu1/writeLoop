@@ -366,4 +366,184 @@ class FeedbackServiceTest {
         verify(promptService).findHintsByPromptId(prompt.id());
         verify(openAiFeedbackClient).review(prompt, answer, hints);
     }
+
+    @Test
+    void review_filters_refinement_frames_when_example_or_pattern_is_already_used() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-1",
+                "Season",
+                "A",
+                "What season do you like, and why?",
+                "어떤 계절을 좋아하고 왜 좋아하나요?",
+                "좋아하는 이유를 한 가지 이상 넣어 보세요."
+        );
+        String answer = "I like spring season because it's the season when flowers bloom and everything fresh.";
+        String correctedAnswer = "I like spring because it's the season when flowers bloom and everything feels fresh.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                83,
+                false,
+                null,
+                "요약",
+                List.of("강점"),
+                List.of(
+                        new CorrectionDto("'spring season'은 자연스럽지 않습니다.", "'spring'으로 충분합니다."),
+                        new CorrectionDto("'feel'은 'everything'에 맞게 수일치가 필요합니다.", "'feels'를 사용하세요.")
+                ),
+                List.of(),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "when [thing] [verb]",
+                                "상황이나 시기를 설명할 때 쓸 수 있습니다.",
+                                "when flowers bloom"
+                        ),
+                        new RefinementExpressionDto(
+                                "because it's the [noun] when [thing] [verb]",
+                                "특정 시기나 계절을 이유로 설명할 때 유용합니다.",
+                                "because it's the season when flowers bloom"
+                        ),
+                        new RefinementExpressionDto(
+                                "everything feels [adj]",
+                                "다양한 감각을 설명할 수 있습니다.",
+                                "everything feels fresh"
+                        )
+                ),
+                correctedAnswer,
+                "다시 써 보세요."
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .doesNotContain(
+                        "when [thing] [verb]",
+                        "because it's the [noun] when [thing] [verb]",
+                        "everything feels [adj]"
+                );
+    }
+
+    @Test
+    void review_filters_refinement_suggestions_when_core_tokens_already_overlap_strongly() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-1",
+                "Season",
+                "A",
+                "What season do you like, and why?",
+                "어떤 계절을 좋아하고 왜 좋아하나요?",
+                "좋아하는 이유를 한 가지 이상 넣어 보세요."
+        );
+        String answer = "I like spring because flowers are blooming and the air feels fresh.";
+        String correctedAnswer = "I like spring because flowers are blooming and the air feels fresh.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                86,
+                false,
+                null,
+                "요약",
+                List.of("강점"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "when [thing] [verb]",
+                                "상황이나 시기를 설명할 때 쓸 수 있습니다.",
+                                "when flowers bloom"
+                        ),
+                        new RefinementExpressionDto(
+                                "the air feels [adj]",
+                                "분위기나 감각을 묘사할 때 좋습니다.",
+                                "the air feels fresh"
+                        ),
+                        new RefinementExpressionDto(
+                                "I enjoy [season] because it feels [adj].",
+                                "계절 선호를 말할 때 쓸 수 있습니다.",
+                                "I enjoy spring because it feels refreshing."
+                        )
+                ),
+                correctedAnswer,
+                "다시 써 보세요."
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .doesNotContain(
+                        "when [thing] [verb]",
+                        "the air feels [adj]"
+                );
+    }
+
+    @Test
+    void review_filters_simple_because_frame_but_keeps_more_specific_because_structure() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-1",
+                "Season",
+                "A",
+                "What season do you like, and why?",
+                "어떤 계절을 좋아하고 왜 좋아하나요?",
+                "좋아하는 이유를 한 가지 이상 넣어 보세요."
+        );
+        String answer = "I like spring because it is beautiful.";
+        String correctedAnswer = "I like spring because it is beautiful.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                88,
+                false,
+                null,
+                "요약",
+                List.of("강점"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "because [reason]",
+                                "이유를 붙일 때 유용합니다.",
+                                "because it is beautiful"
+                        ),
+                        new RefinementExpressionDto(
+                                "because it's the [noun] when [thing] [verb]",
+                                "조금 더 구체적인 이유를 설명할 때 좋습니다.",
+                                "because it's the season when flowers bloom"
+                        )
+                ),
+                correctedAnswer,
+                "다시 써 보세요."
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .contains("because it's the [noun] when [thing] [verb]")
+                .doesNotContain("because [reason]");
+    }
 }

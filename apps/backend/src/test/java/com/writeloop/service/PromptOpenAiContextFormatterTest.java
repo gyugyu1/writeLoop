@@ -18,15 +18,15 @@ class PromptOpenAiContextFormatterTest {
                 "Goal Plan - Skill Growth",
                 "B",
                 "What is one skill you want to improve this year, and how will you work on it?",
-                "올해 더 키우고 싶은 기술 하나는 무엇이고, 어떻게 실천할 건가요?",
-                "목표와 실천 계획을 함께 말해 보세요.",
+                "What skill do you want to improve this year, and how will you practice it?",
+                "Explain both the goal and the action plan.",
                 new PromptCoachProfileDto(
                         "GOAL_PLAN",
                         List.of("goal", "plan", "growth"),
                         List.of("goal", "plan", "process"),
                         List.of("generic_example_marker"),
                         "DIRECT",
-                        "목표와 실행 계획을 우선 추천합니다."
+                        "Prefer goal, plan, and process expressions."
                 )
         );
 
@@ -37,7 +37,7 @@ class PromptOpenAiContextFormatterTest {
         assertThat(text).contains("- preferredExpressionFamilies: goal, plan, process");
         assertThat(text).contains("- avoidFamilies: generic_example_marker");
         assertThat(text).contains("- starterStyle: DIRECT");
-        assertThat(text).contains("- notes: 목표와 실행 계획을 우선 추천합니다.");
+        assertThat(text).contains("- notes: Prefer goal, plan, and process expressions.");
     }
 
     @Test
@@ -54,17 +54,47 @@ class PromptOpenAiContextFormatterTest {
     }
 
     @Test
+    void formatCoachProfileInstructions_builds_soft_guidance_from_profile_fields() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-5",
+                "Goal Plan - Skill Growth",
+                "B",
+                "What is one skill you want to improve this year, and how will you work on it?",
+                "What skill do you want to improve this year, and how will you practice it?",
+                "Explain both the goal and the action plan.",
+                new PromptCoachProfileDto(
+                        "GOAL_PLAN",
+                        List.of("goal", "plan", "growth"),
+                        List.of("goal", "plan", "process"),
+                        List.of("generic_example_marker"),
+                        "DIRECT",
+                        "Prefer goal, plan, and process expressions."
+                )
+        );
+
+        String text = PromptOpenAiContextFormatter.formatCoachProfileInstructions(prompt);
+
+        assertThat(text).contains("Primary answer mode: GOAL_PLAN");
+        assertThat(text).contains("Secondary topical angles to keep in mind: goal, plan, growth.");
+        assertThat(text).contains("Soft-prefer these expression families when they fit the learner answer: goal, plan, process.");
+        assertThat(text).contains("Avoid these expression families unless they are clearly necessary for a natural improvement: generic_example_marker.");
+        assertThat(text).contains("Starter style bias: DIRECT -> prefer concise and direct framing over reflective setup.");
+        assertThat(text).contains("Extra coaching note:");
+    }
+
+    @Test
     void formatters_fall_back_to_none_when_context_is_missing() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-1",
                 "Routine",
                 "A",
                 "How do you spend your weekday mornings?",
-                "평일 아침은 보통 어떻게 보내나요?",
-                "시간 표현과 순서를 함께 넣어 보세요."
+                "How do you usually spend your weekday mornings?",
+                "Include time expressions and sequence words."
         );
 
         assertThat(PromptOpenAiContextFormatter.formatCoachProfile(prompt)).isEqualTo("- none");
         assertThat(PromptOpenAiContextFormatter.formatPromptHints(List.of())).isEqualTo("- none");
+        assertThat(PromptOpenAiContextFormatter.formatCoachProfileInstructions(prompt)).isEqualTo("- none");
     }
 }

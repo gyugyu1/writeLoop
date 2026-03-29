@@ -95,14 +95,12 @@ public class FeedbackService {
         AnswerSessionEntity session = resolveSession(request, prompt.id(), currentUserId);
         AttemptType attemptType = resolveAttemptType(request);
         boolean openAiConfigured = openAiFeedbackClient.isConfigured();
-        List<PromptHintDto> hints = openAiConfigured
-                ? promptService.findHintsByPromptId(prompt.id())
-                : List.of();
+        List<PromptHintDto> hints = promptService.findHintsByPromptId(prompt.id());
 
         FeedbackResponseDto feedback = openAiConfigured
                 ? openAiFeedbackClient.review(prompt, answer, hints)
                 : buildLocalFeedback(prompt, answer);
-        feedback = sanitizeFeedbackResponse(feedback, answer);
+        feedback = sanitizeFeedbackResponse(feedback, answer, hints);
 
         if (feedback.loopComplete()) {
             session.setStatus(SessionStatus.COMPLETED);
@@ -301,7 +299,11 @@ public class FeedbackService {
         );
     }
 
-    private FeedbackResponseDto sanitizeFeedbackResponse(FeedbackResponseDto feedback, String learnerAnswer) {
+    private FeedbackResponseDto sanitizeFeedbackResponse(
+            FeedbackResponseDto feedback,
+            String learnerAnswer,
+            List<PromptHintDto> hints
+    ) {
         List<CorrectionDto> corrections = sanitizeCorrections(
                 feedback.corrections(),
                 feedback.inlineFeedback()
@@ -310,7 +312,8 @@ public class FeedbackService {
                 feedback.refinementExpressions(),
                 learnerAnswer,
                 feedback.correctedAnswer(),
-                feedback.modelAnswer()
+                feedback.modelAnswer(),
+                hints
         );
         List<CoachExpressionUsageDto> usedExpressions = sanitizeUsedExpressions(
                 feedback.usedExpressions(),
@@ -776,7 +779,8 @@ public class FeedbackService {
             List<RefinementExpressionDto> expressions,
             String learnerAnswer,
             String correctedAnswer,
-            String modelAnswer
+            String modelAnswer,
+            List<PromptHintDto> hints
     ) {
         String normalizedLearnerAnswer = normalizeForComparison(learnerAnswer);
         String normalizedCorrectedAnswer = normalizeForComparison(correctedAnswer);
@@ -850,6 +854,21 @@ public class FeedbackService {
             }
         }
 
+        if (sanitized.size() < 3) {
+            for (RefinementExpressionDto fallback : buildHintBasedRefinementExpressions(
+                    hints,
+                    modelAnswer,
+                    normalizedLearnerAnswer,
+                    normalizedCorrectedAnswer,
+                    seenExpressions
+            )) {
+                sanitized.add(fallback);
+                if (sanitized.size() >= 3) {
+                    break;
+                }
+            }
+        }
+
         return sanitized;
     }
 
@@ -889,6 +908,83 @@ public class FeedbackService {
         }
 
         return new ArrayList<>(candidates);
+    }
+
+    private List<RefinementExpressionDto> buildHintBasedRefinementExpressions(
+            List<PromptHintDto> hints,
+            String modelAnswer,
+            String normalizedLearnerAnswer,
+            String normalizedCorrectedAnswer,
+            LinkedHashSet<String> seenExpressions
+    ) {
+        if (hints == null || hints.isEmpty()) {
+            return List.of();
+        }
+
+        List<RefinementExpressionDto> fallbacks = new ArrayList<>();
+        for (PromptHintDto hint : hints) {
+            if (hint == null || hint.content() == null || hint.content().isBlank()) {
+                continue;
+            }
+
+            String candidate = cleanExpressionCandidate(hint.content());
+            if (candidate.isBlank()) {
+                continue;
+            }
+
+            String normalizedCandidate = normalizeForComparison(candidate);
+            if (normalizedCandidate.isBlank() || seenExpressions.contains(normalizedCandidate)) {
+                continue;
+            }
+
+            if (!isUsefulHintRefinementCandidate(candidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
+                continue;
+            }
+
+            seenExpressions.add(normalizedCandidate);
+            fallbacks.add(new RefinementExpressionDto(
+                    candidate,
+                    buildHintRefinementGuidance(hint.hintType()),
+                    buildHintRefinementExample(candidate, modelAnswer)
+            ));
+            if (fallbacks.size() >= 3) {
+                break;
+            }
+        }
+
+        return fallbacks;
+    }
+
+    private boolean isUsefulHintRefinementCandidate(
+            String candidate,
+            String normalizedLearnerAnswer,
+            String normalizedCorrectedAnswer
+    ) {
+        return !isDirectlyAlreadyExpressedInAnswer(candidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+                && !hasComparableStructureOverlap(candidate, normalizedLearnerAnswer, normalizedCorrectedAnswer);
+    }
+
+    private String buildHintRefinementGuidance(String hintType) {
+        if (hintType == null || hintType.isBlank()) {
+            return "다음 답변에서 바로 써볼 수 있는 표현이에요.";
+        }
+
+        return switch (hintType.trim().toUpperCase(Locale.ROOT)) {
+            case "STARTER" -> "답변을 자연스럽게 시작할 때 써보세요.";
+            case "VOCAB" -> "핵심 단어·표현을 조금 더 정확하게 바꿔 쓸 때 좋아요.";
+            case "STRUCTURE" -> "문장 구조를 더 길고 안정적으로 만들 때 활용해 보세요.";
+            case "LINKER" -> "이유나 예시를 연결해서 흐름을 만들 때 좋아요.";
+            case "DETAIL" -> "답변에 구체적인 정보를 덧붙일 때 써보세요.";
+            default -> "다음 답변에서 바로 써볼 수 있는 표현이에요.";
+        };
+    }
+
+    private String buildHintRefinementExample(String candidate, String modelAnswer) {
+        String example = buildRefinementExample(modelAnswer, candidate);
+        if (example == null || example.isBlank()) {
+            return candidate;
+        }
+        return example;
     }
 
     private String toReusableRefinementExpression(String candidate) {

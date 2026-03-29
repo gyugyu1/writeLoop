@@ -4,7 +4,9 @@ import com.writeloop.dto.PromptCoachProfileDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.StringJoiner;
 
 final class PromptOpenAiContextFormatter {
@@ -49,6 +51,42 @@ final class PromptOpenAiContextFormatter {
         return text.isBlank() ? "- none" : text;
     }
 
+    static String formatCoachProfileInstructions(PromptDto prompt) {
+        PromptCoachProfileDto profile = prompt == null ? null : prompt.coachProfile();
+        if (profile == null) {
+            return "- none";
+        }
+
+        List<String> lines = new ArrayList<>();
+        String primaryCategory = normalize(profile.primaryCategory());
+        String secondaryCategories = formatList(profile.secondaryCategories());
+        String preferredFamilies = formatList(profile.preferredExpressionFamilies());
+        String avoidFamilies = formatList(profile.avoidFamilies());
+        String starterStyle = normalize(profile.starterStyle());
+        String notes = normalize(profile.notes());
+
+        if (!primaryCategory.isBlank()) {
+            lines.add("- Primary answer mode: " + primaryCategory + ". Keep the answer shape and reusable expressions aligned with this mode.");
+        }
+        if (!"none".equals(secondaryCategories)) {
+            lines.add("- Secondary topical angles to keep in mind: " + secondaryCategories + ".");
+        }
+        if (!"none".equals(preferredFamilies)) {
+            lines.add("- Soft-prefer these expression families when they fit the learner answer: " + preferredFamilies + ".");
+        }
+        if (!"none".equals(avoidFamilies)) {
+            lines.add("- Avoid these expression families unless they are clearly necessary for a natural improvement: " + avoidFamilies + ".");
+        }
+        if (!starterStyle.isBlank()) {
+            lines.add("- Starter style bias: " + starterStyle + starterStyleGuidance(starterStyle));
+        }
+        if (!notes.isBlank()) {
+            lines.add("- Extra coaching note: " + notes);
+        }
+
+        return lines.isEmpty() ? "- none" : String.join("\n", lines);
+    }
+
     private static String formatList(List<String> values) {
         if (values == null || values.isEmpty()) {
             return "none";
@@ -73,5 +111,14 @@ final class PromptOpenAiContextFormatter {
 
     private static String normalize(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private static String starterStyleGuidance(String starterStyle) {
+        return switch (starterStyle.toUpperCase(Locale.ROOT)) {
+            case "DIRECT" -> " -> prefer concise and direct framing over reflective setup.";
+            case "REFLECTIVE" -> " -> prefer reflection, change, cause, or realization frames when they fit.";
+            case "BALANCED" -> " -> prefer qualification, contrast, or balanced pros-and-cons framing when they fit.";
+            default -> ".";
+        };
     }
 }

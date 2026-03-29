@@ -546,4 +546,67 @@ class FeedbackServiceTest {
                 .contains("because it's the [noun] when [thing] [verb]")
                 .doesNotContain("because [reason]");
     }
+
+    @Test
+    void review_falls_back_to_prompt_hints_when_refinement_suggestions_become_empty() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-1",
+                "Season",
+                "A",
+                "What season do you like, and why?",
+                "어떤 계절을 좋아하고 왜 좋아하나요?",
+                "좋아하는 이유를 한 가지 이상 넣어 보세요."
+        );
+        String answer = "I like spring because it's the season when flowers bloom and everything feels fresh.";
+        List<PromptHintDto> hints = List.of(
+                new PromptHintDto("hint-1", prompt.id(), "STARTER", "I especially like [season] because ...", 1),
+                new PromptHintDto("hint-2", prompt.id(), "VOCAB", "pleasant", 2),
+                new PromptHintDto("hint-3", prompt.id(), "DETAIL", "It makes me feel [adj].", 3)
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(hints);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, hints)).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                84,
+                false,
+                null,
+                "요약",
+                List.of("강점"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                answer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "when [thing] [verb]",
+                                "상황이나 시기를 설명할 때 쓸 수 있습니다.",
+                                "when flowers bloom"
+                        ),
+                        new RefinementExpressionDto(
+                                "because it's the [noun] when [thing] [verb]",
+                                "특정 시기나 계절을 이유로 설명할 때 유용합니다.",
+                                "because it's the season when flowers bloom"
+                        ),
+                        new RefinementExpressionDto(
+                                "everything feels [adj]",
+                                "다양한 감각을 설명할 수 있습니다.",
+                                "everything feels fresh"
+                        )
+                ),
+                answer,
+                "다시 써 보세요."
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .contains("I especially like [season] because ...", "pleasant");
+    }
 }

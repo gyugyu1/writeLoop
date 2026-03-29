@@ -192,8 +192,9 @@ public class OpenAiFeedbackClient {
         return objectMapper.writeValueAsString(payload);
     }
 
-    private String buildPrompt(PromptDto prompt, String answer, List<PromptHintDto> hints) {
+    String buildPrompt(PromptDto prompt, String answer, List<PromptHintDto> hints) {
         String coachProfileText = PromptOpenAiContextFormatter.formatCoachProfile(prompt);
+        String coachProfileGuidance = PromptOpenAiContextFormatter.formatCoachProfileInstructions(prompt);
         String hintText = PromptOpenAiContextFormatter.formatPromptHints(hints);
 
         return """
@@ -229,19 +230,32 @@ public class OpenAiFeedbackClient {
                 - Example 3: original "I like pizza", revised "I like pizza." -> KEEP "I like pizza", ADD ".".
                 - Do not rewrite the whole answer as one REPLACE unless the whole answer is actually wrong. Use the smallest natural segment possible.
                 - modelAnswer should sound natural for the learner's level.
+                - modelAnswer should demonstrate the learner's next-step answer quality, not just a corrected version of the same wording.
+                - Let modelAnswer naturally contain 2 to 4 reusable chunks that are worth extracting for refinementExpressions.
                 - refinementExpressions should list 2 to 4 useful reusable expression frames or vocabulary items from modelAnswer that the learner can try in the next revision.
                 - refinementExpressions.expression must be a reusable frame, pattern, or vocabulary item, not a full sentence.
                 - Prefer slot-style frames such as "[thing]", "[adj]", "[verb]", "[reason]" when useful.
                 - Good examples: "I want to [verb] so that I can [result].", "because it is [adj] and [adj]", "by [verb]ing [method]".
                 - Avoid returning a fully filled-out sentence like "My favorite food is pizza because it is delicious."
                 - refinementExpressions.example should show a short snippet from modelAnswer using that frame or word.
+                - Before writing refinementExpressions, inspect which sentence structures, linkers, and expression families already appear in the learner answer.
                 - Do not include expressions that already appear clearly in the learner answer.
                 - Do not include expressions that merely repeat the learner's current wording with only a tiny grammar fix.
+                - Do not recommend the same frame, the same wording, or a simpler version of a structure the learner already used.
+                - If the learner already used a simple frame in a family, you may recommend a clearly richer or more specific frame in that same family when it adds new value.
+                - refinementExpressions should feel like the learner's natural next step, not a generic list for this prompt.
                 - Prefer frames that improve clarity, detail, reason, example, vocabulary, or natural flow.
+                - Prefer recommendations that add a new move such as a clearer reason, stronger detail, better example, contrast, result, process, or sequence.
                 - rewriteChallenge should tell the learner how to improve in the next attempt in Korean.
                 - Treat the prompt coaching profile and prompt hints as supporting context for modelAnswer and refinementExpressions.
+                - Use the prompt coaching strategy below as a soft bias for tone, starter style, and preferred expression families.
                 - If the prompt coaching profile lists preferred expression families, prefer those families when they fit the learner answer and this prompt.
                 - If the prompt coaching profile lists avoid families, avoid those families unless they are necessary for a natural correction.
+                - Never let the prompt coaching profile or prompt hints override the learner's explicit meaning.
+                - Use prompt hints as idea sources, not as text to copy.
+                - Do not copy a prompt hint verbatim unless it is still clearly novel and useful for this learner.
+                - Rewrite, upgrade, or adapt prompt hints so they fit the learner answer, this prompt, and the learner's likely next revision.
+                - If a prompt hint overlaps with the learner answer, prefer a different or more specific expression instead of repeating it.
 
                 Prompt topic: %s
                 Difficulty: %s
@@ -249,6 +263,8 @@ public class OpenAiFeedbackClient {
                 Question in Korean: %s
                 Speaking tip: %s
                 Prompt coaching profile:
+                %s
+                Prompt coaching strategy:
                 %s
                 Prompt hints:
                 %s
@@ -262,6 +278,7 @@ public class OpenAiFeedbackClient {
                  prompt.questionKo(),
                  prompt.tip(),
                  coachProfileText,
+                 coachProfileGuidance,
                  hintText,
                  answer
         );

@@ -1374,8 +1374,7 @@
   font-size: 0.96rem;
 }
 
-.helpSheetGuideList,
-.helpSheetHintList {
+.helpSheetGuideList {
   display: grid;
   gap: 10px;
 }
@@ -1384,7 +1383,42 @@
   padding: 0;
 }
 
-.helpSheetHintItem,
+.helpSheetHintGroups,
+.writingGuideHintGroups {
+  display: grid;
+  gap: 12px;
+}
+
+.hintGroup {
+  display: grid;
+  gap: 8px;
+}
+
+.hintGroupTitle {
+  color: #10244c;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.hintChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hintChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(16, 36, 76, 0.12);
+  background: rgba(16, 36, 76, 0.04);
+  color: var(--text-sub);
+  font-size: 0.93rem;
+  line-height: 1.35;
+}
+
 .helpSheetEmpty {
   margin: 0;
   color: var(--text-sub);
@@ -2605,12 +2639,6 @@
   line-height: 1.4;
 }
 
-.writingGuideHintList {
-  display: grid;
-  gap: 8px;
-}
-
-.writingGuideHintItem,
 .writingGuideHintEmpty {
   margin: 0;
   color: var(--text-sub);

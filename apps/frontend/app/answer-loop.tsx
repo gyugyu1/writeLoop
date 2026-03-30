@@ -800,10 +800,28 @@ export function AnswerLoop() {
   const promptById = useMemo(() => {
     return new Map(allPrompts.map((prompt) => [prompt.id, prompt] as const));
   }, [allPrompts]);
-  const vocabularyHintItems = useMemo(
+  const vocabularyWordHintItems = useMemo(
     () =>
       hints
         .filter((hint) => hint.hintType === "VOCAB_WORD")
+        .flatMap((hint) => {
+          if (!hint.items || hint.items.length === 0) {
+            return [];
+          }
+
+          return hint.items
+            .filter((item) => item.content.trim().length > 0)
+            .map((item) => ({
+              id: item.id,
+              content: item.content
+            }));
+        }),
+    [hints]
+  );
+  const vocabularyPhraseHintItems = useMemo(
+    () =>
+      hints
+        .filter((hint) => hint.hintType === "VOCAB_PHRASE")
         .flatMap((hint) => {
           if (!hint.items || hint.items.length === 0) {
             return [];
@@ -2268,19 +2286,37 @@ export function AnswerLoop() {
             </section>
 
             <section className={styles.helpSheetSection}>
-              <strong className={styles.helpSheetSectionTitle}>단어 힌트</strong>
               {isLoadingHints ? (
-                <p className={styles.helpSheetEmpty}>지금 단어 힌트를 준비하고 있어요.</p>
-              ) : vocabularyHintItems.length > 0 ? (
-                <div className={styles.helpSheetHintList}>
-                  {vocabularyHintItems.map((hint) => (
-                    <p key={hint.id} className={styles.helpSheetHintItem}>
-                      {hint.content}
-                    </p>
-                  ))}
+                <p className={styles.helpSheetEmpty}>지금 단어·표현 힌트를 준비하고 있어요.</p>
+              ) : vocabularyWordHintItems.length > 0 || vocabularyPhraseHintItems.length > 0 ? (
+                <div className={styles.helpSheetHintGroups}>
+                  {vocabularyWordHintItems.length > 0 ? (
+                    <div className={styles.hintGroup}>
+                      <strong className={styles.hintGroupTitle}>활용 단어</strong>
+                      <div className={styles.hintChipList}>
+                        {vocabularyWordHintItems.map((hint) => (
+                          <span key={hint.id} className={styles.hintChip}>
+                            {hint.content}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
+                  {vocabularyPhraseHintItems.length > 0 ? (
+                    <div className={styles.hintGroup}>
+                      <strong className={styles.hintGroupTitle}>활용 표현</strong>
+                      <div className={styles.hintChipList}>
+                        {vocabularyPhraseHintItems.map((hint) => (
+                          <span key={hint.id} className={styles.hintChip}>
+                            {hint.content}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               ) : (
-                <p className={styles.helpSheetEmpty}>이 질문에는 준비된 단어 힌트가 없어요.</p>
+                <p className={styles.helpSheetEmpty}>이 질문에는 준비된 단어·표현 힌트가 없어요.</p>
               )}
             </section>
           </div>
@@ -2325,19 +2361,38 @@ export function AnswerLoop() {
           </div>
         </section>
         <section className={styles.writingGuideHintSection}>
-          <strong className={styles.writingGuideHintTitle}>단어 힌트</strong>
+          <strong className={styles.writingGuideHintTitle}>단어·표현 힌트</strong>
           {isLoadingHints ? (
-            <p className={styles.writingGuideHintEmpty}>지금 단어 힌트를 준비하고 있어요.</p>
-          ) : vocabularyHintItems.length > 0 ? (
-            <div className={styles.writingGuideHintList}>
-              {vocabularyHintItems.map((hint) => (
-                <p key={hint.id} className={styles.writingGuideHintItem}>
-                  {hint.content}
-                </p>
-              ))}
+            <p className={styles.writingGuideHintEmpty}>지금 단어·표현 힌트를 준비하고 있어요.</p>
+          ) : vocabularyWordHintItems.length > 0 || vocabularyPhraseHintItems.length > 0 ? (
+            <div className={styles.writingGuideHintGroups}>
+              {vocabularyWordHintItems.length > 0 ? (
+                <div className={styles.hintGroup}>
+                  <strong className={styles.hintGroupTitle}>활용 단어</strong>
+                  <div className={styles.hintChipList}>
+                    {vocabularyWordHintItems.map((hint) => (
+                      <span key={hint.id} className={styles.hintChip}>
+                        {hint.content}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {vocabularyPhraseHintItems.length > 0 ? (
+                <div className={styles.hintGroup}>
+                  <strong className={styles.hintGroupTitle}>활용 표현</strong>
+                  <div className={styles.hintChipList}>
+                    {vocabularyPhraseHintItems.map((hint) => (
+                      <span key={hint.id} className={styles.hintChip}>
+                        {hint.content}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : (
-            <p className={styles.writingGuideHintEmpty}>이 질문에는 준비된 단어 힌트가 없어요.</p>
+            <p className={styles.writingGuideHintEmpty}>이 질문에는 준비된 단어·표현 힌트가 없어요.</p>
           )}
         </section>
       </div>

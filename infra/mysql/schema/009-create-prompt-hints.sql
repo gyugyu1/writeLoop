@@ -1,8 +1,20 @@
 CREATE TABLE IF NOT EXISTS prompt_hints (
-    id VARCHAR(64) NOT NULL,
-    prompt_id VARCHAR(64) NOT NULL,
-    hint_type VARCHAR(40) NOT NULL,
-    content TEXT NOT NULL,
+    id VARCHAR(64)
+        CHARACTER SET utf8mb4
+        COLLATE utf8mb4_unicode_ci
+        NOT NULL,
+    prompt_id VARCHAR(64)
+        CHARACTER SET utf8mb4
+        COLLATE utf8mb4_unicode_ci
+        NOT NULL,
+    hint_type VARCHAR(40)
+        CHARACTER SET utf8mb4
+        COLLATE utf8mb4_unicode_ci
+        NOT NULL,
+    title VARCHAR(100)
+        CHARACTER SET utf8mb4
+        COLLATE utf8mb4_unicode_ci
+        NULL,
     display_order INT NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

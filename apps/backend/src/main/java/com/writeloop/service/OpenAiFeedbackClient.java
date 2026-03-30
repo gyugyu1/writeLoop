@@ -1,7 +1,9 @@
 package com.writeloop.service;
 
 import com.writeloop.dto.CorrectionDto;
+import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
@@ -114,14 +116,14 @@ public class OpenAiFeedbackClient {
         Map<String, Object> schema = Map.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
-                        "score", Map.of("type", "integer"),
-                        "summary", Map.of("type", "string"),
-                        "strengths", Map.of(
+                "properties", Map.ofEntries(
+                        Map.entry("score", Map.of("type", "integer")),
+                        Map.entry("summary", Map.of("type", "string")),
+                        Map.entry("strengths", Map.of(
                                 "type", "array",
                                 "items", Map.of("type", "string")
-                        ),
-                        "corrections", Map.of(
+                        )),
+                        Map.entry("corrections", Map.of(
                                 "type", "array",
                                 "items", Map.of(
                                         "type", "object",
@@ -132,8 +134,8 @@ public class OpenAiFeedbackClient {
                                         ),
                                         "required", List.of("issue", "suggestion")
                                 )
-                        ),
-                        "inlineFeedback", Map.of(
+                        )),
+                        Map.entry("inlineFeedback", Map.of(
                                 "type", "array",
                                 "items", Map.of(
                                         "type", "object",
@@ -145,9 +147,34 @@ public class OpenAiFeedbackClient {
                                         ),
                                         "required", List.of("type", "originalText", "revisedText")
                                 )
-                        ),
-                        "correctedAnswer", Map.of("type", "string"),
-                        "refinementExpressions", Map.of(
+                        )),
+                        Map.entry("grammarFeedback", Map.of(
+                                "type", "array",
+                                "items", Map.of(
+                                        "type", "object",
+                                        "additionalProperties", false,
+                                        "properties", Map.of(
+                                                "originalText", Map.of("type", "string"),
+                                                "revisedText", Map.of("type", "string"),
+                                                "reasonKo", Map.of("type", "string")
+                                        ),
+                                        "required", List.of("originalText", "revisedText", "reasonKo")
+                                )
+                        )),
+                        Map.entry("correctedAnswer", Map.of("type", "string")),
+                        Map.entry("usedExpressions", Map.of(
+                                "type", "array",
+                                "items", Map.of(
+                                        "type", "object",
+                                        "additionalProperties", false,
+                                        "properties", Map.of(
+                                                "expression", Map.of("type", "string"),
+                                                "usageTip", Map.of("type", "string")
+                                        ),
+                                        "required", List.of("expression", "usageTip")
+                                )
+                        )),
+                        Map.entry("refinementExpressions", Map.of(
                                 "type", "array",
                                 "items", Map.of(
                                         "type", "object",
@@ -155,13 +182,14 @@ public class OpenAiFeedbackClient {
                                         "properties", Map.of(
                                                 "expression", Map.of("type", "string"),
                                                 "guidance", Map.of("type", "string"),
-                                                "example", Map.of("type", "string")
+                                                "example", Map.of("type", "string"),
+                                                "meaningKo", Map.of("type", List.of("string", "null"))
                                         ),
-                                        "required", List.of("expression", "guidance", "example")
+                                        "required", List.of("expression", "guidance", "example", "meaningKo")
                                 )
-                        ),
-                        "modelAnswer", Map.of("type", "string"),
-                        "rewriteChallenge", Map.of("type", "string")
+                        )),
+                        Map.entry("modelAnswer", Map.of("type", "string")),
+                        Map.entry("rewriteChallenge", Map.of("type", "string"))
                 ),
                 "required", List.of(
                         "score",
@@ -169,7 +197,9 @@ public class OpenAiFeedbackClient {
                         "strengths",
                         "corrections",
                         "inlineFeedback",
+                        "grammarFeedback",
                         "correctedAnswer",
+                        "usedExpressions",
                         "refinementExpressions",
                         "modelAnswer",
                         "rewriteChallenge"
@@ -204,71 +234,41 @@ public class OpenAiFeedbackClient {
                 Rules:
                 - Score from 0 to 100.
                 - Keep the tone encouraging, specific, and actionable.
-                - summary, strengths, corrections.issue, corrections.suggestion, and rewriteChallenge must be written in Korean.
-                - Never write English sentences in summary, strengths, corrections.issue, corrections.suggestion, or rewriteChallenge.
-                - If you need to mention an English expression, quote only the expression itself and explain it in Korean.
-                - correctedAnswer, modelAnswer, and inlineFeedback.originalText/revisedText must be written in English.
-                - refinementExpressions.expression and refinementExpressions.example must be written in English.
-                - strengths should have 2 to 3 concise bullets in Korean.
-                - corrections should focus on natural English, grammar, clarity, and expansion.
-                - corrections should summarize the most useful improvement points, not just the biggest errors.
-                - If inlineFeedback contains clear local edits, reflect the important ones in corrections as Korean coaching points.
-                - Include correction guidance for small but meaningful edits such as capitalization, singular/plural, article use, determiner insertion, pronoun choice, preposition choice, and missing punctuation when they improve the sentence.
-                - If there are several concrete edits, prefer giving 2 to 5 corrections that mix sentence-level fixes and content-level improvement when relevant.
-                - Do not leave corrections effectively empty when the learner answer still has clear edit-worthy issues.
-                - refinementExpressions.guidance must be written in Korean.
-                - correctedAnswer should minimally revise the learner answer. Preserve the learner's meaning and structure as much as possible while fixing grammar and natural phrasing.
-                - inlineFeedback must cover the learner answer in reading order using these types only: KEEP, REPLACE, ADD, REMOVE.
-                - inlineFeedback must reconstruct the learner answer exactly in order. Do not skip or overlap original text.
-                - ADD segments do not consume original characters. They only insert extra text at the current reading position.
-                - For KEEP, REPLACE, and REMOVE, originalText must copy the learner answer exactly, including spaces and punctuation.
-                - KEEP: valid text that stays as-is. originalText and revisedText should be the same.
-                - REPLACE: text that should be changed. originalText is the learner text, revisedText is the improved text.
-                - ADD: extra text that should be added without marking the nearby original text as wrong. originalText should be "" and revisedText should contain only the added text.
-                - REMOVE: text that should be deleted. originalText should contain the learner text and revisedText should be "".
-                - For ADD, include any spaces or punctuation needed so the inserted text fits naturally at that position.
-                - Prefer ADD instead of REPLACE when the learner text is grammatically acceptable and you are only appending detail, reason, example, connector, or emphasis.
-                - Use REPLACE only when the learner text itself is wrong, unnatural, misleading, or must be rewritten.
-                - Use REMOVE only when text should disappear without replacement because it is unnecessary or duplicated.
-                - Example 1: original "tasty", revised "tasty and has many flavors" -> KEEP "tasty", ADD " and has many flavors".
-                - Example 2: original "I go school" -> KEEP "I ", REPLACE "go school", "go to school".
-                - Example 3: original "I like pizza", revised "I like pizza." -> KEEP "I like pizza", ADD ".".
-                - Do not rewrite the whole answer as one REPLACE unless the whole answer is actually wrong. Use the smallest natural segment possible.
-                - modelAnswer should sound natural for the learner's level.
-                - modelAnswer should demonstrate the learner's next-step answer quality, not just a corrected version of the same wording.
-                - Let modelAnswer naturally contain 2 to 4 reusable chunks that are worth extracting for refinementExpressions.
-                - refinementExpressions should list 2 to 4 useful reusable expression frames or vocabulary items from modelAnswer that the learner can try in the next revision.
-                - refinementExpressions.expression must be a reusable frame, pattern, or vocabulary item, not a full sentence.
-                - Prefer slot-style frames such as "[thing]", "[adj]", "[verb]", "[reason]" when useful.
-                - Good examples: "I want to [verb] so that I can [result].", "because it is [adj] and [adj]", "by [verb]ing [method]".
-                - Avoid returning a fully filled-out sentence like "My favorite food is pizza because it is delicious."
-                - Avoid dangling fragments such as "to daily life", "to issues like cheating", or any incomplete chunk that cannot stand alone as a reusable expression.
-                - Unless the item is clearly a vocabulary word, refinementExpressions.expression should usually be at least 3 words long and structurally complete enough to reuse.
-                - refinementExpressions.example should show a short snippet from modelAnswer using that frame or word.
-                - refinementExpressions.example must be clean natural English only. Do not include Korean, broken characters, or quoted meta-instructions.
-                - Before writing refinementExpressions, inspect which sentence structures, linkers, and expression families already appear in the learner answer.
-                - Do not include expressions that already appear clearly in the learner answer.
-                - Do not include expressions that merely repeat the learner's current wording with only a tiny grammar fix.
-                - Do not recommend the same frame, the same wording, or a simpler version of a structure the learner already used.
-                - If the learner already used a simple frame in a family, you may recommend a clearly richer or more specific frame in that same family when it adds new value.
-                - refinementExpressions should feel like the learner's natural next step, not a generic list for this prompt.
-                - Prefer frames that improve clarity, detail, reason, example, vocabulary, or natural flow.
-                - Prefer recommendations that add a new move such as a clearer reason, stronger detail, better example, contrast, result, process, or sequence.
-                - At least 2 refinementExpressions should be content-bearing expansions tied to the learner's actual answer, not just generic discourse markers.
-                - Do not let all refinementExpressions play the same role. Diversify them across functions such as detail, reason, example, qualification, result, contrast, or process when possible.
-                - Use generic discourse-organizing frames such as "On the positive side", "However", or "Overall" only when they add clear value, and do not let them dominate the whole list.
-                - If the prompt is a balanced-opinion style question, prefer a mix such as one concrete positive elaboration, one concern or limitation, and one qualified overall judgment when possible.
-                - Prefer expressions that attach directly to the learner's current ideas, nouns, claims, or examples over broad topic-level templates.
+                - Korean fields: summary, strengths, corrections.issue, corrections.suggestion, rewriteChallenge, grammarFeedback.reasonKo, and any refinementExpressions.guidance or meaningKo when present.
+                - English fields: correctedAnswer, modelAnswer, inlineFeedback.originalText, inlineFeedback.revisedText, grammarFeedback.originalText, grammarFeedback.revisedText, refinementExpressions.expression, and refinementExpressions.example.
+                - Do not write full English sentences in Korean fields. If you mention an English expression there, quote only the expression and explain it in Korean.
+                - strengths should have 2 to 3 concise bullets.
+                - corrections should focus only on non-grammar coaching such as clarity, detail, support, specificity, logical flow, organization, or broader naturalness beyond local sentence mechanics.
+                - Each corrections.issue and corrections.suggestion must contain Korean text, not English-only text.
+                - Do not repeat grammar explanations in corrections when they are already covered in grammarFeedback.
+                - If the answer is short, generic, or underdeveloped, include at least 1 correction about how to expand, support, or clarify the answer when relevant.
+                - If there is no meaningful non-grammar coaching point beyond grammarFeedback, corrections may be an empty array.
+                - correctedAnswer should be a minimal local revision that preserves the learner's meaning and structure while fixing grammar, usage, capitalization, article or determiner choice, preposition choice, and punctuation only.
+                - Do not use correctedAnswer to add new ideas, examples, supporting details, or broader sentence rewrites beyond local correction.
+                - inlineFeedback is only for local sentence correction: grammar, word choice, agreement, article, determiner, preposition, capitalization, and punctuation.
+                - inlineFeedback may be an empty array when the learner answer is already locally grammatical and natural enough.
+                - Do not use inlineFeedback for new ideas, extra reasons, examples, plans, or broader content expansion. Put those in modelAnswer, refinementExpressions, corrections, or rewriteChallenge instead.
+                - inlineFeedback must reconstruct the learner answer in reading order with no skips or overlaps and use the smallest natural edit possible.
+                - Allowed inlineFeedback types: KEEP, REPLACE, ADD, REMOVE. For KEEP, REPLACE, and REMOVE, originalText must copy the learner answer exactly, including spaces and punctuation.
+                - KEEP means unchanged text. REPLACE means wrong or unnatural learner text replaced with better text. ADD inserts text without consuming learner text and must use originalText = "". REMOVE deletes learner text and must use revisedText = "".
+                - ADD should usually be a short local insertion such as an article, preposition, pronoun, auxiliary, connector, or punctuation mark, not a full new clause or sentence.
+                - grammarFeedback should contain only real local grammar or mechanics issues already reflected by the sentence correction, such as agreement, verb form, article, determiner, pronoun, preposition, pluralization, capitalization, or punctuation.
+                - Each grammarFeedback item must include originalText, revisedText, and reasonKo. reasonKo must be one full Korean sentence explaining why the learner form is wrong or less natural.
+                - Do not put content expansion, idea development, examples, or structure advice in grammarFeedback.
+                - modelAnswer should sound natural for the learner's level and show a clear next-step answer, not just a corrected version of the same wording. Let it naturally contain 2 to 4 reusable chunks.
+                - usedExpressions should contain 1 to 3 short English chunks that the learner already used naturally and correctly in the learner answer. Do not return a full sentence or a weak single function word.
+                - Each usedExpressions item must include expression and usageTip. expression should usually be copied from the learner answer rather than rewritten. usageTip should be one Korean sentence explaining why the expression worked well. If nothing clearly stands out, return an empty array.
+                - refinementExpressions should contain 2 to 4 useful reusable frames or vocabulary items drawn from modelAnswer.
+                - refinementExpressions.expression must be a reusable frame, pattern, or vocabulary item, not a full sentence. Prefer slot-style frames such as "[thing]", "[adj]", "[verb]", or "[reason]" when useful, and avoid fully filled-out sentences or dangling fragments.
+                - Each refinement item must include guidance and example. guidance must be one full Korean coaching sentence that explains when or how to use the expression, not just a gloss. example must be a short clean English usage snippet or sentence, must be different from expression, and should place a word or short phrase inside a natural sentence. meaningKo should be a short Korean gloss only for a single word or short lexical phrase; otherwise it may be null.
+                - Do not recommend the same wording, the same frame, or a simpler variant of what already appears in the learner answer. A richer same-family frame is allowed only if it clearly adds value.
+                - refinementExpressions should feel like the learner's natural next step. Prefer frames that improve clarity, detail, reason, example, vocabulary, flow, contrast, result, process, or sequence.
+                - At least 2 refinementExpressions should be content-bearing expansions tied to the learner's actual answer, not just generic discourse markers. Diversify their functions when possible.
+                - Use generic discourse markers such as "On the positive side", "However", or "Overall" only when they add clear value and do not let them dominate the list. For balanced-opinion prompts, prefer a mix such as a concrete positive elaboration, a concern or limitation, and a qualified overall judgment when possible.
                 - rewriteChallenge should tell the learner how to improve in the next attempt in Korean.
-                - Treat the prompt coaching profile and prompt hints as supporting context for modelAnswer and refinementExpressions.
-                - Use the prompt coaching strategy below as a soft bias for tone, starter style, and preferred expression families.
-                - If the prompt coaching profile lists preferred expression families, prefer those families when they fit the learner answer and this prompt.
-                - If the prompt coaching profile lists avoid families, avoid those families unless they are necessary for a natural correction.
-                - Never let the prompt coaching profile or prompt hints override the learner's explicit meaning.
-                - Use prompt hints as idea sources, not as text to copy.
-                - Do not copy a prompt hint verbatim unless it is still clearly novel and useful for this learner.
-                - Rewrite, upgrade, or adapt prompt hints so they fit the learner answer, this prompt, and the learner's likely next revision.
-                - If a prompt hint overlaps with the learner answer, prefer a different or more specific expression instead of repeating it.
+                - Treat the prompt coaching profile and prompt hints as soft supporting context for tone, starter style, and expression families.
+                - Follow preferred or avoid families only when they fit the learner answer naturally. Never let the profile or hints override the learner's explicit meaning.
+                - Use prompt hints as idea sources, not text to copy. Adapt or upgrade them to fit this learner, and avoid repeating a hint that overlaps with the learner answer.
 
                 Prompt topic: %s
                 Difficulty: %s
@@ -327,29 +327,42 @@ public class OpenAiFeedbackClient {
                 )
         ));
 
-        List<InlineFeedbackSegmentDto> rawInlineFeedback = new ArrayList<>();
-        feedbackNode.path("inlineFeedback").forEach(node -> rawInlineFeedback.add(
-                new InlineFeedbackSegmentDto(
-                        node.path("type").asText(),
-                        node.path("originalText").asText(),
-                        node.path("revisedText").asText()
-                )
-        ));
-
         int rawScore = feedbackNode.path("score").asInt();
         String correctedAnswer = feedbackNode.path("correctedAnswer").asText();
-        List<InlineFeedbackSegmentDto> inlineFeedback = normalizeInlineFeedback(answer, correctedAnswer, rawInlineFeedback);
+        List<InlineFeedbackSegmentDto> inlineFeedback = buildInlineFeedbackFromCorrectedAnswer(answer, correctedAnswer);
+        List<GrammarFeedbackItemDto> grammarFeedback = new ArrayList<>();
+        feedbackNode.path("grammarFeedback").forEach(node -> grammarFeedback.add(
+                new GrammarFeedbackItemDto(
+                        node.path("originalText").asText(),
+                        node.path("revisedText").asText(),
+                        node.path("reasonKo").asText()
+                )
+        ));
+        List<CoachExpressionUsageDto> usedExpressions = new ArrayList<>();
+        feedbackNode.path("usedExpressions").forEach(node -> usedExpressions.add(
+                new CoachExpressionUsageDto(
+                        node.path("expression").asText(),
+                        true,
+                        "SELF_DISCOVERED",
+                        null,
+                        "SELF_DISCOVERED",
+                        node.path("usageTip").asText()
+                )
+        ));
         List<RefinementExpressionDto> refinementExpressions = new ArrayList<>();
         feedbackNode.path("refinementExpressions").forEach(node -> refinementExpressions.add(
                 new RefinementExpressionDto(
                         node.path("expression").asText(),
                         node.path("guidance").asText(),
-                        node.path("example").asText()
+                        node.path("example").asText(),
+                        node.path("meaningKo").isMissingNode() || node.path("meaningKo").isNull()
+                                ? null
+                                : node.path("meaningKo").asText()
                 )
         ));
         String modelAnswer = feedbackNode.path("modelAnswer").asText();
-        boolean loopComplete = isLoopComplete(rawScore, corrections);
-        String completionMessage = buildCompletionMessage(rawScore, corrections);
+        boolean loopComplete = isLoopComplete(rawScore, corrections, grammarFeedback);
+        String completionMessage = buildReadableCompletionMessage(rawScore, corrections, grammarFeedback);
 
         return new FeedbackResponseDto(
                 promptId,
@@ -362,11 +375,37 @@ public class OpenAiFeedbackClient {
                 strengths,
                 corrections,
                 inlineFeedback,
+                grammarFeedback,
                 correctedAnswer,
                 refinementExpressions,
                 modelAnswer,
-                feedbackNode.path("rewriteChallenge").asText()
+                feedbackNode.path("rewriteChallenge").asText(),
+                usedExpressions
         );
+    }
+
+    List<InlineFeedbackSegmentDto> buildInlineFeedbackFromCorrectedAnswer(String originalAnswer, String correctedAnswer) {
+        if (originalAnswer == null || originalAnswer.isBlank()) {
+            return List.of();
+        }
+
+        List<InlineFeedbackSegmentDto> segments = buildPreciseInlineFeedback(originalAnswer, correctedAnswer);
+        if (segments.isEmpty() || segments.stream().noneMatch(segment -> !"KEEP".equals(segment.type()))) {
+            return List.of();
+        }
+
+        return segments;
+    }
+
+    private String buildReadableCompletionMessage(
+            int score,
+            List<CorrectionDto> corrections,
+            List<GrammarFeedbackItemDto> grammarFeedback
+    ) {
+        if (!isLoopComplete(score, corrections, grammarFeedback)) {
+            return null;
+        }
+        return "\uc88b\uc544\uc694. \uc9c0\uae08 \ub2e8\uacc4\uc5d0\uc11c \ub9c8\ubb34\ub9ac\ud574\ub3c4 \ucda9\ubd84\ud574\uc694. \uc6d0\ud558\uba74 \ud55c \ubc88 \ub354 \ub2e4\ub4ec\uc73c\uba74\uc11c \uc5f0\uc2b5\ud574 \ubcfc \uc218 \uc788\uc5b4\uc694.";
     }
 
     private List<InlineFeedbackSegmentDto> normalizeInlineFeedback(
@@ -393,6 +432,10 @@ public class OpenAiFeedbackClient {
         }
 
         if (!matchesCorrectedAnswer(correctedAnswer, merged)) {
+            return List.of();
+        }
+
+        if (merged.stream().noneMatch(segment -> !"KEEP".equals(segment.type()))) {
             return List.of();
         }
 
@@ -738,12 +781,22 @@ public class OpenAiFeedbackClient {
         return value == null ? "" : value.replaceAll("\\s+", " ").trim();
     }
 
-    private boolean isLoopComplete(int score, List<CorrectionDto> corrections) {
-        return score >= 85 || (score >= 80 && corrections.size() <= 2);
+    private boolean isLoopComplete(
+            int score,
+            List<CorrectionDto> corrections,
+            List<GrammarFeedbackItemDto> grammarFeedback
+    ) {
+        int issueCount = (corrections == null ? 0 : corrections.size())
+                + (grammarFeedback == null ? 0 : grammarFeedback.size());
+        return score >= 85 || (score >= 80 && issueCount <= 2);
     }
 
-    private String buildCompletionMessage(int score, List<CorrectionDto> corrections) {
-        if (!isLoopComplete(score, corrections)) {
+    private String buildCompletionMessage(
+            int score,
+            List<CorrectionDto> corrections,
+            List<GrammarFeedbackItemDto> grammarFeedback
+    ) {
+        if (!isLoopComplete(score, corrections, grammarFeedback)) {
             return null;
         }
         return "이 답변은 지금 단계에서 마무리해도 충분해요. 원하면 한 번 더 다시 써 보면서 연습할 수 있어요.";

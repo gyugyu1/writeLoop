@@ -156,10 +156,17 @@ export interface FeedbackInlineSegment {
   revisedText: string;
 }
 
+export interface GrammarFeedbackItem {
+  originalText: string;
+  revisedText: string;
+  reasonKo: string;
+}
+
 export interface RefinementExpression {
   expression: string;
   guidance: string;
   example: string;
+  meaningKo?: string | null;
 }
 
 export interface FeedbackRequest {
@@ -181,6 +188,7 @@ export interface Feedback {
   strengths: string[];
   corrections: Correction[];
   inlineFeedback: FeedbackInlineSegment[] | null;
+  grammarFeedback?: GrammarFeedbackItem[] | null;
   correctedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
   usedExpressions?: FeedbackUsedExpression[] | null;
@@ -224,6 +232,7 @@ export interface StoredFeedback {
   strengths: string[];
   corrections: Correction[];
   inlineFeedback: FeedbackInlineSegment[] | null;
+  grammarFeedback?: GrammarFeedbackItem[] | null;
   correctedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
   usedExpressions?: FeedbackUsedExpression[] | null;

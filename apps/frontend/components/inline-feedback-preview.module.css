@@ -105,6 +105,29 @@
   color: #10244c;
 }
 
+.reasonList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.reasonItem {
+  display: grid;
+  gap: 4px;
+  color: #10244c;
+}
+
+.reasonItem strong {
+  font-size: 0.92rem;
+  color: #10244c;
+}
+
+.reasonItem span {
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
 .text {
   color: #10244c;
 }

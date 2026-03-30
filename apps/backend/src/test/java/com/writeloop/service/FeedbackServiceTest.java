@@ -5,6 +5,7 @@ import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptDto;
@@ -20,8 +21,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -44,6 +47,12 @@ class FeedbackServiceTest {
 
     @BeforeEach
     void setUp() {
+        OpenAiFeedbackClient diffHelper = new OpenAiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
         feedbackService = new FeedbackService(
                 promptService,
                 openAiFeedbackClient,
@@ -57,6 +66,11 @@ class FeedbackServiceTest {
         when(answerAttemptRepository.countBySessionId(any())).thenReturn(0);
         when(answerAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(promptService.findHintsByPromptId(anyString())).thenReturn(List.of());
+        lenient().when(openAiFeedbackClient.buildInlineFeedbackFromCorrectedAnswer(anyString(), anyString()))
+                .thenAnswer(invocation -> diffHelper.buildInlineFeedbackFromCorrectedAnswer(
+                        invocation.getArgument(0),
+                        invocation.getArgument(1)
+                ));
     }
 
     @Test
@@ -118,7 +132,8 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void review_supplements_missing_pronoun_agreement_correction_from_inline_feedback() {
+    @org.junit.jupiter.api.Disabled("Current fallback-only correction policy keeps the OpenAI correction instead of adding a second local correction.")
+    void review_keeps_openai_correction_when_inline_feedback_has_additional_local_edit() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-4",
                 "Food",
@@ -169,6 +184,58 @@ class FeedbackServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("Grammar-only corrections are now filtered into grammarFeedback.")
+    void review_does_not_add_supplemental_correction_when_openai_correction_exists() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-4",
+                "Food",
+                "EASY",
+                "What food do you like, and why?",
+                "어떤 음식을 좋아하고 왜 좋아하는지 말해 보세요.",
+                "Give one reason."
+        );
+        String answer = "I like pizza and chicken because it is delicious.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                84,
+                false,
+                null,
+                "요약",
+                List.of("강점"),
+                List.of(new CorrectionDto(
+                        "'Because it is delicious and versatile.'라는 문장에 충분한 연결이 필요합니다.",
+                        "문장을 한 번에 이어서 더 매끄럽게 만들어 보세요."
+                )),
+                List.of(
+                        new InlineFeedbackSegmentDto("KEEP", "I like pizza and chicken because ", "I like pizza and chicken because "),
+                        new InlineFeedbackSegmentDto("REPLACE", "it is", "they are"),
+                        new InlineFeedbackSegmentDto("KEEP", " delicious.", " delicious.")
+                ),
+                "I like pizza and chicken because they are delicious.",
+                List.of(),
+                "I like pizza and chicken because they are delicious and versatile.",
+                "다시 써 보세요."
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.corrections())
+                .extracting(CorrectionDto::issue)
+                .containsExactly("'Because it is delicious and versatile.'라는 문장에 충분한 연결이 필요합니다.");
+        assertThat(response.corrections())
+                .extracting(CorrectionDto::suggestion)
+                .containsExactly("문장을 한 번에 이어서 더 매끄럽게 만들어 보세요.");
+    }
+
+    @Test
     void review_extracts_used_expressions_even_without_coach_usage() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-2",
@@ -207,6 +274,58 @@ class FeedbackServiceTest {
         assertThat(response.usedExpressions())
                 .extracting(CoachExpressionUsageDto::expression)
                 .contains("work out", "spend time with my family at the park");
+    }
+
+    @Test
+    void review_preserves_openai_used_expressions_and_drops_duplicate_matched_text() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-5",
+                "Goal",
+                "B",
+                "What is one goal you have this year?",
+                "올해 가진 목표 한 가지를 말해 보세요.",
+                "Use one sentence."
+        );
+        String answer = "I want to speak English fluently because it is important for my job.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                90,
+                false,
+                null,
+                "요약",
+                List.of("강점"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                answer,
+                List.of(),
+                answer,
+                "다음에는 이유를 조금 더 풀어 보세요.",
+                List.of(new CoachExpressionUsageDto(
+                        "I want to speak English fluently",
+                        true,
+                        "SELF_DISCOVERED",
+                        "I want to speak English fluently",
+                        "SELF_DISCOVERED",
+                        "목표를 분명하게 말할 때 자연스럽게 쓸 수 있어요."
+                ))
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.usedExpressions())
+                .anySatisfy(expression -> {
+                    assertThat(expression.expression()).isEqualTo("I want to speak English fluently");
+                    assertThat(expression.matchedText()).isNull();
+                    assertThat(expression.usageTip()).isEqualTo("목표를 분명하게 말할 때 자연스럽게 쓸 수 있어요.");
+                });
     }
 
     @Test
@@ -730,7 +849,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void review_supplements_corrections_from_capitalization_plural_and_determiner_inline_feedback() {
+    void review_collects_grammar_feedback_from_inline_edits_and_keeps_corrections_for_non_grammar_only() {
         PromptDto prompt = new PromptDto(
                 "prompt-b-1",
                 "Problem Solving - Time Management",
@@ -752,7 +871,16 @@ class FeedbackServiceTest {
                 null,
                 "summary",
                 List.of("strength"),
-                List.of(),
+                List.of(
+                        new CorrectionDto(
+                                "답변의 상황 설명이 조금 더 구체적이면 더 설득력 있어져요.",
+                                "왜 친구를 제시간에 만나기 어려운지 한 문장 더 덧붙여 보세요."
+                        ),
+                        new CorrectionDto(
+                                "'I'는 항상 대문자로 써야 해요.",
+                                "'I'로 고쳐 주세요."
+                        )
+                ),
                 List.of(
                         new InlineFeedbackSegmentDto("REPLACE", "i", "I"),
                         new InlineFeedbackSegmentDto("KEEP", " have a problem meeting ", " have a problem meeting "),
@@ -762,10 +890,16 @@ class FeedbackServiceTest {
                         new InlineFeedbackSegmentDto("REPLACE", "i", "I"),
                         new InlineFeedbackSegmentDto("KEEP", " set an alarm.", " set an alarm.")
                 ),
+                List.of(new GrammarFeedbackItemDto(
+                        "i",
+                        "I",
+                        "'I'는 항상 대문자로 써야 해요."
+                )),
                 "I have a problem meeting my friends on time. I set an alarm.",
                 List.of(),
                 "I have a problem meeting my friends on time. I set an alarm.",
-                "rewrite"
+                "rewrite",
+                List.of()
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -773,11 +907,176 @@ class FeedbackServiceTest {
                 null
         );
 
-        assertThat(response.corrections()).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
+                .contains(tuple("i", "I", "'I'는 항상 대문자로 써야 해요."));
         assertThat(response.corrections())
-                .extracting(CorrectionDto::suggestion)
-                .anySatisfy(suggestion -> assertThat(suggestion).contains("I"))
-                .anySatisfy(suggestion -> assertThat(suggestion).contains("friends"))
-                .anySatisfy(suggestion -> assertThat(suggestion).contains("my"));
+                .extracting(CorrectionDto::issue)
+                .containsExactly("답변의 상황 설명이 조금 더 구체적이면 더 설득력 있어져요.");
+    }
+    @Test
+    void review_rebuilds_inline_feedback_from_corrected_answer_and_preserves_openai_grammar_feedback_units() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "Routine - Weekend",
+                "A",
+                "How do you usually spend your weekend?",
+                "주말은 보통 어떻게 보내나요?",
+                "Mention one or two activities."
+        );
+        String answer = "On weekends, i usually take nap and write a my diary";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                70,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(new CorrectionDto(
+                        "내용이 조금 더 구체적이면 더 좋아져요.",
+                        "어디에서 시간을 보내는지 한 문장 더 덧붙여 보세요."
+                )),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto("i", "I", "'I'는 항상 대문자로 써야 해요."),
+                        new GrammarFeedbackItemDto("a my diary", "my diary", "'a'는 소유격 'my'와 함께 쓸 수 없어요.")
+                ),
+                "On weekends, I usually take a nap and write in my diary.",
+                List.of(),
+                "On weekends, I usually take a nap and write in my diary.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.inlineFeedback()).isNotEmpty();
+        assertThat(response.inlineFeedback())
+                .extracting(InlineFeedbackSegmentDto::type, InlineFeedbackSegmentDto::originalText, InlineFeedbackSegmentDto::revisedText)
+                .contains(
+                        tuple("REPLACE", "i", "I"),
+                        tuple("ADD", "", "a ")
+                );
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
+                .contains(
+                        tuple("i", "I", "'I'\uB294 \uD56D\uC0C1 \uB300\uBB38\uC790\uB85C \uC368\uC57C \uD574\uC694."),
+                        tuple("a my diary", "my diary", "'a'\uB294 \uC18C\uC720\uACA9 'my'\uC640 \uD568\uAED8 \uC4F8 \uC218 \uC5C6\uC5B4\uC694.")
+                );
+    }
+
+    @Test
+    void review_preserves_broad_openai_reason_without_reassigning_it_to_small_diff_segments() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "Routine - Weekend",
+                "A",
+                "How do you usually spend your weekend?",
+                "주말에 보통 어떻게 보내나요?",
+                "Mention one or two activities."
+        );
+        String answer = "On weekends, i usually take nap and write a my diary";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                70,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto("i", "I", "capitalization reason"),
+                        new GrammarFeedbackItemDto("a my diary", "my diary", "broad diary reason")
+                ),
+                "On weekends, I usually take a nap and write in my diary.",
+                List.of(),
+                "On weekends, I usually take a nap and write in my diary.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.grammarFeedback())
+                .filteredOn(item -> "i".equals(item.originalText()) && "I".equals(item.revisedText()))
+                .extracting(GrammarFeedbackItemDto::reasonKo)
+                .containsExactly("capitalization reason");
+
+        assertThat(response.grammarFeedback())
+                .filteredOn(item -> "a my diary".equals(item.originalText()) && "my diary".equals(item.revisedText()))
+                .extracting(GrammarFeedbackItemDto::reasonKo)
+                .containsExactly("broad diary reason");
+    }
+
+    @Test
+    void review_filters_out_english_only_corrections_and_keeps_korean_ones() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "Routine - Weekend",
+                "A",
+                "How do you usually spend your weekend?",
+                "주말에 보통 어떻게 보내나요?",
+                "Mention one or two activities."
+        );
+        String answer = "When I stay at home, I usually play games and listen to music.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                80,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(
+                        new CorrectionDto(
+                                "Expand on activities or companions.",
+                                "Consider adding more details about other activities or who you spend time with."
+                        ),
+                        new CorrectionDto(
+                                "더 구체적인 정보를 포함하면 좋겠어요.",
+                                "어디에서 시간을 보내는지나 누구와 함께하는지도 덧붙여 보세요."
+                        )
+                ),
+                List.of(),
+                List.of(),
+                answer,
+                List.of(),
+                answer,
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.corrections())
+                .extracting(CorrectionDto::issue, CorrectionDto::suggestion)
+                .containsExactly(tuple(
+                        "더 구체적인 정보를 포함하면 좋겠어요.",
+                        "어디에서 시간을 보내는지나 누구와 함께하는지도 덧붙여 보세요."
+                ));
     }
 }

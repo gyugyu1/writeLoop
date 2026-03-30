@@ -1,23 +1,40 @@
 import { useMemo } from "react";
 import { buildInlineFeedbackSegments } from "../lib/inline-feedback";
-import type { FeedbackInlineSegment } from "../lib/types";
+import type { FeedbackInlineSegment, GrammarFeedbackItem } from "../lib/types";
 import styles from "./inline-feedback-preview.module.css";
 
 type InlineFeedbackPreviewProps = {
   originalAnswer: string;
   correctedAnswer?: string | null;
   inlineFeedback?: FeedbackInlineSegment[] | null;
+  grammarFeedback?: GrammarFeedbackItem[] | null;
   title?: string;
-  description?: string;
   compact?: boolean;
   variant?: "default" | "embedded";
 };
+
+function formatGrammarChange(item: GrammarFeedbackItem): string {
+  const originalText = item.originalText?.trim() ?? "";
+  const revisedText = item.revisedText?.trim() ?? "";
+
+  if (originalText && revisedText) {
+    return `'${originalText}' -> '${revisedText}'`;
+  }
+  if (originalText) {
+    return `'${originalText}' 삭제`;
+  }
+  if (revisedText) {
+    return `'${revisedText}' 추가`;
+  }
+  return "문법 수정";
+}
 
 export function InlineFeedbackPreview({
   originalAnswer,
   correctedAnswer,
   inlineFeedback,
-  title = "문장별 피드백",
+  grammarFeedback,
+  title = "문법 피드백",
   compact = false,
   variant = "default"
 }: InlineFeedbackPreviewProps) {
@@ -44,13 +61,13 @@ export function InlineFeedbackPreview({
           <span className={styles.legendSample}>현재 문장</span>
         </span>
         <span className={styles.legendItem}>
-          <span className={styles.legendRemove}>수정 전 표현</span>
+          <span className={styles.legendRemove}>삭제</span>
         </span>
         <span className={styles.legendItem}>
-          <span className={styles.legendReplace}>수정 표현</span>
+          <span className={styles.legendReplace}>수정</span>
         </span>
         <span className={styles.legendItem}>
-          <span className={styles.legendAdd}>추가 표현</span>
+          <span className={styles.legendAdd}>보완</span>
         </span>
       </div>
       <p className={styles.content}>
@@ -87,6 +104,19 @@ export function InlineFeedbackPreview({
           );
         })}
       </p>
+      {grammarFeedback && grammarFeedback.length > 0 ? (
+        <ul className={styles.reasonList}>
+          {grammarFeedback.map((item, index) => (
+            <li
+              key={`${item.originalText}-${item.revisedText}-${index}`}
+              className={styles.reasonItem}
+            >
+              <strong>{formatGrammarChange(item)}</strong>
+              <span>{item.reasonKo}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </section>
   );
 }

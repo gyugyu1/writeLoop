@@ -1117,6 +1117,7 @@ export function MyPageClient() {
                                       originalAnswer={attempt.answerText}
                                       correctedAnswer={attempt.feedback.correctedAnswer}
                                       inlineFeedback={attempt.feedback.inlineFeedback}
+                                      grammarFeedback={attempt.feedback.grammarFeedback}
                                       compact
                                       variant="embedded"
                                     />

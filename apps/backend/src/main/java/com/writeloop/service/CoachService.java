@@ -2000,6 +2000,10 @@ public class CoachService {
     }
 
     private String buildMeaningForHintType(String hintType) {
+        String normalizedMeaning = cleanHintMeaning(hintType);
+        if (normalizedMeaning != null) {
+            return normalizedMeaning;
+        }
         return switch (hintType) {
             case "STARTER" -> "답변을 자연스럽게 시작할 때 쓰기 좋아요.";
             case "VOCAB_WORD" -> "이 주제에서 바로 가져다 쓸 수 있는 단어예요.";
@@ -2013,6 +2017,10 @@ public class CoachService {
     }
 
     private String buildUsageTipForHintType(String hintType) {
+        String normalizedUsageTip = cleanHintUsageTip(hintType);
+        if (normalizedUsageTip != null) {
+            return normalizedUsageTip;
+        }
         return switch (hintType) {
             case "STARTER" -> "첫 문장을 시작할 때 바로 써 보세요.";
             case "VOCAB_WORD" -> "문장 안에 자연스럽게 끼워 넣어 보세요.";
@@ -2021,6 +2029,62 @@ public class CoachService {
             case "DETAIL" -> "짧은 답변에 구체성을 더하고 싶을 때 쓰세요.";
             case "LINKER" -> "이유, 예시, 추가 설명을 연결할 때 좋아요.";
             case "BALANCE" -> "장단점을 함께 말해야 할 때 잘 맞아요.";
+            default -> "다음 답변에서 다시 써 보기 좋은 표현이에요.";
+        };
+    }
+
+    private String normalizedHintMeaning(String hintType) {
+        String normalizedHintType = hintType == null ? "" : hintType.trim().toUpperCase(Locale.ROOT);
+        return switch (normalizedHintType) {
+            case "STARTER" -> "답변을 자연스럽게 시작할 때 쓰기 좋은 표현이에요.";
+            case "VOCAB_WORD" -> "이 주제에서 바로 가져다 쓸 수 있는 핵심 단어예요.";
+            case "VOCAB_PHRASE" -> "이 주제에서 바로 활용할 수 있는 표현이에요.";
+            case "STRUCTURE" -> "답변의 틀을 잡아 주는 표현이에요.";
+            case "DETAIL" -> "내용을 더 구체적으로 만드는 데 도움이 되는 표현이에요.";
+            case "LINKER" -> "문장과 문장을 자연스럽게 이어 주는 표현이에요.";
+            case "BALANCE" -> "장단점을 균형 있게 말할 때 도움이 되는 표현이에요.";
+            default -> "답변을 자연스럽게 만드는 데 도움이 되는 표현이에요.";
+        };
+    }
+
+    private String normalizedHintUsageTip(String hintType) {
+        String normalizedHintType = hintType == null ? "" : hintType.trim().toUpperCase(Locale.ROOT);
+        return switch (normalizedHintType) {
+            case "STARTER" -> "첫 문장을 시작할 때 바로 붙여 써 보세요.";
+            case "VOCAB_WORD" -> "문장 안에 자연스럽게 끼워 넣어 활용해 보세요.";
+            case "VOCAB_PHRASE" -> "표현을 통째로 가져와 문장에 붙여 써 보세요.";
+            case "STRUCTURE" -> "이유나 예시를 덧붙이면 더 자연스럽게 쓸 수 있어요.";
+            case "DETAIL" -> "짧은 답변에 구체적인 정보나 예시를 더할 때 활용해 보세요.";
+            case "LINKER" -> "이유, 예시, 추가 설명을 연결할 때 쓰기 좋아요.";
+            case "BALANCE" -> "한쪽만 말하지 말고 반대 관점도 함께 덧붙이면 좋아요.";
+            default -> "다음 답변에서 다시 써 보면 좋은 표현이에요.";
+        };
+    }
+
+    private String cleanHintMeaning(String hintType) {
+        String normalizedHintType = hintType == null ? "" : hintType.trim().toUpperCase(Locale.ROOT);
+        return switch (normalizedHintType) {
+            case "STARTER" -> "답변을 자연스럽게 시작하게 도와주는 표현이에요.";
+            case "VOCAB_WORD" -> "주제와 바로 연결해 쓸 수 있는 핵심 단어예요.";
+            case "VOCAB_PHRASE" -> "주제와 바로 연결해 쓸 수 있는 표현이에요.";
+            case "STRUCTURE" -> "답변 구조를 잡아주는 표현 틀이에요.";
+            case "DETAIL" -> "내용을 더 구체적으로 만들어 주는 표현이에요.";
+            case "LINKER" -> "문장과 문장을 자연스럽게 이어 주는 표현이에요.";
+            case "BALANCE" -> "균형 잡힌 의견을 보여 줄 때 도움이 되는 표현이에요.";
+            default -> "답변을 더 자연스럽게 만들어 주는 표현이에요.";
+        };
+    }
+
+    private String cleanHintUsageTip(String hintType) {
+        String normalizedHintType = hintType == null ? "" : hintType.trim().toUpperCase(Locale.ROOT);
+        return switch (normalizedHintType) {
+            case "STARTER" -> "첫 문장의 시작 부분에 바로 붙여 써 보세요.";
+            case "VOCAB_WORD" -> "문장 안에 자연스럽게 넣어 써 보세요.";
+            case "VOCAB_PHRASE" -> "표현 전체를 문장 안에 그대로 넣어 써 보세요.";
+            case "STRUCTURE" -> "이 틀에 이유나 예시를 붙이면 더 자연스럽게 들려요.";
+            case "DETAIL" -> "더 구체적인 정보나 예시를 덧붙일 때 써 보세요.";
+            case "LINKER" -> "이유, 예시, 추가 설명을 이어 줄 때 유용해요.";
+            case "BALANCE" -> "의견의 다른 면을 덧붙이고 싶을 때 써 보세요.";
             default -> "다음 답변에서 다시 써 보기 좋은 표현이에요.";
         };
     }

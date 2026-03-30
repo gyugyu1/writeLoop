@@ -4,9 +4,11 @@ import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
+import com.writeloop.dto.PromptHintItemDto;
 import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.exception.GuestLimitExceededException;
 import com.writeloop.persistence.AnswerAttemptEntity;
@@ -38,7 +40,7 @@ public class FeedbackService {
     private static final String LETTER_TOKEN = "[\\p{L}][\\p{L}'-]*";
     private static final String FEEDBACK_USED_EXPRESSION_SOURCE = "SELF_DISCOVERED";
     private static final String FEEDBACK_USED_EXPRESSION_MATCH_TYPE = "SELF_DISCOVERED";
-    private static final String FEEDBACK_USED_EXPRESSION_USAGE_TIP = "??? ???怨좊군??????????곷????????????猿???⑤；諭??";
+    private static final String FEEDBACK_USED_EXPRESSION_USAGE_TIP = "\ub2f5\ubcc0 \uc548\uc5d0\uc11c \uc790\uc5f0\uc2a4\ub7fd\uac8c \uc0b4\ub9b0 \ud45c\ud604\uc774\uc5d0\uc694.";
     private static final Set<String> PRONOUN_TOKENS = Set.of(
             "i", "you", "he", "she", "it", "we", "they"
     );
@@ -132,6 +134,7 @@ public class FeedbackService {
                 feedback.strengths(),
                 feedback.corrections(),
                 feedback.inlineFeedback(),
+                feedback.grammarFeedback(),
                 feedback.correctedAnswer(),
                 feedback.refinementExpressions(),
                 feedback.modelAnswer(),
@@ -242,53 +245,54 @@ public class FeedbackService {
         List<CorrectionDto> corrections = new ArrayList<>();
 
         if (answer.length() >= 50) {
-            strengths.add("?????????늄????ㅼ굣?????⑤챶裕???野껊챶爾??????怨쀪퐨 ???怨쀪퐨 ???⑤；???れ삀?? ????????곷??????⑤９苑묕┼??돳筌???");
+            strengths.add("\ub2f5\ubcc0 \uae38\uc774\uac00 \ucda9\ubd84\ud574\uc11c \uc0dd\uac01\uc744 \uc870\uae08 \ub354 \ud3bc\uccd0 \ubcf4\uc778 \uc810\uc774 \uc88b\uc544\uc694.");
         } else {
             corrections.add(new CorrectionDto(
-                    "??? ??ヂ?筌?鈺곗뼚苡? ?釉뚰???癲ル슣?㎫뙴洹〓눀??",
-                    "?????????怨뺣빰???????뽮덫??????⑤베堉????怨뚮옖???빝??"
+                    "\ub2f5\ubcc0\uc774 \uc870\uae08 \uc9e7\uc544\uc11c \uc0dd\uac01\uc774 \ucda9\ubd84\ud788 \ub4dc\ub7ec\ub098\uc9c0 \uc54a\uc558\uc5b4\uc694.",
+                    "\ud55c\ub450 \ubb38\uc7a5\uc744 \ub354 \ub367\ubd99\uc5ec \uc774\uc720\ub098 \uc608\uc2dc\ub97c \ud568\uaed8 \ub9d0\ud574 \ubcf4\uc138\uc694."
             ));
         }
 
         if (containsAny(answer, "because", "so", "and", "but")) {
-            strengths.add("???ㅼ뒦????? ??????⑤똾留????뽮덫????源낇꼧 ???ㅻ깹鸚??嶺뚮ㅎ?볢짆?????????⑤챶?????⑤９苑묕┼??넊??????怨쀪퐨??");
+            strengths.add("\uc5f0\uacb0 \ud45c\ud604\uc744 \uc0ac\uc6a9\ud574\uc11c \ubb38\uc7a5 \ud750\ub984\uc744 \uc790\uc5f0\uc2a4\ub7fd\uac8c \uc774\uc5b4 \uac04 \uc810\uc774 \uc88b\uc544\uc694.");
         } else {
             corrections.add(new CorrectionDto(
-                    "???룸콅??????룸콅??????????ㅼ뒦????釉뚰?????????",
-                    "because, so, and, but ??좊즵?? ???ㅼ뒦????? ?壤굿??苑??怨뚮옖???빝??"
+                    "\ubb38\uc7a5 \uc0ac\uc774\ub97c \uc774\uc5b4 \uc8fc\ub294 \uc5f0\uacb0 \ud45c\ud604\uc774 \ub354 \uc788\uc73c\uba74 \uc88b\uc544\uc694.",
+                    "\"because\", \"so\", \"and\", \"but\" \uac19\uc740 \uc5f0\uacb0\uc5b4\ub97c \ud65c\uc6a9\ud574 \uc0dd\uac01\uc758 \ud750\ub984\uc744 \ubcf4\uc5ec \uc8fc\uc138\uc694."
             ));
         }
 
         if (containsAny(answer, "i like", "i enjoy", "i want", "i usually", "i practice")) {
-            strengths.add("????????룸콅???癲ル슢??????????????ㅻ쿋獒???れ삀???????猿??????????곷??????怨쀪퐨??좊읈? ???怨쀪퐨??");
+            strengths.add("\uc790\uc2e0\uc758 \uc0dd\uac01\uc774\ub098 \uc2b5\uad00\uc744 \uc9c1\uc811\uc801\uc73c\ub85c \ud45c\ud604\ud55c \uc810\uc774 \uc88b\uc544\uc694.");
         } else {
             corrections.add(new CorrectionDto(
-                    "??????듬쐥??????????????됰슣維딁춯????곕쿊 ??筌먦끉紐??嚥??????レ뿴???",
-                    "I usually..., I want..., I enjoy... ??좊즵?? ????猿???⑥????筌믨퀣援???怨뚮옖???빝??"
+                    "\uc790\uc2e0\uc758 \uc758\uacac\uc774\ub098 \uc2b5\uad00\uc744 \ubcf4\uc5ec \uc8fc\ub294 \ud45c\ud604\uc774 \uc870\uae08 \ub354 \uc788\uc73c\uba74 \uc88b\uc544\uc694.",
+                    "\"I usually...\", \"I want...\", \"I enjoy...\" \uac19\uc740 \ud45c\ud604\uc73c\ub85c \ub0b4\uc6a9\uc744 \ub354 \ubd84\uba85\ud558\uac8c \uc368 \ubcf4\uc138\uc694."
             ));
         }
 
         if (!answer.endsWith(".") && !answer.endsWith("!") && !answer.endsWith("?")) {
             corrections.add(new CorrectionDto(
-                    "???뽮덫???????筌롫챸?????????⑥???怨뚮옖????????怨쀪퐨??",
-                    "癲ル슢???삳닱??筌?猷???醫딅땾?????좊즵?? ???뽮덫?影?????嶺? ?壤굿??苑????????????곷???癲ル슢??袁ъÞ?域밸Ŧ肉???怨뚮옖???빝??"
+                    "\ubb38\uc7a5 \ub05d \ubb38\uc7a5\ubd80\ud638\uac00 \ube60\uc838 \uc788\uc5b4\uc694.",
+                    "\ubb38\uc7a5\uc774 \ub05d\ub0a0 \ub54c\ub294 \ub9c8\uce68\ud45c\ub098 \ubb3c\uc74c\ud45c\ub97c \ubd99\uc5ec \ubb38\uc7a5\uc744 \ubd84\uba85\ud558\uac8c \ub9c8\ubb34\ub9ac\ud574 \ubcf4\uc138\uc694."
             ));
         }
 
         int score = Math.max(62, 88 - corrections.size() * 7 + strengths.size() * 3);
         String summary = corrections.isEmpty()
-                ? "?????????????곷?????ш끽維??潁뺛깾?????レ뿴??? ???源낆쓱 ??影?됀??????????늄????ㅼ굣?????怨뺣빰????嚥▲굥猷????壤굿??苑???????????????곕쿊 癲ル슢???????怨뚮옖???빝??"
-                : "????????⑤챶裕?? ????ш끽維????癲? ???뽮덫?????ㅼ뒦???????늄??濚밸Ŧ?김キ??釉뚰??????怨뚮옖????嚥?????縕??????????곷첓?????????筌뤾퍓???";
+                ? "\ud575\uc2ec \uc0dd\uac01\uc774 \ube44\uad50\uc801 \uc798 \ub4dc\ub7ec\ub0ac\uc5b4\uc694. \ub2e4\uc74c \ub2f5\ubcc0\uc5d0\uc11c\ub294 \uc774\uc720\ub098 \uc608\uc2dc\ub97c \uc870\uae08\ub9cc \ub354 \ubcf4\ud0dc\uba74 \ub354 \uc644\uc131\ub3c4 \ub192\uc740 \ub2f5\ubcc0\uc774 \ub420 \uc218 \uc788\uc5b4\uc694."
+                : "\uae30\ubcf8 \uc758\ubbf8\ub294 \uc798 \uc804\ub2ec\ub418\uc9c0\ub9cc \ubb38\uc7a5 \uc5f0\uacb0\uacfc \uad6c\uccb4\uc131\uc774 \uc870\uae08 \ub354 \ubcf4\uac15\ub418\uba74 \ub354 \uc790\uc5f0\uc2a4\ub7ec\uc6b4 \ub2f5\ubcc0\uc774 \ub420 \uc218 \uc788\uc5b4\uc694.";
 
         String correctedAnswer = buildCorrectedAnswer(answer);
         List<InlineFeedbackSegmentDto> inlineFeedback = buildInlineFeedback(answer, correctedAnswer);
+        List<GrammarFeedbackItemDto> grammarFeedback = sanitizeGrammarFeedback(List.of(), inlineFeedback);
         String modelAnswer = buildModelAnswer(prompt);
         List<RefinementExpressionDto> refinementExpressions = buildRefinementExpressions(answer, correctedAnswer, modelAnswer);
         String rewriteChallenge = buildRewriteChallenge(prompt, corrections.isEmpty());
         int finalScore = Math.min(score, 96);
-        boolean loopComplete = shouldCompleteLoop(finalScore, corrections);
+        boolean loopComplete = shouldCompleteLoop(finalScore, corrections, grammarFeedback);
         String completionMessage = loopComplete
-                ? "??????? 癲ル슣??????影?됀?????癲ル슢??袁ъÞ?域밸Ŧ肉????野껊챶爾????⑤챶萸? ??誘⑦←뵳?異??????????怨뺣빰 ???怨뚮옖???????Β??????嚥▲꺃?????怨쀪퐨??"
+                ? "\uc88b\uc544\uc694. \uc774\ubc88 \ub2f5\ubcc0\uc740 \uae30\ubcf8 \ubb38\uc7a5 \ud750\ub984\uc774 \uc548\uc815\uc801\uc774\uc5d0\uc694. \ub2e4\uc74c\uc5d0\ub294 \uc774\uc720\ub098 \uc608\uc2dc\ub97c \uc870\uae08 \ub354 \ubcf4\ud0dc\uc11c \ub2f5\ubcc0\uc744 \ub354 \ud48d\ubd80\ud558\uac8c \ub9cc\ub4e4\uc5b4 \ubcf4\uc138\uc694."
                 : null;
 
         return new FeedbackResponseDto(
@@ -302,6 +306,7 @@ public class FeedbackService {
                 strengths,
                 corrections,
                 inlineFeedback,
+                grammarFeedback,
                 correctedAnswer,
                 refinementExpressions,
                 modelAnswer,
@@ -315,9 +320,18 @@ public class FeedbackService {
             String learnerAnswer,
             List<PromptHintDto> hints
     ) {
+        List<InlineFeedbackSegmentDto> inlineFeedback = rebuildInlineFeedback(
+                learnerAnswer,
+                feedback.correctedAnswer(),
+                feedback.inlineFeedback()
+        );
+        List<GrammarFeedbackItemDto> grammarFeedback = sanitizeGrammarFeedback(
+                feedback.grammarFeedback(),
+                inlineFeedback
+        );
         List<CorrectionDto> corrections = sanitizeCorrections(
                 feedback.corrections(),
-                feedback.inlineFeedback()
+                grammarFeedback
         );
         List<RefinementExpressionDto> refinementExpressions = sanitizeRefinementExpressions(
                 feedback.promptId(),
@@ -330,7 +344,7 @@ public class FeedbackService {
         List<CoachExpressionUsageDto> usedExpressions = sanitizeUsedExpressions(
                 feedback.usedExpressions(),
                 learnerAnswer,
-                feedback.inlineFeedback()
+                inlineFeedback
         );
 
         return new FeedbackResponseDto(
@@ -343,7 +357,8 @@ public class FeedbackService {
                 feedback.summary(),
                 feedback.strengths(),
                 corrections,
-                feedback.inlineFeedback(),
+                inlineFeedback,
+                grammarFeedback,
                 feedback.correctedAnswer(),
                 refinementExpressions,
                 feedback.modelAnswer(),
@@ -352,9 +367,25 @@ public class FeedbackService {
         );
     }
 
+    private List<InlineFeedbackSegmentDto> rebuildInlineFeedback(
+            String learnerAnswer,
+            String correctedAnswer,
+            List<InlineFeedbackSegmentDto> existingInlineFeedback
+    ) {
+        if (correctedAnswer != null && !correctedAnswer.isBlank()) {
+            return openAiFeedbackClient.buildInlineFeedbackFromCorrectedAnswer(learnerAnswer, correctedAnswer);
+        }
+
+        if (existingInlineFeedback == null || existingInlineFeedback.isEmpty()) {
+            return List.of();
+        }
+
+        return existingInlineFeedback;
+    }
+
     private List<CorrectionDto> sanitizeCorrections(
             List<CorrectionDto> corrections,
-            List<InlineFeedbackSegmentDto> inlineFeedback
+            List<GrammarFeedbackItemDto> grammarFeedback
     ) {
         List<CorrectionDto> sanitized = new ArrayList<>();
         LinkedHashSet<String> seen = new LinkedHashSet<>();
@@ -365,26 +396,507 @@ public class FeedbackService {
                     continue;
                 }
 
-                String key = normalizeForComparison(correction.issue() + " " + correction.suggestion());
+                if (isGrammarCorrection(correction, grammarFeedback)) {
+                    continue;
+                }
+
+                CorrectionDto localizedCorrection = sanitizeCorrectionLanguage(correction);
+                if (localizedCorrection == null) {
+                    continue;
+                }
+
+                String key = normalizeLooseText(localizedCorrection.issue() + " " + localizedCorrection.suggestion());
                 if (key.isBlank() || !seen.add(key)) {
                     continue;
                 }
-                sanitized.add(correction);
-            }
-        }
-
-        for (CorrectionDto supplemental : buildSupplementalCorrections(inlineFeedback, sanitized)) {
-            String key = normalizeForComparison(supplemental.issue() + " " + supplemental.suggestion());
-            if (key.isBlank() || !seen.add(key)) {
-                continue;
-            }
-            sanitized.add(supplemental);
-            if (sanitized.size() >= 5) {
-                break;
+                sanitized.add(localizedCorrection);
             }
         }
 
         return sanitized;
+    }
+
+    private CorrectionDto sanitizeCorrectionLanguage(CorrectionDto correction) {
+        if (correction == null) {
+            return null;
+        }
+
+        String issue = correction.issue() == null ? "" : correction.issue().trim();
+        String suggestion = correction.suggestion() == null ? "" : correction.suggestion().trim();
+        if (issue.isBlank() || suggestion.isBlank()) {
+            return null;
+        }
+        if (!containsHangul(issue) || !containsHangul(suggestion)) {
+            return null;
+        }
+
+        return new CorrectionDto(issue, suggestion);
+    }
+
+    private List<GrammarFeedbackItemDto> sanitizeGrammarFeedback(
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            List<InlineFeedbackSegmentDto> inlineFeedback
+    ) {
+        List<GrammarFeedbackItemDto> provided = new ArrayList<>();
+        if (grammarFeedback != null) {
+            for (GrammarFeedbackItemDto item : grammarFeedback) {
+                GrammarFeedbackItemDto sanitizedItem = sanitizeGrammarFeedbackItem(item);
+                if (sanitizedItem == null) {
+                    continue;
+                }
+                provided.add(sanitizedItem);
+            }
+        }
+
+        if (inlineFeedback == null || inlineFeedback.isEmpty()) {
+            return List.of();
+        }
+
+        if (!provided.isEmpty()) {
+            List<GrammarFeedbackItemDto> preserved = new ArrayList<>();
+            LinkedHashSet<String> seenProvided = new LinkedHashSet<>();
+            for (GrammarFeedbackItemDto item : provided) {
+                if (seenProvided.add(buildGrammarFeedbackKey(item))) {
+                    preserved.add(item);
+                }
+            }
+            return preserved;
+        }
+
+        List<GrammarFeedbackItemDto> synchronizedItems = new ArrayList<>();
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+        for (InlineFeedbackSegmentDto segment : inlineFeedback) {
+            GrammarFeedbackItemDto fallback = buildFallbackGrammarFeedback(segment);
+            if (fallback == null || !seen.add(buildGrammarFeedbackKey(fallback))) {
+                continue;
+            }
+
+            GrammarFeedbackItemDto matched = findMatchingGrammarFeedback(
+                    provided,
+                    fallback,
+                    segment.type()
+            );
+            if (matched != null
+                    && matched.reasonKo() != null
+                    && !matched.reasonKo().isBlank()
+                    && isCompatibleGrammarReason(segment, matched.reasonKo())) {
+                synchronizedItems.add(new GrammarFeedbackItemDto(
+                        fallback.originalText(),
+                        fallback.revisedText(),
+                        matched.reasonKo()
+                ));
+                continue;
+            }
+
+            synchronizedItems.add(fallback);
+        }
+
+        return synchronizedItems;
+    }
+
+    private GrammarFeedbackItemDto sanitizeGrammarFeedbackItem(GrammarFeedbackItemDto item) {
+        if (item == null) {
+            return null;
+        }
+
+        String originalText = cleanSegmentPhrase(item.originalText());
+        String revisedText = cleanSegmentPhrase(item.revisedText());
+        if (!isValidGrammarFeedbackSpan(originalText, revisedText)) {
+            return null;
+        }
+
+        String reasonKo = item.reasonKo() == null ? "" : item.reasonKo().trim();
+        if (reasonKo.isBlank()) {
+            reasonKo = buildGenericGrammarReason(originalText, revisedText);
+        }
+        if (reasonKo.isBlank()) {
+            return null;
+        }
+
+        return new GrammarFeedbackItemDto(originalText, revisedText, reasonKo);
+    }
+
+    private boolean isValidGrammarFeedbackSpan(String originalText, String revisedText) {
+        if (originalText.isBlank() && revisedText.isBlank()) {
+            return false;
+        }
+
+        List<String> originalTokens = tokenList(normalizeForComparison(originalText));
+        List<String> revisedTokens = tokenList(normalizeForComparison(revisedText));
+
+        if (originalText.isBlank()) {
+            return isPunctuationOnly(revisedText) || revisedTokens.size() <= 3;
+        }
+
+        if (revisedText.isBlank()) {
+            return isPunctuationOnly(originalText) || originalTokens.size() <= 3;
+        }
+
+        return originalTokens.size() <= 6 && revisedTokens.size() <= 6;
+    }
+
+    private GrammarFeedbackItemDto buildFallbackGrammarFeedback(InlineFeedbackSegmentDto segment) {
+        if (segment == null) {
+            return null;
+        }
+
+        String type = segment.type() == null ? "" : segment.type().trim().toUpperCase(Locale.ROOT);
+        if ("KEEP".equals(type)) {
+            return null;
+        }
+
+        String originalText = cleanSegmentPhrase(segment.originalText());
+        String revisedText = cleanSegmentPhrase(segment.revisedText());
+        if (!isValidGrammarFeedbackSpan(originalText, revisedText)) {
+            return null;
+        }
+        if (!isGrammarMechanicsSegment(type, originalText, revisedText, segment)) {
+            return null;
+        }
+
+        String reasonKo = buildFallbackGrammarReason(segment, originalText, revisedText);
+        if (reasonKo.isBlank()) {
+            return null;
+        }
+
+        return new GrammarFeedbackItemDto(originalText, revisedText, reasonKo);
+    }
+
+    private GrammarFeedbackItemDto findMatchingGrammarFeedback(
+            List<GrammarFeedbackItemDto> provided,
+            GrammarFeedbackItemDto fallback,
+            String fallbackType
+    ) {
+        if (provided == null || provided.isEmpty() || fallback == null) {
+            return null;
+        }
+
+        String normalizedFallbackType = normalizeGrammarFeedbackEditType(
+                fallbackType,
+                fallback.originalText(),
+                fallback.revisedText()
+        );
+        GrammarFeedbackItemDto bestMatch = null;
+        int bestScore = 0;
+        for (GrammarFeedbackItemDto item : provided) {
+            int score = scoreGrammarFeedbackMatch(item, fallback, normalizedFallbackType);
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = item;
+            }
+        }
+
+        return bestMatch;
+    }
+
+    private int scoreGrammarFeedbackMatch(
+            GrammarFeedbackItemDto item,
+            GrammarFeedbackItemDto fallback,
+            String fallbackEditType
+    ) {
+        if (item == null || fallback == null) {
+            return 0;
+        }
+
+        String itemEditType = normalizeGrammarFeedbackEditType(null, item.originalText(), item.revisedText());
+        if (!itemEditType.equals(fallbackEditType)) {
+            return 0;
+        }
+
+        if (spansExactlyMatch(item, fallback)) {
+            return 400;
+        }
+        if (spansMatchAfterLooseNormalization(item, fallback)) {
+            return 300;
+        }
+        if (spansMatchByNormalizedTokens(item, fallback)) {
+            return 200;
+        }
+        if (spansMatchByConstrainedOverlap(item, fallback)) {
+            return 100;
+        }
+
+        return 0;
+    }
+
+    private String normalizeGrammarFeedbackEditType(
+            String declaredType,
+            String originalText,
+            String revisedText
+    ) {
+        if (declaredType != null && !declaredType.isBlank()) {
+            String normalizedType = declaredType.trim().toUpperCase(Locale.ROOT);
+            if ("ADD".equals(normalizedType) || "REMOVE".equals(normalizedType) || "REPLACE".equals(normalizedType)) {
+                return normalizedType;
+            }
+        }
+
+        if ((originalText == null || originalText.isBlank()) && revisedText != null && !revisedText.isBlank()) {
+            return "ADD";
+        }
+        if (originalText != null && !originalText.isBlank() && (revisedText == null || revisedText.isBlank())) {
+            return "REMOVE";
+        }
+        return "REPLACE";
+    }
+
+    private boolean spansExactlyMatch(GrammarFeedbackItemDto item, GrammarFeedbackItemDto fallback) {
+        return safeEquals(item.originalText(), fallback.originalText())
+                && safeEquals(item.revisedText(), fallback.revisedText());
+    }
+
+    private boolean spansMatchAfterLooseNormalization(GrammarFeedbackItemDto item, GrammarFeedbackItemDto fallback) {
+        return normalizeLooseText(item.originalText()).equals(normalizeLooseText(fallback.originalText()))
+                && normalizeLooseText(item.revisedText()).equals(normalizeLooseText(fallback.revisedText()));
+    }
+
+    private boolean spansMatchByNormalizedTokens(GrammarFeedbackItemDto item, GrammarFeedbackItemDto fallback) {
+        return normalizedTokenSignature(item.originalText()).equals(normalizedTokenSignature(fallback.originalText()))
+                && normalizedTokenSignature(item.revisedText()).equals(normalizedTokenSignature(fallback.revisedText()));
+    }
+
+    private boolean spansMatchByConstrainedOverlap(GrammarFeedbackItemDto item, GrammarFeedbackItemDto fallback) {
+        String itemOriginal = normalizeLooseText(item.originalText());
+        String itemRevised = normalizeLooseText(item.revisedText());
+        String fallbackOriginal = normalizeLooseText(fallback.originalText());
+        String fallbackRevised = normalizeLooseText(fallback.revisedText());
+
+        if (itemOriginal.isBlank() || itemRevised.isBlank() || fallbackOriginal.isBlank() || fallbackRevised.isBlank()) {
+            return false;
+        }
+
+        return overlapInBothDirections(itemOriginal, fallbackOriginal)
+                && overlapInBothDirections(itemRevised, fallbackRevised);
+    }
+
+    private boolean overlapInBothDirections(String left, String right) {
+        return left.contains(right) || right.contains(left);
+    }
+
+    private String normalizedTokenSignature(String value) {
+        return String.join(" ", tokenList(normalizeForComparison(value)));
+    }
+
+    private boolean safeEquals(String left, String right) {
+        return (left == null ? "" : left).equals(right == null ? "" : right);
+    }
+
+    private String buildFallbackGrammarReason(
+            InlineFeedbackSegmentDto segment,
+            String originalText,
+            String revisedText
+    ) {
+        CorrectionDto correction = buildSupplementalCorrectionCandidate(segment);
+        if (correction != null && correction.issue() != null && !correction.issue().isBlank()) {
+            return correction.issue();
+        }
+
+        String type = segment.type() == null ? "" : segment.type().trim().toUpperCase(Locale.ROOT);
+        if ("ADD".equals(type) && isPunctuationOnly(revisedText)) {
+            return "\ubb38\uc7a5 \ub05d\uc5d0\ub294 \ubb38\uc7a5\ubd80\ud638\uac00 \uc788\uc5b4\uc57c \ubb38\uc7a5\uc774 \ubd84\uba85\ud574\uc694.";
+        }
+        if ("REMOVE".equals(type)) {
+            return "\uc774 \ubd80\ubd84\uc740 \ube7c\ub294 \uac83\uc774 \ubb38\ubc95\uc801\uc73c\ub85c \ub354 \uc790\uc5f0\uc2a4\ub7ec\uc6cc\uc694.";
+        }
+
+        return buildGenericGrammarReason(originalText, revisedText);
+    }
+
+    private boolean isCompatibleGrammarReason(InlineFeedbackSegmentDto segment, String reasonKo) {
+        if (segment == null || reasonKo == null || reasonKo.isBlank()) {
+            return false;
+        }
+
+        String original = cleanSegmentPhrase(segment.originalText());
+        String revised = cleanSegmentPhrase(segment.revisedText());
+        List<String> originalTokens = tokenList(normalizeForComparison(original));
+        List<String> revisedTokens = tokenList(normalizeForComparison(revised));
+
+        if (isCapitalizationOnlyChange(original, revised)) {
+            return containsGrammarReasonCue(reasonKo, "\ub300\ubb38\uc790", "capital");
+        }
+        if (isPluralizationChange(originalTokens, revisedTokens)) {
+            return containsGrammarReasonCue(reasonKo, "\ubcf5\uc218", "\ub2e8\uc218", "plural", "singular");
+        }
+        if (isPronounBeAgreementChange(originalTokens, revisedTokens)) {
+            return containsGrammarReasonCue(reasonKo, "\ub300\uba85\uc0ac", "\uc77c\uce58", "\uc8fc\uc5b4", "agreement", "pronoun");
+        }
+        if (isArticleCorrection(originalTokens, revisedTokens) || isDeterminerInsertionOrRemoval(segment, revisedTokens, originalTokens)) {
+            return containsGrammarReasonCue(reasonKo, "\uad00\uc0ac", "\ud55c\uc815\uc5b4", "\uba85\uc0ac \uc55e", "article", "determiner");
+        }
+        if (isPrepositionCorrection(originalTokens, revisedTokens) || isPrepositionInsertionOrRemoval(segment, revisedTokens, originalTokens)) {
+            return containsGrammarReasonCue(reasonKo, "\uc804\uce58\uc0ac", "preposition");
+        }
+        if (isPunctuationOnly(revised) || isPunctuationOnly(original)) {
+            return containsGrammarReasonCue(reasonKo, "\ubb38\uc7a5\ubd80\ud638", "\ub9c8\uce68\ud45c", "\uc270\ud45c", "punctuation");
+        }
+
+        return true;
+    }
+
+    private boolean isDeterminerInsertionOrRemoval(
+            InlineFeedbackSegmentDto segment,
+            List<String> revisedTokens,
+            List<String> originalTokens
+    ) {
+        String type = segment.type() == null ? "" : segment.type().trim().toUpperCase(Locale.ROOT);
+        return ("ADD".equals(type) && revisedTokens.size() == 1 && DETERMINER_TOKENS.contains(revisedTokens.get(0)))
+                || ("REMOVE".equals(type) && originalTokens.size() == 1 && DETERMINER_TOKENS.contains(originalTokens.get(0)));
+    }
+
+    private boolean isPrepositionInsertionOrRemoval(
+            InlineFeedbackSegmentDto segment,
+            List<String> revisedTokens,
+            List<String> originalTokens
+    ) {
+        String type = segment.type() == null ? "" : segment.type().trim().toUpperCase(Locale.ROOT);
+        return ("ADD".equals(type) && revisedTokens.size() == 1 && PREPOSITION_TOKENS.contains(revisedTokens.get(0)))
+                || ("REMOVE".equals(type) && originalTokens.size() == 1 && PREPOSITION_TOKENS.contains(originalTokens.get(0)));
+    }
+
+    private boolean containsGrammarReasonCue(String reasonKo, String... cues) {
+        String lowered = reasonKo.toLowerCase(Locale.ROOT);
+        for (String cue : cues) {
+            if (lowered.contains(cue.toLowerCase(Locale.ROOT))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isGrammarMechanicsSegment(
+            String type,
+            String originalText,
+            String revisedText,
+            InlineFeedbackSegmentDto segment
+    ) {
+        if ("ADD".equals(type) && isPunctuationOnly(revisedText)) {
+            return true;
+        }
+        if ("REMOVE".equals(type) && isPunctuationOnly(originalText)) {
+            return true;
+        }
+        if (buildSupplementalCorrectionCandidate(segment) != null) {
+            return true;
+        }
+
+        List<String> originalTokens = tokenList(normalizeForComparison(originalText));
+        List<String> revisedTokens = tokenList(normalizeForComparison(revisedText));
+        if ("ADD".equals(type) && revisedTokens.size() == 1) {
+            String token = revisedTokens.get(0);
+            return DETERMINER_TOKENS.contains(token)
+                    || PREPOSITION_TOKENS.contains(token)
+                    || PRONOUN_TOKENS.contains(token)
+                    || BE_VERB_TOKENS.contains(token);
+        }
+        if ("REMOVE".equals(type) && originalTokens.size() == 1) {
+            String token = originalTokens.get(0);
+            return DETERMINER_TOKENS.contains(token)
+                    || PREPOSITION_TOKENS.contains(token)
+                    || ARTICLE_TOKENS.contains(token);
+        }
+        if ("REPLACE".equals(type) && originalTokens.size() == 1 && revisedTokens.size() == 1) {
+            String originalToken = originalTokens.get(0);
+            String revisedToken = revisedTokens.get(0);
+            return ARTICLE_TOKENS.contains(originalToken)
+                    || ARTICLE_TOKENS.contains(revisedToken)
+                    || DETERMINER_TOKENS.contains(originalToken)
+                    || DETERMINER_TOKENS.contains(revisedToken)
+                    || PREPOSITION_TOKENS.contains(originalToken)
+                    || PREPOSITION_TOKENS.contains(revisedToken)
+                    || PRONOUN_TOKENS.contains(originalToken)
+                    || PRONOUN_TOKENS.contains(revisedToken)
+                    || BE_VERB_TOKENS.contains(originalToken)
+                    || BE_VERB_TOKENS.contains(revisedToken);
+        }
+
+        return false;
+    }
+
+    private String buildGenericGrammarReason(String originalText, String revisedText) {
+        if (originalText.isBlank() && !revisedText.isBlank()) {
+            return "\uc774 \ubd80\ubd84\uc740 \ubb38\uc7a5\uc744 \ubb38\ubc95\uc801\uc73c\ub85c \uc644\uc131\ud558\uae30 \uc704\ud574 \ubcf4\uc644\ud55c \ud45c\ud604\uc774\uc5d0\uc694.";
+        }
+        if (!originalText.isBlank() && revisedText.isBlank()) {
+            return "\uc774 \ubd80\ubd84\uc740 \ube7c\ub294 \uac83\uc774 \uc601\uc5b4 \ubb38\uc7a5\uc5d0\uc11c \ub354 \uc790\uc5f0\uc2a4\ub7ec\uc6cc\uc694.";
+        }
+        return "\uc774 \ubd80\ubd84\uc740 \uc601\uc5b4 \ubb38\ubc95\uacfc \uc790\uc5f0\uc2a4\ub7ec\uc6b4 \ud45c\ud604\uc5d0 \ub9de\uac8c \uace0\uccd0\uc57c \ud574\uc694.";
+    }
+
+    private boolean isGrammarCorrection(
+            CorrectionDto correction,
+            List<GrammarFeedbackItemDto> grammarFeedback
+    ) {
+        if (correction == null) {
+            return false;
+        }
+
+        if (grammarFeedback != null) {
+            for (GrammarFeedbackItemDto item : grammarFeedback) {
+                if (item != null && overlapsGrammarFeedback(correction, item)) {
+                    return true;
+                }
+            }
+        }
+
+        String combined = ((correction.issue() == null ? "" : correction.issue()) + " "
+                + (correction.suggestion() == null ? "" : correction.suggestion()))
+                .toLowerCase(Locale.ROOT);
+        return combined.contains("grammar")
+                || combined.contains("capital")
+                || combined.contains("plural")
+                || combined.contains("singular")
+                || combined.contains("article")
+                || combined.contains("determiner")
+                || combined.contains("pronoun")
+                || combined.contains("preposition")
+                || combined.contains("punctuation")
+                || combined.contains("verb form")
+                || combined.contains("\ubb38\ubc95")
+                || combined.contains("\ub300\ubb38\uc790")
+                || combined.contains("\ubcf5\uc218")
+                || combined.contains("\ub2e8\uc218")
+                || combined.contains("\uad00\uc0ac")
+                || combined.contains("\ud55c\uc815\uc5b4")
+                || combined.contains("\ub300\uba85\uc0ac")
+                || combined.contains("\uc804\uce58\uc0ac")
+                || combined.contains("\ubb38\uc7a5\ubd80\ud638")
+                || combined.contains("\ub3d9\uc0ac \ud615\ud0dc");
+    }
+
+    private boolean overlapsGrammarFeedback(CorrectionDto correction, GrammarFeedbackItemDto item) {
+        String correctionText = normalizeLooseText(
+                (correction.issue() == null ? "" : correction.issue()) + " "
+                        + (correction.suggestion() == null ? "" : correction.suggestion())
+        );
+        String originalText = normalizeLooseText(item.originalText());
+        String revisedText = normalizeLooseText(item.revisedText());
+        return (!originalText.isBlank() && correctionText.contains(originalText))
+                || (!revisedText.isBlank() && correctionText.contains(revisedText));
+    }
+
+    private String buildGrammarFeedbackKey(GrammarFeedbackItemDto item) {
+        return normalizeLooseText(item.originalText()) + "|"
+                + normalizeLooseText(item.revisedText());
+    }
+
+    private String normalizeLooseText(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+
+        return value.toLowerCase(Locale.ROOT)
+                .replaceAll("\\s+", " ")
+                .trim();
+    }
+
+    private boolean containsHangul(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+
+        return value.codePoints()
+                .anyMatch(codePoint -> Character.UnicodeScript.of(codePoint) == Character.UnicodeScript.HANGUL);
     }
 
     private List<CoachExpressionUsageDto> sanitizeUsedExpressions(
@@ -394,9 +906,16 @@ public class FeedbackService {
     ) {
         List<CoachExpressionUsageDto> extracted = new ArrayList<>();
         if (usedExpressions != null) {
-            extracted.addAll(usedExpressions);
+            for (CoachExpressionUsageDto usage : usedExpressions) {
+                CoachExpressionUsageDto sanitized = sanitizeUsedExpression(usage, learnerAnswer);
+                if (sanitized != null) {
+                    extracted.add(sanitized);
+                }
+            }
         }
-        extracted.addAll(buildUsedExpressions(learnerAnswer, inlineFeedback));
+        if (extracted.size() < 3) {
+            extracted.addAll(buildUsedExpressions(learnerAnswer, inlineFeedback));
+        }
         return deduplicateUsedExpressions(extracted).stream()
                 .limit(3)
                 .toList();
@@ -476,10 +995,69 @@ public class FeedbackService {
                 sanitizedCandidate,
                 true,
                 FEEDBACK_USED_EXPRESSION_MATCH_TYPE,
-                sanitizedCandidate,
+                null,
                 FEEDBACK_USED_EXPRESSION_SOURCE,
                 buildUsedExpressionUsageTip(sanitizedCandidate)
         );
+    }
+
+    private CoachExpressionUsageDto sanitizeUsedExpression(
+            CoachExpressionUsageDto usage,
+            String learnerAnswer
+    ) {
+        if (usage == null) {
+            return null;
+        }
+
+        String sanitizedExpression = sanitizeExtractedExpression(usage.expression());
+        if (!isValidUsedExpressionCandidate(sanitizedExpression)) {
+            return null;
+        }
+
+        String normalizedLearnerAnswer = normalizeForComparison(learnerAnswer);
+        String normalizedExpression = normalizeForComparison(sanitizedExpression);
+        if (normalizedLearnerAnswer.isBlank()
+                || normalizedExpression.isBlank()
+                || !normalizedLearnerAnswer.contains(normalizedExpression)) {
+            return null;
+        }
+
+        String usageTip = usage.usageTip() == null || usage.usageTip().isBlank()
+                ? buildUsedExpressionUsageTip(sanitizedExpression)
+                : usage.usageTip().trim();
+
+        return new CoachExpressionUsageDto(
+                sanitizedExpression,
+                true,
+                FEEDBACK_USED_EXPRESSION_MATCH_TYPE,
+                sanitizeMatchedUsedExpressionText(usage.matchedText(), sanitizedExpression, learnerAnswer),
+                FEEDBACK_USED_EXPRESSION_SOURCE,
+                usageTip
+        );
+    }
+
+    private String sanitizeMatchedUsedExpressionText(
+            String matchedText,
+            String expression,
+            String learnerAnswer
+    ) {
+        if (matchedText == null || matchedText.isBlank()) {
+            return null;
+        }
+
+        String sanitizedMatchedText = matchedText.trim().replaceAll("\\s+", " ");
+        String normalizedMatchedText = normalizeForComparison(sanitizedMatchedText);
+        String normalizedExpression = normalizeForComparison(expression);
+        String normalizedLearnerAnswer = normalizeForComparison(learnerAnswer);
+
+        if (normalizedMatchedText.isBlank()
+                || normalizedMatchedText.equals(normalizedExpression)
+                || normalizedLearnerAnswer.isBlank()
+                || !normalizedLearnerAnswer.contains(normalizedMatchedText)) {
+            return null;
+        }
+
+        return sanitizedMatchedText;
     }
 
     private boolean isPreservedCandidate(String candidate, List<String> preservedSegments) {
@@ -711,6 +1289,14 @@ public class FeedbackService {
                             + "' \uAC19\uC740 \uD45C\uD604\uC744 \uD568\uAED8 \uC368\uC11C \uB204\uAD6C\uB098 \uBB34\uC5C7\uC778\uC9C0 \uB354 \uC120\uBA85\uD558\uAC8C \uB9D0\uD574 \uBCF4\uC138\uC694."
             );
         }
+        if (addedTokens.size() == 1 && PREPOSITION_TOKENS.contains(addedTokens.get(0))) {
+            return new CorrectionDto(
+                    "\uC804\uCE58\uC0AC\uB97C \uBCF4\uC644\uD558\uBA74 \uBB38\uC7A5 \uAD00\uACC4\uAC00 \uB354 \uBD84\uBA85\uD574\uC9D1\uB2C8\uB2E4.",
+                    "'"
+                            + addedText
+                            + "'\uCC98\uB7FC \uC790\uC5F0\uC2A4\uB7EC\uC6B4 \uC804\uCE58\uC0AC\uB97C \uD568\uAED8 \uB123\uC5B4 \uBCF4\uC138\uC694."
+            );
+        }
 
         if (addedTokens.size() > 3) {
             return null;
@@ -907,7 +1493,7 @@ public class FeedbackService {
         for (String candidate : candidates) {
             expressions.add(new RefinementExpressionDto(
                     candidate,
-                    buildRecommendationGuidance(candidate),
+                    buildReadableRecommendationGuidance(candidate),
                     buildRefinementExample(modelAnswer, candidate)
             ));
             if (expressions.size() >= 3) {
@@ -959,7 +1545,7 @@ public class FeedbackService {
                 }
 
                 String guidance = expression.guidance() == null || expression.guidance().isBlank()
-                        ? buildRecommendationGuidance(candidate)
+                        ? buildReadableRecommendationGuidance(candidate)
                         : expression.guidance().trim();
                 String example = expression.example() == null || expression.example().isBlank()
                         ? buildRefinementExample(modelAnswer, candidate)
@@ -978,7 +1564,12 @@ public class FeedbackService {
                     continue;
                 }
 
-                sanitized.add(new RefinementExpressionDto(candidate, guidance, example));
+                sanitized.add(new RefinementExpressionDto(
+                        candidate,
+                        guidance,
+                        example,
+                        resolveRefinementMeaning(candidate, expression.meaningKo(), hints)
+                ));
                 diagnostics.rawAcceptedCount++;
                 diagnostics.recordFinal("openai_raw", candidate);
                 if (sanitized.size() >= 3) {
@@ -1002,8 +1593,9 @@ public class FeedbackService {
         )) {
             sanitized.add(new RefinementExpressionDto(
                     candidate,
-                    buildRecommendationGuidance(candidate),
-                    buildRefinementExample(modelAnswer, candidate)
+                    buildReadableRecommendationGuidance(candidate),
+                    buildRefinementExample(modelAnswer, candidate),
+                    resolveRefinementMeaning(candidate, null, hints)
             ));
             diagnostics.modelSupplementCount++;
             diagnostics.recordFinal("model_supplement", candidate);
@@ -1256,8 +1848,9 @@ public class FeedbackService {
                 seenExpressions.add(normalizedCandidate);
                 fallbacks.add(new RefinementExpressionDto(
                         candidate,
-                        buildHintRefinementGuidance(hint.hintType()),
-                        buildHintRefinementExample(candidate, modelAnswer)
+                        buildReadableHintRefinementGuidance(hint.hintType()),
+                        buildHintRefinementExample(candidate, modelAnswer),
+                        resolveRefinementMeaning(candidate, null, List.of(hint))
                 ));
                 if (fallbacks.size() >= 3) {
                     return fallbacks;
@@ -1288,20 +1881,31 @@ public class FeedbackService {
                 && !hasComparableStructureOverlap(candidate, normalizedLearnerAnswer, normalizedCorrectedAnswer);
     }
 
-    private String buildHintRefinementGuidance(String hintType) {
-        if (hintType == null || hintType.isBlank()) {
-            return "???源낆쓱 ?????????袁⑸즴??繞?????곕븕 ??????덉툗 ????猿???⑤；諭??";
-        }
-
-        return switch (hintType.trim().toUpperCase(Locale.ROOT)) {
-            case "STARTER" -> "?????????????곷?????筌믨퀣援????????고뀪?嶺뚮ㅎ???";
-            case "VOCAB_WORD" -> "Try swapping in a sharper topic word next time.";
-            case "VOCAB_PHRASE" -> "Try reusing this phrase to sound more natural.";
-            case "STRUCTURE" -> "???뽮덫??????깼??癒?걫?????ヂ???????源놁젳???ㅼ굣筌뤿뱶??癲ル슢?????????筌믨퀡裕???怨뚮옖???빝??";
-            case "LINKER" -> "?????????怨뺣빰?????ㅼ뒦????⑤똾留???????癲ル슢??????????レ뿴???";
-            case "DETAIL" -> "?????????늄????ㅼ굣???嶺뚮㉡?€쾮????癰귙룗?????????고뀪?嶺뚮ㅎ???";
-            default -> "???源낆쓱 ?????????袁⑸즴??繞?????곕븕 ??????덉툗 ????猿???⑤；諭??";
+    private String buildReadableHintRefinementGuidance(String hintType) {
+        String normalizedHintType = hintType == null ? "" : hintType.trim().toUpperCase(Locale.ROOT);
+        return switch (normalizedHintType) {
+            case "" -> "\ub2e4\uc74c \ub2f5\ubcc0\uc5d0\uc11c \uc790\uc5f0\uc2a4\ub7fd\uac8c \ub123\uc5b4 \ubcf4\uba74 \uc88b\uc740 \ud45c\ud604\uc774\uc5d0\uc694.";
+            case "STARTER" -> "\ub2f5\ubcc0\uc744 \uc790\uc5f0\uc2a4\ub7fd\uac8c \uc2dc\uc791\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
+            case "VOCAB_WORD" -> "\uc8fc\uc81c\uc5d0 \ub9de\ub294 \ud575\uc2ec \ub2e8\uc5b4\ub97c \ub123\uc5b4 \ubb38\uc7a5\uc744 \ub354 \ub610\ub837\ud558\uac8c \ub9cc\ub4e4 \uc218 \uc788\uc5b4\uc694.";
+            case "VOCAB_PHRASE" -> "\uc774 \ud45c\ud604\uc744 \ubb38\uc7a5\uc5d0 \ub123\uc73c\uba74 \ub354 \uc790\uc5f0\uc2a4\ub7fd\uac8c \ub9d0\ud560 \uc218 \uc788\uc5b4\uc694.";
+            case "STRUCTURE" -> "\uc774 \ud2c0\uc744 \uc4f0\uba74 \uc774\uc720\ub098 \ubc29\ubc95\uc744 \ub354 \uad6c\uccb4\uc801\uc73c\ub85c \uc124\uba85\ud560 \uc218 \uc788\uc5b4\uc694.";
+            case "LINKER" -> "\ubb38\uc7a5\uacfc \ubb38\uc7a5\uc744 \uc790\uc5f0\uc2a4\ub7fd\uac8c \uc774\uc5b4 \uc904 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
+            case "DETAIL" -> "\uad6c\uccb4\uc801\uc778 \uc815\ubcf4\ub098 \uc608\uc2dc\ub97c \ub367\ubd99\uc77c \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
+            case "BALANCE" -> "\uc7a5\uc810\uacfc \ud55c\uacc4\ub97c \ud568\uaed8 \ub9d0\ud558\uba70 \uade0\ud615 \uc788\uac8c \ub2f5\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
+            default -> "\ub2e4\uc74c \ub2f5\ubcc0\uc5d0\uc11c \uc790\uc5f0\uc2a4\ub7fd\uac8c \ub123\uc5b4 \ubcf4\uba74 \uc88b\uc740 \ud45c\ud604\uc774\uc5d0\uc694.";
         };
+    }
+
+    private String buildHintRefinementGuidance(String hintType) {
+        return buildReadableHintRefinementGuidance(hintType);
+    }
+
+    private String normalizedHintRefinementGuidance(String hintType) {
+        return buildReadableHintRefinementGuidance(hintType);
+    }
+
+    private String cleanHintRefinementGuidance(String hintType) {
+        return buildReadableHintRefinementGuidance(hintType);
     }
 
     private String buildHintRefinementExample(String candidate, String modelAnswer) {
@@ -1397,36 +2001,6 @@ public class FeedbackService {
             return "by [verb]ing [method]";
         }
 
-        if (lower.startsWith("one challenge i often face with ")) {
-            return "???뽮덫?影?뽧걫??沃섅굥?? ???筌???寃뗏????⑤９苑??????용럡????????????곷??????????怨쀪퐨??";
-        }
-        if (lower.startsWith("what i like most about ")) {
-            return "???レ뿴???嚥▲꺂痢??????ㅼ굣甕??????????影?됀???????늄????ㅼ굣筌뤿뱶??????용럡???????レ뿴???";
-        }
-        if (lower.startsWith("it helps me ")) {
-            return "??影?る븕?????⑤챷?????됰슣維딁춯????곕쿊 ??癰귙룗????????怨뚮옖???빝??";
-        }
-        if (lower.startsWith("this makes it easier to ")) {
-            return "?????뽮덫????濡ろ뜏???醫듽걫?????????곷??????⑤９苑?濚??????モ????⑤챶萸?";
-        }
-        if (lower.startsWith("when i want to ")) {
-            return "??????????⑤벡彛?????ㅼ뒦????⑤똾留???????潁??욧퍔苡??獄????????????怨쀪퐨??";
-        }
-        if (lower.startsWith("one challenge i often face with ")) {
-            return "???뽮덫?影?뽧걫????筌????????늄????ㅼ굣??????????????????곷??????⑤９苑????????モ????⑤챶萸?";
-        }
-        if (lower.startsWith("what i like most about ")) {
-            return "???レ뿴???嚥▲꺂痢???????????影?됀???????늄????ㅼ굣筌뤿뱶???????雅??????怨뚮옖???빝??";
-        }
-        if (lower.startsWith("it helps me ")) {
-            return "??影?る븕?????????癰귙룗?????????????????곕쿊 癲ル슢??????????レ뿴???";
-        }
-        if (lower.startsWith("this makes it easier to ")) {
-            return "???⑤벡彛???濡ろ뜏????????????雅????곕쿊 癲ル슢??袁ъÞ?域밸Ŧ肉ワ쭕??????怨뚮옖???빝??";
-        }
-        if (lower.startsWith("when i want to ")) {
-            return "??????????⑤벡彛?????ㅼ뒦????⑤똾留???????늄????ㅼ굣???潁???癲ル슢??????????モ????⑤챶萸?";
-        }
         if (lower.startsWith("so that ")) {
             return "so that [result]";
         }
@@ -1503,54 +2077,58 @@ public class FeedbackService {
         return cleaned;
     }
 
-    private String buildRecommendationGuidance(String expression) {
+    private String buildReadableRecommendationGuidance(String expression) {
         String lower = expression.toLowerCase(Locale.ROOT);
         if (expression.contains("[") && expression.contains("]")) {
             if (lower.startsWith("because ")) {
-                return "?怨멸텭筌?）援?癲ル슢???????????壤굿??苑???????琉??⒲걫?????????곷??????⑤９苑??怨뚮옖???빝??";
+                return "\uc774\uc720\ub97c \uc870\uae08 \ub354 \uad6c\uccb4\uc801\uc73c\ub85c \uc124\uba85\ud558\uace0 \uc2f6\uc744 \ub54c \uc4f0\uae30 \uc88b\uc544\uc694.";
             }
             if (lower.startsWith("one challenge i often face with ")) {
-                return "???뽮덫?影?뽧걫????筌????????늄????ㅼ굣??????????????????곷??????⑤９苑????????モ????⑤챶萸?";
+                return "\uacaa\uace0 \uc788\ub294 \ubb38\uc81c\ub97c \uc790\uc5f0\uc2a4\ub7fd\uac8c \uc18c\uac1c\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
             }
             if (lower.startsWith("what i like most about ")) {
-                return "???レ뿴???嚥▲꺂痢???????????影?됀???????늄????ㅼ굣筌뤿뱶???????雅??????怨뚮옖???빝??";
+                return "\uc88b\uc544\ud558\ub294 \uc810\uc744 \ubd84\uba85\ud558\uac8c \uac15\uc870\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
             }
             if (lower.startsWith("it helps me ")) {
-                return "??影?る븕?????????癰귙룗?????????????????곕쿊 癲ル슢??????????レ뿴???";
+                return "\ud589\ub3d9\uc758 \ud6a8\uacfc\ub97c \uc124\uba85\ud560 \ub54c \uc4f0\uae30 \uc88b\uc544\uc694.";
             }
             if (lower.startsWith("this makes it easier to ")) {
-                return "???⑤벡彛???濡ろ뜏????????????雅????곕쿊 癲ル슢??袁ъÞ?域밸Ŧ肉ワ쭕??????怨뚮옖???빝??";
+                return "\uc5b4\ub5a4 \ubcc0\ud654\ub098 \uacb0\uacfc\ub97c \uc790\uc5f0\uc2a4\ub7fd\uac8c \uc774\uc5b4 \ub9d0\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
             }
             if (lower.startsWith("when i want to ")) {
-                return "??????????⑤벡彛?????ㅼ뒦????⑤똾留???????늄????ㅼ굣???潁???癲ル슢??????????モ????⑤챶萸?";
+                return "\uc0c1\ud669\uc5d0 \ub530\ub77c \uc5b4\ub5bb\uac8c \ud589\ub3d9\ud558\ub294\uc9c0 \uc124\uba85\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
             }
             if (lower.startsWith("by ")) {
-                return "?怨멸텭筌?）援??袁⑸젻泳?쉬????壤굿??苑??????거燁????源딅굣??嚥▲꺂痢롳┼??넊? ????늄????ㅼ굣筌뤿뱶?????怨뚮옖???빝??";
+                return "\ubc29\ubc95\uc774\ub098 \uc2e4\ucc9c \uacfc\uc815\uc744 \uad6c\uccb4\uc801\uc73c\ub85c \ub9d0\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
             }
             if (lower.startsWith("so that ")) {
-                return "?怨멸텭筌?）援???れ삀?? ?濡ろ뜏???醫듽걫??壤굿??苑?癲ル슢?꾤땟??????雅????곕쿊 ?怨뚮옖???덩???낆뒩??뗫빝??";
+                return "\ubaa9\uc801\uc774\ub098 \uae30\ub300\ud558\ub294 \uacb0\uacfc\ub97c \uc774\uc5b4\uc11c \ub9d0\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
             }
-            return "?怨멸텭筌?）援??????⑤챶裕??癲ル슢??????縕????壤굿??苑??袁⑸즴??繞?????????怨뚮옖???빝??";
+            return "\ub2e4\uc74c \ub2f5\ubcc0\uc5d0\uc11c \uc790\uc5f0\uc2a4\ub7fd\uac8c \ud655\uc7a5\ud574 \ubcfc \ub9cc\ud55c \ud45c\ud604\uc774\uc5d0\uc694.";
         }
         if (lower.startsWith("because ")) {
-            return "????????????????곷?????癰귙룗????援온????ル∥援???????고뀪?嶺뚮ㅎ???";
+            return "\uc774\uc720\ub97c \ubd84\uba85\ud558\uac8c \ub367\ubd99\uc77c \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
         }
         if (lower.startsWith("by ")) {
-            return "?袁⑸젻泳?쉬?????????源딅굣 ?袁⑸젻泳?????????늄????ㅼ굣筌뤿뱶???怨뚮옖???덩????????レ뿴???";
+            return "\uc5b4\ub5a4 \ubc29\ubc95\uc73c\ub85c \uc2e4\ucc9c\ud558\ub294\uc9c0 \ub9d0\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
         }
         if (lower.startsWith("i would like to ") || lower.startsWith("i want to ")) {
-            return "???寃뗏???? ???⑤벡彛???????節뚮쳯?????????????곷???癲ル슢?????????モ????⑤챶萸?";
+            return "\ud558\uace0 \uc2f6\uc740 \ubaa9\ud45c\ub098 \ubc14\ub78c\uc744 \uc790\uc5f0\uc2a4\ub7fd\uac8c \ub9d0\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
         }
         if (lower.startsWith("i plan to ")) {
-            return "??嚥???棺??짆????節뚮쳯?????????源딅굣 ???????됰슣維딁춯????곕쿊 ?怨뚮옖????????レ뿴???";
+            return "\uad6c\uccb4\uc801\uc778 \uacc4\ud68d\uc774\ub098 \uc2e4\ucc9c \ubc29\ubc95\uc744 \uc18c\uac1c\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
         }
         if (lower.startsWith("i usually ")) {
-            return "??繹먮굛???????????袁⑸즵??????⑤벡彛????????????곷???????용럡???????レ뿴???";
+            return "\ud3c9\uc18c \uc2b5\uad00\uc774\ub098 \uc77c\uc0c1\uc744 \uc124\uba85\ud560 \ub54c \uc790\uc5f0\uc2a4\ub7fd\uac8c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
         }
         if (lower.startsWith("so that ")) {
-            return "癲ル슢?꾤땟????????れ삀?? ??影?る븕???釉뚰????????雅????곕쿊 ??됰Ŧ????????モ????⑤챶萸?";
+            return "\ubaa9\uc801\uc774\ub098 \uae30\ub300\ud558\ub294 \uacb0\uacfc\ub97c \ub354 \ubd84\uba85\ud558\uac8c \ubcf4\uc5ec \uc904 \uc218 \uc788\uc5b4\uc694.";
         }
-        return "???源낆쓱 ????????????고뀪癲???????????곷???????늄????ㅼ굣筌뤿뱶??????뱀벑???????????繹먮끏萸?";
+        return "\ub2e4\uc74c \ub2f5\ubcc0\uc5d0\uc11c \uc790\uc5f0\uc2a4\ub7fd\uac8c \ub123\uc5b4 \ubcf4\uba74 \uc88b\uc740 \ud45c\ud604\uc774\uc5d0\uc694.";
+    }
+
+    private String buildRecommendationGuidance(String expression) {
+        return buildReadableRecommendationGuidance(expression);
     }
 
     private boolean shouldRecommendExpressionCandidate(
@@ -1884,26 +2462,7 @@ public class FeedbackService {
     }
 
     private String buildRefinementGuidance(String expression) {
-        String lower = expression.toLowerCase(Locale.ROOT);
-        if (lower.startsWith("because ")) {
-            return "???????????????雅????곕쿊 ??癰귙룗???????좊읈??嶺뚮ㅎ?닸쾮濡㏃땡????レ뿴???";
-        }
-        if (lower.startsWith("by ")) {
-            return "?????거燁????源딅굣??嚥▲꺂痢롳┼??넊? ?袁⑸젻泳?쉬???????늄????ㅼ굣筌뤿뱶????됰Ŧ??????????⑤챶裕???源낅?.";
-        }
-        if (lower.startsWith("i would like to ") || lower.startsWith("i want to ")) {
-            return "???寃뗏???? ???⑤벡彛???????節뚮쳯?????????????곷???癲ル슢??????????곕븕 ?????怨쀪퐨??";
-        }
-        if (lower.startsWith("i plan to ")) {
-            return "??嚥???棺??짆????節뚮쳯?????????源딅굣 ?????????됰슣維딁춯????곕쿊 ?怨뚮옖???덩????????レ뿴???";
-        }
-        if (lower.startsWith("i usually ")) {
-            return "??繹먮굛???????????袁⑸즵??????⑤벡彛????????????곷???????용럡???????モ????⑤챶萸?";
-        }
-        if (lower.startsWith("so that ")) {
-            return "癲ル슢?꾤땟????????れ삀?? ??影?る븕???釉뚰????????ル늉?????곕쿊 ??됰Ŧ????????レ뿴???";
-        }
-        return "癲ル슢?꾤땟??????????????좊읈??嶺뚮ㅎ?닸쾮?????猿???????????釉뚰?????????????곷???????늄????ㅼ굣筌뤿뱶??????뱀벑???????????繹먮끏萸?";
+        return buildReadableRecommendationGuidance(expression);
     }
 
     private String buildRefinementExample(String modelAnswer, String expression) {
@@ -2114,26 +2673,80 @@ public class FeedbackService {
     }
 
     private String buildUsedExpressionUsageTip(String expression) {
-        String lower = expression.toLowerCase(Locale.ROOT);
+        return cleanUsedExpressionUsageTip(expression);
+    }
+
+    private String normalizedUsedExpressionUsageTip(String expression) {
+        return cleanUsedExpressionUsageTip(expression);
+    }
+
+    private String cleanUsedExpressionUsageTip(String expression) {
+        String lower = expression == null ? "" : expression.toLowerCase(Locale.ROOT);
         if (lower.startsWith("because ")) {
-            return "??????????????곷?????癰귙룗????????レ뿴? ????猿???⑤；諭??";
+            return "\uc774\uc720\ub97c \uc790\uc5f0\uc2a4\ub7fd\uac8c \ub367\ubd99\uc77c \ub54c \uc4f0\uae30 \uc88b\uc740 \ud45c\ud604\uc774\uc5d0\uc694.";
         }
         if (lower.startsWith("by ")) {
-            return "?袁⑸젻泳?쉬???????늄????ㅼ굣筌뤿뱶??????용럡???????レ뿴???";
+            return "\ubc29\ubc95\uc774\ub098 \uc2e4\ucc9c \uacfc\uc815\uc744 \uad6c\uccb4\uc801\uc73c\ub85c \ub9d0\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
         }
         if (lower.startsWith("so that ")) {
-            return "癲ル슢?꾤땟????????れ삀?? ?濡ろ뜏???醫듽걫????⑤９苑???됰Ŧ????????レ뿴???";
+            return "\ubaa9\uc801\uc774\ub098 \uae30\ub300\ud558\ub294 \uacb0\uacfc\ub97c \uc774\uc5b4\uc11c \ub9d0\ud560 \ub54c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
         }
         if (lower.startsWith("i want to ")
                 || lower.startsWith("i would like to ")
                 || lower.startsWith("i plan to ")
                 || lower.startsWith("i hope to ")) {
-            return "癲ル슢?꾤땟?룹춻????節뚮쳯?????됰슣維딁춯????곕쿊 癲ル슢?????????レ뿴???";
+            return "\ubaa9\ud45c\ub098 \uacc4\ud68d\uc744 \ubd84\uba85\ud558\uac8c \ub9d0\ud560 \ub54c \uc790\uc5f0\uc2a4\ub7fd\uac8c \uc4f8 \uc218 \uc788\uc5b4\uc694.";
         }
         if (lower.startsWith("i usually ") || lower.startsWith("i often ")) {
-            return "??繹먮굛?????????????????嚥▲꺂痢????⑤벡彛??癲ル슢?????????レ뿴???";
+            return "\ud3c9\uc18c \uc2b5\uad00\uc774\ub098 \ubc18\ubcf5\ub418\ub294 \ud589\ub3d9\uc744 \uc124\uba85\ud560 \ub54c \uc790\uc8fc \uc4f0\ub294 \ud45c\ud604\uc774\uc5d0\uc694.";
         }
         return FEEDBACK_USED_EXPRESSION_USAGE_TIP;
+    }
+
+    private String resolveRefinementMeaning(
+            String candidate,
+            String explicitMeaningKo,
+            List<PromptHintDto> hints
+    ) {
+        if (explicitMeaningKo != null && !explicitMeaningKo.isBlank()) {
+            return explicitMeaningKo.trim();
+        }
+        if (candidate == null || candidate.isBlank() || hints == null || hints.isEmpty()) {
+            return null;
+        }
+
+        String normalizedCandidate = normalizeForComparison(candidate);
+        if (normalizedCandidate.isBlank()) {
+            return null;
+        }
+
+        for (PromptHintDto hint : hints) {
+            if (hint == null || hint.items() == null) {
+                continue;
+            }
+            for (PromptHintItemDto item : hint.items()) {
+                if (item == null || item.content() == null || item.content().isBlank()) {
+                    continue;
+                }
+
+                String normalizedItem = normalizeForComparison(item.content());
+                String normalizedReusableItem = normalizeForComparison(toReusableRefinementExpression(item.content()));
+                boolean matches = normalizedCandidate.equals(normalizedItem)
+                        || normalizedCandidate.equals(normalizedReusableItem)
+                        || normalizedItem.contains(normalizedCandidate)
+                        || normalizedReusableItem.contains(normalizedCandidate)
+                        || normalizedCandidate.contains(normalizedItem);
+                if (!matches) {
+                    continue;
+                }
+
+                if (item.meaningKo() != null && !item.meaningKo().isBlank()) {
+                    return item.meaningKo().trim();
+                }
+            }
+        }
+
+        return null;
     }
 
     private String cleanExpressionCandidate(String raw) {
@@ -2169,8 +2782,14 @@ public class FeedbackService {
                 .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private boolean shouldCompleteLoop(int score, List<CorrectionDto> corrections) {
-        return score >= 85 || (score >= 80 && corrections.size() <= 2);
+    private boolean shouldCompleteLoop(
+            int score,
+            List<CorrectionDto> corrections,
+            List<GrammarFeedbackItemDto> grammarFeedback
+    ) {
+        int issueCount = (corrections == null ? 0 : corrections.size())
+                + (grammarFeedback == null ? 0 : grammarFeedback.size());
+        return score >= 85 || (score >= 80 && issueCount <= 2);
     }
 
     private boolean containsAny(String source, String... tokens) {
@@ -2226,8 +2845,12 @@ public class FeedbackService {
 
     private String buildRewriteChallenge(PromptDto prompt, boolean alreadyStrong) {
         if (alreadyStrong) {
-            return "?????????늄????ㅼ굣?????怨뺣빰 1??좊즵獒? ??좊즴??????筌먦끉紐?????????猿?1??좊즵獒? ?壤굿??苑?????獄쏅?揆????곕쿊 ???怨뺣빰 ???怨뚮옖???빝??";
+            return "\uc9c0\uae08 \ub2f5\ubcc0\uc744 \ubc14\ud0d5\uc73c\ub85c \ubb38\uc7a5\uc744 1~2\uac1c\ub9cc \ub354 \ub367\ubd99\uc5ec \uc774\uc720\ub098 \uc608\uc2dc\ub97c \ucd94\uac00\ud574 \ubcf4\uc138\uc694.";
         }
-        return "\"" + prompt.topic() + "\" ??낆뒩????癲ル슢????3~4???뽮덫????⑥?????怨뺣빰 ???怨뚮옖???빝?? ?沃섅굥?? 癲ル슣?????????? ??????????용럡???? ???굿????댁땍 ????늄??????怨뺣빰????嚥▲굥猷???癰귙룗?????????レ뿴???";
+        return "\"" + prompt.topic() + "\"\uc5d0 \ub300\ud574 3~4\ubb38\uc7a5\uc73c\ub85c \ub2e4\uc2dc \ub2f5\ud574 \ubcf4\uc138\uc694. \uccab \ubb38\uc7a5\uc5d0\uc11c \ud575\uc2ec \uc0dd\uac01\uc744 \ub9d0\ud558\uace0, \ub4a4 \ubb38\uc7a5\uc5d0\uc11c \uc774\uc720\ub098 \uc608\uc2dc\ub97c \ub367\ubd99\uc774\uba74 \ub354 \uc88b\uc544\uc694.";
     }
 }
+
+
+
+

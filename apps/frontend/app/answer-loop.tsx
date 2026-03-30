@@ -2080,18 +2080,27 @@ export function AnswerLoop() {
                 <strong>잘 사용한 표현</strong>
                 {usedExpressions.length > 0 ? (
                   <div className={styles.coachUsageCards}>
-                    {usedExpressions.map((expression) => (
-                      <article
-                        key={"id" in expression ? expression.id : expression.expression}
-                        className={styles.coachUsageCardUsed}
-                      >
-                        <div className={styles.coachUsageCardHeader}>
-                          <span>{expression.expression}</span>
-                        </div>
-                        {expression.matchedText ? <p>{expression.matchedText}</p> : null}
-                        <small>{expression.usageTip}</small>
-                      </article>
-                    ))}
+                    {usedExpressions.map((expression) => {
+                      const matchedText =
+                        expression.matchedText &&
+                        expression.matchedText.trim() !== "" &&
+                        expression.matchedText.trim() !== expression.expression.trim()
+                          ? expression.matchedText
+                          : null;
+
+                      return (
+                        <article
+                          key={"id" in expression ? expression.id : expression.expression}
+                          className={styles.coachUsageCardUsed}
+                        >
+                          <div className={styles.coachUsageCardHeader}>
+                            <span>{expression.expression}</span>
+                          </div>
+                          {matchedText ? <p>{matchedText}</p> : null}
+                          <small>{expression.usageTip}</small>
+                        </article>
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className={styles.coachUsageEmpty}>이번 제출에서는 아직 눈에 띄는 표현이 잡히지 않았어요.</p>
@@ -2167,6 +2176,7 @@ export function AnswerLoop() {
           {suggestedExpressions.map((expression, index) => (
             <li key={`${expression.expression}-${index}`}>
               <strong>{expression.expression}</strong>
+              {expression.meaningKo ? <span>{expression.meaningKo}</span> : null}
               <span>{expression.guidance}</span>
               <span className={styles.refinementExpressionExample}>{expression.example}</span>
             </li>
@@ -2361,7 +2371,6 @@ export function AnswerLoop() {
           </div>
         </section>
         <section className={styles.writingGuideHintSection}>
-          <strong className={styles.writingGuideHintTitle}>단어·표현 힌트</strong>
           {isLoadingHints ? (
             <p className={styles.writingGuideHintEmpty}>지금 단어·표현 힌트를 준비하고 있어요.</p>
           ) : vocabularyWordHintItems.length > 0 || vocabularyPhraseHintItems.length > 0 ? (
@@ -2467,6 +2476,7 @@ export function AnswerLoop() {
                   originalAnswer={lastSubmittedAnswer}
                   correctedAnswer={feedback.correctedAnswer}
                   inlineFeedback={feedback.inlineFeedback}
+                  grammarFeedback={feedback.grammarFeedback}
                 />
                 {renderFeedbackCorrectionsBlock(styles.feedbackBlock)}
                 {renderRefinementExpressionsBlock(
@@ -2601,6 +2611,7 @@ export function AnswerLoop() {
                       originalAnswer={lastSubmittedAnswer}
                       correctedAnswer={feedback.correctedAnswer}
                       inlineFeedback={feedback.inlineFeedback}
+                      grammarFeedback={feedback.grammarFeedback}
                       compact
                     />
                     {renderFeedbackCorrectionsBlock(styles.rewriteFeedbackBlock)}

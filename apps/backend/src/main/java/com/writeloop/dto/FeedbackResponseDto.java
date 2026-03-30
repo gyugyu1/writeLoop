@@ -13,6 +13,7 @@ public record FeedbackResponseDto(
         List<String> strengths,
         List<CorrectionDto> corrections,
         List<InlineFeedbackSegmentDto> inlineFeedback,
+        List<GrammarFeedbackItemDto> grammarFeedback,
         String correctedAnswer,
         List<RefinementExpressionDto> refinementExpressions,
         String modelAnswer,
@@ -46,11 +47,49 @@ public record FeedbackResponseDto(
                 strengths,
                 corrections,
                 inlineFeedback,
+                List.of(),
                 correctedAnswer,
                 refinementExpressions,
                 modelAnswer,
                 rewriteChallenge,
                 List.of()
+        );
+    }
+
+    public FeedbackResponseDto(
+            String promptId,
+            String sessionId,
+            int attemptNo,
+            int score,
+            boolean loopComplete,
+            String completionMessage,
+            String summary,
+            List<String> strengths,
+            List<CorrectionDto> corrections,
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            String correctedAnswer,
+            List<RefinementExpressionDto> refinementExpressions,
+            String modelAnswer,
+            String rewriteChallenge,
+            List<CoachExpressionUsageDto> usedExpressions
+    ) {
+        this(
+                promptId,
+                sessionId,
+                attemptNo,
+                score,
+                loopComplete,
+                completionMessage,
+                summary,
+                strengths,
+                corrections,
+                inlineFeedback,
+                List.of(),
+                correctedAnswer,
+                refinementExpressions,
+                modelAnswer,
+                rewriteChallenge,
+                usedExpressions
         );
     }
 }

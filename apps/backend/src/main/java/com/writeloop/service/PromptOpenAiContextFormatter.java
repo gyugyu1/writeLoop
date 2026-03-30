@@ -3,6 +3,7 @@ package com.writeloop.service;
 import com.writeloop.dto.PromptCoachProfileDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
+import com.writeloop.dto.PromptHintItemDto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +45,7 @@ final class PromptOpenAiContextFormatter {
             joiner.add("- ["
                     + valueOrNone(hint.hintType())
                     + "] "
-                    + valueOrNone(hint.content()));
+                    + valueOrNone(formatHintContent(hint)));
         }
 
         String text = joiner.toString();
@@ -107,6 +108,26 @@ final class PromptOpenAiContextFormatter {
     private static String valueOrNone(String value) {
         String normalized = normalize(value);
         return normalized.isBlank() ? "none" : normalized;
+    }
+
+    private static String formatHintContent(PromptHintDto hint) {
+        if (hint.items() != null && !hint.items().isEmpty()) {
+            StringJoiner joiner = new StringJoiner(" | ");
+            for (PromptHintItemDto item : hint.items()) {
+                if (item == null) {
+                    continue;
+                }
+                String normalized = normalize(item.content());
+                if (!normalized.isBlank()) {
+                    joiner.add(normalized);
+                }
+            }
+            String text = joiner.toString();
+            if (!text.isBlank()) {
+                return text;
+            }
+        }
+        return hint.content();
     }
 
     private static String normalize(String value) {

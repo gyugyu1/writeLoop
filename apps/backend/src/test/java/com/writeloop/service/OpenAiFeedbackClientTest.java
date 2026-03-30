@@ -48,6 +48,11 @@ class OpenAiFeedbackClientTest {
         assertThat(text).contains("If inlineFeedback contains clear local edits, reflect the important ones in corrections as Korean coaching points.");
         assertThat(text).contains("Include correction guidance for small but meaningful edits such as capitalization, singular/plural, article use, determiner insertion, pronoun choice, preposition choice, and missing punctuation when they improve the sentence.");
         assertThat(text).contains("Do not leave corrections effectively empty when the learner answer still has clear edit-worthy issues.");
+        assertThat(text).contains("Avoid dangling fragments such as \"to daily life\", \"to issues like cheating\", or any incomplete chunk that cannot stand alone as a reusable expression.");
+        assertThat(text).contains("At least 2 refinementExpressions should be content-bearing expansions tied to the learner's actual answer, not just generic discourse markers.");
+        assertThat(text).contains("Do not let all refinementExpressions play the same role. Diversify them across functions such as detail, reason, example, qualification, result, contrast, or process when possible.");
+        assertThat(text).contains("Use generic discourse-organizing frames such as \"On the positive side\", \"However\", or \"Overall\" only when they add clear value, and do not let them dominate the whole list.");
+        assertThat(text).contains("If the prompt is a balanced-opinion style question, prefer a mix such as one concrete positive elaboration, one concern or limitation, and one qualified overall judgment when possible.");
         assertThat(text).contains("Use prompt hints as idea sources, not as text to copy.");
         assertThat(text).contains("Do not copy a prompt hint verbatim unless it is still clearly novel and useful for this learner.");
         assertThat(text).contains("Prompt coaching strategy:");

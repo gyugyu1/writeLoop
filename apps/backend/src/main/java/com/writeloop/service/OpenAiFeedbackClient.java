@@ -242,7 +242,10 @@ public class OpenAiFeedbackClient {
                 - Prefer slot-style frames such as "[thing]", "[adj]", "[verb]", "[reason]" when useful.
                 - Good examples: "I want to [verb] so that I can [result].", "because it is [adj] and [adj]", "by [verb]ing [method]".
                 - Avoid returning a fully filled-out sentence like "My favorite food is pizza because it is delicious."
+                - Avoid dangling fragments such as "to daily life", "to issues like cheating", or any incomplete chunk that cannot stand alone as a reusable expression.
+                - Unless the item is clearly a vocabulary word, refinementExpressions.expression should usually be at least 3 words long and structurally complete enough to reuse.
                 - refinementExpressions.example should show a short snippet from modelAnswer using that frame or word.
+                - refinementExpressions.example must be clean natural English only. Do not include Korean, broken characters, or quoted meta-instructions.
                 - Before writing refinementExpressions, inspect which sentence structures, linkers, and expression families already appear in the learner answer.
                 - Do not include expressions that already appear clearly in the learner answer.
                 - Do not include expressions that merely repeat the learner's current wording with only a tiny grammar fix.
@@ -251,6 +254,11 @@ public class OpenAiFeedbackClient {
                 - refinementExpressions should feel like the learner's natural next step, not a generic list for this prompt.
                 - Prefer frames that improve clarity, detail, reason, example, vocabulary, or natural flow.
                 - Prefer recommendations that add a new move such as a clearer reason, stronger detail, better example, contrast, result, process, or sequence.
+                - At least 2 refinementExpressions should be content-bearing expansions tied to the learner's actual answer, not just generic discourse markers.
+                - Do not let all refinementExpressions play the same role. Diversify them across functions such as detail, reason, example, qualification, result, contrast, or process when possible.
+                - Use generic discourse-organizing frames such as "On the positive side", "However", or "Overall" only when they add clear value, and do not let them dominate the whole list.
+                - If the prompt is a balanced-opinion style question, prefer a mix such as one concrete positive elaboration, one concern or limitation, and one qualified overall judgment when possible.
+                - Prefer expressions that attach directly to the learner's current ideas, nouns, claims, or examples over broad topic-level templates.
                 - rewriteChallenge should tell the learner how to improve in the next attempt in Korean.
                 - Treat the prompt coaching profile and prompt hints as supporting context for modelAnswer and refinementExpressions.
                 - Use the prompt coaching strategy below as a soft bias for tone, starter style, and preferred expression families.

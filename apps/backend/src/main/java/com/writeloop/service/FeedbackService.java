@@ -17,6 +17,7 @@ import com.writeloop.persistence.AttemptType;
 import com.writeloop.persistence.SessionStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -31,6 +32,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class FeedbackService {
     private static final String LETTER_TOKEN = "[\\p{L}][\\p{L}'-]*";
@@ -58,6 +60,11 @@ public class FeedbackService {
             Pattern.compile("\\bI would like to [^,.!?;]+", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bI plan to [^,.!?;]+", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bI usually [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bOne challenge I often face with [^,.!?;]+ is [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bWhat I like most about [^,.!?;]+ is that [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bIt helps me [^,.!?;]+(?: and [^,.!?;]+)?", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bThis makes it easier to [^,.!?;]+", Pattern.CASE_INSENSITIVE),
+            Pattern.compile("\\bWhen I want to [^,.!?;]+, I [^,.!?;]+", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bbecause [^,.!?;]+", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bby [A-Za-z]+ing [^,.!?;]+", Pattern.CASE_INSENSITIVE),
             Pattern.compile("\\bso that [^,.!?;]+", Pattern.CASE_INSENSITIVE),
@@ -313,6 +320,7 @@ public class FeedbackService {
                 feedback.inlineFeedback()
         );
         List<RefinementExpressionDto> refinementExpressions = sanitizeRefinementExpressions(
+                feedback.promptId(),
                 feedback.refinementExpressions(),
                 learnerAnswer,
                 feedback.correctedAnswer(),
@@ -911,6 +919,7 @@ public class FeedbackService {
     }
 
     private List<RefinementExpressionDto> sanitizeRefinementExpressions(
+            String promptId,
             List<RefinementExpressionDto> expressions,
             String learnerAnswer,
             String correctedAnswer,
@@ -921,25 +930,31 @@ public class FeedbackService {
         String normalizedCorrectedAnswer = normalizeForComparison(correctedAnswer);
         List<RefinementExpressionDto> sanitized = new ArrayList<>();
         LinkedHashSet<String> seenExpressions = new LinkedHashSet<>();
+        RefinementSanitizationDiagnostics diagnostics = new RefinementSanitizationDiagnostics();
 
         if (expressions != null) {
+            diagnostics.rawInputCount = expressions.size();
             for (RefinementExpressionDto expression : expressions) {
                 if (expression == null) {
                     continue;
                 }
 
                 String rawCandidate = cleanExpressionCandidate(expression.expression());
+                diagnostics.rawExpressions.add(rawCandidate);
                 if (!shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
+                    diagnostics.rejectedByRecommendation++;
                     continue;
                 }
 
                 String candidate = toReusableRefinementExpression(rawCandidate);
                 if (candidate.isBlank()) {
+                    diagnostics.rejectedBlank++;
                     continue;
                 }
 
                 String normalizedCandidate = normalizeForComparison(candidate);
                 if (!seenExpressions.add(normalizedCandidate)) {
+                    diagnostics.rejectedDuplicate++;
                     continue;
                 }
 
@@ -959,22 +974,28 @@ public class FeedbackService {
                         normalizedLearnerAnswer,
                         normalizedCorrectedAnswer
                 )) {
+                    diagnostics.rejectedByNovelty++;
                     continue;
                 }
 
                 sanitized.add(new RefinementExpressionDto(candidate, guidance, example));
+                diagnostics.rawAcceptedCount++;
+                diagnostics.recordFinal("openai_raw", candidate);
                 if (sanitized.size() >= 3) {
+                    logRefinementDiagnostics(promptId, learnerAnswer, diagnostics);
                     return sanitized;
                 }
             }
         }
 
         if (sanitized.size() >= 3) {
+            logRefinementDiagnostics(promptId, learnerAnswer, diagnostics);
             return sanitized;
         }
 
         for (String candidate : extractAdditionalRefinementCandidates(
                 modelAnswer,
+                correctedAnswer,
                 normalizedLearnerAnswer,
                 normalizedCorrectedAnswer,
                 seenExpressions
@@ -984,12 +1005,14 @@ public class FeedbackService {
                     buildRecommendationGuidance(candidate),
                     buildRefinementExample(modelAnswer, candidate)
             ));
+            diagnostics.modelSupplementCount++;
+            diagnostics.recordFinal("model_supplement", candidate);
             if (sanitized.size() >= 3) {
                 break;
             }
         }
 
-        if (sanitized.size() < 3) {
+        if (sanitized.isEmpty()) {
             for (RefinementExpressionDto fallback : buildHintBasedRefinementExpressions(
                     hints,
                     modelAnswer,
@@ -998,38 +1021,170 @@ public class FeedbackService {
                     seenExpressions
             )) {
                 sanitized.add(fallback);
+                diagnostics.hintFallbackCount++;
+                diagnostics.recordFinal("hint_fallback", fallback.expression());
                 if (sanitized.size() >= 3) {
                     break;
                 }
             }
         }
 
+        logRefinementDiagnostics(promptId, learnerAnswer, diagnostics);
         return sanitized;
+    }
+
+    private void logRefinementDiagnostics(
+            String promptId,
+            String learnerAnswer,
+            RefinementSanitizationDiagnostics diagnostics
+    ) {
+        if (diagnostics == null) {
+            return;
+        }
+
+        boolean shouldLogAtInfo = diagnostics.hintFallbackCount > 0
+                || diagnostics.rawAcceptedCount == 0
+                || diagnostics.rejectedByRecommendation > 0
+                || diagnostics.rejectedByNovelty > 0;
+
+        if (!shouldLogAtInfo && !log.isDebugEnabled()) {
+            return;
+        }
+
+        String message = "Refinement diagnostics promptId={} rawInput={} rawAccepted={} modelSupplement={} hintFallback={} "
+                + "rejected[recommendation={}, blank={}, duplicate={}, novelty={}] finalSources={} rawExpressions={} finalExpressions={} learnerPreview={}";
+
+        Object[] arguments = new Object[]{
+                promptId,
+                diagnostics.rawInputCount,
+                diagnostics.rawAcceptedCount,
+                diagnostics.modelSupplementCount,
+                diagnostics.hintFallbackCount,
+                diagnostics.rejectedByRecommendation,
+                diagnostics.rejectedBlank,
+                diagnostics.rejectedDuplicate,
+                diagnostics.rejectedByNovelty,
+                joinForLog(diagnostics.finalSources),
+                joinForLog(diagnostics.rawExpressions),
+                joinForLog(diagnostics.finalExpressions),
+                abbreviateForLog(learnerAnswer, 160)
+        };
+
+        if (shouldLogAtInfo) {
+            log.info(message, arguments);
+            return;
+        }
+
+        log.debug(message, arguments);
+    }
+
+    private String joinForLog(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return "[]";
+        }
+
+        return values.stream()
+                .map(value -> value == null ? "" : value.replaceAll("\\s+", " ").trim())
+                .filter(value -> !value.isBlank())
+                .reduce((left, right) -> left + " || " + right)
+                .orElse("[]");
+    }
+
+    private String abbreviateForLog(String value, int maxLength) {
+        if (value == null) {
+            return "";
+        }
+
+        String normalized = value.replaceAll("\\s+", " ").trim();
+        if (normalized.length() <= maxLength) {
+            return normalized;
+        }
+
+        return normalized.substring(0, Math.max(0, maxLength - 3)) + "...";
+    }
+
+    private static final class RefinementSanitizationDiagnostics {
+        private int rawInputCount;
+        private int rawAcceptedCount;
+        private int modelSupplementCount;
+        private int hintFallbackCount;
+        private int rejectedByRecommendation;
+        private int rejectedBlank;
+        private int rejectedDuplicate;
+        private int rejectedByNovelty;
+        private final List<String> rawExpressions = new ArrayList<>();
+        private final List<String> finalExpressions = new ArrayList<>();
+        private final List<String> finalSources = new ArrayList<>();
+
+        private void recordFinal(String source, String expression) {
+            finalSources.add(source);
+            finalExpressions.add(expression);
+        }
     }
 
     private List<String> extractAdditionalRefinementCandidates(
             String modelAnswer,
+            String correctedAnswer,
             String normalizedLearnerAnswer,
             String normalizedCorrectedAnswer,
             LinkedHashSet<String> seenExpressions
     ) {
-        if (modelAnswer == null || modelAnswer.isBlank()) {
+        List<String> sourceTexts = new ArrayList<>();
+        if (modelAnswer != null && !modelAnswer.isBlank()) {
+            sourceTexts.add(modelAnswer);
+        }
+        if (correctedAnswer != null
+                && !correctedAnswer.isBlank()
+                && !normalizeForComparison(correctedAnswer).equals(normalizeForComparison(modelAnswer))) {
+            sourceTexts.add(correctedAnswer);
+        }
+
+        if (sourceTexts.isEmpty()) {
             return List.of();
         }
 
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
-        for (Pattern pattern : MODEL_EXPRESSION_PATTERNS) {
-            Matcher matcher = pattern.matcher(modelAnswer);
-            while (matcher.find()) {
-                String rawCandidate = cleanExpressionCandidate(matcher.group());
+        for (String sourceText : sourceTexts) {
+            for (Pattern pattern : MODEL_EXPRESSION_PATTERNS) {
+                Matcher matcher = pattern.matcher(sourceText);
+                while (matcher.find()) {
+                    String rawCandidate = cleanExpressionCandidate(matcher.group());
+                    String candidate = toReusableRefinementExpression(rawCandidate);
+                    String normalizedCandidate = normalizeForComparison(candidate);
+                    if (seenExpressions.contains(normalizedCandidate)) {
+                        continue;
+                    }
+                    String example = buildSupplementRefinementExample(modelAnswer, sourceText, candidate);
+                    if (!candidate.isBlank()
+                            && shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+                            && isNovelRefinementSuggestion(
+                            rawCandidate,
+                            candidate,
+                            example,
+                            normalizedLearnerAnswer,
+                            normalizedCorrectedAnswer
+                    )) {
+                        candidates.add(candidate);
+                    }
+                }
+            }
+        }
+
+        if (candidates.size() >= 3) {
+            return new ArrayList<>(candidates);
+        }
+
+        for (String sourceText : sourceTexts) {
+            for (String clause : sourceText.split("[.!?]")) {
+                String rawCandidate = cleanExpressionCandidate(clause);
                 String candidate = toReusableRefinementExpression(rawCandidate);
                 String normalizedCandidate = normalizeForComparison(candidate);
-                if (seenExpressions.contains(normalizedCandidate)) {
+                if (candidate.isBlank() || seenExpressions.contains(normalizedCandidate)) {
                     continue;
                 }
-                String example = buildRefinementExample(modelAnswer, candidate);
-                if (!candidate.isBlank()
-                        && shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+
+                String example = buildSupplementRefinementExample(modelAnswer, sourceText, candidate);
+                if (shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
                         && isNovelRefinementSuggestion(
                         rawCandidate,
                         candidate,
@@ -1039,10 +1194,31 @@ public class FeedbackService {
                 )) {
                     candidates.add(candidate);
                 }
+
+                if (candidates.size() >= 3) {
+                    return new ArrayList<>(candidates);
+                }
             }
         }
 
         return new ArrayList<>(candidates);
+    }
+
+    private String buildSupplementRefinementExample(
+            String preferredSource,
+            String fallbackSource,
+            String candidate
+    ) {
+        String example = buildRefinementExample(preferredSource, candidate);
+        if (!example.isBlank() && !normalizeForComparison(example).equals(normalizeForComparison(candidate))) {
+            return example;
+        }
+
+        if (fallbackSource == null || fallbackSource.isBlank()) {
+            return example;
+        }
+
+        return buildRefinementExample(fallbackSource, candidate);
     }
 
     private List<RefinementExpressionDto> buildHintBasedRefinementExpressions(
@@ -1058,36 +1234,53 @@ public class FeedbackService {
 
         List<RefinementExpressionDto> fallbacks = new ArrayList<>();
         for (PromptHintDto hint : hints) {
-            if (hint == null || hint.content() == null || hint.content().isBlank()) {
+            if (hint == null) {
                 continue;
             }
 
-            String candidate = cleanExpressionCandidate(hint.content());
-            if (candidate.isBlank()) {
-                continue;
-            }
+            for (String rawCandidate : getHintRefinementCandidates(hint)) {
+                String candidate = cleanExpressionCandidate(rawCandidate);
+                if (candidate.isBlank()) {
+                    continue;
+                }
 
-            String normalizedCandidate = normalizeForComparison(candidate);
-            if (normalizedCandidate.isBlank() || seenExpressions.contains(normalizedCandidate)) {
-                continue;
-            }
+                String normalizedCandidate = normalizeForComparison(candidate);
+                if (normalizedCandidate.isBlank() || seenExpressions.contains(normalizedCandidate)) {
+                    continue;
+                }
 
-            if (!isUsefulHintRefinementCandidate(candidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
-                continue;
-            }
+                if (!isUsefulHintRefinementCandidate(candidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
+                    continue;
+                }
 
-            seenExpressions.add(normalizedCandidate);
-            fallbacks.add(new RefinementExpressionDto(
-                    candidate,
-                    buildHintRefinementGuidance(hint.hintType()),
-                    buildHintRefinementExample(candidate, modelAnswer)
-            ));
-            if (fallbacks.size() >= 3) {
-                break;
+                seenExpressions.add(normalizedCandidate);
+                fallbacks.add(new RefinementExpressionDto(
+                        candidate,
+                        buildHintRefinementGuidance(hint.hintType()),
+                        buildHintRefinementExample(candidate, modelAnswer)
+                ));
+                if (fallbacks.size() >= 3) {
+                    return fallbacks;
+                }
             }
         }
 
         return fallbacks;
+    }
+
+    private List<String> getHintRefinementCandidates(PromptHintDto hint) {
+        if (hint.items() != null && !hint.items().isEmpty()) {
+            return hint.items().stream()
+                    .map(item -> item == null ? "" : item.content())
+                    .filter(candidate -> candidate != null && !candidate.isBlank())
+                    .toList();
+        }
+
+        if (hint.content() == null || hint.content().isBlank()) {
+            return List.of();
+        }
+
+        return List.of(hint.content());
     }
 
     private boolean isUsefulHintRefinementCandidate(
@@ -1175,6 +1368,30 @@ public class FeedbackService {
             return "I am interested in [topic].";
         }
 
+        if (lower.startsWith("one challenge i often face with ")) {
+            return "One challenge I often face with [noun] is [issue].";
+        }
+
+        if (lower.startsWith("what i like most about ") && lower.contains(" is that ")) {
+            return "What I like most about [thing] is that [detail].";
+        }
+
+        if (lower.startsWith("it helps me ") && lower.contains(" and ")) {
+            return "It helps me [verb] and [verb].";
+        }
+
+        if (lower.startsWith("it helps me ")) {
+            return "It helps me [verb].";
+        }
+
+        if (lower.startsWith("this makes it easier to ")) {
+            return "This makes it easier to [verb].";
+        }
+
+        if (lower.startsWith("when i want to ") && lower.contains(", i ")) {
+            return "When I want to [verb], I [action].";
+        }
+
         if (lower.startsWith("because ")) {
             return "because [reason]";
         }
@@ -1183,6 +1400,36 @@ public class FeedbackService {
             return "by [verb]ing [method]";
         }
 
+        if (lower.startsWith("one challenge i often face with ")) {
+            return "문제를 먼저 소개하고 이어서 설명할 때 자연스럽게 쓸 수 있어요.";
+        }
+        if (lower.startsWith("what i like most about ")) {
+            return "좋아하는 대상의 장점을 한 단계 더 구체적으로 설명할 때 좋아요.";
+        }
+        if (lower.startsWith("it helps me ")) {
+            return "효과나 이점을 분명하게 덧붙일 때 써 보세요.";
+        }
+        if (lower.startsWith("this makes it easier to ")) {
+            return "앞 문장의 결과를 자연스럽게 이어 줄 때 유용해요.";
+        }
+        if (lower.startsWith("when i want to ")) {
+            return "상황과 행동을 연결해서 답변에 장면감을 더할 수 있어요.";
+        }
+        if (lower.startsWith("one challenge i often face with ")) {
+            return "문제를 소개한 뒤 구체적인 어려움을 자연스럽게 이어 볼 때 유용해요.";
+        }
+        if (lower.startsWith("what i like most about ")) {
+            return "좋아하는 이유를 한 단계 더 구체적으로 풀어낼 때 써 보세요.";
+        }
+        if (lower.startsWith("it helps me ")) {
+            return "효과나 장점을 덧붙여 답변을 더 풍부하게 만들 때 좋아요.";
+        }
+        if (lower.startsWith("this makes it easier to ")) {
+            return "행동의 결과나 장점을 또렷하게 마무리할 때 써 보세요.";
+        }
+        if (lower.startsWith("when i want to ")) {
+            return "상황과 행동을 연결해서 더 구체적인 장면을 만들 때 유용해요.";
+        }
         if (lower.startsWith("so that ")) {
             return "so that [result]";
         }
@@ -1264,6 +1511,21 @@ public class FeedbackService {
         if (expression.contains("[") && expression.contains("]")) {
             if (lower.startsWith("because ")) {
                 return "칸에 맞는 이유를 넣어서 근거를 자연스럽게 이어 보세요.";
+            }
+            if (lower.startsWith("one challenge i often face with ")) {
+                return "문제를 소개한 뒤 구체적인 어려움을 자연스럽게 이어 볼 때 유용해요.";
+            }
+            if (lower.startsWith("what i like most about ")) {
+                return "좋아하는 이유를 한 단계 더 구체적으로 풀어낼 때 써 보세요.";
+            }
+            if (lower.startsWith("it helps me ")) {
+                return "효과나 장점을 덧붙여 답변을 더 풍부하게 만들 때 좋아요.";
+            }
+            if (lower.startsWith("this makes it easier to ")) {
+                return "행동의 결과나 장점을 또렷하게 마무리할 때 써 보세요.";
+            }
+            if (lower.startsWith("when i want to ")) {
+                return "상황과 행동을 연결해서 더 구체적인 장면을 만들 때 유용해요.";
             }
             if (lower.startsWith("by ")) {
                 return "칸에 방법을 넣어 어떻게 실천하는지 구체적으로 써 보세요.";
@@ -1409,6 +1671,10 @@ public class FeedbackService {
             String normalizedLearnerAnswer,
             String normalizedCorrectedAnswer
     ) {
+        if (expression != null && expression.contains("[") && expression.contains("]")) {
+            return false;
+        }
+
         LinkedHashSet<String> expressionTokens = extractRefinementOverlapTokens(expression);
         if (expressionTokens.isEmpty()) {
             return false;
@@ -1461,7 +1727,13 @@ public class FeedbackService {
         if (tokenCount == 2) {
             return 2;
         }
-        return Math.max(2, (int) Math.ceil(tokenCount * (2.0 / 3.0)));
+        if (tokenCount == 3) {
+            return 3;
+        }
+        if (tokenCount == 4) {
+            return 3;
+        }
+        return Math.max(4, (int) Math.ceil(tokenCount * 0.75));
     }
 
     private LinkedHashSet<String> extractRefinementOverlapTokens(String value) {
@@ -1717,6 +1989,28 @@ public class FeedbackService {
         if (normalizedFrame.startsWith("i am interested in topic")) {
             return normalizedSentence.startsWith("i am interested in ");
         }
+        if (normalizedFrame.startsWith("one challenge i often face with noun is issue")) {
+            return normalizedSentence.startsWith("one challenge i often face with ")
+                    && normalizedSentence.contains(" is ");
+        }
+        if (normalizedFrame.startsWith("what i like most about thing is that detail")) {
+            return normalizedSentence.startsWith("what i like most about ")
+                    && normalizedSentence.contains(" is that ");
+        }
+        if (normalizedFrame.startsWith("it helps me verb and verb")) {
+            return normalizedSentence.startsWith("it helps me ")
+                    && normalizedSentence.contains(" and ");
+        }
+        if (normalizedFrame.startsWith("it helps me verb")) {
+            return normalizedSentence.startsWith("it helps me ");
+        }
+        if (normalizedFrame.startsWith("this makes it easier to verb")) {
+            return normalizedSentence.startsWith("this makes it easier to ");
+        }
+        if (normalizedFrame.startsWith("when i want to verb i action")) {
+            return normalizedSentence.startsWith("when i want to ")
+                    && normalizedSentence.contains(" i ");
+        }
         if (normalizedFrame.startsWith("because reason")) {
             return normalizedSentence.contains(" because ");
         }
@@ -1748,6 +2042,10 @@ public class FeedbackService {
         example = example.replace("[result]", "improve steadily");
         example = example.replace("[activity]", "review my notes");
         example = example.replace("[topic]", "new learning methods");
+        example = example.replace("[noun]", "time management");
+        example = example.replace("[issue]", "staying consistent");
+        example = example.replace("[detail]", "it feels calm and refreshing");
+        example = example.replace("[action]", "take a short walk");
         example = example.replace("[reason]", "it helps me stay focused");
         example = example.replace("[method]", "rewriting my answers");
         example = example.replace("[detail]", "I review my answer after class");

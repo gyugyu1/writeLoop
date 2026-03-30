@@ -800,12 +800,42 @@ export function AnswerLoop() {
   const promptById = useMemo(() => {
     return new Map(allPrompts.map((prompt) => [prompt.id, prompt] as const));
   }, [allPrompts]);
-  const vocabularyHints = useMemo(
-    () => hints.filter((hint) => hint.hintType === "VOCAB"),
+  const vocabularyHintItems = useMemo(
+    () =>
+      hints
+        .filter((hint) => hint.hintType === "VOCAB")
+        .flatMap((hint) => {
+          if (hint.items && hint.items.length > 0) {
+            return hint.items
+              .filter((item) => item.content.trim().length > 0)
+              .map((item) => ({
+                id: item.id,
+                content: item.content
+              }));
+          }
+
+          return hint.content.trim()
+            ? [
+                {
+                  id: `${hint.id}-legacy`,
+                  content: hint.content
+                }
+              ]
+            : [];
+        }),
     [hints]
   );
   const starterHint = useMemo(
-    () => hints.find((hint) => hint.hintType === "STARTER")?.content ?? null,
+    () =>
+      hints
+        .filter((hint) => hint.hintType === "STARTER")
+        .flatMap((hint) => {
+          if (hint.items && hint.items.length > 0) {
+            return hint.items.map((item) => item.content);
+          }
+          return hint.content ? [hint.content] : [];
+        })
+        .find((content) => content.trim().length > 0) ?? null,
     [hints]
   );
   const answerGuide = useMemo(
@@ -2253,9 +2283,9 @@ export function AnswerLoop() {
               <strong className={styles.helpSheetSectionTitle}>단어 힌트</strong>
               {isLoadingHints ? (
                 <p className={styles.helpSheetEmpty}>지금 단어 힌트를 준비하고 있어요.</p>
-              ) : vocabularyHints.length > 0 ? (
+              ) : vocabularyHintItems.length > 0 ? (
                 <div className={styles.helpSheetHintList}>
-                  {vocabularyHints.map((hint) => (
+                  {vocabularyHintItems.map((hint) => (
                     <p key={hint.id} className={styles.helpSheetHintItem}>
                       {hint.content}
                     </p>
@@ -2310,9 +2340,9 @@ export function AnswerLoop() {
           <strong className={styles.writingGuideHintTitle}>단어 힌트</strong>
           {isLoadingHints ? (
             <p className={styles.writingGuideHintEmpty}>지금 단어 힌트를 준비하고 있어요.</p>
-          ) : vocabularyHints.length > 0 ? (
+          ) : vocabularyHintItems.length > 0 ? (
             <div className={styles.writingGuideHintList}>
-              {vocabularyHints.map((hint) => (
+              {vocabularyHintItems.map((hint) => (
                 <p key={hint.id} className={styles.writingGuideHintItem}>
                   {hint.content}
                 </p>

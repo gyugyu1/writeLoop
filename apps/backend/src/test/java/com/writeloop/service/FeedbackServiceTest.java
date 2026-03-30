@@ -611,6 +611,125 @@ class FeedbackServiceTest {
     }
 
     @Test
+    void review_does_not_top_up_with_prompt_hints_when_viable_refinements_remain() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-1",
+                "Season",
+                "A",
+                "What season do you like, and why?",
+                "Which season do you like, and why?",
+                "Give at least one reason."
+        );
+        String answer = "I like spring because it is beautiful.";
+        List<PromptHintDto> hints = List.of(
+                new PromptHintDto("hint-1", prompt.id(), "STARTER", "I especially like [season] because ...", 1),
+                new PromptHintDto("hint-2", prompt.id(), "VOCAB", "pleasant", 2)
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(hints);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, hints)).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                88,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                answer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "One reason is that [reason].",
+                                "Add a clearer reason.",
+                                "One reason is that the weather feels fresh."
+                        ),
+                        new RefinementExpressionDto(
+                                "What I like most about [thing] is that [detail].",
+                                "Expand the idea with a detail.",
+                                "What I like most about spring is that it feels calm."
+                        ),
+                        new RefinementExpressionDto(
+                                "because [reason]",
+                                "Add a reason naturally.",
+                                "because it is beautiful"
+                        )
+                ),
+                answer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions()).hasSize(2);
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .contains(
+                        "One reason is that [reason].",
+                        "What I like most about [thing] is that [detail]."
+                )
+                .doesNotContain(
+                        "because [reason]",
+                        "I especially like [season] because ...",
+                        "pleasant"
+                );
+    }
+
+    @Test
+    void review_extracts_additional_refinement_frames_from_model_answer_without_hint_top_up() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-1",
+                "Problem Solving - Time Management",
+                "B",
+                "What is one challenge you often face with time management, and how do you handle it?",
+                "What time-management challenge do you face, and how do you handle it?",
+                "Explain the problem and your response."
+        );
+        String answer = "Time management is difficult for me, so I try to stay organized.";
+        String modelAnswer = "One challenge I often face with time management is staying consistent. "
+                + "It helps me stay on track and finish important tasks. "
+                + "This makes it easier to manage my schedule.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                82,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                answer,
+                List.of(),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .contains(
+                        "One challenge I often face with [noun] is [issue].",
+                        "It helps me [verb] and [verb].",
+                        "This makes it easier to [verb]."
+                );
+    }
+
+    @Test
     void review_supplements_corrections_from_capitalization_plural_and_determiner_inline_feedback() {
         PromptDto prompt = new PromptDto(
                 "prompt-b-1",

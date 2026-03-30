@@ -13,6 +13,7 @@ import com.writeloop.dto.CoachUsageCheckRequestDto;
 import com.writeloop.dto.CoachUsageCheckResponseDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
+import com.writeloop.dto.PromptHintItemDto;
 import com.writeloop.dto.AnswerHistoryUsedExpressionDto;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
@@ -1652,6 +1653,10 @@ public class CoachService {
         List<String> phrases = new ArrayList<>();
         String content = hint.content() == null ? "" : hint.content().trim();
         String hintType = hint.hintType() == null ? "COACH" : hint.hintType().trim().toUpperCase(Locale.ROOT);
+        List<CoachExpressionDto> itemExpressions = buildExpressionsFromHintItems(hint, hintType, content);
+        if (!itemExpressions.isEmpty()) {
+            return itemExpressions;
+        }
 
         Matcher quotedMatcher = QUOTED_PHRASE_PATTERN.matcher(content);
         while (quotedMatcher.find()) {
@@ -1699,6 +1704,44 @@ public class CoachService {
         }
 
         return expressions;
+    }
+
+    private List<CoachExpressionDto> buildExpressionsFromHintItems(
+            PromptHintDto hint,
+            String hintType,
+            String content
+    ) {
+        if (hint.items() == null || hint.items().isEmpty()) {
+            return List.of();
+        }
+
+        List<CoachExpressionDto> expressions = new ArrayList<>();
+        for (PromptHintItemDto item : hint.items()) {
+            if (item == null) {
+                continue;
+            }
+
+            String phrase = normalizeText(item.content());
+            if (phrase.isBlank() || phrase.length() < 3) {
+                continue;
+            }
+
+            expressions.add(new CoachExpressionDto(
+                    phrase,
+                    firstNonBlank(item.meaningKo(), buildMeaningForHintType(hintType)),
+                    firstNonBlank(item.usageTipKo(), buildUsageTipForHintType(hintType, content)),
+                    firstNonBlank(item.exampleEn(), buildExampleForPhrase(phrase)),
+                    hintType
+            ));
+        }
+        return expressions;
+    }
+
+    private String firstNonBlank(String preferred, String fallback) {
+        if (preferred != null && !preferred.isBlank()) {
+            return preferred.trim();
+        }
+        return fallback;
     }
 
     private List<CoachExpressionDto> buildGenericExpressions(PromptDto prompt, String userQuestion) {

@@ -3,6 +3,7 @@ package com.writeloop.service;
 import com.writeloop.dto.PromptCoachProfileDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
+import com.writeloop.dto.PromptHintItemDto;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -51,6 +52,28 @@ class PromptOpenAiContextFormatterTest {
 
         assertThat(text).contains("- [STARTER] I want to improve [skill] this year.");
         assertThat(text).contains("- [VOCAB] practice regularly");
+    }
+
+    @Test
+    void formatPromptHints_prefers_structured_items_when_available() {
+        List<PromptHintDto> hints = List.of(
+                new PromptHintDto(
+                        "hint-1",
+                        "prompt-b-5",
+                        "VOCAB",
+                        "legacy bundle",
+                        1,
+                        List.of(
+                                new PromptHintItemDto("item-1", "hint-1", "WORD", "deadline", null, null, null, null, 1),
+                                new PromptHintItemDto("item-2", "hint-1", "WORD", "pressure", null, null, null, null, 2)
+                        )
+                )
+        );
+
+        String text = PromptOpenAiContextFormatter.formatPromptHints(hints);
+
+        assertThat(text).contains("- [VOCAB] deadline | pressure");
+        assertThat(text).doesNotContain("legacy bundle");
     }
 
     @Test

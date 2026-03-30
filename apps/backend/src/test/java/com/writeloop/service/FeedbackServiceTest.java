@@ -333,7 +333,7 @@ class FeedbackServiceTest {
         String answer = "I want to improve my English speaking this year.";
         List<PromptHintDto> hints = List.of(
                 new PromptHintDto("hint-1", prompt.id(), "STARTER", "I want to improve [skill] this year.", 1),
-                new PromptHintDto("hint-2", prompt.id(), "VOCAB", "practice regularly", 2)
+                new PromptHintDto("hint-2", prompt.id(), "VOCAB_PHRASE", "practice regularly", 2)
         );
         FeedbackResponseDto feedback = new FeedbackResponseDto(
                 prompt.id(),
@@ -560,7 +560,7 @@ class FeedbackServiceTest {
         String answer = "I like spring because it's the season when flowers bloom and everything feels fresh.";
         List<PromptHintDto> hints = List.of(
                 new PromptHintDto("hint-1", prompt.id(), "STARTER", "I especially like [season] because ...", 1),
-                new PromptHintDto("hint-2", prompt.id(), "VOCAB", "pleasant", 2),
+                new PromptHintDto("hint-2", prompt.id(), "VOCAB_WORD", "pleasant", 2),
                 new PromptHintDto("hint-3", prompt.id(), "DETAIL", "It makes me feel [adj].", 3)
         );
 
@@ -623,7 +623,7 @@ class FeedbackServiceTest {
         String answer = "I like spring because it is beautiful.";
         List<PromptHintDto> hints = List.of(
                 new PromptHintDto("hint-1", prompt.id(), "STARTER", "I especially like [season] because ...", 1),
-                new PromptHintDto("hint-2", prompt.id(), "VOCAB", "pleasant", 2)
+                new PromptHintDto("hint-2", prompt.id(), "VOCAB_WORD", "pleasant", 2)
         );
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);

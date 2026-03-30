@@ -4,6 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -24,7 +25,10 @@ public class PromptHintEntity {
     @Column(name = "hint_type", nullable = false, length = 40)
     private String hintType;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(length = 100)
+    private String title;
+
+    @Transient
     private String content;
 
     @Column(name = "display_order", nullable = false)
@@ -37,6 +41,18 @@ public class PromptHintEntity {
             String id,
             String promptId,
             String hintType,
+            String title,
+            Integer displayOrder,
+            Boolean active
+    ) {
+        this(id, promptId, hintType, title, null, displayOrder, active);
+    }
+
+    public PromptHintEntity(
+            String id,
+            String promptId,
+            String hintType,
+            String title,
             String content,
             Integer displayOrder,
             Boolean active
@@ -44,6 +60,7 @@ public class PromptHintEntity {
         this.id = id;
         this.promptId = promptId;
         this.hintType = hintType;
+        this.title = title;
         this.content = content;
         this.displayOrder = displayOrder;
         this.active = active;
@@ -51,11 +68,22 @@ public class PromptHintEntity {
 
     public void update(
             String hintType,
+            String title,
+            Integer displayOrder,
+            Boolean active
+    ) {
+        update(hintType, title, this.content, displayOrder, active);
+    }
+
+    public void update(
+            String hintType,
+            String title,
             String content,
             Integer displayOrder,
             Boolean active
     ) {
         this.hintType = hintType;
+        this.title = title;
         this.content = content;
         this.displayOrder = displayOrder;
         this.active = active;

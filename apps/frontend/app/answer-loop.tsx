@@ -803,25 +803,18 @@ export function AnswerLoop() {
   const vocabularyHintItems = useMemo(
     () =>
       hints
-        .filter((hint) => hint.hintType === "VOCAB")
+        .filter((hint) => hint.hintType === "VOCAB_WORD")
         .flatMap((hint) => {
-          if (hint.items && hint.items.length > 0) {
-            return hint.items
-              .filter((item) => item.content.trim().length > 0)
-              .map((item) => ({
-                id: item.id,
-                content: item.content
-              }));
+          if (!hint.items || hint.items.length === 0) {
+            return [];
           }
 
-          return hint.content.trim()
-            ? [
-                {
-                  id: `${hint.id}-legacy`,
-                  content: hint.content
-                }
-              ]
-            : [];
+          return hint.items
+            .filter((item) => item.content.trim().length > 0)
+            .map((item) => ({
+              id: item.id,
+              content: item.content
+            }));
         }),
     [hints]
   );
@@ -829,12 +822,7 @@ export function AnswerLoop() {
     () =>
       hints
         .filter((hint) => hint.hintType === "STARTER")
-        .flatMap((hint) => {
-          if (hint.items && hint.items.length > 0) {
-            return hint.items.map((item) => item.content);
-          }
-          return hint.content ? [hint.content] : [];
-        })
+        .flatMap((hint) => hint.items?.map((item) => item.content) ?? [])
         .find((content) => content.trim().length > 0) ?? null,
     [hints]
   );

@@ -1,11 +1,13 @@
 package com.writeloop.config;
 
+import com.writeloop.dto.PromptHintItemDto;
 import com.writeloop.persistence.PromptCoachProfileEntity;
 import com.writeloop.persistence.PromptEntity;
 import com.writeloop.persistence.PromptHintEntity;
 import com.writeloop.persistence.PromptHintRepository;
 import com.writeloop.persistence.PromptRepository;
 import com.writeloop.service.PromptCoachProfileSupport;
+import com.writeloop.service.PromptHintItemSupport;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +26,7 @@ public class PromptSeedConfig {
             PromptHintRepository promptHintRepository,
             JdbcTemplate jdbcTemplate,
             PromptCoachProfileSupport promptCoachProfileSupport,
+            PromptHintItemSupport promptHintItemSupport,
             TransactionTemplate transactionTemplate,
             EntityManager entityManager
     ) {
@@ -31,7 +34,7 @@ public class PromptSeedConfig {
             normalizeLegacyPrompts(jdbcTemplate);
 
             seededPrompts().forEach(prompt -> upsertSeedPrompt(promptRepository, entityManager, prompt));
-            seededHints().forEach(hint -> upsertSeedHint(promptHintRepository, entityManager, hint));
+            seededHints().forEach(hint -> upsertSeedHint(promptHintRepository, promptHintItemSupport, entityManager, hint));
 
             promptRepository.findAllByOrderByDisplayOrderAsc().forEach(prompt -> {
                 if (!promptCoachProfileSupport.shouldRefreshSeededProfile(prompt)) {
@@ -54,6 +57,8 @@ public class PromptSeedConfig {
                         promptCoachProfileSupport.defaultProfileForPrompt(prompt)
                 );
             });
+
+            backfillLegacyHintItemsFromRawContent(jdbcTemplate, promptHintItemSupport);
 
             entityManager.flush();
         });
@@ -175,63 +180,63 @@ public class PromptSeedConfig {
     private List<PromptHintEntity> seededHints() {
         return List.of(
                 hint("hint-a-1-1", "prompt-a-1", "STARTER", "\"After dinner, I usually...\"로 시작해 보세요.", 1),
-                hint("hint-a-1-2", "prompt-a-1", "VOCAB", "활용 단어: relax, wash the dishes, watch videos, take a walk, get ready for bed", 2),
-                hint("hint-a-1-3", "prompt-a-1", "VOCAB", "활용 표현: after dinner, in the evening, before bed, most days, right after I eat", 3),
+                hint("hint-a-1-2", "prompt-a-1", "VOCAB_WORD", "활용 단어: relax, wash the dishes, watch videos, take a walk, get ready for bed", 2),
+                hint("hint-a-1-3", "prompt-a-1", "VOCAB_PHRASE", "활용 표현: after dinner, in the evening, before bed, most days, right after I eat", 3),
                 hint("hint-a-1-4", "prompt-a-1", "STRUCTURE", "저녁을 먹은 뒤 하는 일 2개와 하루를 마무리하는 행동을 순서대로 이어 보세요.", 4),
 
                 hint("hint-a-2-1", "prompt-a-2", "STARTER", "\"My favorite food is ... because...\"로 시작해 보세요.", 1),
-                hint("hint-a-2-2", "prompt-a-2", "VOCAB", "활용 단어: spicy, savory, sweet, comforting, delicious", 2),
-                hint("hint-a-2-3", "prompt-a-2", "VOCAB", "활용 표현: my favorite food, one reason is, I especially like, it tastes, it reminds me of", 3),
+                hint("hint-a-2-2", "prompt-a-2", "VOCAB_WORD", "활용 단어: spicy, savory, sweet, comforting, delicious", 2),
+                hint("hint-a-2-3", "prompt-a-2", "VOCAB_PHRASE", "활용 표현: my favorite food, one reason is, I especially like, it tastes, it reminds me of", 3),
                 hint("hint-a-2-4", "prompt-a-2", "DETAIL", "맛, 느낌, 자주 먹는 상황 중 2가지를 넣으면 답변이 더 자연스러워져요.", 4),
 
                 hint("hint-a-3-1", "prompt-a-3", "STARTER", "\"On weekends, I usually...\"로 시작해 보세요.", 1),
-                hint("hint-a-3-2", "prompt-a-3", "VOCAB", "활용 단어: rest, meet friends, exercise, study, go out", 2),
-                hint("hint-a-3-3", "prompt-a-3", "VOCAB", "활용 표현: on weekends, in the morning, in the afternoon, with my family, most of the time", 3),
+                hint("hint-a-3-2", "prompt-a-3", "VOCAB_WORD", "활용 단어: rest, meet friends, exercise, study, go out", 2),
+                hint("hint-a-3-3", "prompt-a-3", "VOCAB_PHRASE", "활용 표현: on weekends, in the morning, in the afternoon, with my family, most of the time", 3),
                 hint("hint-a-3-4", "prompt-a-3", "STRUCTURE", "주말에 하는 활동, 함께하는 사람, 자주 가는 장소를 순서대로 이어 보세요.", 4),
 
                 hint("hint-b-1-1", "prompt-b-1", "STARTER", "\"One challenge I often face at work or school is...\"로 시작해 보세요.", 1),
-                hint("hint-b-1-2", "prompt-b-1", "VOCAB", "활용 단어: deadline, pressure, teamwork, schedule, solution", 2),
-                hint("hint-b-1-3", "prompt-b-1", "VOCAB", "활용 표현: I deal with it by, one thing I do is, when this happens, step by step, in the end", 3),
+                hint("hint-b-1-2", "prompt-b-1", "VOCAB_WORD", "활용 단어: deadline, pressure, teamwork, schedule, solution", 2),
+                hint("hint-b-1-3", "prompt-b-1", "VOCAB_PHRASE", "활용 표현: I deal with it by, one thing I do is, when this happens, step by step, in the end", 3),
                 hint("hint-b-1-4", "prompt-b-1", "STRUCTURE", "어떤 문제인지, 어떻게 대응하는지, 결과가 어땠는지를 순서대로 말해 보세요.", 4),
 
                 hint("hint-b-2-1", "prompt-b-2", "STARTER", "\"One city I want to visit is...\"로 시작해 보세요.", 1),
-                hint("hint-b-2-2", "prompt-b-2", "VOCAB", "활용 단어: culture, scenery, landmark, local food, explore", 2),
-                hint("hint-b-2-3", "prompt-b-2", "VOCAB", "활용 표현: I want to visit, I would love to, once I get there, I also want to, because it looks", 3),
+                hint("hint-b-2-2", "prompt-b-2", "VOCAB_WORD", "활용 단어: culture, scenery, landmark, local food, explore", 2),
+                hint("hint-b-2-3", "prompt-b-2", "VOCAB_PHRASE", "활용 표현: I want to visit, I would love to, once I get there, I also want to, because it looks", 3),
                 hint("hint-b-2-4", "prompt-b-2", "DETAIL", "가고 싶은 이유 1개와 현지에서 하고 싶은 활동 2개를 함께 적어 보세요.", 4),
 
                 hint("hint-b-3-1", "prompt-b-3", "STARTER", "\"One habit I want to build this year is...\"로 시작해 보세요.", 1),
-                hint("hint-b-3-2", "prompt-b-3", "VOCAB", "활용 단어: consistency, routine, progress, habit, improve", 2),
-                hint("hint-b-3-3", "prompt-b-3", "VOCAB", "활용 표현: every day, little by little, stick to it, make time for, because it helps me", 3),
+                hint("hint-b-3-2", "prompt-b-3", "VOCAB_WORD", "활용 단어: consistency, routine, progress, habit, improve", 2),
+                hint("hint-b-3-3", "prompt-b-3", "VOCAB_PHRASE", "활용 표현: every day, little by little, stick to it, make time for, because it helps me", 3),
                 hint("hint-b-3-4", "prompt-b-3", "STRUCTURE", "만들고 싶은 습관, 중요한 이유, 실천 방법을 차례대로 말해 보세요.", 4),
 
                 hint("hint-c-1-1", "prompt-c-1", "STARTER", "\"Technology has changed relationships in many ways.\"로 시작해 보세요.", 1),
-                hint("hint-c-1-2", "prompt-c-1", "VOCAB", "활용 단어: connection, convenience, distance, misunderstanding, communication", 2),
-                hint("hint-c-1-3", "prompt-c-1", "VOCAB", "활용 표현: on the one hand, on the other hand, in some ways, overall, at the same time", 3),
+                hint("hint-c-1-2", "prompt-c-1", "VOCAB_WORD", "활용 단어: connection, convenience, distance, misunderstanding, communication", 2),
+                hint("hint-c-1-3", "prompt-c-1", "VOCAB_PHRASE", "활용 표현: on the one hand, on the other hand, in some ways, overall, at the same time", 3),
                 hint("hint-c-1-4", "prompt-c-1", "STRUCTURE", "긍정적인 변화 1개, 부정적인 변화 1개, 마지막 입장을 순서대로 말해 보세요.", 4),
 
                 hint("hint-c-2-1", "prompt-c-2", "STARTER", "\"Successful companies should take responsibility for...\"로 시작해 보세요.", 1),
-                hint("hint-c-2-2", "prompt-c-2", "VOCAB", "활용 단어: responsibility, employees, community, trust, sustainability", 2),
-                hint("hint-c-2-3", "prompt-c-2", "VOCAB", "활용 표현: in my opinion, for example, they should, this matters because, one important role is", 3),
+                hint("hint-c-2-2", "prompt-c-2", "VOCAB_WORD", "활용 단어: responsibility, employees, community, trust, sustainability", 2),
+                hint("hint-c-2-3", "prompt-c-2", "VOCAB_PHRASE", "활용 표현: in my opinion, for example, they should, this matters because, one important role is", 3),
                 hint("hint-c-2-4", "prompt-c-2", "DETAIL", "어떤 책임이 필요한지와 그 이유를 구체적인 예 하나와 함께 적어 보세요.", 4),
 
                 hint("hint-c-3-1", "prompt-c-3", "STARTER", "\"I used to believe that..., but now I think...\"로 시작해 보세요.", 1),
-                hint("hint-c-3-2", "prompt-c-3", "VOCAB", "활용 단어: belief, perspective, realize, experience, change", 2),
-                hint("hint-c-3-3", "prompt-c-3", "VOCAB", "활용 표현: over time, because of, after I experienced, now I see, what changed my mind was", 3),
+                hint("hint-c-3-2", "prompt-c-3", "VOCAB_WORD", "활용 단어: belief, perspective, realize, experience, change", 2),
+                hint("hint-c-3-3", "prompt-c-3", "VOCAB_PHRASE", "활용 표현: over time, because of, after I experienced, now I see, what changed my mind was", 3),
                 hint("hint-c-3-4", "prompt-c-3", "STRUCTURE", "예전 생각, 바뀐 계기, 지금의 생각을 순서대로 연결해 보세요.", 4),
 
                 hint("hint-a-4-1", "prompt-a-4", "STARTER", "\"After work, I usually...\"로 시작해 보세요.", 1),
-                hint("hint-a-4-2", "prompt-a-4", "VOCAB", "활용 단어: relax, grab dinner, work out, rest, unwind", 2),
-                hint("hint-a-4-3", "prompt-a-4", "VOCAB", "활용 표현: after work, when I get home, in the evening, because it helps me, once I finish work", 3),
+                hint("hint-a-4-2", "prompt-a-4", "VOCAB_WORD", "활용 단어: relax, grab dinner, work out, rest, unwind", 2),
+                hint("hint-a-4-3", "prompt-a-4", "VOCAB_PHRASE", "활용 표현: after work, when I get home, in the evening, because it helps me, once I finish work", 3),
                 hint("hint-a-4-4", "prompt-a-4", "STRUCTURE", "퇴근 후 하는 일과 그 활동을 좋아하는 이유를 한 문장씩 이어 보세요.", 4),
 
                 hint("hint-b-4-1", "prompt-b-4", "STARTER", "\"One place I want to visit is...\"로 시작해 보세요.", 1),
-                hint("hint-b-4-2", "prompt-b-4", "VOCAB", "활용 단어: destination, scenery, museum, food, experience", 2),
-                hint("hint-b-4-3", "prompt-b-4", "VOCAB", "활용 표현: I want to go there because, I also want to, so I can, when I visit, one thing I would do", 3),
+                hint("hint-b-4-2", "prompt-b-4", "VOCAB_WORD", "활용 단어: destination, scenery, museum, food, experience", 2),
+                hint("hint-b-4-3", "prompt-b-4", "VOCAB_PHRASE", "활용 표현: I want to go there because, I also want to, so I can, when I visit, one thing I would do", 3),
                 hint("hint-b-4-4", "prompt-b-4", "LINKER", "because, also, so를 활용해 이유와 하고 싶은 활동을 자연스럽게 연결해 보세요.", 4),
 
                 hint("hint-b-5-1", "prompt-b-5", "STARTER", "\"One skill I want to improve this year is...\"로 시작해 보세요.", 1),
-                hint("hint-b-5-2", "prompt-b-5", "VOCAB", "활용 단어: practice, improve, routine, confidence, goal", 2),
-                hint("hint-b-5-3", "prompt-b-5", "VOCAB", "활용 표현: I plan to, every week, little by little, to get better at, because it will help me", 3),
+                hint("hint-b-5-2", "prompt-b-5", "VOCAB_WORD", "활용 단어: practice, improve, routine, confidence, goal", 2),
+                hint("hint-b-5-3", "prompt-b-5", "VOCAB_PHRASE", "활용 표현: I plan to, every week, little by little, to get better at, because it will help me", 3),
                 hint("hint-b-5-4", "prompt-b-5", "STRUCTURE", "키우고 싶은 능력, 연습 루틴, 개인적인 이유를 한 흐름으로 이어 보세요.", 4)
         );
     }
@@ -268,6 +273,7 @@ public class PromptSeedConfig {
                 id,
                 promptId,
                 hintType,
+                null,
                 content,
                 displayOrder,
                 true
@@ -298,21 +304,85 @@ public class PromptSeedConfig {
 
     private void upsertSeedHint(
             PromptHintRepository promptHintRepository,
+            PromptHintItemSupport promptHintItemSupport,
             EntityManager entityManager,
             PromptHintEntity seededHint
     ) {
+        String resolvedTitle = promptHintItemSupport.resolveTitle(
+                seededHint.getTitle(),
+                seededHint.getHintType(),
+                seededHint.getContent()
+        );
+        List<String> itemContents = promptHintItemSupport.deriveDtos(seededHint).stream()
+                .map(PromptHintItemDto::content)
+                .toList();
+        String normalizedHintType = promptHintItemSupport.normalizeHintType(
+                seededHint.getHintType(),
+                resolvedTitle,
+                itemContents
+        );
         PromptHintEntity existing = promptHintRepository.findById(seededHint.getId()).orElse(null);
         if (existing == null) {
-            entityManager.persist(seededHint);
+            PromptHintEntity normalizedHint = new PromptHintEntity(
+                    seededHint.getId(),
+                    seededHint.getPromptId(),
+                    normalizedHintType,
+                    resolvedTitle,
+                    null,
+                    seededHint.getDisplayOrder(),
+                    seededHint.getActive()
+            );
+            entityManager.persist(normalizedHint);
+            promptHintItemSupport.syncHintItems(normalizedHint, itemContents);
             return;
         }
 
         existing.update(
-                seededHint.getHintType(),
-                seededHint.getContent(),
+                normalizedHintType,
+                resolvedTitle,
+                null,
                 seededHint.getDisplayOrder(),
                 seededHint.getActive()
         );
+        promptHintItemSupport.syncHintItems(existing, itemContents);
+    }
+
+    private void backfillLegacyHintItemsFromRawContent(
+            JdbcTemplate jdbcTemplate,
+            PromptHintItemSupport promptHintItemSupport
+    ) {
+        Integer contentColumnExists = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'prompt_hints'
+                  AND COLUMN_NAME = 'content'
+                """,
+                Integer.class
+        );
+
+        if (contentColumnExists == null || contentColumnExists == 0) {
+            return;
+        }
+
+        List<PromptHintEntity> legacyHints = jdbcTemplate.query(
+                """
+                SELECT id, prompt_id, hint_type, title, content, display_order, is_active
+                FROM prompt_hints
+                ORDER BY prompt_id, display_order, id
+                """,
+                (rs, rowNum) -> new PromptHintEntity(
+                        rs.getString("id"),
+                        rs.getString("prompt_id"),
+                        rs.getString("hint_type"),
+                        rs.getString("title"),
+                        rs.getString("content"),
+                        rs.getInt("display_order"),
+                        rs.getBoolean("is_active")
+                )
+        );
+        promptHintItemSupport.backfillMissingItems(legacyHints);
     }
 
     private void normalizeLegacyPrompts(JdbcTemplate jdbcTemplate) {

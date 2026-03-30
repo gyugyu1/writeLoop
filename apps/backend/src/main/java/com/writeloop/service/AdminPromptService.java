@@ -6,6 +6,8 @@ import com.writeloop.dto.AdminPromptHintRequestDto;
 import com.writeloop.dto.AdminPromptRequestDto;
 import com.writeloop.persistence.PromptEntity;
 import com.writeloop.persistence.PromptHintEntity;
+import com.writeloop.persistence.PromptHintItemEntity;
+import com.writeloop.persistence.PromptHintItemRepository;
 import com.writeloop.persistence.PromptHintRepository;
 import com.writeloop.persistence.PromptRepository;
 import lombok.RequiredArgsConstructor;
@@ -14,8 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -23,11 +27,12 @@ public class AdminPromptService {
 
     private final PromptRepository promptRepository;
     private final PromptHintRepository promptHintRepository;
+    private final PromptHintItemRepository promptHintItemRepository;
     private final PromptCoachProfileSupport promptCoachProfileSupport;
+    private final PromptHintItemSupport promptHintItemSupport;
 
     public List<AdminPromptDto> findAll() {
         List<PromptEntity> prompts = promptRepository.findAllByOrderByDisplayOrderAsc();
-
         return prompts.stream()
                 .map(prompt -> toDto(prompt, promptHintRepository.findAllByPromptIdOrderByDisplayOrderAsc(prompt.getId())))
                 .toList();
@@ -37,11 +42,11 @@ public class AdminPromptService {
         String difficulty = normalizeDifficulty(request.difficulty());
         PromptEntity prompt = new PromptEntity(
                 generatePromptId(difficulty),
-                normalizeRequiredText(request.topic(), "주제를 입력해 주세요."),
+                normalizeRequiredText(request.topic(), "Topic is required."),
                 difficulty,
-                normalizeRequiredText(request.questionEn(), "영어 질문을 입력해 주세요."),
-                normalizeRequiredText(request.questionKo(), "한국어 질문을 입력해 주세요."),
-                normalizeRequiredText(request.tip(), "팁을 입력해 주세요."),
+                normalizeRequiredText(request.questionEn(), "English question is required."),
+                normalizeRequiredText(request.questionKo(), "Korean question is required."),
+                normalizeRequiredText(request.tip(), "Tip is required."),
                 normalizeDisplayOrder(request.displayOrder()),
                 request.active() == null || request.active()
         );
@@ -55,11 +60,11 @@ public class AdminPromptService {
         PromptEntity prompt = findPrompt(promptId);
 
         prompt.update(
-                normalizeRequiredText(request.topic(), "주제를 입력해 주세요."),
+                normalizeRequiredText(request.topic(), "Topic is required."),
                 normalizeDifficulty(request.difficulty()),
-                normalizeRequiredText(request.questionEn(), "영어 질문을 입력해 주세요."),
-                normalizeRequiredText(request.questionKo(), "한국어 질문을 입력해 주세요."),
-                normalizeRequiredText(request.tip(), "팁을 입력해 주세요."),
+                normalizeRequiredText(request.questionEn(), "English question is required."),
+                normalizeRequiredText(request.questionKo(), "Korean question is required."),
+                normalizeRequiredText(request.tip(), "Tip is required."),
                 normalizeDisplayOrder(request.displayOrder()),
                 request.active() == null || request.active()
         );
@@ -84,21 +89,34 @@ public class AdminPromptService {
 
         List<PromptHintEntity> hints = promptHintRepository.findAllByPromptIdOrderByDisplayOrderAsc(promptId);
         for (PromptHintEntity hint : hints) {
-            hint.update(hint.getHintType(), hint.getContent(), hint.getDisplayOrder(), false);
+            hint.update(hint.getHintType(), hint.getTitle(), hint.getDisplayOrder(), false);
         }
         promptHintRepository.saveAll(hints);
     }
 
     public AdminPromptHintDto createHint(String promptId, AdminPromptHintRequestDto request) {
         findPrompt(promptId);
+
+        List<String> normalizedItems = promptHintItemSupport.normalizeItemContents(request.items());
+        if (normalizedItems.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one hint item is required.");
+        }
+
+        String hintType = promptHintItemSupport.normalizeHintType(
+                normalizeRequiredText(request.hintType(), "Hint type is required."),
+                request.title(),
+                normalizedItems
+        );
+
         PromptHintEntity hint = promptHintRepository.save(new PromptHintEntity(
                 generateHintId(promptId),
                 promptId,
-                normalizeRequiredText(request.hintType(), "힌트 타입을 입력해 주세요.").toUpperCase(Locale.ROOT),
-                normalizeRequiredText(request.content(), "힌트 내용을 입력해 주세요."),
+                hintType,
+                promptHintItemSupport.resolveTitle(request.title(), hintType),
                 normalizeDisplayOrder(request.displayOrder()),
                 request.active() == null || request.active()
         ));
+        promptHintItemSupport.syncHintItems(hint, normalizedItems);
 
         return toHintDto(hint);
     }
@@ -107,34 +125,49 @@ public class AdminPromptService {
         findPrompt(promptId);
         PromptHintEntity hint = promptHintRepository.findById(hintId)
                 .filter(value -> promptId.equals(value.getPromptId()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "힌트를 찾을 수 없어요."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hint not found."));
+
+        List<String> normalizedItems = promptHintItemSupport.normalizeItemContents(request.items());
+        if (normalizedItems.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one hint item is required.");
+        }
+
+        String hintType = promptHintItemSupport.normalizeHintType(
+                normalizeRequiredText(request.hintType(), "Hint type is required."),
+                request.title(),
+                normalizedItems
+        );
 
         hint.update(
-                normalizeRequiredText(request.hintType(), "힌트 타입을 입력해 주세요.").toUpperCase(Locale.ROOT),
-                normalizeRequiredText(request.content(), "힌트 내용을 입력해 주세요."),
+                hintType,
+                promptHintItemSupport.resolveTitle(request.title(), hintType),
                 normalizeDisplayOrder(request.displayOrder()),
                 request.active() == null || request.active()
         );
 
-        return toHintDto(promptHintRepository.save(hint));
+        PromptHintEntity savedHint = promptHintRepository.save(hint);
+        promptHintItemSupport.syncHintItems(savedHint, normalizedItems);
+        return toHintDto(savedHint);
     }
 
     public void deleteHint(String promptId, String hintId) {
         findPrompt(promptId);
         PromptHintEntity hint = promptHintRepository.findById(hintId)
                 .filter(value -> promptId.equals(value.getPromptId()))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "힌트를 찾을 수 없어요."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Hint not found."));
 
-        hint.update(hint.getHintType(), hint.getContent(), hint.getDisplayOrder(), false);
+        hint.update(hint.getHintType(), hint.getTitle(), hint.getDisplayOrder(), false);
         promptHintRepository.save(hint);
+        promptHintItemSupport.deleteHintItems(hintId);
     }
 
     private PromptEntity findPrompt(String promptId) {
         return promptRepository.findByIdWithCoachProfile(promptId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "질문을 찾을 수 없어요."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Prompt not found."));
     }
 
     private AdminPromptDto toDto(PromptEntity prompt, List<PromptHintEntity> hints) {
+        Map<String, List<PromptHintItemEntity>> itemsByHintId = loadHintItems(hints);
         return new AdminPromptDto(
                 prompt.getId(),
                 prompt.getTopic(),
@@ -147,20 +180,45 @@ public class AdminPromptService {
                 promptCoachProfileSupport.toDto(prompt),
                 hints.stream()
                         .sorted(Comparator.comparing(PromptHintEntity::getDisplayOrder).thenComparing(PromptHintEntity::getId))
-                        .map(this::toHintDto)
+                        .map(hint -> toHintDto(hint, itemsByHintId.get(hint.getId())))
                         .toList()
         );
     }
 
     private AdminPromptHintDto toHintDto(PromptHintEntity hint) {
+        return toHintDto(
+                hint,
+                promptHintItemRepository.findAllByHintIdInOrderByDisplayOrderAsc(List.of(hint.getId()))
+        );
+    }
+
+    private AdminPromptHintDto toHintDto(PromptHintEntity hint, List<PromptHintItemEntity> persistedItems) {
+        var resolvedItems = promptHintItemSupport.resolveItems(persistedItems);
         return new AdminPromptHintDto(
                 hint.getId(),
                 hint.getPromptId(),
                 hint.getHintType(),
-                hint.getContent(),
+                promptHintItemSupport.resolveTitle(hint),
                 hint.getDisplayOrder(),
-                Boolean.TRUE.equals(hint.getActive())
+                Boolean.TRUE.equals(hint.getActive()),
+                resolvedItems
         );
+    }
+
+    private Map<String, List<PromptHintItemEntity>> loadHintItems(List<PromptHintEntity> hints) {
+        if (hints.isEmpty()) {
+            return Map.of();
+        }
+
+        List<String> hintIds = hints.stream()
+                .map(PromptHintEntity::getId)
+                .toList();
+        Map<String, List<PromptHintItemEntity>> itemsByHintId = new LinkedHashMap<>();
+        for (PromptHintItemEntity item : promptHintItemRepository.findAllByHintIdInOrderByDisplayOrderAsc(hintIds)) {
+            itemsByHintId.computeIfAbsent(item.getHintId(), ignored -> new java.util.ArrayList<>())
+                    .add(item);
+        }
+        return itemsByHintId;
     }
 
     private String generatePromptId(String difficulty) {
@@ -202,9 +260,9 @@ public class AdminPromptService {
     }
 
     private String normalizeDifficulty(String difficulty) {
-        String normalized = normalizeRequiredText(difficulty, "난이도를 입력해 주세요.").toUpperCase(Locale.ROOT);
+        String normalized = normalizeRequiredText(difficulty, "Difficulty is required.").toUpperCase(Locale.ROOT);
         if (!List.of("A", "B", "C").contains(normalized)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "난이도는 A, B, C 중 하나여야 해요.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Difficulty must be A, B, or C.");
         }
         return normalized;
     }

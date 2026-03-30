@@ -11,6 +11,7 @@ import com.writeloop.dto.CoachUsageCheckResponseDto;
 import com.writeloop.dto.CoachUsageCheckRequestDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
+import com.writeloop.dto.PromptHintItemDto;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AttemptType;
@@ -128,7 +129,7 @@ class CoachServiceTest {
                 new PromptHintDto(
                         "hint-2",
                         prompt.id(),
-                        "VOCAB",
+                        "VOCAB_PHRASE",
                         "Reason expressions: because, one reason is that",
                         2
                 )
@@ -171,6 +172,42 @@ class CoachServiceTest {
 
         assertThat(response.expressions())
                 .anySatisfy(expression -> assertThat(expression.expression()).contains("on weekends"));
+    }
+
+    @Test
+    void help_prefers_structured_hint_items_over_legacy_bundle_content() {
+        PromptDto prompt = new PromptDto(
+                "prompt-2-items",
+                "Time management",
+                "EASY",
+                "What challenge do you face with time management?",
+                "시간 관리에서 어떤 어려움을 겪나요?",
+                "Use natural expressions."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of(
+                new PromptHintDto(
+                        "hint-1",
+                        prompt.id(),
+                        "VOCAB_WORD",
+                        "활용 단어: deadline, pressure, teamwork",
+                        1,
+                        List.of(
+                                new PromptHintItemDto("item-1", "hint-1", "WORD", "deadline", null, null, null, null, 1),
+                                new PromptHintItemDto("item-2", "hint-1", "WORD", "pressure", null, null, null, null, 2),
+                                new PromptHintItemDto("item-3", "hint-1", "WORD", "teamwork", null, null, null, null, 3)
+                        )
+                )
+        ));
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "Need help")
+        );
+
+        assertThat(response.expressions())
+                .extracting(expression -> expression.expression().toLowerCase())
+                .contains("deadline", "pressure", "teamwork")
+                .doesNotContain("활용 단어: deadline, pressure, teamwork");
     }
 
     @Test
@@ -1711,6 +1748,40 @@ class CoachServiceTest {
                 .noneMatch(expression -> expression.equals("one reason is that ..."))
                 .noneMatch(expression -> expression.equals("for example, ..."));
         assertThat(response.coachReply()).contains("\uCCAB \uBB38\uC7A5");
+    }
+
+    @Test
+    void help_uses_item_only_hints_when_legacy_content_is_missing() {
+        PromptDto prompt = new PromptDto(
+                "prompt-items-only-1",
+                "Time management",
+                "EASY",
+                "What challenge do you face with time management?",
+                "What challenge do you face with time management?",
+                "Use natural expressions."
+        );
+        when(promptService.findAll()).thenReturn(List.of(prompt));
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(List.of(
+                new PromptHintDto(
+                        "hint-1",
+                        prompt.id(),
+                        "VOCAB_WORD",
+                        "활용 단어",
+                        null,
+                        1,
+                        List.of(
+                                new PromptHintItemDto("item-1", "hint-1", "WORD", "deadline", null, null, null, null, 1),
+                                new PromptHintItemDto("item-2", "hint-1", "WORD", "pressure", null, null, null, null, 2)
+                        )
+                )
+        ));
+        when(openAiCoachClient.isConfigured()).thenReturn(false);
+
+        CoachHelpResponseDto response = coachService.help(
+                new CoachHelpRequestDto(prompt.id(), "Need help")
+        );
+
+        assertThat(lowerExpressions(response)).contains("deadline", "pressure");
     }
 
     private List<String> lowerExpressions(CoachHelpResponseDto response) {

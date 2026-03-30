@@ -14,6 +14,61 @@ function Escape-Sql {
     return $Value.Replace("'", "''")
 }
 
+function Split-HintItems {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$HintType,
+        [Parameter(Mandatory = $true)]
+        [string]$Content
+    )
+
+    $normalized = $Content.Trim()
+    if ($HintType -eq "STARTER") {
+        if ($normalized -match '"([^"]+)"') {
+            return @($Matches[1].Trim())
+        }
+        return @($normalized)
+    }
+
+    if (($HintType -in @("VOCAB_WORD", "VOCAB_PHRASE", "LINKER")) -and $normalized.Contains(":")) {
+        $payload = ($normalized -replace '^[^:]+:\s*', '')
+        return $payload.Split(",") | ForEach-Object { $_.Trim() } | Where-Object { $_ }
+    }
+
+    return @($normalized)
+}
+
+function Default-HintTitle {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$HintType
+    )
+
+    switch ($HintType) {
+        "STARTER" { return "첫 문장 스타터" }
+        "VOCAB_WORD" { return "활용 단어" }
+        "VOCAB_PHRASE" { return "활용 표현" }
+        "STRUCTURE" { return "답변 구조" }
+        "DETAIL" { return "추가 설명" }
+        "LINKER" { return "연결 표현" }
+        default { return $HintType }
+    }
+}
+
+function Default-ItemType {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$HintType
+    )
+
+    switch ($HintType) {
+        "VOCAB_WORD" { return "WORD" }
+        "VOCAB_PHRASE" { return "PHRASE" }
+        "LINKER" { return "PHRASE" }
+        default { return "FRAME" }
+    }
+}
+
 $categories = @(
     @{
         Abbr = "rtn"
@@ -361,7 +416,8 @@ $lines.Add("-- Seed hint data for the 200 operational prompts.")
 $lines.Add("")
 
 foreach ($category in $categories) {
-    $rows = New-Object System.Collections.Generic.List[string]
+    $hintRows = New-Object System.Collections.Generic.List[string]
+    $itemRows = New-Object System.Collections.Generic.List[string]
 
     for ($index = 1; $index -le 25; $index++) {
         $theme = $category.Themes[[math]::Floor(($index - 1) / 5)]
@@ -369,22 +425,36 @@ foreach ($category in $categories) {
         $abbr = $category.Abbr
 
         $hints = @(
-            @{ Id = ("hint-{0}-{1:d2}-1" -f $abbr, $index); Type = "STARTER"; Content = $theme.Starter; Order = 1 },
-            @{ Id = ("hint-{0}-{1:d2}-2" -f $abbr, $index); Type = "VOCAB"; Content = $theme.Words; Order = 2 },
-            @{ Id = ("hint-{0}-{1:d2}-3" -f $abbr, $index); Type = "VOCAB"; Content = $theme.Expressions; Order = 3 },
-            @{ Id = ("hint-{0}-{1:d2}-4" -f $abbr, $index); Type = $theme.ExtraType; Content = $theme.Extra; Order = 4 }
+            @{ Id = ("hint-{0}-{1:d2}-1" -f $abbr, $index); Type = "STARTER"; Title = (Default-HintTitle "STARTER"); Content = $theme.Starter; Order = 1 },
+            @{ Id = ("hint-{0}-{1:d2}-2" -f $abbr, $index); Type = "VOCAB_WORD"; Title = (Default-HintTitle "VOCAB_WORD"); Content = $theme.Words; Order = 2 },
+            @{ Id = ("hint-{0}-{1:d2}-3" -f $abbr, $index); Type = "VOCAB_PHRASE"; Title = (Default-HintTitle "VOCAB_PHRASE"); Content = $theme.Expressions; Order = 3 },
+            @{ Id = ("hint-{0}-{1:d2}-4" -f $abbr, $index); Type = $theme.ExtraType; Title = (Default-HintTitle $theme.ExtraType); Content = $theme.Extra; Order = 4 }
         )
 
         foreach ($hint in $hints) {
-            $row = [string]::Format(
+            $hintRows.Add([string]::Format(
                 "    ('{0}', '{1}', '{2}', '{3}', {4}, TRUE)",
                 (Escape-Sql $hint.Id),
                 (Escape-Sql $promptId),
                 (Escape-Sql $hint.Type),
-                (Escape-Sql $hint.Content),
+                (Escape-Sql $hint.Title),
                 $hint.Order
-            )
-            $rows.Add($row)
+            ))
+
+            $items = Split-HintItems -HintType $hint.Type -Content $hint.Content
+            $itemType = Default-ItemType $hint.Type
+            $itemOrder = 1
+            foreach ($item in $items) {
+                $itemRows.Add([string]::Format(
+                    "    ('{0}', '{1}', '{2}', '{3}', {4}, TRUE)",
+                    (Escape-Sql ("{0}-item-{1}" -f $hint.Id, $itemOrder)),
+                    (Escape-Sql $hint.Id),
+                    (Escape-Sql $itemType),
+                    (Escape-Sql $item),
+                    $itemOrder
+                ))
+                $itemOrder += 1
+            }
         }
     }
 
@@ -392,14 +462,31 @@ foreach ($category in $categories) {
     $lines.Add("    id,")
     $lines.Add("    prompt_id,")
     $lines.Add("    hint_type,")
+    $lines.Add("    title,")
+    $lines.Add("    display_order,")
+    $lines.Add("    is_active")
+    $lines.Add(")")
+    $lines.Add("VALUES")
+    $lines.Add(($hintRows -join ",`r`n"))
+    $lines.Add("ON DUPLICATE KEY UPDATE")
+    $lines.Add("    hint_type = VALUES(hint_type),")
+    $lines.Add("    title = VALUES(title),")
+    $lines.Add("    display_order = VALUES(display_order),")
+    $lines.Add("    is_active = VALUES(is_active);")
+    $lines.Add("")
+
+    $lines.Add("INSERT INTO prompt_hint_items (")
+    $lines.Add("    id,")
+    $lines.Add("    hint_id,")
+    $lines.Add("    item_type,")
     $lines.Add("    content,")
     $lines.Add("    display_order,")
     $lines.Add("    is_active")
     $lines.Add(")")
     $lines.Add("VALUES")
-    $lines.Add(($rows -join ",`r`n"))
+    $lines.Add(($itemRows -join ",`r`n"))
     $lines.Add("ON DUPLICATE KEY UPDATE")
-    $lines.Add("    hint_type = VALUES(hint_type),")
+    $lines.Add("    item_type = VALUES(item_type),")
     $lines.Add("    content = VALUES(content),")
     $lines.Add("    display_order = VALUES(display_order),")
     $lines.Add("    is_active = VALUES(is_active);")

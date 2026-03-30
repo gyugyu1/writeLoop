@@ -1651,52 +1651,21 @@ public class CoachService {
 
     private List<CoachExpressionDto> buildExpressionsFromHint(PromptHintDto hint) {
         List<String> phrases = new ArrayList<>();
-        String content = hint.content() == null ? "" : hint.content().trim();
         String hintType = hint.hintType() == null ? "COACH" : hint.hintType().trim().toUpperCase(Locale.ROOT);
-        List<CoachExpressionDto> itemExpressions = buildExpressionsFromHintItems(hint, hintType, content);
+        List<CoachExpressionDto> itemExpressions = buildExpressionsFromHintItems(hint, hintType);
         if (!itemExpressions.isEmpty()) {
             return itemExpressions;
         }
 
-        Matcher quotedMatcher = QUOTED_PHRASE_PATTERN.matcher(content);
-        while (quotedMatcher.find()) {
-            String phrase = normalizeText(quotedMatcher.group(1));
-            if (!phrase.isBlank()) {
-                phrases.add(phrase);
-            }
-        }
-
-        if (phrases.isEmpty() && (hintType.contains("VOCAB") || hintType.contains("LINKER"))) {
-            String hintText = content.replaceFirst("^[^:]*:\\s*", "");
-            for (String part : hintText.split(",")) {
-                String phrase = normalizeText(part);
-                if (!phrase.isBlank()) {
-                    phrases.add(phrase);
-                }
-            }
-        }
-
         List<CoachExpressionDto> expressions = new ArrayList<>();
-        for (String phrase : phrases) {
-            if (phrase.length() < 3) {
-                continue;
-            }
-            expressions.add(new CoachExpressionDto(
-                    phrase,
-                    buildMeaningForHintType(hintType),
-                    buildUsageTipForHintType(hintType, content),
-                    buildExampleForPhrase(phrase),
-                    hintType
-            ));
-        }
 
         if (expressions.isEmpty() && (hintType.contains("STARTER") || hintType.contains("STRUCTURE") || hintType.contains("DETAIL"))) {
-            String generic = genericExpressionForHintType(hintType, content);
+            String generic = genericExpressionForHintType(hintType, hint);
             if (!generic.isBlank()) {
                 expressions.add(new CoachExpressionDto(
                         generic,
                         buildMeaningForHintType(hintType),
-                        buildUsageTipForHintType(hintType, content),
+                        buildUsageTipForHintType(hintType),
                         buildExampleForPhrase(generic),
                         hintType
                 ));
@@ -1706,11 +1675,7 @@ public class CoachService {
         return expressions;
     }
 
-    private List<CoachExpressionDto> buildExpressionsFromHintItems(
-            PromptHintDto hint,
-            String hintType,
-            String content
-    ) {
+    private List<CoachExpressionDto> buildExpressionsFromHintItems(PromptHintDto hint, String hintType) {
         if (hint.items() == null || hint.items().isEmpty()) {
             return List.of();
         }
@@ -1729,7 +1694,7 @@ public class CoachService {
             expressions.add(new CoachExpressionDto(
                     phrase,
                     firstNonBlank(item.meaningKo(), buildMeaningForHintType(hintType)),
-                    firstNonBlank(item.usageTipKo(), buildUsageTipForHintType(hintType, content)),
+                    firstNonBlank(item.usageTipKo(), buildUsageTipForHintType(hintType)),
                     firstNonBlank(item.exampleEn(), buildExampleForPhrase(phrase)),
                     hintType
             ));
@@ -2037,7 +2002,8 @@ public class CoachService {
     private String buildMeaningForHintType(String hintType) {
         return switch (hintType) {
             case "STARTER" -> "답변을 자연스럽게 시작할 때 쓰기 좋아요.";
-            case "VOCAB" -> "이 주제에서 활용하기 좋은 표현이에요.";
+            case "VOCAB_WORD" -> "이 주제에서 바로 가져다 쓸 수 있는 단어예요.";
+            case "VOCAB_PHRASE" -> "이 주제에서 바로 가져다 쓸 수 있는 표현이에요.";
             case "STRUCTURE" -> "답변의 틀을 잡아주는 표현이에요.";
             case "DETAIL" -> "내용을 더 구체적으로 만들 때 좋아요.";
             case "LINKER" -> "문장을 매끄럽게 이어주는 표현이에요.";
@@ -2046,21 +2012,24 @@ public class CoachService {
         };
     }
 
-    private String buildUsageTipForHintType(String hintType, String content) {
+    private String buildUsageTipForHintType(String hintType) {
         return switch (hintType) {
             case "STARTER" -> "첫 문장을 시작할 때 바로 써 보세요.";
-            case "VOCAB" -> "핵심 단어를 자연스럽게 넣고 싶을 때 좋아요.";
+            case "VOCAB_WORD" -> "문장 안에 자연스럽게 끼워 넣어 보세요.";
+            case "VOCAB_PHRASE" -> "표현 덩어리째로 가져와 문장에 붙여 보세요.";
             case "STRUCTURE" -> "이유와 예시를 붙이는 흐름에 잘 맞아요.";
             case "DETAIL" -> "짧은 답변에 구체성을 더하고 싶을 때 쓰세요.";
             case "LINKER" -> "이유, 예시, 추가 설명을 연결할 때 좋아요.";
             case "BALANCE" -> "장단점을 함께 말해야 할 때 잘 맞아요.";
-            default -> content;
+            default -> "다음 답변에서 다시 써 보기 좋은 표현이에요.";
         };
     }
 
-    private String genericExpressionForHintType(String hintType, String content) {
+    private String genericExpressionForHintType(String hintType, PromptHintDto hint) {
         return switch (hintType) {
-            case "STARTER" -> extractEnglishFragment(content);
+            case "STARTER" -> hint.items() == null || hint.items().isEmpty()
+                    ? ""
+                    : normalizeText(hint.items().getFirst().content());
             case "STRUCTURE" -> "One reason is that ...";
             case "DETAIL" -> "For example, ...";
             case "BALANCE" -> "On the other hand, ...";

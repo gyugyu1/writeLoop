@@ -9,4 +9,8 @@ public interface PromptHintRepository extends JpaRepository<PromptHintEntity, St
     List<PromptHintEntity> findAllByPromptIdAndActiveTrueOrderByDisplayOrderAsc(String promptId);
 
     List<PromptHintEntity> findAllByPromptIdOrderByDisplayOrderAsc(String promptId);
+
+    List<PromptHintEntity> findAllByActiveTrueOrderByPromptIdAscDisplayOrderAscIdAsc();
+
+    List<PromptHintEntity> findAllByOrderByPromptIdAscDisplayOrderAscIdAsc();
 }

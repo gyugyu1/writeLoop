@@ -22,12 +22,25 @@ export interface PromptCoachProfile {
   notes: string;
 }
 
+export interface PromptHintItem {
+  id: string;
+  hintId: string;
+  itemType: string;
+  content: string;
+  meaningKo?: string | null;
+  usageTipKo?: string | null;
+  exampleEn?: string | null;
+  expressionFamily?: string | null;
+  displayOrder: number;
+}
+
 export interface PromptHint {
   id: string;
   promptId: string;
   hintType: string;
-  content: string;
+  title?: string | null;
   displayOrder: number;
+  items?: PromptHintItem[];
 }
 
 export interface CoachExpression {
@@ -230,9 +243,10 @@ export interface AdminPromptHint {
   id: string;
   promptId: string;
   hintType: string;
-  content: string;
+  title?: string | null;
   displayOrder: number;
   active: boolean;
+  items?: PromptHintItem[];
 }
 
 export interface AdminPrompt {
@@ -261,7 +275,8 @@ export interface AdminPromptRequest {
 
 export interface AdminPromptHintRequest {
   hintType: string;
-  content: string;
+  title?: string | null;
+  items?: string[];
   displayOrder: number;
   active: boolean;
 }

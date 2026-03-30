@@ -45,13 +45,13 @@ class PromptOpenAiContextFormatterTest {
     void formatPromptHints_renders_type_and_content_per_line() {
         List<PromptHintDto> hints = List.of(
                 new PromptHintDto("hint-1", "prompt-b-5", "STARTER", "I want to improve [skill] this year.", 1),
-                new PromptHintDto("hint-2", "prompt-b-5", "VOCAB", "practice regularly", 2)
+                new PromptHintDto("hint-2", "prompt-b-5", "VOCAB_PHRASE", "practice regularly", 2)
         );
 
         String text = PromptOpenAiContextFormatter.formatPromptHints(hints);
 
         assertThat(text).contains("- [STARTER] I want to improve [skill] this year.");
-        assertThat(text).contains("- [VOCAB] practice regularly");
+        assertThat(text).contains("- [VOCAB_PHRASE] practice regularly");
     }
 
     @Test
@@ -60,7 +60,8 @@ class PromptOpenAiContextFormatterTest {
                 new PromptHintDto(
                         "hint-1",
                         "prompt-b-5",
-                        "VOCAB",
+                        "VOCAB_WORD",
+                        "활용 단어",
                         "legacy bundle",
                         1,
                         List.of(
@@ -72,8 +73,30 @@ class PromptOpenAiContextFormatterTest {
 
         String text = PromptOpenAiContextFormatter.formatPromptHints(hints);
 
-        assertThat(text).contains("- [VOCAB] deadline | pressure");
+        assertThat(text).contains("- [VOCAB_WORD] deadline | pressure");
         assertThat(text).doesNotContain("legacy bundle");
+    }
+
+    @Test
+    void formatPromptHints_supports_item_only_hints_without_legacy_content() {
+        List<PromptHintDto> hints = List.of(
+                new PromptHintDto(
+                        "hint-1",
+                        "prompt-b-5",
+                        "VOCAB_WORD",
+                        "활용 단어",
+                        null,
+                        1,
+                        List.of(
+                                new PromptHintItemDto("item-1", "hint-1", "WORD", "deadline", null, null, null, null, 1),
+                                new PromptHintItemDto("item-2", "hint-1", "WORD", "pressure", null, null, null, null, 2)
+                        )
+                )
+        );
+
+        String text = PromptOpenAiContextFormatter.formatPromptHints(hints);
+
+        assertThat(text).contains("- [VOCAB_WORD] deadline | pressure");
     }
 
     @Test

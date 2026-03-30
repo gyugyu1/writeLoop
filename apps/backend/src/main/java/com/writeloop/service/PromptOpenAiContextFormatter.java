@@ -127,7 +127,7 @@ final class PromptOpenAiContextFormatter {
                 return text;
             }
         }
-        return hint.content();
+        return normalize(hint.title());
     }
 
     private static String normalize(String value) {

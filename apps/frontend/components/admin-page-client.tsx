@@ -24,6 +24,14 @@ import authStyles from "./auth-page.module.css";
 import styles from "./admin-page.module.css";
 
 const difficultyOptions: PromptDifficulty[] = ["A", "B", "C"];
+const hintTypeOptions = [
+  "STARTER",
+  "VOCAB_WORD",
+  "VOCAB_PHRASE",
+  "STRUCTURE",
+  "DETAIL",
+  "LINKER"
+] as const;
 
 const emptyCoachProfile: PromptCoachProfile = {
   primaryCategory: "GENERAL",
@@ -47,7 +55,8 @@ const emptyPromptForm: AdminPromptRequest = {
 
 const emptyHintForm: AdminPromptHintRequest = {
   hintType: "STARTER",
-  content: "",
+  title: "",
+  items: [],
   displayOrder: 0,
   active: true
 };
@@ -71,10 +80,22 @@ function toPromptForm(prompt: AdminPrompt): AdminPromptRequest {
 function toHintForm(hint: AdminPromptHint): AdminPromptHintRequest {
   return {
     hintType: hint.hintType,
-    content: hint.content,
+    title: hint.title ?? "",
+    items: (hint.items ?? []).map((item) => item.content),
     displayOrder: hint.displayOrder,
     active: hint.active
   };
+}
+
+function parseHintItemsInput(value: string) {
+  return value
+    .split(/\r?\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function formatHintItemsInput(values: string[] | undefined) {
+  return (values ?? []).join("\n");
 }
 
 function parseListInput(value: string) {
@@ -829,13 +850,32 @@ export function AdminPageClient() {
                               <div className={styles.hintFormGrid}>
                                 <label className={styles.field}>
                                   <span>타입</span>
-                                  <input
+                                  <select
                                     className={styles.input}
                                     value={hintForm.hintType}
                                     onChange={(event) =>
                                       updateHintForm(hint.id, (current) => ({
                                         ...current,
                                         hintType: event.target.value
+                                      }))
+                                    }
+                                  >
+                                    {hintTypeOptions.map((hintType) => (
+                                      <option key={hintType} value={hintType}>
+                                        {hintType}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <label className={styles.field}>
+                                  <span>Title</span>
+                                  <input
+                                    className={styles.input}
+                                    value={hintForm.title ?? ""}
+                                    onChange={(event) =>
+                                      updateHintForm(hint.id, (current) => ({
+                                        ...current,
+                                        title: event.target.value
                                       }))
                                     }
                                   />
@@ -858,12 +898,12 @@ export function AdminPageClient() {
                                   <span>내용</span>
                                   <textarea
                                     className={styles.textarea}
-                                    rows={2}
-                                    value={hintForm.content}
+                                    rows={4}
+                                    value={formatHintItemsInput(hintForm.items)}
                                     onChange={(event) =>
                                       updateHintForm(hint.id, (current) => ({
                                         ...current,
-                                        content: event.target.value
+                                        items: parseHintItemsInput(event.target.value)
                                       }))
                                     }
                                   />
@@ -895,13 +935,32 @@ export function AdminPageClient() {
                         <div className={styles.hintFormGrid}>
                           <label className={styles.field}>
                             <span>타입</span>
-                            <input
+                            <select
                               className={styles.input}
                               value={newHintForms[prompt.id]?.hintType ?? emptyHintForm.hintType}
                               onChange={(event) =>
                                 updateNewHintForm(prompt.id, (current) => ({
                                   ...current,
                                   hintType: event.target.value
+                                }))
+                              }
+                            >
+                              {hintTypeOptions.map((hintType) => (
+                                <option key={hintType} value={hintType}>
+                                  {hintType}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <label className={styles.field}>
+                            <span>Title</span>
+                            <input
+                              className={styles.input}
+                              value={newHintForms[prompt.id]?.title ?? ""}
+                              onChange={(event) =>
+                                updateNewHintForm(prompt.id, (current) => ({
+                                  ...current,
+                                  title: event.target.value
                                 }))
                               }
                             />
@@ -926,12 +985,12 @@ export function AdminPageClient() {
                             <span>내용</span>
                             <textarea
                               className={styles.textarea}
-                              rows={2}
-                              value={newHintForms[prompt.id]?.content ?? emptyHintForm.content}
+                              rows={4}
+                              value={formatHintItemsInput(newHintForms[prompt.id]?.items)}
                               onChange={(event) =>
                                 updateNewHintForm(prompt.id, (current) => ({
                                   ...current,
-                                  content: event.target.value
+                                  items: parseHintItemsInput(event.target.value)
                                 }))
                               }
                             />

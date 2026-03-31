@@ -45,6 +45,9 @@ type UsedExpressionHistoryItem = {
   matchedText: string | null;
 };
 
+const EXPRESSION_HISTORY_PREVIEW_COUNT = 8;
+const ATTEMPT_USED_EXPRESSION_PREVIEW_COUNT = 4;
+
 function formatHistoryDateKey(dateTime: string) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Seoul",
@@ -282,6 +285,8 @@ export function MyPageClient() {
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [showAllExpressionHistory, setShowAllExpressionHistory] = useState(false);
+  const [expandedAttemptExpressions, setExpandedAttemptExpressions] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     function syncTabFromUrl() {
@@ -441,6 +446,19 @@ export function MyPageClient() {
     [historyByDate]
   );
 
+  const visibleExpressionHistory = useMemo(
+    () =>
+      showAllExpressionHistory
+        ? usedExpressionHistory
+        : usedExpressionHistory.slice(0, EXPRESSION_HISTORY_PREVIEW_COUNT),
+    [showAllExpressionHistory, usedExpressionHistory]
+  );
+
+  const hiddenExpressionHistoryCount = Math.max(
+    0,
+    usedExpressionHistory.length - visibleExpressionHistory.length
+  );
+
   useEffect(() => {
     if (historyDates.length === 0) {
       setOpenDates({});
@@ -470,6 +488,12 @@ export function MyPageClient() {
   }, [historyDates]);
 
   useEffect(() => {
+    if (usedExpressionHistory.length <= EXPRESSION_HISTORY_PREVIEW_COUNT && showAllExpressionHistory) {
+      setShowAllExpressionHistory(false);
+    }
+  }, [showAllExpressionHistory, usedExpressionHistory.length]);
+
+  useEffect(() => {
     if (history.length === 0) {
       setOpenSessions({});
       return;
@@ -494,6 +518,19 @@ export function MyPageClient() {
       }
 
       return changed ? next : current;
+    });
+  }, [history]);
+
+  useEffect(() => {
+    const validAttemptIds = new Set<string>(
+      history.flatMap((session) => session.attempts.map((attempt) => String(attempt.id)))
+    );
+
+    setExpandedAttemptExpressions((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([attemptId]) => validAttemptIds.has(attemptId))
+      );
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
     });
   }, [history]);
 
@@ -552,6 +589,29 @@ export function MyPageClient() {
       ...current,
       [sessionId]: !current[sessionId]
     }));
+  }
+
+  function toggleAttemptExpressions(attemptId: string) {
+    setExpandedAttemptExpressions((current) => ({
+      ...current,
+      [attemptId]: !current[attemptId]
+    }));
+  }
+
+  function shouldCollapseAttemptExpressions(attempt: HistorySession["attempts"][number]) {
+    return attempt.usedExpressions.length > ATTEMPT_USED_EXPRESSION_PREVIEW_COUNT;
+  }
+
+  function getVisibleAttemptExpressions(attempt: HistorySession["attempts"][number]) {
+    const attemptKey = String(attempt.id);
+    if (!shouldCollapseAttemptExpressions(attempt) || expandedAttemptExpressions[attemptKey]) {
+      return attempt.usedExpressions;
+    }
+    return attempt.usedExpressions.slice(0, ATTEMPT_USED_EXPRESSION_PREVIEW_COUNT);
+  }
+
+  function getHiddenAttemptExpressionCount(attempt: HistorySession["attempts"][number]) {
+    return Math.max(0, attempt.usedExpressions.length - getVisibleAttemptExpressions(attempt).length);
   }
 
   function goHome() {
@@ -872,8 +932,9 @@ export function MyPageClient() {
               <p>AI 코치가 추천한 표현을 실제 답변에 쓰면, 여기서 내가 써본 표현이 차곡차곡 쌓여요.</p>
             </div>
           ) : (
-            <div className={styles.expressionHistoryGrid}>
-              {usedExpressionHistory.map((expression) => (
+            <>
+              <div className={styles.expressionHistoryGrid}>
+              {visibleExpressionHistory.map((expression) => (
                 <article key={expression.expression} className={styles.expressionHistoryCard}>
                   <div className={styles.expressionHistoryCardTop}>
                     <strong>{expression.expression}</strong>
@@ -886,6 +947,25 @@ export function MyPageClient() {
                 </article>
               ))}
             </div>
+              {usedExpressionHistory.length > EXPRESSION_HISTORY_PREVIEW_COUNT ? (
+              <div className={styles.historyPreviewActions}>
+                {!showAllExpressionHistory ? (
+                  <p className={styles.historyPreviewMeta}>
+                    나머지 {hiddenExpressionHistoryCount}개는 접혀 있어요.
+                  </p>
+                ) : null}
+                <button
+                  type="button"
+                  className={styles.historyInlineToggle}
+                  onClick={() => setShowAllExpressionHistory((current) => !current)}
+                >
+                    {showAllExpressionHistory
+                      ? "표현 접어두기"
+                      : `표현 ${hiddenExpressionHistoryCount}개 더 보기`}
+                </button>
+              </div>
+              ) : null}
+            </>
           )}
         </div>
 
@@ -1099,7 +1179,7 @@ export function MyPageClient() {
                                       이번에 실제로 써본 표현
                                     </span>
                                     <div className={styles.historyUsedExpressionList}>
-                                      {attempt.usedExpressions.map((expression) => (
+                                      {getVisibleAttemptExpressions(attempt).map((expression) => (
                                         <span
                                           key={`${attempt.id}-${expression.expression}`}
                                           className={styles.historyUsedExpressionChip}
@@ -1108,6 +1188,17 @@ export function MyPageClient() {
                                         </span>
                                       ))}
                                     </div>
+                                    {shouldCollapseAttemptExpressions(attempt) ? (
+                                      <button
+                                        type="button"
+                                        className={styles.historyInlineToggle}
+                                        onClick={() => toggleAttemptExpressions(String(attempt.id))}
+                                      >
+                                        {expandedAttemptExpressions[String(attempt.id)]
+                                          ? "표현 접어두기"
+                                          : `표현 ${getHiddenAttemptExpressionCount(attempt)}개 더 보기`}
+                                      </button>
+                                    ) : null}
                                   </div>
                                 ) : null}
                                 <details className={styles.historyFeedbackDetails}>

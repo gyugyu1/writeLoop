@@ -38,6 +38,28 @@ BEGIN
     ALTER TABLE prompt_topic_details
         CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'prompts'
+          AND COLUMN_NAME = 'topic_detail_id'
+    ) THEN
+        ALTER TABLE prompts
+            ADD COLUMN topic_detail_id BIGINT NULL AFTER id;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'prompts'
+          AND INDEX_NAME = 'idx_prompts_topic_detail_id'
+    ) THEN
+        ALTER TABLE prompts
+            ADD INDEX idx_prompts_topic_detail_id (topic_detail_id);
+    END IF;
+
     DROP TEMPORARY TABLE IF EXISTS tmp_prompt_topic_detail_dedup;
     CREATE TEMPORARY TABLE tmp_prompt_topic_detail_dedup (
         keep_id BIGINT NOT NULL,
@@ -81,31 +103,29 @@ BEGIN
             ADD UNIQUE KEY uk_prompt_topic_details_category_name (category_id, name);
     END IF;
 
-    IF NOT EXISTS (
+    IF EXISTS (
         SELECT 1
-        FROM information_schema.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = 'prompts'
-          AND COLUMN_NAME = 'topic_detail_id'
+        FROM prompts
+        WHERE difficulty IN ('A1', 'A2')
     ) THEN
-        ALTER TABLE prompts
-            ADD COLUMN topic_detail_id BIGINT NULL AFTER id;
+        UPDATE prompts SET difficulty = 'A' WHERE difficulty IN ('A1', 'A2');
     END IF;
 
-    IF NOT EXISTS (
+    IF EXISTS (
         SELECT 1
-        FROM information_schema.STATISTICS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = 'prompts'
-          AND INDEX_NAME = 'idx_prompts_topic_detail_id'
+        FROM prompts
+        WHERE difficulty IN ('B1', 'B2')
     ) THEN
-        ALTER TABLE prompts
-            ADD INDEX idx_prompts_topic_detail_id (topic_detail_id);
+        UPDATE prompts SET difficulty = 'B' WHERE difficulty IN ('B1', 'B2');
     END IF;
 
-    UPDATE prompts SET difficulty = 'A' WHERE difficulty IN ('A1', 'A2');
-    UPDATE prompts SET difficulty = 'B' WHERE difficulty IN ('B1', 'B2');
-    UPDATE prompts SET difficulty = 'C' WHERE difficulty IN ('C1', 'C2');
+    IF EXISTS (
+        SELECT 1
+        FROM prompts
+        WHERE difficulty IN ('C1', 'C2')
+    ) THEN
+        UPDATE prompts SET difficulty = 'C' WHERE difficulty IN ('C1', 'C2');
+    END IF;
 
     IF EXISTS (SELECT 1 FROM prompts WHERE id = 'prompt-1') THEN
         UPDATE answer_sessions SET prompt_id = 'prompt-a-4' WHERE prompt_id = 'prompt-1';
@@ -278,18 +298,6 @@ BEGIN
           AND LOCATE(' - ', prompt.topic) > 0;
     END IF;
 
-    IF NOT EXISTS (
-        SELECT 1
-        FROM information_schema.TABLE_CONSTRAINTS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = 'prompts'
-          AND CONSTRAINT_NAME = 'fk_prompts_topic_detail'
-    ) THEN
-        ALTER TABLE prompts
-            ADD CONSTRAINT fk_prompts_topic_detail
-                FOREIGN KEY (topic_detail_id) REFERENCES prompt_topic_details (id);
-    END IF;
-
     IF EXISTS (
         SELECT 1
         FROM information_schema.COLUMNS
@@ -325,8 +333,31 @@ BEGIN
         FROM prompts
         WHERE topic_detail_id IS NULL OR topic_detail_id = 0
     ) THEN
+        IF EXISTS (
+            SELECT 1
+            FROM information_schema.TABLE_CONSTRAINTS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'prompts'
+              AND CONSTRAINT_NAME = 'fk_prompts_topic_detail'
+        ) THEN
+            ALTER TABLE prompts
+                DROP FOREIGN KEY fk_prompts_topic_detail;
+        END IF;
+
         ALTER TABLE prompts
             MODIFY COLUMN topic_detail_id BIGINT NOT NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.TABLE_CONSTRAINTS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'prompts'
+          AND CONSTRAINT_NAME = 'fk_prompts_topic_detail'
+    ) THEN
+        ALTER TABLE prompts
+            ADD CONSTRAINT fk_prompts_topic_detail
+                FOREIGN KEY (topic_detail_id) REFERENCES prompt_topic_details (id);
     END IF;
 
     DROP TEMPORARY TABLE IF EXISTS tmp_prompt_topics;

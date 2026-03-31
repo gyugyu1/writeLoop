@@ -1,5 +1,6 @@
 type RefinementExpressionLike = {
   expression: string;
+  displayable?: boolean | null;
 };
 
 function normalizeRefinementText(value?: string | null) {
@@ -28,6 +29,10 @@ export function filterSuggestedRefinementExpressions<T extends RefinementExpress
   const seen = new Set<string>();
 
   return expressions.filter((expression) => {
+    if (expression.displayable === false) {
+      return false;
+    }
+
     const normalizedExpression = normalizeRefinementText(expression.expression);
     if (!normalizedExpression || seen.has(normalizedExpression)) {
       return false;

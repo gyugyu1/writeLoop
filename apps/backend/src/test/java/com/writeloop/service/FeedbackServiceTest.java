@@ -9,6 +9,7 @@ import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptDto;
+import com.writeloop.dto.RefinementExampleSource;
 import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionRepository;
@@ -68,6 +69,11 @@ class FeedbackServiceTest {
         when(promptService.findHintsByPromptId(anyString())).thenReturn(List.of());
         lenient().when(openAiFeedbackClient.buildInlineFeedbackFromCorrectedAnswer(anyString(), anyString()))
                 .thenAnswer(invocation -> diffHelper.buildInlineFeedbackFromCorrectedAnswer(
+                        invocation.getArgument(0),
+                        invocation.getArgument(1)
+                ));
+        lenient().when(openAiFeedbackClient.buildPreciseInlineFeedback(anyString(), anyString()))
+                .thenAnswer(invocation -> diffHelper.buildPreciseInlineFeedback(
                         invocation.getArgument(0),
                         invocation.getArgument(1)
                 ));
@@ -542,13 +548,7 @@ class FeedbackServiceTest {
                 null
         );
 
-        assertThat(response.refinementExpressions())
-                .extracting(RefinementExpressionDto::expression)
-                .doesNotContain(
-                        "when [thing] [verb]",
-                        "because it's the [noun] when [thing] [verb]",
-                        "everything feels [adj]"
-                );
+        assertThat(response.refinementExpressions()).isEmpty();
     }
 
     @Test
@@ -613,7 +613,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void review_filters_simple_because_frame_but_keeps_more_specific_because_structure() {
+    void review_filters_because_frames_when_they_are_already_used_or_not_reusable() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-1",
                 "Season",
@@ -662,12 +662,12 @@ class FeedbackServiceTest {
 
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression)
-                .contains("because it's the [noun] when [thing] [verb]")
-                .doesNotContain("because [reason]");
+                .doesNotContain("because [reason]")
+                .contains("because it's the [noun] when [thing] [verb]");
     }
 
     @Test
-    void review_falls_back_to_prompt_hints_when_refinement_suggestions_become_empty() {
+    void review_prefers_dropping_invalid_refinements_over_padding_with_prompt_hints() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-1",
                 "Season",
@@ -724,13 +724,11 @@ class FeedbackServiceTest {
                 null
         );
 
-        assertThat(response.refinementExpressions())
-                .extracting(RefinementExpressionDto::expression)
-                .contains("I especially like [season] because ...", "pleasant");
+        assertThat(response.refinementExpressions()).isEmpty();
     }
 
     @Test
-    void review_does_not_top_up_with_prompt_hints_when_viable_refinements_remain() {
+    void review_keeps_usable_openai_refinements_without_padding_with_prompt_hints() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-1",
                 "Season",
@@ -786,18 +784,10 @@ class FeedbackServiceTest {
                 null
         );
 
-        assertThat(response.refinementExpressions()).hasSize(2);
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression)
-                .contains(
-                        "One reason is that [reason].",
-                        "What I like most about [thing] is that [detail]."
-                )
-                .doesNotContain(
-                        "because [reason]",
-                        "I especially like [season] because ...",
-                        "pleasant"
-                );
+                .contains("One reason is that [reason].", "What I like most about [thing] is that [detail].")
+                .doesNotContain("because [reason]");
     }
 
     @Test
@@ -846,6 +836,491 @@ class FeedbackServiceTest {
                         "It helps me [verb] and [verb].",
                         "This makes it easier to [verb]."
                 );
+    }
+
+    @Test
+    void review_tops_up_refinement_expressions_from_model_answer_up_to_four_items() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-5",
+                "Goal Plan - Skill Growth",
+                "B",
+                "What is one skill you want to improve this year, and how will you work on it?",
+                "올해 키우고 싶은 기술 한 가지와 어떻게 연습할지 설명해 주세요.",
+                "Explain both the goal and the action plan."
+        );
+        String answer = "I want to improve my English this year.";
+        String modelAnswer = "I want to improve my English so that I can speak more confidently. "
+                + "I plan to do this by studying for thirty minutes every day. "
+                + "It helps me stay motivated and track my progress. "
+                + "This makes it easier to keep a steady routine.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                84,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                answer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "I want to [verb] so that I can [result].",
+                                "목표와 기대 결과를 함께 말할 때 쓸 수 있어요.",
+                                "I want to improve my English so that I can speak more confidently."
+                        ),
+                        new RefinementExpressionDto(
+                                "I plan to [verb] by [verb]ing [method].",
+                                "실천 계획을 설명할 때 쓸 수 있어요.",
+                                "I plan to do this by studying for thirty minutes every day."
+                        )
+                ),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions()).hasSize(4);
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .contains(
+                        "I want to [verb] so that I can [result].",
+                        "I plan to [verb] by [verb]ing [method].",
+                        "It helps me [verb] and [verb].",
+                        "This makes it easier to [verb]."
+                );
+    }
+
+    @Test
+    void review_keeps_openai_refinement_when_openai_example_is_usable_even_if_not_in_model_answer() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-1",
+                "Daily Life",
+                "EASY",
+                "What do you usually do after lunch?",
+                "What do you usually do after lunch?",
+                "Use one clear daily-life example."
+        );
+        String answer = "I usually take a short break.";
+        String correctedAnswer = "I usually take a short break.";
+        String modelAnswer = "I usually take a short walk before dinner.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                86,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "after lunch",
+                                "Use this to add a time phrase naturally.",
+                                "I usually rest after lunch.",
+                                "점심 식사 후에"
+                        )
+                ),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(
+                        RefinementExpressionDto::expression,
+                        RefinementExpressionDto::example,
+                        RefinementExpressionDto::exampleSource
+                )
+                .contains(tuple("after lunch", "I usually rest after lunch.", RefinementExampleSource.OPENAI));
+    }
+
+    @Test
+    void review_drops_refinement_items_when_example_is_only_the_expression_itself() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-2",
+                "Daily Life",
+                "EASY",
+                "What do you usually do after lunch?",
+                "What do you usually do after lunch?",
+                "Use one clear daily-life example."
+        );
+        String answer = "I usually take a short break.";
+        String correctedAnswer = "I usually take a short break.";
+        String modelAnswer = "I usually take a short walk before dinner.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                86,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "after lunch",
+                                "Use this to add a time phrase naturally.",
+                                "after lunch",
+                                "점심 식사 후에"
+                        )
+                ),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .doesNotContain("after lunch");
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::example)
+                .doesNotContain("after lunch");
+    }
+
+    @Test
+    void review_generates_lexical_gloss_for_single_word_refinement_when_hints_are_missing() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "Daily Life",
+                "EASY",
+                "What do you usually do after lunch?",
+                "What do you usually do after lunch?",
+                "Use one clear daily-life example."
+        );
+        String answer = "I take a short break.";
+        String correctedAnswer = "I take a short break.";
+        String modelAnswer = "I usually rest after lunch because it helps me recharge.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                86,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "rest",
+                                "실제 답변에서 휴식 시간이나 이유를 함께 붙여 보세요.",
+                                "I usually rest after lunch because it helps me recharge.",
+                                null
+                        )
+                ),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo, RefinementExpressionDto::example)
+                .contains(tuple("rest", "휴식하다", "I usually rest after lunch because it helps me recharge."));
+    }
+
+    @Test
+    void review_generates_lexical_gloss_for_phrase_refinement_when_hints_are_missing() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-4",
+                "Daily Life",
+                "EASY",
+                "What do you usually do after lunch?",
+                "What do you usually do after lunch?",
+                "Use one clear daily-life example."
+        );
+        String answer = "I take a short break.";
+        String correctedAnswer = "I take a short break.";
+        String modelAnswer = "I usually rest after lunch because it helps me recharge.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                86,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "after lunch",
+                                "시간 표현 뒤에 어떤 활동을 하는지 이어서 말해 보세요.",
+                                "I usually rest after lunch because it helps me recharge.",
+                                null
+                        )
+                ),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo, RefinementExpressionDto::example)
+                .contains(tuple("after lunch", "점심 식사 후에", "I usually rest after lunch because it helps me recharge."));
+    }
+
+    @Test
+    void review_prefers_model_answer_snippet_over_openai_example_when_both_are_usable() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-4b",
+                "Daily Life",
+                "EASY",
+                "What do you usually do after lunch?",
+                "What do you usually do after lunch?",
+                "Use one clear daily-life example."
+        );
+        String answer = "I take a short break.";
+        String correctedAnswer = "I take a short break.";
+        String modelAnswer = "I usually rest after lunch because it helps me recharge.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                86,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "after lunch",
+                                "?쒓컙 ?쒗쁽 ?ㅼ뿉 ?대뼡 ?쒕룞???섎뒗吏 ?댁뼱??留먰빐 蹂댁꽭??",
+                                "I often read a book after lunch.",
+                                null
+                        )
+                ),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(
+                        RefinementExpressionDto::expression,
+                        RefinementExpressionDto::example,
+                        RefinementExpressionDto::exampleSource
+                )
+                .contains(tuple(
+                        "after lunch",
+                        "I usually rest after lunch because it helps me recharge.",
+                        RefinementExampleSource.EXTRACTED
+                ));
+    }
+
+    @Test
+    void review_generates_pattern_meaning_for_frame_refinement() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-2",
+                "Future Plans",
+                "B",
+                "What habit do you want to build this year?",
+                "What habit do you want to build this year?",
+                "Describe a clear plan."
+        );
+        String answer = "Building a healthier routine is my goal this year.";
+        String correctedAnswer = "Building a healthier routine is my goal this year.";
+        String modelAnswer = "I want to build a healthy routine this year.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                88,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "I want to [verb].",
+                                "목표를 말할 때 뒤에 구체적인 행동을 이어 보세요.",
+                                "I want to build a healthy routine this year.",
+                                null
+                        )
+                ),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo, RefinementExpressionDto::example)
+                .contains(tuple("I want to [verb].", "[동사]하고 싶다고 말하는 틀", "I want to build a healthy routine this year."));
+    }
+
+    @Test
+    void review_keeps_single_word_openai_refinement_when_openai_example_is_usable_even_if_not_in_model_answer() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-5",
+                "Daily Life",
+                "EASY",
+                "What do you usually do after lunch?",
+                "What do you usually do after lunch?",
+                "Use one clear daily-life example."
+        );
+        String answer = "I take a short break.";
+        String correctedAnswer = "I take a short break.";
+        String modelAnswer = "I usually take a short walk before dinner.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                86,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "rest",
+                                "실제 답변에서 휴식 시간이나 이유를 함께 붙여 보세요.",
+                                "I usually rest after lunch.",
+                                "휴식하다"
+                        )
+                ),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .filteredOn(expression -> "rest".equals(expression.expression()))
+                .singleElement()
+                .satisfies(expression -> {
+                    assertThat(expression.meaningKo()).isNotBlank();
+                    assertThat(expression.example()).isEqualTo("I usually rest after lunch.");
+                    assertThat(expression.exampleSource()).isEqualTo(RefinementExampleSource.OPENAI);
+                });
+    }
+
+    @Test
+    void review_replaces_generic_meaning_placeholder_with_generated_gloss() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-6",
+                "Daily Life",
+                "EASY",
+                "What do you usually do after lunch?",
+                "What do you usually do after lunch?",
+                "Use one clear daily-life example."
+        );
+        String answer = "I take a short break.";
+        String correctedAnswer = "I take a short break.";
+        String modelAnswer = "I usually rest after lunch because it helps me recharge.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                86,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                correctedAnswer,
+                List.of(
+                        new RefinementExpressionDto(
+                                "after lunch",
+                                "시간 표현 뒤에 어떤 활동을 하는지 이어서 말해 보세요.",
+                                "I usually rest after lunch because it helps me recharge.",
+                                "다음 답변에서 활용하기 좋은 표현"
+                        )
+                ),
+                modelAnswer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo)
+                .contains(tuple("after lunch", "점심 식사 후에"));
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::meaningKo)
+                .doesNotContain("다음 답변에서 활용하기 좋은 표현");
     }
 
     @Test
@@ -974,7 +1449,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void review_preserves_broad_openai_reason_without_reassigning_it_to_small_diff_segments() {
+    void review_preserves_matching_openai_reason_but_refines_generic_possessive_article_reason() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-3",
                 "Routine - Weekend",
@@ -1022,7 +1497,365 @@ class FeedbackServiceTest {
         assertThat(response.grammarFeedback())
                 .filteredOn(item -> "a my diary".equals(item.originalText()) && "my diary".equals(item.revisedText()))
                 .extracting(GrammarFeedbackItemDto::reasonKo)
-                .containsExactly("broad diary reason");
+                .containsExactly("'my' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 'a'를 함께 쓰지 않아요.");
+    }
+
+    @Test
+    void review_refines_generic_article_removal_reason_when_article_precedes_possessive_determiner() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "Routine - Weekend",
+                "A",
+                "How do you usually spend your weekend?",
+                "주말은 보통 어떻게 보내나요?",
+                "Mention one or two activities."
+        );
+        String answer = "On weekends, I write a my diary before bed.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                75,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto("a", "", "이 부분은 빼는 것이 문법적으로 더 자연스러워요.")
+                ),
+                "On weekends, I write my diary before bed.",
+                List.of(),
+                "On weekends, I write my diary before bed.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
+                .contains(tuple(
+                        "a",
+                        "",
+                        "'my' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 'a'를 함께 쓰지 않아요."
+                ));
+    }
+
+    @Test
+    void review_refines_generic_article_addition_reason_into_countable_noun_rule() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-3",
+                "Goal Plan - Habit Building",
+                "B",
+                "What is one habit you want to build this year, and why is it important to you?",
+                "올해 만들고 싶은 습관 한 가지와 그것이 왜 중요한지 설명해 주세요.",
+                "Include your goal and reason."
+        );
+        String answer = "I want to build exercise habit this year because it helps me stay healthy.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                82,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto("", "an", "명사 앞에 필요한 한정어를 넣으면 뜻이 더 분명해집니다.")
+                ),
+                "I want to build an exercise habit this year because it helps me stay healthy.",
+                List.of(),
+                "I want to build an exercise habit this year because it helps me stay healthy.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
+                .contains(tuple(
+                        "",
+                        "an",
+                        "'habit'처럼 단수 가산명사 앞에는 관사 'an'을 써야 해요."
+                ));
+    }
+
+    @Test
+    void review_refines_generic_punctuation_reason_into_comma_and_period_specific_feedback() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "Routine - Weekend",
+                "A",
+                "How do you usually spend your weekend?",
+                "주말은 보통 어떻게 보내나요?",
+                "Mention one or two activities."
+        );
+        String answer = "On weekends I usually relax at home";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                85,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto("", ",", "문장 끝에는 문장부호가 있어야 문장이 분명해요."),
+                        new GrammarFeedbackItemDto("", ".", "문장 끝에는 문장부호가 있어야 문장이 분명해요.")
+                ),
+                "On weekends, I usually relax at home.",
+                List.of(),
+                "On weekends, I usually relax at home.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
+                .contains(
+                        tuple("", ",", "쉼표를 넣어 앞부분의 도입 표현과 뒤의 본문을 구분해요."),
+                        tuple("", ".", "완전한 문장은 끝에 마침표를 넣어 마무리해요.")
+                );
+    }
+
+    @Test
+    void review_refines_possessive_article_reason_when_openai_span_includes_context() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-1",
+                "Routine - Evening",
+                "A",
+                "What do you usually do after dinner?",
+                "저녁을 먹고 나면 보통 무엇을 하나요?",
+                "Mention one or two activities."
+        );
+        String answer = "After dinner, I clean the my desk and organize my notes.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                74,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto(
+                                "clean the my desk",
+                                "clean my desk",
+                                "명사 앞에 두 개의 정관사를 사용할 수 없습니다."
+                        )
+                ),
+                "After dinner, I clean my desk and organize my notes.",
+                List.of(),
+                "After dinner, I clean my desk and organize my notes.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
+                .contains(tuple(
+                        "clean the my desk",
+                        "clean my desk",
+                        "'my' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 'the'를 함께 쓰지 않아요."
+                ));
+    }
+
+    @Test
+    void review_refines_trailing_article_reason_when_followed_by_possessive_determiner() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-3",
+                "Goal Plan - Habit Building",
+                "B",
+                "What is one habit you want to build this year, and why is it important to you?",
+                "올해 만들고 싶은 습관 한 가지와 그것이 왜 중요한지 설명해 주세요.",
+                "Include your goal and reason."
+        );
+        String answer = "I check a my schedule every morning.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                76,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto(
+                                "I check a",
+                                "I check",
+                                "'schedule'는 가산명사지만 관사를 필요로 하지 않음."
+                        )
+                ),
+                "I check my schedule every morning.",
+                List.of(),
+                "I check my schedule every morning.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
+                .contains(tuple(
+                        "I check a",
+                        "I check",
+                        "'my' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 'a'를 함께 쓰지 않아요."
+                ));
+    }
+
+    @Test
+    void review_filters_out_provided_grammar_feedback_items_without_actual_change() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "Routine - Weekend",
+                "A",
+                "How do you usually spend your weekend?",
+                "주말은 보통 어떻게 보내나요?",
+                "Mention one or two activities."
+        );
+        String answer = "On weekends, I usually take nap at home and watch videos.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                78,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto("nap", "a nap", "'nap'은 가산명사라서 관사가 필요합니다."),
+                        new GrammarFeedbackItemDto("watch videos", "watch videos", "복수형 설명")
+                ),
+                "On weekends, I usually take a nap at home and watch videos.",
+                List.of(),
+                "On weekends, I usually take a nap at home and watch videos.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText)
+                .contains(tuple("nap", "a nap"))
+                .doesNotContain(tuple("watch videos", "watch videos"));
+    }
+
+    @Test
+    void review_ignores_provided_grammar_feedback_when_it_does_not_overlap_actual_inline_change() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-3",
+                "Goal Plan - Habit Building",
+                "B",
+                "What is one habit you want to build this year, and why is it important to you?",
+                "올해 만들고 싶은 습관 한 가지와 그것이 왜 중요한지 설명해 주세요.",
+                "Include your goal and reason."
+        );
+        String answer = "I want to make study plan for this month.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                78,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto(
+                                "this month.",
+                                "for this month.",
+                                "전치사 'for'는 '~을 위한'의 의미로 사용됩니다. 여기서는 기간을 나타냅니다."
+                        )
+                ),
+                "I want to make a study plan for this month.",
+                List.of(),
+                "I want to make a study plan for this month.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
+                .contains(tuple(
+                        "",
+                        "a",
+                        "'plan'처럼 단수 가산명사 앞에는 관사 'a'를 써야 해요."
+                ))
+                .doesNotContain(tuple(
+                        "this month.",
+                        "for this month.",
+                        "전치사 'for'는 '~을 위한'의 의미로 사용됩니다. 여기서는 기간을 나타냅니다."
+                ));
     }
 
     @Test
@@ -1078,5 +1911,101 @@ class FeedbackServiceTest {
                         "더 구체적인 정보를 포함하면 좋겠어요.",
                         "어디에서 시간을 보내는지나 누구와 함께하는지도 덧붙여 보세요."
                 ));
+    }
+
+    @Test
+    void review_discards_context_rewrites_from_corrected_answer_for_grammar_feedback() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "Routine - Weekend",
+                "A",
+                "How do you usually spend your weekend?",
+                "주말은 보통 어떻게 보내나요?",
+                "Mention one or two activities."
+        );
+        String answer = "In the morning, I exercise, and in the afternoon, I relax by reading a book or watching TV.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                78,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto("morning", "evening", "'morning'보다 'evening'가 문맥에 더 자연스럽습니다."),
+                        new GrammarFeedbackItemDto("in the", "after", "관사를 보완하면 표현이 더 자연스럽고 정확해집니다."),
+                        new GrammarFeedbackItemDto("afternoon", "work", "'afternoon'보다 'work'가 문맥에 더 자연스럽습니다.")
+                ),
+                "In the evening, I exercise, and after work, I relax by reading a book or watching TV.",
+                List.of(),
+                "In the evening, I exercise, and after work, I relax by reading a book or watching TV.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.correctedAnswer()).isEqualTo(answer);
+        assertThat(response.inlineFeedback()).isEmpty();
+        assertThat(response.grammarFeedback()).isEmpty();
+    }
+
+    @Test
+    void review_keeps_local_article_fix_in_corrected_answer_sanitization() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-3",
+                "Goal Plan - Habit Building",
+                "B",
+                "What is one habit you want to build this year, and why is it important to you?",
+                "올해 만들고 싶은 습관 한 가지와 그것이 왜 중요한지 설명해 주세요.",
+                "Include your goal and reason."
+        );
+        String answer = "I want to take nap after lunch.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                82,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto("nap", "a nap", "'nap'은 가산명사라서 관사가 필요합니다.")
+                ),
+                "I want to take a nap after lunch.",
+                List.of(),
+                "I want to take a nap after lunch.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.correctedAnswer()).isEqualTo("I want to take a nap after lunch.");
+        assertThat(response.inlineFeedback())
+                .extracting(InlineFeedbackSegmentDto::type, InlineFeedbackSegmentDto::originalText, InlineFeedbackSegmentDto::revisedText)
+                .contains(tuple("ADD", "", "a "));
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText)
+                .contains(tuple("nap", "a nap"));
     }
 }

@@ -14,6 +14,7 @@ public record AnswerHistoryFeedbackDto(
         String correctedAnswer,
         List<RefinementExpressionDto> refinementExpressions,
         String modelAnswer,
+        String modelAnswerKo,
         String rewriteChallenge
 ) {
 }

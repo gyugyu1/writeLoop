@@ -162,11 +162,22 @@ export interface GrammarFeedbackItem {
   reasonKo: string;
 }
 
+export type RefinementExpressionType = "LEXICAL" | "FRAME";
+export type RefinementExpressionSource = "MODEL_ANSWER" | "PROMPT_HINT" | "GENERATED";
+export type RefinementMeaningType = "GLOSS" | "PATTERN_EXPLANATION" | "NONE";
+export type RefinementExampleSource = "EXTRACTED" | "OPENAI" | "GENERATED" | "NONE";
+
 export interface RefinementExpression {
   expression: string;
-  guidance: string;
-  example: string;
+  type?: RefinementExpressionType | null;
+  source?: RefinementExpressionSource | null;
   meaningKo?: string | null;
+  meaningType?: RefinementMeaningType | null;
+  guidanceKo?: string | null;
+  exampleEn?: string | null;
+  exampleSource?: RefinementExampleSource | null;
+  displayable?: boolean | null;
+  qualityFlags?: string[] | null;
 }
 
 export interface FeedbackRequest {
@@ -193,6 +204,7 @@ export interface Feedback {
   refinementExpressions?: RefinementExpression[] | null;
   usedExpressions?: FeedbackUsedExpression[] | null;
   modelAnswer: string;
+  modelAnswerKo?: string | null;
   rewriteChallenge: string;
 }
 
@@ -237,6 +249,7 @@ export interface StoredFeedback {
   refinementExpressions?: RefinementExpression[] | null;
   usedExpressions?: FeedbackUsedExpression[] | null;
   modelAnswer: string;
+  modelAnswerKo?: string | null;
   rewriteChallenge: string;
 }
 

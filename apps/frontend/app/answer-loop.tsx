@@ -65,6 +65,149 @@ const HOME_RETURN_TO = "/";
 
 type Step = "pick" | "answer" | "feedback" | "rewrite" | "complete";
 type PickFlowScreen = "difficulty" | "prompt";
+type UsedExpressionCard = {
+  key: string;
+  expression: string;
+  matchedText?: string | null;
+  usageTip: string;
+};
+type NextExpressionCard = {
+  key: string;
+  expression: string;
+  primaryText?: string | null;
+  secondaryText?: string | null;
+};
+
+const EXPRESSION_SLOT_LABELS: Record<string, string> = {
+  action: "동사",
+  actions: "동사",
+  activity: "동사",
+  activities: "동사",
+  adj: "형용사",
+  adjective: "형용사",
+  adjectives: "형용사",
+  detail: "세부 내용",
+  details: "세부 내용",
+  example: "예시",
+  examples: "예시",
+  how: "방법",
+  issue: "문제",
+  issues: "문제",
+  item: "항목",
+  items: "항목",
+  language: "언어",
+  languages: "언어",
+  method: "방법",
+  methods: "방법",
+  noun: "명사",
+  nouns: "명사",
+  number: "횟수",
+  numbers: "횟수",
+  opinion: "의견",
+  opinions: "의견",
+  period: "기간",
+  periods: "기간",
+  place: "장소",
+  places: "장소",
+  process: "과정",
+  processes: "과정",
+  reason: "이유",
+  reasons: "이유",
+  result: "결과",
+  results: "결과",
+  thing: "내용",
+  things: "내용",
+  topic: "주제",
+  topics: "주제",
+  verb: "동사",
+  verbs: "동사"
+};
+
+function normalizeExpressionKey(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function renderLocalizedExpression(expression: string) {
+  const parts: ReactNode[] = [];
+  const pattern = /\[([A-Za-z]+)\]/g;
+  let lastIndex = 0;
+
+  for (const match of expression.matchAll(pattern)) {
+    const fullMatch = match[0];
+    const rawToken = match[1];
+    const matchIndex = match.index ?? -1;
+    if (matchIndex < 0) {
+      continue;
+    }
+
+    if (matchIndex > lastIndex) {
+      parts.push(expression.slice(lastIndex, matchIndex));
+    }
+
+    const normalizedToken = rawToken.trim().toLowerCase();
+    const translatedToken = EXPRESSION_SLOT_LABELS[normalizedToken] ?? rawToken;
+    parts.push(
+      <em key={`${normalizedToken}-${matchIndex}`} className={styles.expressionSlotToken}>
+        [{translatedToken}]
+      </em>
+    );
+    lastIndex = matchIndex + fullMatch.length;
+  }
+
+  if (lastIndex === 0) {
+    return expression;
+  }
+
+  if (lastIndex < expression.length) {
+    parts.push(expression.slice(lastIndex));
+  }
+
+  return parts;
+}
+
+function normalizePromptCategory(value: string | null | undefined) {
+  return (value ?? "").trim().toUpperCase();
+}
+
+function getPromptCategories(prompt: Prompt | null | undefined) {
+  if (!prompt?.coachProfile) {
+    return [];
+  }
+
+  const categories = [
+    prompt.coachProfile.primaryCategory,
+    ...(prompt.coachProfile.secondaryCategories ?? [])
+  ]
+    .map(normalizePromptCategory)
+    .filter((category) => category !== "" && category !== "GENERAL");
+
+  return Array.from(new Set(categories));
+}
+
+function getPromptCategoryOverlapScore(
+  currentPrompt: Prompt | null | undefined,
+  candidate: Prompt | null | undefined
+) {
+  if (!currentPrompt || !candidate) {
+    return 0;
+  }
+
+  const currentCategories = getPromptCategories(currentPrompt);
+  if (currentCategories.length === 0) {
+    return 0;
+  }
+
+  const candidateCategories = new Set(getPromptCategories(candidate));
+  let score = 0;
+
+  currentCategories.forEach((category, index) => {
+    if (candidateCategories.has(category)) {
+      score += index === 0 ? 3 : 1;
+    }
+  });
+
+  return score;
+}
 
 const DIFFICULTY_OPTIONS: Array<{
   value: DailyDifficulty;
@@ -897,28 +1040,33 @@ export function AnswerLoop() {
       }) as CSSProperties,
     [mobileComposerBarHeight]
   );
-  const suggestedFollowUpPrompt = useMemo(() => {
-    if (prompts.length < 2) {
-      return null;
-    }
-
-    const currentIndex = prompts.findIndex((prompt) => prompt.id === selectedPromptId);
-    if (currentIndex < 0) {
-      return prompts[0] ?? null;
-    }
-
-    for (let offset = 1; offset < prompts.length; offset += 1) {
-      const candidate = prompts[(currentIndex + offset) % prompts.length];
-      if (candidate && candidate.id !== selectedPromptId) {
-        return candidate;
-      }
-    }
-
-    return null;
-  }, [prompts, selectedPromptId]);
+  const fallbackUsedExpressions = useMemo<UsedExpressionCard[]>(
+    () =>
+      (feedback?.usedExpressions ?? []).map((expression) => ({
+        key: expression.expression,
+        expression: expression.expression,
+        matchedText: expression.matchedText ?? null,
+        usageTip: expression.usageTip ?? "답변 안에서 자연스럽게 살린 표현이에요."
+      })),
+    [feedback?.usedExpressions]
+  );
+  const usedExpressions = useMemo<UsedExpressionCard[]>(
+    () =>
+      (coachUsage?.usedExpressions ?? []).length > 0
+        ? (coachUsage?.usedExpressions ?? []).map((expression) => ({
+            key: expression.id,
+            expression: expression.expression,
+            matchedText: expression.matchedText ?? null,
+            usageTip: expression.usageTip
+          }))
+        : fallbackUsedExpressions,
+    [coachUsage?.usedExpressions, fallbackUsedExpressions]
+  );
   const coachRelatedPrompts = useMemo(() => {
     const sourceIds = coachUsage?.relatedPromptIds ?? [];
     const sourcePrompts = allPrompts.length > 0 ? allPrompts : prompts;
+    const currentCategories = getPromptCategories(selectedPrompt);
+    const hasMeaningfulCategories = currentCategories.length > 0;
     const related = sourceIds
       .map((promptId) => promptById.get(promptId) ?? sourcePrompts.find((prompt) => prompt.id === promptId))
       .filter((candidate): candidate is Prompt => {
@@ -926,7 +1074,11 @@ export function AnswerLoop() {
           return false;
         }
 
-        return candidate.id !== selectedPromptId;
+        if (candidate.id === selectedPromptId) {
+          return false;
+        }
+
+        return !hasMeaningfulCategories || getPromptCategoryOverlapScore(selectedPrompt, candidate) > 0;
       });
 
     if (related.length > 0) {
@@ -937,10 +1089,79 @@ export function AnswerLoop() {
       return sourcePrompts.filter((prompt) => prompt.id !== selectedPromptId).slice(0, 3);
     }
 
+    if (hasMeaningfulCategories) {
+      const rankedByCategory = sourcePrompts
+        .map((prompt, index) => ({
+          prompt,
+          index,
+          categoryScore: getPromptCategoryOverlapScore(selectedPrompt, prompt)
+        }))
+        .filter(({ prompt, categoryScore }) => prompt.id !== selectedPromptId && categoryScore > 0)
+        .sort((left, right) => {
+          if (right.categoryScore !== left.categoryScore) {
+            return right.categoryScore - left.categoryScore;
+          }
+          const leftSameDifficulty = left.prompt.difficulty === selectedPrompt.difficulty ? 1 : 0;
+          const rightSameDifficulty = right.prompt.difficulty === selectedPrompt.difficulty ? 1 : 0;
+          if (rightSameDifficulty !== leftSameDifficulty) {
+            return rightSameDifficulty - leftSameDifficulty;
+          }
+          return left.index - right.index;
+        })
+        .map(({ prompt }) => prompt);
+
+      if (rankedByCategory.length > 0) {
+        return rankedByCategory.slice(0, 3);
+      }
+    }
+
     return sourcePrompts
       .filter((prompt) => prompt.id !== selectedPromptId && prompt.difficulty === selectedPrompt.difficulty)
       .slice(0, 3);
   }, [allPrompts, coachUsage?.relatedPromptIds, promptById, prompts, selectedPrompt, selectedPromptId]);
+  const completionNextExpressions = useMemo<NextExpressionCard[]>(() => {
+    const nextExpressions: NextExpressionCard[] = [];
+    const seen = new Set<string>();
+
+    for (const expression of coachUsage?.unusedExpressions ?? []) {
+      const key = normalizeExpressionKey(expression.expression);
+      if (!key || seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      nextExpressions.push({
+        key: `coach-${expression.id}`,
+        expression: expression.expression,
+        primaryText: expression.meaningKo,
+        secondaryText: expression.usageTip
+      });
+    }
+
+    const refinementExpressions = filterSuggestedRefinementExpressions(
+      feedback?.refinementExpressions,
+      lastSubmittedAnswer,
+      feedback?.correctedAnswer
+    );
+    for (const expression of refinementExpressions) {
+      const key = normalizeExpressionKey(expression.expression);
+      if (!key || seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      nextExpressions.push({
+        key: `feedback-${expression.expression}`,
+        expression: expression.expression,
+        primaryText: expression.meaningKo,
+        secondaryText: expression.guidanceKo
+      });
+    }
+
+    return nextExpressions.slice(0, 4);
+  }, [coachUsage?.unusedExpressions, feedback?.correctedAnswer, feedback?.refinementExpressions, lastSubmittedAnswer]);
+  const completionRelatedPrompts = useMemo(
+    () => coachRelatedPrompts.slice(0, 3),
+    [coachRelatedPrompts]
+  );
 
   const isLoggedIn = Boolean(currentUser);
   const activeDraftType: WritingDraftType | null =
@@ -2058,18 +2279,10 @@ export function AnswerLoop() {
   }
 
   function renderCoachUsagePanel() {
-    const fallbackUsedExpressions = (feedback?.usedExpressions ?? []).map((expression) => ({
-      expression: expression.expression,
-      matchedText: expression.matchedText ?? null,
-      usageTip: expression.usageTip ?? "답변 안에서 자연스럽게 살린 표현이에요."
-    }));
     const hasCoachContext = Boolean(coachHelp);
     if (!hasCoachContext && fallbackUsedExpressions.length === 0) {
       return null;
     }
-
-    const usedExpressions = coachUsage?.usedExpressions ?? fallbackUsedExpressions;
-    const unusedExpressions = coachUsage?.unusedExpressions ?? [];
 
     return (
       <section className={styles.coachUsagePanel}>
@@ -2090,7 +2303,7 @@ export function AnswerLoop() {
 
                       return (
                         <article
-                          key={"id" in expression ? expression.id : expression.expression}
+                          key={expression.key}
                           className={styles.coachUsageCardUsed}
                         >
                           <div className={styles.coachUsageCardHeader}>
@@ -2106,51 +2319,99 @@ export function AnswerLoop() {
                   <p className={styles.coachUsageEmpty}>이번 제출에서는 아직 눈에 띄는 표현이 잡히지 않았어요.</p>
                 )}
               </div>
-
-              {hasCoachContext ? (
-                <div className={styles.coachUsageColumn}>
-                  <strong>다음에 써볼 표현</strong>
-                  {unusedExpressions.length > 0 ? (
-                    <div className={styles.coachUsageCards}>
-                      {unusedExpressions.map((expression) => (
-                        <article key={expression.id} className={styles.coachUsageCardUnused}>
-                          <span>{expression.expression}</span>
-                          <p>{expression.meaningKo}</p>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={styles.coachUsageEmpty}>추천 표현을 모두 활용했어요.</p>
-                  )}
-                </div>
-              ) : null}
             </div>
-
-            {hasCoachContext && coachRelatedPrompts.length > 0 ? (
-              <div className={styles.coachRelatedSection}>
-                <strong>이 표현을 더 써볼 질문</strong>
-                <div className={styles.coachRelatedList}>
-                  {coachRelatedPrompts.map((prompt) => (
-                    <button
-                      key={prompt.id}
-                      type="button"
-                      className={styles.coachRelatedCard}
-                      onClick={() => void handlePickPrompt(prompt.id)}
-                    >
-                      <span>{getDifficultyLabel(prompt.difficulty)}</span>
-                      <strong>{prompt.topic}</strong>
-                      <p>{prompt.questionEn}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </>
         ) : isCheckingCoachUsage ? (
           <p className={styles.coachUsageEmpty}>추천 표현이 답변에 쓰였는지 확인하고 있어요.</p>
         ) : (
           <p className={styles.coachUsageEmpty}>추천 표현을 쓰면 여기서 칭찬과 다음 질문을 바로 볼 수 있어요.</p>
         )}
+      </section>
+    );
+  }
+
+  function renderCompletionNextStepPanel() {
+    if (!feedback?.loopComplete) {
+      return null;
+    }
+
+    if (usedExpressions.length === 0 && completionNextExpressions.length === 0 && completionRelatedPrompts.length === 0) {
+      return null;
+    }
+
+    const showUsedExpressions = usedExpressions.length > 0;
+    const showNextExpressions = completionNextExpressions.length > 0;
+
+    return (
+      <section className={styles.coachUsagePanel}>
+        <div
+          className={`${styles.coachUsageGrid} ${
+            showUsedExpressions !== showNextExpressions ? styles.coachUsageGridSingle : ""
+          }`}
+        >
+          {showUsedExpressions ? (
+            <div className={styles.coachUsageColumn}>
+              <strong>잘 사용한 표현</strong>
+              <div className={styles.coachUsageCards}>
+                {usedExpressions.map((expression) => {
+                  const matchedText =
+                    expression.matchedText &&
+                    expression.matchedText.trim() !== "" &&
+                    expression.matchedText.trim() !== expression.expression.trim()
+                      ? expression.matchedText
+                      : null;
+
+                  return (
+                    <article key={expression.key} className={styles.coachUsageCardUsed}>
+                      <div className={styles.coachUsageCardHeader}>
+                        <span>{expression.expression}</span>
+                      </div>
+                      {matchedText ? <p>{matchedText}</p> : null}
+                      <small>{expression.usageTip}</small>
+                    </article>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+
+          {showNextExpressions ? (
+            <div className={styles.coachUsageColumn}>
+              <strong>다음에 써볼 표현</strong>
+              <div className={styles.coachUsageCards}>
+                {completionNextExpressions.map((expression) => (
+                  <article key={expression.key} className={styles.coachUsageCardUnused}>
+                    <span className={styles.expressionText}>{renderLocalizedExpression(expression.expression)}</span>
+                    {expression.primaryText ? <p>{renderLocalizedExpression(expression.primaryText)}</p> : null}
+                    {expression.secondaryText ? (
+                      <small className={styles.coachUsageCardSecondary}>{expression.secondaryText}</small>
+                    ) : null}
+                  </article>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {completionRelatedPrompts.length > 0 ? (
+          <div className={styles.coachRelatedSection}>
+            <strong>이 표현을 더 써볼 질문</strong>
+            <div className={styles.coachRelatedList}>
+              {completionRelatedPrompts.map((prompt) => (
+                <button
+                  key={prompt.id}
+                  type="button"
+                  className={styles.coachRelatedCard}
+                  onClick={() => void handlePickPrompt(prompt.id)}
+                >
+                  <span>{getDifficultyLabel(prompt.difficulty)}</span>
+                  <strong>{prompt.topic}</strong>
+                  <p>{prompt.questionEn}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </section>
     );
   }
@@ -2163,7 +2424,7 @@ export function AnswerLoop() {
       expressions,
       lastSubmittedAnswer,
       feedback?.correctedAnswer
-    );
+    ).filter((expression) => expression.displayable !== false);
 
     if (suggestedExpressions.length === 0) {
       return null;
@@ -2173,15 +2434,50 @@ export function AnswerLoop() {
       <div className={className}>
         <h3>다음 답변에서 써보면 좋은 표현 틀·단어</h3>
         <ul className={styles.list}>
-          {suggestedExpressions.map((expression, index) => (
-            <li key={`${expression.expression}-${index}`}>
-              <strong>{expression.expression}</strong>
-              {expression.meaningKo ? <span>{expression.meaningKo}</span> : null}
-              <span>{expression.guidance}</span>
-              <span className={styles.refinementExpressionExample}>{expression.example}</span>
-            </li>
-          ))}
+          {suggestedExpressions.map((expression, index) => {
+            const interpretation = expression.meaningKo?.trim();
+            const guidanceKo = expression.guidanceKo?.trim();
+            const exampleEn = expression.exampleEn?.trim();
+            const meaningLabel = expression.type === "FRAME" ? "틀 설명" : "뜻";
+
+            if (!guidanceKo && !exampleEn && !interpretation) {
+              return null;
+            }
+
+            return (
+              <li key={`${expression.expression}-${index}`}>
+                <strong className={styles.expressionText}>{renderLocalizedExpression(expression.expression)}</strong>
+                {interpretation ? (
+                  <span className={styles.refinementMeaningText}>
+                    {meaningLabel}: {renderLocalizedExpression(interpretation)}
+                  </span>
+                ) : null}
+                {guidanceKo ? (
+                  <span className={styles.refinementGuidanceText}>활용 팁: {guidanceKo}</span>
+                ) : null}
+                {exampleEn ? (
+                  <span className={styles.refinementExpressionExample}>예문: {exampleEn}</span>
+                ) : null}
+              </li>
+            );
+          })}
         </ul>
+      </div>
+    );
+  }
+
+  function renderModelAnswerBlock(className: string) {
+    if (!feedback) {
+      return null;
+    }
+
+    return (
+      <div className={className}>
+        <h3>모범답안</h3>
+        <p className={styles.modelAnswerText}>{feedback.modelAnswer}</p>
+        {feedback.modelAnswerKo ? (
+          <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
+        ) : null}
       </div>
     );
   }
@@ -2497,12 +2793,7 @@ export function AnswerLoop() {
                 <p>{feedback.rewriteChallenge}</p>
               </div>
             )}
-            {renderFeedbackGroup(
-              <div className={styles.feedbackBlock}>
-                <h3>모범답안</h3>
-                <p>{feedback.modelAnswer}</p>
-              </div>
-            )}
+            {renderFeedbackGroup(renderModelAnswerBlock(styles.feedbackBlock))}
           </div>
         ) : (
           <p className={styles.placeholderText}>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
@@ -2633,12 +2924,7 @@ export function AnswerLoop() {
                     <p>{feedback.rewriteChallenge}</p>
                   </div>
                 )}
-                {renderFeedbackGroup(
-                  <div className={styles.rewriteFeedbackBlock}>
-                    <h3>모범답안</h3>
-                    <p>{feedback.modelAnswer}</p>
-                  </div>
-                )}
+                {renderFeedbackGroup(renderModelAnswerBlock(styles.rewriteFeedbackBlock))}
               </div>
             ) : null}
           </section>
@@ -2713,35 +2999,21 @@ export function AnswerLoop() {
             </p>
           </div>
         ) : null}
-        {suggestedFollowUpPrompt ? (
-          <div className={styles.completeFollowUpCard}>
-            <div className={styles.completeFollowUpCopy}>
-              <strong>비슷한 질문 하나 더 이어서 써볼까요?</strong>
-              <p>
-                같은 흐름을 유지하기 좋은 다음 질문이에요. 지금 바로 이어서 쓰면 오늘의 작문 감각을 더
-                길게 가져갈 수 있어요.
-              </p>
-            </div>
-            <div className={styles.completeFollowUpPrompt}>
-              <span>{suggestedFollowUpPrompt.topic}</span>
-              <p>{suggestedFollowUpPrompt.questionEn}</p>
-            </div>
-          </div>
-        ) : null}
+        {renderCompletionNextStepPanel()}
         <div className={styles.completeActions}>
-          {suggestedFollowUpPrompt ? (
+          {completionRelatedPrompts.length > 0 ? (
             <button
               type="button"
               className={styles.primaryButton}
-              onClick={() => void handlePickPrompt(suggestedFollowUpPrompt.id)}
+              onClick={() => void handlePickPrompt(completionRelatedPrompts[0].id)}
               disabled={isLoadingPrompts}
             >
-              비슷한 질문에 한번 더 답변하기
+              추천 질문에 이어서 답변하기
             </button>
           ) : null}
           <button
             type="button"
-            className={suggestedFollowUpPrompt ? styles.ghostButton : styles.primaryButton}
+            className={completionRelatedPrompts.length > 0 ? styles.ghostButton : styles.primaryButton}
             onClick={handleTryAnotherPrompt}
           >
             다른 질문 보기

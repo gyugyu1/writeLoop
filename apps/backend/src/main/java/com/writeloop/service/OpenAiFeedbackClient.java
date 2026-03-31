@@ -181,14 +181,15 @@ public class OpenAiFeedbackClient {
                                         "additionalProperties", false,
                                         "properties", Map.of(
                                                 "expression", Map.of("type", "string"),
-                                                "guidance", Map.of("type", "string"),
-                                                "example", Map.of("type", "string"),
+                                                "guidanceKo", Map.of("type", "string"),
+                                                "exampleEn", Map.of("type", "string"),
                                                 "meaningKo", Map.of("type", List.of("string", "null"))
                                         ),
-                                        "required", List.of("expression", "guidance", "example", "meaningKo")
+                                        "required", List.of("expression", "guidanceKo", "exampleEn", "meaningKo")
                                 )
                         )),
                         Map.entry("modelAnswer", Map.of("type", "string")),
+                        Map.entry("modelAnswerKo", Map.of("type", "string")),
                         Map.entry("rewriteChallenge", Map.of("type", "string"))
                 ),
                 "required", List.of(
@@ -202,6 +203,7 @@ public class OpenAiFeedbackClient {
                         "usedExpressions",
                         "refinementExpressions",
                         "modelAnswer",
+                        "modelAnswerKo",
                         "rewriteChallenge"
                 )
         );
@@ -234,8 +236,8 @@ public class OpenAiFeedbackClient {
                 Rules:
                 - Score from 0 to 100.
                 - Keep the tone encouraging, specific, and actionable.
-                - Korean fields: summary, strengths, corrections.issue, corrections.suggestion, rewriteChallenge, grammarFeedback.reasonKo, and any refinementExpressions.guidance or meaningKo when present.
-                - English fields: correctedAnswer, modelAnswer, inlineFeedback.originalText, inlineFeedback.revisedText, grammarFeedback.originalText, grammarFeedback.revisedText, refinementExpressions.expression, and refinementExpressions.example.
+                - Korean fields: summary, strengths, corrections.issue, corrections.suggestion, rewriteChallenge, modelAnswerKo, grammarFeedback.reasonKo, and any refinementExpressions.guidanceKo or meaningKo when present.
+                - English fields: correctedAnswer, modelAnswer, inlineFeedback.originalText, inlineFeedback.revisedText, grammarFeedback.originalText, grammarFeedback.revisedText, refinementExpressions.expression, and refinementExpressions.exampleEn.
                 - Do not write full English sentences in Korean fields. If you mention an English expression there, quote only the expression and explain it in Korean.
                 - strengths should have 2 to 3 concise bullets.
                 - corrections should focus only on non-grammar coaching such as clarity, detail, support, specificity, logical flow, organization, or broader naturalness beyond local sentence mechanics.
@@ -245,22 +247,30 @@ public class OpenAiFeedbackClient {
                 - If there is no meaningful non-grammar coaching point beyond grammarFeedback, corrections may be an empty array.
                 - correctedAnswer should be a minimal local revision that preserves the learner's meaning and structure while fixing grammar, usage, capitalization, article or determiner choice, preposition choice, and punctuation only.
                 - Do not use correctedAnswer to add new ideas, examples, supporting details, or broader sentence rewrites beyond local correction.
+                - Do not reinterpret the situation or swap time, place, activity, or other content words just to sound more natural. For example, do not change "morning" to "evening" or "in the afternoon" to "after work" unless the learner meaning itself is wrong.
+                - If the only needed change is punctuation, correctedAnswer must keep the learner's words unchanged and modify punctuation only. Do not replace vocabulary, paraphrase wording, or add lexical material.
                 - inlineFeedback is only for local sentence correction: grammar, word choice, agreement, article, determiner, preposition, capitalization, and punctuation.
                 - inlineFeedback may be an empty array when the learner answer is already locally grammatical and natural enough.
                 - Do not use inlineFeedback for new ideas, extra reasons, examples, plans, or broader content expansion. Put those in modelAnswer, refinementExpressions, corrections, or rewriteChallenge instead.
+                - If the only needed change is punctuation, inlineFeedback should contain only punctuation edits.
                 - inlineFeedback must reconstruct the learner answer in reading order with no skips or overlaps and use the smallest natural edit possible.
                 - Allowed inlineFeedback types: KEEP, REPLACE, ADD, REMOVE. For KEEP, REPLACE, and REMOVE, originalText must copy the learner answer exactly, including spaces and punctuation.
                 - KEEP means unchanged text. REPLACE means wrong or unnatural learner text replaced with better text. ADD inserts text without consuming learner text and must use originalText = "". REMOVE deletes learner text and must use revisedText = "".
                 - ADD should usually be a short local insertion such as an article, preposition, pronoun, auxiliary, connector, or punctuation mark, not a full new clause or sentence.
                 - grammarFeedback should contain only real local grammar or mechanics issues already reflected by the sentence correction, such as agreement, verb form, article, determiner, pronoun, preposition, pluralization, capitalization, or punctuation.
                 - Each grammarFeedback item must include originalText, revisedText, and reasonKo. reasonKo must be one full Korean sentence explaining why the learner form is wrong or less natural.
+                - Prefer short rule-based grammar explanations over generic comments. For article or determiner edits, say whether a singular countable noun needs an article or why a possessive already works as the determiner, instead of a vague comment about adding a determiner. For preposition edits, name the idiomatic preposition in that phrase. For punctuation edits, name the actual punctuation rule.
+                - reasonKo must explain only the actual edit between originalText and revisedText. Do not mention a grammar rule or wording that is not directly reflected in that change.
+                - Bad: mention an unrelated rule like "There is" vs "There's" when the actual edit is article, noun, preposition, or punctuation. Good: explain the real edit, such as why "an" is needed before a singular countable noun, why "on" fits "course on [topic]", or why a comma follows an opening time phrase.
+                - When several nearby edits come from the same grammar rule, you may group them into one broader grammarFeedback item instead of splitting them into tiny unrelated notes.
                 - Do not put content expansion, idea development, examples, or structure advice in grammarFeedback.
                 - modelAnswer should sound natural for the learner's level and show a clear next-step answer, not just a corrected version of the same wording. Let it naturally contain 2 to 4 reusable chunks.
+                - modelAnswerKo should be a natural Korean translation or paraphrase of modelAnswer so the learner can quickly understand the full sample answer.
                 - usedExpressions should contain 1 to 3 short English chunks that the learner already used naturally and correctly in the learner answer. Do not return a full sentence or a weak single function word.
                 - Each usedExpressions item must include expression and usageTip. expression should usually be copied from the learner answer rather than rewritten. usageTip should be one Korean sentence explaining why the expression worked well. If nothing clearly stands out, return an empty array.
-                - refinementExpressions should contain 2 to 4 useful reusable frames or vocabulary items drawn from modelAnswer.
+                - refinementExpressions should contain 2 to 4 useful reusable frames or vocabulary items drawn from modelAnswer. If modelAnswer contains several distinct reusable chunks, prefer returning 3 to 4 items instead of stopping at 2.
                 - refinementExpressions.expression must be a reusable frame, pattern, or vocabulary item, not a full sentence. Prefer slot-style frames such as "[thing]", "[adj]", "[verb]", or "[reason]" when useful, and avoid fully filled-out sentences or dangling fragments.
-                - Each refinement item must include guidance and example. guidance must be one full Korean coaching sentence that explains when or how to use the expression, not just a gloss. example must be a short clean English usage snippet or sentence, must be different from expression, and should place a word or short phrase inside a natural sentence. meaningKo should be a short Korean gloss only for a single word or short lexical phrase; otherwise it may be null.
+                - Each refinement item must include guidanceKo, exampleEn, and meaningKo. guidanceKo must be one full Korean coaching sentence that explains when or how to use the expression, not just a gloss. exampleEn must be a short clean English usage snippet or sentence, must be different from expression, and should place a word or short phrase inside a natural sentence. meaningKo should be a short Korean gloss or paraphrase that helps the learner understand the expression quickly.
                 - Do not recommend the same wording, the same frame, or a simpler variant of what already appears in the learner answer. A richer same-family frame is allowed only if it clearly adds value.
                 - refinementExpressions should feel like the learner's natural next step. Prefer frames that improve clarity, detail, reason, example, vocabulary, flow, contrast, result, process, or sequence.
                 - At least 2 refinementExpressions should be content-bearing expansions tied to the learner's actual answer, not just generic discourse markers. Diversify their functions when possible.
@@ -349,18 +359,23 @@ public class OpenAiFeedbackClient {
                         node.path("usageTip").asText()
                 )
         ));
+        String modelAnswer = feedbackNode.path("modelAnswer").asText();
         List<RefinementExpressionDto> refinementExpressions = new ArrayList<>();
         feedbackNode.path("refinementExpressions").forEach(node -> refinementExpressions.add(
                 new RefinementExpressionDto(
                         node.path("expression").asText(),
-                        node.path("guidance").asText(),
-                        node.path("example").asText(),
+                        node.path("guidanceKo").isMissingNode()
+                                ? node.path("guidance").asText()
+                                : node.path("guidanceKo").asText(),
+                        node.path("exampleEn").isMissingNode()
+                                ? node.path("example").asText()
+                                : node.path("exampleEn").asText(),
                         node.path("meaningKo").isMissingNode() || node.path("meaningKo").isNull()
                                 ? null
                                 : node.path("meaningKo").asText()
                 )
         ));
-        String modelAnswer = feedbackNode.path("modelAnswer").asText();
+        String modelAnswerKo = feedbackNode.path("modelAnswerKo").asText("");
         boolean loopComplete = isLoopComplete(rawScore, corrections, grammarFeedback);
         String completionMessage = buildReadableCompletionMessage(rawScore, corrections, grammarFeedback);
 
@@ -379,6 +394,7 @@ public class OpenAiFeedbackClient {
                 correctedAnswer,
                 refinementExpressions,
                 modelAnswer,
+                modelAnswerKo,
                 feedbackNode.path("rewriteChallenge").asText(),
                 usedExpressions
         );

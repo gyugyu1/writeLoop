@@ -46,6 +46,53 @@ function createCoachExpressionId(promptId: string, expression: string, index: nu
   return `coach-${promptId}-${base || index + 1}`;
 }
 
+function normalizeRefinementExpressionItem(
+  item: {
+    expression?: string | null;
+    type?: "LEXICAL" | "FRAME" | null;
+    source?: "MODEL_ANSWER" | "PROMPT_HINT" | "GENERATED" | null;
+    meaningKo?: string | null;
+    meaningType?: "GLOSS" | "PATTERN_EXPLANATION" | "NONE" | null;
+    guidance?: string | null;
+    guidanceKo?: string | null;
+    example?: string | null;
+    exampleEn?: string | null;
+    exampleSource?: "EXTRACTED" | "OPENAI" | "GENERATED" | "NONE" | null;
+    displayable?: boolean | null;
+    qualityFlags?: string[] | null;
+  } | null | undefined
+) {
+  if (!item?.expression) {
+    return null;
+  }
+
+  return {
+    expression: item.expression,
+    type: item.type ?? null,
+    source: item.source ?? null,
+    meaningKo: item.meaningKo ?? null,
+    meaningType: item.meaningType ?? null,
+    guidanceKo: item.guidanceKo ?? item.guidance ?? null,
+    exampleEn: item.exampleEn ?? item.example ?? null,
+    exampleSource: item.exampleSource ?? null,
+    displayable: item.displayable ?? null,
+    qualityFlags: item.qualityFlags ?? null
+  };
+}
+
+function normalizeFeedbackPayload<T extends { refinementExpressions?: unknown[] | null }>(
+  feedback: T
+): T {
+  const refinementExpressions = (feedback.refinementExpressions ?? [])
+    .map((item) => normalizeRefinementExpressionItem(item as never))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  return {
+    ...feedback,
+    refinementExpressions
+  };
+}
+
 function normalizeCoachUsageExpression(value: string) {
   return value
     .toLowerCase()
@@ -381,7 +428,8 @@ export async function submitFeedback(request: FeedbackRequest): Promise<Feedback
     throw await parseApiError(response, "Failed to submit feedback");
   }
 
-  return response.json();
+  const payload = (await response.json()) as Feedback;
+  return normalizeFeedbackPayload(payload);
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
@@ -636,6 +684,7 @@ export async function getAnswerHistory(): Promise<HistorySession[]> {
     ...session,
     attempts: (session.attempts ?? []).map((attempt) => ({
       ...attempt,
+      feedback: normalizeFeedbackPayload(attempt.feedback),
       usedExpressions: (attempt.usedExpressions ?? []).map((expression) => ({
         ...expression,
         source: expression.source ?? "RECOMMENDED"
@@ -700,7 +749,13 @@ export async function getWritingDraft(
     throw await parseApiError(response, "Failed to load writing draft");
   }
 
-  return response.json();
+  const payload = (await response.json()) as WritingDraft;
+  return payload.feedback
+    ? {
+        ...payload,
+        feedback: normalizeFeedbackPayload(payload.feedback)
+      }
+    : payload;
 }
 
 export async function saveWritingDraft(
@@ -720,7 +775,13 @@ export async function saveWritingDraft(
     throw await parseApiError(response, "Failed to save writing draft");
   }
 
-  return response.json();
+  const payload = (await response.json()) as WritingDraft;
+  return payload.feedback
+    ? {
+        ...payload,
+        feedback: normalizeFeedbackPayload(payload.feedback)
+      }
+    : payload;
 }
 
 export async function deleteWritingDraft(promptId: string, draftType: WritingDraftType): Promise<void> {

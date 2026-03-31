@@ -424,6 +424,7 @@ public class AnswerHistoryService {
                         feedback.correctedAnswer(),
                         feedback.refinementExpressions(),
                         feedback.modelAnswer(),
+                        feedback.modelAnswerKo(),
                         feedback.rewriteChallenge()
                 );
             } catch (Exception ignored) {
@@ -444,6 +445,7 @@ public class AnswerHistoryService {
                     attempt.getAnswerText(),
                     List.of(),
                     attempt.getModelAnswer(),
+                    null,
                     attempt.getRewriteChallenge()
             );
         } catch (Exception exception) {

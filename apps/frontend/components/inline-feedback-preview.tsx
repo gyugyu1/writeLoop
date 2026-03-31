@@ -56,20 +56,6 @@ export function InlineFeedbackPreview({
       <div className={styles.header}>
         <strong>{title}</strong>
       </div>
-      <div className={styles.legend}>
-        <span className={styles.legendItem}>
-          <span className={styles.legendSample}>현재 문장</span>
-        </span>
-        <span className={styles.legendItem}>
-          <span className={styles.legendRemove}>삭제</span>
-        </span>
-        <span className={styles.legendItem}>
-          <span className={styles.legendReplace}>수정</span>
-        </span>
-        <span className={styles.legendItem}>
-          <span className={styles.legendAdd}>보완</span>
-        </span>
-      </div>
       <p className={styles.content}>
         {segments.map((segment, index) => {
           if (segment.kind === "equal") {

@@ -1161,16 +1161,26 @@ export function MyPageClient() {
                                             ).map((expression, index) => (
                                               <li key={`${expression.expression}-${index}`}>
                                                 <strong>{expression.expression}</strong>
-                                                <span>{expression.guidance}</span>
-                                                <span className={styles.historyRefinementExample}>
-                                                  {expression.example}
-                                                </span>
+                                                {expression.meaningKo ? <span>해석: {expression.meaningKo}</span> : null}
+                                                {expression.guidanceKo ? <span>활용: {expression.guidanceKo}</span> : null}
+                                                {expression.exampleEn ? (
+                                                  <span className={styles.historyRefinementExample}>
+                                                    예문: {expression.exampleEn}
+                                                  </span>
+                                                ) : null}
                                               </li>
                                             ))}
                                           </ul>
                                         </div>
                                       ) : null}
-                                      <p>{attempt.feedback.modelAnswer}</p>
+                                      <p className={styles.historyModelAnswer}>
+                                        {attempt.feedback.modelAnswer}
+                                      </p>
+                                      {attempt.feedback.modelAnswerKo ? (
+                                        <p className={styles.historyModelAnswerKo}>
+                                          해석: {attempt.feedback.modelAnswerKo}
+                                        </p>
+                                      ) : null}
                                     </div>
                                     <div className={styles.historyFeedbackBlock}>
                                       <h5>다시쓰기 가이드</h5>

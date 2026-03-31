@@ -9,7 +9,11 @@ import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptHintItemDto;
+import com.writeloop.dto.RefinementExampleSource;
 import com.writeloop.dto.RefinementExpressionDto;
+import com.writeloop.dto.RefinementExpressionSource;
+import com.writeloop.dto.RefinementExpressionType;
+import com.writeloop.dto.RefinementMeaningType;
 import com.writeloop.exception.GuestLimitExceededException;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
@@ -54,6 +58,10 @@ public class FeedbackService {
             "a", "an", "the", "this", "that", "these", "those",
             "my", "your", "his", "her", "our", "their"
     );
+    private static final Set<String> NON_ARTICLE_DETERMINER_TOKENS = Set.of(
+            "this", "that", "these", "those",
+            "my", "your", "his", "her", "its", "our", "their"
+    );
     private static final Set<String> PREPOSITION_TOKENS = Set.of(
             "to", "for", "of", "in", "on", "at", "with", "by", "from", "about"
     );
@@ -95,6 +103,7 @@ public class FeedbackService {
             "i", "if", "in", "into", "is", "it", "its", "my", "of", "on", "one", "or", "our",
             "reason", "so", "that", "the", "their", "this", "to", "when", "with", "your", "his", "her"
     );
+    private static final int MAX_REFINEMENT_EXPRESSION_COUNT = 4;
 
     private final PromptService promptService;
     private final OpenAiFeedbackClient openAiFeedbackClient;
@@ -138,6 +147,7 @@ public class FeedbackService {
                 feedback.correctedAnswer(),
                 feedback.refinementExpressions(),
                 feedback.modelAnswer(),
+                feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
                 feedback.usedExpressions()
         );
@@ -310,6 +320,7 @@ public class FeedbackService {
                 correctedAnswer,
                 refinementExpressions,
                 modelAnswer,
+                null,
                 rewriteChallenge,
                 List.of()
         );
@@ -320,9 +331,10 @@ public class FeedbackService {
             String learnerAnswer,
             List<PromptHintDto> hints
     ) {
+        String correctedAnswer = sanitizeCorrectedAnswer(learnerAnswer, feedback.correctedAnswer());
         List<InlineFeedbackSegmentDto> inlineFeedback = rebuildInlineFeedback(
                 learnerAnswer,
-                feedback.correctedAnswer(),
+                correctedAnswer,
                 feedback.inlineFeedback()
         );
         List<GrammarFeedbackItemDto> grammarFeedback = sanitizeGrammarFeedback(
@@ -337,7 +349,7 @@ public class FeedbackService {
                 feedback.promptId(),
                 feedback.refinementExpressions(),
                 learnerAnswer,
-                feedback.correctedAnswer(),
+                correctedAnswer,
                 feedback.modelAnswer(),
                 hints
         );
@@ -359,12 +371,98 @@ public class FeedbackService {
                 corrections,
                 inlineFeedback,
                 grammarFeedback,
-                feedback.correctedAnswer(),
+                correctedAnswer,
                 refinementExpressions,
                 feedback.modelAnswer(),
+                feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
                 usedExpressions
         );
+    }
+
+    private String sanitizeCorrectedAnswer(String learnerAnswer, String correctedAnswer) {
+        if (learnerAnswer == null || learnerAnswer.isBlank()) {
+            return correctedAnswer;
+        }
+        if (correctedAnswer == null || correctedAnswer.isBlank()) {
+            return learnerAnswer;
+        }
+
+        List<InlineFeedbackSegmentDto> segments = openAiFeedbackClient.buildPreciseInlineFeedback(learnerAnswer, correctedAnswer);
+        if (segments.isEmpty()) {
+            return correctedAnswer;
+        }
+
+        StringBuilder sanitized = new StringBuilder();
+        boolean changed = false;
+        for (int index = 0; index < segments.size(); index++) {
+            InlineFeedbackSegmentDto segment = segments.get(index);
+            if (segment == null) {
+                continue;
+            }
+
+            String type = segment.type() == null ? "" : segment.type().trim().toUpperCase(Locale.ROOT);
+            if ("KEEP".equals(type)) {
+                sanitized.append(segment.originalText());
+                continue;
+            }
+
+            int clusterEnd = index;
+            boolean allowCluster = true;
+            boolean hasUnsafeContentRewrite = false;
+            while (clusterEnd < segments.size()) {
+                InlineFeedbackSegmentDto clusterSegment = segments.get(clusterEnd);
+                String clusterType = clusterSegment.type() == null
+                        ? ""
+                        : clusterSegment.type().trim().toUpperCase(Locale.ROOT);
+                if ("KEEP".equals(clusterType)) {
+                    break;
+                }
+                if (!isStrictGrammarMechanicsSegment(clusterSegment)) {
+                    allowCluster = false;
+                }
+                if ("REPLACE".equals(clusterType)
+                        && !extractMeaningfulTokens(clusterSegment.originalText()).isEmpty()
+                        && !extractMeaningfulTokens(clusterSegment.revisedText()).isEmpty()) {
+                    hasUnsafeContentRewrite = true;
+                }
+                clusterEnd += 1;
+            }
+
+            if (!allowCluster) {
+                if (hasUnsafeContentRewrite) {
+                    return learnerAnswer;
+                }
+                changed = true;
+            }
+
+            for (int clusterIndex = index; clusterIndex < clusterEnd; clusterIndex++) {
+                InlineFeedbackSegmentDto clusterSegment = segments.get(clusterIndex);
+                String clusterType = clusterSegment.type() == null
+                        ? ""
+                        : clusterSegment.type().trim().toUpperCase(Locale.ROOT);
+                if (allowCluster) {
+                    if ("ADD".equals(clusterType) || "REPLACE".equals(clusterType)) {
+                        sanitized.append(clusterSegment.revisedText());
+                    } else if ("REMOVE".equals(clusterType)) {
+                        // Skip removed text.
+                    }
+                    continue;
+                }
+
+                if ("REMOVE".equals(clusterType) || "REPLACE".equals(clusterType)) {
+                    sanitized.append(clusterSegment.originalText());
+                }
+            }
+
+            index = clusterEnd - 1;
+        }
+
+        String sanitizedText = sanitized.toString();
+        if (sanitizedText.isBlank()) {
+            return learnerAnswer;
+        }
+        return changed ? sanitizedText : correctedAnswer;
     }
 
     private List<InlineFeedbackSegmentDto> rebuildInlineFeedback(
@@ -444,7 +542,7 @@ public class FeedbackService {
                 if (sanitizedItem == null) {
                     continue;
                 }
-                provided.add(sanitizedItem);
+                provided.add(enhanceGrammarFeedbackItem(sanitizedItem, inlineFeedback));
             }
         }
 
@@ -456,17 +554,23 @@ public class FeedbackService {
             List<GrammarFeedbackItemDto> preserved = new ArrayList<>();
             LinkedHashSet<String> seenProvided = new LinkedHashSet<>();
             for (GrammarFeedbackItemDto item : provided) {
+                if (!overlapsInlineGrammarChange(item, inlineFeedback)) {
+                    continue;
+                }
                 if (seenProvided.add(buildGrammarFeedbackKey(item))) {
                     preserved.add(item);
                 }
             }
-            return preserved;
+            if (!preserved.isEmpty()) {
+                return preserved;
+            }
         }
 
         List<GrammarFeedbackItemDto> synchronizedItems = new ArrayList<>();
         LinkedHashSet<String> seen = new LinkedHashSet<>();
-        for (InlineFeedbackSegmentDto segment : inlineFeedback) {
-            GrammarFeedbackItemDto fallback = buildFallbackGrammarFeedback(segment);
+        for (int i = 0; i < inlineFeedback.size(); i++) {
+            InlineFeedbackSegmentDto segment = inlineFeedback.get(i);
+            GrammarFeedbackItemDto fallback = buildFallbackGrammarFeedback(inlineFeedback, i);
             if (fallback == null || !seen.add(buildGrammarFeedbackKey(fallback))) {
                 continue;
             }
@@ -494,6 +598,42 @@ public class FeedbackService {
         return synchronizedItems;
     }
 
+    private boolean overlapsInlineGrammarChange(
+            GrammarFeedbackItemDto item,
+            List<InlineFeedbackSegmentDto> inlineFeedback
+    ) {
+        if (item == null || inlineFeedback == null || inlineFeedback.isEmpty()) {
+            return false;
+        }
+
+        String itemOriginal = cleanSegmentPhrase(item.originalText());
+        String itemRevised = cleanSegmentPhrase(item.revisedText());
+        for (InlineFeedbackSegmentDto segment : inlineFeedback) {
+            if (segment == null || "KEEP".equalsIgnoreCase(segment.type())) {
+                continue;
+            }
+
+            String segmentOriginal = cleanSegmentPhrase(segment.originalText());
+            String segmentRevised = cleanSegmentPhrase(segment.revisedText());
+            if (safeEquals(segmentOriginal, itemOriginal) && safeEquals(segmentRevised, itemRevised)) {
+                return true;
+            }
+            if (overlapsGrammarPhrase(itemOriginal, segmentOriginal) || overlapsGrammarPhrase(itemRevised, segmentRevised)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean overlapsGrammarPhrase(String left, String right) {
+        if (left == null || right == null || left.isBlank() || right.isBlank()) {
+            return false;
+        }
+
+        return left.contains(right) || right.contains(left);
+    }
+
     private GrammarFeedbackItemDto sanitizeGrammarFeedbackItem(GrammarFeedbackItemDto item) {
         if (item == null) {
             return null;
@@ -502,6 +642,9 @@ public class FeedbackService {
         String originalText = cleanSegmentPhrase(item.originalText());
         String revisedText = cleanSegmentPhrase(item.revisedText());
         if (!isValidGrammarFeedbackSpan(originalText, revisedText)) {
+            return null;
+        }
+        if (hasNoVisibleGrammarChange(originalText, revisedText)) {
             return null;
         }
 
@@ -535,7 +678,15 @@ public class FeedbackService {
         return originalTokens.size() <= 6 && revisedTokens.size() <= 6;
     }
 
-    private GrammarFeedbackItemDto buildFallbackGrammarFeedback(InlineFeedbackSegmentDto segment) {
+    private GrammarFeedbackItemDto buildFallbackGrammarFeedback(
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            int segmentIndex
+    ) {
+        if (inlineFeedback == null || segmentIndex < 0 || segmentIndex >= inlineFeedback.size()) {
+            return null;
+        }
+
+        InlineFeedbackSegmentDto segment = inlineFeedback.get(segmentIndex);
         if (segment == null) {
             return null;
         }
@@ -559,7 +710,501 @@ public class FeedbackService {
             return null;
         }
 
-        return new GrammarFeedbackItemDto(originalText, revisedText, reasonKo);
+        return enhanceGrammarFeedbackItem(
+                new GrammarFeedbackItemDto(originalText, revisedText, reasonKo),
+                inlineFeedback
+        );
+    }
+
+    private GrammarFeedbackItemDto enhanceGrammarFeedbackItem(
+            GrammarFeedbackItemDto item,
+            List<InlineFeedbackSegmentDto> inlineFeedback
+    ) {
+        if (item == null) {
+            return null;
+        }
+
+        String reasonKo = item.reasonKo() == null ? "" : item.reasonKo().trim();
+        String enhancedReason = enhanceGrammarReason(item, inlineFeedback, reasonKo);
+        if (enhancedReason.isBlank() || enhancedReason.equals(reasonKo)) {
+            return item;
+        }
+
+        return new GrammarFeedbackItemDto(
+                item.originalText(),
+                item.revisedText(),
+                enhancedReason
+        );
+    }
+
+    private String enhanceGrammarReason(
+            GrammarFeedbackItemDto item,
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            String reasonKo
+    ) {
+        String originalText = cleanSegmentPhrase(item.originalText());
+        String revisedText = cleanSegmentPhrase(item.revisedText());
+        List<String> originalTokens = tokenList(normalizeForComparison(originalText));
+        List<String> revisedTokens = tokenList(normalizeForComparison(revisedText));
+
+        String possessiveArticleReason = buildSpecificPossessiveArticleReason(item, inlineFeedback, originalTokens);
+        if (!possessiveArticleReason.isBlank() && shouldRefinePossessiveArticleReason(reasonKo)) {
+            return possessiveArticleReason;
+        }
+
+        String articleReason = buildSpecificArticleReason(item, inlineFeedback, originalTokens, revisedTokens);
+        if (!articleReason.isBlank() && shouldRefineArticleReason(reasonKo)) {
+            return articleReason;
+        }
+
+        if (originalText.isBlank() && isPunctuationOnly(revisedText)) {
+            String punctuationReason = buildSpecificPunctuationReason(revisedText);
+            if (!punctuationReason.isBlank() && shouldRefinePunctuationReason(reasonKo, revisedText)) {
+                return punctuationReason;
+            }
+        }
+
+        if (!originalText.isBlank() && revisedText.isBlank()) {
+            String normalizedOriginal = normalizeForComparison(originalText);
+            if (ARTICLE_TOKENS.contains(normalizedOriginal)
+                    && shouldRefineRemovedArticleReason(reasonKo)) {
+                int segmentIndex = findMatchingInlineSegmentIndex(item, inlineFeedback);
+                String followingToken = findFollowingContextToken(inlineFeedback, segmentIndex);
+                if (NON_ARTICLE_DETERMINER_TOKENS.contains(followingToken)) {
+                    return "'" + followingToken + "' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 '"
+                            + originalText
+                            + "'를 함께 쓰지 않아요.";
+                }
+            }
+        }
+
+        return reasonKo;
+    }
+
+    private boolean hasNoVisibleGrammarChange(String originalText, String revisedText) {
+        if (originalText == null || revisedText == null) {
+            return false;
+        }
+
+        return originalText.trim().equals(revisedText.trim());
+    }
+
+    private String buildSpecificPossessiveArticleReason(
+            GrammarFeedbackItemDto item,
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            List<String> originalTokens
+    ) {
+        if (item == null || originalTokens == null || originalTokens.isEmpty()) {
+            return "";
+        }
+
+        for (int i = 0; i < originalTokens.size() - 1; i++) {
+            String articleToken = originalTokens.get(i);
+            String determinerToken = originalTokens.get(i + 1);
+            if (ARTICLE_TOKENS.contains(articleToken)
+                    && NON_ARTICLE_DETERMINER_TOKENS.contains(determinerToken)) {
+                return buildPossessiveArticleReason(articleToken, determinerToken);
+            }
+        }
+
+        String trailingToken = originalTokens.get(originalTokens.size() - 1);
+        if (ARTICLE_TOKENS.contains(trailingToken)) {
+            int segmentIndex = findMatchingInlineSegmentIndex(item, inlineFeedback);
+            String followingToken = findFollowingContextToken(inlineFeedback, segmentIndex);
+            if (!NON_ARTICLE_DETERMINER_TOKENS.contains(followingToken)) {
+                followingToken = findFollowingDeterminerAfterTrailingArticle(item, inlineFeedback, trailingToken);
+            }
+            if (NON_ARTICLE_DETERMINER_TOKENS.contains(followingToken)) {
+                return buildPossessiveArticleReason(trailingToken, followingToken);
+            }
+        }
+
+        return "";
+    }
+
+    private String findFollowingDeterminerAfterTrailingArticle(
+            GrammarFeedbackItemDto item,
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            String articleToken
+    ) {
+        if (item == null || inlineFeedback == null || inlineFeedback.isEmpty()) {
+            return "";
+        }
+
+        String normalizedArticle = normalizeForComparison(articleToken);
+        String revisedContext = cleanSegmentPhrase(item.revisedText());
+        for (int i = 0; i < inlineFeedback.size(); i++) {
+            InlineFeedbackSegmentDto segment = inlineFeedback.get(i);
+            if (segment == null) {
+                continue;
+            }
+
+            String segmentOriginal = cleanSegmentPhrase(segment.originalText());
+            String segmentRevised = cleanSegmentPhrase(segment.revisedText());
+            if (!normalizedArticle.equals(normalizeForComparison(segmentOriginal)) || !segmentRevised.isBlank()) {
+                continue;
+            }
+
+            String previousContext = findPreviousContextPhrase(inlineFeedback, i);
+            if (!revisedContext.isBlank()
+                    && !previousContext.isBlank()
+                    && !(revisedContext.endsWith(previousContext) || previousContext.endsWith(revisedContext))) {
+                continue;
+            }
+
+            String followingToken = findFollowingContextToken(inlineFeedback, i);
+            if (NON_ARTICLE_DETERMINER_TOKENS.contains(followingToken)) {
+                return followingToken;
+            }
+        }
+
+        return "";
+    }
+
+    private String buildPossessiveArticleReason(String articleToken, String determinerToken) {
+        if (articleToken == null || articleToken.isBlank() || determinerToken == null || determinerToken.isBlank()) {
+            return "";
+        }
+
+        return "'" + determinerToken + "' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 '"
+                + articleToken
+                + "'를 함께 쓰지 않아요.";
+    }
+
+    private String buildSpecificArticleReason(
+            GrammarFeedbackItemDto item,
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            List<String> originalTokens,
+            List<String> revisedTokens
+    ) {
+        if (item == null) {
+            return "";
+        }
+
+        String originalText = cleanSegmentPhrase(item.originalText());
+        String revisedText = cleanSegmentPhrase(item.revisedText());
+
+        if (!originalTokens.isEmpty()
+                && ARTICLE_TOKENS.contains(originalTokens.get(0))
+                && !revisedTokens.isEmpty()
+                && NON_ARTICLE_DETERMINER_TOKENS.contains(revisedTokens.get(0))) {
+            return buildPossessiveArticleReason(originalTokens.get(0), revisedTokens.get(0));
+        }
+
+        if (originalText.isBlank() && revisedTokens.size() == 1 && ARTICLE_TOKENS.contains(revisedTokens.get(0))) {
+            return buildSpecificArticleInsertionReason(revisedTokens.get(0), "", inlineFeedback, item);
+        }
+
+        if (!revisedTokens.isEmpty() && ARTICLE_TOKENS.contains(revisedTokens.get(0))) {
+            String nounHint = findArticleHeadNoun(revisedTokens);
+            return buildSpecificArticleInsertionReason(revisedTokens.get(0), nounHint, inlineFeedback, item);
+        }
+
+        return "";
+    }
+
+    private String buildSpecificArticleInsertionReason(
+            String articleToken,
+            String nounHint,
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            GrammarFeedbackItemDto item
+    ) {
+        String article = articleToken == null ? "" : articleToken.trim().toLowerCase(Locale.ROOT);
+        if (!ARTICLE_TOKENS.contains(article)) {
+            return "";
+        }
+
+        String resolvedNounHint = nounHint;
+        if (resolvedNounHint == null || resolvedNounHint.isBlank()) {
+            int segmentIndex = findMatchingInlineSegmentIndex(item, inlineFeedback);
+            resolvedNounHint = findLikelyArticleNoun(inlineFeedback, segmentIndex);
+        }
+
+        if ("the".equals(article)) {
+            if (!resolvedNounHint.isBlank()) {
+                return "'" + resolvedNounHint + "'를 특정해서 말할 때는 관사 'the'를 써요.";
+            }
+            return "대상을 특정해서 말할 때는 관사 'the'를 써요.";
+        }
+
+        if (!resolvedNounHint.isBlank()) {
+            return "'" + resolvedNounHint + "'처럼 단수 가산명사 앞에는 " + formatArticleObject(article) + " 써야 해요.";
+        }
+        return "단수 가산명사 앞에는 " + formatArticleObject(article) + " 써야 해요.";
+    }
+
+    private boolean shouldRefineArticleReason(String reasonKo) {
+        if (reasonKo == null || reasonKo.isBlank()) {
+            return true;
+        }
+
+        if (containsGrammarReasonCue(reasonKo, "가산", "단수", "소유격", "countable", "possessive")) {
+            return false;
+        }
+
+        return containsGrammarReasonCue(reasonKo, "관사", "한정사", "article", "determiner")
+                || reasonKo.contains("더 분명")
+                || reasonKo.contains("더 자연");
+    }
+
+    private boolean shouldRefinePossessiveArticleReason(String reasonKo) {
+        if (reasonKo == null || reasonKo.isBlank()) {
+            return true;
+        }
+
+        return !containsGrammarReasonCue(reasonKo, "소유격", "한정사", "possessive", "determiner");
+    }
+
+    private String formatArticleObject(String article) {
+        if (article == null || article.isBlank()) {
+            return "관사를";
+        }
+
+        return switch (article.trim().toLowerCase(Locale.ROOT)) {
+            case "an" -> "관사 'an'을";
+            default -> "관사 '" + article.trim().toLowerCase(Locale.ROOT) + "'를";
+        };
+    }
+
+    private String findArticleHeadNoun(List<String> revisedTokens) {
+        if (revisedTokens == null || revisedTokens.size() <= 1) {
+            return "";
+        }
+
+        for (int i = revisedTokens.size() - 1; i >= 1; i--) {
+            String token = revisedTokens.get(i);
+            if (!NON_ARTICLE_DETERMINER_TOKENS.contains(token)
+                    && !PREPOSITION_TOKENS.contains(token)
+                    && !PRONOUN_TOKENS.contains(token)
+                    && !BE_VERB_TOKENS.contains(token)) {
+                return token;
+            }
+        }
+
+        return "";
+    }
+
+    private String findLikelyArticleNoun(
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            int segmentIndex
+    ) {
+        if (inlineFeedback == null || segmentIndex < 0) {
+            return "";
+        }
+
+        for (int i = segmentIndex + 1; i < inlineFeedback.size(); i++) {
+            InlineFeedbackSegmentDto candidate = inlineFeedback.get(i);
+            if (candidate == null) {
+                continue;
+            }
+
+            String nextText = cleanSegmentPhrase(candidate.originalText());
+            if (nextText.isBlank()) {
+                nextText = cleanSegmentPhrase(candidate.revisedText());
+            }
+            if (nextText.isBlank() || isPunctuationOnly(nextText)) {
+                continue;
+            }
+
+            List<String> tokens = tokenList(normalizeForComparison(nextText));
+            List<String> phraseTokens = new ArrayList<>();
+            for (String token : tokens) {
+                if (isArticleNounPhraseBoundary(token, !phraseTokens.isEmpty())) {
+                    break;
+                }
+                phraseTokens.add(token);
+            }
+
+            for (int j = phraseTokens.size() - 1; j >= 0; j--) {
+                String token = phraseTokens.get(j);
+                if (!NON_ARTICLE_DETERMINER_TOKENS.contains(token)
+                        && !PREPOSITION_TOKENS.contains(token)
+                        && !PRONOUN_TOKENS.contains(token)
+                        && !BE_VERB_TOKENS.contains(token)) {
+                    return token;
+                }
+            }
+        }
+
+        return "";
+    }
+
+    private boolean isArticleNounPhraseBoundary(String token, boolean collectedContent) {
+        if (token == null || token.isBlank()) {
+            return collectedContent;
+        }
+        if (!collectedContent) {
+            return false;
+        }
+
+        return NON_ARTICLE_DETERMINER_TOKENS.contains(token)
+                || PREPOSITION_TOKENS.contains(token)
+                || PRONOUN_TOKENS.contains(token)
+                || BE_VERB_TOKENS.contains(token)
+                || "and".equals(token)
+                || "or".equals(token)
+                || "but".equals(token)
+                || "because".equals(token)
+                || "if".equals(token)
+                || "when".equals(token)
+                || "while".equals(token);
+    }
+
+    private boolean shouldRefinePunctuationReason(String reasonKo, String punctuationText) {
+        String normalizedReason = reasonKo == null ? "" : reasonKo.trim();
+        if (normalizedReason.isBlank()) {
+            return true;
+        }
+
+        return switch (punctuationText) {
+            case "," -> !containsGrammarReasonCue(normalizedReason, "쉼표", "comma");
+            case "." -> !containsGrammarReasonCue(normalizedReason, "마침표", "period");
+            case "?" -> !containsGrammarReasonCue(normalizedReason, "물음표", "question mark", "question");
+            case "!" -> !containsGrammarReasonCue(normalizedReason, "느낌표", "exclamation");
+            default -> false;
+        };
+    }
+
+    private boolean shouldRefineRemovedArticleReason(String reasonKo) {
+        if (reasonKo == null || reasonKo.isBlank()) {
+            return true;
+        }
+
+        return !containsGrammarReasonCue(reasonKo, "관사", "한정사", "소유격", "article", "determiner", "possessive");
+    }
+
+    private String buildSpecificPunctuationReason(String punctuationText) {
+        return switch (punctuationText) {
+            case "," -> "쉼표를 넣어 앞부분의 도입 표현과 뒤의 본문을 구분해요.";
+            case "." -> "완전한 문장은 끝에 마침표를 넣어 마무리해요.";
+            case "?" -> "질문 문장은 끝에 물음표를 넣어 표시해요.";
+            case "!" -> "강조나 감탄을 나타낼 때는 느낌표로 마무리할 수 있어요.";
+            default -> "";
+        };
+    }
+
+    private int findMatchingInlineSegmentIndex(
+            GrammarFeedbackItemDto item,
+            List<InlineFeedbackSegmentDto> inlineFeedback
+    ) {
+        if (item == null || inlineFeedback == null || inlineFeedback.isEmpty()) {
+            return -1;
+        }
+
+        String itemOriginal = cleanSegmentPhrase(item.originalText());
+        String itemRevised = cleanSegmentPhrase(item.revisedText());
+        for (int i = 0; i < inlineFeedback.size(); i++) {
+            InlineFeedbackSegmentDto segment = inlineFeedback.get(i);
+            if (segment == null) {
+                continue;
+            }
+
+            if (safeEquals(cleanSegmentPhrase(segment.originalText()), itemOriginal)
+                    && safeEquals(cleanSegmentPhrase(segment.revisedText()), itemRevised)) {
+                return i;
+            }
+        }
+
+        int bestIndex = -1;
+        int bestScore = 0;
+        for (int i = 0; i < inlineFeedback.size(); i++) {
+            InlineFeedbackSegmentDto segment = inlineFeedback.get(i);
+            if (segment == null) {
+                continue;
+            }
+
+            String segmentOriginal = cleanSegmentPhrase(segment.originalText());
+            String segmentRevised = cleanSegmentPhrase(segment.revisedText());
+            int score = scoreRelatedInlineSegment(itemOriginal, itemRevised, segmentOriginal, segmentRevised);
+            if (score > bestScore) {
+                bestScore = score;
+                bestIndex = i;
+            }
+        }
+
+        if (bestScore > 0) {
+            return bestIndex;
+        }
+
+        return -1;
+    }
+
+    private int scoreRelatedInlineSegment(
+            String itemOriginal,
+            String itemRevised,
+            String segmentOriginal,
+            String segmentRevised
+    ) {
+        int score = 0;
+        if (!segmentOriginal.isBlank()
+                && (itemOriginal.contains(segmentOriginal) || segmentOriginal.contains(itemOriginal))) {
+            score += segmentOriginal.length() + 2;
+        }
+        if (!segmentRevised.isBlank()
+                && (itemRevised.contains(segmentRevised) || segmentRevised.contains(itemRevised))) {
+            score += segmentRevised.length() + 1;
+        }
+        if (segmentRevised.isBlank() && !segmentOriginal.isBlank() && itemOriginal.contains(segmentOriginal)) {
+            score += 1;
+        }
+        return score;
+    }
+
+    private String findFollowingContextToken(
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            int segmentIndex
+    ) {
+        if (inlineFeedback == null || segmentIndex < 0) {
+            return "";
+        }
+
+        for (int i = segmentIndex + 1; i < inlineFeedback.size(); i++) {
+            InlineFeedbackSegmentDto candidate = inlineFeedback.get(i);
+            if (candidate == null) {
+                continue;
+            }
+
+            String nextText = cleanSegmentPhrase(candidate.originalText());
+            if (nextText.isBlank()) {
+                nextText = cleanSegmentPhrase(candidate.revisedText());
+            }
+            if (nextText.isBlank() || isPunctuationOnly(nextText)) {
+                continue;
+            }
+
+            List<String> tokens = tokenList(normalizeForComparison(nextText));
+            if (!tokens.isEmpty()) {
+                return tokens.get(0);
+            }
+        }
+
+        return "";
+    }
+
+    private String findPreviousContextPhrase(
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            int segmentIndex
+    ) {
+        if (inlineFeedback == null || segmentIndex <= 0) {
+            return "";
+        }
+
+        for (int i = segmentIndex - 1; i >= 0; i--) {
+            InlineFeedbackSegmentDto candidate = inlineFeedback.get(i);
+            if (candidate == null) {
+                continue;
+            }
+
+            String previousText = cleanSegmentPhrase(candidate.revisedText());
+            if (previousText.isBlank()) {
+                previousText = cleanSegmentPhrase(candidate.originalText());
+            }
+            if (!previousText.isBlank() && !isPunctuationOnly(previousText)) {
+                return previousText;
+            }
+        }
+
+        return "";
     }
 
     private GrammarFeedbackItemDto findMatchingGrammarFeedback(
@@ -811,6 +1456,125 @@ public class FeedbackService {
         }
 
         return false;
+    }
+
+    private boolean isStrictGrammarMechanicsSegment(InlineFeedbackSegmentDto segment) {
+        if (segment == null) {
+            return false;
+        }
+
+        String type = segment.type() == null ? "" : segment.type().trim().toUpperCase(Locale.ROOT);
+        String originalText = cleanSegmentPhrase(segment.originalText());
+        String revisedText = cleanSegmentPhrase(segment.revisedText());
+        List<String> originalTokens = tokenList(normalizeForComparison(originalText));
+        List<String> revisedTokens = tokenList(normalizeForComparison(revisedText));
+
+        if ("KEEP".equals(type)) {
+            return true;
+        }
+        if ("ADD".equals(type) && isPunctuationOnly(revisedText)) {
+            return true;
+        }
+        if ("REMOVE".equals(type) && isPunctuationOnly(originalText)) {
+            return true;
+        }
+        if (isCapitalizationOnlyChange(originalText, revisedText)) {
+            return true;
+        }
+        if (isPluralizationChange(originalTokens, revisedTokens)) {
+            return true;
+        }
+        if (isPronounBeAgreementChange(originalTokens, revisedTokens)) {
+            return true;
+        }
+        if (isArticleCorrection(originalTokens, revisedTokens)
+                || isDeterminerInsertionOrRemoval(segment, revisedTokens, originalTokens)) {
+            return true;
+        }
+        if (isPrepositionCorrection(originalTokens, revisedTokens)
+                || isPrepositionInsertionOrRemoval(segment, revisedTokens, originalTokens)) {
+            return true;
+        }
+
+        if ("ADD".equals(type) && revisedTokens.size() == 1) {
+            String token = revisedTokens.get(0);
+            return DETERMINER_TOKENS.contains(token)
+                    || PREPOSITION_TOKENS.contains(token)
+                    || PRONOUN_TOKENS.contains(token)
+                    || BE_VERB_TOKENS.contains(token);
+        }
+
+        if ("REMOVE".equals(type) && originalTokens.size() == 1) {
+            String token = originalTokens.get(0);
+            return DETERMINER_TOKENS.contains(token)
+                    || PREPOSITION_TOKENS.contains(token)
+                    || ARTICLE_TOKENS.contains(token)
+                    || PRONOUN_TOKENS.contains(token)
+                    || BE_VERB_TOKENS.contains(token);
+        }
+
+        if ("REPLACE".equals(type) && originalTokens.size() == 1 && revisedTokens.size() == 1) {
+            String originalToken = originalTokens.get(0);
+            String revisedToken = revisedTokens.get(0);
+            if (ARTICLE_TOKENS.contains(originalToken)
+                    || ARTICLE_TOKENS.contains(revisedToken)
+                    || DETERMINER_TOKENS.contains(originalToken)
+                    || DETERMINER_TOKENS.contains(revisedToken)
+                    || PREPOSITION_TOKENS.contains(originalToken)
+                    || PREPOSITION_TOKENS.contains(revisedToken)
+                    || PRONOUN_TOKENS.contains(originalToken)
+                    || PRONOUN_TOKENS.contains(revisedToken)
+                    || BE_VERB_TOKENS.contains(originalToken)
+                    || BE_VERB_TOKENS.contains(revisedToken)) {
+                return true;
+            }
+
+            return isLikelySurfaceFormCorrection(originalToken, revisedToken);
+        }
+
+        return false;
+    }
+
+    private boolean isLikelySurfaceFormCorrection(String originalToken, String revisedToken) {
+        if (originalToken == null || revisedToken == null) {
+            return false;
+        }
+
+        String original = originalToken.trim().toLowerCase(Locale.ROOT);
+        String revised = revisedToken.trim().toLowerCase(Locale.ROOT);
+        if (original.isBlank() || revised.isBlank() || original.equals(revised)) {
+            return false;
+        }
+        if (original.length() <= 2 || revised.length() <= 2) {
+            return levenshteinDistance(original, revised) <= 1;
+        }
+        if (original.charAt(0) != revised.charAt(0)) {
+            return false;
+        }
+
+        return levenshteinDistance(original, revised) <= 2;
+    }
+
+    private int levenshteinDistance(String left, String right) {
+        int[][] dp = new int[left.length() + 1][right.length() + 1];
+        for (int i = 0; i <= left.length(); i++) {
+            dp[i][0] = i;
+        }
+        for (int j = 0; j <= right.length(); j++) {
+            dp[0][j] = j;
+        }
+
+        for (int i = 1; i <= left.length(); i++) {
+            for (int j = 1; j <= right.length(); j++) {
+                int cost = left.charAt(i - 1) == right.charAt(j - 1) ? 0 : 1;
+                dp[i][j] = Math.min(
+                        Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1),
+                        dp[i - 1][j - 1] + cost
+                );
+            }
+        }
+
+        return dp[left.length()][right.length()];
     }
 
     private String buildGenericGrammarReason(String originalText, String revisedText) {
@@ -1453,6 +2217,7 @@ public class FeedbackService {
                     String candidate = toReusableRefinementExpression(rawCandidate);
                     String example = buildRefinementExample(modelAnswer, candidate);
                     if (!candidate.isBlank()
+                            && isUsableRefinementExample(candidate, example)
                             && isNovelRefinementSuggestion(
                             rawCandidate,
                             candidate,
@@ -1463,16 +2228,23 @@ public class FeedbackService {
                         candidates.add(candidate);
                     }
                 }
+                if (candidates.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
+                    break;
+                }
+            }
+            if (candidates.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
+                break;
             }
         }
 
-        if (candidates.isEmpty()) {
+        if (candidates.size() < MAX_REFINEMENT_EXPRESSION_COUNT) {
             for (String clause : modelAnswer.split("[.!?]")) {
                 String rawCandidate = cleanExpressionCandidate(clause);
                 if (shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
                     String candidate = toReusableRefinementExpression(rawCandidate);
                     String example = buildRefinementExample(modelAnswer, candidate);
                     if (!candidate.isBlank()
+                            && isUsableRefinementExample(candidate, example)
                             && isNovelRefinementSuggestion(
                             rawCandidate,
                             candidate,
@@ -1483,7 +2255,7 @@ public class FeedbackService {
                         candidates.add(candidate);
                     }
                 }
-                if (candidates.size() >= 3) {
+                if (candidates.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
                     break;
                 }
             }
@@ -1491,12 +2263,20 @@ public class FeedbackService {
 
         List<RefinementExpressionDto> expressions = new ArrayList<>();
         for (String candidate : candidates) {
-            expressions.add(new RefinementExpressionDto(
+            RefinementExpressionDto refinementExpression = buildRefinementExpressionDto(
                     candidate,
+                    RefinementExpressionSource.MODEL_ANSWER,
                     buildReadableRecommendationGuidance(candidate),
-                    buildRefinementExample(modelAnswer, candidate)
-            ));
-            if (expressions.size() >= 3) {
+                    null,
+                    modelAnswer,
+                    null,
+                    List.of()
+            );
+            if (refinementExpression == null || !Boolean.TRUE.equals(refinementExpression.displayable())) {
+                continue;
+            }
+            expressions.add(refinementExpression);
+            if (expressions.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
                 break;
             }
         }
@@ -1527,7 +2307,7 @@ public class FeedbackService {
 
                 String rawCandidate = cleanExpressionCandidate(expression.expression());
                 diagnostics.rawExpressions.add(rawCandidate);
-                if (!shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
+                if (!shouldKeepProvidedRefinementCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)) {
                     diagnostics.rejectedByRecommendation++;
                     continue;
                 }
@@ -1544,19 +2324,26 @@ public class FeedbackService {
                     continue;
                 }
 
-                String guidance = expression.guidance() == null || expression.guidance().isBlank()
+                String guidance = expression.guidanceKo() == null || expression.guidanceKo().isBlank()
                         ? buildReadableRecommendationGuidance(candidate)
-                        : expression.guidance().trim();
-                String example = expression.example() == null || expression.example().isBlank()
-                        ? buildRefinementExample(modelAnswer, candidate)
-                        : expression.example().trim();
-                if (normalizeForComparison(example).equals(normalizeForComparison(candidate))) {
-                    example = buildRefinementExample(modelAnswer, candidate);
+                        : expression.guidanceKo().trim();
+                RefinementExpressionDto refinementExpression = buildRefinementExpressionDto(
+                        candidate,
+                        inferRefinementSource(candidate, expression.source(), modelAnswer, hints),
+                        guidance,
+                        expression.exampleEn(),
+                        modelAnswer,
+                        expression.meaningKo(),
+                        hints
+                );
+                if (refinementExpression == null || !Boolean.TRUE.equals(refinementExpression.displayable())) {
+                    diagnostics.rejectedBlank++;
+                    continue;
                 }
                 if (!isNovelRefinementSuggestion(
                         rawCandidate,
                         candidate,
-                        example,
+                        refinementExpression.exampleEn(),
                         normalizedLearnerAnswer,
                         normalizedCorrectedAnswer
                 )) {
@@ -1564,22 +2351,17 @@ public class FeedbackService {
                     continue;
                 }
 
-                sanitized.add(new RefinementExpressionDto(
-                        candidate,
-                        guidance,
-                        example,
-                        resolveRefinementMeaning(candidate, expression.meaningKo(), hints)
-                ));
+                sanitized.add(refinementExpression);
                 diagnostics.rawAcceptedCount++;
                 diagnostics.recordFinal("openai_raw", candidate);
-                if (sanitized.size() >= 3) {
+                if (sanitized.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
                     logRefinementDiagnostics(promptId, learnerAnswer, diagnostics);
                     return sanitized;
                 }
             }
         }
 
-        if (sanitized.size() >= 3) {
+        if (sanitized.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
             logRefinementDiagnostics(promptId, learnerAnswer, diagnostics);
             return sanitized;
         }
@@ -1591,15 +2373,22 @@ public class FeedbackService {
                 normalizedCorrectedAnswer,
                 seenExpressions
         )) {
-            sanitized.add(new RefinementExpressionDto(
+            RefinementExpressionDto refinementExpression = buildRefinementExpressionDto(
                     candidate,
+                    inferSupplementRefinementSource(candidate, modelAnswer),
                     buildReadableRecommendationGuidance(candidate),
-                    buildRefinementExample(modelAnswer, candidate),
-                    resolveRefinementMeaning(candidate, null, hints)
-            ));
+                    null,
+                    modelAnswer,
+                    null,
+                    hints
+            );
+            if (refinementExpression == null || !Boolean.TRUE.equals(refinementExpression.displayable())) {
+                continue;
+            }
+            sanitized.add(refinementExpression);
             diagnostics.modelSupplementCount++;
             diagnostics.recordFinal("model_supplement", candidate);
-            if (sanitized.size() >= 3) {
+            if (sanitized.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
                 break;
             }
         }
@@ -1615,7 +2404,7 @@ public class FeedbackService {
                 sanitized.add(fallback);
                 diagnostics.hintFallbackCount++;
                 diagnostics.recordFinal("hint_fallback", fallback.expression());
-                if (sanitized.size() >= 3) {
+                if (sanitized.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
                     break;
                 }
             }
@@ -1746,9 +2535,10 @@ public class FeedbackService {
                     if (seenExpressions.contains(normalizedCandidate)) {
                         continue;
                     }
-                    String example = buildSupplementRefinementExample(modelAnswer, sourceText, candidate);
+                    String example = buildSupplementRefinementExample(modelAnswer, sourceText, candidate).exampleEn();
                     if (!candidate.isBlank()
                             && shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+                            && isUsableRefinementExample(candidate, example)
                             && isNovelRefinementSuggestion(
                             rawCandidate,
                             candidate,
@@ -1762,7 +2552,7 @@ public class FeedbackService {
             }
         }
 
-        if (candidates.size() >= 3) {
+        if (candidates.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
             return new ArrayList<>(candidates);
         }
 
@@ -1775,8 +2565,9 @@ public class FeedbackService {
                     continue;
                 }
 
-                String example = buildSupplementRefinementExample(modelAnswer, sourceText, candidate);
+                String example = buildSupplementRefinementExample(modelAnswer, sourceText, candidate).exampleEn();
                 if (shouldRecommendExpressionCandidate(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
+                        && isUsableRefinementExample(candidate, example)
                         && isNovelRefinementSuggestion(
                         rawCandidate,
                         candidate,
@@ -1787,7 +2578,7 @@ public class FeedbackService {
                     candidates.add(candidate);
                 }
 
-                if (candidates.size() >= 3) {
+                if (candidates.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
                     return new ArrayList<>(candidates);
                 }
             }
@@ -1796,21 +2587,24 @@ public class FeedbackService {
         return new ArrayList<>(candidates);
     }
 
-    private String buildSupplementRefinementExample(
+    private RefinementExampleDetails buildSupplementRefinementExample(
             String preferredSource,
             String fallbackSource,
             String candidate
     ) {
-        String example = buildRefinementExample(preferredSource, candidate);
-        if (!example.isBlank() && !normalizeForComparison(example).equals(normalizeForComparison(candidate))) {
-            return example;
+        RefinementExampleDetails preferred = selectRefinementExample(candidate, null, preferredSource);
+        if (preferred.source() != RefinementExampleSource.NONE) {
+            return preferred;
         }
 
         if (fallbackSource == null || fallbackSource.isBlank()) {
-            return example;
+            return new RefinementExampleDetails(null, RefinementExampleSource.NONE);
         }
 
-        return buildRefinementExample(fallbackSource, candidate);
+        RefinementExampleDetails fallback = selectRefinementExample(candidate, null, fallbackSource);
+        return fallback.source() != RefinementExampleSource.NONE
+                ? fallback
+                : new RefinementExampleDetails(null, RefinementExampleSource.NONE);
     }
 
     private List<RefinementExpressionDto> buildHintBasedRefinementExpressions(
@@ -1845,14 +2639,22 @@ public class FeedbackService {
                     continue;
                 }
 
-                seenExpressions.add(normalizedCandidate);
-                fallbacks.add(new RefinementExpressionDto(
+                RefinementExpressionDto refinementExpression = buildRefinementExpressionDto(
                         candidate,
+                        RefinementExpressionSource.PROMPT_HINT,
                         buildReadableHintRefinementGuidance(hint.hintType()),
-                        buildHintRefinementExample(candidate, modelAnswer),
-                        resolveRefinementMeaning(candidate, null, List.of(hint))
-                ));
-                if (fallbacks.size() >= 3) {
+                        null,
+                        modelAnswer,
+                        null,
+                        List.of(hint)
+                );
+                if (refinementExpression == null || !Boolean.TRUE.equals(refinementExpression.displayable())) {
+                    continue;
+                }
+
+                seenExpressions.add(normalizedCandidate);
+                fallbacks.add(refinementExpression);
+                if (fallbacks.size() >= MAX_REFINEMENT_EXPRESSION_COUNT) {
                     return fallbacks;
                 }
             }
@@ -1909,11 +2711,7 @@ public class FeedbackService {
     }
 
     private String buildHintRefinementExample(String candidate, String modelAnswer) {
-        String example = buildRefinementExample(modelAnswer, candidate);
-        if (example == null || example.isBlank()) {
-            return candidate;
-        }
-        return example;
+        return buildRefinementExample(modelAnswer, candidate);
     }
 
     private String toReusableRefinementExpression(String candidate) {
@@ -2017,7 +2815,9 @@ public class FeedbackService {
             return "For example, [detail].";
         }
 
-        return isReusableShortPhrase(cleaned) ? normalizeFramePunctuation(cleaned) : "";
+        return isReusableShortPhrase(cleaned) || isReusableLexicalWord(cleaned)
+                ? normalizeFramePunctuation(cleaned)
+                : "";
     }
 
     private String extractBecauseBeAdjectiveTail(String candidate) {
@@ -2053,6 +2853,15 @@ public class FeedbackService {
 
         int tokenCount = normalized.split("\\s+").length;
         return tokenCount >= 2 && tokenCount <= 6;
+    }
+
+    private boolean isReusableLexicalWord(String candidate) {
+        String normalized = normalizeForComparison(candidate);
+        if (normalized.isBlank()) {
+            return false;
+        }
+
+        return normalized.split("\\s+").length == 1 && normalized.length() >= 4;
     }
 
     private String normalizeFramePunctuation(String value) {
@@ -2127,6 +2936,160 @@ public class FeedbackService {
         return "\ub2e4\uc74c \ub2f5\ubcc0\uc5d0\uc11c \uc790\uc5f0\uc2a4\ub7fd\uac8c \ub123\uc5b4 \ubcf4\uba74 \uc88b\uc740 \ud45c\ud604\uc774\uc5d0\uc694.";
     }
 
+    private String buildReadableRefinementMeaning(String expression) {
+        if (expression == null || expression.isBlank()) {
+            return null;
+        }
+
+        return determineRefinementType(expression) == RefinementExpressionType.FRAME
+                ? buildReadableFrameRefinementMeaning(expression)
+                : buildReadableLexicalRefinementMeaning(expression);
+    }
+
+    private String buildReadableFrameRefinementMeaning(String expression) {
+        String lower = normalizeForComparison(expression);
+        if (lower.isBlank()) {
+            return null;
+        }
+
+        if (lower.startsWith("because ")) {
+            return "왜냐하면 [이유]라고 이유를 이어 말하는 틀";
+        }
+        if (lower.startsWith("by ")) {
+            return "[방법]으로 [동사]하는 방식을 말하는 틀";
+        }
+        if (lower.startsWith("so that ")) {
+            return "[결과]를 위해 또는 [결과]가 되도록이라고 목적을 말하는 틀";
+        }
+        if (lower.startsWith("i plan to ")) {
+            return "[동사]할 계획이라고 말하는 틀";
+        }
+        if (lower.startsWith("i want to ")) {
+            return "[동사]하고 싶다고 말하는 틀";
+        }
+        if (lower.startsWith("i would like to ")) {
+            return "[동사]하고 싶다고 공손하게 말하는 틀";
+        }
+        if (lower.startsWith("i usually ")) {
+            return "평소 습관이나 일상을 말하는 틀";
+        }
+        if (lower.startsWith("it helps me ")) {
+            return "이것이 내게 어떤 도움이 되는지 말하는 틀";
+        }
+        if (lower.startsWith("when i want to ")) {
+            return "어떤 상황에서 어떻게 행동하는지 말하는 틀";
+        }
+        if (lower.startsWith("one reason is that ")) {
+            return "한 가지 이유를 구체적으로 덧붙이는 틀";
+        }
+        if (lower.startsWith("this is because ")) {
+            return "앞 문장의 이유를 이어 설명하는 틀";
+        }
+
+        return null;
+    }
+
+    private String buildReadableLexicalRefinementMeaning(String expression) {
+        String lower = normalizeForComparison(expression);
+        if (lower.isBlank()) {
+            return null;
+        }
+
+        return switch (lower) {
+            case "rest" -> "휴식하다";
+            case "read" -> "읽다";
+            case "relax" -> "휴식을 취하다";
+            case "exercise" -> "운동하다";
+            case "practice" -> "연습하다";
+            case "after lunch" -> "점심 식사 후에";
+            case "after dinner" -> "저녁 식사 후에";
+            case "after work" -> "일이 끝난 후에";
+            case "before bed" -> "잠자기 전에";
+            case "in my free time" -> "여가 시간에";
+            case "at home" -> "집에서";
+            case "on weekends" -> "주말에";
+            case "every morning" -> "매일 아침에";
+            case "every night" -> "매일 밤에";
+            case "fresh air" -> "신선한 공기";
+            default -> buildPatternBasedLexicalMeaning(lower);
+        };
+    }
+
+    private String buildPatternBasedLexicalMeaning(String expression) {
+        if (expression.startsWith("after ")) {
+            return buildTemporalGloss(expression.substring("after ".length()), "후에");
+        }
+        if (expression.startsWith("before ")) {
+            return buildTemporalGloss(expression.substring("before ".length()), "전에");
+        }
+        if (expression.startsWith("every ")) {
+            return buildRecurringGloss(expression.substring("every ".length()));
+        }
+        if (expression.startsWith("at ")) {
+            return buildLocationGloss(expression.substring("at ".length()));
+        }
+        if (expression.startsWith("in my ")) {
+            return buildPossessivePhraseGloss(expression.substring("in my ".length()));
+        }
+        if (expression.startsWith("to ")) {
+            return buildInfinitiveGloss(expression.substring("to ".length()));
+        }
+        return null;
+    }
+
+    private String buildTemporalGloss(String tail, String suffix) {
+        String normalizedTail = normalizeForComparison(tail);
+        return switch (normalizedTail) {
+            case "lunch" -> "점심 식사 " + suffix;
+            case "dinner" -> "저녁 식사 " + suffix;
+            case "work" -> "일이 끝난 " + suffix;
+            case "school" -> "학교가 끝난 " + suffix;
+            case "class" -> "수업이 끝난 " + suffix;
+            case "bed" -> "잠자기 " + suffix;
+            default -> null;
+        };
+    }
+
+    private String buildRecurringGloss(String tail) {
+        String normalizedTail = normalizeForComparison(tail);
+        return switch (normalizedTail) {
+            case "morning" -> "매일 아침에";
+            case "night" -> "매일 밤에";
+            case "weekend", "weekends" -> "매주 주말에";
+            default -> null;
+        };
+    }
+
+    private String buildLocationGloss(String tail) {
+        String normalizedTail = normalizeForComparison(tail);
+        return switch (normalizedTail) {
+            case "home" -> "집에서";
+            case "school" -> "학교에서";
+            case "work" -> "직장에서";
+            case "the park", "park" -> "공원에서";
+            default -> null;
+        };
+    }
+
+    private String buildPossessivePhraseGloss(String tail) {
+        String normalizedTail = normalizeForComparison(tail);
+        return switch (normalizedTail) {
+            case "free time" -> "여가 시간에";
+            default -> null;
+        };
+    }
+
+    private String buildInfinitiveGloss(String tail) {
+        String normalizedTail = normalizeForComparison(tail);
+        return switch (normalizedTail) {
+            case "rest" -> "쉬기 위해";
+            case "read" -> "읽기 위해";
+            case "exercise" -> "운동하기 위해";
+            case "relax" -> "휴식하기 위해";
+            default -> null;
+        };
+    }
+
     private String buildRecommendationGuidance(String expression) {
         return buildReadableRecommendationGuidance(expression);
     }
@@ -2157,6 +3120,33 @@ public class FeedbackService {
                 && !normalizedCorrectedAnswer.contains(normalizedCandidate);
     }
 
+    private boolean shouldKeepProvidedRefinementCandidate(
+            String candidate,
+            String normalizedLearnerAnswer,
+            String normalizedCorrectedAnswer
+    ) {
+        if (candidate == null || candidate.isBlank()) {
+            return false;
+        }
+
+        String normalizedCandidate = normalizeForComparison(candidate);
+        if (normalizedCandidate.isBlank()) {
+            return false;
+        }
+
+        int tokenCount = normalizedCandidate.split("\\s+").length;
+        if (tokenCount > 14) {
+            return false;
+        }
+
+        if (tokenCount == 1 && normalizedCandidate.length() < 4) {
+            return false;
+        }
+
+        return !normalizedLearnerAnswer.contains(normalizedCandidate)
+                && !normalizedCorrectedAnswer.contains(normalizedCandidate);
+    }
+
     private boolean isNovelRefinementSuggestion(
             String rawCandidate,
             String reusableCandidate,
@@ -2165,8 +3155,7 @@ public class FeedbackService {
             String normalizedCorrectedAnswer
     ) {
         return !isAlreadyExpressedInAnswer(rawCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
-                && !isAlreadyExpressedInAnswer(reusableCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
-                && !isAlreadyExpressedInAnswer(example, normalizedLearnerAnswer, normalizedCorrectedAnswer);
+                && !isAlreadyExpressedInAnswer(reusableCandidate, normalizedLearnerAnswer, normalizedCorrectedAnswer);
     }
 
     private boolean isAlreadyExpressedInAnswer(
@@ -2450,6 +3439,19 @@ public class FeedbackService {
         }
     }
 
+    private record RefinementExampleDetails(
+            String exampleEn,
+            RefinementExampleSource source
+    ) {
+    }
+
+    private record RefinementMeaningDetails(
+            String meaningKo,
+            RefinementMeaningType type,
+            List<String> qualityFlags
+    ) {
+    }
+
     private String normalizeFrameForMatching(String value) {
         if (value == null || value.isBlank()) {
             return "";
@@ -2466,16 +3468,16 @@ public class FeedbackService {
     }
 
     private String buildRefinementExample(String modelAnswer, String expression) {
+        return extractRefinementExample(modelAnswer, expression);
+    }
+
+    private String extractRefinementExample(String modelAnswer, String expression) {
         if (expression != null && expression.contains("[") && expression.contains("]")) {
-            String frameMatch = findFrameExampleInModelAnswer(modelAnswer, expression);
-            if (!frameMatch.isBlank()) {
-                return frameMatch;
-            }
-            return materializeRefinementFrame(expression);
+            return findFrameExampleInModelAnswer(modelAnswer, expression);
         }
 
-        if (modelAnswer == null || modelAnswer.isBlank()) {
-            return expression == null ? "" : expression;
+        if (modelAnswer == null || modelAnswer.isBlank() || expression == null || expression.isBlank()) {
+            return "";
         }
 
         String normalizedExpression = expression.toLowerCase(Locale.ROOT);
@@ -2485,7 +3487,157 @@ public class FeedbackService {
             }
         }
 
-        return expression;
+        return "";
+    }
+
+    private RefinementExpressionDto buildRefinementExpressionDto(
+            String expression,
+            RefinementExpressionSource source,
+            String guidanceKo,
+            String preferredExample,
+            String modelAnswer,
+            String explicitMeaningKo,
+            List<PromptHintDto> hints
+    ) {
+        if (expression == null || expression.isBlank()) {
+            return null;
+        }
+
+        String normalizedExpression = cleanExpressionCandidate(expression);
+        if (normalizedExpression.isBlank()) {
+            return null;
+        }
+
+        RefinementExpressionType type = determineRefinementType(normalizedExpression);
+        RefinementExampleDetails exampleDetails = selectRefinementExample(
+                normalizedExpression,
+                preferredExample,
+                modelAnswer
+        );
+        RefinementMeaningDetails meaningDetails = resolveRefinementMeaningDetails(
+                normalizedExpression,
+                explicitMeaningKo,
+                hints
+        );
+        List<String> qualityFlags = new ArrayList<>(meaningDetails.qualityFlags());
+        String normalizedGuidance = normalizeNullable(guidanceKo);
+
+        if (normalizedGuidance == null) {
+            qualityFlags.add("GUIDANCE_NONE");
+        }
+        if (exampleDetails.source() == RefinementExampleSource.NONE) {
+            qualityFlags.add("EXAMPLE_NONE");
+        }
+
+        boolean displayable = exampleDetails.source() != RefinementExampleSource.NONE;
+        return new RefinementExpressionDto(
+                normalizedExpression,
+                type,
+                source == null ? RefinementExpressionSource.GENERATED : source,
+                meaningDetails.meaningKo(),
+                meaningDetails.type(),
+                normalizedGuidance,
+                exampleDetails.exampleEn(),
+                exampleDetails.source(),
+                displayable,
+                qualityFlags
+        );
+    }
+
+    private RefinementExpressionSource inferRefinementSource(
+            String candidate,
+            RefinementExpressionSource preferredSource,
+            String modelAnswer,
+            List<PromptHintDto> hints
+    ) {
+        if (preferredSource != null && preferredSource != RefinementExpressionSource.GENERATED) {
+            return preferredSource;
+        }
+        if (matchesPromptHintRefinement(candidate, hints)) {
+            return RefinementExpressionSource.PROMPT_HINT;
+        }
+        if (appearsInText(candidate, modelAnswer)) {
+            return RefinementExpressionSource.MODEL_ANSWER;
+        }
+        return preferredSource == null ? RefinementExpressionSource.GENERATED : preferredSource;
+    }
+
+    private RefinementExpressionSource inferSupplementRefinementSource(
+            String candidate,
+            String modelAnswer
+    ) {
+        return appearsInText(candidate, modelAnswer)
+                ? RefinementExpressionSource.MODEL_ANSWER
+                : RefinementExpressionSource.GENERATED;
+    }
+
+    private RefinementExampleDetails selectRefinementExample(String expression, String preferredExample, String modelAnswer) {
+        String trimmedPreferred = preferredExample == null ? "" : preferredExample.trim();
+        String extracted = extractRefinementExample(modelAnswer, expression);
+        if (isUsableRefinementExample(expression, extracted)) {
+            return new RefinementExampleDetails(extracted, RefinementExampleSource.EXTRACTED);
+        }
+
+        if (isUsableRefinementExample(expression, trimmedPreferred)) {
+            return new RefinementExampleDetails(trimmedPreferred, RefinementExampleSource.OPENAI);
+        }
+
+        return new RefinementExampleDetails(null, RefinementExampleSource.NONE);
+    }
+
+    private boolean isUsableRefinementExample(String expression, String example) {
+        if (example == null || example.isBlank()) {
+            return false;
+        }
+
+        String trimmedExample = example.trim();
+        String normalizedExpression = normalizeForComparison(expression);
+        String normalizedExample = normalizeForComparison(trimmedExample);
+        if (normalizedExample.isBlank() || normalizedExample.equals(normalizedExpression)) {
+            return false;
+        }
+
+        if (trimmedExample.contains("[") || trimmedExample.contains("]")) {
+            return false;
+        }
+
+        if (looksLikeMetaRefinementExample(normalizedExample)) {
+            return false;
+        }
+
+        int expressionTokenCount = normalizedExpression.isBlank() ? 0 : normalizedExpression.split("\\s+").length;
+        int exampleTokenCount = normalizedExample.split("\\s+").length;
+        if (expression != null && expression.contains("[") && expression.contains("]")) {
+            return exampleTokenCount >= 4 && extractMeaningfulTokens(normalizedExample).size() >= 2;
+        }
+
+        if (exampleTokenCount <= expressionTokenCount) {
+            return false;
+        }
+
+        if (exampleTokenCount < Math.max(4, expressionTokenCount + 1)) {
+            return false;
+        }
+
+        return extractMeaningfulTokens(normalizedExample).size() >= 2;
+    }
+
+    private boolean looksLikeMetaRefinementExample(String normalizedExample) {
+        if (normalizedExample == null || normalizedExample.isBlank()) {
+            return true;
+        }
+
+        return normalizedExample.startsWith("example ")
+                || normalizedExample.startsWith("use this ")
+                || normalizedExample.startsWith("good expression ")
+                || normalizedExample.startsWith("this expression ")
+                || normalizedExample.contains(" good expression ")
+                || normalizedExample.contains(" use this ")
+                || normalizedExample.contains(" guidance ")
+                || normalizedExample.contains(" hint ")
+                || normalizedExample.contains(" instruction ")
+                || normalizedExample.contains(" meaning ")
+                || normalizedExample.contains(" translation ");
     }
 
     private String findFrameExampleInModelAnswer(String modelAnswer, String frame) {
@@ -2703,15 +3855,50 @@ public class FeedbackService {
         return FEEDBACK_USED_EXPRESSION_USAGE_TIP;
     }
 
+    private RefinementMeaningDetails resolveRefinementMeaningDetails(
+            String candidate,
+            String explicitMeaningKo,
+            List<PromptHintDto> hints
+    ) {
+        String meaning = resolveRefinementMeaning(
+                candidate,
+                explicitMeaningKo,
+                hints
+        );
+        if (meaning == null || meaning.isBlank()) {
+            return new RefinementMeaningDetails(null, RefinementMeaningType.NONE, List.of("MEANING_NONE"));
+        }
+        if (isGenericMeaningPlaceholder(meaning)) {
+            return new RefinementMeaningDetails(null, RefinementMeaningType.NONE, List.of("MEANING_GENERIC"));
+        }
+
+        RefinementExpressionType expressionType = determineRefinementType(candidate);
+        RefinementMeaningType meaningType = expressionType == RefinementExpressionType.FRAME
+                ? RefinementMeaningType.PATTERN_EXPLANATION
+                : RefinementMeaningType.GLOSS;
+        return new RefinementMeaningDetails(meaning.trim(), meaningType, List.of());
+    }
+
+    private boolean isGenericMeaningPlaceholder(String meaningKo) {
+        String normalized = meaningKo == null ? "" : meaningKo.trim().replaceAll("\\s+", " ");
+        return normalized.equals("다음 답변에서 활용하기 좋은 표현")
+                || normalized.equals("다음 답변에 바로 가져다 쓸 수 있는 표현 틀")
+                || normalized.equals("다음 답변에 바로 가져다 쓸 수 있는 표현")
+                || (normalized.contains("다음 답변에서") && normalized.contains("표현"))
+                || (normalized.contains("가져다 쓸 수 있는") && normalized.contains("표현"));
+    }
+
     private String resolveRefinementMeaning(
             String candidate,
             String explicitMeaningKo,
             List<PromptHintDto> hints
     ) {
-        if (explicitMeaningKo != null && !explicitMeaningKo.isBlank()) {
+        if (explicitMeaningKo != null
+                && !explicitMeaningKo.isBlank()
+                && !isGenericMeaningPlaceholder(explicitMeaningKo)) {
             return explicitMeaningKo.trim();
         }
-        if (candidate == null || candidate.isBlank() || hints == null || hints.isEmpty()) {
+        if (candidate == null || candidate.isBlank()) {
             return null;
         }
 
@@ -2720,6 +3907,64 @@ public class FeedbackService {
             return null;
         }
 
+        if (hints != null && !hints.isEmpty()) {
+            for (PromptHintDto hint : hints) {
+                if (hint == null || hint.items() == null) {
+                    continue;
+                }
+                for (PromptHintItemDto item : hint.items()) {
+                    if (item == null || item.content() == null || item.content().isBlank()) {
+                        continue;
+                    }
+
+                    String normalizedItem = normalizeForComparison(item.content());
+                    String normalizedReusableItem = normalizeForComparison(toReusableRefinementExpression(item.content()));
+                    boolean matches = normalizedCandidate.equals(normalizedItem)
+                            || normalizedCandidate.equals(normalizedReusableItem)
+                            || normalizedItem.contains(normalizedCandidate)
+                            || normalizedReusableItem.contains(normalizedCandidate)
+                            || normalizedCandidate.contains(normalizedItem);
+                    if (!matches) {
+                        continue;
+                    }
+
+                    if (item.meaningKo() != null && !item.meaningKo().isBlank()) {
+                        return item.meaningKo().trim();
+                    }
+                }
+            }
+        }
+
+        return buildReadableRefinementMeaning(candidate);
+    }
+
+    private boolean isGenericRefinementMeaning(String meaningKo) {
+        String normalized = meaningKo == null ? "" : meaningKo.trim().replaceAll("\\s+", " ");
+        return normalized.equals("다음 답변에서 활용하기 좋은 표현")
+                || normalized.equals("다음 답변에 바로 가져다 쓸 수 있는 표현 틀")
+                || (normalized.contains("다음 답변에서") && normalized.contains("표현"))
+                || (normalized.contains("가져다 쓸 수") && normalized.contains("표현"));
+    }
+
+    private RefinementExpressionType determineRefinementType(String expression) {
+        return expression != null && expression.contains("[") && expression.contains("]")
+                ? RefinementExpressionType.FRAME
+                : RefinementExpressionType.LEXICAL;
+    }
+
+    private boolean appearsInText(String candidate, String sourceText) {
+        String normalizedCandidate = normalizeForComparison(candidate);
+        String normalizedSource = normalizeForComparison(sourceText);
+        return !normalizedCandidate.isBlank() && !normalizedSource.isBlank()
+                && normalizedSource.contains(normalizedCandidate);
+    }
+
+    private boolean matchesPromptHintRefinement(String candidate, List<PromptHintDto> hints) {
+        if (candidate == null || candidate.isBlank() || hints == null || hints.isEmpty()) {
+            return false;
+        }
+
+        String normalizedCandidate = normalizeForComparison(candidate);
         for (PromptHintDto hint : hints) {
             if (hint == null || hint.items() == null) {
                 continue;
@@ -2728,25 +3973,26 @@ public class FeedbackService {
                 if (item == null || item.content() == null || item.content().isBlank()) {
                     continue;
                 }
-
                 String normalizedItem = normalizeForComparison(item.content());
                 String normalizedReusableItem = normalizeForComparison(toReusableRefinementExpression(item.content()));
-                boolean matches = normalizedCandidate.equals(normalizedItem)
+                if (normalizedCandidate.equals(normalizedItem)
                         || normalizedCandidate.equals(normalizedReusableItem)
                         || normalizedItem.contains(normalizedCandidate)
                         || normalizedReusableItem.contains(normalizedCandidate)
-                        || normalizedCandidate.contains(normalizedItem);
-                if (!matches) {
-                    continue;
-                }
-
-                if (item.meaningKo() != null && !item.meaningKo().isBlank()) {
-                    return item.meaningKo().trim();
+                        || normalizedCandidate.contains(normalizedItem)) {
+                    return true;
                 }
             }
         }
+        return false;
+    }
 
-        return null;
+    private String normalizeNullable(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private String cleanExpressionCandidate(String raw) {

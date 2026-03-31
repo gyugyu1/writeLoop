@@ -6,6 +6,8 @@ export type WritingDraftType = "ANSWER" | "REWRITE";
 export interface Prompt {
   id: string;
   topic: string;
+  topicCategory: string;
+  topicDetail: string;
   difficulty: PromptDifficulty;
   questionEn: string;
   questionKo: string;
@@ -274,6 +276,8 @@ export interface AdminPromptHint {
 export interface AdminPrompt {
   id: string;
   topic: string;
+  topicCategory: string;
+  topicDetail: string;
   difficulty: PromptDifficulty;
   questionEn: string;
   questionKo: string;
@@ -284,8 +288,15 @@ export interface AdminPrompt {
   hints: AdminPromptHint[];
 }
 
+export interface AdminPromptTopicCatalogEntry {
+  category: string;
+  details: string[];
+}
+
 export interface AdminPromptRequest {
-  topic: string;
+  topic?: string;
+  topicCategory: string;
+  topicDetail: string;
   difficulty: PromptDifficulty;
   questionEn: string;
   questionKo: string;

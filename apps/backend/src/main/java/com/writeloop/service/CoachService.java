@@ -2859,6 +2859,8 @@ public class CoachService {
                 currentPrompt.questionEn() + " " + currentPrompt.questionKo() + " " + currentPrompt.tip() + " " + currentPrompt.topic()
         ));
         currentCategories.addAll(usedCategories);
+        String currentTopicCategory = normalizePromptTopicKey(currentPrompt.topicCategory());
+        String currentTopicDetail = normalizePromptTopicKey(currentPrompt.topicDetail());
 
         Set<String> answerTokens = tokenize(answer);
         Set<String> currentTokens = tokenize(
@@ -2871,9 +2873,20 @@ public class CoachService {
                 continue;
             }
 
+            TopicMatch topicMatch = matchPromptTopics(
+                    currentTopicCategory,
+                    currentTopicDetail,
+                    normalizePromptTopicKey(prompt.topicCategory()),
+                    normalizePromptTopicKey(prompt.topicDetail())
+            );
             int score = 0;
             if (prompt.difficulty().equalsIgnoreCase(currentPrompt.difficulty())) {
                 score += 4;
+            }
+            if (topicMatch.sameTopicDetail()) {
+                score += 12;
+            } else if (topicMatch.sameCategory()) {
+                score += 7;
             }
 
             Set<String> promptCategories = inferCategories(
@@ -2898,23 +2911,48 @@ public class CoachService {
             }
 
             if (score > 0) {
-                scoredPrompts.add(new ScoredPrompt(prompt.id(), score, i));
+                scoredPrompts.add(new ScoredPrompt(
+                        prompt.id(),
+                        score,
+                        i,
+                        topicMatch.sameTopicDetail(),
+                        topicMatch.sameCategory(),
+                        prompt.difficulty().equalsIgnoreCase(currentPrompt.difficulty())
+                ));
             }
         }
 
-        scoredPrompts.sort(Comparator
-                .comparingInt(ScoredPrompt::score).reversed()
-                .thenComparingInt(ScoredPrompt::order));
+        scoredPrompts.sort((left, right) -> {
+            int leftPriority = left.score()
+                    + (left.sameTopicDetail() ? 1_000 : 0)
+                    + (left.sameCategory() ? 100 : 0)
+                    + (left.sameDifficulty() ? 10 : 0);
+            int rightPriority = right.score()
+                    + (right.sameTopicDetail() ? 1_000 : 0)
+                    + (right.sameCategory() ? 100 : 0)
+                    + (right.sameDifficulty() ? 10 : 0);
+            if (rightPriority != leftPriority) {
+                return Integer.compare(rightPriority, leftPriority);
+            }
+            return Integer.compare(left.order(), right.order());
+        });
 
         List<String> suggested = new ArrayList<>();
-        for (ScoredPrompt scoredPrompt : scoredPrompts) {
-            if (!suggested.contains(scoredPrompt.promptId())) {
-                suggested.add(scoredPrompt.promptId());
-            }
-            if (suggested.size() >= 3) {
-                break;
-            }
-        }
+        List<ScoredPrompt> sameTopicDetailPrompts = scoredPrompts.stream()
+                .filter(ScoredPrompt::sameTopicDetail)
+                .toList();
+        List<ScoredPrompt> sameCategoryPrompts = scoredPrompts.stream()
+                .filter(prompt -> prompt.sameCategory() && !prompt.sameTopicDetail())
+                .toList();
+        List<ScoredPrompt> otherPrompts = scoredPrompts.stream()
+                .filter(prompt -> !prompt.sameCategory())
+                .toList();
+
+        addFirstSuggestedPrompt(suggested, sameTopicDetailPrompts);
+        addFirstSuggestedPrompt(suggested, sameCategoryPrompts);
+        addSuggestedPrompts(suggested, sameTopicDetailPrompts);
+        addSuggestedPrompts(suggested, sameCategoryPrompts);
+        addSuggestedPrompts(suggested, otherPrompts);
 
         if (suggested.size() < 3) {
             for (PromptDto prompt : prompts) {
@@ -2928,6 +2966,57 @@ public class CoachService {
         }
 
         return suggested;
+    }
+
+    private void addFirstSuggestedPrompt(List<String> suggested, List<ScoredPrompt> candidates) {
+        if (suggested.size() >= 3 || candidates.isEmpty()) {
+            return;
+        }
+
+        ScoredPrompt candidate = candidates.get(0);
+        if (!suggested.contains(candidate.promptId())) {
+            suggested.add(candidate.promptId());
+        }
+    }
+
+    private void addSuggestedPrompts(List<String> suggested, List<ScoredPrompt> candidates) {
+        if (suggested.size() >= 3) {
+            return;
+        }
+
+        for (ScoredPrompt candidate : candidates) {
+            if (!suggested.contains(candidate.promptId())) {
+                suggested.add(candidate.promptId());
+            }
+            if (suggested.size() >= 3) {
+                return;
+            }
+        }
+    }
+
+    private String normalizePromptTopicKey(String value) {
+        if (value == null) {
+            return "";
+        }
+        return value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private TopicMatch matchPromptTopics(
+            String currentCategory,
+            String currentDetail,
+            String candidateCategory,
+            String candidateDetail
+    ) {
+        if (currentCategory.isBlank() || candidateCategory.isBlank()) {
+            return new TopicMatch(false, false);
+        }
+
+        boolean sameCategory = currentCategory.equals(candidateCategory);
+        boolean sameTopicDetail = sameCategory
+                && !currentDetail.isBlank()
+                && !candidateDetail.isBlank()
+                && currentDetail.equals(candidateDetail);
+        return new TopicMatch(sameCategory, sameTopicDetail);
     }
 
     private ExpressionMatch matchExpression(String answer, String expression) {
@@ -3170,7 +3259,17 @@ public class CoachService {
     private record TokenWindow(int start, int end) {
     }
 
-    private record ScoredPrompt(String promptId, int score, int order) {
+    private record TopicMatch(boolean sameCategory, boolean sameTopicDetail) {
+    }
+
+    private record ScoredPrompt(
+            String promptId,
+            int score,
+            int order,
+            boolean sameTopicDetail,
+            boolean sameCategory,
+            boolean sameDifficulty
+    ) {
     }
 
     private record ExpressionTopicBundle(

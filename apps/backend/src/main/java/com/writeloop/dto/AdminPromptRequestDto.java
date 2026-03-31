@@ -2,6 +2,8 @@ package com.writeloop.dto;
 
 public record AdminPromptRequestDto(
         String topic,
+        String topicCategory,
+        String topicDetail,
         String difficulty,
         String questionEn,
         String questionKo,
@@ -19,6 +21,6 @@ public record AdminPromptRequestDto(
             Integer displayOrder,
             Boolean active
     ) {
-        this(topic, difficulty, questionEn, questionKo, tip, displayOrder, active, null);
+        this(topic, null, null, difficulty, questionEn, questionKo, tip, displayOrder, active, null);
     }
 }

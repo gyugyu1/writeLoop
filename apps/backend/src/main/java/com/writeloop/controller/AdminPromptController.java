@@ -4,6 +4,7 @@ import com.writeloop.dto.AdminPromptDto;
 import com.writeloop.dto.AdminPromptHintDto;
 import com.writeloop.dto.AdminPromptHintRequestDto;
 import com.writeloop.dto.AdminPromptRequestDto;
+import com.writeloop.dto.AdminPromptTopicCatalogDto;
 import com.writeloop.service.AdminPromptService;
 import com.writeloop.service.AuthService;
 import jakarta.servlet.http.HttpSession;
@@ -33,6 +34,12 @@ public class AdminPromptController {
     public List<AdminPromptDto> findPrompts(HttpSession session) {
         authService.requireAdmin(session);
         return adminPromptService.findAll();
+    }
+
+    @GetMapping("/topic-catalog")
+    public List<AdminPromptTopicCatalogDto> findTopicCatalog(HttpSession session) {
+        authService.requireAdmin(session);
+        return adminPromptService.findTopicCatalog();
     }
 
     @PostMapping

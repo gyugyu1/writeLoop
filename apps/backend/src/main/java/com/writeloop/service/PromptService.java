@@ -89,6 +89,8 @@ public class PromptService {
         return new PromptDto(
                 prompt.getId(),
                 prompt.getTopic(),
+                prompt.getTopicCategory(),
+                prompt.getTopicDetail(),
                 prompt.getDifficulty(),
                 prompt.getQuestionEn(),
                 prompt.getQuestionKo(),

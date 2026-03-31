@@ -6,6 +6,7 @@ import {
   createAdminPromptHint,
   deleteAdminPrompt,
   deleteAdminPromptHint,
+  getAdminPromptTopicCatalog,
   getAdminPrompts,
   getCurrentUser,
   updateAdminPrompt,
@@ -16,6 +17,7 @@ import type {
   AdminPromptHint,
   AdminPromptHintRequest,
   AdminPromptRequest,
+  AdminPromptTopicCatalogEntry,
   AuthUser,
   PromptCoachProfile,
   PromptDifficulty
@@ -43,7 +45,8 @@ const emptyCoachProfile: PromptCoachProfile = {
 };
 
 const emptyPromptForm: AdminPromptRequest = {
-  topic: "",
+  topicCategory: "",
+  topicDetail: "",
   difficulty: "A",
   questionEn: "",
   questionKo: "",
@@ -63,7 +66,8 @@ const emptyHintForm: AdminPromptHintRequest = {
 
 function toPromptForm(prompt: AdminPrompt): AdminPromptRequest {
   return {
-    topic: prompt.topic,
+    topicCategory: prompt.topicCategory,
+    topicDetail: prompt.topicDetail,
     difficulty: prompt.difficulty,
     questionEn: prompt.questionEn,
     questionKo: prompt.questionKo,
@@ -109,8 +113,37 @@ function formatListInput(values: string[] | undefined) {
   return (values ?? []).join(", ");
 }
 
+function updateTopicSelection(
+  topicCatalog: AdminPromptTopicCatalogEntry[],
+  current: AdminPromptRequest,
+  nextTopicCategory: string,
+  nextTopicDetail?: string
+): AdminPromptRequest {
+  const allowedDetails = getPromptTopicDetails(topicCatalog, nextTopicCategory);
+  const resolvedTopicDetail =
+    nextTopicDetail !== undefined
+      ? nextTopicDetail
+      : allowedDetails.includes(current.topicDetail)
+        ? current.topicDetail
+        : "";
+
+  return {
+    ...current,
+    topicCategory: nextTopicCategory,
+    topicDetail: resolvedTopicDetail
+  };
+}
+
+function getPromptTopicDetails(
+  topicCatalog: AdminPromptTopicCatalogEntry[],
+  category: string
+) {
+  return [...(topicCatalog.find((entry) => entry.category === category)?.details ?? [])];
+}
+
 export function AdminPageClient() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
+  const [topicCatalog, setTopicCatalog] = useState<AdminPromptTopicCatalogEntry[]>([]);
   const [prompts, setPrompts] = useState<AdminPrompt[]>([]);
   const [promptForms, setPromptForms] = useState<Record<string, AdminPromptRequest>>({});
   const [hintForms, setHintForms] = useState<Record<string, AdminPromptHintRequest>>({});
@@ -137,11 +170,15 @@ export function AdminPageClient() {
           return;
         }
 
-        const adminPrompts = await getAdminPrompts();
+        const [adminPrompts, adminTopicCatalog] = await Promise.all([
+          getAdminPrompts(),
+          getAdminPromptTopicCatalog()
+        ]);
         if (!mounted) {
           return;
         }
 
+        setTopicCatalog(adminTopicCatalog);
         applyPromptState(adminPrompts);
         setLoading(false);
       } catch {
@@ -376,14 +413,43 @@ export function AdminPageClient() {
         </div>
         <div className={styles.formGrid}>
           <label className={styles.field}>
-            <span>주제</span>
-            <input
+            <span>주제 대분류</span>
+            <select
               className={styles.input}
-              value={newPromptForm.topic}
+              value={newPromptForm.topicCategory}
               onChange={(event) =>
-                setNewPromptForm((current) => ({ ...current, topic: event.target.value }))
+                setNewPromptForm((current) =>
+                  updateTopicSelection(topicCatalog, current, event.target.value)
+                )
               }
-            />
+            >
+              <option value="">선택하세요</option>
+              {topicCatalog.map((entry) => (
+                <option key={entry.category} value={entry.category}>
+                  {entry.category}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.field}>
+            <span>세부 토픽</span>
+            <select
+              className={styles.input}
+              value={newPromptForm.topicDetail}
+              disabled={!newPromptForm.topicCategory}
+              onChange={(event) =>
+                setNewPromptForm((current) =>
+                  updateTopicSelection(topicCatalog, current, current.topicCategory, event.target.value)
+                )
+              }
+            >
+              <option value="">선택하세요</option>
+              {getPromptTopicDetails(topicCatalog, newPromptForm.topicCategory).map((detail) => (
+                <option key={detail} value={detail}>
+                  {detail}
+                </option>
+              ))}
+            </select>
           </label>
           <label className={styles.field}>
             <span>난이도</span>
@@ -613,17 +679,43 @@ export function AdminPageClient() {
                   <div className={styles.promptEditor}>
                     <div className={styles.formGrid}>
                       <label className={styles.field}>
-                        <span>주제</span>
-                        <input
+                        <span>주제 대분류</span>
+                        <select
                           className={styles.input}
-                          value={form.topic}
+                          value={form.topicCategory}
                           onChange={(event) =>
-                            updatePromptForm(prompt.id, (current) => ({
-                              ...current,
-                              topic: event.target.value
-                            }))
+                            updatePromptForm(prompt.id, (current) =>
+                              updateTopicSelection(topicCatalog, current, event.target.value)
+                            )
                           }
-                        />
+                        >
+                          <option value="">선택하세요</option>
+                          {topicCatalog.map((entry) => (
+                            <option key={entry.category} value={entry.category}>
+                              {entry.category}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className={styles.field}>
+                        <span>세부 토픽</span>
+                        <select
+                          className={styles.input}
+                          value={form.topicDetail}
+                          disabled={!form.topicCategory}
+                          onChange={(event) =>
+                            updatePromptForm(prompt.id, (current) =>
+                              updateTopicSelection(topicCatalog, current, current.topicCategory, event.target.value)
+                            )
+                          }
+                        >
+                          <option value="">선택하세요</option>
+                          {getPromptTopicDetails(topicCatalog, form.topicCategory).map((detail) => (
+                            <option key={detail} value={detail}>
+                              {detail}
+                            </option>
+                          ))}
+                        </select>
                       </label>
                       <label className={styles.field}>
                         <span>난이도</span>

@@ -4,12 +4,14 @@ import com.writeloop.dto.AdminPromptDto;
 import com.writeloop.dto.AdminPromptHintDto;
 import com.writeloop.dto.AdminPromptHintRequestDto;
 import com.writeloop.dto.AdminPromptRequestDto;
+import com.writeloop.dto.AdminPromptTopicCatalogDto;
 import com.writeloop.persistence.PromptEntity;
 import com.writeloop.persistence.PromptHintEntity;
 import com.writeloop.persistence.PromptHintItemEntity;
 import com.writeloop.persistence.PromptHintItemRepository;
 import com.writeloop.persistence.PromptHintRepository;
 import com.writeloop.persistence.PromptRepository;
+import com.writeloop.persistence.PromptTopicDetailEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,7 @@ public class AdminPromptService {
     private final PromptHintItemRepository promptHintItemRepository;
     private final PromptCoachProfileSupport promptCoachProfileSupport;
     private final PromptHintItemSupport promptHintItemSupport;
+    private final PromptTopicSupport promptTopicSupport;
 
     public List<AdminPromptDto> findAll() {
         List<PromptEntity> prompts = promptRepository.findAllByOrderByDisplayOrderAsc();
@@ -38,11 +41,18 @@ public class AdminPromptService {
                 .toList();
     }
 
+    public List<AdminPromptTopicCatalogDto> findTopicCatalog() {
+        return promptTopicSupport.findTopicCatalog();
+    }
+
     public AdminPromptDto createPrompt(AdminPromptRequestDto request) {
         String difficulty = normalizeDifficulty(request.difficulty());
+        PromptEntity.TopicParts topicParts = resolveTopic(request);
+        PromptTopicDetailEntity topicDetail = resolveTopicDetail(topicParts);
         PromptEntity prompt = new PromptEntity(
                 generatePromptId(difficulty),
-                normalizeRequiredText(request.topic(), "Topic is required."),
+                topicParts.category(),
+                topicParts.detail(),
                 difficulty,
                 normalizeRequiredText(request.questionEn(), "English question is required."),
                 normalizeRequiredText(request.questionKo(), "Korean question is required."),
@@ -50,6 +60,7 @@ public class AdminPromptService {
                 normalizeDisplayOrder(request.displayOrder()),
                 request.active() == null || request.active()
         );
+        prompt.assignTopicDetail(topicDetail);
         promptCoachProfileSupport.upsertProfile(prompt, request.coachProfile());
         prompt = promptRepository.save(prompt);
 
@@ -58,9 +69,12 @@ public class AdminPromptService {
 
     public AdminPromptDto updatePrompt(String promptId, AdminPromptRequestDto request) {
         PromptEntity prompt = findPrompt(promptId);
+        PromptEntity.TopicParts topicParts = resolveTopic(request);
+        PromptTopicDetailEntity topicDetail = resolveTopicDetail(topicParts);
 
         prompt.update(
-                normalizeRequiredText(request.topic(), "Topic is required."),
+                topicParts.category(),
+                topicParts.detail(),
                 normalizeDifficulty(request.difficulty()),
                 normalizeRequiredText(request.questionEn(), "English question is required."),
                 normalizeRequiredText(request.questionKo(), "Korean question is required."),
@@ -68,6 +82,7 @@ public class AdminPromptService {
                 normalizeDisplayOrder(request.displayOrder()),
                 request.active() == null || request.active()
         );
+        prompt.assignTopicDetail(topicDetail);
         promptCoachProfileSupport.upsertProfile(prompt, request.coachProfile());
 
         PromptEntity saved = promptRepository.save(prompt);
@@ -77,7 +92,8 @@ public class AdminPromptService {
     public void deletePrompt(String promptId) {
         PromptEntity prompt = findPrompt(promptId);
         prompt.update(
-                prompt.getTopic(),
+                prompt.getTopicCategory(),
+                prompt.getTopicDetail(),
                 prompt.getDifficulty(),
                 prompt.getQuestionEn(),
                 prompt.getQuestionKo(),
@@ -171,6 +187,8 @@ public class AdminPromptService {
         return new AdminPromptDto(
                 prompt.getId(),
                 prompt.getTopic(),
+                prompt.getTopicCategory(),
+                prompt.getTopicDetail(),
                 prompt.getDifficulty(),
                 prompt.getQuestionEn(),
                 prompt.getQuestionKo(),
@@ -272,6 +290,45 @@ public class AdminPromptService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, message);
         }
         return value.trim();
+    }
+
+    private String normalizeOptionalText(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private PromptEntity.TopicParts resolveTopic(AdminPromptRequestDto request) {
+        String topicCategory = normalizeOptionalText(request.topicCategory());
+        String topicDetail = normalizeOptionalText(request.topicDetail());
+
+        if (!topicCategory.isBlank() || !topicDetail.isBlank()) {
+            if (topicCategory.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Topic category is required.");
+            }
+            if (topicDetail.isBlank()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Topic detail is required.");
+            }
+            validateNormalizedTopic(topicCategory, topicDetail);
+            return new PromptEntity.TopicParts(topicCategory, topicDetail);
+        }
+
+        String topic = normalizeRequiredText(request.topic(), "Topic is required.");
+        PromptEntity.TopicParts topicParts = PromptEntity.splitTopic(topic);
+        validateNormalizedTopic(topicParts.category(), topicParts.detail());
+        return topicParts;
+    }
+
+    private void validateNormalizedTopic(String topicCategory, String topicDetail) {
+        if (promptTopicSupport.findTopicDetail(topicCategory, topicDetail).isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported topic detail for the selected category.");
+        }
+    }
+
+    private PromptTopicDetailEntity resolveTopicDetail(PromptEntity.TopicParts topicParts) {
+        try {
+            return promptTopicSupport.requireTopicDetail(topicParts.category(), topicParts.detail());
+        } catch (IllegalArgumentException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, exception.getMessage());
+        }
     }
 
     private int normalizeDisplayOrder(Integer displayOrder) {

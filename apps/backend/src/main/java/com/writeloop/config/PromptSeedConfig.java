@@ -8,6 +8,7 @@ import com.writeloop.persistence.PromptHintRepository;
 import com.writeloop.persistence.PromptRepository;
 import com.writeloop.service.PromptCoachProfileSupport;
 import com.writeloop.service.PromptHintItemSupport;
+import com.writeloop.service.PromptTopicSupport;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
@@ -27,13 +28,16 @@ public class PromptSeedConfig {
             JdbcTemplate jdbcTemplate,
             PromptCoachProfileSupport promptCoachProfileSupport,
             PromptHintItemSupport promptHintItemSupport,
+            PromptTopicSupport promptTopicSupport,
             TransactionTemplate transactionTemplate,
             EntityManager entityManager
     ) {
         return args -> transactionTemplate.executeWithoutResult(status -> {
             normalizeLegacyPrompts(jdbcTemplate);
+            promptTopicSupport.ensureCatalogSeeded();
+            backfillNormalizedPromptTopicRefs(jdbcTemplate, promptTopicSupport);
 
-            seededPrompts().forEach(prompt -> upsertSeedPrompt(promptRepository, entityManager, prompt));
+            seededPrompts().forEach(prompt -> upsertSeedPrompt(promptRepository, entityManager, promptTopicSupport, prompt));
             seededHints().forEach(hint -> upsertSeedHint(promptHintRepository, promptHintItemSupport, entityManager, hint));
 
             promptRepository.findAllByOrderByDisplayOrderAsc().forEach(prompt -> {
@@ -283,8 +287,12 @@ public class PromptSeedConfig {
     private void upsertSeedPrompt(
             PromptRepository promptRepository,
             EntityManager entityManager,
+            PromptTopicSupport promptTopicSupport,
             PromptEntity seededPrompt
     ) {
+        seededPrompt.assignTopicDetail(
+                promptTopicSupport.requireTopicDetail(seededPrompt.getTopicCategory(), seededPrompt.getTopicDetail())
+        );
         PromptEntity existing = promptRepository.findById(seededPrompt.getId()).orElse(null);
         if (existing == null) {
             entityManager.persist(seededPrompt);
@@ -299,6 +307,9 @@ public class PromptSeedConfig {
                 seededPrompt.getTip(),
                 seededPrompt.getDisplayOrder(),
                 seededPrompt.getActive()
+        );
+        existing.assignTopicDetail(
+                promptTopicSupport.requireTopicDetail(seededPrompt.getTopicCategory(), seededPrompt.getTopicDetail())
         );
     }
 
@@ -393,6 +404,87 @@ public class PromptSeedConfig {
         migrateLegacyPrompt(jdbcTemplate, "prompt-1", "prompt-a-4", "A", 10);
         migrateLegacyPrompt(jdbcTemplate, "prompt-2", "prompt-b-4", "B", 11);
         migrateLegacyPrompt(jdbcTemplate, "prompt-3", "prompt-b-5", "B", 12);
+    }
+
+    private void backfillNormalizedPromptTopicRefs(
+            JdbcTemplate jdbcTemplate,
+            PromptTopicSupport promptTopicSupport
+    ) {
+        if (!columnExists(jdbcTemplate, "prompts", "topic_detail_id")) {
+            return;
+        }
+
+        boolean hasLegacyTopic = columnExists(jdbcTemplate, "prompts", "topic");
+        boolean hasSplitTopicCategory = columnExists(jdbcTemplate, "prompts", "topic_category");
+        boolean hasSplitTopicDetail = columnExists(jdbcTemplate, "prompts", "topic_detail");
+
+        if (!hasLegacyTopic && !(hasSplitTopicCategory && hasSplitTopicDetail)) {
+            return;
+        }
+
+        StringBuilder sql = new StringBuilder("""
+                SELECT id, topic_detail_id
+                """);
+        if (hasLegacyTopic) {
+            sql.append(", topic");
+        }
+        if (hasSplitTopicCategory) {
+            sql.append(", topic_category");
+        }
+        if (hasSplitTopicDetail) {
+            sql.append(", topic_detail");
+        }
+        sql.append("""
+                
+                FROM prompts
+                WHERE topic_detail_id IS NULL
+                ORDER BY display_order, id
+                """);
+
+        jdbcTemplate.query(
+                sql.toString(),
+                rs -> {
+                    if (rs.getObject("topic_detail_id") != null) {
+                        return;
+                    }
+
+                    String topicCategory = hasSplitTopicCategory ? rs.getString("topic_category") : "";
+                    String topicDetail = hasSplitTopicDetail ? rs.getString("topic_detail") : "";
+                    if (!hasText(topicCategory) || !hasText(topicDetail)) {
+                        PromptEntity.TopicParts topicParts = PromptEntity.splitTopic(hasLegacyTopic ? rs.getString("topic") : "");
+                        topicCategory = topicParts.category();
+                        topicDetail = topicParts.detail();
+                    }
+
+                    String promptId = rs.getString("id");
+                    promptTopicSupport.findTopicDetail(topicCategory, topicDetail)
+                            .ifPresent(detail -> jdbcTemplate.update(
+                                    "UPDATE prompts SET topic_detail_id = ? WHERE id = ?",
+                                    detail.getId(),
+                                    promptId
+                            ));
+                }
+        );
+    }
+
+    private boolean columnExists(JdbcTemplate jdbcTemplate, String tableName, String columnName) {
+        Integer count = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*)
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = ?
+                  AND COLUMN_NAME = ?
+                """,
+                Integer.class,
+                tableName,
+                columnName
+        );
+        return count != null && count > 0;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isBlank();
     }
 
     private void migrateLegacyPrompt(

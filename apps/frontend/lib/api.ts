@@ -3,6 +3,7 @@ import type {
   AdminPromptHint,
   AdminPromptHintRequest,
   AdminPromptRequest,
+  AdminPromptTopicCatalogEntry,
   AuthNotice,
   CoachHelpRequest,
   CoachHelpResponse,
@@ -803,6 +804,19 @@ export async function getAdminPrompts(): Promise<AdminPrompt[]> {
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to load admin prompts");
+  }
+
+  return response.json();
+}
+
+export async function getAdminPromptTopicCatalog(): Promise<AdminPromptTopicCatalogEntry[]> {
+  const response = await fetch(`${API_BASE}/api/admin/prompts/topic-catalog`, {
+    cache: "no-store",
+    credentials: "include"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to load admin prompt topic catalog");
   }
 
   return response.json();

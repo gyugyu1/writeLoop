@@ -518,6 +518,64 @@ class CoachServiceTest {
     }
 
     @Test
+    void checkUsage_mixes_same_topic_detail_and_same_category_prompt_recommendations() {
+        PromptDto currentPrompt = new PromptDto(
+                "prompt-goal-current",
+                "Goal Plan - Habit Building",
+                "B",
+                "What is one habit you want to build this year?",
+                "올해 만들고 싶은 습관 한 가지는 무엇인가요?",
+                "Explain why it matters."
+        );
+        PromptDto sameTopicDetailPrompt = new PromptDto(
+                "prompt-goal-habit-2",
+                "Goal Plan - Habit Building",
+                "B",
+                "What healthy habit do you want to keep every week?",
+                "매주 꾸준히 지키고 싶은 건강 습관은 무엇인가요?",
+                "Share one clear habit."
+        );
+        PromptDto sameCategoryPrompt = new PromptDto(
+                "prompt-goal-skill",
+                "Goal Plan - Skill Growth",
+                "B",
+                "What skill do you want to improve this year?",
+                "올해 향상하고 싶은 기술은 무엇인가요?",
+                "Explain how you will practice."
+        );
+        PromptDto fallbackPrompt = new PromptDto(
+                "prompt-routine-dinner",
+                "Routine - After Dinner",
+                "B",
+                "What do you usually do after dinner?",
+                "저녁 식사 후에 보통 무엇을 하나요?",
+                "Use one or two sentences."
+        );
+
+        when(promptService.findAll()).thenReturn(List.of(
+                currentPrompt,
+                fallbackPrompt,
+                sameCategoryPrompt,
+                sameTopicDetailPrompt
+        ));
+
+        CoachUsageCheckResponseDto response = coachService.checkUsage(
+                new CoachUsageCheckRequestDto(
+                        currentPrompt.id(),
+                        "I want to build this habit because it helps me stay healthy.",
+                        null,
+                        null,
+                        List.of("I want to build this habit.")
+                )
+        );
+
+        assertThat(response.suggestedPromptIds()).hasSize(3);
+        assertThat(response.suggestedPromptIds().get(0)).isEqualTo("prompt-goal-habit-2");
+        assertThat(response.suggestedPromptIds().subList(0, 2))
+                .contains("prompt-goal-skill");
+    }
+
+    @Test
     void checkUsage_uses_keep_segment_as_self_discovered_fallback_when_pattern_match_is_missing() throws Exception {
         PromptDto prompt = new PromptDto(
                 "prompt-usage-5",

@@ -169,7 +169,11 @@ function normalizePromptCategory(value: string | null | undefined) {
   return (value ?? "").trim().toUpperCase();
 }
 
-function getPromptCategories(prompt: Prompt | null | undefined) {
+function normalizePromptTopicKey(value: string | null | undefined) {
+  return (value ?? "").trim().toUpperCase();
+}
+
+function getPromptCoachCategories(prompt: Prompt | null | undefined) {
   if (!prompt?.coachProfile) {
     return [];
   }
@@ -184,7 +188,7 @@ function getPromptCategories(prompt: Prompt | null | undefined) {
   return Array.from(new Set(categories));
 }
 
-function getPromptCategoryOverlapScore(
+function getPromptCoachCategoryOverlapScore(
   currentPrompt: Prompt | null | undefined,
   candidate: Prompt | null | undefined
 ) {
@@ -192,12 +196,12 @@ function getPromptCategoryOverlapScore(
     return 0;
   }
 
-  const currentCategories = getPromptCategories(currentPrompt);
+  const currentCategories = getPromptCoachCategories(currentPrompt);
   if (currentCategories.length === 0) {
     return 0;
   }
 
-  const candidateCategories = new Set(getPromptCategories(candidate));
+  const candidateCategories = new Set(getPromptCoachCategories(candidate));
   let score = 0;
 
   currentCategories.forEach((category, index) => {
@@ -207,6 +211,92 @@ function getPromptCategoryOverlapScore(
   });
 
   return score;
+}
+
+function getPromptTopicMatch(
+  currentPrompt: Prompt | null | undefined,
+  candidate: Prompt | null | undefined
+) {
+  const currentCategory = normalizePromptTopicKey(currentPrompt?.topicCategory);
+  const candidateCategory = normalizePromptTopicKey(candidate?.topicCategory);
+  const currentDetail = normalizePromptTopicKey(currentPrompt?.topicDetail);
+  const candidateDetail = normalizePromptTopicKey(candidate?.topicDetail);
+
+  const sameCategory = currentCategory !== "" && currentCategory === candidateCategory;
+  const sameTopicDetail =
+    sameCategory && currentDetail !== "" && currentDetail === candidateDetail;
+
+  return {
+    sameCategory,
+    sameTopicDetail
+  };
+}
+
+function buildRelatedPromptRecommendations(
+  currentPrompt: Prompt | null | undefined,
+  candidates: Prompt[],
+  selectedPromptId: string
+) {
+  const uniqueCandidates = candidates.filter(
+    (candidate, index) =>
+      candidate.id !== selectedPromptId &&
+      candidates.findIndex((item) => item.id === candidate.id) === index
+  );
+
+  if (!currentPrompt) {
+    return uniqueCandidates.slice(0, 3);
+  }
+
+  const rankedCandidates = uniqueCandidates
+    .map((prompt, index) => {
+      const topicMatch = getPromptTopicMatch(currentPrompt, prompt);
+      const coachCategoryScore = getPromptCoachCategoryOverlapScore(currentPrompt, prompt);
+      const sameDifficulty = prompt.difficulty === currentPrompt.difficulty;
+      const priority =
+        (topicMatch.sameTopicDetail ? 1_000 : 0) +
+        (topicMatch.sameCategory ? 100 : 0) +
+        (sameDifficulty ? 10 : 0) +
+        coachCategoryScore;
+
+      return {
+        prompt,
+        index,
+        sameDifficulty,
+        coachCategoryScore,
+        ...topicMatch,
+        priority
+      };
+    })
+    .sort((left, right) => {
+      if (right.priority !== left.priority) {
+        return right.priority - left.priority;
+      }
+      return left.index - right.index;
+    });
+
+  const sameTopicDetail = rankedCandidates.filter((candidate) => candidate.sameTopicDetail);
+  const sameCategory = rankedCandidates.filter(
+    (candidate) => candidate.sameCategory && !candidate.sameTopicDetail
+  );
+  const others = rankedCandidates.filter((candidate) => !candidate.sameCategory);
+
+  const selected: Prompt[] = [];
+  const selectedIds = new Set<string>();
+
+  const addCandidate = (candidate?: (typeof rankedCandidates)[number]) => {
+    if (!candidate || selectedIds.has(candidate.prompt.id) || selected.length >= 3) {
+      return;
+    }
+    selected.push(candidate.prompt);
+    selectedIds.add(candidate.prompt.id);
+  };
+
+  addCandidate(sameTopicDetail[0]);
+  addCandidate(sameCategory[0]);
+
+  [...sameTopicDetail, ...sameCategory, ...others].forEach((candidate) => addCandidate(candidate));
+
+  return selected.slice(0, 3);
 }
 
 const DIFFICULTY_OPTIONS: Array<{
@@ -1065,8 +1155,6 @@ export function AnswerLoop() {
   const coachRelatedPrompts = useMemo(() => {
     const sourceIds = coachUsage?.relatedPromptIds ?? [];
     const sourcePrompts = allPrompts.length > 0 ? allPrompts : prompts;
-    const currentCategories = getPromptCategories(selectedPrompt);
-    const hasMeaningfulCategories = currentCategories.length > 0;
     const related = sourceIds
       .map((promptId) => promptById.get(promptId) ?? sourcePrompts.find((prompt) => prompt.id === promptId))
       .filter((candidate): candidate is Prompt => {
@@ -1074,50 +1162,18 @@ export function AnswerLoop() {
           return false;
         }
 
-        if (candidate.id === selectedPromptId) {
-          return false;
-        }
-
-        return !hasMeaningfulCategories || getPromptCategoryOverlapScore(selectedPrompt, candidate) > 0;
+        return candidate.id !== selectedPromptId;
       });
 
     if (related.length > 0) {
-      return related;
+      return buildRelatedPromptRecommendations(selectedPrompt, related, selectedPromptId);
     }
 
     if (!selectedPrompt) {
       return sourcePrompts.filter((prompt) => prompt.id !== selectedPromptId).slice(0, 3);
     }
 
-    if (hasMeaningfulCategories) {
-      const rankedByCategory = sourcePrompts
-        .map((prompt, index) => ({
-          prompt,
-          index,
-          categoryScore: getPromptCategoryOverlapScore(selectedPrompt, prompt)
-        }))
-        .filter(({ prompt, categoryScore }) => prompt.id !== selectedPromptId && categoryScore > 0)
-        .sort((left, right) => {
-          if (right.categoryScore !== left.categoryScore) {
-            return right.categoryScore - left.categoryScore;
-          }
-          const leftSameDifficulty = left.prompt.difficulty === selectedPrompt.difficulty ? 1 : 0;
-          const rightSameDifficulty = right.prompt.difficulty === selectedPrompt.difficulty ? 1 : 0;
-          if (rightSameDifficulty !== leftSameDifficulty) {
-            return rightSameDifficulty - leftSameDifficulty;
-          }
-          return left.index - right.index;
-        })
-        .map(({ prompt }) => prompt);
-
-      if (rankedByCategory.length > 0) {
-        return rankedByCategory.slice(0, 3);
-      }
-    }
-
-    return sourcePrompts
-      .filter((prompt) => prompt.id !== selectedPromptId && prompt.difficulty === selectedPrompt.difficulty)
-      .slice(0, 3);
+    return buildRelatedPromptRecommendations(selectedPrompt, sourcePrompts, selectedPromptId);
   }, [allPrompts, coachUsage?.relatedPromptIds, promptById, prompts, selectedPrompt, selectedPromptId]);
   const completionNextExpressions = useMemo<NextExpressionCard[]>(() => {
     const nextExpressions: NextExpressionCard[] = [];

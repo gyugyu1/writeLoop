@@ -14,13 +14,15 @@ import java.util.regex.Pattern;
 
 final class FeedbackSectionValidators {
     private static final Pattern WORD_PATTERN = Pattern.compile("[\\p{L}][\\p{L}'-]*");
+    private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\[[^\\]\\r\\n]{1,24}\\]");
+    private static final Pattern BROKEN_PATCH_PATTERN = Pattern.compile("'.+?'\\s*->\\s*'.+?'");
     private static final Set<String> GENERIC_MEANING_TEXTS = Set.of(
-            "다음 답변에서 활용하기 좋은 표현",
-            "다음 답변에 바로 가져다 쓸 수 있는 표현 틀"
+            "?ㅼ쓬 ?듬??먯꽌 ?쒖슜?섍린 醫뗭? ?쒗쁽",
+            "?ㅼ쓬 ?듬???諛붾줈 媛?몃떎 ?????덈뒗 ?쒗쁽 ?"
     );
     private static final Set<String> GENERIC_GUIDANCE_TEXTS = Set.of(
-            "다음 답변에서 활용하기 좋은 표현",
-            "다음 답변에 바로 가져다 쓸 수 있는 표현 틀"
+            "?ㅼ쓬 ?듬??먯꽌 ?쒖슜?섍린 醫뗭? ?쒗쁽",
+            "?ㅼ쓬 ?듬???諛붾줈 媛?몃떎 ?????덈뒗 ?쒗쁽 ?"
     );
 
     List<String> dedupeStrengths(List<String> strengths) {
@@ -51,6 +53,9 @@ final class FeedbackSectionValidators {
             String revised = item.revisedText() == null ? "" : item.revisedText().trim();
             String reason = item.reasonKo() == null ? "" : item.reasonKo().trim();
             if (reason.isBlank()) {
+                continue;
+            }
+            if (isMalformedGrammarReason(reason)) {
                 continue;
             }
             if (original.isBlank() && revised.isBlank()) {
@@ -110,6 +115,13 @@ final class FeedbackSectionValidators {
             if (normalizedExpression.isBlank() || normalizedExample.isBlank()) {
                 continue;
             }
+            if (containsPlaceholder(expression.expression())
+                    || containsPlaceholder(expression.meaningKo())
+                    || containsPlaceholder(expression.guidanceKo())
+                    || containsPlaceholder(expression.exampleEn())
+                    || containsPlaceholder(expression.exampleKo())) {
+                continue;
+            }
             if (normalizedExpression.equals(normalizedExample)) {
                 continue;
             }
@@ -117,6 +129,9 @@ final class FeedbackSectionValidators {
                 continue;
             }
             if (GENERIC_GUIDANCE_TEXTS.contains(normalizeText(expression.guidanceKo()))) {
+                continue;
+            }
+            if (isGenericMeaning(expression.meaningKo()) || isGenericGuidance(expression.guidanceKo())) {
                 continue;
             }
             int overlappingIndex = findOverlappingRefinementIndex(sanitized, expression);
@@ -160,6 +175,107 @@ final class FeedbackSectionValidators {
         return new ModelAnswerContent(blankToNull(guarded), blankToNull(guardedKo));
     }
 
+    String reduceRewriteGuideModelAnswerDuplication(
+            String rewriteGuide,
+            String modelAnswer,
+            boolean grammarBlocking
+    ) {
+        String cleanGuide = blankToNull(rewriteGuide);
+        String normalizedGuide = normalizeExpressionForOverlap(rewriteGuide);
+        String normalizedModelAnswer = normalizeExpressionForOverlap(modelAnswer);
+        if (normalizedGuide.isBlank() || normalizedModelAnswer.isBlank()) {
+            return cleanGuide;
+        }
+
+        if (!isNearDuplicate(normalizedGuide, normalizedModelAnswer)) {
+            return cleanGuide;
+        }
+
+        String quotedHint = extractLeadingQuotedHint(cleanGuide);
+        if (grammarBlocking
+                && quotedHint != null
+                && hasMeaningfulGuidanceText(stripLeadingQuotedHint(cleanGuide))
+                && isOneStepUpModelAnswer(quotedHint, modelAnswer)) {
+            return cleanGuide;
+        }
+
+        String stripped = rewriteGuide == null
+                ? null
+                : rewriteGuide
+                .replaceAll("\\s*\\??곕뱜[^:]*:\\s*\"[^\"]+\"", "")
+                .replaceAll("\\s+", " ")
+                .trim();
+        stripped = stripLeadingQuotedHint(cleanGuide);
+        if (grammarBlocking && hasMeaningfulGuidanceText(stripped)) {
+            return stripped;
+        }
+        if (stripped != null
+                && !stripped.isBlank()
+                && !isNearDuplicate(normalizeExpressionForOverlap(stripped), normalizedModelAnswer)) {
+            return stripped;
+        }
+        if (grammarBlocking) {
+            return "문장을 먼저 자연스럽게 고친 뒤, 이 방법이 어떻게 도움이 되는지 한 가지를 더 붙여 보세요.";
+        }
+        return stripped == null || stripped.isBlank() ? null : stripped;
+    }
+
+    String sanitizeCorrectedSentence(String correctedSentence) {
+        if (correctedSentence == null || correctedSentence.isBlank()) {
+            return null;
+        }
+        String sanitized = correctedSentence
+                .replaceAll("\\s+", " ")
+                .replaceAll("\\s+([,.!?])", "$1")
+                .replaceAll("([,.!?])(\\p{L})", "$1 $2")
+                .trim();
+        if (sanitized.isBlank()) {
+            return null;
+        }
+        if (!sanitized.endsWith(".") && !sanitized.endsWith("!") && !sanitized.endsWith("?")) {
+            sanitized = sanitized + ".";
+        }
+        return sanitized;
+    }
+
+    private String extractLeadingQuotedHint(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        Matcher matcher = Pattern.compile("^\\s*\"([^\"]+)\"").matcher(text);
+        if (!matcher.find()) {
+            return null;
+        }
+        String quoted = matcher.group(1);
+        return quoted == null || quoted.isBlank() ? null : quoted.trim();
+    }
+
+    private String stripLeadingQuotedHint(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        String stripped = text
+                .replaceFirst("^\\s*\"[^\"]+\"\\s*", "")
+                .replaceAll("\\s+", " ")
+                .trim();
+        return stripped.isBlank() ? null : stripped;
+    }
+
+    private boolean hasMeaningfulGuidanceText(String text) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+        Matcher matcher = WORD_PATTERN.matcher(text);
+        int count = 0;
+        while (matcher.find()) {
+            count++;
+            if (count >= 3) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean isLikelyGrammarDuplicate(
             String issue,
             String suggestion,
@@ -168,7 +284,7 @@ final class FeedbackSectionValidators {
         if (grammarFeedback == null || grammarFeedback.isEmpty()) {
             return false;
         }
-        if (issue.contains("문법") || suggestion.contains("문법") || issue.contains("시제") || suggestion.contains("시제")) {
+        if (issue.contains("臾몃쾿") || suggestion.contains("臾몃쾿") || issue.contains("?쒖젣") || suggestion.contains("?쒖젣")) {
             return true;
         }
         for (GrammarFeedbackItemDto item : grammarFeedback) {
@@ -185,6 +301,48 @@ final class FeedbackSectionValidators {
             }
         }
         return false;
+    }
+
+    private boolean containsPlaceholder(String text) {
+        return text != null && PLACEHOLDER_PATTERN.matcher(text).find();
+    }
+
+    private boolean isMalformedGrammarReason(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return true;
+        }
+        String normalized = reason.trim();
+        if (BROKEN_PATCH_PATTERN.matcher(normalized).find()) {
+            return true;
+        }
+        if (normalized.contains("->")) {
+            return true;
+        }
+        long quoteCount = normalized.chars()
+                .filter(character -> character == '\'' || character == '"')
+                .count();
+        return quoteCount == 1;
+    }
+
+    private boolean isGenericMeaning(String meaningKo) {
+        String normalized = normalizeText(meaningKo);
+        if (normalized.isBlank()) {
+            return false;
+        }
+        return normalized.equals("표현 설명")
+                || normalized.equals("문장 설명")
+                || normalized.contains("표현입니다")
+                || normalized.contains("패턴입니다");
+    }
+
+    private boolean isGenericGuidance(String guidanceKo) {
+        String normalized = normalizeText(guidanceKo);
+        if (normalized.isBlank()) {
+            return false;
+        }
+        return normalized.equals("다음 답변에서 자연스럽게 넣어 보면 좋은 표현이에요.")
+                || normalized.equals("설명할 때 사용할 수 있어요.")
+                || normalized.equals("사용할 수 있어요.");
     }
 
     private String trimToSentenceCount(String text, int maxSentences) {
@@ -321,6 +479,38 @@ final class FeedbackSectionValidators {
 
     private String blankToNull(String text) {
         return text == null || text.isBlank() ? null : text.trim();
+    }
+
+    private boolean isNearDuplicate(String left, String right) {
+        if (left.isBlank() || right.isBlank()) {
+            return false;
+        }
+        if (left.contains(right) || right.contains(left)) {
+            return true;
+        }
+
+        Set<String> leftTokens = extractMeaningfulTokens(left);
+        Set<String> rightTokens = extractMeaningfulTokens(right);
+        if (leftTokens.isEmpty() || rightTokens.isEmpty()) {
+            return false;
+        }
+
+        Set<String> overlap = new LinkedHashSet<>(leftTokens);
+        overlap.retainAll(rightTokens);
+        int smallerSize = Math.min(leftTokens.size(), rightTokens.size());
+        return !overlap.isEmpty() && overlap.size() >= Math.max(2, smallerSize - 1);
+    }
+
+    private boolean isOneStepUpModelAnswer(String quotedGuideBase, String modelAnswer) {
+        String normalizedBase = normalizeExpressionForOverlap(quotedGuideBase);
+        String normalizedModelAnswer = normalizeExpressionForOverlap(modelAnswer);
+        if (normalizedBase.isBlank() || normalizedModelAnswer.isBlank()) {
+            return false;
+        }
+        if (!normalizedModelAnswer.startsWith(normalizedBase)) {
+            return false;
+        }
+        return countWords(modelAnswer) >= countWords(quotedGuideBase) + 4;
     }
 
     record ModelAnswerContent(

@@ -330,17 +330,120 @@ public class FeedbackService {
                     attemptType,
                     answer,
                     feedback.score(),
-                    feedback.summary(),
+                    buildPersistedFeedbackSummary(feedback),
                     objectMapper.writeValueAsString(feedback.strengths()),
                     objectMapper.writeValueAsString(feedback.corrections()),
-                    feedback.modelAnswer(),
-                    feedback.rewriteChallenge(),
+                    buildPersistedModelAnswer(feedback),
+                    buildPersistedRewriteChallenge(feedback),
                     objectMapper.writeValueAsString(feedback)
             );
             answerAttemptRepository.save(attempt);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Failed to serialize feedback for storage", exception);
         }
+    }
+
+    private String buildPersistedFeedbackSummary(FeedbackResponseDto feedback) {
+        String directSummary = normalizeNullable(feedback.summary());
+        if (directSummary != null) {
+            return directSummary;
+        }
+
+        String firstStrength = firstNonBlank(feedback.strengths());
+        String firstIssue = firstNonBlank(
+                firstCorrectionIssue(feedback.corrections()),
+                firstGrammarReason(feedback.grammarFeedback()),
+                normalizeNullable(feedback.rewriteChallenge())
+        );
+
+        if (firstStrength != null && firstIssue != null) {
+            return firstStrength + " " + firstIssue;
+        }
+        if (firstIssue != null) {
+            return firstIssue;
+        }
+        if (firstStrength != null) {
+            return firstStrength;
+        }
+        return "피드백이 생성되었습니다.";
+    }
+
+    private String buildPersistedModelAnswer(FeedbackResponseDto feedback) {
+        return firstNonBlank(
+                normalizeNullable(feedback.modelAnswer()),
+                normalizeNullable(feedback.correctedAnswer()),
+                ""
+        );
+    }
+
+    private String buildPersistedRewriteChallenge(FeedbackResponseDto feedback) {
+        return firstNonBlank(
+                normalizeNullable(feedback.rewriteChallenge()),
+                normalizeNullable(feedback.summary()),
+                "다음 답변에서 핵심 문장을 더 자연스럽게 다듬어 보세요."
+        );
+    }
+
+    private String firstCorrectionIssue(List<CorrectionDto> corrections) {
+        if (corrections == null) {
+            return null;
+        }
+        for (CorrectionDto correction : corrections) {
+            if (correction == null) {
+                continue;
+            }
+            String issue = normalizeNullable(correction.issue());
+            if (issue != null) {
+                return issue;
+            }
+            String suggestion = normalizeNullable(correction.suggestion());
+            if (suggestion != null) {
+                return suggestion;
+            }
+        }
+        return null;
+    }
+
+    private String firstGrammarReason(List<GrammarFeedbackItemDto> grammarFeedback) {
+        if (grammarFeedback == null) {
+            return null;
+        }
+        for (GrammarFeedbackItemDto item : grammarFeedback) {
+            if (item == null) {
+                continue;
+            }
+            String reason = normalizeNullable(item.reasonKo());
+            if (reason != null) {
+                return reason;
+            }
+        }
+        return null;
+    }
+
+    private String firstNonBlank(List<String> values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            String normalized = normalizeNullable(value);
+            if (normalized != null) {
+                return normalized;
+            }
+        }
+        return null;
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            String normalized = normalizeNullable(value);
+            if (normalized != null) {
+                return normalized;
+            }
+        }
+        return null;
     }
 
     private FeedbackResponseDto buildLocalFeedback(PromptDto prompt, String answer) {

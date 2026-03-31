@@ -5,7 +5,11 @@ import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.PromptDto;
+import com.writeloop.dto.RefinementExampleSource;
 import com.writeloop.dto.RefinementExpressionDto;
+import com.writeloop.dto.RefinementExpressionSource;
+import com.writeloop.dto.RefinementExpressionType;
+import com.writeloop.dto.RefinementMeaningType;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -18,6 +22,10 @@ import java.util.regex.Pattern;
 
 final class FeedbackSectionPolicyApplier {
     private static final Pattern WORD_PATTERN = Pattern.compile("[\\p{L}][\\p{L}'-]*");
+    private static final Pattern PREPOSITION_GERUND_PATTERN = Pattern.compile("\\bby\\s+[a-z]+ing\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern STRUGGLE_TO_PATTERN = Pattern.compile("\\bstruggle\\s+to\\s+[a-z]", Pattern.CASE_INSENSITIVE);
+    private static final Pattern STRUGGLE_WITH_BARE_VERB_PATTERN = Pattern.compile("\\bstruggle\\s+with\\s+[a-z]+\\b", Pattern.CASE_INSENSITIVE);
+    private static final Pattern BROKEN_CONNECTOR_PATTERN = Pattern.compile("(?:^|[,;])\\s*(?:to address|to solve|to handle)\\s+i\\b", Pattern.CASE_INSENSITIVE);
     private static final Set<String> STRENGTH_STOPWORDS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "i", "in", "is",
             "it", "my", "of", "on", "or", "so", "that", "the", "this", "to", "with"
@@ -34,16 +42,44 @@ final class FeedbackSectionPolicyApplier {
             int attemptIndex
     ) {
         SectionPolicy policy = sectionPolicySelector.select(answerProfile, attemptIndex);
+        String grammarBlockingCorrection = resolveGrammarBlockingMinimalCorrection(learnerAnswer, feedback, answerProfile);
 
         List<String> strengths = buildStrengthSection(feedback, answerProfile, policy);
-        List<GrammarFeedbackItemDto> grammar = buildGrammarSection(learnerAnswer, feedback, answerProfile, policy);
-        List<CorrectionDto> corrections = buildImprovementSection(feedback, answerProfile, policy, grammar);
-        List<RefinementExpressionDto> refinement = buildRefinementSection(feedback, answerProfile, policy);
-        String summary = buildSummarySection(feedback.summary(), policy);
-        String rewriteGuide = policy.showRewriteGuide() ? feedback.rewriteChallenge() : null;
+        List<GrammarFeedbackItemDto> grammar = buildGrammarSection(
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                policy,
+                grammarBlockingCorrection
+        );
+        List<CorrectionDto> corrections = buildImprovementSection(
+                feedback,
+                answerProfile,
+                policy,
+                grammar,
+                grammarBlockingCorrection
+        );
+        List<RefinementExpressionDto> refinement = buildRefinementSection(
+                feedback,
+                learnerAnswer,
+                answerProfile,
+                policy,
+                grammarBlockingCorrection
+        );
         FeedbackSectionValidators.ModelAnswerContent modelAnswerContent =
-                buildModelAnswerSection(prompt, learnerAnswer, feedback, answerProfile, policy);
+                buildModelAnswerSection(prompt, learnerAnswer, feedback, answerProfile, policy, grammarBlockingCorrection);
+        String rewriteGuide = buildRewriteGuideSection(
+                feedback,
+                answerProfile,
+                policy,
+                modelAnswerContent,
+                grammarBlockingCorrection
+        );
+        String summary = buildSummarySection(feedback.summary(), answerProfile, corrections, policy);
         List<CoachExpressionUsageDto> usedExpressions = buildUsedExpressionSection(feedback, learnerAnswer, answerProfile);
+        String correctedAnswer = isGrammarBlocking(answerProfile) && grammarBlockingCorrection != null
+                ? grammarBlockingCorrection
+                : feedback.correctedAnswer();
 
         return new FeedbackResponseDto(
                 feedback.promptId(),
@@ -57,7 +93,7 @@ final class FeedbackSectionPolicyApplier {
                 corrections,
                 feedback.inlineFeedback(),
                 grammar,
-                feedback.correctedAnswer(),
+                correctedAnswer,
                 refinement,
                 modelAnswerContent.modelAnswer(),
                 modelAnswerContent.modelAnswerKo(),
@@ -76,7 +112,7 @@ final class FeedbackSectionPolicyApplier {
         }
 
         if (shouldUseMeaningBasedStrengths(answerProfile)) {
-            return limit(buildMeaningBasedStrengths(answerProfile), policy.maxStrengthCount());
+            return limit(buildMeaningBasedStrengthsV2(answerProfile), policy.maxStrengthCount());
         }
 
         List<String> strengths = new ArrayList<>();
@@ -101,12 +137,13 @@ final class FeedbackSectionPolicyApplier {
             String learnerAnswer,
             FeedbackResponseDto feedback,
             AnswerProfile answerProfile,
-            SectionPolicy policy
+            SectionPolicy policy,
+            String grammarBlockingCorrection
     ) {
-        int effectiveLimit = Math.max(2, policy.maxGrammarIssueCount());
+        int effectiveLimit = Math.max(1, policy.maxGrammarIssueCount());
         if (isGrammarBlocking(answerProfile)) {
             List<GrammarFeedbackItemDto> grammar = validators.validateGrammarSectionFormat(
-                    buildGrammarBlockingSection(learnerAnswer, feedback, answerProfile)
+                    buildGrammarBlockingSection(learnerAnswer, feedback, answerProfile, grammarBlockingCorrection)
             );
             if (grammar.isEmpty() && answerProfile != null && answerProfile.grammar() != null) {
                 grammar = validators.validateGrammarSectionFormat(fromGrammarIssues(answerProfile.grammar().issues()));
@@ -155,22 +192,30 @@ final class FeedbackSectionPolicyApplier {
             }
             filtered.add(usage);
         }
-        return List.copyOf(filtered);
+        return isGrammarBlocking(answerProfile) ? limit(filtered, 1) : List.copyOf(filtered);
     }
 
     private List<CorrectionDto> buildImprovementSection(
             FeedbackResponseDto feedback,
             AnswerProfile answerProfile,
             SectionPolicy policy,
-            List<GrammarFeedbackItemDto> grammarFeedback
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            String grammarBlockingCorrection
     ) {
         if (!policy.showImprovement()) {
             return List.of();
         }
+        if (isGrammarBlocking(answerProfile)) {
+            CorrectionDto grammarBlockingImprovement = buildGrammarBlockingImprovement(answerProfile, grammarBlockingCorrection);
+            if (grammarBlockingImprovement != null) {
+                return List.of(grammarBlockingImprovement);
+            }
+        }
 
         List<CorrectionDto> corrections = validators.reduceDuplicateCorrections(feedback.corrections(), grammarFeedback);
         if (!corrections.isEmpty()) {
-            return List.copyOf(corrections);
+            CorrectionDto selected = selectCorrection(corrections, answerProfile);
+            return selected == null ? List.of() : List.of(selected);
         }
         CorrectionDto selected = fallbackCorrection(answerProfile);
         return selected == null ? List.of() : List.of(selected);
@@ -178,23 +223,48 @@ final class FeedbackSectionPolicyApplier {
 
     private List<RefinementExpressionDto> buildRefinementSection(
             FeedbackResponseDto feedback,
+            String learnerAnswer,
             AnswerProfile answerProfile,
-            SectionPolicy policy
+            SectionPolicy policy,
+            String grammarBlockingCorrection
     ) {
         if (!policy.showRefinement()) {
             return List.of();
         }
         List<RefinementExpressionDto> refinementExpressions = validators.validateRefinementCards(feedback.refinementExpressions());
+        if (isGrammarBlocking(answerProfile)) {
+            List<RefinementExpressionDto> immediateRepairExpressions = buildGrammarBlockingRepairRefinements(grammarBlockingCorrection);
+            refinementExpressions = mergeGrammarBlockingRefinements(
+                    immediateRepairExpressions,
+                    refinementExpressions.stream()
+                    .filter(expression -> !shouldDropRefinementForGrammarBlocking(expression, answerProfile, feedback))
+                    .map(this::toDirectGrammarBlockingRefinement)
+                    .toList(),
+                    learnerAnswer,
+                    answerProfile
+            );
+        }
         refinementExpressions = refinementExpressions.stream()
                 .sorted(Comparator
                         .comparingInt((RefinementExpressionDto expression) -> refinementScore(expression, policy.refinementFocus(), answerProfile))
                         .reversed()
                         .thenComparing(expression -> expression.expression() == null ? "" : expression.expression(), String.CASE_INSENSITIVE_ORDER))
                 .toList();
-        return limit(refinementExpressions, Math.max(policy.maxRefinementCount(), Math.min(4, refinementExpressions.size())));
+        return limit(refinementExpressions, policy.maxRefinementCount());
     }
 
-    private String buildSummarySection(String summary, SectionPolicy policy) {
+    private String buildSummarySection(
+            String summary,
+            AnswerProfile answerProfile,
+            List<CorrectionDto> corrections,
+            SectionPolicy policy
+    ) {
+        if (!policy.showSummary()) {
+            return null;
+        }
+        if (isGrammarBlocking(answerProfile)) {
+            return buildGrammarBlockingSummaryV2();
+        }
         if (summary == null || summary.isBlank()) {
             return null;
         }
@@ -202,16 +272,45 @@ final class FeedbackSectionPolicyApplier {
         return trimToSentenceCount(summary, sentenceLimit);
     }
 
+    private String buildRewriteGuideSection(
+            FeedbackResponseDto feedback,
+            AnswerProfile answerProfile,
+            SectionPolicy policy,
+            FeedbackSectionValidators.ModelAnswerContent modelAnswerContent,
+            String grammarBlockingCorrection
+    ) {
+        if (!policy.showRewriteGuide()) {
+            return null;
+        }
+        String rewriteGuide = feedback.rewriteChallenge();
+        if (isGrammarBlocking(answerProfile)) {
+            rewriteGuide = buildGrammarBlockingRewriteGuideV2(answerProfile, grammarBlockingCorrection);
+        }
+        return validators.reduceRewriteGuideModelAnswerDuplication(
+                rewriteGuide,
+                modelAnswerContent == null ? null : modelAnswerContent.modelAnswer(),
+                isGrammarBlocking(answerProfile)
+        );
+    }
+
     private FeedbackSectionValidators.ModelAnswerContent buildModelAnswerSection(
             PromptDto prompt,
             String learnerAnswer,
             FeedbackResponseDto feedback,
             AnswerProfile answerProfile,
-            SectionPolicy policy
+            SectionPolicy policy,
+            String grammarBlockingCorrection
     ) {
         String modelAnswer = feedback.modelAnswer();
         String modelAnswerKo = feedback.modelAnswerKo();
-        if (policy.modelAnswerMode() == ModelAnswerMode.MINIMAL_CORRECTION
+        ModelAnswerMode effectiveMode = policy.modelAnswerMode();
+        if (isGrammarBlocking(answerProfile) && grammarBlockingCorrection != null) {
+            modelAnswer = buildGrammarBlockingOneStepUpModelAnswer(grammarBlockingCorrection, feedback.modelAnswer());
+            modelAnswerKo = null;
+            if (modelAnswer != null && !normalize(modelAnswer).equals(normalize(grammarBlockingCorrection))) {
+                effectiveMode = ModelAnswerMode.ONE_STEP_UP;
+            }
+        } else if (policy.modelAnswerMode() == ModelAnswerMode.MINIMAL_CORRECTION
                 && answerProfile != null
                 && answerProfile.grammar() != null
                 && answerProfile.grammar().minimalCorrection() != null) {
@@ -231,7 +330,7 @@ final class FeedbackSectionPolicyApplier {
                 modelAnswer,
                 modelAnswerKo,
                 policy.maxModelAnswerSentences(),
-                policy.modelAnswerMode()
+                effectiveMode
         );
         if ((guarded.modelAnswer() == null || guarded.modelAnswer().isBlank())
                 && prompt != null
@@ -248,6 +347,44 @@ final class FeedbackSectionPolicyApplier {
             );
         }
         return guarded;
+    }
+
+    private String buildGrammarBlockingSummary(
+            AnswerProfile answerProfile,
+            List<CorrectionDto> corrections
+    ) {
+        String strengthClause = buildMeaningBasedStrengths(answerProfile).stream()
+                .findFirst()
+                .orElse("문제와 해결 방향을 함께 말하려는 흐름은 좋습니다.");
+        String normalizedStrength = strengthClause.endsWith(".")
+                ? strengthClause.substring(0, strengthClause.length() - 1)
+                : strengthClause;
+
+        String issueClause = "문장을 막는 핵심 문법을 먼저 바로잡아야 해요.";
+        return normalizedStrength + " 다만 " + issueClause;
+    }
+
+    private String buildGrammarBlockingRewriteGuide(AnswerProfile answerProfile, String grammarBlockingCorrection) {
+        if (answerProfile == null || answerProfile.rewrite() == null) {
+            return null;
+        }
+        String base = firstNonBlank(
+                grammarBlockingCorrection,
+                answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
+                answerProfile.rewrite().target() == null ? null : answerProfile.rewrite().target().skeleton()
+        );
+        if (base == null) {
+            return null;
+        }
+
+        String secondaryIssueCode = answerProfile.rewrite().secondaryIssueCode();
+        String nextStep = switch (secondaryIssueCode == null ? "" : secondaryIssueCode) {
+            case "ADD_REASON" -> "여기에 왜 이 방법을 쓰는지 한 가지 이유를 더 붙여 보세요.";
+            case "ADD_EXAMPLE" -> "여기에 짧은 예시 한 문장을 더 붙여 보세요.";
+            case "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC" -> "여기에 이 방법이 어떻게 도움이 되는지 한 가지를 더 붙여 보세요.";
+            default -> "이 수정문을 기준으로 다시 써 보세요.";
+        };
+        return "\"" + base + "\" " + nextStep;
     }
 
     private void prioritizeStrengthSignalsForOverlay(
@@ -311,7 +448,8 @@ final class FeedbackSectionPolicyApplier {
     private List<GrammarFeedbackItemDto> buildGrammarBlockingSection(
             String learnerAnswer,
             FeedbackResponseDto feedback,
-            AnswerProfile answerProfile
+            AnswerProfile answerProfile,
+            String grammarBlockingCorrection
     ) {
         if (answerProfile == null || answerProfile.grammar() == null) {
             return List.of();
@@ -319,6 +457,7 @@ final class FeedbackSectionPolicyApplier {
 
         List<GrammarFeedbackItemDto> grammar = new ArrayList<>();
         String revisedSentence = firstNonBlank(
+                grammarBlockingCorrection,
                 answerProfile.grammar().minimalCorrection(),
                 answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
                         ? null
@@ -329,10 +468,9 @@ final class FeedbackSectionPolicyApplier {
             grammar.add(new GrammarFeedbackItemDto(
                     learnerAnswer == null ? "" : learnerAnswer.trim(),
                     revisedSentence,
-                    grammarBlockingReason(answerProfile)
+                    buildGrammarBlockingReasonV2(answerProfile, learnerAnswer, revisedSentence)
             ));
         }
-        grammar.addAll(fromGrammarIssues(answerProfile.grammar().issues()));
         return grammar;
     }
 
@@ -346,6 +484,49 @@ final class FeedbackSectionPolicyApplier {
             case "NUMBER_AGREEMENT" -> "단수/복수 형태를 맞춰 주세요.";
             default -> "원문을 유지하면서 이 부분만 자연스럽게 고쳐 주세요.";
         };
+    }
+
+    private String buildGrammarBlockingReason(
+            AnswerProfile answerProfile,
+            String learnerAnswer,
+            String revisedSentence
+    ) {
+        List<String> reasons = new ArrayList<>();
+        String normalizedAnswer = normalize(learnerAnswer);
+        String normalizedRevised = normalize(revisedSentence);
+
+        if (STRUGGLE_WITH_BARE_VERB_PATTERN.matcher(normalizedAnswer).find()
+                && (STRUGGLE_TO_PATTERN.matcher(normalizedRevised).find() || normalizedRevised.contains("with meeting"))) {
+            reasons.add("struggle 뒤에는 to meet 또는 with meeting처럼 자연스러운 동사 형태를 써 주세요.");
+        }
+        if (normalizedAnswer.contains(" by ")
+                && PREPOSITION_GERUND_PATTERN.matcher(normalizedRevised).find()) {
+            reasons.add("by 뒤에는 writing처럼 -ing 형태가 와야 자연스러워요.");
+        }
+        if (BROKEN_CONNECTOR_PATTERN.matcher(normalizedAnswer).find()
+                && (normalizedRevised.contains(" so ") || normalizedRevised.contains("to address this") || normalizedRevised.contains("to solve this"))) {
+            reasons.add("to address를 단독으로 잇기보다 so 또는 To address this처럼 연결하면 더 자연스러워요.");
+        }
+
+        if (answerProfile != null && answerProfile.grammar() != null) {
+            for (GrammarIssue issue : answerProfile.grammar().issues()) {
+                if (issue == null) {
+                    continue;
+                }
+                String reason = grammarReasonForCode(issue.code());
+                if (reason != null && !reason.isBlank() && !reasons.contains(reason)) {
+                    reasons.add(reason);
+                }
+                if (reasons.size() >= 3) {
+                    break;
+                }
+            }
+        }
+
+        if (reasons.isEmpty()) {
+            reasons.add("문장을 막는 핵심 문법을 먼저 바로잡으면 뜻이 한 번에 더 잘 읽혀요.");
+        }
+        return String.join("\n", reasons.stream().limit(3).toList());
     }
 
     private String grammarBlockingReason(AnswerProfile answerProfile) {
@@ -439,8 +620,17 @@ final class FeedbackSectionPolicyApplier {
                 if (normalizedExpression.startsWith("i ") || normalizedExpression.startsWith("because")) score += 1;
             }
             case GRAMMAR_PATTERN -> {
-                if (expression.type() != null && expression.type().name().equals("FRAME")) score += 3;
-                if (normalizedExpression.contains("because") || normalizedExpression.contains("one reason") || normalizedExpression.contains("i want to")) score += 2;
+                if (expression.type() != null && expression.type().name().equals("LEXICAL")) score += 4;
+                if (expression.type() != null && expression.type().name().equals("FRAME")) score -= 2;
+                score += overlapWithSafeRewrite(normalizedExpression, answerProfile) * 2;
+                if (STRUGGLE_TO_PATTERN.matcher(normalizedExpression).find()) score += 4;
+                if (PREPOSITION_GERUND_PATTERN.matcher(normalizedExpression).find()) score += 4;
+                if (normalizedExpression.contains("stay on track")) score += 2;
+                if (normalizedExpression.contains("deadline")) score += 2;
+                if (normalizedExpression.contains("to do list")) score += 2;
+                if (isGenericTransitionConnector(normalizedExpression)) score -= 6;
+                if (requiresLargeReframeForGrammarBlocking(normalizedExpression, expression)) score -= 6;
+                if (countWords(normalizedExpression) > 6) score -= 3;
             }
             case DETAIL_BUILDING -> {
                 if (normalizedExpression.contains("because") || normalizedExpression.contains("for example")) score += 3;
@@ -458,6 +648,84 @@ final class FeedbackSectionPolicyApplier {
         }
         score -= expression.qualityFlags() == null ? 0 : expression.qualityFlags().size();
         return score;
+    }
+
+    private boolean shouldDropRefinementForGrammarBlocking(
+            RefinementExpressionDto expression,
+            AnswerProfile answerProfile,
+            FeedbackResponseDto feedback
+    ) {
+        if (expression == null || expression.expression() == null || expression.expression().isBlank()) {
+            return true;
+        }
+        String normalizedExpression = normalize(expression.expression());
+        if (isGenericTransitionConnector(normalizedExpression)) {
+            return true;
+        }
+        if (requiresLargeReframeForGrammarBlocking(normalizedExpression, expression)) {
+            return true;
+        }
+        if (overlapsGrammarIssueSpan(
+                normalizedExpression,
+                answerProfile == null || answerProfile.grammar() == null ? List.of() : answerProfile.grammar().issues()
+        ) && overlapWithSafeRewrite(normalizedExpression, answerProfile) == 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean requiresLargeReframeForGrammarBlocking(
+            String normalizedExpression,
+            RefinementExpressionDto expression
+    ) {
+        if (normalizedExpression == null || normalizedExpression.isBlank()) {
+            return false;
+        }
+        if (normalizedExpression.equals("as a result")
+                || normalizedExpression.equals("therefore")
+                || normalizedExpression.equals("one challenge i often face is")) {
+            return true;
+        }
+        return expression != null
+                && expression.type() == com.writeloop.dto.RefinementExpressionType.FRAME
+                && countWords(normalizedExpression) >= 5
+                && !STRUGGLE_TO_PATTERN.matcher(normalizedExpression).find()
+                && !PREPOSITION_GERUND_PATTERN.matcher(normalizedExpression).find();
+    }
+
+    private int overlapWithSafeRewrite(String normalizedExpression, AnswerProfile answerProfile) {
+        if (normalizedExpression == null || normalizedExpression.isBlank() || answerProfile == null) {
+            return 0;
+        }
+        Set<String> expressionTokens = extractMeaningfulTokens(normalizedExpression);
+        if (expressionTokens.isEmpty()) {
+            return 0;
+        }
+
+        Set<String> safeTokens = new LinkedHashSet<>();
+        if (answerProfile.grammar() != null && answerProfile.grammar().minimalCorrection() != null) {
+            safeTokens.addAll(extractMeaningfulTokens(answerProfile.grammar().minimalCorrection()));
+        }
+        if (answerProfile.rewrite() != null
+                && answerProfile.rewrite().target() != null
+                && answerProfile.rewrite().target().skeleton() != null) {
+            safeTokens.addAll(extractMeaningfulTokens(answerProfile.rewrite().target().skeleton()));
+        }
+        if (safeTokens.isEmpty()) {
+            return 0;
+        }
+
+        Set<String> overlap = new LinkedHashSet<>(expressionTokens);
+        overlap.retainAll(safeTokens);
+        return overlap.size();
+    }
+
+    private boolean isGenericTransitionConnector(String normalizedExpression) {
+        return "to address this".equals(normalizedExpression)
+                || "to solve this".equals(normalizedExpression)
+                || "to handle this".equals(normalizedExpression)
+                || "as a result".equals(normalizedExpression)
+                || "therefore".equals(normalizedExpression);
     }
 
     private boolean matchesTaskCompletionNeed(String normalizedExpression, AnswerProfile answerProfile) {
@@ -531,6 +799,339 @@ final class FeedbackSectionPolicyApplier {
             strengths.add("질문에 답하려는 핵심 의도는 분명합니다.");
         }
         return validators.dedupeStrengths(strengths);
+    }
+
+    private List<String> buildMeaningBasedStrengthsV2(AnswerProfile answerProfile) {
+        if (answerProfile == null || answerProfile.content() == null || answerProfile.content().signals() == null) {
+            return List.of();
+        }
+
+        ContentSignals signals = answerProfile.content().signals();
+        List<String> strengths = new ArrayList<>();
+        if (signals.hasMainAnswer() && signals.hasActivity()) {
+            strengths.add("문제와 해결 방법을 함께 제시하려는 흐름이 좋아요.");
+        }
+        if (signals.hasMainAnswer() && signals.hasReason()) {
+            strengths.add("핵심 답과 이유를 함께 담으려는 점이 좋아요.");
+        }
+        if (signals.hasActivity()) {
+            strengths.add("실제 해결 행동을 함께 말해서 답이 살아 있어요.");
+        }
+        if (strengths.isEmpty() && signals.hasMainAnswer()) {
+            strengths.add("질문에 맞는 핵심 답을 분명하게 말했어요.");
+        }
+        return validators.dedupeStrengths(strengths);
+    }
+
+    private String resolveGrammarBlockingMinimalCorrection(
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            AnswerProfile answerProfile
+    ) {
+        if (!isGrammarBlocking(answerProfile)) {
+            return null;
+        }
+
+        String candidate = firstNonBlank(
+                answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
+                answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
+                        ? null
+                        : answerProfile.rewrite().target().skeleton(),
+                feedback == null ? null : feedback.correctedAnswer(),
+                feedback == null ? null : trimToSentenceCount(feedback.modelAnswer(), 1)
+        );
+        return normalizeGrammarBlockingCorrection(learnerAnswer, candidate);
+    }
+
+    private String normalizeGrammarBlockingCorrection(String learnerAnswer, String candidate) {
+        String revised = validators.sanitizeCorrectedSentence(candidate);
+        if (revised == null) {
+            return null;
+        }
+
+        revised = revised
+                .replaceAll("(?i)\\bstruggle with meet the deadline\\b", "struggle to meet deadlines")
+                .replaceAll("(?i)\\bstruggle with meet deadlines\\b", "struggle to meet deadlines")
+                .replaceAll("(?i)\\bstruggle with meeting the deadline\\b", "struggle to meet deadlines")
+                .replaceAll("(?i)\\bstruggle with meeting deadlines\\b", "struggle to meet deadlines")
+                .replaceAll("(?i)\\bto meet the deadline\\b", "to meet deadlines")
+                .replaceAll("(?i)\\bby write\\b", "by writing")
+                .replaceAll("(?i),?\\s*to address this,?\\s+i\\b", ", so I")
+                .replaceAll("(?i),?\\s*to address\\s+i\\b", ", so I")
+                .replaceAll("(?i),?\\s*to solve this,?\\s+i\\b", ", so I")
+                .replaceAll("(?i),?\\s*to solve\\s+i\\b", ", so I")
+                .replaceAll("\\s+,", ",")
+                .replaceAll("\\.\\s*,\\s*so\\b", ", so")
+                .replaceAll("\\.\\s+so\\b", ", so")
+                .replaceAll(",(?=\\S)", ", ")
+                .replaceAll("\\s+", " ")
+                .trim();
+
+        if (!revised.endsWith(".") && !revised.endsWith("!") && !revised.endsWith("?")) {
+            revised = revised + ".";
+        }
+        if (!revised.isEmpty()) {
+            revised = Character.toUpperCase(revised.charAt(0)) + revised.substring(1);
+        }
+        return validators.sanitizeCorrectedSentence(revised);
+    }
+
+    private CorrectionDto buildGrammarBlockingImprovement(
+            AnswerProfile answerProfile,
+            String grammarBlockingCorrection
+    ) {
+        if (!isGrammarBlocking(answerProfile)) {
+            return null;
+        }
+        String normalizedCorrection = normalize(grammarBlockingCorrection);
+        if (normalizedCorrection.contains("to do list") || normalizedCorrection.contains("to-do list")) {
+            return new CorrectionDto(
+                    "to-do list가 어떻게 도움이 되는지 한 가지 더 구체적으로 써 보세요.",
+                    "예: 해야 할 일을 더 잘 정리할 수 있다고 한 문장만 덧붙여 보세요."
+            );
+        }
+        return new CorrectionDto(
+                "이 방법이 어떻게 도움이 되는지 한 가지 더 구체적으로 써 보세요.",
+                "효과를 보여 주는 짧은 문장 한 개만 더 붙여 보세요."
+        );
+    }
+
+    private List<RefinementExpressionDto> buildGrammarBlockingRepairRefinements(String grammarBlockingCorrection) {
+        if (grammarBlockingCorrection == null || grammarBlockingCorrection.isBlank()) {
+            return List.of();
+        }
+
+        String normalized = normalize(grammarBlockingCorrection);
+        List<RefinementExpressionDto> refinements = new ArrayList<>();
+        if (normalized.contains("struggle to meet deadlines")) {
+            refinements.add(grammarBlockingRefinement(
+                    "struggle to meet deadlines",
+                    "마감일을 맞추는 데 어려움을 겪다",
+                    "자주 겪는 어려움을 말할 때 쓸 수 있어요.",
+                    "I often struggle to meet deadlines.",
+                    "저는 자주 마감일을 맞추는 데 어려움을 겪어요."
+            ));
+        }
+        if (normalized.contains("by writing a to-do list")) {
+            refinements.add(grammarBlockingRefinement(
+                    "by writing a to-do list",
+                    "할 일 목록을 써서",
+                    "해결 방법을 설명할 때 자연스럽게 이어 쓸 수 있어요.",
+                    "I stay organized by writing a to-do list.",
+                    "저는 할 일 목록을 써서 정리를 유지해요."
+            ));
+        }
+        if (normalized.contains("stay on track")) {
+            refinements.add(grammarBlockingRefinement(
+                    "stay on track",
+                    "계획대로 해 나가다",
+                    "계획을 유지하는 느낌을 짧게 말할 때 좋아요.",
+                    "A clear plan helps me stay on track.",
+                    "분명한 계획은 제가 계획대로 가도록 도와줘요."
+            ));
+        }
+        return List.copyOf(refinements);
+    }
+
+    private RefinementExpressionDto toDirectGrammarBlockingRefinement(RefinementExpressionDto expression) {
+        if (expression == null || expression.expression() == null) {
+            return expression;
+        }
+        String normalizedExpression = normalize(expression.expression());
+        if (normalizedExpression.contains("struggle to meet deadlines")) {
+            return grammarBlockingRefinement(
+                    "struggle to meet deadlines",
+                    "마감일을 맞추는 데 어려움을 겪다",
+                    "자주 겪는 어려움을 말할 때 쓸 수 있어요.",
+                    "I often struggle to meet deadlines.",
+                    "저는 자주 마감일을 맞추는 데 어려움을 겪어요."
+            );
+        }
+        if (normalizedExpression.contains("by writing a to-do list")) {
+            return grammarBlockingRefinement(
+                    "by writing a to-do list",
+                    "할 일 목록을 써서",
+                    "해결 방법을 설명할 때 자연스럽게 이어 쓸 수 있어요.",
+                    "I stay organized by writing a to-do list.",
+                    "저는 할 일 목록을 써서 정리를 유지해요."
+            );
+        }
+        if (normalizedExpression.contains("stay on track")) {
+            return grammarBlockingRefinement(
+                    "stay on track",
+                    "계획대로 해 나가다",
+                    "계획을 유지하는 느낌을 짧게 말할 때 좋아요.",
+                    "A clear plan helps me stay on track.",
+                    "분명한 계획은 제가 계획대로 가도록 도와줘요."
+            );
+        }
+        return expression;
+    }
+
+    private List<RefinementExpressionDto> mergeGrammarBlockingRefinements(
+            List<RefinementExpressionDto> immediateRepairExpressions,
+            List<RefinementExpressionDto> fallbackExpressions,
+            String learnerAnswer,
+            AnswerProfile answerProfile
+    ) {
+        List<RefinementExpressionDto> merged = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (RefinementExpressionDto expression : immediateRepairExpressions) {
+            if (expression == null || expression.expression() == null) {
+                continue;
+            }
+            String key = normalize(expression.expression());
+            if (seen.add(key)) {
+                merged.add(expression);
+            }
+        }
+        for (RefinementExpressionDto expression : fallbackExpressions) {
+            if (expression == null || expression.expression() == null) {
+                continue;
+            }
+            String key = normalize(expression.expression());
+            if (!seen.add(key)) {
+                continue;
+            }
+            if (requiresLargeReframeForGrammarBlocking(normalize(expression.expression()), expression)) {
+                continue;
+            }
+            if (overlapsGrammarIssueSpan(normalize(expression.expression()),
+                    answerProfile == null || answerProfile.grammar() == null ? List.of() : answerProfile.grammar().issues())
+                    && overlapWithSafeRewrite(normalize(expression.expression()), answerProfile) == 0) {
+                continue;
+            }
+            merged.add(expression);
+        }
+        return List.copyOf(merged);
+    }
+
+    private RefinementExpressionDto grammarBlockingRefinement(
+            String expression,
+            String meaningKo,
+            String guidanceKo,
+            String exampleEn,
+            String exampleKo
+    ) {
+        return new RefinementExpressionDto(
+                expression,
+                RefinementExpressionType.LEXICAL,
+                RefinementExpressionSource.GENERATED,
+                meaningKo,
+                RefinementMeaningType.GLOSS,
+                guidanceKo,
+                exampleEn,
+                exampleKo,
+                RefinementExampleSource.GENERATED,
+                true,
+                List.of()
+        );
+    }
+
+    private String buildGrammarBlockingSummaryV2() {
+        return "문제와 해결 방법을 함께 제시한 점은 좋지만, 먼저 핵심 문법을 바로잡아야 해요.";
+    }
+
+    private String buildGrammarBlockingRewriteGuideV2(AnswerProfile answerProfile, String grammarBlockingCorrection) {
+        if (answerProfile == null || answerProfile.rewrite() == null) {
+            return null;
+        }
+        String base = firstNonBlank(
+                grammarBlockingCorrection,
+                answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
+                answerProfile.rewrite().target() == null ? null : answerProfile.rewrite().target().skeleton()
+        );
+        if (base == null) {
+            return null;
+        }
+
+        String secondaryIssueCode = answerProfile.rewrite().secondaryIssueCode();
+        String nextStep = switch (secondaryIssueCode == null ? "" : secondaryIssueCode) {
+            case "ADD_REASON" -> "여기에 왜 이 방법이 도움이 되는지 한 가지 이유를 더 붙여 보세요.";
+            case "ADD_EXAMPLE" -> "여기에 짧은 예시 한 문장을 더 붙여 보세요.";
+            case "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC" -> "여기에 이 방법이 어떻게 도움이 되는지 한 가지를 더 덧붙여 보세요.";
+            default -> "이 문장을 기준으로 핵심 문법을 유지한 채 다시 써 보세요.";
+        };
+        return "\"" + base + "\" " + nextStep;
+    }
+
+    private String buildGrammarBlockingReasonV2(
+            AnswerProfile answerProfile,
+            String learnerAnswer,
+            String revisedSentence
+    ) {
+        List<String> reasons = new ArrayList<>();
+        String normalizedAnswer = normalize(learnerAnswer);
+        String normalizedRevised = normalize(revisedSentence);
+
+        if (STRUGGLE_WITH_BARE_VERB_PATTERN.matcher(normalizedAnswer).find()
+                && STRUGGLE_TO_PATTERN.matcher(normalizedRevised).find()) {
+            reasons.add("struggle 뒤에는 to meet가 자연스럽습니다.");
+        }
+        if (normalizedAnswer.contains(" by ")
+                && PREPOSITION_GERUND_PATTERN.matcher(normalizedRevised).find()) {
+            reasons.add("by 뒤에는 writing처럼 -ing 형태가 와야 자연스럽습니다.");
+        }
+        if ((BROKEN_CONNECTOR_PATTERN.matcher(normalizedAnswer).find() || normalizedAnswer.contains("to address this"))
+                && normalizedRevised.contains(" so ")) {
+            reasons.add("so로 연결하면 문장이 더 자연스럽습니다.");
+        }
+
+        if (reasons.isEmpty()) {
+            reasons.add("문장을 막는 핵심 문법을 먼저 바로잡으면 뜻이 더 자연스럽게 읽힙니다.");
+        }
+        return String.join("\n", reasons.stream().limit(3).toList());
+    }
+
+    private String buildGrammarBlockingOneStepUpModelAnswer(String grammarBlockingCorrection, String fallbackModelAnswer) {
+        String base = firstNonBlank(grammarBlockingCorrection, trimToSentenceCount(fallbackModelAnswer, 1));
+        if (base == null) {
+            return null;
+        }
+
+        String detailSentence = extractHelpfulDetailSentence(fallbackModelAnswer, base);
+        if (detailSentence == null) {
+            detailSentence = inferHelpfulDetailSentence(base);
+        }
+        return detailSentence == null ? base : base + " " + detailSentence;
+    }
+
+    private String extractHelpfulDetailSentence(String modelAnswer, String baseSentence) {
+        if (modelAnswer == null || modelAnswer.isBlank()) {
+            return null;
+        }
+        String[] sentences = modelAnswer.trim().split("(?<=[.!?])\\s+");
+        if (sentences.length < 2) {
+            return null;
+        }
+        String normalizedBase = normalize(baseSentence);
+        for (String sentence : sentences) {
+            String trimmed = sentence == null ? null : sentence.trim();
+            if (trimmed == null || trimmed.isBlank()) {
+                continue;
+            }
+            if (normalize(trimmed).equals(normalizedBase)) {
+                continue;
+            }
+            if (countWords(trimmed) >= 4) {
+                return validators.sanitizeCorrectedSentence(trimmed);
+            }
+        }
+        return null;
+    }
+
+    private String inferHelpfulDetailSentence(String baseSentence) {
+        String normalized = normalize(baseSentence);
+        if (normalized.contains("to do list") || normalized.contains("to-do list")) {
+            return "This helps me organize my tasks better.";
+        }
+        if (normalized.contains("stay on track")) {
+            return "This helps me keep my schedule under control.";
+        }
+        if (normalized.contains("plan")) {
+            return "This helps me manage my tasks more clearly.";
+        }
+        return "This helps me handle the problem more clearly.";
     }
 
     private boolean shouldDropUsedExpressionForElevatedGrammar(

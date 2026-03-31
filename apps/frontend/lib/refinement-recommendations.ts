@@ -3,6 +3,8 @@ type RefinementExpressionLike = {
   displayable?: boolean | null;
 };
 
+const PLACEHOLDER_PATTERN = /\[[^[\]\r\n]{1,24}\]/;
+
 function normalizeRefinementText(value?: string | null) {
   if (!value) {
     return "";
@@ -30,6 +32,22 @@ export function filterSuggestedRefinementExpressions<T extends RefinementExpress
 
   return expressions.filter((expression) => {
     if (expression.displayable === false) {
+      return false;
+    }
+
+    const candidate = expression as T & {
+      meaningKo?: string | null;
+      guidanceKo?: string | null;
+      exampleEn?: string | null;
+      exampleKo?: string | null;
+    };
+    if (
+      PLACEHOLDER_PATTERN.test(candidate.expression ?? "") ||
+      PLACEHOLDER_PATTERN.test(candidate.meaningKo ?? "") ||
+      PLACEHOLDER_PATTERN.test(candidate.guidanceKo ?? "") ||
+      PLACEHOLDER_PATTERN.test(candidate.exampleEn ?? "") ||
+      PLACEHOLDER_PATTERN.test(candidate.exampleKo ?? "")
+    ) {
       return false;
     }
 

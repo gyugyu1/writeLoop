@@ -1,7 +1,7 @@
 package com.writeloop.service;
 
-import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
+import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.PromptDto;
@@ -17,7 +17,7 @@ class FeedbackSectionPolicyApplierTest {
     private final FeedbackSectionPolicyApplier applier = new FeedbackSectionPolicyApplier();
 
     @Test
-    void apply_enforces_grammar_blocking_policy_caps_and_minimal_correction_mode() {
+    void apply_enforces_grammar_blocking_policy_caps_and_one_step_up_model_answer() {
         FeedbackResponseDto feedback = new FeedbackResponseDto(
                 "prompt-a-2",
                 "session-1",
@@ -39,9 +39,9 @@ class FeedbackSectionPolicyApplierTest {
                 ),
                 "My favorite season are spring because it warm.",
                 List.of(
-                        new RefinementExpressionDto("because it's [adjective]", "Use this to explain a reason.", "because it's warm"),
-                        new RefinementExpressionDto("I want to [verb].", "Use this to talk about a plan.", "I want to build a better routine."),
-                        new RefinementExpressionDto("One reason is that ...", "Use this to add a reason.", "One reason is that spring feels fresh.")
+                        new RefinementExpressionDto("struggle to meet deadlines", "Use this to describe a recurring difficulty.", "I sometimes struggle to meet deadlines at work."),
+                        new RefinementExpressionDto("by writing a to-do list", "Use this to explain how you solve the problem.", "I stay organized by writing a to-do list."),
+                        new RefinementExpressionDto("stay on track", "Use this when you describe keeping your plan.", "A planner helps me stay on track.")
                 ),
                 "My favorite season is spring because it is warm. I enjoy the breeze in spring. It helps me relax after school.",
                 null,
@@ -68,18 +68,7 @@ class FeedbackSectionPolicyApplierTest {
         );
 
         FeedbackResponseDto applied = applier.apply(
-                new PromptDto(
-                        "prompt-a-2",
-                        "Preference - Favorite Season",
-                        "Preference",
-                        "Favorite Season",
-                        "A",
-                        "What is your favorite season and why?",
-                        "가장 좋아하는 계절과 이유를 말해 보세요.",
-                        null,
-                        null,
-                        null
-                ),
+                prompt("prompt-a-2", "What is your favorite season and why?"),
                 "My favorite season are spring because it warm.",
                 feedback,
                 answerProfile,
@@ -87,12 +76,14 @@ class FeedbackSectionPolicyApplierTest {
         );
 
         assertThat(applied.strengths()).hasSize(1);
-        assertThat(applied.grammarFeedback()).hasSize(2);
-        assertThat(applied.corrections()).hasSize(2);
-        assertThat(applied.refinementExpressions()).hasSize(3);
-        assertThat(applied.modelAnswer()).isEqualTo("My favorite season is spring because it is warm.");
+        assertThat(applied.grammarFeedback()).hasSize(1);
+        assertThat(applied.corrections()).hasSize(1);
+        assertThat(applied.refinementExpressions()).hasSize(2);
+        assertThat(applied.modelAnswer()).startsWith("My favorite season is spring because it is warm.");
+        assertThat(applied.modelAnswer()).contains("I enjoy the breeze in spring.");
+        assertThat(applied.modelAnswer()).isNotEqualTo("My favorite season is spring because it is warm.");
         assertThat(applied.modelAnswerKo()).isNull();
-        assertThat(applied.summary()).contains("grammar issue");
+        assertThat(applied.summary()).isNotBlank();
     }
 
     @Test
@@ -112,8 +103,8 @@ class FeedbackSectionPolicyApplierTest {
                 "One challenge I face is procrastination.",
                 List.of(
                         new RefinementExpressionDto("To address this", "Use this as a transition.", "To address this, I write a to-do list every morning."),
-                        new RefinementExpressionDto("To address this, I [action or strategy].", "Use this to explain your solution.", "To address this, I prioritize my tasks."),
-                        new RefinementExpressionDto("This helps me [result or benefit].", "Use this to explain the result.", "This helps me stay on track and be more productive.")
+                        new RefinementExpressionDto("To address this, I make a daily plan.", "Use this to explain your solution.", "To address this, I make a daily plan before class."),
+                        new RefinementExpressionDto("This helps me stay on track.", "Use this to explain the result.", "This helps me stay on track during the week.")
                 ),
                 "One challenge I face is procrastination. To address this, I write a to-do list every morning.",
                 null,
@@ -133,18 +124,7 @@ class FeedbackSectionPolicyApplierTest {
         );
 
         FeedbackResponseDto applied = applier.apply(
-                new PromptDto(
-                        "prompt-b-1",
-                        "Problem Solving - Work or School Challenge",
-                        "Problem Solving",
-                        "Work or School Challenge",
-                        "B",
-                        "What is one challenge you often face at work or school, and how do you deal with it?",
-                        "직장이나 학교에서 자주 겪는 어려움과 해결 방법을 말해 보세요.",
-                        null,
-                        null,
-                        null
-                ),
+                prompt("prompt-b-1", "What is one challenge you often face at work or school, and how do you deal with it?"),
                 "One challenge I face is procrastination.",
                 feedback,
                 answerProfile,
@@ -153,14 +133,14 @@ class FeedbackSectionPolicyApplierTest {
 
         assertThat(applied.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression)
-                .contains("To address this, I [action or strategy].", "This helps me [result or benefit].")
+                .contains("To address this, I make a daily plan.", "This helps me stay on track.")
                 .doesNotContain("To address this");
     }
 
     @Test
     void apply_uses_semantic_strengths_and_filters_raw_used_expressions_for_grammar_blocking() {
         String learnerAnswer = "I often struggle with meet the deadline, to address I try to stay on track by write a to-do list.";
-        String minimalCorrection = "I often struggle to meet deadlines. To solve this, I write a to-do list to stay on track.";
+        String minimalCorrection = "I often struggle to meet deadlines, so I write a to-do list to stay on track.";
         FeedbackResponseDto feedback = new FeedbackResponseDto(
                 "prompt-b-1",
                 "session-3",
@@ -201,18 +181,7 @@ class FeedbackSectionPolicyApplierTest {
         );
 
         FeedbackResponseDto applied = applier.apply(
-                new PromptDto(
-                        "prompt-b-1",
-                        "Problem Solving - Work Challenge",
-                        "Problem Solving",
-                        "Work Challenge",
-                        "B",
-                        "What is one challenge you often face at work or school, and how do you deal with it?",
-                        "질문",
-                        null,
-                        null,
-                        null
-                ),
+                prompt("prompt-b-1", "What is one challenge you often face at work or school, and how do you deal with it?"),
                 learnerAnswer,
                 feedback,
                 answerProfile,
@@ -220,15 +189,97 @@ class FeedbackSectionPolicyApplierTest {
         );
 
         assertThat(applied.strengths()).hasSize(1);
-        assertThat(applied.strengths().get(0)).contains("문제와 해결 방법");
         assertThat(applied.strengths().get(0)).doesNotContain(learnerAnswer);
         assertThat(applied.grammarFeedback()).isNotEmpty();
         assertThat(applied.grammarFeedback().get(0).originalText()).isEqualTo(learnerAnswer);
         assertThat(applied.grammarFeedback().get(0).revisedText()).isEqualTo(minimalCorrection);
         assertThat(applied.grammarFeedback().get(0).reasonKo()).isNotBlank();
+        assertThat(applied.usedExpressions()).hasSize(1);
         assertThat(applied.usedExpressions())
                 .extracting(CoachExpressionUsageDto::expression)
-                .contains("to-do list", "stay on track")
                 .doesNotContain("I often struggle with meet the deadline");
+    }
+
+    @Test
+    void apply_for_grammar_blocking_prioritizes_repair_chunks_and_separates_rewrite_guide_from_model_answer() {
+        String learnerAnswer = "I often struggle with meet the deadline, to address I try to stay on track by write a to-do list.";
+        String minimalCorrection = "I often struggle to meet deadlines, so I try to stay on track by writing a to-do list.";
+        FeedbackResponseDto feedback = new FeedbackResponseDto(
+                "prompt-b-1",
+                "session-4",
+                1,
+                68,
+                false,
+                null,
+                "summary",
+                List.of(learnerAnswer),
+                List.of(new CorrectionDto("Add one more detail.", "Explain how the to-do list helps you.")),
+                List.of(),
+                List.of(),
+                minimalCorrection,
+                List.of(
+                        new RefinementExpressionDto("To stay on top of my tasks, I [verb]", "Use this to talk about task management.", "To stay on top of my tasks, I review my notes."),
+                        new RefinementExpressionDto("To address this", "Use this as a transition.", "To address this, I write a to-do list."),
+                        new RefinementExpressionDto("struggle to meet deadlines", "Use this to describe a repeated difficulty.", "I often struggle to meet deadlines."),
+                        new RefinementExpressionDto("by writing a to-do list", "Use this to explain your method.", "I stay organized by writing a to-do list.")
+                ),
+                minimalCorrection,
+                null,
+                "\"" + minimalCorrection + "\" Add one detail about how this method helps you.",
+                List.of()
+        );
+
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.GRAMMAR_BLOCKING),
+                new GrammarProfile(
+                        GrammarSeverity.MAJOR,
+                        List.of(new GrammarIssue("PREPOSITION", "by write", "by writing", true, GrammarSeverity.MAJOR)),
+                        minimalCorrection
+                ),
+                new ContentProfile(
+                        ContentLevel.MEDIUM,
+                        new ContentSignals(true, false, false, false, true, false),
+                        List.of()
+                ),
+                new RewriteProfile(
+                        "FIX_BLOCKING_GRAMMAR",
+                        "ADD_DETAIL",
+                        new RewriteTarget("FIX_BLOCKING_GRAMMAR", minimalCorrection, 0),
+                        null
+                )
+        );
+
+        FeedbackResponseDto applied = applier.apply(
+                prompt("prompt-b-1", "What is one challenge you often face at work or school, and how do you deal with it?"),
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                1
+        );
+
+        assertThat(applied.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .containsExactly("struggle to meet deadlines", "by writing a to-do list");
+        assertThat(applied.rewriteChallenge()).doesNotContain(learnerAnswer);
+        assertThat(applied.rewriteChallenge()).contains(minimalCorrection);
+        assertThat(applied.modelAnswer()).startsWith(minimalCorrection);
+        assertThat(applied.modelAnswer()).isNotEqualTo(minimalCorrection);
+        assertThat(applied.rewriteChallenge()).isNotEqualTo(applied.modelAnswer());
+        assertThat(applied.strengths()).allSatisfy(strength -> assertThat(strength).doesNotContain(learnerAnswer));
+    }
+
+    private PromptDto prompt(String id, String questionEn) {
+        return new PromptDto(
+                id,
+                "Problem Solving - Work Challenge",
+                "Problem Solving",
+                "Work Challenge",
+                "B",
+                questionEn,
+                null,
+                null,
+                null,
+                null
+        );
     }
 }

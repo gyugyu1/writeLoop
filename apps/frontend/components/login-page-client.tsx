@@ -7,6 +7,7 @@ import { resolveReturnTo } from "../lib/auth-flow";
 import styles from "./auth-page.module.css";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const SAVED_LOGIN_ID_KEY = "writeloop_saved_login_id";
 
 export function LoginPageClient() {
   const [returnTo, setReturnTo] = useState("/");
@@ -16,9 +17,11 @@ export function LoginPageClient() {
   const [pendingEmail, setPendingEmail] = useState("");
   const [showVerify, setShowVerify] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [saveLoginId, setSaveLoginId] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isStorageReady, setIsStorageReady] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -27,7 +30,36 @@ export function LoginPageClient() {
     if (params.get("reset") === "done") {
       setNotice("비밀번호를 재설정했어요. 새 비밀번호로 로그인해 주세요.");
     }
+
+    try {
+      const savedLoginId = window.localStorage.getItem(SAVED_LOGIN_ID_KEY)?.trim() ?? "";
+      if (savedLoginId) {
+        setEmail(savedLoginId);
+        setPendingEmail(savedLoginId);
+        setSaveLoginId(true);
+      }
+    } catch {
+      // Ignore storage access issues and keep the login form usable.
+    } finally {
+      setIsStorageReady(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (!isStorageReady) {
+      return;
+    }
+
+    try {
+      if (saveLoginId && email.trim()) {
+        window.localStorage.setItem(SAVED_LOGIN_ID_KEY, email.trim());
+        return;
+      }
+      window.localStorage.removeItem(SAVED_LOGIN_ID_KEY);
+    } catch {
+      // Ignore storage access issues and keep the login flow usable.
+    }
+  }, [email, isStorageReady, saveLoginId]);
 
   const registerHref = `/register?returnTo=${encodeURIComponent(returnTo)}`;
   const forgotPasswordHref = `/forgot-password?returnTo=${encodeURIComponent(returnTo)}`;
@@ -49,11 +81,19 @@ export function LoginPageClient() {
       setIsSubmitting(true);
       setError("");
       setNotice("");
+      const trimmedEmail = email.trim();
       await login({
-        email: email.trim(),
+        email: trimmedEmail,
         password,
         rememberMe
       });
+      if (saveLoginId && trimmedEmail) {
+        try {
+          window.localStorage.setItem(SAVED_LOGIN_ID_KEY, trimmedEmail);
+        } catch {
+          // Ignore storage write errors during login success handling.
+        }
+      }
       window.location.assign(returnTo);
     } catch (caughtError: unknown) {
       if (caughtError instanceof ApiError && caughtError.code === "EMAIL_NOT_VERIFIED") {
@@ -84,6 +124,13 @@ export function LoginPageClient() {
         email: targetEmail,
         code: verificationCode.trim()
       });
+      if (saveLoginId && targetEmail) {
+        try {
+          window.localStorage.setItem(SAVED_LOGIN_ID_KEY, targetEmail);
+        } catch {
+          // Ignore storage write errors during verification success handling.
+        }
+      }
       window.location.assign(returnTo);
     } catch (caughtError: unknown) {
       setError(caughtError instanceof ApiError ? caughtError.message : "이메일 인증을 완료할 수 없어요.");
@@ -162,14 +209,24 @@ export function LoginPageClient() {
                     placeholder="비밀번호를 입력해 주세요."
                   />
                 </label>
-                <label className={styles.checkboxField}>
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(event) => setRememberMe(event.target.checked)}
-                  />
-                  <span>로그인 상태 유지</span>
-                </label>
+                <div className={styles.checkboxGroup}>
+                  <label className={styles.checkboxField}>
+                    <input
+                      type="checkbox"
+                      checked={saveLoginId}
+                      onChange={(event) => setSaveLoginId(event.target.checked)}
+                    />
+                    <span>ID 저장하기</span>
+                  </label>
+                  <label className={styles.checkboxField}>
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(event) => setRememberMe(event.target.checked)}
+                    />
+                    <span>로그인 상태 유지</span>
+                  </label>
+                </div>
 
                 {!showVerify && error ? <p className={styles.error}>{error}</p> : null}
 

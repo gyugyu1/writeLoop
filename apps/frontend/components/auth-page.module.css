@@ -222,6 +222,13 @@
   font-weight: 700;
 }
 
+.checkboxGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+
 .checkboxField input {
   width: 18px;
   height: 18px;

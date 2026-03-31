@@ -268,6 +268,161 @@ class FeedbackSectionPolicyApplierTest {
         assertThat(applied.strengths()).allSatisfy(strength -> assertThat(strength).doesNotContain(learnerAnswer));
     }
 
+    @Test
+    void apply_for_too_short_fragment_uses_minimal_correction_before_any_invention() {
+        String learnerAnswer = "I doing nothing";
+        FeedbackResponseDto feedback = new FeedbackResponseDto(
+                "prompt-rtn-1",
+                "session-5",
+                1,
+                48,
+                false,
+                null,
+                "Add one complete sentence.",
+                List.of("You answered directly."),
+                List.of(new CorrectionDto("Complete the sentence first.", "Write one full sentence before adding detail.")),
+                List.of(),
+                List.of(new GrammarFeedbackItemDto("I doing nothing", "I do nothing", "Make the sentence complete.")),
+                "I usually relax at home.",
+                List.of(),
+                "On Sunday afternoons, I usually relax at home.",
+                null,
+                "Write one full sentence.",
+                List.of()
+        );
+
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.TOO_SHORT_FRAGMENT),
+                new GrammarProfile(
+                        GrammarSeverity.MODERATE,
+                        List.of(new GrammarIssue("LOCAL_GRAMMAR", "I doing nothing", "I do nothing", false, GrammarSeverity.MODERATE)),
+                        "I do nothing."
+                ),
+                new ContentProfile(
+                        ContentLevel.LOW,
+                        new ContentSignals(true, false, false, false, true, false),
+                        List.of(new StrengthSignal("CLEAR_MAIN_ANSWER", "I doing nothing"))
+                ),
+                new RewriteProfile(
+                        "FIX_LOCAL_GRAMMAR",
+                        "STATE_MAIN_ANSWER",
+                        new RewriteTarget("STATE_MAIN_ANSWER", "On Sunday afternoons, I usually ...", 1),
+                        null
+                )
+        );
+
+        FeedbackResponseDto applied = applier.apply(
+                prompt("prompt-rtn-1", "How do you usually spend your Sunday afternoons?"),
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                1
+        );
+
+        assertThat(applied.grammarFeedback()).hasSize(1);
+        assertThat(applied.grammarFeedback().get(0).revisedText()).isEqualTo("I do nothing.");
+        assertThat(applied.rewriteChallenge()).contains("I do nothing.");
+        assertThat(applied.rewriteChallenge()).contains("On Sunday afternoons, I usually ...");
+        assertThat(applied.modelAnswer()).contains("do nothing");
+        assertThat(applied.modelAnswer()).doesNotContain("relax at home");
+    }
+
+    @Test
+    void apply_hides_low_value_article_grammar_for_short_but_valid_content_answer() {
+        String learnerAnswer = "My favorite season is spring because I like sunshine.";
+        FeedbackResponseDto feedback = new FeedbackResponseDto(
+                "prompt-pref-1",
+                "session-6",
+                1,
+                82,
+                false,
+                null,
+                "Add one more detail.",
+                List.of("You answered the question clearly."),
+                List.of(new CorrectionDto("Add one more detail.", "Give one more concrete reason.")),
+                List.of(),
+                List.of(new GrammarFeedbackItemDto("sunshine", "the sunshine", "Use an article here.")),
+                learnerAnswer,
+                List.of(),
+                "My favorite season is spring because I like sunshine. The warm light makes me feel relaxed.",
+                null,
+                "Add one more detail about why you like spring.",
+                List.of()
+        );
+
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.SHORT_BUT_VALID),
+                new GrammarProfile(
+                        GrammarSeverity.MINOR,
+                        List.of(new GrammarIssue("ARTICLE", "sunshine", "the sunshine", false, GrammarSeverity.MINOR)),
+                        null
+                ),
+                new ContentProfile(
+                        ContentLevel.MEDIUM,
+                        new ContentSignals(true, true, false, true, false, false),
+                        List.of(new StrengthSignal("HAS_REASON", "because I like sunshine"))
+                ),
+                new RewriteProfile("ADD_DETAIL", null, new RewriteTarget("ADD_DETAIL", "My favorite season is spring because ...", 1), null)
+        );
+
+        FeedbackResponseDto applied = applier.apply(
+                prompt("prompt-pref-1", "What is your favorite season and why do you like it?"),
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                1
+        );
+
+        assertThat(applied.grammarFeedback()).isEmpty();
+        assertThat(applied.modelAnswer()).contains("The warm light makes me feel relaxed.");
+    }
+
+    @Test
+    void apply_hides_regressive_model_answer_for_natural_but_basic_answer() {
+        String learnerAnswer = "On Sunday afternoons, I usually go to church and relax at home.";
+        FeedbackResponseDto feedback = new FeedbackResponseDto(
+                "prompt-rtn-2",
+                "session-7",
+                1,
+                90,
+                false,
+                null,
+                "",
+                List.of("You answered clearly."),
+                List.of(new CorrectionDto("Make it a bit smoother.", "Use a connector if you want to sound more natural.")),
+                List.of(),
+                List.of(new GrammarFeedbackItemDto("at home", "at home", "No change.")),
+                learnerAnswer,
+                List.of(),
+                "On Sunday afternoons, I usually go to church.",
+                null,
+                "If you want, make the sentence slightly smoother.",
+                List.of()
+        );
+
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.NATURAL_BUT_BASIC),
+                new GrammarProfile(GrammarSeverity.NONE, List.of(), null),
+                new ContentProfile(
+                        ContentLevel.MEDIUM,
+                        new ContentSignals(true, false, false, false, true, true),
+                        List.of(new StrengthSignal("DESCRIBES_ACTIVITY", "go to church and relax at home"))
+                ),
+                new RewriteProfile("IMPROVE_NATURALNESS", null, new RewriteTarget("IMPROVE_NATURALNESS", "On Sunday afternoons, I usually ... and ...", 1), null)
+        );
+
+        FeedbackResponseDto applied = applier.apply(
+                prompt("prompt-rtn-2", "How do you usually spend your Sunday afternoons?"),
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                1
+        );
+
+        assertThat(applied.grammarFeedback()).isEmpty();
+        assertThat(applied.modelAnswer()).isNull();
+    }
+
     private PromptDto prompt(String id, String questionEn) {
         return new PromptDto(
                 id,

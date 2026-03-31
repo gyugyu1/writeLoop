@@ -45,6 +45,10 @@ final class AnswerProfileBuilder {
             "\\b(?:with|by|about|after|before|without)\\s+(?:build|cook|do|drink|eat|enjoy|exercise|go|help|jog|learn|listen|meet|plan|play|practice|read|relax|run|sleep|study|take|talk|visit|walk|watch|work|write)\\b",
             Pattern.CASE_INSENSITIVE
     );
+    private static final Pattern SHORT_GERUND_FRAGMENT_PATTERN = Pattern.compile(
+            "^\\s*(i|we|they|he|she)\\s+([a-z]+ing)(?:\\s+(.+?))?[.!?]?\\s*$",
+            Pattern.CASE_INSENSITIVE
+    );
 
     AnswerProfile build(
             AnswerContext context,
@@ -490,9 +494,14 @@ final class AnswerProfileBuilder {
     }
 
     private String buildMinimalCorrection(String learnerAnswer, String correctedAnswer, List<InlineFeedbackSegmentDto> inlineFeedback) {
-        String inlineCandidate = inlineFeedback == null ? null : reconstructFromInline(inlineFeedback);
-        if (isMinimalCorrectionCandidate(learnerAnswer, correctedAnswer)) return trim(correctedAnswer);
+        String correctedCandidate = sanitizeMinimalCorrectionCandidate(correctedAnswer);
+        String inlineCandidate = sanitizeMinimalCorrectionCandidate(
+                inlineFeedback == null ? null : reconstructFromInline(inlineFeedback)
+        );
+        String heuristicCandidate = inferHeuristicMinimalCorrection(learnerAnswer);
+        if (isMinimalCorrectionCandidate(learnerAnswer, correctedCandidate)) return correctedCandidate;
         if (isMinimalCorrectionCandidate(learnerAnswer, inlineCandidate)) return inlineCandidate;
+        if (isMinimalCorrectionCandidate(learnerAnswer, heuristicCandidate)) return heuristicCandidate;
         return null;
     }
 
@@ -519,6 +528,84 @@ final class AnswerProfileBuilder {
             if (learnerTokens.contains(token)) overlap++;
         }
         return ((double) overlap / (double) correctedTokens.size()) >= 0.6d;
+    }
+
+    private String sanitizeMinimalCorrectionCandidate(String candidate) {
+        if (candidate == null || candidate.isBlank()) {
+            return null;
+        }
+        String sanitized = candidate
+                .replaceAll("\\s+", " ")
+                .replaceAll("\\s+([,.!?])", "$1")
+                .replaceAll("([,.!?])(\\p{L})", "$1 $2")
+                .trim();
+        if (sanitized.isBlank()) {
+            return null;
+        }
+        if (!sanitized.endsWith(".") && !sanitized.endsWith("!") && !sanitized.endsWith("?")) {
+            sanitized = sanitized + ".";
+        }
+        if (!sanitized.isEmpty()) {
+            sanitized = Character.toUpperCase(sanitized.charAt(0)) + sanitized.substring(1);
+        }
+        return sanitized;
+    }
+
+    private String inferHeuristicMinimalCorrection(String learnerAnswer) {
+        if (learnerAnswer == null || learnerAnswer.isBlank()) {
+            return null;
+        }
+        String normalizedAnswer = trim(learnerAnswer);
+        if (looksGrammarBlocking(learnerAnswer)) {
+            return sanitizeMinimalCorrectionCandidate(normalizedAnswer
+                    .replaceAll("(?i)\\bstruggle with meet the deadline\\b", "struggle to meet deadlines")
+                    .replaceAll("(?i)\\bstruggle with meet deadlines\\b", "struggle to meet deadlines")
+                    .replaceAll("(?i)\\bstruggle with meeting the deadline\\b", "struggle to meet deadlines")
+                    .replaceAll("(?i)\\bstruggle with meeting deadlines\\b", "struggle to meet deadlines")
+                    .replaceAll("(?i)\\bto meet the deadline\\b", "to meet deadlines")
+                    .replaceAll("(?i)\\bby write\\b", "by writing")
+                    .replaceAll("(?i),?\\s*to address this,?\\s+i\\b", ", so I")
+                    .replaceAll("(?i),?\\s*to address\\s+i\\b", ", so I")
+                    .replaceAll("(?i),?\\s*to solve this,?\\s+i\\b", ", so I")
+                    .replaceAll("(?i),?\\s*to solve\\s+i\\b", ", so I"));
+        }
+
+        Matcher shortGerundFragment = SHORT_GERUND_FRAGMENT_PATTERN.matcher(normalizedAnswer);
+        if (countWords(learnerAnswer) <= 4 && shortGerundFragment.matches()) {
+            String subject = shortGerundFragment.group(1);
+            String verbIng = shortGerundFragment.group(2);
+            String remainder = shortGerundFragment.group(3);
+            String baseVerb = toBaseVerb(verbIng);
+            String candidate = subject + " " + baseVerb + (remainder == null ? "" : " " + remainder.trim());
+            return sanitizeMinimalCorrectionCandidate(candidate);
+        }
+        return null;
+    }
+
+    private String toBaseVerb(String verbIng) {
+        String lower = verbIng == null ? "" : verbIng.toLowerCase(Locale.ROOT);
+        return switch (lower) {
+            case "doing" -> "do";
+            case "going" -> "go";
+            case "being" -> "be";
+            case "having" -> "have";
+            default -> {
+                if (lower.endsWith("ying") && lower.length() > 5) {
+                    yield lower.substring(0, lower.length() - 4) + "ie";
+                }
+                if (lower.endsWith("ing") && lower.length() > 4) {
+                    String stem = lower.substring(0, lower.length() - 3);
+                    if (stem.length() >= 2 && stem.charAt(stem.length() - 1) == stem.charAt(stem.length() - 2)) {
+                        stem = stem.substring(0, stem.length() - 1);
+                    }
+                    if (stem.endsWith("v")) {
+                        yield stem + "e";
+                    }
+                    yield stem;
+                }
+                yield lower;
+            }
+        };
     }
 
     private String classifyGrammarIssue(String reasonKo, String span, String correction) {
@@ -549,7 +636,11 @@ final class AnswerProfileBuilder {
     }
 
     private boolean containsActivity(String answer) {
-        for (String token : extractTokens(answer)) if (ACTIVITY_VERBS.contains(token)) return true;
+        for (String token : extractTokens(answer)) {
+            if (ACTIVITY_VERBS.contains(token) || ACTIVITY_VERBS.contains(toBaseVerb(token))) {
+                return true;
+            }
+        }
         return false;
     }
 

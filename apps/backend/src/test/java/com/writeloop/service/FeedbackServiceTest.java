@@ -1573,6 +1573,7 @@ class FeedbackServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("Legacy expectation assumed minor grammar was always shown before answer-band section hiding.")
     void review_collects_grammar_feedback_from_inline_edits_and_keeps_corrections_for_non_grammar_only() {
         PromptDto prompt = new PromptDto(
                 "prompt-b-1",
@@ -1801,6 +1802,7 @@ class FeedbackServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("Legacy expectation assumed article fixes were always surfaced in grammar instead of being folded into corrected answer for stronger bands.")
     void review_refines_generic_article_addition_reason_into_countable_noun_rule() {
         PromptDto prompt = new PromptDto(
                 "prompt-b-3",
@@ -1900,6 +1902,7 @@ class FeedbackServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("Legacy expectation assumed local possessive article fixes were always shown in grammar instead of hidden for otherwise-good answers.")
     void review_refines_possessive_article_reason_when_openai_span_includes_context() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-1",
@@ -1953,6 +1956,7 @@ class FeedbackServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("Legacy expectation assumed short-valid/content-thin answers always surfaced minor article cleanup in grammar.")
     void review_refines_trailing_article_reason_when_followed_by_possessive_determiner() {
         PromptDto prompt = new PromptDto(
                 "prompt-b-3",
@@ -2006,6 +2010,7 @@ class FeedbackServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("Legacy expectation assumed surviving minor grammar items were always shown even when section policy hides grammar for stronger answers.")
     void review_filters_out_provided_grammar_feedback_items_without_actual_change() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-3",
@@ -2050,6 +2055,243 @@ class FeedbackServiceTest {
                 .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText)
                 .contains(tuple("nap", "a nap"))
                 .doesNotContain(tuple("watch videos", "watch videos"));
+    }
+
+    @Test
+    void review_keeps_corrected_answer_and_non_grammar_improvement_when_minor_grammar_is_hidden_by_policy() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-1",
+                "Problem Solving - Time Management",
+                "B",
+                "What is one challenge you often face with time management, and how do you handle it?",
+                "What time-management challenge do you face, and how do you handle it?",
+                "Explain the problem and your response."
+        );
+        String answer = "i have a problem meeting friend on time. i set an alarm.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                78,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(
+                        new CorrectionDto(
+                                "?듬????곹솴 ?ㅻ챸??議곌툑 ??援ъ껜?곸씠硫????ㅻ뱷???덉뼱?몄슂.",
+                                "??移쒓뎄瑜??쒖떆媛꾩뿉 留뚮굹湲??대젮?댁? ??臾몄옣 ???㏓텤??蹂댁꽭??"
+                        ),
+                        new CorrectionDto(
+                                "'I'????긽 ?臾몄옄濡??⑥빞 ?댁슂.",
+                                "'I'濡?怨좎퀜 二쇱꽭??"
+                        )
+                ),
+                List.of(
+                        new InlineFeedbackSegmentDto("REPLACE", "i", "I"),
+                        new InlineFeedbackSegmentDto("KEEP", " have a problem meeting ", " have a problem meeting "),
+                        new InlineFeedbackSegmentDto("ADD", "", "my "),
+                        new InlineFeedbackSegmentDto("REPLACE", "friend", "friends"),
+                        new InlineFeedbackSegmentDto("KEEP", " on time. ", " on time. "),
+                        new InlineFeedbackSegmentDto("REPLACE", "i", "I"),
+                        new InlineFeedbackSegmentDto("KEEP", " set an alarm.", " set an alarm.")
+                ),
+                List.of(new GrammarFeedbackItemDto("i", "I", "'I'????긽 ?臾몄옄濡??⑥빞 ?댁슂.")),
+                "I have a problem meeting my friends on time. I set an alarm.",
+                List.of(),
+                "I have a problem meeting my friends on time. I set an alarm.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.correctedAnswer()).isNotBlank();
+        assertThat(response.grammarFeedback()).isEmpty();
+        assertThat(response.corrections())
+                .extracting(CorrectionDto::issue)
+                .containsExactly("?듬????곹솴 ?ㅻ챸??議곌툑 ??援ъ껜?곸씠硫????ㅻ뱷???덉뼱?몄슂.");
+    }
+
+    @Test
+    void review_keeps_countable_noun_article_fix_in_corrected_answer_when_grammar_section_is_hidden() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-3",
+                "Goal Plan - Habit Building",
+                "B",
+                "What is one habit you want to build this year, and why is it important to you?",
+                "?ы빐 留뚮뱾怨??띠? ?듦? ??媛吏? 洹멸쾬????以묒슂?쒖? ?ㅻ챸??二쇱꽭??",
+                "Include your goal and reason."
+        );
+        String answer = "I want to build exercise habit this year because it helps me stay healthy.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                82,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(new GrammarFeedbackItemDto("", "an", "article")),
+                "I want to build an exercise habit this year because it helps me stay healthy.",
+                List.of(),
+                "I want to build an exercise habit this year because it helps me stay healthy.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.correctedAnswer())
+                .isEqualTo("I want to build an exercise habit this year because it helps me stay healthy.");
+        assertThat(response.grammarFeedback()).isEmpty();
+    }
+
+    @Test
+    void review_keeps_possessive_article_cleanup_in_corrected_answer_when_grammar_section_is_hidden() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-1",
+                "Routine - Evening",
+                "A",
+                "What do you usually do after dinner?",
+                "??곸쓣 癒밴퀬 ?섎㈃ 蹂댄넻 臾댁뾿???섎굹??",
+                "Mention one or two activities."
+        );
+        String answer = "After dinner, I clean the my desk and organize my notes.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                74,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(new GrammarFeedbackItemDto("clean the my desk", "clean my desk", "article")),
+                "After dinner, I clean my desk and organize my notes.",
+                List.of(),
+                "After dinner, I clean my desk and organize my notes.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.correctedAnswer()).isEqualTo("After dinner, I clean my desk and organize my notes.");
+        assertThat(response.grammarFeedback()).isEmpty();
+    }
+
+    @Test
+    void review_keeps_local_article_fix_in_corrected_answer_when_remaining_answer_is_good_enough() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "Routine - Weekend",
+                "A",
+                "How do you usually spend your weekend?",
+                "二쇰쭚? 蹂댄넻 ?대뼸寃?蹂대궡?섏슂?",
+                "Mention one or two activities."
+        );
+        String answer = "On weekends, I usually take nap at home and watch videos.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                78,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto("nap", "a nap", "article"),
+                        new GrammarFeedbackItemDto("watch videos", "watch videos", "noop")
+                ),
+                "On weekends, I usually take a nap at home and watch videos.",
+                List.of(),
+                "On weekends, I usually take a nap at home and watch videos.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.correctedAnswer()).isEqualTo("On weekends, I usually take a nap at home and watch videos.");
+        assertThat(response.grammarFeedback()).isEmpty();
+    }
+
+    @Test
+    void review_prefers_reason_building_over_minor_article_cleanup_for_short_valid_answer() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-3",
+                "Goal Plan - Habit Building",
+                "B",
+                "What is one habit you want to build this year, and why is it important to you?",
+                "?ы빐 留뚮뱾怨??띠? ?듦? ??媛吏? 洹멸쾬????以묒슂?쒖? ?ㅻ챸??二쇱꽭??",
+                "Include your goal and reason."
+        );
+        String answer = "I check a my schedule every morning.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                76,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(new GrammarFeedbackItemDto("I check a", "I check", "article")),
+                "I check my schedule every morning.",
+                List.of(),
+                "I check my schedule every morning.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.correctedAnswer()).isEqualTo("I check my schedule every morning.");
+        assertThat(response.grammarFeedback())
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText)
+                .containsExactly(tuple("I check a", "I check"));
+        assertThat(response.rewriteChallenge()).contains("이유");
     }
 
     @Test

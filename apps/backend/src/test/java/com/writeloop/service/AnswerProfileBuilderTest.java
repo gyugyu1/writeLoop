@@ -225,4 +225,54 @@ class AnswerProfileBuilderTest {
         assertThat(profile.task().answerBand()).isEqualTo(AnswerBand.GRAMMAR_BLOCKING);
         assertThat(profile.rewrite().primaryIssueCode()).isEqualTo("FIX_BLOCKING_GRAMMAR");
     }
+
+    @Test
+    void build_routes_short_gerund_fragment_to_too_short_fragment_with_heuristic_minimal_correction() {
+        AnswerProfile profile = answerProfileBuilder.build(
+                new AnswerContext(
+                        "How do you usually spend your Sunday afternoons?",
+                        "A",
+                        1,
+                        "I doing nothing",
+                        null,
+                        null,
+                        List.of(),
+                        new PromptTaskMetaDto("ROUTINE", List.of("MAIN_ANSWER", "ACTIVITY"), List.of("TIME_OR_PLACE", "FEELING")),
+                        "Routine",
+                        "Weekend"
+                ),
+                null,
+                List.of(),
+                List.of()
+        );
+
+        assertThat(profile.task().onTopic()).isTrue();
+        assertThat(profile.task().answerBand()).isEqualTo(AnswerBand.TOO_SHORT_FRAGMENT);
+        assertThat(profile.grammar().minimalCorrection()).isEqualTo("I do nothing.");
+    }
+
+    @Test
+    void build_routes_complete_routine_answer_to_natural_but_basic() {
+        AnswerProfile profile = answerProfileBuilder.build(
+                new AnswerContext(
+                        "How do you usually spend your Sunday afternoons?",
+                        "A",
+                        1,
+                        "On Sunday afternoons, I usually go to church and relax at home.",
+                        null,
+                        null,
+                        List.of(),
+                        new PromptTaskMetaDto("ROUTINE", List.of("MAIN_ANSWER", "ACTIVITY"), List.of("TIME_OR_PLACE", "FEELING")),
+                        "Routine",
+                        "Sunday Afternoons"
+                ),
+                null,
+                List.of(),
+                List.of()
+        );
+
+        assertThat(profile.task().onTopic()).isTrue();
+        assertThat(profile.task().taskCompletion()).isEqualTo(TaskCompletion.FULL);
+        assertThat(profile.task().answerBand()).isEqualTo(AnswerBand.NATURAL_BUT_BASIC);
+    }
 }

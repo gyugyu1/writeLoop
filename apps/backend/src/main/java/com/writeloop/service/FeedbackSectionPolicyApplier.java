@@ -75,7 +75,7 @@ final class FeedbackSectionPolicyApplier {
                 modelAnswerContent,
                 grammarBlockingCorrection
         );
-        String summary = buildSummarySection(feedback.summary(), answerProfile, corrections, policy);
+        String summary = buildSummarySection(feedback.summary(), answerProfile, corrections, rewriteGuide, policy);
         List<CoachExpressionUsageDto> usedExpressions = buildUsedExpressionSection(feedback, learnerAnswer, answerProfile);
         String correctedAnswer = isGrammarBlocking(answerProfile) && grammarBlockingCorrection != null
                 ? grammarBlockingCorrection
@@ -153,13 +153,23 @@ final class FeedbackSectionPolicyApplier {
             }
             return limit(grammar, effectiveLimit);
         }
+        if (isTooShortFragment(answerProfile)) {
+            List<GrammarFeedbackItemDto> grammar = validators.validateGrammarSectionFormat(
+                    buildTooShortGrammarSection(learnerAnswer, feedback, answerProfile)
+            );
+            if (!policy.showGrammar()) {
+                return List.of();
+            }
+            return limit(grammar, effectiveLimit);
+        }
 
         List<GrammarFeedbackItemDto> grammar = validators.validateGrammarSectionFormat(feedback.grammarFeedback());
         if (grammar.isEmpty() && answerProfile != null && answerProfile.grammar() != null) {
             grammar = validators.validateGrammarSectionFormat(fromGrammarIssues(answerProfile.grammar().issues()));
         }
+        grammar = validators.filterLowValueGrammarItems(grammar);
         if (!policy.showGrammar()) {
-            return limit(grammar, effectiveLimit);
+            return List.of();
         }
         if (policy.attemptOverlayPolicy().suppressResolvedGrammar()
                 && answerProfile != null
@@ -257,6 +267,7 @@ final class FeedbackSectionPolicyApplier {
             String summary,
             AnswerProfile answerProfile,
             List<CorrectionDto> corrections,
+            String rewriteGuide,
             SectionPolicy policy
     ) {
         if (!policy.showSummary()) {
@@ -269,7 +280,7 @@ final class FeedbackSectionPolicyApplier {
             return null;
         }
         int sentenceLimit = policy.modelAnswerMode() == ModelAnswerMode.TASK_RESET ? 1 : 2;
-        return trimToSentenceCount(summary, sentenceLimit);
+        return validators.reduceSummaryDuplication(trimToSentenceCount(summary, sentenceLimit), corrections, rewriteGuide);
     }
 
     private String buildRewriteGuideSection(
@@ -282,9 +293,17 @@ final class FeedbackSectionPolicyApplier {
         if (!policy.showRewriteGuide()) {
             return null;
         }
+        AnswerBand answerBand = answerProfile == null || answerProfile.task() == null || answerProfile.task().answerBand() == null
+                ? AnswerBand.SHORT_BUT_VALID
+                : answerProfile.task().answerBand();
         String rewriteGuide = feedback.rewriteChallenge();
         if (isGrammarBlocking(answerProfile)) {
             rewriteGuide = buildGrammarBlockingRewriteGuideV2(answerProfile, grammarBlockingCorrection);
+        } else if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
+            rewriteGuide = buildTooShortRewriteGuide(answerProfile, feedback);
+        }
+        if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
+            return rewriteGuide;
         }
         return validators.reduceRewriteGuideModelAnswerDuplication(
                 rewriteGuide,
@@ -304,12 +323,18 @@ final class FeedbackSectionPolicyApplier {
         String modelAnswer = feedback.modelAnswer();
         String modelAnswerKo = feedback.modelAnswerKo();
         ModelAnswerMode effectiveMode = policy.modelAnswerMode();
+        AnswerBand answerBand = answerProfile == null || answerProfile.task() == null
+                ? AnswerBand.SHORT_BUT_VALID
+                : answerProfile.task().answerBand();
         if (isGrammarBlocking(answerProfile) && grammarBlockingCorrection != null) {
             modelAnswer = buildGrammarBlockingOneStepUpModelAnswer(grammarBlockingCorrection, feedback.modelAnswer());
             modelAnswerKo = null;
             if (modelAnswer != null && !normalize(modelAnswer).equals(normalize(grammarBlockingCorrection))) {
                 effectiveMode = ModelAnswerMode.ONE_STEP_UP;
             }
+        } else if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
+            modelAnswer = buildTooShortModelAnswer(prompt, learnerAnswer, feedback, answerProfile);
+            modelAnswerKo = null;
         } else if (policy.modelAnswerMode() == ModelAnswerMode.MINIMAL_CORRECTION
                 && answerProfile != null
                 && answerProfile.grammar() != null
@@ -331,6 +356,35 @@ final class FeedbackSectionPolicyApplier {
                 modelAnswerKo,
                 policy.maxModelAnswerSentences(),
                 effectiveMode
+        );
+        String modelAnswerAnchor = firstNonBlank(
+                grammarBlockingCorrection,
+                answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
+                answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
+                        ? null
+                        : answerProfile.rewrite().target().skeleton(),
+                feedback.correctedAnswer()
+        );
+        String nonRegressiveModelAnswer = validators.preventModelAnswerRegression(
+                learnerAnswer,
+                guarded.modelAnswer(),
+                modelAnswerAnchor,
+                answerBand,
+                effectiveMode
+        );
+        if (effectiveMode == ModelAnswerMode.ONE_STEP_UP
+                && validators.isNearDuplicateText(nonRegressiveModelAnswer, modelAnswerAnchor)) {
+            if (answerBand == AnswerBand.GRAMMAR_BLOCKING && grammarBlockingCorrection != null) {
+                nonRegressiveModelAnswer = buildGrammarBlockingOneStepUpModelAnswer(grammarBlockingCorrection, feedback.modelAnswer());
+            } else if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
+                nonRegressiveModelAnswer = buildTooShortModelAnswer(prompt, learnerAnswer, feedback, answerProfile);
+            } else if (answerBand == AnswerBand.NATURAL_BUT_BASIC) {
+                nonRegressiveModelAnswer = null;
+            }
+        }
+        guarded = new FeedbackSectionValidators.ModelAnswerContent(
+                nonRegressiveModelAnswer,
+                nonRegressiveModelAnswer == null ? null : guarded.modelAnswerKo()
         );
         if ((guarded.modelAnswer() == null || guarded.modelAnswer().isBlank())
                 && prompt != null
@@ -472,6 +526,29 @@ final class FeedbackSectionPolicyApplier {
             ));
         }
         return grammar;
+    }
+
+    private List<GrammarFeedbackItemDto> buildTooShortGrammarSection(
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            AnswerProfile answerProfile
+    ) {
+        String revisedSentence = resolveTooShortMinimalCorrection(answerProfile, feedback);
+        if (revisedSentence == null || normalize(learnerAnswer).equals(normalize(revisedSentence))) {
+            return List.of();
+        }
+
+        String reason = firstNonBlank(
+                feedback == null || feedback.grammarFeedback() == null || feedback.grammarFeedback().isEmpty()
+                        ? null
+                        : feedback.grammarFeedback().get(0).reasonKo(),
+                "먼저 문장이 되도록 주어와 동사 형태를 바로잡아 보세요."
+        );
+        return List.of(new GrammarFeedbackItemDto(
+                learnerAnswer == null ? "" : learnerAnswer.trim(),
+                revisedSentence,
+                reason
+        ));
     }
 
     private String grammarReasonForCode(String code) {
@@ -770,6 +847,12 @@ final class FeedbackSectionPolicyApplier {
                 && answerProfile.task().answerBand() == AnswerBand.GRAMMAR_BLOCKING;
     }
 
+    private boolean isTooShortFragment(AnswerProfile answerProfile) {
+        return answerProfile != null
+                && answerProfile.task() != null
+                && answerProfile.task().answerBand() == AnswerBand.TOO_SHORT_FRAGMENT;
+    }
+
     private List<String> buildMeaningBasedStrengths(AnswerProfile answerProfile) {
         if (answerProfile == null || answerProfile.content() == null || answerProfile.content().signals() == null) {
             return List.of();
@@ -838,7 +921,8 @@ final class FeedbackSectionPolicyApplier {
                         ? null
                         : answerProfile.rewrite().target().skeleton(),
                 feedback == null ? null : feedback.correctedAnswer(),
-                feedback == null ? null : trimToSentenceCount(feedback.modelAnswer(), 1)
+                feedback == null ? null : trimToSentenceCount(feedback.modelAnswer(), 1),
+                learnerAnswer
         );
         return normalizeGrammarBlockingCorrection(learnerAnswer, candidate);
     }
@@ -1053,6 +1137,83 @@ final class FeedbackSectionPolicyApplier {
             default -> "이 문장을 기준으로 핵심 문법을 유지한 채 다시 써 보세요.";
         };
         return "\"" + base + "\" " + nextStep;
+    }
+
+    private String buildTooShortRewriteGuide(AnswerProfile answerProfile, FeedbackResponseDto feedback) {
+        String minimalCorrection = resolveTooShortMinimalCorrection(answerProfile, feedback);
+        String skeleton = answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
+                ? null
+                : answerProfile.rewrite().target().skeleton();
+        String action = answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
+                ? null
+                : answerProfile.rewrite().target().action();
+        String nextStep = switch (action == null ? "" : action) {
+            case "ADD_REASON" -> "이유를 짧게 덧붙여 다시 써 보세요.";
+            case "ADD_EXAMPLE" -> "짧은 예시를 한 문장 덧붙여 보세요.";
+            case "ADD_DETAIL" -> "한 가지 구체적인 정보를 더 붙여 보세요.";
+            default -> null;
+        };
+        if (minimalCorrection != null && skeleton != null) {
+            String guide = "\"" + minimalCorrection + "\"처럼 먼저 문장을 성립시키고, 그다음 \"" + skeleton + "\" 틀로 다시 써 보세요.";
+            return nextStep == null ? guide : guide + " " + nextStep;
+        }
+        if (skeleton != null) {
+            String guide = "\"" + skeleton + "\" 틀에 맞춰 한 문장으로 다시 써 보세요.";
+            return nextStep == null ? guide : guide + " " + nextStep;
+        }
+        if (minimalCorrection != null) {
+            String guide = "\"" + minimalCorrection + "\"처럼 먼저 문장을 완성해 보세요.";
+            return nextStep == null ? guide : guide + " " + nextStep;
+        }
+        return null;
+    }
+
+    private String buildTooShortModelAnswer(
+            PromptDto prompt,
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            AnswerProfile answerProfile
+    ) {
+        String minimalCorrection = resolveTooShortMinimalCorrection(answerProfile, feedback);
+        String skeleton = answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
+                ? null
+                : answerProfile.rewrite().target().skeleton();
+        String predicate = extractPredicateFromSentence(minimalCorrection);
+        if (skeleton != null && predicate != null && skeleton.contains("...")) {
+            String expanded = validators.sanitizeCorrectedSentence(skeleton.replace("...", predicate));
+            if (expanded != null && !validators.isNearDuplicateText(expanded, minimalCorrection)) {
+                return expanded;
+            }
+        }
+        if (minimalCorrection != null) {
+            return minimalCorrection;
+        }
+        return trimToSentenceCount(feedback == null ? null : feedback.modelAnswer(), 1);
+    }
+
+    private String resolveTooShortMinimalCorrection(AnswerProfile answerProfile, FeedbackResponseDto feedback) {
+        return validators.sanitizeCorrectedSentence(firstNonBlank(
+                answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
+                feedback == null ? null : feedback.correctedAnswer(),
+                answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
+                        ? null
+                        : answerProfile.rewrite().target().skeleton()
+        ));
+    }
+
+    private String extractPredicateFromSentence(String sentence) {
+        String sanitized = validators.sanitizeCorrectedSentence(sentence);
+        if (sanitized == null) {
+            return null;
+        }
+        String withoutEnding = sanitized.replaceAll("[.!?]+$", "").trim();
+        Matcher matcher = Pattern.compile("^(?:i|we|he|she|they)\\s+(?:usually\\s+)?(.+)$", Pattern.CASE_INSENSITIVE)
+                .matcher(withoutEnding);
+        if (!matcher.find()) {
+            return null;
+        }
+        String predicate = matcher.group(1) == null ? null : matcher.group(1).trim();
+        return predicate == null || predicate.isBlank() ? null : predicate;
     }
 
     private String buildGrammarBlockingReasonV2(

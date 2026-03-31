@@ -16,6 +16,12 @@ final class FeedbackSectionValidators {
     private static final Pattern WORD_PATTERN = Pattern.compile("[\\p{L}][\\p{L}'-]*");
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\[[^\\]\\r\\n]{1,24}\\]");
     private static final Pattern BROKEN_PATCH_PATTERN = Pattern.compile("'.+?'\\s*->\\s*'.+?'");
+    private static final Set<String> CONTENT_STOPWORDS = Set.of(
+            "a", "an", "and", "are", "at", "be", "because", "by", "do", "for", "from", "go",
+            "i", "in", "is", "it", "me", "my", "of", "on", "or", "so", "that", "the", "this",
+            "to", "usually", "very", "with"
+    );
+    private static final Set<String> ARTICLE_TOKENS = Set.of("a", "an", "the");
     private static final Set<String> GENERIC_MEANING_TEXTS = Set.of(
             "?ㅼ쓬 ?듬??먯꽌 ?쒖슜?섍린 醫뗭? ?쒗쁽",
             "?ㅼ쓬 ?듬???諛붾줈 媛?몃떎 ?????덈뒗 ?쒗쁽 ?"
@@ -70,6 +76,23 @@ final class FeedbackSectionValidators {
             }
         }
         return List.copyOf(sanitized);
+    }
+
+    List<GrammarFeedbackItemDto> filterLowValueGrammarItems(List<GrammarFeedbackItemDto> grammarFeedback) {
+        if (grammarFeedback == null || grammarFeedback.isEmpty()) {
+            return List.of();
+        }
+        List<GrammarFeedbackItemDto> filtered = new ArrayList<>();
+        for (GrammarFeedbackItemDto item : grammarFeedback) {
+            if (item == null) {
+                continue;
+            }
+            if (isLowValueArticleCorrection(item.originalText(), item.revisedText())) {
+                continue;
+            }
+            filtered.add(item);
+        }
+        return List.copyOf(filtered);
     }
 
     List<CorrectionDto> reduceDuplicateCorrections(
@@ -175,6 +198,71 @@ final class FeedbackSectionValidators {
         return new ModelAnswerContent(blankToNull(guarded), blankToNull(guardedKo));
     }
 
+    String preventModelAnswerRegression(
+            String learnerAnswer,
+            String modelAnswer,
+            String anchorText,
+            AnswerBand answerBand,
+            ModelAnswerMode modelAnswerMode
+    ) {
+        String sanitized = sanitizeFreeText(modelAnswer);
+        if (sanitized == null) {
+            return null;
+        }
+        if (answerBand == AnswerBand.OFF_TOPIC || modelAnswerMode == ModelAnswerMode.TASK_RESET) {
+            return sanitized;
+        }
+        if (dropsProtectedMeaning(learnerAnswer, sanitized)) {
+            return null;
+        }
+        if (omitsMajorLearnerClause(learnerAnswer, sanitized)) {
+            return null;
+        }
+        if (answerBand == AnswerBand.NATURAL_BUT_BASIC && isNearDuplicateText(learnerAnswer, sanitized)) {
+            return null;
+        }
+        if ((answerBand == AnswerBand.TOO_SHORT_FRAGMENT
+                || answerBand == AnswerBand.SHORT_BUT_VALID
+                || answerBand == AnswerBand.CONTENT_THIN)
+                && anchorText != null
+                && !anchorText.isBlank()
+                && !hasMinimumAnchorOverlap(sanitized, anchorText)) {
+            return null;
+        }
+        return sanitized;
+    }
+
+    String reduceSummaryDuplication(
+            String summary,
+            List<CorrectionDto> corrections,
+            String rewriteGuide
+    ) {
+        String cleanSummary = blankToNull(summary);
+        if (cleanSummary == null) {
+            return null;
+        }
+        if (rewriteGuide != null && isNearDuplicateText(cleanSummary, rewriteGuide)) {
+            return null;
+        }
+        if (corrections != null) {
+            for (CorrectionDto correction : corrections) {
+                if (correction == null) {
+                    continue;
+                }
+                String combined = (correction.issue() == null ? "" : correction.issue()) + " "
+                        + (correction.suggestion() == null ? "" : correction.suggestion());
+                if (isNearDuplicateText(cleanSummary, combined)) {
+                    return null;
+                }
+            }
+        }
+        return cleanSummary;
+    }
+
+    boolean isNearDuplicateText(String left, String right) {
+        return isNearDuplicate(normalizeExpressionForOverlap(left), normalizeExpressionForOverlap(right));
+    }
+
     String reduceRewriteGuideModelAnswerDuplication(
             String rewriteGuide,
             String modelAnswer,
@@ -236,6 +324,17 @@ final class FeedbackSectionValidators {
             sanitized = sanitized + ".";
         }
         return sanitized;
+    }
+
+    private String sanitizeFreeText(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        return text
+                .replaceAll("\\s+", " ")
+                .replaceAll("\\s+([,.!?])", "$1")
+                .replaceAll("([,.!?])(\\p{L})", "$1 $2")
+                .trim();
     }
 
     private String extractLeadingQuotedHint(String text) {
@@ -305,6 +404,114 @@ final class FeedbackSectionValidators {
 
     private boolean containsPlaceholder(String text) {
         return text != null && PLACEHOLDER_PATTERN.matcher(text).find();
+    }
+
+    private boolean isLowValueArticleCorrection(String originalText, String revisedText) {
+        String normalizedOriginal = normalizeExpressionForOverlap(originalText);
+        String normalizedRevised = normalizeExpressionForOverlap(revisedText);
+        if (normalizedOriginal.isBlank() || normalizedRevised.isBlank()) {
+            return false;
+        }
+        List<String> originalTokens = List.of(normalizedOriginal.split("\\s+"));
+        List<String> revisedTokens = List.of(normalizedRevised.split("\\s+"));
+        boolean articleTouched = originalTokens.stream().anyMatch(ARTICLE_TOKENS::contains)
+                || revisedTokens.stream().anyMatch(ARTICLE_TOKENS::contains);
+        if (!articleTouched) {
+            return false;
+        }
+        List<String> originalWithoutArticles = originalTokens.stream()
+                .filter(token -> !ARTICLE_TOKENS.contains(token))
+                .toList();
+        List<String> revisedWithoutArticles = revisedTokens.stream()
+                .filter(token -> !ARTICLE_TOKENS.contains(token))
+                .toList();
+        boolean revisedAddsOnlyDefiniteArticle = revisedTokens.size() == originalTokens.size() + 1
+                && !originalTokens.contains("the")
+                && revisedTokens.contains("the")
+                && !revisedTokens.contains("a")
+                && !revisedTokens.contains("an");
+        return !originalWithoutArticles.isEmpty()
+                && originalWithoutArticles.equals(revisedWithoutArticles)
+                && Math.max(originalTokens.size(), revisedTokens.size()) <= 4
+                && revisedAddsOnlyDefiniteArticle;
+    }
+
+    private boolean dropsProtectedMeaning(String learnerAnswer, String modelAnswer) {
+        String normalizedLearner = normalizeExpressionForOverlap(learnerAnswer);
+        String normalizedModel = normalizeExpressionForOverlap(modelAnswer);
+        if (normalizedLearner.contains("nothing") && !normalizedModel.contains("nothing")) {
+            return true;
+        }
+        if (normalizedLearner.contains("never") && !normalizedModel.contains("never")) {
+            return true;
+        }
+        if (normalizedLearner.contains("not") && !normalizedModel.contains("not")) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean omitsMajorLearnerClause(String learnerAnswer, String modelAnswer) {
+        List<Set<String>> learnerClauses = splitIntoMeaningfulClauses(learnerAnswer);
+        if (learnerClauses.size() < 2) {
+            return false;
+        }
+        Set<String> modelTokens = extractContentTokens(modelAnswer);
+        if (modelTokens.isEmpty()) {
+            return false;
+        }
+        for (Set<String> clauseTokens : learnerClauses) {
+            if (clauseTokens.size() < 2) {
+                continue;
+            }
+            Set<String> overlap = new LinkedHashSet<>(clauseTokens);
+            overlap.retainAll(modelTokens);
+            if (overlap.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasMinimumAnchorOverlap(String candidate, String anchorText) {
+        Set<String> candidateTokens = extractContentTokens(candidate);
+        Set<String> anchorTokens = extractContentTokens(anchorText);
+        if (candidateTokens.isEmpty() || anchorTokens.isEmpty()) {
+            return true;
+        }
+        Set<String> overlap = new LinkedHashSet<>(candidateTokens);
+        overlap.retainAll(anchorTokens);
+        return !overlap.isEmpty();
+    }
+
+    private List<Set<String>> splitIntoMeaningfulClauses(String text) {
+        String normalized = normalizeExpressionForOverlap(text);
+        if (normalized.isBlank()) {
+            return List.of();
+        }
+        List<Set<String>> clauses = new ArrayList<>();
+        for (String clause : normalized.split("\\b(?:and|but)\\b|[,;]")) {
+            Set<String> clauseTokens = extractContentTokens(clause);
+            if (!clauseTokens.isEmpty()) {
+                clauses.add(clauseTokens);
+            }
+        }
+        return List.copyOf(clauses);
+    }
+
+    private Set<String> extractContentTokens(String text) {
+        String normalized = normalizeExpressionForOverlap(text);
+        if (normalized.isBlank()) {
+            return Set.of();
+        }
+        Set<String> tokens = new LinkedHashSet<>();
+        for (String token : normalized.split("\\s+")) {
+            if (token.length() < 3 || CONTENT_STOPWORDS.contains(token)) {
+                continue;
+            }
+            tokens.add(token);
+        }
+        return tokens;
     }
 
     private boolean isMalformedGrammarReason(String reason) {

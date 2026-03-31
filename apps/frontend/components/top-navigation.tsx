@@ -67,7 +67,6 @@ export function TopNavigation() {
 
     syncCurrentTab();
     void loadCurrentUser();
-
     window.addEventListener("popstate", syncCurrentTab);
     window.addEventListener("writeloop:tab-change", handleTabChange);
 
@@ -87,13 +86,23 @@ export function TopNavigation() {
           href: "/me?tab=writing",
           label: "작문기록",
           active: pathname === "/me" && currentTab === "writing",
-          onClick: () => setCurrentTab("writing")
+          onClick: () => {
+            setCurrentTab("writing");
+            window.dispatchEvent(
+              new CustomEvent("writeloop:tab-change", { detail: { tab: "writing" } })
+            );
+          }
         },
         {
           href: "/me?tab=account",
           label: "내정보",
           active: pathname === "/me" && currentTab !== "writing",
-          onClick: () => setCurrentTab("account")
+          onClick: () => {
+            setCurrentTab("account");
+            window.dispatchEvent(
+              new CustomEvent("writeloop:tab-change", { detail: { tab: "account" } })
+            );
+          }
         }
       ]
     : [

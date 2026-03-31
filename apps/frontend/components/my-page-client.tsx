@@ -45,6 +45,8 @@ type UsedExpressionHistoryItem = {
   matchedText: string | null;
 };
 
+type WritingSectionKey = "expressions" | "feedback" | "history";
+
 const EXPRESSION_HISTORY_PREVIEW_COUNT = 8;
 const ATTEMPT_USED_EXPRESSION_PREVIEW_COUNT = 4;
 
@@ -239,11 +241,11 @@ function getLoginMethodLabel(user: AuthUser) {
 
 function parseMyPageTab(): MyPageTab {
   if (typeof window === "undefined") {
-    return "account";
+    return "writing";
   }
 
   const params = new URLSearchParams(window.location.search);
-  return params.get("tab") === "writing" ? "writing" : "account";
+  return params.get("tab") === "account" ? "account" : "writing";
 }
 
 function parseHistoryDateParam() {
@@ -262,7 +264,7 @@ function notifyTabChange(tab: MyPageTab) {
 
 export function MyPageClient() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<MyPageTab>("account");
+  const [activeTab, setActiveTab] = useState<MyPageTab>("writing");
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [history, setHistory] = useState<HistorySession[]>([]);
@@ -294,11 +296,20 @@ export function MyPageClient() {
       setSelectedHistoryDate(parseHistoryDateParam());
     }
 
+    function handleTabChange(event: Event) {
+      const detail = (event as CustomEvent<{ tab?: MyPageTab }>).detail;
+      const nextTab = detail?.tab === "account" ? "account" : "writing";
+      setActiveTab(nextTab);
+      setSelectedHistoryDate(parseHistoryDateParam());
+    }
+
     syncTabFromUrl();
     window.addEventListener("popstate", syncTabFromUrl);
+    window.addEventListener("writeloop:tab-change", handleTabChange);
 
     return () => {
       window.removeEventListener("popstate", syncTabFromUrl);
+      window.removeEventListener("writeloop:tab-change", handleTabChange);
     };
   }, []);
 
@@ -571,12 +582,6 @@ export function MyPageClient() {
     });
   }, [historyByDate, historyDates, selectedHistoryDate]);
 
-  function setTab(tab: MyPageTab) {
-    setActiveTab(tab);
-    window.history.replaceState({}, "", `/me?tab=${tab}`);
-    notifyTabChange(tab);
-  }
-
   function toggleDate(dateKey: string) {
     setOpenDates((current) => ({
       ...current,
@@ -616,6 +621,26 @@ export function MyPageClient() {
 
   function goHome() {
     window.location.assign("/");
+  }
+
+  function scrollToWritingSection(section: WritingSectionKey) {
+    const sectionId =
+      section === "expressions"
+        ? "writing-expressions-section"
+        : section === "feedback"
+          ? "writing-feedback-section"
+          : "writing-history-section";
+
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
+  function setTab(tab: MyPageTab) {
+    setActiveTab(tab);
+    window.history.replaceState({}, "", `/me?tab=${tab}`);
+    notifyTabChange(tab);
   }
 
   async function handleSaveProfile() {
@@ -918,7 +943,10 @@ export function MyPageClient() {
           </div>
         </div>
 
-        <div className={styles.historySection}>
+        <div
+          id="writing-expressions-section"
+          className={`${styles.historySection} ${styles.historySectionAnchor}`}
+        >
           <div className={styles.historyHeader}>
             <div>
               <span className={styles.historyEyebrow}>표현 히스토리</span>
@@ -969,7 +997,10 @@ export function MyPageClient() {
           )}
         </div>
 
-        <div className={styles.historySection}>
+        <div
+          id="writing-feedback-section"
+          className={`${styles.historySection} ${styles.historySectionAnchor}`}
+        >
           <div className={styles.historyHeader}>
             <div>
               <span className={styles.historyEyebrow}>학습 분석</span>
@@ -998,7 +1029,10 @@ export function MyPageClient() {
           )}
         </div>
 
-        <div className={styles.historySection}>
+        <div
+          id="writing-history-section"
+          className={`${styles.historySection} ${styles.historySectionAnchor}`}
+        >
           <div className={styles.historyHeader}>
             <div>
               <span className={styles.historyEyebrow}>학습 기록</span>
@@ -1362,7 +1396,39 @@ export function MyPageClient() {
             </div>
           </div>
 
-          <div className={styles.tabRow}>
+          {activeTab === "writing" ? (
+            <div className={styles.tabRow}>
+              <button
+                type="button"
+                className={styles.tabButton}
+                onClick={() => scrollToWritingSection("expressions")}
+              >
+                내가 실제로 써본 표현
+              </button>
+              <button
+                type="button"
+                className={styles.tabButton}
+                onClick={() => scrollToWritingSection("feedback")}
+              >
+                자주 나오는 피드백
+              </button>
+              <button
+                type="button"
+                className={styles.tabButton}
+                onClick={() => scrollToWritingSection("history")}
+              >
+                날짜별 작문 히스토리
+              </button>
+            </div>
+          ) : (
+            <div className={styles.tabRow}>
+              <button type="button" className={styles.tabButtonActive}>
+                내 계정
+              </button>
+            </div>
+          )}
+
+          <div className={styles.tabRow} hidden>
             <button
               type="button"
               className={activeTab === "account" ? styles.tabButtonActive : styles.tabButton}

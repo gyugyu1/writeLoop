@@ -158,6 +158,10 @@
   margin-bottom: 18px;
 }
 
+.tabRow[hidden] {
+  display: none !important;
+}
+
 .tabButton,
 .tabButtonActive {
   display: inline-flex;
@@ -496,12 +500,16 @@
 }
 
 .historyEyebrow {
-  display: inline-flex;
+  display: none;
   color: var(--warm-accent-deep);
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.historySectionAnchor {
+  scroll-margin-top: 120px;
 }
 
 .historyDateList {
@@ -1349,7 +1357,7 @@
 
   .myPageShell .tabRow {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     gap: 8px;
     margin-bottom: 14px;
     padding: 4px;

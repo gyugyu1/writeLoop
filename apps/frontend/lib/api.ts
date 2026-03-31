@@ -58,6 +58,7 @@ function normalizeRefinementExpressionItem(
     guidanceKo?: string | null;
     example?: string | null;
     exampleEn?: string | null;
+    exampleKo?: string | null;
     exampleSource?: "EXTRACTED" | "OPENAI" | "GENERATED" | "NONE" | null;
     displayable?: boolean | null;
     qualityFlags?: string[] | null;
@@ -75,6 +76,7 @@ function normalizeRefinementExpressionItem(
     meaningType: item.meaningType ?? null,
     guidanceKo: item.guidanceKo ?? item.guidance ?? null,
     exampleEn: item.exampleEn ?? item.example ?? null,
+    exampleKo: item.exampleKo ?? null,
     exampleSource: item.exampleSource ?? null,
     displayable: item.displayable ?? null,
     qualityFlags: item.qualityFlags ?? null

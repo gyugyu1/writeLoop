@@ -1161,13 +1161,14 @@ export function MyPageClient() {
                                             ).map((expression, index) => (
                                               <li key={`${expression.expression}-${index}`}>
                                                 <strong>{expression.expression}</strong>
-                                                {expression.meaningKo ? <span>해석: {expression.meaningKo}</span> : null}
-                                                {expression.guidanceKo ? <span>활용: {expression.guidanceKo}</span> : null}
+                                                {expression.meaningKo ? <span>{expression.meaningKo}</span> : null}
+                                                {expression.guidanceKo ? <span>{expression.guidanceKo}</span> : null}
                                                 {expression.exampleEn ? (
                                                   <span className={styles.historyRefinementExample}>
-                                                    예문: {expression.exampleEn}
+                                                    {expression.exampleEn}
                                                   </span>
                                                 ) : null}
+                                                {expression.exampleKo ? <span>{expression.exampleKo}</span> : null}
                                               </li>
                                             ))}
                                           </ul>

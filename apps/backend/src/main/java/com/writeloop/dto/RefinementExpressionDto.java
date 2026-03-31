@@ -15,6 +15,7 @@ public record RefinementExpressionDto(
         RefinementMeaningType meaningType,
         @JsonProperty("guidance") @JsonAlias({"guidance", "guidanceKo"}) String guidanceKo,
         @JsonProperty("example") @JsonAlias({"example", "exampleEn"}) String exampleEn,
+        @JsonProperty("exampleKo") @JsonAlias({"exampleKo"}) String exampleKo,
         RefinementExampleSource exampleSource,
         Boolean displayable,
         List<String> qualityFlags
@@ -24,6 +25,7 @@ public record RefinementExpressionDto(
         meaningKo = normalize(meaningKo);
         guidanceKo = normalize(guidanceKo);
         exampleEn = normalize(exampleEn);
+        exampleKo = normalize(exampleKo);
         type = type == null ? inferType(expression) : type;
         source = source == null ? RefinementExpressionSource.GENERATED : source;
         meaningType = meaningType == null ? inferMeaningType(type, meaningKo) : meaningType;
@@ -45,6 +47,29 @@ public record RefinementExpressionDto(
                 RefinementMeaningType.NONE,
                 guidanceKo,
                 exampleEn,
+                null,
+                inferExampleSource(exampleEn, expression),
+                inferDisplayable(exampleEn, expression),
+                List.of()
+        );
+    }
+
+    public RefinementExpressionDto(
+            String expression,
+            String guidanceKo,
+            String exampleEn,
+            String exampleKo,
+            String meaningKo
+    ) {
+        this(
+                expression,
+                inferType(expression),
+                RefinementExpressionSource.GENERATED,
+                meaningKo,
+                inferMeaningType(inferType(expression), meaningKo),
+                guidanceKo,
+                exampleEn,
+                exampleKo,
                 inferExampleSource(exampleEn, expression),
                 inferDisplayable(exampleEn, expression),
                 List.of()
@@ -65,6 +90,7 @@ public record RefinementExpressionDto(
                 inferMeaningType(inferType(expression), meaningKo),
                 guidanceKo,
                 exampleEn,
+                null,
                 inferExampleSource(exampleEn, expression),
                 inferDisplayable(exampleEn, expression),
                 List.of()

@@ -3190,6 +3190,12 @@
   color: #10244c;
 }
 
+.refinementExpressionExampleTranslation {
+  margin-top: 4px;
+  font-size: 0.92rem;
+  color: var(--text-sub);
+}
+
 .refinementMeaningText {
   color: #10244c;
   font-weight: 700;

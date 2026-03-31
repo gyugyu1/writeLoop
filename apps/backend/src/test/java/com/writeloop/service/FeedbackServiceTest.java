@@ -11,6 +11,7 @@ import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.RefinementExampleSource;
 import com.writeloop.dto.RefinementExpressionDto;
+import com.writeloop.dto.RefinementExpressionSource;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 
@@ -62,11 +64,11 @@ class FeedbackServiceTest {
                 new ObjectMapper()
         );
 
-        when(answerSessionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(answerSessionRepository.countByGuestId(any())).thenReturn(0L);
-        when(answerAttemptRepository.countBySessionId(any())).thenReturn(0);
-        when(answerAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        when(promptService.findHintsByPromptId(anyString())).thenReturn(List.of());
+        lenient().when(answerSessionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(answerSessionRepository.countByGuestId(any())).thenReturn(0L);
+        lenient().when(answerAttemptRepository.countBySessionId(any())).thenReturn(0);
+        lenient().when(answerAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(promptService.findHintsByPromptId(anyString())).thenReturn(List.of());
         lenient().when(openAiFeedbackClient.buildInlineFeedbackFromCorrectedAnswer(anyString(), anyString()))
                 .thenAnswer(invocation -> diffHelper.buildInlineFeedbackFromCorrectedAnswer(
                         invocation.getArgument(0),
@@ -2007,5 +2009,27 @@ class FeedbackServiceTest {
         assertThat(response.grammarFeedback())
                 .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText)
                 .contains(tuple("nap", "a nap"));
+    }
+
+    @Test
+    void buildRefinementExpressionDto_aligns_example_translation_with_model_answer_snippet() {
+        RefinementExpressionDto expression = (RefinementExpressionDto) ReflectionTestUtils.invokeMethod(
+                feedbackService,
+                "buildRefinementExpressionDto",
+                "after lunch",
+                RefinementExpressionSource.MODEL_ANSWER,
+                "시간 표현 뒤에 어떤 활동을 하는지 붙이면 문장이 더 또렷해집니다.",
+                null,
+                null,
+                "I usually rest after lunch. It helps me recharge for the afternoon.",
+                "저는 보통 점심 식사 후에 쉬어요. 그러면 오후를 더 잘 보낼 힘이 생겨요.",
+                "점심 식사 후에",
+                List.of()
+        );
+
+        assertThat(expression).isNotNull();
+        assertThat(expression.exampleEn()).isEqualTo("I usually rest after lunch.");
+        assertThat(expression.exampleKo()).isEqualTo("저는 보통 점심 식사 후에 쉬어요.");
+        assertThat(expression.exampleSource()).isEqualTo(RefinementExampleSource.EXTRACTED);
     }
 }

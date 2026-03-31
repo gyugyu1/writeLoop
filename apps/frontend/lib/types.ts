@@ -177,6 +177,7 @@ export interface RefinementExpression {
   meaningType?: RefinementMeaningType | null;
   guidanceKo?: string | null;
   exampleEn?: string | null;
+  exampleKo?: string | null;
   exampleSource?: RefinementExampleSource | null;
   displayable?: boolean | null;
   qualityFlags?: string[] | null;

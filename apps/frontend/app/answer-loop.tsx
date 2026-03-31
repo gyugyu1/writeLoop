@@ -2508,15 +2508,15 @@ export function AnswerLoop() {
 
     return (
       <div className={className}>
-        <h3>다음 답변에서 써보면 좋은 표현 틀·단어</h3>
+        <h3>다음 답변에서 써보면 좋은 표현</h3>
         <ul className={styles.list}>
           {suggestedExpressions.map((expression, index) => {
             const interpretation = expression.meaningKo?.trim();
             const guidanceKo = expression.guidanceKo?.trim();
             const exampleEn = expression.exampleEn?.trim();
-            const meaningLabel = expression.type === "FRAME" ? "틀 설명" : "뜻";
+            const exampleKo = expression.exampleKo?.trim();
 
-            if (!guidanceKo && !exampleEn && !interpretation) {
+            if (!guidanceKo && !exampleEn && !exampleKo && !interpretation) {
               return null;
             }
 
@@ -2524,15 +2524,12 @@ export function AnswerLoop() {
               <li key={`${expression.expression}-${index}`}>
                 <strong className={styles.expressionText}>{renderLocalizedExpression(expression.expression)}</strong>
                 {interpretation ? (
-                  <span className={styles.refinementMeaningText}>
-                    {meaningLabel}: {renderLocalizedExpression(interpretation)}
-                  </span>
+                  <span className={styles.refinementMeaningText}>{renderLocalizedExpression(interpretation)}</span>
                 ) : null}
-                {guidanceKo ? (
-                  <span className={styles.refinementGuidanceText}>활용 팁: {guidanceKo}</span>
-                ) : null}
-                {exampleEn ? (
-                  <span className={styles.refinementExpressionExample}>예문: {exampleEn}</span>
+                {guidanceKo ? <span className={styles.refinementGuidanceText}>{guidanceKo}</span> : null}
+                {exampleEn ? <span className={styles.refinementExpressionExample}>{exampleEn}</span> : null}
+                {exampleKo ? (
+                  <span className={styles.refinementExpressionExampleTranslation}>{renderLocalizedExpression(exampleKo)}</span>
                 ) : null}
               </li>
             );

@@ -297,7 +297,7 @@ public class FeedbackService {
         List<InlineFeedbackSegmentDto> inlineFeedback = buildInlineFeedback(answer, correctedAnswer);
         List<GrammarFeedbackItemDto> grammarFeedback = sanitizeGrammarFeedback(List.of(), inlineFeedback);
         String modelAnswer = buildModelAnswer(prompt);
-        List<RefinementExpressionDto> refinementExpressions = buildRefinementExpressions(answer, correctedAnswer, modelAnswer);
+        List<RefinementExpressionDto> refinementExpressions = buildRefinementExpressions(answer, correctedAnswer, modelAnswer, null);
         String rewriteChallenge = buildRewriteChallenge(prompt, corrections.isEmpty());
         int finalScore = Math.min(score, 96);
         boolean loopComplete = shouldCompleteLoop(finalScore, corrections, grammarFeedback);
@@ -351,6 +351,7 @@ public class FeedbackService {
                 learnerAnswer,
                 correctedAnswer,
                 feedback.modelAnswer(),
+                feedback.modelAnswerKo(),
                 hints
         );
         List<CoachExpressionUsageDto> usedExpressions = sanitizeUsedExpressions(
@@ -2199,7 +2200,8 @@ public class FeedbackService {
     private List<RefinementExpressionDto> buildRefinementExpressions(
             String learnerAnswer,
             String correctedAnswer,
-            String modelAnswer
+            String modelAnswer,
+            String modelAnswerKo
     ) {
         if (modelAnswer == null || modelAnswer.isBlank()) {
             return List.of();
@@ -2268,7 +2270,9 @@ public class FeedbackService {
                     RefinementExpressionSource.MODEL_ANSWER,
                     buildReadableRecommendationGuidance(candidate),
                     null,
+                    null,
                     modelAnswer,
+                    modelAnswerKo,
                     null,
                     List.of()
             );
@@ -2290,6 +2294,7 @@ public class FeedbackService {
             String learnerAnswer,
             String correctedAnswer,
             String modelAnswer,
+            String modelAnswerKo,
             List<PromptHintDto> hints
     ) {
         String normalizedLearnerAnswer = normalizeForComparison(learnerAnswer);
@@ -2332,7 +2337,9 @@ public class FeedbackService {
                         inferRefinementSource(candidate, expression.source(), modelAnswer, hints),
                         guidance,
                         expression.exampleEn(),
+                        expression.exampleKo(),
                         modelAnswer,
+                        modelAnswerKo,
                         expression.meaningKo(),
                         hints
                 );
@@ -2378,7 +2385,9 @@ public class FeedbackService {
                     inferSupplementRefinementSource(candidate, modelAnswer),
                     buildReadableRecommendationGuidance(candidate),
                     null,
+                    null,
                     modelAnswer,
+                    modelAnswerKo,
                     null,
                     hints
             );
@@ -2397,6 +2406,7 @@ public class FeedbackService {
             for (RefinementExpressionDto fallback : buildHintBasedRefinementExpressions(
                     hints,
                     modelAnswer,
+                    modelAnswerKo,
                     normalizedLearnerAnswer,
                     normalizedCorrectedAnswer,
                     seenExpressions
@@ -2610,6 +2620,7 @@ public class FeedbackService {
     private List<RefinementExpressionDto> buildHintBasedRefinementExpressions(
             List<PromptHintDto> hints,
             String modelAnswer,
+            String modelAnswerKo,
             String normalizedLearnerAnswer,
             String normalizedCorrectedAnswer,
             LinkedHashSet<String> seenExpressions
@@ -2644,7 +2655,9 @@ public class FeedbackService {
                         RefinementExpressionSource.PROMPT_HINT,
                         buildReadableHintRefinementGuidance(hint.hintType()),
                         null,
+                        null,
                         modelAnswer,
+                        modelAnswerKo,
                         null,
                         List.of(hint)
                 );
@@ -3495,7 +3508,9 @@ public class FeedbackService {
             RefinementExpressionSource source,
             String guidanceKo,
             String preferredExample,
+            String preferredExampleKo,
             String modelAnswer,
+            String modelAnswerKo,
             String explicitMeaningKo,
             List<PromptHintDto> hints
     ) {
@@ -3513,6 +3528,13 @@ public class FeedbackService {
                 normalizedExpression,
                 preferredExample,
                 modelAnswer
+        );
+        String resolvedExampleKo = resolveRefinementExampleKo(
+                exampleDetails,
+                preferredExample,
+                preferredExampleKo,
+                modelAnswer,
+                modelAnswerKo
         );
         RefinementMeaningDetails meaningDetails = resolveRefinementMeaningDetails(
                 normalizedExpression,
@@ -3538,6 +3560,7 @@ public class FeedbackService {
                 meaningDetails.type(),
                 normalizedGuidance,
                 exampleDetails.exampleEn(),
+                resolvedExampleKo,
                 exampleDetails.source(),
                 displayable,
                 qualityFlags
@@ -3583,6 +3606,83 @@ public class FeedbackService {
         }
 
         return new RefinementExampleDetails(null, RefinementExampleSource.NONE);
+    }
+
+    private String resolveRefinementExampleKo(
+            RefinementExampleDetails exampleDetails,
+            String preferredExample,
+            String preferredExampleKo,
+            String modelAnswer,
+            String modelAnswerKo
+    ) {
+        if (exampleDetails == null || exampleDetails.source() == RefinementExampleSource.NONE) {
+            return null;
+        }
+
+        String exampleEn = normalizeNullable(exampleDetails.exampleEn());
+        if (exampleEn == null) {
+            return null;
+        }
+
+        String normalizedPreferredExample = normalizeForComparison(preferredExample);
+        String normalizedSelectedExample = normalizeForComparison(exampleEn);
+        String normalizedPreferredExampleKo = normalizeNullable(preferredExampleKo);
+
+        if (normalizedPreferredExampleKo != null) {
+            if (exampleDetails.source() == RefinementExampleSource.OPENAI) {
+                return normalizedPreferredExampleKo;
+            }
+            if (!normalizedPreferredExample.isBlank() && normalizedPreferredExample.equals(normalizedSelectedExample)) {
+                return normalizedPreferredExampleKo;
+            }
+        }
+
+        return extractAlignedKoreanSnippet(modelAnswer, modelAnswerKo, exampleEn);
+    }
+
+    private String extractAlignedKoreanSnippet(
+            String englishText,
+            String koreanText,
+            String englishSnippet
+    ) {
+        String normalizedEnglishText = normalizeNullable(englishText);
+        String normalizedKoreanText = normalizeNullable(koreanText);
+        String normalizedEnglishSnippet = normalizeNullable(englishSnippet);
+
+        if (normalizedEnglishText == null || normalizedKoreanText == null || normalizedEnglishSnippet == null) {
+            return null;
+        }
+
+        if (normalizeForComparison(normalizedEnglishText).equals(normalizeForComparison(normalizedEnglishSnippet))) {
+            return normalizedKoreanText;
+        }
+
+        List<String> englishSentences = splitRefinementSentences(normalizedEnglishText);
+        List<String> koreanSentences = splitRefinementSentences(normalizedKoreanText);
+        if (englishSentences.size() != koreanSentences.size()) {
+            return null;
+        }
+
+        String normalizedSnippet = normalizeForComparison(normalizedEnglishSnippet);
+        for (int index = 0; index < englishSentences.size(); index++) {
+            if (normalizeForComparison(englishSentences.get(index)).equals(normalizedSnippet)) {
+                return koreanSentences.get(index);
+            }
+        }
+
+        return null;
+    }
+
+    private List<String> splitRefinementSentences(String text) {
+        String normalized = normalizeNullable(text);
+        if (normalized == null) {
+            return List.of();
+        }
+
+        return Arrays.stream(normalized.split("(?<=[.!?。？！])\\s+"))
+                .map(this::normalizeNullable)
+                .filter(sentence -> sentence != null && !sentence.isBlank())
+                .toList();
     }
 
     private boolean isUsableRefinementExample(String expression, String example) {

@@ -183,9 +183,10 @@ public class OpenAiFeedbackClient {
                                                 "expression", Map.of("type", "string"),
                                                 "guidanceKo", Map.of("type", "string"),
                                                 "exampleEn", Map.of("type", "string"),
+                                                "exampleKo", Map.of("type", List.of("string", "null")),
                                                 "meaningKo", Map.of("type", List.of("string", "null"))
                                         ),
-                                        "required", List.of("expression", "guidanceKo", "exampleEn", "meaningKo")
+                                        "required", List.of("expression", "guidanceKo", "exampleEn", "exampleKo", "meaningKo")
                                 )
                         )),
                         Map.entry("modelAnswer", Map.of("type", "string")),
@@ -236,7 +237,7 @@ public class OpenAiFeedbackClient {
                 Rules:
                 - Score from 0 to 100.
                 - Keep the tone encouraging, specific, and actionable.
-                - Korean fields: summary, strengths, corrections.issue, corrections.suggestion, rewriteChallenge, modelAnswerKo, grammarFeedback.reasonKo, and any refinementExpressions.guidanceKo or meaningKo when present.
+                - Korean fields: summary, strengths, corrections.issue, corrections.suggestion, rewriteChallenge, modelAnswerKo, grammarFeedback.reasonKo, and any refinementExpressions.guidanceKo, exampleKo, or meaningKo when present.
                 - English fields: correctedAnswer, modelAnswer, inlineFeedback.originalText, inlineFeedback.revisedText, grammarFeedback.originalText, grammarFeedback.revisedText, refinementExpressions.expression, and refinementExpressions.exampleEn.
                 - Do not write full English sentences in Korean fields. If you mention an English expression there, quote only the expression and explain it in Korean.
                 - strengths should have 2 to 3 concise bullets.
@@ -270,7 +271,7 @@ public class OpenAiFeedbackClient {
                 - Each usedExpressions item must include expression and usageTip. expression should usually be copied from the learner answer rather than rewritten. usageTip should be one Korean sentence explaining why the expression worked well. If nothing clearly stands out, return an empty array.
                 - refinementExpressions should contain 2 to 4 useful reusable frames or vocabulary items drawn from modelAnswer. If modelAnswer contains several distinct reusable chunks, prefer returning 3 to 4 items instead of stopping at 2.
                 - refinementExpressions.expression must be a reusable frame, pattern, or vocabulary item, not a full sentence. Prefer slot-style frames such as "[thing]", "[adj]", "[verb]", or "[reason]" when useful, and avoid fully filled-out sentences or dangling fragments.
-                - Each refinement item must include guidanceKo, exampleEn, and meaningKo. guidanceKo must be one full Korean coaching sentence that explains when or how to use the expression, not just a gloss. exampleEn must be a short clean English usage snippet or sentence, must be different from expression, and should place a word or short phrase inside a natural sentence. meaningKo should be a short Korean gloss or paraphrase that helps the learner understand the expression quickly.
+                - Each refinement item must include guidanceKo, exampleEn, exampleKo, and meaningKo. guidanceKo must be one full Korean coaching sentence that explains when or how to use the expression, not just a gloss. exampleEn must be a short clean English usage snippet or sentence, must be different from expression, and should place a word or short phrase inside a natural sentence. exampleKo should be a natural Korean translation or paraphrase of exampleEn. meaningKo should be a short Korean gloss or paraphrase that helps the learner understand the expression quickly.
                 - Do not recommend the same wording, the same frame, or a simpler variant of what already appears in the learner answer. A richer same-family frame is allowed only if it clearly adds value.
                 - refinementExpressions should feel like the learner's natural next step. Prefer frames that improve clarity, detail, reason, example, vocabulary, flow, contrast, result, process, or sequence.
                 - At least 2 refinementExpressions should be content-bearing expansions tied to the learner's actual answer, not just generic discourse markers. Diversify their functions when possible.
@@ -370,6 +371,9 @@ public class OpenAiFeedbackClient {
                         node.path("exampleEn").isMissingNode()
                                 ? node.path("example").asText()
                                 : node.path("exampleEn").asText(),
+                        node.path("exampleKo").isMissingNode() || node.path("exampleKo").isNull()
+                                ? null
+                                : node.path("exampleKo").asText(),
                         node.path("meaningKo").isMissingNode() || node.path("meaningKo").isNull()
                                 ? null
                                 : node.path("meaningKo").asText()

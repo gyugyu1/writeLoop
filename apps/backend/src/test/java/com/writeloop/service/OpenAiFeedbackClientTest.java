@@ -49,7 +49,7 @@ class OpenAiFeedbackClientTest {
 
         String text = client.buildPrompt(prompt, "I want to improve my English this year.", hints);
 
-        assertThat(text).contains("Korean fields: summary, strengths, corrections.issue, corrections.suggestion, rewriteChallenge, modelAnswerKo, grammarFeedback.reasonKo, and any refinementExpressions.guidanceKo or meaningKo when present.");
+        assertThat(text).contains("Korean fields: summary, strengths, corrections.issue, corrections.suggestion, rewriteChallenge, modelAnswerKo, grammarFeedback.reasonKo, and any refinementExpressions.guidanceKo, exampleKo, or meaningKo when present.");
         assertThat(text).contains("English fields: correctedAnswer, modelAnswer, inlineFeedback.originalText, inlineFeedback.revisedText, grammarFeedback.originalText, grammarFeedback.revisedText, refinementExpressions.expression, and refinementExpressions.exampleEn.");
         assertThat(text).contains("inlineFeedback is only for local sentence correction: grammar, word choice, agreement, article, determiner, preposition, capitalization, and punctuation.");
         assertThat(text).contains("inlineFeedback may be an empty array when the learner answer is already locally grammatical and natural enough.");
@@ -74,9 +74,10 @@ class OpenAiFeedbackClientTest {
         assertThat(text).contains("usedExpressions should contain 1 to 3 short English chunks that the learner already used naturally and correctly in the learner answer.");
         assertThat(text).contains("Each usedExpressions item must include expression and usageTip.");
         assertThat(text).contains("If modelAnswer contains several distinct reusable chunks, prefer returning 3 to 4 items instead of stopping at 2.");
-        assertThat(text).contains("Each refinement item must include guidanceKo, exampleEn, and meaningKo.");
+        assertThat(text).contains("Each refinement item must include guidanceKo, exampleEn, exampleKo, and meaningKo.");
         assertThat(text).contains("guidanceKo must be one full Korean coaching sentence that explains when or how to use the expression, not just a gloss.");
         assertThat(text).contains("exampleEn must be a short clean English usage snippet or sentence, must be different from expression, and should place a word or short phrase inside a natural sentence.");
+        assertThat(text).contains("exampleKo should be a natural Korean translation or paraphrase of exampleEn.");
         assertThat(text).contains("meaningKo should be a short Korean gloss or paraphrase that helps the learner understand the expression quickly.");
         assertThat(text).contains("Do not recommend the same wording, the same frame, or a simpler variant of what already appears in the learner answer.");
         assertThat(text).contains("At least 2 refinementExpressions should be content-bearing expansions tied to the learner's actual answer, not just generic discourse markers.");
@@ -167,5 +168,53 @@ class OpenAiFeedbackClientTest {
                         "I",
                         "'I'\ub294 \ud56d\uc0c1 \ub300\ubb38\uc790\ub85c \uc368\uc57c \ud574\uc694."
                 ));
+    }
+
+    @Test
+    void parseResponse_reads_refinement_example_translation_from_openai_payload() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        OpenAiFeedbackClient client = new OpenAiFeedbackClient(
+                mapper,
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
+
+        String outputText = mapper.writeValueAsString(Map.ofEntries(
+                Map.entry("score", 88),
+                Map.entry("summary", "요약"),
+                Map.entry("strengths", List.of("강점")),
+                Map.entry("corrections", List.of()),
+                Map.entry("inlineFeedback", List.of()),
+                Map.entry("grammarFeedback", List.of()),
+                Map.entry("correctedAnswer", "I usually rest after lunch."),
+                Map.entry("usedExpressions", List.of()),
+                Map.entry("refinementExpressions", List.of(Map.of(
+                        "expression", "after lunch",
+                        "guidanceKo", "시간 표현 뒤에 어떤 활동을 하는지 붙이면 문장이 더 또렷해집니다.",
+                        "exampleEn", "I usually rest after lunch.",
+                        "exampleKo", "저는 보통 점심 식사 후에 쉬어요.",
+                        "meaningKo", "점심 식사 후에"
+                ))),
+                Map.entry("modelAnswer", "I usually rest after lunch."),
+                Map.entry("modelAnswerKo", "저는 보통 점심 식사 후에 쉬어요."),
+                Map.entry("rewriteChallenge", "다음에는 이유를 한 문장 더 붙여 보세요.")
+        ));
+        String body = mapper.writeValueAsString(Map.of("output_text", outputText));
+
+        FeedbackResponseDto response = (FeedbackResponseDto) ReflectionTestUtils.invokeMethod(
+                client,
+                "parseResponse",
+                "prompt-1",
+                "I usually rest after lunch.",
+                body
+        );
+
+        assertThat(response.refinementExpressions())
+                .singleElement()
+                .satisfies(expression -> {
+                    assertThat(expression.exampleEn()).isEqualTo("I usually rest after lunch.");
+                    assertThat(expression.exampleKo()).isEqualTo("저는 보통 점심 식사 후에 쉬어요.");
+                });
     }
 }

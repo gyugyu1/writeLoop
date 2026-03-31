@@ -2,6 +2,7 @@ package com.writeloop.service;
 
 import com.writeloop.persistence.RememberLoginTokenEntity;
 import com.writeloop.persistence.RememberLoginTokenRepository;
+import com.writeloop.persistence.UserRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -29,6 +30,7 @@ public class RememberLoginService {
     public static final String COOKIE_NAME = "WRITELOOP_REMEMBER";
 
     private final RememberLoginTokenRepository rememberLoginTokenRepository;
+    private final UserRepository userRepository;
 
     @Value("${app.auth.remember-me-days:30}")
     private long rememberMeDays;
@@ -78,6 +80,10 @@ public class RememberLoginService {
 
         HttpSession session = request.getSession(true);
         session.setAttribute(AuthService.SESSION_USER_ID, entity.getUserId());
+        userRepository.findById(entity.getUserId()).ifPresent(user -> {
+            user.markLoggedIn();
+            userRepository.save(user);
+        });
 
         String nextRawToken = generateRawToken();
         entity.rotate(hash(nextRawToken), Instant.now().plus(Duration.ofDays(rememberMeDays)));

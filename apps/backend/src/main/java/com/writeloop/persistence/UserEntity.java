@@ -45,6 +45,9 @@ public class UserEntity {
     @Column(name = "verified_at")
     private Instant verifiedAt;
 
+    @Column(name = "last_login_at")
+    private Instant lastLoginAt;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -95,5 +98,9 @@ public class UserEntity {
 
     public void updatePasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    public void markLoggedIn() {
+        this.lastLoginAt = Instant.now();
     }
 }

@@ -668,6 +668,8 @@ public class AuthService {
             HttpServletResponse response,
             boolean rememberMe
     ) {
+        user.markLoggedIn();
+        userRepository.save(user);
         session.setAttribute(SESSION_USER_ID, user.getId());
 
         if (rememberMe) {

@@ -77,6 +77,11 @@ type NextExpressionCard = {
   primaryText?: string | null;
   secondaryText?: string | null;
 };
+type WritingGuideHintItem = {
+  id: string;
+  content: string;
+  meaningKo?: string | null;
+};
 
 const EXPRESSION_SLOT_LABELS: Record<string, string> = {
   action: "동사",
@@ -163,6 +168,19 @@ function renderLocalizedExpression(expression: string) {
   }
 
   return parts;
+}
+
+function renderWritingGuideHintCard(hint: WritingGuideHintItem) {
+  const meaningKo = hint.meaningKo?.trim();
+
+  return (
+    <article key={hint.id} className={styles.hintChip}>
+      <strong className={styles.hintChipContent}>{renderLocalizedExpression(hint.content)}</strong>
+      {meaningKo ? (
+        <span className={styles.hintChipMeaning}>{renderLocalizedExpression(meaningKo)}</span>
+      ) : null}
+    </article>
+  );
 }
 
 function normalizePromptCategory(value: string | null | undefined) {
@@ -1046,7 +1064,8 @@ export function AnswerLoop() {
             .filter((item) => item.content.trim().length > 0)
             .map((item) => ({
               id: item.id,
-              content: item.content
+              content: item.content,
+              meaningKo: item.meaningKo ?? null
             }));
         }),
     [hints]
@@ -1064,7 +1083,8 @@ export function AnswerLoop() {
             .filter((item) => item.content.trim().length > 0)
             .map((item) => ({
               id: item.id,
-              content: item.content
+              content: item.content,
+              meaningKo: item.meaningKo ?? null
             }));
         }),
     [hints]
@@ -2656,11 +2676,7 @@ export function AnswerLoop() {
                     <div className={styles.hintGroup}>
                       <strong className={styles.hintGroupTitle}>활용 단어</strong>
                       <div className={styles.hintChipList}>
-                        {vocabularyWordHintItems.map((hint) => (
-                          <span key={hint.id} className={styles.hintChip}>
-                            {hint.content}
-                          </span>
-                        ))}
+                        {vocabularyWordHintItems.map((hint) => renderWritingGuideHintCard(hint))}
                       </div>
                     </div>
                   ) : null}
@@ -2668,11 +2684,7 @@ export function AnswerLoop() {
                     <div className={styles.hintGroup}>
                       <strong className={styles.hintGroupTitle}>활용 표현</strong>
                       <div className={styles.hintChipList}>
-                        {vocabularyPhraseHintItems.map((hint) => (
-                          <span key={hint.id} className={styles.hintChip}>
-                            {hint.content}
-                          </span>
-                        ))}
+                        {vocabularyPhraseHintItems.map((hint) => renderWritingGuideHintCard(hint))}
                       </div>
                     </div>
                   ) : null}
@@ -2731,11 +2743,7 @@ export function AnswerLoop() {
                 <div className={styles.hintGroup}>
                   <strong className={styles.hintGroupTitle}>활용 단어</strong>
                   <div className={styles.hintChipList}>
-                    {vocabularyWordHintItems.map((hint) => (
-                      <span key={hint.id} className={styles.hintChip}>
-                        {hint.content}
-                      </span>
-                    ))}
+                    {vocabularyWordHintItems.map((hint) => renderWritingGuideHintCard(hint))}
                   </div>
                 </div>
               ) : null}
@@ -2743,11 +2751,7 @@ export function AnswerLoop() {
                 <div className={styles.hintGroup}>
                   <strong className={styles.hintGroupTitle}>활용 표현</strong>
                   <div className={styles.hintChipList}>
-                    {vocabularyPhraseHintItems.map((hint) => (
-                      <span key={hint.id} className={styles.hintChip}>
-                        {hint.content}
-                      </span>
-                    ))}
+                    {vocabularyPhraseHintItems.map((hint) => renderWritingGuideHintCard(hint))}
                   </div>
                 </div>
               ) : null}

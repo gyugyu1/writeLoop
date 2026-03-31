@@ -1402,21 +1402,32 @@
 }
 
 .hintChipList {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 8px;
 }
 
 .hintChip {
-  display: inline-flex;
-  align-items: center;
-  padding: 7px 12px;
-  border-radius: 999px;
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: 10px 12px;
+  border-radius: 14px;
   border: 1px solid rgba(16, 36, 76, 0.12);
-  background: rgba(16, 36, 76, 0.04);
-  color: var(--text-sub);
+  background: rgba(16, 36, 76, 0.03);
+}
+
+.hintChipContent {
+  color: #10244c;
   font-size: 0.93rem;
-  line-height: 1.35;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.hintChipMeaning {
+  color: var(--text-sub);
+  font-size: 0.86rem;
+  line-height: 1.45;
 }
 
 .helpSheetEmpty {

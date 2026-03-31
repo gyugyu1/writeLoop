@@ -110,11 +110,15 @@ public class FeedbackService {
     private final AnswerSessionRepository answerSessionRepository;
     private final AnswerAttemptRepository answerAttemptRepository;
     private final ObjectMapper objectMapper;
+    private final AnswerProfileBuilder answerProfileBuilder = new AnswerProfileBuilder();
+    private final FeedbackSectionPolicyApplier feedbackSectionPolicyApplier = new FeedbackSectionPolicyApplier();
 
     public FeedbackResponseDto review(FeedbackRequestDto request, Long currentUserId) {
         PromptDto prompt = promptService.findById(request.promptId());
         String answer = request.answer() == null ? "" : request.answer().trim();
         AnswerSessionEntity session = resolveSession(request, prompt.id(), currentUserId);
+        int attemptNo = answerAttemptRepository.countBySessionId(session.getId()) + 1;
+        String previousAnswer = findPreviousAnswer(session.getId(), attemptNo);
         AttemptType attemptType = resolveAttemptType(request);
         boolean openAiConfigured = openAiFeedbackClient.isConfigured();
         List<PromptHintDto> hints = promptService.findHintsByPromptId(prompt.id());
@@ -123,13 +127,17 @@ public class FeedbackService {
                 ? openAiFeedbackClient.review(prompt, answer, hints)
                 : buildLocalFeedback(prompt, answer);
         feedback = sanitizeFeedbackResponse(feedback, answer, hints);
+        AnswerProfile answerProfile = buildAnswerProfile(prompt, answer, previousAnswer, attemptNo, hints, feedback);
+        feedback = withRewriteChallenge(
+                feedback,
+                buildRewriteChallenge(prompt, answerProfile, feedback.rewriteChallenge(), feedback.modelAnswer())
+        );
+        feedback = applySectionPolicy(prompt, answer, feedback, answerProfile, attemptNo);
 
         if (feedback.loopComplete()) {
             session.setStatus(SessionStatus.COMPLETED);
             answerSessionRepository.save(session);
         }
-
-        int attemptNo = answerAttemptRepository.countBySessionId(session.getId()) + 1;
         saveAttempt(session, attemptType, attemptNo, answer, feedback);
 
         return new FeedbackResponseDto(
@@ -149,6 +157,91 @@ public class FeedbackService {
                 feedback.modelAnswer(),
                 feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
+                feedback.usedExpressions()
+        );
+    }
+
+    private String findPreviousAnswer(String sessionId, int attemptNo) {
+        if (attemptNo <= 1) {
+            return null;
+        }
+        return answerAttemptRepository.findBySessionIdAndAttemptNo(sessionId, attemptNo - 1)
+                .map(AnswerAttemptEntity::getAnswerText)
+                .orElse(null);
+    }
+
+    private AnswerProfile buildAnswerProfile(
+            PromptDto prompt,
+            String learnerAnswer,
+            String previousAnswer,
+            int attemptNo,
+            List<PromptHintDto> hints,
+            FeedbackResponseDto feedback
+    ) {
+        List<PromptHintRef> promptHintRefs = new ArrayList<>();
+        if (hints != null) {
+            for (PromptHintDto hint : hints) {
+                if (hint == null || hint.items() == null || hint.items().isEmpty()) {
+                    continue;
+                }
+                List<String> items = hint.items().stream()
+                        .filter(item -> item != null && item.content() != null && !item.content().isBlank())
+                        .map(PromptHintItemDto::content)
+                        .toList();
+                if (!items.isEmpty()) {
+                    promptHintRefs.add(new PromptHintRef(hint.hintType(), items));
+                }
+            }
+        }
+
+        AnswerContext context = new AnswerContext(
+                prompt.questionEn(),
+                prompt.difficulty(),
+                attemptNo,
+                learnerAnswer,
+                previousAnswer,
+                feedback.modelAnswer(),
+                promptHintRefs,
+                prompt.taskMeta(),
+                prompt.topicCategory(),
+                prompt.topicDetail()
+        );
+        return answerProfileBuilder.build(
+                context,
+                feedback.correctedAnswer(),
+                feedback.inlineFeedback(),
+                feedback.grammarFeedback()
+        );
+    }
+
+    FeedbackResponseDto applySectionPolicy(
+            PromptDto prompt,
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            AnswerProfile answerProfile,
+            int attemptIndex
+    ) {
+        return feedbackSectionPolicyApplier.apply(prompt, learnerAnswer, feedback, answerProfile, attemptIndex);
+    }
+
+    private FeedbackResponseDto withRewriteChallenge(FeedbackResponseDto feedback, String rewriteChallenge) {
+        return new FeedbackResponseDto(
+                feedback.promptId(),
+                feedback.sessionId(),
+                feedback.attemptNo(),
+                feedback.score(),
+                feedback.loopComplete(),
+                feedback.completionMessage(),
+                feedback.summary(),
+                feedback.strengths(),
+                feedback.corrections(),
+                feedback.inlineFeedback(),
+                feedback.grammarFeedback(),
+                feedback.correctedAnswer(),
+                feedback.refinementExpressions(),
+                feedback.modelAnswer(),
+                feedback.modelAnswerKo(),
+                rewriteChallenge,
                 feedback.usedExpressions()
         );
     }
@@ -431,9 +524,6 @@ public class FeedbackService {
             }
 
             if (!allowCluster) {
-                if (hasUnsafeContentRewrite) {
-                    return learnerAnswer;
-                }
                 changed = true;
             }
 
@@ -463,7 +553,14 @@ public class FeedbackService {
         if (sanitizedText.isBlank()) {
             return learnerAnswer;
         }
+        if (removeWhitespace(sanitizedText).equals(removeWhitespace(learnerAnswer))) {
+            return learnerAnswer;
+        }
         return changed ? sanitizedText : correctedAnswer;
+    }
+
+    private String removeWhitespace(String text) {
+        return text == null ? "" : text.replaceAll("\\s+", "");
     }
 
     private List<InlineFeedbackSegmentDto> rebuildInlineFeedback(
@@ -1549,11 +1646,27 @@ public class FeedbackService {
         if (original.length() <= 2 || revised.length() <= 2) {
             return levenshteinDistance(original, revised) <= 1;
         }
+        if (sharesGerundSurfaceBase(original, revised) || sharesGerundSurfaceBase(revised, original)) {
+            return true;
+        }
         if (original.charAt(0) != revised.charAt(0)) {
             return false;
         }
 
         return levenshteinDistance(original, revised) <= 2;
+    }
+
+    private boolean sharesGerundSurfaceBase(String maybeGerund, String otherToken) {
+        if (maybeGerund == null || otherToken == null || !maybeGerund.endsWith("ing") || maybeGerund.length() <= 4) {
+            return false;
+        }
+        String base = maybeGerund.substring(0, maybeGerund.length() - 3);
+        if (otherToken.equals(base) || otherToken.equals(base + "e")) {
+            return true;
+        }
+        return base.length() >= 2
+                && base.charAt(base.length() - 1) == base.charAt(base.length() - 2)
+                && otherToken.equals(base.substring(0, base.length() - 1));
     }
 
     private int levenshteinDistance(String left, String right) {
@@ -2692,8 +2805,7 @@ public class FeedbackService {
             String normalizedLearnerAnswer,
             String normalizedCorrectedAnswer
     ) {
-        return !isDirectlyAlreadyExpressedInAnswer(candidate, normalizedLearnerAnswer, normalizedCorrectedAnswer)
-                && !hasComparableStructureOverlap(candidate, normalizedLearnerAnswer, normalizedCorrectedAnswer);
+        return !isAlreadyExpressedInAnswer(candidate, normalizedLearnerAnswer, normalizedCorrectedAnswer);
     }
 
     private String buildReadableHintRefinementGuidance(String hintType) {
@@ -4191,9 +4303,73 @@ public class FeedbackService {
 
     private String buildRewriteChallenge(PromptDto prompt, boolean alreadyStrong) {
         if (alreadyStrong) {
-            return "\uc9c0\uae08 \ub2f5\ubcc0\uc744 \ubc14\ud0d5\uc73c\ub85c \ubb38\uc7a5\uc744 1~2\uac1c\ub9cc \ub354 \ub367\ubd99\uc5ec \uc774\uc720\ub098 \uc608\uc2dc\ub97c \ucd94\uac00\ud574 \ubcf4\uc138\uc694.";
+            return "지금 답변을 바탕으로 문장을 1~2개만 더 덧붙여 이유나 예시를 추가해 보세요.";
         }
-        return "\"" + prompt.topic() + "\"\uc5d0 \ub300\ud574 3~4\ubb38\uc7a5\uc73c\ub85c \ub2e4\uc2dc \ub2f5\ud574 \ubcf4\uc138\uc694. \uccab \ubb38\uc7a5\uc5d0\uc11c \ud575\uc2ec \uc0dd\uac01\uc744 \ub9d0\ud558\uace0, \ub4a4 \ubb38\uc7a5\uc5d0\uc11c \uc774\uc720\ub098 \uc608\uc2dc\ub97c \ub367\ubd99\uc774\uba74 \ub354 \uc88b\uc544\uc694.";
+        return "\"" + prompt.topic() + "\"에 대해 3~4문장으로 다시 답해 보세요. 첫 문장에서 핵심 생각을 말하고, 뒤 문장에서 이유나 예시를 덧붙이면 더 좋아요.";
+    }
+
+    private String buildRewriteChallenge(
+            PromptDto prompt,
+            AnswerProfile answerProfile,
+            String fallback,
+            String modelAnswer
+    ) {
+        if (answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null) {
+            return fallback == null || fallback.isBlank() ? buildRewriteChallenge(prompt, false) : fallback;
+        }
+
+        RewriteTarget target = answerProfile.rewrite().target();
+        String hint = formatRewriteHint(selectRewriteGuideHintSource(answerProfile, modelAnswer));
+        return switch (target.action()) {
+            case "MAKE_ON_TOPIC" ->
+                    "\"" + prompt.topic() + "\"에 맞는 핵심 답을 먼저 쓰고, 뒤에 이유를 1문장 덧붙여 다시 써 보세요." + hint;
+            case "STATE_MAIN_ANSWER" ->
+                    "질문에 대한 핵심 답을 첫 문장에서 분명히 적고, 가능하면 why에 해당하는 이유를 짧게 덧붙여 보세요." + hint;
+            case "FIX_BLOCKING_GRAMMAR" ->
+                    "지금 답의 뜻은 유지하고, 문장을 막는 문법만 최소한으로 고쳐 다시 써 보세요." + hint;
+            case "FIX_LOCAL_GRAMMAR" ->
+                    "지금 답의 내용은 유지한 채, 문법 표현 1~2곳만 다듬어 다시 써 보세요." + hint;
+            case "ADD_REASON" ->
+                    "핵심 답은 유지하고, 왜 그런지 이유를 1문장만 더 붙여 보세요." + hint;
+            case "ADD_EXAMPLE" ->
+                    "핵심 답은 유지하고, 이를 보여 주는 짧은 예시를 1문장만 덧붙여 보세요." + hint;
+            case "ADD_DETAIL" ->
+                    "핵심 답은 유지하고, 시간·장소·활동 같은 구체 디테일을 1문장만 더 넣어 보세요." + hint;
+            case "IMPROVE_NATURALNESS" ->
+                    "지금 답을 바탕으로 문장을 더 자연스럽게 연결해 보세요." + hint;
+            default -> fallback == null || fallback.isBlank() ? buildRewriteChallenge(prompt, false) : fallback;
+        };
+    }
+
+    private String selectRewriteGuideHintSource(AnswerProfile answerProfile, String modelAnswer) {
+        if (answerProfile == null) {
+            return firstRewriteHintSentence(modelAnswer);
+        }
+        if (answerProfile.grammar() != null && answerProfile.grammar().minimalCorrection() != null) {
+            return answerProfile.grammar().minimalCorrection();
+        }
+        if (answerProfile.rewrite() != null
+                && answerProfile.rewrite().target() != null
+                && answerProfile.rewrite().target().skeleton() != null) {
+            return answerProfile.rewrite().target().skeleton();
+        }
+        return firstRewriteHintSentence(modelAnswer);
+    }
+
+    private String firstRewriteHintSentence(String text) {
+        String normalized = normalizeNullable(text);
+        if (normalized == null) {
+            return null;
+        }
+        String[] sentences = normalized.split("(?<=[.!?])\\s+");
+        return sentences.length == 0 ? normalized : sentences[0].trim();
+    }
+
+    private String formatRewriteHint(String skeleton) {
+        if (skeleton == null || skeleton.isBlank()) {
+            return "";
+        }
+        return " 힌트 뼈대: \"" + skeleton.trim() + "\"";
     }
 }
 

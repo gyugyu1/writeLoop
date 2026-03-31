@@ -33,6 +33,7 @@ public class PromptService {
     private final PromptHintItemRepository promptHintItemRepository;
     private final PromptCoachProfileSupport promptCoachProfileSupport;
     private final PromptHintItemSupport promptHintItemSupport;
+    private final PromptTaskMetaSupport promptTaskMetaSupport;
 
     public List<PromptDto> findAll() {
         return promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc().stream()
@@ -95,7 +96,8 @@ public class PromptService {
                 prompt.getQuestionEn(),
                 prompt.getQuestionKo(),
                 prompt.getTip(),
-                promptCoachProfileSupport.toDto(prompt)
+                promptCoachProfileSupport.toDto(prompt),
+                promptTaskMetaSupport.toDto(prompt)
         );
     }
 

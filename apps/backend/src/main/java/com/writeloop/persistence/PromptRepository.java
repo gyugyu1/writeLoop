@@ -10,26 +10,38 @@ import java.util.Optional;
 public interface PromptRepository extends JpaRepository<PromptEntity, String> {
 
     @Query("""
-            select p
+            select distinct p
             from PromptEntity p
             left join fetch p.coachProfile
+            left join fetch p.taskProfile tp
+            left join fetch tp.answerMode
+            left join fetch tp.slotAssignments tsa
+            left join fetch tsa.slot
             where p.active = true
             order by p.displayOrder asc
             """)
     List<PromptEntity> findAllByActiveTrueOrderByDisplayOrderAsc();
 
     @Query("""
-            select p
+            select distinct p
             from PromptEntity p
             left join fetch p.coachProfile
+            left join fetch p.taskProfile tp
+            left join fetch tp.answerMode
+            left join fetch tp.slotAssignments tsa
+            left join fetch tsa.slot
             order by p.displayOrder asc
             """)
     List<PromptEntity> findAllByOrderByDisplayOrderAsc();
 
     @Query("""
-            select p
+            select distinct p
             from PromptEntity p
             left join fetch p.coachProfile
+            left join fetch p.taskProfile tp
+            left join fetch tp.answerMode
+            left join fetch tp.slotAssignments tsa
+            left join fetch tsa.slot
             where p.id = :promptId
             """)
     Optional<PromptEntity> findByIdWithCoachProfile(@Param("promptId") String promptId);

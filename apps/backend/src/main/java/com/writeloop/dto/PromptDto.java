@@ -9,7 +9,8 @@ public record PromptDto(
         String questionEn,
         String questionKo,
         String tip,
-        PromptCoachProfileDto coachProfile
+        PromptCoachProfileDto coachProfile,
+        PromptTaskMetaDto taskMeta
 ) {
     public PromptDto(
             String id,
@@ -19,7 +20,7 @@ public record PromptDto(
             String questionKo,
             String tip
     ) {
-        this(id, topic, null, null, difficulty, questionEn, questionKo, tip, null);
+        this(id, topic, null, null, difficulty, questionEn, questionKo, tip, null, null);
     }
 
     public PromptDto(
@@ -31,7 +32,7 @@ public record PromptDto(
             String tip,
             PromptCoachProfileDto coachProfile
     ) {
-        this(id, topic, null, null, difficulty, questionEn, questionKo, tip, coachProfile);
+        this(id, topic, null, null, difficulty, questionEn, questionKo, tip, coachProfile, null);
     }
 
     public PromptDto {

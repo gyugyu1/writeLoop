@@ -61,6 +61,9 @@ public class PromptEntity {
     @OneToOne(mappedBy = "prompt", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private PromptCoachProfileEntity coachProfile;
 
+    @OneToOne(mappedBy = "prompt", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private PromptTaskProfileEntity taskProfile;
+
     public PromptEntity(
             String id,
             String topicCategory,
@@ -177,6 +180,16 @@ public class PromptEntity {
 
         coachProfile.attachPrompt(this);
         this.coachProfile = coachProfile;
+    }
+
+    public void upsertTaskProfile(PromptTaskProfileEntity taskProfile) {
+        if (taskProfile == null) {
+            this.taskProfile = null;
+            return;
+        }
+
+        taskProfile.attachPrompt(this);
+        this.taskProfile = taskProfile;
     }
 
     public static TopicParts splitTopic(String topic) {

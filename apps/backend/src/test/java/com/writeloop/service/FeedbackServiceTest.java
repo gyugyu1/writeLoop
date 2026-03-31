@@ -9,6 +9,7 @@ import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptDto;
+import com.writeloop.dto.PromptTaskMetaDto;
 import com.writeloop.dto.RefinementExampleSource;
 import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.dto.RefinementExpressionSource;
@@ -67,6 +68,7 @@ class FeedbackServiceTest {
         lenient().when(answerSessionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(answerSessionRepository.countByGuestId(any())).thenReturn(0L);
         lenient().when(answerAttemptRepository.countBySessionId(any())).thenReturn(0);
+        lenient().when(answerAttemptRepository.findBySessionIdAndAttemptNo(anyString(), any())).thenReturn(java.util.Optional.empty());
         lenient().when(answerAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(promptService.findHintsByPromptId(anyString())).thenReturn(List.of());
         lenient().when(openAiFeedbackClient.buildInlineFeedbackFromCorrectedAnswer(anyString(), anyString()))
@@ -79,6 +81,141 @@ class FeedbackServiceTest {
                         invocation.getArgument(0),
                         invocation.getArgument(1)
                 ));
+    }
+
+    @Test
+    void review_rewrite_challenge_uses_profile_when_reason_is_missing() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-4",
+                "Food",
+                "EASY",
+                "What food do you like, and why?",
+                "어떤 음식을 좋아하고 왜 좋아하는지 말해 보세요.",
+                "Give one reason."
+        );
+        String answer = "I like pizza.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(false);
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.rewriteChallenge())
+                .contains("이유")
+                .doesNotContain("3~4문장");
+    }
+
+    @Test
+    void buildRewriteChallenge_forGrammarBlocking_prefersMinimalCorrection_over_raw_fallback() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-1",
+                "Problem Solving - Work Challenge",
+                "B",
+                "What is one challenge you often face at work or school, and how do you deal with it?",
+                "질문",
+                null
+        );
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.GRAMMAR_BLOCKING),
+                new GrammarProfile(
+                        GrammarSeverity.MAJOR,
+                        List.of(new GrammarIssue("SUBJECT_VERB_AGREEMENT", "meet the deadline", "to meet deadlines", true, GrammarSeverity.MAJOR)),
+                        "I often struggle to meet deadlines. To solve this, I write a to-do list."
+                ),
+                new ContentProfile(
+                        ContentLevel.MEDIUM,
+                        new ContentSignals(true, false, false, false, true, false),
+                        List.of()
+                ),
+                new RewriteProfile(
+                        "FIX_BLOCKING_GRAMMAR",
+                        null,
+                        new RewriteTarget("FIX_BLOCKING_GRAMMAR", "I often struggle to meet deadlines. To solve this, I write a to-do list.", 0),
+                        null
+                )
+        );
+
+        String rewriteChallenge = ReflectionTestUtils.invokeMethod(
+                feedbackService,
+                "buildRewriteChallenge",
+                prompt,
+                answerProfile,
+                "Hint: I often struggle with meet the deadline, to address I try to stay on track by write a to-do list.",
+                "One challenge I face is meeting deadlines. To solve this, I write a to-do list."
+        );
+
+        assertThat(rewriteChallenge)
+                .contains("I often struggle to meet deadlines")
+                .doesNotContain("I often struggle with meet the deadline");
+    }
+
+    @Test
+    void review_applies_grammar_blocking_policy_to_broken_solution_answer() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-1",
+                "Problem Solving - Work Challenge",
+                "Problem Solving",
+                "Work Challenge",
+                "B",
+                "What is one challenge you often face at work or school, and how do you deal with it?",
+                "질문",
+                null,
+                null,
+                new PromptTaskMetaDto("PROBLEM_SOLUTION", List.of("MAIN_ANSWER", "ACTIVITY"), List.of("REASON"))
+        );
+        String answer = "I often struggle with meet the deadline, to address I try to stay on track by write a to-do list.";
+        String correctedAnswer = "I often struggle with meeting deadlines. To address this, I try to stay on track by writing a to-do list.";
+        String modelAnswer = "One challenge I face is meeting deadlines. To solve this, I write a to-do list to stay on track.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                75,
+                false,
+                null,
+                "summary",
+                List.of("\"" + answer + "\" shows your idea clearly."),
+                List.of(new CorrectionDto("Add more detail.", "Explain the method and result more clearly.")),
+                List.of(),
+                List.of(),
+                correctedAnswer,
+                List.of(),
+                modelAnswer,
+                null,
+                "Hint: " + answer,
+                List.of(
+                        new CoachExpressionUsageDto("stay on track", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", "Useful chunk."),
+                        new CoachExpressionUsageDto("I often struggle with meet the deadline", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", "Broken span.")
+                )
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.strengths()).allSatisfy(strength -> {
+            assertThat(strength).doesNotContain(answer);
+        });
+        assertThat(response.strengths()).anySatisfy(strength -> {
+            assertThat(strength).contains("문제와 해결 방법");
+        });
+        assertThat(response.grammarFeedback()).isNotEmpty();
+        assertThat(response.grammarFeedback().get(0).originalText()).isEqualTo(answer);
+        assertThat(response.grammarFeedback().get(0).revisedText()).isEqualTo(correctedAnswer);
+        assertThat(response.rewriteChallenge())
+                .contains("I often struggle with meeting deadlines")
+                .doesNotContain(answer);
+        assertThat(response.usedExpressions())
+                .extracting(CoachExpressionUsageDto::expression)
+                .contains("stay on track")
+                .doesNotContain("I often struggle with meet the deadline");
     }
 
     @Test
@@ -612,6 +749,52 @@ class FeedbackServiceTest {
                         "when [thing] [verb]",
                         "the air feels [adj]"
                 );
+    }
+
+    @Test
+    void review_filters_hint_refinement_when_core_phrase_is_already_used_with_small_inflection_difference() {
+        PromptDto prompt = new PromptDto(
+                "prompt-b-1",
+                "Problem Solving",
+                "B",
+                "What is one challenge you often face, and how do you deal with it?",
+                "자주 겪는 어려움과 해결 방법을 말해 보세요.",
+                "Mention the problem and one strategy."
+        );
+        String answer = "I often struggle to meet the deadline, but I try to stay on track by writing a to-do list.";
+        List<PromptHintDto> hints = List.of(
+                new PromptHintDto("hint-1", prompt.id(), "VOCAB_PHRASE", "to meet deadlines", 1),
+                new PromptHintDto("hint-2", prompt.id(), "STRUCTURE", "To handle this, I [action or strategy].", 2)
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(promptService.findHintsByPromptId(prompt.id())).thenReturn(hints);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(openAiFeedbackClient.review(prompt, answer, hints)).thenReturn(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                81,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                answer,
+                List.of(),
+                answer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.refinementExpressions())
+                .extracting(RefinementExpressionDto::expression)
+                .doesNotContain("to meet deadlines");
     }
 
     @Test

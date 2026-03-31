@@ -8,6 +8,7 @@ import com.writeloop.persistence.PromptHintRepository;
 import com.writeloop.persistence.PromptRepository;
 import com.writeloop.service.PromptCoachProfileSupport;
 import com.writeloop.service.PromptHintItemSupport;
+import com.writeloop.service.PromptTaskMetaSupport;
 import com.writeloop.service.PromptTopicSupport;
 import jakarta.persistence.EntityManager;
 import org.springframework.boot.ApplicationRunner;
@@ -28,6 +29,7 @@ public class PromptSeedConfig {
             JdbcTemplate jdbcTemplate,
             PromptCoachProfileSupport promptCoachProfileSupport,
             PromptHintItemSupport promptHintItemSupport,
+            PromptTaskMetaSupport promptTaskMetaSupport,
             PromptTopicSupport promptTopicSupport,
             TransactionTemplate transactionTemplate,
             EntityManager entityManager
@@ -35,10 +37,15 @@ public class PromptSeedConfig {
         return args -> transactionTemplate.executeWithoutResult(status -> {
             normalizeLegacyPrompts(jdbcTemplate);
             promptTopicSupport.ensureCatalogSeeded();
+            promptTaskMetaSupport.ensureCatalogSeeded();
             backfillNormalizedPromptTopicRefs(jdbcTemplate, promptTopicSupport);
 
-            seededPrompts().forEach(prompt -> upsertSeedPrompt(promptRepository, entityManager, promptTopicSupport, prompt));
+            seededPrompts().forEach(prompt -> {
+                upsertSeedPrompt(promptRepository, entityManager, promptTopicSupport, prompt);
+            });
             seededHints().forEach(hint -> upsertSeedHint(promptHintRepository, promptHintItemSupport, entityManager, hint));
+
+            promptTaskMetaSupport.syncProfiles(promptRepository.findAllByOrderByDisplayOrderAsc());
 
             promptRepository.findAllByOrderByDisplayOrderAsc().forEach(prompt -> {
                 if (!promptCoachProfileSupport.shouldRefreshSeededProfile(prompt)) {
@@ -284,7 +291,7 @@ public class PromptSeedConfig {
         );
     }
 
-    private void upsertSeedPrompt(
+    private PromptEntity upsertSeedPrompt(
             PromptRepository promptRepository,
             EntityManager entityManager,
             PromptTopicSupport promptTopicSupport,
@@ -296,7 +303,7 @@ public class PromptSeedConfig {
         PromptEntity existing = promptRepository.findById(seededPrompt.getId()).orElse(null);
         if (existing == null) {
             entityManager.persist(seededPrompt);
-            return;
+            return seededPrompt;
         }
 
         existing.update(
@@ -311,6 +318,7 @@ public class PromptSeedConfig {
         existing.assignTopicDetail(
                 promptTopicSupport.requireTopicDetail(seededPrompt.getTopicCategory(), seededPrompt.getTopicDetail())
         );
+        return existing;
     }
 
     private void upsertSeedHint(

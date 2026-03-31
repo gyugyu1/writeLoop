@@ -2813,6 +2813,13 @@ export function AnswerLoop() {
           <div className={styles.feedbackBody}>
             {renderFeedbackGroup(
               <div className={styles.responseCard}>
+                <div className={styles.responsePrompt}>
+                  <span className={styles.responsePromptLabel}>질문</span>
+                  <p>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</p>
+                  {selectedPrompt?.questionKo ? (
+                    <small className={styles.translationText}>{selectedPrompt.questionKo}</small>
+                  ) : null}
+                </div>
                 <h3>내가 제출한 답변</h3>
                 <p>{lastSubmittedAnswer}</p>
               </div>

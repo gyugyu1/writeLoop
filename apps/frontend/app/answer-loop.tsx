@@ -317,6 +317,174 @@ function buildRelatedPromptRecommendations(
   return selected.slice(0, 3);
 }
 
+const PROMPT_DIVERSITY_STOPWORDS = new Set([
+  "about",
+  "after",
+  "and",
+  "are",
+  "because",
+  "describe",
+  "does",
+  "during",
+  "each",
+  "english",
+  "every",
+  "explain",
+  "favorite",
+  "from",
+  "have",
+  "how",
+  "important",
+  "into",
+  "like",
+  "make",
+  "matters",
+  "one",
+  "reach",
+  "related",
+  "tell",
+  "that",
+  "the",
+  "their",
+  "them",
+  "there",
+  "they",
+  "this",
+  "usually",
+  "want",
+  "what",
+  "when",
+  "which",
+  "why",
+  "with",
+  "year",
+  "you",
+  "your"
+]);
+
+function extractPromptDiversityTokens(prompt: Prompt | null | undefined) {
+  if (!prompt) {
+    return [];
+  }
+
+  const rawText = [
+    prompt.topic,
+    prompt.topicCategory,
+    prompt.topicDetail,
+    prompt.questionEn
+  ]
+    .filter((value): value is string => Boolean(value?.trim()))
+    .join(" ")
+    .toLowerCase();
+
+  const tokens = rawText
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(
+      (token) => token.length >= 3 && !PROMPT_DIVERSITY_STOPWORDS.has(token)
+    );
+
+  return Array.from(new Set(tokens));
+}
+
+function getPromptSharedTokenCount(
+  currentPrompt: Prompt | null | undefined,
+  candidate: Prompt | null | undefined
+) {
+  if (!currentPrompt || !candidate) {
+    return 0;
+  }
+
+  const currentTokens = new Set(extractPromptDiversityTokens(currentPrompt));
+  let sharedCount = 0;
+
+  for (const token of extractPromptDiversityTokens(candidate)) {
+    if (currentTokens.has(token)) {
+      sharedCount += 1;
+    }
+  }
+
+  return sharedCount;
+}
+
+function calculatePromptOverlapPenalty(
+  currentPrompt: Prompt | null | undefined,
+  candidate: Prompt | null | undefined
+) {
+  if (!currentPrompt || !candidate) {
+    return 0;
+  }
+
+  const topicMatch = getPromptTopicMatch(currentPrompt, candidate);
+  const coachCategoryScore = getPromptCoachCategoryOverlapScore(currentPrompt, candidate);
+  const sharedTokenCount = getPromptSharedTokenCount(currentPrompt, candidate);
+  const sameTopic =
+    normalizePromptTopicKey(currentPrompt.topic) !== "" &&
+    normalizePromptTopicKey(currentPrompt.topic) === normalizePromptTopicKey(candidate.topic);
+
+  return (
+    (sameTopic ? 8_000 : 0) +
+    (topicMatch.sameTopicDetail ? 4_000 : 0) +
+    (topicMatch.sameCategory ? 1_000 : 0) +
+    coachCategoryScore * 180 +
+    sharedTokenCount * 55
+  );
+}
+
+function pickLeastOverlappingPrompt(
+  currentPrompt: Prompt | null | undefined,
+  candidates: Prompt[],
+  seenPromptIds: Iterable<string>
+) {
+  const uniqueCandidates = candidates.filter(
+    (candidate, index) =>
+      candidate.id !== currentPrompt?.id &&
+      candidates.findIndex((item) => item.id === candidate.id) === index
+  );
+
+  if (uniqueCandidates.length === 0) {
+    return null;
+  }
+
+  const seenSet = new Set(seenPromptIds);
+  const unseenCandidates = uniqueCandidates.filter((candidate) => !seenSet.has(candidate.id));
+  const candidatePool = unseenCandidates.length > 0 ? unseenCandidates : uniqueCandidates;
+
+  return (
+    candidatePool
+      .map((candidate, index) => ({
+        candidate,
+        index,
+        overlapPenalty: calculatePromptOverlapPenalty(currentPrompt, candidate)
+      }))
+      .sort((left, right) => {
+        if (left.overlapPenalty !== right.overlapPenalty) {
+          return left.overlapPenalty - right.overlapPenalty;
+        }
+        return left.index - right.index;
+      })[0]?.candidate ?? null
+  );
+}
+
+function mergePromptIntoRecommendation(
+  recommendation: DailyPromptRecommendation | null,
+  nextPrompt: Prompt
+) {
+  if (!recommendation) {
+    return recommendation;
+  }
+
+  const mergedPrompts = [
+    nextPrompt,
+    ...recommendation.prompts.filter((prompt) => prompt.id !== nextPrompt.id)
+  ].slice(0, Math.max(recommendation.prompts.length, 1));
+
+  return {
+    ...recommendation,
+    prompts: mergedPrompts
+  };
+}
+
 const DIFFICULTY_OPTIONS: Array<{
   value: DailyDifficulty;
   label: string;
@@ -669,6 +837,8 @@ export function AnswerLoop() {
   const [didRestoreDraft, setDidRestoreDraft] = useState(false);
   const [didAttemptPersistedDraftRestore, setDidAttemptPersistedDraftRestore] = useState(false);
   const [draftStatusMessage, setDraftStatusMessage] = useState("");
+  const [questionRefreshHistory, setQuestionRefreshHistory] = useState<string[]>([]);
+  const [isRefreshingQuestion, setIsRefreshingQuestion] = useState(false);
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
   const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mobileComposerBarRef = useRef<HTMLDivElement | null>(null);
@@ -755,6 +925,10 @@ export function AnswerLoop() {
   useEffect(() => {
     setDidAttemptPersistedDraftRestore(false);
   }, [selectedDifficulty, currentUser?.id]);
+
+  useEffect(() => {
+    setQuestionRefreshHistory([]);
+  }, [selectedDifficulty]);
 
   useEffect(() => {
     let isMounted = true;
@@ -1585,6 +1759,52 @@ export function AnswerLoop() {
     resetFlowForPrompt(promptId);
   }
 
+  async function handleRefreshQuestion() {
+    if (!selectedPrompt) {
+      setError("질문을 먼저 불러와 주세요.");
+      return;
+    }
+
+    const sourcePrompts = allPrompts.length > 0 ? allPrompts : prompts;
+    const sameDifficultyCandidates = sourcePrompts.filter(
+      (prompt) =>
+        prompt.difficulty === selectedPrompt.difficulty && prompt.id !== selectedPrompt.id
+    );
+
+    if (sameDifficultyCandidates.length === 0) {
+      setError("이 난이도에서 바꿀 수 있는 다른 질문이 아직 없어요.");
+      return;
+    }
+
+    const nextPrompt = pickLeastOverlappingPrompt(
+      selectedPrompt,
+      sameDifficultyCandidates,
+      questionRefreshHistory
+    );
+
+    if (!nextPrompt) {
+      setError("새 질문을 고르지 못했어요. 잠시 후 다시 시도해 주세요.");
+      return;
+    }
+
+    if (!isLoggedIn && guestSessionId && guestPromptId && nextPrompt.id !== guestPromptId) {
+      setShowLoginWall(true);
+      setError(
+        "게스트는 질문 1개만 시작할 수 있어요. 다른 질문으로 바꾸려면 로그인해 주세요."
+      );
+      return;
+    }
+
+    setIsRefreshingQuestion(true);
+    setQuestionRefreshHistory((current) =>
+      Array.from(new Set([...current, selectedPrompt.id, nextPrompt.id])).slice(-12)
+    );
+    setDailyRecommendation((current) => mergePromptIntoRecommendation(current, nextPrompt));
+    setRevealedTranslations({});
+    resetFlowForPrompt(nextPrompt.id);
+    setIsRefreshingQuestion(false);
+  }
+
   function handleSelectDifficulty(nextDifficulty: DailyDifficulty) {
     setPendingDifficultySelection((current) => (current === nextDifficulty ? null : nextDifficulty));
     setError("");
@@ -2162,6 +2382,16 @@ export function AnswerLoop() {
           <div className={styles.writingComposerHeader}>
             <span className={styles.writingComposerBadge}>{selectedPrompt?.topic ?? "오늘의 질문"}</span>
             <div className={styles.writingComposerHeaderActions}>
+              {step === "answer" ? (
+                <button
+                  type="button"
+                  className={`${styles.promptTranslationButton} ${styles.writingComposerToggle}`}
+                  onClick={() => void handleRefreshQuestion()}
+                  disabled={isRefreshingQuestion || isLoadingPrompts || !selectedPrompt}
+                >
+                  {isRefreshingQuestion ? "바꾸는 중..." : "새 질문"}
+                </button>
+              ) : null}
               <button
                 type="button"
                 className={`${styles.promptTranslationButton} ${styles.writingComposerToggle}`}

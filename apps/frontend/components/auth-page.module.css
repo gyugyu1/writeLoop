@@ -158,6 +158,10 @@
   margin-bottom: 18px;
 }
 
+.myPageShell .tabRow:has(> .tabButtonActive:only-child) {
+  display: none;
+}
+
 .tabRow[hidden] {
   display: none !important;
 }

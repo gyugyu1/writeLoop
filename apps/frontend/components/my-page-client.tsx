@@ -19,6 +19,7 @@ import type { AuthUser, CommonMistake, HistorySession, TodayWritingStatus } from
 import styles from "./auth-page.module.css";
 
 type MyPageTab = "account" | "writing";
+type AccountSectionKey = "profile" | "delete";
 type HistoryDiffSegment = {
   text: string;
   changed: boolean;
@@ -637,6 +638,16 @@ export function MyPageClient() {
     });
   }
 
+  function scrollToAccountSection(section: AccountSectionKey) {
+    const sectionId =
+      section === "profile" ? "account-profile-section" : "account-delete-section";
+
+    document.getElementById(sectionId)?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
   function setTab(tab: MyPageTab) {
     setActiveTab(tab);
     window.history.replaceState({}, "", `/me?tab=${tab}`);
@@ -771,7 +782,10 @@ export function MyPageClient() {
           </div>
         </div>
 
-        <div className={styles.historySection}>
+        <div
+          id="account-profile-section"
+          className={`${styles.historySection} ${styles.historySectionAnchor}`}
+        >
           <div className={styles.historyHeader}>
             <div>
               <span className={styles.historyEyebrow}>계정 설정</span>
@@ -855,7 +869,10 @@ export function MyPageClient() {
           {error ? <p className={styles.error}>{error}</p> : null}
         </div>
 
-        <div className={styles.historySection}>
+        <div
+          id="account-delete-section"
+          className={`${styles.historySection} ${styles.historySectionAnchor}`}
+        >
           <div className={styles.historyHeader}>
             <div>
               <span className={styles.historyEyebrow}>위험 구역</span>
@@ -1427,6 +1444,25 @@ export function MyPageClient() {
               </button>
             </div>
           )}
+
+          {activeTab === "account" ? (
+            <div className={styles.tabRow}>
+              <button
+                type="button"
+                className={styles.tabButton}
+                onClick={() => scrollToAccountSection("profile")}
+              >
+                내 계정 수정
+              </button>
+              <button
+                type="button"
+                className={styles.tabButton}
+                onClick={() => scrollToAccountSection("delete")}
+              >
+                회원탈퇴
+              </button>
+            </div>
+          ) : null}
 
           <div className={styles.tabRow} hidden>
             <button

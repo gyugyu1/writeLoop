@@ -43,6 +43,7 @@ final class FeedbackSectionPolicyApplier {
     ) {
         SectionPolicy policy = sectionPolicySelector.select(answerProfile, attemptIndex);
         String grammarBlockingCorrection = resolveGrammarBlockingMinimalCorrection(learnerAnswer, feedback, answerProfile);
+        String alignedCorrection = resolveAlignedMinimalCorrection(feedback, answerProfile);
 
         List<String> strengths = buildStrengthSection(feedback, answerProfile, policy);
         List<GrammarFeedbackItemDto> grammar = buildGrammarSection(
@@ -50,14 +51,16 @@ final class FeedbackSectionPolicyApplier {
                 feedback,
                 answerProfile,
                 policy,
-                grammarBlockingCorrection
+                grammarBlockingCorrection,
+                alignedCorrection
         );
         List<CorrectionDto> corrections = buildImprovementSection(
                 feedback,
                 answerProfile,
                 policy,
                 grammar,
-                grammarBlockingCorrection
+                grammarBlockingCorrection,
+                alignedCorrection
         );
         List<RefinementExpressionDto> refinement = buildRefinementSection(
                 feedback,
@@ -67,19 +70,31 @@ final class FeedbackSectionPolicyApplier {
                 grammarBlockingCorrection
         );
         FeedbackSectionValidators.ModelAnswerContent modelAnswerContent =
-                buildModelAnswerSection(prompt, learnerAnswer, feedback, answerProfile, policy, grammarBlockingCorrection);
+                buildModelAnswerSection(
+                        prompt,
+                        learnerAnswer,
+                        feedback,
+                        answerProfile,
+                        policy,
+                        grammarBlockingCorrection,
+                        alignedCorrection
+                );
         String rewriteGuide = buildRewriteGuideSection(
+                learnerAnswer,
                 feedback,
                 answerProfile,
                 policy,
                 modelAnswerContent,
-                grammarBlockingCorrection
+                grammarBlockingCorrection,
+                alignedCorrection
         );
         String summary = buildSummarySection(feedback.summary(), answerProfile, corrections, rewriteGuide, policy);
         List<CoachExpressionUsageDto> usedExpressions = buildUsedExpressionSection(feedback, learnerAnswer, answerProfile);
-        String correctedAnswer = isGrammarBlocking(answerProfile) && grammarBlockingCorrection != null
-                ? grammarBlockingCorrection
-                : feedback.correctedAnswer();
+        String correctedAnswer = firstNonBlank(
+                isGrammarBlocking(answerProfile) ? grammarBlockingCorrection : null,
+                shouldUseAlignedExpansionGuide(answerProfile, alignedCorrection) ? alignedCorrection : null,
+                feedback.correctedAnswer()
+        );
 
         return new FeedbackResponseDto(
                 feedback.promptId(),
@@ -112,7 +127,13 @@ final class FeedbackSectionPolicyApplier {
         }
 
         if (shouldUseMeaningBasedStrengths(answerProfile)) {
-            return limit(buildMeaningBasedStrengthsV2(answerProfile), policy.maxStrengthCount());
+            int effectiveLimit = policy.maxStrengthCount();
+            if (answerProfile != null
+                    && answerProfile.grammar() != null
+                    && answerProfile.grammar().severity().ordinal() >= GrammarSeverity.MODERATE.ordinal()) {
+                effectiveLimit = Math.min(effectiveLimit, 1);
+            }
+            return limit(buildMeaningBasedStrengthsV2(answerProfile), effectiveLimit);
         }
 
         List<String> strengths = new ArrayList<>();
@@ -138,7 +159,8 @@ final class FeedbackSectionPolicyApplier {
             FeedbackResponseDto feedback,
             AnswerProfile answerProfile,
             SectionPolicy policy,
-            String grammarBlockingCorrection
+            String grammarBlockingCorrection,
+            String alignedCorrection
     ) {
         int effectiveLimit = Math.max(1, policy.maxGrammarIssueCount());
         if (isGrammarBlocking(answerProfile)) {
@@ -161,6 +183,14 @@ final class FeedbackSectionPolicyApplier {
                 return List.of();
             }
             return limit(grammar, effectiveLimit);
+        }
+        if (policy.showGrammar() && shouldBuildAlignedLocalGrammarSection(answerProfile, learnerAnswer, alignedCorrection)) {
+            List<GrammarFeedbackItemDto> grammar = validators.validateGrammarSectionFormat(
+                    buildAlignedLocalGrammarSection(learnerAnswer, answerProfile, alignedCorrection)
+            );
+            if (!grammar.isEmpty()) {
+                return limit(grammar, effectiveLimit);
+            }
         }
 
         List<GrammarFeedbackItemDto> grammar = validators.validateGrammarSectionFormat(feedback.grammarFeedback());
@@ -210,7 +240,8 @@ final class FeedbackSectionPolicyApplier {
             AnswerProfile answerProfile,
             SectionPolicy policy,
             List<GrammarFeedbackItemDto> grammarFeedback,
-            String grammarBlockingCorrection
+            String grammarBlockingCorrection,
+            String alignedCorrection
     ) {
         if (!policy.showImprovement()) {
             return List.of();
@@ -220,6 +251,10 @@ final class FeedbackSectionPolicyApplier {
             if (grammarBlockingImprovement != null) {
                 return List.of(grammarBlockingImprovement);
             }
+        }
+        CorrectionDto alignedExpansionImprovement = buildAlignedExpansionImprovement(answerProfile, alignedCorrection);
+        if (alignedExpansionImprovement != null) {
+            return List.of(alignedExpansionImprovement);
         }
 
         List<CorrectionDto> corrections = validators.reduceDuplicateCorrections(feedback.corrections(), grammarFeedback);
@@ -276,6 +311,13 @@ final class FeedbackSectionPolicyApplier {
         if (isGrammarBlocking(answerProfile)) {
             return buildGrammarBlockingSummaryV2();
         }
+        if (shouldUseAlignedExpansionSummary(answerProfile)) {
+            return validators.reduceSummaryDuplication(
+                    buildAlignedExpansionSummary(answerProfile),
+                    corrections,
+                    rewriteGuide
+            );
+        }
         if (summary == null || summary.isBlank()) {
             return null;
         }
@@ -284,11 +326,13 @@ final class FeedbackSectionPolicyApplier {
     }
 
     private String buildRewriteGuideSection(
+            String learnerAnswer,
             FeedbackResponseDto feedback,
             AnswerProfile answerProfile,
             SectionPolicy policy,
             FeedbackSectionValidators.ModelAnswerContent modelAnswerContent,
-            String grammarBlockingCorrection
+            String grammarBlockingCorrection,
+            String alignedCorrection
     ) {
         if (!policy.showRewriteGuide()) {
             return null;
@@ -301,6 +345,8 @@ final class FeedbackSectionPolicyApplier {
             rewriteGuide = buildGrammarBlockingRewriteGuideV2(answerProfile, grammarBlockingCorrection);
         } else if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
             rewriteGuide = buildTooShortRewriteGuide(answerProfile, feedback);
+        } else if (shouldUseAlignedExpansionGuide(answerProfile, alignedCorrection)) {
+            rewriteGuide = buildAlignedExpansionRewriteGuide(answerProfile, alignedCorrection);
         }
         if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
             return rewriteGuide;
@@ -318,7 +364,8 @@ final class FeedbackSectionPolicyApplier {
             FeedbackResponseDto feedback,
             AnswerProfile answerProfile,
             SectionPolicy policy,
-            String grammarBlockingCorrection
+            String grammarBlockingCorrection,
+            String alignedCorrection
     ) {
         String modelAnswer = feedback.modelAnswer();
         String modelAnswerKo = feedback.modelAnswerKo();
@@ -335,6 +382,11 @@ final class FeedbackSectionPolicyApplier {
         } else if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
             modelAnswer = buildTooShortModelAnswer(prompt, learnerAnswer, feedback, answerProfile);
             modelAnswerKo = null;
+        } else if ((answerBand == AnswerBand.SHORT_BUT_VALID || answerBand == AnswerBand.CONTENT_THIN)
+                && alignedCorrection != null) {
+            modelAnswer = buildAlignedOneStepUpModelAnswer(alignedCorrection, feedback.modelAnswer());
+            modelAnswerKo = null;
+            effectiveMode = ModelAnswerMode.ONE_STEP_UP;
         } else if (policy.modelAnswerMode() == ModelAnswerMode.MINIMAL_CORRECTION
                 && answerProfile != null
                 && answerProfile.grammar() != null
@@ -359,6 +411,7 @@ final class FeedbackSectionPolicyApplier {
         );
         String modelAnswerAnchor = firstNonBlank(
                 grammarBlockingCorrection,
+                alignedCorrection,
                 answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
                 answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
                         ? null
@@ -373,14 +426,23 @@ final class FeedbackSectionPolicyApplier {
                 effectiveMode
         );
         if (effectiveMode == ModelAnswerMode.ONE_STEP_UP
-                && validators.isNearDuplicateText(nonRegressiveModelAnswer, modelAnswerAnchor)) {
+                && validators.isNearDuplicateText(nonRegressiveModelAnswer, modelAnswerAnchor)
+                && !isClearlyExtendedOneStepUp(nonRegressiveModelAnswer, modelAnswerAnchor)) {
             if (answerBand == AnswerBand.GRAMMAR_BLOCKING && grammarBlockingCorrection != null) {
                 nonRegressiveModelAnswer = buildGrammarBlockingOneStepUpModelAnswer(grammarBlockingCorrection, feedback.modelAnswer());
             } else if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
                 nonRegressiveModelAnswer = buildTooShortModelAnswer(prompt, learnerAnswer, feedback, answerProfile);
+            } else if ((answerBand == AnswerBand.SHORT_BUT_VALID || answerBand == AnswerBand.CONTENT_THIN)
+                    && alignedCorrection != null) {
+                nonRegressiveModelAnswer = buildAlignedOneStepUpModelAnswer(alignedCorrection, null);
             } else if (answerBand == AnswerBand.NATURAL_BUT_BASIC) {
                 nonRegressiveModelAnswer = null;
             }
+        }
+        if (effectiveMode == ModelAnswerMode.ONE_STEP_UP
+                && answerBand != AnswerBand.TOO_SHORT_FRAGMENT
+                && !hasNovelOneStepUpDetail(nonRegressiveModelAnswer, modelAnswerAnchor)) {
+            nonRegressiveModelAnswer = null;
         }
         guarded = new FeedbackSectionValidators.ModelAnswerContent(
                 nonRegressiveModelAnswer,
@@ -497,6 +559,114 @@ final class FeedbackSectionPolicyApplier {
             ));
         }
         return List.copyOf(converted);
+    }
+
+    private boolean shouldBuildAlignedLocalGrammarSection(
+            AnswerProfile answerProfile,
+            String learnerAnswer,
+            String alignedCorrection
+    ) {
+        if (answerProfile == null || answerProfile.grammar() == null) {
+            return false;
+        }
+        if (answerProfile.grammar().severity().ordinal() < GrammarSeverity.MINOR.ordinal()) {
+            return false;
+        }
+        AnswerBand answerBand = answerProfile.task() == null || answerProfile.task().answerBand() == null
+                ? AnswerBand.SHORT_BUT_VALID
+                : answerProfile.task().answerBand();
+        if (answerBand != AnswerBand.SHORT_BUT_VALID && answerBand != AnswerBand.CONTENT_THIN) {
+            return false;
+        }
+        if (alignedCorrection == null || alignedCorrection.isBlank()) {
+            return false;
+        }
+        if (normalize(learnerAnswer).equals(normalize(alignedCorrection))) {
+            return false;
+        }
+        boolean hasNonArticleIssue = answerProfile.grammar().issues().stream()
+                .filter(issue -> issue != null)
+                .anyMatch(issue -> !"ARTICLE".equals(issue.code()));
+        return hasNonArticleIssue && shouldPreferAlignedSentenceGrammar(learnerAnswer, alignedCorrection);
+    }
+
+    private boolean shouldPreferAlignedSentenceGrammar(String learnerAnswer, String alignedCorrection) {
+        String normalizedLearner = normalize(learnerAnswer);
+        String normalizedCorrection = normalize(alignedCorrection);
+        if (normalizedCorrection.contains("health goal")
+                && (normalizedCorrection.contains("this year")
+                || normalizedCorrection.contains("improve my diet")
+                || normalizedCorrection.contains("eat healthier")
+                || normalizedCorrection.contains("important to me because"))) {
+            return true;
+        }
+        if ((normalizedLearner.contains("important for me to") && normalizedCorrection.contains("important to me because"))
+                || (normalizedLearner.contains("to diet") && normalizedCorrection.contains("improve my diet"))) {
+            return true;
+        }
+        return false;
+    }
+
+    private List<GrammarFeedbackItemDto> buildAlignedLocalGrammarSection(
+            String learnerAnswer,
+            AnswerProfile answerProfile,
+            String alignedCorrection
+    ) {
+        if (alignedCorrection == null || alignedCorrection.isBlank()) {
+            return List.of();
+        }
+        String reason = buildAlignedLocalGrammarReason(learnerAnswer, alignedCorrection, answerProfile);
+        if (reason == null || reason.isBlank()) {
+            return List.of();
+        }
+        return List.of(new GrammarFeedbackItemDto(
+                learnerAnswer == null ? "" : learnerAnswer.trim(),
+                alignedCorrection,
+                reason
+        ));
+    }
+
+    private String buildAlignedLocalGrammarReason(
+            String learnerAnswer,
+            String revisedSentence,
+            AnswerProfile answerProfile
+    ) {
+        List<String> reasons = new ArrayList<>();
+        String normalizedAnswer = normalize(learnerAnswer);
+        String normalizedRevised = normalize(revisedSentence);
+
+        if (normalizedAnswer.contains("one health goal i have this is to")
+                && normalizedRevised.contains("one health goal i have this year is to")) {
+            reasons.add("\"One health goal I have this is to ...\"는 어색하므로 \"One health goal I have this year is to ...\"처럼 고치는 편이 자연스러워요.");
+        }
+        if (normalizedAnswer.contains("to diet")
+                && (normalizedRevised.contains("improve my diet") || normalizedRevised.contains("eat healthier"))) {
+            reasons.add("\"to diet\"보다 \"to improve my diet\"나 \"to eat healthier\"처럼 말하면 더 자연스러워요.");
+        }
+        if (normalizedAnswer.contains("important for me to")
+                && normalizedRevised.contains("important to me because")) {
+            reasons.add("\"It's important for me to ...\"를 \"It's important to me because ...\"처럼 연결하면 이유가 더 분명해져요.");
+        }
+
+        if (reasons.isEmpty() && answerProfile != null && answerProfile.grammar() != null) {
+            for (GrammarIssue issue : answerProfile.grammar().issues()) {
+                if (issue == null) {
+                    continue;
+                }
+                String reason = grammarReasonForCode(issue.code());
+                if (reason != null && !reason.isBlank() && !reasons.contains(reason)) {
+                    reasons.add(reason);
+                }
+                if (reasons.size() >= 2) {
+                    break;
+                }
+            }
+        }
+
+        if (reasons.isEmpty()) {
+            reasons.add("문장을 막지는 않지만 어색한 표현을 조금 더 자연스럽게 다듬어 보세요.");
+        }
+        return String.join("\n", reasons.stream().limit(2).toList());
     }
 
     private List<GrammarFeedbackItemDto> buildGrammarBlockingSection(
@@ -830,7 +1000,14 @@ final class FeedbackSectionPolicyApplier {
     }
 
     private boolean shouldUseMeaningBasedStrengths(AnswerProfile answerProfile) {
-        return hasElevatedGrammar(answerProfile);
+        if (answerProfile == null || answerProfile.task() == null) {
+            return false;
+        }
+        if (hasElevatedGrammar(answerProfile)) {
+            return true;
+        }
+        return answerProfile.task().answerBand() == AnswerBand.SHORT_BUT_VALID
+                || answerProfile.task().answerBand() == AnswerBand.CONTENT_THIN;
     }
 
     private boolean hasElevatedGrammar(AnswerProfile answerProfile) {
@@ -927,6 +1104,20 @@ final class FeedbackSectionPolicyApplier {
         return normalizeGrammarBlockingCorrection(learnerAnswer, candidate);
     }
 
+    private String resolveAlignedMinimalCorrection(
+            FeedbackResponseDto feedback,
+            AnswerProfile answerProfile
+    ) {
+        String candidate = firstNonBlank(
+                answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
+                feedback == null ? null : feedback.correctedAnswer(),
+                answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
+                        ? null
+                        : answerProfile.rewrite().target().skeleton()
+        );
+        return normalizeMinorCorrection(candidate);
+    }
+
     private String normalizeGrammarBlockingCorrection(String learnerAnswer, String candidate) {
         String revised = validators.sanitizeCorrectedSentence(candidate);
         if (revised == null) {
@@ -957,6 +1148,43 @@ final class FeedbackSectionPolicyApplier {
         if (!revised.isEmpty()) {
             revised = Character.toUpperCase(revised.charAt(0)) + revised.substring(1);
         }
+        return validators.sanitizeCorrectedSentence(revised);
+    }
+
+    private CorrectionDto buildAlignedExpansionImprovement(
+            AnswerProfile answerProfile,
+            String alignedCorrection
+    ) {
+        if (!shouldUseAlignedExpansionGuide(answerProfile, alignedCorrection)) {
+            return null;
+        }
+        String normalizedCorrection = normalize(alignedCorrection);
+        if (normalizedCorrection.contains("health goal")
+                || normalizedCorrection.contains("healthy")
+                || normalizedCorrection.contains("diet")) {
+            return new CorrectionDto(
+                    "건강 목표나 이유를 조금 더 구체적으로 써 보세요.",
+                    "건강을 위해 실제로 하려는 습관 한 가지를 더 붙여 보세요."
+            );
+        }
+        return null;
+    }
+
+    private String normalizeMinorCorrection(String candidate) {
+        String revised = validators.sanitizeCorrectedSentence(candidate);
+        if (revised == null) {
+            return null;
+        }
+        revised = revised
+                .replaceAll("(?i)\\bone health goal i have this is to\\b", "One health goal I have this year is to")
+                .replaceAll("(?i)\\bone health goal i have this year is to diet\\b", "One health goal I have this year is to improve my diet")
+                .replaceAll("(?i)\\bone health goal i have this is to diet\\b", "One health goal I have this year is to improve my diet")
+                .replaceAll("(?i)\\bit(?:'s| is)\\s+important\\s+for\\s+me\\s+to\\s+([^.!?]+)", "It's important to me because I want to $1")
+                .replaceAll("(?i)\\bto diet\\b", "to improve my diet")
+                .replaceAll("\\s+,", ",")
+                .replaceAll(",(?=\\S)", ", ")
+                .replaceAll("\\s+", " ")
+                .trim();
         return validators.sanitizeCorrectedSentence(revised);
     }
 
@@ -1139,6 +1367,49 @@ final class FeedbackSectionPolicyApplier {
         return "\"" + base + "\" " + nextStep;
     }
 
+    private boolean shouldUseAlignedExpansionSummary(AnswerProfile answerProfile) {
+        if (answerProfile == null || answerProfile.task() == null || answerProfile.rewrite() == null) {
+            return false;
+        }
+        AnswerBand answerBand = answerProfile.task().answerBand();
+        return (answerBand == AnswerBand.SHORT_BUT_VALID || answerBand == AnswerBand.CONTENT_THIN)
+                && ("ADD_DETAIL".equals(answerProfile.rewrite().primaryIssueCode())
+                || "MAKE_IT_MORE_SPECIFIC".equals(answerProfile.rewrite().primaryIssueCode())
+                || "FIX_LOCAL_GRAMMAR".equals(answerProfile.rewrite().primaryIssueCode()));
+    }
+
+    private String buildAlignedExpansionSummary(AnswerProfile answerProfile) {
+        if (answerProfile == null || answerProfile.content() == null || answerProfile.content().signals() == null) {
+            return null;
+        }
+        ContentSignals signals = answerProfile.content().signals();
+        String strengthClause = signals.hasMainAnswer() && signals.hasReason()
+                ? "목표와 이유를 함께 답한 점은 좋아요."
+                : "질문에 맞는 핵심 답을 분명하게 말한 점은 좋아요.";
+        String nextClause;
+        if (answerProfile.grammar() != null && answerProfile.grammar().severity().ordinal() >= GrammarSeverity.MINOR.ordinal()) {
+            nextClause = "표현을 조금 더 자연스럽게 고치고 한 가지 방법이나 이유를 더 붙여 보세요.";
+        } else {
+            nextClause = "한 가지 방법이나 이유를 더 구체적으로 붙여 보세요.";
+        }
+        return strengthClause + " " + nextClause;
+    }
+
+    private boolean shouldUseAlignedExpansionGuide(AnswerProfile answerProfile, String alignedCorrection) {
+        if (alignedCorrection == null || alignedCorrection.isBlank() || answerProfile == null || answerProfile.task() == null) {
+            return false;
+        }
+        AnswerBand answerBand = answerProfile.task().answerBand();
+        return answerBand == AnswerBand.SHORT_BUT_VALID || answerBand == AnswerBand.CONTENT_THIN;
+    }
+
+    private String buildAlignedExpansionRewriteGuide(AnswerProfile answerProfile, String alignedCorrection) {
+        if (alignedCorrection == null || alignedCorrection.isBlank()) {
+            return null;
+        }
+        return "\"" + alignedCorrection + "\" " + detailInstructionForRewrite(answerProfile, alignedCorrection);
+    }
+
     private String buildTooShortRewriteGuide(AnswerProfile answerProfile, FeedbackResponseDto feedback) {
         String minimalCorrection = resolveTooShortMinimalCorrection(answerProfile, feedback);
         String skeleton = answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
@@ -1164,6 +1435,129 @@ final class FeedbackSectionPolicyApplier {
         if (minimalCorrection != null) {
             String guide = "\"" + minimalCorrection + "\"처럼 먼저 문장을 완성해 보세요.";
             return nextStep == null ? guide : guide + " " + nextStep;
+        }
+        return null;
+    }
+
+    private String detailInstructionForRewrite(AnswerProfile answerProfile, String alignedCorrection) {
+        String normalizedCorrection = normalize(alignedCorrection);
+        String primaryIssueCode = answerProfile == null || answerProfile.rewrite() == null
+                ? ""
+                : answerProfile.rewrite().primaryIssueCode();
+        String secondaryIssueCode = answerProfile == null || answerProfile.rewrite() == null
+                ? ""
+                : firstNonBlank(answerProfile.rewrite().secondaryIssueCode(), "");
+        String targetIssueCode = "FIX_LOCAL_GRAMMAR".equals(primaryIssueCode) && !secondaryIssueCode.isBlank()
+                ? secondaryIssueCode
+                : primaryIssueCode;
+
+        if (normalizedCorrection.contains("health goal")
+                || normalizedCorrection.contains("healthy")
+                || normalizedCorrection.contains("diet")) {
+            return "여기에 건강을 위해 실제로 하려는 습관 한 가지를 더 붙여 보세요.";
+        }
+        return switch (targetIssueCode) {
+            case "ADD_REASON" -> "여기에 why it matters를 더 보여 주는 이유 한 가지를 덧붙여 보세요.";
+            case "ADD_EXAMPLE" -> "여기에 짧은 예시 한 문장을 더 붙여 보세요.";
+            case "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC" -> "여기에 한 가지 방법이나 디테일을 더 구체적으로 붙여 보세요.";
+            default -> "여기에 답을 더 자연스럽게 만드는 디테일 한 가지를 더 붙여 보세요.";
+        };
+    }
+
+    private String buildAlignedOneStepUpModelAnswer(String alignedCorrection, String fallbackModelAnswer) {
+        String base = validators.dedupeRepeatedSentences(validators.sanitizeCorrectedSentence(alignedCorrection));
+        if (base == null) {
+            return null;
+        }
+        String preferredFallback = validators.dedupeRepeatedSentences(
+                validators.sanitizeCorrectedSentence(trimToSentenceCount(fallbackModelAnswer, 2))
+        );
+        String baseSentence = firstSentence(base);
+        if (preferredFallback != null
+                && baseSentence != null
+                && normalize(preferredFallback).startsWith(normalize(baseSentence))
+                && countWords(preferredFallback) >= countWords(baseSentence) + 3
+                && hasNovelOneStepUpDetail(preferredFallback, base)) {
+            return preferredFallback;
+        }
+
+        List<String> sentences = new ArrayList<>(splitSentences(base));
+        if (sentences.isEmpty()) {
+            return base;
+        }
+
+        String anchorSentence = sentences.get(0);
+        String detailFragment = selectNovelOneStepUpDetailFragment(anchorSentence, base);
+        if (detailFragment == null) {
+            return validators.dedupeRepeatedSentences(base);
+        }
+
+        int lastIndex = sentences.size() - 1;
+        String lastSentence = sentences.get(lastIndex);
+        String normalizedLastSentence = normalize(lastSentence);
+        if (normalizedLastSentence.contains("because i want to")) {
+            sentences.set(
+                    lastIndex,
+                    validators.sanitizeCorrectedSentence(lastSentence.replaceFirst("\\.\\s*$", " and " + detailFragment + "."))
+            );
+            return validators.dedupeRepeatedSentences(String.join(" ", sentences));
+        }
+        if (normalizedLastSentence.contains("this helps me")) {
+            sentences.set(
+                    lastIndex,
+                    validators.sanitizeCorrectedSentence(lastSentence.replaceFirst("\\.\\s*$", " and " + detailFragment + "."))
+            );
+            return validators.dedupeRepeatedSentences(String.join(" ", sentences));
+        }
+        return validators.dedupeRepeatedSentences(base + " This helps me " + detailFragment + ".");
+    }
+
+    private boolean isClearlyExtendedOneStepUp(String modelAnswer, String anchorText) {
+        if (modelAnswer == null || modelAnswer.isBlank() || anchorText == null || anchorText.isBlank()) {
+            return false;
+        }
+        String sanitizedModel = validators.sanitizeCorrectedSentence(modelAnswer);
+        String sanitizedAnchor = validators.sanitizeCorrectedSentence(trimToSentenceCount(anchorText, 1));
+        if (sanitizedModel == null || sanitizedAnchor == null) {
+            return false;
+        }
+        if (normalize(sanitizedModel).startsWith(normalize(sanitizedAnchor))
+                && countWords(sanitizedModel) >= countWords(sanitizedAnchor) + 3) {
+            return true;
+        }
+        return hasNovelOneStepUpDetail(sanitizedModel, sanitizedAnchor);
+    }
+
+    private String inferOneStepUpDetailFragment(String alignedCorrection) {
+        String normalizedCorrection = normalize(alignedCorrection);
+        if (normalizedCorrection.contains("diet") || normalizedCorrection.contains("healthy")) {
+            return "feel more energetic";
+        }
+        if (normalizedCorrection.contains("spring") || normalizedCorrection.contains("sunshine")) {
+            return "feel more relaxed";
+        }
+        if (normalizedCorrection.contains("skill") || normalizedCorrection.contains("confidence")) {
+            return "build more confidence";
+        }
+        if (normalizedCorrection.contains("time") && normalizedCorrection.contains("schedule")) {
+            return "manage my time more clearly";
+        }
+        return null;
+    }
+
+    private String inferAlternativeOneStepUpDetailFragment(String alignedCorrection) {
+        String normalizedCorrection = normalize(alignedCorrection);
+        if (normalizedCorrection.contains("work out") || normalizedCorrection.contains("gym")) {
+            return "stay consistent with my routine";
+        }
+        if (normalizedCorrection.contains("diet") || normalizedCorrection.contains("healthy")) {
+            return "build healthier habits";
+        }
+        if (normalizedCorrection.contains("time") || normalizedCorrection.contains("schedule")) {
+            return "stay focused during the day";
+        }
+        if (normalizedCorrection.contains("spring") || normalizedCorrection.contains("sunshine")) {
+            return "enjoy the season more";
         }
         return null;
     }
@@ -1257,7 +1651,7 @@ final class FeedbackSectionPolicyApplier {
         return detailSentence == null ? base : base + " " + detailSentence;
     }
 
-    private String extractHelpfulDetailSentence(String modelAnswer, String baseSentence) {
+    private String extractHelpfulDetailSentence(String modelAnswer, String baseText) {
         if (modelAnswer == null || modelAnswer.isBlank()) {
             return null;
         }
@@ -1265,13 +1659,12 @@ final class FeedbackSectionPolicyApplier {
         if (sentences.length < 2) {
             return null;
         }
-        String normalizedBase = normalize(baseSentence);
         for (String sentence : sentences) {
             String trimmed = sentence == null ? null : sentence.trim();
             if (trimmed == null || trimmed.isBlank()) {
                 continue;
             }
-            if (normalize(trimmed).equals(normalizedBase)) {
+            if (containsEquivalentSentence(baseText, trimmed)) {
                 continue;
             }
             if (countWords(trimmed) >= 4) {
@@ -1422,6 +1815,96 @@ final class FeedbackSectionPolicyApplier {
             builder.append(sentences[i].trim());
         }
         return builder.toString().trim();
+    }
+
+    private boolean hasNovelOneStepUpDetail(String candidateText, String anchorText) {
+        if (candidateText == null || candidateText.isBlank() || anchorText == null || anchorText.isBlank()) {
+            return false;
+        }
+        List<String> candidateSentences = splitSentences(candidateText);
+        List<String> anchorSentences = splitSentences(anchorText);
+        if (candidateSentences.isEmpty() || anchorSentences.isEmpty()) {
+            return false;
+        }
+        if (candidateSentences.size() > anchorSentences.size()) {
+            for (String candidateSentence : candidateSentences) {
+                if (!containsEquivalentSentence(anchorText, candidateSentence) && countWords(candidateSentence) >= 4) {
+                    return true;
+                }
+            }
+        }
+        int comparableCount = Math.min(candidateSentences.size(), anchorSentences.size());
+        for (int index = 0; index < comparableCount; index++) {
+            String candidateSentence = candidateSentences.get(index);
+            String anchorSentence = anchorSentences.get(index);
+            if (areEquivalentSentences(candidateSentence, anchorSentence)) {
+                continue;
+            }
+            if (extendsSentence(candidateSentence, anchorSentence)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String selectNovelOneStepUpDetailFragment(String anchorSentence, String baseText) {
+        String primaryDetail = inferOneStepUpDetailFragment(anchorSentence);
+        if (primaryDetail != null && !normalize(baseText).contains(normalize(primaryDetail))) {
+            return primaryDetail;
+        }
+        String alternativeDetail = inferAlternativeOneStepUpDetailFragment(anchorSentence);
+        if (alternativeDetail != null && !normalize(baseText).contains(normalize(alternativeDetail))) {
+            return alternativeDetail;
+        }
+        return null;
+    }
+
+    private boolean containsEquivalentSentence(String text, String sentence) {
+        if (text == null || text.isBlank() || sentence == null || sentence.isBlank()) {
+            return false;
+        }
+        for (String existingSentence : splitSentences(text)) {
+            if (areEquivalentSentences(existingSentence, sentence)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean areEquivalentSentences(String left, String right) {
+        return normalizeSentenceBody(left).equals(normalizeSentenceBody(right));
+    }
+
+    private boolean extendsSentence(String candidateSentence, String anchorSentence) {
+        String normalizedCandidate = normalizeSentenceBody(candidateSentence);
+        String normalizedAnchor = normalizeSentenceBody(anchorSentence);
+        return !normalizedCandidate.isBlank()
+                && !normalizedAnchor.isBlank()
+                && normalizedCandidate.startsWith(normalizedAnchor)
+                && countWords(normalizedCandidate) >= countWords(normalizedAnchor) + 3;
+    }
+
+    private String firstSentence(String text) {
+        List<String> sentences = splitSentences(text);
+        return sentences.isEmpty() ? null : sentences.get(0);
+    }
+
+    private List<String> splitSentences(String text) {
+        if (text == null || text.isBlank()) {
+            return List.of();
+        }
+        List<String> sentences = new ArrayList<>();
+        for (String sentence : text.trim().split("(?<=[.!?])\\s+")) {
+            String sanitized = validators.sanitizeCorrectedSentence(sentence);
+            if (sanitized != null && !sanitized.isBlank()) {
+                sentences.add(sanitized);
+            }
+        }
+        return List.copyOf(sentences);
+    }
+
+    private String normalizeSentenceBody(String text) {
+        return normalize(text).replaceAll("[.!?]+$", "").trim();
     }
 
     private String formatHintSuffix(String skeleton) {

@@ -52,7 +52,7 @@ final class SectionPolicySelector {
             );
             case CONTENT_THIN -> new SectionPolicy(
                     true, 2,
-                    false, 1,
+                    true, 1,
                     true,
                     true, 3, RefinementFocus.DETAIL_BUILDING,
                     true,

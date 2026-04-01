@@ -22,13 +22,14 @@ final class FeedbackSectionValidators {
             "to", "usually", "very", "with"
     );
     private static final Set<String> ARTICLE_TOKENS = Set.of("a", "an", "the");
+    private static final Set<String> POSSESSIVE_DETERMINERS = Set.of("my", "your", "his", "her", "our", "their", "its");
     private static final Set<String> GENERIC_MEANING_TEXTS = Set.of(
-            "?ㅼ쓬 ?듬??먯꽌 ?쒖슜?섍린 醫뗭? ?쒗쁽",
-            "?ㅼ쓬 ?듬???諛붾줈 媛?몃떎 ?????덈뒗 ?쒗쁽 ?"
+            "다음 답변에서 자연스럽게 넣어 보면 좋은 표현이에요.",
+            "다음 답변에 바로 가져다 쓸 수 있는 표현이에요."
     );
     private static final Set<String> GENERIC_GUIDANCE_TEXTS = Set.of(
-            "?ㅼ쓬 ?듬??먯꽌 ?쒖슜?섍린 醫뗭? ?쒗쁽",
-            "?ㅼ쓬 ?듬???諛붾줈 媛?몃떎 ?????덈뒗 ?쒗쁽 ?"
+            "다음 답변에서 자연스럽게 넣어 보면 좋은 표현이에요.",
+            "다음 답변에 바로 가져다 쓸 수 있는 표현이에요."
     );
 
     List<String> dedupeStrengths(List<String> strengths) {
@@ -87,7 +88,8 @@ final class FeedbackSectionValidators {
             if (item == null) {
                 continue;
             }
-            if (isLowValueArticleCorrection(item.originalText(), item.revisedText())) {
+            if (isLowValueArticleCorrection(item.originalText(), item.revisedText())
+                    || isCapitalizationOnlyCorrection(item.originalText(), item.revisedText())) {
                 continue;
             }
             filtered.add(item);
@@ -177,7 +179,7 @@ final class FeedbackSectionValidators {
             int maxSentences,
             ModelAnswerMode modelAnswerMode
     ) {
-        String guarded = trimToSentenceCount(modelAnswer, maxSentences);
+        String guarded = dedupeRepeatedSentences(trimToSentenceCount(modelAnswer, maxSentences));
         int learnerWordCount = countWords(learnerAnswer);
         int maxAllowedWordCount = switch (modelAnswerMode) {
             case MINIMAL_CORRECTION -> Math.max(8, learnerWordCount + 6);
@@ -186,6 +188,7 @@ final class FeedbackSectionValidators {
         };
         if (countWords(guarded) > maxAllowedWordCount) {
             guarded = trimToWordCount(guarded, maxAllowedWordCount);
+            guarded = dedupeRepeatedSentences(guarded);
         }
 
         String guardedKo = modelAnswerKo;
@@ -196,6 +199,32 @@ final class FeedbackSectionValidators {
             }
         }
         return new ModelAnswerContent(blankToNull(guarded), blankToNull(guardedKo));
+    }
+
+    String dedupeRepeatedSentences(String text) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+        String[] sentences = text.trim().split("(?<=[.!?])\\s+");
+        if (sentences.length <= 1) {
+            return sanitizeCorrectedSentence(text);
+        }
+        List<String> uniqueSentences = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (String sentence : sentences) {
+            String sanitizedSentence = sanitizeCorrectedSentence(sentence);
+            if (sanitizedSentence == null || sanitizedSentence.isBlank()) {
+                continue;
+            }
+            String key = normalizeExpressionForOverlap(sanitizedSentence);
+            if (seen.add(key)) {
+                uniqueSentences.add(sanitizedSentence);
+            }
+        }
+        if (uniqueSentences.isEmpty()) {
+            return null;
+        }
+        return sanitizeCorrectedSentence(String.join(" ", uniqueSentences));
     }
 
     String preventModelAnswerRegression(
@@ -227,6 +256,14 @@ final class FeedbackSectionValidators {
                 && anchorText != null
                 && !anchorText.isBlank()
                 && !hasMinimumAnchorOverlap(sanitized, anchorText)) {
+            return null;
+        }
+        if ((answerBand == AnswerBand.SHORT_BUT_VALID
+                || answerBand == AnswerBand.CONTENT_THIN
+                || answerBand == AnswerBand.NATURAL_BUT_BASIC)
+                && anchorText != null
+                && !anchorText.isBlank()
+                && addsExcessiveNovelDetail(sanitized, anchorText, answerBand, modelAnswerMode)) {
             return null;
         }
         return sanitized;
@@ -280,8 +317,7 @@ final class FeedbackSectionValidators {
         }
 
         String quotedHint = extractLeadingQuotedHint(cleanGuide);
-        if (grammarBlocking
-                && quotedHint != null
+        if (quotedHint != null
                 && hasMeaningfulGuidanceText(stripLeadingQuotedHint(cleanGuide))
                 && isOneStepUpModelAnswer(quotedHint, modelAnswer)) {
             return cleanGuide;
@@ -290,7 +326,7 @@ final class FeedbackSectionValidators {
         String stripped = rewriteGuide == null
                 ? null
                 : rewriteGuide
-                .replaceAll("\\s*\\??곕뱜[^:]*:\\s*\"[^\"]+\"", "")
+                .replaceAll("\\s*힌트[^:]*:\\s*\"[^\"]+\"", "")
                 .replaceAll("\\s+", " ")
                 .trim();
         stripped = stripLeadingQuotedHint(cleanGuide);
@@ -383,7 +419,7 @@ final class FeedbackSectionValidators {
         if (grammarFeedback == null || grammarFeedback.isEmpty()) {
             return false;
         }
-        if (issue.contains("臾몃쾿") || suggestion.contains("臾몃쾿") || issue.contains("?쒖젣") || suggestion.contains("?쒖젣")) {
+        if (issue.contains("문법") || suggestion.contains("문법") || issue.contains("교정") || suggestion.contains("교정")) {
             return true;
         }
         for (GrammarFeedbackItemDto item : grammarFeedback) {
@@ -430,10 +466,12 @@ final class FeedbackSectionValidators {
                 && revisedTokens.contains("the")
                 && !revisedTokens.contains("a")
                 && !revisedTokens.contains("an");
-        return !originalWithoutArticles.isEmpty()
+        boolean originalHadArticleBeforePossessive = originalTokens.size() == revisedTokens.size() + 1
                 && originalWithoutArticles.equals(revisedWithoutArticles)
+                && revisedTokens.stream().anyMatch(POSSESSIVE_DETERMINERS::contains);
+        return !originalWithoutArticles.isEmpty()
                 && Math.max(originalTokens.size(), revisedTokens.size()) <= 4
-                && revisedAddsOnlyDefiniteArticle;
+                && (revisedAddsOnlyDefiniteArticle || originalHadArticleBeforePossessive);
     }
 
     private boolean dropsProtectedMeaning(String learnerAnswer, String modelAnswer) {
@@ -449,6 +487,19 @@ final class FeedbackSectionValidators {
             return true;
         }
         return false;
+    }
+
+    private boolean isCapitalizationOnlyCorrection(String originalText, String revisedText) {
+        String original = blankToNull(originalText);
+        String revised = blankToNull(revisedText);
+        if (original == null || revised == null) {
+            return false;
+        }
+        if (original.equals(revised)) {
+            return false;
+        }
+        return original.equalsIgnoreCase(revised)
+                && normalizeExpressionForOverlap(original).equals(normalizeExpressionForOverlap(revised));
     }
 
     private boolean omitsMajorLearnerClause(String learnerAnswer, String modelAnswer) {
@@ -482,6 +533,30 @@ final class FeedbackSectionValidators {
         Set<String> overlap = new LinkedHashSet<>(candidateTokens);
         overlap.retainAll(anchorTokens);
         return !overlap.isEmpty();
+    }
+
+    private boolean addsExcessiveNovelDetail(
+            String candidate,
+            String anchorText,
+            AnswerBand answerBand,
+            ModelAnswerMode modelAnswerMode
+    ) {
+        Set<String> candidateTokens = extractContentTokens(candidate);
+        Set<String> anchorTokens = extractContentTokens(anchorText);
+        if (candidateTokens.isEmpty() || anchorTokens.isEmpty()) {
+            return false;
+        }
+        Set<String> novelTokens = new LinkedHashSet<>(candidateTokens);
+        novelTokens.removeAll(anchorTokens);
+        if (novelTokens.isEmpty()) {
+            return false;
+        }
+        int allowedNovelTokens = switch (answerBand) {
+            case NATURAL_BUT_BASIC -> 4;
+            case SHORT_BUT_VALID, CONTENT_THIN -> modelAnswerMode == ModelAnswerMode.ONE_STEP_UP ? 6 : 3;
+            default -> 6;
+        };
+        return novelTokens.size() > allowedNovelTokens;
     }
 
     private List<Set<String>> splitIntoMeaningfulClauses(String text) {

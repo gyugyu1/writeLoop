@@ -2540,7 +2540,7 @@ export function AnswerLoop() {
   }
 
   function renderModelAnswerBlock(className: string) {
-    if (!feedback) {
+    if (!feedback || !feedback.modelAnswer?.trim()) {
       return null;
     }
 

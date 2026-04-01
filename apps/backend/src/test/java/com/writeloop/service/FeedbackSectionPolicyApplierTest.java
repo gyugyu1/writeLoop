@@ -423,6 +423,156 @@ class FeedbackSectionPolicyApplierTest {
         assertThat(applied.modelAnswer()).isNull();
     }
 
+    @Test
+    void apply_aligns_minor_correction_content_expansion_sections_for_health_goal_answer() {
+        String learnerAnswer = "One health goal I have this is to diet. It's important for me to stay healthy.";
+        String minimalCorrection = "One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy.";
+        FeedbackResponseDto feedback = new FeedbackResponseDto(
+                "prompt-goal-12",
+                "session-8",
+                1,
+                78,
+                false,
+                null,
+                "Add one more reason or method.",
+                List.of("\"" + learnerAnswer + "\" clearly states your goal."),
+                List.of(
+                        new CorrectionDto("Add one more reason.", "Explain why this matters a little more."),
+                        new CorrectionDto("Add one concrete habit.", "Write one habit you want to follow for this goal.")
+                ),
+                List.of(),
+                List.of(new GrammarFeedbackItemDto(
+                        "One health goal I have this is to diet",
+                        "One health goal I have this year is to diet",
+                        "Make this phrase more natural."
+                )),
+                "One health goal I have this year is to diet. It's important for me to stay healthy.",
+                List.of(
+                        new RefinementExpressionDto("One challenge I often face is...", "Use this to introduce a problem.", "One challenge I often face is managing my schedule."),
+                        new RefinementExpressionDto("As a result", "Use this to explain a result.", "As a result, I feel more organized."),
+                        new RefinementExpressionDto("improve my diet", "Use this to talk about your eating habits.", "I want to improve my diet this year."),
+                        new RefinementExpressionDto("It matters to me because ...", "Use this to explain why the goal is important.", "It matters to me because I want to stay healthy.")
+                ),
+                "One of my health goals this year is to lose weight. I exercise every weekend and stick to a healthy diet.",
+                null,
+                "One health goal I have this is to diet because ...",
+                List.of()
+        );
+
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.CONTENT_THIN),
+                new GrammarProfile(
+                        GrammarSeverity.MODERATE,
+                        List.of(new GrammarIssue("LOCAL_GRAMMAR", "One health goal I have this is to diet", "One health goal I have this year is to improve my diet", false, GrammarSeverity.MODERATE)),
+                        minimalCorrection
+                ),
+                new ContentProfile(
+                        ContentLevel.LOW,
+                        new ContentSignals(true, true, false, false, false, true),
+                        List.of(
+                                new StrengthSignal("CLEAR_MAIN_ANSWER", learnerAnswer),
+                                new StrengthSignal("HAS_REASON", "It's important for me to stay healthy")
+                        )
+                ),
+                new RewriteProfile(
+                        "ADD_DETAIL",
+                        "FIX_LOCAL_GRAMMAR",
+                        new RewriteTarget("ADD_DETAIL", minimalCorrection + " I plan to ...", 1),
+                        null
+                )
+        );
+
+        FeedbackResponseDto applied = applier.apply(
+                prompt("prompt-goal-12", "Explain one health goal you want to reach this year and why it matters to you."),
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                1
+        );
+
+        assertThat(applied.strengths()).hasSize(1);
+        assertThat(applied.strengths().get(0)).doesNotContain(learnerAnswer);
+        assertThat(applied.grammarFeedback()).hasSize(1);
+        assertThat(applied.grammarFeedback().get(0).revisedText()).isEqualTo(minimalCorrection);
+        assertThat(applied.grammarFeedback().get(0).reasonKo()).contains("자연스러워");
+        assertThat(applied.corrections()).hasSize(1);
+        assertThat(applied.corrections().get(0).suggestion()).contains("건강");
+        assertThat(applied.rewriteChallenge()).contains(minimalCorrection);
+        assertThat(applied.rewriteChallenge()).contains("건강");
+        assertThat(applied.rewriteChallenge()).doesNotContain("I have this is to diet because");
+        assertThat(applied.modelAnswer())
+                .isEqualTo("One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy and feel more energetic.");
+        assertThat(applied.modelAnswer()).doesNotContain("lose weight");
+        assertThat(applied.modelAnswer()).doesNotContain("exercise every weekend");
+        assertThat(applied.summary()).contains("목표와 이유");
+        assertThat(applied.summary()).contains("더 붙여");
+    }
+
+    @Test
+    void apply_avoids_repeating_existing_benefit_sentence_in_one_step_up_model_answer() {
+        String learnerAnswer = "I work out regularly by going to gym every day to stay healthy. This helps me feel more energetic";
+        String correctedAnswer = "I work out regularly by going to the gym every day to stay healthy. This helps me feel more energetic.";
+        FeedbackResponseDto feedback = new FeedbackResponseDto(
+                "prompt-goal-13",
+                null,
+                0,
+                86,
+                false,
+                null,
+                "Add one more concrete detail.",
+                List.of("\"" + learnerAnswer + "\" explains your goal."),
+                List.of(new CorrectionDto("Add one more detail.", "Add one more concrete benefit or habit.")),
+                List.of(),
+                List.of(new GrammarFeedbackItemDto(
+                        "going to gym",
+                        "going to the gym",
+                        "Add the article to make the phrase natural."
+                )),
+                correctedAnswer,
+                List.of(),
+                null,
+                null,
+                "Use the corrected sentence and add one more detail.",
+                List.of()
+        );
+
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.CONTENT_THIN),
+                new GrammarProfile(
+                        GrammarSeverity.MINOR,
+                        List.of(new GrammarIssue("ARTICLE", "going to gym", "going to the gym", false, GrammarSeverity.MINOR)),
+                        correctedAnswer
+                ),
+                new ContentProfile(
+                        ContentLevel.LOW,
+                        new ContentSignals(true, true, false, false, true, false),
+                        List.of(
+                                new StrengthSignal("CLEAR_MAIN_ANSWER", "I work out regularly"),
+                                new StrengthSignal("HAS_REASON", "This helps me feel more energetic")
+                        )
+                ),
+                new RewriteProfile(
+                        "ADD_DETAIL",
+                        "MAKE_IT_MORE_SPECIFIC",
+                        new RewriteTarget("ADD_DETAIL", correctedAnswer, 1),
+                        null
+                )
+        );
+
+        FeedbackResponseDto applied = applier.apply(
+                prompt("prompt-goal-13", "Explain one health goal you want to reach this year and why it matters to you."),
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                4
+        );
+
+        assertThat(applied.modelAnswer())
+                .isEqualTo("I work out regularly by going to the gym every day to stay healthy. This helps me feel more energetic and stay consistent with my routine.");
+        assertThat(applied.modelAnswer())
+                .doesNotContain("This helps me feel more energetic. This helps me feel more energetic.");
+    }
+
     private PromptDto prompt(String id, String questionEn) {
         return new PromptDto(
                 id,

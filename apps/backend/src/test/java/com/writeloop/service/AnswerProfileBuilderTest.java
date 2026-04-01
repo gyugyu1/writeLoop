@@ -137,8 +137,8 @@ class AnswerProfileBuilderTest {
         assertThat(missingActivityProfile.rewrite().primaryIssueCode()).isEqualTo("ADD_DETAIL");
 
         assertThat(reasonRequiredProfile.task().taskCompletion()).isEqualTo(TaskCompletion.FULL);
-        assertThat(reasonRequiredProfile.content().specificity()).isEqualTo(ContentLevel.MEDIUM);
-        assertThat(reasonRequiredProfile.rewrite().primaryIssueCode()).isEqualTo("IMPROVE_NATURALNESS");
+        assertThat(reasonRequiredProfile.content().specificity()).isEqualTo(ContentLevel.LOW);
+        assertThat(reasonRequiredProfile.rewrite().primaryIssueCode()).isEqualTo("ADD_DETAIL");
         assertThat(reasonRequiredProfile.content().strengths())
                 .extracting(StrengthSignal::code)
                 .contains("HAS_REASON");
@@ -249,6 +249,40 @@ class AnswerProfileBuilderTest {
         assertThat(profile.task().onTopic()).isTrue();
         assertThat(profile.task().answerBand()).isEqualTo(AnswerBand.TOO_SHORT_FRAGMENT);
         assertThat(profile.grammar().minimalCorrection()).isEqualTo("I do nothing.");
+    }
+
+    @Test
+    void build_treats_health_goal_answer_as_content_thin_with_minor_correction_not_grammar_blocking() {
+        AnswerProfile profile = answerProfileBuilder.build(
+                new AnswerContext(
+                        "Explain one health goal you want to reach this year and why it matters to you.",
+                        "B",
+                        1,
+                        "One health goal I have this is to diet. It's important for me to stay healthy.",
+                        null,
+                        null,
+                        List.of(),
+                        new PromptTaskMetaDto("GOAL_PLAN", List.of("MAIN_ANSWER", "REASON"), List.of("ACTIVITY", "TIME_OR_PLACE")),
+                        "Goal Plan",
+                        "Health Goal"
+                ),
+                "One health goal I have this year is to diet. It's important for me to stay healthy.",
+                List.of(),
+                List.of(new GrammarFeedbackItemDto(
+                        "One health goal I have this is to diet",
+                        "One health goal I have this year is to diet",
+                        "Make this phrase sound more natural."
+                ))
+        );
+
+        assertThat(profile.task().onTopic()).isTrue();
+        assertThat(profile.task().taskCompletion()).isEqualTo(TaskCompletion.FULL);
+        assertThat(profile.task().answerBand()).isEqualTo(AnswerBand.CONTENT_THIN);
+        assertThat(profile.grammar().severity()).isEqualTo(GrammarSeverity.MODERATE);
+        assertThat(profile.grammar().minimalCorrection())
+                .isEqualTo("One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy.");
+        assertThat(profile.rewrite().primaryIssueCode()).isEqualTo("ADD_DETAIL");
+        assertThat(profile.rewrite().target().skeleton()).startsWith("One health goal I have this year is to improve my diet");
     }
 
     @Test

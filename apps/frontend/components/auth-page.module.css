@@ -1356,20 +1356,30 @@
   }
 
   .myPageShell .tabRow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
     margin-bottom: 14px;
-    padding: 4px;
-    border-radius: 18px;
-    background: rgba(16, 36, 76, 0.05);
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow-x: clip;
+  }
+
+  .myPageShell .tabRow > * {
+    max-width: 100%;
   }
 
   .myPageShell .tabButton,
   .myPageShell .tabButtonActive {
-    width: 100%;
-    min-height: 42px;
-    padding: 10px 12px;
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 34px;
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    line-height: 1.2;
+    white-space: nowrap;
   }
 
   .myPageShell .streakBanner,

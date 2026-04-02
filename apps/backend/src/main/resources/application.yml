@@ -32,10 +32,10 @@ spring:
       hibernate:
         format_sql: true
 
-openai:
-  api-key: ${OPENAI_API_KEY:}
-  model: ${OPENAI_MODEL:gpt-4o}
-  api-url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}
+gemini:
+  api-key: ${GEMINI_API_KEY:}
+  model: ${GEMINI_MODEL:gemini-2.5-flash}
+  api-url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models}
 
 app:
   frontend-base-url: ${APP_FRONTEND_BASE_URL:http://writeloop.localtest.me}

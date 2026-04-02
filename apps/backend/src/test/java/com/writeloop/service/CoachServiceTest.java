@@ -46,7 +46,7 @@ class CoachServiceTest {
     private PromptService promptService;
 
     @Mock
-    private OpenAiCoachClient openAiCoachClient;
+    private LlmCoachClient openAiCoachClient;
 
     @Mock
     private AnswerAttemptRepository answerAttemptRepository;

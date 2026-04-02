@@ -29,7 +29,7 @@ class CoachEvaluationServiceTest {
     private CoachInteractionRepository coachInteractionRepository;
 
     @Mock
-    private OpenAiCoachEvaluationClient openAiCoachEvaluationClient;
+    private LlmCoachEvaluationClient openAiCoachEvaluationClient;
 
     private CoachEvaluationService coachEvaluationService;
 
@@ -90,7 +90,7 @@ class CoachEvaluationServiceTest {
                 any(Pageable.class)
         )).thenReturn(List.of(interaction));
         when(openAiCoachEvaluationClient.evaluate(interaction)).thenReturn(
-                new OpenAiCoachEvaluationClient.CoachEvaluationResult(
+                new LlmCoachEvaluationClient.CoachEvaluationResult(
                         CoachEvaluationStatus.APPROPRIATE,
                         93,
                         "MEANING_MATCH",

@@ -16,6 +16,7 @@ final class FeedbackSectionValidators {
     private static final Pattern WORD_PATTERN = Pattern.compile("[\\p{L}][\\p{L}'-]*");
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\[[^\\]\\r\\n]{1,24}\\]");
     private static final Pattern BROKEN_PATCH_PATTERN = Pattern.compile("'.+?'\\s*->\\s*'.+?'");
+    private static final Pattern HANGUL_PATTERN = Pattern.compile("[가-힣]");
     private static final Set<String> CONTENT_STOPWORDS = Set.of(
             "a", "an", "and", "are", "at", "be", "because", "by", "do", "for", "from", "go",
             "i", "in", "is", "it", "me", "my", "of", "on", "or", "so", "that", "the", "this",
@@ -23,12 +24,20 @@ final class FeedbackSectionValidators {
     );
     private static final Set<String> ARTICLE_TOKENS = Set.of("a", "an", "the");
     private static final Set<String> POSSESSIVE_DETERMINERS = Set.of("my", "your", "his", "her", "our", "their", "its");
-    private static final Set<String> GENERIC_MEANING_TEXTS = Set.of(
+    private static final Set<String> READABLE_GENERIC_MEANING_TEXTS = Set.of(
             "다음 답변에서 자연스럽게 넣어 보면 좋은 표현이에요.",
+            "다음 답변에서 바로 가져다 쓸 수 있는 표현이에요."
+    );
+    private static final Set<String> READABLE_GENERIC_GUIDANCE_TEXTS = Set.of(
+            "다음 답변에서 자연스럽게 넣어 보면 좋은 표현이에요.",
+            "다음 답변에서 바로 가져다 쓸 수 있는 표현이에요."
+    );
+    private static final Set<String> GENERIC_MEANING_TEXTS = Set.of(
+            "다음 답변에서 자연스럽게 써 보면 좋은 표현이에요.",
             "다음 답변에 바로 가져다 쓸 수 있는 표현이에요."
     );
     private static final Set<String> GENERIC_GUIDANCE_TEXTS = Set.of(
-            "다음 답변에서 자연스럽게 넣어 보면 좋은 표현이에요.",
+            "다음 답변에서 자연스럽게 써 보면 좋은 표현이에요.",
             "다음 답변에 바로 가져다 쓸 수 있는 표현이에요."
     );
 
@@ -44,6 +53,30 @@ final class FeedbackSectionValidators {
             unique.add(strength.trim());
         }
         return List.copyOf(unique);
+    }
+
+    List<String> filterKoreanStrengths(List<String> strengths) {
+        if (strengths == null || strengths.isEmpty()) {
+            return List.of();
+        }
+        List<String> filtered = new ArrayList<>();
+        for (String strength : strengths) {
+            if (strength == null || strength.isBlank()) {
+                continue;
+            }
+            if (containsHangul(strength)) {
+                filtered.add(strength.trim());
+            }
+        }
+        return List.copyOf(filtered);
+    }
+
+    String filterKoreanSummary(String summary) {
+        String cleanSummary = blankToNull(summary);
+        if (cleanSummary == null) {
+            return null;
+        }
+        return containsHangul(cleanSummary) ? cleanSummary : null;
     }
 
     List<GrammarFeedbackItemDto> validateGrammarSectionFormat(List<GrammarFeedbackItemDto> grammarFeedback) {
@@ -83,18 +116,7 @@ final class FeedbackSectionValidators {
         if (grammarFeedback == null || grammarFeedback.isEmpty()) {
             return List.of();
         }
-        List<GrammarFeedbackItemDto> filtered = new ArrayList<>();
-        for (GrammarFeedbackItemDto item : grammarFeedback) {
-            if (item == null) {
-                continue;
-            }
-            if (isLowValueArticleCorrection(item.originalText(), item.revisedText())
-                    || isCapitalizationOnlyCorrection(item.originalText(), item.revisedText())) {
-                continue;
-            }
-            filtered.add(item);
-        }
-        return List.copyOf(filtered);
+        return List.copyOf(grammarFeedback);
     }
 
     List<CorrectionDto> reduceDuplicateCorrections(
@@ -115,9 +137,6 @@ final class FeedbackSectionValidators {
             if (issue.isBlank() || suggestion.isBlank()) {
                 continue;
             }
-            if (isLikelyGrammarDuplicate(issue, suggestion, grammarFeedback)) {
-                continue;
-            }
             String key = issue + "|" + suggestion;
             if (seen.add(key)) {
                 reduced.add(new CorrectionDto(correction.issue().trim(), correction.suggestion().trim()));
@@ -131,6 +150,7 @@ final class FeedbackSectionValidators {
             return List.of();
         }
         List<RefinementExpressionDto> sanitized = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
         for (RefinementExpressionDto expression : refinementExpressions) {
             if (expression == null || !Boolean.TRUE.equals(expression.displayable())) {
                 continue;
@@ -150,26 +170,27 @@ final class FeedbackSectionValidators {
             if (normalizedExpression.equals(normalizedExample)) {
                 continue;
             }
-            if (GENERIC_MEANING_TEXTS.contains(normalizeText(expression.meaningKo()))) {
-                continue;
+            String key = normalizedExpression + "|" + normalizedExample + "|" + normalizeText(expression.guidanceKo());
+            if (seen.add(key)) {
+                sanitized.add(expression);
             }
-            if (GENERIC_GUIDANCE_TEXTS.contains(normalizeText(expression.guidanceKo()))) {
-                continue;
-            }
-            if (isGenericMeaning(expression.meaningKo()) || isGenericGuidance(expression.guidanceKo())) {
-                continue;
-            }
-            int overlappingIndex = findOverlappingRefinementIndex(sanitized, expression);
-            if (overlappingIndex >= 0) {
-                RefinementExpressionDto existing = sanitized.get(overlappingIndex);
-                if (refinementSpecificityScore(expression) > refinementSpecificityScore(existing)) {
-                    sanitized.set(overlappingIndex, expression);
-                }
-                continue;
-            }
-            sanitized.add(expression);
         }
         return List.copyOf(sanitized);
+    }
+
+    List<RefinementCard> validateRefinementCardsDomain(List<RefinementCard> refinementCards) {
+        if (refinementCards == null || refinementCards.isEmpty()) {
+            return List.of();
+        }
+        List<RefinementExpressionDto> dtos = new ArrayList<>();
+        for (RefinementCard refinementCard : refinementCards) {
+            if (refinementCard != null) {
+                dtos.add(refinementCard.toDto());
+            }
+        }
+        return validateRefinementCards(dtos).stream()
+                .map(RefinementCard::fromDto)
+                .toList();
     }
 
     ModelAnswerContent guardModelAnswer(
@@ -184,7 +205,7 @@ final class FeedbackSectionValidators {
         int maxAllowedWordCount = switch (modelAnswerMode) {
             case MINIMAL_CORRECTION -> Math.max(8, learnerWordCount + 6);
             case TASK_RESET -> Math.max(10, learnerWordCount + 8);
-            case ONE_STEP_UP -> Math.max(12, learnerWordCount + 12);
+            case ONE_STEP_UP, OPTIONAL_IF_ALREADY_GOOD -> Math.max(12, learnerWordCount + 12);
         };
         if (countWords(guarded) > maxAllowedWordCount) {
             guarded = trimToWordCount(guarded, maxAllowedWordCount);
@@ -247,6 +268,9 @@ final class FeedbackSectionValidators {
         if (omitsMajorLearnerClause(learnerAnswer, sanitized)) {
             return null;
         }
+        if (omitsMajorLearnerClause(anchorText, sanitized)) {
+            return null;
+        }
         if (answerBand == AnswerBand.NATURAL_BUT_BASIC && isNearDuplicateText(learnerAnswer, sanitized)) {
             return null;
         }
@@ -269,6 +293,10 @@ final class FeedbackSectionValidators {
         return sanitized;
     }
 
+    boolean losesMajorContent(String sourceText, String candidateText) {
+        return omitsMajorLearnerClause(sourceText, candidateText);
+    }
+
     String reduceSummaryDuplication(
             String summary,
             List<CorrectionDto> corrections,
@@ -278,7 +306,8 @@ final class FeedbackSectionValidators {
         if (cleanSummary == null) {
             return null;
         }
-        if (rewriteGuide != null && isNearDuplicateText(cleanSummary, rewriteGuide)) {
+        if (rewriteGuide != null
+                && normalizeExpressionForOverlap(cleanSummary).equals(normalizeExpressionForOverlap(rewriteGuide))) {
             return null;
         }
         if (corrections != null) {
@@ -288,7 +317,7 @@ final class FeedbackSectionValidators {
                 }
                 String combined = (correction.issue() == null ? "" : correction.issue()) + " "
                         + (correction.suggestion() == null ? "" : correction.suggestion());
-                if (isNearDuplicateText(cleanSummary, combined)) {
+                if (normalizeExpressionForOverlap(cleanSummary).equals(normalizeExpressionForOverlap(combined))) {
                     return null;
                 }
             }
@@ -312,11 +341,16 @@ final class FeedbackSectionValidators {
             return cleanGuide;
         }
 
-        if (!isNearDuplicate(normalizedGuide, normalizedModelAnswer)) {
+        if (!normalizedGuide.equals(normalizedModelAnswer)) {
             return cleanGuide;
         }
 
         String quotedHint = extractLeadingQuotedHint(cleanGuide);
+        if (grammarBlocking
+                && quotedHint != null
+                && hasMeaningfulGuidanceText(stripLeadingQuotedHint(cleanGuide))) {
+            return cleanGuide;
+        }
         if (quotedHint != null
                 && hasMeaningfulGuidanceText(stripLeadingQuotedHint(cleanGuide))
                 && isOneStepUpModelAnswer(quotedHint, modelAnswer)) {
@@ -339,7 +373,7 @@ final class FeedbackSectionValidators {
             return stripped;
         }
         if (grammarBlocking) {
-            return "문장을 먼저 자연스럽게 고친 뒤, 이 방법이 어떻게 도움이 되는지 한 가지를 더 붙여 보세요.";
+            return "문장을 먼저 자연스럽게 고친 뒤 이 방법이 어떻게 도움이 되는지 한 가지를 더 붙여 보세요.";
         }
         return stripped == null || stripped.isBlank() ? null : stripped;
     }
@@ -442,6 +476,21 @@ final class FeedbackSectionValidators {
         return text != null && PLACEHOLDER_PATTERN.matcher(text).find();
     }
 
+    private boolean containsHangul(String text) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            if ((ch >= '\u1100' && ch <= '\u11FF')
+                    || (ch >= '\u3130' && ch <= '\u318F')
+                    || (ch >= '\uAC00' && ch <= '\uD7AF')) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private boolean isLowValueArticleCorrection(String originalText, String revisedText) {
         String normalizedOriginal = normalizeExpressionForOverlap(originalText);
         String normalizedRevised = normalizeExpressionForOverlap(revisedText);
@@ -503,6 +552,9 @@ final class FeedbackSectionValidators {
     }
 
     private boolean omitsMajorLearnerClause(String learnerAnswer, String modelAnswer) {
+        if (learnerAnswer == null || learnerAnswer.isBlank() || modelAnswer == null || modelAnswer.isBlank()) {
+            return false;
+        }
         List<Set<String>> learnerClauses = splitIntoMeaningfulClauses(learnerAnswer);
         if (learnerClauses.size() < 2) {
             return false;
@@ -553,19 +605,20 @@ final class FeedbackSectionValidators {
         }
         int allowedNovelTokens = switch (answerBand) {
             case NATURAL_BUT_BASIC -> 4;
-            case SHORT_BUT_VALID, CONTENT_THIN -> modelAnswerMode == ModelAnswerMode.ONE_STEP_UP ? 6 : 3;
+            case SHORT_BUT_VALID, CONTENT_THIN ->
+                    (modelAnswerMode == ModelAnswerMode.ONE_STEP_UP
+                            || modelAnswerMode == ModelAnswerMode.OPTIONAL_IF_ALREADY_GOOD) ? 6 : 3;
             default -> 6;
         };
         return novelTokens.size() > allowedNovelTokens;
     }
 
     private List<Set<String>> splitIntoMeaningfulClauses(String text) {
-        String normalized = normalizeExpressionForOverlap(text);
-        if (normalized.isBlank()) {
+        if (text == null || text.isBlank()) {
             return List.of();
         }
         List<Set<String>> clauses = new ArrayList<>();
-        for (String clause : normalized.split("\\b(?:and|but)\\b|[,;]")) {
+        for (String clause : text.split("(?<=[.!?])\\s+|\\b(?:and|but)\\b|[,;:]")) {
             Set<String> clauseTokens = extractContentTokens(clause);
             if (!clauseTokens.isEmpty()) {
                 clauses.add(clauseTokens);
@@ -614,19 +667,17 @@ final class FeedbackSectionValidators {
         return normalized.equals("표현 설명")
                 || normalized.equals("문장 설명")
                 || normalized.contains("표현입니다")
-                || normalized.contains("패턴입니다");
+                || normalized.contains("뜻입니다");
     }
-
     private boolean isGenericGuidance(String guidanceKo) {
         String normalized = normalizeText(guidanceKo);
         if (normalized.isBlank()) {
             return false;
         }
-        return normalized.equals("다음 답변에서 자연스럽게 넣어 보면 좋은 표현이에요.")
-                || normalized.equals("설명할 때 사용할 수 있어요.")
+        return normalized.equals("다음 답변에서 자연스럽게 써 보면 좋은 표현이에요.")
+                || normalized.equals("설명할 때 사용하면 유용해요.")
                 || normalized.equals("사용할 수 있어요.");
     }
-
     private String trimToSentenceCount(String text, int maxSentences) {
         if (text == null || text.isBlank()) {
             return null;
@@ -801,3 +852,6 @@ final class FeedbackSectionValidators {
     ) {
     }
 }
+
+
+

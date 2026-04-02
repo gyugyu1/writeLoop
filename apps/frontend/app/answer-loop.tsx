@@ -37,6 +37,7 @@ import { buildCoachQuickQuestions } from "../lib/coach-quick-questions";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getDifficultyLabel } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
+import { buildInlineFeedbackSegments, type RenderedInlineFeedbackSegment } from "../lib/inline-feedback";
 import { buildLocalCoachHelp, buildLocalCoachUsage } from "../lib/coach";
 import type {
   AuthUser,
@@ -45,6 +46,8 @@ import type {
   CoachHelpResponse,
   CoachUsageCheckResponse,
   Feedback,
+  FeedbackLoopStatus,
+  FeedbackScreenPolicy,
   HistoryMonthStatus,
   HomeDraftSnapshot,
   HomeFlowStep,
@@ -1417,7 +1420,7 @@ export function AnswerLoop() {
   const activeDraftType: WritingDraftType | null =
     step === "answer" ? "ANSWER" : step === "rewrite" ? "REWRITE" : null;
   const isGuestCycleComplete = Boolean(feedback && guestSessionId && feedback.attemptNo >= 2);
-  const shouldSuggestFinish = Boolean(feedback?.loopComplete);
+  const shouldSuggestFinish = Boolean(feedback?.ui?.screenPolicy?.showFinishCta ?? feedback?.loopComplete);
   const feedbackLevel = feedback ? getFeedbackLevelInfo(feedback.score, feedback.loopComplete) : null;
   const streakDays = todayStatus?.streakDays ?? 0;
   useEffect(() => {
@@ -2722,6 +2725,491 @@ export function AnswerLoop() {
     );
   }
 
+  function handleStartRewriteFromGuide() {
+    const starter = feedback?.ui?.rewritePractice?.starter?.trim();
+    if (starter) {
+      setRewrite(starter);
+    } else {
+      setRewrite(lastSubmittedAnswer);
+    }
+    setShowRewriteFeedback(false);
+    setShowPreviousRewriteAnswer(false);
+    setStep("rewrite");
+  }
+
+  function handleRewriteFromCurrentAnswer() {
+    setRewrite(lastSubmittedAnswer);
+    setShowRewriteFeedback(false);
+    setShowPreviousRewriteAnswer(false);
+    setStep("rewrite");
+  }
+
+  function handleCancelSubmittedAnswer() {
+    setAnswer(lastSubmittedAnswer);
+    setShowRewriteFeedback(false);
+    setShowPreviousRewriteAnswer(false);
+    setStep("answer");
+  }
+
+  function resolveScreenPolicy(): FeedbackScreenPolicy | null {
+    if (!feedback) {
+      return null;
+    }
+
+    return (
+      feedback.ui?.screenPolicy ?? {
+        completionState: feedback.loopComplete ? "CAN_FINISH" : "NEEDS_REVISION",
+        sectionOrder: [
+          "QUESTION_ANSWER",
+          "TOP_STATUS",
+          "KEEP_WHAT_WORKS",
+          "FIX_FIRST",
+          "REWRITE_GUIDE",
+          "MODEL_ANSWER",
+          "REFINEMENT",
+          "CTA"
+        ],
+        keepWhatWorksDisplayMode:
+          feedback.strengths.length > 0 || usedExpressions.length > 0 ? "SHOW_EXPANDED" : "HIDE",
+        fixFirstDisplayMode:
+          feedback.grammarFeedback?.length || feedback.corrections?.length ? "SHOW_EXPANDED" : "HIDE",
+        rewriteGuideDisplayMode: "SHOW_EXPANDED",
+        rewriteGuideMode: feedback.loopComplete ? "OPTIONAL_POLISH" : "DETAIL_SCAFFOLD",
+        modelAnswerDisplayMode: feedback.modelAnswer?.trim()
+          ? feedback.loopComplete
+            ? "SHOW_COLLAPSED"
+            : "SHOW_EXPANDED"
+          : "HIDE",
+        refinementDisplayMode:
+          feedback.refinementExpressions && feedback.refinementExpressions.length > 0
+            ? "SHOW_COLLAPSED"
+            : "HIDE",
+        keepWhatWorksMaxItems: 1,
+        keepExpressionChipMaxItems: 2,
+        refinementMaxCards: 2,
+        showFinishCta: Boolean(feedback.loopComplete),
+        showRewriteCta: true,
+        showCancelCta: true
+      }
+    );
+  }
+
+  function resolveLoopStatus(): FeedbackLoopStatus | null {
+    if (!feedback) {
+      return null;
+    }
+
+    return (
+      feedback.ui?.loopStatus ?? {
+        badge: feedback.loopComplete ? "루프 완료 가능" : "다시 써보기 추천",
+        headline:
+          feedback.completionMessage?.trim() ??
+          (feedback.loopComplete
+            ? "지금 단계에서 마무리해도 괜찮아요."
+            : "지금은 한 가지만 먼저 고쳐서 다시 써 보세요."),
+        supportText: feedback.loopComplete
+          ? "원하면 한 번 더 다듬어 볼 수 있어요."
+          : "위 starter를 바탕으로 바로 다시 써 볼 수 있어요.",
+        rewriteCtaLabel: feedback.loopComplete ? "다시 써보기" : "다시 써보기",
+        finishCtaLabel: feedback.loopComplete ? "오늘 루프 완료하고 도장 받기" : null,
+        cancelCtaLabel: "답변 취소"
+      }
+    );
+  }
+
+  function isDisplayVisible(mode: string | null | undefined) {
+    return mode !== "HIDE";
+  }
+
+  function isCollapsedDisplay(mode: string | null | undefined) {
+    return mode === "SHOW_COLLAPSED";
+  }
+
+  function renderFeedbackFocusCard() {
+    const focusCard = feedback?.ui?.focusCard ?? (feedback
+      ? {
+          title: feedback.loopComplete ? "지금도 충분히 좋아요" : "이번 답변의 수정 목표",
+          headline:
+            (feedback.loopComplete
+              ? feedback.completionMessage?.trim()
+              : feedback.summary?.trim()) ||
+            (feedback.loopComplete
+              ? "원하면 한 번 더 다듬어 보세요."
+              : "이번 답변에서 한 가지만 먼저 고쳐 보세요."),
+          supportText: feedback.loopComplete
+            ? "이미 질문에는 잘 답했고, 원하면 선택적으로 한 번 더 다듬어 볼 수 있어요."
+            : null
+        }
+      : null);
+    if (!focusCard) {
+      return null;
+    }
+    const isGoodEnoughTitle = focusCard.title.trim() === "지금도 충분히 좋아요";
+
+    return (
+      <section
+        className={`${styles.feedbackBlock} ${styles.feedbackFocusCard} ${
+          isGoodEnoughTitle ? styles.feedbackFocusCardGoodEnough : ""
+        }`}
+      >
+        {isGoodEnoughTitle ? (
+          <strong className={styles.feedbackFocusTitleHero}>{focusCard.title}</strong>
+        ) : (
+          <span className={styles.feedbackFocusEyebrow}>{focusCard.title}</span>
+        )}
+        <strong
+          className={`${styles.feedbackFocusHeadline} ${
+            isGoodEnoughTitle ? styles.feedbackFocusHeadlineLarge : ""
+          }`}
+        >
+          {focusCard.headline}
+        </strong>
+        {focusCard.supportText ? (
+          <p className={styles.feedbackFocusSupport}>{focusCard.supportText}</p>
+        ) : null}
+      </section>
+    );
+  }
+
+  function renderKeepSection() {
+    if (!feedback) {
+      return null;
+    }
+
+    const screenPolicy = resolveScreenPolicy();
+    if (!isDisplayVisible(screenPolicy?.keepWhatWorksDisplayMode)) {
+      return null;
+    }
+
+    const keepStrengths = feedback.strengths.slice(0, screenPolicy?.keepWhatWorksMaxItems ?? 1);
+    const expressionChips = usedExpressions.slice(0, screenPolicy?.keepExpressionChipMaxItems ?? 2);
+    if (keepStrengths.length === 0 && expressionChips.length === 0) {
+      return null;
+    }
+
+    return (
+      <section className={styles.feedbackBlock}>
+        <h3>유지할 점</h3>
+        {keepStrengths.length > 0 ? (
+          <ul className={styles.list}>
+            {keepStrengths.map((strength) => (
+              <li key={strength}>{strength}</li>
+            ))}
+          </ul>
+        ) : null}
+        {expressionChips.length > 0 ? (
+          <div className={styles.feedbackChipSection}>
+            <span className={styles.feedbackChipLabel}>잘 쓴 표현</span>
+            <div className={styles.feedbackChipList}>
+              {expressionChips.map((expression) => (
+                <span key={expression.key} className={styles.feedbackChip}>
+                  {expression.expression}
+                </span>
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </section>
+    );
+  }
+
+  function renderPrimaryFixSection() {
+    const screenPolicy = resolveScreenPolicy();
+    if (!isDisplayVisible(screenPolicy?.fixFirstDisplayMode)) {
+      return null;
+    }
+
+    const primaryFix = feedback?.ui?.primaryFix ?? (feedback
+      ? (() => {
+          const grammarItem = feedback.grammarFeedback?.[0];
+          if (grammarItem?.reasonKo?.trim()) {
+            return {
+              title: "먼저 고칠 부분",
+              instruction: "이 한 군데만 먼저 고치면 문장 흐름이 훨씬 안정돼요.",
+              originalText: grammarItem.originalText,
+              revisedText: grammarItem.revisedText,
+              reasonKo: grammarItem.reasonKo
+            };
+          }
+
+          const correction = feedback.corrections?.[0];
+          if (correction?.suggestion?.trim()) {
+            return {
+              title: "한 가지 더 추가하면 좋아요",
+              instruction: correction.suggestion,
+              originalText: null,
+              revisedText: null,
+              reasonKo: null
+            };
+          }
+
+          return null;
+        })()
+      : null);
+    if (!primaryFix) {
+      return null;
+    }
+
+    const hasGrammarCard =
+      Boolean(primaryFix.originalText?.trim()) &&
+      Boolean(primaryFix.revisedText?.trim()) &&
+      Boolean(primaryFix.reasonKo?.trim());
+
+    return (
+      <section className={styles.feedbackBlock}>
+        <h3>{primaryFix.title}</h3>
+        {primaryFix.instruction ? <p>{primaryFix.instruction}</p> : null}
+        {hasGrammarCard ? (
+          <div className={styles.primaryFixCard}>
+            <div className={styles.primaryFixRow}>
+              <span className={styles.primaryFixLabel}>원문</span>
+              <p className={styles.primaryFixDiffText}>
+                {renderPrimaryFixDiff("original")}
+              </p>
+            </div>
+            <div className={styles.primaryFixRow}>
+              <span className={styles.primaryFixLabel}>수정문</span>
+              <p className={styles.primaryFixDiffText}>
+                {renderPrimaryFixDiff("revised")}
+              </p>
+            </div>
+            <div className={styles.primaryFixRow}>
+              <span className={styles.primaryFixLabel}>이유</span>
+              <p>{primaryFix.reasonKo}</p>
+            </div>
+          </div>
+        ) : null}
+      </section>
+    );
+  }
+
+  function renderMicroTipSection() {
+    const microTip = feedback?.ui?.microTip;
+    if (!microTip?.originalText?.trim() || !microTip.revisedText?.trim() || !microTip.reasonKo?.trim()) {
+      return null;
+    }
+
+    return (
+      <section className={`${styles.feedbackBlock} ${styles.feedbackMicroTip}`}>
+        <div className={styles.feedbackMicroTipHeader}>
+          <span>{microTip.title || "작은 표현 다듬기"}</span>
+        </div>
+        <p className={styles.feedbackMicroTipPair}>
+          <span className={styles.feedbackMicroTipOriginal}>{microTip.originalText}</span>
+          <span className={styles.feedbackMicroTipArrow}>→</span>
+          <span className={styles.feedbackMicroTipRevised}>{microTip.revisedText}</span>
+        </p>
+        <p className={styles.feedbackMicroTipReason}>{microTip.reasonKo}</p>
+      </section>
+    );
+  }
+
+  function renderPrimaryFixDiff(mode: "original" | "revised") {
+    const primaryFix = feedback?.ui?.primaryFix;
+    const originalAnswer = lastSubmittedAnswer?.trim() ?? "";
+    const correctedAnswer = feedback?.correctedAnswer?.trim() ?? "";
+
+    if (!primaryFix) {
+      return null;
+    }
+
+    if (originalAnswer && correctedAnswer && originalAnswer !== correctedAnswer) {
+      const segments = buildInlineFeedbackSegments(
+        originalAnswer,
+        correctedAnswer,
+        feedback?.inlineFeedback ?? null
+      );
+
+      if (segments.length > 0) {
+        return segments.map((segment, index) => renderPrimaryFixDiffSegment(segment, mode, index));
+      }
+    }
+
+    return mode === "original" ? primaryFix.originalText : primaryFix.revisedText;
+  }
+
+  function renderPrimaryFixDiffSegment(
+    segment: RenderedInlineFeedbackSegment,
+    mode: "original" | "revised",
+    index: number
+  ) {
+    switch (segment.kind) {
+      case "equal":
+        return <span key={`${mode}-equal-${index}`}>{segment.text}</span>;
+      case "replace":
+        return mode === "original" ? (
+          <span key={`${mode}-replace-${index}`} className={styles.primaryFixRemoved}>
+            {segment.removed}
+          </span>
+        ) : (
+          <span key={`${mode}-replace-${index}`} className={styles.primaryFixAdded}>
+            {segment.added}
+          </span>
+        );
+      case "remove":
+        return mode === "original" ? (
+          <span key={`${mode}-remove-${index}`} className={styles.primaryFixRemoved}>
+            {segment.text}
+          </span>
+        ) : null;
+      case "add":
+        return mode === "revised" ? (
+          <span key={`${mode}-add-${index}`} className={styles.primaryFixAdded}>
+            {segment.text}
+          </span>
+        ) : null;
+      default:
+        return null;
+    }
+  }
+
+  function renderRewritePracticeSection() {
+    const screenPolicy = resolveScreenPolicy();
+    if (!isDisplayVisible(screenPolicy?.rewriteGuideDisplayMode)) {
+      return null;
+    }
+
+    const rewritePractice = feedback?.ui?.rewritePractice ?? (feedback
+      ? {
+          title: feedback.loopComplete ? "원하면 한 번 더 다듬어 보세요" : "한번 더 써보기",
+          starter: feedback.correctedAnswer?.trim() || lastSubmittedAnswer,
+          instruction:
+            feedback.rewriteChallenge?.trim() ||
+            "이 문장을 시작점으로 삼아 다시 써 보세요.",
+          ctaLabel: "이 문장으로 시작해서 다시 쓰기",
+          optionalTone: Boolean(feedback.loopComplete)
+        }
+      : null);
+    if (!rewritePractice) {
+      return null;
+    }
+
+    return (
+      <section className={styles.feedbackBlock}>
+        <h3>{rewritePractice.title}</h3>
+        <div
+          className={`${styles.rewriteStarterCard} ${
+            rewritePractice.optionalTone ? styles.rewriteStarterCardOptional : ""
+          }`}
+        >
+          <pre className={styles.rewriteStarterText}>{rewritePractice.starter}</pre>
+          <p className={styles.rewriteStarterInstruction}>{rewritePractice.instruction}</p>
+          <div className={styles.rewriteStarterActions}>
+            <button
+              type="button"
+              className={styles.smallActionButton}
+              onClick={handleStartRewriteFromGuide}
+            >
+              {rewritePractice.ctaLabel}
+            </button>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function renderExampleAnswerSection() {
+    const screenPolicy = resolveScreenPolicy();
+    const modelAnswerMode = screenPolicy?.modelAnswerDisplayMode ?? "HIDE";
+    if (!isDisplayVisible(modelAnswerMode)) {
+      return null;
+    }
+
+    if (!feedback?.modelAnswer?.trim()) {
+      return null;
+    }
+
+    const rewriteStarter = feedback.ui?.rewritePractice?.starter?.trim();
+    if (rewriteStarter && rewriteStarter === feedback.modelAnswer.trim()) {
+      return null;
+    }
+
+    const title = modelAnswerMode === "TASK_RESET_EXAMPLE" ? "질문에 맞는 예시 답변" : "예시 답변";
+    if (isCollapsedDisplay(modelAnswerMode)) {
+      return (
+        <details className={`${styles.feedbackBlock} ${styles.expressionDrawer}`}>
+          <summary className={styles.expressionDrawerSummary}>
+            {screenPolicy?.completionState === "OPTIONAL_POLISH" ? "원하면 예시 답변 보기" : `${title} 보기`}
+          </summary>
+          <p className={styles.modelAnswerText}>{feedback.modelAnswer}</p>
+          {feedback.modelAnswerKo ? (
+            <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
+          ) : null}
+        </details>
+      );
+    }
+
+    return (
+      <section className={styles.feedbackBlock}>
+        <h3>{title}</h3>
+        <p className={styles.modelAnswerText}>{feedback.modelAnswer}</p>
+        {feedback.modelAnswerKo ? (
+          <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
+        ) : null}
+      </section>
+    );
+  }
+
+  function renderExpressionDrawer() {
+    if (!feedback) {
+      return null;
+    }
+
+    const screenPolicy = resolveScreenPolicy();
+    if (!isDisplayVisible(screenPolicy?.refinementDisplayMode)) {
+      return null;
+    }
+
+    const suggestedExpressions = filterSuggestedRefinementExpressions(
+      feedback.refinementExpressions,
+      lastSubmittedAnswer,
+      feedback.correctedAnswer
+    )
+      .filter((expression) => expression.displayable !== false)
+      .slice(0, screenPolicy?.refinementMaxCards ?? 2);
+
+    if (suggestedExpressions.length === 0) {
+      return null;
+    }
+
+    const drawer = (
+      <details
+        className={`${styles.feedbackBlock} ${styles.expressionDrawer}`}
+        open={screenPolicy?.refinementDisplayMode === "SHOW_EXPANDED"}
+      >
+        <summary className={styles.expressionDrawerSummary}>써보면 좋을 표현</summary>
+        <ul className={styles.list}>
+          {suggestedExpressions.map((expression, index) => {
+            const interpretation = expression.meaningKo?.trim();
+            const guidanceKo = expression.guidanceKo?.trim();
+            const exampleEn = expression.exampleEn?.trim();
+            const exampleKo = expression.exampleKo?.trim();
+
+            if (!guidanceKo && !exampleEn && !exampleKo && !interpretation) {
+              return null;
+            }
+
+            return (
+              <li key={`${expression.expression}-${index}`}>
+                <strong className={styles.expressionText}>{renderLocalizedExpression(expression.expression)}</strong>
+                {interpretation ? (
+                  <span className={styles.refinementMeaningText}>{renderLocalizedExpression(interpretation)}</span>
+                ) : null}
+                {guidanceKo ? <span className={styles.refinementGuidanceText}>{guidanceKo}</span> : null}
+                {exampleEn ? <span className={styles.refinementExpressionExample}>{exampleEn}</span> : null}
+                {exampleKo ? (
+                  <span className={styles.refinementExpressionExampleTranslation}>{renderLocalizedExpression(exampleKo)}</span>
+                ) : null}
+              </li>
+            );
+          })}
+        </ul>
+      </details>
+    );
+
+    return drawer;
+  }
+
   function renderRefinementExpressionsBlock(
     expressions: Feedback["refinementExpressions"] | null | undefined,
     className: string
@@ -2793,8 +3281,34 @@ export function AnswerLoop() {
     );
   }
 
+  function renderSummaryBlock(className: string) {
+    if (!feedback?.summary?.trim()) {
+      return null;
+    }
+
+    return (
+      <div className={className}>
+        <h3>전체 요약</h3>
+        <p>{feedback.summary}</p>
+      </div>
+    );
+  }
+
+  function renderRewriteGuideBlock(className: string) {
+    if (!feedback?.rewriteChallenge?.trim()) {
+      return null;
+    }
+
+    return (
+      <div className={className}>
+        <h3>다시쓰기 가이드</h3>
+        <p>{feedback.rewriteChallenge}</p>
+      </div>
+    );
+  }
+
   function renderFeedbackStrengthsBlock(className: string) {
-    if (!feedback) {
+    if (!feedback || feedback.strengths.length === 0) {
       return null;
     }
 
@@ -3032,6 +3546,9 @@ export function AnswerLoop() {
   }
 
   function renderFeedbackStep() {
+    const screenPolicy = resolveScreenPolicy();
+    const loopStatus = resolveLoopStatus();
+
     return (
       <section className={styles.stage}>
         {renderStageHeader({
@@ -3054,78 +3571,61 @@ export function AnswerLoop() {
                 <p>{lastSubmittedAnswer}</p>
               </div>
             )}
-            {renderFeedbackGroup(
-              <>
-                {renderCoachUsagePanel()}
-                {renderFeedbackStrengthsBlock(styles.feedbackBlock)}
-              </>
-            )}
-            {renderFeedbackGroup(
-              <>
-                <InlineFeedbackPreview
-                  originalAnswer={lastSubmittedAnswer}
-                  correctedAnswer={feedback.correctedAnswer}
-                  inlineFeedback={feedback.inlineFeedback}
-                  grammarFeedback={feedback.grammarFeedback}
-                />
-                {renderFeedbackCorrectionsBlock(styles.feedbackBlock)}
-                {renderRefinementExpressionsBlock(
-                  feedback.refinementExpressions,
-                  styles.feedbackBlock
-                )}
-              </>
-            )}
-            {renderFeedbackGroup(
-              <div className={styles.feedbackBlock}>
-                <h3>전체 요약</h3>
-                <p>{feedback.summary}</p>
-              </div>
-            )}
-            {renderFeedbackGroup(
-              <div className={styles.feedbackBlock}>
-                <h3>다시쓰기 가이드</h3>
-                <p>{feedback.rewriteChallenge}</p>
-              </div>
-            )}
-            {renderFeedbackGroup(renderModelAnswerBlock(styles.feedbackBlock))}
+            {renderFeedbackFocusCard()}
+            {renderKeepSection()}
+            {renderMicroTipSection()}
+            {renderPrimaryFixSection()}
+            {renderRewritePracticeSection()}
+            {renderExampleAnswerSection()}
+            {renderExpressionDrawer()}
           </div>
         ) : (
           <p className={styles.placeholderText}>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
         )}
         <div className={styles.stageFooter}>
-          {shouldSuggestFinish ? (
+          {feedback ? (
             <div className={styles.completionCallout}>
-              <span className={styles.completionCalloutBadge}>루프 완료 가능</span>
-              <strong>{feedbackLevel?.label ?? "충분히 좋음"}</strong>
-              <p>
-                {feedback?.completionMessage ??
+              {loopStatus?.badge ? (
+                <span className={styles.completionCalloutBadge}>{loopStatus.badge}</span>
+              ) : null}
+              <strong>
+                {loopStatus?.headline ??
+                  feedback.completionMessage ??
                   feedbackLevel?.summary ??
                   "이 답변은 지금 단계에서 마무리해도 충분해요."}
-              </p>
+              </strong>
+              {loopStatus?.supportText ? <p>{loopStatus.supportText}</p> : null}
             </div>
-          ) : (
-            <p>준비가 되면 피드백을 반영해서 다시 써 보세요.</p>
-          )}
+          ) : null}
           <div className={styles.actionRow}>
-            {shouldSuggestFinish ? (
-              <button type="button" className={styles.primaryButton} onClick={handleFinishLoop}>
-                오늘 루프 완료하고 도장 받기
+            {(screenPolicy?.showRewriteCta ?? Boolean(feedback)) ? (
+              <button
+                type="button"
+                className={shouldSuggestFinish ? styles.ghostButton : styles.primaryButton}
+                onClick={handleRewriteFromCurrentAnswer}
+                disabled={!feedback}
+              >
+                {loopStatus?.rewriteCtaLabel ?? "다시 써보기"}
               </button>
             ) : null}
-            <button
-              type="button"
-              className={shouldSuggestFinish ? styles.ghostButton : styles.primaryButton}
-              onClick={() => {
-                setRewrite(lastSubmittedAnswer);
-                setShowRewriteFeedback(false);
-                setShowPreviousRewriteAnswer(false);
-                setStep("rewrite");
-              }}
-              disabled={!feedback}
-            >
-              {shouldSuggestFinish ? "한 번 더 다듬기" : "다시 써보기"}
-            </button>
+            {(screenPolicy?.showCancelCta ?? Boolean(feedback)) ? (
+              <button
+                type="button"
+                className={styles.ghostButton}
+                onClick={handleCancelSubmittedAnswer}
+                disabled={!feedback}
+              >
+                {loopStatus?.cancelCtaLabel ?? "답변 취소"}
+              </button>
+            ) : null}
           </div>
+          {(screenPolicy?.showFinishCta ?? shouldSuggestFinish) ? (
+            <div className={styles.actionRow}>
+              <button type="button" className={styles.primaryButton} onClick={handleFinishLoop}>
+                {loopStatus?.finishCtaLabel ?? "오늘 루프 완료하고 도장 받기"}
+              </button>
+            </div>
+          ) : null}
         </div>
       </section>
     );
@@ -3206,19 +3706,15 @@ export function AnswerLoop() {
                     )}
                   </>
                 )}
-                {renderFeedbackGroup(
-                  <div className={styles.rewriteFeedbackBlock}>
-                    <h3>전체 요약</h3>
-                    <p>{feedback.summary}</p>
-                  </div>
-                )}
-                {renderFeedbackGroup(
-                  <div className={styles.rewriteFeedbackBlock}>
-                    <h3>다시쓰기 가이드</h3>
-                    <p>{feedback.rewriteChallenge}</p>
-                  </div>
-                )}
-                {renderFeedbackGroup(renderModelAnswerBlock(styles.rewriteFeedbackBlock))}
+                {renderSummaryBlock(styles.rewriteFeedbackBlock)
+                  ? renderFeedbackGroup(renderSummaryBlock(styles.rewriteFeedbackBlock))
+                  : null}
+                {renderRewriteGuideBlock(styles.rewriteFeedbackBlock)
+                  ? renderFeedbackGroup(renderRewriteGuideBlock(styles.rewriteFeedbackBlock))
+                  : null}
+                {renderModelAnswerBlock(styles.rewriteFeedbackBlock)
+                  ? renderFeedbackGroup(renderModelAnswerBlock(styles.rewriteFeedbackBlock))
+                  : null}
               </div>
             ) : null}
           </section>

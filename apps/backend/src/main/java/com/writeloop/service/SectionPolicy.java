@@ -11,10 +11,44 @@ record SectionPolicy(
         RefinementFocus refinementFocus,
         boolean showSummary,
         boolean showRewriteGuide,
+        boolean showModelAnswer,
         int maxModelAnswerSentences,
         ModelAnswerMode modelAnswerMode,
         AttemptOverlayPolicy attemptOverlayPolicy
 ) {
+    SectionPolicy(
+            boolean showStrengths,
+            int maxStrengthCount,
+            boolean showGrammar,
+            int maxGrammarIssueCount,
+            boolean showImprovement,
+            boolean showRefinement,
+            int maxRefinementCount,
+            RefinementFocus refinementFocus,
+            boolean showSummary,
+            boolean showRewriteGuide,
+            int maxModelAnswerSentences,
+            ModelAnswerMode modelAnswerMode,
+            AttemptOverlayPolicy attemptOverlayPolicy
+    ) {
+        this(
+                showStrengths,
+                maxStrengthCount,
+                showGrammar,
+                maxGrammarIssueCount,
+                showImprovement,
+                showRefinement,
+                maxRefinementCount,
+                refinementFocus,
+                showSummary,
+                showRewriteGuide,
+                true,
+                maxModelAnswerSentences,
+                modelAnswerMode,
+                attemptOverlayPolicy
+        );
+    }
+
     SectionPolicy {
         maxStrengthCount = Math.max(0, maxStrengthCount);
         maxGrammarIssueCount = Math.max(0, Math.min(2, maxGrammarIssueCount));
@@ -37,6 +71,7 @@ record SectionPolicy(
                 refinementFocus,
                 showSummary,
                 showRewriteGuide,
+                showModelAnswer,
                 maxModelAnswerSentences,
                 modelAnswerMode,
                 attemptOverlayPolicy
@@ -55,6 +90,7 @@ record SectionPolicy(
                 refinementFocus,
                 showSummary,
                 showRewriteGuide,
+                showModelAnswer,
                 maxModelAnswerSentences,
                 modelAnswerMode,
                 attemptOverlayPolicy
@@ -73,6 +109,7 @@ record SectionPolicy(
                 refinementFocus,
                 showSummary,
                 showRewriteGuide,
+                showModelAnswer,
                 maxModelAnswerSentences,
                 modelAnswerMode,
                 attemptOverlayPolicy
@@ -91,6 +128,26 @@ record SectionPolicy(
                 refinementFocus,
                 showSummary,
                 showRewriteGuide,
+                showModelAnswer,
+                maxModelAnswerSentences,
+                modelAnswerMode,
+                attemptOverlayPolicy
+        );
+    }
+
+    SectionPolicy withShowModelAnswer(boolean showModelAnswer) {
+        return new SectionPolicy(
+                showStrengths,
+                maxStrengthCount,
+                showGrammar,
+                maxGrammarIssueCount,
+                showImprovement,
+                showRefinement,
+                maxRefinementCount,
+                refinementFocus,
+                showSummary,
+                showRewriteGuide,
+                showModelAnswer,
                 maxModelAnswerSentences,
                 modelAnswerMode,
                 attemptOverlayPolicy

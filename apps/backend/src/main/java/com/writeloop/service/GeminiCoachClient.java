@@ -8,12 +8,9 @@ import com.writeloop.dto.CoachSelfDiscoveredCandidateDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -27,7 +24,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 @Service
-public class OpenAiCoachClient {
+public class GeminiCoachClient {
 
     private static final Pattern NON_WORD_PATTERN = Pattern.compile("[^\\p{L}\\p{N}\\s']");
 
@@ -38,12 +35,12 @@ public class OpenAiCoachClient {
     private final String model;
     private final String apiUrl;
 
-    public OpenAiCoachClient(
+    public GeminiCoachClient(
             ObjectMapper objectMapper,
             CoachQueryAnalyzer coachQueryAnalyzer,
-            @Value("${openai.api-key:}") String apiKey,
-            @Value("${openai.model:gpt-4o}") String model,
-            @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl
+            @Value("${gemini.api-key:}") String apiKey,
+            @Value("${gemini.model:gemini-2.5-flash}") String model,
+            @Value("${gemini.api-url:https://generativelanguage.googleapis.com/v1beta/models}") String apiUrl
     ) {
         this.objectMapper = objectMapper;
         this.coachQueryAnalyzer = coachQueryAnalyzer;
@@ -71,7 +68,7 @@ public class OpenAiCoachClient {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            throw new IllegalStateException("OpenAI coach API request failed", exception);
+            throw new IllegalStateException("Gemini coach API request failed", exception);
         }
     }
 
@@ -160,20 +157,11 @@ public class OpenAiCoachClient {
                 "required", List.of("coachReply", "expressions")
         );
 
-        Map<String, Object> payload = Map.of(
-                "model", model,
-                "input", buildPrompt(prompt, userQuestion, hints),
-                "text", Map.of(
-                        "format", Map.of(
-                                "type", "json_schema",
-                                "name", "english_expression_coach",
-                                "schema", schema,
-                                "strict", true
-                        )
-                )
+        return GeminiStructuredOutputSupport.buildGenerateContentRequestBody(
+                objectMapper,
+                buildPrompt(prompt, userQuestion, hints),
+                schema
         );
-
-        return objectMapper.writeValueAsString(payload);
     }
 
     private String buildPrompt(PromptDto prompt, String userQuestion, List<PromptHintDto> hints) {
@@ -292,20 +280,11 @@ public class OpenAiCoachClient {
                  sourceText
         );
 
-        Map<String, Object> payload = Map.of(
-                "model", model,
-                "input", promptText,
-                "text", Map.of(
-                        "format", Map.of(
-                                "type", "json_schema",
-                                "name", "meaning_slot_translation",
-                                "schema", schema,
-                                "strict", true
-                        )
-                )
+        return GeminiStructuredOutputSupport.buildGenerateContentRequestBody(
+                objectMapper,
+                promptText,
+                schema
         );
-
-        return objectMapper.writeValueAsString(payload);
     }
 
     private String buildSelfDiscoveredExtractionRequestBody(
@@ -383,20 +362,11 @@ public class OpenAiCoachClient {
                 answer
         );
 
-        Map<String, Object> payload = Map.of(
-                "model", model,
-                "input", promptText,
-                "text", Map.of(
-                        "format", Map.of(
-                                "type", "json_schema",
-                                "name", "coach_self_discovered_expressions",
-                                "schema", schema,
-                                "strict", true
-                        )
-                )
+        return GeminiStructuredOutputSupport.buildGenerateContentRequestBody(
+                objectMapper,
+                promptText,
+                schema
         );
-
-        return objectMapper.writeValueAsString(payload);
     }
 
     private List<String> inferLearnerIntentCategories(PromptDto prompt, String userQuestion) {
@@ -597,40 +567,17 @@ public class OpenAiCoachClient {
     }
 
     private String sendResponsesRequest(String requestBody) throws IOException, InterruptedException {
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(apiUrl))
-                .timeout(Duration.ofSeconds(60))
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody))
-                .build();
+        HttpRequest request = GeminiStructuredOutputSupport.buildGenerateContentRequest(apiUrl, apiKey, model, requestBody);
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 400) {
-            throw new IllegalStateException("OpenAI coach API request failed with status " + response.statusCode());
+            throw new IllegalStateException("Gemini coach API request failed with status " + response.statusCode());
         }
         return response.body();
     }
 
     private String extractStructuredOutputText(String body) throws IOException {
-        JsonNode root = objectMapper.readTree(body);
-        String outputText = root.path("output_text").asText("");
-
-        if (outputText.isBlank()) {
-            JsonNode output = root.path("output");
-            if (output.isArray() && !output.isEmpty()) {
-                JsonNode content = output.get(0).path("content");
-                if (content.isArray() && !content.isEmpty()) {
-                    outputText = content.get(0).path("text").asText("");
-                }
-            }
-        }
-
-        if (outputText.isBlank()) {
-            throw new IllegalStateException("OpenAI coach response did not include structured text");
-        }
-
-        return outputText;
+        return GeminiStructuredOutputSupport.extractStructuredOutputText(objectMapper, body);
     }
 
     private String parseSlotTranslationResponse(String body) throws IOException {

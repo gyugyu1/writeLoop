@@ -22,11 +22,11 @@ public class CoachEvaluationService {
     private static final int MAX_LIMIT = 100;
 
     private final CoachInteractionRepository coachInteractionRepository;
-    private final OpenAiCoachEvaluationClient openAiCoachEvaluationClient;
+    private final LlmCoachEvaluationClient llmCoachEvaluationClient;
 
     public AdminCoachEvaluationSummaryDto getSummary() {
         return new AdminCoachEvaluationSummaryDto(
-                openAiCoachEvaluationClient.isConfigured(),
+                llmCoachEvaluationClient.isConfigured(),
                 coachInteractionRepository.countByEvaluationStatus(CoachEvaluationStatus.NOT_EVALUATED),
                 coachInteractionRepository.countByEvaluationStatus(CoachEvaluationStatus.IN_REVIEW),
                 coachInteractionRepository.countByEvaluationStatus(CoachEvaluationStatus.APPROPRIATE),
@@ -36,8 +36,8 @@ public class CoachEvaluationService {
     }
 
     public AdminCoachEvaluationRunResponseDto evaluatePendingInteractions(Integer requestedLimit) {
-        if (!openAiCoachEvaluationClient.isConfigured()) {
-            throw new IllegalStateException("OpenAI coach evaluator is not configured");
+        if (!llmCoachEvaluationClient.isConfigured()) {
+            throw new IllegalStateException("LLM coach evaluator is not configured");
         }
 
         int limit = normalizeLimit(requestedLimit);
@@ -57,22 +57,22 @@ public class CoachEvaluationService {
                     null,
                     null,
                     "평가 중입니다.",
-                    openAiCoachEvaluationClient.configuredModel(),
+                    llmCoachEvaluationClient.configuredModel(),
                     null,
                     null
             );
             coachInteractionRepository.save(interaction);
 
-            OpenAiCoachEvaluationClient.CoachEvaluationResult evaluationResult;
+            LlmCoachEvaluationClient.CoachEvaluationResult evaluationResult;
             try {
-                evaluationResult = openAiCoachEvaluationClient.evaluate(interaction);
+                evaluationResult = llmCoachEvaluationClient.evaluate(interaction);
             } catch (RuntimeException exception) {
                 interaction.updateEvaluation(
                         CoachEvaluationStatus.NEEDS_REVIEW,
                         null,
                         "INSUFFICIENT_CONTEXT",
-                        "OpenAI 평가 호출에 실패해 수동 검토가 필요합니다.",
-                        openAiCoachEvaluationClient.configuredModel(),
+                        "LLM 평가 호출이 실패해서 수동 검토가 필요합니다.",
+                        llmCoachEvaluationClient.configuredModel(),
                         buildFailurePayload(exception),
                         Instant.now()
                 );
@@ -87,7 +87,7 @@ public class CoachEvaluationService {
                     evaluationResult.score(),
                     evaluationResult.verdict(),
                     evaluationResult.summary(),
-                    openAiCoachEvaluationClient.configuredModel(),
+                    llmCoachEvaluationClient.configuredModel(),
                     evaluationResult.payloadJson(),
                     Instant.now()
             );
@@ -107,7 +107,7 @@ public class CoachEvaluationService {
                 appropriateCount,
                 inappropriateCount,
                 needsReviewCount,
-                openAiCoachEvaluationClient.configuredModel(),
+                llmCoachEvaluationClient.configuredModel(),
                 items
         );
     }

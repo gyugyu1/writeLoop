@@ -13,7 +13,7 @@ class FeedbackServiceGuidanceTextTest {
     void buildReadableHintRefinementGuidance_returns_clean_korean_text() {
         FeedbackService feedbackService = new FeedbackService(
                 mock(PromptService.class),
-                mock(OpenAiFeedbackClient.class),
+                mock(LlmFeedbackClient.class),
                 mock(com.writeloop.persistence.AnswerSessionRepository.class),
                 mock(com.writeloop.persistence.AnswerAttemptRepository.class),
                 new ObjectMapper()
@@ -32,7 +32,7 @@ class FeedbackServiceGuidanceTextTest {
     void buildReadableRecommendationGuidance_returns_clean_default_guidance() {
         FeedbackService feedbackService = new FeedbackService(
                 mock(PromptService.class),
-                mock(OpenAiFeedbackClient.class),
+                mock(LlmFeedbackClient.class),
                 mock(com.writeloop.persistence.AnswerSessionRepository.class),
                 mock(com.writeloop.persistence.AnswerAttemptRepository.class),
                 new ObjectMapper()
@@ -51,7 +51,7 @@ class FeedbackServiceGuidanceTextTest {
     void cleanUsedExpressionUsageTip_returns_clean_korean_text() {
         FeedbackService feedbackService = new FeedbackService(
                 mock(PromptService.class),
-                mock(OpenAiFeedbackClient.class),
+                mock(LlmFeedbackClient.class),
                 mock(com.writeloop.persistence.AnswerSessionRepository.class),
                 mock(com.writeloop.persistence.AnswerAttemptRepository.class),
                 new ObjectMapper()

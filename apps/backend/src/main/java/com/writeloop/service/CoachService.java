@@ -138,7 +138,7 @@ public class CoachService {
     );
 
     private final PromptService promptService;
-    private final OpenAiCoachClient openAiCoachClient;
+    private final LlmCoachClient llmCoachClient;
     private final AnswerAttemptRepository answerAttemptRepository;
     private final CoachInteractionRepository coachInteractionRepository;
     private final ObjectMapper objectMapper;
@@ -181,10 +181,10 @@ public class CoachService {
                         enrichmentResult.usedSlotTranslation()
                                 ? CoachResponseSource.DETERMINISTIC_WITH_SLOT_TRANSLATION
                                 : CoachResponseSource.DETERMINISTIC,
-                        enrichmentResult.usedSlotTranslation() ? openAiCoachClient.configuredModel() : null
+                        enrichmentResult.usedSlotTranslation() ? llmCoachClient.configuredModel() : null
                 );
             } else {
-                CoachHelpBuildResult openAiResult = tryOpenAiHelp(
+                CoachHelpBuildResult llmResult = tryLlmHelp(
                         prompt,
                         userQuestion,
                         hints,
@@ -192,14 +192,14 @@ public class CoachService {
                         queryMode,
                         effectiveLookupSpec
                 );
-                if (openAiResult != null) {
+                if (llmResult != null) {
                     buildResult = hybridSupportRequest
-                            ? withHybridSupport(prompt, userQuestion, hints, intentCategories, openAiResult)
-                            : openAiResult;
+                            ? withHybridSupport(prompt, userQuestion, hints, intentCategories, llmResult)
+                            : llmResult;
                 } else {
                     CoachHelpBuildResult downgradedSupportResult =
                             shouldDowngradeMeaningLookupToWritingSupport(effectiveLookupSpec)
-                                    ? tryOpenAiHelp(
+                                    ? tryLlmHelp(
                                     prompt,
                                     userQuestion,
                                     hints,
@@ -230,7 +230,7 @@ public class CoachService {
                 }
             }
         } else if (ideaSupport) {
-            CoachHelpBuildResult openAiResult = tryOpenAiHelp(
+            CoachHelpBuildResult llmResult = tryLlmHelp(
                     prompt,
                     userQuestion,
                     hints,
@@ -238,8 +238,8 @@ public class CoachService {
                     queryMode,
                     null
             );
-            if (openAiResult != null) {
-                buildResult = openAiResult;
+            if (llmResult != null) {
+                buildResult = llmResult;
             } else {
                 List<CoachExpressionDto> expressions = buildIdeaSupportExpressions(prompt, userQuestion, intentCategories);
                 buildResult = new CoachHelpBuildResult(
@@ -250,7 +250,7 @@ public class CoachService {
                 );
             }
         } else {
-            CoachHelpBuildResult openAiResult = tryOpenAiHelp(
+            CoachHelpBuildResult llmResult = tryLlmHelp(
                     prompt,
                     userQuestion,
                     hints,
@@ -258,8 +258,8 @@ public class CoachService {
                     queryMode,
                     null
             );
-            if (openAiResult != null) {
-                buildResult = openAiResult;
+            if (llmResult != null) {
+                buildResult = llmResult;
             } else {
                 List<CoachExpressionDto> expressions = buildLocalExpressions(prompt, userQuestion, hints, intentCategories);
                 buildResult = new CoachHelpBuildResult(
@@ -292,7 +292,7 @@ public class CoachService {
         );
     }
 
-    private CoachHelpBuildResult tryOpenAiHelp(
+    private CoachHelpBuildResult tryLlmHelp(
             PromptDto prompt,
             String userQuestion,
             List<PromptHintDto> hints,
@@ -300,12 +300,12 @@ public class CoachService {
             CoachQueryAnalyzer.QueryMode queryMode,
             CoachQueryAnalyzer.MeaningLookupSpec lookupSpec
     ) {
-        if (!openAiCoachClient.isConfigured()) {
+        if (!llmCoachClient.isConfigured()) {
             return null;
         }
 
         try {
-            CoachHelpResponseDto response = openAiCoachClient.help(prompt, userQuestion, hints);
+            CoachHelpResponseDto response = llmCoachClient.help(prompt, userQuestion, hints);
             List<CoachExpressionDto> normalized = normalizeHelpExpressions(response.expressions());
             List<CoachExpressionDto> prioritized = switch (queryMode) {
                 case MEANING_LOOKUP, IDEA_SUPPORT -> normalized;
@@ -333,7 +333,7 @@ public class CoachService {
                     coachReply,
                     limitExpressions(prioritized),
                     CoachResponseSource.OPENAI,
-                    openAiCoachClient.configuredModel()
+                        llmCoachClient.configuredModel()
             );
         } catch (RuntimeException ignored) {
             return null;
@@ -656,11 +656,11 @@ public class CoachService {
                 continue;
             }
 
-            if (!openAiCoachClient.isConfigured()) {
+            if (!llmCoachClient.isConfigured()) {
                 continue;
             }
 
-            String translated = openAiCoachClient.translateMeaningSlot(
+            String translated = llmCoachClient.translateMeaningSlot(
                     prompt,
                     userQuestion,
                     lookupSpec.frame().family(),
@@ -1080,11 +1080,11 @@ public class CoachService {
             List<String> preservedSegments,
             Set<String> excludedExpressions
     ) {
-        if (!openAiCoachClient.isConfigured()) {
+        if (!llmCoachClient.isConfigured()) {
             return List.of();
         }
 
-        List<CoachSelfDiscoveredCandidateDto> candidates = openAiCoachClient.extractSelfDiscoveredExpressions(
+        List<CoachSelfDiscoveredCandidateDto> candidates = llmCoachClient.extractSelfDiscoveredExpressions(
                 prompt,
                 answer,
                 recommendedExpressions,

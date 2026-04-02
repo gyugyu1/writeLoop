@@ -24,12 +24,45 @@ class SectionPolicySelectorTest {
     }
 
     @Test
+    void select_keeps_model_answer_for_finishable_short_but_valid() {
+        SectionPolicy policy = selector.select(profileWithBandAndFinishable(AnswerBand.SHORT_BUT_VALID, true), 1);
+
+        assertThat(policy.showModelAnswer()).isTrue();
+        assertThat(policy.modelAnswerMode()).isEqualTo(ModelAnswerMode.ONE_STEP_UP);
+    }
+
+    @Test
+    void select_keeps_model_answer_for_finishable_content_thin() {
+        SectionPolicy policy = selector.select(profileWithBandAndFinishable(AnswerBand.CONTENT_THIN, true), 1);
+
+        assertThat(policy.showModelAnswer()).isTrue();
+        assertThat(policy.modelAnswerMode()).isEqualTo(ModelAnswerMode.ONE_STEP_UP);
+    }
+
+    @Test
+    void select_uses_optional_model_answer_for_natural_but_basic() {
+        SectionPolicy policy = selector.select(profileWithBandAndFinishable(AnswerBand.NATURAL_BUT_BASIC, true), 1);
+
+        assertThat(policy.showModelAnswer()).isTrue();
+        assertThat(policy.modelAnswerMode()).isEqualTo(ModelAnswerMode.OPTIONAL_IF_ALREADY_GOOD);
+    }
+
+    @Test
+    void select_prioritizes_rewrite_guide_over_model_answer_for_too_short_fragment() {
+        SectionPolicy policy = selector.select(profileWithBand(AnswerBand.TOO_SHORT_FRAGMENT), 1);
+
+        assertThat(policy.showRewriteGuide()).isTrue();
+        assertThat(policy.showModelAnswer()).isFalse();
+    }
+
+    @Test
     void select_applies_attempt_overlay_for_second_try() {
         SectionPolicy policy = selector.select(profileWithBand(AnswerBand.NATURAL_BUT_BASIC), 2);
 
         assertThat(policy.showGrammar()).isFalse();
         assertThat(policy.maxStrengthCount()).isEqualTo(1);
         assertThat(policy.maxModelAnswerSentences()).isEqualTo(1);
+        assertThat(policy.modelAnswerMode()).isEqualTo(ModelAnswerMode.OPTIONAL_IF_ALREADY_GOOD);
         assertThat(policy.attemptOverlayPolicy().progressAwareStrengths()).isTrue();
         assertThat(policy.attemptOverlayPolicy().suppressResolvedGrammar()).isTrue();
         assertThat(policy.attemptOverlayPolicy().emphasizeSingleRemainingIssue()).isTrue();
@@ -46,8 +79,12 @@ class SectionPolicySelectorTest {
     }
 
     private AnswerProfile profileWithBand(AnswerBand answerBand) {
+        return profileWithBandAndFinishable(answerBand, false);
+    }
+
+    private AnswerProfile profileWithBandAndFinishable(AnswerBand answerBand, boolean finishable) {
         return new AnswerProfile(
-                new TaskProfile(true, TaskCompletion.FULL, answerBand),
+                new TaskProfile(true, TaskCompletion.FULL, answerBand, finishable),
                 new GrammarProfile(GrammarSeverity.NONE, java.util.List.of(), null),
                 new ContentProfile(ContentLevel.MEDIUM, new ContentSignals(true, true, false, false, true, false), java.util.List.of()),
                 new RewriteProfile("IMPROVE_NATURALNESS", null, new RewriteTarget("IMPROVE_NATURALNESS", null, 1), null)

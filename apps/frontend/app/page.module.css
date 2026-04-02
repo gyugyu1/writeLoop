@@ -3176,6 +3176,271 @@
   line-height: 1.65;
 }
 
+.feedbackFocusCard {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border-color: rgba(var(--warm-accent-rgb), 0.2);
+  background: rgba(var(--warm-accent-light-rgb), 0.14);
+}
+
+.feedbackFocusCardGoodEnough {
+  gap: 12px;
+  padding: 24px 22px;
+  background: rgba(var(--warm-accent-light-rgb), 0.2);
+}
+
+.feedbackFocusEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: #9f541a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.feedbackFocusTitleHero {
+  color: #9f541a;
+  font-size: 1.52rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.feedbackFocusHeadline {
+  color: #10244c;
+  font-size: 1.12rem;
+  line-height: 1.5;
+}
+
+.feedbackFocusHeadlineLarge {
+  font-size: 1.42rem;
+  line-height: 1.35;
+}
+
+.feedbackFocusSupport {
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.feedbackChipSection {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.feedbackChipLabel {
+  color: #7b4a1e;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.feedbackChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feedbackChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.08);
+  color: #7d4316;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.primaryFixCard {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(16, 36, 76, 0.03);
+}
+
+.primaryFixRow {
+  display: grid;
+  gap: 6px;
+}
+
+.primaryFixLabel {
+  color: #7b4a1e;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.primaryFixDiffText {
+  white-space: pre-wrap;
+  word-break: break-word;
+  line-height: 1.8;
+}
+
+.primaryFixRemoved {
+  color: #9b1c1c;
+  background: rgba(233, 95, 95, 0.12);
+  border-radius: 6px;
+  padding: 1px 2px;
+}
+
+.primaryFixAdded {
+  color: #0f5c38;
+  background: rgba(57, 181, 74, 0.12);
+  border-radius: 6px;
+  padding: 1px 2px;
+}
+
+.feedbackMicroTip {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(16, 36, 76, 0.025);
+}
+
+.feedbackMicroTipHeader {
+  display: flex;
+  align-items: center;
+}
+
+.feedbackMicroTipHeader span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.08);
+  color: #7d4316;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.feedbackMicroTipPair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.feedbackMicroTipOriginal,
+.feedbackMicroTipRevised {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.feedbackMicroTipOriginal {
+  color: #9b1c1c;
+  background: rgba(233, 95, 95, 0.1);
+}
+
+.feedbackMicroTipRevised {
+  color: #0f5c38;
+  background: rgba(57, 181, 74, 0.12);
+}
+
+.feedbackMicroTipArrow {
+  color: #5b6887;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.feedbackMicroTipReason {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.rewriteStarterCard {
+  display: grid;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(36, 87, 245, 0.12);
+  background: #f3f7ff;
+}
+
+.rewriteStarterCardOptional {
+  border-color: rgba(var(--warm-accent-rgb), 0.16);
+  background: rgba(var(--warm-accent-light-rgb), 0.16);
+}
+
+.rewriteStarterText {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #10244c;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.75;
+}
+
+.rewriteStarterInstruction {
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.rewriteStarterActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.smallActionButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: #9f541a;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.smallActionButton:hover {
+  background: rgba(var(--warm-accent-rgb), 0.18);
+}
+
+.expressionDrawer {
+  display: grid;
+  gap: 12px;
+}
+
+.expressionDrawerSummary {
+  cursor: pointer;
+  list-style: none;
+  color: #10244c;
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.expressionDrawerSummary::-webkit-details-marker {
+  display: none;
+}
+
 .list {
   display: grid;
   gap: 10px;

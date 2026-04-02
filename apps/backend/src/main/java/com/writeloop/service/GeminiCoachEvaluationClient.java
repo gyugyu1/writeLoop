@@ -5,12 +5,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.persistence.CoachEvaluationStatus;
 import com.writeloop.persistence.CoachInteractionEntity;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -19,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 @Service
-public class OpenAiCoachEvaluationClient {
+public class GeminiCoachEvaluationClient {
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -27,11 +24,11 @@ public class OpenAiCoachEvaluationClient {
     private final String model;
     private final String apiUrl;
 
-    public OpenAiCoachEvaluationClient(
+    public GeminiCoachEvaluationClient(
             ObjectMapper objectMapper,
-            @Value("${openai.api-key:}") String apiKey,
-            @Value("${openai.model:gpt-4o}") String model,
-            @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl
+            @Value("${gemini.api-key:}") String apiKey,
+            @Value("${gemini.model:gemini-2.5-flash}") String model,
+            @Value("${gemini.api-url:https://generativelanguage.googleapis.com/v1beta/models}") String apiUrl
     ) {
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
@@ -52,17 +49,16 @@ public class OpenAiCoachEvaluationClient {
 
     public CoachEvaluationResult evaluate(CoachInteractionEntity interaction) {
         try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl))
-                    .timeout(Duration.ofSeconds(60))
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                    .POST(HttpRequest.BodyPublishers.ofString(buildRequestBody(interaction)))
-                    .build();
+            HttpRequest request = GeminiStructuredOutputSupport.buildGenerateContentRequest(
+                    apiUrl,
+                    apiKey,
+                    model,
+                    buildRequestBody(interaction)
+            );
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() >= 400) {
-                throw new IllegalStateException("OpenAI coach evaluation request failed with status " + response.statusCode());
+                throw new IllegalStateException("Gemini coach evaluation request failed with status " + response.statusCode());
             }
 
             return parseResponse(response.body());
@@ -70,7 +66,7 @@ public class OpenAiCoachEvaluationClient {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            throw new IllegalStateException("OpenAI coach evaluation request failed", exception);
+            throw new IllegalStateException("Gemini coach evaluation request failed", exception);
         }
     }
 
@@ -106,20 +102,11 @@ public class OpenAiCoachEvaluationClient {
                 "required", List.of("evaluationStatus", "score", "verdict", "summary", "issues", "improvementAction")
         );
 
-        Map<String, Object> payload = Map.of(
-                "model", model,
-                "input", buildPrompt(interaction),
-                "text", Map.of(
-                        "format", Map.of(
-                                "type", "json_schema",
-                                "name", "coach_answer_evaluation",
-                                "schema", schema,
-                                "strict", true
-                        )
-                )
+        return GeminiStructuredOutputSupport.buildGenerateContentRequestBody(
+                objectMapper,
+                buildPrompt(interaction),
+                schema
         );
-
-        return objectMapper.writeValueAsString(payload);
     }
 
     private String buildPrompt(CoachInteractionEntity interaction) {
@@ -176,22 +163,7 @@ public class OpenAiCoachEvaluationClient {
     }
 
     private CoachEvaluationResult parseResponse(String body) throws IOException {
-        JsonNode root = objectMapper.readTree(body);
-        String outputText = root.path("output_text").asText("");
-
-        if (outputText.isBlank()) {
-            JsonNode output = root.path("output");
-            if (output.isArray() && !output.isEmpty()) {
-                JsonNode content = output.get(0).path("content");
-                if (content.isArray() && !content.isEmpty()) {
-                    outputText = content.get(0).path("text").asText("");
-                }
-            }
-        }
-
-        if (outputText.isBlank()) {
-            throw new IllegalStateException("OpenAI coach evaluation response did not include structured text");
-        }
+        String outputText = GeminiStructuredOutputSupport.extractStructuredOutputText(objectMapper, body);
 
         JsonNode node = objectMapper.readTree(outputText);
         return new CoachEvaluationResult(

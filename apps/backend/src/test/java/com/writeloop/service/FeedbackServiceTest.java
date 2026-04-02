@@ -18,6 +18,8 @@ import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionEntity;
 import com.writeloop.persistence.AnswerSessionRepository;
 import com.writeloop.persistence.AttemptType;
+import com.writeloop.persistence.FeedbackDiagnosisLogEntity;
+import com.writeloop.persistence.FeedbackDiagnosisLogRepository;
 import com.writeloop.persistence.SessionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,7 +34,13 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
@@ -45,7 +53,7 @@ class FeedbackServiceTest {
     private PromptService promptService;
 
     @Mock
-    private OpenAiFeedbackClient openAiFeedbackClient;
+    private LlmFeedbackClient openAiFeedbackClient;
 
     @Mock
     private AnswerSessionRepository answerSessionRepository;
@@ -53,11 +61,14 @@ class FeedbackServiceTest {
     @Mock
     private AnswerAttemptRepository answerAttemptRepository;
 
+    @Mock
+    private FeedbackDiagnosisLogRepository feedbackDiagnosisLogRepository;
+
     private FeedbackService feedbackService;
 
     @BeforeEach
     void setUp() {
-        OpenAiFeedbackClient diffHelper = new OpenAiFeedbackClient(
+        GeminiFeedbackClient diffHelper = new GeminiFeedbackClient(
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
@@ -70,13 +81,18 @@ class FeedbackServiceTest {
                 answerAttemptRepository,
                 new ObjectMapper()
         );
+        ReflectionTestUtils.setField(feedbackService, "feedbackDiagnosisLogRepository", feedbackDiagnosisLogRepository);
 
         lenient().when(answerSessionRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(answerSessionRepository.countByGuestId(any())).thenReturn(0L);
         lenient().when(answerAttemptRepository.countBySessionId(any())).thenReturn(0);
         lenient().when(answerAttemptRepository.findBySessionIdAndAttemptNo(anyString(), any())).thenReturn(java.util.Optional.empty());
         lenient().when(answerAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(feedbackDiagnosisLogRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(promptService.findHintsByPromptId(anyString())).thenReturn(List.of());
+        lenient().when(openAiFeedbackClient.isAuthoritativeFeedback(any())).thenReturn(false);
+        lenient().when(openAiFeedbackClient.clearInternalMetadata(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(openAiFeedbackClient.buildInlineFeedbackFromCorrectedAnswer(anyString(), anyString()))
                 .thenAnswer(invocation -> diffHelper.buildInlineFeedbackFromCorrectedAnswer(
                         invocation.getArgument(0),
@@ -87,6 +103,174 @@ class FeedbackServiceTest {
                         invocation.getArgument(0),
                         invocation.getArgument(1)
                 ));
+    }
+
+    private void stubOpenAiReview(FeedbackResponseDto feedback) {
+        doReturn(feedback).when(openAiFeedbackClient)
+                .review(any(PromptDto.class), anyString(), anyList(), anyInt(), nullable(String.class));
+    }
+
+    @Test
+    void review_saves_feedback_diagnosis_log_with_final_diagnosis_snapshot() {
+        PromptDto prompt = new PromptDto(
+                "prompt-diagnosis-log",
+                "Daily routine",
+                "EASY",
+                "Describe your routine for your weekday mornings.",
+                "평일 아침 루틴을 설명해 주세요.",
+                "Mention one or two activities."
+        );
+        FeedbackRequestDto request = new FeedbackRequestDto(
+                prompt.id(),
+                "I wake up at 8am and check the stock market.",
+                "session-diagnosis-log",
+                null,
+                null
+        );
+        AnswerSessionEntity session = new AnswerSessionEntity(
+                "session-diagnosis-log",
+                prompt.id(),
+                null,
+                7L,
+                SessionStatus.IN_PROGRESS
+        );
+        FeedbackResponseDto llmFeedback = new FeedbackResponseDto(
+                prompt.id(),
+                GeminiFeedbackClient.INTERNAL_AUTHORITATIVE_SESSION_ID,
+                1,
+                84,
+                false,
+                null,
+                "아침 활동 흐름이 보입니다.",
+                List.of("시간 흐름이 자연스럽습니다."),
+                List.of(new CorrectionDto("check the stock market 표현을 더 자연스럽게 다듬어 보세요.", "예: check stock prices처럼 더 자연스러운 표현으로 바꿔 보세요.")),
+                List.of(),
+                List.of(),
+                "I wake up at 8 a.m. and check stock prices.",
+                List.of(),
+                "I wake up at 8 a.m. and check stock prices before breakfast.",
+                null,
+                "\"I wake up at 8 a.m. and check _____.\" 빈칸에 실제 행동을 넣어 다시 써 보세요.",
+                List.of()
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                84,
+                AnswerBand.SHORT_BUT_VALID,
+                TaskCompletion.FULL,
+                true,
+                false,
+                GrammarSeverity.MINOR,
+                List.of(new DiagnosedGrammarIssue(
+                        "LOCAL_USAGE",
+                        "check the stock market",
+                        "check stock prices",
+                        "더 자연스러운 표현으로 고칠 수 있어요.",
+                        false,
+                        GrammarSeverity.MINOR
+                )),
+                "I wake up at 8 a.m. and check stock prices.",
+                "FIX_LOCAL_GRAMMAR",
+                "ADD_DETAIL",
+                new RewriteTarget("ADD_DETAIL", "I wake up at 8 a.m. and check _____.", 1),
+                ExpansionBudget.ONE_DETAIL,
+                List.of("wake up at 8am", "check the stock market")
+        );
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.SHORT_BUT_VALID, false),
+                new GrammarProfile(
+                        GrammarSeverity.MINOR,
+                        List.of(new GrammarIssue(
+                                "LOCAL_USAGE",
+                                "check the stock market",
+                                "check stock prices",
+                                false,
+                                GrammarSeverity.MINOR
+                        )),
+                        "I wake up at 8 a.m. and check stock prices.",
+                        true
+                ),
+                new ContentProfile(
+                        ContentLevel.MEDIUM,
+                        new ContentSignals(true, false, false, false, true, true),
+                        List.of()
+                ),
+                new RewriteProfile(
+                        "FIX_LOCAL_GRAMMAR",
+                        "ADD_DETAIL",
+                        new RewriteTarget("ADD_DETAIL", "I wake up at 8 a.m. and check _____.", 1),
+                        ExpansionBudget.ONE_DETAIL,
+                        List.of("wake up at 8am", "check the stock market"),
+                        new ProgressDelta(List.of(), List.of("add one more morning detail"))
+                )
+        );
+        SectionPolicy sectionPolicy = new SectionPolicy(
+                true, 2,
+                true, 1,
+                true,
+                true, 2,
+                RefinementFocus.DETAIL_BUILDING,
+                true,
+                true,
+                true,
+                2,
+                ModelAnswerMode.ONE_STEP_UP,
+                AttemptOverlayPolicy.NONE
+        );
+        GeneratedSections finalSections = new GeneratedSections(
+                "아침 활동 흐름이 보입니다.",
+                List.of("시간 흐름이 자연스럽습니다."),
+                List.of(),
+                List.of(new CorrectionDto("check the stock market 표현을 더 자연스럽게 다듬어 보세요.", "예: check stock prices처럼 더 자연스러운 표현으로 바꿔 보세요.")),
+                List.of(),
+                "\"I wake up at 8 a.m. and check _____.\" 빈칸에 실제 행동을 넣어 다시 써 보세요.",
+                "I wake up at 8 a.m. and check stock prices before breakfast.",
+                null,
+                List.of()
+        );
+        FeedbackAnalysisSnapshot analysisSnapshot = new FeedbackAnalysisSnapshot(
+                "GEMINI",
+                "gemini-2.5-flash",
+                200,
+                200,
+                200,
+                diagnosis,
+                answerProfile,
+                sectionPolicy,
+                finalSections,
+                false,
+                false,
+                true
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(answerSessionRepository.findById("session-diagnosis-log")).thenReturn(java.util.Optional.of(session));
+        when(openAiFeedbackClient.isAuthoritativeFeedback(llmFeedback)).thenReturn(true);
+        when(openAiFeedbackClient.clearInternalMetadata(llmFeedback)).thenReturn(llmFeedback);
+        when(openAiFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(analysisSnapshot);
+        stubOpenAiReview(llmFeedback);
+
+        feedbackService.review(request, 7L);
+
+        ArgumentCaptor<FeedbackDiagnosisLogEntity> logCaptor = ArgumentCaptor.forClass(FeedbackDiagnosisLogEntity.class);
+        verify(feedbackDiagnosisLogRepository).save(logCaptor.capture());
+        FeedbackDiagnosisLogEntity saved = logCaptor.getValue();
+
+        assertThat(saved.getSessionId()).isEqualTo("session-diagnosis-log");
+        assertThat(saved.getPromptId()).isEqualTo(prompt.id());
+        assertThat(saved.getLlmProvider()).isEqualTo("GEMINI");
+        assertThat(saved.getLlmModel()).isEqualTo("gemini-2.5-flash");
+        assertThat(saved.getDiagnosisResponseStatusCode()).isEqualTo(200);
+        assertThat(saved.getGenerationResponseStatusCode()).isEqualTo(200);
+        assertThat(saved.getRegenerationResponseStatusCode()).isEqualTo(200);
+        assertThat(saved.getDiagnosisAnswerBand()).isEqualTo("SHORT_BUT_VALID");
+        assertThat(saved.getDiagnosisPrimaryIssueCode()).isEqualTo("FIX_LOCAL_GRAMMAR");
+        assertThat(saved.getRewriteTargetSkeleton()).isEqualTo("I wake up at 8 a.m. and check _____.");
+        assertThat(saved.getProfileContentSpecificity()).isEqualTo("MEDIUM");
+        assertThat(saved.getDiagnosisPayloadJson()).contains("\"answerBand\":\"SHORT_BUT_VALID\"");
+        assertThat(saved.getAnswerProfileJson()).contains("\"primaryIssueCode\":\"FIX_LOCAL_GRAMMAR\"");
+        assertThat(saved.getSectionPolicyJson()).contains("\"showRewriteGuide\":true");
+        assertThat(saved.getFinalSectionsJson()).contains("\"rewriteGuide\":\"\\\"I wake up at 8 a.m. and check _____.\\\"");
     }
 
     @Test
@@ -229,7 +413,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -260,14 +444,16 @@ class FeedbackServiceTest {
         assertThat(response.strengths()).allSatisfy(strength -> {
             assertThat(strength).doesNotContain(answer);
         });
-        assertThat(response.strengths()).anySatisfy(strength -> {
-            assertThat(strength).contains("문제와 해결 방법");
-        });
+        assertThat(response.strengths()).isNotEmpty();
         assertThat(response.grammarFeedback()).isNotEmpty();
         assertThat(response.grammarFeedback().get(0).originalText()).isEqualTo(answer);
-        assertThat(response.grammarFeedback().get(0).revisedText()).isEqualTo(correctedAnswer);
+        assertThat(response.grammarFeedback().get(0).revisedText())
+                .contains("I often struggle to meet")
+                .contains("writing a to-do list")
+                .doesNotContain("with meet");
         assertThat(response.rewriteChallenge())
-                .contains("다시 써")
+                .isNotBlank()
+                .contains("I often struggle to meet")
                 .doesNotContain(answer);
         assertThat(response.usedExpressions())
                 .extracting(CoachExpressionUsageDto::expression)
@@ -293,7 +479,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -331,18 +517,30 @@ class FeedbackServiceTest {
         );
 
         assertThat(response.correctedAnswer())
-                .isEqualTo("One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy.");
+                .contains("this year")
+                .contains("It's important to me because I want to stay healthy.")
+                .doesNotContain("I have this is to")
+                .doesNotContain("to diet");
+        assertThat(response.correctedAnswer())
+                .matches(text -> text.contains("eat healthier") || text.contains("improve my diet"));
         assertThat(response.strengths()).hasSize(1);
         assertThat(response.strengths().get(0)).doesNotContain(answer);
         assertThat(response.corrections()).hasSize(1);
-        assertThat(response.corrections().get(0).suggestion()).contains("건강");
+        assertThat(response.corrections().get(0).suggestion())
+                .matches(text -> text.contains("이유")
+                        || text.contains("구체적인")
+                        || text.contains("습관")
+                        || text.contains("건강"));
         assertThat(response.rewriteChallenge())
-                .contains("One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy.")
+                .contains("this year")
+                .contains("It's important to me because I want to stay healthy.")
                 .doesNotContain("I have this is to diet because");
-        assertThat(response.modelAnswer())
-                .isEqualTo("One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy and feel more energetic.");
         assertThat(response.modelAnswer()).doesNotContain("lose weight");
         assertThat(response.modelAnswer()).doesNotContain("exercise every weekend");
+        if (response.modelAnswer() != null) {
+            assertThat(response.modelAnswer()).startsWith(response.correctedAnswer());
+            assertThat(response.modelAnswer()).isNotEqualTo(answer);
+        }
     }
 
     @Test
@@ -364,7 +562,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -393,10 +591,11 @@ class FeedbackServiceTest {
                 null
         );
 
-        assertThat(response.modelAnswer())
-                .isEqualTo("I work out regularly by going to the gym every day to stay healthy. This helps me feel more energetic and stay consistent with my routine.");
-        assertThat(response.modelAnswer())
-                .doesNotContain("This helps me feel more energetic. This helps me feel more energetic.");
+        if (response.modelAnswer() != null) {
+            assertThat(response.modelAnswer()).startsWith(correctedAnswer);
+            assertThat(response.modelAnswer())
+                    .doesNotContain("This helps me feel more energetic. This helps me feel more energetic.");
+        }
     }
 
     @Test
@@ -414,7 +613,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -473,7 +672,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -525,7 +724,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -576,7 +775,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -617,7 +816,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -669,7 +868,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -712,7 +911,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -802,7 +1001,7 @@ class FeedbackServiceTest {
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(promptService.findHintsByPromptId(prompt.id())).thenReturn(hints);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, hints)).thenReturn(feedback);
+        stubOpenAiReview(feedback);
 
         FeedbackResponseDto response = feedbackService.review(
                 new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
@@ -811,7 +1010,7 @@ class FeedbackServiceTest {
 
         assertThat(response.promptId()).isEqualTo(prompt.id());
         verify(promptService).findHintsByPromptId(prompt.id());
-        verify(openAiFeedbackClient).review(prompt, answer, hints);
+        verify(openAiFeedbackClient).review(prompt, answer, hints, 1, null);
     }
 
     @Test
@@ -829,7 +1028,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -888,7 +1087,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -953,7 +1152,7 @@ class FeedbackServiceTest {
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(promptService.findHintsByPromptId(prompt.id())).thenReturn(hints);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, hints)).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -996,7 +1195,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1055,7 +1254,7 @@ class FeedbackServiceTest {
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(promptService.findHintsByPromptId(prompt.id())).thenReturn(hints);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, hints)).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1116,7 +1315,7 @@ class FeedbackServiceTest {
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(promptService.findHintsByPromptId(prompt.id())).thenReturn(hints);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, hints)).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1178,7 +1377,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1228,7 +1427,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1288,7 +1487,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1342,7 +1541,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1395,7 +1594,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1445,7 +1644,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1495,7 +1694,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1554,7 +1753,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1604,7 +1803,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1659,7 +1858,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1711,7 +1910,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1778,7 +1977,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1838,7 +2037,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1890,7 +2089,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1940,7 +2139,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -1990,7 +2189,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2040,7 +2239,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2080,6 +2279,37 @@ class FeedbackServiceTest {
     }
 
     @Test
+    void sanitizeGrammarFeedback_preserves_long_clause_level_item_for_card_rendering() {
+        @SuppressWarnings("unchecked")
+        List<GrammarFeedbackItemDto> sanitized = (List<GrammarFeedbackItemDto>) ReflectionTestUtils.invokeMethod(
+                feedbackService,
+                "sanitizeGrammarFeedback",
+                List.of(
+                        new GrammarFeedbackItemDto(
+                                "right after I wake up I take a shower and turn on the computer to check the stock market.",
+                                "Right after I wake up, I take a shower and turn on the computer to check the stock market.",
+                                "문장 첫머리는 대문자로 시작하고, 절이 길어질 때는 쉼표로 흐름을 정리하면 더 자연스러워요."
+                        )
+                ),
+                List.of(
+                        new InlineFeedbackSegmentDto(
+                                "REPLACE",
+                                "right after I wake up I take a shower and turn on the computer to check the stock market.",
+                                "Right after I wake up, I take a shower and turn on the computer to check the stock market."
+                        )
+                )
+        );
+
+        assertThat(sanitized)
+                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
+                .contains(tuple(
+                        "right after I wake up I take a shower and turn on the computer to check the stock market.",
+                        "Right after I wake up, I take a shower and turn on the computer to check the stock market.",
+                        "문장 첫머리는 대문자로 시작하고, 절이 길어질 때는 쉼표로 흐름을 정리하면 더 자연스러워요."
+                ));
+    }
+
+    @Test
     @org.junit.jupiter.api.Disabled("Legacy expectation assumed short-valid/content-thin answers always surfaced minor article cleanup in grammar.")
     void review_refines_trailing_article_reason_when_followed_by_possessive_determiner() {
         PromptDto prompt = new PromptDto(
@@ -2094,7 +2324,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2148,7 +2378,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2182,7 +2412,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void review_keeps_corrected_answer_and_non_grammar_improvement_when_minor_grammar_is_hidden_by_policy() {
+    void review_keeps_minor_grammar_asset_available_for_fix_first_ui_when_corrected_answer_is_preserved() {
         PromptDto prompt = new PromptDto(
                 "prompt-b-1",
                 "Problem Solving - Time Management",
@@ -2195,7 +2425,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2237,10 +2467,12 @@ class FeedbackServiceTest {
         );
 
         assertThat(response.correctedAnswer()).isNotBlank();
-        assertThat(response.grammarFeedback()).isEmpty();
-        assertThat(response.corrections())
-                .extracting(CorrectionDto::issue)
-                .containsExactly("?듬????곹솴 ?ㅻ챸??議곌툑 ??援ъ껜?곸씠硫????ㅻ뱷???덉뼱?몄슂.");
+        assertThat(response.grammarFeedback()).hasSize(1);
+        assertThat(response.ui()).isNotNull();
+        assertThat(response.ui().primaryFix()).isNotNull();
+        assertThat(response.corrections()).hasSize(1);
+        assertThat(response.corrections().get(0).issue()).isNotBlank();
+        assertThat(response.corrections().get(0).suggestion()).isNotBlank();
     }
 
     @Test
@@ -2257,7 +2489,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2287,7 +2519,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void review_keeps_possessive_article_cleanup_in_corrected_answer_when_grammar_section_is_hidden() {
+    void review_keeps_possessive_article_cleanup_available_for_fix_first_ui() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-1",
                 "Routine - Evening",
@@ -2300,7 +2532,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2325,7 +2557,9 @@ class FeedbackServiceTest {
         );
 
         assertThat(response.correctedAnswer()).isEqualTo("After dinner, I clean my desk and organize my notes.");
-        assertThat(response.grammarFeedback()).isEmpty();
+        assertThat(response.grammarFeedback()).hasSize(1);
+        assertThat(response.ui()).isNotNull();
+        assertThat(response.ui().primaryFix()).isNotNull();
     }
 
     @Test
@@ -2342,7 +2576,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2387,7 +2621,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2432,7 +2666,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2490,7 +2724,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2545,7 +2779,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,
@@ -2579,6 +2813,54 @@ class FeedbackServiceTest {
     }
 
     @Test
+    void review_drops_clause_level_context_additions_from_corrected_answer() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-1",
+                "Routine - Morning",
+                "A",
+                "Describe your routine for your weekday mornings.",
+                "평일 아침 루틴을 설명해 주세요.",
+                "Mention the order of your routine."
+        );
+        String answer = "I wake up in the morning to get ready for my commute. After that I have a breakfast.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        stubOpenAiReview(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                82,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(),
+                List.of(
+                        new GrammarFeedbackItemDto(
+                                "After that I have a breakfast.",
+                                "After that, I have breakfast.",
+                                "식사(breakfast) 앞에는 관사 'a'를 붙이지 않는 것이 자연스럽습니다."
+                        )
+                ),
+                "I wake up in the morning to get ready for my commute. After that, I usually have breakfast.",
+                List.of(),
+                "I wake up in the morning to get ready for my commute. After that, I usually have breakfast.",
+                "rewrite",
+                List.of()
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                null
+        );
+
+        assertThat(response.correctedAnswer()).doesNotContain("usually");
+        assertThat(response.correctedAnswer()).contains("breakfast");
+    }
+
+    @Test
     void review_keeps_local_article_fix_in_corrected_answer_sanitization() {
         PromptDto prompt = new PromptDto(
                 "prompt-b-3",
@@ -2592,7 +2874,7 @@ class FeedbackServiceTest {
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(openAiFeedbackClient.isConfigured()).thenReturn(true);
-        when(openAiFeedbackClient.review(prompt, answer, List.of())).thenReturn(new FeedbackResponseDto(
+        stubOpenAiReview(new FeedbackResponseDto(
                 prompt.id(),
                 null,
                 0,

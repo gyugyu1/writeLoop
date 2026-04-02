@@ -51,6 +51,11 @@
   color: #10244c;
 }
 
+.grammarCards {
+  display: grid;
+  gap: 12px;
+}
+
 .cleanGrammarCard {
   display: grid;
   gap: 12px;
@@ -108,49 +113,6 @@
 .reasonItem span {
   color: var(--text-sub);
   line-height: 1.6;
-}
-
-.text {
-  color: #10244c;
-}
-
-.remove {
-  color: #10244c;
-  text-decoration: line-through;
-  text-decoration-color: #cf3243;
-  text-decoration-thickness: 2px;
-  background: rgba(198, 54, 66, 0.08);
-  border-radius: 8px;
-  padding: 1px 3px;
-}
-
-.replace {
-  color: #cf3243;
-  font-weight: 700;
-}
-
-.replaceGroup {
-  display: inline-flex;
-  flex-direction: column;
-  gap: 4px;
-  vertical-align: middle;
-  margin: 0 2px;
-}
-
-.replaceBelow {
-  display: inline-flex;
-  width: fit-content;
-  color: #cf3243;
-  font-weight: 700;
-  line-height: 1.5;
-  background: rgba(207, 50, 67, 0.08);
-  border-radius: 8px;
-  padding: 1px 3px;
-}
-
-.add {
-  color: #1e5fe9;
-  font-weight: 700;
 }
 
 @media (max-width: 900px) {

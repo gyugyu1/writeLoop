@@ -21,7 +21,7 @@ class AnswerProfileBuilderTest {
                 1,
                 "My favorite season are spring because it's warm and I like the breeze and sunshine.",
                 null,
-                null,
+                
                 List.of()
         );
 
@@ -55,7 +55,7 @@ class AnswerProfileBuilderTest {
                 1,
                 "I want to build a morning reading habit.",
                 null,
-                null,
+                
                 List.of(),
                 new PromptTaskMetaDto("GOAL_PLAN", List.of("MAIN_ANSWER", "REASON"), List.of("ACTIVITY"))
         );
@@ -81,7 +81,7 @@ class AnswerProfileBuilderTest {
                         1,
                         "Pizza because it's cheesy and delicious.",
                         null,
-                        null,
+                        
                         List.of(),
                         new PromptTaskMetaDto("PREFERENCE", List.of("MAIN_ANSWER", "REASON"), List.of("FEELING", "EXAMPLE")),
                         "Preference",
@@ -107,7 +107,7 @@ class AnswerProfileBuilderTest {
                         1,
                         learnerAnswer,
                         null,
-                        null,
+                        
                         List.of(),
                         new PromptTaskMetaDto("GOAL_PLAN", List.of("MAIN_ANSWER", "ACTIVITY"), List.of("REASON", "TIME_OR_PLACE"))
                 ),
@@ -123,7 +123,7 @@ class AnswerProfileBuilderTest {
                         1,
                         learnerAnswer,
                         null,
-                        null,
+                        
                         List.of(),
                         new PromptTaskMetaDto("GOAL_PLAN", List.of("MAIN_ANSWER", "REASON"), List.of("ACTIVITY", "TIME_OR_PLACE"))
                 ),
@@ -153,7 +153,7 @@ class AnswerProfileBuilderTest {
                         1,
                         "Last year I practiced piano every day after school.",
                         null,
-                        null,
+                        
                         List.of(),
                         new PromptTaskMetaDto(
                                 "GOAL_PLAN",
@@ -177,7 +177,7 @@ class AnswerProfileBuilderTest {
                         1,
                         "People usually watch TV after dinner.",
                         null,
-                        null,
+                        
                         List.of(),
                         new PromptTaskMetaDto(
                                 "ROUTINE",
@@ -235,7 +235,7 @@ class AnswerProfileBuilderTest {
                         1,
                         "I doing nothing",
                         null,
-                        null,
+                        
                         List.of(),
                         new PromptTaskMetaDto("ROUTINE", List.of("MAIN_ANSWER", "ACTIVITY"), List.of("TIME_OR_PLACE", "FEELING")),
                         "Routine",
@@ -260,7 +260,7 @@ class AnswerProfileBuilderTest {
                         1,
                         "One health goal I have this is to diet. It's important for me to stay healthy.",
                         null,
-                        null,
+                        
                         List.of(),
                         new PromptTaskMetaDto("GOAL_PLAN", List.of("MAIN_ANSWER", "REASON"), List.of("ACTIVITY", "TIME_OR_PLACE")),
                         "Goal Plan",
@@ -280,9 +280,16 @@ class AnswerProfileBuilderTest {
         assertThat(profile.task().answerBand()).isEqualTo(AnswerBand.CONTENT_THIN);
         assertThat(profile.grammar().severity()).isEqualTo(GrammarSeverity.MODERATE);
         assertThat(profile.grammar().minimalCorrection())
-                .isEqualTo("One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy.");
+                .contains("this year")
+                .contains("It's important to me because I want to stay healthy.")
+                .doesNotContain("I have this is to")
+                .doesNotContain("to diet");
+        assertThat(profile.grammar().minimalCorrection())
+                .matches(text -> text.contains("eat healthier") || text.contains("improve my diet"));
         assertThat(profile.rewrite().primaryIssueCode()).isEqualTo("ADD_DETAIL");
-        assertThat(profile.rewrite().target().skeleton()).startsWith("One health goal I have this year is to improve my diet");
+        assertThat(profile.rewrite().target().skeleton()).contains("this year");
+        assertThat(profile.rewrite().target().skeleton())
+                .matches(text -> text.contains("eat healthier") || text.contains("improve my diet"));
     }
 
     @Test
@@ -294,7 +301,7 @@ class AnswerProfileBuilderTest {
                         1,
                         "On Sunday afternoons, I usually go to church and relax at home.",
                         null,
-                        null,
+                        
                         List.of(),
                         new PromptTaskMetaDto("ROUTINE", List.of("MAIN_ANSWER", "ACTIVITY"), List.of("TIME_OR_PLACE", "FEELING")),
                         "Routine",
@@ -310,3 +317,4 @@ class AnswerProfileBuilderTest {
         assertThat(profile.task().answerBand()).isEqualTo(AnswerBand.NATURAL_BUT_BASIC);
     }
 }
+

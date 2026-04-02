@@ -5,6 +5,9 @@ final class SectionPolicySelector {
     SectionPolicy select(AnswerProfile answerProfile, int attemptIndex) {
         AnswerBand answerBand = resolveAnswerBand(answerProfile);
         SectionPolicy policy = basePolicy(answerBand);
+        if (resolveFinishable(answerProfile)) {
+            policy = applyFinishableOverlay(policy, answerBand);
+        }
         if (attemptIndex >= 2) {
             policy = applyAttemptOverlay(policy, answerBand);
         }
@@ -18,6 +21,12 @@ final class SectionPolicySelector {
         return answerProfile.task().answerBand();
     }
 
+    private boolean resolveFinishable(AnswerProfile answerProfile) {
+        return answerProfile != null
+                && answerProfile.task() != null
+                && answerProfile.task().finishable();
+    }
+
     private SectionPolicy basePolicy(AnswerBand answerBand) {
         return switch (answerBand) {
             case TOO_SHORT_FRAGMENT -> new SectionPolicy(
@@ -27,6 +36,7 @@ final class SectionPolicySelector {
                     true, 2, RefinementFocus.EASY_REUSABLE,
                     true,
                     true,
+                    false,
                     2, ModelAnswerMode.ONE_STEP_UP,
                     AttemptOverlayPolicy.NONE
             );
@@ -65,9 +75,10 @@ final class SectionPolicySelector {
                     false, 0,
                     true,
                     true, 3, RefinementFocus.NATURALNESS,
-                    false,
                     true,
-                    2, ModelAnswerMode.ONE_STEP_UP,
+                    true,
+                    true,
+                    2, ModelAnswerMode.OPTIONAL_IF_ALREADY_GOOD,
                     AttemptOverlayPolicy.NONE
             );
             case OFF_TOPIC -> new SectionPolicy(
@@ -88,13 +99,26 @@ final class SectionPolicySelector {
                 ? Math.min(basePolicy.maxGrammarIssueCount(), 2)
                 : Math.min(basePolicy.maxGrammarIssueCount(), 1);
         int overlayStrengthLimit = Math.min(basePolicy.maxStrengthCount(), 1);
-        int overlayModelSentences = Math.max(1,
-                basePolicy.maxModelAnswerSentences() - AttemptOverlayPolicy.PROGRESS_AWARE.modelAnswerSentenceDelta());
+        int overlayModelSentences = switch (answerBand) {
+            case NATURAL_BUT_BASIC, OFF_TOPIC -> Math.max(1,
+                    basePolicy.maxModelAnswerSentences() - AttemptOverlayPolicy.PROGRESS_AWARE.modelAnswerSentenceDelta());
+            default -> basePolicy.maxModelAnswerSentences();
+        };
 
         return basePolicy
                 .withMaxStrengthCount(overlayStrengthLimit)
                 .withMaxGrammarIssueCount(overlayGrammarLimit)
                 .withMaxModelAnswerSentences(overlayModelSentences)
                 .withAttemptOverlayPolicy(AttemptOverlayPolicy.PROGRESS_AWARE);
+    }
+
+    private SectionPolicy applyFinishableOverlay(SectionPolicy basePolicy, AnswerBand answerBand) {
+        SectionPolicy policy = basePolicy.withMaxGrammarIssueCount(Math.min(basePolicy.maxGrammarIssueCount(), 1));
+        return switch (answerBand) {
+            case SHORT_BUT_VALID, CONTENT_THIN -> policy;
+            case NATURAL_BUT_BASIC -> policy;
+            case TOO_SHORT_FRAGMENT -> policy.withShowModelAnswer(false);
+            default -> policy;
+        };
     }
 }

@@ -48,14 +48,16 @@ final class AnswerProfileBuilder {
             "\\b(?:with|by|about|after|before|without)\\s+(?:build|cook|do|drink|eat|enjoy|exercise|go|help|jog|learn|listen|meet|plan|play|practice|read|relax|run|sleep|study|take|talk|visit|walk|watch|work|write)\\b",
             Pattern.CASE_INSENSITIVE
     );
-    private static final Pattern AWKWARD_HEALTH_GOAL_PATTERN = Pattern.compile(
-            "\\bone\\s+health\\s+goal\\s+i\\s+have\\s+this(?:\\s+year)?\\s+is\\s+to\\s+diet\\b",
+    private static final Pattern GOAL_THIS_IS_TO_PATTERN = Pattern.compile(
+            "\\b(?:one\\s+)?(?:[a-z]+\\s+)?goal\\s+i\\s+have\\s+this(?:\\s+year)?\\s+is\\s+to\\b",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern IMPORTANT_FOR_ME_PATTERN = Pattern.compile(
             "\\bit(?:'s| is)\\s+important\\s+for\\s+me\\s+to\\s+([^.!?]+)",
             Pattern.CASE_INSENSITIVE
     );
+
+    private final FeedbackLexicalChoiceNormalizer lexicalChoiceNormalizer = new FeedbackLexicalChoiceNormalizer();
     private static final Pattern SHORT_GERUND_FRAGMENT_PATTERN = Pattern.compile(
             "^\\s*(i|we|they|he|she)\\s+([a-z]+ing)(?:\\s+(.+?))?[.!?]?\\s*$",
             Pattern.CASE_INSENSITIVE
@@ -230,7 +232,8 @@ final class AnswerProfileBuilder {
         }
         if (severity == GrammarSeverity.MINOR && issues.size() >= 3) severity = GrammarSeverity.MODERATE;
 
-        return new GrammarProfile(severity, issues, buildMinimalCorrection(learnerAnswer, correctedAnswer, inlineFeedback));
+        String minimalCorrection = buildMinimalCorrection(learnerAnswer, correctedAnswer, inlineFeedback);
+        return new GrammarProfile(severity, issues, minimalCorrection, minimalCorrection != null);
     }
 
     private TaskProfile buildTaskProfile(
@@ -243,7 +246,8 @@ final class AnswerProfileBuilder {
         boolean onTopic = determineOnTopic(context, rubric, signals);
         TaskCompletion taskCompletion = determineTaskCompletion(onTopic, rubric, signals);
         AnswerBand answerBand = determineAnswerBand(context.learnerAnswer(), onTopic, taskCompletion, grammar.severity(), content.specificity());
-        return new TaskProfile(onTopic, taskCompletion, answerBand);
+        boolean finishable = determineFinishable(context.learnerAnswer(), onTopic, taskCompletion, grammar.severity(), content.specificity());
+        return new TaskProfile(onTopic, taskCompletion, answerBand, finishable);
     }
 
     private RewriteProfile buildRewriteProfile(
@@ -257,7 +261,16 @@ final class AnswerProfileBuilder {
         String primaryIssueCode = determinePrimaryIssueCode(task, rubric, grammar, content);
         String secondaryIssueCode = determineSecondaryIssueCode(primaryIssueCode, task, rubric, grammar, content);
         RewriteTarget target = buildRewriteTarget(context.learnerAnswer(), context.promptText(), task, grammar, primaryIssueCode, rubric, content);
-        return new RewriteProfile(primaryIssueCode, secondaryIssueCode, target, progressDelta);
+        ExpansionBudget expansionBudget = determineExpansionBudget(task, grammar, content);
+        List<String> regressionSensitiveFacts = extractRegressionSensitiveFacts(context.learnerAnswer(), content.signals());
+        return new RewriteProfile(
+                primaryIssueCode,
+                secondaryIssueCode,
+                target,
+                expansionBudget,
+                regressionSensitiveFacts,
+                progressDelta
+        );
     }
 
     private ProgressDelta buildProgressDelta(AnswerContext context, PromptRubric rubric) {
@@ -298,7 +311,6 @@ final class AnswerProfileBuilder {
         }
 
         Set<String> promptTokens = new LinkedHashSet<>(extractTokens(context.promptText()));
-        promptTokens.addAll(extractTokens(context.modelAnswer()));
         for (PromptHintRef hint : context.promptHints()) {
             if (hint == null) continue;
             for (String item : hint.items()) {
@@ -313,6 +325,20 @@ final class AnswerProfileBuilder {
             return true;
         }
         return rubric.expectsSeason() && containsSeasonToken(context.learnerAnswer());
+    }
+
+    private boolean determineFinishable(
+            String learnerAnswer,
+            boolean onTopic,
+            TaskCompletion taskCompletion,
+            GrammarSeverity grammarSeverity,
+            ContentLevel specificity
+    ) {
+        return onTopic
+                && taskCompletion == TaskCompletion.FULL
+                && grammarSeverity.ordinal() <= GrammarSeverity.MINOR.ordinal()
+                && specificity != ContentLevel.LOW
+                && countWords(learnerAnswer) >= 8;
     }
 
     private TaskCompletion determineTaskCompletion(boolean onTopic, PromptRubric rubric, ContentSignals signals) {
@@ -497,6 +523,47 @@ final class AnswerProfileBuilder {
         };
     }
 
+    private ExpansionBudget determineExpansionBudget(
+            TaskProfile task,
+            GrammarProfile grammar,
+            ContentProfile content
+    ) {
+        if (task == null || task.answerBand() == null) {
+            return ExpansionBudget.ONE_DETAIL;
+        }
+        return switch (task.answerBand()) {
+            case OFF_TOPIC -> ExpansionBudget.ONE_SUPPORT_SENTENCE;
+            case NATURAL_BUT_BASIC -> task.finishable() ? ExpansionBudget.NONE : ExpansionBudget.ONE_DETAIL;
+            case GRAMMAR_BLOCKING -> grammar != null && grammar.severity() == GrammarSeverity.MAJOR
+                    ? ExpansionBudget.ONE_DETAIL
+                    : ExpansionBudget.NONE;
+            case TOO_SHORT_FRAGMENT, SHORT_BUT_VALID, CONTENT_THIN -> content != null && content.specificity() == ContentLevel.HIGH
+                    ? ExpansionBudget.NONE
+                    : ExpansionBudget.ONE_DETAIL;
+        };
+    }
+
+    private List<String> extractRegressionSensitiveFacts(String learnerAnswer, ContentSignals signals) {
+        List<String> facts = new ArrayList<>();
+        String firstSentence = firstSentence(learnerAnswer);
+        if (firstSentence != null && !firstSentence.isBlank()) {
+            facts.add(firstSentence);
+        }
+        if (signals.hasReason()) {
+            String reason = matchedOrFirst(learnerAnswer, REASON_PATTERN);
+            if (reason != null && !reason.isBlank() && facts.stream().noneMatch(reason::equals)) {
+                facts.add(reason);
+            }
+        }
+        if (signals.hasTimeOrPlace()) {
+            String timeOrPlace = matchedOrFirst(learnerAnswer, TIME_OR_PLACE_PATTERN);
+            if (timeOrPlace != null && !timeOrPlace.isBlank() && facts.stream().noneMatch(timeOrPlace::equals)) {
+                facts.add(timeOrPlace);
+            }
+        }
+        return List.copyOf(facts);
+    }
+
     private GrammarIssue buildExpectedPovIssue(
             String learnerAnswer,
             PromptRubric rubric,
@@ -587,9 +654,8 @@ final class AnswerProfileBuilder {
         if (normalizedCandidate.contains("this year")) score += 3;
         if (normalizedCandidate.contains("because")) score += 2;
         if (normalizedCandidate.contains("important to me")) score += 2;
-        if (normalizedCandidate.contains("improve my diet") || normalizedCandidate.contains("eat healthier")) score += 3;
         if (normalizedCandidate.contains(" i have this is to ")) score -= 6;
-        if (normalizedCandidate.contains(" to diet")) score -= 4;
+        if (lexicalChoiceNormalizer.containsAwkwardLexicalChoice(normalizedCandidate)) score -= 4;
         if (normalizedCandidate.contains("important for me to")) score -= 2;
         return score;
     }
@@ -622,17 +688,7 @@ final class AnswerProfileBuilder {
         }
         String normalizedAnswer = trim(learnerAnswer);
         if (looksGrammarBlocking(learnerAnswer)) {
-            return sanitizeMinimalCorrectionCandidate(normalizedAnswer
-                    .replaceAll("(?i)\\bstruggle with meet the deadline\\b", "struggle to meet deadlines")
-                    .replaceAll("(?i)\\bstruggle with meet deadlines\\b", "struggle to meet deadlines")
-                    .replaceAll("(?i)\\bstruggle with meeting the deadline\\b", "struggle to meet deadlines")
-                    .replaceAll("(?i)\\bstruggle with meeting deadlines\\b", "struggle to meet deadlines")
-                    .replaceAll("(?i)\\bto meet the deadline\\b", "to meet deadlines")
-                    .replaceAll("(?i)\\bby write\\b", "by writing")
-                    .replaceAll("(?i),?\\s*to address this,?\\s+i\\b", ", so I")
-                    .replaceAll("(?i),?\\s*to address\\s+i\\b", ", so I")
-                    .replaceAll("(?i),?\\s*to solve this,?\\s+i\\b", ", so I")
-                    .replaceAll("(?i),?\\s*to solve\\s+i\\b", ", so I"));
+            return sanitizeMinimalCorrectionCandidate(applyGrammarBlockingHeuristicCorrections(normalizedAnswer));
         }
 
         Matcher shortGerundFragment = SHORT_GERUND_FRAGMENT_PATTERN.matcher(normalizedAnswer);
@@ -644,23 +700,32 @@ final class AnswerProfileBuilder {
             String candidate = subject + " " + baseVerb + (remainder == null ? "" : " " + remainder.trim());
             return sanitizeMinimalCorrectionCandidate(candidate);
         }
-        if (AWKWARD_HEALTH_GOAL_PATTERN.matcher(normalizedAnswer).find() || IMPORTANT_FOR_ME_PATTERN.matcher(normalizedAnswer).find()) {
+        if (GOAL_THIS_IS_TO_PATTERN.matcher(normalizedAnswer).find() || IMPORTANT_FOR_ME_PATTERN.matcher(normalizedAnswer).find()) {
             return sanitizeMinimalCorrectionCandidate(applyHeuristicCorrectionNormalizations(normalizedAnswer));
         }
         return null;
+    }
+
+    private String applyGrammarBlockingHeuristicCorrections(String candidate) {
+        if (candidate == null || candidate.isBlank()) {
+            return null;
+        }
+        String normalized = rewriteStruggleWithBareVerb(candidate)
+                .replaceAll("(?i)\\bmeet the deadline\\b", "meet deadlines");
+        normalized = rewritePrepositionBareVerb(normalized);
+        normalized = rewriteBrokenSolutionConnector(normalized);
+        return normalized;
     }
 
     private String applyHeuristicCorrectionNormalizations(String candidate) {
         if (candidate == null || candidate.isBlank()) {
             return null;
         }
-        String normalized = candidate
-                .replaceAll("(?i)\\bone health goal i have this is to\\b", "One health goal I have this year is to")
-                .replaceAll("(?i)\\bone health goal i have this year is to diet\\b", "One health goal I have this year is to improve my diet")
-                .replaceAll("(?i)\\bone health goal i have this is to diet\\b", "One health goal I have this year is to improve my diet");
-        if (normalized.toLowerCase(Locale.ROOT).contains("health goal")) {
-            normalized = normalized.replaceAll("(?i)\\bto diet\\b", "to improve my diet");
-        }
+        String normalized = candidate.replaceAll(
+                "(?i)\\b((?:one\\s+)?(?:[a-z]+\\s+)?goal\\s+i\\s+have)\\s+this\\s+is\\s+to\\b",
+                "$1 this year is to"
+        );
+        normalized = lexicalChoiceNormalizer.normalize(normalized);
         normalized = normalized.replaceAll(
                 "(?i)\\bit(?:'s| is)\\s+important\\s+for\\s+me\\s+to\\s+([^.!?]+)",
                 "It's important to me because I want to $1"
@@ -670,6 +735,60 @@ final class AnswerProfileBuilder {
                 .replaceAll(",(?=\\S)", ", ")
                 .replaceAll("\\s+", " ")
                 .trim();
+    }
+
+    private String rewriteStruggleWithBareVerb(String candidate) {
+        Matcher matcher = Pattern.compile(
+                "\\bstruggle\\s+with\\s+([a-z]+)(\\b[^,.!?;]*)",
+                Pattern.CASE_INSENSITIVE
+        ).matcher(candidate);
+        StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            String verb = matcher.group(1);
+            String tail = matcher.group(2) == null ? "" : matcher.group(2);
+            if (!ACTIVITY_VERBS.contains(verb.toLowerCase(Locale.ROOT))) {
+                continue;
+            }
+            matcher.appendReplacement(buffer, Matcher.quoteReplacement("struggle to " + verb + tail));
+        }
+        matcher.appendTail(buffer);
+        return buffer.toString();
+    }
+
+    private String rewritePrepositionBareVerb(String candidate) {
+        String normalized = candidate;
+        for (String verb : ACTIVITY_VERBS) {
+            normalized = normalized.replaceAll(
+                    "(?i)\\bby\\s+" + Pattern.quote(verb) + "\\b",
+                    "by " + toGerund(verb)
+            );
+        }
+        return normalized;
+    }
+
+    private String rewriteBrokenSolutionConnector(String candidate) {
+        Matcher matcher = BROKEN_SOLUTION_CONNECTOR_PATTERN.matcher(candidate);
+        StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            String matched = matcher.group();
+            String replacement = matched.startsWith(",") || matched.startsWith(";")
+                    ? ", so I"
+                    : "So I";
+            matcher.appendReplacement(buffer, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(buffer);
+        return buffer.toString();
+    }
+
+    private String toGerund(String verb) {
+        String lower = verb == null ? "" : verb.toLowerCase(Locale.ROOT);
+        if (lower.endsWith("ie")) {
+            return lower.substring(0, lower.length() - 2) + "ying";
+        }
+        if (lower.endsWith("e") && !lower.endsWith("ee")) {
+            return lower.substring(0, lower.length() - 1) + "ing";
+        }
+        return lower + "ing";
     }
 
     private String toBaseVerb(String verbIng) {

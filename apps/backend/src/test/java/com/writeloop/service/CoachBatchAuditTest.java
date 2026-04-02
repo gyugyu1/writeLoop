@@ -41,7 +41,7 @@ class CoachBatchAuditTest {
     @Test
     void generate_batch_audit_report_for_1000_mixed_coach_questions() throws Exception {
         PromptService promptService = mock(PromptService.class);
-        OpenAiCoachClient openAiCoachClient = mock(OpenAiCoachClient.class);
+        LlmCoachClient openAiCoachClient = mock(LlmCoachClient.class);
         AnswerAttemptRepository answerAttemptRepository = mock(AnswerAttemptRepository.class);
         CoachInteractionRepository coachInteractionRepository = mock(CoachInteractionRepository.class);
         ObjectMapper objectMapper = new ObjectMapper();

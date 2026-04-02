@@ -13,15 +13,24 @@ public record AnswerProfile(
 record TaskProfile(
         boolean onTopic,
         TaskCompletion taskCompletion,
-        AnswerBand answerBand
+        AnswerBand answerBand,
+        boolean finishable
 ) {
+    TaskProfile(boolean onTopic, TaskCompletion taskCompletion, AnswerBand answerBand) {
+        this(onTopic, taskCompletion, answerBand, false);
+    }
 }
 
 record GrammarProfile(
         GrammarSeverity severity,
         List<GrammarIssue> issues,
-        String minimalCorrection
+        String minimalCorrection,
+        boolean correctionTrusted
 ) {
+    GrammarProfile(GrammarSeverity severity, List<GrammarIssue> issues, String minimalCorrection) {
+        this(severity, issues, minimalCorrection, false);
+    }
+
     GrammarProfile {
         issues = issues == null ? List.of() : List.copyOf(issues);
         minimalCorrection = minimalCorrection == null || minimalCorrection.isBlank() ? null : minimalCorrection.trim();
@@ -77,13 +86,21 @@ record RewriteProfile(
         String primaryIssueCode,
         String secondaryIssueCode,
         RewriteTarget target,
+        ExpansionBudget expansionBudget,
+        List<String> regressionSensitiveFacts,
         ProgressDelta progressDelta
 ) {
+    RewriteProfile(String primaryIssueCode, String secondaryIssueCode, RewriteTarget target, ProgressDelta progressDelta) {
+        this(primaryIssueCode, secondaryIssueCode, target, ExpansionBudget.NONE, List.of(), progressDelta);
+    }
+
     RewriteProfile {
         primaryIssueCode = primaryIssueCode == null ? "" : primaryIssueCode.trim();
         secondaryIssueCode = secondaryIssueCode == null || secondaryIssueCode.isBlank()
                 ? null
                 : secondaryIssueCode.trim();
+        expansionBudget = expansionBudget == null ? ExpansionBudget.NONE : expansionBudget;
+        regressionSensitiveFacts = regressionSensitiveFacts == null ? List.of() : List.copyOf(regressionSensitiveFacts);
     }
 }
 

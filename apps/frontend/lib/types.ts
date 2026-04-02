@@ -164,6 +164,85 @@ export interface GrammarFeedbackItem {
   reasonKo: string;
 }
 
+export interface FeedbackFocusCard {
+  title: string;
+  headline: string;
+  supportText?: string | null;
+}
+
+export interface FeedbackPrimaryFix {
+  title: string;
+  instruction?: string | null;
+  originalText?: string | null;
+  revisedText?: string | null;
+  reasonKo?: string | null;
+}
+
+export interface FeedbackMicroTip {
+  title: string;
+  originalText?: string | null;
+  revisedText?: string | null;
+  reasonKo?: string | null;
+}
+
+export interface FeedbackRewritePractice {
+  title: string;
+  starter: string;
+  instruction: string;
+  ctaLabel: string;
+  optionalTone: boolean;
+}
+
+export type FeedbackCompletionState = "NEEDS_REVISION" | "CAN_FINISH" | "OPTIONAL_POLISH";
+export type FeedbackSectionDisplayMode = "HIDE" | "SHOW_EXPANDED" | "SHOW_COLLAPSED";
+export type FeedbackRewriteGuideMode =
+  | "FRAGMENT_SCAFFOLD"
+  | "CORRECTED_SKELETON"
+  | "DETAIL_SCAFFOLD"
+  | "TASK_RESET"
+  | "OPTIONAL_POLISH";
+export type FeedbackModelAnswerDisplayMode =
+  | "HIDE"
+  | "SHOW_EXPANDED"
+  | "SHOW_COLLAPSED"
+  | "TASK_RESET_EXAMPLE";
+export type FeedbackRefinementDisplayMode = "HIDE" | "SHOW_EXPANDED" | "SHOW_COLLAPSED";
+
+export interface FeedbackScreenPolicy {
+  completionState: FeedbackCompletionState;
+  sectionOrder: string[];
+  keepWhatWorksDisplayMode: FeedbackSectionDisplayMode;
+  fixFirstDisplayMode: FeedbackSectionDisplayMode;
+  rewriteGuideDisplayMode: FeedbackSectionDisplayMode;
+  rewriteGuideMode: FeedbackRewriteGuideMode;
+  modelAnswerDisplayMode: FeedbackModelAnswerDisplayMode;
+  refinementDisplayMode: FeedbackRefinementDisplayMode;
+  keepWhatWorksMaxItems: number;
+  keepExpressionChipMaxItems: number;
+  refinementMaxCards: number;
+  showFinishCta: boolean;
+  showRewriteCta: boolean;
+  showCancelCta: boolean;
+}
+
+export interface FeedbackLoopStatus {
+  badge?: string | null;
+  headline: string;
+  supportText?: string | null;
+  rewriteCtaLabel?: string | null;
+  finishCtaLabel?: string | null;
+  cancelCtaLabel?: string | null;
+}
+
+export interface FeedbackUi {
+  focusCard: FeedbackFocusCard;
+  primaryFix?: FeedbackPrimaryFix | null;
+  microTip?: FeedbackMicroTip | null;
+  rewritePractice: FeedbackRewritePractice;
+  screenPolicy?: FeedbackScreenPolicy | null;
+  loopStatus?: FeedbackLoopStatus | null;
+}
+
 export type RefinementExpressionType = "LEXICAL" | "FRAME";
 export type RefinementExpressionSource = "MODEL_ANSWER" | "PROMPT_HINT" | "GENERATED";
 export type RefinementMeaningType = "GLOSS" | "PATTERN_EXPLANATION" | "NONE";
@@ -209,6 +288,7 @@ export interface Feedback {
   modelAnswer: string;
   modelAnswerKo?: string | null;
   rewriteChallenge: string;
+  ui?: FeedbackUi | null;
 }
 
 export interface HomeDraftSnapshot {
@@ -254,6 +334,7 @@ export interface StoredFeedback {
   modelAnswer: string;
   modelAnswerKo?: string | null;
   rewriteChallenge: string;
+  ui?: FeedbackUi | null;
 }
 
 export interface AuthUser {

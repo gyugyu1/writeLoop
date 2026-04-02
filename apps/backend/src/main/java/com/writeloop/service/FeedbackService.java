@@ -20,11 +20,16 @@ import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionEntity;
 import com.writeloop.persistence.AnswerSessionRepository;
 import com.writeloop.persistence.AttemptType;
+import com.writeloop.persistence.FeedbackDiagnosisLogEntity;
+import com.writeloop.persistence.FeedbackDiagnosisLogRepository;
 import com.writeloop.persistence.SessionStatus;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -41,6 +46,7 @@ import java.util.regex.Pattern;
 @Slf4j
 @RequiredArgsConstructor
 public class FeedbackService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(FeedbackService.class);
     private static final String LETTER_TOKEN = "[\\p{L}][\\p{L}'-]*";
     private static final String FEEDBACK_USED_EXPRESSION_SOURCE = "SELF_DISCOVERED";
     private static final String FEEDBACK_USED_EXPRESSION_MATCH_TYPE = "SELF_DISCOVERED";
@@ -106,12 +112,15 @@ public class FeedbackService {
     private static final int MAX_REFINEMENT_EXPRESSION_COUNT = 4;
 
     private final PromptService promptService;
-    private final OpenAiFeedbackClient openAiFeedbackClient;
+    private final LlmFeedbackClient llmFeedbackClient;
     private final AnswerSessionRepository answerSessionRepository;
     private final AnswerAttemptRepository answerAttemptRepository;
     private final ObjectMapper objectMapper;
     private final AnswerProfileBuilder answerProfileBuilder = new AnswerProfileBuilder();
     private final FeedbackSectionPolicyApplier feedbackSectionPolicyApplier = new FeedbackSectionPolicyApplier();
+    private final FeedbackUiComposer feedbackUiComposer = new FeedbackUiComposer();
+    @Autowired(required = false)
+    private FeedbackDiagnosisLogRepository feedbackDiagnosisLogRepository;
 
     public FeedbackResponseDto review(FeedbackRequestDto request, Long currentUserId) {
         PromptDto prompt = promptService.findById(request.promptId());
@@ -120,25 +129,50 @@ public class FeedbackService {
         int attemptNo = answerAttemptRepository.countBySessionId(session.getId()) + 1;
         String previousAnswer = findPreviousAnswer(session.getId(), attemptNo);
         AttemptType attemptType = resolveAttemptType(request);
-        boolean openAiConfigured = openAiFeedbackClient.isConfigured();
+        boolean llmConfigured = llmFeedbackClient.isConfigured();
         List<PromptHintDto> hints = promptService.findHintsByPromptId(prompt.id());
+        FeedbackAnalysisSnapshot analysisSnapshot = null;
 
-        FeedbackResponseDto feedback = openAiConfigured
-                ? openAiFeedbackClient.review(prompt, answer, hints)
+        FeedbackResponseDto feedback = llmConfigured
+                ? fetchLlmFeedback(prompt, answer, hints, attemptNo, previousAnswer)
                 : buildLocalFeedback(prompt, answer);
+        if (llmConfigured) {
+            analysisSnapshot = llmFeedbackClient.takeLastAnalysisSnapshot();
+        }
+        boolean authoritativeLlmFeedback = llmConfigured && llmFeedbackClient.isAuthoritativeFeedback(feedback);
+        feedback = llmFeedbackClient.clearInternalMetadata(feedback);
         feedback = sanitizeFeedbackResponse(feedback, answer, hints);
-        AnswerProfile answerProfile = buildAnswerProfile(prompt, answer, previousAnswer, attemptNo, hints, feedback);
-        feedback = withRewriteChallenge(
-                feedback,
-                buildRewriteChallenge(prompt, answerProfile, feedback.rewriteChallenge(), feedback.modelAnswer())
-        );
-        feedback = applySectionPolicy(prompt, answer, feedback, answerProfile, attemptNo);
+        AnswerProfile answerProfile = analysisSnapshot == null ? null : analysisSnapshot.answerProfile();
+        if (!authoritativeLlmFeedback) {
+            answerProfile = buildAnswerProfile(prompt, answer, previousAnswer, attemptNo, hints, feedback);
+            feedback = withRewriteChallenge(
+                    feedback,
+                    buildRewriteChallenge(prompt, answerProfile, feedback.rewriteChallenge(), feedback.modelAnswer())
+            );
+            feedback = applySectionPolicy(prompt, answer, feedback, answerProfile, attemptNo);
+        } else if (answerProfile == null) {
+            answerProfile = buildAnswerProfile(prompt, answer, previousAnswer, attemptNo, hints, feedback);
+        }
+        feedback = feedback.withUi(feedbackUiComposer.compose(prompt, answer, feedback, answerProfile));
 
         if (feedback.loopComplete()) {
             session.setStatus(SessionStatus.COMPLETED);
             answerSessionRepository.save(session);
         }
-        saveAttempt(session, attemptType, attemptNo, answer, feedback);
+        AnswerAttemptEntity savedAttempt = saveAttempt(session, attemptType, attemptNo, answer, feedback);
+        saveFeedbackDiagnosisLog(
+                session,
+                savedAttempt,
+                attemptType,
+                attemptNo,
+                prompt,
+                hints,
+                answer,
+                previousAnswer,
+                authoritativeLlmFeedback,
+                analysisSnapshot,
+                answerProfile
+        );
 
         return new FeedbackResponseDto(
                 feedback.promptId(),
@@ -157,8 +191,19 @@ public class FeedbackService {
                 feedback.modelAnswer(),
                 feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
-                feedback.usedExpressions()
+                feedback.usedExpressions(),
+                feedback.ui()
         );
+    }
+
+    private FeedbackResponseDto fetchLlmFeedback(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptNo,
+            String previousAnswer
+    ) {
+        return llmFeedbackClient.review(prompt, answer, hints, attemptNo, previousAnswer);
     }
 
     private String findPreviousAnswer(String sessionId, int attemptNo) {
@@ -200,7 +245,7 @@ public class FeedbackService {
                 attemptNo,
                 learnerAnswer,
                 previousAnswer,
-                feedback.modelAnswer(),
+                
                 promptHintRefs,
                 prompt.taskMeta(),
                 prompt.topicCategory(),
@@ -316,7 +361,7 @@ public class FeedbackService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
-    private void saveAttempt(
+    private AnswerAttemptEntity saveAttempt(
             AnswerSessionEntity session,
             AttemptType attemptType,
             int attemptNo,
@@ -337,13 +382,157 @@ public class FeedbackService {
                     buildPersistedRewriteChallenge(feedback),
                     objectMapper.writeValueAsString(feedback)
             );
-            answerAttemptRepository.save(attempt);
+            return answerAttemptRepository.save(attempt);
         } catch (JsonProcessingException exception) {
             throw new IllegalStateException("Failed to serialize feedback for storage", exception);
         }
     }
 
+    private void saveFeedbackDiagnosisLog(
+            AnswerSessionEntity session,
+            AnswerAttemptEntity savedAttempt,
+            AttemptType attemptType,
+            int attemptNo,
+            PromptDto prompt,
+            List<PromptHintDto> hints,
+            String learnerAnswer,
+            String previousAnswer,
+            boolean authoritativeLlmFeedback,
+            FeedbackAnalysisSnapshot analysisSnapshot,
+            AnswerProfile answerProfile
+    ) {
+        if (feedbackDiagnosisLogRepository == null || session == null || prompt == null) {
+            return;
+        }
+
+        try {
+            FeedbackDiagnosisResult diagnosis = analysisSnapshot == null ? null : analysisSnapshot.diagnosis();
+            AnswerProfile resolvedProfile = analysisSnapshot != null && analysisSnapshot.answerProfile() != null
+                    ? analysisSnapshot.answerProfile()
+                    : answerProfile;
+            SectionPolicy sectionPolicy = analysisSnapshot == null ? null : analysisSnapshot.sectionPolicy();
+            GeneratedSections finalSections = analysisSnapshot == null ? null : analysisSnapshot.finalSections();
+            RewriteTarget rewriteTarget = diagnosis != null && diagnosis.rewriteTarget() != null
+                    ? diagnosis.rewriteTarget()
+                    : resolvedProfile == null || resolvedProfile.rewrite() == null
+                    ? null
+                    : resolvedProfile.rewrite().target();
+            ContentSignals contentSignals = resolvedProfile == null || resolvedProfile.content() == null
+                    ? null
+                    : resolvedProfile.content().signals();
+
+            FeedbackDiagnosisLogEntity entity = FeedbackDiagnosisLogEntity.builder()
+                    .answerAttemptId(savedAttempt == null ? null : savedAttempt.getId())
+                    .sessionId(session.getId())
+                    .attemptNo(attemptNo)
+                    .attemptType(attemptType == null ? null : attemptType.name())
+                    .userId(session.getUserId())
+                    .guestId(session.getGuestId())
+                    .promptId(prompt.id())
+                    .promptTopic(prompt.topic())
+                    .promptTopicCategory(normalizeNullable(prompt.topicCategory()))
+                    .promptTopicDetail(normalizeNullable(prompt.topicDetail()))
+                    .promptDifficulty(prompt.difficulty())
+                    .promptQuestionEn(prompt.questionEn())
+                    .promptQuestionKo(prompt.questionKo())
+                    .promptHintsJson(writeJsonOrNull(hints == null ? List.of() : hints))
+                    .promptTaskMetaJson(writeJsonOrNull(prompt.taskMeta()))
+                    .learnerAnswer(learnerAnswer)
+                    .previousAnswer(normalizeNullable(previousAnswer))
+                    .llmProvider(resolveAnalysisProvider(analysisSnapshot, authoritativeLlmFeedback))
+                    .llmModel(analysisSnapshot == null ? null : normalizeNullable(analysisSnapshot.model()))
+                    .diagnosisResponseStatusCode(analysisSnapshot == null ? null : analysisSnapshot.diagnosisResponseStatusCode())
+                    .generationResponseStatusCode(analysisSnapshot == null ? null : analysisSnapshot.generationResponseStatusCode())
+                    .regenerationResponseStatusCode(analysisSnapshot == null ? null : analysisSnapshot.regenerationResponseStatusCode())
+                    .authoritativeFeedback(authoritativeLlmFeedback)
+                    .diagnosisFallbackUsed(analysisSnapshot != null && analysisSnapshot.diagnosisFallbackUsed())
+                    .deterministicResponseFallbackUsed(analysisSnapshot != null && analysisSnapshot.deterministicResponseFallbackUsed())
+                    .retryAttempted(analysisSnapshot != null && analysisSnapshot.retryAttempted())
+                    .diagnosisScore(diagnosis == null ? null : diagnosis.score())
+                    .diagnosisAnswerBand(enumName(diagnosis == null ? null : diagnosis.answerBand()))
+                    .diagnosisTaskCompletion(enumName(diagnosis == null ? null : diagnosis.taskCompletion()))
+                    .diagnosisOnTopic(diagnosis == null ? null : diagnosis.onTopic())
+                    .diagnosisFinishable(diagnosis == null ? null : diagnosis.finishable())
+                    .diagnosisGrammarSeverity(enumName(diagnosis == null ? null : diagnosis.grammarSeverity()))
+                    .diagnosisGrammarIssueCount(diagnosis == null || diagnosis.grammarIssues() == null ? null : diagnosis.grammarIssues().size())
+                    .diagnosisPrimaryIssueCode(diagnosis == null ? null : normalizeNullable(diagnosis.primaryIssueCode()))
+                    .diagnosisSecondaryIssueCode(diagnosis == null ? null : normalizeNullable(diagnosis.secondaryIssueCode()))
+                    .diagnosisMinimalCorrection(diagnosis == null ? null : normalizeNullable(diagnosis.minimalCorrection()))
+                    .rewriteTargetAction(rewriteTarget == null ? null : normalizeNullable(rewriteTarget.action()))
+                    .rewriteTargetSkeleton(rewriteTarget == null ? null : normalizeNullable(rewriteTarget.skeleton()))
+                    .rewriteTargetMaxNewSentenceCount(rewriteTarget == null ? null : rewriteTarget.maxNewSentenceCount())
+                    .expansionBudget(enumName(diagnosis == null ? null : diagnosis.expansionBudget()))
+                    .profileTaskAnswerBand(enumName(resolvedProfile == null || resolvedProfile.task() == null ? null : resolvedProfile.task().answerBand()))
+                    .profileTaskCompletion(enumName(resolvedProfile == null || resolvedProfile.task() == null ? null : resolvedProfile.task().taskCompletion()))
+                    .profileTaskFinishable(resolvedProfile == null || resolvedProfile.task() == null ? null : resolvedProfile.task().finishable())
+                    .profileGrammarSeverity(enumName(resolvedProfile == null || resolvedProfile.grammar() == null ? null : resolvedProfile.grammar().severity()))
+                    .profileGrammarIssueCount(resolvedProfile == null || resolvedProfile.grammar() == null || resolvedProfile.grammar().issues() == null
+                            ? null
+                            : resolvedProfile.grammar().issues().size())
+                    .profileContentSpecificity(enumName(resolvedProfile == null || resolvedProfile.content() == null ? null : resolvedProfile.content().specificity()))
+                    .profileHasMainAnswer(contentSignals == null ? null : contentSignals.hasMainAnswer())
+                    .profileHasReason(contentSignals == null ? null : contentSignals.hasReason())
+                    .profileHasExample(contentSignals == null ? null : contentSignals.hasExample())
+                    .profileHasFeeling(contentSignals == null ? null : contentSignals.hasFeeling())
+                    .profileHasActivity(contentSignals == null ? null : contentSignals.hasActivity())
+                    .profileHasTimeOrPlace(contentSignals == null ? null : contentSignals.hasTimeOrPlace())
+                    .diagnosisPayloadJson(writeJsonOrNull(diagnosis))
+                    .answerProfileJson(writeJsonOrNull(resolvedProfile))
+                    .sectionPolicyJson(writeJsonOrNull(sectionPolicy))
+                    .finalSectionsJson(writeJsonOrNull(finalSections))
+                    .build();
+            feedbackDiagnosisLogRepository.save(entity);
+        } catch (Exception exception) {
+            LOGGER.warn("Failed to save feedback diagnosis log for session {}", session.getId(), exception);
+        }
+    }
+
+    private String writeJsonOrNull(Object value) throws JsonProcessingException {
+        if (value == null) {
+            return null;
+        }
+        return objectMapper.writeValueAsString(value);
+    }
+
+    private String resolveAnalysisProvider(
+            FeedbackAnalysisSnapshot analysisSnapshot,
+            boolean authoritativeLlmFeedback
+    ) {
+        if (analysisSnapshot != null && analysisSnapshot.provider() != null && !analysisSnapshot.provider().isBlank()) {
+            return analysisSnapshot.provider().trim();
+        }
+        return authoritativeLlmFeedback ? "LLM" : "LOCAL";
+    }
+
+    private String enumName(Enum<?> value) {
+        return value == null ? null : value.name();
+    }
+
     private String buildPersistedFeedbackSummary(FeedbackResponseDto feedback) {
+        if (feedback != null) {
+            String directSummary = normalizeNullable(feedback.summary());
+            if (directSummary != null) {
+                return directSummary;
+            }
+
+            String firstStrength = firstNonBlank(feedback.strengths());
+            String firstIssue = firstNonBlank(
+                    firstCorrectionIssue(feedback.corrections()),
+                    firstGrammarReason(feedback.grammarFeedback()),
+                    normalizeNullable(feedback.rewriteChallenge())
+            );
+
+            if (firstStrength != null && firstIssue != null) {
+                return firstStrength + " " + firstIssue;
+            }
+            if (firstIssue != null) {
+                return firstIssue;
+            }
+            if (firstStrength != null) {
+                return firstStrength;
+            }
+            return "피드백이 생성되었습니다.";
+        }
         String directSummary = normalizeNullable(feedback.summary());
         if (directSummary != null) {
             return directSummary;
@@ -377,6 +566,13 @@ public class FeedbackService {
     }
 
     private String buildPersistedRewriteChallenge(FeedbackResponseDto feedback) {
+        if (feedback != null) {
+            return firstNonBlank(
+                    normalizeNullable(feedback.rewriteChallenge()),
+                    normalizeNullable(feedback.summary()),
+                    "다음 답변에서 핵심 문장을 더 자연스럽게 다듬어 보세요."
+            );
+        }
         return firstNonBlank(
                 normalizeNullable(feedback.rewriteChallenge()),
                 normalizeNullable(feedback.summary()),
@@ -585,7 +781,7 @@ public class FeedbackService {
             return learnerAnswer;
         }
 
-        List<InlineFeedbackSegmentDto> segments = openAiFeedbackClient.buildPreciseInlineFeedback(learnerAnswer, correctedAnswer);
+        List<InlineFeedbackSegmentDto> segments = llmFeedbackClient.buildPreciseInlineFeedback(learnerAnswer, correctedAnswer);
         if (segments.isEmpty()) {
             return correctedAnswer;
         }
@@ -624,6 +820,10 @@ public class FeedbackService {
                     hasUnsafeContentRewrite = true;
                 }
                 clusterEnd += 1;
+            }
+
+            if (hasUnsafeContentRewrite) {
+                allowCluster = false;
             }
 
             if (!allowCluster) {
@@ -672,7 +872,7 @@ public class FeedbackService {
             List<InlineFeedbackSegmentDto> existingInlineFeedback
     ) {
         if (correctedAnswer != null && !correctedAnswer.isBlank()) {
-            return openAiFeedbackClient.buildInlineFeedbackFromCorrectedAnswer(learnerAnswer, correctedAnswer);
+            return llmFeedbackClient.buildInlineFeedbackFromCorrectedAnswer(learnerAnswer, correctedAnswer);
         }
 
         if (existingInlineFeedback == null || existingInlineFeedback.isEmpty()) {
@@ -748,14 +948,14 @@ public class FeedbackService {
         }
 
         if (inlineFeedback == null || inlineFeedback.isEmpty()) {
-            return List.of();
+            return List.copyOf(provided);
         }
 
         if (!provided.isEmpty()) {
             List<GrammarFeedbackItemDto> preserved = new ArrayList<>();
             LinkedHashSet<String> seenProvided = new LinkedHashSet<>();
             for (GrammarFeedbackItemDto item : provided) {
-                if (!overlapsInlineGrammarChange(item, inlineFeedback)) {
+                if (!overlapsInlineGrammarChange(item, inlineFeedback) && !isLongGrammarRewriteItem(item)) {
                     continue;
                 }
                 if (seenProvided.add(buildGrammarFeedbackKey(item))) {
@@ -860,6 +1060,22 @@ public class FeedbackService {
         return new GrammarFeedbackItemDto(originalText, revisedText, reasonKo);
     }
 
+    private boolean isLongGrammarRewriteItem(GrammarFeedbackItemDto item) {
+        if (item == null) {
+            return false;
+        }
+        String originalText = cleanSegmentPhrase(item.originalText());
+        String revisedText = cleanSegmentPhrase(item.revisedText());
+        List<String> originalTokens = tokenList(normalizeForComparison(originalText));
+        List<String> revisedTokens = tokenList(normalizeForComparison(revisedText));
+        if (originalTokens.isEmpty() || revisedTokens.isEmpty()) {
+            return false;
+        }
+        return (originalTokens.size() > 6 || revisedTokens.size() > 6)
+                && originalTokens.size() <= 24
+                && revisedTokens.size() <= 24;
+    }
+
     private boolean isValidGrammarFeedbackSpan(String originalText, String revisedText) {
         if (originalText.isBlank() && revisedText.isBlank()) {
             return false;
@@ -876,7 +1092,23 @@ public class FeedbackService {
             return isPunctuationOnly(originalText) || originalTokens.size() <= 3;
         }
 
-        return originalTokens.size() <= 6 && revisedTokens.size() <= 6;
+        if (originalTokens.size() <= 6 && revisedTokens.size() <= 6) {
+            return true;
+        }
+
+        int maxSideTokens = Math.max(originalTokens.size(), revisedTokens.size());
+        int totalTokens = originalTokens.size() + revisedTokens.size();
+        if (maxSideTokens > 24 || totalTokens > 40) {
+            return false;
+        }
+
+        String normalizedOriginal = normalizeForComparison(originalText);
+        String normalizedRevised = normalizeForComparison(revisedText);
+        return normalizedOriginal.contains(",")
+                || normalizedRevised.contains(",")
+                || normalizedOriginal.contains(".")
+                || normalizedRevised.contains(".")
+                || overlapsGrammarPhrase(normalizedOriginal, normalizedRevised);
     }
 
     private GrammarFeedbackItemDto buildFallbackGrammarFeedback(
@@ -1123,7 +1355,7 @@ public class FeedbackService {
 
         if ("the".equals(article)) {
             if (!resolvedNounHint.isBlank()) {
-                return "'" + resolvedNounHint + "'를 특정해서 말할 때는 관사 'the'를 써요.";
+                return "'" + resolvedNounHint + "'을 특정해서 말할 때는 관사 'the'를 써요.";
             }
             return "대상을 특정해서 말할 때는 관사 'the'를 써요.";
         }
@@ -1147,7 +1379,6 @@ public class FeedbackService {
                 || reasonKo.contains("더 분명")
                 || reasonKo.contains("더 자연");
     }
-
     private boolean shouldRefinePossessiveArticleReason(String reasonKo) {
         if (reasonKo == null || reasonKo.isBlank()) {
             return true;
@@ -1155,7 +1386,6 @@ public class FeedbackService {
 
         return !containsGrammarReasonCue(reasonKo, "소유격", "한정사", "possessive", "determiner");
     }
-
     private String formatArticleObject(String article) {
         if (article == null || article.isBlank()) {
             return "관사를";
@@ -1166,7 +1396,6 @@ public class FeedbackService {
             default -> "관사 '" + article.trim().toLowerCase(Locale.ROOT) + "'를";
         };
     }
-
     private String findArticleHeadNoun(List<String> revisedTokens) {
         if (revisedTokens == null || revisedTokens.size() <= 1) {
             return "";
@@ -1265,7 +1494,6 @@ public class FeedbackService {
             default -> false;
         };
     }
-
     private boolean shouldRefineRemovedArticleReason(String reasonKo) {
         if (reasonKo == null || reasonKo.isBlank()) {
             return true;
@@ -1273,7 +1501,6 @@ public class FeedbackService {
 
         return !containsGrammarReasonCue(reasonKo, "관사", "한정사", "소유격", "article", "determiner", "possessive");
     }
-
     private String buildSpecificPunctuationReason(String punctuationText) {
         return switch (punctuationText) {
             case "," -> "쉼표를 넣어 앞부분의 도입 표현과 뒤의 본문을 구분해요.";
@@ -1283,7 +1510,6 @@ public class FeedbackService {
             default -> "";
         };
     }
-
     private int findMatchingInlineSegmentIndex(
             GrammarFeedbackItemDto item,
             List<InlineFeedbackSegmentDto> inlineFeedback
@@ -2654,7 +2880,7 @@ public class FeedbackService {
                 || diagnostics.rejectedByRecommendation > 0
                 || diagnostics.rejectedByNovelty > 0;
 
-        if (!shouldLogAtInfo && !log.isDebugEnabled()) {
+        if (!shouldLogAtInfo && !LOGGER.isDebugEnabled()) {
             return;
         }
 
@@ -2678,11 +2904,11 @@ public class FeedbackService {
         };
 
         if (shouldLogAtInfo) {
-            log.info(message, arguments);
+            LOGGER.info(message, arguments);
             return;
         }
 
-        log.debug(message, arguments);
+        LOGGER.debug(message, arguments);
     }
 
     private String joinForLog(List<String> values) {
@@ -3181,37 +3407,37 @@ public class FeedbackService {
         }
 
         if (lower.startsWith("because ")) {
-            return "왜냐하면 [이유]라고 이유를 이어 말하는 틀";
+            return "[이유]라고 이유를 풀어 말하는 표현";
         }
         if (lower.startsWith("by ")) {
-            return "[방법]으로 [동사]하는 방식을 말하는 틀";
+            return "[방법]으로 [동사]하는 방식을 말하는 표현";
         }
         if (lower.startsWith("so that ")) {
-            return "[결과]를 위해 또는 [결과]가 되도록이라고 목적을 말하는 틀";
+            return "[결과]를 위해 또는 [결과]가 되도록이라고 목적을 말하는 표현";
         }
         if (lower.startsWith("i plan to ")) {
-            return "[동사]할 계획이라고 말하는 틀";
+            return "[동사]할 계획이라고 말하는 표현";
         }
         if (lower.startsWith("i want to ")) {
-            return "[동사]하고 싶다고 말하는 틀";
+            return "[동사]하고 싶다고 말하는 표현";
         }
         if (lower.startsWith("i would like to ")) {
-            return "[동사]하고 싶다고 공손하게 말하는 틀";
+            return "[동사]하고 싶다고 공손하게 말하는 표현";
         }
         if (lower.startsWith("i usually ")) {
-            return "평소 습관이나 일상을 말하는 틀";
+            return "평소 습관이나 일상을 말하는 표현";
         }
         if (lower.startsWith("it helps me ")) {
-            return "이것이 내게 어떤 도움이 되는지 말하는 틀";
+            return "이것이 내게 어떤 도움이 되는지 말하는 표현";
         }
         if (lower.startsWith("when i want to ")) {
-            return "어떤 상황에서 어떻게 행동하는지 말하는 틀";
+            return "어떤 상황에서 어떻게 행동하는지 말하는 표현";
         }
         if (lower.startsWith("one reason is that ")) {
-            return "한 가지 이유를 구체적으로 덧붙이는 틀";
+            return "한 가지 이유를 구체적으로 덧붙이는 표현";
         }
         if (lower.startsWith("this is because ")) {
-            return "앞 문장의 이유를 이어 설명하는 틀";
+            return "앞문장의 이유를 이어 설명하는 표현";
         }
 
         return null;
@@ -3242,7 +3468,6 @@ public class FeedbackService {
             default -> buildPatternBasedLexicalMeaning(lower);
         };
     }
-
     private String buildPatternBasedLexicalMeaning(String expression) {
         if (expression.startsWith("after ")) {
             return buildTemporalGloss(expression.substring("after ".length()), "후에");
@@ -3298,7 +3523,6 @@ public class FeedbackService {
             default -> null;
         };
     }
-
     private String buildPossessivePhraseGloss(String tail) {
         String normalizedTail = normalizeForComparison(tail);
         return switch (normalizedTail) {
@@ -3306,7 +3530,6 @@ public class FeedbackService {
             default -> null;
         };
     }
-
     private String buildInfinitiveGloss(String tail) {
         String normalizedTail = normalizeForComparison(tail);
         return switch (normalizedTail) {
@@ -3894,7 +4117,7 @@ public class FeedbackService {
             return List.of();
         }
 
-        return Arrays.stream(normalized.split("(?<=[.!?。？！])\\s+"))
+        return Arrays.stream(normalized.split("(?<=[.!?。！？])\\s+"))
                 .map(this::normalizeNullable)
                 .filter(sentence -> sentence != null && !sentence.isBlank())
                 .toList();
@@ -4196,8 +4419,7 @@ public class FeedbackService {
 
     private boolean isGenericMeaningPlaceholder(String meaningKo) {
         String normalized = meaningKo == null ? "" : meaningKo.trim().replaceAll("\\s+", " ");
-        return normalized.equals("다음 답변에서 활용하기 좋은 표현")
-                || normalized.equals("다음 답변에 바로 가져다 쓸 수 있는 표현 틀")
+        return normalized.equals("다음 답변에서 사용하기 좋은 표현")
                 || normalized.equals("다음 답변에 바로 가져다 쓸 수 있는 표현")
                 || (normalized.contains("다음 답변에서") && normalized.contains("표현"))
                 || (normalized.contains("가져다 쓸 수 있는") && normalized.contains("표현"));
@@ -4260,7 +4482,6 @@ public class FeedbackService {
                 || (normalized.contains("다음 답변에서") && normalized.contains("표현"))
                 || (normalized.contains("가져다 쓸 수") && normalized.contains("표현"));
     }
-
     private RefinementExpressionType determineRefinementType(String expression) {
         return expression != null && expression.contains("[") && expression.contains("]")
                 ? RefinementExpressionType.FRAME
@@ -4401,14 +4622,14 @@ public class FeedbackService {
         if (correctedAnswer == null || correctedAnswer.isBlank() || correctedAnswer.equals(answer)) {
             return List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer));
         }
-        return openAiFeedbackClient.buildPreciseInlineFeedback(answer, correctedAnswer);
+        return llmFeedbackClient.buildPreciseInlineFeedback(answer, correctedAnswer);
     }
 
     private String buildRewriteChallenge(PromptDto prompt, boolean alreadyStrong) {
         if (alreadyStrong) {
-            return "지금 답변을 바탕으로 문장을 1~2개만 더 덧붙여 이유나 예시를 추가해 보세요.";
+            return "지금 답변을 바탕으로 문장 1~2개만 더 붙여 이유나 예시를 추가해 보세요.";
         }
-        return "\"" + prompt.topic() + "\"에 대해 3~4문장으로 다시 답해 보세요. 첫 문장에서 핵심 생각을 말하고, 뒤 문장에서 이유나 예시를 덧붙이면 더 좋아요.";
+        return "\"" + prompt.topic() + "\"에 대해 3~4문장으로 다시 써 보세요. 첫 문장에서 핵심 생각을 말하고, 다음 문장에서 이유나 예시를 덧붙이면 더 좋아요.";
     }
 
     private String buildRewriteChallenge(
@@ -4427,19 +4648,19 @@ public class FeedbackService {
             case "MAKE_ON_TOPIC" ->
                     "\"" + prompt.topic() + "\"에 맞는 핵심 답을 먼저 쓰고, 뒤에 이유를 1문장 덧붙여 다시 써 보세요." + hint;
             case "STATE_MAIN_ANSWER" ->
-                    "질문에 대한 핵심 답을 첫 문장에서 분명히 적고, 가능하면 why에 해당하는 이유를 짧게 덧붙여 보세요." + hint;
+                    "질문에 대한 핵심 답을 첫 문장에서 분명하게 쓰고, 가능하면 why에 해당하는 이유를 짧게 덧붙여 보세요." + hint;
             case "FIX_BLOCKING_GRAMMAR" ->
                     "지금 답의 뜻은 유지하고, 문장을 막는 문법만 최소한으로 고쳐 다시 써 보세요." + hint;
             case "FIX_LOCAL_GRAMMAR" ->
                     "지금 답의 내용은 유지한 채, 문법 표현 1~2곳만 다듬어 다시 써 보세요." + hint;
             case "ADD_REASON" ->
-                    "핵심 답은 유지하고, 왜 그런지 이유를 1문장만 더 붙여 보세요." + hint;
+                    "핵심 답은 그대로 두고, 왜 그런지 이유를 1문장 더 붙여 보세요." + hint;
             case "ADD_EXAMPLE" ->
-                    "핵심 답은 유지하고, 이를 보여 주는 짧은 예시를 1문장만 덧붙여 보세요." + hint;
+                    "핵심 답은 그대로 두고, 내용을 보여 주는 짧은 예시를 1문장 더 붙여 보세요." + hint;
             case "ADD_DETAIL" ->
-                    "핵심 답은 유지하고, 시간·장소·활동 같은 구체 디테일을 1문장만 더 넣어 보세요." + hint;
+                    "핵심 답은 그대로 두고, 시간·장소·활동 같은 구체 디테일을 1문장 더 넣어 보세요." + hint;
             case "IMPROVE_NATURALNESS" ->
-                    "지금 답을 바탕으로 문장을 더 자연스럽게 연결해 보세요." + hint;
+                    "지금 답을 바탕으로 문장 연결을 더 자연스럽게 다듬어 보세요." + hint;
             default -> fallback == null || fallback.isBlank() ? buildRewriteChallenge(prompt, false) : fallback;
         };
     }
@@ -4475,6 +4696,7 @@ public class FeedbackService {
         return " 힌트 뼈대: \"" + skeleton.trim() + "\"";
     }
 }
+
 
 
 

@@ -32,7 +32,7 @@ final class FeedbackScreenPolicySelector {
         FixFirstMode fixFirstMode = FixFirstMode.HIDE;
         SectionDisplayMode rewriteGuideDisplayMode = SectionDisplayMode.SHOW_EXPANDED;
         RewriteGuideMode rewriteGuideMode = RewriteGuideMode.DETAIL_SCAFFOLD;
-        ModelAnswerDisplayMode modelAnswerDisplayMode = ModelAnswerDisplayMode.HIDE;
+        ModelAnswerDisplayMode modelAnswerDisplayMode = ModelAnswerDisplayMode.SHOW_EXPANDED;
         RefinementDisplayMode refinementDisplayMode = RefinementDisplayMode.HIDE;
         int keepMaxItems = 1;
         int keepExpressionChipMaxItems = 2;
@@ -54,15 +54,21 @@ final class FeedbackScreenPolicySelector {
                         ? RefinementDisplayMode.SHOW_COLLAPSED
                         : RefinementDisplayMode.HIDE;
                 refinementMaxCards = 1;
-                modelAnswerDisplayMode = ModelAnswerDisplayMode.HIDE;
+                modelAnswerDisplayMode = availability != null && availability.hasModelAnswer()
+                        ? ModelAnswerDisplayMode.SHOW_EXPANDED
+                        : ModelAnswerDisplayMode.HIDE;
                 showFinishCta = false;
             }
             case SHORT_BUT_VALID -> {
-                fixFirstDisplayMode = shouldShowGrammarFix(answerBand, grammarSeverity, taskCompletion, availability, primaryIssueCode)
+                fixFirstMode = resolveFixFirstMode(answerBand, taskCompletion, grammarSeverity, availability, primaryIssueCode);
+                fixFirstDisplayMode = availability != null
+                        && availability.hasPrimaryFix()
+                        && fixFirstMode != FixFirstMode.HIDE
                         ? SectionDisplayMode.SHOW_EXPANDED
                         : SectionDisplayMode.HIDE;
-                fixFirstMode = resolveFixFirstMode(answerBand, taskCompletion, grammarSeverity, availability, primaryIssueCode);
-                rewriteGuideMode = RewriteGuideMode.DETAIL_SCAFFOLD;
+                rewriteGuideMode = fixFirstMode == FixFirstMode.GRAMMAR_CARD
+                        ? RewriteGuideMode.CORRECTED_SKELETON
+                        : RewriteGuideMode.DETAIL_SCAFFOLD;
                 modelAnswerDisplayMode = availability != null && availability.hasModelAnswer()
                         ? ModelAnswerDisplayMode.SHOW_EXPANDED
                         : ModelAnswerDisplayMode.HIDE;
@@ -78,7 +84,7 @@ final class FeedbackScreenPolicySelector {
                 fixFirstMode = FixFirstMode.GRAMMAR_CARD;
                 rewriteGuideMode = RewriteGuideMode.CORRECTED_SKELETON;
                 modelAnswerDisplayMode = availability != null && availability.hasModelAnswer()
-                        ? ModelAnswerDisplayMode.SHOW_COLLAPSED
+                        ? ModelAnswerDisplayMode.SHOW_EXPANDED
                         : ModelAnswerDisplayMode.HIDE;
                 refinementDisplayMode = availability != null && availability.hasDisplayableRefinement()
                         ? RefinementDisplayMode.SHOW_COLLAPSED
@@ -87,11 +93,15 @@ final class FeedbackScreenPolicySelector {
                 showFinishCta = false;
             }
             case CONTENT_THIN -> {
-                fixFirstDisplayMode = shouldShowGrammarFix(answerBand, grammarSeverity, taskCompletion, availability, primaryIssueCode)
+                fixFirstMode = resolveFixFirstMode(answerBand, taskCompletion, grammarSeverity, availability, primaryIssueCode);
+                fixFirstDisplayMode = availability != null
+                        && availability.hasPrimaryFix()
+                        && fixFirstMode != FixFirstMode.HIDE
                         ? SectionDisplayMode.SHOW_EXPANDED
                         : SectionDisplayMode.HIDE;
-                fixFirstMode = resolveFixFirstMode(answerBand, taskCompletion, grammarSeverity, availability, primaryIssueCode);
-                rewriteGuideMode = RewriteGuideMode.DETAIL_SCAFFOLD;
+                rewriteGuideMode = fixFirstMode == FixFirstMode.GRAMMAR_CARD
+                        ? RewriteGuideMode.CORRECTED_SKELETON
+                        : RewriteGuideMode.DETAIL_SCAFFOLD;
                 modelAnswerDisplayMode = availability != null && availability.hasModelAnswer()
                         ? ModelAnswerDisplayMode.SHOW_EXPANDED
                         : ModelAnswerDisplayMode.HIDE;
@@ -101,19 +111,21 @@ final class FeedbackScreenPolicySelector {
                 refinementMaxCards = 2;
             }
             case NATURAL_BUT_BASIC -> {
-                fixFirstDisplayMode = availability != null && availability.hasHighValueCorrection()
+                boolean hasConcreteGrammarPolish = availability != null && availability.hasGrammarCard();
+                fixFirstDisplayMode = availability != null
+                        && (availability.hasHighValueCorrection() || hasConcreteGrammarPolish)
                         ? SectionDisplayMode.SHOW_EXPANDED
                         : SectionDisplayMode.HIDE;
                 fixFirstMode = fixFirstDisplayMode == SectionDisplayMode.SHOW_EXPANDED
                         ? resolveFixFirstMode(answerBand, taskCompletion, grammarSeverity, availability, primaryIssueCode)
                         : FixFirstMode.HIDE;
-                rewriteGuideMode = completionState == CompletionState.OPTIONAL_POLISH
+                rewriteGuideMode = fixFirstMode == FixFirstMode.GRAMMAR_CARD
+                        ? RewriteGuideMode.CORRECTED_SKELETON
+                        : completionState == CompletionState.OPTIONAL_POLISH
                         ? RewriteGuideMode.OPTIONAL_POLISH
                         : RewriteGuideMode.DETAIL_SCAFFOLD;
                 modelAnswerDisplayMode = availability != null && availability.hasModelAnswer()
-                        ? (completionState == CompletionState.OPTIONAL_POLISH
-                                ? ModelAnswerDisplayMode.HIDE
-                                : ModelAnswerDisplayMode.SHOW_COLLAPSED)
+                        ? ModelAnswerDisplayMode.SHOW_COLLAPSED
                         : ModelAnswerDisplayMode.HIDE;
                 refinementDisplayMode = availability != null && availability.hasDisplayableRefinement()
                         ? RefinementDisplayMode.SHOW_COLLAPSED
@@ -138,7 +150,12 @@ final class FeedbackScreenPolicySelector {
 
         if (completionState == CompletionState.OPTIONAL_POLISH) {
             rewriteGuideMode = RewriteGuideMode.OPTIONAL_POLISH;
-            if (fixFirstMode != FixFirstMode.GRAMMAR_CARD || (availability != null && !availability.hasHighValueCorrection())) {
+            boolean keepConcreteGrammarPolish = availability != null
+                    && availability.hasGrammarCard()
+                    && fixFirstMode == FixFirstMode.GRAMMAR_CARD;
+            if (!keepConcreteGrammarPolish
+                    && (fixFirstMode != FixFirstMode.GRAMMAR_CARD
+                    || (availability != null && !availability.hasHighValueCorrection()))) {
                 fixFirstDisplayMode = SectionDisplayMode.HIDE;
                 fixFirstMode = FixFirstMode.HIDE;
             }
@@ -194,25 +211,6 @@ final class FeedbackScreenPolicySelector {
         );
     }
 
-    private boolean shouldShowGrammarFix(
-            AnswerBand answerBand,
-            GrammarSeverity grammarSeverity,
-            TaskCompletion taskCompletion,
-            FeedbackSectionAvailability availability,
-            String primaryIssueCode
-    ) {
-        if (availability == null || !availability.hasPrimaryFix()) {
-            return false;
-        }
-        if (answerBand == AnswerBand.OFF_TOPIC || taskCompletion != TaskCompletion.FULL) {
-            return true;
-        }
-        return grammarSeverity.ordinal() >= GrammarSeverity.MINOR.ordinal()
-                || "FIX_BLOCKING_GRAMMAR".equals(primaryIssueCode)
-                || "FIX_LOCAL_GRAMMAR".equals(primaryIssueCode)
-                || availability.hasHighValueCorrection();
-    }
-
     private FixFirstMode resolveFixFirstMode(
             AnswerBand answerBand,
             TaskCompletion taskCompletion,
@@ -220,23 +218,102 @@ final class FeedbackScreenPolicySelector {
             FeedbackSectionAvailability availability,
             String primaryIssueCode
     ) {
-        if (answerBand == AnswerBand.OFF_TOPIC || taskCompletion != TaskCompletion.FULL) {
+        if (answerBand == AnswerBand.OFF_TOPIC) {
             return FixFirstMode.TASK_RESET_CARD;
         }
-        if (answerBand == AnswerBand.GRAMMAR_BLOCKING
-                || grammarSeverity.ordinal() >= GrammarSeverity.MINOR.ordinal()
-                || "FIX_BLOCKING_GRAMMAR".equals(primaryIssueCode)
-                || "FIX_LOCAL_GRAMMAR".equals(primaryIssueCode)
-                || (availability != null && availability.hasGrammarCard())) {
+
+        int grammarScore = scoreGrammarMode(answerBand, grammarSeverity, availability, primaryIssueCode);
+        int detailScore = scoreDetailMode(answerBand, taskCompletion, primaryIssueCode);
+        int taskResetScore = scoreTaskResetMode(answerBand, taskCompletion, primaryIssueCode);
+
+        int bestScore = Math.max(grammarScore, Math.max(detailScore, taskResetScore));
+        if (bestScore <= 0) {
+            return FixFirstMode.HIDE;
+        }
+        if (grammarScore >= detailScore && grammarScore >= taskResetScore) {
             return FixFirstMode.GRAMMAR_CARD;
         }
+        if (detailScore >= taskResetScore) {
+            return FixFirstMode.DETAIL_PROMPT_CARD;
+        }
+        return FixFirstMode.TASK_RESET_CARD;
+    }
+
+    private int scoreGrammarMode(
+            AnswerBand answerBand,
+            GrammarSeverity grammarSeverity,
+            FeedbackSectionAvailability availability,
+            String primaryIssueCode
+    ) {
+        if (availability == null || !availability.hasGrammarCard()) {
+            return 0;
+        }
+
+        int score = 0;
+        if (answerBand == AnswerBand.GRAMMAR_BLOCKING) {
+            score += 10;
+        }
+        if ("FIX_BLOCKING_GRAMMAR".equals(primaryIssueCode)) {
+            score += 9;
+        } else if ("FIX_LOCAL_GRAMMAR".equals(primaryIssueCode)) {
+            score += 7;
+        }
+        score += switch (grammarSeverity) {
+            case MAJOR -> 9;
+            case MODERATE -> 7;
+            case MINOR -> 3;
+            case NONE -> 1;
+        };
+        if (availability.hasHighValueCorrection()) {
+            score += 1;
+        }
+        return score;
+    }
+
+    private int scoreDetailMode(
+            AnswerBand answerBand,
+            TaskCompletion taskCompletion,
+            String primaryIssueCode
+    ) {
+        int score = 0;
         if ("ADD_REASON".equals(primaryIssueCode)
                 || "ADD_EXAMPLE".equals(primaryIssueCode)
                 || "ADD_DETAIL".equals(primaryIssueCode)
                 || "MAKE_IT_MORE_SPECIFIC".equals(primaryIssueCode)) {
-            return FixFirstMode.DETAIL_PROMPT_CARD;
+            score += 8;
         }
-        return FixFirstMode.HIDE;
+        if (taskCompletion == TaskCompletion.PARTIAL) {
+            score += 2;
+        }
+        if (answerBand == AnswerBand.CONTENT_THIN) {
+            score += 2;
+        } else if (answerBand == AnswerBand.SHORT_BUT_VALID || answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
+            score += 1;
+        }
+        return score;
+    }
+
+    private int scoreTaskResetMode(
+            AnswerBand answerBand,
+            TaskCompletion taskCompletion,
+            String primaryIssueCode
+    ) {
+        int score = 0;
+        if ("OFF_TOPIC_RESPONSE".equals(primaryIssueCode)
+                || "MISSING_MAIN_TASK".equals(primaryIssueCode)
+                || "STATE_MAIN_ANSWER".equals(primaryIssueCode)
+                || "MAKE_ON_TOPIC".equals(primaryIssueCode)) {
+            score += 8;
+        }
+        if (taskCompletion == TaskCompletion.MISS) {
+            score += 7;
+        } else if (taskCompletion == TaskCompletion.PARTIAL) {
+            score += 2;
+        }
+        if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
+            score += 1;
+        }
+        return score;
     }
 
     private AnswerBand answerBand(AnswerProfile answerProfile) {

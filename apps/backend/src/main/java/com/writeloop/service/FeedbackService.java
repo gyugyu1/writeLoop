@@ -109,7 +109,7 @@ public class FeedbackService {
             "i", "if", "in", "into", "is", "it", "its", "my", "of", "on", "one", "or", "our",
             "reason", "so", "that", "the", "their", "this", "to", "when", "with", "your", "his", "her"
     );
-    private static final int MAX_REFINEMENT_EXPRESSION_COUNT = 4;
+    private static final int MAX_REFINEMENT_EXPRESSION_COUNT = 12;
 
     private final PromptService promptService;
     private final LlmFeedbackClient llmFeedbackClient;
@@ -458,7 +458,7 @@ public class FeedbackService {
                     .diagnosisPrimaryIssueCode(diagnosis == null ? null : normalizeNullable(diagnosis.primaryIssueCode()))
                     .diagnosisSecondaryIssueCode(diagnosis == null ? null : normalizeNullable(diagnosis.secondaryIssueCode()))
                     .diagnosisMinimalCorrection(diagnosis == null ? null : normalizeNullable(diagnosis.minimalCorrection()))
-                    .rewriteTargetAction(rewriteTarget == null ? null : normalizeNullable(rewriteTarget.action()))
+                    .rewriteTargetAction(rewriteTarget == null ? null : limitNullable(normalizeNullable(rewriteTarget.action()), 255))
                     .rewriteTargetSkeleton(rewriteTarget == null ? null : normalizeNullable(rewriteTarget.skeleton()))
                     .rewriteTargetMaxNewSentenceCount(rewriteTarget == null ? null : rewriteTarget.maxNewSentenceCount())
                     .expansionBudget(enumName(diagnosis == null ? null : diagnosis.expansionBudget()))
@@ -769,7 +769,8 @@ public class FeedbackService {
                 feedback.modelAnswer(),
                 feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
-                usedExpressions
+                usedExpressions,
+                feedback.ui()
         );
     }
 
@@ -4529,6 +4530,14 @@ public class FeedbackService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String limitNullable(String value, int maxLength) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null || maxLength <= 0 || normalized.length() <= maxLength) {
+            return normalized;
+        }
+        return normalized.substring(0, maxLength);
     }
 
     private String cleanExpressionCandidate(String raw) {

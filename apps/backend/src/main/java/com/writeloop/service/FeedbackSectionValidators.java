@@ -1,6 +1,7 @@
 package com.writeloop.service;
 
 import com.writeloop.dto.CorrectionDto;
+import com.writeloop.dto.FeedbackPrimaryFixDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.RefinementExpressionDto;
 
@@ -13,10 +14,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 final class FeedbackSectionValidators {
+    private static final Pattern QUOTED_ENGLISH_TOKEN_PATTERN = Pattern.compile("[`'\"‘’“”]([a-z]{1,12})[`'\"‘’“”]", Pattern.CASE_INSENSITIVE);
+    private static final Set<String> CONNECTOR_TOKENS = Set.of("and", "because", "so", "also", "then");
     private static final Pattern WORD_PATTERN = Pattern.compile("[\\p{L}][\\p{L}'-]*");
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\[[^\\]\\r\\n]{1,24}\\]");
     private static final Pattern BROKEN_PATCH_PATTERN = Pattern.compile("'.+?'\\s*->\\s*'.+?'");
     private static final Pattern HANGUL_PATTERN = Pattern.compile("[가-힣]");
+    private static final Pattern IT_REFERENT_PATTERN = Pattern.compile("(?i)\\b(it|it's|it is|its)\\b");
+    private static final Pattern THEY_REFERENT_PATTERN = Pattern.compile("(?i)\\b(they|they're|they are|their|them)\\b");
     private static final Set<String> CONTENT_STOPWORDS = Set.of(
             "a", "an", "and", "are", "at", "be", "because", "by", "do", "for", "from", "go",
             "i", "in", "is", "it", "me", "my", "of", "on", "or", "so", "that", "the", "this",
@@ -110,6 +115,31 @@ final class FeedbackSectionValidators {
             }
         }
         return List.copyOf(sanitized);
+    }
+
+    List<GrammarFeedbackItemDto> alignGrammarFeedbackWithMinimalCorrection(
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            String minimalCorrection
+    ) {
+        if (grammarFeedback == null || grammarFeedback.isEmpty()) {
+            return List.of();
+        }
+        List<GrammarFeedbackItemDto> aligned = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (GrammarFeedbackItemDto item : grammarFeedback) {
+            if (item == null) {
+                continue;
+            }
+            GrammarFeedbackItemDto repaired = repairGrammarItemWithMinimalCorrection(item, minimalCorrection);
+            if (repaired == null) {
+                continue;
+            }
+            String key = normalizeText(repaired.originalText()) + "->" + normalizeText(repaired.revisedText()) + "|" + normalizeText(repaired.reasonKo());
+            if (seen.add(key)) {
+                aligned.add(repaired);
+            }
+        }
+        return List.copyOf(aligned);
     }
 
     List<GrammarFeedbackItemDto> filterLowValueGrammarItems(List<GrammarFeedbackItemDto> grammarFeedback) {
@@ -271,9 +301,6 @@ final class FeedbackSectionValidators {
         if (omitsMajorLearnerClause(anchorText, sanitized)) {
             return null;
         }
-        if (answerBand == AnswerBand.NATURAL_BUT_BASIC && isNearDuplicateText(learnerAnswer, sanitized)) {
-            return null;
-        }
         if ((answerBand == AnswerBand.TOO_SHORT_FRAGMENT
                 || answerBand == AnswerBand.SHORT_BUT_VALID
                 || answerBand == AnswerBand.CONTENT_THIN)
@@ -291,6 +318,26 @@ final class FeedbackSectionValidators {
             return null;
         }
         return sanitized;
+    }
+
+    String alignModelAnswerWithPrimaryFixReferent(
+            String modelAnswer,
+            FeedbackPrimaryFixDto primaryFix,
+            String anchorText
+    ) {
+        String sanitized = blankToNull(modelAnswer);
+        if (sanitized == null || primaryFix == null) {
+            return sanitized;
+        }
+        ReferentTarget target = detectPrimaryFixReferentTarget(primaryFix);
+        if (target == ReferentTarget.NONE || !conflictsWithReferentTarget(sanitized, target)) {
+            return sanitized;
+        }
+        String anchor = sanitizeCorrectedSentence(anchorText);
+        if (anchor != null && !conflictsWithReferentTarget(anchor, target)) {
+            return anchor;
+        }
+        return null;
     }
 
     boolean losesMajorContent(String sourceText, String candidateText) {
@@ -472,6 +519,94 @@ final class FeedbackSectionValidators {
         return false;
     }
 
+    private GrammarFeedbackItemDto repairGrammarItemWithMinimalCorrection(
+            GrammarFeedbackItemDto item,
+            String minimalCorrection
+    ) {
+        String original = blankToNull(item.originalText());
+        String revised = blankToNull(item.revisedText());
+        String reason = blankToNull(item.reasonKo());
+        if (reason == null || revised == null) {
+            return null;
+        }
+
+        Set<String> requiredTokens = extractRequiredReasonTokens(reason);
+        if (requiredTokens.isEmpty() || containsAllRequiredTokens(revised, requiredTokens)) {
+            return item;
+        }
+
+        String normalizedMinimalCorrection = blankToNull(minimalCorrection);
+        if (normalizedMinimalCorrection != null
+                && containsAllRequiredTokens(normalizedMinimalCorrection, requiredTokens)
+                && canPromoteMinimalCorrection(original)) {
+            return new GrammarFeedbackItemDto(
+                    original == null ? "" : original,
+                    normalizedMinimalCorrection,
+                    reason
+            );
+        }
+
+        return null;
+    }
+
+    private Set<String> extractRequiredReasonTokens(String reason) {
+        Set<String> tokens = new LinkedHashSet<>();
+        if (reason == null || reason.isBlank()) {
+            return tokens;
+        }
+
+        Matcher quotedMatcher = QUOTED_ENGLISH_TOKEN_PATTERN.matcher(reason);
+        while (quotedMatcher.find()) {
+            String token = quotedMatcher.group(1);
+            if (token != null && !token.isBlank()) {
+                tokens.add(token.toLowerCase(Locale.ROOT));
+            }
+        }
+
+        String normalizedReason = normalizeText(reason);
+        for (String token : CONNECTOR_TOKENS) {
+            if (containsWord(normalizedReason, token)) {
+                tokens.add(token);
+            }
+        }
+        return tokens;
+    }
+
+    private boolean containsAllRequiredTokens(String text, Set<String> requiredTokens) {
+        if (requiredTokens == null || requiredTokens.isEmpty()) {
+            return true;
+        }
+        String normalizedText = normalizeText(text);
+        if (normalizedText.isBlank()) {
+            return false;
+        }
+        for (String token : requiredTokens) {
+            if (!containsWord(normalizedText, token)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean containsWord(String text, String token) {
+        if (text == null || text.isBlank() || token == null || token.isBlank()) {
+            return false;
+        }
+        return Pattern.compile("(?<![a-z])" + Pattern.quote(token.toLowerCase(Locale.ROOT)) + "(?![a-z])")
+                .matcher(text)
+                .find();
+    }
+
+    private boolean canPromoteMinimalCorrection(String originalText) {
+        String normalizedOriginal = blankToNull(originalText);
+        if (normalizedOriginal == null) {
+            return true;
+        }
+        return normalizedOriginal.contains(".")
+                || normalizedOriginal.contains(",")
+                || normalizedOriginal.split("\\s+").length >= 4;
+    }
+
     private boolean containsPlaceholder(String text) {
         return text != null && PLACEHOLDER_PATTERN.matcher(text).find();
     }
@@ -604,13 +739,61 @@ final class FeedbackSectionValidators {
             return false;
         }
         int allowedNovelTokens = switch (answerBand) {
-            case NATURAL_BUT_BASIC -> 4;
+            case NATURAL_BUT_BASIC -> 6;
             case SHORT_BUT_VALID, CONTENT_THIN ->
                     (modelAnswerMode == ModelAnswerMode.ONE_STEP_UP
-                            || modelAnswerMode == ModelAnswerMode.OPTIONAL_IF_ALREADY_GOOD) ? 6 : 3;
+                            || modelAnswerMode == ModelAnswerMode.OPTIONAL_IF_ALREADY_GOOD) ? 8 : 5;
             default -> 6;
         };
         return novelTokens.size() > allowedNovelTokens;
+    }
+
+    private ReferentTarget detectPrimaryFixReferentTarget(FeedbackPrimaryFixDto primaryFix) {
+        if (primaryFix == null) {
+            return ReferentTarget.NONE;
+        }
+        String original = blankToNull(primaryFix.originalText());
+        String revised = blankToNull(primaryFix.revisedText());
+        String reason = normalizeExpressionForOverlap(primaryFix.reasonKo());
+        if (revised == null) {
+            return ReferentTarget.NONE;
+        }
+
+        boolean revisedHasThey = containsReferentToken(revised, THEY_REFERENT_PATTERN);
+        boolean revisedHasIt = containsReferentToken(revised, IT_REFERENT_PATTERN);
+        boolean originalHasThey = containsReferentToken(original, THEY_REFERENT_PATTERN);
+        boolean originalHasIt = containsReferentToken(original, IT_REFERENT_PATTERN);
+        boolean reasonMentionsPronounOrNumber = reason.contains("대명사")
+                || reason.contains("복수형")
+                || reason.contains("단수");
+
+        if (revisedHasThey && (originalHasIt || reasonMentionsPronounOrNumber)) {
+            return ReferentTarget.PLURAL;
+        }
+        if (revisedHasIt && (originalHasThey || reasonMentionsPronounOrNumber)) {
+            return ReferentTarget.SINGULAR;
+        }
+        return ReferentTarget.NONE;
+    }
+
+    private boolean conflictsWithReferentTarget(String text, ReferentTarget target) {
+        if (text == null || text.isBlank() || target == ReferentTarget.NONE) {
+            return false;
+        }
+        boolean hasIt = containsReferentToken(text, IT_REFERENT_PATTERN);
+        boolean hasThey = containsReferentToken(text, THEY_REFERENT_PATTERN);
+        return switch (target) {
+            case PLURAL -> hasIt && !hasThey;
+            case SINGULAR -> hasThey && !hasIt;
+            case NONE -> false;
+        };
+    }
+
+    private boolean containsReferentToken(String text, Pattern pattern) {
+        if (text == null || text.isBlank()) {
+            return false;
+        }
+        return pattern.matcher(text).find();
     }
 
     private List<Set<String>> splitIntoMeaningfulClauses(String text) {
@@ -844,6 +1027,12 @@ final class FeedbackSectionValidators {
             return false;
         }
         return countWords(modelAnswer) >= countWords(quotedGuideBase) + 4;
+    }
+
+    private enum ReferentTarget {
+        NONE,
+        SINGULAR,
+        PLURAL
     }
 
     record ModelAnswerContent(

@@ -6,20 +6,38 @@ import com.writeloop.dto.FeedbackMicroTipDto;
 import com.writeloop.dto.FeedbackPrimaryFixDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackRewritePracticeDto;
+import com.writeloop.dto.FeedbackRewriteSuggestionDto;
+import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackScreenPolicyDto;
 import com.writeloop.dto.FeedbackUiDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.PromptDto;
+import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.RefinementExpressionDto;
+import com.writeloop.dto.RefinementExpressionType;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 final class FeedbackUiComposer {
+    private static final Pattern ENGLISH_ANCHOR_PATTERN = Pattern.compile("[A-Za-z][A-Za-z' -]{2,}");
     private static final String START_REWRITE_CTA_LABEL = "이 문장으로 시작해서 다시 쓰기";
     private static final Pattern MULTI_SPACE_PATTERN = Pattern.compile("\\s+");
     private static final Pattern PUNCTUATION_ONLY_PATTERN = Pattern.compile("^[\\p{Punct}]+$");
+    private static final Pattern BRACKET_PLACEHOLDER_PATTERN = Pattern.compile("\\[[^\\]]+\\]");
+    private static final Pattern QUOTED_ANCHOR_PATTERN = Pattern.compile("['\"“”‘’]([^'\"“”‘’]{3,80})['\"“”‘’]");
+    private static final Set<String> SHORT_GRAMMAR_ANCHORS = Set.of(
+            "and", "because", "so", "also", "to", "in", "on", "at", "my", "they", "it", "is", "are"
+    );
+    private static final Set<String> GRAMMAR_OVERLAP_CUES = Set.of(
+            "문장", "연결", "전치사", "대명사", "복수", "단수", "동사", "철자", "시제",
+            "connector", "connect", "grammar", "pronoun", "plural", "singular", "preposition", "spelling"
+    );
     private static final List<String> DEFAULT_SECTION_ORDER = List.of(
             FeedbackScreenSectionId.QUESTION_ANSWER.name(),
             FeedbackScreenSectionId.TOP_STATUS.name(),
@@ -40,6 +58,7 @@ final class FeedbackUiComposer {
             FeedbackResponseDto feedback,
             AnswerProfile answerProfile
     ) {
+        FeedbackUiDto llmUi = feedback == null ? null : feedback.ui();
         FeedbackSectionAvailability availability = buildAvailability(prompt, learnerAnswer, feedback, answerProfile);
         CompletionState completionState = completionStateSelector.select(answerProfile, availability);
         FeedbackScreenPolicy screenPolicy = screenPolicySelector.select(
@@ -49,16 +68,64 @@ final class FeedbackUiComposer {
                 feedback == null ? 1 : Math.max(1, feedback.attemptNo())
         );
 
-        FeedbackFocusCardDto focusCard = applyDynamicSupportText(
-                buildFocusCard(prompt, answerProfile, completionState),
+        List<ImprovementCandidate> rankedCandidates = rankImprovementCandidates(
+                prompt,
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                screenPolicy.fixFirstMode()
+        );
+        ImprovementCandidate primaryCandidate = selectPrimaryFixCandidate(
+                rankedCandidates,
+                screenPolicy.fixFirstDisplayMode(),
+                screenPolicy.fixFirstMode()
+        );
+        FeedbackPrimaryFixDto primaryFix = resolvePrimaryFix(
+                llmUi,
+                primaryCandidate,
+                screenPolicy.fixFirstDisplayMode(),
+                screenPolicy.fixFirstMode(),
+                learnerAnswer,
                 feedback
+        );
+        FeedbackFocusCardDto focusCard = resolveFocusCard(
+                llmUi,
+                prompt,
+                answerProfile,
+                screenPolicy,
+                completionState,
+                feedback
+        );
+        FeedbackRewritePracticeDto rewritePractice = resolveRewritePractice(
+                llmUi,
+                prompt,
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                screenPolicy.fixFirstMode(),
+                screenPolicy.rewriteGuideMode(),
+                primaryFix,
+                completionState == CompletionState.OPTIONAL_POLISH
+        );
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = resolveSecondaryLearningPoints(
+                llmUi,
+                primaryFix,
+                rankedCandidates
+        );
+        List<FeedbackSecondaryLearningPointDto> fixPoints = buildFixPoints(primaryFix, secondaryLearningPoints);
+        List<FeedbackRewriteSuggestionDto> rewriteSuggestions = resolveRewriteSuggestions(
+                llmUi,
+                rewritePractice
         );
 
         return new FeedbackUiDto(
                 focusCard,
-                buildPrimaryFix(prompt, learnerAnswer, feedback, answerProfile, screenPolicy.fixFirstDisplayMode(), screenPolicy.fixFirstMode()),
+                primaryFix,
                 buildMicroTip(learnerAnswer, feedback, screenPolicy.fixFirstMode()),
-                buildRewritePractice(prompt, learnerAnswer, feedback, answerProfile, screenPolicy.rewriteGuideMode(), completionState == CompletionState.OPTIONAL_POLISH),
+                secondaryLearningPoints,
+                fixPoints,
+                rewritePractice,
+                rewriteSuggestions,
                 toDto(screenPolicy),
                 buildLoopStatus(feedback, completionState, screenPolicy)
         );
@@ -81,12 +148,17 @@ final class FeedbackUiComposer {
                 && normalizeNullable(grammarCard.reasonKo()) != null;
 
         boolean hasPrimaryFix = hasGrammarCard
+                || (feedback != null && feedback.ui() != null && uiPrimaryFix(feedback.ui()) != null)
                 || answerBand(answerProfile) == AnswerBand.OFF_TOPIC
                 || taskCompletion(answerProfile) != TaskCompletion.FULL
                 || isDetailPromptIssue(primaryIssueCode(answerProfile));
 
-        boolean hasRewriteGuide = normalizeNullable(
-                deriveStarter(prompt, learnerAnswer, feedback, answerProfile, null)
+        boolean hasRewriteGuide = (feedback != null
+                && feedback.ui() != null
+                && feedback.ui().rewritePractice() != null
+                && normalizeNullable(feedback.ui().rewritePractice().starter()) != null)
+                || normalizeNullable(
+                deriveStarter(prompt, learnerAnswer, feedback, answerProfile, FixFirstMode.HIDE, null, null)
         ) != null;
         boolean hasModelAnswer = feedback != null && normalizeNullable(feedback.modelAnswer()) != null;
         boolean hasDisplayableRefinement = hasDisplayableRefinement(feedback == null ? null : feedback.refinementExpressions());
@@ -105,10 +177,12 @@ final class FeedbackUiComposer {
     private FeedbackFocusCardDto buildFocusCard(
             PromptDto prompt,
             AnswerProfile answerProfile,
+            FeedbackScreenPolicy screenPolicy,
             CompletionState completionState
     ) {
         String primaryIssueCode = primaryIssueCode(answerProfile);
         AnswerBand answerBand = answerBand(answerProfile);
+        FixFirstMode fixFirstMode = screenPolicy == null ? FixFirstMode.HIDE : screenPolicy.fixFirstMode();
 
         if (completionState == CompletionState.OPTIONAL_POLISH) {
             return new FeedbackFocusCardDto(
@@ -126,7 +200,8 @@ final class FeedbackUiComposer {
             );
         }
 
-        if (answerBand == AnswerBand.OFF_TOPIC
+        if (fixFirstMode == FixFirstMode.TASK_RESET_CARD
+                || answerBand == AnswerBand.OFF_TOPIC
                 || "OFF_TOPIC_RESPONSE".equals(primaryIssueCode)
                 || "MISSING_MAIN_TASK".equals(primaryIssueCode)
                 || "STATE_MAIN_ANSWER".equals(primaryIssueCode)) {
@@ -145,7 +220,8 @@ final class FeedbackUiComposer {
             );
         }
 
-        if (answerBand == AnswerBand.GRAMMAR_BLOCKING
+        if (fixFirstMode == FixFirstMode.GRAMMAR_CARD
+                || answerBand == AnswerBand.GRAMMAR_BLOCKING
                 || "FIX_BLOCKING_GRAMMAR".equals(primaryIssueCode)
                 || "FIX_LOCAL_GRAMMAR".equals(primaryIssueCode)) {
             return new FeedbackFocusCardDto(
@@ -155,7 +231,7 @@ final class FeedbackUiComposer {
             );
         }
 
-        if ("ADD_REASON".equals(primaryIssueCode)) {
+        if (fixFirstMode == FixFirstMode.DETAIL_PROMPT_CARD && "ADD_REASON".equals(primaryIssueCode)) {
             return new FeedbackFocusCardDto(
                     "이번 답변의 수정 목표",
                     "이유를 한 가지 더 구체적으로 쓰기",
@@ -163,7 +239,7 @@ final class FeedbackUiComposer {
             );
         }
 
-        if ("ADD_EXAMPLE".equals(primaryIssueCode)) {
+        if (fixFirstMode == FixFirstMode.DETAIL_PROMPT_CARD && "ADD_EXAMPLE".equals(primaryIssueCode)) {
             return new FeedbackFocusCardDto(
                     "이번 답변의 수정 목표",
                     "짧은 예시를 한 문장 더 붙이기",
@@ -171,7 +247,8 @@ final class FeedbackUiComposer {
             );
         }
 
-        if ("ADD_DETAIL".equals(primaryIssueCode) || "MAKE_IT_MORE_SPECIFIC".equals(primaryIssueCode)) {
+        if (fixFirstMode == FixFirstMode.DETAIL_PROMPT_CARD
+                && ("ADD_DETAIL".equals(primaryIssueCode) || "MAKE_IT_MORE_SPECIFIC".equals(primaryIssueCode))) {
             return new FeedbackFocusCardDto(
                     "이번 답변의 수정 목표",
                     "한 가지 디테일 더 추가하기",
@@ -188,22 +265,32 @@ final class FeedbackUiComposer {
         );
     }
 
-    private FeedbackFocusCardDto applyDynamicSupportText(FeedbackFocusCardDto focusCard, FeedbackResponseDto feedback) {
+    private FeedbackFocusCardDto resolveFocusCard(
+            FeedbackUiDto llmUi,
+            PromptDto prompt,
+            AnswerProfile answerProfile,
+            FeedbackScreenPolicy screenPolicy,
+            CompletionState completionState,
+            FeedbackResponseDto feedback
+    ) {
+        FeedbackFocusCardDto llmFocusCard = sanitizeLlmFocusCard(llmUi == null ? null : llmUi.focusCard());
+        if (llmFocusCard != null) {
+            return llmFocusCard;
+        }
+        return buildFocusCard(prompt, answerProfile, screenPolicy, completionState);
+    }
+
+    private FeedbackFocusCardDto sanitizeLlmFocusCard(FeedbackFocusCardDto focusCard) {
         if (focusCard == null) {
             return null;
         }
-        String dynamicSupportText = resolveFocusSupportText(feedback);
-        if (dynamicSupportText == null) {
-            return focusCard;
+        String title = normalizeNullable(focusCard.title());
+        String headline = normalizeNullable(focusCard.headline());
+        String supportText = normalizeNullable(focusCard.supportText());
+        if (title == null || headline == null) {
+            return null;
         }
-        if (sameMeaning(dynamicSupportText, focusCard.headline()) || sameMeaning(dynamicSupportText, focusCard.supportText())) {
-            return focusCard;
-        }
-        return new FeedbackFocusCardDto(
-                focusCard.title(),
-                focusCard.headline(),
-                dynamicSupportText
-        );
+        return new FeedbackFocusCardDto(title, headline, supportText);
     }
 
     private FeedbackPrimaryFixDto buildPrimaryFix(
@@ -215,6 +302,237 @@ final class FeedbackUiComposer {
             FixFirstMode fixFirstMode
     ) {
         if (displayMode == SectionDisplayMode.HIDE || fixFirstMode == FixFirstMode.HIDE) {
+            return null;
+        }
+
+        FeedbackPrimaryFixDto llmPrimaryFix = feedback == null || feedback.ui() == null
+                ? null
+                : feedback.ui().primaryFix();
+        FeedbackPrimaryFixDto alignedPrimaryFix = alignPrimaryFixWithMode(llmPrimaryFix, fixFirstMode);
+        if (alignedPrimaryFix != null) {
+            return alignedPrimaryFix;
+        }
+
+        if (fixFirstMode == FixFirstMode.GRAMMAR_CARD) {
+            GrammarFeedbackItemDto primaryGrammarItem = primaryGrammarItem(learnerAnswer, feedback);
+            if (primaryGrammarItem == null) {
+                return null;
+            }
+            return new FeedbackPrimaryFixDto(
+                    "먼저 고칠 부분",
+                    "이 한 군데만 먼저 고치면 문장 흐름이 훨씬 안정돼요.",
+                    primaryGrammarItem.originalText(),
+                    primaryGrammarItem.revisedText(),
+                    primaryGrammarItem.reasonKo()
+            );
+        }
+
+        if (fixFirstMode == FixFirstMode.TASK_RESET_CARD) {
+            return new FeedbackPrimaryFixDto(
+                    "먼저 고칠 부분",
+                    "질문이 묻는 대상과 이유를 바로 말하는 한 문장부터 써 보세요.",
+                    null,
+                    null,
+                    null
+            );
+        }
+
+        String primaryIssueCode = primaryIssueCode(answerProfile);
+        String instruction;
+        if ("ADD_REASON".equals(primaryIssueCode)) {
+            instruction = "because를 사용해 왜 그런지 한 문장으로 이유를 더 써 보세요.";
+        } else if ("ADD_EXAMPLE".equals(primaryIssueCode)) {
+            instruction = "짧은 예시를 한 문장 더 붙여 보세요.";
+        } else if ("ADD_DETAIL".equals(primaryIssueCode) || "MAKE_IT_MORE_SPECIFIC".equals(primaryIssueCode)) {
+            instruction = detailInstruction(prompt);
+        } else {
+            instruction = "지금 답을 더 또렷하게 만드는 정보 한 가지를 추가해 보세요.";
+        }
+        return new FeedbackPrimaryFixDto("한 가지 더 추가하면 좋아요", instruction, null, null, null);
+    }
+
+    private ImprovementCandidate selectPrimaryFixCandidate(
+            List<ImprovementCandidate> rankedCandidates,
+            SectionDisplayMode displayMode,
+            FixFirstMode fixFirstMode
+    ) {
+        if (displayMode == SectionDisplayMode.HIDE
+                || fixFirstMode == FixFirstMode.HIDE
+                || rankedCandidates == null
+                || rankedCandidates.isEmpty()) {
+            return null;
+        }
+
+        for (ImprovementCandidate candidate : rankedCandidates) {
+            if (candidate.primaryFix() != null && candidate.fixFirstMode() == fixFirstMode) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private List<ImprovementCandidate> rankImprovementCandidates(
+            PromptDto prompt,
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            AnswerProfile answerProfile,
+            FixFirstMode fixFirstMode
+    ) {
+        if (feedback == null) {
+            return List.of();
+        }
+
+        List<ImprovementCandidate> candidates = new ArrayList<>();
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+        int order = 0;
+
+        FeedbackPrimaryFixDto llmPrimaryFix = feedback.ui() == null ? null : uiPrimaryFix(feedback.ui());
+        FeedbackPrimaryFixDto alignedPrimaryFix = alignPrimaryFixWithMode(llmPrimaryFix, fixFirstMode);
+        if (alignedPrimaryFix != null) {
+            addImprovementCandidate(
+                    candidates,
+                    seen,
+                    new ImprovementCandidate(
+                            candidateKey(
+                                    "PRIMARY_FIX",
+                                    alignedPrimaryFix.title(),
+                                    alignedPrimaryFix.instruction(),
+                                    alignedPrimaryFix.originalText(),
+                                    alignedPrimaryFix.revisedText()
+                            ),
+                            ImprovementCandidateKind.PRIMARY_FIX,
+                            fixFirstMode,
+                            scorePrimaryFixCandidate(alignedPrimaryFix, fixFirstMode, answerProfile, true),
+                            order++,
+                            alignedPrimaryFix,
+                            null
+                    )
+            );
+        }
+
+        FeedbackPrimaryFixDto fallbackPrimaryFix = buildFallbackPrimaryFix(
+                prompt,
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                fixFirstMode
+        );
+        if (fallbackPrimaryFix != null) {
+            addImprovementCandidate(
+                    candidates,
+                    seen,
+                    new ImprovementCandidate(
+                            candidateKey(
+                                    "PRIMARY_FIX_FALLBACK",
+                                    fallbackPrimaryFix.title(),
+                                    fallbackPrimaryFix.instruction(),
+                                    fallbackPrimaryFix.originalText(),
+                                    fallbackPrimaryFix.revisedText()
+                            ),
+                            ImprovementCandidateKind.PRIMARY_FIX,
+                            fixFirstMode,
+                            scorePrimaryFixCandidate(fallbackPrimaryFix, fixFirstMode, answerProfile, false),
+                            order++,
+                            fallbackPrimaryFix,
+                            null
+                    )
+            );
+        }
+
+        if (feedback.grammarFeedback() != null) {
+            for (GrammarFeedbackItemDto grammarItem : feedback.grammarFeedback()) {
+                FeedbackSecondaryLearningPointDto secondaryPoint = toGrammarSecondaryPoint(grammarItem);
+                if (secondaryPoint == null) {
+                    continue;
+                }
+                addImprovementCandidate(
+                        candidates,
+                        seen,
+                        new ImprovementCandidate(
+                                candidateKey("GRAMMAR", grammarItem.originalText(), grammarItem.revisedText(), grammarItem.reasonKo()),
+                                ImprovementCandidateKind.GRAMMAR,
+                                FixFirstMode.GRAMMAR_CARD,
+                                scoreGrammarCandidate(grammarItem, answerProfile),
+                                order++,
+                                new FeedbackPrimaryFixDto(
+                                        "먼저 고칠 부분",
+                                        "이 한 군데만 먼저 고치면 문장 흐름이 훨씬 안정돼요.",
+                                        grammarItem.originalText(),
+                                        grammarItem.revisedText(),
+                                        grammarItem.reasonKo()
+                                ),
+                                secondaryPoint
+                        )
+                );
+            }
+        }
+
+        if (feedback.corrections() != null) {
+            for (CorrectionDto correction : feedback.corrections()) {
+                FeedbackSecondaryLearningPointDto secondaryPoint = toCorrectionSecondaryPoint(correction);
+                if (secondaryPoint == null) {
+                    continue;
+                }
+                addImprovementCandidate(
+                        candidates,
+                        seen,
+                        new ImprovementCandidate(
+                                candidateKey("CORRECTION", correction.issue(), correction.suggestion()),
+                                ImprovementCandidateKind.CORRECTION,
+                                FixFirstMode.HIDE,
+                                scoreCorrectionCandidate(correction, answerProfile),
+                                order++,
+                                null,
+                                secondaryPoint
+                        )
+                );
+            }
+        }
+
+        if (feedback.refinementExpressions() != null) {
+            for (RefinementExpressionDto expression : feedback.refinementExpressions()) {
+                FeedbackSecondaryLearningPointDto secondaryPoint = toRefinementSecondaryPoint(expression);
+                if (secondaryPoint == null) {
+                    continue;
+                }
+                addImprovementCandidate(
+                        candidates,
+                        seen,
+                        new ImprovementCandidate(
+                                candidateKey("EXPRESSION", expression.expression(), expression.guidanceKo(), expression.exampleEn()),
+                                ImprovementCandidateKind.EXPRESSION,
+                                FixFirstMode.HIDE,
+                                scoreExpressionCandidate(expression, answerProfile),
+                                order++,
+                                null,
+                                secondaryPoint
+                        )
+                );
+            }
+        }
+
+        candidates.sort((left, right) -> {
+            int scoreCompare = Integer.compare(right.score(), left.score());
+            if (scoreCompare != 0) {
+                return scoreCompare;
+            }
+            int kindCompare = Integer.compare(kindPriority(left.kind()), kindPriority(right.kind()));
+            if (kindCompare != 0) {
+                return kindCompare;
+            }
+            return Integer.compare(left.order(), right.order());
+        });
+        return List.copyOf(candidates);
+    }
+
+    private FeedbackPrimaryFixDto buildFallbackPrimaryFix(
+            PromptDto prompt,
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            AnswerProfile answerProfile,
+            FixFirstMode fixFirstMode
+    ) {
+        if (fixFirstMode == FixFirstMode.HIDE) {
             return null;
         }
 
@@ -245,15 +563,262 @@ final class FeedbackUiComposer {
         String primaryIssueCode = primaryIssueCode(answerProfile);
         String instruction;
         if ("ADD_REASON".equals(primaryIssueCode)) {
-            instruction = "왜 그런지 한 문장으로 이유를 더 써 보세요.";
+            instruction = "because를 사용해서 왜 그런지 한 문장으로 이유를 직접 써 보세요.";
         } else if ("ADD_EXAMPLE".equals(primaryIssueCode)) {
             instruction = "짧은 예시를 한 문장 더 붙여 보세요.";
         } else if ("ADD_DETAIL".equals(primaryIssueCode) || "MAKE_IT_MORE_SPECIFIC".equals(primaryIssueCode)) {
             instruction = detailInstruction(prompt);
         } else {
-            instruction = "지금 답을 더 또렷하게 만드는 정보 한 가지를 추가해 보세요.";
+            instruction = "지금 답을 더 선명하게 만들어 줄 정보 한 가지를 추가해 보세요.";
         }
         return new FeedbackPrimaryFixDto("한 가지 더 추가하면 좋아요", instruction, null, null, null);
+    }
+
+    private FeedbackPrimaryFixDto alignPrimaryFixWithMode(
+            FeedbackPrimaryFixDto primaryFix,
+            FixFirstMode fixFirstMode
+    ) {
+        if (primaryFix == null || fixFirstMode == null || fixFirstMode == FixFirstMode.HIDE) {
+            return null;
+        }
+
+        String title = firstNonBlank(primaryFix.title(), defaultPrimaryFixTitle(fixFirstMode));
+        String instruction = normalizeNullable(primaryFix.instruction());
+        String originalText = normalizeNullable(primaryFix.originalText());
+        String revisedText = normalizeNullable(primaryFix.revisedText());
+        String reasonKo = normalizeNullable(primaryFix.reasonKo());
+
+        if (fixFirstMode == FixFirstMode.GRAMMAR_CARD) {
+            if (originalText == null || revisedText == null || reasonKo == null) {
+                return null;
+            }
+            return new FeedbackPrimaryFixDto(title, instruction, originalText, revisedText, reasonKo);
+        }
+
+        boolean hasGrammarPair = originalText != null && revisedText != null && reasonKo != null;
+        if (instruction == null && !hasGrammarPair) {
+            return null;
+        }
+        if (!hasGrammarPair) {
+            FeedbackPrimaryFixDto instructionOnlyPrimaryFix = new FeedbackPrimaryFixDto(title, instruction, null, null, null);
+            if (!isConcreteInstructionOnlyPrimaryFix(instructionOnlyPrimaryFix)) {
+                return null;
+            }
+        }
+
+        return new FeedbackPrimaryFixDto(
+                title,
+                instruction,
+                hasGrammarPair ? originalText : null,
+                hasGrammarPair ? revisedText : null,
+                hasGrammarPair ? reasonKo : null
+        );
+    }
+
+    private FeedbackPrimaryFixDto uiPrimaryFix(FeedbackUiDto ui) {
+        if (ui == null) {
+            return null;
+        }
+        if (ui.fixPoints() != null) {
+            for (FeedbackSecondaryLearningPointDto point : ui.fixPoints()) {
+                FeedbackPrimaryFixDto derived = toPrimaryFix(point);
+                if (derived != null) {
+                    return derived;
+                }
+            }
+        }
+        return ui.primaryFix();
+    }
+
+    private FeedbackPrimaryFixDto toPrimaryFix(FeedbackSecondaryLearningPointDto point) {
+        if (point == null || "EXPRESSION".equals(normalizeNullable(point.kind()))) {
+            return null;
+        }
+
+        String title = normalizeNullable(point.title());
+        String headline = normalizeNullable(point.headline());
+        String supportText = normalizeNullable(point.supportText());
+        String originalText = normalizeNullable(point.originalText());
+        String revisedText = normalizeNullable(point.revisedText());
+        if (title == null
+                && headline == null
+                && supportText == null
+                && originalText == null
+                && revisedText == null) {
+            return null;
+        }
+
+        return new FeedbackPrimaryFixDto(
+                title,
+                headline,
+                originalText,
+                revisedText,
+                supportText
+        );
+    }
+
+    private FeedbackPrimaryFixDto resolvePrimaryFix(
+            FeedbackUiDto llmUi,
+            ImprovementCandidate primaryCandidate,
+            SectionDisplayMode displayMode,
+            FixFirstMode fixFirstMode,
+            String learnerAnswer,
+            FeedbackResponseDto feedback
+    ) {
+        if (displayMode == SectionDisplayMode.HIDE || fixFirstMode == FixFirstMode.HIDE) {
+            return null;
+        }
+        FeedbackPrimaryFixDto llmPrimaryFix = llmUi == null ? null : alignPrimaryFixWithMode(uiPrimaryFix(llmUi), fixFirstMode);
+        if (llmPrimaryFix != null) {
+            FeedbackPrimaryFixDto augmentedPrimaryFix = augmentPrimaryFixWithSupportingGrammar(llmPrimaryFix, learnerAnswer, feedback, fixFirstMode);
+            return isConcreteInstructionOnlyPrimaryFix(augmentedPrimaryFix) ? augmentedPrimaryFix : null;
+        }
+        FeedbackPrimaryFixDto fallbackPrimaryFix = primaryCandidate == null ? null : primaryCandidate.primaryFix();
+        FeedbackPrimaryFixDto augmentedFallbackPrimaryFix = augmentPrimaryFixWithSupportingGrammar(fallbackPrimaryFix, learnerAnswer, feedback, fixFirstMode);
+        return isConcreteInstructionOnlyPrimaryFix(augmentedFallbackPrimaryFix) ? augmentedFallbackPrimaryFix : null;
+    }
+
+    private FeedbackPrimaryFixDto augmentPrimaryFixWithSupportingGrammar(
+            FeedbackPrimaryFixDto primaryFix,
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            FixFirstMode fixFirstMode
+    ) {
+        if (primaryFix == null || fixFirstMode == null || fixFirstMode == FixFirstMode.HIDE || fixFirstMode == FixFirstMode.GRAMMAR_CARD) {
+            return primaryFix;
+        }
+        if (fixFirstMode != FixFirstMode.DETAIL_PROMPT_CARD) {
+            return primaryFix;
+        }
+        if (normalizeNullable(primaryFix.originalText()) != null
+                && normalizeNullable(primaryFix.revisedText()) != null
+                && normalizeNullable(primaryFix.reasonKo()) != null) {
+            return primaryFix;
+        }
+
+        GrammarFeedbackItemDto grammarItem = primaryGrammarItem(learnerAnswer, feedback);
+        if (grammarItem == null
+                || normalizeNullable(grammarItem.originalText()) == null
+                || normalizeNullable(grammarItem.revisedText()) == null
+                || normalizeNullable(grammarItem.reasonKo()) == null) {
+            return primaryFix;
+        }
+
+        return new FeedbackPrimaryFixDto(
+                primaryFix.title(),
+                primaryFix.instruction(),
+                grammarItem.originalText(),
+                grammarItem.revisedText(),
+                grammarItem.reasonKo()
+        );
+    }
+
+    private FeedbackRewritePracticeDto resolveRewritePractice(
+            FeedbackUiDto llmUi,
+            PromptDto prompt,
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            AnswerProfile answerProfile,
+            FixFirstMode fixFirstMode,
+            RewriteGuideMode rewriteGuideMode,
+            FeedbackPrimaryFixDto primaryFix,
+            boolean optionalTone
+    ) {
+        FeedbackRewritePracticeDto llmRewritePractice = sanitizeLlmRewritePractice(
+                llmUi == null ? null : llmUi.rewritePractice(),
+                prompt,
+                answerProfile,
+                rewriteGuideMode,
+                optionalTone
+        );
+        if (llmRewritePractice != null) {
+            return llmRewritePractice;
+        }
+        return buildRewritePractice(
+                prompt,
+                learnerAnswer,
+                feedback,
+                answerProfile,
+                fixFirstMode,
+                rewriteGuideMode,
+                primaryFix,
+                optionalTone
+        );
+    }
+
+    private List<FeedbackRewriteSuggestionDto> resolveRewriteSuggestions(
+            FeedbackUiDto llmUi,
+            FeedbackRewritePracticeDto rewritePractice
+    ) {
+        if (llmUi == null || rewritePractice == null || rewritePractice.starter() == null || rewritePractice.starter().isBlank()) {
+            return List.of();
+        }
+        if (llmUi.rewriteSuggestions() == null || llmUi.rewriteSuggestions().isEmpty()) {
+            return List.of();
+        }
+
+        List<FeedbackRewriteSuggestionDto> suggestions = new ArrayList<>();
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+        for (FeedbackRewriteSuggestionDto suggestion : llmUi.rewriteSuggestions()) {
+            if (suggestion == null) {
+                continue;
+            }
+            String english = normalizeNullable(suggestion.english());
+            if (english == null) {
+                continue;
+            }
+            String key = normalizeNullable(english.toLowerCase(Locale.ROOT));
+            if (key == null || !seen.add(key)) {
+                continue;
+            }
+            suggestions.add(new FeedbackRewriteSuggestionDto(
+                    english,
+                    normalizeNullable(suggestion.meaningKo()),
+                    normalizeNullable(suggestion.noteKo())
+            ));
+        }
+        return List.copyOf(suggestions);
+    }
+
+    private FeedbackRewritePracticeDto sanitizeLlmRewritePractice(
+            FeedbackRewritePracticeDto rewritePractice,
+            PromptDto prompt,
+            AnswerProfile answerProfile,
+            RewriteGuideMode rewriteGuideMode,
+            boolean optionalTone
+    ) {
+        if (rewritePractice == null) {
+            return null;
+        }
+        String starter = normalizeStarter(rewritePractice.starter(), prompt, answerProfile, rewriteGuideMode);
+        if (starter == null || !starter.contains("______")) {
+            return null;
+        }
+        String title = normalizeNullable(rewritePractice.title());
+        if (title == null) {
+            title = optionalTone ? "원하면 한 번 더 다듬어 보세요" : "한번 더 써보기";
+        }
+        String instruction = normalizeNullable(rewritePractice.instruction());
+        if (instruction == null) {
+            instruction = optionalTone
+                    ? "원하면 빈칸에 짧은 연결 표현이나 한 가지 디테일을 넣어 조금 더 다듬어 보세요."
+                    : "빈칸에 한 가지 필요한 내용을 넣어 다시 써 보세요.";
+        }
+        return new FeedbackRewritePracticeDto(
+                title,
+                starter,
+                instruction,
+                normalizeNullable(rewritePractice.ctaLabel()),
+                optionalTone || rewritePractice.optionalTone()
+        );
+    }
+
+    private String defaultPrimaryFixTitle(FixFirstMode fixFirstMode) {
+        return switch (fixFirstMode) {
+            case GRAMMAR_CARD, TASK_RESET_CARD -> "癒쇱? 怨좎튌 遺遺?";
+            case DETAIL_PROMPT_CARD -> "??媛吏 ??異붽??섎㈃ 醫뗭븘??";
+            case HIDE -> "癒쇱? 怨좎튌 遺遺?";
+        };
     }
 
     private FeedbackMicroTipDto buildMicroTip(
@@ -284,12 +849,752 @@ final class FeedbackUiComposer {
         );
     }
 
+    private List<FeedbackSecondaryLearningPointDto> buildSecondaryLearningPoints(
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            FeedbackPrimaryFixDto primaryFix,
+            FixFirstMode fixFirstMode
+    ) {
+        if (feedback == null) {
+            return List.of();
+        }
+
+        List<FeedbackSecondaryLearningPointDto> points = new ArrayList<>();
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+        GrammarFeedbackItemDto mainGrammarItem = primaryGrammarItem(learnerAnswer, feedback);
+        boolean primaryFixUsesGrammar = fixFirstMode == FixFirstMode.GRAMMAR_CARD
+                && primaryFix != null
+                && normalizeNullable(primaryFix.originalText()) != null
+                && normalizeNullable(primaryFix.revisedText()) != null;
+
+        if (!primaryFixUsesGrammar && mainGrammarItem != null) {
+            addSecondaryGrammarPoint(points, seen, mainGrammarItem);
+        }
+
+        if (feedback.grammarFeedback() != null) {
+            for (GrammarFeedbackItemDto grammarItem : feedback.grammarFeedback()) {
+                if (grammarItem == null) {
+                    continue;
+                }
+                if (mainGrammarItem != null
+                        && sameMeaning(grammarItem.originalText(), mainGrammarItem.originalText())
+                        && sameMeaning(grammarItem.revisedText(), mainGrammarItem.revisedText())) {
+                    continue;
+                }
+                addSecondaryGrammarPoint(points, seen, grammarItem);
+            }
+        }
+
+        if (feedback.corrections() != null) {
+            for (CorrectionDto correction : feedback.corrections()) {
+                addSecondaryCorrectionPoint(points, seen, correction);
+            }
+        }
+
+        if (feedback.refinementExpressions() != null) {
+            for (RefinementExpressionDto expression : feedback.refinementExpressions()) {
+                addSecondaryRefinementPoint(points, seen, expression);
+            }
+        }
+
+        return List.copyOf(points);
+    }
+
+    private void addSecondaryGrammarPoint(
+            List<FeedbackSecondaryLearningPointDto> points,
+            LinkedHashSet<String> seen,
+            GrammarFeedbackItemDto grammarItem
+    ) {
+        if (grammarItem == null) {
+            return;
+        }
+        String originalText = normalizeNullable(grammarItem.originalText());
+        String revisedText = normalizeNullable(grammarItem.revisedText());
+        String reasonKo = normalizeNullable(grammarItem.reasonKo());
+        if (originalText == null || revisedText == null || reasonKo == null) {
+            return;
+        }
+        addSecondaryPoint(
+                points,
+                seen,
+                new FeedbackSecondaryLearningPointDto(
+                        "GRAMMAR",
+                        "작은 표현 다듬기",
+                        null,
+                        reasonKo,
+                        originalText,
+                        revisedText,
+                        null,
+                        null,
+                        null,
+                        null
+                )
+        );
+    }
+
+    private void addSecondaryCorrectionPoint(
+            List<FeedbackSecondaryLearningPointDto> points,
+            LinkedHashSet<String> seen,
+            CorrectionDto correction
+    ) {
+        if (correction == null) {
+            return;
+        }
+        String issue = normalizeNullable(correction.issue());
+        String suggestion = normalizeNullable(correction.suggestion());
+        if (issue == null || suggestion == null) {
+            return;
+        }
+        addSecondaryPoint(
+                points,
+                seen,
+                new FeedbackSecondaryLearningPointDto(
+                        "CORRECTION",
+                        "보조 학습 포인트",
+                        issue,
+                        suggestion,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
+                )
+        );
+    }
+
+    private void addSecondaryRefinementPoint(
+            List<FeedbackSecondaryLearningPointDto> points,
+            LinkedHashSet<String> seen,
+            RefinementExpressionDto expression
+    ) {
+        if (!isDisplayableRefinement(expression)) {
+            return;
+        }
+        String headline = normalizeNullable(expression.expression());
+        if (headline == null) {
+            return;
+        }
+        addSecondaryPoint(
+                points,
+                seen,
+                new FeedbackSecondaryLearningPointDto(
+                        "EXPRESSION",
+                        "써보면 좋은 표현",
+                        headline,
+                        null,
+                        null,
+                        null,
+                        normalizeNullable(expression.meaningKo()),
+                        normalizeNullable(expression.guidanceKo()),
+                        normalizeNullable(expression.exampleEn()),
+                        normalizeNullable(expression.exampleKo())
+                )
+        );
+    }
+
+    private void addSecondaryPoint(
+            List<FeedbackSecondaryLearningPointDto> points,
+            LinkedHashSet<String> seen,
+            FeedbackSecondaryLearningPointDto point
+    ) {
+        if (point == null) {
+            return;
+        }
+        String key = normalize(
+                firstNonBlank(point.kind(), "")
+                        + "|" + firstNonBlank(point.headline(), "")
+                        + "|" + firstNonBlank(point.supportText(), "")
+                        + "|" + firstNonBlank(point.originalText(), "")
+                        + "|" + firstNonBlank(point.revisedText(), "")
+                        + "|" + firstNonBlank(point.exampleEn(), "")
+        );
+        if (key.isBlank() || !seen.add(key)) {
+            return;
+        }
+        points.add(point);
+    }
+
+    private List<FeedbackSecondaryLearningPointDto> resolveSecondaryLearningPoints(
+            FeedbackUiDto llmUi,
+            FeedbackPrimaryFixDto primaryFix,
+            List<ImprovementCandidate> rankedCandidates
+    ) {
+        List<FeedbackSecondaryLearningPointDto> llmPoints = sanitizeLlmSecondaryLearningPoints(
+                llmUi == null ? null : llmUi.secondaryLearningPoints(),
+                primaryFix
+        );
+        if (!llmPoints.isEmpty()) {
+            return llmPoints;
+        }
+        return buildSecondaryLearningPoints(primaryFix, rankedCandidates);
+    }
+
+    private List<FeedbackSecondaryLearningPointDto> buildFixPoints(
+            FeedbackPrimaryFixDto primaryFix,
+            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints
+    ) {
+        List<FeedbackSecondaryLearningPointDto> points = new ArrayList<>();
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+
+        FeedbackSecondaryLearningPointDto primaryFixPoint = toFixPoint(primaryFix);
+        if (primaryFixPoint != null) {
+            addSecondaryPoint(points, seen, primaryFixPoint);
+        }
+
+        if (secondaryLearningPoints != null) {
+            for (FeedbackSecondaryLearningPointDto point : secondaryLearningPoints) {
+                if (point == null || "EXPRESSION".equals(normalizeNullable(point.kind()))) {
+                    continue;
+                }
+                addSecondaryPoint(points, seen, point);
+            }
+        }
+
+        return List.copyOf(points);
+    }
+
+    private FeedbackSecondaryLearningPointDto toFixPoint(FeedbackPrimaryFixDto primaryFix) {
+        if (primaryFix == null) {
+            return null;
+        }
+
+        String title = normalizeNullable(primaryFix.title());
+        String instruction = normalizeNullable(primaryFix.instruction());
+        String originalText = normalizeNullable(primaryFix.originalText());
+        String revisedText = normalizeNullable(primaryFix.revisedText());
+        String reasonKo = normalizeNullable(primaryFix.reasonKo());
+
+        if (title == null
+                && instruction == null
+                && originalText == null
+                && revisedText == null
+                && reasonKo == null) {
+            return null;
+        }
+
+        String kind = originalText != null && revisedText != null ? "GRAMMAR" : "CORRECTION";
+        return new FeedbackSecondaryLearningPointDto(
+                kind,
+                title,
+                instruction,
+                reasonKo,
+                originalText,
+                revisedText,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private List<FeedbackSecondaryLearningPointDto> sanitizeLlmSecondaryLearningPoints(
+            List<FeedbackSecondaryLearningPointDto> points,
+            FeedbackPrimaryFixDto primaryFix
+    ) {
+        if (points == null || points.isEmpty()) {
+            return List.of();
+        }
+        List<FeedbackSecondaryLearningPointDto> sanitized = new ArrayList<>();
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+        for (FeedbackSecondaryLearningPointDto point : points) {
+            if (point == null) {
+                continue;
+            }
+            FeedbackSecondaryLearningPointDto cleaned = new FeedbackSecondaryLearningPointDto(
+                    normalizeNullable(point.kind()),
+                    normalizeNullable(point.title()),
+                    normalizeNullable(point.headline()),
+                    normalizeNullable(point.supportText()),
+                    normalizeNullable(point.originalText()),
+                    normalizeNullable(point.revisedText()),
+                    normalizeNullable(point.meaningKo()),
+                    normalizeNullable(point.guidanceKo()),
+                    normalizeNullable(point.exampleEn()),
+                    normalizeNullable(point.exampleKo())
+            );
+            if (firstNonBlank(
+                    cleaned.headline(),
+                    cleaned.supportText(),
+                    cleaned.originalText(),
+                    cleaned.revisedText(),
+                    cleaned.exampleEn()
+            ) == null) {
+                continue;
+            }
+            if (isSecondaryPointCoveredByPrimaryFix(cleaned, primaryFix)) {
+                continue;
+            }
+            addSecondaryPoint(sanitized, seen, cleaned);
+        }
+        return List.copyOf(sanitized);
+    }
+
+    private List<FeedbackSecondaryLearningPointDto> buildSecondaryLearningPoints(
+            FeedbackPrimaryFixDto primaryFix,
+            List<ImprovementCandidate> rankedCandidates
+    ) {
+        if (rankedCandidates == null || rankedCandidates.isEmpty()) {
+            return List.of();
+        }
+
+        List<FeedbackSecondaryLearningPointDto> points = new ArrayList<>();
+        LinkedHashSet<String> seen = new LinkedHashSet<>();
+        for (ImprovementCandidate candidate : rankedCandidates) {
+            FeedbackSecondaryLearningPointDto point = candidate.secondaryPoint();
+            if (point == null) {
+                continue;
+            }
+            if (isSecondaryPointCoveredByPrimaryFix(point, primaryFix)) {
+                continue;
+            }
+            addSecondaryPoint(points, seen, point);
+        }
+        return List.copyOf(points);
+    }
+
+    private FeedbackSecondaryLearningPointDto toGrammarSecondaryPoint(GrammarFeedbackItemDto grammarItem) {
+        if (grammarItem == null) {
+            return null;
+        }
+        String originalText = normalizeNullable(grammarItem.originalText());
+        String revisedText = normalizeNullable(grammarItem.revisedText());
+        String reasonKo = normalizeNullable(grammarItem.reasonKo());
+        if (originalText == null || revisedText == null || reasonKo == null) {
+            return null;
+        }
+        return new FeedbackSecondaryLearningPointDto(
+                "GRAMMAR",
+                "작은 표현 다듬기",
+                null,
+                reasonKo,
+                originalText,
+                revisedText,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private FeedbackSecondaryLearningPointDto toCorrectionSecondaryPoint(CorrectionDto correction) {
+        if (correction == null) {
+            return null;
+        }
+        String issue = normalizeNullable(correction.issue());
+        String suggestion = normalizeNullable(correction.suggestion());
+        if (issue == null || suggestion == null) {
+            return null;
+        }
+        return new FeedbackSecondaryLearningPointDto(
+                "CORRECTION",
+                "보조 학습 포인트",
+                issue,
+                suggestion,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+    }
+
+    private FeedbackSecondaryLearningPointDto toRefinementSecondaryPoint(RefinementExpressionDto expression) {
+        if (!isDisplayableRefinement(expression)) {
+            return null;
+        }
+        String headline = normalizeNullable(expression.expression());
+        if (headline == null) {
+            return null;
+        }
+        return new FeedbackSecondaryLearningPointDto(
+                "EXPRESSION",
+                "써보면 좋은 표현",
+                headline,
+                null,
+                null,
+                null,
+                normalizeNullable(expression.meaningKo()),
+                normalizeNullable(expression.guidanceKo()),
+                normalizeNullable(expression.exampleEn()),
+                normalizeNullable(expression.exampleKo())
+        );
+    }
+
+    private void addImprovementCandidate(
+            List<ImprovementCandidate> candidates,
+            LinkedHashSet<String> seen,
+            ImprovementCandidate candidate
+    ) {
+        if (candidate == null || candidate.key().isBlank() || !seen.add(candidate.key())) {
+            return;
+        }
+        candidates.add(candidate);
+    }
+
+    private int scorePrimaryFixCandidate(
+            FeedbackPrimaryFixDto primaryFix,
+            FixFirstMode fixFirstMode,
+            AnswerProfile answerProfile,
+            boolean llmSupplied
+    ) {
+        int blockingImpact = switch (fixFirstMode) {
+            case GRAMMAR_CARD -> 5;
+            case TASK_RESET_CARD -> 4;
+            case DETAIL_PROMPT_CARD -> 3;
+            case HIDE -> 0;
+        };
+        int taskCoverageGain = switch (primaryIssueCode(answerProfile)) {
+            case "ADD_REASON", "ADD_EXAMPLE", "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC", "STATE_MAIN_ANSWER", "MAKE_ON_TOPIC" -> 4;
+            default -> taskCompletion(answerProfile) == TaskCompletion.FULL ? 1 : 3;
+        };
+        int rewriteLeverage = fixFirstMode == FixFirstMode.GRAMMAR_CARD ? 4 : 3;
+        int naturalnessGain = fixFirstMode == FixFirstMode.DETAIL_PROMPT_CARD ? 1 : 0;
+        int locality = countTokens(firstNonBlank(primaryFix.originalText(), primaryFix.instruction())) <= 8 ? 2 : 1;
+        int llmBonus = llmSupplied ? 2 : 0;
+        return 4 * blockingImpact
+                + 3 * taskCoverageGain
+                + 3 * rewriteLeverage
+                + 2 * naturalnessGain
+                + locality
+                + llmBonus;
+    }
+
+    private int scoreGrammarCandidate(GrammarFeedbackItemDto grammarItem, AnswerProfile answerProfile) {
+        int blockingImpact = switch (grammarSeverity(answerProfile)) {
+            case MAJOR -> 5;
+            case MODERATE -> 4;
+            case MINOR -> 2;
+            case NONE -> 1;
+        };
+        if (answerBand(answerProfile) == AnswerBand.GRAMMAR_BLOCKING) {
+            blockingImpact += 1;
+        }
+        int taskCoverageGain = taskCompletion(answerProfile) == TaskCompletion.FULL ? 0 : 1;
+        int rewriteLeverage = 4;
+        int naturalnessGain = 1;
+        int locality = countTokens(grammarItem.originalText()) <= 6 ? 2 : 1;
+        return 4 * blockingImpact
+                + 3 * taskCoverageGain
+                + 3 * rewriteLeverage
+                + 2 * naturalnessGain
+                + locality;
+    }
+
+    private int scoreCorrectionCandidate(CorrectionDto correction, AnswerProfile answerProfile) {
+        int taskCoverageGain = taskCoverageSignal(
+                primaryIssueCode(answerProfile),
+                firstNonBlank(correction.issue(), correction.suggestion())
+        );
+        int rewriteLeverage = rewriteLeverageSignal(correction.suggestion());
+        int naturalnessGain = 3;
+        int locality = countTokens(correction.issue()) <= 8 ? 2 : 1;
+        return 3 * taskCoverageGain
+                + 3 * rewriteLeverage
+                + 2 * naturalnessGain
+                + locality;
+    }
+
+    private int scoreExpressionCandidate(RefinementExpressionDto expression, AnswerProfile answerProfile) {
+        int taskCoverageGain = taskCoverageSignal(
+                primaryIssueCode(answerProfile),
+                firstNonBlank(expression.guidanceKo(), expression.exampleEn(), expression.expression())
+        );
+        int rewriteLeverage = expression.type() == RefinementExpressionType.FRAME ? 2 : 1;
+        int naturalnessGain = 2;
+        return 3 * taskCoverageGain
+                + 3 * rewriteLeverage
+                + 2 * naturalnessGain
+                + 1;
+    }
+
+    private boolean isSecondaryPointCoveredByPrimaryFix(
+            FeedbackSecondaryLearningPointDto point,
+            FeedbackPrimaryFixDto primaryFix
+    ) {
+        if (point == null || primaryFix == null) {
+            return false;
+        }
+
+        String primaryOriginal = normalizeNullable(primaryFix.originalText());
+        String primaryRevised = normalizeNullable(primaryFix.revisedText());
+
+        if ("GRAMMAR".equals(point.kind())
+                && primaryOriginal != null
+                && primaryRevised != null) {
+            return isCoveredTextPair(point.originalText(), point.revisedText(), primaryOriginal, primaryRevised);
+        }
+
+        return hasAnchorLevelOverlap(point, primaryFix);
+    }
+
+    private boolean hasAnchorLevelOverlap(
+            FeedbackSecondaryLearningPointDto point,
+            FeedbackPrimaryFixDto primaryFix
+    ) {
+        LinkedHashSet<String> anchors = extractPrimaryFixAnchors(primaryFix);
+        if (anchors.isEmpty()) {
+            return hasAddedTokenOverlap(point, primaryFix);
+        }
+        return pointMentionsAnyAnchor(point, anchors) || hasAddedTokenOverlap(point, primaryFix);
+    }
+
+    private LinkedHashSet<String> extractPrimaryFixAnchors(FeedbackPrimaryFixDto primaryFix) {
+        LinkedHashSet<String> anchors = new LinkedHashSet<>();
+        addQuotedAnchors(anchors, primaryFix.title());
+        addQuotedAnchors(anchors, primaryFix.instruction());
+        addEnglishAnchors(anchors, primaryFix.title());
+        addEnglishAnchors(anchors, primaryFix.instruction());
+        addAnchorIfUseful(anchors, primaryFix.originalText());
+        addAnchorIfUseful(anchors, primaryFix.revisedText());
+        return anchors;
+    }
+
+    private void addQuotedAnchors(LinkedHashSet<String> anchors, String text) {
+        String value = normalizeNullable(text);
+        if (value == null) {
+            return;
+        }
+        var matcher = QUOTED_ANCHOR_PATTERN.matcher(value);
+        while (matcher.find()) {
+            addAnchorIfUseful(anchors, matcher.group(1));
+        }
+    }
+
+    private void addEnglishAnchors(LinkedHashSet<String> anchors, String text) {
+        String value = normalizeNullable(text);
+        if (value == null) {
+            return;
+        }
+        var matcher = ENGLISH_ANCHOR_PATTERN.matcher(value);
+        while (matcher.find()) {
+            addAnchorIfUseful(anchors, matcher.group());
+        }
+    }
+
+    private void addAnchorIfUseful(LinkedHashSet<String> anchors, String candidate) {
+        String normalized = normalizeForSpanCompare(candidate);
+        if (normalized.isBlank()) {
+            return;
+        }
+        boolean hasLetters = normalized.chars().anyMatch(Character::isLetter);
+        boolean multiToken = normalized.contains(" ");
+        if (hasLetters && (multiToken || normalized.length() >= 10 || SHORT_GRAMMAR_ANCHORS.contains(normalized))) {
+            anchors.add(normalized);
+        }
+    }
+
+    private boolean pointMentionsAnyAnchor(
+            FeedbackSecondaryLearningPointDto point,
+            LinkedHashSet<String> anchors
+    ) {
+        if (point == null || anchors == null || anchors.isEmpty()) {
+            return false;
+        }
+        List<String> candidateTexts = new ArrayList<>();
+        candidateTexts.add(normalizeNullable(point.headline()));
+        candidateTexts.add(normalizeNullable(point.supportText()));
+        candidateTexts.add(normalizeNullable(point.originalText()));
+        candidateTexts.add(normalizeNullable(point.revisedText()));
+        candidateTexts.add(normalizeNullable(point.guidanceKo()));
+        candidateTexts.add(normalizeNullable(point.exampleEn()));
+        for (String candidate : candidateTexts) {
+            String normalizedCandidate = normalizeForSpanCompare(candidate);
+            if (normalizedCandidate.isBlank()) {
+                continue;
+            }
+            for (String anchor : anchors) {
+                if (normalizedCandidate.contains(anchor)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean hasAddedTokenOverlap(
+            FeedbackSecondaryLearningPointDto point,
+            FeedbackPrimaryFixDto primaryFix
+    ) {
+        if (point == null || primaryFix == null) {
+            return false;
+        }
+        String primaryOriginal = normalizeNullable(primaryFix.originalText());
+        String primaryRevised = normalizeNullable(primaryFix.revisedText());
+        if (primaryOriginal == null || primaryRevised == null) {
+            return false;
+        }
+
+        LinkedHashSet<String> addedTokens = extractAddedTokens(primaryOriginal, primaryRevised);
+        if (addedTokens.isEmpty()) {
+            return false;
+        }
+
+        String pointText = normalizeForSpanCompare(String.join(" ",
+                firstNonBlank(point.title(), ""),
+                firstNonBlank(point.headline(), ""),
+                firstNonBlank(point.supportText(), ""),
+                firstNonBlank(point.guidanceKo(), ""),
+                firstNonBlank(point.exampleEn(), "")
+        ));
+        if (pointText.isBlank() || !containsAnyToken(pointText, addedTokens)) {
+            return false;
+        }
+
+        return containsAnyCue(pointText, GRAMMAR_OVERLAP_CUES);
+    }
+
+    private LinkedHashSet<String> extractAddedTokens(String originalText, String revisedText) {
+        LinkedHashSet<String> added = new LinkedHashSet<>();
+        LinkedHashSet<String> originalTokens = new LinkedHashSet<>(Arrays.asList(normalizeForSpanCompare(originalText).split(" ")));
+        LinkedHashSet<String> revisedTokens = new LinkedHashSet<>(Arrays.asList(normalizeForSpanCompare(revisedText).split(" ")));
+        for (String token : revisedTokens) {
+            if (token == null || token.isBlank() || originalTokens.contains(token)) {
+                continue;
+            }
+            if (token.length() >= 4 || SHORT_GRAMMAR_ANCHORS.contains(token)) {
+                added.add(token);
+            }
+        }
+        return added;
+    }
+
+    private boolean containsAnyToken(String text, Set<String> tokens) {
+        if (text == null || text.isBlank() || tokens == null || tokens.isEmpty()) {
+            return false;
+        }
+        for (String token : tokens) {
+            if (token != null && !token.isBlank() && text.contains(token)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean containsAnyCue(String text, Set<String> cues) {
+        if (text == null || text.isBlank() || cues == null || cues.isEmpty()) {
+            return false;
+        }
+        for (String cue : cues) {
+            if (cue != null && !cue.isBlank() && text.contains(normalizeForSpanCompare(cue))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isConcreteInstructionOnlyPrimaryFix(FeedbackPrimaryFixDto primaryFix) {
+        if (primaryFix == null) {
+            return false;
+        }
+        if (normalizeNullable(primaryFix.originalText()) != null
+                && normalizeNullable(primaryFix.revisedText()) != null
+                && normalizeNullable(primaryFix.reasonKo()) != null) {
+            return true;
+        }
+
+        String instruction = normalizeNullable(primaryFix.instruction());
+        if (instruction == null || isGenericPrimaryFixInstruction(instruction)) {
+            return false;
+        }
+        return !extractPrimaryFixAnchors(primaryFix).isEmpty();
+    }
+
+    private boolean isGenericPrimaryFixInstruction(String instruction) {
+        String normalizedInstruction = normalizeForSpanCompare(instruction);
+        if (normalizedInstruction.isBlank()) {
+            return true;
+        }
+        return normalizedInstruction.contains("이 한 군데만 먼저 고치면")
+                || normalizedInstruction.contains("문장 흐름이 훨씬 안정돼요")
+                || normalizedInstruction.contains("한 가지를 더 추가하면 좋아요")
+                || normalizedInstruction.contains("정보 한 가지를 추가해 보세요")
+                || normalizedInstruction.contains("문장 하나를 더 써 보세요")
+                || normalizedInstruction.contains("먼저 고칠 부분");
+    }
+
+    private boolean isCoveredTextPair(
+            String candidateOriginal,
+            String candidateRevised,
+            String primaryOriginal,
+            String primaryRevised
+    ) {
+        return !normalizeForSpanCompare(candidateOriginal).isBlank()
+                && !normalizeForSpanCompare(candidateRevised).isBlank()
+                && (sameMeaning(candidateOriginal, primaryOriginal)
+                || containsNormalizedSpan(primaryOriginal, candidateOriginal))
+                && (sameMeaning(candidateRevised, primaryRevised)
+                || containsNormalizedSpan(primaryRevised, candidateRevised));
+    }
+
+    private boolean containsNormalizedSpan(String container, String fragment) {
+        String normalizedContainer = normalizeForSpanCompare(container);
+        String normalizedFragment = normalizeForSpanCompare(fragment);
+        return !normalizedContainer.isBlank()
+                && !normalizedFragment.isBlank()
+                && normalizedContainer.contains(normalizedFragment);
+    }
+
+    private int taskCoverageSignal(String primaryIssueCode, String text) {
+        String normalizedIssue = normalize(primaryIssueCode);
+        String normalizedText = normalize(text);
+        if ("add_reason".equals(normalizedIssue) || normalizedText.contains("because")) {
+            return 4;
+        }
+        if ("add_example".equals(normalizedIssue) || normalizedText.contains("for example")) {
+            return 3;
+        }
+        if ("add_detail".equals(normalizedIssue) || "make_it_more_specific".equals(normalizedIssue)) {
+            return 3;
+        }
+        if ("make_on_topic".equals(normalizedIssue) || "state_main_answer".equals(normalizedIssue)) {
+            return 4;
+        }
+        return 1;
+    }
+
+    private int rewriteLeverageSignal(String text) {
+        String normalizedText = normalize(text);
+        if (normalizedText.contains("because")
+                || normalizedText.contains("for example")
+                || normalizedText.contains("i ")
+                || normalizedText.contains("my ")
+                || normalizedText.contains("you ")) {
+            return 3;
+        }
+        return 2;
+    }
+
+    private int kindPriority(ImprovementCandidateKind kind) {
+        return switch (kind) {
+            case PRIMARY_FIX -> 0;
+            case GRAMMAR -> 1;
+            case CORRECTION -> 2;
+            case EXPRESSION -> 3;
+        };
+    }
+
+    private String candidateKey(String prefix, String... values) {
+        return prefix + "|" + normalize(firstNonBlank(values));
+    }
+
+    private int countTokens(String value) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null) {
+            return 0;
+        }
+        return normalized.split("\\s+").length;
+    }
+
     private FeedbackRewritePracticeDto buildRewritePractice(
             PromptDto prompt,
             String learnerAnswer,
             FeedbackResponseDto feedback,
             AnswerProfile answerProfile,
+            FixFirstMode fixFirstMode,
             RewriteGuideMode rewriteGuideMode,
+            FeedbackPrimaryFixDto primaryFix,
             boolean optionalTone
     ) {
         RewriteTarget target = answerProfile == null || answerProfile.rewrite() == null
@@ -297,7 +1602,7 @@ final class FeedbackUiComposer {
                 : answerProfile.rewrite().target();
 
         String starter = normalizeStarter(
-                deriveStarter(prompt, learnerAnswer, feedback, answerProfile, rewriteGuideMode),
+                deriveStarter(prompt, learnerAnswer, feedback, answerProfile, fixFirstMode, rewriteGuideMode, primaryFix),
                 prompt,
                 answerProfile,
                 rewriteGuideMode
@@ -414,17 +1719,24 @@ final class FeedbackUiComposer {
             String learnerAnswer,
             FeedbackResponseDto feedback,
             AnswerProfile answerProfile,
-            RewriteGuideMode rewriteGuideMode
+            FixFirstMode fixFirstMode,
+            RewriteGuideMode rewriteGuideMode,
+            FeedbackPrimaryFixDto primaryFix
     ) {
         RewriteTarget target = answerProfile == null || answerProfile.rewrite() == null
                 ? null
                 : answerProfile.rewrite().target();
         String action = target == null ? "" : target.action();
         String correctedBase = firstNonBlank(
+                primaryFix == null ? null : primaryFix.revisedText(),
                 answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
                 feedback == null ? null : feedback.correctedAnswer(),
                 learnerAnswer
         );
+
+        if (fixFirstMode == FixFirstMode.GRAMMAR_CARD && rewriteGuideMode != RewriteGuideMode.OPTIONAL_POLISH) {
+            return grammarFirstStarter(prompt, correctedBase, target, action);
+        }
 
         if (rewriteGuideMode == null) {
             return firstNonBlank(target == null ? null : target.skeleton(), correctedBase, promptBasedStarter(prompt, action));
@@ -432,26 +1744,63 @@ final class FeedbackUiComposer {
 
         return switch (rewriteGuideMode) {
             case FRAGMENT_SCAFFOLD, TASK_RESET -> promptBasedStarter(prompt, action);
-            case CORRECTED_SKELETON -> firstNonBlank(target == null ? null : target.skeleton(), correctedBase, promptBasedStarter(prompt, action));
+            case CORRECTED_SKELETON -> correctedScaffoldStarter(prompt, correctedBase, target, action);
             case OPTIONAL_POLISH -> optionalPolishStarter(prompt, correctedBase);
             case DETAIL_SCAFFOLD -> detailStarter(prompt, correctedBase, target, action);
         };
     }
 
+    private String grammarFirstStarter(PromptDto prompt, String correctedBase, RewriteTarget target, String action) {
+        String anchoredSkeleton = anchorGrammarStarterToCorrectedBase(prompt, correctedBase, target, action);
+        return switch (action) {
+            case "ADD_REASON" -> firstNonBlank(anchoredSkeleton, appendBlankReason(correctedBase), promptBasedStarter(prompt, action));
+            case "ADD_EXAMPLE" -> firstNonBlank(anchoredSkeleton, appendBlankExample(correctedBase), promptBasedStarter(prompt, action));
+            case "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC" -> firstNonBlank(
+                    anchoredSkeleton,
+                    promptAwareBlankStarter(prompt, correctedBase, action),
+                    promptBasedStarter(prompt, action)
+            );
+            default -> firstNonBlank(anchoredSkeleton, promptAwareBlankStarter(prompt, correctedBase, action), promptBasedStarter(prompt, action));
+        };
+    }
+
+    private String anchorGrammarStarterToCorrectedBase(PromptDto prompt, String correctedBase, RewriteTarget target, String action) {
+        String skeleton = target == null ? null : normalizeNullable(target.skeleton());
+        String corrected = normalizeNullable(correctedBase);
+        if (skeleton == null || corrected == null) {
+            return skeleton == null ? promptAwareBlankStarter(prompt, corrected, action) : skeleton;
+        }
+        String normalizedSkeleton = normalize(trimSentenceEnding(skeleton));
+        String normalizedSkeletonAnchor = normalize(trimSentenceEnding(skeleton.replace("______", " ")));
+        String normalizedCorrected = normalize(trimSentenceEnding(corrected));
+        if (normalizedCorrected.isBlank()
+                || normalizedSkeleton.contains(normalizedCorrected)
+                || (!normalizedSkeletonAnchor.isBlank() && normalizedCorrected.contains(normalizedSkeletonAnchor))) {
+            return skeleton;
+        }
+        return switch (action) {
+            case "ADD_REASON" -> appendBlankReason(corrected);
+            case "ADD_EXAMPLE" -> appendBlankExample(corrected);
+            case "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC" -> promptAwareBlankStarter(prompt, corrected, action);
+            default -> promptAwareBlankStarter(prompt, corrected, action);
+        };
+    }
+
     private String detailStarter(PromptDto prompt, String correctedBase, RewriteTarget target, String action) {
+        String targetSkeleton = blankTargetSkeleton(target);
         if ("ADD_REASON".equals(action)) {
-            return appendBlankReason(correctedBase);
+            return firstNonBlank(targetSkeleton, appendBlankReason(correctedBase), promptBasedStarter(prompt, action));
         }
         if ("ADD_EXAMPLE".equals(action)) {
-            return appendBlankExample(correctedBase);
+            return firstNonBlank(targetSkeleton, appendBlankExample(correctedBase), promptBasedStarter(prompt, action));
         }
         if ("ADD_DETAIL".equals(action) || "MAKE_IT_MORE_SPECIFIC".equals(action)) {
-            return firstNonBlank(promptAwareDetailStarter(prompt, correctedBase), target == null ? null : target.skeleton(), correctedBase);
+            return firstNonBlank(targetSkeleton, promptAwareDetailStarter(prompt, correctedBase), promptAwareBlankStarter(prompt, correctedBase, action));
         }
         if ("MAKE_ON_TOPIC".equals(action) || "STATE_MAIN_ANSWER".equals(action)) {
-            return promptBasedStarter(prompt, action);
+            return firstNonBlank(targetSkeleton, promptBasedStarter(prompt, action), promptAwareBlankStarter(prompt, correctedBase, action));
         }
-        return firstNonBlank(target == null ? null : target.skeleton(), correctedBase, promptAwareDetailStarter(prompt, correctedBase));
+        return firstNonBlank(targetSkeleton, promptAwareBlankStarter(prompt, correctedBase, action), promptBasedStarter(prompt, action));
     }
 
     private String optionalPolishStarter(PromptDto prompt, String correctedBase) {
@@ -479,20 +1828,66 @@ final class FeedbackUiComposer {
             candidate = "My answer is ______.";
         }
 
+        candidate = BRACKET_PLACEHOLDER_PATTERN.matcher(candidate).replaceAll("______");
         candidate = candidate
                 .replace("...", "______")
                 .replaceAll("\\s+", " ")
                 .trim();
 
-        if (!candidate.contains("______")
-                && rewriteGuideMode != RewriteGuideMode.CORRECTED_SKELETON
-                && rewriteGuideMode != RewriteGuideMode.TASK_RESET) {
-            candidate = rewriteGuideMode == RewriteGuideMode.OPTIONAL_POLISH
-                    ? appendSentence(candidate, "Also, ______.")
-                    : appendBlankReason(candidate);
+        if (!candidate.contains("______")) {
+            candidate = forceBlankStarter(candidate, prompt, answerProfile, rewriteGuideMode);
         }
 
         return ensureSentence(candidate);
+    }
+
+    private String correctedScaffoldStarter(PromptDto prompt, String correctedBase, RewriteTarget target, String action) {
+        return firstNonBlank(
+                blankTargetSkeleton(target),
+                promptAwareBlankStarter(prompt, correctedBase, action),
+                promptBasedStarter(prompt, action)
+        );
+    }
+
+    private String blankTargetSkeleton(RewriteTarget target) {
+        String skeleton = target == null ? null : normalizeNullable(target.skeleton());
+        if (skeleton == null) {
+            return null;
+        }
+        String normalizedSkeleton = BRACKET_PLACEHOLDER_PATTERN.matcher(skeleton).replaceAll("______")
+                .replace("...", "______")
+                .replaceAll("\\s+", " ")
+                .trim();
+        return normalizedSkeleton.contains("______") ? normalizedSkeleton : null;
+    }
+
+    private String promptAwareBlankStarter(PromptDto prompt, String correctedBase, String action) {
+        if ("ADD_REASON".equals(action)) {
+            return appendBlankReason(correctedBase);
+        }
+        if ("ADD_EXAMPLE".equals(action)) {
+            return appendBlankExample(correctedBase);
+        }
+        String promptAware = promptAwareDetailStarter(prompt, correctedBase);
+        if (promptAware != null && promptAware.contains("______")) {
+            return promptAware;
+        }
+        String base = firstNonBlank(correctedBase, "My answer is");
+        return appendSentence(trimSentenceEnding(base), "______.");
+    }
+
+    private String forceBlankStarter(
+            String candidate,
+            PromptDto prompt,
+            AnswerProfile answerProfile,
+            RewriteGuideMode rewriteGuideMode
+    ) {
+        String action = primaryIssueCode(answerProfile);
+        return switch (rewriteGuideMode) {
+            case OPTIONAL_POLISH -> appendSentence(candidate, "Also, ______.");
+            case TASK_RESET, FRAGMENT_SCAFFOLD -> firstNonBlank(promptBasedStarter(prompt, action), promptAwareBlankStarter(prompt, candidate, action));
+            case CORRECTED_SKELETON, DETAIL_SCAFFOLD -> promptAwareBlankStarter(prompt, candidate, action);
+        };
     }
 
     private String buildRewriteInstruction(
@@ -639,6 +2034,17 @@ final class FeedbackUiComposer {
         if (sentence == null) {
             return "I like ______ because ______.";
         }
+        String normalizedSentence = normalize(sentence);
+        if (normalizedSentence.contains("because ______")) {
+            return ensureSentence(sentence);
+        }
+        int becauseIndex = normalizedSentence.indexOf(" because ");
+        if (becauseIndex >= 0) {
+            int originalBecauseIndex = sentence.toLowerCase(Locale.ROOT).indexOf(" because ");
+            if (originalBecauseIndex >= 0) {
+                return ensureSentence(sentence.substring(0, originalBecauseIndex) + " because ______");
+            }
+        }
         return sentence + " because ______.";
     }
 
@@ -745,17 +2151,20 @@ final class FeedbackUiComposer {
         return false;
     }
 
-    private String resolveFocusSupportText(FeedbackResponseDto feedback) {
-        if (feedback == null) {
-            return null;
-        }
-        return normalizeNullable(feedback.summary());
-    }
-
     private boolean sameMeaning(String left, String right) {
         String normalizedLeft = normalize(left);
         String normalizedRight = normalize(right);
         return !normalizedLeft.isBlank() && normalizedLeft.equals(normalizedRight);
+    }
+
+    private String normalizeForSpanCompare(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return value.toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}]+", " ")
+                .replaceAll("\\s+", " ")
+                .trim();
     }
 
     private String normalize(String value) {
@@ -806,5 +2215,23 @@ final class FeedbackUiComposer {
 
     private String normalizeSentence(String value) {
         return ensureSentence(firstNonBlank(value, ""));
+    }
+
+    private record ImprovementCandidate(
+            String key,
+            ImprovementCandidateKind kind,
+            FixFirstMode fixFirstMode,
+            int score,
+            int order,
+            FeedbackPrimaryFixDto primaryFix,
+            FeedbackSecondaryLearningPointDto secondaryPoint
+    ) {
+    }
+
+    private enum ImprovementCandidateKind {
+        PRIMARY_FIX,
+        GRAMMAR,
+        CORRECTION,
+        EXPRESSION
     }
 }

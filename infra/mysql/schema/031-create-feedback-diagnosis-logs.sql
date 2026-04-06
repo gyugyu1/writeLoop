@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS feedback_diagnosis_logs (
     diagnosis_primary_issue_code VARCHAR(96) NULL,
     diagnosis_secondary_issue_code VARCHAR(96) NULL,
     diagnosis_minimal_correction TEXT NULL,
-    rewrite_target_action VARCHAR(64) NULL,
+    rewrite_target_action VARCHAR(255) NULL,
     rewrite_target_skeleton TEXT NULL,
     rewrite_target_max_new_sentence_count INT NULL,
     expansion_budget VARCHAR(32) NULL,

@@ -164,20 +164,6 @@ export interface GrammarFeedbackItem {
   reasonKo: string;
 }
 
-export interface FeedbackFocusCard {
-  title: string;
-  headline: string;
-  supportText?: string | null;
-}
-
-export interface FeedbackPrimaryFix {
-  title: string;
-  instruction?: string | null;
-  originalText?: string | null;
-  revisedText?: string | null;
-  reasonKo?: string | null;
-}
-
 export interface FeedbackMicroTip {
   title: string;
   originalText?: string | null;
@@ -185,12 +171,35 @@ export interface FeedbackMicroTip {
   reasonKo?: string | null;
 }
 
+export type FeedbackSecondaryLearningPointKind = "GRAMMAR" | "CORRECTION" | "EXPRESSION";
+
+export interface FeedbackSecondaryLearningPoint {
+  kind: FeedbackSecondaryLearningPointKind;
+  title?: string | null;
+  headline?: string | null;
+  supportText?: string | null;
+  originalText?: string | null;
+  revisedText?: string | null;
+  meaningKo?: string | null;
+  guidanceKo?: string | null;
+  exampleEn?: string | null;
+  exampleKo?: string | null;
+}
+
+export type FeedbackFixPoint = FeedbackSecondaryLearningPoint;
+
 export interface FeedbackRewritePractice {
   title: string;
   starter: string;
   instruction: string;
   ctaLabel: string;
   optionalTone: boolean;
+}
+
+export interface FeedbackRewriteSuggestion {
+  english: string;
+  meaningKo?: string | null;
+  noteKo?: string | null;
 }
 
 export type FeedbackCompletionState = "NEEDS_REVISION" | "CAN_FINISH" | "OPTIONAL_POLISH";
@@ -235,10 +244,11 @@ export interface FeedbackLoopStatus {
 }
 
 export interface FeedbackUi {
-  focusCard: FeedbackFocusCard;
-  primaryFix?: FeedbackPrimaryFix | null;
   microTip?: FeedbackMicroTip | null;
+  secondaryLearningPoints?: FeedbackSecondaryLearningPoint[] | null;
+  fixPoints?: FeedbackFixPoint[] | null;
   rewritePractice: FeedbackRewritePractice;
+  rewriteSuggestions?: FeedbackRewriteSuggestion[] | null;
   screenPolicy?: FeedbackScreenPolicy | null;
   loopStatus?: FeedbackLoopStatus | null;
 }

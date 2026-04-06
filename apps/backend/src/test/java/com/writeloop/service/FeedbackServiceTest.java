@@ -265,12 +265,118 @@ class FeedbackServiceTest {
         assertThat(saved.getRegenerationResponseStatusCode()).isEqualTo(200);
         assertThat(saved.getDiagnosisAnswerBand()).isEqualTo("SHORT_BUT_VALID");
         assertThat(saved.getDiagnosisPrimaryIssueCode()).isEqualTo("FIX_LOCAL_GRAMMAR");
+        assertThat(saved.getRewriteTargetAction()).isEqualTo("ADD_DETAIL");
         assertThat(saved.getRewriteTargetSkeleton()).isEqualTo("I wake up at 8 a.m. and check _____.");
         assertThat(saved.getProfileContentSpecificity()).isEqualTo("MEDIUM");
         assertThat(saved.getDiagnosisPayloadJson()).contains("\"answerBand\":\"SHORT_BUT_VALID\"");
         assertThat(saved.getAnswerProfileJson()).contains("\"primaryIssueCode\":\"FIX_LOCAL_GRAMMAR\"");
         assertThat(saved.getSectionPolicyJson()).contains("\"showRewriteGuide\":true");
         assertThat(saved.getFinalSectionsJson()).contains("\"rewriteGuide\":\"\\\"I wake up at 8 a.m. and check _____.\\\"");
+    }
+
+    @Test
+    void review_truncates_overlong_rewrite_target_action_before_saving_diagnosis_log() {
+        PromptDto prompt = new PromptDto(
+                "prompt-diagnosis-log-overlong",
+                "Daily routine",
+                "EASY",
+                "Describe your routine for your weekday mornings.",
+                "질문",
+                "Mention one or two activities."
+        );
+        FeedbackRequestDto request = new FeedbackRequestDto(
+                prompt.id(),
+                "I wake up and commute.",
+                "session-diagnosis-log-overlong",
+                null,
+                null
+        );
+        AnswerSessionEntity session = new AnswerSessionEntity(
+                "session-diagnosis-log-overlong",
+                prompt.id(),
+                null,
+                7L,
+                SessionStatus.IN_PROGRESS
+        );
+        String overlongAction = "ADD_REASON_" + "X".repeat(300);
+        FeedbackResponseDto llmFeedback = new FeedbackResponseDto(
+                prompt.id(),
+                GeminiFeedbackClient.INTERNAL_AUTHORITATIVE_SESSION_ID,
+                1,
+                80,
+                false,
+                null,
+                "요약",
+                List.of("강점"),
+                List.of(),
+                List.of(),
+                List.of(),
+                "I wake up and prepare for my commute.",
+                List.of(),
+                null,
+                null,
+                null,
+                List.of()
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                80,
+                AnswerBand.CONTENT_THIN,
+                TaskCompletion.PARTIAL,
+                true,
+                false,
+                GrammarSeverity.MINOR,
+                List.of(),
+                "I wake up and prepare for my commute.",
+                "ADD_REASON",
+                null,
+                new RewriteTarget(overlongAction, "I wake up and prepare for my commute because ______.", 1),
+                ExpansionBudget.ONE_DETAIL,
+                List.of("wake up", "commute")
+        );
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.PARTIAL, AnswerBand.CONTENT_THIN, false),
+                new GrammarProfile(GrammarSeverity.MINOR, List.of(), "I wake up and prepare for my commute.", true),
+                new ContentProfile(ContentLevel.MEDIUM, new ContentSignals(true, false, false, false, true, true), List.of()),
+                new RewriteProfile(
+                        "ADD_REASON",
+                        null,
+                        new RewriteTarget(overlongAction, "I wake up and prepare for my commute because ______.", 1),
+                        ExpansionBudget.ONE_DETAIL,
+                        List.of("wake up", "commute"),
+                        new ProgressDelta(List.of(), List.of("add one reason"))
+                )
+        );
+        FeedbackAnalysisSnapshot analysisSnapshot = new FeedbackAnalysisSnapshot(
+                "GEMINI",
+                "gemini-2.5-flash",
+                200,
+                200,
+                null,
+                diagnosis,
+                answerProfile,
+                null,
+                null,
+                false,
+                false,
+                false
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(answerSessionRepository.findById("session-diagnosis-log-overlong")).thenReturn(java.util.Optional.of(session));
+        when(openAiFeedbackClient.isAuthoritativeFeedback(llmFeedback)).thenReturn(true);
+        when(openAiFeedbackClient.clearInternalMetadata(llmFeedback)).thenReturn(llmFeedback);
+        when(openAiFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(analysisSnapshot);
+        stubOpenAiReview(llmFeedback);
+
+        feedbackService.review(request, 7L);
+
+        ArgumentCaptor<FeedbackDiagnosisLogEntity> logCaptor = ArgumentCaptor.forClass(FeedbackDiagnosisLogEntity.class);
+        verify(feedbackDiagnosisLogRepository).save(logCaptor.capture());
+        FeedbackDiagnosisLogEntity saved = logCaptor.getValue();
+
+        assertThat(saved.getRewriteTargetAction()).hasSize(255);
+        assertThat(saved.getRewriteTargetAction()).startsWith("ADD_REASON_");
     }
 
     @Test

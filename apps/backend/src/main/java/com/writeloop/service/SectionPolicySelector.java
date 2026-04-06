@@ -33,10 +33,10 @@ final class SectionPolicySelector {
                     true, 1,
                     true, 1,
                     true,
-                    true, 2, RefinementFocus.EASY_REUSABLE,
+                    true, 12, RefinementFocus.EASY_REUSABLE,
                     true,
                     true,
-                    false,
+                    true,
                     2, ModelAnswerMode.ONE_STEP_UP,
                     AttemptOverlayPolicy.NONE
             );
@@ -44,7 +44,7 @@ final class SectionPolicySelector {
                     true, 2,
                     true, 1,
                     true,
-                    true, 3, RefinementFocus.DETAIL_BUILDING,
+                    true, 12, RefinementFocus.DETAIL_BUILDING,
                     true,
                     true,
                     2, ModelAnswerMode.ONE_STEP_UP,
@@ -54,7 +54,7 @@ final class SectionPolicySelector {
                     true, 1,
                     true, 2,
                     true,
-                    true, 2, RefinementFocus.GRAMMAR_PATTERN,
+                    true, 12, RefinementFocus.GRAMMAR_PATTERN,
                     true,
                     true,
                     2, ModelAnswerMode.MINIMAL_CORRECTION,
@@ -64,7 +64,7 @@ final class SectionPolicySelector {
                     true, 2,
                     true, 1,
                     true,
-                    true, 3, RefinementFocus.DETAIL_BUILDING,
+                    true, 12, RefinementFocus.DETAIL_BUILDING,
                     true,
                     true,
                     2, ModelAnswerMode.ONE_STEP_UP,
@@ -74,7 +74,7 @@ final class SectionPolicySelector {
                     true, 2,
                     false, 0,
                     true,
-                    true, 3, RefinementFocus.NATURALNESS,
+                    true, 12, RefinementFocus.NATURALNESS,
                     true,
                     true,
                     true,
@@ -85,7 +85,7 @@ final class SectionPolicySelector {
                     true, 1,
                     true, 1,
                     true,
-                    true, 2, RefinementFocus.TASK_COMPLETION,
+                    true, 12, RefinementFocus.TASK_COMPLETION,
                     true,
                     true,
                     1, ModelAnswerMode.TASK_RESET,
@@ -117,7 +117,7 @@ final class SectionPolicySelector {
         return switch (answerBand) {
             case SHORT_BUT_VALID, CONTENT_THIN -> policy;
             case NATURAL_BUT_BASIC -> policy;
-            case TOO_SHORT_FRAGMENT -> policy.withShowModelAnswer(false);
+            case TOO_SHORT_FRAGMENT -> policy;
             default -> policy;
         };
     }

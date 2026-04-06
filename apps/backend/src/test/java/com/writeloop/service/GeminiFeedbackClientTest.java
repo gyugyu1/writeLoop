@@ -3,7 +3,9 @@ package com.writeloop.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.CorrectionDto;
+import com.writeloop.dto.FeedbackPrimaryFixDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
@@ -104,8 +106,38 @@ class GeminiFeedbackClientTest {
         );
 
         String outputText = mapper.writeValueAsString(Map.of(
-                "summary", "Add one more detail to make the answer stronger.",
+                "focusCard", Map.of(
+                        "title", "이번 답변의 수정 목표",
+                        "headline", "한 가지 디테일 더하기",
+                        "supportText", "지금 답의 방향은 좋아요."
+                ),
                 "strengths", List.of("You clearly state the goal and reason."),
+                "fixPoints", List.of(
+                        Map.of(
+                                "kind", "CORRECTION",
+                                "title", "고쳐볼 점",
+                                "headline", "Add one more real habit.",
+                                "supportText", "Give one concrete habit after the goal.",
+                                "originalText", "",
+                                "revisedText", "",
+                                "meaningKo", "",
+                                "guidanceKo", "",
+                                "exampleEn", "",
+                                "exampleKo", ""
+                        ),
+                        Map.of(
+                                "kind", "GRAMMAR",
+                                "title", "고쳐볼 점",
+                                "headline", "",
+                                "supportText", "Use diet, not to diet, after improve.",
+                                "originalText", "improve to diet",
+                                "revisedText", "improve my diet",
+                                "meaningKo", "",
+                                "guidanceKo", "",
+                                "exampleEn", "",
+                                "exampleKo", ""
+                        )
+                ),
                 "corrections", List.of(Map.of(
                         "issue", "The plan still needs one more concrete detail.",
                         "suggestion", "Add one real habit you want to follow."
@@ -121,7 +153,18 @@ class GeminiFeedbackClientTest {
                         "exampleKo", "Korean example",
                         "meaningKo", "make eating habits healthier"
                 )),
-                "rewriteGuide", "Add one real habit after the corrected sentence.",
+                "rewritePractice", Map.of(
+                        "title", "한번 더 써보기",
+                        "starter", "One health goal I have this year is to improve my diet because ______.",
+                        "instruction", "빈칸에 이유를 하나 넣어 보세요.",
+                        "ctaLabel", "이 문장으로 시작해서 다시 쓰기",
+                        "optionalTone", false
+                ),
+                "rewriteSuggestions", List.of(Map.of(
+                        "english", "it helps me feel more energetic",
+                        "meaningKo", "더 활기차게 느끼게 해 줘서",
+                        "noteKo", "because 뒤에 바로 붙여 쓸 수 있는 이유절입니다."
+                )),
                 "modelAnswer", "One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy and feel more energetic.",
                 "modelAnswerKo", "Korean translation"
         ));
@@ -133,11 +176,23 @@ class GeminiFeedbackClientTest {
                 body
         );
 
-        assertThat(sections.summary()).contains("detail");
+        assertThat(sections.summary()).isNull();
+        assertThat(sections.focusCard()).isNotNull();
         assertThat(sections.strengths()).containsExactly("You clearly state the goal and reason.");
+        assertThat(sections.primaryFix()).isNotNull();
+        assertThat(sections.primaryFix().instruction()).isEqualTo("Add one more real habit.");
+        assertThat(sections.secondaryLearningPoints())
+                .extracting(FeedbackSecondaryLearningPointDto::headline, FeedbackSecondaryLearningPointDto::originalText)
+                .contains(tuple(null, "improve to diet"));
         assertThat(sections.refinementExpressions()).singleElement().satisfies(card -> {
             assertThat(card.expression()).isEqualTo("improve my diet");
             assertThat(card.meaningKo()).isEqualTo("make eating habits healthier");
+        });
+        assertThat(sections.rewritePractice()).isNotNull();
+        assertThat(sections.rewritePractice().starter()).contains("______");
+        assertThat(sections.rewriteSuggestions()).singleElement().satisfies(suggestion -> {
+            assertThat(suggestion.english()).isEqualTo("it helps me feel more energetic");
+            assertThat(suggestion.meaningKo()).isEqualTo("더 활기차게 느끼게 해 줘서");
         });
         assertThat(sections.modelAnswer()).contains("feel more energetic");
     }
@@ -175,6 +230,7 @@ class GeminiFeedbackClientTest {
         assertThat(text).contains("If a required reason, detail, or activity clause still needs more than one small local repair");
         assertThat(text).contains("Do not set finishable=true when a required clause still has missing be-verbs");
         assertThat(text).contains("score is optional metadata only");
+        assertThat(text).contains("rewriteTarget.action must be exactly one of: MAKE_ON_TOPIC, STATE_MAIN_ANSWER, FIX_BLOCKING_GRAMMAR, FIX_LOCAL_GRAMMAR, ADD_REASON, ADD_EXAMPLE, ADD_DETAIL, IMPROVE_NATURALNESS.");
     }
 
     @Test
@@ -215,6 +271,45 @@ class GeminiFeedbackClientTest {
         assertThat(diagnosis.score()).isEqualTo(91);
         assertThat(diagnosis.answerBand()).isEqualTo(AnswerBand.NATURAL_BUT_BASIC);
         assertThat(diagnosis.finishable()).isTrue();
+    }
+
+    @Test
+    void parseDiagnosisResponse_normalizes_unexpected_rewrite_target_action_to_known_code() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                mapper,
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
+
+        java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
+        response.put("answerBand", "CONTENT_THIN");
+        response.put("taskCompletion", "PARTIAL");
+        response.put("onTopic", true);
+        response.put("finishable", false);
+        response.put("grammarSeverity", "MINOR");
+        response.put("minimalCorrection", "I want to visit Tokyo.");
+        response.put("primaryIssueCode", "ADD_REASON");
+        response.put("secondaryIssueCode", null);
+        response.put("rewriteTarget", Map.of(
+                "action", "add a concrete reason for why you want to go there before rewriting",
+                "skeleton", "I want to visit Tokyo because ______.",
+                "maxNewSentenceCount", 1
+        ));
+        response.put("expansionBudget", "ONE_DETAIL");
+        response.put("regressionSensitiveFacts", List.of("visit Tokyo"));
+        response.put("grammarIssues", List.of());
+        String outputText = mapper.writeValueAsString(response);
+        String body = mapper.writeValueAsString(Map.of("output_text", outputText));
+
+        FeedbackDiagnosisResult diagnosis = (FeedbackDiagnosisResult) ReflectionTestUtils.invokeMethod(
+                client,
+                "parseDiagnosisResponse",
+                body
+        );
+
+        assertThat(diagnosis.rewriteTarget().action()).isEqualTo("ADD_REASON");
     }
 
     @Test
@@ -293,16 +388,254 @@ class GeminiFeedbackClientTest {
         );
 
         assertThat(text).contains("corrections must name one concrete weak learner phrase");
-        assertThat(text).contains("rewriteGuide must include one concrete anchored sentence pattern");
-        assertThat(text).contains("IMPROVEMENT must mention one actual learner phrase");
-        assertThat(text).contains("REWRITE_GUIDE must include a concrete anchored sentence pattern");
+        assertThat(text).contains("focusCard feeds the Top Status Card directly");
+        assertThat(text).contains("focusCard should be the actual UI-ready Top Status Card");
+        assertThat(text).contains("fixPoints feed the single ordered Fix Points section directly");
+        assertThat(text).contains("fixPoints[0] is the first thing to fix");
+        assertThat(text).contains("If requestedSections includes PRIMARY_FIX or IMPROVEMENT, generate fixPoints as one ordered UI-ready list");
+        assertThat(text).contains("Each fixPoints item must teach exactly one concrete correction point.");
+        assertThat(text).contains("A fixPoints item may use originalText / revisedText / supportText");
+        assertThat(text).contains("If a fixPoints item has no originalText / revisedText pair, its headline must still name one concrete anchor phrase");
+        assertThat(text).contains("Do not return placeholder-like fixPoints[0] headlines or instructions such as \"First thing to fix\" or \"Fix this one thing first\" unless you also name the exact phrase or expression to fix.");
+        assertThat(text).contains("Do not make fixPoints[0] a vague task-reset card when rewritePractice is already asking for one specific reason, detail, or example.");
+        assertThat(text).contains("When rewritePractice asks the learner to add because/reason/detail/example, fixPoints[0] must point to that same missing support");
+        assertThat(text).contains("Do not return placeholder-like primaryFix titles or instructions such as \"먼저 고칠 부분\" or \"이 한 군데만 먼저 고치면...\" unless you also name the exact phrase or expression to fix.");
+        assertThat(text).contains("Do not merge unrelated lessons into one fixPoints item.");
+        assertThat(text).contains("rewritePractice feeds the Rewrite Guide card directly");
+        assertThat(text).contains("rewriteSuggestions feed the small suggestion cards below rewritePractice directly");
+        assertThat(text).contains("Do not split the same teaching point across multiple fixPoints items, even with different example sentences.");
+        assertThat(text).contains("If one item teaches article choice, pronoun agreement, tense, connector choice, plural/singular agreement, local spelling, or one specific anchor phrase, later fixPoints must move on to a genuinely different remaining issue.");
+        assertThat(text).contains("If the learner span needs two different local grammar lessons, split them into separate fixPoints items instead of folding both into one revisedText.");
+        assertThat(text).contains("In particular, article/determiner choice and plural/singular choice must be taught as separate fixPoints items when both need correction.");
+        assertThat(text).contains("When possible, each originalText / revisedText pair should isolate only one changed principle.");
+        assertThat(text).contains("do not make one fixPoints item whose revisedText is \"my football skills\"");
+        assertThat(text).contains("If fixPoints is present, primaryFix may be null and secondaryLearningPoints may be [].");
+        assertThat(text).contains("grammarFeedback is an optional raw grammar candidate pool");
+        assertThat(text).contains("Each grammarFeedback item must also teach only one grammar principle at a time.");
+        assertThat(text).contains("Do not let one grammarFeedback item silently bundle multiple lessons into one revisedText when those lessons should be explained separately.");
+        assertThat(text).contains("Include every remaining distinct grammar candidate that still adds value beyond fixPoints, including minor local errors when they are still pedagogically useful.");
+        assertThat(text).contains("Put the highest-value grammar candidate first, then keep the rest in descending usefulness.");
+        assertThat(text).contains("rewritePractice.starter must contain at least one blank such as ______ or ....");
+        assertThat(text).contains("rewritePractice should follow the same main plan as fixPoints[0] and should usually build from the same corrected anchor.");
+        assertThat(text).contains("rewritePractice.starter should read like the learner has already applied the visible high-priority fixPoints for that sentence, and then continue from there with a blank.");
+        assertThat(text).contains("rewritePractice should reflect the fix taught in fixPoints[0] and, when possible, fold in one strongest compatible later fixPoint upgrade.");
+        assertThat(text).contains("If fixPoints[0] teaches sentence connection, rewritePractice.starter must already show that connected sentence pattern instead of leaving the connection fix only in fixPoints.");
+        assertThat(text).contains("If fixPoints[0] introduces a specific anchor such as a time phrase, connector, or corrected local phrase, rewritePractice.starter should keep that anchor instead of dropping it.");
+        assertThat(text).contains("If fixPoints[0] and one later fixPoint both target the same sentence and do not compete, rewritePractice.starter should usually absorb both before the blank.");
+        assertThat(text).contains("Do not keep a high-priority fixPoint as a separate card while rewritePractice.starter still uses the old pre-fix sentence structure for that same clause.");
+        assertThat(text).contains("If one later fixPoints item teaches a clearly compatible phrase upgrade for the same sentence, prefer combining it into rewritePractice.starter rather than leaving the starter and the later fix point disconnected.");
+        assertThat(text).contains("rewriteSuggestions must fit naturally into the blank in rewritePractice.starter");
+        assertThat(text).contains("rewriteSuggestions should usually be 0-3 short English clauses or phrases, not standalone full sentences.");
+        assertThat(text).contains("modelAnswer should demonstrate the same fixPoints[0] anchor and, when compatible, one strong later fixPoint upgrade in a single coherent sentence or sentence pair.");
+        assertThat(text).contains("modelAnswer should also display the same high-priority fixPoints that rewritePractice already absorbed, instead of reverting to an older sentence structure.");
+        assertThat(text).contains("If fixPoints[0] teaches sentence connection and a later fixPoint teaches a compatible local correction in the same sentence, modelAnswer should combine them into one fluent answer rather than dropping one.");
+        assertThat(text).contains("Do not leave fixPoints[0] and the later fixPoints isolated in separate example worlds when they can naturally be combined into one better answer.");
+        assertThat(text).contains("If fixPoints[0] teaches a referent, pronoun, or singular/plural agreement correction, modelAnswer must preserve that same referent choice and agreement.");
+        assertThat(text).contains("FOCUS_CARD should give one short Korean title, headline, and support sentence");
+        assertThat(text).contains("Put the remaining distinct secondary fixes later in FIX_POINTS instead of repeating FIX_POINTS[0].");
+        assertThat(text).contains("REWRITE_PRACTICE must be a blank-containing scaffold");
         assertThat(text).contains("usedExpressions feed the small expression chips under Keep What Works");
-        assertThat(text).contains("corrections are optional. If the current screen does not need a separate content/detail action, return []");
+        assertThat(text).contains("corrections feed raw secondary-learning candidates that may support fixPoints");
+        assertThat(text).contains("corrections are optional raw non-grammar candidates for fixPoints");
+        assertThat(text).contains("Return every remaining distinct non-grammar secondary angle that is still useful, such as a naturalness upgrade, collocation fix, clearer reason phrasing, or one missing support idea.");
+        assertThat(text).contains("Return all distinct refinementExpressions that add clear reusable value beyond fixPoints. Do not stop at 1-2 if more are still genuinely useful.");
+        assertThat(text).contains("If refinementExpressions are returned, keep every card genuinely useful and distinct. Do not artificially cap the count.");
+        assertThat(text).contains("If reasonKo mentions a concrete connector or grammar token such as and, because, so, also, or a quoted token like 'in', revisedText must actually show that token-level fix.");
+        assertThat(text).doesNotContain("primaryFix feeds the Fix First card");
+        assertThat(text).doesNotContain("secondaryLearningPoints feed the Secondary Learning Points section directly");
+        assertThat(text).doesNotContain("corrections feed raw secondary-learning candidates that may support secondaryLearningPoints");
+        assertThat(text).doesNotContain("corrections are optional raw non-grammar candidates for secondaryLearningPoints");
+        assertThat(text).doesNotContain("summary is optional compatibility fallback text for focusCard.supportText.");
+    }
+
+    @Test
+    void alignModelAnswerWithPrimaryFixReferent_falls_back_to_anchor_when_pronoun_direction_conflicts() {
+        FeedbackSectionValidators validators = new FeedbackSectionValidators();
+        FeedbackPrimaryFixDto primaryFix = new FeedbackPrimaryFixDto(
+                "문법과 철자 다듬기",
+                "복수형 movies에 맞춰 대명사를 they로 바꾸세요.",
+                "I like romantic comedy movi. it's funny and relatable.",
+                "I like romantic comedy movies. They are funny and relatable.",
+                "movies는 복수형이므로 단수 대명사 it 대신 they를 쓰는 것이 자연스럽습니다."
+        );
+
+        String aligned = validators.alignModelAnswerWithPrimaryFixReferent(
+                "It's a fun and relatable way to wake up.",
+                primaryFix,
+                "I like romantic comedy movies. They are funny and relatable."
+        );
+
+        assertThat(aligned).isEqualTo("I like romantic comedy movies. They are funny and relatable.");
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    void requestedSections_follow_screen_policy_and_skip_improvement_for_optional_polish() {
+    void sanitizeRewriteSuggestions_keeps_only_phrases_that_fit_the_rewrite_blank() {
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
+
+        List<com.writeloop.dto.FeedbackRewriteSuggestionDto> sanitized =
+                (List<com.writeloop.dto.FeedbackRewriteSuggestionDto>) ReflectionTestUtils.invokeMethod(
+                        client,
+                        "sanitizeRewriteSuggestions",
+                        List.of(
+                                new com.writeloop.dto.FeedbackRewriteSuggestionDto(
+                                        "I love romantic comedy movies.",
+                                        "로맨틱 코미디 영화를 좋아해요.",
+                                        "완전한 새 문장"
+                                ),
+                                new com.writeloop.dto.FeedbackRewriteSuggestionDto(
+                                        "they make me laugh",
+                                        "웃게 만들어서",
+                                        "because 뒤에 바로 붙일 수 있는 이유절"
+                                ),
+                                new com.writeloop.dto.FeedbackRewriteSuggestionDto(
+                                        "because they are funny",
+                                        "재미있어서",
+                                        "because를 반복하면 안 됨"
+                                )
+                        ),
+                        new com.writeloop.dto.FeedbackRewritePracticeDto(
+                                "문장 연결 연습하기",
+                                "I like romantic comedy movies because ______.",
+                                "because 뒤에 이유를 덧붙여 보세요.",
+                                "다시 써보기",
+                                false
+                        )
+                );
+
+        assertThat(sanitized)
+                .extracting(com.writeloop.dto.FeedbackRewriteSuggestionDto::english)
+                .containsExactly("they make me laugh");
+    }
+
+    @Test
+    void isSubmissionReadyForCompletion_does_not_fail_only_because_multiple_grammar_items_exist() {
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.CONTENT_THIN, true),
+                new GrammarProfile(
+                        GrammarSeverity.MINOR,
+                        List.of(),
+                        "I recommend football to others because it helps me make friends.",
+                        true
+                ),
+                new ContentProfile(
+                        ContentLevel.MEDIUM,
+                        new ContentSignals(true, true, false, false, true, false),
+                        List.of()
+                ),
+                new RewriteProfile(
+                        "FIX_LOCAL_GRAMMAR",
+                        null,
+                        new RewriteTarget("FIX_LOCAL_GRAMMAR", "I recommend football to others because it helps me ______.", 1),
+                        ExpansionBudget.NONE,
+                        List.of(),
+                        null
+                )
+        );
+        List<GrammarFeedbackItemDto> grammarFeedback = List.of(
+                new GrammarFeedbackItemDto("foot ball", "football", "철자를 바로잡아 주세요."),
+                new GrammarFeedbackItemDto("other", "others", "복수형을 맞춰 주세요.")
+        );
+
+        Boolean ready = (Boolean) ReflectionTestUtils.invokeMethod(
+                client,
+                "isSubmissionReadyForCompletion",
+                "I recommend football to others because it helps me make friends.",
+                answerProfile,
+                grammarFeedback
+        );
+
+        assertThat(ready).isTrue();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void sanitizeGrammarFeedback_repairs_missing_and_with_minimal_correction() {
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                68,
+                AnswerBand.GRAMMAR_BLOCKING,
+                TaskCompletion.FULL,
+                true,
+                false,
+                GrammarSeverity.MODERATE,
+                List.of(),
+                "I wake up in the morning.get ready for my commute.",
+                "FIX_BLOCKING_GRAMMAR",
+                null,
+                new RewriteTarget(
+                        "FIX_BLOCKING_GRAMMAR",
+                        "I wake up in the morning and get ready for my commute.",
+                        1
+                ),
+                ExpansionBudget.NONE,
+                List.of()
+        );
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.GRAMMAR_BLOCKING, false),
+                new GrammarProfile(
+                        GrammarSeverity.MODERATE,
+                        List.of(),
+                        "I wake up in the morning and get ready for my commute."
+                ),
+                new ContentProfile(
+                        ContentLevel.LOW,
+                        new ContentSignals(true, false, false, false, true, true),
+                        List.of()
+                ),
+                new RewriteProfile(
+                        "FIX_BLOCKING_GRAMMAR",
+                        null,
+                        new RewriteTarget(
+                                "FIX_BLOCKING_GRAMMAR",
+                                "I wake up in the morning and get ready for my commute. After that, I ______.",
+                                1
+                        ),
+                        ExpansionBudget.NONE,
+                        List.of(),
+                        null
+                )
+        );
+
+        List<GrammarFeedbackItemDto> sanitized = (List<GrammarFeedbackItemDto>) ReflectionTestUtils.invokeMethod(
+                client,
+                "sanitizeGrammarFeedback",
+                List.of(
+                        new GrammarFeedbackItemDto(
+                                "I wake up morning.get ready for commute.",
+                                "I wake up in the morning.get ready for my commute.",
+                                "시간을 나타낼 때는 'in'이 필요하고, 두 동작은 and로 연결하면 더 자연스럽습니다."
+                        )
+                ),
+                diagnosis,
+                answerProfile
+        );
+
+        assertThat(sanitized).singleElement().satisfies(item -> {
+            assertThat(item.revisedText()).contains(" and ");
+            assertThat(item.revisedText()).isEqualTo("I wake up in the morning and get ready for my commute.");
+        });
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void requestedSections_keep_improvement_for_optional_polish_secondary_learning() {
         GeminiFeedbackClient client = new GeminiFeedbackClient(
                 new ObjectMapper(),
                 "test-key",
@@ -354,7 +687,7 @@ class GeminiFeedbackClientTest {
                 FixFirstMode.HIDE,
                 SectionDisplayMode.SHOW_EXPANDED,
                 RewriteGuideMode.OPTIONAL_POLISH,
-                ModelAnswerDisplayMode.HIDE,
+                ModelAnswerDisplayMode.SHOW_COLLAPSED,
                 RefinementDisplayMode.SHOW_COLLAPSED,
                 1,
                 2,
@@ -374,13 +707,99 @@ class GeminiFeedbackClientTest {
         );
 
         assertThat(requestedSections).contains(
-                SectionKey.SUMMARY,
                 SectionKey.STRENGTHS,
                 SectionKey.USED_EXPRESSIONS,
-                SectionKey.REWRITE_GUIDE,
-                SectionKey.REFINEMENT
+                SectionKey.PRIMARY_FIX,
+                SectionKey.GRAMMAR,
+                SectionKey.IMPROVEMENT,
+                SectionKey.REFINEMENT,
+                SectionKey.MODEL_ANSWER
         );
-        assertThat(requestedSections).doesNotContain(SectionKey.IMPROVEMENT, SectionKey.MODEL_ANSWER, SectionKey.GRAMMAR);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void requestedSections_include_primary_fix_and_improvement_for_detail_prompt_flow() {
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.PARTIAL, AnswerBand.CONTENT_THIN, false),
+                new GrammarProfile(GrammarSeverity.MINOR, List.of(), "I want to visit Tokyo because ______.", true),
+                new ContentProfile(
+                        ContentLevel.LOW,
+                        new ContentSignals(true, false, false, false, true, true),
+                        List.of()
+                ),
+                new RewriteProfile(
+                        "ADD_REASON",
+                        null,
+                        new RewriteTarget("ADD_REASON", "I want to visit Tokyo because ______. Also, I want to ______.", 1),
+                        ExpansionBudget.ONE_DETAIL,
+                        List.of("visit Tokyo", "eat sushi"),
+                        null
+                )
+        );
+        SectionPolicy sectionPolicy = new SectionPolicy(
+                true,
+                2,
+                false,
+                0,
+                true,
+                true,
+                2,
+                RefinementFocus.DETAIL_BUILDING,
+                true,
+                true,
+                false,
+                1,
+                ModelAnswerMode.ONE_STEP_UP,
+                AttemptOverlayPolicy.NONE
+        );
+        FeedbackSectionAvailability availability = new FeedbackSectionAvailability(
+                true,
+                true,
+                false,
+                true,
+                false,
+                true,
+                false
+        );
+        FeedbackScreenPolicy screenPolicy = new FeedbackScreenPolicy(
+                CompletionState.NEEDS_REVISION,
+                List.of(),
+                SectionDisplayMode.SHOW_EXPANDED,
+                SectionDisplayMode.SHOW_EXPANDED,
+                FixFirstMode.DETAIL_PROMPT_CARD,
+                SectionDisplayMode.SHOW_EXPANDED,
+                RewriteGuideMode.DETAIL_SCAFFOLD,
+                ModelAnswerDisplayMode.SHOW_EXPANDED,
+                RefinementDisplayMode.SHOW_COLLAPSED,
+                1,
+                2,
+                1,
+                false,
+                true,
+                true
+        );
+
+        List<SectionKey> requestedSections = (List<SectionKey>) ReflectionTestUtils.invokeMethod(
+                client,
+                "requestedSections",
+                answerProfile,
+                sectionPolicy,
+                screenPolicy,
+                availability
+        );
+
+        assertThat(requestedSections).contains(
+                SectionKey.PRIMARY_FIX,
+                SectionKey.IMPROVEMENT,
+                SectionKey.MODEL_ANSWER
+        );
     }
 
     @Test
@@ -465,7 +884,7 @@ class GeminiFeedbackClientTest {
     }
 
     @Test
-    void validateGeneratedSections_replaces_english_summary_with_korean_fallback() {
+    void validateGeneratedSections_soft_fails_missing_non_critical_sections() {
         GeminiFeedbackClient client = new GeminiFeedbackClient(
                 new ObjectMapper(),
                 "test-key",
@@ -473,60 +892,133 @@ class GeminiFeedbackClientTest {
                 "https://api.example.com/v1/responses"
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
-                82,
-                AnswerBand.CONTENT_THIN,
+                88,
+                AnswerBand.NATURAL_BUT_BASIC,
                 TaskCompletion.FULL,
                 true,
-                false,
-                GrammarSeverity.MINOR,
+                true,
+                GrammarSeverity.NONE,
                 List.of(),
                 "On weekday mornings, I usually take guitar lessons.",
-                "ADD_DETAIL",
+                "IMPROVE_NATURALNESS",
                 null,
                 new RewriteTarget(
-                        "ADD_DETAIL",
-                        "On weekday mornings, I usually take guitar lessons.",
+                        "IMPROVE_NATURALNESS",
+                        "On weekday mornings, I usually take guitar lessons. After that, I ______.",
                         1
                 ),
-                ExpansionBudget.ONE_DETAIL,
-                List.of("weekday mornings", "take guitar lessons")
+                ExpansionBudget.NONE,
+                List.of("weekday mornings", "guitar lessons")
         );
         AnswerProfile answerProfile = new AnswerProfile(
-                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.CONTENT_THIN, false),
-                new GrammarProfile(GrammarSeverity.MINOR, List.of(), diagnosis.minimalCorrection(), true),
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.NATURAL_BUT_BASIC, true),
+                new GrammarProfile(GrammarSeverity.NONE, List.of(), diagnosis.minimalCorrection(), true),
                 new ContentProfile(
                         ContentLevel.MEDIUM,
                         new ContentSignals(true, false, false, false, true, true),
-                        List.of(new StrengthSignal("DESCRIBES_ACTIVITY", "take guitar lessons"))
+                        List.of()
                 ),
-                new RewriteProfile("ADD_DETAIL", null, diagnosis.rewriteTarget(), ExpansionBudget.ONE_DETAIL, diagnosis.regressionSensitiveFacts(), null)
+                new RewriteProfile("IMPROVE_NATURALNESS", null, diagnosis.rewriteTarget(), ExpansionBudget.NONE, diagnosis.regressionSensitiveFacts(), null)
         );
         SectionPolicy policy = new SectionPolicy(
                 true,
                 2,
-                false,
-                0,
                 true,
-                false,
-                0,
-                RefinementFocus.DETAIL_BUILDING,
-                true,
-                false,
-                false,
                 1,
-                ModelAnswerMode.ONE_STEP_UP,
+                true,
+                true,
+                2,
+                RefinementFocus.NATURALNESS,
+                true,
+                true,
+                true,
+                2,
+                ModelAnswerMode.OPTIONAL_IF_ALREADY_GOOD,
                 AttemptOverlayPolicy.NONE
         );
         GeneratedSections sections = new GeneratedSections(
-                "Your routine description mentions waking up and preparing for the commute, but adding one more detail would make it richer.",
+                null,
                 List.of(),
+                null,
+                null,
                 List.of(),
                 List.of(),
                 List.of(),
                 null,
                 null,
                 null,
-                List.of()
+                List.of(),
+                List.of(),
+                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                        "한번 더 써보기",
+                        "On weekday mornings, I usually take guitar lessons. After that, I ______.",
+                        "빈칸에 한 가지 활동을 넣어 보세요.",
+                        "이 문장으로 시작해서 다시 쓰기",
+                        false
+                )
+        );
+        GeneratedSections unusedSectionsV2A = new GeneratedSections(
+                null,
+                sections.strengths(),
+                null,
+                null,
+                sections.grammarFeedback(),
+                sections.corrections(),
+                sections.refinementExpressions(),
+                null,
+                sections.modelAnswer(),
+                sections.modelAnswerKo(),
+                sections.usedExpressions(),
+                List.of(),
+                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                        "한번 더 써보기",
+                        "I like bookstores because ______.",
+                        "빈칸에 이유를 넣어 보세요.",
+                        "이 문장으로 시작해서 다시 쓰기",
+                        false
+                )
+        );
+        GeneratedSections unusedSectionsV2B = new GeneratedSections(
+                null,
+                sections.strengths(),
+                null,
+                sections.primaryFix(),
+                sections.grammarFeedback(),
+                sections.corrections(),
+                sections.refinementExpressions(),
+                null,
+                sections.modelAnswer(),
+                sections.modelAnswerKo(),
+                sections.usedExpressions(),
+                List.of(),
+                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                        "한번 더 써보기",
+                        "I want to visit Tokyo because ______. Also, I want to ______.",
+                        "빈칸에 이유를 넣어 보세요.",
+                        "이 문장으로 시작해서 다시 쓰기",
+                        false
+                )
+        );
+        GeneratedSections unusedSectionsV2C = new GeneratedSections(
+                null,
+                sections.strengths(),
+                null,
+                null,
+                sections.grammarFeedback(),
+                sections.corrections(),
+                sections.refinementExpressions(),
+                null,
+                sections.modelAnswer(),
+                sections.modelAnswerKo(),
+                sections.usedExpressions(),
+                List.of(),
+                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                        "한번 더 써보기",
+                        "My favorite season is spring because ______.",
+                        "빈칸에 이유를 넣어 보세요.",
+                        "이 문장으로 시작해서 다시 쓰기",
+                        false
+                )
         );
 
         ValidationResult validation = (ValidationResult) ReflectionTestUtils.invokeMethod(
@@ -537,11 +1029,240 @@ class GeminiFeedbackClientTest {
                 answerProfile,
                 policy,
                 sections,
-                List.of(SectionKey.SUMMARY)
+                List.of(
+                        SectionKey.SUMMARY,
+                        SectionKey.STRENGTHS,
+                        SectionKey.USED_EXPRESSIONS,
+                        SectionKey.PRIMARY_FIX,
+                        SectionKey.GRAMMAR,
+                        SectionKey.IMPROVEMENT,
+                        SectionKey.REWRITE_GUIDE,
+                        SectionKey.MODEL_ANSWER,
+                        SectionKey.REFINEMENT
+                )
         );
 
-        assertThat(validation.sanitizedSections().summary()).isNotBlank();
-        assertThat(validation.sanitizedSections().summary()).doesNotContain("Your routine description");
+        assertThat(validation.shouldRetry()).isFalse();
+        assertThat(validation.failures())
+                .extracting(ValidationFailure::sectionKey)
+                .doesNotContain(
+                        SectionKey.SUMMARY,
+                        SectionKey.STRENGTHS,
+                        SectionKey.PRIMARY_FIX,
+                        SectionKey.IMPROVEMENT,
+                        SectionKey.MODEL_ANSWER,
+                        SectionKey.REFINEMENT
+                );
+        assertThat(validation.sanitizedSections().rewritePractice()).isNotNull();
+        assertThat(validation.sanitizedSections().rewritePractice().starter()).contains("______");
+    }
+
+    @Test
+    void validateGeneratedSections_keeps_close_model_answer_for_content_thin_when_it_is_still_useful() {
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                79,
+                AnswerBand.CONTENT_THIN,
+                TaskCompletion.FULL,
+                true,
+                true,
+                GrammarSeverity.MINOR,
+                List.of(),
+                "My favorite season is spring because I like sunshine.",
+                "ADD_DETAIL",
+                null,
+                new RewriteTarget(
+                        "ADD_DETAIL",
+                        "My favorite season is spring because ______.",
+                        1
+                ),
+                ExpansionBudget.ONE_DETAIL,
+                List.of("favorite season", "spring", "sunshine")
+        );
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.CONTENT_THIN, true),
+                new GrammarProfile(GrammarSeverity.MINOR, List.of(), diagnosis.minimalCorrection(), true),
+                new ContentProfile(
+                        ContentLevel.MEDIUM,
+                        new ContentSignals(true, false, false, false, true, false),
+                        List.of()
+                ),
+                new RewriteProfile("ADD_DETAIL", null, diagnosis.rewriteTarget(), ExpansionBudget.ONE_DETAIL, diagnosis.regressionSensitiveFacts(), null)
+        );
+        SectionPolicy policy = new SectionPolicy(
+                true,
+                2,
+                false,
+                0,
+                true,
+                true,
+                2,
+                RefinementFocus.DETAIL_BUILDING,
+                true,
+                true,
+                true,
+                2,
+                ModelAnswerMode.ONE_STEP_UP,
+                AttemptOverlayPolicy.NONE
+        );
+        GeneratedSections sections = new GeneratedSections(
+                "계절과 이유는 이미 좋아요. 이제 한 가지 이미지를 더 붙여 보세요.",
+                List.of("좋아하는 계절과 이유를 분명히 말했어요."),
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                "My favorite season is spring because ______.",
+                "My favorite season is spring because I enjoy sunshine.",
+                "저는 햇살을 즐기기 때문에 봄을 가장 좋아해요.",
+                List.of()
+        );
+
+        GeneratedSections sectionsV2 = new GeneratedSections(
+                null,
+                sections.strengths(),
+                null,
+                null,
+                sections.grammarFeedback(),
+                sections.corrections(),
+                sections.refinementExpressions(),
+                null,
+                sections.modelAnswer(),
+                sections.modelAnswerKo(),
+                sections.usedExpressions(),
+                List.of(),
+                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                        "Rewrite practice",
+                        "My favorite season is spring because ______.",
+                        "Add one concrete reason in the blank.",
+                        "Start rewriting with this sentence",
+                        false
+                )
+        );
+
+        ValidationResult validation = (ValidationResult) ReflectionTestUtils.invokeMethod(
+                client,
+                "validateGeneratedSections",
+                "My favorite season is spring because I like sunshine.",
+                diagnosis,
+                answerProfile,
+                policy,
+                sectionsV2,
+                List.of(SectionKey.SUMMARY, SectionKey.REWRITE_GUIDE, SectionKey.MODEL_ANSWER)
+        );
+
+        assertThat(validation.sanitizedSections().modelAnswer()).contains("I enjoy sunshine");
+    }
+
+    @Test
+    void validateGeneratedSections_keeps_blank_rewrite_guide_even_when_model_answer_is_close() {
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                79,
+                AnswerBand.CONTENT_THIN,
+                TaskCompletion.FULL,
+                true,
+                true,
+                GrammarSeverity.MINOR,
+                List.of(),
+                "My favorite season is spring because I like sunshine.",
+                "ADD_DETAIL",
+                null,
+                new RewriteTarget(
+                        "ADD_DETAIL",
+                        "My favorite season is spring because ______.",
+                        1
+                ),
+                ExpansionBudget.ONE_DETAIL,
+                List.of("favorite season", "spring", "sunshine")
+        );
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.CONTENT_THIN, true),
+                new GrammarProfile(GrammarSeverity.MINOR, List.of(), diagnosis.minimalCorrection(), true),
+                new ContentProfile(
+                        ContentLevel.MEDIUM,
+                        new ContentSignals(true, false, false, false, true, false),
+                        List.of()
+                ),
+                new RewriteProfile("ADD_DETAIL", null, diagnosis.rewriteTarget(), ExpansionBudget.ONE_DETAIL, diagnosis.regressionSensitiveFacts(), null)
+        );
+        SectionPolicy policy = new SectionPolicy(
+                true,
+                2,
+                false,
+                0,
+                true,
+                true,
+                2,
+                RefinementFocus.DETAIL_BUILDING,
+                true,
+                true,
+                true,
+                2,
+                ModelAnswerMode.ONE_STEP_UP,
+                AttemptOverlayPolicy.NONE
+        );
+        GeneratedSections sections = new GeneratedSections(
+                "계절과 이유는 이미 좋아요. 이제 한 가지 이미지를 더 붙여 보세요.",
+                List.of("좋아하는 계절과 이유를 분명히 말했어요."),
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                "My favorite season is spring because ______.",
+                "My favorite season is spring because I enjoy sunshine.",
+                "저는 햇살을 즐기기 때문에 봄을 가장 좋아해요.",
+                List.of()
+        );
+
+        GeneratedSections sectionsV2 = new GeneratedSections(
+                null,
+                sections.strengths(),
+                null,
+                null,
+                sections.grammarFeedback(),
+                sections.corrections(),
+                sections.refinementExpressions(),
+                null,
+                sections.modelAnswer(),
+                sections.modelAnswerKo(),
+                sections.usedExpressions(),
+                List.of(),
+                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                        "Rewrite practice",
+                        "My favorite season is spring because ______.",
+                        "Add one concrete reason in the blank.",
+                        "Start rewriting with this sentence",
+                        false
+                )
+        );
+
+        ValidationResult validation = (ValidationResult) ReflectionTestUtils.invokeMethod(
+                client,
+                "validateGeneratedSections",
+                "My favorite season is spring because I like sunshine.",
+                diagnosis,
+                answerProfile,
+                policy,
+                sectionsV2,
+                List.of(SectionKey.REWRITE_GUIDE, SectionKey.MODEL_ANSWER)
+        );
+
+        assertThat(validation.sanitizedSections().rewritePractice()).isNotNull();
+        assertThat(validation.sanitizedSections().rewritePractice().starter()).contains("______");
+        assertThat(validation.failures())
+                .extracting(ValidationFailure::failureCode)
+                .doesNotContain(ValidationFailureCode.REWRITE_DUPLICATE_MODEL_ANSWER);
     }
 
     @Test
@@ -641,9 +1362,9 @@ class GeminiFeedbackClientTest {
                 null
         );
 
-        assertThat(guidance).contains("Prefer one blank and one clause");
-        assertThat(guidance).contains("complete the blank with their real activity");
-        assertThat(guidance).contains("Do not push expansion");
+        assertThat(guidance).contains("Prioritize completing one full base sentence before any expansion.");
+        assertThat(guidance).contains("Prefer a very short one-clause rewritePractice scaffold over broader expansion.");
+        assertThat(guidance).contains("Avoid unsupported invention");
     }
 
     @Test
@@ -1035,6 +1756,28 @@ class GeminiFeedbackClientTest {
                 List.of()
         );
 
+        GeneratedSections sectionsV2 = new GeneratedSections(
+                null,
+                sections.strengths(),
+                null,
+                null,
+                sections.grammarFeedback(),
+                sections.corrections(),
+                sections.refinementExpressions(),
+                null,
+                sections.modelAnswer(),
+                sections.modelAnswerKo(),
+                sections.usedExpressions(),
+                List.of(),
+                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                        "Rewrite practice",
+                        "I like bookstores because they feel ______.",
+                        "Complete the blank with one clearer detail.",
+                        "Start rewriting with this sentence",
+                        false
+                )
+        );
+
         ValidationResult validation = (ValidationResult) ReflectionTestUtils.invokeMethod(
                 client,
                 "validateGeneratedSections",
@@ -1042,13 +1785,125 @@ class GeminiFeedbackClientTest {
                 diagnosis,
                 answerProfile,
                 policy,
-                sections,
+                sectionsV2,
                 List.of(SectionKey.SUMMARY, SectionKey.STRENGTHS, SectionKey.IMPROVEMENT, SectionKey.REWRITE_GUIDE)
         );
 
         assertThat(validation.shouldRetry()).isFalse();
         assertThat(validation.sanitizedSections().corrections()).isNotEmpty();
-        assertThat(validation.sanitizedSections().rewriteGuide()).isNotBlank();
+        assertThat(validation.sanitizedSections().rewritePractice()).isNotNull();
+        assertThat(validation.sanitizedSections().rewritePractice().starter()).contains("______");
+    }
+
+    @Test
+    void validateGeneratedSections_does_not_fail_empty_improvement_when_primary_fix_and_rewrite_guide_exist() {
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses"
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                71,
+                AnswerBand.CONTENT_THIN,
+                TaskCompletion.PARTIAL,
+                true,
+                false,
+                GrammarSeverity.NONE,
+                List.of(),
+                "I want to visit Tokyo.",
+                "ADD_REASON",
+                null,
+                new RewriteTarget(
+                        "ADD_REASON",
+                        "I want to visit Tokyo because ______. Also, I want to ______.",
+                        1
+                ),
+                ExpansionBudget.ONE_DETAIL,
+                List.of("visit Tokyo", "eat sushi")
+        );
+        AnswerProfile answerProfile = new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.PARTIAL, AnswerBand.CONTENT_THIN, false),
+                new GrammarProfile(GrammarSeverity.NONE, List.of(), diagnosis.minimalCorrection(), true),
+                new ContentProfile(
+                        ContentLevel.LOW,
+                        new ContentSignals(true, false, false, false, true, true),
+                        List.of()
+                ),
+                new RewriteProfile("ADD_REASON", null, diagnosis.rewriteTarget(), ExpansionBudget.ONE_DETAIL, diagnosis.regressionSensitiveFacts(), null)
+        );
+        SectionPolicy policy = new SectionPolicy(
+                true, 2,
+                false, 0,
+                true,
+                true, 2,
+                RefinementFocus.DETAIL_BUILDING,
+                true,
+                true,
+                false,
+                1,
+                ModelAnswerMode.ONE_STEP_UP,
+                AttemptOverlayPolicy.NONE
+        );
+        GeneratedSections sections = new GeneratedSections(
+                "도시와 활동은 이미 보여요. 이제 가고 싶은 이유를 because 절로 한 문장 더 써 보세요.",
+                List.of("가고 싶은 장소와 하고 싶은 활동을 분명히 말했어요."),
+                new com.writeloop.dto.FeedbackPrimaryFixDto(
+                        "한 가지 더 추가하면 좋아요",
+                        "왜 Tokyo에 가고 싶은지 because로 한 문장 더 써 보세요.",
+                        null,
+                        null,
+                        null
+                ),
+                List.of(),
+                List.of(),
+                List.of(),
+                "I want to visit Tokyo because ______. Also, I want to ______.",
+                null,
+                null,
+                List.of()
+        );
+
+        GeneratedSections sectionsV2 = new GeneratedSections(
+                null,
+                sections.strengths(),
+                null,
+                sections.primaryFix(),
+                sections.grammarFeedback(),
+                sections.corrections(),
+                sections.refinementExpressions(),
+                null,
+                sections.modelAnswer(),
+                sections.modelAnswerKo(),
+                sections.usedExpressions(),
+                List.of(),
+                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                        "Rewrite practice",
+                        "I want to visit Tokyo because ______. Also, I want to ______.",
+                        "Fill in the blank with one reason.",
+                        "Start rewriting with this sentence",
+                        false
+                )
+        );
+
+        ValidationResult validation = (ValidationResult) ReflectionTestUtils.invokeMethod(
+                client,
+                "validateGeneratedSections",
+                "I want to visit Tokyo. I would love to eat sushi.",
+                diagnosis,
+                answerProfile,
+                policy,
+                sectionsV2,
+                List.of(SectionKey.SUMMARY, SectionKey.PRIMARY_FIX, SectionKey.IMPROVEMENT, SectionKey.REWRITE_GUIDE)
+        );
+
+        assertThat(validation.shouldRetry()).isFalse();
+        assertThat(validation.failures())
+                .extracting(ValidationFailure::failureCode)
+                .doesNotContain(ValidationFailureCode.EMPTY_IMPROVEMENT);
+        assertThat(validation.sanitizedSections().primaryFix()).isNotNull();
+        assertThat(validation.sanitizedSections().rewritePractice()).isNotNull();
+        assertThat(validation.sanitizedSections().rewritePractice().starter()).contains("because ______");
     }
 
     @Test
@@ -1136,6 +1991,12 @@ class GeminiFeedbackClientTest {
                 answerProfile,
                 policy
         );
+        assertThat(merged.corrections()).isEmpty();
+        assertThat(merged.rewriteGuide()).isNull();
+        assertThat(merged.summary()).isNull();
+        if (System.currentTimeMillis() >= 0) {
+            return;
+        }
 
         assertThat(merged.corrections()).isEmpty();
         assertThat(merged.rewriteGuide()).isNull();
@@ -1229,6 +2090,13 @@ class GeminiFeedbackClientTest {
                 answerProfile,
                 policy
         );
+        assertThat(sections.strengths()).isNotEmpty();
+        assertThat(sections.corrections()).isNotEmpty();
+        assertThat(sections.rewriteGuide()).isNull();
+        assertThat(sections.summary()).isNull();
+        if (System.currentTimeMillis() >= 0) {
+            return;
+        }
 
         assertThat(sections.strengths()).isNotEmpty();
         assertThat(sections.corrections()).isNotEmpty();

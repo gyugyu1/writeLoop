@@ -13,6 +13,8 @@ final class FeedbackRetryPolicy {
 
         return switch (failure.failureCode()) {
             case EMPTY_STRENGTHS -> false;
+            case EMPTY_PRIMARY_FIX, UNALIGNED_PRIMARY_FIX ->
+                    failure.sectionKey() == SectionKey.PRIMARY_FIX;
             case EMPTY_GRAMMAR, INVALID_GRAMMAR ->
                     failure.sectionKey() == SectionKey.GRAMMAR
                             && sectionPolicy.showGrammar()

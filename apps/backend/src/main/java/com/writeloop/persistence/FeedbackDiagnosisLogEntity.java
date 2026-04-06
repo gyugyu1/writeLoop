@@ -144,7 +144,7 @@ public class FeedbackDiagnosisLogEntity {
     @Column(name = "diagnosis_minimal_correction", columnDefinition = "TEXT")
     private String diagnosisMinimalCorrection;
 
-    @Column(name = "rewrite_target_action", length = 64)
+    @Column(name = "rewrite_target_action", length = 255)
     private String rewriteTargetAction;
 
     @Column(name = "rewrite_target_skeleton", columnDefinition = "TEXT")

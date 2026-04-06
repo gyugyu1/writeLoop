@@ -2,6 +2,11 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.CorrectionDto;
+import com.writeloop.dto.FeedbackFocusCardDto;
+import com.writeloop.dto.FeedbackPrimaryFixDto;
+import com.writeloop.dto.FeedbackRewritePracticeDto;
+import com.writeloop.dto.FeedbackRewriteSuggestionDto;
+import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.RefinementExpressionDto;
 
@@ -109,17 +114,124 @@ record RefinementCard(
 record GeneratedSections(
         String summary,
         List<String> strengths,
+        FeedbackFocusCardDto focusCard,
+        FeedbackPrimaryFixDto primaryFix,
         List<GrammarFeedbackItemDto> grammarFeedback,
         List<CorrectionDto> corrections,
         List<RefinementCard> refinementExpressions,
         String rewriteGuide,
         String modelAnswer,
         String modelAnswerKo,
-        List<CoachExpressionUsageDto> usedExpressions
+        List<CoachExpressionUsageDto> usedExpressions,
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
+        FeedbackRewritePracticeDto rewritePractice,
+        List<FeedbackRewriteSuggestionDto> rewriteSuggestions
 ) {
+    GeneratedSections(
+            String summary,
+            List<String> strengths,
+            FeedbackPrimaryFixDto primaryFix,
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            List<CorrectionDto> corrections,
+            List<RefinementCard> refinementExpressions,
+            String rewriteGuide,
+            String modelAnswer,
+            String modelAnswerKo,
+            List<CoachExpressionUsageDto> usedExpressions
+    ) {
+        this(
+                summary,
+                strengths,
+                null,
+                primaryFix,
+                grammarFeedback,
+                corrections,
+                refinementExpressions,
+                rewriteGuide,
+                modelAnswer,
+                modelAnswerKo,
+                usedExpressions,
+                List.of(),
+                null,
+                List.of()
+        );
+    }
+
+    GeneratedSections(
+            String summary,
+            List<String> strengths,
+            FeedbackFocusCardDto focusCard,
+            FeedbackPrimaryFixDto primaryFix,
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            List<CorrectionDto> corrections,
+            List<RefinementCard> refinementExpressions,
+            String rewriteGuide,
+            String modelAnswer,
+            String modelAnswerKo,
+            List<CoachExpressionUsageDto> usedExpressions
+    ) {
+        this(
+                summary,
+                strengths,
+                focusCard,
+                primaryFix,
+                grammarFeedback,
+                corrections,
+                refinementExpressions,
+                rewriteGuide,
+                modelAnswer,
+                modelAnswerKo,
+                usedExpressions,
+                List.of(),
+                null,
+                List.of()
+        );
+    }
+
+    GeneratedSections(
+            String summary,
+            List<String> strengths,
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            List<CorrectionDto> corrections,
+            List<RefinementCard> refinementExpressions,
+            String rewriteGuide,
+            String modelAnswer,
+            String modelAnswerKo,
+            List<CoachExpressionUsageDto> usedExpressions
+    ) {
+        this(
+                summary,
+                strengths,
+                null,
+                null,
+                grammarFeedback,
+                corrections,
+                refinementExpressions,
+                rewriteGuide,
+                modelAnswer,
+                modelAnswerKo,
+                usedExpressions,
+                List.of(),
+                null,
+                List.of()
+            );
+    }
+
     GeneratedSections {
         summary = blankToNull(summary);
         strengths = strengths == null ? List.of() : List.copyOf(strengths);
+        focusCard = focusCard == null ? null : new FeedbackFocusCardDto(
+                focusCard.title(),
+                focusCard.headline(),
+                focusCard.supportText()
+        );
+        primaryFix = primaryFix == null ? null : new FeedbackPrimaryFixDto(
+                primaryFix.title(),
+                primaryFix.instruction(),
+                primaryFix.originalText(),
+                primaryFix.revisedText(),
+                primaryFix.reasonKo()
+        );
         grammarFeedback = grammarFeedback == null ? List.of() : List.copyOf(grammarFeedback);
         corrections = corrections == null ? List.of() : List.copyOf(corrections);
         refinementExpressions = refinementExpressions == null ? List.of() : List.copyOf(refinementExpressions);
@@ -127,6 +239,48 @@ record GeneratedSections(
         modelAnswer = blankToNull(modelAnswer);
         modelAnswerKo = blankToNull(modelAnswerKo);
         usedExpressions = usedExpressions == null ? List.of() : List.copyOf(usedExpressions);
+        secondaryLearningPoints = secondaryLearningPoints == null ? List.of() : List.copyOf(secondaryLearningPoints);
+        rewritePractice = rewritePractice == null ? null : new FeedbackRewritePracticeDto(
+                rewritePractice.title(),
+                rewritePractice.starter(),
+                rewritePractice.instruction(),
+                rewritePractice.ctaLabel(),
+                rewritePractice.optionalTone()
+        );
+        rewriteSuggestions = rewriteSuggestions == null ? List.of() : List.copyOf(rewriteSuggestions);
+    }
+
+    GeneratedSections(
+            String summary,
+            List<String> strengths,
+            FeedbackFocusCardDto focusCard,
+            FeedbackPrimaryFixDto primaryFix,
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            List<CorrectionDto> corrections,
+            List<RefinementCard> refinementExpressions,
+            String rewriteGuide,
+            String modelAnswer,
+            String modelAnswerKo,
+            List<CoachExpressionUsageDto> usedExpressions,
+            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
+            FeedbackRewritePracticeDto rewritePractice
+    ) {
+        this(
+                summary,
+                strengths,
+                focusCard,
+                primaryFix,
+                grammarFeedback,
+                corrections,
+                refinementExpressions,
+                rewriteGuide,
+                modelAnswer,
+                modelAnswerKo,
+                usedExpressions,
+                secondaryLearningPoints,
+                rewritePractice,
+                List.of()
+        );
     }
 
     GeneratedSections merge(GeneratedSections override) {
@@ -136,13 +290,18 @@ record GeneratedSections(
         return new GeneratedSections(
                 override.summary != null ? override.summary : summary,
                 !override.strengths.isEmpty() ? override.strengths : strengths,
+                override.focusCard != null ? override.focusCard : focusCard,
+                override.primaryFix != null ? override.primaryFix : primaryFix,
                 !override.grammarFeedback.isEmpty() ? override.grammarFeedback : grammarFeedback,
                 !override.corrections.isEmpty() ? override.corrections : corrections,
                 !override.refinementExpressions.isEmpty() ? override.refinementExpressions : refinementExpressions,
                 override.rewriteGuide != null ? override.rewriteGuide : rewriteGuide,
                 override.modelAnswer != null ? override.modelAnswer : modelAnswer,
                 override.modelAnswerKo != null ? override.modelAnswerKo : modelAnswerKo,
-                !override.usedExpressions.isEmpty() ? override.usedExpressions : usedExpressions
+                !override.usedExpressions.isEmpty() ? override.usedExpressions : usedExpressions,
+                !override.secondaryLearningPoints.isEmpty() ? override.secondaryLearningPoints : secondaryLearningPoints,
+                override.rewritePractice != null ? override.rewritePractice : rewritePractice,
+                !override.rewriteSuggestions.isEmpty() ? override.rewriteSuggestions : rewriteSuggestions
         );
     }
 
@@ -153,6 +312,7 @@ record GeneratedSections(
 
 enum SectionKey {
     STRENGTHS,
+    PRIMARY_FIX,
     GRAMMAR,
     IMPROVEMENT,
     REFINEMENT,
@@ -164,6 +324,7 @@ enum SectionKey {
 
 enum ValidationFailureCode {
     EMPTY_STRENGTHS,
+    EMPTY_PRIMARY_FIX,
     EMPTY_GRAMMAR,
     INVALID_GRAMMAR,
     EMPTY_IMPROVEMENT,
@@ -178,6 +339,7 @@ enum ValidationFailureCode {
     REWRITE_DUPLICATE_MODEL_ANSWER,
     SUMMARY_DUPLICATES_IMPROVEMENT,
     LOW_VALUE_SECTION,
+    UNALIGNED_PRIMARY_FIX,
     UNALIGNED_REWRITE_TARGET,
     LOW_VALUE_MODEL_ANSWER,
     LOW_VALUE_REFINEMENT
@@ -202,7 +364,7 @@ record ValidationResult(
 ) {
     ValidationResult {
         sanitizedSections = sanitizedSections == null
-                ? new GeneratedSections(null, List.of(), List.of(), List.of(), List.of(), null, null, null, List.of())
+                ? new GeneratedSections(null, List.of(), null, null, List.of(), List.of(), List.of(), null, null, null, List.of(), List.of(), null)
                 : sanitizedSections;
         failures = failures == null ? List.of() : List.copyOf(failures);
     }

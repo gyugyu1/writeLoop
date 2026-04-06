@@ -17,7 +17,7 @@ class SectionPolicySelectorTest {
         assertThat(policy.showGrammar()).isTrue();
         assertThat(policy.maxGrammarIssueCount()).isEqualTo(1);
         assertThat(policy.showRefinement()).isTrue();
-        assertThat(policy.maxRefinementCount()).isEqualTo(3);
+        assertThat(policy.maxRefinementCount()).isEqualTo(12);
         assertThat(policy.refinementFocus()).isEqualTo(RefinementFocus.DETAIL_BUILDING);
         assertThat(policy.modelAnswerMode()).isEqualTo(ModelAnswerMode.ONE_STEP_UP);
         assertThat(policy.maxModelAnswerSentences()).isEqualTo(2);
@@ -48,11 +48,11 @@ class SectionPolicySelectorTest {
     }
 
     @Test
-    void select_prioritizes_rewrite_guide_over_model_answer_for_too_short_fragment() {
+    void select_keeps_model_answer_for_too_short_fragment() {
         SectionPolicy policy = selector.select(profileWithBand(AnswerBand.TOO_SHORT_FRAGMENT), 1);
 
         assertThat(policy.showRewriteGuide()).isTrue();
-        assertThat(policy.showModelAnswer()).isFalse();
+        assertThat(policy.showModelAnswer()).isTrue();
     }
 
     @Test

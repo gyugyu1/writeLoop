@@ -1138,6 +1138,13 @@
   flex-shrink: 0;
 }
 
+.stageHeaderButtonGroup {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .stageFooter {
   display: flex;
   justify-content: space-between;
@@ -3268,6 +3275,10 @@
   background: rgba(16, 36, 76, 0.03);
 }
 
+.primaryFixCardCompact {
+  margin-top: 0;
+}
+
 .primaryFixRow {
   display: grid;
   gap: 6px;
@@ -3368,6 +3379,94 @@
   line-height: 1.6;
 }
 
+.secondaryLearningBlock {
+  display: grid;
+  gap: 12px;
+}
+
+.secondaryLearningList {
+  display: grid;
+  gap: 10px;
+}
+
+.secondaryLearningCard {
+  display: grid;
+  gap: 8px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(16, 36, 76, 0.025);
+}
+
+.secondaryLearningLabel {
+  color: #7a4a22;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.secondaryLearningBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 26px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.08);
+  color: #7d4316;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.secondaryLearningHeadline {
+  color: #10244c;
+  font-size: 0.96rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.secondaryLearningSupport {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.secondaryLearningPair {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.secondaryLearningOriginal,
+.secondaryLearningRevised {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.secondaryLearningOriginal {
+  color: #9b1c1c;
+  background: rgba(233, 95, 95, 0.1);
+}
+
+.secondaryLearningRevised {
+  color: #0f5c38;
+  background: rgba(57, 181, 74, 0.12);
+}
+
+.secondaryLearningArrow {
+  color: #5b6887;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
 .rewriteStarterCard {
   display: grid;
   gap: 14px;
@@ -3394,8 +3493,54 @@
 }
 
 .rewriteStarterInstruction {
+  margin: 0;
   color: var(--text-sub);
   line-height: 1.65;
+}
+
+.rewriteSuggestionBlock {
+  display: grid;
+  gap: 10px;
+}
+
+.rewriteSuggestionTitle {
+  color: #10244c;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.rewriteSuggestionList {
+  display: grid;
+  gap: 8px;
+}
+
+.rewriteSuggestionCard {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.rewriteSuggestionEnglish {
+  color: #10244c;
+  font-size: 0.94rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.rewriteSuggestionKorean {
+  color: #31506f;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.rewriteSuggestionNote {
+  color: var(--text-sub);
+  font-size: 0.88rem;
+  line-height: 1.6;
 }
 
 .rewriteStarterActions {
@@ -3464,24 +3609,28 @@
 }
 
 .refinementExpressionExample {
-  margin-top: 8px;
+  margin-top: 2px;
   font-size: 0.93rem;
   color: #10244c;
+  line-height: 1.6;
 }
 
 .refinementExpressionExampleTranslation {
-  margin-top: 4px;
+  margin-top: 0;
   font-size: 0.92rem;
   color: var(--text-sub);
+  line-height: 1.6;
 }
 
 .refinementMeaningText {
   color: #10244c;
   font-weight: 700;
+  line-height: 1.6;
 }
 
 .refinementGuidanceText {
   color: var(--text-sub);
+  line-height: 1.6;
 }
 
 .modelAnswerText {
@@ -4350,6 +4499,11 @@
 
   .stageHeaderAction {
     width: 100%;
+  }
+
+  .stageHeaderButtonGroup {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .todayStatusPending,

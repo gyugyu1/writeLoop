@@ -676,21 +676,29 @@ function pickLeastOverlappingPromptSet(
 const DIFFICULTY_OPTIONS: Array<{
   value: DailyDifficulty;
   label: string;
+  level: string;
+  icon: string;
   description: string;
 }> = [
   {
     value: "A",
     label: "EASY",
+    level: "LEVEL 01",
+    icon: "☻",
     description: "짧고 분명한 문장으로 가볍게 시작하기 좋아요."
   },
   {
     value: "B",
     label: "MEDIUM",
+    level: "LEVEL 02",
+    icon: "✎",
     description: "이유와 예시를 덧붙여 조금 더 길게 표현해보기 좋아요."
   },
   {
     value: "C",
     label: "HARD",
+    level: "LEVEL 03",
+    icon: "◆",
     description: "생각과 근거를 구조적으로 풀어내는 연습에 잘 맞아요."
   }
 ];
@@ -748,12 +756,12 @@ function formatDateKey(date: Date) {
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
-function buildWelcomeWeek(todayStatus: TodayWritingStatus | null) {
+function buildWelcomeWeek(todayStatus: TodayWritingStatus | null, completedDateKeys: string[]) {
   const today = todayStatus ? parseLocalDate(todayStatus.date) : new Date();
   const todayKey = formatDateKey(today);
-  const completedKeys = new Set<string>();
+  const completedKeys = new Set<string>(completedDateKeys);
 
-  if (todayStatus && todayStatus.streakDays > 0) {
+  if (completedKeys.size === 0 && todayStatus && todayStatus.streakDays > 0) {
     const streakEndDate = todayStatus.completed ? today : addDays(today, -1);
     for (let offset = 0; offset < todayStatus.streakDays; offset += 1) {
       completedKeys.add(formatDateKey(addDays(streakEndDate, -offset)));
@@ -1002,6 +1010,7 @@ export function AnswerLoop() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [isResolvingCurrentUser, setIsResolvingCurrentUser] = useState(true);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
+  const [welcomeCompletedDateKeys, setWelcomeCompletedDateKeys] = useState<string[]>([]);
   const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
   const [showRewriteFeedback, setShowRewriteFeedback] = useState(false);
   const [showPreviousRewriteAnswer, setShowPreviousRewriteAnswer] = useState(false);
@@ -1147,6 +1156,54 @@ export function AnswerLoop() {
       isMounted = false;
     };
   }, [currentUser]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadWelcomeHistory() {
+      if (!currentUser) {
+        if (isMounted) {
+          setWelcomeCompletedDateKeys([]);
+        }
+        return;
+      }
+
+      const referenceDate = todayStatus?.date ? parseLocalDate(todayStatus.date) : new Date();
+      const startDate = addDays(referenceDate, -6);
+      const targetMonths = new Map<string, MonthView>();
+
+      [startDate, referenceDate].forEach((date) => {
+        const view = createMonthView(date);
+        targetMonths.set(`${view.year}-${view.month}`, view);
+      });
+
+      try {
+        const monthResults = await Promise.all(
+          Array.from(targetMonths.values()).map((view) => getMonthStatus(view.year, view.month))
+        );
+        if (!isMounted) {
+          return;
+        }
+
+        const completedKeys = monthResults
+          .flatMap((status) => status.days)
+          .filter((day) => day.completed)
+          .map((day) => day.date);
+
+        setWelcomeCompletedDateKeys(Array.from(new Set(completedKeys)));
+      } catch {
+        if (isMounted) {
+          setWelcomeCompletedDateKeys([]);
+        }
+      }
+    }
+
+    void loadWelcomeHistory();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser, todayStatus?.date]);
 
   useEffect(() => {
     let isMounted = true;
@@ -1488,7 +1545,10 @@ export function AnswerLoop() {
     [selectedPrompt]
   );
   const rewriteWordCount = useMemo(() => countWords(rewrite), [rewrite]);
-  const welcomeWeekDays = useMemo(() => buildWelcomeWeek(todayStatus), [todayStatus]);
+  const welcomeWeekDays = useMemo(
+    () => buildWelcomeWeek(todayStatus, welcomeCompletedDateKeys),
+    [todayStatus, welcomeCompletedDateKeys]
+  );
   const monthCalendar = buildMonthCalendar(monthStatus, activeMonthView, todayStatus?.date);
   const welcomeStreakMessage = useMemo(() => {
     if (!todayStatus) {
@@ -2224,8 +2284,13 @@ export function AnswerLoop() {
             completed: true,
             completedSessions: Math.max(1, current?.completedSessions ?? 0),
             startedSessions: Math.max(1, current?.startedSessions ?? 0),
-            streakDays: Math.max(1, current?.streakDays ?? 0)
+            streakDays: Math.max(1, current?.streakDays ?? 0),
+            totalWrittenSentences: (current?.totalWrittenSentences ?? 0) + 1
           }));
+          setWelcomeCompletedDateKeys((current) => {
+            const todayKey = formatDateKey(new Date());
+            return current.includes(todayKey) ? current : [...current, todayKey];
+          });
         }
 
         if (!isLoggedIn && !guestSessionId) {
@@ -2339,8 +2404,11 @@ export function AnswerLoop() {
         <div className={styles.stageHeaderMain}>
           <div className={styles.stageHeaderTopRow}>
             <div className={styles.stageHeaderLead}>
-              <span className={styles.stageStepLabel}>{stepNumber}단계</span>
-              <h2>{title}</h2>
+              <span className={styles.stageStepLabel}>{stepNumber}</span>
+              <div className={styles.stageTitleStack}>
+                <span className={styles.stageStepCaption}>단계</span>
+                <h2>{title}</h2>
+              </div>
             </div>
             {meta ? <span className={styles.stageHeaderMeta}>{meta}</span> : null}
           </div>
@@ -2364,8 +2432,36 @@ export function AnswerLoop() {
       return (
         <section className={styles.pickFlow}>
           <article className={styles.welcomeCard}>
-            <h1>{currentUser ? `${currentUser.displayName}님, 반가워요.` : "오늘의 질문에 답해보세요."}</h1>
-            {currentUser ? (
+            <div className={styles.welcomeHeroLayout}>
+              <div className={styles.welcomeIntroPanel}>
+                <span className={styles.welcomeBadge}>Modern Scholar&apos;s Studio</span>
+                <h1>{currentUser ? `${currentUser.displayName}님, 반가워요!` : "Ready to write today?"}</h1>
+                <p>
+                  {currentUser
+                    ? "오늘도 당신의 영어 기록을 함께 채워볼까요? 작은 문장들이 모여 더 선명한 성장 곡선을 만듭니다."
+                    : "짧은 문장부터 천천히 쌓아도 충분해요. 난이도를 고르고 오늘의 질문으로 가볍게 시작해 보세요."}
+                </p>
+                <div className={styles.welcomeStats}>
+                  {currentUser ? (
+                    <>
+                      <div className={styles.welcomeStatChip}>
+                        <span className={styles.welcomeStatLabel}>Total Sentences</span>
+                        <strong>{(todayStatus?.totalWrittenSentences ?? 0).toLocaleString()} Sentences</strong>
+                      </div>
+                      <div className={styles.welcomeStatChipMuted}>
+                        <span className={styles.welcomeStatLabel}>Scholar Mode</span>
+                        <strong>기록 이어쓰기</strong>
+                      </div>
+                    </>
+                  ) : (
+                    <div className={styles.welcomeStatChipMuted}>
+                      <span className={styles.welcomeStatLabel}>Warm Start</span>
+                      <strong>짧은 문장부터 차분하게</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+              {currentUser ? (
                 <button
                   type="button"
                   className={`${styles.welcomeStreakCard} ${styles.welcomeStreakCardInteractive}`}
@@ -2374,35 +2470,40 @@ export function AnswerLoop() {
                   aria-expanded={showMonthStatus}
                   onClick={openMonthStatus}
                 >
-                <div className={styles.welcomeStreakHeader}>
-                  <div className={styles.welcomeStreakIcon} aria-hidden="true">
-                    <span className={styles.welcomeStreakIconCore} />
+                  <div className={styles.welcomeStreakTopRow}>
+                    <strong>연속 학습</strong>
+                    <span className={styles.welcomeStreakPill}>{todayStatus?.streakDays ?? 0} Days</span>
                   </div>
-                  <div className={styles.welcomeStreakCopy}>
-                    <strong>연속 학습 {todayStatus?.streakDays ?? 0}일</strong>
-                    <span>{welcomeStreakMessage}</span>
-                  </div>
-                </div>
-                <div className={styles.welcomeStreakWeek}>
-                  {welcomeWeekDays.map((day) => (
-                    <div
-                      key={day.key}
-                      className={`${styles.welcomeStreakDay} ${
-                        day.isCompleted ? styles.welcomeStreakDayCompleted : ""
-                      } ${day.isToday ? styles.welcomeStreakDayToday : ""}`}
-                    >
-                      <span className={styles.welcomeStreakDayLabel}>{day.label}</span>
-                      <span className={styles.welcomeStreakDayDot} aria-hidden="true" />
+                  <div className={styles.welcomeStreakHeader}>
+                    <div className={styles.welcomeStreakIcon} aria-hidden="true">
+                      <span className={styles.welcomeStreakIconCore} />
                     </div>
-                  ))}
+                    <div className={styles.welcomeStreakCopy}>
+                      <strong>{welcomeStreakMessage}</strong>
+                      <span>이번 달 학습 흐름을 눌러 자세히 확인해 보세요.</span>
+                    </div>
+                  </div>
+                  <div className={styles.welcomeStreakWeek}>
+                    {welcomeWeekDays.map((day) => (
+                      <div
+                        key={day.key}
+                        className={`${styles.welcomeStreakDay} ${
+                          day.isCompleted ? styles.welcomeStreakDayCompleted : ""
+                        } ${day.isToday ? styles.welcomeStreakDayToday : ""}`}
+                      >
+                        <span className={styles.welcomeStreakDayLabel}>{day.label}</span>
+                        <span className={styles.welcomeStreakDayDot} aria-hidden="true" />
+                      </div>
+                    ))}
+                  </div>
+                </button>
+              ) : (
+                <div className={styles.welcomeGuestPanel}>
+                  <strong>오늘의 루프를 시작해 볼까요?</strong>
+                  <p>난이도를 고르고, 질문을 선택하고, 한 문장씩 차분하게 완성해 보세요.</p>
                 </div>
-              </button>
-            ) : (
-              <p>
-                어느 정도 난이도로 시작할지 먼저 골라볼까요? 원하는 난이도를 고른 뒤 확인 버튼을 누르면
-                질문 고르기로 넘어갑니다.
-              </p>
-            )}
+              )}
+            </div>
           </article>
 
           <section className={styles.pickStage}>
@@ -2423,8 +2524,16 @@ export function AnswerLoop() {
                   }
                   onClick={() => handleSelectDifficulty(option.value)}
                 >
-                  <strong>{option.label}</strong>
-                  <span>{option.description}</span>
+                  <div className={styles.difficultyStageTopRow}>
+                    <span className={styles.difficultyStageIcon} aria-hidden="true">
+                      {option.icon}
+                    </span>
+                    <span className={styles.difficultyStageBadge}>{option.level}</span>
+                  </div>
+                  <div className={styles.difficultyStageCopy}>
+                    <strong>{option.label}</strong>
+                    <span>{option.description}</span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -2432,7 +2541,7 @@ export function AnswerLoop() {
             <div className={styles.stageFooter}>
               <p>
                 {pendingDifficultyOption
-                  ? `${pendingDifficultyOption.label} 난이도로 시작할 준비가 됐어요.`
+                  ? `선택하신 '${pendingDifficultyOption.label}' 난이도는 오늘 문장을 ${pendingDifficultyOption.description}`
                   : "원하는 난이도를 먼저 선택해 주세요."}
               </p>
               <button
@@ -2441,7 +2550,8 @@ export function AnswerLoop() {
                 onClick={handleConfirmDifficultySelection}
                 disabled={!pendingDifficultySelection}
               >
-                이 난이도로 시작하기
+                <span>이 난이도로 시작하기</span>
+                <span aria-hidden="true">→</span>
               </button>
             </div>
           </section>

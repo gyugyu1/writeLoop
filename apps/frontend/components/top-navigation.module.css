@@ -4,25 +4,26 @@
   left: 0;
   right: 0;
   z-index: 30;
-  backdrop-filter: blur(16px);
-  background: rgba(252, 247, 239, 0.84);
-  border-bottom: 1px solid rgba(16, 36, 76, 0.08);
+  backdrop-filter: blur(18px);
+  background: rgba(251, 246, 239, 0.9);
+  border-bottom: 1px solid rgba(var(--midnight-navy-rgb), 0.08);
+  box-shadow: 0 10px 24px rgba(68, 53, 42, 0.04);
 }
 
 .inner {
-  max-width: 1120px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 14px 20px;
+  padding: 16px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 20px;
 }
 
 .logo {
   display: inline-flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   text-decoration: none;
 }
 
@@ -30,9 +31,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   flex-shrink: 0;
+  padding: 6px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(var(--midnight-navy-rgb), 0.08);
+  box-shadow: 0 10px 24px rgba(68, 53, 42, 0.06);
 }
 
 .logoSymbol {
@@ -43,16 +49,20 @@
 }
 
 .logoText {
-  color: #10244c;
-  font-size: 1.1rem;
+  color: var(--midnight-navy);
+  font-size: 1.08rem;
   font-weight: 800;
-  letter-spacing: 0.01em;
+  letter-spacing: -0.02em;
 }
 
 .menu {
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid rgba(var(--midnight-navy-rgb), 0.08);
 }
 
 .menuLink,
@@ -60,27 +70,38 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 88px;
+  min-width: 90px;
   padding: 11px 16px;
   border-radius: 999px;
   text-decoration: none;
   font-weight: 700;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
 .menuLink {
-  background: rgba(16, 36, 76, 0.06);
-  color: #10244c;
+  color: var(--text-sub);
+}
+
+.menuLink:hover {
+  transform: translateY(-1px);
+  color: var(--midnight-navy);
 }
 
 .menuLinkActive {
   background: var(--warm-accent);
-  color: #fff;
+  color: #fffaf7;
+  box-shadow: 0 12px 24px rgba(var(--warm-accent-rgb), 0.22);
 }
 
 .status {
   color: var(--text-sub);
   font-size: 0.95rem;
   font-weight: 700;
+  padding: 8px 12px;
 }
 
 @media (max-width: 900px) {
@@ -89,22 +110,24 @@
   }
 
   .logoText {
-    font-size: 1rem;
+    font-size: 0.98rem;
   }
 
   .logoMark {
-    width: 48px;
-    height: 48px;
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
   }
 
   .menu {
-    gap: 8px;
+    gap: 6px;
+    padding: 4px;
   }
 
   .menuLink,
   .menuLinkActive {
     min-width: auto;
-    padding: 10px 14px;
-    font-size: 0.94rem;
+    padding: 10px 13px;
+    font-size: 0.92rem;
   }
 }

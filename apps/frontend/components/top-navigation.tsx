@@ -81,10 +81,14 @@ export function TopNavigation() {
 
   const menuItems = currentUser
     ? [
-        ...(currentUser.admin ? [{ href: "/admin", label: "관리", active: pathname === "/admin" }] : []),
+        {
+          href: "/",
+          label: "Home",
+          active: pathname === "/"
+        },
         {
           href: "/me?tab=writing",
-          label: "작문기록",
+          label: "History",
           active: pathname === "/me" && currentTab === "writing",
           onClick: () => {
             setCurrentTab("writing");
@@ -95,7 +99,7 @@ export function TopNavigation() {
         },
         {
           href: "/me?tab=account",
-          label: "내정보",
+          label: "Profile",
           active: pathname === "/me" && currentTab !== "writing",
           onClick: () => {
             setCurrentTab("account");
@@ -103,17 +107,18 @@ export function TopNavigation() {
               new CustomEvent("writeloop:tab-change", { detail: { tab: "account" } })
             );
           }
-        }
+        },
+        ...(currentUser.admin ? [{ href: "/admin", label: "Admin", active: pathname === "/admin" }] : [])
       ]
     : [
         {
           href: `/login?returnTo=${encodeURIComponent(returnTo)}`,
-          label: "로그인",
+          label: "Login",
           active: pathname === "/login"
         },
         {
           href: `/register?returnTo=${encodeURIComponent(returnTo)}`,
-          label: "회원가입",
+          label: "Register",
           active: pathname === "/register"
         }
       ];
@@ -125,7 +130,7 @@ export function TopNavigation() {
           <span className={styles.logoMark}>
             <Image
               src="/brand-symbol.png"
-              alt="writeLoop 로고"
+              alt="writeLoop logo"
               width={48}
               height={48}
               className={styles.logoSymbol}
@@ -134,9 +139,9 @@ export function TopNavigation() {
           </span>
           <span className={styles.logoText}>writeLoop</span>
         </Link>
-        <nav className={styles.menu} aria-label="상단 메뉴">
+        <nav className={styles.menu} aria-label="Main navigation">
           {currentUser === undefined ? (
-            <span className={styles.status}>확인 중...</span>
+            <span className={styles.status}>Loading...</span>
           ) : (
             menuItems.map((item) => (
               <Link

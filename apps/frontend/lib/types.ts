@@ -120,6 +120,7 @@ export interface TodayWritingStatus {
   completedSessions: number;
   startedSessions: number;
   streakDays: number;
+  totalWrittenSentences: number;
 }
 
 export interface MonthStatusDay {

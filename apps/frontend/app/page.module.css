@@ -1,7 +1,7 @@
 .main {
-  max-width: 1120px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 116px 20px 96px;
+  padding: 118px 24px 96px;
 }
 
 .hero {
@@ -538,19 +538,33 @@
 
 .pickFlow {
   display: grid;
-  gap: 18px;
+  gap: 28px;
 }
 
 .welcomeCard {
+  padding: 18px;
+  border-radius: 34px;
+  background: rgba(255, 252, 247, 0.92);
+  border: 1px solid rgba(119, 87, 61, 0.08);
+  box-shadow: var(--shadow-card);
+}
+
+.welcomeHeroLayout {
   display: grid;
-  gap: 14px;
-  padding: 28px 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.92fr);
+  overflow: hidden;
   border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.78) 0%, rgba(251, 246, 239, 0.92) 100%);
+}
+
+.welcomeIntroPanel {
+  display: grid;
+  align-content: center;
+  gap: 18px;
+  padding: 42px 40px;
   background:
-    radial-gradient(circle at top right, rgba(255, 213, 128, 0.42), transparent 32%),
-    linear-gradient(145deg, #173058 0%, #11284d 58%, #0b1731 100%);
-  color: #f8fbff;
-  box-shadow: 0 24px 60px rgba(12, 27, 54, 0.18);
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.72) 0%, transparent 30%),
+    linear-gradient(180deg, #fffdfa 0%, #fcf7f0 100%);
 }
 
 .welcomeBadge {
@@ -558,36 +572,83 @@
   width: fit-content;
   align-items: center;
   justify-content: center;
-  padding: 7px 11px;
+  padding: 7px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: var(--warm-accent-deep);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .welcomeCard h1 {
   margin: 0;
-  font-size: clamp(2rem, 7vw, 3rem);
-  line-height: 1.08;
+  color: var(--midnight-navy);
+  font-size: clamp(2.2rem, 6vw, 3.35rem);
+  line-height: 1.04;
 }
 
 .welcomeCard p {
   margin: 0;
   max-width: 560px;
-  color: rgba(248, 251, 255, 0.84);
-  line-height: 1.7;
+  color: var(--text-sub);
+  line-height: 1.72;
+  font-size: 1rem;
 }
 
-.welcomeStreakCard {
+.welcomeStats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.welcomeStatChip,
+.welcomeStatChipMuted {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  width: fit-content;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--midnight-navy-rgb), 0.08);
+  box-shadow: 0 12px 26px rgba(86, 63, 44, 0.06);
+}
+
+.welcomeStatChip {
+  background: rgba(255, 214, 104, 0.26);
+  color: var(--midnight-navy);
+}
+
+.welcomeStatChipMuted {
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--midnight-navy);
+}
+
+.welcomeStatLabel {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.welcomeStatChip strong,
+.welcomeStatChipMuted strong {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: var(--midnight-navy);
+}
+
+.welcomeStreakCard,
+.welcomeGuestPanel {
   display: grid;
-  gap: 16px;
-  max-width: 560px;
-  padding: 18px 18px 16px;
-  border-radius: 24px;
-  background: rgba(248, 251, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  backdrop-filter: blur(16px);
+  gap: 18px;
+  align-content: center;
+  padding: 42px 34px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.12) 0%, transparent 26%),
+    linear-gradient(180deg, #2f3748 0%, #2a3142 100%);
+  color: #f7f2eb;
 }
 
 .welcomeStreakCardInteractive {
@@ -595,66 +656,92 @@
   text-align: left;
   cursor: pointer;
   border: none;
+  border-radius: 0;
   color: inherit;
   font: inherit;
   transition:
     transform 0.18s ease,
-    border-color 0.18s ease,
     box-shadow 0.18s ease,
-    background 0.18s ease;
+    filter 0.18s ease;
   appearance: none;
 }
 
 .welcomeStreakCardInteractive:hover {
   transform: translateY(-1px);
-  border-color: rgba(255, 255, 255, 0.22);
-  box-shadow: 0 20px 38px rgba(7, 19, 42, 0.12);
-  background: rgba(248, 251, 255, 0.14);
+  filter: brightness(1.02);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .welcomeStreakCardInteractive:focus-visible {
-  outline: 3px solid rgba(var(--warm-accent-light-rgb), 0.38);
+  outline: 3px solid rgba(var(--warm-accent-light-rgb), 0.3);
   outline-offset: 3px;
+}
+
+.welcomeStreakTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.welcomeStreakTopRow strong,
+.welcomeGuestPanel strong {
+  font-size: 1.24rem;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.welcomeStreakPill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.88rem;
+  font-weight: 800;
 }
 
 .welcomeStreakHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 14px;
 }
 
 .welcomeStreakIcon {
   display: grid;
   place-items: center;
-  width: 50px;
-  height: 50px;
+  width: 56px;
+  height: 56px;
   flex-shrink: 0;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14) 0%, rgba(255, 255, 255, 0.08) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .welcomeStreakIconCore {
   width: 19px;
   height: 24px;
-  background: linear-gradient(180deg, rgba(var(--warm-accent-light-rgb), 0.96) 0%, rgba(var(--warm-accent-rgb), 1) 100%);
+  background: linear-gradient(180deg, rgba(255, 208, 136, 0.96) 0%, rgba(var(--warm-accent-rgb), 1) 100%);
   clip-path: polygon(50% 0%, 85% 28%, 100% 58%, 84% 88%, 50% 100%, 16% 88%, 0% 58%, 15% 28%);
 }
 
 .welcomeStreakCopy {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
 }
 
 .welcomeStreakCopy strong {
   color: #ffffff;
-  font-size: 1.08rem;
+  font-size: 1.12rem;
   line-height: 1.2;
 }
 
-.welcomeStreakCopy span {
-  color: rgba(248, 251, 255, 0.78);
+.welcomeStreakCopy span,
+.welcomeGuestPanel p {
+  color: rgba(247, 242, 235, 0.78);
   font-size: 0.94rem;
   line-height: 1.55;
 }
@@ -673,7 +760,7 @@
 }
 
 .welcomeStreakDayLabel {
-  color: rgba(248, 251, 255, 0.6);
+  color: rgba(247, 242, 235, 0.68);
   font-size: 0.8rem;
   font-weight: 700;
   line-height: 1;
@@ -685,29 +772,31 @@
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(247, 242, 235, 0.22);
+  background: rgba(247, 242, 235, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .welcomeStreakDayCompleted .welcomeStreakDayLabel {
-  color: rgba(255, 255, 255, 0.92);
+  color: rgba(255, 248, 242, 0.98);
 }
 
 .welcomeStreakDayCompleted .welcomeStreakDayDot {
-  border-color: rgba(var(--warm-accent-light-rgb), 0.4);
-  background: linear-gradient(180deg, rgba(var(--warm-accent-light-rgb), 0.92) 0%, rgba(var(--warm-accent-rgb), 0.98) 100%);
-  box-shadow: 0 8px 16px rgba(var(--warm-accent-rgb), 0.24);
+  border-color: rgba(var(--muted-sage-rgb), 0.58);
+  background: linear-gradient(180deg, rgba(161, 198, 178, 0.96) 0%, rgba(var(--muted-sage-rgb), 0.98) 100%);
+  box-shadow: 0 8px 16px rgba(var(--muted-sage-rgb), 0.2);
 }
 
 .welcomeStreakDayToday .welcomeStreakDayLabel {
-  color: #ffffff;
+  color: #fff8f2;
 }
 
 .welcomeStreakDayToday .welcomeStreakDayDot {
   box-shadow:
     0 0 0 4px rgba(255, 255, 255, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: linear-gradient(180deg, rgba(255, 198, 145, 0.94) 0%, rgba(var(--warm-accent-rgb), 0.98) 100%);
+  border-color: rgba(255, 220, 193, 0.36);
 }
 
 .welcomeStreakDayToday .welcomeStreakDayDot::after {
@@ -723,57 +812,112 @@
 }
 
 .pickStage {
-  margin-top: 20px;
-  border: 1px solid rgba(16, 36, 76, 0.08);
-  background: rgba(255, 255, 255, 0.94);
-  border-radius: 28px;
-  padding: 24px;
-  box-shadow: 0 22px 50px rgba(18, 34, 68, 0.08);
+  margin-top: 0;
+  border: 1px solid rgba(119, 87, 61, 0.08);
+  background: rgba(255, 252, 247, 0.92);
+  border-radius: 34px;
+  padding: 34px 32px;
+  box-shadow: var(--shadow-card);
 }
 
 .difficultyStageGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 18px;
 }
 
 .difficultyStageButton,
 .difficultyStageButtonActive {
   display: grid;
-  gap: 10px;
-  padding: 20px 18px;
-  border-radius: 22px;
+  gap: 22px;
+  min-height: 212px;
+  padding: 26px 24px 22px;
+  border-radius: 28px;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
 }
 
 .difficultyStageButton {
-  border: 1px solid rgba(16, 36, 76, 0.1);
-  background: var(--warm-accent-paper);
+  border: 1px solid rgba(119, 87, 61, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow-soft);
 }
 
 .difficultyStageButtonActive {
-  border: 1px solid var(--warm-accent-light);
-  background: var(--warm-accent-surface-2);
-  box-shadow: 0 18px 34px rgba(var(--warm-accent-rgb), 0.16);
+  border: 1.5px solid rgba(var(--warm-accent-rgb), 0.72);
+  background: linear-gradient(180deg, rgba(250, 232, 225, 0.92) 0%, rgba(246, 219, 209, 0.98) 100%);
+  box-shadow: 0 22px 42px rgba(var(--warm-accent-rgb), 0.14);
 }
 
 .difficultyStageButton:hover,
 .difficultyStageButtonActive:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+}
+
+.difficultyStageTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.difficultyStageIcon {
+  display: inline-flex;
+  width: 54px;
+  height: 54px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: rgba(42, 49, 66, 0.06);
+  color: var(--midnight-navy);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.difficultyStageButtonActive .difficultyStageIcon {
+  background: rgba(var(--warm-accent-rgb), 0.16);
+  color: var(--warm-accent-deep);
+}
+
+.difficultyStageBadge {
+  display: inline-flex;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(42, 49, 66, 0.08);
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.difficultyStageButtonActive .difficultyStageBadge {
+  background: rgba(var(--warm-accent-rgb), 0.18);
+  color: var(--warm-accent-deep);
+}
+
+.difficultyStageCopy {
+  display: grid;
+  align-content: end;
+  gap: 12px;
 }
 
 .difficultyStageButton strong,
 .difficultyStageButtonActive strong {
-  font-size: 1.02rem;
-  color: #10244c;
+  font-size: clamp(1.55rem, 2vw, 2rem);
+  color: var(--midnight-navy);
+  letter-spacing: -0.03em;
 }
 
 .difficultyStageButton span,
 .difficultyStageButtonActive span {
   color: var(--text-sub);
-  line-height: 1.6;
+  line-height: 1.72;
+  font-size: 1rem;
 }
 
 .stepRail {
@@ -1078,10 +1222,10 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
-  margin-bottom: 18px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid rgba(16, 36, 76, 0.08);
+  gap: 18px;
+  margin-bottom: 26px;
+  padding-bottom: 0;
+  border-bottom: 0;
 }
 
 .stageHeaderMain {
@@ -1102,22 +1246,43 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: start;
-  gap: 10px;
+  gap: 16px;
   min-width: 0;
 }
 
 .stageStepLabel {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
   flex-shrink: 0;
-  color: var(--warm-accent-deep);
-  font-size: 0.88rem;
+  background: var(--warm-accent);
+  color: #fff7f2;
+  font-size: 1.1rem;
   font-weight: 800;
-  letter-spacing: 0.04em;
+  box-shadow: 0 16px 28px rgba(var(--warm-accent-rgb), 0.2);
+}
+
+.stageTitleStack {
+  display: grid;
+  gap: 6px;
+}
+
+.stageStepCaption {
+  color: var(--warm-accent-deep);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .stageHeader h2 {
   margin: 0;
-  font-size: clamp(1.35rem, 2vw, 1.72rem);
-  line-height: 1.18;
+  font-size: clamp(1.5rem, 2vw, 2rem);
+  line-height: 1.14;
+  color: var(--midnight-navy);
 }
 
 .stageHeaderMeta {
@@ -1148,15 +1313,18 @@
 .stageFooter {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  margin-top: 18px;
+  align-items: flex-end;
+  gap: 24px;
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(119, 87, 61, 0.08);
 }
 
 .stageFooter p {
   margin: 0;
   color: var(--text-sub);
-  line-height: 1.6;
+  line-height: 1.72;
+  max-width: 520px;
 }
 
 .completionCallout {
@@ -1936,22 +2104,27 @@
 .promptCard,
 .promptActive {
   width: 100%;
-  border-radius: 18px;
-  padding: 16px;
+  border-radius: 24px;
+  padding: 20px 20px 18px;
   text-align: left;
   cursor: pointer;
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
 }
 
 .promptCard {
-  border: 1px solid var(--border);
-  background: var(--warm-accent-paper);
+  border: 1px solid rgba(119, 87, 61, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-soft);
 }
 
 .promptActive {
-  border: 1px solid var(--warm-accent-light);
-  background: var(--warm-accent-surface-2);
-  box-shadow: 0 16px 28px rgba(var(--warm-accent-rgb), 0.14);
+  border: 1.5px solid rgba(var(--warm-accent-rgb), 0.72);
+  background: linear-gradient(180deg, rgba(250, 232, 225, 0.92) 0%, rgba(246, 219, 209, 0.98) 100%);
+  box-shadow: 0 20px 36px rgba(var(--warm-accent-rgb), 0.12);
 }
 
 .promptCard:hover,
@@ -1962,33 +2135,38 @@
 .promptCard strong,
 .promptActive strong {
   display: block;
-  font-size: 1rem;
+  font-size: 0.98rem;
+  color: var(--text-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .promptCard span,
 .promptActive span {
   display: inline-block;
-  margin-top: 6px;
+  margin-top: 10px;
   color: var(--warm-accent-deep);
-  font-size: 0.88rem;
+  font-size: 0.8rem;
   font-weight: 700;
+  letter-spacing: 0.08em;
 }
 
 .promptCard p,
 .promptActive p {
-  margin: 10px 0 0;
-  color: #10244c;
-  line-height: 1.5;
-  font-size: 1.4rem;
-  font-weight: 700;
+  margin: 16px 0 0;
+  color: var(--midnight-navy);
+  line-height: 1.42;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
 }
 
 .promptCard small,
 .promptActive small {
   display: block;
-  margin-top: 10px;
+  margin-top: 14px;
   color: var(--text-sub);
-  line-height: 1.55;
+  line-height: 1.7;
 }
 
 .translationText {
@@ -3053,23 +3231,38 @@
   justify-content: center;
   border: none;
   border-radius: 999px;
-  padding: 13px 18px;
+  gap: 10px;
+  padding: 15px 22px;
   font: inherit;
-  font-weight: 700;
+  font-weight: 800;
   cursor: pointer;
   text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
 }
 
 .primaryButton,
 .primaryLink {
-  background: var(--warm-accent);
-  color: #fff;
+  background: linear-gradient(135deg, #bf6b52 0%, #b65e45 100%);
+  color: #fffaf7;
+  box-shadow: 0 18px 30px rgba(var(--warm-accent-rgb), 0.2);
 }
 
 .ghostButton,
 .ghostLink {
-  background: rgba(16, 36, 76, 0.06);
-  color: #10244c;
+  background: rgba(42, 49, 66, 0.06);
+  color: var(--midnight-navy);
+  border: 1px solid rgba(42, 49, 66, 0.08);
+}
+
+.primaryButton:hover,
+.primaryLink:hover,
+.ghostButton:hover,
+.ghostLink:hover {
+  transform: translateY(-1px);
 }
 
 .primaryButton:disabled,
@@ -3899,31 +4092,32 @@
     position: relative;
     overflow: hidden;
     gap: 12px;
-    padding: 20px 18px;
-    border: 1px solid rgba(22, 49, 94, 0.12);
+    padding: 14px;
+    border: 1px solid rgba(119, 87, 61, 0.1);
     border-radius: 24px;
-    background:
-      radial-gradient(circle at top right, rgba(255, 205, 120, 0.4), transparent 34%),
-      radial-gradient(circle at bottom left, rgba(72, 122, 255, 0.12), transparent 38%),
-      linear-gradient(145deg, #18335d 0%, #102748 56%, #0a1730 100%);
-    box-shadow: 0 18px 38px rgba(12, 27, 54, 0.16);
+    background: rgba(255, 252, 247, 0.94);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .welcomeHeroLayout {
+    grid-template-columns: 1fr;
   }
 
   .welcomeCard h1 {
-    font-size: 1.72rem;
+    font-size: 1.82rem;
     line-height: 1.12;
   }
 
   .welcomeCard p {
-    color: rgba(248, 251, 255, 0.88);
     font-size: 0.96rem;
-    line-height: 1.65;
+    line-height: 1.68;
   }
 
-  .welcomeStreakCard {
+  .welcomeIntroPanel,
+  .welcomeStreakCard,
+  .welcomeGuestPanel {
     gap: 14px;
-    padding: 16px 14px 14px;
-    border-radius: 22px;
+    padding: 22px 18px;
   }
 
   .welcomeStreakHeader {
@@ -3972,7 +4166,6 @@
 
   .stageHeader {
     margin-bottom: 10px;
-    padding-bottom: 10px;
   }
 
   .stage {
@@ -3983,7 +4176,7 @@
   .difficultyStageButtonActive,
   .promptCard,
   .promptActive {
-    padding: 14px 0;
+    padding: 18px 0;
     border: 0;
     border-bottom: 1px solid rgba(16, 36, 76, 0.08);
     border-radius: 0;
@@ -3995,6 +4188,21 @@
   .promptActive {
     padding-left: 12px;
     border-left: 3px solid var(--warm-accent-light);
+  }
+
+  .difficultyStageTopRow {
+    margin-bottom: 6px;
+  }
+
+  .difficultyStageIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    font-size: 1rem;
+  }
+
+  .difficultyStageBadge {
+    font-size: 0.72rem;
   }
 
   .promptCard p,
@@ -4480,8 +4688,18 @@
   }
 
   .stageStepLabel {
-    font-size: 0.82rem;
+    width: 38px;
+    height: 38px;
+    font-size: 0.96rem;
     white-space: nowrap;
+  }
+
+  .stageTitleStack {
+    gap: 4px;
+  }
+
+  .stageStepCaption {
+    font-size: 0.72rem;
   }
 
   .stageHeader h2 {

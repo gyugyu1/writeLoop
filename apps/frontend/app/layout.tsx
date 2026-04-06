@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { TopNavigation } from "../components/top-navigation";
 import "./globals.css";
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
+  display: "swap"
+});
 
 const siteTitle = "writeLoop";
 const siteDescription =
@@ -49,7 +56,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body>
+      <body className={plusJakartaSans.className}>
         <TopNavigation />
         {children}
       </body>

@@ -1,24 +1,35 @@
 :root {
-  --background: #f7f8fc;
-  --surface: #ffffff;
-  --primary: #1d4ed8;
-  --primary-soft: #dbe7ff;
-  --warm-accent: #e56a1f;
-  --warm-accent-light: #f0993a;
-  --warm-accent-deep: #8c3f10;
-  --warm-accent-rgb: 229, 106, 31;
-  --warm-accent-light-rgb: 240, 153, 58;
-  --warm-accent-deep-rgb: 140, 63, 16;
-  --warm-accent-paper: #fffaf4;
-  --warm-accent-surface-1: #fff3e7;
-  --warm-accent-surface-2: #ffe9d1;
-  --warm-accent-surface-3: #ffdcc0;
-  --warm-accent-surface-4: #ffcdab;
-  --warm-accent-surface-5: #ffbc8c;
-  --text-main: #162033;
-  --text-sub: #5a6a87;
-  --border: #d8deea;
-  --ok: #0f8a5f;
+  --background: #fbf6ef;
+  --surface: #fffdf9;
+  --surface-raised: #ffffff;
+  --surface-soft: #f3ece2;
+  --surface-muted: #efe6d9;
+  --primary: #bc664e;
+  --primary-soft: #f3d8cf;
+  --warm-accent: #bc664e;
+  --warm-accent-light: #d48a74;
+  --warm-accent-deep: #8d4e3a;
+  --warm-accent-rgb: 188, 102, 78;
+  --warm-accent-light-rgb: 212, 138, 116;
+  --warm-accent-deep-rgb: 141, 78, 58;
+  --warm-accent-paper: #f9f2e8;
+  --warm-accent-surface-1: #f7ede3;
+  --warm-accent-surface-2: #f4ddd5;
+  --warm-accent-surface-3: #efd0c6;
+  --warm-accent-surface-4: #e6bbab;
+  --warm-accent-surface-5: #d99c87;
+  --midnight-navy: #2a3142;
+  --midnight-navy-rgb: 42, 49, 66;
+  --muted-sage: #92b9a4;
+  --muted-sage-rgb: 146, 185, 164;
+  --text-main: #2a3142;
+  --text-sub: #5e5b56;
+  --text-soft: #7b746b;
+  --border: #e6dbcf;
+  --border-strong: #d8c4b5;
+  --ok: #628974;
+  --shadow-soft: 0 18px 42px rgba(62, 46, 34, 0.08);
+  --shadow-card: 0 22px 56px rgba(62, 46, 34, 0.1);
 }
 
 * {
@@ -29,7 +40,30 @@ html,
 body {
   margin: 0;
   padding: 0;
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background: radial-gradient(circle at 10% 0%, #eef3ff 0%, var(--background) 40%);
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.72) 0%, transparent 32%),
+    linear-gradient(180deg, #fffdf9 0%, var(--background) 18%, #f7f0e7 100%);
+  color: var(--text-main);
+}
+
+body {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: inherit;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(var(--warm-accent-rgb), 0.18);
   color: var(--text-main);
 }

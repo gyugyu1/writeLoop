@@ -1,7 +1,7 @@
 .page {
-  max-width: 1120px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 116px 20px 96px;
+  padding: 118px 24px 96px;
 }
 
 .myPageShell {
@@ -34,7 +34,7 @@
 .hero {
   display: grid;
   grid-template-columns: 1.1fr 0.9fr;
-  gap: 24px;
+  gap: 28px;
 }
 
 .stackedHero {
@@ -44,13 +44,13 @@
 }
 
 .intro {
-  padding: 32px;
-  border-radius: 28px;
+  padding: 36px;
+  border-radius: 34px;
   background:
-    radial-gradient(circle at top right, rgba(var(--warm-accent-light-rgb), 0.34), transparent 28%),
-    linear-gradient(135deg, #173058 0%, #0d2141 55%, #08162c 100%);
-  color: #f8fbff;
-  box-shadow: 0 24px 80px rgba(9, 28, 59, 0.18);
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.14), transparent 28%),
+    linear-gradient(145deg, #32394a 0%, #2a3142 60%, #242b39 100%);
+  color: #f8f4ef;
+  box-shadow: var(--shadow-card);
 }
 
 .eyebrow {
@@ -78,14 +78,15 @@
 
 .intro h1 {
   margin: 18px 0 0;
-  font-size: clamp(2rem, 3vw, 3rem);
+  font-size: clamp(2.2rem, 3vw, 3.2rem);
   line-height: 1.08;
+  letter-spacing: -0.03em;
 }
 
 .intro p {
   margin: 16px 0 0;
-  line-height: 1.7;
-  color: rgba(248, 251, 255, 0.84);
+  line-height: 1.72;
+  color: rgba(248, 244, 239, 0.82);
 }
 
 .points {
@@ -101,10 +102,10 @@
   gap: 8px;
   margin-top: 22px;
   padding: 18px 20px;
-  border-radius: 20px;
-  border: 1px solid rgba(var(--warm-accent-rgb), 0.18);
-  background: var(--warm-accent-surface-2);
-  color: #10244c;
+  border-radius: 24px;
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.16);
+  background: rgba(255, 250, 245, 0.92);
+  color: var(--midnight-navy);
 }
 
 .streakLabel {
@@ -131,11 +132,11 @@
 }
 
 .card {
-  padding: 28px;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(16, 36, 76, 0.08);
-  box-shadow: 0 22px 50px rgba(18, 34, 68, 0.08);
+  padding: 32px;
+  border-radius: 34px;
+  background: rgba(255, 252, 247, 0.94);
+  border: 1px solid rgba(119, 87, 61, 0.08);
+  box-shadow: var(--shadow-card);
 }
 
 .card h2 {
@@ -180,13 +181,14 @@
 }
 
 .tabButton {
-  background: rgba(16, 36, 76, 0.06);
-  color: #10244c;
+  background: rgba(var(--midnight-navy-rgb), 0.06);
+  color: var(--midnight-navy);
 }
 
 .tabButtonActive {
   background: var(--warm-accent);
-  color: #fff;
+  color: #fffaf7;
+  box-shadow: 0 14px 26px rgba(var(--warm-accent-rgb), 0.18);
 }
 
 .subText {
@@ -245,10 +247,10 @@
 .input {
   width: 100%;
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 13px 14px;
+  border-radius: 18px;
+  padding: 14px 15px;
   font: inherit;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
 }
 
 .input:focus {
@@ -288,9 +290,10 @@
   align-items: center;
   justify-content: center;
   border-radius: 999px;
-  padding: 10px 14px;
-  background: rgba(16, 36, 76, 0.06);
-  color: #10244c;
+  padding: 11px 15px;
+  background: rgba(var(--midnight-navy-rgb), 0.06);
+  color: var(--midnight-navy);
+  border: 1px solid rgba(var(--midnight-navy-rgb), 0.08);
   font-size: 0.92rem;
   font-weight: 700;
   text-decoration: none;
@@ -306,23 +309,25 @@
   justify-content: center;
   border: none;
   border-radius: 999px;
-  padding: 13px 18px;
+  padding: 14px 20px;
   font: inherit;
-  font-weight: 700;
+  font-weight: 800;
   text-decoration: none;
   cursor: pointer;
 }
 
 .primaryButton,
 .primaryLink {
-  background: var(--warm-accent);
-  color: #fff;
+  background: linear-gradient(135deg, #bf6b52 0%, #b65e45 100%);
+  color: #fffaf7;
+  box-shadow: 0 16px 28px rgba(var(--warm-accent-rgb), 0.18);
 }
 
 .ghostButton,
 .ghostLink {
-  background: rgba(16, 36, 76, 0.06);
-  color: #10244c;
+  background: rgba(var(--midnight-navy-rgb), 0.06);
+  color: var(--midnight-navy);
+  border: 1px solid rgba(var(--midnight-navy-rgb), 0.08);
 }
 
 .dangerButton {
@@ -467,9 +472,10 @@
 
 .infoCard {
   padding: 18px;
-  border-radius: 18px;
-  border: 1px solid rgba(16, 36, 76, 0.08);
-  background: var(--warm-accent-paper);
+  border-radius: 22px;
+  border: 1px solid rgba(119, 87, 61, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow-soft);
 }
 
 .infoCard span {

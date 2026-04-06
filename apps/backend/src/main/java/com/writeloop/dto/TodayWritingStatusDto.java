@@ -5,6 +5,7 @@ public record TodayWritingStatusDto(
         boolean completed,
         long completedSessions,
         long startedSessions,
-        long streakDays
+        long streakDays,
+        long totalWrittenSentences
 ) {
 }

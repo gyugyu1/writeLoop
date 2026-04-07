@@ -60,6 +60,7 @@ public class OpenAiFeedbackClient {
     private final HttpClient httpClient;
     private final String apiKey;
     private final String model;
+    private final String diagnosisModel;
     private final String apiUrl;
     private final String reasoningEffort;
     private final int requestTimeoutSeconds;
@@ -162,6 +163,7 @@ public class OpenAiFeedbackClient {
             ObjectMapper objectMapper,
             @Value("${openai.api-key:}") String apiKey,
             @Value("${openai.feedback-model:${OPENAI_MODEL:gpt-5-mini}}") String model,
+            @Value("${openai.diagnosis-model:${OPENAI_DIAGNOSIS_MODEL:${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-5-mini}}}}") String diagnosisModel,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
             @Value("${openai.feedback-reasoning-effort:}") String reasoningEffort,
             @Value("${openai.feedback-request-timeout-seconds:120}") int requestTimeoutSeconds
@@ -172,6 +174,7 @@ public class OpenAiFeedbackClient {
                 .build();
         this.apiKey = apiKey;
         this.model = model;
+        this.diagnosisModel = diagnosisModel;
         this.apiUrl = apiUrl;
         this.reasoningEffort = reasoningEffort;
         this.requestTimeoutSeconds = requestTimeoutSeconds;
@@ -1278,6 +1281,7 @@ public class OpenAiFeedbackClient {
                 ))
         );
         return buildStructuredRequestBody(
+                diagnosisModel,
                 buildDiagnosisPrompt(prompt, answer, hints, attemptIndex, previousAnswer),
                 "english_answer_diagnosis",
                 schema
@@ -1454,6 +1458,7 @@ public class OpenAiFeedbackClient {
                 ))
         );
         return buildStructuredRequestBody(
+                model,
                 buildGenerationPrompt(
                         prompt,
                         answer,
@@ -1472,10 +1477,10 @@ public class OpenAiFeedbackClient {
         );
     }
 
-    private String buildStructuredRequestBody(String promptText, String schemaName, Map<String, Object> schema) throws IOException {
+    private String buildStructuredRequestBody(String requestModel, String promptText, String schemaName, Map<String, Object> schema) throws IOException {
         return OpenAiStructuredOutputSupport.buildResponsesRequestBody(
                 objectMapper,
-                model,
+                requestModel,
                 promptText,
                 schemaName,
                 schema,
@@ -1957,7 +1962,7 @@ public class OpenAiFeedbackClient {
                     phase,
                     promptId,
                     attemptIndex,
-                    model,
+                    resolveModelForPhase(phase),
                     exception.getClass().getName(),
                     statusCode,
                     abbreviateForLog(responseBody),
@@ -1971,11 +1976,18 @@ public class OpenAiFeedbackClient {
                 phase,
                 promptId,
                 attemptIndex,
-                model,
+                resolveModelForPhase(phase),
                 exception.getClass().getName(),
                 exception.getMessage(),
                 exception
         );
+    }
+
+    private String resolveModelForPhase(String phase) {
+        if (phase != null && phase.startsWith("diagnosis")) {
+            return diagnosisModel;
+        }
+        return model;
     }
 
     private String abbreviateForLog(String responseBody) {

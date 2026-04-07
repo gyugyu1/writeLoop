@@ -17,16 +17,11 @@ import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.text.Normalizer;
 import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Pattern;
+import java.util.Map;
 
 @Service
-public class GeminiCoachClient implements CoachLlmEngine {
-
-    private static final Pattern NON_WORD_PATTERN = Pattern.compile("[^\\p{L}\\p{N}\\s']");
+public class OpenAiCoachClient implements CoachLlmEngine {
 
     private final ObjectMapper objectMapper;
     private final CoachQueryAnalyzer coachQueryAnalyzer;
@@ -34,13 +29,17 @@ public class GeminiCoachClient implements CoachLlmEngine {
     private final String apiKey;
     private final String model;
     private final String apiUrl;
+    private final String reasoningEffort;
+    private final int requestTimeoutSeconds;
 
-    public GeminiCoachClient(
+    public OpenAiCoachClient(
             ObjectMapper objectMapper,
             CoachQueryAnalyzer coachQueryAnalyzer,
-            @Value("${gemini.api-key:}") String apiKey,
-            @Value("${gemini.coach-model:gemini-3.1-flash-lite-preview}") String model,
-            @Value("${gemini.api-url:https://generativelanguage.googleapis.com/v1beta/models}") String apiUrl
+            @Value("${openai.api-key:}") String apiKey,
+            @Value("${openai.coach-model:${OPENAI_COACH_MODEL:${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-5-mini}}}}") String model,
+            @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
+            @Value("${openai.coach-reasoning-effort:${OPENAI_COACH_REASONING_EFFORT:${OPENAI_FEEDBACK_REASONING_EFFORT:}}}") String reasoningEffort,
+            @Value("${openai.coach-request-timeout-seconds:${OPENAI_COACH_REQUEST_TIMEOUT_SECONDS:${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:120}}}") int requestTimeoutSeconds
     ) {
         this.objectMapper = objectMapper;
         this.coachQueryAnalyzer = coachQueryAnalyzer;
@@ -50,11 +49,13 @@ public class GeminiCoachClient implements CoachLlmEngine {
         this.apiKey = apiKey;
         this.model = model;
         this.apiUrl = apiUrl;
+        this.reasoningEffort = reasoningEffort;
+        this.requestTimeoutSeconds = requestTimeoutSeconds;
     }
 
     @Override
     public String provider() {
-        return "gemini";
+        return "openai";
     }
 
     @Override
@@ -76,7 +77,7 @@ public class GeminiCoachClient implements CoachLlmEngine {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            throw new IllegalStateException("Gemini coach API request failed", exception);
+            throw new IllegalStateException("OpenAI coach API request failed", exception);
         }
     }
 
@@ -167,9 +168,9 @@ public class GeminiCoachClient implements CoachLlmEngine {
                 "required", List.of("coachReply", "expressions")
         );
 
-        return GeminiStructuredOutputSupport.buildGenerateContentRequestBody(
-                objectMapper,
+        return buildStructuredRequestBody(
                 buildPrompt(prompt, userQuestion, hints),
+                "english_expression_coach",
                 schema
         );
     }
@@ -229,16 +230,16 @@ public class GeminiCoachClient implements CoachLlmEngine {
                         ? "- If the learner asks for a first-sentence starter, recommend only opener expressions or opener sentences for the very first sentence. Exclude conclusion phrases, contrast markers, example linkers, detail markers, and body-paragraph transitions."
                         : "",
                 prompt.topic(),
-                 prompt.difficulty(),
-                 prompt.questionEn(),
-                 prompt.questionKo(),
-                 prompt.tip(),
-                 coachProfileText,
-                 userQuestion == null ? "" : userQuestion,
-                 queryMode.name().toLowerCase(Locale.ROOT),
-                 targetMeaning.isBlank() ? "none" : targetMeaning,
-                 intentCategories.isBlank() ? "none" : intentCategories,
-                 hintText
+                prompt.difficulty(),
+                prompt.questionEn(),
+                prompt.questionKo(),
+                prompt.tip(),
+                coachProfileText,
+                userQuestion == null ? "" : userQuestion,
+                queryMode.name().toLowerCase(Locale.ROOT),
+                targetMeaning.isBlank() ? "none" : targetMeaning,
+                intentCategories.isBlank() ? "none" : intentCategories,
+                hintText
         );
     }
 
@@ -281,18 +282,18 @@ public class GeminiCoachClient implements CoachLlmEngine {
                 Slot type: %s
                 Source text: %s
                 """.formatted(
-                 prompt.topic(),
-                 prompt.questionEn(),
-                 PromptOpenAiContextFormatter.formatCoachProfile(prompt),
-                 userQuestion == null ? "" : userQuestion,
-                 family.name().toLowerCase(Locale.ROOT),
-                 slot.name().toLowerCase(Locale.ROOT),
-                 sourceText
+                prompt.topic(),
+                prompt.questionEn(),
+                PromptOpenAiContextFormatter.formatCoachProfile(prompt),
+                userQuestion == null ? "" : userQuestion,
+                family.name().toLowerCase(Locale.ROOT),
+                slot.name().toLowerCase(Locale.ROOT),
+                sourceText
         );
 
-        return GeminiStructuredOutputSupport.buildGenerateContentRequestBody(
-                objectMapper,
+        return buildStructuredRequestBody(
                 promptText,
+                "english_slot_translation",
                 schema
         );
     }
@@ -372,222 +373,41 @@ public class GeminiCoachClient implements CoachLlmEngine {
                 answer
         );
 
-        return GeminiStructuredOutputSupport.buildGenerateContentRequestBody(
-                objectMapper,
+        return buildStructuredRequestBody(
                 promptText,
+                "english_self_discovered_expressions",
                 schema
         );
     }
 
-    private List<String> inferLearnerIntentCategories(PromptDto prompt, String userQuestion) {
-        List<String> userCategories = inferCategories(userQuestion);
-        if (!userCategories.isEmpty()) {
-            return userCategories;
-        }
-
-        return inferCategories(prompt.questionEn() + " " + prompt.questionKo() + " " + prompt.tip());
-    }
-
-    private boolean isExpressionLookupQuestion(String userQuestion) {
-        String normalized = normalizeText(userQuestion);
-        if (normalized.isBlank()) {
-            return false;
-        }
-
-        if (containsAny(
-                normalized,
-                "\uC601\uC5B4\uB85C", "\uB9D0\uD558\uACE0 \uC2F6", "\uC5B4\uB5BB\uAC8C \uB9D0",
-                "\uBB50\uB77C\uACE0", "\uB77C\uACE0 \uB9D0", "\uB77C\uACE0 \uD558\uACE0", "\uB2E8\uC5B4",
-                "how do i say", "want to say")) {
-            return true;
-        }
-
-        if (containsAny(
-                normalized,
-                "\uB73B", "\uC758\uBBF8", "\uBB34\uC2A8 \uB73B", "\uB73B\uC774 \uBB50\uC57C", "\uB73B\uC774 \uBB54\uC9C0",
-                "meaning", "what does", "means", "mean")) {
-            return true;
-        }
-
-        if (containsAny(normalized, "\uD45C\uD604", "\uB2E8\uC5B4", "expression", "phrase", "word")
-                && inferCategories(userQuestion).isEmpty()) {
-            return true;
-        }
-
-        if (containsAny(
-                normalized,
-                "\uAD6C\uC870", "\uD750\uB984", "\uC21C\uC11C", "\uBB50\uBD80\uD130", "\uC2DC\uC791",
-                "structure", "flow", "order", "how should i start", "what to write first")) {
-            return false;
-        }
-
-        return normalized.split("\\s+").length <= 2;
-    }
-
-    private String extractExpressionLookupTarget(String userQuestion) {
-        String normalized = normalizeText(userQuestion);
-        if (normalized.isBlank()) {
-            return "";
-        }
-
-        String extracted = normalized
-                .replace("\uC601\uC5B4\uB85C", " ")
-                .replace("\uD45C\uD604", " ")
-                .replace("\uB9D0\uD558\uACE0 \uC2F6\uC5B4", " ")
-                .replace("\uB9D0\uD558\uACE0 \uC2F6", " ")
-                .replace("\uC5B4\uB5BB\uAC8C \uB9D0", " ")
-                .replace("\uBB50\uB77C\uACE0", " ")
-                .replace("\uB77C\uACE0 \uB9D0", " ")
-                .replace("\uB77C\uACE0 \uD558\uACE0", " ")
-                .replace("\uB2E8\uC5B4", " ")
-                .replace("how do i say", " ")
-                .replace("want to say", " ")
-                .replace("expression", " ")
-                .replace("phrase", " ")
-                .replace("word", " ")
-                .replace("\uB73B\uC774 \uBB50\uC57C", " ")
-                .replace("\uB73B\uC774 \uBB54\uC9C0", " ")
-                .replace("\uBB34\uC2A8 \uB73B", " ")
-                .replace("\uB73B", " ")
-                .replace("\uC758\uBBF8", " ")
-                .replace("what is the meaning of", " ")
-                .replace("what does", " ")
-                .replace("meaning", " ")
-                .replace("means", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
-
-        extracted = extracted.replaceAll("\\bmean\\b", " ").replaceAll("\\s+", " ").trim();
-        return extracted.isBlank() ? normalized : extracted;
-    }
-
-    private List<String> inferCategories(String text) {
-        String normalized = normalizeText(text);
-        List<String> categories = new ArrayList<>();
-
-        if (containsAny(normalized,
-                "why", "reason", "because", "since", "so that", "one reason is that",
-                "이유", "왜", "왜냐하면", "때문", "근거")) {
-            categories.add("reason");
-        }
-        if (containsAny(normalized,
-                "example", "for instance", "for example", "such as", "specifically",
-                "예시", "예를 들어", "예를들어", "예로", "경험")) {
-            categories.add("example");
-        }
-        if (containsAny(normalized,
-                "think", "opinion", "believe", "i feel", "in my opinion", "i think",
-                "의견", "생각", "입장", "주장")) {
-            categories.add("opinion");
-        }
-        if (containsAny(normalized,
-                "compare", "different", "similar", "on the other hand", "whereas",
-                "비교", "차이", "반면", "반대로")) {
-            categories.add("comparison");
-        }
-        if (containsAny(normalized,
-                "usually", "every day", "habit", "routine", "often",
-                "습관", "루틴", "평소", "주말", "보통", "자주", "매일")) {
-            categories.add("habit");
-        }
-        if (containsAny(normalized,
-                "future", "plan", "goal", "long run", "in the long run", "this year",
-                "계획", "목표", "앞으로", "장기", "장기적")) {
-            categories.add("future");
-        }
-        if (containsAny(normalized,
-                "detail", "specific", "specifically", "more clearly", "explain",
-                "구체", "자세히", "설명", "풀어서")) {
-            categories.add("detail");
-        }
-        if (containsAny(normalized,
-                "balance", "on the one hand", "on the other hand", "overall",
-                "균형", "한편", "다른 한편", "전체적으로", "종합")) {
-            categories.add("balance");
-        }
-
-        if (containsAny(normalized,
-                "\uC65C", "\uC774\uC720", "\uB54C\uBB38", "\uADF8\uB798\uC11C",
-                "why", "reason", "because")) {
-            categories.add("reason");
-        }
-        if (containsAny(normalized,
-                "\uC608\uC2DC", "\uC608\uB97C \uB4E4\uC5B4", "\uC0AC\uB840", "\uACBD\uD5D8",
-                "example", "for example", "for instance", "case", "sample")) {
-            categories.add("example");
-        }
-        if (containsAny(normalized,
-                "\uAC1C\uC778\uC801\uC73C\uB85C", "\uB0B4 \uC0DD\uAC01", "\uC81C \uC0DD\uAC01",
-                "personally", "from my perspective", "in my opinion", "i think", "opinion")) {
-            categories.add("opinion");
-        }
-        if (containsAny(normalized,
-                "\uBE44\uAD50", "\uCC28\uC774", "\uBC18\uBA74", "\uBC18\uB300\uB85C",
-                "compare", "difference", "similar", "on the other hand", "whereas")) {
-            categories.add("comparison");
-        }
-        if (containsAny(normalized,
-                "\uC2B5\uAD00", "\uB8E8\uD2F4", "\uC77C\uC0C1", "\uB9E4\uC77C", "\uC790\uC8FC",
-                "habit", "routine", "usually", "every day", "often")) {
-            categories.add("habit");
-        }
-        if (containsAny(normalized,
-                "\uACC4\uD68D", "\uBAA9\uD45C", "\uC55E\uC73C\uB85C", "\uC62C\uD574", "\uC7A5\uAE30\uC801",
-                "future", "plan", "goal", "long run", "in the long run", "this year")) {
-            categories.add("future");
-        }
-        if (containsAny(normalized,
-                "\uAD6C\uCCB4", "\uC790\uC138\uD788", "\uC124\uBA85", "\uD55C \uBC88 \uB354", "\uB354 \uAD6C\uCCB4",
-                "detail", "specific", "specifically", "more clearly", "explain")) {
-            categories.add("detail");
-        }
-        if (containsAny(normalized,
-                "\uAD6C\uC870", "\uD750\uB984", "\uC815\uB9AC", "\uBB50\uBD80\uD130", "\uC21C\uC11C",
-                "structure", "flow", "organize", "order", "what to write first")) {
-            categories.add("structure");
-        }
-        if (containsAny(normalized,
-                "\uC7A5\uB2E8\uC810", "\uCC2C\uBC18", "\uD55C\uD3B8", "\uB2E4\uB978 \uD55C\uD3B8",
-                "pros and cons", "advantage", "disadvantage", "on the one hand", "overall")) {
-            categories.add("balance");
-        }
-
-        return categories;
-    }
-
-    private boolean containsAny(String source, String... tokens) {
-        for (String token : tokens) {
-            if (source.contains(token)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private String normalizeText(String value) {
-        if (value == null) {
-            return "";
-        }
-
-        String normalized = Normalizer.normalize(value, Normalizer.Form.NFKC);
-        normalized = normalized.toLowerCase(Locale.ROOT);
-        normalized = NON_WORD_PATTERN.matcher(normalized).replaceAll(" ");
-        normalized = normalized.replaceAll("\\s+", " ").trim();
-        return normalized;
+    private String buildStructuredRequestBody(String promptText, String schemaName, Map<String, Object> schema) throws IOException {
+        return OpenAiStructuredOutputSupport.buildResponsesRequestBody(
+                objectMapper,
+                model,
+                promptText,
+                schemaName,
+                schema,
+                reasoningEffort
+        );
     }
 
     private String sendResponsesRequest(String requestBody) throws IOException, InterruptedException {
-        HttpRequest request = GeminiStructuredOutputSupport.buildGenerateContentRequest(apiUrl, apiKey, model, requestBody);
+        HttpRequest request = OpenAiStructuredOutputSupport.buildResponsesRequest(
+                apiUrl,
+                apiKey,
+                requestBody,
+                requestTimeoutSeconds
+        );
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 400) {
-            throw new IllegalStateException("Gemini coach API request failed with status " + response.statusCode());
+            throw new IllegalStateException("OpenAI coach API request failed with status " + response.statusCode());
         }
         return response.body();
     }
 
     private String extractStructuredOutputText(String body) throws IOException {
-        return GeminiStructuredOutputSupport.extractStructuredOutputText(objectMapper, body);
+        return OpenAiStructuredOutputSupport.extractStructuredOutputText(objectMapper, body);
     }
 
     private String parseSlotTranslationResponse(String body) throws IOException {

@@ -3200,8 +3200,7 @@ export function AnswerLoop() {
         keepWhatWorksDisplayMode:
           feedback.strengths.length > 0 || usedExpressions.length > 0 ? "SHOW_EXPANDED" : "HIDE",
         fixFirstDisplayMode:
-          (feedback.ui?.fixPoints?.some((point) => point && point.kind !== "EXPRESSION") ||
-            feedback.corrections?.length)
+          feedback.ui?.fixPoints?.some((point) => point && point.kind !== "EXPRESSION")
             ? "SHOW_EXPANDED"
             : "HIDE",
         rewriteGuideDisplayMode: "SHOW_EXPANDED",
@@ -3280,18 +3279,6 @@ export function AnswerLoop() {
         supportText: microTip.reasonKo
       });
     }
-
-    feedback.corrections?.forEach((correction) => {
-      if (!correction?.issue?.trim() || !correction.suggestion?.trim()) {
-        return;
-      }
-      fallback.push({
-        kind: "CORRECTION",
-        title: "보조 학습 포인트",
-        headline: correction.issue,
-        supportText: correction.suggestion
-      });
-    });
 
     filterSuggestedRefinementExpressions(
       feedback.refinementExpressions,

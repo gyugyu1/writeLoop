@@ -13,7 +13,7 @@ public record FeedbackResponseDto(
         String completionMessage,
         @Deprecated String summary,
         List<String> strengths,
-        List<CorrectionDto> corrections,
+        @Deprecated @JsonIgnore List<CorrectionDto> corrections,
         @Deprecated List<InlineFeedbackSegmentDto> inlineFeedback,
         @Deprecated @JsonIgnore List<GrammarFeedbackItemDto> grammarFeedback,
         String correctedAnswer,

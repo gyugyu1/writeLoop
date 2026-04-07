@@ -431,8 +431,6 @@ public class GeminiFeedbackClient {
     ) {
         List<ValidationFailure> failures = new ArrayList<>();
         boolean strengthsRequested = isRequested(requestedSections, SectionKey.STRENGTHS);
-        boolean grammarRequested = isRequested(requestedSections, SectionKey.GRAMMAR);
-        boolean improvementRequested = isRequested(requestedSections, SectionKey.IMPROVEMENT);
         boolean refinementRequested = isRequested(requestedSections, SectionKey.REFINEMENT);
         boolean modelAnswerRequested = isRequested(requestedSections, SectionKey.MODEL_ANSWER);
         boolean usedExpressionsRequested = isRequested(requestedSections, SectionKey.USED_EXPRESSIONS);
@@ -443,21 +441,8 @@ public class GeminiFeedbackClient {
                 sectionPolicy.maxStrengthCount()
         )
                 : List.of();
-        List<GrammarFeedbackItemDto> grammarFeedback = grammarRequested
-                ? sanitizeGrammarFeedback(generatedSections.grammarFeedback(), diagnosis, answerProfile)
-                : List.of();
-        if (grammarRequested
-                && grammarFeedback.isEmpty()
-                && shouldRequireGrammarSection(diagnosis, answerProfile, sectionPolicy)) {
-            failures.add(new ValidationFailure(
-                    SectionKey.GRAMMAR,
-                    ValidationFailureCode.EMPTY_GRAMMAR,
-                    "No valid grammar feedback survived validation."
-            ));
-        }
-        List<CorrectionDto> corrections = improvementRequested
-                ? sanitizeCorrections(generatedSections.corrections())
-                : List.of();
+        List<GrammarFeedbackItemDto> grammarFeedback = List.of();
+        List<CorrectionDto> corrections = List.of();
         List<CoachExpressionUsageDto> usedExpressions = usedExpressionsRequested
                 ? sanitizeUsedExpressions(generatedSections.usedExpressions())
                 : List.of();
@@ -1252,31 +1237,6 @@ public class GeminiFeedbackClient {
                                         )
                                 )
                         )),
-                        Map.entry("grammarFeedback", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "originalText", Map.of("type", "string"),
-                                                "revisedText", Map.of("type", "string"),
-                                                "reasonKo", Map.of("type", "string")
-                                        ),
-                                        "required", List.of("originalText", "revisedText", "reasonKo")
-                                )
-                        )),
-                        Map.entry("corrections", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "issue", Map.of("type", "string"),
-                                                "suggestion", Map.of("type", "string")
-                                        ),
-                                        "required", List.of("issue", "suggestion")
-                                )
-                        )),
                         Map.entry("secondaryLearningPoints", Map.of(
                                 "type", "array",
                                 "items", Map.of(
@@ -1386,8 +1346,6 @@ public class GeminiFeedbackClient {
                 Map.entry("required", List.of(
                         "strengths",
                         "fixPoints",
-                        "grammarFeedback",
-                        "corrections",
                         "usedExpressions",
                         "refinementExpressions",
                         "nextStepPractice",
@@ -1552,66 +1510,53 @@ public class GeminiFeedbackClient {
                 - progress.remainingAreas: %s
                 - Prioritize learner focus and clarity over section completeness. It is better to return fewer, sharper items than many overlapping ones.
 
-                Screen role map:
-                - strengths and usedExpressions feed Keep What Works.
-                - fixPoints feed the ordered must-fix list for the learner.
-                - nextStepPractice and rewriteSuggestions feed one optional next-step area after the must-fix list.
-                - grammarFeedback, corrections, and refinementExpressions are optional raw support pools behind fixPoints.
-                - modelAnswer is a one-step-up reference answer.
+                General output rules:
+                - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
+                - Do not reuse a broken learner phrase in strengths, refinementExpressions, nextStepPractice, or modelAnswer.
+                - If requestedSections does not include a section, return [] for arrays or null for strings.
+                - Keep Korean fields natural and concise.
+                - If attemptIndex >= 2, keep the list focused, but still include any other distinct useful fixPoints that are clearly worth teaching.
 
-                Common rules:
+                Strengths and usedExpressions rules:
                 - strengths must be semantic praise only. Never quote the full raw learner answer unless it is already clean and necessary.
                 - strengths should usually be one short Korean line that tells the learner what to keep.
                 - usedExpressions should contain at most 2 short reusable learner-used chunks that are already good enough to keep.
                 - usedExpressions must not contain long broken spans or whole awkward sentences.
                 - usedExpressions.usageTip must be one short Korean note about why the expression is worth keeping.
-                - Generate fixPoints as one ordered UI-ready list instead of splitting the same lesson across multiple fields.
+
+                fixPoints rules:
+                - Generate fixPoints as one UI-ready list instead of splitting the same lesson across multiple fields.
                 - Each fixPoints item must teach exactly one concrete correction point.
-                - fixPoints[0] should be the first fix the learner should focus on.
-                - Later fixPoints may include every remaining distinct minor grammar, naturalness, collocation, or reusable expression tip that still adds value.
+                - Include every remaining distinct useful fix as a separate fixPoints item instead of stopping after one representative correction.
                 - A fixPoints item may use originalText / revisedText / supportText to show a concrete correction pair, or title / headline / supportText to show one anchored instruction card.
                 - If a fixPoints item has no originalText / revisedText pair, its headline must still name one concrete anchor phrase, word, connector, or slot the learner should change next.
-                - Do not return placeholder-like fixPoints[0] headlines or instructions such as "First thing to fix" or "Fix this one thing first" unless you also name the exact phrase or expression to fix.
-                - Do not merge unrelated lessons into one fixPoints item or split the same teaching point across multiple fixPoints items.
-                - If the learner span needs multiple local grammar lessons, split them into separate fixPoints items instead of folding them into one revisedText.
+                - Do not return placeholder-like fixPoints headlines or instructions such as "First thing to fix" or "Fix this one thing first" unless you also name the exact phrase or expression to fix.
+                - Do not merge unrelated lessons into one fixPoints item, and do not split the same teaching point across multiple fixPoints items.
+                - If the learner answer contains multiple distinct local errors, split them into separate fixPoints items instead of folding them into one revisedText or one broad umbrella note.
                 - In particular, teach article/determiner vs plural/singular separately, and teach pronoun agreement vs connector choice separately, when both need correction.
-                - If one learner answer contains several distinct local errors, prefer separate short fixPoints for each fixable error instead of only 1-2 representative fixes.
-                - Do not collapse multiple fixable spans into one broad umbrella note such as "use past tense consistently" when the learner would benefit from seeing the concrete spans one by one.
-                - When possible, each originalText / revisedText pair should isolate one changed principle.
-                - Example: if the learner wrote "football skill" and you want to teach both determiner and plural, do not make one fixPoints item whose revisedText is "my football skills". Split it into separate fixPoints items such as "football skill" -> "football skills" and "football skills" -> "my football skills" if both are genuinely worth teaching.
-                - grammarFeedback is an optional raw grammar candidate pool beyond fixPoints.
-                - Include every remaining distinct grammar candidate that still adds value, keep the highest-value one first, and do not pad with trivial punctuation-only edits or repetitive variants.
-                - Each grammarFeedback item must still teach only one grammar principle at a time.
-                - If the learner answer contains 3 or more distinct local grammar errors, enumerate them as separate grammarFeedback items whenever they are individually fixable and non-duplicate.
-                - If reasonKo mentions a concrete connector or grammar token such as and, because, so, also, or a quoted token like 'in', revisedText must actually show that token-level fix.
-                - Do not mention a connector or token fix in reasonKo unless revisedText already reflects that exact change.
-                - corrections are optional raw non-grammar candidates for fixPoints.
-                - Return every remaining distinct non-grammar secondary angle that is still useful, such as a naturalness upgrade, collocation fix, clearer reason phrasing, or one missing support idea.
-                - corrections must name one concrete weak learner phrase, vague word, awkward collocation, or missing support slot. Avoid generic advice such as "make it more natural" unless you also say what to rewrite.
-                - corrections.suggestion must tell the learner exactly what to change, add, or replace next. Prefer a concrete phrase or sentence pattern over abstract coaching language.
-                - refinementExpressions are optional raw reusable-expression candidates.
-                - Return all distinct refinementExpressions that add clear reusable value beyond fixPoints. Do not stop at 1-2 if more are still genuinely useful.
-                - refinementExpressions must separate expression, meaningKo, guidanceKo, exampleEn, exampleKo.
+
+                refinementExpressions rules:
+                - refinementExpressions are optional reusable-expression cards beyond fixPoints.
+                - Return only genuinely useful, distinct refinementExpressions, and keep expression, meaningKo, guidanceKo, exampleEn, and exampleKo separate.
                 - exampleEn must not be identical to expression.
-                - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
-                - Do not reuse a broken learner phrase in strengths, refinementExpressions, nextStepPractice, or modelAnswer.
-                - nextStepPractice is optional and should represent one genuine next step after the must-fix list, not another copy of fixPoints[0].
-                - Use nextStepPractice only when there is a locally acceptable base answer or one clearly optional add-on after the must-fix corrections; otherwise leave it null.
+
+                nextStepPractice rules:
+                - nextStepPractice is optional and should represent one genuine next step after the must-fix list, not another copy of a must-fix item.
+                - Use nextStepPractice only when there is a locally acceptable base answer or one clearly optional add-on after the must-fix list; otherwise leave it null.
                 - nextStepPractice may use the same flexible card fields as fixPoints and does not need to be a blank scaffold.
                 - nextStepPractice.title should name one optional next move in short Korean, nextStepPractice.headline should show the actual English move when helpful, and nextStepPractice.supportText should briefly explain the add-on in Korean.
                 - If nextStepPractice uses originalText / revisedText, that pair must still teach only one optional improvement point and must not repeat a must-fix lesson already covered in fixPoints.
+
+                rewriteSuggestions rules:
                 - rewriteSuggestions are optional helper ideas for nextStepPractice.
                 - rewriteSuggestions do not need to fit a blank. They should support the same next step as nextStepPractice with short English phrases, clauses, or example chunks.
                 - rewriteSuggestions should usually be 0-3 short English ideas, not long standalone answers.
                 - Do not use rewriteSuggestions to restate the whole learner answer or to duplicate the exact same English already shown in nextStepPractice.
+
+                modelAnswer rules:
                 - modelAnswer is a one-step-up reference, not another nextStepPractice card.
-                - modelAnswer must preserve learner meaning, keep the must-fix corrections from fixPoints, and, when natural, add one optional upgrade from nextStepPractice without reverting a taught correction.
-                - Preserve referent, pronoun, and singular/plural agreement taught by fixPoints[0].
-                - Do not switch from plural noun + they to singular it, or from singular it to plural they, unless fixPoints[0] already teaches that shift.
-                - If refinementExpressions are returned, keep every card genuinely useful and distinct. Do not artificially cap the count.
-                - If requestedSections does not include a section, return [] for arrays or null for strings.
-                - Keep Korean fields natural and concise.
-                - If attemptIndex >= 2, prioritize one remaining action first, but still include any other distinct later fixPoints that are clearly useful.
+                - modelAnswer must preserve learner meaning, keep the must-fix lessons from fixPoints, and, when natural, add one optional upgrade from nextStepPractice without reverting a taught correction.
+                - Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.
 
                 Band-specific guidance:
                 %s
@@ -1770,17 +1715,6 @@ public class GeminiFeedbackClient {
         JsonNode node = objectMapper.readTree(extractOutputText(body));
         List<String> strengths = new ArrayList<>();
         node.path("strengths").forEach(item -> strengths.add(item.asText("")));
-        List<GrammarFeedbackItemDto> grammarFeedback = new ArrayList<>();
-        node.path("grammarFeedback").forEach(item -> grammarFeedback.add(new GrammarFeedbackItemDto(
-                item.path("originalText").asText(""),
-                item.path("revisedText").asText(""),
-                item.path("reasonKo").asText("")
-        )));
-        List<CorrectionDto> corrections = new ArrayList<>();
-        node.path("corrections").forEach(item -> corrections.add(new CorrectionDto(
-                item.path("issue").asText(""),
-                item.path("suggestion").asText("")
-        )));
         List<FeedbackSecondaryLearningPointDto> fixPoints = new ArrayList<>();
         node.path("fixPoints").forEach(item -> fixPoints.add(new FeedbackSecondaryLearningPointDto(
                 item.path("kind").isNull() ? null : item.path("kind").asText(null),
@@ -1864,8 +1798,8 @@ public class GeminiFeedbackClient {
                 strengths,
                 null,
                 primaryFix,
-                grammarFeedback,
-                corrections,
+                List.of(),
+                List.of(),
                 refinementExpressions,
                 null,
                 node.path("modelAnswer").isNull() ? null : node.path("modelAnswer").asText(null),
@@ -1948,8 +1882,7 @@ public class GeminiFeedbackClient {
                 SectionKey.STRENGTHS,
                 SectionKey.USED_EXPRESSIONS,
                 SectionKey.PRIMARY_FIX,
-                SectionKey.GRAMMAR,
-                SectionKey.IMPROVEMENT,
+                SectionKey.REWRITE_GUIDE,
                 SectionKey.MODEL_ANSWER,
                 SectionKey.REFINEMENT
         );
@@ -1960,8 +1893,7 @@ public class GeminiFeedbackClient {
                 ? List.of(
                 SectionKey.STRENGTHS,
                 SectionKey.PRIMARY_FIX,
-                SectionKey.GRAMMAR,
-                SectionKey.IMPROVEMENT,
+                SectionKey.REWRITE_GUIDE,
                 SectionKey.REFINEMENT,
                 SectionKey.MODEL_ANSWER,
                 SectionKey.USED_EXPRESSIONS
@@ -2618,37 +2550,26 @@ public class GeminiFeedbackClient {
             return "- none";
         }
         List<String> instructions = new ArrayList<>();
-        boolean fixWorkRequested = requestedSections != null
-                && (requestedSections.contains(SectionKey.PRIMARY_FIX)
-                || requestedSections.contains(SectionKey.IMPROVEMENT));
-        boolean improvementRequested = requestedSections != null && requestedSections.contains(SectionKey.IMPROVEMENT);
+        boolean fixWorkRequested = requestedSections != null && requestedSections.contains(SectionKey.PRIMARY_FIX);
         boolean strengthsRequested = requestedSections != null && requestedSections.contains(SectionKey.STRENGTHS);
 
-        if (fixWorkRequested && (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
+        boolean fixPointRetryNeeded = fixWorkRequested && (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.UNALIGNED_PRIMARY_FIX)
-                || failureCodes.contains(ValidationFailureCode.LOW_VALUE_SECTION))) {
-            instructions.add("- FIX_POINTS should be one ordered list of concrete fixes, with FIX_POINTS[0] as the first thing to fix.");
-            instructions.add("- Keep every FIX_POINTS item specific and limited to one teaching point. Do not merge unrelated fixes into one item.");
-            instructions.add("- If FIX_POINTS[0] has no original/revised pair, its headline must still name one exact word, connector, quoted phrase, or blank slot to fix next.");
+                || failureCodes.contains(ValidationFailureCode.LOW_VALUE_SECTION)
+                || failureCodes.contains(ValidationFailureCode.NEAR_DUPLICATE)
+                || failureCodes.contains(ValidationFailureCode.EMPTY_IMPROVEMENT));
+        if (fixPointRetryNeeded) {
+            instructions.add("- Replace generic FIX_POINTS with specific ones. Each item should teach one point and name the exact phrase, word, connector, or slot to change when no original/revised pair is shown.");
+            instructions.add("- If multiple distinct fixes remain, return them as separate FIX_POINTS instead of repeating the same lesson.");
         }
         if (strengthsRequested && (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.NEAR_DUPLICATE)
                 || failureCodes.contains(ValidationFailureCode.LOW_VALUE_SECTION))) {
-            instructions.add("- STRENGTHS should be one short Korean keep-signal, not a generic compliment.");
-            instructions.add("- If you praise something, say what the learner should keep in the next rewrite.");
-        }
-        if (improvementRequested && (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
-                || failureCodes.contains(ValidationFailureCode.NEAR_DUPLICATE)
-                || failureCodes.contains(ValidationFailureCode.LOW_VALUE_SECTION)
-                || failureCodes.contains(ValidationFailureCode.EMPTY_IMPROVEMENT))) {
-            instructions.add("- Put the remaining distinct later fixes later in FIX_POINTS instead of repeating FIX_POINTS[0].");
-            instructions.add("- If you return CORRECTIONS raw candidates, keep them short, concrete, and aligned with those later fix points.");
+            instructions.add("- STRENGTHS should be one short Korean keep-signal that says what the learner should keep in the next rewrite.");
         }
         if (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.UNALIGNED_REWRITE_TARGET)) {
-            instructions.add("- NEXT_STEP_PRACTICE should be one optional add-on card, not another copy of FIX_POINTS[0].");
-            instructions.add("- Leave NEXT_STEP_PRACTICE null if there is no clearly different next move beyond the must-fix list.");
-            instructions.add("- If you return REWRITE_SUGGESTIONS, make them short helper ideas for that same next step instead of blank-fit fillers.");
+            instructions.add("- NEXT_STEP_PRACTICE should be one clearly different optional add-on or null, and REWRITE_SUGGESTIONS should be short helper ideas for that same next step.");
         }
         if (instructions.isEmpty()) {
             return "- none";
@@ -2941,34 +2862,34 @@ public class GeminiFeedbackClient {
         return switch (answerBand) {
             case GRAMMAR_BLOCKING -> """
                     - Prioritize the core sentence repair before extra expansion.
-                    - Keep fixPoints[0] on one corrected sentence direction first.
+                    - Keep each fixPoint centered on one corrected sentence direction.
                     - Prefer leaving nextStepPractice null unless there is one clearly optional add-on after the repair.
-                    - Prefer compact later fixPoints that directly support the repair.
+                    - Prefer compact fixPoints that directly support the repair.
                     - Keep modelAnswer very close to learner meaning and the corrected direction.
                     """;
             case TOO_SHORT_FRAGMENT -> """
                     - Prioritize completing one full base sentence before any expansion.
-                    - Keep fixPoints[0] centered on finishing the fragment cleanly.
+                    - Keep fixPoints centered on finishing the fragment cleanly.
                     - Use nextStepPractice only if there is one clearly optional add-on after the full base sentence is complete.
-                    - Avoid unsupported invention in later fixPoints or modelAnswer.
+                    - Avoid unsupported invention in fixPoints or modelAnswer.
                     """;
             case CONTENT_THIN, SHORT_BUT_VALID -> """
                     - Prioritize adding one more concrete reason, detail, image, or habit.
                     - Keep grammar explanation brief unless it directly blocks the next rewrite.
-                    - Prefer later fixPoints that help the learner support the same main idea more concretely.
+                    - Prefer fixPoints that help the learner support the same main idea more concretely.
                     - Keep modelAnswer close to learner meaning and add at most one step-up detail.
                     """;
             case NATURAL_BUT_BASIC -> """
                     - Prioritize optional polish and naturalness over major correction.
                     - Keep the overall tone light so the learner feels the answer is already usable.
-                    - Prefer later fixPoints that teach one small naturalness or phrasing upgrade.
+                    - Prefer fixPoints that teach one small naturalness or phrasing upgrade.
                     - Keep modelAnswer short, close to learner meaning, and low-pressure.
                     """;
             case OFF_TOPIC -> """
                     - Prioritize getting the learner back to the actual task before polishing language.
-                    - Keep fixPoints[0] centered on answering the prompt directly.
+                    - Keep fixPoints centered on answering the prompt directly.
                     - Use nextStepPractice only if there is one clearly optional add-on after task alignment.
-                    - Prefer later fixPoints that support task completion rather than extra polish.
+                    - Prefer fixPoints that support task completion rather than extra polish.
                     - Keep modelAnswer as a short task-reset example.
                     """;
         };

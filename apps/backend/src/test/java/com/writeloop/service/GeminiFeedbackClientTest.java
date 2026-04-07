@@ -138,10 +138,6 @@ class GeminiFeedbackClientTest {
                                 "exampleKo", ""
                         )
                 ),
-                "corrections", List.of(Map.of(
-                        "issue", "The plan still needs one more concrete detail.",
-                        "suggestion", "Add one real habit you want to follow."
-                )),
                 "usedExpressions", List.of(Map.of(
                         "expression", "stay healthy",
                         "usageTip", "Use this to explain why the goal matters."
@@ -190,6 +186,8 @@ class GeminiFeedbackClientTest {
         assertThat(sections.secondaryLearningPoints())
                 .extracting(FeedbackSecondaryLearningPointDto::headline, FeedbackSecondaryLearningPointDto::originalText)
                 .contains(tuple(null, "improve to diet"));
+        assertThat(sections.grammarFeedback()).isEmpty();
+        assertThat(sections.corrections()).isEmpty();
         assertThat(sections.refinementExpressions()).singleElement().satisfies(card -> {
             assertThat(card.expression()).isEqualTo("improve my diet");
             assertThat(card.meaningKo()).isEqualTo("make eating habits healthier");
@@ -388,53 +386,38 @@ class GeminiFeedbackClientTest {
                 policy,
                 1,
                 null,
-                List.of(SectionKey.IMPROVEMENT, SectionKey.REWRITE_GUIDE),
+                List.of(SectionKey.PRIMARY_FIX, SectionKey.REWRITE_GUIDE),
                 List.of(ValidationFailureCode.GENERIC_TEXT),
                 null
         );
 
-        assertThat(text).contains("corrections must name one concrete weak learner phrase");
         assertThat(text).contains("requestedSections: FIX_POINTS, NEXT_STEP_PRACTICE");
         assertThat(text).contains("Prioritize learner focus and clarity over section completeness.");
-        assertThat(text).contains("fixPoints feed the ordered must-fix list for the learner");
-        assertThat(text).contains("Generate fixPoints as one ordered UI-ready list");
+        assertThat(text).contains("Generate fixPoints as one UI-ready list");
         assertThat(text).contains("Each fixPoints item must teach exactly one concrete correction point.");
+        assertThat(text).contains("Include every remaining distinct useful fix as a separate fixPoints item instead of stopping after one representative correction.");
         assertThat(text).contains("A fixPoints item may use originalText / revisedText / supportText");
         assertThat(text).contains("If a fixPoints item has no originalText / revisedText pair, its headline must still name one concrete anchor phrase");
-        assertThat(text).contains("Do not return placeholder-like fixPoints[0] headlines or instructions such as \"First thing to fix\" or \"Fix this one thing first\" unless you also name the exact phrase or expression to fix.");
-        assertThat(text).contains("strengths and usedExpressions feed Keep What Works.");
-        assertThat(text).contains("nextStepPractice and rewriteSuggestions feed one optional next-step area after the must-fix list.");
-        assertThat(text).contains("Do not merge unrelated lessons into one fixPoints item or split the same teaching point across multiple fixPoints items.");
-        assertThat(text).contains("If the learner span needs multiple local grammar lessons, split them into separate fixPoints items instead of folding them into one revisedText.");
+        assertThat(text).contains("Do not return placeholder-like fixPoints headlines or instructions such as \"First thing to fix\" or \"Fix this one thing first\" unless you also name the exact phrase or expression to fix.");
+        assertThat(text).contains("Do not merge unrelated lessons into one fixPoints item, and do not split the same teaching point across multiple fixPoints items.");
+        assertThat(text).contains("If the learner answer contains multiple distinct local errors, split them into separate fixPoints items instead of folding them into one revisedText or one broad umbrella note.");
         assertThat(text).contains("teach article/determiner vs plural/singular separately");
-        assertThat(text).contains("If one learner answer contains several distinct local errors, prefer separate short fixPoints for each fixable error");
-        assertThat(text).contains("Do not collapse multiple fixable spans into one broad umbrella note");
-        assertThat(text).contains("each originalText / revisedText pair should isolate one changed principle.");
-        assertThat(text).contains("do not make one fixPoints item whose revisedText is \"my football skills\"");
-        assertThat(text).contains("grammarFeedback is an optional raw grammar candidate pool beyond fixPoints.");
-        assertThat(text).contains("Each grammarFeedback item must still teach only one grammar principle at a time.");
-        assertThat(text).contains("Include every remaining distinct grammar candidate that still adds value");
-        assertThat(text).contains("If the learner answer contains 3 or more distinct local grammar errors, enumerate them as separate grammarFeedback items");
         assertThat(text).contains("nextStepPractice is optional and should represent one genuine next step after the must-fix list");
         assertThat(text).contains("Use nextStepPractice only when there is a locally acceptable base answer");
         assertThat(text).contains("nextStepPractice may use the same flexible card fields as fixPoints and does not need to be a blank scaffold.");
         assertThat(text).contains("rewriteSuggestions do not need to fit a blank. They should support the same next step as nextStepPractice");
         assertThat(text).contains("modelAnswer is a one-step-up reference, not another nextStepPractice card.");
-        assertThat(text).contains("modelAnswer must preserve learner meaning, keep the must-fix corrections from fixPoints");
-        assertThat(text).contains("Preserve referent, pronoun, and singular/plural agreement taught by fixPoints[0].");
-        assertThat(text).contains("If attemptIndex >= 2, prioritize one remaining action first, but still include any other distinct later fixPoints that are clearly useful.");
-        assertThat(text).contains("Put the remaining distinct later fixes later in FIX_POINTS instead of repeating FIX_POINTS[0].");
-        assertThat(text).contains("grammarFeedback, corrections, and refinementExpressions are optional raw support pools behind fixPoints.");
-        assertThat(text).contains("corrections are optional raw non-grammar candidates for fixPoints");
-        assertThat(text).contains("Return every remaining distinct non-grammar secondary angle that is still useful, such as a naturalness upgrade, collocation fix, clearer reason phrasing, or one missing support idea.");
-        assertThat(text).contains("Return all distinct refinementExpressions that add clear reusable value beyond fixPoints. Do not stop at 1-2 if more are still genuinely useful.");
-        assertThat(text).contains("If refinementExpressions are returned, keep every card genuinely useful and distinct. Do not artificially cap the count.");
-        assertThat(text).contains("If reasonKo mentions a concrete connector or grammar token such as and, because, so, also, or a quoted token like 'in', revisedText must actually show that token-level fix.");
+        assertThat(text).contains("modelAnswer must preserve learner meaning, keep the must-fix lessons from fixPoints");
+        assertThat(text).contains("Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.");
+        assertThat(text).contains("If attemptIndex >= 2, keep the list focused, but still include any other distinct useful fixPoints that are clearly worth teaching.");
+        assertThat(text).contains("refinementExpressions are optional reusable-expression cards beyond fixPoints.");
+        assertThat(text).contains("Return only genuinely useful, distinct refinementExpressions");
         assertThat(text).doesNotContain("primaryFix feeds the Fix First card");
         assertThat(text).doesNotContain("focusCard feeds the Top Status Card directly");
         assertThat(text).doesNotContain("secondaryLearningPoints feed the Secondary Learning Points section directly");
-        assertThat(text).doesNotContain("corrections feed raw secondary-learning candidates that may support secondaryLearningPoints");
-        assertThat(text).doesNotContain("corrections are optional raw non-grammar candidates for secondaryLearningPoints");
+        assertThat(text).doesNotContain("grammarFeedback rules:");
+        assertThat(text).doesNotContain("corrections rules:");
+        assertThat(text).doesNotContain("Screen role map:");
         assertThat(text).doesNotContain("summary is optional compatibility fallback text for focusCard.supportText.");
     }
 
@@ -704,8 +687,7 @@ class GeminiFeedbackClientTest {
                 SectionKey.STRENGTHS,
                 SectionKey.USED_EXPRESSIONS,
                 SectionKey.PRIMARY_FIX,
-                SectionKey.GRAMMAR,
-                SectionKey.IMPROVEMENT,
+                SectionKey.REWRITE_GUIDE,
                 SectionKey.REFINEMENT,
                 SectionKey.MODEL_ANSWER
         );
@@ -791,7 +773,7 @@ class GeminiFeedbackClientTest {
 
         assertThat(requestedSections).contains(
                 SectionKey.PRIMARY_FIX,
-                SectionKey.IMPROVEMENT,
+                SectionKey.REWRITE_GUIDE,
                 SectionKey.MODEL_ANSWER
         );
     }
@@ -1784,7 +1766,7 @@ class GeminiFeedbackClientTest {
         );
 
         assertThat(validation.shouldRetry()).isFalse();
-        assertThat(validation.sanitizedSections().corrections()).isNotEmpty();
+        assertThat(validation.sanitizedSections().corrections()).isEmpty();
         assertThat(validation.sanitizedSections().nextStepPractice()).isNotNull();
         assertThat(validation.sanitizedSections().nextStepPractice().starter()).contains("______");
     }

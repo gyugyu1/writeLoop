@@ -685,7 +685,7 @@ export function MyPageClient() {
     const rewriteChallenge = attempt.feedback.rewriteChallenge?.trim() ?? "";
     const completionMessage = attempt.feedback.completionMessage?.trim() ?? "";
     const hasModelAnswerSection = Boolean(modelAnswer) || Boolean(modelAnswerKo) || suggestedExpressions.length > 0;
-    const hasRefineSection = fixPoints.length > 0 || attempt.feedback.corrections.length > 0;
+    const hasRefineSection = fixPoints.length > 0;
     const hasStrengthsSection = attempt.feedback.strengths.length > 0;
     const hasNextLoopSection =
       Boolean(rewriteChallenge) || rewriteSuggestions.length > 0 || Boolean(completionMessage);
@@ -885,7 +885,7 @@ export function MyPageClient() {
     const rewriteChallenge = attempt.feedback.rewriteChallenge?.trim() ?? "";
     const completionMessage = attempt.feedback.completionMessage?.trim() ?? "";
     const hasModelAnswerSection = Boolean(modelAnswer) || Boolean(modelAnswerKo) || suggestedExpressions.length > 0;
-    const hasRefineSection = fixPoints.length > 0 || attempt.feedback.corrections.length > 0;
+    const hasRefineSection = fixPoints.length > 0;
     const hasStrengthsSection = attempt.feedback.strengths.length > 0;
     const hasNextLoopSection =
       Boolean(rewriteChallenge) || rewriteSuggestions.length > 0 || Boolean(completionMessage);
@@ -935,21 +935,6 @@ export function MyPageClient() {
                           <strong>{point.headline ?? point.originalText ?? "한 번 더 다듬어 보기"}</strong>
                           {point.supportText?.trim() ? <p>{point.supportText}</p> : null}
                           {!point.supportText?.trim() && point.revisedText?.trim() ? <p>{point.revisedText}</p> : null}
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                ) : attempt.feedback.corrections.length > 0 ? (
-                  <section className={styles.writingHistoryFeedbackCard}>
-                    <span className={styles.writingHistoryFeedbackLabel}>고쳐야 할 점</span>
-                    <div className={styles.writingHistoryFeedbackCorrectionList}>
-                      {attempt.feedback.corrections.map((correction) => (
-                        <article
-                          key={`${correction.issue}-${correction.suggestion}`}
-                          className={styles.writingHistoryFeedbackCorrectionItem}
-                        >
-                          <strong>{correction.issue}</strong>
-                          <p>{correction.suggestion}</p>
                         </article>
                       ))}
                     </div>

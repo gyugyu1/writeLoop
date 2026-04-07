@@ -407,11 +407,14 @@ class GeminiFeedbackClientTest {
         assertThat(text).contains("Do not merge unrelated lessons into one fixPoints item or split the same teaching point across multiple fixPoints items.");
         assertThat(text).contains("If the learner span needs multiple local grammar lessons, split them into separate fixPoints items instead of folding them into one revisedText.");
         assertThat(text).contains("teach article/determiner vs plural/singular separately");
+        assertThat(text).contains("If one learner answer contains several distinct local errors, prefer separate short fixPoints for each fixable error");
+        assertThat(text).contains("Do not collapse multiple fixable spans into one broad umbrella note");
         assertThat(text).contains("each originalText / revisedText pair should isolate one changed principle.");
         assertThat(text).contains("do not make one fixPoints item whose revisedText is \"my football skills\"");
         assertThat(text).contains("grammarFeedback is an optional raw grammar candidate pool beyond fixPoints.");
         assertThat(text).contains("Each grammarFeedback item must still teach only one grammar principle at a time.");
         assertThat(text).contains("Include every remaining distinct grammar candidate that still adds value");
+        assertThat(text).contains("If the learner answer contains 3 or more distinct local grammar errors, enumerate them as separate grammarFeedback items");
         assertThat(text).contains("nextStepPractice is optional and should represent one genuine next step after the must-fix list");
         assertThat(text).contains("Use nextStepPractice only when there is a locally acceptable base answer");
         assertThat(text).contains("nextStepPractice may use the same flexible card fields as fixPoints and does not need to be a blank scaffold.");

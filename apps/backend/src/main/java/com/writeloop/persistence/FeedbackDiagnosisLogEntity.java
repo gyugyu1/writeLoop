@@ -102,6 +102,15 @@ public class FeedbackDiagnosisLogEntity {
     @Column(name = "regeneration_response_status_code")
     private Integer regenerationResponseStatusCode;
 
+    @Column(name = "diagnosis_response_body_json", columnDefinition = "JSON")
+    private String diagnosisResponseBodyJson;
+
+    @Column(name = "generation_response_body_json", columnDefinition = "JSON")
+    private String generationResponseBodyJson;
+
+    @Column(name = "regeneration_response_body_json", columnDefinition = "JSON")
+    private String regenerationResponseBodyJson;
+
     @Column(name = "authoritative_feedback", nullable = false)
     private boolean authoritativeFeedback;
 

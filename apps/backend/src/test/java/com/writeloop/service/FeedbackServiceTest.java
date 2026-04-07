@@ -233,6 +233,9 @@ class FeedbackServiceTest {
                 200,
                 200,
                 200,
+                "{\"diag\":true}",
+                "{\"gen\":true}",
+                "{\"regen\":true}",
                 diagnosis,
                 answerProfile,
                 sectionPolicy,
@@ -263,6 +266,9 @@ class FeedbackServiceTest {
         assertThat(saved.getDiagnosisResponseStatusCode()).isEqualTo(200);
         assertThat(saved.getGenerationResponseStatusCode()).isEqualTo(200);
         assertThat(saved.getRegenerationResponseStatusCode()).isEqualTo(200);
+        assertThat(saved.getDiagnosisResponseBodyJson()).isEqualTo("{\"diag\":true}");
+        assertThat(saved.getGenerationResponseBodyJson()).isEqualTo("{\"gen\":true}");
+        assertThat(saved.getRegenerationResponseBodyJson()).isEqualTo("{\"regen\":true}");
         assertThat(saved.getDiagnosisAnswerBand()).isEqualTo("SHORT_BUT_VALID");
         assertThat(saved.getDiagnosisPrimaryIssueCode()).isEqualTo("FIX_LOCAL_GRAMMAR");
         assertThat(saved.getRewriteTargetAction()).isEqualTo("ADD_DETAIL");
@@ -351,6 +357,9 @@ class FeedbackServiceTest {
                 "gemini-2.5-flash",
                 200,
                 200,
+                null,
+                "{\"diag\":true}",
+                "{\"gen\":true}",
                 null,
                 diagnosis,
                 answerProfile,

@@ -75,13 +75,15 @@ public class GeminiFeedbackClient {
 
     private record DiagnosisCallResult(
             FeedbackDiagnosisResult diagnosis,
-            int statusCode
+            int statusCode,
+            String rawResponseBody
     ) {
     }
 
     private record GenerationCallResult(
             GeneratedSections sections,
-            int statusCode
+            int statusCode,
+            String rawResponseBody
     ) {
     }
 
@@ -198,10 +200,12 @@ public class GeminiFeedbackClient {
         FeedbackDiagnosisResult diagnosis;
         boolean diagnosisFallbackUsed = false;
         Integer diagnosisResponseStatusCode = null;
+        String diagnosisResponseBody = null;
         try {
             DiagnosisCallResult diagnosisCallResult = diagnose(prompt, answer, hints, attemptIndex, previousAnswer);
             diagnosis = diagnosisCallResult.diagnosis();
             diagnosisResponseStatusCode = diagnosisCallResult.statusCode();
+            diagnosisResponseBody = diagnosisCallResult.rawResponseBody();
         } catch (GeminiApiHttpException diagnosisFailure) {
             throw feedbackGenerationUnavailable();
         } catch (IOException diagnosisFailure) {
@@ -240,6 +244,8 @@ public class GeminiFeedbackClient {
         try {
             Integer generationResponseStatusCode = null;
             Integer regenerationResponseStatusCode = null;
+            String generationResponseBody = null;
+            String regenerationResponseBody = null;
             GenerationCallResult generationCallResult = generateSections(
                     prompt,
                     answer,
@@ -255,6 +261,7 @@ public class GeminiFeedbackClient {
             );
             GeneratedSections generatedSections = generationCallResult.sections();
             generationResponseStatusCode = generationCallResult.statusCode();
+            generationResponseBody = generationCallResult.rawResponseBody();
             ValidationResult validation = validateGeneratedSections(
                     answer,
                     diagnosis,
@@ -283,6 +290,7 @@ public class GeminiFeedbackClient {
                     );
                     GeneratedSections regenerated = regenerationCallResult.sections();
                     regenerationResponseStatusCode = regenerationCallResult.statusCode();
+                    regenerationResponseBody = regenerationCallResult.rawResponseBody();
                     validation = validateGeneratedSections(
                             answer,
                             diagnosis,
@@ -322,6 +330,9 @@ public class GeminiFeedbackClient {
                     diagnosisResponseStatusCode,
                     generationResponseStatusCode,
                     regenerationResponseStatusCode,
+                    diagnosisResponseBody,
+                    generationResponseBody,
+                    regenerationResponseBody,
                     diagnosis,
                     diagnosedProfile,
                     sectionPolicy,
@@ -355,6 +366,9 @@ public class GeminiFeedbackClient {
                 diagnosisResponseStatusCode,
                 null,
                 null,
+                diagnosisResponseBody,
+                null,
+                null,
                 diagnosis,
                 diagnosedProfile,
                 sectionPolicy,
@@ -375,7 +389,7 @@ public class GeminiFeedbackClient {
     )
             throws IOException, InterruptedException {
         GeminiApiResponse response = sendResponsesRequest(buildDiagnosisRequestBody(prompt, answer, hints, attemptIndex, previousAnswer));
-        return new DiagnosisCallResult(parseDiagnosisResponse(response.body()), response.statusCode());
+        return new DiagnosisCallResult(parseDiagnosisResponse(response.body()), response.statusCode(), response.body());
     }
 
     private GenerationCallResult generateSections(
@@ -404,7 +418,7 @@ public class GeminiFeedbackClient {
                 failureCodes,
                 previousSections
         ));
-        return new GenerationCallResult(parseGeneratedSections(response.body()), response.statusCode());
+        return new GenerationCallResult(parseGeneratedSections(response.body()), response.statusCode(), response.body());
     }
 
     private ValidationResult validateGeneratedSections(
@@ -1561,11 +1575,14 @@ public class GeminiFeedbackClient {
                 - Do not merge unrelated lessons into one fixPoints item or split the same teaching point across multiple fixPoints items.
                 - If the learner span needs multiple local grammar lessons, split them into separate fixPoints items instead of folding them into one revisedText.
                 - In particular, teach article/determiner vs plural/singular separately, and teach pronoun agreement vs connector choice separately, when both need correction.
+                - If one learner answer contains several distinct local errors, prefer separate short fixPoints for each fixable error instead of only 1-2 representative fixes.
+                - Do not collapse multiple fixable spans into one broad umbrella note such as "use past tense consistently" when the learner would benefit from seeing the concrete spans one by one.
                 - When possible, each originalText / revisedText pair should isolate one changed principle.
                 - Example: if the learner wrote "football skill" and you want to teach both determiner and plural, do not make one fixPoints item whose revisedText is "my football skills". Split it into separate fixPoints items such as "football skill" -> "football skills" and "football skills" -> "my football skills" if both are genuinely worth teaching.
                 - grammarFeedback is an optional raw grammar candidate pool beyond fixPoints.
                 - Include every remaining distinct grammar candidate that still adds value, keep the highest-value one first, and do not pad with trivial punctuation-only edits or repetitive variants.
                 - Each grammarFeedback item must still teach only one grammar principle at a time.
+                - If the learner answer contains 3 or more distinct local grammar errors, enumerate them as separate grammarFeedback items whenever they are individually fixable and non-duplicate.
                 - If reasonKo mentions a concrete connector or grammar token such as and, because, so, also, or a quoted token like 'in', revisedText must actually show that token-level fix.
                 - Do not mention a connector or token fix in reasonKo unless revisedText already reflects that exact change.
                 - corrections are optional raw non-grammar candidates for fixPoints.

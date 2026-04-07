@@ -5,7 +5,7 @@ import com.writeloop.dto.FeedbackLoopStatusDto;
 import com.writeloop.dto.FeedbackMicroTipDto;
 import com.writeloop.dto.FeedbackPrimaryFixDto;
 import com.writeloop.dto.FeedbackResponseDto;
-import com.writeloop.dto.FeedbackRewritePracticeDto;
+import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackScreenPolicyDto;
@@ -96,7 +96,7 @@ final class FeedbackUiComposer {
                 completionState,
                 feedback
         );
-        FeedbackRewritePracticeDto rewritePractice = resolveRewritePractice(
+        FeedbackNextStepPracticeDto nextStepPractice = resolveRewritePractice(
                 llmUi,
                 prompt,
                 learnerAnswer,
@@ -115,7 +115,7 @@ final class FeedbackUiComposer {
         List<FeedbackSecondaryLearningPointDto> fixPoints = buildFixPoints(primaryFix, secondaryLearningPoints);
         List<FeedbackRewriteSuggestionDto> rewriteSuggestions = resolveRewriteSuggestions(
                 llmUi,
-                rewritePractice
+                nextStepPractice
         );
 
         return new FeedbackUiDto(
@@ -124,7 +124,7 @@ final class FeedbackUiComposer {
                 buildMicroTip(learnerAnswer, feedback, screenPolicy.fixFirstMode()),
                 secondaryLearningPoints,
                 fixPoints,
-                rewritePractice,
+                nextStepPractice,
                 rewriteSuggestions,
                 toDto(screenPolicy),
                 buildLoopStatus(feedback, completionState, screenPolicy)
@@ -155,11 +155,11 @@ final class FeedbackUiComposer {
 
         boolean hasRewriteGuide = (feedback != null
                 && feedback.ui() != null
-                && feedback.ui().rewritePractice() != null
-                && normalizeNullable(feedback.ui().rewritePractice().starter()) != null)
-                || normalizeNullable(
+                && hasMeaningfulNextStepPractice(feedback.ui().nextStepPractice()))
+                || (shouldBuildFallbackNextStepPractice(answerProfile, FixFirstMode.HIDE)
+                && normalizeNullable(
                 deriveStarter(prompt, learnerAnswer, feedback, answerProfile, FixFirstMode.HIDE, null, null)
-        ) != null;
+        ) != null);
         boolean hasModelAnswer = feedback != null && normalizeNullable(feedback.modelAnswer()) != null;
         boolean hasDisplayableRefinement = hasDisplayableRefinement(feedback == null ? null : feedback.refinementExpressions());
 
@@ -713,7 +713,7 @@ final class FeedbackUiComposer {
         );
     }
 
-    private FeedbackRewritePracticeDto resolveRewritePractice(
+    private FeedbackNextStepPracticeDto resolveRewritePractice(
             FeedbackUiDto llmUi,
             PromptDto prompt,
             String learnerAnswer,
@@ -724,8 +724,8 @@ final class FeedbackUiComposer {
             FeedbackPrimaryFixDto primaryFix,
             boolean optionalTone
     ) {
-        FeedbackRewritePracticeDto llmRewritePractice = sanitizeLlmRewritePractice(
-                llmUi == null ? null : llmUi.rewritePractice(),
+        FeedbackNextStepPracticeDto llmRewritePractice = sanitizeLlmNextStepPractice(
+                llmUi == null ? null : llmUi.nextStepPractice(),
                 prompt,
                 answerProfile,
                 rewriteGuideMode,
@@ -734,7 +734,7 @@ final class FeedbackUiComposer {
         if (llmRewritePractice != null) {
             return llmRewritePractice;
         }
-        return buildRewritePractice(
+        return buildNextStepPractice(
                 prompt,
                 learnerAnswer,
                 feedback,
@@ -748,9 +748,9 @@ final class FeedbackUiComposer {
 
     private List<FeedbackRewriteSuggestionDto> resolveRewriteSuggestions(
             FeedbackUiDto llmUi,
-            FeedbackRewritePracticeDto rewritePractice
+            FeedbackNextStepPracticeDto nextStepPractice
     ) {
-        if (llmUi == null || rewritePractice == null || rewritePractice.starter() == null || rewritePractice.starter().isBlank()) {
+        if (llmUi == null || nextStepPractice == null) {
             return List.of();
         }
         if (llmUi.rewriteSuggestions() == null || llmUi.rewriteSuggestions().isEmpty()) {
@@ -759,12 +759,18 @@ final class FeedbackUiComposer {
 
         List<FeedbackRewriteSuggestionDto> suggestions = new ArrayList<>();
         LinkedHashSet<String> seen = new LinkedHashSet<>();
+        String practiceHeadline = normalizeNullable(nextStepPractice.headline());
+        String practiceExample = normalizeNullable(nextStepPractice.exampleEn());
+        String practiceRevised = normalizeNullable(nextStepPractice.revisedText());
         for (FeedbackRewriteSuggestionDto suggestion : llmUi.rewriteSuggestions()) {
             if (suggestion == null) {
                 continue;
             }
             String english = normalizeNullable(suggestion.english());
-            if (english == null) {
+            if (english == null
+                    || sameMeaning(english, practiceHeadline)
+                    || sameMeaning(english, practiceExample)
+                    || sameMeaning(english, practiceRevised)) {
                 continue;
             }
             String key = normalizeNullable(english.toLowerCase(Locale.ROOT));
@@ -780,36 +786,63 @@ final class FeedbackUiComposer {
         return List.copyOf(suggestions);
     }
 
-    private FeedbackRewritePracticeDto sanitizeLlmRewritePractice(
-            FeedbackRewritePracticeDto rewritePractice,
+    private FeedbackNextStepPracticeDto sanitizeLlmNextStepPractice(
+            FeedbackNextStepPracticeDto nextStepPractice,
             PromptDto prompt,
             AnswerProfile answerProfile,
             RewriteGuideMode rewriteGuideMode,
             boolean optionalTone
     ) {
-        if (rewritePractice == null) {
+        if (nextStepPractice == null) {
             return null;
         }
-        String starter = normalizeStarter(rewritePractice.starter(), prompt, answerProfile, rewriteGuideMode);
-        if (starter == null || !starter.contains("______")) {
-            return null;
-        }
-        String title = normalizeNullable(rewritePractice.title());
+        String title = normalizeNullable(nextStepPractice.title());
         if (title == null) {
-            title = optionalTone ? "원하면 한 번 더 다듬어 보세요" : "한번 더 써보기";
+            title = optionalTone ? "\uCD94\uAC00\uD558\uBA74 \uC88B\uC744 \uC810" : "\uB2E4\uC74C\uC5D0 \uB354\uD574 \uBCFC \uC810";
         }
-        String instruction = normalizeNullable(rewritePractice.instruction());
-        if (instruction == null) {
-            instruction = optionalTone
-                    ? "원하면 빈칸에 짧은 연결 표현이나 한 가지 디테일을 넣어 조금 더 다듬어 보세요."
-                    : "빈칸에 한 가지 필요한 내용을 넣어 다시 써 보세요.";
+        String headline = normalizeNextStepHeadline(
+                firstNonBlank(
+                        nextStepPractice.headline(),
+                        nextStepPractice.revisedText(),
+                        nextStepPractice.exampleEn()
+                ),
+                prompt,
+                answerProfile,
+                rewriteGuideMode
+        );
+        String supportText = firstNonBlank(
+                normalizeNullable(nextStepPractice.supportText()),
+                normalizeNullable(nextStepPractice.guidanceKo())
+        );
+        String originalText = normalizeNullable(nextStepPractice.originalText());
+        String revisedText = normalizeNullable(nextStepPractice.revisedText());
+        if (originalText == null || revisedText == null) {
+            originalText = null;
+            revisedText = null;
         }
-        return new FeedbackRewritePracticeDto(
+        String meaningKo = normalizeNullable(nextStepPractice.meaningKo());
+        String guidanceKo = normalizeNullable(nextStepPractice.guidanceKo());
+        String exampleEn = normalizeNextStepBaseHeadline(nextStepPractice.exampleEn());
+        String exampleKo = normalizeNullable(nextStepPractice.exampleKo());
+        if (headline == null && supportText == null && revisedText == null && exampleEn == null) {
+            return null;
+        }
+        if (supportText == null) {
+            supportText = buildNextStepSupportText(prompt, answerProfile, rewriteGuideMode, optionalTone);
+        }
+        return new FeedbackNextStepPracticeDto(
+                normalizeNullable(nextStepPractice.kind()),
                 title,
-                starter,
-                instruction,
-                normalizeNullable(rewritePractice.ctaLabel()),
-                optionalTone || rewritePractice.optionalTone()
+                headline,
+                supportText,
+                originalText,
+                revisedText,
+                meaningKo,
+                guidanceKo,
+                exampleEn,
+                exampleKo,
+                normalizeNullable(nextStepPractice.ctaLabel()),
+                optionalTone || nextStepPractice.optionalTone()
         );
     }
 
@@ -1587,7 +1620,7 @@ final class FeedbackUiComposer {
         return normalized.split("\\s+").length;
     }
 
-    private FeedbackRewritePracticeDto buildRewritePractice(
+    private FeedbackNextStepPracticeDto buildNextStepPractice(
             PromptDto prompt,
             String learnerAnswer,
             FeedbackResponseDto feedback,
@@ -1601,17 +1634,37 @@ final class FeedbackUiComposer {
                 ? null
                 : answerProfile.rewrite().target();
 
-        String starter = normalizeStarter(
+        String correctedBase = firstNonBlank(
+                primaryFix == null ? null : primaryFix.revisedText(),
+                answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
+                feedback == null ? null : feedback.correctedAnswer(),
+                learnerAnswer
+        );
+        String derivedHeadline = normalizeNextStepHeadline(
                 deriveStarter(prompt, learnerAnswer, feedback, answerProfile, fixFirstMode, rewriteGuideMode, primaryFix),
                 prompt,
                 answerProfile,
                 rewriteGuideMode
         );
+        String exampleEn = derivedHeadline == null
+                ? normalizeNextStepBaseHeadline(firstNonBlank(target == null ? null : target.skeleton(), correctedBase))
+                : null;
 
-        return new FeedbackRewritePracticeDto(
-                optionalTone ? "원하면 한 번 더 다듬어 보세요" : "한번 더 써보기",
-                starter,
-                buildRewriteInstruction(prompt, answerProfile, target, starter, rewriteGuideMode, optionalTone),
+        if (derivedHeadline == null && exampleEn == null && !shouldBuildFallbackNextStepPractice(answerProfile, fixFirstMode)) {
+            return null;
+        }
+
+        return new FeedbackNextStepPracticeDto(
+                "NEXT_STEP",
+                optionalTone ? "\uCD94\uAC00\uD558\uBA74 \uC88B\uC744 \uC810" : "\uB2E4\uC74C\uC5D0 \uB354\uD574 \uBCFC \uC810",
+                derivedHeadline,
+                buildNextStepSupportText(prompt, answerProfile, rewriteGuideMode, optionalTone),
+                null,
+                null,
+                null,
+                null,
+                exampleEn,
+                null,
                 START_REWRITE_CTA_LABEL,
                 optionalTone
         );
@@ -1888,6 +1941,120 @@ final class FeedbackUiComposer {
             case TASK_RESET, FRAGMENT_SCAFFOLD -> firstNonBlank(promptBasedStarter(prompt, action), promptAwareBlankStarter(prompt, candidate, action));
             case CORRECTED_SKELETON, DETAIL_SCAFFOLD -> promptAwareBlankStarter(prompt, candidate, action);
         };
+    }
+
+    private boolean hasMeaningfulNextStepPractice(FeedbackNextStepPracticeDto nextStepPractice) {
+        if (nextStepPractice == null) {
+            return false;
+        }
+        return firstNonBlank(
+                normalizeNullable(nextStepPractice.title()),
+                normalizeNullable(nextStepPractice.headline()),
+                normalizeNullable(nextStepPractice.supportText()),
+                normalizeNullable(nextStepPractice.originalText()),
+                normalizeNullable(nextStepPractice.revisedText()),
+                normalizeNullable(nextStepPractice.exampleEn())
+        ) != null;
+    }
+
+    private boolean shouldBuildFallbackNextStepPractice(AnswerProfile answerProfile, FixFirstMode fixFirstMode) {
+        if (answerProfile == null || fixFirstMode == FixFirstMode.TASK_RESET_CARD) {
+            return false;
+        }
+        AnswerBand band = answerBand(answerProfile);
+        if (band == AnswerBand.OFF_TOPIC || band == AnswerBand.TOO_SHORT_FRAGMENT || band == AnswerBand.GRAMMAR_BLOCKING) {
+            return false;
+        }
+        String issueCode = primaryIssueCode(answerProfile);
+        return switch (issueCode) {
+            case "ADD_REASON", "ADD_EXAMPLE", "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC", "IMPROVE_NATURALNESS" -> true;
+            default -> band == AnswerBand.NATURAL_BUT_BASIC || band == AnswerBand.SHORT_BUT_VALID;
+        };
+    }
+
+    private String normalizeNextStepHeadline(
+            String headline,
+            PromptDto prompt,
+            AnswerProfile answerProfile,
+            RewriteGuideMode rewriteGuideMode
+    ) {
+        String candidate = normalizeNextStepBaseHeadline(headline);
+        if (candidate != null) {
+            return candidate;
+        }
+        if (rewriteGuideMode == RewriteGuideMode.TASK_RESET) {
+            return null;
+        }
+        return normalizeNextStepBaseHeadline(promptBasedStarter(prompt, primaryIssueCode(answerProfile)));
+    }
+
+    private String normalizeNextStepBaseHeadline(String value) {
+        String candidate = normalizeNullable(value);
+        if (candidate == null) {
+            return null;
+        }
+        candidate = BRACKET_PLACEHOLDER_PATTERN.matcher(candidate).replaceAll(" ");
+        candidate = candidate
+                .replace("______", " ")
+                .replace("...", " ");
+        candidate = MULTI_SPACE_PATTERN.matcher(candidate).replaceAll(" ").trim();
+        candidate = candidate.replaceAll("\\s+([,.!?;:])", "$1");
+        if (!isUsableNextStepHeadline(candidate)) {
+            return null;
+        }
+        return ensureSentence(candidate);
+    }
+
+    private boolean isUsableNextStepHeadline(String candidate) {
+        String normalized = normalizeNullable(candidate);
+        if (normalized == null || normalized.contains("______") || normalized.contains("[") || normalized.contains("]")) {
+            return false;
+        }
+        String trimmed = trimSentenceEnding(normalized).toLowerCase(Locale.ROOT);
+        if (countTokens(trimmed) < 3) {
+            return false;
+        }
+        return !trimmed.endsWith("because")
+                && !trimmed.endsWith("and")
+                && !trimmed.endsWith("or")
+                && !trimmed.endsWith("to")
+                && !trimmed.endsWith("so")
+                && !trimmed.endsWith("then")
+                && !trimmed.endsWith("usually")
+                && !trimmed.endsWith("also")
+                && !trimmed.endsWith("my")
+                && !trimmed.endsWith("the")
+                && !trimmed.endsWith("a");
+    }
+
+    private String buildNextStepSupportText(
+            PromptDto prompt,
+            AnswerProfile answerProfile,
+            RewriteGuideMode rewriteGuideMode,
+            boolean optionalTone
+    ) {
+        String action = primaryIssueCode(answerProfile);
+        if (rewriteGuideMode == RewriteGuideMode.OPTIONAL_POLISH || optionalTone) {
+            return "\uC9C0\uAE08 \uB2F5\uB3C4 \uCDA9\uBD84\uD788 \uC88B\uC544\uC694. \uC6D0\uD558\uBA74 \uD55C \uAC00\uC9C0 \uB514\uD14C\uC77C\uC774\uB098 \uD45C\uD604\uC744 \uB354\uD574 \uB354 \uD48D\uC131\uD558\uAC8C \uB9CC\uB4E4 \uC218 \uC788\uC5B4\uC694.";
+        }
+        if (rewriteGuideMode == RewriteGuideMode.TASK_RESET) {
+            return "\uC9C0\uAE08\uC740 \uBA3C\uC800 \uC9C8\uBB38\uC5D0 \uB9DE\uB294 \uD575\uC2EC \uB2F5\uC744 \uD55C \uBB38\uC7A5\uC73C\uB85C \uB610\uB837\uD558\uAC8C \uB9D0\uD574 \uBCF4\uC138\uC694.";
+        }
+        if ("ADD_REASON".equals(action)) {
+            return "\uC9E7\uC740 \uC774\uC720\uB97C \uD55C \uAC00\uC9C0 \uB354 \uBCF4\uD0DC\uBA74 \uB2F5\uC774 \uB354 \uC124\uB4DD\uB825 \uC788\uAC8C \uB4E4\uB824\uC694.";
+        }
+        if ("ADD_EXAMPLE".equals(action)) {
+            return "\uC9E7\uC740 \uC608\uC2DC\uB97C \uB354\uD558\uBA74 \uB2F5\uC774 \uB354 \uC0DD\uC0DD\uD558\uACE0 \uAD6C\uCCB4\uC801\uC73C\uB85C \uB4E4\uB824\uC694.";
+        }
+        if ("ADD_DETAIL".equals(action) || "MAKE_IT_MORE_SPECIFIC".equals(action)) {
+            return isRoutinePrompt(prompt)
+                    ? "\uB8E8\uD2F4\uC758 \uB2E4\uC74C \uD65C\uB3D9\uC774\uB098 \uC2DC\uAC04 \uC815\uBCF4\uB97C \uD55C \uAC00\uC9C0 \uB354 \uB367\uBD99\uC774\uBA74 \uB2F5\uC774 \uB354 \uC790\uC5F0\uC2A4\uB7EC\uC6CC\uC838\uC694."
+                    : "\uC0C1\uD669\uC774\uB098 \uB514\uD14C\uC77C\uC744 \uD55C \uAC00\uC9C0 \uB354 \uB123\uC73C\uBA74 \uB2F5\uC774 \uB354 \uB610\uB837\uD558\uACE0 \uD48D\uC131\uD574\uC838\uC694.";
+        }
+        if ("IMPROVE_NATURALNESS".equals(action)) {
+            return "\uB73B\uC740 \uB9DE\uC73C\uB2C8, \uD45C\uD604 \uD558\uB098\uB9CC \uB354 \uC790\uC5F0\uC2A4\uB7FD\uAC8C \uB2E4\uB4EC\uC5B4 \uBCF4\uBA74 \uD6E8\uC52C \uB9E4\uB054\uD574\uC838\uC694.";
+        }
+        return "\uC9C0\uAE08 \uB2F5\uC744 \uBC14\uD0D5\uC73C\uB85C \uC9E7\uC740 \uC815\uBCF4 \uD558\uB098\uB97C \uB354\uD574 \uB2F5\uC744 \uC870\uAE08 \uB354 \uD48D\uC131\uD558\uAC8C \uB9CC\uB4E4\uC5B4 \uBCF4\uC138\uC694.";
     }
 
     private String buildRewriteInstruction(

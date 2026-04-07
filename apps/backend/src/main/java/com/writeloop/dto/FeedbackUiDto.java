@@ -8,7 +8,7 @@ public record FeedbackUiDto(
         FeedbackMicroTipDto microTip,
         java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
         java.util.List<FeedbackSecondaryLearningPointDto> fixPoints,
-        FeedbackRewritePracticeDto rewritePractice,
+        FeedbackNextStepPracticeDto nextStepPractice,
         java.util.List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
         FeedbackScreenPolicyDto screenPolicy,
         FeedbackLoopStatusDto loopStatus
@@ -22,9 +22,9 @@ public record FeedbackUiDto(
     public FeedbackUiDto(
             FeedbackFocusCardDto focusCard,
             FeedbackPrimaryFixDto primaryFix,
-            FeedbackRewritePracticeDto rewritePractice
+            FeedbackNextStepPracticeDto nextStepPractice
     ) {
-        this(focusCard, primaryFix, null, java.util.List.of(), java.util.List.of(), rewritePractice, java.util.List.of(), null, null);
+        this(focusCard, primaryFix, null, java.util.List.of(), java.util.List.of(), nextStepPractice, java.util.List.of(), null, null);
     }
 
     public FeedbackUiDto(
@@ -32,7 +32,7 @@ public record FeedbackUiDto(
             FeedbackPrimaryFixDto primaryFix,
             FeedbackMicroTipDto microTip,
             java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            FeedbackRewritePracticeDto rewritePractice,
+            FeedbackNextStepPracticeDto nextStepPractice,
             java.util.List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
             FeedbackScreenPolicyDto screenPolicy,
             FeedbackLoopStatusDto loopStatus
@@ -43,7 +43,7 @@ public record FeedbackUiDto(
                 microTip,
                 secondaryLearningPoints,
                 java.util.List.of(),
-                rewritePractice,
+                nextStepPractice,
                 rewriteSuggestions,
                 screenPolicy,
                 loopStatus
@@ -55,9 +55,9 @@ public record FeedbackUiDto(
             FeedbackPrimaryFixDto primaryFix,
             FeedbackMicroTipDto microTip,
             java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            FeedbackRewritePracticeDto rewritePractice
+            FeedbackNextStepPracticeDto nextStepPractice
     ) {
-        this(focusCard, primaryFix, microTip, secondaryLearningPoints, java.util.List.of(), rewritePractice, java.util.List.of(), null, null);
+        this(focusCard, primaryFix, microTip, secondaryLearningPoints, java.util.List.of(), nextStepPractice, java.util.List.of(), null, null);
     }
 
     public FeedbackUiDto(
@@ -65,10 +65,10 @@ public record FeedbackUiDto(
             FeedbackPrimaryFixDto primaryFix,
             FeedbackMicroTipDto microTip,
             java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            FeedbackRewritePracticeDto rewritePractice,
+            FeedbackNextStepPracticeDto nextStepPractice,
             FeedbackScreenPolicyDto screenPolicy,
             FeedbackLoopStatusDto loopStatus
     ) {
-        this(focusCard, primaryFix, microTip, secondaryLearningPoints, java.util.List.of(), rewritePractice, java.util.List.of(), screenPolicy, loopStatus);
+        this(focusCard, primaryFix, microTip, secondaryLearningPoints, java.util.List.of(), nextStepPractice, java.util.List.of(), screenPolicy, loopStatus);
     }
 }

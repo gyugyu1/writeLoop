@@ -3691,6 +3691,37 @@
   line-height: 1.65;
 }
 
+.additionalIdeasSection {
+  display: grid;
+  gap: 14px;
+}
+
+.additionalIdeasStack {
+  display: grid;
+  gap: 16px;
+}
+
+.feedbackSubsection {
+  display: grid;
+  gap: 10px;
+}
+
+.feedbackSubsectionLabel {
+  color: var(--primary);
+  font-size: 0.9rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.feedbackSubsectionCard {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 10px 24px -18px rgba(127, 82, 0, 0.18);
+}
+
 .rewriteSuggestionBlock {
   display: grid;
   gap: 10px;
@@ -3837,6 +3868,14 @@
   margin-top: 8px;
   color: var(--text-sub);
   line-height: 1.65;
+}
+
+.mobileFeedbackPracticeLabel {
+  margin: 0 0 4px;
+  color: var(--primary);
+  font-size: 0.88rem;
+  font-weight: 800;
+  line-height: 1.4;
 }
 
 .errorText {

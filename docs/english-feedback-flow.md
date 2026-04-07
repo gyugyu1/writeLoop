@@ -1,4 +1,4 @@
-# English Feedback Flow
+﻿# English Feedback Flow
 
 This document describes the current feedback-generation flow in `WriteLoop` after the move to the `fixPoints[]`-first UI contract.
 
@@ -8,7 +8,7 @@ The live feedback screen is built around a small set of UI-ready outputs:
 
 - `strengths`
 - `ui.fixPoints`
-- `ui.rewritePractice`
+- `ui.nextStepPractice`
 - `ui.rewriteSuggestions`
 - `modelAnswer`
 - `usedExpressions`
@@ -65,7 +65,7 @@ The structured Gemini generation step is now centered on an internal generation 
 - `secondaryLearningPoints`
 - `usedExpressions`
 - `refinementExpressions`
-- `rewritePractice`
+- `nextStepPractice`
 - `rewriteSuggestions`
 - `modelAnswer`
 - `modelAnswerKo`
@@ -74,7 +74,7 @@ The public learner-facing contract is smaller:
 
 - `strengths`
 - `ui.fixPoints`
-- `ui.rewritePractice`
+- `ui.nextStepPractice`
 - `ui.rewriteSuggestions`
 - `modelAnswer`
 - `usedExpressions`
@@ -84,7 +84,7 @@ The public learner-facing contract is smaller:
 These are intended to be close to directly renderable in the public feedback UI:
 
 - `fixPoints`
-- `rewritePractice`
+- `nextStepPractice`
 - `rewriteSuggestions`
 - `modelAnswer`
 
@@ -160,15 +160,15 @@ Current parser behavior:
 - parse `fixPoints`
 - derive compatibility `primaryFix` from `fixPoints[0]` when needed internally
 - derive compatibility `secondaryLearningPoints` from later fix points when needed internally
-- parse `rewritePractice`, `rewriteSuggestions`, `modelAnswer`, and raw candidate pools
+- parse `nextStepPractice`, `rewriteSuggestions`, `modelAnswer`, and raw candidate pools
 
 `GeminiFeedbackClient.validateGeneratedSections(...)`
 
 Current validation emphasis:
 
 - keep `fixPoints` specific and non-generic
-- keep `rewritePractice` aligned with `fixPoints[0]`
-- keep `rewriteSuggestions` fitting the actual blank
+- keep `nextStepPractice` aligned with `fixPoints[0]`
+- keep `rewriteSuggestions` aligned with the same optional next step
 - keep `modelAnswer` aligned with the same corrected direction
 - keep raw candidate pools deduped and useful
 
@@ -179,7 +179,7 @@ Current validation emphasis:
 The final feedback screen is assembled into:
 
 - `ui.fixPoints`
-- `ui.rewritePractice`
+- `ui.nextStepPractice`
 - `ui.rewriteSuggestions`
 - `ui.secondaryLearningPoints` (mainly expression-style support cards)
 - `ui.screenPolicy`
@@ -195,7 +195,7 @@ The modern feedback screen is centered on:
 
 1. keep strengths
 2. fix points
-3. rewrite practice
+3. next-step practice
 4. rewrite suggestions
 5. model answer
 6. expression / reusable language support
@@ -207,8 +207,8 @@ The frontend type `FeedbackUi` intentionally does not include `focusCard` or `pr
 If you are changing the feedback UX today:
 
 - treat `fixPoints[]` as the source of truth for correction ordering
-- treat `rewritePractice` as the learner-facing scaffold
-- treat `rewriteSuggestions` as blank-fit helpers only
+- treat `nextStepPractice` as the learner-facing optional add-on card
+- treat `rewriteSuggestions` as short helper ideas for that same next step
 - treat `modelAnswer` as a one-step-up reference answer
 
 If you encounter these fields:
@@ -219,3 +219,4 @@ If you encounter these fields:
 - `ui.primaryFix`
 
 assume they are legacy / compatibility-oriented unless your target surface explicitly still depends on them.
+

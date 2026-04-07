@@ -1,4 +1,4 @@
-export type PromptDifficulty = "A" | "B" | "C";
+﻿export type PromptDifficulty = "A" | "B" | "C";
 export type DailyDifficulty = "A" | "B" | "C";
 export type HomeFlowStep = "pick" | "answer" | "feedback" | "rewrite" | "complete";
 export type WritingDraftType = "ANSWER" | "REWRITE";
@@ -189,12 +189,19 @@ export interface FeedbackSecondaryLearningPoint {
 
 export type FeedbackFixPoint = FeedbackSecondaryLearningPoint;
 
-export interface FeedbackRewritePractice {
-  title: string;
-  starter: string;
-  instruction: string;
-  ctaLabel: string;
-  optionalTone: boolean;
+export interface FeedbackNextStepPractice {
+  kind?: FeedbackSecondaryLearningPointKind | null;
+  title?: string | null;
+  headline?: string | null;
+  supportText?: string | null;
+  originalText?: string | null;
+  revisedText?: string | null;
+  meaningKo?: string | null;
+  guidanceKo?: string | null;
+  exampleEn?: string | null;
+  exampleKo?: string | null;
+  ctaLabel?: string | null;
+  optionalTone?: boolean | null;
 }
 
 export interface FeedbackRewriteSuggestion {
@@ -248,7 +255,7 @@ export interface FeedbackUi {
   microTip?: FeedbackMicroTip | null;
   secondaryLearningPoints?: FeedbackSecondaryLearningPoint[] | null;
   fixPoints?: FeedbackFixPoint[] | null;
-  rewritePractice: FeedbackRewritePractice;
+  nextStepPractice?: FeedbackNextStepPractice | null;
   rewriteSuggestions?: FeedbackRewriteSuggestion[] | null;
   screenPolicy?: FeedbackScreenPolicy | null;
   loopStatus?: FeedbackLoopStatus | null;
@@ -502,3 +509,4 @@ export interface HistorySession {
   updatedAt: string;
   attempts: HistoryAttempt[];
 }
+

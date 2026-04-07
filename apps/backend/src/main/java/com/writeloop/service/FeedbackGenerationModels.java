@@ -3,8 +3,8 @@ package com.writeloop.service;
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackFocusCardDto;
+import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackPrimaryFixDto;
-import com.writeloop.dto.FeedbackRewritePracticeDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
@@ -123,8 +123,9 @@ record GeneratedSections(
         String modelAnswer,
         String modelAnswerKo,
         List<CoachExpressionUsageDto> usedExpressions,
+        List<FeedbackSecondaryLearningPointDto> fixPoints,
         List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-        FeedbackRewritePracticeDto rewritePractice,
+        FeedbackNextStepPracticeDto nextStepPractice,
         List<FeedbackRewriteSuggestionDto> rewriteSuggestions
 ) {
     GeneratedSections(
@@ -151,6 +152,7 @@ record GeneratedSections(
                 modelAnswer,
                 modelAnswerKo,
                 usedExpressions,
+                List.of(),
                 List.of(),
                 null,
                 List.of()
@@ -183,6 +185,7 @@ record GeneratedSections(
                 modelAnswerKo,
                 usedExpressions,
                 List.of(),
+                List.of(),
                 null,
                 List.of()
         );
@@ -211,6 +214,7 @@ record GeneratedSections(
                 modelAnswer,
                 modelAnswerKo,
                 usedExpressions,
+                List.of(),
                 List.of(),
                 null,
                 List.of()
@@ -239,13 +243,21 @@ record GeneratedSections(
         modelAnswer = blankToNull(modelAnswer);
         modelAnswerKo = blankToNull(modelAnswerKo);
         usedExpressions = usedExpressions == null ? List.of() : List.copyOf(usedExpressions);
+        fixPoints = fixPoints == null ? List.of() : List.copyOf(fixPoints);
         secondaryLearningPoints = secondaryLearningPoints == null ? List.of() : List.copyOf(secondaryLearningPoints);
-        rewritePractice = rewritePractice == null ? null : new FeedbackRewritePracticeDto(
-                rewritePractice.title(),
-                rewritePractice.starter(),
-                rewritePractice.instruction(),
-                rewritePractice.ctaLabel(),
-                rewritePractice.optionalTone()
+        nextStepPractice = nextStepPractice == null ? null : new FeedbackNextStepPracticeDto(
+                nextStepPractice.kind(),
+                nextStepPractice.title(),
+                nextStepPractice.headline(),
+                nextStepPractice.supportText(),
+                nextStepPractice.originalText(),
+                nextStepPractice.revisedText(),
+                nextStepPractice.meaningKo(),
+                nextStepPractice.guidanceKo(),
+                nextStepPractice.exampleEn(),
+                nextStepPractice.exampleKo(),
+                nextStepPractice.ctaLabel(),
+                nextStepPractice.optionalTone()
         );
         rewriteSuggestions = rewriteSuggestions == null ? List.of() : List.copyOf(rewriteSuggestions);
     }
@@ -262,8 +274,9 @@ record GeneratedSections(
             String modelAnswer,
             String modelAnswerKo,
             List<CoachExpressionUsageDto> usedExpressions,
+            List<FeedbackSecondaryLearningPointDto> fixPoints,
             List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            FeedbackRewritePracticeDto rewritePractice
+            FeedbackNextStepPracticeDto nextStepPractice
     ) {
         this(
                 summary,
@@ -277,8 +290,43 @@ record GeneratedSections(
                 modelAnswer,
                 modelAnswerKo,
                 usedExpressions,
+                fixPoints,
                 secondaryLearningPoints,
-                rewritePractice,
+                nextStepPractice,
+                List.of()
+        );
+    }
+
+    GeneratedSections(
+            String summary,
+            List<String> strengths,
+            FeedbackFocusCardDto focusCard,
+            FeedbackPrimaryFixDto primaryFix,
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            List<CorrectionDto> corrections,
+            List<RefinementCard> refinementExpressions,
+            String rewriteGuide,
+            String modelAnswer,
+            String modelAnswerKo,
+            List<CoachExpressionUsageDto> usedExpressions,
+            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
+            FeedbackNextStepPracticeDto nextStepPractice
+    ) {
+        this(
+                summary,
+                strengths,
+                focusCard,
+                primaryFix,
+                grammarFeedback,
+                corrections,
+                refinementExpressions,
+                rewriteGuide,
+                modelAnswer,
+                modelAnswerKo,
+                usedExpressions,
+                List.of(),
+                secondaryLearningPoints,
+                nextStepPractice,
                 List.of()
         );
     }
@@ -299,8 +347,9 @@ record GeneratedSections(
                 override.modelAnswer != null ? override.modelAnswer : modelAnswer,
                 override.modelAnswerKo != null ? override.modelAnswerKo : modelAnswerKo,
                 !override.usedExpressions.isEmpty() ? override.usedExpressions : usedExpressions,
+                !override.fixPoints.isEmpty() ? override.fixPoints : fixPoints,
                 !override.secondaryLearningPoints.isEmpty() ? override.secondaryLearningPoints : secondaryLearningPoints,
-                override.rewritePractice != null ? override.rewritePractice : rewritePractice,
+                override.nextStepPractice != null ? override.nextStepPractice : nextStepPractice,
                 !override.rewriteSuggestions.isEmpty() ? override.rewriteSuggestions : rewriteSuggestions
         );
     }
@@ -364,7 +413,7 @@ record ValidationResult(
 ) {
     ValidationResult {
         sanitizedSections = sanitizedSections == null
-                ? new GeneratedSections(null, List.of(), null, null, List.of(), List.of(), List.of(), null, null, null, List.of(), List.of(), null)
+                ? new GeneratedSections(null, List.of(), null, null, List.of(), List.of(), List.of(), null, null, null, List.of(), List.of(), List.of(), null)
                 : sanitizedSections;
         failures = failures == null ? List.of() : List.copyOf(failures);
     }

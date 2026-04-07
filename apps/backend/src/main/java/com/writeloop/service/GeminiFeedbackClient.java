@@ -4,7 +4,7 @@ import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackPrimaryFixDto;
 import com.writeloop.dto.FeedbackResponseDto;
-import com.writeloop.dto.FeedbackRewritePracticeDto;
+import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackUiDto;
@@ -102,7 +102,7 @@ public class GeminiFeedbackClient {
         return new ApiException(
                 HttpStatus.BAD_GATEWAY,
                 "FEEDBACK_GENERATION_UNAVAILABLE",
-                "피드백 생성 불가"
+                "??곕굡獄???밴쉐 ?븍뜃?"
         );
     }
 
@@ -458,11 +458,19 @@ public class GeminiFeedbackClient {
                 sectionPolicy.maxRefinementCount()
         )
                 : List.of();
+        List<FeedbackSecondaryLearningPointDto> rawFixPoints = resolveGeneratedFixPoints(generatedSections);
+        List<FeedbackSecondaryLearningPointDto> normalizedFixPointCandidates = sanitizeSecondaryLearningPoints(rawFixPoints, null);
         FeedbackPrimaryFixDto primaryFix = sanitizePrimaryFix(
-                generatedSections.primaryFix(),
+                derivePrimaryFixFromFixPoints(normalizedFixPointCandidates),
                 diagnosis,
                 answerProfile,
-                generatedSections.rewritePractice() == null ? null : generatedSections.rewritePractice().starter()
+                generatedSections.nextStepPractice() == null
+                        ? null
+                        : firstNonBlank(
+                        generatedSections.nextStepPractice().headline(),
+                        generatedSections.nextStepPractice().revisedText(),
+                        generatedSections.nextStepPractice().exampleEn()
+                )
         );
         String modelAnswerAnchor = anchorTextForModelAnswer(diagnosis, answerProfile);
         FeedbackSectionValidators.ModelAnswerContent guardedModelAnswer = modelAnswerRequested
@@ -500,24 +508,21 @@ public class GeminiFeedbackClient {
                 protectedModelAnswerKo = null;
             }
         }
-        FeedbackRewritePracticeDto rewritePractice = generatedSections.rewritePractice() != null
-                ? sanitizeRewritePractice(generatedSections.rewritePractice(), diagnosis, answerProfile)
+        FeedbackNextStepPracticeDto nextStepPractice = generatedSections.nextStepPractice() != null
+                ? sanitizeRewritePractice(generatedSections.nextStepPractice(), diagnosis, answerProfile)
                 : null;
-        if (rewritePractice == null) {
-            failures.add(new ValidationFailure(
-                    SectionKey.REWRITE_GUIDE,
-                    ValidationFailureCode.UNALIGNED_REWRITE_TARGET,
-                    "Rewrite practice did not survive validation."
-            ));
-        }
         List<FeedbackRewriteSuggestionDto> rewriteSuggestions = sanitizeRewriteSuggestions(
                 generatedSections.rewriteSuggestions(),
-                rewritePractice
+                nextStepPractice
         );
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = sanitizeSecondaryLearningPoints(
-                generatedSections.secondaryLearningPoints(),
+        List<FeedbackSecondaryLearningPointDto> laterFixPoints = sanitizeSecondaryLearningPoints(
+                deriveSecondaryLearningPointsFromFixPoints(normalizedFixPointCandidates),
                 primaryFix
         );
+        List<FeedbackSecondaryLearningPointDto> fixPoints = toFixPoints(primaryFix, laterFixPoints);
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = generatedSections.secondaryLearningPoints().isEmpty()
+                ? laterFixPoints
+                : sanitizeSecondaryLearningPoints(generatedSections.secondaryLearningPoints(), primaryFix);
         GeneratedSections sanitized = new GeneratedSections(
                 null,
                 strengths,
@@ -530,8 +535,9 @@ public class GeminiFeedbackClient {
                 protectedModelAnswer,
                 protectedModelAnswerKo,
                 usedExpressions,
+                fixPoints,
                 secondaryLearningPoints,
-                rewritePractice,
+                nextStepPractice,
                 rewriteSuggestions
         );
 
@@ -585,21 +591,24 @@ public class GeminiFeedbackClient {
                 generatedSections.corrections(),
                 grammarFeedback
         );
-        List<FeedbackSecondaryLearningPointDto> fixPoints = toFixPoints(
-                generatedSections.primaryFix(),
-                generatedSections.secondaryLearningPoints()
-        );
-        FeedbackUiDto generatedUi = (!generatedSections.secondaryLearningPoints().isEmpty()
+        List<FeedbackSecondaryLearningPointDto> fixPoints = resolveGeneratedFixPoints(generatedSections);
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = !generatedSections.secondaryLearningPoints().isEmpty()
+                ? generatedSections.secondaryLearningPoints()
+                : deriveSecondaryLearningPointsFromFixPoints(fixPoints);
+        FeedbackPrimaryFixDto primaryFix = generatedSections.primaryFix() != null
+                ? generatedSections.primaryFix()
+                : derivePrimaryFixFromFixPoints(fixPoints);
+        FeedbackUiDto generatedUi = (!secondaryLearningPoints.isEmpty()
                 || !fixPoints.isEmpty()
-                || generatedSections.rewritePractice() != null
+                || generatedSections.nextStepPractice() != null
                 || !generatedSections.rewriteSuggestions().isEmpty())
                 ? new FeedbackUiDto(
                 null,
+                primaryFix,
                 null,
-                null,
-                generatedSections.secondaryLearningPoints(),
+                secondaryLearningPoints,
                 fixPoints,
-                generatedSections.rewritePractice(),
+                generatedSections.nextStepPractice(),
                 generatedSections.rewriteSuggestions(),
                 null,
                 null
@@ -645,6 +654,16 @@ public class GeminiFeedbackClient {
         }
 
         return List.copyOf(fixPoints);
+    }
+
+    private List<FeedbackSecondaryLearningPointDto> resolveGeneratedFixPoints(GeneratedSections generatedSections) {
+        if (generatedSections == null) {
+            return List.of();
+        }
+        if (generatedSections.fixPoints() != null && !generatedSections.fixPoints().isEmpty()) {
+            return List.copyOf(generatedSections.fixPoints());
+        }
+        return toFixPoints(generatedSections.primaryFix(), generatedSections.secondaryLearningPoints());
     }
 
     private FeedbackSecondaryLearningPointDto toFixPoint(FeedbackPrimaryFixDto primaryFix) {
@@ -794,12 +813,15 @@ public class GeminiFeedbackClient {
                 generatedSections.modelAnswer(),
                 generatedSections.modelAnswerKo(),
                 generatedSections.usedExpressions(),
+                !resolveGeneratedFixPoints(generatedSections).isEmpty()
+                        ? resolveGeneratedFixPoints(generatedSections)
+                        : resolveGeneratedFixPoints(fallbackSections),
                 !generatedSections.secondaryLearningPoints().isEmpty()
                         ? generatedSections.secondaryLearningPoints()
                         : fallbackSections.secondaryLearningPoints(),
-                generatedSections.rewritePractice() != null
-                        ? generatedSections.rewritePractice()
-                        : fallbackSections.rewritePractice(),
+                generatedSections.nextStepPractice() != null
+                        ? generatedSections.nextStepPractice()
+                        : fallbackSections.nextStepPractice(),
                 !generatedSections.rewriteSuggestions().isEmpty()
                         ? generatedSections.rewriteSuggestions()
                         : fallbackSections.rewriteSuggestions()
@@ -829,24 +851,24 @@ public class GeminiFeedbackClient {
             AnswerProfile answerProfile
     ) {
         if (diagnosis != null && diagnosis.finishable()) {
-            return List.of("질문에 맞게 답의 흐름을 자연스럽게 이어 갔어요.");
+            return List.of("筌욌뜄揆??筌띿쉳苡????벥 ?癒?カ???癒?염??살쓦野???곷선 揶쏅뗄堉??");
         }
         if (answerProfile != null && answerProfile.content() != null && answerProfile.content().signals() != null) {
             ContentSignals signals = answerProfile.content().signals();
             if (signals.hasMainAnswer() && signals.hasReason()) {
-                return List.of("답의 핵심과 이유를 함께 제시한 점이 좋아요.");
+                return List.of("???벥 ???뼎????곸?????ｍ뜞 ??뽯뻻???癒?뵠 ?ル뿭釉??");
             }
             if (signals.hasMainAnswer() && signals.hasActivity()) {
-                return List.of("실제로 하는 행동을 넣어 답이 더 살아 있어요.");
+                return List.of("??쇱젫嚥???롫뮉 ??곕짗???節뚮선 ???뵠 ????곷툡 ??됰선??");
             }
             if (signals.hasMainAnswer()) {
-                return List.of("질문에 맞는 핵심 답을 분명하게 말했어요.");
+                return List.of("筌욌뜄揆??筌띿쉶?????뼎 ???뱽 ?브쑬梨??띿쓺 筌띾?六??곸뒄.");
             }
         }
         if (diagnosis != null && diagnosis.answerBand() == AnswerBand.OFF_TOPIC) {
-            return List.of("질문에 맞추려는 방향은 보여요.");
+            return List.of("筌욌뜄揆??筌띿쉸???삳뮉 獄쎻뫚堉?? 癰귣똻肉??");
         }
-        return List.of("질문에 맞는 답을 쓰려는 방향이 보여요.");
+        return List.of("筌욌뜄揆??筌띿쉶?????뱽 ?怨뺤젻??獄쎻뫚堉??癰귣똻肉??");
     }
 
     private List<String> resolveFallbackStrengths(
@@ -854,24 +876,24 @@ public class GeminiFeedbackClient {
             AnswerProfile answerProfile
     ) {
         if (diagnosis != null && diagnosis.finishable()) {
-            return List.of("질문에 맞게 전체 흐름을 자연스럽게 이어 갔어요.");
+            return List.of("筌욌뜄揆??筌띿쉳苡??袁⑷퍥 ?癒?カ???癒?염??살쓦野???곷선 揶쏅뗄堉??");
         }
         if (answerProfile != null && answerProfile.content() != null && answerProfile.content().signals() != null) {
             ContentSignals signals = answerProfile.content().signals();
             if (signals.hasMainAnswer() && signals.hasReason()) {
-                return List.of("질문에 맞는 답과 이유를 함께 말한 점이 좋아요.");
+                return List.of("筌욌뜄揆??筌띿쉶?????궢 ??곸?????ｍ뜞 筌띾?釉??癒?뵠 ?ル뿭釉??");
             }
             if (signals.hasMainAnswer() && signals.hasActivity()) {
-                return List.of("문제와 해결 방법을 함께 제시한 점이 좋아요.");
+                return List.of("?얜챷??? ??욧퍙 獄쎻뫖苡????ｍ뜞 ??뽯뻻???癒?뵠 ?ル뿭釉??");
             }
             if (signals.hasMainAnswer()) {
-                return List.of("질문에 맞는 핵심 답을 분명하게 말한 점이 좋아요.");
+                return List.of("筌욌뜄揆??筌띿쉶?????뼎 ???뱽 ?브쑬梨??띿쓺 筌띾?釉??癒?뵠 ?ル뿭釉??");
             }
         }
         if (diagnosis != null && diagnosis.answerBand() == AnswerBand.OFF_TOPIC) {
-            return List.of("답해 보려는 시도는 보여요.");
+            return List.of("???퉸 癰귣??????뺣즲??癰귣똻肉??");
         }
-        return List.of("질문에 답하려는 방향은 잘 잡혀 있어요.");
+        return List.of("筌욌뜄揆?????릭??삳뮉 獄쎻뫚堉?? ????? ??됰선??");
     }
 
     private FeedbackDiagnosisResult buildDeterministicDiagnosis(
@@ -1041,13 +1063,13 @@ public class GeminiFeedbackClient {
     private String deterministicReasonForGrammarIssue(String code) {
         String safeCode = code == null ? "" : code.trim().toUpperCase(Locale.ROOT);
         return switch (safeCode) {
-            case "VERB_PATTERN" -> "동사 형태를 더 자연스럽게 맞춰 주세요.";
-            case "PREPOSITION" -> "전치사와 뒤 형태를 자연스럽게 이어 주세요.";
-            case "ARTICLE" -> "관사나 수식어를 자연스럽게 맞춰 주세요.";
-            case "AGREEMENT" -> "주어와 표현 형태를 자연스럽게 맞춰 주세요.";
-            case "TENSE_ALIGNMENT" -> "시제를 문맥에 맞게 자연스럽게 맞춰 주세요.";
-            case "POINT_OF_VIEW_ALIGNMENT" -> "주어와 시점을 문맥에 맞게 맞춰 주세요.";
-            default -> "의미 흐름을 해치지 않도록 이 부분만 자연스럽게 고쳐 주세요.";
+            case "VERB_PATTERN" -> "??덇텢 ?類κ묶?????癒?염??살쓦野?筌띿쉸??雅뚯눘苑??";
+            case "PREPOSITION" -> "?袁⑺뒄??? ???類κ묶???癒?염??살쓦野???곷선 雅뚯눘苑??";
+            case "ARTICLE" -> "?온??援???뤿뻼??? ?癒?염??살쓦野?筌띿쉸??雅뚯눘苑??";
+            case "AGREEMENT" -> "雅뚯눘堉?? ??쀬겱 ?類κ묶???癒?염??살쓦野?筌띿쉸??雅뚯눘苑??";
+            case "TENSE_ALIGNMENT" -> "??뽰젫???얜챶???筌띿쉳苡??癒?염??살쓦野?筌띿쉸??雅뚯눘苑??";
+            case "POINT_OF_VIEW_ALIGNMENT" -> "雅뚯눘堉?? ??뽰젎???얜챶???筌띿쉳苡?筌띿쉸??雅뚯눘苑??";
+            default -> "??? ?癒?カ????곹뒄筌왖 ??낅즲嚥????봔?브쑬彛??癒?염??살쓦野??⑥쥙??雅뚯눘苑??";
         };
     }
 
@@ -1299,17 +1321,37 @@ public class GeminiFeedbackClient {
                                         "required", List.of("expression", "guidanceKo", "exampleEn", "exampleKo", "meaningKo")
                                 )
                         )),
-                        Map.entry("rewritePractice", Map.of(
+                        Map.entry("nextStepPractice", Map.of(
                                 "type", List.of("object", "null"),
                                 "additionalProperties", false,
-                                "properties", Map.of(
-                                        "title", Map.of("type", List.of("string", "null")),
-                                        "starter", Map.of("type", List.of("string", "null")),
-                                        "instruction", Map.of("type", List.of("string", "null")),
-                                        "ctaLabel", Map.of("type", List.of("string", "null")),
-                                        "optionalTone", Map.of("type", List.of("boolean", "null"))
+                                "properties", Map.ofEntries(
+                                        Map.entry("kind", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("title", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("headline", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("supportText", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("originalText", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("revisedText", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("meaningKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("guidanceKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("exampleEn", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("exampleKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("ctaLabel", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("optionalTone", Map.of("type", List.of("boolean", "null")))
                                 ),
-                                "required", List.of("title", "starter", "instruction", "ctaLabel", "optionalTone")
+                                "required", List.of(
+                                        "kind",
+                                        "title",
+                                        "headline",
+                                        "supportText",
+                                        "originalText",
+                                        "revisedText",
+                                        "meaningKo",
+                                        "guidanceKo",
+                                        "exampleEn",
+                                        "exampleKo",
+                                        "ctaLabel",
+                                        "optionalTone"
+                                )
                         )),
                         Map.entry("rewriteSuggestions", Map.of(
                                 "type", "array",
@@ -1334,7 +1376,7 @@ public class GeminiFeedbackClient {
                         "corrections",
                         "usedExpressions",
                         "refinementExpressions",
-                        "rewritePractice",
+                        "nextStepPractice",
                         "rewriteSuggestions",
                         "modelAnswer",
                         "modelAnswerKo"
@@ -1458,9 +1500,7 @@ public class GeminiFeedbackClient {
         String coachProfileText = PromptOpenAiContextFormatter.formatCoachProfile(prompt);
         String coachProfileGuidance = PromptOpenAiContextFormatter.formatCoachProfileInstructions(prompt);
         String hintText = PromptOpenAiContextFormatter.formatPromptHints(hints);
-        String requestedSectionText = requestedSections == null || requestedSections.isEmpty()
-                ? "STRENGTHS, PRIMARY_FIX, GRAMMAR, IMPROVEMENT, REFINEMENT, MODEL_ANSWER, USED_EXPRESSIONS"
-                : requestedSections.stream().map(Enum::name).reduce((left, right) -> left + ", " + right).orElse("");
+        String requestedSectionText = formatRequestedSectionsForPrompt(requestedSections);
         String retryFailures = failureCodes == null || failureCodes.isEmpty()
                 ? "- none"
                 : "- " + failureCodes.stream().map(Enum::name).reduce((left, right) -> left + ", " + right).orElse("");
@@ -1496,19 +1536,14 @@ public class GeminiFeedbackClient {
                 - previousAnswer: %s
                 - progress.improvedAreas: %s
                 - progress.remainingAreas: %s
-                - Prioritize immediate rewrite usefulness over section completeness.
+                - Prioritize learner focus and clarity over section completeness. It is better to return fewer, sharper items than many overlapping ones.
 
                 Screen role map:
-                - strengths feed Keep What Works.
-                - usedExpressions feed the small expression chips under Keep What Works.
-                - fixPoints feed the single ordered Fix Points section directly.
-                - fixPoints[0] is the first thing to fix, and later items are the remaining fix points in descending priority.
-                - rewritePractice feeds the Rewrite Guide card directly.
-                - rewriteSuggestions feed the small suggestion cards below rewritePractice directly.
-                - grammarFeedback is optional internal raw grammar material that may support fixPoints.
-                - corrections feed raw non-grammar candidates that may support fixPoints.
-                - modelAnswer feeds the Example Answer section.
-                - refinementExpressions feed raw reusable-expression candidates that may support fixPoints.
+                - strengths and usedExpressions feed Keep What Works.
+                - fixPoints feed the ordered must-fix list for the learner.
+                - nextStepPractice and rewriteSuggestions feed one optional next-step area after the must-fix list.
+                - grammarFeedback, corrections, and refinementExpressions are optional raw support pools behind fixPoints.
+                - modelAnswer is a one-step-up reference answer.
 
                 Common rules:
                 - strengths must be semantic praise only. Never quote the full raw learner answer unless it is already clean and necessary.
@@ -1523,21 +1558,14 @@ public class GeminiFeedbackClient {
                 - A fixPoints item may use originalText / revisedText / supportText to show a concrete correction pair, or title / headline / supportText to show one anchored instruction card.
                 - If a fixPoints item has no originalText / revisedText pair, its headline must still name one concrete anchor phrase, word, connector, or slot the learner should change next.
                 - Do not return placeholder-like fixPoints[0] headlines or instructions such as "First thing to fix" or "Fix this one thing first" unless you also name the exact phrase or expression to fix.
-                - Do not make fixPoints[0] a vague task-reset card when rewritePractice is already asking for one specific reason, detail, or example.
-                - When rewritePractice asks the learner to add because/reason/detail/example, fixPoints[0] must point to that same missing support, not a broader generic instruction.
-                - Do not merge unrelated lessons into one fixPoints item.
-                - Do not split the same teaching point across multiple fixPoints items, even with different example sentences.
-                - If one item teaches article choice, pronoun agreement, tense, connector choice, plural/singular agreement, local spelling, or one specific anchor phrase, later fixPoints must move on to a genuinely different remaining issue.
-                - If the learner span needs two different local grammar lessons, split them into separate fixPoints items instead of folding both into one revisedText.
-                - In particular, article/determiner choice and plural/singular choice must be taught as separate fixPoints items when both need correction.
-                - In particular, pronoun agreement and connector choice must be taught as separate fixPoints items when both need correction.
-                - When possible, each originalText / revisedText pair should isolate only one changed principle. Do not revise one pair in a way that simultaneously teaches determiner choice and plural choice, or pronoun choice and connector choice.
+                - Do not merge unrelated lessons into one fixPoints item or split the same teaching point across multiple fixPoints items.
+                - If the learner span needs multiple local grammar lessons, split them into separate fixPoints items instead of folding them into one revisedText.
+                - In particular, teach article/determiner vs plural/singular separately, and teach pronoun agreement vs connector choice separately, when both need correction.
+                - When possible, each originalText / revisedText pair should isolate one changed principle.
                 - Example: if the learner wrote "football skill" and you want to teach both determiner and plural, do not make one fixPoints item whose revisedText is "my football skills". Split it into separate fixPoints items such as "football skill" -> "football skills" and "football skills" -> "my football skills" if both are genuinely worth teaching.
-                - grammarFeedback is an optional raw grammar candidate pool.
-                - Include every remaining distinct grammar candidate that still adds value beyond fixPoints, including minor local errors when they are still pedagogically useful.
-                - Put the highest-value grammar candidate first, then keep the rest in descending usefulness. Do not pad with trivial punctuation-only edits or repetitive variants.
-                - Each grammarFeedback item must also teach only one grammar principle at a time.
-                - Do not let one grammarFeedback item silently bundle multiple lessons into one revisedText when those lessons should be explained separately.
+                - grammarFeedback is an optional raw grammar candidate pool beyond fixPoints.
+                - Include every remaining distinct grammar candidate that still adds value, keep the highest-value one first, and do not pad with trivial punctuation-only edits or repetitive variants.
+                - Each grammarFeedback item must still teach only one grammar principle at a time.
                 - If reasonKo mentions a concrete connector or grammar token such as and, because, so, also, or a quoted token like 'in', revisedText must actually show that token-level fix.
                 - Do not mention a connector or token fix in reasonKo unless revisedText already reflects that exact change.
                 - corrections are optional raw non-grammar candidates for fixPoints.
@@ -1549,35 +1577,24 @@ public class GeminiFeedbackClient {
                 - refinementExpressions must separate expression, meaningKo, guidanceKo, exampleEn, exampleKo.
                 - exampleEn must not be identical to expression.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
-                - Do not reuse a broken learner phrase in strengths, refinementExpressions, rewritePractice, or modelAnswer.
-                - rewritePractice must be the actual UI-ready rewrite card.
-                - rewritePractice.title should name the same teaching action as fixPoints[0] in short Korean, not a generic filler title.
-                - rewritePractice.starter must contain at least one blank such as ______ or ....
-                - rewritePractice should follow the same main plan as fixPoints[0] and should usually build from the same corrected anchor.
-                - rewritePractice.starter must visibly apply the fix taught in fixPoints[0] inside the starter itself, not only mention it in rewritePractice.instruction.
-                - rewritePractice.starter should already reflect the visible high-priority fixes for that sentence before the blank, instead of leaving the learner's old form behind.
-                - If fixPoints[0] introduces a specific anchor such as a time phrase, connector, corrected local phrase, or connected sentence pattern, keep that anchor in rewritePractice.starter instead of dropping it.
-                - If compatible later fixPoints target the same sentence, rewritePractice.starter should usually absorb them before the blank, including compatible local fixes or one strong phrase upgrade.
-                - rewritePractice should be a scaffold the learner can complete, not a polished final answer.
-                - rewritePractice.instruction should be one short Korean sentence telling the learner what to add or complete next.
-                - If answerBand is TOO_SHORT_FRAGMENT, keep rewritePractice short, fill-in-based, and not a polished final answer.
-                - rewriteSuggestions should be the actual UI-ready suggestion list for the blank in rewritePractice.starter.
-                - rewriteSuggestions must fit naturally into the blank in rewritePractice.starter with little or no editing.
-                - rewriteSuggestions should usually be 0-3 short English clauses or phrases, not standalone full sentences.
-                - If rewritePractice.starter already includes because, rewriteSuggestions must not repeat because. Return only the reason clause or short continuation.
-                - If rewritePractice.starter already includes another connector or preposition before the blank, rewriteSuggestions must not repeat that connector or preposition.
-                - Do not use rewriteSuggestions to restate the whole learner answer. They should help the learner complete the blank, not replace the full scaffold.
-                - modelAnswer must preserve learner meaning, must not delete correct learner information, and must not over-invent new activities, feelings, or plans.
-                - modelAnswer must feel clearly different from rewritePractice. rewritePractice is the learner scaffold; modelAnswer is only a one-step-up reference.
-                - modelAnswer should demonstrate the same fixPoints[0] anchor and, when compatible, one strong later fixPoint upgrade in a single coherent sentence or sentence pair.
-                - modelAnswer should preserve the same compatible fixes that rewritePractice already absorbed, instead of reverting to an older sentence structure or the learner's old form.
-                - If fixPoints[0] and compatible later fixPoints can naturally combine in the same sentence, modelAnswer should combine them in one coherent answer instead of splitting them across separate example worlds.
-                - If fixPoints[0] teaches a referent, pronoun, or singular/plural agreement correction, modelAnswer must preserve that same referent choice and agreement.
+                - Do not reuse a broken learner phrase in strengths, refinementExpressions, nextStepPractice, or modelAnswer.
+                - nextStepPractice is optional and should represent one genuine next step after the must-fix list, not another copy of fixPoints[0].
+                - Use nextStepPractice only when there is a locally acceptable base answer or one clearly optional add-on after the must-fix corrections; otherwise leave it null.
+                - nextStepPractice may use the same flexible card fields as fixPoints and does not need to be a blank scaffold.
+                - nextStepPractice.title should name one optional next move in short Korean, nextStepPractice.headline should show the actual English move when helpful, and nextStepPractice.supportText should briefly explain the add-on in Korean.
+                - If nextStepPractice uses originalText / revisedText, that pair must still teach only one optional improvement point and must not repeat a must-fix lesson already covered in fixPoints.
+                - rewriteSuggestions are optional helper ideas for nextStepPractice.
+                - rewriteSuggestions do not need to fit a blank. They should support the same next step as nextStepPractice with short English phrases, clauses, or example chunks.
+                - rewriteSuggestions should usually be 0-3 short English ideas, not long standalone answers.
+                - Do not use rewriteSuggestions to restate the whole learner answer or to duplicate the exact same English already shown in nextStepPractice.
+                - modelAnswer is a one-step-up reference, not another nextStepPractice card.
+                - modelAnswer must preserve learner meaning, keep the must-fix corrections from fixPoints, and, when natural, add one optional upgrade from nextStepPractice without reverting a taught correction.
+                - Preserve referent, pronoun, and singular/plural agreement taught by fixPoints[0].
                 - Do not switch from plural noun + they to singular it, or from singular it to plural they, unless fixPoints[0] already teaches that shift.
                 - If refinementExpressions are returned, keep every card genuinely useful and distinct. Do not artificially cap the count.
                 - If requestedSections does not include a section, return [] for arrays or null for strings.
                 - Keep Korean fields natural and concise.
-                - If attemptIndex >= 2, prioritize one remaining action, but keep any other clearly useful secondary support point.
+                - If attemptIndex >= 2, prioritize one remaining action first, but still include any other distinct later fixPoints that are clearly useful.
 
                 Band-specific guidance:
                 %s
@@ -1725,6 +1742,13 @@ public class GeminiFeedbackClient {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    private String textOrNull(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        return trimToNull(node.asText(null));
+    }
+
     private GeneratedSections parseGeneratedSections(String body) throws IOException {
         JsonNode node = objectMapper.readTree(extractOutputText(body));
         List<String> strengths = new ArrayList<>();
@@ -1783,17 +1807,33 @@ public class GeminiFeedbackClient {
                 item.path("exampleKo").isNull() ? null : item.path("exampleKo").asText(null),
                 item.path("meaningKo").isNull() ? null : item.path("meaningKo").asText(null)
         )));
-        FeedbackPrimaryFixDto primaryFix = derivePrimaryFixFromFixPoints(fixPoints);
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = parsedSecondaryLearningPoints.isEmpty() && !fixPoints.isEmpty()
-                ? deriveSecondaryLearningPointsFromFixPoints(fixPoints)
+        List<FeedbackSecondaryLearningPointDto> parsedFixPoints = !fixPoints.isEmpty()
+                ? List.copyOf(fixPoints)
+                : toFixPoints(null, parsedSecondaryLearningPoints);
+        FeedbackPrimaryFixDto primaryFix = derivePrimaryFixFromFixPoints(parsedFixPoints);
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = parsedSecondaryLearningPoints.isEmpty() && !parsedFixPoints.isEmpty()
+                ? deriveSecondaryLearningPointsFromFixPoints(parsedFixPoints)
                 : parsedSecondaryLearningPoints;
-        FeedbackRewritePracticeDto rewritePractice = node.path("rewritePractice").isObject()
-                ? new FeedbackRewritePracticeDto(
-                node.path("rewritePractice").path("title").isNull() ? null : node.path("rewritePractice").path("title").asText(null),
-                node.path("rewritePractice").path("starter").isNull() ? null : node.path("rewritePractice").path("starter").asText(null),
-                node.path("rewritePractice").path("instruction").isNull() ? null : node.path("rewritePractice").path("instruction").asText(null),
-                node.path("rewritePractice").path("ctaLabel").isNull() ? null : node.path("rewritePractice").path("ctaLabel").asText(null),
-                node.path("rewritePractice").path("optionalTone").asBoolean(false)
+        FeedbackNextStepPracticeDto nextStepPractice = node.path("nextStepPractice").isObject()
+                ? new FeedbackNextStepPracticeDto(
+                textOrNull(node.path("nextStepPractice").path("kind")),
+                textOrNull(node.path("nextStepPractice").path("title")),
+                firstNonBlank(
+                        textOrNull(node.path("nextStepPractice").path("headline")),
+                        textOrNull(node.path("nextStepPractice").path("starter"))
+                ),
+                firstNonBlank(
+                        textOrNull(node.path("nextStepPractice").path("supportText")),
+                        textOrNull(node.path("nextStepPractice").path("instruction"))
+                ),
+                textOrNull(node.path("nextStepPractice").path("originalText")),
+                textOrNull(node.path("nextStepPractice").path("revisedText")),
+                textOrNull(node.path("nextStepPractice").path("meaningKo")),
+                textOrNull(node.path("nextStepPractice").path("guidanceKo")),
+                textOrNull(node.path("nextStepPractice").path("exampleEn")),
+                textOrNull(node.path("nextStepPractice").path("exampleKo")),
+                textOrNull(node.path("nextStepPractice").path("ctaLabel")),
+                node.path("nextStepPractice").path("optionalTone").asBoolean(false)
         )
                 : null;
         List<FeedbackRewriteSuggestionDto> rewriteSuggestions = new ArrayList<>();
@@ -1814,8 +1854,9 @@ public class GeminiFeedbackClient {
                 node.path("modelAnswer").isNull() ? null : node.path("modelAnswer").asText(null),
                 node.path("modelAnswerKo").isNull() ? null : node.path("modelAnswerKo").asText(null),
                 usedExpressions,
+                parsedFixPoints,
                 secondaryLearningPoints,
-                rewritePractice,
+                nextStepPractice,
                 rewriteSuggestions
         );
     }
@@ -1897,6 +1938,42 @@ public class GeminiFeedbackClient {
         );
     }
 
+    private String formatRequestedSectionsForPrompt(List<SectionKey> requestedSections) {
+        List<SectionKey> effectiveSections = (requestedSections == null || requestedSections.isEmpty())
+                ? List.of(
+                SectionKey.STRENGTHS,
+                SectionKey.PRIMARY_FIX,
+                SectionKey.GRAMMAR,
+                SectionKey.IMPROVEMENT,
+                SectionKey.REFINEMENT,
+                SectionKey.MODEL_ANSWER,
+                SectionKey.USED_EXPRESSIONS
+        )
+                : requestedSections;
+
+        return effectiveSections.stream()
+                .map(this::formatSectionKeyForPrompt)
+                .distinct()
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("");
+    }
+
+    private String formatSectionKeyForPrompt(SectionKey sectionKey) {
+        if (sectionKey == null) {
+            return "";
+        }
+        return switch (sectionKey) {
+            case STRENGTHS -> "STRENGTHS";
+            case PRIMARY_FIX, IMPROVEMENT -> "FIX_POINTS";
+            case GRAMMAR -> "GRAMMAR_FEEDBACK";
+            case REFINEMENT -> "REFINEMENT_EXPRESSIONS";
+            case SUMMARY -> "SUMMARY";
+            case REWRITE_GUIDE -> "NEXT_STEP_PRACTICE";
+            case MODEL_ANSWER -> "MODEL_ANSWER";
+            case USED_EXPRESSIONS -> "USED_EXPRESSIONS";
+        };
+    }
+
     private boolean isRequested(List<SectionKey> requestedSections, SectionKey sectionKey) {
         return requestedSections != null && requestedSections.contains(sectionKey);
     }
@@ -1958,7 +2035,7 @@ public class GeminiFeedbackClient {
             return null;
         }
 
-        String title = firstNonBlank(primaryFix.title(), "먼저 고칠 부분");
+        String title = firstNonBlank(primaryFix.title(), "Fix this first");
         String instruction = firstNonBlank(primaryFix.instruction());
         String originalText = firstNonBlank(primaryFix.originalText());
         String revisedText = firstNonBlank(primaryFix.revisedText());
@@ -1989,24 +2066,6 @@ public class GeminiFeedbackClient {
             return null;
         }
 
-        if (false && rewriteStarter != null && !rewriteStarter.isBlank() && isDetailPromptPrimaryIssue(primaryIssueCode)) {
-            String normalizedGuide = normalizeForComparison(rewriteStarter);
-            String normalizedInstruction = normalizeForComparison(instruction);
-            if ("ADD_REASON".equals(primaryIssueCode)
-                    && normalizedGuide.contains("because")
-                    && !normalizedInstruction.contains("because")
-                    && !instruction.contains("이유")
-                    && !instruction.contains("왜")) {
-                return null;
-            }
-            if ("ADD_EXAMPLE".equals(primaryIssueCode)
-                    && !instruction.contains("예시")
-                    && !instruction.contains("예를")
-                    && !normalizedInstruction.contains("for example")) {
-                return null;
-            }
-        }
-
         return new FeedbackPrimaryFixDto(title, instruction, null, null, null);
     }
 
@@ -2015,9 +2074,10 @@ public class GeminiFeedbackClient {
             return false;
         }
         String normalized = normalizeForComparison(instruction);
-        return (instruction.contains("질문") && instruction.contains("한 문장"))
-                || normalized.contains("answer the prompt first")
-                || normalized.contains("write one sentence first");
+        return normalized.contains("answer the prompt first")
+                || normalized.contains("answer the question first")
+                || normalized.contains("write one sentence first")
+                || normalized.contains("answer in one sentence first");
     }
 
     private boolean isGenericPrimaryFixInstruction(String title, String instruction) {
@@ -2026,13 +2086,14 @@ public class GeminiFeedbackClient {
         if (normalizedInstruction.isBlank()) {
             return true;
         }
-        return normalizedTitle.contains("먼저 고칠 부분")
-                || normalizedTitle.contains("한 가지 더 추가하면 좋아요")
-                || normalizedInstruction.contains("이 한 군데만 먼저 고치면")
-                || normalizedInstruction.contains("문장 흐름이 훨씬 안정돼요")
-                || normalizedInstruction.contains("정보 한 가지를 추가해 보세요")
-                || normalizedInstruction.contains("한 문장만 더 보태 보세요")
-                || normalizedInstruction.contains("먼저 고칠 부분");
+        return normalizedTitle.contains("fix this first")
+                || normalizedTitle.contains("add one more thing")
+                || normalizedInstruction.contains("fix this one thing first")
+                || normalizedInstruction.contains("your sentence will become more stable")
+                || normalizedInstruction.contains("add one more detail")
+                || normalizedInstruction.contains("try one more sentence")
+                || normalizedInstruction.contains("add one more detail")
+                || normalizedInstruction.contains("try one more sentence");
     }
 
     private boolean hasConcretePrimaryFixAnchor(FeedbackPrimaryFixDto primaryFix) {
@@ -2146,39 +2207,57 @@ public class GeminiFeedbackClient {
         return List.copyOf(sanitized);
     }
 
-    private FeedbackRewritePracticeDto sanitizeRewritePractice(
-            FeedbackRewritePracticeDto rewritePractice,
+    private FeedbackNextStepPracticeDto sanitizeRewritePractice(
+            FeedbackNextStepPracticeDto nextStepPractice,
             FeedbackDiagnosisResult diagnosis,
             AnswerProfile answerProfile
     ) {
-        String starter = sanitizeRewriteGuide(
-                rewritePractice == null ? null : rewritePractice.starter(),
-                diagnosis,
-                answerProfile
-        );
-        if (starter == null || starter.isBlank() || !containsRewriteGuidePlaceholder(starter)) {
+        if (nextStepPractice == null) {
             return null;
         }
-        return new FeedbackRewritePracticeDto(
-                rewritePractice == null ? null : trimToNull(rewritePractice.title()),
-                starter,
-                rewritePractice == null ? null : trimToNull(rewritePractice.instruction()),
-                rewritePractice == null ? null : trimToNull(rewritePractice.ctaLabel()),
-                rewritePractice != null && rewritePractice.optionalTone()
+        String headline = sanitizeNextStepHeadline(
+                firstNonBlank(nextStepPractice.headline(), nextStepPractice.revisedText(), nextStepPractice.exampleEn())
+        );
+        String supportText = trimToNull(nextStepPractice.supportText());
+        String originalText = trimToNull(nextStepPractice.originalText());
+        String revisedText = trimToNull(nextStepPractice.revisedText());
+        if ((originalText == null) != (revisedText == null)) {
+            originalText = null;
+            revisedText = null;
+        }
+        String meaningKo = trimToNull(nextStepPractice.meaningKo());
+        String guidanceKo = trimToNull(nextStepPractice.guidanceKo());
+        String exampleEn = trimToNull(nextStepPractice.exampleEn());
+        String exampleKo = trimToNull(nextStepPractice.exampleKo());
+        if (firstNonBlank(headline, supportText, revisedText, meaningKo, guidanceKo, exampleEn) == null) {
+            return null;
+        }
+        return new FeedbackNextStepPracticeDto(
+                trimToNull(nextStepPractice.kind()),
+                trimToNull(nextStepPractice.title()),
+                headline,
+                supportText,
+                originalText,
+                revisedText,
+                meaningKo,
+                guidanceKo,
+                exampleEn,
+                exampleKo,
+                trimToNull(nextStepPractice.ctaLabel()),
+                nextStepPractice.optionalTone()
         );
     }
 
     private List<FeedbackRewriteSuggestionDto> sanitizeRewriteSuggestions(
             List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
-            FeedbackRewritePracticeDto rewritePractice
+            FeedbackNextStepPracticeDto nextStepPractice
     ) {
-        if (rewriteSuggestions == null || rewriteSuggestions.isEmpty() || rewritePractice == null) {
+        if (rewriteSuggestions == null || rewriteSuggestions.isEmpty() || nextStepPractice == null) {
             return List.of();
         }
-        String starter = trimToNull(rewritePractice.starter());
-        if (starter == null || !containsRewriteGuidePlaceholder(starter)) {
-            return List.of();
-        }
+        String practiceHeadline = trimToNull(nextStepPractice.headline());
+        String practiceExample = trimToNull(nextStepPractice.exampleEn());
+        String practiceRevised = trimToNull(nextStepPractice.revisedText());
 
         List<FeedbackRewriteSuggestionDto> sanitized = new ArrayList<>();
         LinkedHashSet<String> seen = new LinkedHashSet<>();
@@ -2187,7 +2266,11 @@ public class GeminiFeedbackClient {
                 continue;
             }
             String english = sanitizeRewriteSuggestionEnglish(suggestion.english());
-            if (english == null || !canFitRewritePracticeStarter(english, starter)) {
+            String normalizedEnglish = normalizeForComparison(english);
+            if (english == null
+                    || normalizedEnglish.equals(normalizeForComparison(practiceHeadline))
+                    || normalizedEnglish.equals(normalizeForComparison(practiceExample))
+                    || normalizedEnglish.equals(normalizeForComparison(practiceRevised))) {
                 continue;
             }
             String key = normalizeForComparison(english);
@@ -2209,49 +2292,22 @@ public class GeminiFeedbackClient {
             return null;
         }
         String normalized = trimmed.replaceAll("[.!?]+$", "").trim();
-        if (normalized.isBlank() || normalized.contains("______") || normalized.contains("[") || normalized.contains("]")) {
+        if (normalized.isBlank() || normalized.contains("[") || normalized.contains("]")) {
             return null;
         }
         return normalized;
     }
 
-    private boolean canFitRewritePracticeStarter(String suggestion, String starter) {
-        if (suggestion == null || suggestion.isBlank() || starter == null || starter.isBlank()) {
-            return false;
+    private String sanitizeNextStepHeadline(String headline) {
+        String trimmed = trimToNull(headline);
+        if (trimmed == null) {
+            return null;
         }
-        String[] parts = starter.split("(?:_{3,}|\\.{3,})", 2);
-        String prefix = parts.length == 0 ? "" : parts[0];
-        String normalizedSuggestion = suggestion.trim();
-
-        if (normalizedSuggestion.split("\\s+").length > 10) {
-            return false;
+        String normalized = trimmed.replaceAll("\\s+", " ").trim();
+        if (normalized.contains("[") || normalized.contains("]")) {
+            return null;
         }
-        if (normalizedSuggestion.matches(".*[.!?]\\s+\\S.*")) {
-            return false;
-        }
-
-        String prefixLastWord = lastLatinWord(prefix);
-        if (prefixLastWord != null && isConnectorWord(prefixLastWord)) {
-            String lowerSuggestion = normalizedSuggestion.toLowerCase(Locale.ROOT);
-            if (lowerSuggestion.equals(prefixLastWord) || lowerSuggestion.startsWith(prefixLastWord + " ")) {
-                return false;
-            }
-        }
-
-        List<String> suggestionTokens = extractRewriteSuggestionTokens(normalizedSuggestion);
-        if (suggestionTokens.size() >= 3) {
-            List<String> prefixTokens = extractRewriteSuggestionTokens(prefix);
-            int overlapCount = 0;
-            for (String token : suggestionTokens) {
-                if (prefixTokens.contains(token)) {
-                    overlapCount++;
-                }
-            }
-            if (!suggestionTokens.isEmpty() && (double) overlapCount / suggestionTokens.size() >= 0.5d) {
-                return false;
-            }
-        }
-        return true;
+        return normalized;
     }
 
     private String lastLatinWord(String text) {
@@ -2323,7 +2379,7 @@ public class GeminiFeedbackClient {
                 return List.of(new GrammarFeedbackItemDto(
                         originalText == null || originalText.isBlank() ? "" : originalText,
                         revisedText,
-                        "수정문 방향에 맞춰 핵심 문법을 먼저 바로잡아 보세요."
+                        "??륁젟??獄쎻뫚堉??筌띿쉸?????뼎 ?얜챶苡???믪눘? 獄쏅뗀以??る툡 癰귣똻苑??"
                 ));
             }
         }
@@ -2568,13 +2624,14 @@ public class GeminiFeedbackClient {
                 || failureCodes.contains(ValidationFailureCode.NEAR_DUPLICATE)
                 || failureCodes.contains(ValidationFailureCode.LOW_VALUE_SECTION)
                 || failureCodes.contains(ValidationFailureCode.EMPTY_IMPROVEMENT))) {
-            instructions.add("- Put the remaining distinct secondary fixes later in FIX_POINTS instead of repeating FIX_POINTS[0].");
+            instructions.add("- Put the remaining distinct later fixes later in FIX_POINTS instead of repeating FIX_POINTS[0].");
             instructions.add("- If you return CORRECTIONS raw candidates, keep them short, concrete, and aligned with those later fix points.");
         }
         if (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.UNALIGNED_REWRITE_TARGET)) {
-            instructions.add("- REWRITE_PRACTICE must be a blank-containing scaffold the learner can complete immediately.");
-            instructions.add("- Keep REWRITE_PRACTICE aligned with FIX_POINTS[0] and avoid polished final-answer wording.");
+            instructions.add("- NEXT_STEP_PRACTICE should be one optional add-on card, not another copy of FIX_POINTS[0].");
+            instructions.add("- Leave NEXT_STEP_PRACTICE null if there is no clearly different next move beyond the must-fix list.");
+            instructions.add("- If you return REWRITE_SUGGESTIONS, make them short helper ideas for that same next step instead of blank-fit fillers.");
         }
         if (instructions.isEmpty()) {
             return "- none";
@@ -2597,12 +2654,12 @@ public class GeminiFeedbackClient {
             return null;
         }
         if (diagnosis.expansionBudget() == ExpansionBudget.NONE) {
-            return "\"" + base + "\"를 기준으로 다시 써 보세요.";
+            return "\"" + base + "\"??疫꿸퀣???곗쨮 ??쇰뻻 ??癰귣똻苑??";
         }
         if (diagnosis.expansionBudget() == ExpansionBudget.ONE_SUPPORT_SENTENCE) {
-            return "\"" + base + "\"를 바탕으로 질문에 직접 답하는 문장 뒤에 이유 문장 하나를 더 붙여 보세요.";
+            return "\"" + base + "\"??獄쏅?源??곗쨮 筌욌뜄揆??筌욊낯?????릭???얜챷????쇰퓠 ??곸? ?얜챷????롪돌?????븐늿肉?癰귣똻苑??";
         }
-        return "\"" + base + "\"를 바탕으로 한 가지 이유나 구체적인 설명을 더 붙여 보세요.";
+        return "\"" + base + "\"??獄쏅?源??곗쨮 ??揶쎛筌왖 ??곸????닌딄퍥?怨몄뵥 ??살구?????븐늿肉?癰귣똻苑??";
     }
 
     private String fallbackTooShortRewriteGuide(FeedbackDiagnosisResult diagnosis) {
@@ -2614,7 +2671,7 @@ public class GeminiFeedbackClient {
         if (usableSkeleton == null) {
             usableSkeleton = "I ____.";
         }
-        return "\"" + usableSkeleton + "\" 틀에 맞춰 먼저 한 문장으로 다시 쓰고, 빈칸에 실제 활동을 넣어 보세요.";
+        return "\"" + usableSkeleton + "\" ????筌띿쉸???믪눘? ???얜챷???곗쨮 ??쇰뻻 ?怨뚰? ??뜆萸????쇱젫 ??뺣짗???節뚮선 癰귣똻苑??";
     }
 
     private boolean isValidTooShortRewriteGuide(String rewriteGuide, FeedbackDiagnosisResult diagnosis) {
@@ -2701,12 +2758,12 @@ public class GeminiFeedbackClient {
 
     private String buildNormalizedTooShortRewriteGuideInstruction(String skeleton) {
         String cleanSkeleton = skeleton == null || skeleton.isBlank() ? "I ____." : skeleton.trim();
-        return "\"" + cleanSkeleton + "\" 틀에 맞춰 먼저 한 문장으로 완성하고, 빈칸에는 실제 행동을 넣어 보세요.";
+        return "\"" + cleanSkeleton + "\" ????筌띿쉸???믪눘? ???얜챷???곗쨮 ?袁⑷쉐??랁? ??뜆萸?癒?뮉 ??쇱젫 ??곕짗???節뚮선 癰귣똻苑??";
     }
 
     private String buildTooShortRewriteGuideInstruction(String skeleton) {
         String cleanSkeleton = skeleton == null || skeleton.isBlank() ? "I ____." : skeleton.trim();
-        return "\"" + cleanSkeleton + "\" 틀에 맞춰 먼저 한 문장으로 완성해 보세요.";
+        return "\"" + cleanSkeleton + "\" ????筌띿쉸???믪눘? ???얜챷???곗쨮 ?袁⑷쉐??癰귣똻苑??";
     }
 
     private String extractTooShortGuideSkeleton(String rewriteGuide) {
@@ -2867,14 +2924,15 @@ public class GeminiFeedbackClient {
         return switch (answerBand) {
             case GRAMMAR_BLOCKING -> """
                     - Prioritize the core sentence repair before extra expansion.
-                    - Keep fixPoints[0] and rewritePractice on one corrected sentence direction first.
+                    - Keep fixPoints[0] on one corrected sentence direction first.
+                    - Prefer leaving nextStepPractice null unless there is one clearly optional add-on after the repair.
                     - Prefer compact later fixPoints that directly support the repair.
                     - Keep modelAnswer very close to learner meaning and the corrected direction.
                     """;
             case TOO_SHORT_FRAGMENT -> """
                     - Prioritize completing one full base sentence before any expansion.
                     - Keep fixPoints[0] centered on finishing the fragment cleanly.
-                    - Prefer a very short one-clause rewritePractice scaffold over broader expansion.
+                    - Use nextStepPractice only if there is one clearly optional add-on after the full base sentence is complete.
                     - Avoid unsupported invention in later fixPoints or modelAnswer.
                     """;
             case CONTENT_THIN, SHORT_BUT_VALID -> """
@@ -2891,7 +2949,8 @@ public class GeminiFeedbackClient {
                     """;
             case OFF_TOPIC -> """
                     - Prioritize getting the learner back to the actual task before polishing language.
-                    - Keep fixPoints[0] and rewritePractice centered on answering the prompt directly.
+                    - Keep fixPoints[0] centered on answering the prompt directly.
+                    - Use nextStepPractice only if there is one clearly optional add-on after task alignment.
                     - Prefer later fixPoints that support task completion rather than extra polish.
                     - Keep modelAnswer as a short task-reset example.
                     """;
@@ -3512,12 +3571,13 @@ public class GeminiFeedbackClient {
             List<GrammarFeedbackItemDto> grammarFeedback
     ) {
         if (isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
-            return "좋아요. 지금 단계에서 마무리해도 충분해요. 원하면 한 번 더 다듬으면서 연습해 볼 수 있어요.";
+            return "?ル뿭釉?? 筌왖疫???ｍ?癒?퐣 筌띾뜄龜?귐뗫퉸???겸뫖???곸뒄. ?癒곕릭筌???甕?????삳쾳??겹늺???怨쀫뮸??癰?????됰선??";
         }
         if (!isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
             return null;
         }
-        return "충분히 좋아서 지금 단계에서 마무리해도 괜찮아요. 원하면 한 번 더 다듬어 보며 연습할 수도 있어요.";
+        return "?겸뫖????ル뿭釉??筌왖疫???ｍ?癒?퐣 筌띾뜄龜?귐뗫퉸???우뮇媛?袁⑹뒄. ?癒곕릭筌???甕?????삳쾳??癰귣?흭 ?怨쀫뮸????롫즲 ??됰선??";
     }
 }
+
 

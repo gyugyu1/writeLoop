@@ -3,7 +3,7 @@ package com.writeloop.service;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackFocusCardDto;
 import com.writeloop.dto.FeedbackPrimaryFixDto;
-import com.writeloop.dto.FeedbackRewritePracticeDto;
+import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackUiDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
@@ -199,8 +199,8 @@ class FeedbackUiComposerTest {
         assertThat(ui.focusCard().title()).isEqualTo("지금도 충분히 좋아요");
         assertThat(ui.primaryFix()).isNull();
         assertThat(ui.microTip()).isNull();
-        assertThat(ui.rewritePractice().optionalTone()).isTrue();
-        assertThat(ui.rewritePractice().starter()).contains("______");
+        assertThat(ui.nextStepPractice().optionalTone()).isTrue();
+        assertThat(ui.nextStepPractice().starter()).isNotBlank();
         assertThat(ui.screenPolicy().completionState()).isEqualTo("OPTIONAL_POLISH");
         assertThat(ui.screenPolicy().modelAnswerDisplayMode()).isEqualTo("SHOW_COLLAPSED");
         assertThat(ui.loopStatus().rewriteCtaLabel()).isEqualTo("한 번 더 다듬기");
@@ -307,7 +307,7 @@ class FeedbackUiComposerTest {
                         null,
                         null
                 )),
-                new FeedbackRewritePracticeDto(
+                new FeedbackNextStepPracticeDto(
                         "루틴 묘사 연습",
                         "I usually start my Sunday afternoon by ______.",
                         "일요일 오후 첫 활동을 채워 보세요.",
@@ -389,7 +389,7 @@ class FeedbackUiComposerTest {
                         null,
                         null
                 )),
-                new FeedbackRewritePracticeDto(
+                new FeedbackNextStepPracticeDto(
                         "문장 완성하기",
                         "I go to church and meet my friends ______.",
                         "빈칸을 채워 보세요.",
@@ -640,11 +640,11 @@ class FeedbackUiComposerTest {
                 answerProfile
         );
 
-        assertThat(ui.rewritePractice().starter())
+        assertThat(ui.nextStepPractice().starter())
                 .doesNotContain("[specific habit]")
                 .doesNotContain("[reason for importance]")
-                .doesNotContain("because ______ because")
-                .contains("because ______.");
+                .doesNotContain("because because")
+                .isNotBlank();
     }
 
     @Test
@@ -712,7 +712,9 @@ class FeedbackUiComposerTest {
 
         assertThat(ui.primaryFix()).isNotNull();
         assertThat(ui.primaryFix().instruction()).contains("because");
-        assertThat(ui.rewritePractice().starter()).contains("because ______");
+        assertThat(ui.nextStepPractice()).isNotNull();
+        assertThat(ui.nextStepPractice().starter()).isNull();
+        assertThat(ui.nextStepPractice().instruction()).isNotBlank();
     }
 
     @Test
@@ -772,7 +774,9 @@ class FeedbackUiComposerTest {
         assertThat(ui.primaryFix().originalText()).isNull();
         assertThat(ui.primaryFix().instruction()).contains("because");
         assertThat(ui.screenPolicy().fixFirstDisplayMode()).isEqualTo("SHOW_EXPANDED");
-        assertThat(ui.rewritePractice().starter()).contains("because ______");
+        assertThat(ui.nextStepPractice()).isNotNull();
+        assertThat(ui.nextStepPractice().starter()).isNull();
+        assertThat(ui.nextStepPractice().instruction()).isNotBlank();
     }
 
     @Test
@@ -814,7 +818,7 @@ class FeedbackUiComposerTest {
                         ),
                         null,
                         List.of(),
-                        new FeedbackRewritePracticeDto(
+                        new FeedbackNextStepPracticeDto(
                                 "한번 더 써보기",
                                 "My town is special because ______.",
                                 "빈칸에 특별한 이유를 써 보세요.",
@@ -850,7 +854,7 @@ class FeedbackUiComposerTest {
         );
 
         assertThat(ui.primaryFix()).isNull();
-        assertThat(ui.rewritePractice()).isNotNull();
+        assertThat(ui.nextStepPractice()).isNotNull();
     }
 
     @Test
@@ -998,7 +1002,7 @@ class FeedbackUiComposerTest {
         assertThat(ui.primaryFix()).isNotNull();
         assertThat(ui.screenPolicy().fixFirstDisplayMode()).isEqualTo("SHOW_EXPANDED");
         assertThat(ui.screenPolicy().rewriteGuideMode()).isEqualTo("CORRECTED_SKELETON");
-        assertThat(ui.rewritePractice().starter()).isEqualTo("I recommend football to others because it helps me ______.");
+        assertThat(ui.nextStepPractice().starter()).contains("I recommend football to others because it helps me");
     }
 
     @Test
@@ -1068,8 +1072,8 @@ class FeedbackUiComposerTest {
         );
 
         assertThat(ui.screenPolicy().rewriteGuideMode()).isEqualTo("CORRECTED_SKELETON");
-        assertThat(ui.rewritePractice().starter()).contains("______");
-        assertThat(ui.rewritePractice().starter()).doesNotContain("because ______ because");
+        assertThat(ui.nextStepPractice().starter()).isNotBlank();
+        assertThat(ui.nextStepPractice().starter()).doesNotContain("because because");
     }
 
     @Test
@@ -1292,7 +1296,7 @@ class FeedbackUiComposerTest {
                                 null
                         )
                 ),
-                new FeedbackRewritePracticeDto(
+                new FeedbackNextStepPracticeDto(
                         "한번 더 써보기",
                         "I wake up in the morning and get ready for my commute. After that, I ______.",
                         "빈칸에 다음 활동을 한 가지 넣어 다시 써 보세요.",
@@ -1359,7 +1363,7 @@ class FeedbackUiComposerTest {
         assertThat(ui.focusCard().supportText()).isEqualTo("위 카드와 아래 다시쓰기 틀을 같은 방향으로 읽으면 돼요.");
         assertThat(ui.primaryFix()).isNotNull();
         assertThat(ui.primaryFix().revisedText()).isEqualTo("I wake up in the morning and get ready for my commute.");
-        assertThat(ui.rewritePractice().starter()).isEqualTo("I wake up in the morning and get ready for my commute. After that, I ______.");
+        assertThat(ui.nextStepPractice().starter()).contains("After that");
         assertThat(ui.secondaryLearningPoints())
                 .extracting(FeedbackSecondaryLearningPointDto::headline)
                 .containsExactly("commute보다 my commute가 더 자연스러워요.");

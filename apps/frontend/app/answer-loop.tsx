@@ -47,6 +47,7 @@ import type {
   CoachUsageCheckResponse,
   Feedback,
   FeedbackLoopStatus,
+  FeedbackNextStepPractice,
   FeedbackSecondaryLearningPoint,
   FeedbackScreenPolicy,
   HistoryMonthStatus,
@@ -192,26 +193,6 @@ function isGenericLearningPointTitle(value?: string | null) {
   );
 }
 
-const REWRITE_PLACEHOLDER_PATTERN = /(?:_{3,}|\.{3,})/;
-const REWRITE_CONNECTOR_WORDS = new Set([
-  "because",
-  "and",
-  "but",
-  "so",
-  "or",
-  "to",
-  "for",
-  "with",
-  "in",
-  "on",
-  "at",
-  "about",
-  "after",
-  "before",
-  "if",
-  "when",
-  "that"
-]);
 const REWRITE_OVERLAP_STOP_WORDS = new Set([
   "a",
   "an",
@@ -274,46 +255,41 @@ function extractRewriteComparisonTokens(value?: string | null) {
     ?.filter((token) => !REWRITE_OVERLAP_STOP_WORDS.has(token)) ?? [];
 }
 
-function canSuggestionFillRewriteStarter(english: string, starter?: string | null) {
-  const normalizedStarter = trimNullable(starter);
-  if (!normalizedStarter || !REWRITE_PLACEHOLDER_PATTERN.test(normalizedStarter)) {
-    return false;
-  }
-
+function isSuggestionTooSimilarToNextStep(
+  english: string,
+  nextStepPractice?: FeedbackNextStepPractice | null
+) {
   const cleanedEnglish = stripRewriteSuggestionTerminalPunctuation(english);
   if (!cleanedEnglish) {
-    return false;
+    return true;
   }
+  const normalizedEnglish = normalizeExpressionKey(cleanedEnglish);
+  const practiceFields = [
+    nextStepPractice?.headline,
+    nextStepPractice?.revisedText,
+    nextStepPractice?.exampleEn
+  ]
+    .map((value) => trimNullable(value))
+    .filter((value): value is string => Boolean(value));
 
-  const sentenceLikeWordCount = cleanedEnglish.split(/\s+/).filter(Boolean).length;
-  if (sentenceLikeWordCount > 10) {
-    return false;
-  }
-
-  if (/[.!?]\s+\S/.test(cleanedEnglish)) {
-    return false;
-  }
-
-  const [prefix = ""] = normalizedStarter.split(REWRITE_PLACEHOLDER_PATTERN, 2);
-  const prefixLastWord = (prefix.toLowerCase().match(/[a-z]+(?:'[a-z]+)?(?=[^a-z']*$)/) ?? [null])[0];
-  const candidateLower = cleanedEnglish.toLowerCase();
-
-  if (prefixLastWord && REWRITE_CONNECTOR_WORDS.has(prefixLastWord)) {
-    if (candidateLower === prefixLastWord || candidateLower.startsWith(`${prefixLastWord} `)) {
-      return false;
-    }
+  if (
+    practiceFields.some(
+      (value) => normalizeExpressionKey(stripRewriteSuggestionTerminalPunctuation(value)) === normalizedEnglish
+    )
+  ) {
+    return true;
   }
 
   const candidateTokens = extractRewriteComparisonTokens(cleanedEnglish);
-  const prefixTokens = new Set(extractRewriteComparisonTokens(prefix));
-  if (candidateTokens.length >= 3) {
-    const overlapCount = candidateTokens.filter((token) => prefixTokens.has(token)).length;
-    if (overlapCount / candidateTokens.length >= 0.5) {
-      return false;
-    }
+  if (candidateTokens.length < 3) {
+    return false;
   }
 
-  return true;
+  return practiceFields.some((value) => {
+    const practiceTokens = new Set(extractRewriteComparisonTokens(value));
+    const overlapCount = candidateTokens.filter((token) => practiceTokens.has(token)).length;
+    return overlapCount / candidateTokens.length >= 0.6;
+  });
 }
 
 function renderLocalizedExpression(expression: string) {
@@ -2961,7 +2937,7 @@ export function AnswerLoop() {
             </span>
             <span className={styles.writingActionCopy}>
               <strong>{showHelpSheet ? "가이드 닫기" : "가이드 보기"}</strong>
-              <small>starter 문장과 유용한 단어 목록을 펼쳐요.</small>
+              <small>추천 문장과 유용한 단어 목록을 펼쳐요.</small>
             </span>
           </button>
         </section>
@@ -3178,9 +3154,9 @@ export function AnswerLoop() {
   }
 
   function handleStartRewriteFromGuide() {
-    const starter = feedback?.ui?.rewritePractice?.starter?.trim();
-    if (starter) {
-      setRewrite(starter);
+    const nextStepSeed = resolveNextStepSeed(resolveNextStepPractice());
+    if (nextStepSeed) {
+      setRewrite(nextStepSeed);
     } else {
       setRewrite(lastSubmittedAnswer);
     }
@@ -3434,7 +3410,9 @@ export function AnswerLoop() {
     );
   }
 
-  function resolveRewritePracticeSuggestions(starter?: string | null): RewriteSuggestion[] {
+  function resolveNextStepSuggestions(
+    nextStepPractice?: FeedbackNextStepPractice | null
+  ): RewriteSuggestion[] {
     const uiRewriteSuggestions = feedback?.ui?.rewriteSuggestions;
     if (uiRewriteSuggestions) {
       const suggestions: RewriteSuggestion[] = [];
@@ -3442,7 +3420,7 @@ export function AnswerLoop() {
 
       uiRewriteSuggestions.forEach((suggestion, index) => {
         const english = stripRewriteSuggestionTerminalPunctuation(suggestion?.english ?? "");
-        if (!english || !canSuggestionFillRewriteStarter(english, starter)) {
+        if (!english || isSuggestionTooSimilarToNextStep(english, nextStepPractice)) {
           return;
         }
         const dedupeKey = `ui-${english.toLowerCase()}`;
@@ -3477,7 +3455,7 @@ export function AnswerLoop() {
           return;
         }
         const normalizedLead = stripRewriteSuggestionTerminalPunctuation(lead);
-        if (!canSuggestionFillRewriteStarter(normalizedLead, starter)) {
+        if (isSuggestionTooSimilarToNextStep(normalizedLead, nextStepPractice)) {
           return;
         }
         const korean = resolveLearningPointMeaning(point, lead) ?? trimNullable(point.exampleKo);
@@ -3563,7 +3541,7 @@ export function AnswerLoop() {
 
     return (
       <section className={styles.feedbackBlock}>
-        <h3>유지할 점</h3>
+        <h3>잘한 점</h3>
         {keepStrengths.length > 0 ? (
           <ul className={styles.list}>
             {keepStrengths.map((strength) => (
@@ -3709,43 +3687,81 @@ export function AnswerLoop() {
     }
   }
 
-  function renderRewritePracticeSection() {
-    const screenPolicy = resolveScreenPolicy();
-    if (!isDisplayVisible(screenPolicy?.rewriteGuideDisplayMode)) {
-      return null;
-    }
-
-    const rewritePractice = feedback?.ui?.rewritePractice ?? (feedback
+  function resolveNextStepPractice(): FeedbackNextStepPractice | null {
+    return feedback?.ui?.nextStepPractice ?? (feedback
       ? {
           title: feedback.loopComplete ? "원하면 한 번 더 다듬어 보세요" : "한번 더 써보기",
-          starter: feedback.correctedAnswer?.trim() || lastSubmittedAnswer,
-          instruction:
+          headline: feedback.correctedAnswer?.trim() || lastSubmittedAnswer,
+          supportText:
             feedback.rewriteChallenge?.trim() ||
             "이 문장을 시작점으로 삼아 다시 써 보세요.",
           ctaLabel: "이 문장으로 시작해서 다시 쓰기",
           optionalTone: Boolean(feedback.loopComplete)
         }
       : null);
-    if (!rewritePractice) {
+  }
+
+  function resolveNextStepSeed(nextStepPractice?: FeedbackNextStepPractice | null) {
+    return pickFirstNonEmpty(
+      nextStepPractice?.revisedText,
+      nextStepPractice?.headline,
+      nextStepPractice?.exampleEn,
+      feedback?.correctedAnswer?.trim(),
+      lastSubmittedAnswer
+    );
+  }
+
+  function toNextStepLearningPoint(
+    nextStepPractice: FeedbackNextStepPractice,
+    nested = false
+  ): FeedbackSecondaryLearningPoint {
+    return {
+      kind: nextStepPractice.kind ?? "CORRECTION",
+      title: nested ? null : nextStepPractice.title ?? null,
+      headline: nextStepPractice.headline ?? null,
+      supportText: nextStepPractice.supportText ?? null,
+      originalText: nextStepPractice.originalText ?? null,
+      revisedText: nextStepPractice.revisedText ?? null,
+      meaningKo: nextStepPractice.meaningKo ?? null,
+      guidanceKo: nextStepPractice.guidanceKo ?? null,
+      exampleEn: nextStepPractice.exampleEn ?? null,
+      exampleKo: nextStepPractice.exampleKo ?? null
+    };
+  }
+
+  function renderNextStepPracticeSection(nested = false) {
+    const screenPolicy = resolveScreenPolicy();
+    if (!isDisplayVisible(screenPolicy?.rewriteGuideDisplayMode)) {
       return null;
     }
 
-    const rewriteSuggestions = resolveRewritePracticeSuggestions(rewritePractice.starter);
+    const nextStepPractice = resolveNextStepPractice();
+    if (!nextStepPractice) {
+      return null;
+    }
 
-    return (
-      <section className={styles.feedbackBlock}>
-        <h3>{rewritePractice.title}</h3>
+    const nextStepPoint = toNextStepLearningPoint(nextStepPractice, nested);
+    const rewriteSuggestions = resolveNextStepSuggestions(nextStepPractice);
+    const contentCard =
+      trimNullable(nextStepPoint.originalText) && trimNullable(nextStepPoint.revisedText)
+        ? renderFixPointCard(nextStepPoint, -1)
+        : renderLearningPointTextCard(nextStepPoint, -1);
+
+    const content = (
+      <>
+        {nested && nextStepPractice.title ? (
+          <span className={styles.feedbackSubsectionLabel}>{nextStepPractice.title}</span>
+        ) : null}
         <div
           className={`${styles.rewriteStarterCard} ${
-            rewritePractice.optionalTone ? styles.rewriteStarterCardOptional : ""
+            nextStepPractice.optionalTone ? styles.rewriteStarterCardOptional : ""
           }`}
         >
-          <pre className={styles.rewriteStarterText}>{rewritePractice.starter}</pre>
-          <p className={styles.rewriteStarterInstruction}>{rewritePractice.instruction}</p>
+          {contentCard}
           {rewriteSuggestions.length > 0 ? (
             <div className={styles.rewriteSuggestionBlock}>
               <strong className={styles.rewriteSuggestionTitle}>
-                이런 표현으로 이어 써볼 수 있어요
+                이런 아이디어를 더해 볼 수 있어요
               </strong>
               <div className={styles.rewriteSuggestionList}>
                 {rewriteSuggestions.map((suggestion) => (
@@ -3770,15 +3786,26 @@ export function AnswerLoop() {
               className={styles.smallActionButton}
               onClick={handleStartRewriteFromGuide}
             >
-              {rewritePractice.ctaLabel}
+              {nextStepPractice.ctaLabel}
             </button>
           </div>
         </div>
+      </>
+    );
+
+    if (nested) {
+      return <div className={styles.feedbackSubsection}>{content}</div>;
+    }
+
+    return (
+      <section className={styles.feedbackBlock}>
+        <h3>{nextStepPractice.title || "추가하면 좋을 점"}</h3>
+        {content}
       </section>
     );
   }
 
-  function renderExampleAnswerSection() {
+  function renderExampleAnswerSection(nested = false) {
     const screenPolicy = resolveScreenPolicy();
     const modelAnswerMode = screenPolicy?.modelAnswerDisplayMode ?? "HIDE";
     if (!isDisplayVisible(modelAnswerMode)) {
@@ -3789,12 +3816,26 @@ export function AnswerLoop() {
       return null;
     }
 
-    const rewriteStarter = feedback.ui?.rewritePractice?.starter?.trim();
-    if (rewriteStarter && rewriteStarter === feedback.modelAnswer.trim()) {
+    const nextStepSeed = resolveNextStepSeed(feedback.ui?.nextStepPractice);
+    if (nextStepSeed && nextStepSeed === feedback.modelAnswer.trim()) {
       return null;
     }
 
     const title = modelAnswerMode === "TASK_RESET_EXAMPLE" ? "질문에 맞는 예시 답변" : "예시 답변";
+    if (nested) {
+      return (
+        <div className={styles.feedbackSubsection}>
+          <span className={styles.feedbackSubsectionLabel}>{title}</span>
+          <div className={styles.feedbackSubsectionCard}>
+            <p className={styles.modelAnswerText}>{feedback.modelAnswer}</p>
+            {feedback.modelAnswerKo ? (
+              <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
+            ) : null}
+          </div>
+        </div>
+      );
+    }
+
     if (isCollapsedDisplay(modelAnswerMode)) {
       return (
         <details className={`${styles.feedbackBlock} ${styles.expressionDrawer}`}>
@@ -3841,17 +3882,49 @@ export function AnswerLoop() {
     );
   }
 
-  function renderExpressionLearningSection() {
+  function renderExpressionLearningSection(nested = false) {
     const points = resolveSecondaryLearningPoints().filter((point) => point.kind === "EXPRESSION");
     if (points.length === 0) {
       return null;
     }
 
+    const content = (
+      <>
+        {nested ? <span className={styles.feedbackSubsectionLabel}>써보면 좋은 표현</span> : null}
+        <div className={styles.secondaryLearningList}>
+          {points.map((point, index) => renderLearningPointTextCard(point, index))}
+        </div>
+      </>
+    );
+
+    if (nested) {
+      return <div className={styles.feedbackSubsection}>{content}</div>;
+    }
+
     return (
       <section className={`${styles.feedbackBlock} ${styles.secondaryLearningBlock}`}>
         <h3>써보면 좋은 표현</h3>
-        <div className={styles.secondaryLearningList}>
-          {points.map((point, index) => renderLearningPointTextCard(point, index))}
+        {content}
+      </section>
+    );
+  }
+
+  function renderAdditionalIdeasSection() {
+    const nextStepPracticeSection = renderNextStepPracticeSection(true);
+    const exampleAnswerSection = renderExampleAnswerSection(true);
+    const expressionSection = renderExpressionLearningSection(true);
+
+    if (!nextStepPracticeSection && !exampleAnswerSection && !expressionSection) {
+      return null;
+    }
+
+    return (
+      <section className={`${styles.feedbackBlock} ${styles.additionalIdeasSection}`}>
+        <h3>추가하면 좋을 점</h3>
+        <div className={styles.additionalIdeasStack}>
+          {nextStepPracticeSection}
+          {exampleAnswerSection}
+          {expressionSection}
         </div>
       </section>
     );
@@ -3862,9 +3935,7 @@ export function AnswerLoop() {
       <>
         {renderKeepSection()}
         {renderFixPointsSection()}
-        {renderRewritePracticeSection()}
-        {renderExampleAnswerSection()}
-        {renderExpressionLearningSection()}
+        {renderAdditionalIdeasSection()}
       </>
     );
   }
@@ -3920,14 +3991,15 @@ export function AnswerLoop() {
     const keepStrengths = feedback.strengths.slice(0, screenPolicy?.keepWhatWorksMaxItems ?? 2);
     const expressionChips = usedExpressions.slice(0, screenPolicy?.keepExpressionChipMaxItems ?? 2);
     const fixPoints = resolveFixPoints();
-    const rewritePractice = feedback.ui?.rewritePractice ?? {
+    const nextStepPractice = resolveNextStepPractice() ?? {
       title: feedback.loopComplete ? "원하면 한 번 더 다듬어 보세요" : "한번 더 써보기",
-      starter: feedback.correctedAnswer?.trim() || lastSubmittedAnswer,
-      instruction: feedback.rewriteChallenge?.trim() || "이 문장을 시작점으로 삼아 다시 써 보세요.",
+      headline: feedback.correctedAnswer?.trim() || lastSubmittedAnswer,
+      supportText: feedback.rewriteChallenge?.trim() || "이 문장을 시작점으로 삼아 다시 써 보세요.",
       ctaLabel: "이 문장으로 시작해서 다시 쓰기",
       optionalTone: Boolean(feedback.loopComplete)
     };
-    const rewriteSuggestions = resolveRewritePracticeSuggestions(rewritePractice.starter);
+    const rewriteSuggestions = resolveNextStepSuggestions(nextStepPractice);
+    const nextStepPoint = toNextStepLearningPoint(nextStepPractice, true);
     const canShowModelAnswer =
       Boolean(feedback.modelAnswer?.trim()) &&
       (screenPolicy?.modelAnswerDisplayMode ?? "SHOW_EXPANDED") !== "HIDE";
@@ -3977,7 +4049,7 @@ export function AnswerLoop() {
               <div className={`${styles.mobileFeedbackSectionIcon} ${styles.mobileFeedbackSectionIconGood}`}>
                 <span className="material-symbols-outlined">thumb_up</span>
               </div>
-              <h3>이건 잘했어</h3>
+              <h3>잘한 점</h3>
             </div>
             {keepStrengths.length > 0 ? (
               <ul className={styles.mobileFeedbackStrengthList}>
@@ -4018,59 +4090,95 @@ export function AnswerLoop() {
           </section>
         ) : null}
 
-        {isDisplayVisible(screenPolicy?.rewriteGuideDisplayMode) ? (
+        {isDisplayVisible(screenPolicy?.rewriteGuideDisplayMode) || canShowModelAnswer ? (
           <section className={styles.mobileFeedbackPracticeSection}>
-            <h3>{rewritePractice.title || "이 문장으로 다시 써보기"}</h3>
-            <div className={styles.mobileFeedbackPracticeCard}>
-              <div className={styles.mobileFeedbackStarterBlock}>
-                <p className={styles.mobileFeedbackStarterText}>{rewritePractice.starter}</p>
-                <p className={styles.mobileFeedbackStarterHint}>{rewritePractice.instruction}</p>
-              </div>
-              {rewriteSuggestions.length > 0 ? (
-                <div className={styles.mobileFeedbackSuggestionBlock}>
-                  <p className={styles.mobileFeedbackSuggestionTitle}>이런 표현으로 이어 써볼 수 있어요</p>
-                  <div className={styles.mobileFeedbackSuggestionList}>
-                    {rewriteSuggestions.map((suggestion) => (
-                      <article key={suggestion.key} className={styles.mobileFeedbackSuggestionCard}>
-                        <div className={styles.mobileFeedbackSuggestionTop}>
-                          <strong>{suggestion.english}</strong>
-                          <span className={styles.mobileFeedbackSuggestionDot} aria-hidden="true" />
-                        </div>
-                        {suggestion.korean ? (
-                          <p>{renderLocalizedExpression(suggestion.korean)}</p>
-                        ) : null}
-                      </article>
-                    ))}
-                  </div>
+            <h3>추가하면 좋을 점</h3>
+            {isDisplayVisible(screenPolicy?.rewriteGuideDisplayMode) ? (
+              <div className={styles.mobileFeedbackPracticeCard}>
+                <div className={styles.mobileFeedbackStarterBlock}>
+                  <p className={styles.mobileFeedbackPracticeLabel}>
+                    {nextStepPractice.title || "이 문장으로 다시 써보기"}
+                  </p>
+                  {trimNullable(nextStepPoint.originalText) && trimNullable(nextStepPoint.revisedText) ? (
+                    renderMobileFeedbackFixPoint(nextStepPoint, -1)
+                  ) : (
+                    <>
+                      {resolveLearningPointLead(nextStepPoint) ? (
+                        <p className={styles.mobileFeedbackStarterText}>
+                          {resolveLearningPointLead(nextStepPoint)}
+                        </p>
+                      ) : null}
+                      {resolveLearningPointMeaning(
+                        nextStepPoint,
+                        resolveLearningPointLead(nextStepPoint)
+                      ) ? (
+                        <p className={styles.mobileFeedbackStarterHint}>
+                          {renderLocalizedExpression(
+                            resolveLearningPointMeaning(
+                              nextStepPoint,
+                              resolveLearningPointLead(nextStepPoint)
+                            ) ?? ""
+                          )}
+                        </p>
+                      ) : null}
+                      {resolveLearningPointGuidance(nextStepPoint) ? (
+                        <p className={styles.mobileFeedbackStarterHint}>
+                          {resolveLearningPointGuidance(nextStepPoint)}
+                        </p>
+                      ) : null}
+                      {resolveLearningPointSupport(nextStepPoint) ? (
+                        <p className={styles.mobileFeedbackStarterHint}>
+                          {resolveLearningPointSupport(nextStepPoint)}
+                        </p>
+                      ) : null}
+                    </>
+                  )}
                 </div>
-              ) : null}
-              <div className={styles.mobileFeedbackPracticeAction}>
-                <button
-                  type="button"
-                  className={`${styles.primaryButton} ${styles.mobileFeedbackPracticeButton}`}
-                  onClick={handleStartRewriteFromGuide}
-                >
-                  {rewritePractice.ctaLabel}
-                </button>
+                {rewriteSuggestions.length > 0 ? (
+                  <div className={styles.mobileFeedbackSuggestionBlock}>
+                    <p className={styles.mobileFeedbackSuggestionTitle}>이런 아이디어를 더해 볼 수 있어요</p>
+                    <div className={styles.mobileFeedbackSuggestionList}>
+                      {rewriteSuggestions.map((suggestion) => (
+                        <article key={suggestion.key} className={styles.mobileFeedbackSuggestionCard}>
+                          <div className={styles.mobileFeedbackSuggestionTop}>
+                            <strong>{suggestion.english}</strong>
+                            <span className={styles.mobileFeedbackSuggestionDot} aria-hidden="true" />
+                          </div>
+                          {suggestion.korean ? (
+                            <p>{renderLocalizedExpression(suggestion.korean)}</p>
+                          ) : null}
+                        </article>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+                <div className={styles.mobileFeedbackPracticeAction}>
+                  <button
+                    type="button"
+                    className={`${styles.primaryButton} ${styles.mobileFeedbackPracticeButton}`}
+                    onClick={handleStartRewriteFromGuide}
+                  >
+                    {nextStepPractice.ctaLabel}
+                  </button>
+                </div>
               </div>
-            </div>
-          </section>
-        ) : null}
-
-        {canShowModelAnswer ? (
-          <section className={styles.mobileFeedbackSectionCard}>
-            <div className={styles.mobileFeedbackSectionHeader}>
-              <div className={`${styles.mobileFeedbackSectionIcon} ${styles.mobileFeedbackSectionIconExample}`}>
-                <span className="material-symbols-outlined">auto_awesome</span>
+            ) : null}
+            {canShowModelAnswer ? (
+              <div className={styles.mobileFeedbackSectionCard}>
+                <div className={styles.mobileFeedbackSectionHeader}>
+                  <div className={`${styles.mobileFeedbackSectionIcon} ${styles.mobileFeedbackSectionIconExample}`}>
+                    <span className="material-symbols-outlined">auto_awesome</span>
+                  </div>
+                  <h3>예시 답안</h3>
+                </div>
+                <div className={styles.mobileFeedbackExampleCard}>
+                  <p className={styles.mobileFeedbackExampleText}>{feedback.modelAnswer}</p>
+                  {feedback.modelAnswerKo ? (
+                    <p className={styles.mobileFeedbackExampleTranslation}>해석: {feedback.modelAnswerKo}</p>
+                  ) : null}
+                </div>
               </div>
-              <h3>예시 답안</h3>
-            </div>
-            <div className={styles.mobileFeedbackExampleCard}>
-              <p className={styles.mobileFeedbackExampleText}>{feedback.modelAnswer}</p>
-              {feedback.modelAnswerKo ? (
-                <p className={styles.mobileFeedbackExampleTranslation}>해석: {feedback.modelAnswerKo}</p>
-              ) : null}
-            </div>
+            ) : null}
           </section>
         ) : null}
 
@@ -4727,3 +4835,4 @@ export function AnswerLoop() {
     </main>
   );
 }
+

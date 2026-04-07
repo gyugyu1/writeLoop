@@ -153,7 +153,7 @@ class GeminiFeedbackClientTest {
                         "exampleKo", "Korean example",
                         "meaningKo", "make eating habits healthier"
                 )),
-                "rewritePractice", Map.of(
+                "nextStepPractice", Map.of(
                         "title", "한번 더 써보기",
                         "starter", "One health goal I have this year is to improve my diet because ______.",
                         "instruction", "빈칸에 이유를 하나 넣어 보세요.",
@@ -179,6 +179,12 @@ class GeminiFeedbackClientTest {
         assertThat(sections.summary()).isNull();
         assertThat(sections.focusCard()).isNull();
         assertThat(sections.strengths()).containsExactly("You clearly state the goal and reason.");
+        assertThat(sections.fixPoints())
+                .extracting(FeedbackSecondaryLearningPointDto::kind, FeedbackSecondaryLearningPointDto::headline)
+                .containsExactly(
+                        tuple("CORRECTION", "Add one more real habit."),
+                        tuple("GRAMMAR", null)
+                );
         assertThat(sections.primaryFix()).isNotNull();
         assertThat(sections.primaryFix().instruction()).isEqualTo("Add one more real habit.");
         assertThat(sections.secondaryLearningPoints())
@@ -188,8 +194,8 @@ class GeminiFeedbackClientTest {
             assertThat(card.expression()).isEqualTo("improve my diet");
             assertThat(card.meaningKo()).isEqualTo("make eating habits healthier");
         });
-        assertThat(sections.rewritePractice()).isNotNull();
-        assertThat(sections.rewritePractice().starter()).contains("______");
+        assertThat(sections.nextStepPractice()).isNotNull();
+        assertThat(sections.nextStepPractice().starter()).isNotBlank();
         assertThat(sections.rewriteSuggestions()).singleElement().satisfies(suggestion -> {
             assertThat(suggestion.english()).isEqualTo("it helps me feel more energetic");
             assertThat(suggestion.meaningKo()).isEqualTo("더 활기차게 느끼게 해 줘서");
@@ -388,44 +394,34 @@ class GeminiFeedbackClientTest {
         );
 
         assertThat(text).contains("corrections must name one concrete weak learner phrase");
-        assertThat(text).contains("fixPoints feed the single ordered Fix Points section directly");
-        assertThat(text).contains("fixPoints[0] is the first thing to fix");
+        assertThat(text).contains("requestedSections: FIX_POINTS, NEXT_STEP_PRACTICE");
+        assertThat(text).contains("Prioritize learner focus and clarity over section completeness.");
+        assertThat(text).contains("fixPoints feed the ordered must-fix list for the learner");
         assertThat(text).contains("Generate fixPoints as one ordered UI-ready list");
         assertThat(text).contains("Each fixPoints item must teach exactly one concrete correction point.");
         assertThat(text).contains("A fixPoints item may use originalText / revisedText / supportText");
         assertThat(text).contains("If a fixPoints item has no originalText / revisedText pair, its headline must still name one concrete anchor phrase");
         assertThat(text).contains("Do not return placeholder-like fixPoints[0] headlines or instructions such as \"First thing to fix\" or \"Fix this one thing first\" unless you also name the exact phrase or expression to fix.");
-        assertThat(text).contains("Do not make fixPoints[0] a vague task-reset card when rewritePractice is already asking for one specific reason, detail, or example.");
-        assertThat(text).contains("When rewritePractice asks the learner to add because/reason/detail/example, fixPoints[0] must point to that same missing support");
-        assertThat(text).contains("Do not merge unrelated lessons into one fixPoints item.");
-        assertThat(text).contains("rewritePractice feeds the Rewrite Guide card directly");
-        assertThat(text).contains("rewriteSuggestions feed the small suggestion cards below rewritePractice directly");
-        assertThat(text).contains("Do not split the same teaching point across multiple fixPoints items, even with different example sentences.");
-        assertThat(text).contains("If one item teaches article choice, pronoun agreement, tense, connector choice, plural/singular agreement, local spelling, or one specific anchor phrase, later fixPoints must move on to a genuinely different remaining issue.");
-        assertThat(text).contains("If the learner span needs two different local grammar lessons, split them into separate fixPoints items instead of folding both into one revisedText.");
-        assertThat(text).contains("In particular, article/determiner choice and plural/singular choice must be taught as separate fixPoints items when both need correction.");
-        assertThat(text).contains("When possible, each originalText / revisedText pair should isolate only one changed principle.");
+        assertThat(text).contains("strengths and usedExpressions feed Keep What Works.");
+        assertThat(text).contains("nextStepPractice and rewriteSuggestions feed one optional next-step area after the must-fix list.");
+        assertThat(text).contains("Do not merge unrelated lessons into one fixPoints item or split the same teaching point across multiple fixPoints items.");
+        assertThat(text).contains("If the learner span needs multiple local grammar lessons, split them into separate fixPoints items instead of folding them into one revisedText.");
+        assertThat(text).contains("teach article/determiner vs plural/singular separately");
+        assertThat(text).contains("each originalText / revisedText pair should isolate one changed principle.");
         assertThat(text).contains("do not make one fixPoints item whose revisedText is \"my football skills\"");
-        assertThat(text).contains("grammarFeedback is an optional raw grammar candidate pool");
-        assertThat(text).contains("Each grammarFeedback item must also teach only one grammar principle at a time.");
-        assertThat(text).contains("Do not let one grammarFeedback item silently bundle multiple lessons into one revisedText when those lessons should be explained separately.");
-        assertThat(text).contains("Include every remaining distinct grammar candidate that still adds value beyond fixPoints, including minor local errors when they are still pedagogically useful.");
-        assertThat(text).contains("Put the highest-value grammar candidate first, then keep the rest in descending usefulness.");
-        assertThat(text).contains("rewritePractice.starter must contain at least one blank such as ______ or ....");
-        assertThat(text).contains("rewritePractice should follow the same main plan as fixPoints[0] and should usually build from the same corrected anchor.");
-        assertThat(text).contains("rewritePractice.starter should already reflect the visible high-priority fixes for that sentence before the blank, instead of leaving the learner's old form behind.");
-        assertThat(text).contains("If fixPoints[0] introduces a specific anchor such as a time phrase, connector, corrected local phrase, or connected sentence pattern, keep that anchor in rewritePractice.starter instead of dropping it.");
-        assertThat(text).contains("If compatible later fixPoints target the same sentence, rewritePractice.starter should usually absorb them before the blank, including compatible local fixes or one strong phrase upgrade.");
-        assertThat(text).contains("rewriteSuggestions must fit naturally into the blank in rewritePractice.starter");
-        assertThat(text).contains("rewriteSuggestions should usually be 0-3 short English clauses or phrases, not standalone full sentences.");
-        assertThat(text).contains("modelAnswer should demonstrate the same fixPoints[0] anchor and, when compatible, one strong later fixPoint upgrade in a single coherent sentence or sentence pair.");
-        assertThat(text).contains("modelAnswer should preserve the same compatible fixes that rewritePractice already absorbed, instead of reverting to an older sentence structure or the learner's old form.");
-        assertThat(text).contains("If fixPoints[0] and compatible later fixPoints can naturally combine in the same sentence, modelAnswer should combine them in one coherent answer instead of splitting them across separate example worlds.");
-        assertThat(text).contains("If fixPoints[0] teaches a referent, pronoun, or singular/plural agreement correction, modelAnswer must preserve that same referent choice and agreement.");
-        assertThat(text).contains("Put the remaining distinct secondary fixes later in FIX_POINTS instead of repeating FIX_POINTS[0].");
-        assertThat(text).contains("REWRITE_PRACTICE must be a blank-containing scaffold");
-        assertThat(text).contains("usedExpressions feed the small expression chips under Keep What Works");
-        assertThat(text).contains("corrections feed raw non-grammar candidates that may support fixPoints");
+        assertThat(text).contains("grammarFeedback is an optional raw grammar candidate pool beyond fixPoints.");
+        assertThat(text).contains("Each grammarFeedback item must still teach only one grammar principle at a time.");
+        assertThat(text).contains("Include every remaining distinct grammar candidate that still adds value");
+        assertThat(text).contains("nextStepPractice is optional and should represent one genuine next step after the must-fix list");
+        assertThat(text).contains("Use nextStepPractice only when there is a locally acceptable base answer");
+        assertThat(text).contains("nextStepPractice may use the same flexible card fields as fixPoints and does not need to be a blank scaffold.");
+        assertThat(text).contains("rewriteSuggestions do not need to fit a blank. They should support the same next step as nextStepPractice");
+        assertThat(text).contains("modelAnswer is a one-step-up reference, not another nextStepPractice card.");
+        assertThat(text).contains("modelAnswer must preserve learner meaning, keep the must-fix corrections from fixPoints");
+        assertThat(text).contains("Preserve referent, pronoun, and singular/plural agreement taught by fixPoints[0].");
+        assertThat(text).contains("If attemptIndex >= 2, prioritize one remaining action first, but still include any other distinct later fixPoints that are clearly useful.");
+        assertThat(text).contains("Put the remaining distinct later fixes later in FIX_POINTS instead of repeating FIX_POINTS[0].");
+        assertThat(text).contains("grammarFeedback, corrections, and refinementExpressions are optional raw support pools behind fixPoints.");
         assertThat(text).contains("corrections are optional raw non-grammar candidates for fixPoints");
         assertThat(text).contains("Return every remaining distinct non-grammar secondary angle that is still useful, such as a naturalness upgrade, collocation fix, clearer reason phrasing, or one missing support idea.");
         assertThat(text).contains("Return all distinct refinementExpressions that add clear reusable value beyond fixPoints. Do not stop at 1-2 if more are still genuinely useful.");
@@ -490,7 +486,7 @@ class GeminiFeedbackClientTest {
                                         "because를 반복하면 안 됨"
                                 )
                         ),
-                        new com.writeloop.dto.FeedbackRewritePracticeDto(
+                        new com.writeloop.dto.FeedbackNextStepPracticeDto(
                                 "문장 연결 연습하기",
                                 "I like romantic comedy movies because ______.",
                                 "because 뒤에 이유를 덧붙여 보세요.",
@@ -501,7 +497,11 @@ class GeminiFeedbackClientTest {
 
         assertThat(sanitized)
                 .extracting(com.writeloop.dto.FeedbackRewriteSuggestionDto::english)
-                .containsExactly("they make me laugh");
+                .containsExactly(
+                        "I love romantic comedy movies",
+                        "they make me laugh",
+                        "because they are funny"
+                );
     }
 
     @Test
@@ -940,7 +940,7 @@ class GeminiFeedbackClientTest {
                 null,
                 List.of(),
                 List.of(),
-                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                new com.writeloop.dto.FeedbackNextStepPracticeDto(
                         "한번 더 써보기",
                         "On weekday mornings, I usually take guitar lessons. After that, I ______.",
                         "빈칸에 한 가지 활동을 넣어 보세요.",
@@ -961,7 +961,7 @@ class GeminiFeedbackClientTest {
                 sections.modelAnswerKo(),
                 sections.usedExpressions(),
                 List.of(),
-                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                new com.writeloop.dto.FeedbackNextStepPracticeDto(
                         "한번 더 써보기",
                         "I like bookstores because ______.",
                         "빈칸에 이유를 넣어 보세요.",
@@ -982,7 +982,7 @@ class GeminiFeedbackClientTest {
                 sections.modelAnswerKo(),
                 sections.usedExpressions(),
                 List.of(),
-                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                new com.writeloop.dto.FeedbackNextStepPracticeDto(
                         "한번 더 써보기",
                         "I want to visit Tokyo because ______. Also, I want to ______.",
                         "빈칸에 이유를 넣어 보세요.",
@@ -1003,7 +1003,7 @@ class GeminiFeedbackClientTest {
                 sections.modelAnswerKo(),
                 sections.usedExpressions(),
                 List.of(),
-                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                new com.writeloop.dto.FeedbackNextStepPracticeDto(
                         "한번 더 써보기",
                         "My favorite season is spring because ______.",
                         "빈칸에 이유를 넣어 보세요.",
@@ -1044,8 +1044,8 @@ class GeminiFeedbackClientTest {
                         SectionKey.MODEL_ANSWER,
                         SectionKey.REFINEMENT
                 );
-        assertThat(validation.sanitizedSections().rewritePractice()).isNotNull();
-        assertThat(validation.sanitizedSections().rewritePractice().starter()).contains("______");
+        assertThat(validation.sanitizedSections().nextStepPractice()).isNotNull();
+        assertThat(validation.sanitizedSections().nextStepPractice().starter()).contains("______");
     }
 
     @Test
@@ -1127,7 +1127,7 @@ class GeminiFeedbackClientTest {
                 sections.modelAnswerKo(),
                 sections.usedExpressions(),
                 List.of(),
-                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                new com.writeloop.dto.FeedbackNextStepPracticeDto(
                         "Rewrite practice",
                         "My favorite season is spring because ______.",
                         "Add one concrete reason in the blank.",
@@ -1229,7 +1229,7 @@ class GeminiFeedbackClientTest {
                 sections.modelAnswerKo(),
                 sections.usedExpressions(),
                 List.of(),
-                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                new com.writeloop.dto.FeedbackNextStepPracticeDto(
                         "Rewrite practice",
                         "My favorite season is spring because ______.",
                         "Add one concrete reason in the blank.",
@@ -1249,8 +1249,8 @@ class GeminiFeedbackClientTest {
                 List.of(SectionKey.REWRITE_GUIDE, SectionKey.MODEL_ANSWER)
         );
 
-        assertThat(validation.sanitizedSections().rewritePractice()).isNotNull();
-        assertThat(validation.sanitizedSections().rewritePractice().starter()).contains("______");
+        assertThat(validation.sanitizedSections().nextStepPractice()).isNotNull();
+        assertThat(validation.sanitizedSections().nextStepPractice().starter()).contains("______");
         assertThat(validation.failures())
                 .extracting(ValidationFailure::failureCode)
                 .doesNotContain(ValidationFailureCode.REWRITE_DUPLICATE_MODEL_ANSWER);
@@ -1354,7 +1354,7 @@ class GeminiFeedbackClientTest {
         );
 
         assertThat(guidance).contains("Prioritize completing one full base sentence before any expansion.");
-        assertThat(guidance).contains("Prefer a very short one-clause rewritePractice scaffold over broader expansion.");
+        assertThat(guidance).contains("Use nextStepPractice only if there is one clearly optional add-on after the full base sentence is complete.");
         assertThat(guidance).contains("Avoid unsupported invention");
     }
 
@@ -1760,7 +1760,7 @@ class GeminiFeedbackClientTest {
                 sections.modelAnswerKo(),
                 sections.usedExpressions(),
                 List.of(),
-                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                new com.writeloop.dto.FeedbackNextStepPracticeDto(
                         "Rewrite practice",
                         "I like bookstores because they feel ______.",
                         "Complete the blank with one clearer detail.",
@@ -1782,8 +1782,8 @@ class GeminiFeedbackClientTest {
 
         assertThat(validation.shouldRetry()).isFalse();
         assertThat(validation.sanitizedSections().corrections()).isNotEmpty();
-        assertThat(validation.sanitizedSections().rewritePractice()).isNotNull();
-        assertThat(validation.sanitizedSections().rewritePractice().starter()).contains("______");
+        assertThat(validation.sanitizedSections().nextStepPractice()).isNotNull();
+        assertThat(validation.sanitizedSections().nextStepPractice().starter()).contains("______");
     }
 
     @Test
@@ -1868,7 +1868,7 @@ class GeminiFeedbackClientTest {
                 sections.modelAnswerKo(),
                 sections.usedExpressions(),
                 List.of(),
-                new com.writeloop.dto.FeedbackRewritePracticeDto(
+                new com.writeloop.dto.FeedbackNextStepPracticeDto(
                         "Rewrite practice",
                         "I want to visit Tokyo because ______. Also, I want to ______.",
                         "Fill in the blank with one reason.",
@@ -1893,8 +1893,8 @@ class GeminiFeedbackClientTest {
                 .extracting(ValidationFailure::failureCode)
                 .doesNotContain(ValidationFailureCode.EMPTY_IMPROVEMENT);
         assertThat(validation.sanitizedSections().primaryFix()).isNotNull();
-        assertThat(validation.sanitizedSections().rewritePractice()).isNotNull();
-        assertThat(validation.sanitizedSections().rewritePractice().starter()).contains("because ______");
+        assertThat(validation.sanitizedSections().nextStepPractice()).isNotNull();
+        assertThat(validation.sanitizedSections().nextStepPractice().starter()).contains("because ______");
     }
 
     @Test

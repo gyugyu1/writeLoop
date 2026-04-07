@@ -43,6 +43,10 @@ public class OpenAiFeedbackClient {
     private static final int MAX_LOG_RESPONSE_BODY_LENGTH = 4000;
     private static final Pattern INLINE_TOKEN_PATTERN = Pattern.compile("[A-Za-z0-9']+|[^\\sA-Za-z0-9']+|\\s+");
     private static final Pattern PRIMARY_FIX_ENGLISH_ANCHOR_PATTERN = Pattern.compile("[A-Za-z][A-Za-z' -]{2,}");
+    private static final Set<String> EXPLANATION_ANCHOR_STOPWORDS = Set.of(
+            "a", "an", "and", "are", "be", "been", "being", "for", "from", "had", "has", "have",
+            "in", "is", "it", "its", "of", "on", "or", "that", "the", "to", "was", "were", "with"
+    );
     static final String INTERNAL_AUTHORITATIVE_SESSION_ID = "__OPENAI_HYBRID_FINAL__";
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -563,6 +567,7 @@ public class OpenAiFeedbackClient {
         List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = generatedSections.secondaryLearningPoints().isEmpty()
                 ? laterFixPoints
                 : sanitizeSecondaryLearningPoints(generatedSections.secondaryLearningPoints(), primaryFix);
+        failures.addAll(validateFixPointExplanationCoverage(fixPoints));
         GeneratedSections sanitized = new GeneratedSections(
                 null,
                 strengths,
@@ -583,6 +588,129 @@ public class OpenAiFeedbackClient {
 
         boolean shouldRetry = failures.stream().anyMatch(failure -> feedbackRetryPolicy.shouldRetry(failure, diagnosis, sectionPolicy));
         return new ValidationResult(sanitized, failures, shouldRetry);
+    }
+
+    private List<ValidationFailure> validateFixPointExplanationCoverage(List<FeedbackSecondaryLearningPointDto> fixPoints) {
+        if (fixPoints == null || fixPoints.isEmpty()) {
+            return List.of();
+        }
+        for (FeedbackSecondaryLearningPointDto point : fixPoints) {
+            if (point == null || !isUnderExplainedFixPoint(point)) {
+                continue;
+            }
+            return List.of(new ValidationFailure(
+                    SectionKey.PRIMARY_FIX,
+                    ValidationFailureCode.LOW_VALUE_SECTION,
+                    "Fix point explanation is too thin for the number of visible edits"
+            ));
+        }
+        return List.of();
+    }
+
+    private boolean isUnderExplainedFixPoint(FeedbackSecondaryLearningPointDto point) {
+        String originalText = trimToNull(point.originalText());
+        String revisedText = trimToNull(point.revisedText());
+        if (originalText == null || revisedText == null) {
+            return false;
+        }
+
+        List<InlineFeedbackSegmentDto> changedSegments = buildPreciseInlineFeedback(originalText, revisedText).stream()
+                .filter(segment -> segment != null && !"KEEP".equals(segment.type()))
+                .filter(this::isMeaningfulChangeSegment)
+                .toList();
+        if (changedSegments.size() < 2) {
+            return false;
+        }
+
+        String supportText = trimToNull(point.supportText());
+        String explanationText = normalizeForComparison(String.join(" ",
+                firstNonBlank(point.title(), ""),
+                firstNonBlank(point.headline(), ""),
+                firstNonBlank(point.supportText(), "")
+        )).toLowerCase(Locale.ROOT);
+        List<String> changeAnchors = extractMeaningfulChangeAnchors(changedSegments);
+        int coveredAnchors = countCoveredChangeAnchors(explanationText, changeAnchors);
+
+        if (changedSegments.size() >= 3 && (supportText == null || supportText.length() < 28)) {
+            return true;
+        }
+
+        return changeAnchors.size() >= 2
+                && coveredAnchors < 2
+                && (supportText == null || supportText.length() < 40);
+    }
+
+    private boolean isMeaningfulChangeSegment(InlineFeedbackSegmentDto segment) {
+        if (segment == null) {
+            return false;
+        }
+        return containsLatinOrDigit(segment.originalText()) || containsLatinOrDigit(segment.revisedText());
+    }
+
+    private List<String> extractMeaningfulChangeAnchors(List<InlineFeedbackSegmentDto> changedSegments) {
+        if (changedSegments == null || changedSegments.isEmpty()) {
+            return List.of();
+        }
+        LinkedHashSet<String> anchors = new LinkedHashSet<>();
+        for (InlineFeedbackSegmentDto segment : changedSegments) {
+            String anchor = firstNonBlank(
+                    sanitizeChangeAnchor(segment.revisedText()),
+                    sanitizeChangeAnchor(segment.originalText())
+            );
+            if (anchor != null) {
+                anchors.add(anchor);
+            }
+        }
+        return List.copyOf(anchors);
+    }
+
+    private String sanitizeChangeAnchor(String value) {
+        String trimmed = trimToNull(value);
+        if (trimmed == null || !containsLatinOrDigit(trimmed)) {
+            return null;
+        }
+        String normalized = trimmed
+                .replaceAll("^[^A-Za-z0-9]+|[^A-Za-z0-9]+$", "")
+                .replaceAll("\\s+", " ")
+                .trim()
+                .toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return null;
+        }
+        if (!normalized.contains(" ")) {
+            if (normalized.length() < 3 || EXPLANATION_ANCHOR_STOPWORDS.contains(normalized)) {
+                return null;
+            }
+        }
+        return normalized;
+    }
+
+    private int countCoveredChangeAnchors(String explanationText, List<String> changeAnchors) {
+        if (explanationText == null || explanationText.isBlank() || changeAnchors == null || changeAnchors.isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        for (String anchor : changeAnchors) {
+            if (anchor != null && !anchor.isBlank() && explanationText.contains(anchor)) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private boolean containsLatinOrDigit(String value) {
+        if (value == null || value.isBlank()) {
+            return false;
+        }
+        for (int index = 0; index < value.length(); index++) {
+            char character = value.charAt(index);
+            if ((character >= 'A' && character <= 'Z')
+                    || (character >= 'a' && character <= 'z')
+                    || Character.isDigit(character)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private RegenerationRequest toRegenerationRequest(
@@ -1449,12 +1577,12 @@ public class OpenAiFeedbackClient {
                 - Fill both the diagnosis fields and the feedback section fields in the same JSON object.
                 - Work in this order:
                   1) Write modelAnswer first as the closest natural, submission-ready rewrite of the learner answer.
-                  2) Then build fixPoints as explanations of the most important visible differences between learner answer and modelAnswer.
+                  2) Then build fixPoints as explanations of all visible differences between learner answer and modelAnswer.
                   3) Then use nextStepPractice only for one optional move beyond modelAnswer, if that extra move is clearly useful.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
                 - Do not reuse a broken learner phrase in strengths, refinementExpressions, nextStepPractice, or modelAnswer.
                 - Keep Korean fields natural and concise.
-                - If attemptIndex >= 2, keep the list focused but still include any other clearly distinct, high-value fixPoints.
+                - If attemptIndex >= 2, keep the writing concise, but do not leave a visible learner-to-modelAnswer change unexplained.
 
                 Diagnosis rules:
                 - Choose exactly one answerBand from: TOO_SHORT_FRAGMENT, SHORT_BUT_VALID, GRAMMAR_BLOCKING, CONTENT_THIN, NATURAL_BUT_BASIC, OFF_TOPIC.
@@ -1472,15 +1600,19 @@ public class OpenAiFeedbackClient {
                 - usedExpressions must not contain long broken spans or whole awkward sentences, and usageTip should be one short Korean reason.
 
                 fixPoints rules:
-                - Each fixPoints item should explain one visible, meaningful difference between learner answer and modelAnswer.
+                - fixPoints should collectively explain all visible differences between learner answer and modelAnswer.
+                - Each fixPoints item should explain one visible difference between learner answer and modelAnswer.
                 - Each fixPoints item must teach exactly one concrete correction point.
-                - Return every remaining distinct useful fix as its own item instead of merging unrelated lessons or repeating the same lesson.
+                - Do not leave an unexplained edit in modelAnswer. If modelAnswer changes something, explain that change in fixPoints unless it is purely formatting or punctuation-only.
+                - Return every distinct fix as its own item instead of merging unrelated lessons or repeating the same lesson.
+                - Prefer the smallest aligned originalText / revisedText span that still teaches the point clearly.
+                - If one originalText / revisedText pair contains multiple meaningful edits, either split it into multiple fixPoints or make supportText explicitly explain every changed part in that pair.
+                - supportText must match the size of the edit. Short reason text is only acceptable for a small local change; larger pairs need fuller explanation.
                 - When possible, use originalText for the learner span and revisedText for the aligned corrected span from modelAnswer.
                 - A fixPoints item may use originalText / revisedText / supportText for a correction pair, or title / headline / supportText for one anchored instruction card when a clean pair is not possible.
                 - If there is no originalText / revisedText pair, the headline must still name the exact phrase, word, connector, or slot that changes in modelAnswer.
                 - Avoid generic fixPoints titles or instructions without an explicit anchor.
                 - Keep article/determiner, singular/plural, pronoun agreement, and connector choice separate when they are distinct problems.
-                - Do not turn every tiny polish in modelAnswer into a fixPoint. Focus on must-fix or clearly high-value differences first.
 
                 refinementExpressions rules:
                 - refinementExpressions are optional reusable-expression cards beyond fixPoints.
@@ -1500,7 +1632,7 @@ public class OpenAiFeedbackClient {
 
                 modelAnswer rules:
                 - modelAnswer should read like a natural polished rewrite of the learner answer, not a distant sample answer.
-                - Write modelAnswer first and let fixPoints explain the important differences that appear in that rewrite.
+                - Write modelAnswer first and let fixPoints explain all visible differences that appear in that rewrite.
                 - Keep modelAnswer as close as possible to the learner's meaning, facts, and sentence direction while making it natural and submission-ready.
                 - modelAnswer must already contain the must-fix changes that fixPoints later explain.
                 - Add at most one small optional upgrade only when it still clearly feels like the same answer, not a new answer.
@@ -2469,6 +2601,7 @@ public class OpenAiFeedbackClient {
         if (fixPointRetryNeeded) {
             instructions.add("- Replace generic FIX_POINTS with specific ones. Each item should teach one point and name the exact phrase, word, connector, or slot to change when no original/revised pair is shown.");
             instructions.add("- If multiple distinct fixes remain, return them as separate FIX_POINTS instead of repeating the same lesson.");
+            instructions.add("- If one FIX_POINTS pair changes several things, either split it into smaller cards or explain every changed part clearly in supportText. Do not explain only the first edit.");
         }
         if (strengthsRequested && (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.NEAR_DUPLICATE)

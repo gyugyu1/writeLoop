@@ -43,7 +43,8 @@ final class FeedbackRetryPolicy {
                         default -> false;
                     };
             case SUMMARY_DUPLICATES_IMPROVEMENT -> false;
-            case LOW_VALUE_SECTION -> false;
+            case LOW_VALUE_SECTION ->
+                    failure.sectionKey() == SectionKey.PRIMARY_FIX;
         };
     }
 }

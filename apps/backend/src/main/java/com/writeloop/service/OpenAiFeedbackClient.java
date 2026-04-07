@@ -1365,18 +1365,37 @@ public class OpenAiFeedbackClient {
             List<ValidationFailureCode> failureCodes,
             GeneratedSections previousSections
     ) throws IOException {
-        String coachProfileText = PromptOpenAiContextFormatter.formatCoachProfile(prompt);
         String coachProfileGuidance = PromptOpenAiContextFormatter.formatCoachProfileInstructions(prompt);
         String hintText = PromptOpenAiContextFormatter.formatPromptHints(hints);
         String requestedSectionText = formatRequestedSectionsForPrompt(requestedSections);
-        String retryFailures = failureCodes == null || failureCodes.isEmpty()
-                ? "- none"
-                : "- " + failureCodes.stream().map(Enum::name).reduce((left, right) -> left + ", " + right).orElse("");
-        String retrySpecificInstructions = buildRetrySpecificInstructionsV2(failureCodes, requestedSections);
-        String previousSectionJson = previousSections == null ? "{}" : objectMapper.writeValueAsString(previousSections);
-        String bandGuidance = diagnosis == null || sectionPolicy == null
+        boolean hasRetryContext = (failureCodes != null && !failureCodes.isEmpty()) || previousSections != null;
+        String retryContext = "";
+        if (hasRetryContext) {
+            String retryFailures = failureCodes == null || failureCodes.isEmpty()
+                    ? "- none"
+                    : "- " + failureCodes.stream().map(Enum::name).reduce((left, right) -> left + ", " + right).orElse("");
+            String retrySpecificInstructions = buildRetrySpecificInstructionsV2(failureCodes, requestedSections);
+            String previousSectionJson = previousSections == null ? "{}" : objectMapper.writeValueAsString(previousSections);
+            retryContext = """
+                    Retry notes:
+                    %s
+                    Retry-specific instructions:
+                    %s
+                    Return only these section groups:
+                    - %s
+                    Previous generated sections JSON:
+                    %s
+
+                    """.formatted(
+                    retryFailures,
+                    retrySpecificInstructions,
+                    requestedSectionText,
+                    previousSectionJson
+            );
+        }
+        String bandGuidance = diagnosis == null
                 ? "- Derive the diagnosis first, then make the must-fix list, next step, and model answer consistent with that diagnosis."
-                : generationBandGuidance(diagnosis.answerBand(), sectionPolicy);
+                : generationBandGuidance(diagnosis.answerBand());
         ProgressDelta progressDelta = answerProfile == null || answerProfile.rewrite() == null
                 ? null
                 : answerProfile.rewrite().progressDelta();
@@ -1385,16 +1404,14 @@ public class OpenAiFeedbackClient {
         String analysisContext = diagnosis == null
                 ? """
                 First-pass diagnosis:
-                - Your first job is to diagnose the learner answer and fill the diagnosis fields in this same JSON object.
-                - Treat the diagnosis fields you output as the source of truth for the sections you generate.
-                - requestedSections: %s
+                - Diagnose the learner answer inside this same JSON object first.
+                - Keep diagnosis, fixPoints, nextStepPractice, and modelAnswer aligned with each other.
                 - attemptIndex: %s
                 - previousAnswer: %s
                 - progress.improvedAreas: %s
                 - progress.remainingAreas: %s
-                - Prioritize learner focus and clarity over section completeness. It is better to return fewer, sharper items than many overlapping ones.
+                - Prefer fewer, sharper teaching points over many overlapping ones.
                 """.formatted(
-                requestedSectionText,
                 attemptIndex,
                 previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
                 improvedAreas,
@@ -1406,18 +1423,16 @@ public class OpenAiFeedbackClient {
                 - taskCompletion: %s
                 - onTopic: %s
                 - finishable: %s
-                - requestedSections: %s
                 - attemptIndex: %s
                 - previousAnswer: %s
                 - progress.improvedAreas: %s
                 - progress.remainingAreas: %s
-                - Prioritize learner focus and clarity over section completeness. It is better to return fewer, sharper items than many overlapping ones.
+                - Keep the regenerated sections aligned with this diagnosis.
                 """.formatted(
                 diagnosis.answerBand().name(),
                 diagnosis.taskCompletion().name(),
                 diagnosis.onTopic(),
                 diagnosis.finishable(),
-                requestedSectionText,
                 attemptIndex,
                 previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
                 improvedAreas,
@@ -1430,64 +1445,50 @@ public class OpenAiFeedbackClient {
 
                 %s
 
-                General output rules:
+                Response rules:
                 - Fill both the diagnosis fields and the feedback section fields in the same JSON object.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
                 - Do not reuse a broken learner phrase in strengths, refinementExpressions, nextStepPractice, or modelAnswer.
-                - If requestedSections does not include a section, return [] for arrays or null for strings.
                 - Keep Korean fields natural and concise.
-                - If attemptIndex >= 2, keep the list focused, but still include any other distinct useful fixPoints that are clearly worth teaching.
+                - If attemptIndex >= 2, keep the list focused but still include any other clearly distinct, high-value fixPoints.
 
                 Diagnosis rules:
-                - Diagnosis should support a rewrite-first screen. Choose one dominant next step that can drive the rewrite guide and must-fix list.
                 - Choose exactly one answerBand from: TOO_SHORT_FRAGMENT, SHORT_BUT_VALID, GRAMMAR_BLOCKING, CONTENT_THIN, NATURAL_BUT_BASIC, OFF_TOPIC.
                 - answerBand must reflect what the learner most needs next, not what sounds harshest.
-                - finishable should be true only when the learner answer already reads like an acceptable final submission, not merely a correct idea sketch.
-                - Do not keep finishable false only because the answer could be longer, more polished, or could support another optional one-step-up model answer.
-                - For routine or daily-life prompts, one or two clear activities with a natural time flow can already be finishable if the clauses themselves are natural enough to submit.
-                - If a required reason, detail, or activity clause still needs more than one small local repair, keep finishable=false.
-                - Do not set finishable=true when a required clause still has missing be-verbs, missing infinitive markers, broken complement structure, or other clearly incomplete sentence framing.
-                - An answer may be on-topic and task-complete but still not finishable if the required reason/detail clause sounds malformed as a final sentence.
-                - If attemptIndex >= 2, use previousAnswer only to detect progress and remaining issues. Do not repeat already-resolved grammar corrections as the primary issue.
+                - finishable=true only when the current answer already reads like an acceptable final submission.
+                - Do not keep finishable=false only because the answer could be longer, more polished, or could support one optional upgrade.
+                - If a required reason, detail, or activity clause is still malformed or needs more than one small local repair, keep finishable=false.
+                - If attemptIndex >= 2, use previousAnswer only to detect progress and remaining issues. Do not repeat already-fixed issues as if they were still the main problem.
                 - NATURAL_BUT_BASIC is appropriate when the answer is already clear, on-topic, complete enough for the loop to end, and needs at most one very small local cleanup.
-                - Prefer CONTENT_THIN or SHORT_BUT_VALID over GRAMMAR_BLOCKING when the answer mainly needs one minor correction plus a little expansion.
-                - Prefer GRAMMAR_BLOCKING only when grammar seriously blocks meaning or sentence structure.
+                - Prefer CONTENT_THIN or SHORT_BUT_VALID over GRAMMAR_BLOCKING unless grammar truly blocks meaning or sentence structure.
 
                 Strengths and usedExpressions rules:
-                - strengths must be semantic praise only. Never quote the full raw learner answer unless it is already clean and necessary.
-                - strengths should usually be one short Korean line that tells the learner what to keep.
-                - usedExpressions should contain at most 2 short reusable learner-used chunks that are already good enough to keep.
-                - usedExpressions must not contain long broken spans or whole awkward sentences.
-                - usedExpressions.usageTip must be one short Korean note about why the expression is worth keeping.
+                - strengths should usually be one short Korean keep-signal based on meaning, not a full raw quote unless it is already clean and necessary.
+                - usedExpressions may contain up to 2 short reusable learner-used chunks that are already good enough to keep.
+                - usedExpressions must not contain long broken spans or whole awkward sentences, and usageTip should be one short Korean reason.
 
                 fixPoints rules:
-                - Generate fixPoints as one UI-ready list instead of splitting the same lesson across multiple fields.
                 - Each fixPoints item must teach exactly one concrete correction point.
-                - Include every remaining distinct useful fix as a separate fixPoints item instead of stopping after one representative correction.
-                - A fixPoints item may use originalText / revisedText / supportText to show a concrete correction pair, or title / headline / supportText to show one anchored instruction card.
-                - If a fixPoints item has no originalText / revisedText pair, its headline must still name one concrete anchor phrase, word, connector, or slot the learner should change next.
-                - Do not return placeholder-like fixPoints headlines or instructions such as "First thing to fix" or "Fix this one thing first" unless you also name the exact phrase or expression to fix.
-                - Do not merge unrelated lessons into one fixPoints item, and do not split the same teaching point across multiple fixPoints items.
-                - If the learner answer contains multiple distinct local errors, split them into separate fixPoints items instead of folding them into one revisedText or one broad umbrella note.
-                - In particular, teach article/determiner vs plural/singular separately, and teach pronoun agreement vs connector choice separately, when both need correction.
+                - Return every remaining distinct useful fix as its own item instead of merging unrelated lessons or repeating the same lesson.
+                - A fixPoints item may use originalText / revisedText / supportText for a correction pair, or title / headline / supportText for one anchored instruction card.
+                - If there is no originalText / revisedText pair, the headline must still name the exact phrase, word, connector, or slot to change.
+                - Avoid generic fixPoints titles or instructions without an explicit anchor.
+                - Keep article/determiner, singular/plural, pronoun agreement, and connector choice separate when they are distinct problems.
 
                 refinementExpressions rules:
                 - refinementExpressions are optional reusable-expression cards beyond fixPoints.
-                - Return only genuinely useful, distinct refinementExpressions, and keep expression, meaningKo, guidanceKo, exampleEn, and exampleKo separate.
+                - Return only genuinely useful, distinct items, and keep expression, meaningKo, guidanceKo, exampleEn, and exampleKo separate.
                 - exampleEn must not be identical to expression.
 
                 nextStepPractice rules:
-                - nextStepPractice is optional and should represent one genuine next step after the must-fix list, not another copy of a must-fix item.
-                - Use nextStepPractice only when there is a locally acceptable base answer or one clearly optional add-on after the must-fix list; otherwise leave it null.
-                - nextStepPractice may use the same flexible card fields as fixPoints and does not need to be a blank scaffold.
-                - nextStepPractice.title should name one optional next move in short Korean, nextStepPractice.headline should show the actual English move when helpful, and nextStepPractice.supportText should briefly explain the add-on in Korean.
-                - If nextStepPractice uses originalText / revisedText, that pair must still teach only one optional improvement point and must not repeat a must-fix lesson already covered in fixPoints.
+                - nextStepPractice is optional and should represent one genuine next step after the must-fix list, not a repeated must-fix item.
+                - Use it only when there is a locally acceptable base answer or one clearly optional add-on after the must-fix list; otherwise leave it null.
+                - It may use the same flexible fields as fixPoints; title should be short Korean, headline should show the English move when helpful, and supportText should briefly explain the add-on in Korean.
 
                 rewriteSuggestions rules:
                 - rewriteSuggestions are optional helper ideas for nextStepPractice.
-                - rewriteSuggestions do not need to fit a blank. They should support the same next step as nextStepPractice with short English phrases, clauses, or example chunks.
-                - rewriteSuggestions should usually be 0-3 short English ideas, not long standalone answers.
-                - Do not use rewriteSuggestions to restate the whole learner answer or to duplicate the exact same English already shown in nextStepPractice.
+                - They should support the same next step with 0-3 short English phrases, clauses, or example chunks, not long standalone answers.
+                - Do not restate the whole learner answer or duplicate the exact same English already shown in nextStepPractice.
 
                 modelAnswer rules:
                 - modelAnswer is a one-step-up reference, not another nextStepPractice card.
@@ -1497,20 +1498,12 @@ public class OpenAiFeedbackClient {
                 Diagnosis-to-section alignment:
                 %s
 
-                Retry notes:
                 %s
-                Retry-specific instructions:
-                %s
-                Previous generated sections JSON:
-                %s
-
                 Prompt topic: %s
                 Difficulty: %s
                 Question in English: %s
                 Question in Korean: %s
                 Speaking tip: %s
-                Prompt coaching profile:
-                %s
                 Prompt coaching strategy:
                 %s
                 Prompt hints:
@@ -1521,15 +1514,12 @@ public class OpenAiFeedbackClient {
                 """.formatted(
                 analysisContext,
                 bandGuidance,
-                retryFailures,
-                retrySpecificInstructions,
-                previousSectionJson,
+                retryContext,
                 prompt.topic(),
                 prompt.difficulty(),
                 prompt.questionEn(),
                 prompt.questionKo(),
                 prompt.tip(),
-                coachProfileText,
                 coachProfileGuidance,
                 hintText,
                 answer
@@ -2762,13 +2752,12 @@ public class OpenAiFeedbackClient {
         return safeLeft.ordinal() >= safeRight.ordinal() ? safeLeft : safeRight;
     }
 
-    private String generationBandGuidance(AnswerBand answerBand, SectionPolicy sectionPolicy) {
+    private String generationBandGuidance(AnswerBand answerBand) {
         return switch (answerBand) {
             case GRAMMAR_BLOCKING -> """
                     - Prioritize the core sentence repair before extra expansion.
-                    - Keep each fixPoint centered on one corrected sentence direction.
+                    - Keep fixPoints compact and centered on the repair.
                     - Prefer leaving nextStepPractice null unless there is one clearly optional add-on after the repair.
-                    - Prefer compact fixPoints that directly support the repair.
                     - Keep modelAnswer very close to learner meaning and the corrected direction.
                     """;
             case TOO_SHORT_FRAGMENT -> """
@@ -2785,7 +2774,6 @@ public class OpenAiFeedbackClient {
                     """;
             case NATURAL_BUT_BASIC -> """
                     - Prioritize optional polish and naturalness over major correction.
-                    - Keep the overall tone light so the learner feels the answer is already usable.
                     - Prefer fixPoints that teach one small naturalness or phrasing upgrade.
                     - Keep modelAnswer short, close to learner meaning, and low-pressure.
                     """;
@@ -2793,7 +2781,6 @@ public class OpenAiFeedbackClient {
                     - Prioritize getting the learner back to the actual task before polishing language.
                     - Keep fixPoints centered on answering the prompt directly.
                     - Use nextStepPractice only if there is one clearly optional add-on after task alignment.
-                    - Prefer fixPoints that support task completion rather than extra polish.
                     - Keep modelAnswer as a short task-reset example.
                     """;
         };

@@ -181,6 +181,29 @@ function looksLikeEnglishSentence(value?: string | null) {
   return text.split(/\s+/).length >= 5;
 }
 
+function tokenizeComparisonText(value?: string | null) {
+  return (trimNullable(value)?.toLowerCase().match(/[a-z0-9']+/g) ?? []).filter(
+    (token) => token.length > 1
+  );
+}
+
+function computeTokenOverlapRatio(left?: string | null, right?: string | null) {
+  const leftTokens = Array.from(new Set(tokenizeComparisonText(left)));
+  const rightTokens = new Set(tokenizeComparisonText(right));
+  if (leftTokens.length === 0 || rightTokens.size === 0) {
+    return 0;
+  }
+
+  let overlapCount = 0;
+  for (const token of leftTokens) {
+    if (rightTokens.has(token)) {
+      overlapCount += 1;
+    }
+  }
+
+  return overlapCount / Math.max(1, Math.min(leftTokens.length, rightTokens.size));
+}
+
 function isGenericLearningPointTitle(value?: string | null) {
   const normalized = trimNullable(value)?.replace(/\s+/g, " ");
   if (!normalized) {
@@ -3548,10 +3571,6 @@ export function AnswerLoop() {
     return mode !== "HIDE";
   }
 
-  function isCollapsedDisplay(mode: string | null | undefined) {
-    return mode === "SHOW_COLLAPSED";
-  }
-
   function renderKeepSection() {
     if (!feedback) {
       return null;
@@ -3723,6 +3742,67 @@ export function AnswerLoop() {
     return feedback.ui.nextStepPractice ?? null;
   }
 
+  function resolveVisibleModelAnswer() {
+    const modelAnswer = trimNullable(feedback?.modelAnswer);
+    const modelAnswerMode = resolveScreenPolicy()?.modelAnswerDisplayMode ?? "HIDE";
+    if (!modelAnswer || !isDisplayVisible(modelAnswerMode)) {
+      return null;
+    }
+    return {
+      modelAnswer,
+      modelAnswerMode
+    };
+  }
+
+  function resolveModelAnswerDiffSegments() {
+    const modelAnswerState = resolveVisibleModelAnswer();
+    const originalAnswer = trimNullable(lastSubmittedAnswer);
+    if (!modelAnswerState || !originalAnswer) {
+      return null;
+    }
+    if (modelAnswerState.modelAnswerMode === "TASK_RESET_EXAMPLE") {
+      return null;
+    }
+    if (normalizeExpressionKey(originalAnswer) === normalizeExpressionKey(modelAnswerState.modelAnswer)) {
+      return null;
+    }
+
+    const segments = buildInlineFeedbackSegments(originalAnswer, modelAnswerState.modelAnswer, null);
+    if (segments.length === 0) {
+      return null;
+    }
+
+    const hasMeaningfulChange = segments.some((segment) => {
+      switch (segment.kind) {
+        case "replace":
+          return /[A-Za-z]/.test(`${segment.removed}${segment.added}`);
+        case "add":
+        case "remove":
+          return /[A-Za-z]/.test(segment.text);
+        default:
+          return false;
+      }
+    });
+    const hasSharedChunk = segments.some(
+      (segment) => segment.kind === "equal" && /[A-Za-z]{3,}/.test(segment.text)
+    );
+    const overlapRatio = computeTokenOverlapRatio(originalAnswer, modelAnswerState.modelAnswer);
+    const originalTokenCount = tokenizeComparisonText(originalAnswer).length;
+
+    if (!hasMeaningfulChange || !hasSharedChunk) {
+      return null;
+    }
+    if (originalTokenCount >= 4 && overlapRatio < 0.24) {
+      return null;
+    }
+
+    return {
+      originalAnswer,
+      modelAnswer: modelAnswerState.modelAnswer,
+      segments
+    };
+  }
+
   function resolveNextStepSeed(nextStepPractice?: FeedbackNextStepPractice | null) {
     return pickFirstNonEmpty(
       nextStepPractice?.revisedText,
@@ -3826,58 +3906,75 @@ export function AnswerLoop() {
     );
   }
 
-  function renderExampleAnswerSection(nested = false) {
-    const screenPolicy = resolveScreenPolicy();
-    const modelAnswerMode = screenPolicy?.modelAnswerDisplayMode ?? "HIDE";
-    if (!isDisplayVisible(modelAnswerMode)) {
+  function renderExampleAnswerSection() {
+    const modelAnswerState = resolveVisibleModelAnswer();
+    if (!modelAnswerState) {
       return null;
     }
 
-    if (!feedback?.modelAnswer?.trim()) {
+    const nextStepSeed = resolveNextStepSeed(feedback?.ui?.nextStepPractice);
+    if (nextStepSeed && nextStepSeed === modelAnswerState.modelAnswer) {
       return null;
     }
 
-    const nextStepSeed = resolveNextStepSeed(feedback.ui?.nextStepPractice);
-    if (nextStepSeed && nextStepSeed === feedback.modelAnswer.trim()) {
-      return null;
-    }
+    const isTaskResetExample = modelAnswerState.modelAnswerMode === "TASK_RESET_EXAMPLE";
+    const title = isTaskResetExample ? "질문에 맞는 자연스러운 답안" : "자연스럽게 다듬은 답안";
+    const supportText = isTaskResetExample
+      ? "지금 답을 질문에 더 맞게 다듬으면 이런 톤과 방향으로 말할 수 있어요."
+      : "내 의미를 유지하면서 더 자연스럽게 다듬으면 이렇게 들려요.";
 
-    const title = modelAnswerMode === "TASK_RESET_EXAMPLE" ? "질문에 맞는 예시 답변" : "예시 답변";
-    if (nested) {
-      return (
-        <div className={styles.feedbackSubsection}>
-          <span className={styles.feedbackSubsectionLabel}>{title}</span>
-          <div className={styles.feedbackSubsectionCard}>
-            <p className={styles.modelAnswerText}>{feedback.modelAnswer}</p>
-            {feedback.modelAnswerKo ? (
-              <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
-            ) : null}
-          </div>
+    return (
+      <section className={`${styles.feedbackBlock} ${styles.modelAnswerShowcase}`}>
+        <div className={styles.modelAnswerShowcaseHeader}>
+          <span className={styles.modelAnswerEyebrow}>
+            {isTaskResetExample ? "TASK RESET" : "NATURAL REWRITE"}
+          </span>
+          <h3>{title}</h3>
+          <p>{supportText}</p>
         </div>
-      );
-    }
-
-    if (isCollapsedDisplay(modelAnswerMode)) {
-      return (
-        <details className={`${styles.feedbackBlock} ${styles.expressionDrawer}`}>
-          <summary className={styles.expressionDrawerSummary}>
-            {screenPolicy?.completionState === "OPTIONAL_POLISH" ? "원하면 예시 답변 보기" : `${title} 보기`}
-          </summary>
-          <p className={styles.modelAnswerText}>{feedback.modelAnswer}</p>
-          {feedback.modelAnswerKo ? (
+        <div className={styles.modelAnswerShowcaseCard}>
+          <p className={styles.modelAnswerText}>{modelAnswerState.modelAnswer}</p>
+          {feedback?.modelAnswerKo ? (
             <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
           ) : null}
-        </details>
-      );
+        </div>
+      </section>
+    );
+  }
+
+  function renderModelAnswerDiffSection() {
+    const diff = resolveModelAnswerDiffSegments();
+    if (!diff) {
+      return null;
     }
 
     return (
-      <section className={styles.feedbackBlock}>
-        <h3>{title}</h3>
-        <p className={styles.modelAnswerText}>{feedback.modelAnswer}</p>
-        {feedback.modelAnswerKo ? (
-          <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
-        ) : null}
+      <section className={`${styles.feedbackBlock} ${styles.modelAnswerDiffBlock}`}>
+        <div className={styles.modelAnswerDiffHeader}>
+          <h3>원문과 이렇게 달라져요</h3>
+          <p>빨간 부분은 줄이거나 고친 표현, 초록 부분은 더 자연스럽게 다듬은 표현이에요.</p>
+        </div>
+        <div className={styles.modelAnswerDiffStack}>
+          <article className={styles.modelAnswerDiffCard}>
+            <span className={styles.modelAnswerDiffLabel}>내 답변</span>
+            <p className={styles.primaryFixDiffText}>
+              {diff.segments.map((segment, index) =>
+                renderPrimaryFixDiffSegment(segment, "original", index)
+              )}
+            </p>
+          </article>
+          <article className={styles.modelAnswerDiffCard}>
+            <span className={styles.modelAnswerDiffLabel}>다듬은 답안</span>
+            <p className={styles.primaryFixDiffText}>
+              {diff.segments.map((segment, index) =>
+                renderPrimaryFixDiffSegment(segment, "revised", index)
+              )}
+            </p>
+          </article>
+        </div>
+        <p className={styles.modelAnswerDiffHint}>
+          아래 설명 카드에서 어떤 표현을 왜 바꿨는지 이어서 보면 더 이해하기 쉬워요.
+        </p>
       </section>
     );
   }
@@ -3888,9 +3985,11 @@ export function AnswerLoop() {
       return null;
     }
 
+    const title = resolveVisibleModelAnswer() ? "이렇게 바꾸는 이유" : "고쳐볼 점";
+
     return (
       <section className={`${styles.feedbackBlock} ${styles.secondaryLearningBlock}`}>
-        <h3>고쳐볼 점</h3>
+        <h3>{title}</h3>
         <div className={styles.secondaryLearningList}>
           {points.map((point, index) => renderFixPointCard(point, index))}
         </div>
@@ -3927,10 +4026,9 @@ export function AnswerLoop() {
 
   function renderAdditionalIdeasSection() {
     const nextStepPracticeSection = renderNextStepPracticeSection(true);
-    const exampleAnswerSection = renderExampleAnswerSection(true);
     const expressionSection = renderExpressionLearningSection(true);
 
-    if (!nextStepPracticeSection && !exampleAnswerSection && !expressionSection) {
+    if (!nextStepPracticeSection && !expressionSection) {
       return null;
     }
 
@@ -3939,7 +4037,6 @@ export function AnswerLoop() {
         <h3>추가하면 좋을 점</h3>
         <div className={styles.additionalIdeasStack}>
           {nextStepPracticeSection}
-          {exampleAnswerSection}
           {expressionSection}
         </div>
       </section>
@@ -3947,10 +4044,24 @@ export function AnswerLoop() {
   }
 
   function renderFeedbackCoreSections() {
+    const modelAnswerSection = renderExampleAnswerSection();
+    const modelAnswerDiffSection = renderModelAnswerDiffSection();
+    if (!modelAnswerSection) {
+      return (
+        <>
+          {renderKeepSection()}
+          {renderFixPointsSection()}
+          {renderAdditionalIdeasSection()}
+        </>
+      );
+    }
+
     return (
       <>
-        {renderKeepSection()}
+        {modelAnswerSection}
+        {modelAnswerDiffSection}
         {renderFixPointsSection()}
+        {renderKeepSection()}
         {renderAdditionalIdeasSection()}
       </>
     );

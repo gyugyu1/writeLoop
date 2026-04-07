@@ -1447,6 +1447,10 @@ public class OpenAiFeedbackClient {
 
                 Response rules:
                 - Fill both the diagnosis fields and the feedback section fields in the same JSON object.
+                - Work in this order:
+                  1) Write modelAnswer first as the closest natural, submission-ready rewrite of the learner answer.
+                  2) Then build fixPoints as explanations of the most important visible differences between learner answer and modelAnswer.
+                  3) Then use nextStepPractice only for one optional move beyond modelAnswer, if that extra move is clearly useful.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
                 - Do not reuse a broken learner phrase in strengths, refinementExpressions, nextStepPractice, or modelAnswer.
                 - Keep Korean fields natural and concise.
@@ -1468,12 +1472,15 @@ public class OpenAiFeedbackClient {
                 - usedExpressions must not contain long broken spans or whole awkward sentences, and usageTip should be one short Korean reason.
 
                 fixPoints rules:
+                - Each fixPoints item should explain one visible, meaningful difference between learner answer and modelAnswer.
                 - Each fixPoints item must teach exactly one concrete correction point.
                 - Return every remaining distinct useful fix as its own item instead of merging unrelated lessons or repeating the same lesson.
-                - A fixPoints item may use originalText / revisedText / supportText for a correction pair, or title / headline / supportText for one anchored instruction card.
-                - If there is no originalText / revisedText pair, the headline must still name the exact phrase, word, connector, or slot to change.
+                - When possible, use originalText for the learner span and revisedText for the aligned corrected span from modelAnswer.
+                - A fixPoints item may use originalText / revisedText / supportText for a correction pair, or title / headline / supportText for one anchored instruction card when a clean pair is not possible.
+                - If there is no originalText / revisedText pair, the headline must still name the exact phrase, word, connector, or slot that changes in modelAnswer.
                 - Avoid generic fixPoints titles or instructions without an explicit anchor.
                 - Keep article/determiner, singular/plural, pronoun agreement, and connector choice separate when they are distinct problems.
+                - Do not turn every tiny polish in modelAnswer into a fixPoint. Focus on must-fix or clearly high-value differences first.
 
                 refinementExpressions rules:
                 - refinementExpressions are optional reusable-expression cards beyond fixPoints.
@@ -1481,8 +1488,9 @@ public class OpenAiFeedbackClient {
                 - exampleEn must not be identical to expression.
 
                 nextStepPractice rules:
-                - nextStepPractice is optional and should represent one genuine next step after the must-fix list, not a repeated must-fix item.
-                - Use it only when there is a locally acceptable base answer or one clearly optional add-on after the must-fix list; otherwise leave it null.
+                - nextStepPractice is optional and should represent one genuine next step after the modelAnswer-level rewrite is already complete.
+                - Do not use nextStepPractice for a must-fix item that is already reflected in modelAnswer or fixPoints.
+                - Use it only when there is one clearly optional add-on beyond modelAnswer; otherwise leave it null.
                 - It may use the same flexible fields as fixPoints; title should be short Korean, headline should show the English move when helpful, and supportText should briefly explain the add-on in Korean.
 
                 rewriteSuggestions rules:
@@ -1491,8 +1499,12 @@ public class OpenAiFeedbackClient {
                 - Do not restate the whole learner answer or duplicate the exact same English already shown in nextStepPractice.
 
                 modelAnswer rules:
-                - modelAnswer is a one-step-up reference, not another nextStepPractice card.
-                - modelAnswer must preserve learner meaning, keep the must-fix lessons from fixPoints, and, when natural, add one optional upgrade from nextStepPractice without reverting a taught correction.
+                - modelAnswer should read like a natural polished rewrite of the learner answer, not a distant sample answer.
+                - Write modelAnswer first and let fixPoints explain the important differences that appear in that rewrite.
+                - Keep modelAnswer as close as possible to the learner's meaning, facts, and sentence direction while making it natural and submission-ready.
+                - modelAnswer must already contain the must-fix changes that fixPoints later explain.
+                - Add at most one small optional upgrade only when it still clearly feels like the same answer, not a new answer.
+                - For OFF_TOPIC or TOO_SHORT_FRAGMENT, modelAnswer may reset the answer toward the prompt or toward one complete base sentence, but should still stay as close as possible to what the learner seems to be trying to say.
                 - Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.
 
                 Diagnosis-to-section alignment:

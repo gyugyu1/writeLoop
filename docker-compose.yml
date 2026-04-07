@@ -18,7 +18,8 @@ services:
       SPRING_DATA_REDIS_PORT: ${SPRING_DATA_REDIS_PORT:-6379}
       TZ: Asia/Seoul
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      GEMINI_FEEDBACK_MODEL: ${GEMINI_FEEDBACK_MODEL:-gemini-3-flash-preview}
+      GEMINI_COACH_MODEL: ${GEMINI_COACH_MODEL:-gemini-3.1-flash-lite-preview}
       GEMINI_API_URL: ${GEMINI_API_URL:-https://generativelanguage.googleapis.com/v1beta/models}
       APP_CORS_ALLOWED_ORIGINS: ${APP_CORS_ALLOWED_ORIGINS:-http://writeloop.localtest.me}
       APP_FRONTEND_BASE_URL: ${APP_FRONTEND_BASE_URL:-http://writeloop.localtest.me}

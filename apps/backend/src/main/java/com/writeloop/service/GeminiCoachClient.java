@@ -39,7 +39,7 @@ public class GeminiCoachClient {
             ObjectMapper objectMapper,
             CoachQueryAnalyzer coachQueryAnalyzer,
             @Value("${gemini.api-key:}") String apiKey,
-            @Value("${gemini.model:gemini-2.5-flash}") String model,
+            @Value("${gemini.coach-model:gemini-3.1-flash-lite-preview}") String model,
             @Value("${gemini.api-url:https://generativelanguage.googleapis.com/v1beta/models}") String apiUrl
     ) {
         this.objectMapper = objectMapper;

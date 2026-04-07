@@ -38,12 +38,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
-public class GeminiFeedbackClient {
-    private static final Logger LOGGER = LoggerFactory.getLogger(GeminiFeedbackClient.class);
+public class OpenAiFeedbackClient {
+    private static final Logger LOGGER = LoggerFactory.getLogger(OpenAiFeedbackClient.class);
     private static final int MAX_LOG_RESPONSE_BODY_LENGTH = 4000;
     private static final Pattern INLINE_TOKEN_PATTERN = Pattern.compile("[A-Za-z0-9']+|[^\\sA-Za-z0-9']+|\\s+");
     private static final Pattern PRIMARY_FIX_ENGLISH_ANCHOR_PATTERN = Pattern.compile("[A-Za-z][A-Za-z' -]{2,}");
-    static final String INTERNAL_AUTHORITATIVE_SESSION_ID = "__LLM_HYBRID_FINAL__";
+    static final String INTERNAL_AUTHORITATIVE_SESSION_ID = "__OPENAI_HYBRID_FINAL__";
     private static final List<String> REWRITE_TARGET_ACTION_ENUM = List.of(
             "MAKE_ON_TOPIC",
             "STATE_MAIN_ANSWER",
@@ -61,7 +61,7 @@ public class GeminiFeedbackClient {
     private final String apiKey;
     private final String model;
     private final String apiUrl;
-    private final Integer thinkingBudget;
+    private final String reasoningEffort;
     private final int requestTimeoutSeconds;
     private final AnswerProfileBuilder answerProfileBuilder = new AnswerProfileBuilder();
     private final SectionPolicySelector sectionPolicySelector = new SectionPolicySelector();
@@ -73,7 +73,7 @@ public class GeminiFeedbackClient {
     private final FeedbackRetryPolicy feedbackRetryPolicy = new FeedbackRetryPolicy();
     private final ThreadLocal<FeedbackAnalysisSnapshot> latestAnalysisSnapshot = new ThreadLocal<>();
 
-    private record GeminiApiResponse(
+    private record OpenAiApiResponse(
             int statusCode,
             String body
     ) {
@@ -93,11 +93,11 @@ public class GeminiFeedbackClient {
     ) {
     }
 
-    private static final class GeminiApiHttpException extends IllegalStateException {
+    private static final class OpenAiApiHttpException extends IllegalStateException {
         private final int statusCode;
         private final String responseBody;
 
-        private GeminiApiHttpException(int statusCode, String message, String responseBody) {
+        private OpenAiApiHttpException(int statusCode, String message, String responseBody) {
             super(message);
             this.statusCode = statusCode;
             this.responseBody = responseBody;
@@ -112,11 +112,11 @@ public class GeminiFeedbackClient {
         }
     }
 
-    private static final class GeminiResponseParseException extends IOException {
+    private static final class OpenAiResponseParseException extends IOException {
         private final int statusCode;
         private final String responseBody;
 
-        private GeminiResponseParseException(String message, int statusCode, String responseBody, Throwable cause) {
+        private OpenAiResponseParseException(String message, int statusCode, String responseBody, Throwable cause) {
             super(message, cause);
             this.statusCode = statusCode;
             this.responseBody = responseBody;
@@ -131,11 +131,11 @@ public class GeminiFeedbackClient {
         }
     }
 
-    private static final class GeminiResponseParseRuntimeException extends IllegalStateException {
+    private static final class OpenAiResponseParseRuntimeException extends IllegalStateException {
         private final int statusCode;
         private final String responseBody;
 
-        private GeminiResponseParseRuntimeException(String message, int statusCode, String responseBody, Throwable cause) {
+        private OpenAiResponseParseRuntimeException(String message, int statusCode, String responseBody, Throwable cause) {
             super(message, cause);
             this.statusCode = statusCode;
             this.responseBody = responseBody;
@@ -158,13 +158,13 @@ public class GeminiFeedbackClient {
         );
     }
 
-    public GeminiFeedbackClient(
+    public OpenAiFeedbackClient(
             ObjectMapper objectMapper,
-            @Value("${gemini.api-key:}") String apiKey,
-            @Value("${gemini.feedback-model:gemini-3-flash-preview}") String model,
-            @Value("${gemini.api-url:https://generativelanguage.googleapis.com/v1beta/models}") String apiUrl,
-            @Value("${gemini.feedback-thinking-budget:16000}") Integer thinkingBudget,
-            @Value("${gemini.feedback-request-timeout-seconds:120}") int requestTimeoutSeconds
+            @Value("${openai.api-key:}") String apiKey,
+            @Value("${openai.feedback-model:${OPENAI_MODEL:gpt-5-mini}}") String model,
+            @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
+            @Value("${openai.feedback-reasoning-effort:}") String reasoningEffort,
+            @Value("${openai.feedback-request-timeout-seconds:120}") int requestTimeoutSeconds
     ) {
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder()
@@ -173,7 +173,7 @@ public class GeminiFeedbackClient {
         this.apiKey = apiKey;
         this.model = model;
         this.apiUrl = apiUrl;
-        this.thinkingBudget = thinkingBudget;
+        this.reasoningEffort = reasoningEffort;
         this.requestTimeoutSeconds = requestTimeoutSeconds;
     }
 
@@ -200,11 +200,11 @@ public class GeminiFeedbackClient {
         try {
             return reviewHybrid(prompt, answer, hints, attemptIndex, previousAnswer);
         } catch (IOException | InterruptedException exception) {
-            logGeminiFailure("review", prompt == null ? null : prompt.id(), attemptIndex, exception);
+            logOpenAiFailure("review", prompt == null ? null : prompt.id(), attemptIndex, exception);
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            throw new IllegalStateException("Gemini API request failed", exception);
+            throw new IllegalStateException("OpenAI API request failed", exception);
         }
     }
 
@@ -261,18 +261,18 @@ public class GeminiFeedbackClient {
             diagnosis = diagnosisCallResult.diagnosis();
             diagnosisResponseStatusCode = diagnosisCallResult.statusCode();
             diagnosisResponseBody = diagnosisCallResult.rawResponseBody();
-        } catch (GeminiApiHttpException diagnosisFailure) {
-            logGeminiFailure("diagnosis-http", prompt.id(), attemptIndex, diagnosisFailure);
+        } catch (OpenAiApiHttpException diagnosisFailure) {
+            logOpenAiFailure("diagnosis-http", prompt.id(), attemptIndex, diagnosisFailure);
             throw feedbackGenerationUnavailable();
         } catch (IOException diagnosisFailure) {
-            logGeminiFailure("diagnosis-io", prompt.id(), attemptIndex, diagnosisFailure);
+            logOpenAiFailure("diagnosis-io", prompt.id(), attemptIndex, diagnosisFailure);
             throw feedbackGenerationUnavailable();
         } catch (InterruptedException diagnosisFailure) {
-            logGeminiFailure("diagnosis-interrupted", prompt.id(), attemptIndex, diagnosisFailure);
+            logOpenAiFailure("diagnosis-interrupted", prompt.id(), attemptIndex, diagnosisFailure);
             Thread.currentThread().interrupt();
             throw feedbackGenerationUnavailable();
         } catch (RuntimeException diagnosisFailure) {
-            logGeminiFailure("diagnosis-runtime-fallback", prompt.id(), attemptIndex, diagnosisFailure);
+            logOpenAiFailure("diagnosis-runtime-fallback", prompt.id(), attemptIndex, diagnosisFailure);
             diagnosis = buildDeterministicDiagnosis(prompt, answer, hints, attemptIndex, previousAnswer);
             diagnosisFallbackUsed = true;
         }
@@ -358,18 +358,18 @@ public class GeminiFeedbackClient {
                             validation.sanitizedSections().merge(regenerated),
                             generationRequestedSections
                     );
-                } catch (GeminiApiHttpException apiException) {
-                    logGeminiFailure("regeneration-http", prompt.id(), attemptIndex, apiException);
+                } catch (OpenAiApiHttpException apiException) {
+                    logOpenAiFailure("regeneration-http", prompt.id(), attemptIndex, apiException);
                     throw feedbackGenerationUnavailable();
                 } catch (IOException ioException) {
-                    logGeminiFailure("regeneration-io", prompt.id(), attemptIndex, ioException);
+                    logOpenAiFailure("regeneration-io", prompt.id(), attemptIndex, ioException);
                     throw feedbackGenerationUnavailable();
                 } catch (InterruptedException interruptedException) {
-                    logGeminiFailure("regeneration-interrupted", prompt.id(), attemptIndex, interruptedException);
+                    logOpenAiFailure("regeneration-interrupted", prompt.id(), attemptIndex, interruptedException);
                     Thread.currentThread().interrupt();
                     throw feedbackGenerationUnavailable();
                 } catch (RuntimeException runtimeException) {
-                    logGeminiFailure("regeneration-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
+                    logOpenAiFailure("regeneration-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
                     // Use the validated first-pass sections plus deterministic fallback for any remaining gaps.
                 }
             }
@@ -388,7 +388,7 @@ public class GeminiFeedbackClient {
                     generationRequestedSections
             );
             latestAnalysisSnapshot.set(new FeedbackAnalysisSnapshot(
-                    "GEMINI",
+                    "OPENAI",
                     model,
                     diagnosisResponseStatusCode,
                     generationResponseStatusCode,
@@ -405,18 +405,18 @@ public class GeminiFeedbackClient {
                     retryAttempted
             ));
             return assembleHybridResponse(prompt.id(), answer, diagnosis, diagnosedProfile, completed.sanitizedSections());
-        } catch (GeminiApiHttpException apiException) {
-            logGeminiFailure("generation-http", prompt.id(), attemptIndex, apiException);
+        } catch (OpenAiApiHttpException apiException) {
+            logOpenAiFailure("generation-http", prompt.id(), attemptIndex, apiException);
             throw feedbackGenerationUnavailable();
         } catch (IOException generationFailure) {
-            logGeminiFailure("generation-io", prompt.id(), attemptIndex, generationFailure);
+            logOpenAiFailure("generation-io", prompt.id(), attemptIndex, generationFailure);
             throw feedbackGenerationUnavailable();
         } catch (InterruptedException interruptedException) {
-            logGeminiFailure("generation-interrupted", prompt.id(), attemptIndex, interruptedException);
+            logOpenAiFailure("generation-interrupted", prompt.id(), attemptIndex, interruptedException);
             Thread.currentThread().interrupt();
             throw feedbackGenerationUnavailable();
         } catch (RuntimeException runtimeException) {
-            logGeminiFailure("generation-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
+            logOpenAiFailure("generation-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
             // If generation fails after successful diagnosis, prefer deterministic fallback over legacy monolithic prompt.
         }
         ValidationResult fallbackValidation = validateGeneratedSections(
@@ -428,7 +428,7 @@ public class GeminiFeedbackClient {
                 generationRequestedSections
         );
         latestAnalysisSnapshot.set(new FeedbackAnalysisSnapshot(
-                "GEMINI",
+                "OPENAI",
                 model,
                 diagnosisResponseStatusCode,
                 null,
@@ -455,19 +455,19 @@ public class GeminiFeedbackClient {
             String previousAnswer
     )
             throws IOException, InterruptedException {
-        GeminiApiResponse response = sendResponsesRequest(buildDiagnosisRequestBody(prompt, answer, hints, attemptIndex, previousAnswer));
+        OpenAiApiResponse response = sendResponsesRequest(buildDiagnosisRequestBody(prompt, answer, hints, attemptIndex, previousAnswer));
         try {
             return new DiagnosisCallResult(parseDiagnosisResponse(response.body()), response.statusCode(), response.body());
         } catch (IOException exception) {
-            throw new GeminiResponseParseException(
-                    "Gemini diagnosis response parsing failed",
+            throw new OpenAiResponseParseException(
+                    "OpenAI diagnosis response parsing failed",
                     response.statusCode(),
                     response.body(),
                     exception
             );
         } catch (RuntimeException exception) {
-            throw new GeminiResponseParseRuntimeException(
-                    "Gemini diagnosis response parsing failed",
+            throw new OpenAiResponseParseRuntimeException(
+                    "OpenAI diagnosis response parsing failed",
                     response.statusCode(),
                     response.body(),
                     exception
@@ -488,7 +488,7 @@ public class GeminiFeedbackClient {
             List<ValidationFailureCode> failureCodes,
             GeneratedSections previousSections
     ) throws IOException, InterruptedException {
-        GeminiApiResponse response = sendResponsesRequest(buildGenerationRequestBody(
+        OpenAiApiResponse response = sendResponsesRequest(buildGenerationRequestBody(
                 prompt,
                 answer,
                 hints,
@@ -504,15 +504,15 @@ public class GeminiFeedbackClient {
         try {
             return new GenerationCallResult(parseGeneratedSections(response.body()), response.statusCode(), response.body());
         } catch (IOException exception) {
-            throw new GeminiResponseParseException(
-                    "Gemini generation response parsing failed",
+            throw new OpenAiResponseParseException(
+                    "OpenAI generation response parsing failed",
                     response.statusCode(),
                     response.body(),
                     exception
             );
         } catch (RuntimeException exception) {
-            throw new GeminiResponseParseRuntimeException(
-                    "Gemini generation response parsing failed",
+            throw new OpenAiResponseParseRuntimeException(
+                    "OpenAI generation response parsing failed",
                     response.statusCode(),
                     response.body(),
                     exception
@@ -949,24 +949,24 @@ public class GeminiFeedbackClient {
             AnswerProfile answerProfile
     ) {
         if (diagnosis != null && diagnosis.finishable()) {
-            return List.of("癲ル슣??袁ｋ즵??癲ル슢???섎뼀????甕???????????????곷??????⑤９苑???좊즴?袁?젂??");
+            return List.of("?꿔꺂???熬곻퐢利???꿔꺂?????롫?????????????????????怨???????ㅿ폎????醫딆┫?熬????");
         }
         if (answerProfile != null && answerProfile.content() != null && answerProfile.content().signals() != null) {
             ContentSignals signals = answerProfile.content().signals();
             if (signals.hasMainAnswer() && signals.hasReason()) {
-                return List.of("???甕???????????????影?얠맽 ??筌?六??????????レ뿴???");
+                return List.of("???????????????????壤굿??좊㎧ ??嶺?筌???????????щ였???");
             }
             if (signals.hasMainAnswer() && signals.hasActivity()) {
-                return List.of("???源놁졆????嚥▲꺂痢????⑤벡彛???壤굿??苑???????????⑤；?????怨쀪퐨??");
+                return List.of("???繹먮냱議?????β뼯爰귨㎘?????ㅻ깹壤???鶯ㅺ동????????????????ㅿ폑??????⑥ろ맖??");
             }
             if (signals.hasMainAnswer()) {
-                return List.of("癲ル슣??袁ｋ즵??癲ル슢????????????獄???됰슣維딁춯????곕쿊 癲ル슢??嶺???⑤챶萸?");
+                return List.of("?꿔꺂???熬곻퐢利???꿔꺂??????????????????곗뒩泳?봺異????怨뺤퓡 ?꿔꺂???癲????ㅼ굡??");
             }
         }
         if (diagnosis != null && diagnosis.answerBand() == AnswerBand.OFF_TOPIC) {
-            return List.of("癲ル슣??袁ｋ즵??癲ル슢???????몄툗 ?袁⑸젻泳?떑??? ?怨뚮옖???덩??");
+            return List.of("?꿔꺂???熬곻퐢利???꿔꺂????????紐꾪닓 ?熬곣뫖?삥납????? ??⑤슢???????");
         }
-        return List.of("癲ル슣??袁ｋ즵??癲ル슢???????獄????ㅻ깹????袁⑸젻泳?떑????怨뚮옖???덩??");
+        return List.of("?꿔꺂???熬곻퐢利???꿔꺂??????????????산뭐????熬곣뫖?삥납???????⑤슢???????");
     }
 
     private List<String> resolveFallbackStrengths(
@@ -974,24 +974,24 @@ public class GeminiFeedbackClient {
             AnswerProfile answerProfile
     ) {
         if (diagnosis != null && diagnosis.finishable()) {
-            return List.of("癲ル슣??袁ｋ즵??癲ル슢???섎뼀???ш끽維????????????????곷??????⑤９苑???좊즴?袁?젂??");
+            return List.of("?꿔꺂???熬곻퐢利???꿔꺂?????롫??????썹땟????????????????怨???????ㅿ폎????醫딆┫?熬????");
         }
         if (answerProfile != null && answerProfile.content() != null && answerProfile.content().signals() != null) {
             ContentSignals signals = answerProfile.content().signals();
             if (signals.hasMainAnswer() && signals.hasReason()) {
-                return List.of("癲ル슣??袁ｋ즵??癲ル슢???????亦?????????影?얠맽 癲ル슢????????????レ뿴???");
+                return List.of("?꿔꺂???熬곻퐢利???꿔꺂????????雅?????????壤굿??좊㎧ ?꿔꺂??????????????щ였???");
             }
             if (signals.hasMainAnswer() && signals.hasActivity()) {
-                return List.of("???뽮덫??? ????됰쐳 ?袁⑸젻泳?쉬?????影?얠맽 ??筌?六??????????レ뿴???");
+                return List.of("???戮?뜪??? ?????곗맫 ?熬곣뫖?삥납???????壤굿??좊㎧ ??嶺?筌???????????щ였???");
             }
             if (signals.hasMainAnswer()) {
-                return List.of("癲ル슣??袁ｋ즵??癲ル슢????????????獄???됰슣維딁춯????곕쿊 癲ル슢????????????レ뿴???");
+                return List.of("?꿔꺂???熬곻퐢利???꿔꺂??????????????????곗뒩泳?봺異????怨뺤퓡 ?꿔꺂??????????????щ였???");
             }
         }
         if (diagnosis != null && diagnosis.answerBand() == AnswerBand.OFF_TOPIC) {
-            return List.of("??????怨뚮옖??????筌먲퐣????怨뚮옖???덩??");
+            return List.of("???????⑤슢???????嶺뚮㉡??????⑤슢???????");
         }
-        return List.of("癲ル슣??袁ｋ즵??????????몄툗 ?袁⑸젻泳?떑??? ????? ???怨쀪퐨??");
+        return List.of("?꿔꺂???熬곻퐢利??????????紐꾪닓 ?熬곣뫖?삥납????? ????? ????⑥ろ맖??");
     }
 
     private FeedbackDiagnosisResult buildDeterministicDiagnosis(
@@ -1161,13 +1161,13 @@ public class GeminiFeedbackClient {
     private String deterministicReasonForGrammarIssue(String code) {
         String safeCode = code == null ? "" : code.trim().toUpperCase(Locale.ROOT);
         return switch (safeCode) {
-            case "VERB_PATTERN" -> "????숇??嶺뚮쮳釉띚????????????곷???癲ル슢??????낆뒩??뗫빝??";
-            case "PREPOSITION" -> "??ш끽維???? ???嶺뚮쮳釉띚??????????곷??????⑤９苑???낆뒩??뗫빝??";
-            case "ARTICLE" -> "???굿??????筌뚯슜六???? ????????곷???癲ル슢??????낆뒩??뗫빝??";
-            case "AGREEMENT" -> "??낆뒩??뉗젂?? ????猿??嶺뚮쮳釉띚??????????곷???癲ル슢??????낆뒩??뗫빝??";
-            case "TENSE_ALIGNMENT" -> "??筌믨퀣??????뽮덧???癲ル슢???섎뼀?????????곷???癲ル슢??????낆뒩??뗫빝??";
-            case "POINT_OF_VIEW_ALIGNMENT" -> "??낆뒩??뉗젂?? ??筌믨퀣??????뽮덧???癲ル슢???섎뼀?癲ル슢??????낆뒩??뗫빝??";
-            default -> "??? ?????????⑤갭萸듸┼??넊? ????녳뵣??????딅텑???됰슣維듿＄?????????곷?????關履????낆뒩??뗫빝??";
+            case "VERB_PATTERN" -> "?????눫??癲ル슢怡녜뇡?????????????怨????꿔꺂????????녿뮝???ル튉??";
+            case "PREPOSITION" -> "????썹땟???? ???癲ル슢怡녜뇡???????????怨???????ㅿ폎?????녿뮝???ル튉??";
+            case "ARTICLE" -> "???援온??????嶺뚮슣?쒙쭛???? ????????怨????꿔꺂????????녿뮝???ル튉??";
+            case "AGREEMENT" -> "???녿뮝???쀬쟼?? ???????癲ル슢怡녜뇡???????????怨????꿔꺂????????녿뮝???ル튉??";
+            case "TENSE_ALIGNMENT" -> "??嶺뚮????????戮?뜤????꿔꺂?????롫??????????怨????꿔꺂????????녿뮝???ル튉??";
+            case "POINT_OF_VIEW_ALIGNMENT" -> "???녿뮝???쀬쟼?? ??嶺뚮????????戮?뜤????꿔꺂?????롫???꿔꺂????????녿뮝???ル튉??";
+            default -> "??? ??????????ㅺ강?몃벝????? ?????노덫???????낇뀘????곗뒩泳?벩竊?????????怨??????쒙쭫?????녿뮝???ル튉??";
         };
     }
 
@@ -1473,7 +1473,14 @@ public class GeminiFeedbackClient {
     }
 
     private String buildStructuredRequestBody(String promptText, String schemaName, Map<String, Object> schema) throws IOException {
-        return GeminiStructuredOutputSupport.buildGenerateContentRequestBody(objectMapper, promptText, schema, thinkingBudget);
+        return OpenAiStructuredOutputSupport.buildResponsesRequestBody(
+                objectMapper,
+                model,
+                promptText,
+                schemaName,
+                schema,
+                reasoningEffort
+        );
     }
 
     private String buildDiagnosisPrompt(
@@ -1911,43 +1918,42 @@ public class GeminiFeedbackClient {
         );
     }
 
-    private GeminiApiResponse sendResponsesRequest(String requestBody) throws IOException, InterruptedException {
-        HttpRequest request = GeminiStructuredOutputSupport.buildGenerateContentRequest(
+    private OpenAiApiResponse sendResponsesRequest(String requestBody) throws IOException, InterruptedException {
+        HttpRequest request = OpenAiStructuredOutputSupport.buildResponsesRequest(
                 apiUrl,
                 apiKey,
-                model,
                 requestBody,
                 requestTimeoutSeconds
         );
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         if (response.statusCode() >= 400) {
-            throw new GeminiApiHttpException(
+            throw new OpenAiApiHttpException(
                     response.statusCode(),
-                    "Gemini API request failed with status " + response.statusCode(),
+                    "OpenAI API request failed with status " + response.statusCode(),
                     response.body()
             );
         }
-        return new GeminiApiResponse(response.statusCode(), response.body());
+        return new OpenAiApiResponse(response.statusCode(), response.body());
     }
 
-    private void logGeminiFailure(String phase, String promptId, int attemptIndex, Throwable exception) {
+    private void logOpenAiFailure(String phase, String promptId, int attemptIndex, Throwable exception) {
         Integer statusCode = null;
         String responseBody = null;
-        if (exception instanceof GeminiApiHttpException httpException) {
+        if (exception instanceof OpenAiApiHttpException httpException) {
             statusCode = httpException.statusCode();
             responseBody = httpException.responseBody();
-        } else if (exception instanceof GeminiResponseParseException parseException) {
+        } else if (exception instanceof OpenAiResponseParseException parseException) {
             statusCode = parseException.statusCode();
             responseBody = parseException.responseBody();
-        } else if (exception instanceof GeminiResponseParseRuntimeException parseRuntimeException) {
+        } else if (exception instanceof OpenAiResponseParseRuntimeException parseRuntimeException) {
             statusCode = parseRuntimeException.statusCode();
             responseBody = parseRuntimeException.responseBody();
         }
 
         if (statusCode != null || responseBody != null) {
             LOGGER.warn(
-                    "Gemini {} failed for promptId={}, attemptIndex={}, model={}, exceptionClass={}, status={}, body={}",
+                    "OpenAI {} failed for promptId={}, attemptIndex={}, model={}, exceptionClass={}, status={}, body={}",
                     phase,
                     promptId,
                     attemptIndex,
@@ -1961,7 +1967,7 @@ public class GeminiFeedbackClient {
         }
 
         LOGGER.warn(
-                "Gemini {} failed for promptId={}, attemptIndex={}, model={}, exceptionClass={}, message={}",
+                "OpenAI {} failed for promptId={}, attemptIndex={}, model={}, exceptionClass={}, message={}",
                 phase,
                 promptId,
                 attemptIndex,
@@ -1984,7 +1990,7 @@ public class GeminiFeedbackClient {
     }
 
     private String extractOutputText(String body) throws IOException {
-        return GeminiStructuredOutputSupport.extractStructuredOutputText(objectMapper, body);
+        return OpenAiStructuredOutputSupport.extractStructuredOutputText(objectMapper, body);
     }
 
     private FeedbackSectionAvailability buildGenerationAvailability(
@@ -2486,7 +2492,7 @@ public class GeminiFeedbackClient {
                 return List.of(new GrammarFeedbackItemDto(
                         originalText == null || originalText.isBlank() ? "" : originalText,
                         revisedText,
-                        "???쒓낯????袁⑸젻泳?떑???癲ル슢????????????뽮덧????沃섅굥?? ?袁⑸즴??繞?????떋 ?怨뚮옖???빝??"
+                        "????볥궚????熬곣뫖?삥납??????꿔꺂?????????????戮?뜤????亦껋꼨援?? ?熬곣뫖利??濚?????????⑤슢????鍮??"
                 ));
             }
         }
@@ -2750,12 +2756,12 @@ public class GeminiFeedbackClient {
             return null;
         }
         if (diagnosis.expansionBudget() == ExpansionBudget.NONE) {
-            return "\"" + base + "\"????れ삀?????⑥?????怨뺣빰 ???怨뚮옖???빝??";
+            return "\"" + base + "\"?????뚯???????Β??????⑤베鍮?????⑤슢????鍮??";
         }
         if (diagnosis.expansionBudget() == ExpansionBudget.ONE_SUPPORT_SENTENCE) {
-            return "\"" + base + "\"???袁⑸즴?濚???⑥??癲ル슣??袁ｋ즵??癲ル슣?????????????뽮덫?????怨좊군 ???? ???뽮덫????嚥▲굥猷??????됰Ŧ????怨뚮옖???빝??";
+            return "\"" + base + "\"???熬곣뫖利?嚥????Β???꿔꺂???熬곻퐢利???꿔꺂??????????????戮?뜪??????⑥쥓援????? ???戮?뜪?????β뼯援η뙴???????거?????⑤슢????鍮??";
         }
-        return "\"" + base + "\"???袁⑸즴?濚???⑥??????좊읈?癲ル슣?? ??????????늄????ㅼ굣??????용럡??????됰Ŧ????怨뚮옖???빝??";
+        return "\"" + base + "\"???熬곣뫖利?嚥????Β??????醫딆쓧??꿔꺂??? ????????????????쇨덫???????⑸윞???????거?????⑤슢????鍮??";
     }
 
     private String fallbackTooShortRewriteGuide(FeedbackDiagnosisResult diagnosis) {
@@ -2767,7 +2773,7 @@ public class GeminiFeedbackClient {
         if (usableSkeleton == null) {
             usableSkeleton = "I ____.";
         }
-        return "\"" + usableSkeleton + "\" ????癲ル슢?????沃섅굥?? ?????뽮덫????⑥?????怨뺣빰 ???ㅼ뒭?? ????삳㎟?????源놁졆 ??筌먲퐣彛???壤굿??苑??怨뚮옖???빝??";
+        return "\"" + usableSkeleton + "\" ?????꿔꺂??????亦껋꼨援?? ?????戮?뜪?????Β??????⑤베鍮?????쇰뮡?? ?????녈렅?????繹먮냱議???嶺뚮㉡?ｅ퐲???鶯ㅺ동???????⑤슢????鍮??";
     }
 
     private boolean isValidTooShortRewriteGuide(String rewriteGuide, FeedbackDiagnosisResult diagnosis) {
@@ -2854,12 +2860,12 @@ public class GeminiFeedbackClient {
 
     private String buildNormalizedTooShortRewriteGuideInstruction(String skeleton) {
         String cleanSkeleton = skeleton == null || skeleton.isBlank() ? "I ____." : skeleton.trim();
-        return "\"" + cleanSkeleton + "\" ????癲ル슢?????沃섅굥?? ?????뽮덫????⑥????ш끽維????寃뗏? ????삳㎟???獒????源놁졆 ???⑤벡彛???壤굿??苑??怨뚮옖???빝??";
+        return "\"" + cleanSkeleton + "\" ?????꿔꺂??????亦껋꼨援?? ?????戮?뜪?????Β??????썹땟????野껊뿈?? ?????녈렅????????繹먮냱議?????ㅻ깹壤???鶯ㅺ동???????⑤슢????鍮??";
     }
 
     private String buildTooShortRewriteGuideInstruction(String skeleton) {
         String cleanSkeleton = skeleton == null || skeleton.isBlank() ? "I ____." : skeleton.trim();
-        return "\"" + cleanSkeleton + "\" ????癲ル슢?????沃섅굥?? ?????뽮덫????⑥????ш끽維????怨뚮옖???빝??";
+        return "\"" + cleanSkeleton + "\" ?????꿔꺂??????亦껋꼨援?? ?????戮?뜪?????Β??????썹땟?????⑤슢????鍮??";
     }
 
     private String extractTooShortGuideSkeleton(String rewriteGuide) {
@@ -3667,12 +3673,12 @@ public class GeminiFeedbackClient {
             List<GrammarFeedbackItemDto> grammarFeedback
     ) {
         if (isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
-            return "???レ뿴??? 癲ル슣??????影?됀?????癲ル슢??袁ъÞ?域밸Ŧ肉????野껊챶爾????⑤챶萸? ??誘⑦←뵳?異???????????뱀벑??野껊갭??????Β???????????怨쀪퐨??";
+            return "????щ였??? ?꿔꺂???????壤굿?????????꿔꺂???熬곎듑??잙갭큔??????롪퍓梨띄댚?????ㅼ굡?? ??沃섃뫂??먮뎨?????????????諭踰???롪퍓媛????????????????????⑥ろ맖??";
         }
         if (!isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
             return null;
         }
-        return "?野껊챶爾??????レ뿴???癲ル슣??????影?됀?????癲ル슢??袁ъÞ?域밸Ŧ肉?????怨뺤툔???ш끽維?? ??誘⑦←뵳?異???????????뱀벑???怨뚮옖??????Β??????嚥▲꺃?????怨쀪퐨??";
+        return "??롪퍓梨띄댚???????щ였????꿔꺂???????壤굿?????????꿔꺂???熬곎듑??잙갭큔???????⑤벡??????썹땟?? ??沃섃뫂??먮뎨?????????????諭踰????⑤슢????????????????β뼯爰??????⑥ろ맖??";
     }
 }
 

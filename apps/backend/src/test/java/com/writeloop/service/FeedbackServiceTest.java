@@ -72,7 +72,7 @@ class FeedbackServiceTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         feedbackService = new FeedbackService(
                 promptService,
@@ -117,7 +117,7 @@ class FeedbackServiceTest {
                 "Daily routine",
                 "EASY",
                 "Describe your routine for your weekday mornings.",
-                "평일 아침 루틴을 설명해 주세요.",
+                "?됱씪 ?꾩묠 猷⑦떞???ㅻ챸??二쇱꽭??",
                 "Mention one or two activities."
         );
         FeedbackRequestDto request = new FeedbackRequestDto(
@@ -141,16 +141,16 @@ class FeedbackServiceTest {
                 84,
                 false,
                 null,
-                "아침 활동 흐름이 보입니다.",
-                List.of("시간 흐름이 자연스럽습니다."),
-                List.of(new CorrectionDto("check the stock market 표현을 더 자연스럽게 다듬어 보세요.", "예: check stock prices처럼 더 자연스러운 표현으로 바꿔 보세요.")),
+                "?꾩묠 ?쒕룞 ?먮쫫??蹂댁엯?덈떎.",
+                List.of("?쒓컙 ?먮쫫???먯뿰?ㅻ읇?듬땲??"),
+                List.of(new CorrectionDto("check the stock market ?쒗쁽?????먯뿰?ㅻ읇寃??ㅻ벉??蹂댁꽭??", "?? check stock prices泥섎읆 ???먯뿰?ㅻ윭???쒗쁽?쇰줈 諛붽퓭 蹂댁꽭??")),
                 List.of(),
                 List.of(),
                 "I wake up at 8 a.m. and check stock prices.",
                 List.of(),
                 "I wake up at 8 a.m. and check stock prices before breakfast.",
                 null,
-                "\"I wake up at 8 a.m. and check _____.\" 빈칸에 실제 행동을 넣어 다시 써 보세요.",
+                "\"I wake up at 8 a.m. and check _____.\" 鍮덉뭏???ㅼ젣 ?됰룞???ｌ뼱 ?ㅼ떆 ??蹂댁꽭??",
                 List.of()
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
@@ -164,7 +164,7 @@ class FeedbackServiceTest {
                         "LOCAL_USAGE",
                         "check the stock market",
                         "check stock prices",
-                        "더 자연스러운 표현으로 고칠 수 있어요.",
+                        "???먯뿰?ㅻ윭???쒗쁽?쇰줈 怨좎튌 ???덉뼱??",
                         false,
                         GrammarSeverity.MINOR
                 )),
@@ -217,12 +217,12 @@ class FeedbackServiceTest {
                 AttemptOverlayPolicy.NONE
         );
         GeneratedSections finalSections = new GeneratedSections(
-                "아침 활동 흐름이 보입니다.",
-                List.of("시간 흐름이 자연스럽습니다."),
+                "?꾩묠 ?쒕룞 ?먮쫫??蹂댁엯?덈떎.",
+                List.of("?쒓컙 ?먮쫫???먯뿰?ㅻ읇?듬땲??"),
                 List.of(),
-                List.of(new CorrectionDto("check the stock market 표현을 더 자연스럽게 다듬어 보세요.", "예: check stock prices처럼 더 자연스러운 표현으로 바꿔 보세요.")),
+                List.of(new CorrectionDto("check the stock market ?쒗쁽?????먯뿰?ㅻ읇寃??ㅻ벉??蹂댁꽭??", "?? check stock prices泥섎읆 ???먯뿰?ㅻ윭???쒗쁽?쇰줈 諛붽퓭 蹂댁꽭??")),
                 List.of(),
-                "\"I wake up at 8 a.m. and check _____.\" 빈칸에 실제 행동을 넣어 다시 써 보세요.",
+                "\"I wake up at 8 a.m. and check _____.\" 鍮덉뭏???ㅼ젣 ?됰룞???ｌ뼱 ?ㅼ떆 ??蹂댁꽭??",
                 "I wake up at 8 a.m. and check stock prices before breakfast.",
                 null,
                 List.of()
@@ -287,7 +287,7 @@ class FeedbackServiceTest {
                 "Daily routine",
                 "EASY",
                 "Describe your routine for your weekday mornings.",
-                "질문",
+                "吏덈Ц",
                 "Mention one or two activities."
         );
         FeedbackRequestDto request = new FeedbackRequestDto(
@@ -312,8 +312,8 @@ class FeedbackServiceTest {
                 80,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(),
                 List.of(),
                 List.of(),
@@ -395,7 +395,7 @@ class FeedbackServiceTest {
                 "Food",
                 "EASY",
                 "What food do you like, and why?",
-                "어떤 음식을 좋아하고 왜 좋아하는지 말해 보세요.",
+                "?대뼡 ?뚯떇??醫뗭븘?섍퀬 ??醫뗭븘?섎뒗吏 留먰빐 蹂댁꽭??",
                 "Give one reason."
         );
         String answer = "I like pizza.";
@@ -409,8 +409,8 @@ class FeedbackServiceTest {
         );
 
         assertThat(response.rewriteChallenge())
-                .contains("이유")
-                .doesNotContain("3~4문장");
+                .contains("?댁쑀")
+                .doesNotContain("3~4臾몄옣");
     }
 
     @Test
@@ -420,7 +420,7 @@ class FeedbackServiceTest {
                 "Problem Solving - Work Challenge",
                 "B",
                 "What is one challenge you often face at work or school, and how do you deal with it?",
-                "질문",
+                "吏덈Ц",
                 null
         );
         AnswerProfile answerProfile = new AnswerProfile(
@@ -474,8 +474,8 @@ class FeedbackServiceTest {
                 false,
                 null,
                 null,
-                List.of("문제와 해결 방법을 함께 말한 점이 좋아요."),
-                List.of(new CorrectionDto("이 방법이 어떻게 도움이 되는지 한 가지 더 덧붙여 보세요.", "효과를 한 문장 더 써 보세요.")),
+                List.of("臾몄젣? ?닿껐 諛⑸쾿???④퍡 留먰븳 ?먯씠 醫뗭븘??"),
+                List.of(new CorrectionDto("??諛⑸쾿???대뼸寃??꾩????섎뒗吏 ??媛吏 ???㏓텤??蹂댁꽭??", "?④낵瑜???臾몄옣 ????蹂댁꽭??")),
                 List.of(),
                 List.of(),
                 "I usually start my Saturday with a walk.",
@@ -503,9 +503,9 @@ class FeedbackServiceTest {
         verify(answerAttemptRepository).save(captor.capture());
 
         AnswerAttemptEntity saved = captor.getValue();
-        assertThat(saved.getFeedbackSummary()).isEqualTo("문제와 해결 방법을 함께 말한 점이 좋아요. 이 방법이 어떻게 도움이 되는지 한 가지 더 덧붙여 보세요.");
+        assertThat(saved.getFeedbackSummary()).isEqualTo("臾몄젣? ?닿껐 諛⑸쾿???④퍡 留먰븳 ?먯씠 醫뗭븘?? ??諛⑸쾿???대뼸寃??꾩????섎뒗吏 ??媛吏 ???㏓텤??蹂댁꽭??");
         assertThat(saved.getModelAnswer()).isEqualTo("I usually start my Saturday with a walk.");
-        assertThat(saved.getRewriteChallenge()).isEqualTo("다음 답변에서 핵심 문장을 더 자연스럽게 다듬어 보세요.");
+        assertThat(saved.getRewriteChallenge()).isEqualTo("?ㅼ쓬 ?듬??먯꽌 ?듭떖 臾몄옣?????먯뿰?ㅻ읇寃??ㅻ벉??蹂댁꽭??");
     }
 
     @Test
@@ -517,7 +517,7 @@ class FeedbackServiceTest {
                 "Work Challenge",
                 "B",
                 "What is one challenge you often face at work or school, and how do you deal with it?",
-                "질문",
+                "吏덈Ц",
                 null,
                 null,
                 new PromptTaskMetaDto("PROBLEM_SOLUTION", List.of("MAIN_ANSWER", "ACTIVITY"), List.of("REASON"))
@@ -585,7 +585,7 @@ class FeedbackServiceTest {
                 "Health Goal",
                 "B",
                 "Explain one health goal you want to reach this year and why it matters to you.",
-                "올해 이루고 싶은 건강 목표 하나와 그것이 왜 중요한지 설명해 주세요.",
+                "?ы빐 ?대（怨??띠? 嫄닿컯 紐⑺몴 ?섎굹? 洹멸쾬????以묒슂?쒖? ?ㅻ챸??二쇱꽭??",
                 null,
                 null,
                 new PromptTaskMetaDto("GOAL_PLAN", List.of("MAIN_ANSWER", "REASON"), List.of("ACTIVITY", "TIME_OR_PLACE"))
@@ -642,10 +642,10 @@ class FeedbackServiceTest {
         assertThat(response.strengths().get(0)).doesNotContain(answer);
         assertThat(response.corrections()).hasSize(1);
         assertThat(response.corrections().get(0).suggestion())
-                .matches(text -> text.contains("이유")
-                        || text.contains("구체적인")
-                        || text.contains("습관")
-                        || text.contains("건강"));
+                .matches(text -> text.contains("?댁쑀")
+                        || text.contains("援ъ껜?곸씤")
+                        || text.contains("?듦?")
+                        || text.contains("嫄닿컯"));
         assertThat(response.rewriteChallenge())
                 .contains("this year")
                 .contains("It's important to me because I want to stay healthy.")
@@ -721,8 +721,8 @@ class FeedbackServiceTest {
                 "Society",
                 "HARD",
                 "What kind of social responsibility should successful companies have in modern society?",
-                "현대 사회에서 성공한 기업이 어떤 사회적 책임을 가져야 하는지 설명해 주세요.",
-                "구체적인 사례와 기준을 함께 제시하면 더 설득력 있어집니다."
+                "?꾨? ?ы쉶?먯꽌 ?깃났??湲곗뾽???대뼡 ?ы쉶??梨낆엫??媛?몄빞 ?섎뒗吏 ?ㅻ챸??二쇱꽭??",
+                "援ъ껜?곸씤 ?щ?? 湲곗????④퍡 ?쒖떆?섎㈃ ???ㅻ뱷???덉뼱吏묐땲??"
         );
         String answer = "Successful companies should take responsibility for caring marginalized groups.";
 
@@ -735,30 +735,30 @@ class FeedbackServiceTest {
                 90,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
-                List.of(new CorrectionDto("전치사 보완", "'for'를 넣어 보세요.")),
+                "?붿빟",
+                List.of("媛뺤젏"),
+                List.of(new CorrectionDto("?꾩튂??蹂댁셿", "'for'瑜??ｌ뼱 蹂댁꽭??")),
                 List.of(),
                 "Successful companies should take responsibility for caring for marginalized groups.",
                 List.of(
                         new RefinementExpressionDto(
                                 "take responsibility for",
-                                "이미 쓴 표현",
+                                "?대? ???쒗쁽",
                                 "take responsibility for supporting communities"
                         ),
                         new RefinementExpressionDto(
                                 "caring for marginalized groups",
-                                "교정문에 이미 반영된 표현",
+                                "援먯젙臾몄뿉 ?대? 諛섏쁺???쒗쁽",
                                 "caring for marginalized groups by providing support"
                         ),
                         new RefinementExpressionDto(
                                 "by providing support and opportunities",
-                                "다음 답변에서 더해볼 표현",
+                                "?ㅼ쓬 ?듬??먯꽌 ?뷀빐蹂??쒗쁽",
                                 "by providing support and opportunities"
                         )
                 ),
                 "Successful companies should take responsibility for caring for marginalized groups by providing support and opportunities.",
-                "다시 써 보세요."
+                "?ㅼ떆 ??蹂댁꽭??"
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -780,7 +780,7 @@ class FeedbackServiceTest {
                 "Food",
                 "EASY",
                 "What food do you like, and why?",
-                "어떤 음식을 좋아하고 왜 좋아하는지 말해 보세요.",
+                "?대뼡 ?뚯떇??醫뗭븘?섍퀬 ??醫뗭븘?섎뒗吏 留먰빐 蹂댁꽭??",
                 "Give one reason."
         );
         String answer = "I like pizza and chicken because it is delicious.";
@@ -794,11 +794,11 @@ class FeedbackServiceTest {
                 84,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(new CorrectionDto(
-                        "'Because it is delicious and versatile.'라는 문장에 충분한 연결이 필요합니다.",
-                        "문장을 연결하여 자연스럽게 만드세요."
+                        "'Because it is delicious and versatile.'?쇰뒗 臾몄옣??異⑸텇???곌껐???꾩슂?⑸땲??",
+                        "臾몄옣???곌껐?섏뿬 ?먯뿰?ㅻ읇寃?留뚮뱶?몄슂."
                 )),
                 List.of(
                         new InlineFeedbackSegmentDto("KEEP", "I like pizza and chicken because ", "I like pizza and chicken because "),
@@ -808,7 +808,7 @@ class FeedbackServiceTest {
                 "I like pizza and chicken because they are delicious.",
                 List.of(),
                 "I like pizza and chicken because they are delicious and versatile.",
-                "다시 써 보세요."
+                "?ㅼ떆 ??蹂댁꽭??"
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -821,7 +821,7 @@ class FeedbackServiceTest {
                 .anySatisfy(issue -> assertThat(issue).contains("they are"));
         assertThat(response.corrections())
                 .extracting(CorrectionDto::suggestion)
-                .anySatisfy(suggestion -> assertThat(suggestion).contains("대명사와 be동사"));
+                .anySatisfy(suggestion -> assertThat(suggestion).contains("?紐낆궗? be?숈궗"));
     }
 
     @Test
@@ -832,7 +832,7 @@ class FeedbackServiceTest {
                 "Food",
                 "EASY",
                 "What food do you like, and why?",
-                "어떤 음식을 좋아하고 왜 좋아하는지 말해 보세요.",
+                "?대뼡 ?뚯떇??醫뗭븘?섍퀬 ??醫뗭븘?섎뒗吏 留먰빐 蹂댁꽭??",
                 "Give one reason."
         );
         String answer = "I like pizza and chicken because it is delicious.";
@@ -846,11 +846,11 @@ class FeedbackServiceTest {
                 84,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(new CorrectionDto(
-                        "'Because it is delicious and versatile.'라는 문장에 충분한 연결이 필요합니다.",
-                        "문장을 한 번에 이어서 더 매끄럽게 만들어 보세요."
+                        "'Because it is delicious and versatile.'?쇰뒗 臾몄옣??異⑸텇???곌껐???꾩슂?⑸땲??",
+                        "臾몄옣????踰덉뿉 ?댁뼱????留ㅻ걚?쎄쾶 留뚮뱾??蹂댁꽭??"
                 )),
                 List.of(
                         new InlineFeedbackSegmentDto("KEEP", "I like pizza and chicken because ", "I like pizza and chicken because "),
@@ -860,7 +860,7 @@ class FeedbackServiceTest {
                 "I like pizza and chicken because they are delicious.",
                 List.of(),
                 "I like pizza and chicken because they are delicious and versatile.",
-                "다시 써 보세요."
+                "?ㅼ떆 ??蹂댁꽭??"
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -870,10 +870,10 @@ class FeedbackServiceTest {
 
         assertThat(response.corrections())
                 .extracting(CorrectionDto::issue)
-                .containsExactly("'Because it is delicious and versatile.'라는 문장에 충분한 연결이 필요합니다.");
+                .containsExactly("'Because it is delicious and versatile.'?쇰뒗 臾몄옣??異⑸텇???곌껐???꾩슂?⑸땲??");
         assertThat(response.corrections())
                 .extracting(CorrectionDto::suggestion)
-                .containsExactly("문장을 한 번에 이어서 더 매끄럽게 만들어 보세요.");
+                .containsExactly("臾몄옣????踰덉뿉 ?댁뼱????留ㅻ걚?쎄쾶 留뚮뱾??蹂댁꽭??");
     }
 
     @Test
@@ -883,7 +883,7 @@ class FeedbackServiceTest {
                 "Weekend",
                 "EASY",
                 "What do you usually do on weekends?",
-                "주말에 보통 무엇을 하나요?",
+                "二쇰쭚??蹂댄넻 臾댁뾿???섎굹??",
                 "Mention one or two activities."
         );
         String answer = "On weekends, I work out and spend time with my family at the park.";
@@ -897,14 +897,14 @@ class FeedbackServiceTest {
                 90,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(),
                 List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
                 answer,
                 List.of(),
                 answer,
-                "다시 써보세요."
+                "?ㅼ떆 ?⑤낫?몄슂."
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -924,7 +924,7 @@ class FeedbackServiceTest {
                 "Goal",
                 "B",
                 "What is one goal you have this year?",
-                "올해 가진 목표 한 가지를 말해 보세요.",
+                "?ы빐 媛吏?紐⑺몴 ??媛吏瑜?留먰빐 蹂댁꽭??",
                 "Use one sentence."
         );
         String answer = "I want to speak English fluently because it is important for my job.";
@@ -938,21 +938,21 @@ class FeedbackServiceTest {
                 90,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(),
                 List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
                 answer,
                 List.of(),
                 answer,
-                "다음에는 이유를 조금 더 풀어 보세요.",
+                "?ㅼ쓬?먮뒗 ?댁쑀瑜?議곌툑 ?????蹂댁꽭??",
                 List.of(new CoachExpressionUsageDto(
                         "I want to speak English fluently",
                         true,
                         "SELF_DISCOVERED",
                         "I want to speak English fluently",
                         "SELF_DISCOVERED",
-                        "목표를 분명하게 말할 때 자연스럽게 쓸 수 있어요."
+                        "紐⑺몴瑜?遺꾨챸?섍쾶 留먰븷 ???먯뿰?ㅻ읇寃??????덉뼱??"
                 ))
         ));
 
@@ -965,7 +965,7 @@ class FeedbackServiceTest {
                 .anySatisfy(expression -> {
                     assertThat(expression.expression()).isEqualTo("I want to speak English fluently");
                     assertThat(expression.matchedText()).isNull();
-                    assertThat(expression.usageTip()).isEqualTo("목표를 분명하게 말할 때 자연스럽게 쓸 수 있어요.");
+                    assertThat(expression.usageTip()).isEqualTo("紐⑺몴瑜?遺꾨챸?섍쾶 留먰븷 ???먯뿰?ㅻ읇寃??????덉뼱??");
                 });
     }
 
@@ -976,7 +976,7 @@ class FeedbackServiceTest {
                 "Weekend",
                 "EASY",
                 "What do you usually do on weekends?",
-                "주말에 보통 무엇을 하나요?",
+                "二쇰쭚??蹂댄넻 臾댁뾿???섎굹??",
                 "Mention one or two activities."
         );
         String answer = "I usually spend time with my friends on weekends.";
@@ -990,14 +990,14 @@ class FeedbackServiceTest {
                 88,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(),
                 List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
                 answer,
                 List.of(),
                 answer,
-                "다시 써보세요."
+                "?ㅼ떆 ?⑤낫?몄슂."
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -1019,7 +1019,7 @@ class FeedbackServiceTest {
                 "Food",
                 "EASY",
                 "What food do you like, and why?",
-                "어떤 음식을 좋아하고 왜 좋아하는지 말해 보세요.",
+                "?대뼡 ?뚯떇??醫뗭븘?섍퀬 ??醫뗭븘?섎뒗吏 留먰빐 蹂댁꽭??",
                 "Give one reason."
         );
         String answer = "I like pizza.";
@@ -1033,25 +1033,25 @@ class FeedbackServiceTest {
                 88,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(),
                 List.of(),
                 "I like pizza because it is delicious.",
                 List.of(
                         new RefinementExpressionDto(
                                 "My favorite food is pizza because it is delicious and versatile.",
-                                "다음 답변에서 재사용해 보세요.",
+                                "?ㅼ쓬 ?듬??먯꽌 ?ъ궗?⑺빐 蹂댁꽭??",
                                 "My favorite food is pizza because it is delicious and versatile."
                         ),
                         new RefinementExpressionDto(
                                 "I want to eat healthy food so that I can stay energetic.",
-                                "다음 답변에서 재사용해 보세요.",
+                                "?ㅼ쓬 ?듬??먯꽌 ?ъ궗?⑺빐 蹂댁꽭??",
                                 "I want to eat healthy food so that I can stay energetic."
                         )
                 ),
                 "My favorite food is pizza because it is delicious and versatile. I want to eat healthy food so that I can stay energetic.",
-                "다시 써 보세요."
+                "?ㅼ떆 ??蹂댁꽭??"
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -1088,8 +1088,8 @@ class FeedbackServiceTest {
                 "Goal Plan - Skill Growth",
                 "B",
                 "What is one skill you want to improve this year, and how will you work on it?",
-                "올해 더 키우고 싶은 기술 하나는 무엇이고, 어떻게 실천할 건가요?",
-                "목표와 실천 계획을 함께 말해 보세요."
+                "?ы빐 ???ㅼ슦怨??띠? 湲곗닠 ?섎굹??臾댁뾿?닿퀬, ?대뼸寃??ㅼ쿇??嫄닿???",
+                "紐⑺몴? ?ㅼ쿇 怨꾪쉷???④퍡 留먰빐 蹂댁꽭??"
         );
         String answer = "I want to improve my English speaking this year.";
         List<PromptHintDto> hints = List.of(
@@ -1103,14 +1103,14 @@ class FeedbackServiceTest {
                 87,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(),
                 List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
                 answer,
                 List.of(),
                 answer,
-                "다시 써 보세요."
+                "?ㅼ떆 ??蹂댁꽭??"
         );
 
         when(promptService.findById(prompt.id())).thenReturn(prompt);
@@ -1135,8 +1135,8 @@ class FeedbackServiceTest {
                 "Season",
                 "A",
                 "What season do you like, and why?",
-                "어떤 계절을 좋아하고 왜 좋아하나요?",
-                "좋아하는 이유를 한 가지 이상 넣어 보세요."
+                "?대뼡 怨꾩젅??醫뗭븘?섍퀬 ??醫뗭븘?섎굹??",
+                "醫뗭븘?섎뒗 ?댁쑀瑜???媛吏 ?댁긽 ?ｌ뼱 蹂댁꽭??"
         );
         String answer = "I like spring season because it's the season when flowers bloom and everything fresh.";
         String correctedAnswer = "I like spring because it's the season when flowers bloom and everything feels fresh.";
@@ -1150,33 +1150,33 @@ class FeedbackServiceTest {
                 83,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(
-                        new CorrectionDto("'spring season'은 자연스럽지 않습니다.", "'spring'으로 충분합니다."),
-                        new CorrectionDto("'feel'은 'everything'에 맞게 수일치가 필요합니다.", "'feels'를 사용하세요.")
+                        new CorrectionDto("'spring season'? ?먯뿰?ㅻ읇吏 ?딆뒿?덈떎.", "'spring'?쇰줈 異⑸텇?⑸땲??"),
+                        new CorrectionDto("'feel'? 'everything'??留욊쾶 ?섏씪移섍? ?꾩슂?⑸땲??", "'feels'瑜??ъ슜?섏꽭??")
                 ),
                 List.of(),
                 correctedAnswer,
                 List.of(
                         new RefinementExpressionDto(
                                 "when [thing] [verb]",
-                                "상황이나 시기를 설명할 때 쓸 수 있습니다.",
+                                "?곹솴?대굹 ?쒓린瑜??ㅻ챸?????????덉뒿?덈떎.",
                                 "when flowers bloom"
                         ),
                         new RefinementExpressionDto(
                                 "because it's the [noun] when [thing] [verb]",
-                                "특정 시기나 계절을 이유로 설명할 때 유용합니다.",
+                                "?뱀젙 ?쒓린??怨꾩젅???댁쑀濡??ㅻ챸?????좎슜?⑸땲??",
                                 "because it's the season when flowers bloom"
                         ),
                         new RefinementExpressionDto(
                                 "everything feels [adj]",
-                                "다양한 감각을 설명할 수 있습니다.",
+                                "?ㅼ뼇??媛먭컖???ㅻ챸?????덉뒿?덈떎.",
                                 "everything feels fresh"
                         )
                 ),
                 correctedAnswer,
-                "다시 써 보세요."
+                "?ㅼ떆 ??蹂댁꽭??"
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -1194,8 +1194,8 @@ class FeedbackServiceTest {
                 "Season",
                 "A",
                 "What season do you like, and why?",
-                "어떤 계절을 좋아하고 왜 좋아하나요?",
-                "좋아하는 이유를 한 가지 이상 넣어 보세요."
+                "?대뼡 怨꾩젅??醫뗭븘?섍퀬 ??醫뗭븘?섎굹??",
+                "醫뗭븘?섎뒗 ?댁쑀瑜???媛吏 ?댁긽 ?ｌ뼱 蹂댁꽭??"
         );
         String answer = "I like spring because flowers are blooming and the air feels fresh.";
         String correctedAnswer = "I like spring because flowers are blooming and the air feels fresh.";
@@ -1209,30 +1209,30 @@ class FeedbackServiceTest {
                 86,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(),
                 List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
                 correctedAnswer,
                 List.of(
                         new RefinementExpressionDto(
                                 "when [thing] [verb]",
-                                "상황이나 시기를 설명할 때 쓸 수 있습니다.",
+                                "?곹솴?대굹 ?쒓린瑜??ㅻ챸?????????덉뒿?덈떎.",
                                 "when flowers bloom"
                         ),
                         new RefinementExpressionDto(
                                 "the air feels [adj]",
-                                "분위기나 감각을 묘사할 때 좋습니다.",
+                                "遺꾩쐞湲곕굹 媛먭컖??臾섏궗????醫뗭뒿?덈떎.",
                                 "the air feels fresh"
                         ),
                         new RefinementExpressionDto(
                                 "I enjoy [season] because it feels [adj].",
-                                "계절 선호를 말할 때 쓸 수 있습니다.",
+                                "怨꾩젅 ?좏샇瑜?留먰븷 ???????덉뒿?덈떎.",
                                 "I enjoy spring because it feels refreshing."
                         )
                 ),
                 correctedAnswer,
-                "다시 써 보세요."
+                "?ㅼ떆 ??蹂댁꽭??"
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -1255,7 +1255,7 @@ class FeedbackServiceTest {
                 "Problem Solving",
                 "B",
                 "What is one challenge you often face, and how do you deal with it?",
-                "자주 겪는 어려움과 해결 방법을 말해 보세요.",
+                "?먯＜ 寃る뒗 ?대젮?怨??닿껐 諛⑸쾿??留먰빐 蹂댁꽭??",
                 "Mention the problem and one strategy."
         );
         String answer = "I often struggle to meet the deadline, but I try to stay on track by writing a to-do list.";
@@ -1302,8 +1302,8 @@ class FeedbackServiceTest {
                 "Season",
                 "A",
                 "What season do you like, and why?",
-                "어떤 계절을 좋아하고 왜 좋아하나요?",
-                "좋아하는 이유를 한 가지 이상 넣어 보세요."
+                "?대뼡 怨꾩젅??醫뗭븘?섍퀬 ??醫뗭븘?섎굹??",
+                "醫뗭븘?섎뒗 ?댁쑀瑜???媛吏 ?댁긽 ?ｌ뼱 蹂댁꽭??"
         );
         String answer = "I like spring because it is beautiful.";
         String correctedAnswer = "I like spring because it is beautiful.";
@@ -1317,25 +1317,25 @@ class FeedbackServiceTest {
                 88,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(),
                 List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
                 correctedAnswer,
                 List.of(
                         new RefinementExpressionDto(
                                 "because [reason]",
-                                "이유를 붙일 때 유용합니다.",
+                                "?댁쑀瑜?遺숈씪 ???좎슜?⑸땲??",
                                 "because it is beautiful"
                         ),
                         new RefinementExpressionDto(
                                 "because it's the [noun] when [thing] [verb]",
-                                "조금 더 구체적인 이유를 설명할 때 좋습니다.",
+                                "議곌툑 ??援ъ껜?곸씤 ?댁쑀瑜??ㅻ챸????醫뗭뒿?덈떎.",
                                 "because it's the season when flowers bloom"
                         )
                 ),
                 correctedAnswer,
-                "다시 써 보세요."
+                "?ㅼ떆 ??蹂댁꽭??"
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -1356,8 +1356,8 @@ class FeedbackServiceTest {
                 "Season",
                 "A",
                 "What season do you like, and why?",
-                "어떤 계절을 좋아하고 왜 좋아하나요?",
-                "좋아하는 이유를 한 가지 이상 넣어 보세요."
+                "?대뼡 怨꾩젅??醫뗭븘?섍퀬 ??醫뗭븘?섎굹??",
+                "醫뗭븘?섎뒗 ?댁쑀瑜???媛吏 ?댁긽 ?ｌ뼱 蹂댁꽭??"
         );
         String answer = "I like spring because it's the season when flowers bloom and everything feels fresh.";
         List<PromptHintDto> hints = List.of(
@@ -1376,30 +1376,30 @@ class FeedbackServiceTest {
                 84,
                 false,
                 null,
-                "요약",
-                List.of("강점"),
+                "?붿빟",
+                List.of("媛뺤젏"),
                 List.of(),
                 List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
                 answer,
                 List.of(
                         new RefinementExpressionDto(
                                 "when [thing] [verb]",
-                                "상황이나 시기를 설명할 때 쓸 수 있습니다.",
+                                "?곹솴?대굹 ?쒓린瑜??ㅻ챸?????????덉뒿?덈떎.",
                                 "when flowers bloom"
                         ),
                         new RefinementExpressionDto(
                                 "because it's the [noun] when [thing] [verb]",
-                                "특정 시기나 계절을 이유로 설명할 때 유용합니다.",
+                                "?뱀젙 ?쒓린??怨꾩젅???댁쑀濡??ㅻ챸?????좎슜?⑸땲??",
                                 "because it's the season when flowers bloom"
                         ),
                         new RefinementExpressionDto(
                                 "everything feels [adj]",
-                                "다양한 감각을 설명할 수 있습니다.",
+                                "?ㅼ뼇??媛먭컖???ㅻ챸?????덉뒿?덈떎.",
                                 "everything feels fresh"
                         )
                 ),
                 answer,
-                "다시 써 보세요."
+                "?ㅼ떆 ??蹂댁꽭??"
         ));
 
         FeedbackResponseDto response = feedbackService.review(
@@ -1531,7 +1531,7 @@ class FeedbackServiceTest {
                 "Goal Plan - Skill Growth",
                 "B",
                 "What is one skill you want to improve this year, and how will you work on it?",
-                "올해 키우고 싶은 기술 한 가지와 어떻게 연습할지 설명해 주세요.",
+                "?ы빐 ?ㅼ슦怨??띠? 湲곗닠 ??媛吏? ?대뼸寃??곗뒿?좎? ?ㅻ챸??二쇱꽭??",
                 "Explain both the goal and the action plan."
         );
         String answer = "I want to improve my English this year.";
@@ -1557,12 +1557,12 @@ class FeedbackServiceTest {
                 List.of(
                         new RefinementExpressionDto(
                                 "I want to [verb] so that I can [result].",
-                                "목표와 기대 결과를 함께 말할 때 쓸 수 있어요.",
+                                "紐⑺몴? 湲곕? 寃곌낵瑜??④퍡 留먰븷 ???????덉뼱??",
                                 "I want to improve my English so that I can speak more confidently."
                         ),
                         new RefinementExpressionDto(
                                 "I plan to [verb] by [verb]ing [method].",
-                                "실천 계획을 설명할 때 쓸 수 있어요.",
+                                "?ㅼ쿇 怨꾪쉷???ㅻ챸?????????덉뼱??",
                                 "I plan to do this by studying for thirty minutes every day."
                         )
                 ),
@@ -1619,7 +1619,7 @@ class FeedbackServiceTest {
                                 "after lunch",
                                 "Use this to add a time phrase naturally.",
                                 "I usually rest after lunch.",
-                                "점심 식사 후에"
+                                "?먯떖 ?앹궗 ?꾩뿉"
                         )
                 ),
                 modelAnswer,
@@ -1673,7 +1673,7 @@ class FeedbackServiceTest {
                                 "after lunch",
                                 "Use this to add a time phrase naturally.",
                                 "after lunch",
-                                "점심 식사 후에"
+                                "?먯떖 ?앹궗 ?꾩뿉"
                         )
                 ),
                 modelAnswer,
@@ -1724,7 +1724,7 @@ class FeedbackServiceTest {
                 List.of(
                         new RefinementExpressionDto(
                                 "rest",
-                                "실제 답변에서 휴식 시간이나 이유를 함께 붙여 보세요.",
+                                "?ㅼ젣 ?듬??먯꽌 ?댁떇 ?쒓컙?대굹 ?댁쑀瑜??④퍡 遺숈뿬 蹂댁꽭??",
                                 "I usually rest after lunch because it helps me recharge.",
                                 null
                         )
@@ -1740,7 +1740,7 @@ class FeedbackServiceTest {
 
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo, RefinementExpressionDto::example)
-                .contains(tuple("rest", "휴식하다", "I usually rest after lunch because it helps me recharge."));
+                .contains(tuple("rest", "?댁떇?섎떎", "I usually rest after lunch because it helps me recharge."));
     }
 
     @Test
@@ -1774,7 +1774,7 @@ class FeedbackServiceTest {
                 List.of(
                         new RefinementExpressionDto(
                                 "after lunch",
-                                "시간 표현 뒤에 어떤 활동을 하는지 이어서 말해 보세요.",
+                                "?쒓컙 ?쒗쁽 ?ㅼ뿉 ?대뼡 ?쒕룞???섎뒗吏 ?댁뼱??留먰빐 蹂댁꽭??",
                                 "I usually rest after lunch because it helps me recharge.",
                                 null
                         )
@@ -1790,7 +1790,7 @@ class FeedbackServiceTest {
 
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo, RefinementExpressionDto::example)
-                .contains(tuple("after lunch", "점심 식사 후에", "I usually rest after lunch because it helps me recharge."));
+                .contains(tuple("after lunch", "?먯떖 ?앹궗 ?꾩뿉", "I usually rest after lunch because it helps me recharge."));
     }
 
     @Test
@@ -1824,7 +1824,7 @@ class FeedbackServiceTest {
                 List.of(
                         new RefinementExpressionDto(
                                 "after lunch",
-                                "?쒓컙 ?쒗쁽 ?ㅼ뿉 ?대뼡 ?쒕룞???섎뒗吏 ?댁뼱??留먰빐 蹂댁꽭??",
+                                "??볦퍢 ??쀬겱 ??쇰퓠 ??堉???뺣짗????롫뮉筌왖 ??곷선??筌띾?鍮?癰귣똻苑??",
                                 "I often read a book after lunch.",
                                 null
                         )
@@ -1883,7 +1883,7 @@ class FeedbackServiceTest {
                 List.of(
                         new RefinementExpressionDto(
                                 "I want to [verb].",
-                                "목표를 말할 때 뒤에 구체적인 행동을 이어 보세요.",
+                                "紐⑺몴瑜?留먰븷 ???ㅼ뿉 援ъ껜?곸씤 ?됰룞???댁뼱 蹂댁꽭??",
                                 "I want to build a healthy routine this year.",
                                 null
                         )
@@ -1899,7 +1899,7 @@ class FeedbackServiceTest {
 
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo, RefinementExpressionDto::example)
-                .contains(tuple("I want to [verb].", "[동사]하고 싶다고 말하는 틀", "I want to build a healthy routine this year."));
+                .contains(tuple("I want to [verb].", "[?숈궗]?섍퀬 ?띕떎怨?留먰븯???", "I want to build a healthy routine this year."));
     }
 
     @Test
@@ -1933,9 +1933,9 @@ class FeedbackServiceTest {
                 List.of(
                         new RefinementExpressionDto(
                                 "rest",
-                                "실제 답변에서 휴식 시간이나 이유를 함께 붙여 보세요.",
+                                "?ㅼ젣 ?듬??먯꽌 ?댁떇 ?쒓컙?대굹 ?댁쑀瑜??④퍡 遺숈뿬 蹂댁꽭??",
                                 "I usually rest after lunch.",
-                                "휴식하다"
+                                "?댁떇?섎떎"
                         )
                 ),
                 modelAnswer,
@@ -1988,9 +1988,9 @@ class FeedbackServiceTest {
                 List.of(
                         new RefinementExpressionDto(
                                 "after lunch",
-                                "시간 표현 뒤에 어떤 활동을 하는지 이어서 말해 보세요.",
+                                "?쒓컙 ?쒗쁽 ?ㅼ뿉 ?대뼡 ?쒕룞???섎뒗吏 ?댁뼱??留먰빐 蹂댁꽭??",
                                 "I usually rest after lunch because it helps me recharge.",
-                                "다음 답변에서 활용하기 좋은 표현"
+                                "?ㅼ쓬 ?듬??먯꽌 ?쒖슜?섍린 醫뗭? ?쒗쁽"
                         )
                 ),
                 modelAnswer,
@@ -2004,10 +2004,10 @@ class FeedbackServiceTest {
 
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo)
-                .contains(tuple("after lunch", "점심 식사 후에"));
+                .contains(tuple("after lunch", "?먯떖 ?앹궗 ?꾩뿉"));
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::meaningKo)
-                .doesNotContain("다음 답변에서 활용하기 좋은 표현");
+                .doesNotContain("?ㅼ쓬 ?듬??먯꽌 ?쒖슜?섍린 醫뗭? ?쒗쁽");
     }
 
     @Test
@@ -2036,12 +2036,12 @@ class FeedbackServiceTest {
                 List.of("strength"),
                 List.of(
                         new CorrectionDto(
-                                "답변의 상황 설명이 조금 더 구체적이면 더 설득력 있어져요.",
-                                "왜 친구를 제시간에 만나기 어려운지 한 문장 더 덧붙여 보세요."
+                                "?듬????곹솴 ?ㅻ챸??議곌툑 ??援ъ껜?곸씠硫????ㅻ뱷???덉뼱?몄슂.",
+                                "??移쒓뎄瑜??쒖떆媛꾩뿉 留뚮굹湲??대젮?댁? ??臾몄옣 ???㏓텤??蹂댁꽭??"
                         ),
                         new CorrectionDto(
-                                "'I'는 항상 대문자로 써야 해요.",
-                                "'I'로 고쳐 주세요."
+                                "'I'????긽 ?臾몄옄濡??⑥빞 ?댁슂.",
+                                "'I'濡?怨좎퀜 二쇱꽭??"
                         )
                 ),
                 List.of(
@@ -2056,7 +2056,7 @@ class FeedbackServiceTest {
                 List.of(new GrammarFeedbackItemDto(
                         "i",
                         "I",
-                        "'I'는 항상 대문자로 써야 해요."
+                        "'I'????긽 ?臾몄옄濡??⑥빞 ?댁슂."
                 )),
                 "I have a problem meeting my friends on time. I set an alarm.",
                 List.of(),
@@ -2072,10 +2072,10 @@ class FeedbackServiceTest {
 
         assertThat(response.grammarFeedback())
                 .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
-                .contains(tuple("i", "I", "'I'는 항상 대문자로 써야 해요."));
+                .contains(tuple("i", "I", "'I'????긽 ?臾몄옄濡??⑥빞 ?댁슂."));
         assertThat(response.corrections())
                 .extracting(CorrectionDto::issue)
-                .containsExactly("답변의 상황 설명이 조금 더 구체적이면 더 설득력 있어져요.");
+                .containsExactly("?듬????곹솴 ?ㅻ챸??議곌툑 ??援ъ껜?곸씠硫????ㅻ뱷???덉뼱?몄슂.");
     }
     @Test
     @org.junit.jupiter.api.Disabled("Legacy grammar expectation predates section-policy grammar cap.")
@@ -2085,7 +2085,7 @@ class FeedbackServiceTest {
                 "Routine - Weekend",
                 "A",
                 "How do you usually spend your weekend?",
-                "주말은 보통 어떻게 보내나요?",
+                "二쇰쭚? 蹂댄넻 ?대뼸寃?蹂대궡?섏슂?",
                 "Mention one or two activities."
         );
         String answer = "On weekends, i usually take nap and write a my diary";
@@ -2102,13 +2102,13 @@ class FeedbackServiceTest {
                 "summary",
                 List.of("strength"),
                 List.of(new CorrectionDto(
-                        "내용이 조금 더 구체적이면 더 좋아져요.",
-                        "어디에서 시간을 보내는지 한 문장 더 덧붙여 보세요."
+                        "?댁슜??議곌툑 ??援ъ껜?곸씠硫???醫뗭븘?몄슂.",
+                        "?대뵒?먯꽌 ?쒓컙??蹂대궡?붿? ??臾몄옣 ???㏓텤??蹂댁꽭??"
                 )),
                 List.of(),
                 List.of(
-                        new GrammarFeedbackItemDto("i", "I", "'I'는 항상 대문자로 써야 해요."),
-                        new GrammarFeedbackItemDto("a my diary", "my diary", "'a'는 소유격 'my'와 함께 쓸 수 없어요.")
+                        new GrammarFeedbackItemDto("i", "I", "'I'????긽 ?臾몄옄濡??⑥빞 ?댁슂."),
+                        new GrammarFeedbackItemDto("a my diary", "my diary", "'a'???뚯쑀寃?'my'? ?④퍡 ?????놁뼱??")
                 ),
                 "On weekends, I usually take a nap and write in my diary.",
                 List.of(),
@@ -2145,7 +2145,7 @@ class FeedbackServiceTest {
                 "Routine - Weekend",
                 "A",
                 "How do you usually spend your weekend?",
-                "주말에 보통 어떻게 보내나요?",
+                "二쇰쭚??蹂댄넻 ?대뼸寃?蹂대궡?섏슂?",
                 "Mention one or two activities."
         );
         String answer = "On weekends, i usually take nap and write a my diary";
@@ -2187,7 +2187,7 @@ class FeedbackServiceTest {
         assertThat(response.grammarFeedback())
                 .filteredOn(item -> "a my diary".equals(item.originalText()) && "my diary".equals(item.revisedText()))
                 .extracting(GrammarFeedbackItemDto::reasonKo)
-                .containsExactly("'my' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 'a'를 함께 쓰지 않아요.");
+                .containsExactly("'my' 媛숈? ?쒖젙?ш? ?대? 紐낆궗瑜?袁몃ŉ 二쇰?濡??욎뿉 愿??'a'瑜??④퍡 ?곗? ?딆븘??");
     }
 
     @Test
@@ -2197,7 +2197,7 @@ class FeedbackServiceTest {
                 "Routine - Weekend",
                 "A",
                 "How do you usually spend your weekend?",
-                "주말은 보통 어떻게 보내나요?",
+                "二쇰쭚? 蹂댄넻 ?대뼸寃?蹂대궡?섏슂?",
                 "Mention one or two activities."
         );
         String answer = "On weekends, I write a my diary before bed.";
@@ -2216,7 +2216,7 @@ class FeedbackServiceTest {
                 List.of(),
                 List.of(),
                 List.of(
-                        new GrammarFeedbackItemDto("a", "", "이 부분은 빼는 것이 문법적으로 더 자연스러워요.")
+                        new GrammarFeedbackItemDto("a", "", "??遺遺꾩? 鍮쇰뒗 寃껋씠 臾몃쾿?곸쑝濡????먯뿰?ㅻ윭?뚯슂.")
                 ),
                 "On weekends, I write my diary before bed.",
                 List.of(),
@@ -2235,7 +2235,7 @@ class FeedbackServiceTest {
                 .contains(tuple(
                         "a",
                         "",
-                        "'my' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 'a'를 함께 쓰지 않아요."
+                        "'my' 媛숈? ?쒖젙?ш? ?대? 紐낆궗瑜?袁몃ŉ 二쇰?濡??욎뿉 愿??'a'瑜??④퍡 ?곗? ?딆븘??"
                 ));
     }
 
@@ -2247,7 +2247,7 @@ class FeedbackServiceTest {
                 "Goal Plan - Habit Building",
                 "B",
                 "What is one habit you want to build this year, and why is it important to you?",
-                "올해 만들고 싶은 습관 한 가지와 그것이 왜 중요한지 설명해 주세요.",
+                "?ы빐 留뚮뱾怨??띠? ?듦? ??媛吏? 洹멸쾬????以묒슂?쒖? ?ㅻ챸??二쇱꽭??",
                 "Include your goal and reason."
         );
         String answer = "I want to build exercise habit this year because it helps me stay healthy.";
@@ -2266,7 +2266,7 @@ class FeedbackServiceTest {
                 List.of(),
                 List.of(),
                 List.of(
-                        new GrammarFeedbackItemDto("", "an", "명사 앞에 필요한 한정어를 넣으면 뜻이 더 분명해집니다.")
+                        new GrammarFeedbackItemDto("", "an", "紐낆궗 ?욎뿉 ?꾩슂???쒖젙?대? ?ｌ쑝硫??살씠 ??遺꾨챸?댁쭛?덈떎.")
                 ),
                 "I want to build an exercise habit this year because it helps me stay healthy.",
                 List.of(),
@@ -2285,7 +2285,7 @@ class FeedbackServiceTest {
                 .contains(tuple(
                         "",
                         "an",
-                        "'habit'처럼 단수 가산명사 앞에는 관사 'an'을 써야 해요."
+                        "'habit'泥섎읆 ?⑥닔 媛?곕챸???욎뿉??愿??'an'???⑥빞 ?댁슂."
                 ));
     }
 
@@ -2297,7 +2297,7 @@ class FeedbackServiceTest {
                 "Routine - Weekend",
                 "A",
                 "How do you usually spend your weekend?",
-                "주말은 보통 어떻게 보내나요?",
+                "二쇰쭚? 蹂댄넻 ?대뼸寃?蹂대궡?섏슂?",
                 "Mention one or two activities."
         );
         String answer = "On weekends I usually relax at home";
@@ -2316,8 +2316,8 @@ class FeedbackServiceTest {
                 List.of(),
                 List.of(),
                 List.of(
-                        new GrammarFeedbackItemDto("", ",", "문장 끝에는 문장부호가 있어야 문장이 분명해요."),
-                        new GrammarFeedbackItemDto("", ".", "문장 끝에는 문장부호가 있어야 문장이 분명해요.")
+                        new GrammarFeedbackItemDto("", ",", "臾몄옣 ?앹뿉??臾몄옣遺?멸? ?덉뼱??臾몄옣??遺꾨챸?댁슂."),
+                        new GrammarFeedbackItemDto("", ".", "臾몄옣 ?앹뿉??臾몄옣遺?멸? ?덉뼱??臾몄옣??遺꾨챸?댁슂.")
                 ),
                 "On weekends, I usually relax at home.",
                 List.of(),
@@ -2334,8 +2334,8 @@ class FeedbackServiceTest {
         assertThat(response.grammarFeedback())
                 .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
                 .contains(
-                        tuple("", ",", "쉼표를 넣어 앞부분의 도입 표현과 뒤의 본문을 구분해요."),
-                        tuple("", ".", "완전한 문장은 끝에 마침표를 넣어 마무리해요.")
+                        tuple("", ",", "?쇳몴瑜??ｌ뼱 ?욌?遺꾩쓽 ?꾩엯 ?쒗쁽怨??ㅼ쓽 蹂몃Ц??援щ텇?댁슂."),
+                        tuple("", ".", "?꾩쟾??臾몄옣? ?앹뿉 留덉묠?쒕? ?ｌ뼱 留덈Т由ы빐??")
                 );
     }
 
@@ -2347,7 +2347,7 @@ class FeedbackServiceTest {
                 "Routine - Evening",
                 "A",
                 "What do you usually do after dinner?",
-                "저녁을 먹고 나면 보통 무엇을 하나요?",
+                "??곸쓣 癒밴퀬 ?섎㈃ 蹂댄넻 臾댁뾿???섎굹??",
                 "Mention one or two activities."
         );
         String answer = "After dinner, I clean the my desk and organize my notes.";
@@ -2369,7 +2369,7 @@ class FeedbackServiceTest {
                         new GrammarFeedbackItemDto(
                                 "clean the my desk",
                                 "clean my desk",
-                                "명사 앞에 두 개의 정관사를 사용할 수 없습니다."
+                                "紐낆궗 ?욎뿉 ??媛쒖쓽 ?뺢??щ? ?ъ슜?????놁뒿?덈떎."
                         )
                 ),
                 "After dinner, I clean my desk and organize my notes.",
@@ -2389,7 +2389,7 @@ class FeedbackServiceTest {
                 .contains(tuple(
                         "clean the my desk",
                         "clean my desk",
-                        "'my' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 'the'를 함께 쓰지 않아요."
+                        "'my' 媛숈? ?쒖젙?ш? ?대? 紐낆궗瑜?袁몃ŉ 二쇰?濡??욎뿉 愿??'the'瑜??④퍡 ?곗? ?딆븘??"
                 ));
     }
 
@@ -2403,7 +2403,7 @@ class FeedbackServiceTest {
                         new GrammarFeedbackItemDto(
                                 "right after I wake up I take a shower and turn on the computer to check the stock market.",
                                 "Right after I wake up, I take a shower and turn on the computer to check the stock market.",
-                                "문장 첫머리는 대문자로 시작하고, 절이 길어질 때는 쉼표로 흐름을 정리하면 더 자연스러워요."
+                                "臾몄옣 泥ル㉧由щ뒗 ?臾몄옄濡??쒖옉?섍퀬, ?덉씠 湲몄뼱吏??뚮뒗 ?쇳몴濡??먮쫫???뺣━?섎㈃ ???먯뿰?ㅻ윭?뚯슂."
                         )
                 ),
                 List.of(
@@ -2420,7 +2420,7 @@ class FeedbackServiceTest {
                 .contains(tuple(
                         "right after I wake up I take a shower and turn on the computer to check the stock market.",
                         "Right after I wake up, I take a shower and turn on the computer to check the stock market.",
-                        "문장 첫머리는 대문자로 시작하고, 절이 길어질 때는 쉼표로 흐름을 정리하면 더 자연스러워요."
+                        "臾몄옣 泥ル㉧由щ뒗 ?臾몄옄濡??쒖옉?섍퀬, ?덉씠 湲몄뼱吏??뚮뒗 ?쇳몴濡??먮쫫???뺣━?섎㈃ ???먯뿰?ㅻ윭?뚯슂."
                 ));
     }
 
@@ -2432,7 +2432,7 @@ class FeedbackServiceTest {
                 "Goal Plan - Habit Building",
                 "B",
                 "What is one habit you want to build this year, and why is it important to you?",
-                "올해 만들고 싶은 습관 한 가지와 그것이 왜 중요한지 설명해 주세요.",
+                "?ы빐 留뚮뱾怨??띠? ?듦? ??媛吏? 洹멸쾬????以묒슂?쒖? ?ㅻ챸??二쇱꽭??",
                 "Include your goal and reason."
         );
         String answer = "I check a my schedule every morning.";
@@ -2454,7 +2454,7 @@ class FeedbackServiceTest {
                         new GrammarFeedbackItemDto(
                                 "I check a",
                                 "I check",
-                                "'schedule'는 가산명사지만 관사를 필요로 하지 않음."
+                                "'schedule'??媛?곕챸?ъ?留?愿?щ? ?꾩슂濡??섏? ?딆쓬."
                         )
                 ),
                 "I check my schedule every morning.",
@@ -2474,7 +2474,7 @@ class FeedbackServiceTest {
                 .contains(tuple(
                         "I check a",
                         "I check",
-                        "'my' 같은 한정사가 이미 명사를 꾸며 주므로 앞에 관사 'a'를 함께 쓰지 않아요."
+                        "'my' 媛숈? ?쒖젙?ш? ?대? 紐낆궗瑜?袁몃ŉ 二쇰?濡??욎뿉 愿??'a'瑜??④퍡 ?곗? ?딆븘??"
                 ));
     }
 
@@ -2486,7 +2486,7 @@ class FeedbackServiceTest {
                 "Routine - Weekend",
                 "A",
                 "How do you usually spend your weekend?",
-                "주말은 보통 어떻게 보내나요?",
+                "二쇰쭚? 蹂댄넻 ?대뼸寃?蹂대궡?섏슂?",
                 "Mention one or two activities."
         );
         String answer = "On weekends, I usually take nap at home and watch videos.";
@@ -2505,8 +2505,8 @@ class FeedbackServiceTest {
                 List.of(),
                 List.of(),
                 List.of(
-                        new GrammarFeedbackItemDto("nap", "a nap", "'nap'은 가산명사라서 관사가 필요합니다."),
-                        new GrammarFeedbackItemDto("watch videos", "watch videos", "복수형 설명")
+                        new GrammarFeedbackItemDto("nap", "a nap", "'nap'? 媛?곕챸?щ씪??愿?ш? ?꾩슂?⑸땲??"),
+                        new GrammarFeedbackItemDto("watch videos", "watch videos", "蹂듭닔???ㅻ챸")
                 ),
                 "On weekends, I usually take a nap at home and watch videos.",
                 List.of(),
@@ -2551,12 +2551,12 @@ class FeedbackServiceTest {
                 List.of("strength"),
                 List.of(
                         new CorrectionDto(
-                                "?듬????곹솴 ?ㅻ챸??議곌툑 ??援ъ껜?곸씠硫????ㅻ뱷???덉뼱?몄슂.",
-                                "??移쒓뎄瑜??쒖떆媛꾩뿉 留뚮굹湲??대젮?댁? ??臾몄옣 ???㏓텤??蹂댁꽭??"
+                                "??????怨뱀넺 ??살구??鈺곌퀗?????닌딄퍥?怨몄뵠筌?????삳굣????됰선?紐꾩뒄.",
+                                "??燁살뮄?꾤몴???뽯뻻揶쏄쑴肉?筌띾슢援방묾??????? ???얜챷??????볧뀮??癰귣똻苑??"
                         ),
                         new CorrectionDto(
-                                "'I'????긽 ?臾몄옄濡??⑥빞 ?댁슂.",
-                                "'I'濡?怨좎퀜 二쇱꽭??"
+                                "'I'????湲????얜챷?꾣에???λ튊 ??곸뒄.",
+                                "'I'嚥??⑥쥙??雅뚯눘苑??"
                         )
                 ),
                 List.of(
@@ -2568,7 +2568,7 @@ class FeedbackServiceTest {
                         new InlineFeedbackSegmentDto("REPLACE", "i", "I"),
                         new InlineFeedbackSegmentDto("KEEP", " set an alarm.", " set an alarm.")
                 ),
-                List.of(new GrammarFeedbackItemDto("i", "I", "'I'????긽 ?臾몄옄濡??⑥빞 ?댁슂.")),
+                List.of(new GrammarFeedbackItemDto("i", "I", "'I'????湲????얜챷?꾣에???λ튊 ??곸뒄.")),
                 "I have a problem meeting my friends on time. I set an alarm.",
                 List.of(),
                 "I have a problem meeting my friends on time. I set an alarm.",
@@ -2597,7 +2597,7 @@ class FeedbackServiceTest {
                 "Goal Plan - Habit Building",
                 "B",
                 "What is one habit you want to build this year, and why is it important to you?",
-                "?ы빐 留뚮뱾怨??띠? ?듦? ??媛吏? 洹멸쾬????以묒슂?쒖? ?ㅻ챸??二쇱꽭??",
+                "??鍮?筌띾슢諭얏???? ??? ??揶쎛筌왖?? 域밸㈇苡????餓λ쵐???? ??살구??雅뚯눘苑??",
                 "Include your goal and reason."
         );
         String answer = "I want to build exercise habit this year because it helps me stay healthy.";
@@ -2640,7 +2640,7 @@ class FeedbackServiceTest {
                 "Routine - Evening",
                 "A",
                 "What do you usually do after dinner?",
-                "??곸쓣 癒밴퀬 ?섎㈃ 蹂댄넻 臾댁뾿???섎굹??",
+                "???怨몄뱽 ?믩객????롢늺 癰귣똾???얜똻毓????롪돌??",
                 "Mention one or two activities."
         );
         String answer = "After dinner, I clean the my desk and organize my notes.";
@@ -2684,7 +2684,7 @@ class FeedbackServiceTest {
                 "Routine - Weekend",
                 "A",
                 "How do you usually spend your weekend?",
-                "二쇰쭚? 蹂댄넻 ?대뼸寃?蹂대궡?섏슂?",
+                "雅뚯눖彛?? 癰귣똾????堉멨칰?癰귣?沅??륁뒄?",
                 "Mention one or two activities."
         );
         String answer = "On weekends, I usually take nap at home and watch videos.";
@@ -2729,7 +2729,7 @@ class FeedbackServiceTest {
                 "Goal Plan - Habit Building",
                 "B",
                 "What is one habit you want to build this year, and why is it important to you?",
-                "?ы빐 留뚮뱾怨??띠? ?듦? ??媛吏? 洹멸쾬????以묒슂?쒖? ?ㅻ챸??二쇱꽭??",
+                "??鍮?筌띾슢諭얏???? ??? ??揶쎛筌왖?? 域밸㈇苡????餓λ쵐???? ??살구??雅뚯눘苑??",
                 "Include your goal and reason."
         );
         String answer = "I check a my schedule every morning.";
@@ -2764,7 +2764,7 @@ class FeedbackServiceTest {
         assertThat(response.grammarFeedback())
                 .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText)
                 .containsExactly(tuple("I check a", "I check"));
-        assertThat(response.rewriteChallenge()).contains("이유");
+        assertThat(response.rewriteChallenge()).contains("?댁쑀");
     }
 
     @Test
@@ -2774,7 +2774,7 @@ class FeedbackServiceTest {
                 "Goal Plan - Habit Building",
                 "B",
                 "What is one habit you want to build this year, and why is it important to you?",
-                "올해 만들고 싶은 습관 한 가지와 그것이 왜 중요한지 설명해 주세요.",
+                "?ы빐 留뚮뱾怨??띠? ?듦? ??媛吏? 洹멸쾬????以묒슂?쒖? ?ㅻ챸??二쇱꽭??",
                 "Include your goal and reason."
         );
         String answer = "I want to make study plan for this month.";
@@ -2796,7 +2796,7 @@ class FeedbackServiceTest {
                         new GrammarFeedbackItemDto(
                                 "this month.",
                                 "for this month.",
-                                "전치사 'for'는 '~을 위한'의 의미로 사용됩니다. 여기서는 기간을 나타냅니다."
+                                "?꾩튂??'for'??'~???꾪븳'???섎?濡??ъ슜?⑸땲?? ?ш린?쒕뒗 湲곌컙???섑??낅땲??"
                         )
                 ),
                 "I want to make a study plan for this month.",
@@ -2816,12 +2816,12 @@ class FeedbackServiceTest {
                 .contains(tuple(
                         "",
                         "a",
-                        "'plan'처럼 단수 가산명사 앞에는 관사 'a'를 써야 해요."
+                        "'plan'泥섎읆 ?⑥닔 媛?곕챸???욎뿉??愿??'a'瑜??⑥빞 ?댁슂."
                 ))
                 .doesNotContain(tuple(
                         "this month.",
                         "for this month.",
-                        "전치사 'for'는 '~을 위한'의 의미로 사용됩니다. 여기서는 기간을 나타냅니다."
+                        "?꾩튂??'for'??'~???꾪븳'???섎?濡??ъ슜?⑸땲?? ?ш린?쒕뒗 湲곌컙???섑??낅땲??"
                 ));
     }
 
@@ -2832,7 +2832,7 @@ class FeedbackServiceTest {
                 "Routine - Weekend",
                 "A",
                 "How do you usually spend your weekend?",
-                "주말에 보통 어떻게 보내나요?",
+                "二쇰쭚??蹂댄넻 ?대뼸寃?蹂대궡?섏슂?",
                 "Mention one or two activities."
         );
         String answer = "When I stay at home, I usually play games and listen to music.";
@@ -2854,8 +2854,8 @@ class FeedbackServiceTest {
                                 "Consider adding more details about other activities or who you spend time with."
                         ),
                         new CorrectionDto(
-                                "더 구체적인 정보를 포함하면 좋겠어요.",
-                                "어디에서 시간을 보내는지나 누구와 함께하는지도 덧붙여 보세요."
+                                "??援ъ껜?곸씤 ?뺣낫瑜??ы븿?섎㈃ 醫뗪쿋?댁슂.",
+                                "?대뵒?먯꽌 ?쒓컙??蹂대궡?붿????꾧뎄? ?④퍡?섎뒗吏???㏓텤??蹂댁꽭??"
                         )
                 ),
                 List.of(),
@@ -2875,8 +2875,8 @@ class FeedbackServiceTest {
         assertThat(response.corrections())
                 .extracting(CorrectionDto::issue, CorrectionDto::suggestion)
                 .containsExactly(tuple(
-                        "더 구체적인 정보를 포함하면 좋겠어요.",
-                        "어디에서 시간을 보내는지나 누구와 함께하는지도 덧붙여 보세요."
+                        "??援ъ껜?곸씤 ?뺣낫瑜??ы븿?섎㈃ 醫뗪쿋?댁슂.",
+                        "?대뵒?먯꽌 ?쒓컙??蹂대궡?붿????꾧뎄? ?④퍡?섎뒗吏???㏓텤??蹂댁꽭??"
                 ));
     }
 
@@ -2887,7 +2887,7 @@ class FeedbackServiceTest {
                 "Routine - Weekend",
                 "A",
                 "How do you usually spend your weekend?",
-                "주말은 보통 어떻게 보내나요?",
+                "二쇰쭚? 蹂댄넻 ?대뼸寃?蹂대궡?섏슂?",
                 "Mention one or two activities."
         );
         String answer = "In the morning, I exercise, and in the afternoon, I relax by reading a book or watching TV.";
@@ -2906,9 +2906,9 @@ class FeedbackServiceTest {
                 List.of(),
                 List.of(),
                 List.of(
-                        new GrammarFeedbackItemDto("morning", "evening", "'morning'보다 'evening'가 문맥에 더 자연스럽습니다."),
-                        new GrammarFeedbackItemDto("in the", "after", "관사를 보완하면 표현이 더 자연스럽고 정확해집니다."),
-                        new GrammarFeedbackItemDto("afternoon", "work", "'afternoon'보다 'work'가 문맥에 더 자연스럽습니다.")
+                        new GrammarFeedbackItemDto("morning", "evening", "'morning'蹂대떎 'evening'媛 臾몃㎘?????먯뿰?ㅻ읇?듬땲??"),
+                        new GrammarFeedbackItemDto("in the", "after", "愿?щ? 蹂댁셿?섎㈃ ?쒗쁽?????먯뿰?ㅻ읇怨??뺥솗?댁쭛?덈떎."),
+                        new GrammarFeedbackItemDto("afternoon", "work", "'afternoon'蹂대떎 'work'媛 臾몃㎘?????먯뿰?ㅻ읇?듬땲??")
                 ),
                 "In the evening, I exercise, and after work, I relax by reading a book or watching TV.",
                 List.of(),
@@ -2934,7 +2934,7 @@ class FeedbackServiceTest {
                 "Routine - Morning",
                 "A",
                 "Describe your routine for your weekday mornings.",
-                "평일 아침 루틴을 설명해 주세요.",
+                "?됱씪 ?꾩묠 猷⑦떞???ㅻ챸??二쇱꽭??",
                 "Mention the order of your routine."
         );
         String answer = "I wake up in the morning to get ready for my commute. After that I have a breakfast.";
@@ -2956,7 +2956,7 @@ class FeedbackServiceTest {
                         new GrammarFeedbackItemDto(
                                 "After that I have a breakfast.",
                                 "After that, I have breakfast.",
-                                "식사(breakfast) 앞에는 관사 'a'를 붙이지 않는 것이 자연스럽습니다."
+                                "?앹궗(breakfast) ?욎뿉??愿??'a'瑜?遺숈씠吏 ?딅뒗 寃껋씠 ?먯뿰?ㅻ읇?듬땲??"
                         )
                 ),
                 "I wake up in the morning to get ready for my commute. After that, I usually have breakfast.",
@@ -2982,7 +2982,7 @@ class FeedbackServiceTest {
                 "Goal Plan - Habit Building",
                 "B",
                 "What is one habit you want to build this year, and why is it important to you?",
-                "올해 만들고 싶은 습관 한 가지와 그것이 왜 중요한지 설명해 주세요.",
+                "?ы빐 留뚮뱾怨??띠? ?듦? ??媛吏? 洹멸쾬????以묒슂?쒖? ?ㅻ챸??二쇱꽭??",
                 "Include your goal and reason."
         );
         String answer = "I want to take nap after lunch.";
@@ -3001,7 +3001,7 @@ class FeedbackServiceTest {
                 List.of(),
                 List.of(),
                 List.of(
-                        new GrammarFeedbackItemDto("nap", "a nap", "'nap'은 가산명사라서 관사가 필요합니다.")
+                        new GrammarFeedbackItemDto("nap", "a nap", "'nap'? 媛?곕챸?щ씪??愿?ш? ?꾩슂?⑸땲??")
                 ),
                 "I want to take a nap after lunch.",
                 List.of(),
@@ -3031,18 +3031,18 @@ class FeedbackServiceTest {
                 "buildRefinementExpressionDto",
                 "after lunch",
                 RefinementExpressionSource.MODEL_ANSWER,
-                "시간 표현 뒤에 어떤 활동을 하는지 붙이면 문장이 더 또렷해집니다.",
+                "?쒓컙 ?쒗쁽 ?ㅼ뿉 ?대뼡 ?쒕룞???섎뒗吏 遺숈씠硫?臾몄옣?????먮졆?댁쭛?덈떎.",
                 null,
                 null,
                 "I usually rest after lunch. It helps me recharge for the afternoon.",
-                "저는 보통 점심 식사 후에 쉬어요. 그러면 오후를 더 잘 보낼 힘이 생겨요.",
-                "점심 식사 후에",
+                "???蹂댄넻 ?먯떖 ?앹궗 ?꾩뿉 ?ъ뼱?? 洹몃윭硫??ㅽ썑瑜?????蹂대궪 ?섏씠 ?앷꺼??",
+                "?먯떖 ?앹궗 ?꾩뿉",
                 List.of()
         );
 
         assertThat(expression).isNotNull();
         assertThat(expression.exampleEn()).isEqualTo("I usually rest after lunch.");
-        assertThat(expression.exampleKo()).isEqualTo("저는 보통 점심 식사 후에 쉬어요.");
+        assertThat(expression.exampleKo()).isEqualTo("???蹂댄넻 ?먯떖 ?앹궗 ?꾩뿉 ?ъ뼱??");
         assertThat(expression.exampleSource()).isEqualTo(RefinementExampleSource.EXTRACTED);
     }
 }

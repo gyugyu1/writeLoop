@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,6 +23,22 @@ final class GeminiStructuredOutputSupport {
             String promptText,
             Map<String, Object> schema
     ) throws IOException {
+        return buildGenerateContentRequestBody(objectMapper, promptText, schema, null);
+    }
+
+    static String buildGenerateContentRequestBody(
+            ObjectMapper objectMapper,
+            String promptText,
+            Map<String, Object> schema,
+            Integer thinkingBudget
+    ) throws IOException {
+        Map<String, Object> generationConfig = new LinkedHashMap<>();
+        generationConfig.put("responseMimeType", "application/json");
+        generationConfig.put("responseJsonSchema", schema);
+        if (thinkingBudget != null) {
+            generationConfig.put("thinkingConfig", Map.of("thinkingBudget", thinkingBudget));
+        }
+
         Map<String, Object> payload = Map.of(
                 "contents", List.of(
                         Map.of(
@@ -30,10 +47,7 @@ final class GeminiStructuredOutputSupport {
                                 )
                         )
                 ),
-                "generationConfig", Map.of(
-                        "responseMimeType", "application/json",
-                        "responseJsonSchema", schema
-                )
+                "generationConfig", generationConfig
         );
         return objectMapper.writeValueAsString(payload);
     }
@@ -44,9 +58,19 @@ final class GeminiStructuredOutputSupport {
             String model,
             String requestBody
     ) {
+        return buildGenerateContentRequest(apiUrl, apiKey, model, requestBody, 60);
+    }
+
+    static HttpRequest buildGenerateContentRequest(
+            String apiUrl,
+            String apiKey,
+            String model,
+            String requestBody,
+            int requestTimeoutSeconds
+    ) {
         return HttpRequest.newBuilder()
                 .uri(resolveGenerateContentUri(apiUrl, model))
-                .timeout(Duration.ofSeconds(60))
+                .timeout(Duration.ofSeconds(requestTimeoutSeconds))
                 .header("x-goog-api-key", apiKey)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))

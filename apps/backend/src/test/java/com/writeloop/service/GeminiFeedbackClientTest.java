@@ -28,7 +28,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
 
         List<InlineFeedbackSegmentDto> result = (List<InlineFeedbackSegmentDto>) ReflectionTestUtils.invokeMethod(
@@ -49,7 +49,7 @@ class GeminiFeedbackClientTest {
                 mapper,
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
 
         String outputText = mapper.writeValueAsString(Map.ofEntries(
@@ -73,7 +73,7 @@ class GeminiFeedbackClientTest {
                         "code", "VERB_PATTERN",
                         "span", "with meet the deadline",
                         "correction", "to meet deadlines",
-                        "reasonKo", "struggle ????????????to meet ??????됰Ŧ????????????ㅼ뒧?됰??륅쭚節띾즽?????????????? ??????????????嚥싲갭큔????????",
+                        "reasonKo", "struggle ????????????to meet ???????거?????????????쇰뮛????瑜낆춾影?얠┰?????????????? ???????????????μ떜媛?걫????????",
                         "blocksMeaning", true,
                         "severity", "MAJOR"
                 )))
@@ -102,20 +102,20 @@ class GeminiFeedbackClientTest {
                 mapper,
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
 
         String outputText = mapper.writeValueAsString(Map.of(
                 "focusCard", Map.of(
-                        "title", "이번 답변의 수정 목표",
-                        "headline", "한 가지 디테일 더하기",
-                        "supportText", "지금 답의 방향은 좋아요."
+                        "title", "?대쾲 ?듬????섏젙 紐⑺몴",
+                        "headline", "??媛吏 ?뷀뀒???뷀븯湲?,
+                        "supportText", "吏湲??듭쓽 諛⑺뼢? 醫뗭븘??"
                 ),
                 "strengths", List.of("You clearly state the goal and reason."),
                 "fixPoints", List.of(
                         Map.of(
                                 "kind", "CORRECTION",
-                                "title", "고쳐볼 점",
+                                "title", "怨좎퀜蹂???,
                                 "headline", "Add one more real habit.",
                                 "supportText", "Give one concrete habit after the goal.",
                                 "originalText", "",
@@ -127,7 +127,7 @@ class GeminiFeedbackClientTest {
                         ),
                         Map.of(
                                 "kind", "GRAMMAR",
-                                "title", "고쳐볼 점",
+                                "title", "怨좎퀜蹂???,
                                 "headline", "",
                                 "supportText", "Use diet, not to diet, after improve.",
                                 "originalText", "improve to diet",
@@ -150,16 +150,16 @@ class GeminiFeedbackClientTest {
                         "meaningKo", "make eating habits healthier"
                 )),
                 "nextStepPractice", Map.of(
-                        "title", "한번 더 써보기",
+                        "title", "?쒕쾲 ???⑤낫湲?,
                         "starter", "One health goal I have this year is to improve my diet because ______.",
-                        "instruction", "빈칸에 이유를 하나 넣어 보세요.",
-                        "ctaLabel", "이 문장으로 시작해서 다시 쓰기",
+                        "instruction", "鍮덉뭏???댁쑀瑜??섎굹 ?ｌ뼱 蹂댁꽭??",
+                        "ctaLabel", "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
                         "optionalTone", false
                 ),
                 "rewriteSuggestions", List.of(Map.of(
                         "english", "it helps me feel more energetic",
-                        "meaningKo", "더 활기차게 느끼게 해 줘서",
-                        "noteKo", "because 뒤에 바로 붙여 쓸 수 있는 이유절입니다."
+                        "meaningKo", "???쒓린李④쾶 ?먮겮寃???以섏꽌",
+                        "noteKo", "because ?ㅼ뿉 諛붾줈 遺숈뿬 ?????덈뒗 ?댁쑀?덉엯?덈떎."
                 )),
                 "modelAnswer", "One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy and feel more energetic.",
                 "modelAnswerKo", "Korean translation"
@@ -196,7 +196,7 @@ class GeminiFeedbackClientTest {
         assertThat(sections.nextStepPractice().starter()).isNotBlank();
         assertThat(sections.rewriteSuggestions()).singleElement().satisfies(suggestion -> {
             assertThat(suggestion.english()).isEqualTo("it helps me feel more energetic");
-            assertThat(suggestion.meaningKo()).isEqualTo("더 활기차게 느끼게 해 줘서");
+            assertThat(suggestion.meaningKo()).isEqualTo("???쒓린李④쾶 ?먮겮寃???以섏꽌");
         });
         assertThat(sections.modelAnswer()).contains("feel more energetic");
     }
@@ -206,7 +206,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         PromptDto prompt = new PromptDto(
                 "prompt-goal-1",
@@ -244,7 +244,7 @@ class GeminiFeedbackClientTest {
                 mapper,
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
 
         String outputText = mapper.writeValueAsString(new java.util.LinkedHashMap<>(Map.ofEntries(
@@ -284,7 +284,7 @@ class GeminiFeedbackClientTest {
                 mapper,
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
 
         java.util.Map<String, Object> response = new java.util.LinkedHashMap<>();
@@ -322,14 +322,14 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         PromptDto prompt = new PromptDto(
                 "prompt-place-1",
                 "Favorite Relaxing Place",
                 "B",
                 "What do you like most about your favorite place to relax, and why?",
-                "편하게 쉬기 좋은 장소에서 가장 마음에 드는 점은 무엇이고, 왜 그런가요?",
+                "?명븯寃??ш린 醫뗭? ?μ냼?먯꽌 媛??留덉쓬???쒕뒗 ?먯? 臾댁뾿?닿퀬, ??洹몃윴媛??",
                 null
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
@@ -425,11 +425,11 @@ class GeminiFeedbackClientTest {
     void alignModelAnswerWithPrimaryFixReferent_falls_back_to_anchor_when_pronoun_direction_conflicts() {
         FeedbackSectionValidators validators = new FeedbackSectionValidators();
         FeedbackPrimaryFixDto primaryFix = new FeedbackPrimaryFixDto(
-                "문법과 철자 다듬기",
-                "복수형 movies에 맞춰 대명사를 they로 바꾸세요.",
+                "臾몃쾿怨?泥좎옄 ?ㅻ벉湲?,
+                "蹂듭닔??movies??留욎떠 ?紐낆궗瑜?they濡?諛붽씀?몄슂.",
                 "I like romantic comedy movi. it's funny and relatable.",
                 "I like romantic comedy movies. They are funny and relatable.",
-                "movies는 복수형이므로 단수 대명사 it 대신 they를 쓰는 것이 자연스럽습니다."
+                "movies??蹂듭닔?뺤씠誘濡??⑥닔 ?紐낆궗 it ???they瑜??곕뒗 寃껋씠 ?먯뿰?ㅻ읇?듬땲??"
         );
 
         String aligned = validators.alignModelAnswerWithPrimaryFixReferent(
@@ -448,7 +448,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
 
         List<com.writeloop.dto.FeedbackRewriteSuggestionDto> sanitized =
@@ -458,25 +458,25 @@ class GeminiFeedbackClientTest {
                         List.of(
                                 new com.writeloop.dto.FeedbackRewriteSuggestionDto(
                                         "I love romantic comedy movies.",
-                                        "로맨틱 코미디 영화를 좋아해요.",
-                                        "완전한 새 문장"
+                                        "濡쒕㎤??肄붾????곹솕瑜?醫뗭븘?댁슂.",
+                                        "?꾩쟾????臾몄옣"
                                 ),
                                 new com.writeloop.dto.FeedbackRewriteSuggestionDto(
                                         "they make me laugh",
-                                        "웃게 만들어서",
-                                        "because 뒤에 바로 붙일 수 있는 이유절"
+                                        "?껉쾶 留뚮뱾?댁꽌",
+                                        "because ?ㅼ뿉 諛붾줈 遺숈씪 ???덈뒗 ?댁쑀??
                                 ),
                                 new com.writeloop.dto.FeedbackRewriteSuggestionDto(
                                         "because they are funny",
-                                        "재미있어서",
-                                        "because를 반복하면 안 됨"
+                                        "?щ??덉뼱??,
+                                        "because瑜?諛섎났?섎㈃ ????
                                 )
                         ),
                         new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                                "문장 연결 연습하기",
+                                "臾몄옣 ?곌껐 ?곗뒿?섍린",
                                 "I like romantic comedy movies because ______.",
-                                "because 뒤에 이유를 덧붙여 보세요.",
-                                "다시 써보기",
+                                "because ?ㅼ뿉 ?댁쑀瑜??㏓텤??蹂댁꽭??",
+                                "?ㅼ떆 ?⑤낫湲?,
                                 false
                         )
                 );
@@ -496,7 +496,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         AnswerProfile answerProfile = new AnswerProfile(
                 new TaskProfile(true, TaskCompletion.FULL, AnswerBand.CONTENT_THIN, true),
@@ -521,8 +521,8 @@ class GeminiFeedbackClientTest {
                 )
         );
         List<GrammarFeedbackItemDto> grammarFeedback = List.of(
-                new GrammarFeedbackItemDto("foot ball", "football", "철자를 바로잡아 주세요."),
-                new GrammarFeedbackItemDto("other", "others", "복수형을 맞춰 주세요.")
+                new GrammarFeedbackItemDto("foot ball", "football", "泥좎옄瑜?諛붾줈?≪븘 二쇱꽭??"),
+                new GrammarFeedbackItemDto("other", "others", "蹂듭닔?뺤쓣 留욎떠 二쇱꽭??")
         );
 
         Boolean ready = (Boolean) ReflectionTestUtils.invokeMethod(
@@ -543,7 +543,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 68,
@@ -597,7 +597,7 @@ class GeminiFeedbackClientTest {
                         new GrammarFeedbackItemDto(
                                 "I wake up morning.get ready for commute.",
                                 "I wake up in the morning.get ready for my commute.",
-                                "시간을 나타낼 때는 'in'이 필요하고, 두 동작은 and로 연결하면 더 자연스럽습니다."
+                                "?쒓컙???섑????뚮뒗 'in'???꾩슂?섍퀬, ???숈옉? and濡??곌껐?섎㈃ ???먯뿰?ㅻ읇?듬땲??"
                         )
                 ),
                 diagnosis,
@@ -617,7 +617,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         AnswerProfile answerProfile = new AnswerProfile(
                 new TaskProfile(true, TaskCompletion.FULL, AnswerBand.NATURAL_BUT_BASIC, true),
@@ -700,7 +700,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         AnswerProfile answerProfile = new AnswerProfile(
                 new TaskProfile(true, TaskCompletion.PARTIAL, AnswerBand.CONTENT_THIN, false),
@@ -784,7 +784,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 86,
@@ -865,7 +865,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 88,
@@ -926,10 +926,10 @@ class GeminiFeedbackClientTest {
                 List.of(),
                 List.of(),
                 new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                        "한번 더 써보기",
+                        "?쒕쾲 ???⑤낫湲?,
                         "On weekday mornings, I usually take guitar lessons. After that, I ______.",
-                        "빈칸에 한 가지 활동을 넣어 보세요.",
-                        "이 문장으로 시작해서 다시 쓰기",
+                        "鍮덉뭏????媛吏 ?쒕룞???ｌ뼱 蹂댁꽭??",
+                        "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
                         false
                 )
         );
@@ -947,10 +947,10 @@ class GeminiFeedbackClientTest {
                 sections.usedExpressions(),
                 List.of(),
                 new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                        "한번 더 써보기",
+                        "?쒕쾲 ???⑤낫湲?,
                         "I like bookstores because ______.",
-                        "빈칸에 이유를 넣어 보세요.",
-                        "이 문장으로 시작해서 다시 쓰기",
+                        "鍮덉뭏???댁쑀瑜??ｌ뼱 蹂댁꽭??",
+                        "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
                         false
                 )
         );
@@ -968,10 +968,10 @@ class GeminiFeedbackClientTest {
                 sections.usedExpressions(),
                 List.of(),
                 new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                        "한번 더 써보기",
+                        "?쒕쾲 ???⑤낫湲?,
                         "I want to visit Tokyo because ______. Also, I want to ______.",
-                        "빈칸에 이유를 넣어 보세요.",
-                        "이 문장으로 시작해서 다시 쓰기",
+                        "鍮덉뭏???댁쑀瑜??ｌ뼱 蹂댁꽭??",
+                        "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
                         false
                 )
         );
@@ -989,10 +989,10 @@ class GeminiFeedbackClientTest {
                 sections.usedExpressions(),
                 List.of(),
                 new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                        "한번 더 써보기",
+                        "?쒕쾲 ???⑤낫湲?,
                         "My favorite season is spring because ______.",
-                        "빈칸에 이유를 넣어 보세요.",
-                        "이 문장으로 시작해서 다시 쓰기",
+                        "鍮덉뭏???댁쑀瑜??ｌ뼱 蹂댁꽭??",
+                        "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
                         false
                 )
         );
@@ -1039,7 +1039,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 79,
@@ -1087,15 +1087,15 @@ class GeminiFeedbackClientTest {
                 AttemptOverlayPolicy.NONE
         );
         GeneratedSections sections = new GeneratedSections(
-                "계절과 이유는 이미 좋아요. 이제 한 가지 이미지를 더 붙여 보세요.",
-                List.of("좋아하는 계절과 이유를 분명히 말했어요."),
+                "怨꾩젅怨??댁쑀???대? 醫뗭븘?? ?댁젣 ??媛吏 ?대?吏瑜???遺숈뿬 蹂댁꽭??",
+                List.of("醫뗭븘?섎뒗 怨꾩젅怨??댁쑀瑜?遺꾨챸??留먰뻽?댁슂."),
                 null,
                 List.of(),
                 List.of(),
                 List.of(),
                 "My favorite season is spring because ______.",
                 "My favorite season is spring because I enjoy sunshine.",
-                "저는 햇살을 즐기기 때문에 봄을 가장 좋아해요.",
+                "????뉗궡??利먭린湲??뚮Ц??遊꾩쓣 媛??醫뗭븘?댁슂.",
                 List.of()
         );
 
@@ -1141,7 +1141,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 79,
@@ -1189,15 +1189,15 @@ class GeminiFeedbackClientTest {
                 AttemptOverlayPolicy.NONE
         );
         GeneratedSections sections = new GeneratedSections(
-                "계절과 이유는 이미 좋아요. 이제 한 가지 이미지를 더 붙여 보세요.",
-                List.of("좋아하는 계절과 이유를 분명히 말했어요."),
+                "怨꾩젅怨??댁쑀???대? 醫뗭븘?? ?댁젣 ??媛吏 ?대?吏瑜???遺숈뿬 蹂댁꽭??",
+                List.of("醫뗭븘?섎뒗 怨꾩젅怨??댁쑀瑜?遺꾨챸??留먰뻽?댁슂."),
                 null,
                 List.of(),
                 List.of(),
                 List.of(),
                 "My favorite season is spring because ______.",
                 "My favorite season is spring because I enjoy sunshine.",
-                "저는 햇살을 즐기기 때문에 봄을 가장 좋아해요.",
+                "????뉗궡??利먭린湲??뚮Ц??遊꾩쓣 媛??醫뗭븘?댁슂.",
                 List.of()
         );
 
@@ -1247,7 +1247,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 41,
@@ -1288,7 +1288,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 35,
@@ -1328,7 +1328,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
 
         String guidance = (String) ReflectionTestUtils.invokeMethod(
@@ -1349,7 +1349,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 78,
@@ -1400,7 +1400,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 84,
@@ -1451,7 +1451,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 88,
@@ -1507,7 +1507,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         String learnerAnswer = "I like ramen. it easy make and delicious.";
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
@@ -1553,8 +1553,8 @@ class GeminiFeedbackClientTest {
                 answerProfile,
                 List.of(),
                 List.of(
-                        new GrammarFeedbackItemDto("it", "It", "?????筌???????怨뚮뼺??????轅붽틓??????繹먮끏堉????????????⑤９苡?????"),
-                        new GrammarFeedbackItemDto("easy make", "is easy to make", "???? ???濚밸Ŧ援?????筌????????繹????椰??????????????????밸븶???????용츧????ロ뒌??")
+                        new GrammarFeedbackItemDto("it", "It", "?????嶺????????⑤슢堉??????饔낅떽???????濚밸Ŧ?뤷젆?????????????ㅿ폎??????"),
+                        new GrammarFeedbackItemDto("easy make", "is easy to make", "???? ???嚥싲갭큔??????嶺????????濚????濾??????????????????諛몃마????????⑹름??????뭽??")
                 )
         );
 
@@ -1673,7 +1673,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 72,
@@ -1718,15 +1718,15 @@ class GeminiFeedbackClientTest {
                 AttemptOverlayPolicy.NONE
         );
         GeneratedSections sections = new GeneratedSections(
-                "질문에 맞는 핵심 내용은 보여요.",
-                List.of("이유를 적어 답의 흐름이 자연스러워요."),
+                "吏덈Ц??留욌뒗 ?듭떖 ?댁슜? 蹂댁뿬??",
+                List.of("?댁쑀瑜??곸뼱 ?듭쓽 ?먮쫫???먯뿰?ㅻ윭?뚯슂."),
                 List.of(),
                 List.of(new CorrectionDto(
-                        "표현을 조금 더 자연스럽게 다듬어 보세요.",
-                        "표현을 조금 더 자연스럽게 고친 뒤, 이유나 방법 한 가지를 더 붙여 보세요."
+                        "?쒗쁽??議곌툑 ???먯뿰?ㅻ읇寃??ㅻ벉??蹂댁꽭??",
+                        "?쒗쁽??議곌툑 ???먯뿰?ㅻ읇寃?怨좎튇 ?? ?댁쑀??諛⑸쾿 ??媛吏瑜???遺숈뿬 蹂댁꽭??"
                 )),
                 List.of(),
-                "\"I like bookstore and...\" 표현을 조금 더 자연스럽게 고친 뒤, 이유나 방법 한 가지를 더 붙여 보세요.",
+                "\"I like bookstore and...\" ?쒗쁽??議곌툑 ???먯뿰?ㅻ읇寃?怨좎튇 ?? ?댁쑀??諛⑸쾿 ??媛吏瑜???遺숈뿬 蹂댁꽭??",
                 null,
                 null,
                 List.of()
@@ -1777,7 +1777,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 71,
@@ -1822,11 +1822,11 @@ class GeminiFeedbackClientTest {
                 AttemptOverlayPolicy.NONE
         );
         GeneratedSections sections = new GeneratedSections(
-                "도시와 활동은 이미 보여요. 이제 가고 싶은 이유를 because 절로 한 문장 더 써 보세요.",
-                List.of("가고 싶은 장소와 하고 싶은 활동을 분명히 말했어요."),
+                "?꾩떆? ?쒕룞? ?대? 蹂댁뿬?? ?댁젣 媛怨??띠? ?댁쑀瑜?because ?덈줈 ??臾몄옣 ????蹂댁꽭??",
+                List.of("媛怨??띠? ?μ냼? ?섍퀬 ?띠? ?쒕룞??遺꾨챸??留먰뻽?댁슂."),
                 new com.writeloop.dto.FeedbackPrimaryFixDto(
-                        "한 가지 더 추가하면 좋아요",
-                        "왜 Tokyo에 가고 싶은지 because로 한 문장 더 써 보세요.",
+                        "??媛吏 ??異붽??섎㈃ 醫뗭븘??,
+                        "??Tokyo??媛怨??띠?吏 because濡???臾몄옣 ????蹂댁꽭??",
                         null,
                         null,
                         null
@@ -1888,7 +1888,7 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 74,
@@ -1936,8 +1936,8 @@ class GeminiFeedbackClientTest {
                 AttemptOverlayPolicy.NONE
         );
         GeneratedSections generated = new GeneratedSections(
-                "질문에 맞는 핵심 내용은 보여요.",
-                List.of("이유를 함께 적어 답의 흐름이 자연스러워요."),
+                "吏덈Ц??留욌뒗 ?듭떖 ?댁슜? 蹂댁뿬??",
+                List.of("?댁쑀瑜??④퍡 ?곸뼱 ?듭쓽 ?먮쫫???먯뿰?ㅻ윭?뚯슂."),
                 List.of(),
                 List.of(),
                 List.of(),
@@ -1950,9 +1950,9 @@ class GeminiFeedbackClientTest {
                 "fallback summary",
                 List.of("fallback strength"),
                 List.of(),
-                List.of(new CorrectionDto("표현을 조금 더 자연스럽게 다듬어 보세요.", "이유나 방법 한 가지를 더 붙여 보세요.")),
+                List.of(new CorrectionDto("?쒗쁽??議곌툑 ???먯뿰?ㅻ읇寃??ㅻ벉??蹂댁꽭??", "?댁쑀??諛⑸쾿 ??媛吏瑜???遺숈뿬 蹂댁꽭??")),
                 List.of(),
-                "\"I like bookstores because ...\" 를 바탕으로 한 가지 이유를 더 써 보세요.",
+                "\"I like bookstores because ...\" 瑜?諛뷀깢?쇰줈 ??媛吏 ?댁쑀瑜?????蹂댁꽭??",
                 "I like bookstores because they feel cozy and calm.",
                 null,
                 List.of()
@@ -1976,7 +1976,7 @@ class GeminiFeedbackClientTest {
 
         assertThat(merged.corrections()).isEmpty();
         assertThat(merged.rewriteGuide()).isNull();
-        assertThat(merged.summary()).isEqualTo("질문에 맞는 핵심 내용은 보여요.");
+        assertThat(merged.summary()).isEqualTo("吏덈Ц??留욌뒗 ?듭떖 ?댁슜? 蹂댁뿬??");
     }
 
     @Test
@@ -1985,14 +1985,14 @@ class GeminiFeedbackClientTest {
                 new ObjectMapper(),
                 "test-key",
                 "gpt-4o",
-                "https://api.example.com/v1/responses"
+                "https://api.example.com/v1/responses", null, 120
         );
         PromptDto prompt = new PromptDto(
                 "prompt-1",
                 "Health Goal - Diet",
                 "B",
                 "Explain one health goal you want to reach this year and why it matters to you.",
-                "?????????????살퓢?????怨몃룭???勇????猷고??燁?????? ??????거??????輿?????????????거??????????????거??????????????嶺뚮씚維?????饔낅떽???????? ????????????겸뵛?????????????????? ??????거????????????????熬곣뫖利당춯??????????",
+                "??????????????댄뱼??????⑤챶猷?????????룰퀬?????????? ??????嫄??????雍?????????????嫄??????????????嫄??????????????癲ル슢?싩땟?????耀붾굝????????? ????????????寃몃탿?????????????????? ??????嫄?????????????????ш끽維뽳쭩?뱀땡??????????",
                 "Explain the goal and why it matters."
         );
         AnswerProfile answerProfile = new AnswerProfile(

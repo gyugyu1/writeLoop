@@ -16,6 +16,8 @@ import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.exception.ApiException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,8 @@ import java.util.regex.Pattern;
 
 @Service
 public class GeminiFeedbackClient {
+    private static final Logger LOGGER = LoggerFactory.getLogger(GeminiFeedbackClient.class);
+    private static final int MAX_LOG_RESPONSE_BODY_LENGTH = 4000;
     private static final Pattern INLINE_TOKEN_PATTERN = Pattern.compile("[A-Za-z0-9']+|[^\\sA-Za-z0-9']+|\\s+");
     private static final Pattern PRIMARY_FIX_ENGLISH_ANCHOR_PATTERN = Pattern.compile("[A-Za-z][A-Za-z' -]{2,}");
     static final String INTERNAL_AUTHORITATIVE_SESSION_ID = "__LLM_HYBRID_FINAL__";
@@ -89,14 +93,58 @@ public class GeminiFeedbackClient {
 
     private static final class GeminiApiHttpException extends IllegalStateException {
         private final int statusCode;
+        private final String responseBody;
 
-        private GeminiApiHttpException(int statusCode, String message) {
+        private GeminiApiHttpException(int statusCode, String message, String responseBody) {
             super(message);
             this.statusCode = statusCode;
+            this.responseBody = responseBody;
         }
 
         int statusCode() {
             return statusCode;
+        }
+
+        String responseBody() {
+            return responseBody;
+        }
+    }
+
+    private static final class GeminiResponseParseException extends IOException {
+        private final int statusCode;
+        private final String responseBody;
+
+        private GeminiResponseParseException(String message, int statusCode, String responseBody, Throwable cause) {
+            super(message, cause);
+            this.statusCode = statusCode;
+            this.responseBody = responseBody;
+        }
+
+        int statusCode() {
+            return statusCode;
+        }
+
+        String responseBody() {
+            return responseBody;
+        }
+    }
+
+    private static final class GeminiResponseParseRuntimeException extends IllegalStateException {
+        private final int statusCode;
+        private final String responseBody;
+
+        private GeminiResponseParseRuntimeException(String message, int statusCode, String responseBody, Throwable cause) {
+            super(message, cause);
+            this.statusCode = statusCode;
+            this.responseBody = responseBody;
+        }
+
+        int statusCode() {
+            return statusCode;
+        }
+
+        String responseBody() {
+            return responseBody;
         }
     }
 
@@ -104,7 +152,7 @@ public class GeminiFeedbackClient {
         return new ApiException(
                 HttpStatus.BAD_GATEWAY,
                 "FEEDBACK_GENERATION_UNAVAILABLE",
-                "??곕굡獄???밴쉐 ?븍뜃?"
+                "\uC9C0\uAE08\uC740 \uD53C\uB4DC\uBC31\uC744 \uC0DD\uC131\uD560 \uC218 \uC5C6\uC5B4\uC694."
         );
     }
 
@@ -146,6 +194,7 @@ public class GeminiFeedbackClient {
         try {
             return reviewHybrid(prompt, answer, hints, attemptIndex, previousAnswer);
         } catch (IOException | InterruptedException exception) {
+            logGeminiFailure("review", prompt == null ? null : prompt.id(), attemptIndex, exception);
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
@@ -207,13 +256,17 @@ public class GeminiFeedbackClient {
             diagnosisResponseStatusCode = diagnosisCallResult.statusCode();
             diagnosisResponseBody = diagnosisCallResult.rawResponseBody();
         } catch (GeminiApiHttpException diagnosisFailure) {
+            logGeminiFailure("diagnosis-http", prompt.id(), attemptIndex, diagnosisFailure);
             throw feedbackGenerationUnavailable();
         } catch (IOException diagnosisFailure) {
+            logGeminiFailure("diagnosis-io", prompt.id(), attemptIndex, diagnosisFailure);
             throw feedbackGenerationUnavailable();
         } catch (InterruptedException diagnosisFailure) {
+            logGeminiFailure("diagnosis-interrupted", prompt.id(), attemptIndex, diagnosisFailure);
             Thread.currentThread().interrupt();
             throw feedbackGenerationUnavailable();
         } catch (RuntimeException diagnosisFailure) {
+            logGeminiFailure("diagnosis-runtime-fallback", prompt.id(), attemptIndex, diagnosisFailure);
             diagnosis = buildDeterministicDiagnosis(prompt, answer, hints, attemptIndex, previousAnswer);
             diagnosisFallbackUsed = true;
         }
@@ -300,13 +353,17 @@ public class GeminiFeedbackClient {
                             generationRequestedSections
                     );
                 } catch (GeminiApiHttpException apiException) {
+                    logGeminiFailure("regeneration-http", prompt.id(), attemptIndex, apiException);
                     throw feedbackGenerationUnavailable();
                 } catch (IOException ioException) {
+                    logGeminiFailure("regeneration-io", prompt.id(), attemptIndex, ioException);
                     throw feedbackGenerationUnavailable();
                 } catch (InterruptedException interruptedException) {
+                    logGeminiFailure("regeneration-interrupted", prompt.id(), attemptIndex, interruptedException);
                     Thread.currentThread().interrupt();
                     throw feedbackGenerationUnavailable();
-                } catch (RuntimeException ignored) {
+                } catch (RuntimeException runtimeException) {
+                    logGeminiFailure("regeneration-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
                     // Use the validated first-pass sections plus deterministic fallback for any remaining gaps.
                 }
             }
@@ -343,13 +400,17 @@ public class GeminiFeedbackClient {
             ));
             return assembleHybridResponse(prompt.id(), answer, diagnosis, diagnosedProfile, completed.sanitizedSections());
         } catch (GeminiApiHttpException apiException) {
+            logGeminiFailure("generation-http", prompt.id(), attemptIndex, apiException);
             throw feedbackGenerationUnavailable();
         } catch (IOException generationFailure) {
+            logGeminiFailure("generation-io", prompt.id(), attemptIndex, generationFailure);
             throw feedbackGenerationUnavailable();
         } catch (InterruptedException interruptedException) {
+            logGeminiFailure("generation-interrupted", prompt.id(), attemptIndex, interruptedException);
             Thread.currentThread().interrupt();
             throw feedbackGenerationUnavailable();
-        } catch (RuntimeException ignored) {
+        } catch (RuntimeException runtimeException) {
+            logGeminiFailure("generation-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
             // If generation fails after successful diagnosis, prefer deterministic fallback over legacy monolithic prompt.
         }
         ValidationResult fallbackValidation = validateGeneratedSections(
@@ -389,7 +450,23 @@ public class GeminiFeedbackClient {
     )
             throws IOException, InterruptedException {
         GeminiApiResponse response = sendResponsesRequest(buildDiagnosisRequestBody(prompt, answer, hints, attemptIndex, previousAnswer));
-        return new DiagnosisCallResult(parseDiagnosisResponse(response.body()), response.statusCode(), response.body());
+        try {
+            return new DiagnosisCallResult(parseDiagnosisResponse(response.body()), response.statusCode(), response.body());
+        } catch (IOException exception) {
+            throw new GeminiResponseParseException(
+                    "Gemini diagnosis response parsing failed",
+                    response.statusCode(),
+                    response.body(),
+                    exception
+            );
+        } catch (RuntimeException exception) {
+            throw new GeminiResponseParseRuntimeException(
+                    "Gemini diagnosis response parsing failed",
+                    response.statusCode(),
+                    response.body(),
+                    exception
+            );
+        }
     }
 
     private GenerationCallResult generateSections(
@@ -418,7 +495,23 @@ public class GeminiFeedbackClient {
                 failureCodes,
                 previousSections
         ));
-        return new GenerationCallResult(parseGeneratedSections(response.body()), response.statusCode(), response.body());
+        try {
+            return new GenerationCallResult(parseGeneratedSections(response.body()), response.statusCode(), response.body());
+        } catch (IOException exception) {
+            throw new GeminiResponseParseException(
+                    "Gemini generation response parsing failed",
+                    response.statusCode(),
+                    response.body(),
+                    exception
+            );
+        } catch (RuntimeException exception) {
+            throw new GeminiResponseParseRuntimeException(
+                    "Gemini generation response parsing failed",
+                    response.statusCode(),
+                    response.body(),
+                    exception
+            );
+        }
     }
 
     private ValidationResult validateGeneratedSections(
@@ -850,24 +943,24 @@ public class GeminiFeedbackClient {
             AnswerProfile answerProfile
     ) {
         if (diagnosis != null && diagnosis.finishable()) {
-            return List.of("筌욌뜄揆??筌띿쉳苡????벥 ?癒?カ???癒?염??살쓦野???곷선 揶쏅뗄堉??");
+            return List.of("癲ル슣??袁ｋ즵??癲ル슢???섎뼀????甕???????????????곷??????⑤９苑???좊즴?袁?젂??");
         }
         if (answerProfile != null && answerProfile.content() != null && answerProfile.content().signals() != null) {
             ContentSignals signals = answerProfile.content().signals();
             if (signals.hasMainAnswer() && signals.hasReason()) {
-                return List.of("???벥 ???뼎????곸?????ｍ뜞 ??뽯뻻???癒?뵠 ?ル뿭釉??");
+                return List.of("???甕???????????????影?얠맽 ??筌?六??????????レ뿴???");
             }
             if (signals.hasMainAnswer() && signals.hasActivity()) {
-                return List.of("??쇱젫嚥???롫뮉 ??곕짗???節뚮선 ???뵠 ????곷툡 ??됰선??");
+                return List.of("???源놁졆????嚥▲꺂痢????⑤벡彛???壤굿??苑???????????⑤；?????怨쀪퐨??");
             }
             if (signals.hasMainAnswer()) {
-                return List.of("筌욌뜄揆??筌띿쉶?????뼎 ???뱽 ?브쑬梨??띿쓺 筌띾?六??곸뒄.");
+                return List.of("癲ル슣??袁ｋ즵??癲ル슢????????????獄???됰슣維딁춯????곕쿊 癲ル슢??嶺???⑤챶萸?");
             }
         }
         if (diagnosis != null && diagnosis.answerBand() == AnswerBand.OFF_TOPIC) {
-            return List.of("筌욌뜄揆??筌띿쉸???삳뮉 獄쎻뫚堉?? 癰귣똻肉??");
+            return List.of("癲ル슣??袁ｋ즵??癲ル슢???????몄툗 ?袁⑸젻泳?떑??? ?怨뚮옖???덩??");
         }
-        return List.of("筌욌뜄揆??筌띿쉶?????뱽 ?怨뺤젻??獄쎻뫚堉??癰귣똻肉??");
+        return List.of("癲ル슣??袁ｋ즵??癲ル슢???????獄????ㅻ깹????袁⑸젻泳?떑????怨뚮옖???덩??");
     }
 
     private List<String> resolveFallbackStrengths(
@@ -875,24 +968,24 @@ public class GeminiFeedbackClient {
             AnswerProfile answerProfile
     ) {
         if (diagnosis != null && diagnosis.finishable()) {
-            return List.of("筌욌뜄揆??筌띿쉳苡??袁⑷퍥 ?癒?カ???癒?염??살쓦野???곷선 揶쏅뗄堉??");
+            return List.of("癲ル슣??袁ｋ즵??癲ル슢???섎뼀???ш끽維????????????????곷??????⑤９苑???좊즴?袁?젂??");
         }
         if (answerProfile != null && answerProfile.content() != null && answerProfile.content().signals() != null) {
             ContentSignals signals = answerProfile.content().signals();
             if (signals.hasMainAnswer() && signals.hasReason()) {
-                return List.of("筌욌뜄揆??筌띿쉶?????궢 ??곸?????ｍ뜞 筌띾?釉??癒?뵠 ?ル뿭釉??");
+                return List.of("癲ル슣??袁ｋ즵??癲ル슢???????亦?????????影?얠맽 癲ル슢????????????レ뿴???");
             }
             if (signals.hasMainAnswer() && signals.hasActivity()) {
-                return List.of("?얜챷??? ??욧퍙 獄쎻뫖苡????ｍ뜞 ??뽯뻻???癒?뵠 ?ル뿭釉??");
+                return List.of("???뽮덫??? ????됰쐳 ?袁⑸젻泳?쉬?????影?얠맽 ??筌?六??????????レ뿴???");
             }
             if (signals.hasMainAnswer()) {
-                return List.of("筌욌뜄揆??筌띿쉶?????뼎 ???뱽 ?브쑬梨??띿쓺 筌띾?釉??癒?뵠 ?ル뿭釉??");
+                return List.of("癲ル슣??袁ｋ즵??癲ル슢????????????獄???됰슣維딁춯????곕쿊 癲ル슢????????????レ뿴???");
             }
         }
         if (diagnosis != null && diagnosis.answerBand() == AnswerBand.OFF_TOPIC) {
-            return List.of("???퉸 癰귣??????뺣즲??癰귣똻肉??");
+            return List.of("??????怨뚮옖??????筌먲퐣????怨뚮옖???덩??");
         }
-        return List.of("筌욌뜄揆?????릭??삳뮉 獄쎻뫚堉?? ????? ??됰선??");
+        return List.of("癲ル슣??袁ｋ즵??????????몄툗 ?袁⑸젻泳?떑??? ????? ???怨쀪퐨??");
     }
 
     private FeedbackDiagnosisResult buildDeterministicDiagnosis(
@@ -1062,13 +1155,13 @@ public class GeminiFeedbackClient {
     private String deterministicReasonForGrammarIssue(String code) {
         String safeCode = code == null ? "" : code.trim().toUpperCase(Locale.ROOT);
         return switch (safeCode) {
-            case "VERB_PATTERN" -> "??덇텢 ?類κ묶?????癒?염??살쓦野?筌띿쉸??雅뚯눘苑??";
-            case "PREPOSITION" -> "?袁⑺뒄??? ???類κ묶???癒?염??살쓦野???곷선 雅뚯눘苑??";
-            case "ARTICLE" -> "?온??援???뤿뻼??? ?癒?염??살쓦野?筌띿쉸??雅뚯눘苑??";
-            case "AGREEMENT" -> "雅뚯눘堉?? ??쀬겱 ?類κ묶???癒?염??살쓦野?筌띿쉸??雅뚯눘苑??";
-            case "TENSE_ALIGNMENT" -> "??뽰젫???얜챶???筌띿쉳苡??癒?염??살쓦野?筌띿쉸??雅뚯눘苑??";
-            case "POINT_OF_VIEW_ALIGNMENT" -> "雅뚯눘堉?? ??뽰젎???얜챶???筌띿쉳苡?筌띿쉸??雅뚯눘苑??";
-            default -> "??? ?癒?カ????곹뒄筌왖 ??낅즲嚥????봔?브쑬彛??癒?염??살쓦野??⑥쥙??雅뚯눘苑??";
+            case "VERB_PATTERN" -> "????숇??嶺뚮쮳釉띚????????????곷???癲ル슢??????낆뒩??뗫빝??";
+            case "PREPOSITION" -> "??ш끽維???? ???嶺뚮쮳釉띚??????????곷??????⑤９苑???낆뒩??뗫빝??";
+            case "ARTICLE" -> "???굿??????筌뚯슜六???? ????????곷???癲ル슢??????낆뒩??뗫빝??";
+            case "AGREEMENT" -> "??낆뒩??뉗젂?? ????猿??嶺뚮쮳釉띚??????????곷???癲ル슢??????낆뒩??뗫빝??";
+            case "TENSE_ALIGNMENT" -> "??筌믨퀣??????뽮덧???癲ル슢???섎뼀?????????곷???癲ル슢??????낆뒩??뗫빝??";
+            case "POINT_OF_VIEW_ALIGNMENT" -> "??낆뒩??뉗젂?? ??筌믨퀣??????뽮덧???癲ル슢???섎뼀?癲ル슢??????낆뒩??뗫빝??";
+            default -> "??? ?????????⑤갭萸듸┼??넊? ????녳뵣??????딅텑???됰슣維듿＄?????????곷?????關履????낆뒩??뗫빝??";
         };
     }
 
@@ -1819,10 +1912,63 @@ public class GeminiFeedbackClient {
         if (response.statusCode() >= 400) {
             throw new GeminiApiHttpException(
                     response.statusCode(),
-                    "Gemini API request failed with status " + response.statusCode()
+                    "Gemini API request failed with status " + response.statusCode(),
+                    response.body()
             );
         }
         return new GeminiApiResponse(response.statusCode(), response.body());
+    }
+
+    private void logGeminiFailure(String phase, String promptId, int attemptIndex, Throwable exception) {
+        Integer statusCode = null;
+        String responseBody = null;
+        if (exception instanceof GeminiApiHttpException httpException) {
+            statusCode = httpException.statusCode();
+            responseBody = httpException.responseBody();
+        } else if (exception instanceof GeminiResponseParseException parseException) {
+            statusCode = parseException.statusCode();
+            responseBody = parseException.responseBody();
+        } else if (exception instanceof GeminiResponseParseRuntimeException parseRuntimeException) {
+            statusCode = parseRuntimeException.statusCode();
+            responseBody = parseRuntimeException.responseBody();
+        }
+
+        if (statusCode != null || responseBody != null) {
+            LOGGER.warn(
+                    "Gemini {} failed for promptId={}, attemptIndex={}, model={}, exceptionClass={}, status={}, body={}",
+                    phase,
+                    promptId,
+                    attemptIndex,
+                    model,
+                    exception.getClass().getName(),
+                    statusCode,
+                    abbreviateForLog(responseBody),
+                    exception
+            );
+            return;
+        }
+
+        LOGGER.warn(
+                "Gemini {} failed for promptId={}, attemptIndex={}, model={}, exceptionClass={}, message={}",
+                phase,
+                promptId,
+                attemptIndex,
+                model,
+                exception.getClass().getName(),
+                exception.getMessage(),
+                exception
+        );
+    }
+
+    private String abbreviateForLog(String responseBody) {
+        if (responseBody == null || responseBody.isBlank()) {
+            return responseBody;
+        }
+        String normalized = responseBody.replaceAll("\\s+", " ").trim();
+        if (normalized.length() <= MAX_LOG_RESPONSE_BODY_LENGTH) {
+            return normalized;
+        }
+        return normalized.substring(0, MAX_LOG_RESPONSE_BODY_LENGTH) + "...(truncated)";
     }
 
     private String extractOutputText(String body) throws IOException {
@@ -2328,7 +2474,7 @@ public class GeminiFeedbackClient {
                 return List.of(new GrammarFeedbackItemDto(
                         originalText == null || originalText.isBlank() ? "" : originalText,
                         revisedText,
-                        "??륁젟??獄쎻뫚堉??筌띿쉸?????뼎 ?얜챶苡???믪눘? 獄쏅뗀以??る툡 癰귣똻苑??"
+                        "???쒓낯????袁⑸젻泳?떑???癲ル슢????????????뽮덧????沃섅굥?? ?袁⑸즴??繞?????떋 ?怨뚮옖???빝??"
                 ));
             }
         }
@@ -2592,12 +2738,12 @@ public class GeminiFeedbackClient {
             return null;
         }
         if (diagnosis.expansionBudget() == ExpansionBudget.NONE) {
-            return "\"" + base + "\"??疫꿸퀣???곗쨮 ??쇰뻻 ??癰귣똻苑??";
+            return "\"" + base + "\"????れ삀?????⑥?????怨뺣빰 ???怨뚮옖???빝??";
         }
         if (diagnosis.expansionBudget() == ExpansionBudget.ONE_SUPPORT_SENTENCE) {
-            return "\"" + base + "\"??獄쏅?源??곗쨮 筌욌뜄揆??筌욊낯?????릭???얜챷????쇰퓠 ??곸? ?얜챷????롪돌?????븐늿肉?癰귣똻苑??";
+            return "\"" + base + "\"???袁⑸즴?濚???⑥??癲ル슣??袁ｋ즵??癲ル슣?????????????뽮덫?????怨좊군 ???? ???뽮덫????嚥▲굥猷??????됰Ŧ????怨뚮옖???빝??";
         }
-        return "\"" + base + "\"??獄쏅?源??곗쨮 ??揶쎛筌왖 ??곸????닌딄퍥?怨몄뵥 ??살구?????븐늿肉?癰귣똻苑??";
+        return "\"" + base + "\"???袁⑸즴?濚???⑥??????좊읈?癲ル슣?? ??????????늄????ㅼ굣??????용럡??????됰Ŧ????怨뚮옖???빝??";
     }
 
     private String fallbackTooShortRewriteGuide(FeedbackDiagnosisResult diagnosis) {
@@ -2609,7 +2755,7 @@ public class GeminiFeedbackClient {
         if (usableSkeleton == null) {
             usableSkeleton = "I ____.";
         }
-        return "\"" + usableSkeleton + "\" ????筌띿쉸???믪눘? ???얜챷???곗쨮 ??쇰뻻 ?怨뚰? ??뜆萸????쇱젫 ??뺣짗???節뚮선 癰귣똻苑??";
+        return "\"" + usableSkeleton + "\" ????癲ル슢?????沃섅굥?? ?????뽮덫????⑥?????怨뺣빰 ???ㅼ뒭?? ????삳㎟?????源놁졆 ??筌먲퐣彛???壤굿??苑??怨뚮옖???빝??";
     }
 
     private boolean isValidTooShortRewriteGuide(String rewriteGuide, FeedbackDiagnosisResult diagnosis) {
@@ -2696,12 +2842,12 @@ public class GeminiFeedbackClient {
 
     private String buildNormalizedTooShortRewriteGuideInstruction(String skeleton) {
         String cleanSkeleton = skeleton == null || skeleton.isBlank() ? "I ____." : skeleton.trim();
-        return "\"" + cleanSkeleton + "\" ????筌띿쉸???믪눘? ???얜챷???곗쨮 ?袁⑷쉐??랁? ??뜆萸?癒?뮉 ??쇱젫 ??곕짗???節뚮선 癰귣똻苑??";
+        return "\"" + cleanSkeleton + "\" ????癲ル슢?????沃섅굥?? ?????뽮덫????⑥????ш끽維????寃뗏? ????삳㎟???獒????源놁졆 ???⑤벡彛???壤굿??苑??怨뚮옖???빝??";
     }
 
     private String buildTooShortRewriteGuideInstruction(String skeleton) {
         String cleanSkeleton = skeleton == null || skeleton.isBlank() ? "I ____." : skeleton.trim();
-        return "\"" + cleanSkeleton + "\" ????筌띿쉸???믪눘? ???얜챷???곗쨮 ?袁⑷쉐??癰귣똻苑??";
+        return "\"" + cleanSkeleton + "\" ????癲ル슢?????沃섅굥?? ?????뽮덫????⑥????ш끽維????怨뚮옖???빝??";
     }
 
     private String extractTooShortGuideSkeleton(String rewriteGuide) {
@@ -3509,12 +3655,12 @@ public class GeminiFeedbackClient {
             List<GrammarFeedbackItemDto> grammarFeedback
     ) {
         if (isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
-            return "?ル뿭釉?? 筌왖疫???ｍ?癒?퐣 筌띾뜄龜?귐뗫퉸???겸뫖???곸뒄. ?癒곕릭筌???甕?????삳쾳??겹늺???怨쀫뮸??癰?????됰선??";
+            return "???レ뿴??? 癲ル슣??????影?됀?????癲ル슢??袁ъÞ?域밸Ŧ肉????野껊챶爾????⑤챶萸? ??誘⑦←뵳?異???????????뱀벑??野껊갭??????Β???????????怨쀪퐨??";
         }
         if (!isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
             return null;
         }
-        return "?겸뫖????ル뿭釉??筌왖疫???ｍ?癒?퐣 筌띾뜄龜?귐뗫퉸???우뮇媛?袁⑹뒄. ?癒곕릭筌???甕?????삳쾳??癰귣?흭 ?怨쀫뮸????롫즲 ??됰선??";
+        return "?野껊챶爾??????レ뿴???癲ル슣??????影?됀?????癲ル슢??袁ъÞ?域밸Ŧ肉?????怨뺤툔???ш끽維?? ??誘⑦←뵳?異???????????뱀벑???怨뚮옖??????Β??????嚥▲꺃?????怨쀪퐨??";
     }
 }
 

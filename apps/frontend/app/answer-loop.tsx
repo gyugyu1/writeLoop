@@ -2426,6 +2426,23 @@ export function AnswerLoop() {
           return;
         }
 
+        if (process.env.NODE_ENV !== "production") {
+          if (caughtError instanceof ApiError) {
+            const debugParts = [
+              caughtError.status ? `HTTP ${caughtError.status}` : null,
+              caughtError.code ? `code=${caughtError.code}` : null,
+              caughtError.message || null
+            ].filter(Boolean);
+            setError(debugParts.join(" | "));
+            return;
+          }
+
+          if (caughtError instanceof Error && caughtError.message) {
+            setError(caughtError.message);
+            return;
+          }
+        }
+
         setError("지금은 피드백을 생성할 수 없어요.");
       })
       .finally(() => {

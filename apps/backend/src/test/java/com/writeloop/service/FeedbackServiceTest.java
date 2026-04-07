@@ -5,6 +5,10 @@ import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.FeedbackNextStepPracticeDto;
+import com.writeloop.dto.FeedbackRewriteSuggestionDto;
+import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
+import com.writeloop.dto.FeedbackUiDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptHintDto;
@@ -108,6 +112,178 @@ class FeedbackServiceTest {
     private void stubOpenAiReview(FeedbackResponseDto feedback) {
         doReturn(feedback).when(openAiFeedbackClient)
                 .review(any(PromptDto.class), anyString(), anyList(), anyInt(), nullable(String.class));
+    }
+
+    @Test
+    void review_authoritativeLlmFeedback_withoutUi_doesNotComposeFallbackUi() {
+        PromptDto prompt = new PromptDto(
+                "prompt-authoritative-no-ui",
+                "Daily routine",
+                "EASY",
+                "What do you do on weekday mornings?",
+                "평일 아침에 무엇을 하나요?",
+                "Mention one or two activities."
+        );
+        FeedbackRequestDto request = new FeedbackRequestDto(
+                prompt.id(),
+                null,
+                "session-authoritative-no-ui",
+                null,
+                null
+        );
+        AnswerSessionEntity session = new AnswerSessionEntity(
+                "session-authoritative-no-ui",
+                prompt.id(),
+                null,
+                7L,
+                SessionStatus.IN_PROGRESS
+        );
+        FeedbackResponseDto llmFeedback = new FeedbackResponseDto(
+                prompt.id(),
+                GeminiFeedbackClient.INTERNAL_AUTHORITATIVE_SESSION_ID,
+                1,
+                88,
+                false,
+                null,
+                null,
+                List.of("핵심 루틴은 잘 말했어요."),
+                List.of(),
+                List.of(),
+                List.of(),
+                null,
+                List.of(),
+                "I wake up early and usually drink coffee before work.",
+                null,
+                null,
+                List.of(),
+                null
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(answerSessionRepository.findById("session-authoritative-no-ui")).thenReturn(java.util.Optional.of(session));
+        when(openAiFeedbackClient.isAuthoritativeFeedback(llmFeedback)).thenReturn(true);
+        when(openAiFeedbackClient.clearInternalMetadata(llmFeedback)).thenReturn(llmFeedback);
+        when(openAiFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(null);
+        stubOpenAiReview(llmFeedback);
+
+        FeedbackResponseDto response = feedbackService.review(request, 7L);
+
+        assertThat(response.ui()).isNull();
+        assertThat(response.correctedAnswer()).isNull();
+        assertThat(response.inlineFeedback()).isEmpty();
+    }
+
+    @Test
+    void review_authoritativeLlmFeedback_preservesLlmUiWhenPresent() {
+        PromptDto prompt = new PromptDto(
+                "prompt-authoritative-ui",
+                "Daily routine",
+                "EASY",
+                "What do you do on weekday mornings?",
+                "평일 아침에 무엇을 하나요?",
+                "Mention one or two activities."
+        );
+        FeedbackRequestDto request = new FeedbackRequestDto(
+                prompt.id(),
+                "I wake up early and drink coffee.",
+                "session-authoritative-ui",
+                null,
+                null
+        );
+        AnswerSessionEntity session = new AnswerSessionEntity(
+                "session-authoritative-ui",
+                prompt.id(),
+                null,
+                7L,
+                SessionStatus.IN_PROGRESS
+        );
+        FeedbackUiDto llmUi = new FeedbackUiDto(
+                null,
+                null,
+                null,
+                List.of(),
+                List.of(new FeedbackSecondaryLearningPointDto(
+                        "GRAMMAR",
+                        "시제 맞추기",
+                        "drink coffee",
+                        "아침 루틴은 보통 현재 시제로 말해요.",
+                        "drink coffee",
+                        "drink coffee",
+                        null,
+                        null,
+                        null,
+                        null
+                )),
+                new FeedbackNextStepPracticeDto(
+                        "CORRECTION",
+                        "추가하면 좋을 점",
+                        "I usually drink coffee before work.",
+                        "한 문장만 더 붙여서 루틴을 자연스럽게 이어 보세요.",
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        null,
+                        "이 문장으로 다시 써보기",
+                        true
+                ),
+                List.of(new FeedbackRewriteSuggestionDto(
+                        "before work",
+                        "출근 전에",
+                        null
+                )),
+                null,
+                null
+        );
+        FeedbackResponseDto llmFeedback = new FeedbackResponseDto(
+                prompt.id(),
+                GeminiFeedbackClient.INTERNAL_AUTHORITATIVE_SESSION_ID,
+                1,
+                88,
+                false,
+                null,
+                null,
+                List.of("핵심 루틴은 잘 말했어요."),
+                List.of(),
+                List.of(),
+                List.of(),
+                "I wake up early and drink coffee.",
+                List.of(),
+                "I wake up early and usually drink coffee before work.",
+                null,
+                null,
+                List.of(),
+                llmUi
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        when(answerSessionRepository.findById("session-authoritative-ui")).thenReturn(java.util.Optional.of(session));
+        when(openAiFeedbackClient.isAuthoritativeFeedback(llmFeedback)).thenReturn(true);
+        when(openAiFeedbackClient.clearInternalMetadata(llmFeedback)).thenReturn(llmFeedback);
+        when(openAiFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(null);
+        stubOpenAiReview(llmFeedback);
+
+        FeedbackResponseDto response = feedbackService.review(request, 7L);
+
+        assertThat(response.ui()).isNotNull();
+        assertThat(response.ui().screenPolicy()).isNull();
+        assertThat(response.ui().loopStatus()).isNull();
+        assertThat(response.ui().fixPoints())
+                .extracting(
+                        FeedbackSecondaryLearningPointDto::kind,
+                        FeedbackSecondaryLearningPointDto::title,
+                        FeedbackSecondaryLearningPointDto::headline
+                )
+                .containsExactly(tuple("GRAMMAR", "시제 맞추기", "drink coffee"));
+        assertThat(response.ui().nextStepPractice()).isNotNull();
+        assertThat(response.ui().nextStepPractice().headline())
+                .isEqualTo("I usually drink coffee before work.");
+        assertThat(response.ui().rewriteSuggestions())
+                .extracting(FeedbackRewriteSuggestionDto::english)
+                .containsExactly("before work");
     }
 
     @Test

@@ -229,7 +229,6 @@ export interface FeedbackScreenPolicy {
   completionState: FeedbackCompletionState;
   sectionOrder: string[];
   keepWhatWorksDisplayMode: FeedbackSectionDisplayMode;
-  fixFirstDisplayMode: FeedbackSectionDisplayMode;
   rewriteGuideDisplayMode: FeedbackSectionDisplayMode;
   rewriteGuideMode: FeedbackRewriteGuideMode;
   modelAnswerDisplayMode: FeedbackModelAnswerDisplayMode;

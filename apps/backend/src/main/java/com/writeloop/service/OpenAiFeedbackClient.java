@@ -44,30 +44,14 @@ public class OpenAiFeedbackClient {
     private static final Pattern INLINE_TOKEN_PATTERN = Pattern.compile("[A-Za-z0-9']+|[^\\sA-Za-z0-9']+|\\s+");
     private static final Pattern PRIMARY_FIX_ENGLISH_ANCHOR_PATTERN = Pattern.compile("[A-Za-z][A-Za-z' -]{2,}");
     static final String INTERNAL_AUTHORITATIVE_SESSION_ID = "__OPENAI_HYBRID_FINAL__";
-    private static final List<String> REWRITE_TARGET_ACTION_ENUM = List.of(
-            "MAKE_ON_TOPIC",
-            "STATE_MAIN_ANSWER",
-            "FIX_BLOCKING_GRAMMAR",
-            "FIX_LOCAL_GRAMMAR",
-            "ADD_REASON",
-            "ADD_EXAMPLE",
-            "ADD_DETAIL",
-            "IMPROVE_NATURALNESS"
-    );
-    private static final Set<String> REWRITE_TARGET_ACTION_CODES = Set.copyOf(REWRITE_TARGET_ACTION_ENUM);
-
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
     private final String apiKey;
     private final String model;
-    private final String diagnosisModel;
     private final String apiUrl;
     private final String reasoningEffort;
     private final int requestTimeoutSeconds;
     private final AnswerProfileBuilder answerProfileBuilder = new AnswerProfileBuilder();
-    private final SectionPolicySelector sectionPolicySelector = new SectionPolicySelector();
-    private final CompletionStateSelector completionStateSelector = new CompletionStateSelector();
-    private final FeedbackScreenPolicySelector feedbackScreenPolicySelector = new FeedbackScreenPolicySelector();
     private final FeedbackSectionValidators feedbackSectionValidators = new FeedbackSectionValidators();
     private final FeedbackDeterministicSectionGenerator deterministicSectionGenerator = new FeedbackDeterministicSectionGenerator();
     private final FeedbackDeterministicCorrectionResolver deterministicCorrectionResolver = new FeedbackDeterministicCorrectionResolver();
@@ -80,14 +64,8 @@ public class OpenAiFeedbackClient {
     ) {
     }
 
-    private record DiagnosisCallResult(
-            FeedbackDiagnosisResult diagnosis,
-            int statusCode,
-            String rawResponseBody
-    ) {
-    }
-
     private record GenerationCallResult(
+            FeedbackDiagnosisResult diagnosis,
             GeneratedSections sections,
             int statusCode,
             String rawResponseBody
@@ -163,7 +141,6 @@ public class OpenAiFeedbackClient {
             ObjectMapper objectMapper,
             @Value("${openai.api-key:}") String apiKey,
             @Value("${openai.feedback-model:${OPENAI_MODEL:gpt-5-mini}}") String model,
-            @Value("${openai.diagnosis-model:${OPENAI_DIAGNOSIS_MODEL:${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-5-mini}}}}") String diagnosisModel,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
             @Value("${openai.feedback-reasoning-effort:}") String reasoningEffort,
             @Value("${openai.feedback-request-timeout-seconds:120}") int requestTimeoutSeconds
@@ -174,7 +151,6 @@ public class OpenAiFeedbackClient {
                 .build();
         this.apiKey = apiKey;
         this.model = model;
-        this.diagnosisModel = diagnosisModel;
         this.apiUrl = apiUrl;
         this.reasoningEffort = reasoningEffort;
         this.requestTimeoutSeconds = requestTimeoutSeconds;
@@ -255,75 +231,44 @@ public class OpenAiFeedbackClient {
             String previousAnswer
     )
             throws IOException, InterruptedException {
-        FeedbackDiagnosisResult diagnosis;
-        boolean diagnosisFallbackUsed = false;
-        Integer diagnosisResponseStatusCode = null;
-        String diagnosisResponseBody = null;
-        try {
-            DiagnosisCallResult diagnosisCallResult = diagnose(prompt, answer, hints, attemptIndex, previousAnswer);
-            diagnosis = diagnosisCallResult.diagnosis();
-            diagnosisResponseStatusCode = diagnosisCallResult.statusCode();
-            diagnosisResponseBody = diagnosisCallResult.rawResponseBody();
-        } catch (OpenAiApiHttpException diagnosisFailure) {
-            logOpenAiFailure("diagnosis-http", prompt.id(), attemptIndex, diagnosisFailure);
-            throw feedbackGenerationUnavailable();
-        } catch (IOException diagnosisFailure) {
-            logOpenAiFailure("diagnosis-io", prompt.id(), attemptIndex, diagnosisFailure);
-            throw feedbackGenerationUnavailable();
-        } catch (InterruptedException diagnosisFailure) {
-            logOpenAiFailure("diagnosis-interrupted", prompt.id(), attemptIndex, diagnosisFailure);
-            Thread.currentThread().interrupt();
-            throw feedbackGenerationUnavailable();
-        } catch (RuntimeException diagnosisFailure) {
-            logOpenAiFailure("diagnosis-runtime-fallback", prompt.id(), attemptIndex, diagnosisFailure);
-            diagnosis = buildDeterministicDiagnosis(prompt, answer, hints, attemptIndex, previousAnswer);
-            diagnosisFallbackUsed = true;
-        }
-        AnswerProfile diagnosedProfile = buildDiagnosedProfile(prompt, answer, hints, diagnosis, attemptIndex, previousAnswer);
-        SectionPolicy sectionPolicy = sectionPolicySelector.select(diagnosedProfile, attemptIndex);
-        FeedbackSectionAvailability generationAvailability = buildGenerationAvailability(diagnosedProfile, sectionPolicy);
-        CompletionState generationCompletionState = completionStateSelector.select(diagnosedProfile, generationAvailability);
-        FeedbackScreenPolicy generationScreenPolicy = feedbackScreenPolicySelector.select(
-                diagnosedProfile,
-                generationCompletionState,
-                generationAvailability,
-                attemptIndex
-        );
-        List<SectionKey> generationRequestedSections = requestedSections(
-                diagnosedProfile,
-                sectionPolicy,
-                generationScreenPolicy,
-                generationAvailability
-        );
-        GeneratedSections fallbackSections = buildDeterministicFallbackSections(
-                prompt,
-                answer,
-                diagnosis,
-                diagnosedProfile,
-                sectionPolicy
-        );
-
         try {
             Integer generationResponseStatusCode = null;
             Integer regenerationResponseStatusCode = null;
             String generationResponseBody = null;
             String regenerationResponseBody = null;
+            List<SectionKey> initialRequestedSections = requestedSections(null, null, null, null);
             GenerationCallResult generationCallResult = generateSections(
                     prompt,
                     answer,
                     hints,
-                    diagnosis,
-                    diagnosedProfile,
-                    sectionPolicy,
+                    null,
+                    null,
+                    null,
                     attemptIndex,
                     previousAnswer,
-                    generationRequestedSections,
+                    initialRequestedSections,
                     List.of(),
                     null
             );
+            FeedbackDiagnosisResult diagnosis = generationCallResult.diagnosis();
             GeneratedSections generatedSections = generationCallResult.sections();
             generationResponseStatusCode = generationCallResult.statusCode();
             generationResponseBody = generationCallResult.rawResponseBody();
+            AnswerProfile diagnosedProfile = buildDiagnosedProfile(prompt, answer, hints, diagnosis, attemptIndex, previousAnswer);
+            SectionPolicy sectionPolicy = llmPassThroughSectionPolicy();
+            List<SectionKey> generationRequestedSections = requestedSections(
+                    diagnosedProfile,
+                    sectionPolicy,
+                    null,
+                    null
+            );
+            GeneratedSections fallbackSections = buildDeterministicFallbackSections(
+                    prompt,
+                    answer,
+                    diagnosis,
+                    diagnosedProfile,
+                    sectionPolicy
+            );
             ValidationResult validation = validateGeneratedSections(
                     answer,
                     diagnosis,
@@ -393,17 +338,17 @@ public class OpenAiFeedbackClient {
             latestAnalysisSnapshot.set(new FeedbackAnalysisSnapshot(
                     "OPENAI",
                     model,
-                    diagnosisResponseStatusCode,
+                    generationResponseStatusCode,
                     generationResponseStatusCode,
                     regenerationResponseStatusCode,
-                    diagnosisResponseBody,
+                    generationResponseBody,
                     generationResponseBody,
                     regenerationResponseBody,
                     diagnosis,
                     diagnosedProfile,
                     sectionPolicy,
                     completed.sanitizedSections(),
-                    diagnosisFallbackUsed,
+                    false,
                     false,
                     retryAttempted
             ));
@@ -420,8 +365,24 @@ public class OpenAiFeedbackClient {
             throw feedbackGenerationUnavailable();
         } catch (RuntimeException runtimeException) {
             logOpenAiFailure("generation-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
-            // If generation fails after successful diagnosis, prefer deterministic fallback over legacy monolithic prompt.
+            // If generation fails, prefer deterministic fallback over the removed separate diagnosis pass.
         }
+        FeedbackDiagnosisResult diagnosis = buildDeterministicDiagnosis(prompt, answer, hints, attemptIndex, previousAnswer);
+        AnswerProfile diagnosedProfile = buildDiagnosedProfile(prompt, answer, hints, diagnosis, attemptIndex, previousAnswer);
+        SectionPolicy sectionPolicy = llmPassThroughSectionPolicy();
+        List<SectionKey> generationRequestedSections = requestedSections(
+                diagnosedProfile,
+                sectionPolicy,
+                null,
+                null
+        );
+        GeneratedSections fallbackSections = buildDeterministicFallbackSections(
+                prompt,
+                answer,
+                diagnosis,
+                diagnosedProfile,
+                sectionPolicy
+        );
         ValidationResult fallbackValidation = validateGeneratedSections(
                 answer,
                 diagnosis,
@@ -433,49 +394,21 @@ public class OpenAiFeedbackClient {
         latestAnalysisSnapshot.set(new FeedbackAnalysisSnapshot(
                 "OPENAI",
                 model,
-                diagnosisResponseStatusCode,
                 null,
                 null,
-                diagnosisResponseBody,
+                null,
+                null,
                 null,
                 null,
                 diagnosis,
                 diagnosedProfile,
                 sectionPolicy,
                 fallbackValidation.sanitizedSections(),
-                diagnosisFallbackUsed,
+                true,
                 true,
                 false
         ));
         return assembleHybridResponse(prompt.id(), answer, diagnosis, diagnosedProfile, fallbackValidation.sanitizedSections());
-    }
-
-    private DiagnosisCallResult diagnose(
-            PromptDto prompt,
-            String answer,
-            List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer
-    )
-            throws IOException, InterruptedException {
-        OpenAiApiResponse response = sendResponsesRequest(buildDiagnosisRequestBody(prompt, answer, hints, attemptIndex, previousAnswer));
-        try {
-            return new DiagnosisCallResult(parseDiagnosisResponse(response.body()), response.statusCode(), response.body());
-        } catch (IOException exception) {
-            throw new OpenAiResponseParseException(
-                    "OpenAI diagnosis response parsing failed",
-                    response.statusCode(),
-                    response.body(),
-                    exception
-            );
-        } catch (RuntimeException exception) {
-            throw new OpenAiResponseParseRuntimeException(
-                    "OpenAI diagnosis response parsing failed",
-                    response.statusCode(),
-                    response.body(),
-                    exception
-            );
-        }
     }
 
     private GenerationCallResult generateSections(
@@ -505,7 +438,13 @@ public class OpenAiFeedbackClient {
                 previousSections
         ));
         try {
-            return new GenerationCallResult(parseGeneratedSections(response.body()), response.statusCode(), response.body());
+            JsonNode node = objectMapper.readTree(extractOutputText(response.body()));
+            return new GenerationCallResult(
+                    parseDiagnosisResponse(node),
+                    parseGeneratedSections(node),
+                    response.statusCode(),
+                    response.body()
+            );
         } catch (IOException exception) {
             throw new OpenAiResponseParseException(
                     "OpenAI generation response parsing failed",
@@ -672,12 +611,6 @@ public class OpenAiFeedbackClient {
         List<GrammarFeedbackItemDto> grammarFeedback = generatedSections.grammarFeedback().isEmpty()
                 ? toGrammarFeedback(diagnosis)
                 : generatedSections.grammarFeedback();
-        String correctedAnswer = firstNonBlank(
-                diagnosis.minimalCorrection(),
-                answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
-                learnerAnswer
-        );
-        List<InlineFeedbackSegmentDto> inlineFeedback = buildInlineFeedbackFromCorrectedAnswer(learnerAnswer, correctedAnswer);
         boolean loopComplete = isLoopComplete(
                 learnerAnswer,
                 diagnosis,
@@ -725,9 +658,9 @@ public class OpenAiFeedbackClient {
                 null,
                 generatedSections.strengths(),
                 generatedSections.corrections(),
-                inlineFeedback,
+                List.of(),
                 grammarFeedback,
-                correctedAnswer,
+                null,
                 toRefinementExpressionDtos(generatedSections.refinementExpressions()),
                 generatedSections.modelAnswer(),
                 generatedSections.modelAnswerKo(),
@@ -1067,8 +1000,8 @@ public class OpenAiFeedbackClient {
         );
         AnswerProfile baseProfile = answerProfileBuilder.build(
                 context,
-                diagnosis.minimalCorrection(),
-                buildInlineFeedbackFromCorrectedAnswer(learnerAnswer, diagnosis.minimalCorrection()),
+                null,
+                List.of(),
                 grammarFeedback
         );
         TaskProfile mergedTask = new TaskProfile(
@@ -1079,17 +1012,19 @@ public class OpenAiFeedbackClient {
         );
         List<GrammarIssue> diagnosisIssues = toGrammarIssues(diagnosis);
         GrammarProfile mergedGrammar = new GrammarProfile(
-                maxSeverity(baseProfile.grammar().severity(), diagnosis.grammarSeverity()),
+                baseProfile.grammar().severity(),
                 diagnosisIssues.isEmpty() ? baseProfile.grammar().issues() : diagnosisIssues,
-                firstNonBlank(diagnosis.minimalCorrection(), baseProfile.grammar().minimalCorrection()),
-                diagnosis.minimalCorrection() != null
+                baseProfile.grammar().minimalCorrection(),
+                false
         );
         RewriteProfile mergedRewrite = new RewriteProfile(
-                firstNonBlank(diagnosis.primaryIssueCode(), baseProfile.rewrite().primaryIssueCode()),
-                diagnosis.secondaryIssueCode() == null ? baseProfile.rewrite().secondaryIssueCode() : diagnosis.secondaryIssueCode(),
-                diagnosis.rewriteTarget() == null ? baseProfile.rewrite().target() : diagnosis.rewriteTarget(),
-                diagnosis.expansionBudget(),
-                diagnosis.regressionSensitiveFacts(),
+                baseProfile.rewrite().primaryIssueCode(),
+                baseProfile.rewrite().secondaryIssueCode(),
+                baseProfile.rewrite().target(),
+                baseProfile.rewrite().expansionBudget(),
+                diagnosis.regressionSensitiveFacts().isEmpty()
+                        ? baseProfile.rewrite().regressionSensitiveFacts()
+                        : diagnosis.regressionSensitiveFacts(),
                 baseProfile.rewrite().progressDelta()
         );
         return new AnswerProfile(mergedTask, mergedGrammar, baseProfile.content(), mergedRewrite);
@@ -1114,8 +1049,7 @@ public class OpenAiFeedbackClient {
             AnswerBand answerBand,
             TaskCompletion taskCompletion,
             boolean onTopic,
-            boolean finishable,
-            GrammarSeverity grammarSeverity
+            boolean finishable
     ) {
         if (scoreNode != null && scoreNode.isInt()) {
             return scoreNode.asInt();
@@ -1126,7 +1060,7 @@ public class OpenAiFeedbackClient {
         if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
             return 45;
         }
-        if (answerBand == AnswerBand.GRAMMAR_BLOCKING || grammarSeverity == GrammarSeverity.MAJOR) {
+        if (answerBand == AnswerBand.GRAMMAR_BLOCKING) {
             return 58;
         }
         if (taskCompletion != TaskCompletion.FULL) {
@@ -1202,92 +1136,6 @@ public class OpenAiFeedbackClient {
         return List.of(new InlineFeedbackSegmentDto("REPLACE", safeOriginalText, safeRevisedText));
     }
 
-    private String buildDiagnosisRequestBody(
-            PromptDto prompt,
-            String answer,
-            List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer
-    ) throws IOException {
-        Map<String, Object> schema = Map.ofEntries(
-                Map.entry("type", "object"),
-                Map.entry("additionalProperties", false),
-                Map.entry("properties", Map.ofEntries(
-                        Map.entry("score", Map.of("type", List.of("integer", "null"))),
-                        Map.entry("answerBand", Map.of("type", "string", "enum", List.of(
-                                "TOO_SHORT_FRAGMENT",
-                                "SHORT_BUT_VALID",
-                                "GRAMMAR_BLOCKING",
-                                "CONTENT_THIN",
-                                "NATURAL_BUT_BASIC",
-                                "OFF_TOPIC"
-                        ))),
-                        Map.entry("taskCompletion", Map.of("type", "string", "enum", List.of("FULL", "PARTIAL", "MISS"))),
-                        Map.entry("onTopic", Map.of("type", "boolean")),
-                        Map.entry("finishable", Map.of("type", "boolean")),
-                        Map.entry("grammarSeverity", Map.of("type", "string", "enum", List.of("NONE", "MINOR", "MODERATE", "MAJOR"))),
-                        Map.entry("minimalCorrection", Map.of("type", List.of("string", "null"))),
-                        Map.entry("primaryIssueCode", Map.of("type", "string")),
-                        Map.entry("secondaryIssueCode", Map.of("type", List.of("string", "null"))),
-                        Map.entry("rewriteTarget", Map.of(
-                                "type", "object",
-                                "additionalProperties", false,
-                                "properties", Map.of(
-                                        "action", Map.of("type", "string", "enum", REWRITE_TARGET_ACTION_ENUM),
-                                        "skeleton", Map.of("type", List.of("string", "null")),
-                                        "maxNewSentenceCount", Map.of("type", "integer")
-                                ),
-                                "required", List.of("action", "skeleton", "maxNewSentenceCount")
-                        )),
-                        Map.entry("expansionBudget", Map.of("type", "string", "enum", List.of(
-                                "NONE",
-                                "ONE_DETAIL",
-                                "ONE_SUPPORT_SENTENCE"
-                        ))),
-                        Map.entry("regressionSensitiveFacts", Map.of(
-                                "type", "array",
-                                "items", Map.of("type", "string")
-                        )),
-                        Map.entry("grammarIssues", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "code", Map.of("type", "string"),
-                                                "span", Map.of("type", "string"),
-                                                "correction", Map.of("type", "string"),
-                                                "reasonKo", Map.of("type", "string"),
-                                                "blocksMeaning", Map.of("type", "boolean"),
-                                                "severity", Map.of("type", "string", "enum", List.of("NONE", "MINOR", "MODERATE", "MAJOR"))
-                                        ),
-                                        "required", List.of("code", "span", "correction", "reasonKo", "blocksMeaning", "severity")
-                                )
-                        ))
-                )),
-                Map.entry("required", List.of(
-                        "answerBand",
-                        "taskCompletion",
-                        "onTopic",
-                        "finishable",
-                        "grammarSeverity",
-                        "minimalCorrection",
-                        "primaryIssueCode",
-                        "secondaryIssueCode",
-                        "rewriteTarget",
-                        "expansionBudget",
-                        "regressionSensitiveFacts",
-                        "grammarIssues"
-                ))
-        );
-        return buildStructuredRequestBody(
-                diagnosisModel,
-                buildDiagnosisPrompt(prompt, answer, hints, attemptIndex, previousAnswer),
-                "english_answer_diagnosis",
-                schema
-        );
-    }
-
     private String buildGenerationRequestBody(
             PromptDto prompt,
             String answer,
@@ -1305,6 +1153,17 @@ public class OpenAiFeedbackClient {
                 Map.entry("type", "object"),
                 Map.entry("additionalProperties", false),
                 Map.entry("properties", Map.ofEntries(
+                        Map.entry("answerBand", Map.of("type", "string", "enum", List.of(
+                                "TOO_SHORT_FRAGMENT",
+                                "SHORT_BUT_VALID",
+                                "GRAMMAR_BLOCKING",
+                                "CONTENT_THIN",
+                                "NATURAL_BUT_BASIC",
+                                "OFF_TOPIC"
+                        ))),
+                        Map.entry("taskCompletion", Map.of("type", "string", "enum", List.of("FULL", "PARTIAL", "MISS"))),
+                        Map.entry("onTopic", Map.of("type", "boolean")),
+                        Map.entry("finishable", Map.of("type", "boolean")),
                         Map.entry("strengths", Map.of(
                                 "type", "array",
                                 "items", Map.of("type", "string")
@@ -1447,8 +1306,13 @@ public class OpenAiFeedbackClient {
                         Map.entry("modelAnswerKo", Map.of("type", List.of("string", "null")))
                 )),
                 Map.entry("required", List.of(
+                        "answerBand",
+                        "taskCompletion",
+                        "onTopic",
+                        "finishable",
                         "strengths",
                         "fixPoints",
+                        "secondaryLearningPoints",
                         "usedExpressions",
                         "refinementExpressions",
                         "nextStepPractice",
@@ -1488,85 +1352,6 @@ public class OpenAiFeedbackClient {
         );
     }
 
-    private String buildDiagnosisPrompt(
-            PromptDto prompt,
-            String answer,
-            List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer
-    ) {
-        String coachProfileText = PromptOpenAiContextFormatter.formatCoachProfile(prompt);
-        String coachProfileGuidance = PromptOpenAiContextFormatter.formatCoachProfileInstructions(prompt);
-        String hintText = PromptOpenAiContextFormatter.formatPromptHints(hints);
-        return """
-                You are diagnosing an English learner answer for a rewrite-first coaching app.
-                Return valid JSON only.
-
-                Your job is diagnosis only.
-                Do not generate strengths, corrections, refinement cards, rewrite guide, or model answer.
-
-                Diagnosis rules:
-                - Diagnosis should support a rewrite-first screen. Choose one dominant next step that can drive the Top Status Card and Rewrite Guide.
-                - Choose exactly one answerBand from: TOO_SHORT_FRAGMENT, SHORT_BUT_VALID, GRAMMAR_BLOCKING, CONTENT_THIN, NATURAL_BUT_BASIC, OFF_TOPIC.
-                - answerBand must reflect what the learner most needs next, not what sounds harshest.
-                - primaryIssueCode must name the single top rewrite goal, not a vague category list.
-                - minimalCorrection must preserve learner meaning and structure as much as possible.
-                - minimalCorrection must fix only local grammar, usage, word form, determiner, preposition, capitalization, spacing, or punctuation.
-                - Do not add new examples, new plans, or unsupported lifestyle details in minimalCorrection.
-                - If the answer is already locally good enough, minimalCorrection may be null.
-                - grammarIssues must explain only issues that are directly reflected in minimalCorrection or the learner answer.
-                - grammarIssues.reasonKo must be concise Korean, aligned with the chosen correction, and must not mention alternative structures that you did not choose.
-                - score is optional metadata only. If you include it, use a broad coarse estimate. Never let score override answerBand, finishable, or rewriteTarget decisions.
-                - finishable should be true only when the learner answer already reads like an acceptable final submission, not merely a correct idea sketch.
-                - Do not keep finishable false only because the answer could be longer, more polished, or could support another optional one-step-up model answer.
-                - For routine or daily-life prompts, one or two clear activities with a natural time flow can already be finishable if the clauses themselves are natural enough to submit.
-                - If a required reason, detail, or activity clause still needs more than one small local repair, keep finishable=false.
-                - Do not set finishable=true when a required clause still has missing be-verbs, missing infinitive markers, broken complement structure, or other clearly incomplete sentence framing.
-                - An answer may be on-topic and task-complete but still not finishable if the required reason/detail clause sounds malformed as a final sentence.
-                - If attemptIndex >= 2 and the learner clearly added a concrete detail, activity, reason, or sequence compared with previousAnswer, prefer finishable=true only when no blocking grammar or malformed required clause still remains.
-                - NATURAL_BUT_BASIC is appropriate when the answer is already clear, on-topic, complete enough for the loop to end, and needs at most one very small local cleanup.
-                - rewriteTarget must give a single action and corrected skeleton for the next rewrite.
-                - rewriteTarget.action must be exactly one of: MAKE_ON_TOPIC, STATE_MAIN_ANSWER, FIX_BLOCKING_GRAMMAR, FIX_LOCAL_GRAMMAR, ADD_REASON, ADD_EXAMPLE, ADD_DETAIL, IMPROVE_NATURALNESS.
-                - rewriteTarget.skeleton should be starter-length and directly reusable in a rewrite guide, not a long model answer.
-                - regressionSensitiveFacts must list short factual spans from the learner answer that later generations must preserve.
-                - expansionBudget should be NONE, ONE_DETAIL, or ONE_SUPPORT_SENTENCE depending on how much later generation may safely add.
-                - Prefer CONTENT_THIN or SHORT_BUT_VALID over GRAMMAR_BLOCKING when the answer mainly needs one minor correction plus a little expansion.
-                - Prefer GRAMMAR_BLOCKING only when grammar seriously blocks meaning or sentence structure.
-                - If attemptIndex >= 2, use previousAnswer only to detect progress and remaining issues. Do not repeat already-resolved grammar corrections as the primary issue.
-
-                Attempt context:
-                - attemptIndex: %s
-                - previousAnswer: %s
-
-                Prompt topic: %s
-                Difficulty: %s
-                Question in English: %s
-                Question in Korean: %s
-                Speaking tip: %s
-                Prompt coaching profile:
-                %s
-                Prompt coaching strategy:
-                %s
-                Prompt hints:
-                %s
-
-                Learner answer:
-                %s
-                """.formatted(
-                attemptIndex,
-                previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
-                prompt.topic(),
-                prompt.difficulty(),
-                prompt.questionEn(),
-                prompt.questionKo(),
-                prompt.tip(),
-                coachProfileText,
-                coachProfileGuidance,
-                hintText,
-                answer
-        );
-    }
-
     private String buildGenerationPrompt(
             PromptDto prompt,
             String answer,
@@ -1589,44 +1374,84 @@ public class OpenAiFeedbackClient {
                 : "- " + failureCodes.stream().map(Enum::name).reduce((left, right) -> left + ", " + right).orElse("");
         String retrySpecificInstructions = buildRetrySpecificInstructionsV2(failureCodes, requestedSections);
         String previousSectionJson = previousSections == null ? "{}" : objectMapper.writeValueAsString(previousSections);
-        String bandGuidance = generationBandGuidance(diagnosis.answerBand(), sectionPolicy);
+        String bandGuidance = diagnosis == null || sectionPolicy == null
+                ? "- Derive the diagnosis first, then make the must-fix list, next step, and model answer consistent with that diagnosis."
+                : generationBandGuidance(diagnosis.answerBand(), sectionPolicy);
         ProgressDelta progressDelta = answerProfile == null || answerProfile.rewrite() == null
                 ? null
                 : answerProfile.rewrite().progressDelta();
         String improvedAreas = progressDelta == null ? "[]" : progressDelta.improvedAreas().toString();
         String remainingAreas = progressDelta == null ? "[]" : progressDelta.remainingAreas().toString();
-
-        return """
-                You are generating only the selected feedback sections for an English learner.
-                Return valid JSON only.
-
-                Backend source of truth:
-                - answerBand: %s
-                - taskCompletion: %s
-                - onTopic: %s
-                - finishable: %s
-                - grammarSeverity: %s
-                - minimalCorrection: %s
-                - primaryIssueCode: %s
-                - secondaryIssueCode: %s
-                - rewriteTarget.action: %s
-                - rewriteTarget.skeleton: %s
-                - rewriteTarget.maxNewSentenceCount: %s
-                - expansionBudget: %s
-                - regressionSensitiveFacts: %s
+        String analysisContext = diagnosis == null
+                ? """
+                First-pass diagnosis:
+                - Your first job is to diagnose the learner answer and fill the diagnosis fields in this same JSON object.
+                - Treat the diagnosis fields you output as the source of truth for the sections you generate.
                 - requestedSections: %s
                 - attemptIndex: %s
                 - previousAnswer: %s
                 - progress.improvedAreas: %s
                 - progress.remainingAreas: %s
                 - Prioritize learner focus and clarity over section completeness. It is better to return fewer, sharper items than many overlapping ones.
+                """.formatted(
+                requestedSectionText,
+                attemptIndex,
+                previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
+                improvedAreas,
+                remainingAreas
+        )
+                : """
+                Backend source of truth:
+                - answerBand: %s
+                - taskCompletion: %s
+                - onTopic: %s
+                - finishable: %s
+                - requestedSections: %s
+                - attemptIndex: %s
+                - previousAnswer: %s
+                - progress.improvedAreas: %s
+                - progress.remainingAreas: %s
+                - Prioritize learner focus and clarity over section completeness. It is better to return fewer, sharper items than many overlapping ones.
+                """.formatted(
+                diagnosis.answerBand().name(),
+                diagnosis.taskCompletion().name(),
+                diagnosis.onTopic(),
+                diagnosis.finishable(),
+                requestedSectionText,
+                attemptIndex,
+                previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
+                improvedAreas,
+                remainingAreas
+        );
+
+        return """
+                You are generating English-learner feedback for a rewrite-first coaching app.
+                Return valid JSON only.
+
+                %s
 
                 General output rules:
+                - Fill both the diagnosis fields and the feedback section fields in the same JSON object.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
                 - Do not reuse a broken learner phrase in strengths, refinementExpressions, nextStepPractice, or modelAnswer.
                 - If requestedSections does not include a section, return [] for arrays or null for strings.
                 - Keep Korean fields natural and concise.
                 - If attemptIndex >= 2, keep the list focused, but still include any other distinct useful fixPoints that are clearly worth teaching.
+
+                Diagnosis rules:
+                - Diagnosis should support a rewrite-first screen. Choose one dominant next step that can drive the rewrite guide and must-fix list.
+                - Choose exactly one answerBand from: TOO_SHORT_FRAGMENT, SHORT_BUT_VALID, GRAMMAR_BLOCKING, CONTENT_THIN, NATURAL_BUT_BASIC, OFF_TOPIC.
+                - answerBand must reflect what the learner most needs next, not what sounds harshest.
+                - finishable should be true only when the learner answer already reads like an acceptable final submission, not merely a correct idea sketch.
+                - Do not keep finishable false only because the answer could be longer, more polished, or could support another optional one-step-up model answer.
+                - For routine or daily-life prompts, one or two clear activities with a natural time flow can already be finishable if the clauses themselves are natural enough to submit.
+                - If a required reason, detail, or activity clause still needs more than one small local repair, keep finishable=false.
+                - Do not set finishable=true when a required clause still has missing be-verbs, missing infinitive markers, broken complement structure, or other clearly incomplete sentence framing.
+                - An answer may be on-topic and task-complete but still not finishable if the required reason/detail clause sounds malformed as a final sentence.
+                - If attemptIndex >= 2, use previousAnswer only to detect progress and remaining issues. Do not repeat already-resolved grammar corrections as the primary issue.
+                - NATURAL_BUT_BASIC is appropriate when the answer is already clear, on-topic, complete enough for the loop to end, and needs at most one very small local cleanup.
+                - Prefer CONTENT_THIN or SHORT_BUT_VALID over GRAMMAR_BLOCKING when the answer mainly needs one minor correction plus a little expansion.
+                - Prefer GRAMMAR_BLOCKING only when grammar seriously blocks meaning or sentence structure.
 
                 Strengths and usedExpressions rules:
                 - strengths must be semantic praise only. Never quote the full raw learner answer unless it is already clean and necessary.
@@ -1669,7 +1494,7 @@ public class OpenAiFeedbackClient {
                 - modelAnswer must preserve learner meaning, keep the must-fix lessons from fixPoints, and, when natural, add one optional upgrade from nextStepPractice without reverting a taught correction.
                 - Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.
 
-                Band-specific guidance:
+                Diagnosis-to-section alignment:
                 %s
 
                 Retry notes:
@@ -1694,24 +1519,7 @@ public class OpenAiFeedbackClient {
                 Learner answer:
                 %s
                 """.formatted(
-                diagnosis.answerBand().name(),
-                diagnosis.taskCompletion().name(),
-                diagnosis.onTopic(),
-                diagnosis.finishable(),
-                diagnosis.grammarSeverity().name(),
-                diagnosis.minimalCorrection() == null ? "null" : diagnosis.minimalCorrection(),
-                diagnosis.primaryIssueCode(),
-                diagnosis.secondaryIssueCode() == null ? "null" : diagnosis.secondaryIssueCode(),
-                diagnosis.rewriteTarget() == null ? "" : diagnosis.rewriteTarget().action(),
-                diagnosis.rewriteTarget() == null || diagnosis.rewriteTarget().skeleton() == null ? "null" : diagnosis.rewriteTarget().skeleton(),
-                diagnosis.rewriteTarget() == null ? 0 : diagnosis.rewriteTarget().maxNewSentenceCount(),
-                diagnosis.expansionBudget().name(),
-                diagnosis.regressionSensitiveFacts(),
-                requestedSectionText,
-                attemptIndex,
-                previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
-                improvedAreas,
-                remainingAreas,
+                analysisContext,
                 bandGuidance,
                 retryFailures,
                 retrySpecificInstructions,
@@ -1728,13 +1536,11 @@ public class OpenAiFeedbackClient {
         );
     }
 
-    private FeedbackDiagnosisResult parseDiagnosisResponse(String body) throws IOException {
-        JsonNode node = objectMapper.readTree(extractOutputText(body));
+    private FeedbackDiagnosisResult parseDiagnosisResponse(JsonNode node) {
         AnswerBand answerBand = parseAnswerBand(node.path("answerBand").asText("SHORT_BUT_VALID"));
         TaskCompletion taskCompletion = parseTaskCompletion(node.path("taskCompletion").asText("PARTIAL"));
         boolean onTopic = node.path("onTopic").asBoolean(true);
         boolean finishable = node.path("finishable").asBoolean(false);
-        GrammarSeverity grammarSeverity = parseGrammarSeverity(node.path("grammarSeverity").asText("NONE"));
         List<DiagnosedGrammarIssue> grammarIssues = new ArrayList<>();
         node.path("grammarIssues").forEach(item -> grammarIssues.add(new DiagnosedGrammarIssue(
                 item.path("code").asText(""),
@@ -1744,67 +1550,24 @@ public class OpenAiFeedbackClient {
                 item.path("blocksMeaning").asBoolean(false),
                 parseGrammarSeverity(item.path("severity").asText(""))
         )));
-        String primaryIssueCode = node.path("primaryIssueCode").asText("");
-        JsonNode rewriteTargetNode = node.path("rewriteTarget");
-        RewriteTarget rewriteTarget = rewriteTargetNode.isMissingNode()
-                ? null
-                : new RewriteTarget(
-                normalizeRewriteTargetAction(rewriteTargetNode.path("action").asText(""), primaryIssueCode),
-                rewriteTargetNode.path("skeleton").isNull() ? null : rewriteTargetNode.path("skeleton").asText(null),
-                rewriteTargetNode.path("maxNewSentenceCount").asInt(1)
-        );
         List<String> regressionSensitiveFacts = new ArrayList<>();
         node.path("regressionSensitiveFacts").forEach(item -> regressionSensitiveFacts.add(item.asText("")));
-        int score = resolveDiagnosisScore(node.path("score"), answerBand, taskCompletion, onTopic, finishable, grammarSeverity);
+        int score = resolveDiagnosisScore(node.path("score"), answerBand, taskCompletion, onTopic, finishable);
         return new FeedbackDiagnosisResult(
                 score,
                 answerBand,
                 taskCompletion,
                 onTopic,
                 finishable,
-                grammarSeverity,
+                GrammarSeverity.NONE,
                 grammarIssues,
                 node.path("minimalCorrection").isNull() ? null : node.path("minimalCorrection").asText(null),
-                primaryIssueCode,
+                "",
                 node.path("secondaryIssueCode").isNull() ? null : node.path("secondaryIssueCode").asText(null),
-                rewriteTarget,
-                parseExpansionBudget(node.path("expansionBudget").asText("ONE_DETAIL")),
+                null,
+                ExpansionBudget.NONE,
                 regressionSensitiveFacts
         );
-    }
-
-    private String normalizeRewriteTargetAction(String rawAction, String primaryIssueCode) {
-        String normalized = trimToNull(rawAction);
-        if (normalized != null) {
-            normalized = normalized
-                    .toUpperCase(Locale.ROOT)
-                    .replace('-', '_')
-                    .replaceAll("\\s+", "_")
-                    .replaceAll("[^A-Z_]", "_")
-                    .replaceAll("_+", "_")
-                    .replaceAll("^_+|_+$", "");
-        }
-        if (normalized != null && REWRITE_TARGET_ACTION_CODES.contains(normalized)) {
-            return normalized;
-        }
-        return defaultRewriteTargetAction(primaryIssueCode);
-    }
-
-    private String defaultRewriteTargetAction(String primaryIssueCode) {
-        String normalized = trimToNull(primaryIssueCode);
-        if (normalized == null) {
-            return "IMPROVE_NATURALNESS";
-        }
-        return switch (normalized.toUpperCase(Locale.ROOT)) {
-            case "OFF_TOPIC_RESPONSE" -> "MAKE_ON_TOPIC";
-            case "MISSING_MAIN_TASK", "STATE_MAIN_ANSWER" -> "STATE_MAIN_ANSWER";
-            case "FIX_BLOCKING_GRAMMAR" -> "FIX_BLOCKING_GRAMMAR";
-            case "FIX_LOCAL_GRAMMAR" -> "FIX_LOCAL_GRAMMAR";
-            case "ADD_REASON" -> "ADD_REASON";
-            case "ADD_EXAMPLE" -> "ADD_EXAMPLE";
-            case "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC" -> "ADD_DETAIL";
-            default -> "IMPROVE_NATURALNESS";
-        };
     }
 
     private String trimToNull(String value) {
@@ -1822,8 +1585,7 @@ public class OpenAiFeedbackClient {
         return trimToNull(node.asText(null));
     }
 
-    private GeneratedSections parseGeneratedSections(String body) throws IOException {
-        JsonNode node = objectMapper.readTree(extractOutputText(body));
+    private GeneratedSections parseGeneratedSections(JsonNode node) {
         List<String> strengths = new ArrayList<>();
         node.path("strengths").forEach(item -> strengths.add(item.asText("")));
         List<FeedbackSecondaryLearningPointDto> fixPoints = new ArrayList<>();
@@ -1984,9 +1746,6 @@ public class OpenAiFeedbackClient {
     }
 
     private String resolveModelForPhase(String phase) {
-        if (phase != null && phase.startsWith("diagnosis")) {
-            return diagnosisModel;
-        }
         return model;
     }
 
@@ -2005,6 +1764,22 @@ public class OpenAiFeedbackClient {
         return OpenAiStructuredOutputSupport.extractStructuredOutputText(objectMapper, body);
     }
 
+    private SectionPolicy llmPassThroughSectionPolicy() {
+        return new SectionPolicy(
+                true, 4,
+                true, 5,
+                true,
+                true, 12,
+                RefinementFocus.DETAIL_BUILDING,
+                true,
+                true,
+                true,
+                4,
+                ModelAnswerMode.ONE_STEP_UP,
+                AttemptOverlayPolicy.NONE
+        );
+    }
+
     private FeedbackSectionAvailability buildGenerationAvailability(
             AnswerProfile answerProfile,
             SectionPolicy sectionPolicy
@@ -2015,27 +1790,15 @@ public class OpenAiFeedbackClient {
         TaskCompletion taskCompletion = answerProfile == null || answerProfile.task() == null || answerProfile.task().taskCompletion() == null
                 ? TaskCompletion.PARTIAL
                 : answerProfile.task().taskCompletion();
-        GrammarSeverity grammarSeverity = answerProfile == null || answerProfile.grammar() == null || answerProfile.grammar().severity() == null
-                ? GrammarSeverity.NONE
-                : answerProfile.grammar().severity();
-        String primaryIssueCode = answerProfile == null || answerProfile.rewrite() == null
-                ? ""
-                : firstNonBlank(answerProfile.rewrite().primaryIssueCode(), "");
 
         boolean hasGrammarCard = sectionPolicy.showGrammar()
-                && (answerBand == AnswerBand.GRAMMAR_BLOCKING
-                || grammarSeverity.ordinal() >= GrammarSeverity.MINOR.ordinal()
-                || "FIX_BLOCKING_GRAMMAR".equals(primaryIssueCode)
-                || "FIX_LOCAL_GRAMMAR".equals(primaryIssueCode));
+                && answerBand == AnswerBand.GRAMMAR_BLOCKING;
         boolean hasHighValueCorrection = hasGrammarCard
-                && (answerBand == AnswerBand.GRAMMAR_BLOCKING
-                || grammarSeverity.ordinal() >= GrammarSeverity.MINOR.ordinal()
-                || "FIX_BLOCKING_GRAMMAR".equals(primaryIssueCode)
-                || "FIX_LOCAL_GRAMMAR".equals(primaryIssueCode));
+                && answerBand == AnswerBand.GRAMMAR_BLOCKING;
         boolean hasPrimaryFix = hasGrammarCard
                 || answerBand == AnswerBand.OFF_TOPIC
                 || taskCompletion != TaskCompletion.FULL
-                || isDetailPromptPrimaryIssue(primaryIssueCode);
+                || answerBand == AnswerBand.CONTENT_THIN;
 
         return new FeedbackSectionAvailability(
                 sectionPolicy.showStrengths(),
@@ -2103,13 +1866,6 @@ public class OpenAiFeedbackClient {
         return requestedSections != null && requestedSections.contains(sectionKey);
     }
 
-    private boolean isDetailPromptPrimaryIssue(String primaryIssueCode) {
-        return "ADD_REASON".equals(primaryIssueCode)
-                || "ADD_EXAMPLE".equals(primaryIssueCode)
-                || "ADD_DETAIL".equals(primaryIssueCode)
-                || "MAKE_IT_MORE_SPECIFIC".equals(primaryIssueCode);
-    }
-
     private FeedbackPrimaryFixDto derivePrimaryFixFromFixPoints(List<FeedbackSecondaryLearningPointDto> fixPoints) {
         if (fixPoints == null || fixPoints.isEmpty()) {
             return null;
@@ -2166,12 +1922,8 @@ public class OpenAiFeedbackClient {
         String revisedText = firstNonBlank(primaryFix.revisedText());
         String reasonKo = firstNonBlank(primaryFix.reasonKo());
 
-        String primaryIssueCode = diagnosis == null ? "" : firstNonBlank(diagnosis.primaryIssueCode(), "");
         boolean grammarFirst = diagnosis != null
-                && (diagnosis.answerBand() == AnswerBand.GRAMMAR_BLOCKING
-                || diagnosis.grammarSeverity().ordinal() >= GrammarSeverity.MINOR.ordinal()
-                || "FIX_BLOCKING_GRAMMAR".equals(primaryIssueCode)
-                || "FIX_LOCAL_GRAMMAR".equals(primaryIssueCode));
+                && diagnosis.answerBand() == AnswerBand.GRAMMAR_BLOCKING;
 
         if (grammarFirst) {
             if (originalText == null || revisedText == null || reasonKo == null) {
@@ -2181,10 +1933,6 @@ public class OpenAiFeedbackClient {
         }
 
         if (instruction == null) {
-            return null;
-        }
-
-        if (isGenericTaskResetInstruction(instruction) && isDetailPromptPrimaryIssue(primaryIssueCode)) {
             return null;
         }
         if (!hasConcretePrimaryFixAnchor(primaryFix) && isGenericPrimaryFixInstruction(title, instruction)) {
@@ -2480,34 +2228,21 @@ public class OpenAiFeedbackClient {
             FeedbackDiagnosisResult diagnosis,
             AnswerProfile answerProfile
     ) {
-        String minimalCorrection = answerProfile == null || answerProfile.grammar() == null
-                ? null
-                : answerProfile.grammar().minimalCorrection();
         List<GrammarFeedbackItemDto> primary = feedbackSectionValidators.validateGrammarSectionFormat(grammarFeedback);
         primary = feedbackSectionValidators.filterLowValueGrammarItems(primary);
-        primary = feedbackSectionValidators.alignGrammarFeedbackWithMinimalCorrection(primary, minimalCorrection);
         if (!primary.isEmpty()) {
             return List.copyOf(primary);
         }
 
         List<GrammarFeedbackItemDto> fallback = feedbackSectionValidators.validateGrammarSectionFormat(toGrammarFeedback(diagnosis));
         fallback = feedbackSectionValidators.filterLowValueGrammarItems(fallback);
-        fallback = feedbackSectionValidators.alignGrammarFeedbackWithMinimalCorrection(fallback, minimalCorrection);
         if (!fallback.isEmpty()) {
             return List.copyOf(fallback);
         }
+        /* Legacy minimal-correction grammar fallback removed.
 
-        if (minimalCorrection != null) {
-            String originalText = diagnosis == null ? null : diagnosis.minimalCorrection();
-            String revisedText = minimalCorrection;
-            if (revisedText != null && !revisedText.isBlank()) {
-                return List.of(new GrammarFeedbackItemDto(
-                        originalText == null || originalText.isBlank() ? "" : originalText,
-                        revisedText,
                         "????볥궚????熬곣뫖?삥납??????꿔꺂?????????????戮?뜤????亦껋꼨援?? ?熬곣뫖利??濚?????????⑤슢????鍮??"
-                ));
-            }
-        }
+        */
         return List.of();
     }
 
@@ -2526,12 +2261,7 @@ public class OpenAiFeedbackClient {
                 || diagnosis.answerBand() == AnswerBand.TOO_SHORT_FRAGMENT) {
             return true;
         }
-        if (diagnosis.grammarSeverity().ordinal() >= GrammarSeverity.MODERATE.ordinal()) {
-            return true;
-        }
-        return answerProfile != null
-                && answerProfile.grammar() != null
-                && answerProfile.grammar().severity().ordinal() >= GrammarSeverity.MODERATE.ordinal();
+        return false;
     }
 
     private List<RefinementExpressionDto> toRefinementExpressionDtos(List<RefinementCard> cards) {
@@ -2761,23 +2491,27 @@ public class OpenAiFeedbackClient {
                 return tooShortGuide;
             }
         }
-        String skeleton = diagnosis.rewriteTarget() != null ? diagnosis.rewriteTarget().skeleton() : null;
-        String minimalCorrection = diagnosis.minimalCorrection();
-        String base = firstNonBlank(minimalCorrection, skeleton);
+        String skeleton = diagnosis == null ? null : diagnosis.minimalCorrection();
+        String base = skeleton;
         if (base == null) {
             return null;
         }
-        if (diagnosis.expansionBudget() == ExpansionBudget.NONE) {
+        String rewriteAction = "";
+        if ("FIX_BLOCKING_GRAMMAR".equals(rewriteAction)
+                || "FIX_LOCAL_GRAMMAR".equals(rewriteAction)
+                || "IMPROVE_NATURALNESS".equals(rewriteAction)
+                || "STATE_MAIN_ANSWER".equals(rewriteAction)
+                || "MAKE_ON_TOPIC".equals(rewriteAction)) {
             return "\"" + base + "\"?????뚯???????Β??????⑤베鍮?????⑤슢????鍮??";
         }
-        if (diagnosis.expansionBudget() == ExpansionBudget.ONE_SUPPORT_SENTENCE) {
+        if ("ADD_REASON".equals(rewriteAction) || "ADD_EXAMPLE".equals(rewriteAction)) {
             return "\"" + base + "\"???熬곣뫖利?嚥????Β???꿔꺂???熬곻퐢利???꿔꺂??????????????戮?뜪??????⑥쥓援????? ???戮?뜪?????β뼯援η뙴???????거?????⑤슢????鍮??";
         }
         return "\"" + base + "\"???熬곣뫖利?嚥????Β??????醫딆쓧??꿔꺂??? ????????????????쇨덫???????⑸윞???????거?????⑤슢????鍮??";
     }
 
     private String fallbackTooShortRewriteGuide(FeedbackDiagnosisResult diagnosis) {
-        String skeleton = diagnosis == null || diagnosis.rewriteTarget() == null ? null : diagnosis.rewriteTarget().skeleton();
+        String skeleton = diagnosis == null ? null : diagnosis.minimalCorrection();
         String usableSkeleton = inferTooShortSkeleton(diagnosis == null ? null : diagnosis.minimalCorrection());
         if (usableSkeleton == null) {
             usableSkeleton = preferFillInSkeleton(skeleton);
@@ -2861,9 +2595,6 @@ public class OpenAiFeedbackClient {
         if (preferredSkeleton == null) {
             preferredSkeleton = extractTooShortGuideSkeleton(rewriteGuide);
         }
-        if (preferredSkeleton == null && diagnosis != null && diagnosis.rewriteTarget() != null) {
-            preferredSkeleton = preferFillInSkeleton(diagnosis.rewriteTarget().skeleton());
-        }
         if (preferredSkeleton == null) {
             preferredSkeleton = "I ____.";
         }
@@ -2933,17 +2664,14 @@ public class OpenAiFeedbackClient {
         if (!minimalCorrection.isBlank() && normalizedGuide.contains(minimalCorrection)) {
             return false;
         }
-        String skeleton = diagnosis.rewriteTarget() == null ? "" : normalizeForComparison(diagnosis.rewriteTarget().skeleton());
+        String skeleton = "";
         return !skeleton.isBlank() && normalizedGuide.contains(skeleton) ? false : normalizedGuide.contains("i have this is to");
     }
 
     private String anchorTextForModelAnswer(FeedbackDiagnosisResult diagnosis, AnswerProfile answerProfile) {
         return firstNonBlank(
                 diagnosis.minimalCorrection(),
-                answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection(),
-                answerProfile == null || answerProfile.rewrite() == null || answerProfile.rewrite().target() == null
-                        ? null
-                        : answerProfile.rewrite().target().skeleton()
+                answerProfile == null || answerProfile.grammar() == null ? null : answerProfile.grammar().minimalCorrection()
         );
     }
 
@@ -3081,10 +2809,6 @@ public class OpenAiFeedbackClient {
 
     private GrammarSeverity parseGrammarSeverity(String value) {
         return parseEnum(value, GrammarSeverity.NONE, GrammarSeverity.class);
-    }
-
-    private ExpansionBudget parseExpansionBudget(String value) {
-        return parseEnum(value, ExpansionBudget.ONE_DETAIL, ExpansionBudget.class);
     }
 
     private <T extends Enum<T>> T parseEnum(String value, T fallback, Class<T> enumClass) {
@@ -3561,16 +3285,13 @@ public class OpenAiFeedbackClient {
                 : task == null ? TaskCompletion.PARTIAL : task.taskCompletion();
         boolean onTopic = diagnosis != null ? diagnosis.onTopic() : task != null && task.onTopic();
         boolean finishable = diagnosis != null && diagnosis.finishable();
-        GrammarSeverity grammarSeverity = answerProfile != null && answerProfile.grammar() != null
-                ? answerProfile.grammar().severity()
-                : diagnosis == null ? GrammarSeverity.NONE : diagnosis.grammarSeverity();
         if (!onTopic) {
             return false;
         }
         if (answerBand == AnswerBand.OFF_TOPIC || answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
             return false;
         }
-        if (answerBand == AnswerBand.GRAMMAR_BLOCKING || grammarSeverity == GrammarSeverity.MAJOR) {
+        if (answerBand == AnswerBand.GRAMMAR_BLOCKING) {
             return false;
         }
         if (taskCompletion != TaskCompletion.FULL) {
@@ -3594,9 +3315,6 @@ public class OpenAiFeedbackClient {
         if (grammar.severity().ordinal() > GrammarSeverity.MINOR.ordinal()) {
             return false;
         }
-        if (estimateMinimalCorrectionEditBurden(learnerAnswer, grammar.minimalCorrection()) > 1) {
-            return false;
-        }
         return true;
     }
 
@@ -3610,29 +3328,6 @@ public class OpenAiFeedbackClient {
                 || signals.hasExample()
                 || signals.hasFeeling()
                 || signals.hasTimeOrPlace();
-    }
-
-    private int estimateMinimalCorrectionEditBurden(String learnerAnswer, String minimalCorrection) {
-        if (learnerAnswer == null || learnerAnswer.isBlank() || minimalCorrection == null || minimalCorrection.isBlank()) {
-            return 0;
-        }
-        if (normalizeForComparison(learnerAnswer).equals(normalizeForComparison(minimalCorrection))) {
-            return 0;
-        }
-
-        List<InlineFeedbackSegmentDto> segments = buildInlineFeedbackFromCorrectedAnswer(learnerAnswer, minimalCorrection);
-        if (segments.isEmpty()) {
-            return 2;
-        }
-
-        int burden = 0;
-        for (InlineFeedbackSegmentDto segment : segments) {
-            if (segment == null || "KEEP".equals(segment.type())) {
-                continue;
-            }
-            burden += completionEditBurden(segment.originalText(), segment.revisedText());
-        }
-        return burden;
     }
 
     private int countMeaningfulGrammarFixes(List<GrammarFeedbackItemDto> grammarFeedback) {

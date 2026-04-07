@@ -1712,8 +1712,7 @@ export function AnswerLoop() {
 
     const refinementExpressions = filterSuggestedRefinementExpressions(
       feedback?.refinementExpressions,
-      lastSubmittedAnswer,
-      feedback?.correctedAnswer
+      lastSubmittedAnswer
     );
     for (const expression of refinementExpressions) {
       const key = normalizeExpressionKey(expression.expression);
@@ -1730,7 +1729,7 @@ export function AnswerLoop() {
     }
 
     return nextExpressions.slice(0, 4);
-  }, [coachUsage?.unusedExpressions, feedback?.correctedAnswer, feedback?.refinementExpressions, lastSubmittedAnswer]);
+  }, [coachUsage?.unusedExpressions, feedback?.refinementExpressions, lastSubmittedAnswer]);
   const completionRelatedPrompts = useMemo(
     () => coachRelatedPrompts.slice(0, 3),
     [coachRelatedPrompts]
@@ -3201,6 +3200,33 @@ export function AnswerLoop() {
       return null;
     }
 
+    if (!feedback.ui) {
+      return {
+        completionState: feedback.loopComplete ? "CAN_FINISH" : "NEEDS_REVISION",
+        sectionOrder: [
+          "QUESTION_ANSWER",
+          "TOP_STATUS",
+          "KEEP_WHAT_WORKS",
+          "FIX_FIRST",
+          "REWRITE_GUIDE",
+          "MODEL_ANSWER",
+          "REFINEMENT",
+          "CTA"
+        ],
+        keepWhatWorksDisplayMode: "HIDE",
+        rewriteGuideDisplayMode: "HIDE",
+        rewriteGuideMode: feedback.loopComplete ? "OPTIONAL_POLISH" : "DETAIL_SCAFFOLD",
+        modelAnswerDisplayMode: "HIDE",
+        refinementDisplayMode: "HIDE",
+        keepWhatWorksMaxItems: 1,
+        keepExpressionChipMaxItems: 2,
+        refinementMaxCards: 0,
+        showFinishCta: Boolean(feedback.loopComplete),
+        showRewriteCta: true,
+        showCancelCta: true
+      };
+    }
+
     return (
       feedback.ui?.screenPolicy ?? {
         completionState: feedback.loopComplete ? "CAN_FINISH" : "NEEDS_REVISION",
@@ -3216,10 +3242,6 @@ export function AnswerLoop() {
         ],
         keepWhatWorksDisplayMode:
           feedback.strengths.length > 0 || usedExpressions.length > 0 ? "SHOW_EXPANDED" : "HIDE",
-        fixFirstDisplayMode:
-          feedback.ui?.fixPoints?.some((point) => point && point.kind !== "EXPRESSION")
-            ? "SHOW_EXPANDED"
-            : "HIDE",
         rewriteGuideDisplayMode: "SHOW_EXPANDED",
         rewriteGuideMode: feedback.loopComplete ? "OPTIONAL_POLISH" : "DETAIL_SCAFFOLD",
         modelAnswerDisplayMode: feedback.modelAnswer?.trim()
@@ -3243,6 +3265,10 @@ export function AnswerLoop() {
 
   function resolveLoopStatus(): FeedbackLoopStatus | null {
     if (!feedback) {
+      return null;
+    }
+
+    if (!feedback.ui) {
       return null;
     }
 
@@ -3299,8 +3325,7 @@ export function AnswerLoop() {
 
     filterSuggestedRefinementExpressions(
       feedback.refinementExpressions,
-      lastSubmittedAnswer,
-      feedback.correctedAnswer
+      lastSubmittedAnswer
     )
       .filter((expression) => expression.displayable !== false)
       .forEach((expression) => {
@@ -3692,17 +3717,10 @@ export function AnswerLoop() {
   }
 
   function resolveNextStepPractice(): FeedbackNextStepPractice | null {
-    return feedback?.ui?.nextStepPractice ?? (feedback
-      ? {
-          title: feedback.loopComplete ? "원하면 한 번 더 다듬어 보세요" : "한번 더 써보기",
-          headline: feedback.correctedAnswer?.trim() || lastSubmittedAnswer,
-          supportText:
-            feedback.rewriteChallenge?.trim() ||
-            "이 문장을 시작점으로 삼아 다시 써 보세요.",
-          ctaLabel: "이 문장으로 시작해서 다시 쓰기",
-          optionalTone: Boolean(feedback.loopComplete)
-        }
-      : null);
+    if (!feedback?.ui) {
+      return null;
+    }
+    return feedback.ui.nextStepPractice ?? null;
   }
 
   function resolveNextStepSeed(nextStepPractice?: FeedbackNextStepPractice | null) {
@@ -3710,7 +3728,6 @@ export function AnswerLoop() {
       nextStepPractice?.revisedText,
       nextStepPractice?.headline,
       nextStepPractice?.exampleEn,
-      feedback?.correctedAnswer?.trim(),
       lastSubmittedAnswer
     );
   }
@@ -3866,11 +3883,6 @@ export function AnswerLoop() {
   }
 
   function renderFixPointsSection() {
-    const screenPolicy = resolveScreenPolicy();
-    if (!isDisplayVisible(screenPolicy?.fixFirstDisplayMode)) {
-      return null;
-    }
-
     const points = resolveFixPoints();
     if (points.length === 0) {
       return null;
@@ -3941,286 +3953,6 @@ export function AnswerLoop() {
         {renderFixPointsSection()}
         {renderAdditionalIdeasSection()}
       </>
-    );
-  }
-
-  function renderMobileFeedbackFixPoint(point: FeedbackSecondaryLearningPoint, index: number) {
-    const label = point.kind === "GRAMMAR" ? "GRAMMAR TIP" : "STRUCTURE TIP";
-    const lead = resolveLearningPointLead(point);
-    const meaning = resolveLearningPointMeaning(point, lead);
-    const guidance = resolveLearningPointGuidance(point);
-    const support = resolveLearningPointSupport(point);
-    const originalText = trimNullable(point.originalText);
-    const revisedText = trimNullable(point.revisedText);
-
-    return (
-      <article
-        key={`${point.kind}-${point.headline ?? point.originalText ?? point.exampleEn ?? index}`}
-        className={styles.mobileFeedbackFixEntry}
-      >
-        <div className={styles.mobileFeedbackFixTip}>
-          <span>{label}</span>
-          <p>{support ?? guidance ?? meaning ?? lead ?? "이 부분을 한번 더 다듬어 보세요."}</p>
-        </div>
-        {originalText ? (
-          <p className={styles.mobileFeedbackFixOriginal}>{renderPrimaryFixDiff(originalText, revisedText, "original")}</p>
-        ) : null}
-        {revisedText ? (
-          <p className={styles.mobileFeedbackFixRevised}>
-            <span className={`materialSymbols ${styles.mobileFeedbackFixCheck}`} aria-hidden="true">
-              check_circle
-            </span>
-            <span>{renderPrimaryFixDiff(originalText, revisedText, "revised")}</span>
-          </p>
-        ) : null}
-      </article>
-    );
-  }
-
-  function renderMobileFeedbackStep({
-    screenPolicy,
-    loopStatus
-  }: {
-    screenPolicy: FeedbackScreenPolicy | null;
-    loopStatus: FeedbackLoopStatus | null;
-  }) {
-    if (!feedback) {
-      return (
-        <section className={`${styles.stage} ${styles.feedbackStageMobile}`}>
-          <p className={styles.placeholderText}>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
-        </section>
-      );
-    }
-
-    const keepStrengths = feedback.strengths.slice(0, screenPolicy?.keepWhatWorksMaxItems ?? 2);
-    const expressionChips = usedExpressions.slice(0, screenPolicy?.keepExpressionChipMaxItems ?? 2);
-    const fixPoints = resolveFixPoints();
-    const nextStepPractice = resolveNextStepPractice() ?? {
-      title: feedback.loopComplete ? "원하면 한 번 더 다듬어 보세요" : "한번 더 써보기",
-      headline: feedback.correctedAnswer?.trim() || lastSubmittedAnswer,
-      supportText: feedback.rewriteChallenge?.trim() || "이 문장을 시작점으로 삼아 다시 써 보세요.",
-      ctaLabel: "이 문장으로 시작해서 다시 쓰기",
-      optionalTone: Boolean(feedback.loopComplete)
-    };
-    const rewriteSuggestions = resolveNextStepSuggestions(nextStepPractice);
-    const nextStepPoint = toNextStepLearningPoint(nextStepPractice, true);
-    const canShowModelAnswer =
-      Boolean(feedback.modelAnswer?.trim()) &&
-      (screenPolicy?.modelAnswerDisplayMode ?? "SHOW_EXPANDED") !== "HIDE";
-    const mobileBadge = loopStatus?.badge?.trim() || (shouldSuggestFinish ? "마무리 가능" : "다시 써보기 추천");
-    const mobileHeadline = "Great effort!";
-    const mobileSupport =
-      loopStatus?.headline?.trim() ||
-      feedback.completionMessage?.trim() ||
-      feedbackLevel?.summary ||
-      "문장을 아주 잘 이어 썼어요. 이제 몇 군데만 다듬으면 더 자연스러워져요.";
-
-    return (
-      <section className={`${styles.stage} ${styles.feedbackStageMobile}`}>
-        <header className={styles.mobileFeedbackHero}>
-          <div className={styles.mobileFeedbackHeroTop}>
-            <span className={styles.mobileFeedbackStageBadge}>4단계</span>
-            <span className={styles.mobileFeedbackAttemptMeta}>
-              {feedback.attemptNo}번째 시도 · {feedbackLevel?.label ?? "피드백"}
-            </span>
-          </div>
-          <div className={styles.mobileFeedbackHeroCopy}>
-            <h2>{mobileHeadline}</h2>
-            <p>{mobileSupport}</p>
-          </div>
-        </header>
-
-        <section className={styles.mobileFeedbackContextCard}>
-          <div className={styles.mobileFeedbackContextBlock}>
-            <h4>질문</h4>
-            <p>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</p>
-            {selectedPrompt?.questionKo ? (
-              <span className={styles.mobileFeedbackContextTranslation}>
-                {selectedPrompt.questionKo}
-              </span>
-            ) : null}
-          </div>
-          <div className={styles.mobileFeedbackContextDivider} />
-          <div className={styles.mobileFeedbackContextBlock}>
-            <h4>내가 제출한 답변</h4>
-            <p className={styles.mobileFeedbackAnswerText}>{lastSubmittedAnswer}</p>
-          </div>
-        </section>
-
-        {(keepStrengths.length > 0 || expressionChips.length > 0) ? (
-          <section className={styles.mobileFeedbackSectionCard}>
-            <div className={styles.mobileFeedbackSectionHeader}>
-              <div className={`${styles.mobileFeedbackSectionIcon} ${styles.mobileFeedbackSectionIconGood}`}>
-                <span className="material-symbols-outlined">thumb_up</span>
-              </div>
-              <h3>잘한 점</h3>
-            </div>
-            {keepStrengths.length > 0 ? (
-              <ul className={styles.mobileFeedbackStrengthList}>
-                {keepStrengths.map((strength) => (
-                  <li key={strength}>
-                    <span>+</span>
-                    <span>{strength}</span>
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-            {expressionChips.length > 0 ? (
-              <div className={styles.mobileFeedbackChipSection}>
-                <h4>잘 쓴 표현</h4>
-                <div className={styles.mobileFeedbackChipList}>
-                  {expressionChips.map((expression) => (
-                    <span key={expression.key} className={styles.mobileFeedbackChip}>
-                      {expression.expression}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ) : null}
-          </section>
-        ) : null}
-
-        {fixPoints.length > 0 ? (
-          <section className={styles.mobileFeedbackSectionCard}>
-            <div className={styles.mobileFeedbackSectionHeader}>
-              <div className={`${styles.mobileFeedbackSectionIcon} ${styles.mobileFeedbackSectionIconFix}`}>
-                <span className="material-symbols-outlined">edit_square</span>
-              </div>
-              <h3>고쳐볼 점</h3>
-            </div>
-            <div className={styles.mobileFeedbackFixList}>
-              {fixPoints.map((point, index) => renderMobileFeedbackFixPoint(point, index))}
-            </div>
-          </section>
-        ) : null}
-
-        {isDisplayVisible(screenPolicy?.rewriteGuideDisplayMode) || canShowModelAnswer ? (
-          <section className={styles.mobileFeedbackPracticeSection}>
-            <h3>추가하면 좋을 점</h3>
-            {isDisplayVisible(screenPolicy?.rewriteGuideDisplayMode) ? (
-              <div className={styles.mobileFeedbackPracticeCard}>
-                <div className={styles.mobileFeedbackStarterBlock}>
-                  <p className={styles.mobileFeedbackPracticeLabel}>
-                    {nextStepPractice.title || "이 문장으로 다시 써보기"}
-                  </p>
-                  {trimNullable(nextStepPoint.originalText) && trimNullable(nextStepPoint.revisedText) ? (
-                    renderMobileFeedbackFixPoint(nextStepPoint, -1)
-                  ) : (
-                    <>
-                      {resolveLearningPointLead(nextStepPoint) ? (
-                        <p className={styles.mobileFeedbackStarterText}>
-                          {resolveLearningPointLead(nextStepPoint)}
-                        </p>
-                      ) : null}
-                      {resolveLearningPointMeaning(
-                        nextStepPoint,
-                        resolveLearningPointLead(nextStepPoint)
-                      ) ? (
-                        <p className={styles.mobileFeedbackStarterHint}>
-                          {renderLocalizedExpression(
-                            resolveLearningPointMeaning(
-                              nextStepPoint,
-                              resolveLearningPointLead(nextStepPoint)
-                            ) ?? ""
-                          )}
-                        </p>
-                      ) : null}
-                      {resolveLearningPointGuidance(nextStepPoint) ? (
-                        <p className={styles.mobileFeedbackStarterHint}>
-                          {resolveLearningPointGuidance(nextStepPoint)}
-                        </p>
-                      ) : null}
-                      {resolveLearningPointSupport(nextStepPoint) ? (
-                        <p className={styles.mobileFeedbackStarterHint}>
-                          {resolveLearningPointSupport(nextStepPoint)}
-                        </p>
-                      ) : null}
-                    </>
-                  )}
-                </div>
-                {rewriteSuggestions.length > 0 ? (
-                  <div className={styles.mobileFeedbackSuggestionBlock}>
-                    <p className={styles.mobileFeedbackSuggestionTitle}>이런 아이디어를 더해 볼 수 있어요</p>
-                    <div className={styles.mobileFeedbackSuggestionList}>
-                      {rewriteSuggestions.map((suggestion) => (
-                        <article key={suggestion.key} className={styles.mobileFeedbackSuggestionCard}>
-                          <div className={styles.mobileFeedbackSuggestionTop}>
-                            <strong>{suggestion.english}</strong>
-                            <span className={styles.mobileFeedbackSuggestionDot} aria-hidden="true" />
-                          </div>
-                          {suggestion.korean ? (
-                            <p>{renderLocalizedExpression(suggestion.korean)}</p>
-                          ) : null}
-                        </article>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                <div className={styles.mobileFeedbackPracticeAction}>
-                  <button
-                    type="button"
-                    className={`${styles.primaryButton} ${styles.mobileFeedbackPracticeButton}`}
-                    onClick={handleStartRewriteFromGuide}
-                  >
-                    {nextStepPractice.ctaLabel}
-                  </button>
-                </div>
-              </div>
-            ) : null}
-            {canShowModelAnswer ? (
-              <div className={styles.mobileFeedbackSectionCard}>
-                <div className={styles.mobileFeedbackSectionHeader}>
-                  <div className={`${styles.mobileFeedbackSectionIcon} ${styles.mobileFeedbackSectionIconExample}`}>
-                    <span className="material-symbols-outlined">auto_awesome</span>
-                  </div>
-                  <h3>예시 답안</h3>
-                </div>
-                <div className={styles.mobileFeedbackExampleCard}>
-                  <p className={styles.mobileFeedbackExampleText}>{feedback.modelAnswer}</p>
-                  {feedback.modelAnswerKo ? (
-                    <p className={styles.mobileFeedbackExampleTranslation}>해석: {feedback.modelAnswerKo}</p>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-          </section>
-        ) : null}
-
-        <section className={styles.mobileFeedbackFooterCard}>
-          <div className={styles.mobileFeedbackFooterCopy}>
-            <span className={styles.mobileFeedbackFooterBadge}>{mobileBadge}</span>
-            <strong>{loopStatus?.headline ?? "지금은 두세 가지만 먼저 고치면 충분해요."}</strong>
-            {loopStatus?.supportText ? <p>{loopStatus.supportText}</p> : null}
-          </div>
-          <div className={styles.mobileFeedbackFooterActions}>
-            {(screenPolicy?.showRewriteCta ?? Boolean(feedback)) ? (
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={handleRewriteFromCurrentAnswer}
-                disabled={!feedback}
-              >
-                {loopStatus?.rewriteCtaLabel ?? "다시 써보기"}
-              </button>
-            ) : null}
-            {(screenPolicy?.showCancelCta ?? Boolean(feedback)) ? (
-              <button
-                type="button"
-                className={styles.ghostButton}
-                onClick={handleCancelSubmittedAnswer}
-                disabled={!feedback}
-              >
-                {loopStatus?.cancelCtaLabel ?? "답변 취소"}
-              </button>
-            ) : null}
-            {(screenPolicy?.showFinishCta ?? shouldSuggestFinish) ? (
-              <button type="button" className={styles.ghostButton} onClick={handleFinishLoop}>
-                {loopStatus?.finishCtaLabel ?? "오늘 루프 완료"}
-              </button>
-            ) : null}
-          </div>
-        </section>
-      </section>
     );
   }
 
@@ -4430,8 +4162,72 @@ export function AnswerLoop() {
   function renderFeedbackStep() {
     const screenPolicy = resolveScreenPolicy();
     const loopStatus = resolveLoopStatus();
+    const canRewrite = screenPolicy?.showRewriteCta ?? Boolean(feedback);
+    const canCancel = screenPolicy?.showCancelCta ?? Boolean(feedback);
+    const canFinish = screenPolicy?.showFinishCta ?? shouldSuggestFinish;
 
-    return renderMobileFeedbackStep({ screenPolicy, loopStatus });
+    return (
+      <section className={`${styles.stage} ${styles.writingStage}`} style={mobileComposerBarStyle}>
+        <div className={styles.writingStageLayout}>
+          {renderWritingSidebar({ stepNumber: 4 })}
+          <div className={styles.writingStageMain}>
+            <div className={styles.responseCard}>
+              <h3>내가 제출한 답변</h3>
+              <p className={styles.mobileFeedbackAnswerText}>
+                {lastSubmittedAnswer || "방금 제출한 답변이 여기에 표시됩니다."}
+              </p>
+            </div>
+            {feedback ? (
+              <section className={styles.rewriteFeedbackPanel}>
+                <div className={styles.rewriteFeedbackHeader}>
+                  <div>
+                    <strong>피드백</strong>
+                    <p>다시쓰기 화면에서 펼쳐보는 것과 같은 구조로 피드백을 확인해 보세요.</p>
+                  </div>
+                </div>
+                <div className={styles.rewriteFeedbackBody}>{renderFeedbackCoreSections()}</div>
+              </section>
+            ) : (
+              <section className={styles.rewriteFeedbackPanel}>
+                <div className={styles.rewriteFeedbackHeader}>
+                  <div>
+                    <strong>피드백</strong>
+                    <p>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
+                  </div>
+                </div>
+              </section>
+            )}
+            <div className={styles.writingStageActions}>
+              {canCancel ? (
+                <button
+                  type="button"
+                  className={styles.ghostButton}
+                  onClick={handleCancelSubmittedAnswer}
+                  disabled={!feedback}
+                >
+                  {loopStatus?.cancelCtaLabel ?? "답변 취소"}
+                </button>
+              ) : null}
+              {canFinish ? (
+                <button type="button" className={styles.ghostButton} onClick={handleFinishLoop}>
+                  {loopStatus?.finishCtaLabel ?? "오늘 루프 완료"}
+                </button>
+              ) : null}
+              {canRewrite ? (
+                <button
+                  type="button"
+                  className={`${styles.primaryButton} ${styles.writingSubmitButton}`}
+                  onClick={handleRewriteFromCurrentAnswer}
+                  disabled={!feedback}
+                >
+                  {loopStatus?.rewriteCtaLabel ?? "다시 써보기"}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   function renderRewriteStep() {

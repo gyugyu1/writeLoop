@@ -141,7 +141,7 @@ public class FeedbackService {
         }
         boolean authoritativeLlmFeedback = llmConfigured && llmFeedbackClient.isAuthoritativeFeedback(feedback);
         feedback = llmFeedbackClient.clearInternalMetadata(feedback);
-        feedback = sanitizeFeedbackResponse(feedback, answer, hints);
+        feedback = sanitizeFeedbackResponse(feedback, answer, hints, authoritativeLlmFeedback);
         AnswerProfile answerProfile = analysisSnapshot == null ? null : analysisSnapshot.answerProfile();
         if (!authoritativeLlmFeedback) {
             answerProfile = buildAnswerProfile(prompt, answer, previousAnswer, attemptNo, hints, feedback);
@@ -153,7 +153,9 @@ public class FeedbackService {
         } else if (answerProfile == null) {
             answerProfile = buildAnswerProfile(prompt, answer, previousAnswer, attemptNo, hints, feedback);
         }
-        feedback = feedback.withUi(feedbackUiComposer.compose(prompt, answer, feedback, answerProfile));
+        if (!authoritativeLlmFeedback) {
+            feedback = feedback.withUi(feedbackUiComposer.compose(prompt, answer, feedback, answerProfile));
+        }
 
         if (feedback.loopComplete()) {
             session.setStatus(SessionStatus.COMPLETED);
@@ -724,10 +726,17 @@ public class FeedbackService {
     private FeedbackResponseDto sanitizeFeedbackResponse(
             FeedbackResponseDto feedback,
             String learnerAnswer,
-            List<PromptHintDto> hints
+            List<PromptHintDto> hints,
+            boolean authoritativeLlmFeedback
     ) {
-        String correctedAnswer = sanitizeCorrectedAnswer(learnerAnswer, feedback.correctedAnswer());
-        List<InlineFeedbackSegmentDto> inlineFeedback = rebuildInlineFeedback(
+        boolean preserveMissingCorrectionFields = authoritativeLlmFeedback
+                && (feedback.correctedAnswer() == null || feedback.correctedAnswer().isBlank());
+        String correctedAnswer = preserveMissingCorrectionFields
+                ? null
+                : sanitizeCorrectedAnswer(learnerAnswer, feedback.correctedAnswer());
+        List<InlineFeedbackSegmentDto> inlineFeedback = preserveMissingCorrectionFields
+                ? (feedback.inlineFeedback() == null ? List.of() : feedback.inlineFeedback())
+                : rebuildInlineFeedback(
                 learnerAnswer,
                 correctedAnswer,
                 feedback.inlineFeedback()

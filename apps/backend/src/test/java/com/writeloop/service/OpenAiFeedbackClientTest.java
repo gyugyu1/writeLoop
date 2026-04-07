@@ -15,24 +15,6 @@ class OpenAiFeedbackClientTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void buildDiagnosisRequestBody_usesDiagnosisModel() throws Exception {
-        OpenAiFeedbackClient client = newClient();
-
-        String requestBody = ReflectionTestUtils.invokeMethod(
-                client,
-                "buildDiagnosisRequestBody",
-                samplePrompt(),
-                "I wake up at 8 a.m.",
-                List.of(),
-                1,
-                null
-        );
-
-        JsonNode request = objectMapper.readTree(requestBody);
-        assertThat(request.path("model").asText()).isEqualTo("gpt-5.4-nano");
-    }
-
-    @Test
     void buildGenerationRequestBody_usesFeedbackModel() throws Exception {
         OpenAiFeedbackClient client = newClient();
 
@@ -56,12 +38,59 @@ class OpenAiFeedbackClientTest {
         assertThat(request.path("model").asText()).isEqualTo("gpt-5.4-mini");
     }
 
+    @Test
+    void buildGenerationRequestBody_includesDiagnosisFieldsInCombinedSchema() throws Exception {
+        OpenAiFeedbackClient client = newClient();
+
+        String requestBody = ReflectionTestUtils.invokeMethod(
+                client,
+                "buildGenerationRequestBody",
+                samplePrompt(),
+                "I wake up at 8 a.m.",
+                List.of(),
+                null,
+                null,
+                null,
+                1,
+                null,
+                List.of(SectionKey.STRENGTHS),
+                List.of(),
+                null
+        );
+
+        assertThat(requestBody)
+                .contains("\"answerBand\"")
+                .contains("\"taskCompletion\"")
+                .contains("\"finishable\"")
+                .doesNotContain("\"primaryIssueCode\"")
+                .doesNotContain("\"minimalCorrection\"")
+                .doesNotContain("\"grammarSeverity\"")
+                .doesNotContain("\"expansionBudget\"")
+                .doesNotContain("\"rewriteTarget\"")
+                .doesNotContain("\"secondaryIssueCode\"")
+                .doesNotContain("\"regressionSensitiveFacts\"")
+                .doesNotContain("\"grammarIssues\"")
+                .doesNotContain("\"score\"")
+                .contains("Fill both the diagnosis fields and the feedback section fields");
+    }
+
+    @Test
+    void llmPassThroughSectionPolicy_keeps_generation_limits_loose() {
+        OpenAiFeedbackClient client = newClient();
+
+        SectionPolicy policy = (SectionPolicy) ReflectionTestUtils.invokeMethod(client, "llmPassThroughSectionPolicy");
+
+        assertThat(policy.maxStrengthCount()).isEqualTo(4);
+        assertThat(policy.maxRefinementCount()).isEqualTo(12);
+        assertThat(policy.maxModelAnswerSentences()).isEqualTo(4);
+        assertThat(policy.attemptOverlayPolicy()).isEqualTo(AttemptOverlayPolicy.NONE);
+    }
+
     private OpenAiFeedbackClient newClient() {
         return new OpenAiFeedbackClient(
                 objectMapper,
                 "test-key",
                 "gpt-5.4-mini",
-                "gpt-5.4-nano",
                 "https://api.openai.com/v1/responses",
                 "",
                 120

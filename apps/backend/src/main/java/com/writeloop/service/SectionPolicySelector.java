@@ -31,7 +31,7 @@ final class SectionPolicySelector {
         return switch (answerBand) {
             case TOO_SHORT_FRAGMENT -> new SectionPolicy(
                     true, 1,
-                    true, 1,
+                    true, 2,
                     true,
                     true, 12, RefinementFocus.EASY_REUSABLE,
                     true,
@@ -42,7 +42,7 @@ final class SectionPolicySelector {
             );
             case SHORT_BUT_VALID -> new SectionPolicy(
                     true, 2,
-                    true, 1,
+                    true, 5,
                     true,
                     true, 12, RefinementFocus.DETAIL_BUILDING,
                     true,
@@ -52,7 +52,7 @@ final class SectionPolicySelector {
             );
             case GRAMMAR_BLOCKING -> new SectionPolicy(
                     true, 1,
-                    true, 2,
+                    true, 5,
                     true,
                     true, 12, RefinementFocus.GRAMMAR_PATTERN,
                     true,
@@ -62,7 +62,7 @@ final class SectionPolicySelector {
             );
             case CONTENT_THIN -> new SectionPolicy(
                     true, 2,
-                    true, 1,
+                    true, 5,
                     true,
                     true, 12, RefinementFocus.DETAIL_BUILDING,
                     true,
@@ -83,7 +83,7 @@ final class SectionPolicySelector {
             );
             case OFF_TOPIC -> new SectionPolicy(
                     true, 1,
-                    true, 1,
+                    true, 2,
                     true,
                     true, 12, RefinementFocus.TASK_COMPLETION,
                     true,
@@ -95,9 +95,6 @@ final class SectionPolicySelector {
     }
 
     private SectionPolicy applyAttemptOverlay(SectionPolicy basePolicy, AnswerBand answerBand) {
-        int overlayGrammarLimit = answerBand == AnswerBand.GRAMMAR_BLOCKING
-                ? Math.min(basePolicy.maxGrammarIssueCount(), 2)
-                : Math.min(basePolicy.maxGrammarIssueCount(), 1);
         int overlayStrengthLimit = Math.min(basePolicy.maxStrengthCount(), 1);
         int overlayModelSentences = switch (answerBand) {
             case NATURAL_BUT_BASIC, OFF_TOPIC -> Math.max(1,
@@ -107,13 +104,12 @@ final class SectionPolicySelector {
 
         return basePolicy
                 .withMaxStrengthCount(overlayStrengthLimit)
-                .withMaxGrammarIssueCount(overlayGrammarLimit)
                 .withMaxModelAnswerSentences(overlayModelSentences)
                 .withAttemptOverlayPolicy(AttemptOverlayPolicy.PROGRESS_AWARE);
     }
 
     private SectionPolicy applyFinishableOverlay(SectionPolicy basePolicy, AnswerBand answerBand) {
-        SectionPolicy policy = basePolicy.withMaxGrammarIssueCount(Math.min(basePolicy.maxGrammarIssueCount(), 1));
+        SectionPolicy policy = basePolicy;
         return switch (answerBand) {
             case SHORT_BUT_VALID, CONTENT_THIN -> policy;
             case NATURAL_BUT_BASIC -> policy;

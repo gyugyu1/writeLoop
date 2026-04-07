@@ -15,7 +15,7 @@ class SectionPolicySelectorTest {
         assertThat(policy.showStrengths()).isTrue();
         assertThat(policy.maxStrengthCount()).isEqualTo(2);
         assertThat(policy.showGrammar()).isTrue();
-        assertThat(policy.maxGrammarIssueCount()).isEqualTo(1);
+        assertThat(policy.maxGrammarIssueCount()).isEqualTo(5);
         assertThat(policy.showRefinement()).isTrue();
         assertThat(policy.maxRefinementCount()).isEqualTo(12);
         assertThat(policy.refinementFocus()).isEqualTo(RefinementFocus.DETAIL_BUILDING);
@@ -66,6 +66,22 @@ class SectionPolicySelectorTest {
         assertThat(policy.attemptOverlayPolicy().progressAwareStrengths()).isTrue();
         assertThat(policy.attemptOverlayPolicy().suppressResolvedGrammar()).isTrue();
         assertThat(policy.attemptOverlayPolicy().emphasizeSingleRemainingIssue()).isTrue();
+    }
+
+    @Test
+    void select_does_not_reduce_grammar_issue_limit_for_second_try_content_thin() {
+        SectionPolicy policy = selector.select(profileWithBand(AnswerBand.CONTENT_THIN), 2);
+
+        assertThat(policy.showGrammar()).isTrue();
+        assertThat(policy.maxGrammarIssueCount()).isEqualTo(5);
+    }
+
+    @Test
+    void select_keeps_finishable_short_but_valid_grammar_limit() {
+        SectionPolicy policy = selector.select(profileWithBandAndFinishable(AnswerBand.SHORT_BUT_VALID, true), 1);
+
+        assertThat(policy.showGrammar()).isTrue();
+        assertThat(policy.maxGrammarIssueCount()).isEqualTo(5);
     }
 
     @Test

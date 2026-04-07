@@ -426,7 +426,8 @@ public class AnswerHistoryService {
                         feedback.refinementExpressions(),
                         feedback.modelAnswer(),
                         feedback.modelAnswerKo(),
-                        feedback.rewriteChallenge()
+                        feedback.rewriteChallenge(),
+                        feedback.ui()
                 );
             } catch (Exception ignored) {
                 // Fall back to legacy feedback columns below.
@@ -446,7 +447,8 @@ public class AnswerHistoryService {
                     List.of(),
                     attempt.getModelAnswer(),
                     null,
-                    attempt.getRewriteChallenge()
+                    attempt.getRewriteChallenge(),
+                    null
             );
         } catch (Exception exception) {
             throw new IllegalStateException("Failed to deserialize stored feedback", exception);

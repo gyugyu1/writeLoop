@@ -51,7 +51,7 @@ record SectionPolicy(
 
     SectionPolicy {
         maxStrengthCount = Math.max(0, maxStrengthCount);
-        maxGrammarIssueCount = Math.max(0, Math.min(2, maxGrammarIssueCount));
+        maxGrammarIssueCount = Math.max(0, Math.min(6, maxGrammarIssueCount));
         maxRefinementCount = Math.max(0, maxRefinementCount);
         maxModelAnswerSentences = Math.max(1, maxModelAnswerSentences);
         refinementFocus = refinementFocus == null ? RefinementFocus.DETAIL_BUILDING : refinementFocus;

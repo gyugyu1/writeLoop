@@ -1,8 +1,10 @@
 package com.writeloop.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 public record FeedbackUiDto(
-        FeedbackFocusCardDto focusCard,
-        FeedbackPrimaryFixDto primaryFix,
+        @Deprecated @JsonIgnore FeedbackFocusCardDto focusCard,
+        @Deprecated @JsonIgnore FeedbackPrimaryFixDto primaryFix,
         FeedbackMicroTipDto microTip,
         java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
         java.util.List<FeedbackSecondaryLearningPointDto> fixPoints,

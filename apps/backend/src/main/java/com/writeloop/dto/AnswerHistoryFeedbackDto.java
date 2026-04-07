@@ -10,7 +10,6 @@ public record AnswerHistoryFeedbackDto(
         List<String> strengths,
         List<CorrectionDto> corrections,
         List<InlineFeedbackSegmentDto> inlineFeedback,
-        List<GrammarFeedbackItemDto> grammarFeedback,
         String correctedAnswer,
         List<RefinementExpressionDto> refinementExpressions,
         String modelAnswer,

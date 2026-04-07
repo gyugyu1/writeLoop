@@ -1,5 +1,7 @@
 package com.writeloop.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.List;
 
 public record FeedbackResponseDto(
@@ -9,11 +11,11 @@ public record FeedbackResponseDto(
         int score,
         boolean loopComplete,
         String completionMessage,
-        String summary,
+        @Deprecated String summary,
         List<String> strengths,
         List<CorrectionDto> corrections,
-        List<InlineFeedbackSegmentDto> inlineFeedback,
-        List<GrammarFeedbackItemDto> grammarFeedback,
+        @Deprecated List<InlineFeedbackSegmentDto> inlineFeedback,
+        @Deprecated @JsonIgnore List<GrammarFeedbackItemDto> grammarFeedback,
         String correctedAnswer,
         List<RefinementExpressionDto> refinementExpressions,
         String modelAnswer,

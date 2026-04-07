@@ -15,3 +15,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 env_files/
+.artifacts/
+test-results/
+.tmp-next-dev.log
+.tmp-next-dev.err.log

@@ -4780,3 +4780,2694 @@
     padding: 92px 10px 72px;
   }
 }
+
+/* Amber Harvest overrides */
+.main {
+  max-width: 1280px;
+  padding: 124px 28px 104px;
+}
+
+.hero,
+.pickStage,
+.stage,
+.completeStage,
+.welcomeCard {
+  border: 0;
+  box-shadow: var(--shadow-card);
+}
+
+.welcomeCard {
+  position: relative;
+  overflow: hidden;
+  padding: 24px;
+  border-radius: 36px;
+  background:
+    radial-gradient(circle at 6% 14%, rgba(255, 215, 154, 0.32) 0%, transparent 22%),
+    radial-gradient(circle at 92% 8%, rgba(0, 104, 79, 0.08) 0%, transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62) 0%, rgba(246, 240, 234, 0.94) 100%);
+}
+
+.welcomeHeroLayout {
+  grid-template-columns: minmax(0, 1.08fr) minmax(320px, 0.92fr);
+  gap: 22px;
+  overflow: visible;
+  border-radius: 0;
+  background: transparent;
+}
+
+.welcomeIntroPanel {
+  position: relative;
+  gap: 20px;
+  padding: 44px 42px;
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 220, 162, 0.32) 0%, transparent 26%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(253, 248, 242, 0.94) 100%);
+  box-shadow: var(--shadow-soft);
+}
+
+.welcomeBadge {
+  padding: 9px 14px;
+  background: rgba(var(--warm-accent-rgb), 0.14);
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  box-shadow: 0 8px 18px -12px rgba(var(--warm-accent-rgb), 0.36);
+}
+
+.welcomeCard h1 {
+  color: var(--primary);
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.welcomeCard p {
+  color: var(--text-sub);
+  font-size: 1.04rem;
+  line-height: 1.75;
+}
+
+.welcomeStats {
+  gap: 14px;
+}
+
+.welcomeStatChip,
+.welcomeStatChipMuted {
+  align-items: center;
+  padding: 13px 18px;
+  border: 0;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-soft);
+}
+
+.welcomeStatChip {
+  color: var(--primary);
+}
+
+.welcomeStatChipMuted {
+  color: var(--secondary);
+}
+
+.welcomeStatLabel {
+  color: var(--text-soft);
+  letter-spacing: 0.1em;
+}
+
+.welcomeStatChip strong,
+.welcomeStatChipMuted strong {
+  color: var(--text-main);
+  font-size: 1.02rem;
+}
+
+.welcomeStreakCard,
+.welcomeGuestPanel {
+  border-radius: 32px;
+  box-shadow: var(--shadow-soft);
+}
+
+.welcomeStreakCard,
+.welcomeGuestPanel {
+  background:
+    radial-gradient(circle at 82% 12%, rgba(255, 214, 138, 0.16) 0%, transparent 24%),
+    linear-gradient(160deg, #21463b 0%, #163229 100%);
+}
+
+.welcomeStreakTopRow strong,
+.welcomeGuestPanel strong,
+.welcomeStreakCopy strong {
+  color: #fffdf7;
+}
+
+.welcomeStreakPill {
+  border: 0;
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.welcomeStreakCopy span,
+.welcomeGuestPanel p,
+.welcomeStreakDayLabel {
+  color: rgba(255, 249, 240, 0.74);
+}
+
+.welcomeStreakIcon {
+  border: 0;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.welcomeStreakDayDot {
+  border: 0;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+.welcomeStreakDayCompleted .welcomeStreakDayDot {
+  background: linear-gradient(180deg, rgba(173, 219, 205, 0.98) 0%, rgba(var(--secondary-rgb), 0.92) 100%);
+  box-shadow: 0 10px 20px -12px rgba(var(--secondary-rgb), 0.5);
+}
+
+.welcomeStreakDayToday .welcomeStreakDayDot {
+  background: linear-gradient(180deg, rgba(255, 214, 138, 1) 0%, rgba(var(--warm-accent-rgb), 0.98) 100%);
+  box-shadow: 0 0 0 6px rgba(255, 247, 236, 0.08);
+}
+
+.pickStage,
+.stage,
+.completeStage {
+  padding: 36px;
+  border-radius: 36px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(255, 214, 138, 0.18) 0%, transparent 18%),
+    linear-gradient(180deg, rgba(246, 240, 234, 0.94) 0%, rgba(242, 234, 224, 0.98) 100%);
+}
+
+.stageHeader {
+  align-items: flex-end;
+  margin-bottom: 30px;
+}
+
+.stageStepLabel {
+  width: 56px;
+  height: 40px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #b87b1d 0%, var(--primary) 100%);
+  color: #fff9f2;
+  font-size: 1rem;
+  box-shadow: var(--shadow-active);
+}
+
+.stageStepCaption {
+  color: var(--primary);
+  letter-spacing: 0.12em;
+}
+
+.stageHeader h2 {
+  color: var(--primary);
+  font-size: clamp(2rem, 3vw, 3rem);
+  letter-spacing: -0.05em;
+}
+
+.stageHeaderMeta,
+.stageFooter p {
+  color: var(--text-sub);
+}
+
+.difficultyStageGrid {
+  gap: 24px;
+}
+
+.difficultyStageButton,
+.difficultyStageButtonActive {
+  min-height: 236px;
+  padding: 28px 26px 24px;
+  border-radius: 34px;
+  border: 0;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-soft);
+}
+
+.difficultyStageButtonActive {
+  border: 4px solid rgba(var(--warm-accent-rgb), 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(255, 214, 138, 0.32) 0%, transparent 30%),
+    linear-gradient(180deg, #fffdfa 0%, #fbf2e4 100%);
+  box-shadow: var(--shadow-active);
+}
+
+.difficultyStageButton:hover,
+.difficultyStageButtonActive:hover {
+  transform: translateY(-4px);
+}
+
+.difficultyStageIcon {
+  width: 62px;
+  height: 62px;
+  border-radius: 999px;
+  background: rgba(var(--secondary-rgb), 0.09);
+  color: var(--secondary);
+}
+
+.difficultyStageButtonActive .difficultyStageIcon {
+  background: rgba(var(--warm-accent-rgb), 0.14);
+  color: var(--primary);
+}
+
+.difficultyStageBadge {
+  background: var(--surface-low);
+  color: var(--text-soft);
+}
+
+.difficultyStageButtonActive .difficultyStageBadge {
+  background: rgba(var(--warm-accent-rgb), 0.14);
+  color: var(--primary);
+}
+
+.difficultyStageButton strong,
+.difficultyStageButtonActive strong {
+  color: var(--text-main);
+}
+
+.stageFooter {
+  align-items: center;
+  margin-top: 30px;
+  padding: 22px 24px;
+  border-top: 0;
+  border-radius: 28px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-soft);
+}
+
+.primaryButton,
+.primaryLink,
+.ghostButton,
+.ghostLink,
+.promptSelectButton,
+.promptSelectButtonActive,
+.promptTranslationButton,
+.writingComposerHelpButton,
+.coachPrimaryButton,
+.writingGuideButton,
+.inlineHintButton,
+.smallActionButton,
+.rewriteFeedbackToggle,
+.mobileComposerGhost,
+.mobileComposerPrimary,
+.mobileSectionToggle,
+.monthStatusNavButton {
+  border: 0;
+  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  color: #583700;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.72),
+    0 6px 0 #644000,
+    0 14px 24px -14px rgba(100, 64, 0, 0.4);
+}
+
+.primaryButton:hover,
+.primaryLink:hover,
+.ghostButton:hover,
+.ghostLink:hover,
+.promptSelectButton:hover,
+.promptSelectButtonActive:hover,
+.promptTranslationButton:hover,
+.writingComposerHelpButton:hover,
+.coachPrimaryButton:hover,
+.writingGuideButton:hover,
+.inlineHintButton:hover,
+.smallActionButton:hover,
+.rewriteFeedbackToggle:hover,
+.mobileComposerGhost:hover,
+.mobileComposerPrimary:hover,
+.mobileSectionToggle:hover,
+.monthStatusNavButton:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ffd07a 0%, #ffbb45 100%);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.78),
+    0 8px 0 #644000,
+    0 16px 26px -14px rgba(100, 64, 0, 0.44);
+}
+
+.primaryButton:active:not(:disabled),
+.ghostButton:active:not(:disabled),
+.promptSelectButton:active:not(:disabled),
+.promptSelectButtonActive:active:not(:disabled),
+.promptTranslationButton:active:not(:disabled),
+.writingComposerHelpButton:active:not(:disabled),
+.coachPrimaryButton:active:not(:disabled),
+.writingGuideButton:active:not(:disabled),
+.inlineHintButton:active:not(:disabled),
+.smallActionButton:active:not(:disabled),
+.rewriteFeedbackToggle:active:not(:disabled),
+.mobileComposerGhost:active:not(:disabled),
+.mobileComposerPrimary:active:not(:disabled),
+.mobileSectionToggle:active:not(:disabled),
+.monthStatusNavButton:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.58),
+    0 3px 0 #644000,
+    0 10px 18px -14px rgba(100, 64, 0, 0.32);
+}
+
+.primaryButton:disabled,
+.ghostButton:disabled,
+.promptTranslationButton:disabled,
+.coachPrimaryButton:disabled,
+.inlineHintButton:disabled,
+.mobileComposerPrimary:disabled,
+.monthStatusNavButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.52),
+    0 4px 0 rgba(100, 64, 0, 0.5),
+    0 8px 16px -14px rgba(100, 64, 0, 0.2);
+}
+
+.promptSelectionHero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.promptSelectionCopy {
+  display: grid;
+  gap: 10px;
+  max-width: 620px;
+}
+
+.promptSelectionEyebrow {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.1);
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.promptSelectionTitle {
+  margin: 0;
+  color: var(--text-main);
+  font-size: clamp(2.3rem, 4vw, 3.2rem);
+  font-weight: 900;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+}
+
+.promptSelectionDescription {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 1.04rem;
+  line-height: 1.7;
+}
+
+.promptSelectionToolbar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.promptShowcaseGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  padding-bottom: 56px;
+}
+
+.promptShowcaseCard,
+.promptShowcaseCardActive {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 292px;
+  padding: 22px 22px 20px;
+  border-radius: 32px;
+  border: 4px solid transparent;
+  background: var(--surface-lowest);
+  cursor: pointer;
+  transition:
+    transform 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease,
+    background 0.22s ease;
+}
+
+.promptShowcaseCard {
+  box-shadow: var(--shadow-soft);
+}
+
+.promptShowcaseCardActive {
+  border-color: rgba(254, 182, 76, 0.94);
+  box-shadow: 0 15px 35px -5px rgba(254, 182, 76, 0.25);
+}
+
+.promptShowcaseCard:hover,
+.promptShowcaseCardActive:hover {
+  transform: translateY(-8px);
+}
+
+.promptShowcaseSelectedBadge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary);
+}
+
+.promptShowcaseSelectedIcon {
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 1.2rem;
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 700,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+.promptShowcaseTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.promptShowcaseChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.08);
+  color: rgba(88, 55, 0, 0.9);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.promptShowcaseCardActive .promptShowcaseChip {
+  background: var(--primary);
+  color: #fff6ea;
+}
+
+.promptShowcaseLeadingIcon {
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: 1.15rem;
+  color: rgba(var(--warm-accent-rgb), 0.46);
+}
+
+.promptShowcaseCardActive .promptShowcaseLeadingIcon {
+  color: rgba(var(--warm-accent-rgb), 0.86);
+}
+
+.promptShowcaseQuestion {
+  margin: 0;
+  color: var(--text-main);
+  font-size: clamp(1.28rem, 1.8vw, 1.46rem);
+  font-weight: 800;
+  line-height: 1.42;
+  letter-spacing: -0.03em;
+}
+
+.promptShowcaseTranslation {
+  margin: 12px 0 0;
+  color: var(--text-sub);
+  font-size: 0.94rem;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.promptShowcaseFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.promptShowcaseMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.promptShowcaseMetaIcon {
+  width: 0.9rem;
+  height: 0.9rem;
+  font-size: 0.9rem;
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.promptShowcaseTranslateButton {
+  min-height: 36px;
+  padding: 8px 14px;
+  flex-shrink: 0;
+}
+
+.promptSelectionSupport {
+  display: flex;
+  justify-content: center;
+  margin-top: 0;
+}
+
+.promptSelectionSupport p {
+  margin: 0;
+  color: var(--text-sub);
+  text-align: center;
+  line-height: 1.7;
+}
+
+.promptSelectionActionDock {
+  position: sticky;
+  bottom: 28px;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+  pointer-events: none;
+}
+
+.promptSelectionPrimaryButton {
+  pointer-events: auto;
+  min-width: 310px;
+  min-height: 72px;
+  padding-inline: 34px;
+  gap: 14px;
+  font-size: 1.42rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  color: #583700;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.72),
+    0 8px 0 #644000,
+    0 16px 26px -14px rgba(100, 64, 0, 0.4);
+}
+
+.promptSelectionPrimaryButton .primaryButtonIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 1.75rem;
+}
+
+.promptSelectionPrimaryButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.8),
+    0 10px 0 #644000,
+    0 18px 28px -14px rgba(100, 64, 0, 0.44);
+}
+
+.promptSelectionPrimaryButton:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.6),
+    0 3px 0 #644000,
+    0 10px 18px -14px rgba(100, 64, 0, 0.32);
+}
+
+@media (max-width: 900px) {
+  .promptSelectionHero {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .promptSelectionToolbar {
+    justify-content: flex-start;
+  }
+
+  .promptShowcaseGrid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding-bottom: 24px;
+  }
+
+  .promptShowcaseCard,
+  .promptShowcaseCardActive {
+    min-height: 0;
+    border-radius: 28px;
+  }
+
+  .promptShowcaseFooter {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .promptSelectionActionDock {
+    position: static;
+    margin-top: 18px;
+  }
+
+  .promptSelectionPrimaryButton {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.feedbackBlock,
+.responseCard,
+.rewriteFeedbackPanel,
+.rewriteFeedbackBlock,
+.completionCallout,
+.completeHighlightCard,
+.completionRewardCard,
+.completeFollowUpCard,
+.completeFollowUpPrompt,
+.completeSummary div,
+.promptCard,
+.promptActive,
+.writingComposer,
+.coachPanel,
+.monthStatusDialog {
+  border: 0;
+  background: var(--surface-low);
+  box-shadow: var(--shadow-soft);
+}
+
+.feedbackBlock,
+.responseCard,
+.rewriteFeedbackPanel,
+.completionCallout,
+.completeHighlightCard,
+.completionRewardCard,
+.completeFollowUpCard,
+.completeFollowUpPrompt,
+.completeSummary div {
+  padding: 20px;
+  border-radius: 28px;
+}
+
+.feedbackBlock h3,
+.responseCard h3,
+.rewriteFeedbackBlock h3,
+.feedbackChipLabel,
+.primaryFixLabel,
+.feedbackMicroTipHeader span,
+.secondaryLearningBadge,
+.secondaryLearningLabel {
+  color: var(--primary);
+}
+
+.feedbackChip {
+  background: rgba(var(--warm-accent-rgb), 0.1);
+  color: var(--primary);
+}
+
+.primaryFixCard,
+.feedbackMicroTip,
+.secondaryLearningCard,
+.rewriteStarterCard {
+  border: 0;
+  border-radius: 24px;
+  background: var(--surface-lowest);
+  box-shadow: 0 12px 30px -16px rgba(127, 82, 0, 0.18);
+}
+
+.primaryFixRemoved,
+.secondaryLearningOriginal {
+  background: rgba(222, 86, 65, 0.12);
+}
+
+.primaryFixAdded,
+.secondaryLearningRevised {
+  background: rgba(var(--secondary-rgb), 0.12);
+}
+
+.secondaryLearningHeadline,
+.rewriteStarterText,
+.modelAnswerText {
+  color: var(--text-main);
+}
+
+.secondaryLearningSupport,
+.secondaryLearningLabel,
+.rewriteStarterInstruction,
+.modelAnswerTranslation,
+.responseCard p,
+.feedbackBlock p {
+  color: var(--text-sub);
+}
+
+.promptCard,
+.promptActive {
+  border-radius: 28px;
+}
+
+.promptCard {
+  background: var(--surface-lowest);
+}
+
+.promptActive {
+  border: 4px solid rgba(var(--warm-accent-rgb), 0.16);
+  background:
+    radial-gradient(circle at top right, rgba(255, 214, 138, 0.22) 0%, transparent 30%),
+    linear-gradient(180deg, #fffdfa 0%, #faf0e1 100%);
+  box-shadow: var(--shadow-active);
+}
+
+.writingComposer {
+  overflow: hidden;
+  border-radius: 34px;
+  background: var(--surface-low);
+}
+
+.writingComposerQuestion,
+.writingComposerAnswer {
+  background: transparent;
+}
+
+.coachPanel {
+  border-radius: 32px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 214, 138, 0.16) 0%, transparent 20%),
+    linear-gradient(180deg, rgba(246, 240, 234, 0.96) 0%, rgba(255, 255, 255, 0.96) 100%);
+}
+
+.textarea {
+  border: 0;
+  background: var(--surface-lowest);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 10px 24px -20px rgba(127, 82, 0, 0.18);
+}
+
+.textarea:focus {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 0 0 4px rgba(var(--warm-accent-rgb), 0.12),
+    0 12px 26px -20px rgba(127, 82, 0, 0.24);
+}
+
+@media (max-width: 900px) {
+  .main {
+    padding: 96px 12px 76px;
+  }
+
+  .welcomeCard,
+  .pickStage,
+  .stage,
+  .completeStage {
+    padding: 16px;
+    border-radius: 28px;
+  }
+
+  .welcomeHeroLayout {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .welcomeIntroPanel,
+  .welcomeStreakCard,
+  .welcomeGuestPanel {
+    padding: 24px 20px;
+    border-radius: 24px;
+  }
+
+  .welcomeCard h1 {
+    font-size: 2.1rem;
+  }
+
+  .stageHeader {
+    margin-bottom: 20px;
+  }
+
+  .stageHeaderTopRow {
+    grid-template-columns: 1fr;
+  }
+
+  .stageHeaderLead {
+    gap: 12px;
+  }
+
+  .stageStepLabel {
+    width: 48px;
+    height: 36px;
+  }
+
+  .stageHeader h2 {
+    font-size: 1.75rem;
+  }
+
+  .difficultyStageButton,
+  .difficultyStageButtonActive {
+    min-height: 0;
+    padding: 22px 20px;
+    border-radius: 24px;
+  }
+
+  .stageFooter {
+    margin-top: 20px;
+    padding: 18px;
+    border-radius: 22px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .feedbackBlock,
+  .responseCard,
+  .rewriteFeedbackPanel,
+  .completionCallout,
+  .completeHighlightCard,
+  .completionRewardCard,
+  .completeFollowUpCard,
+  .completeFollowUpPrompt,
+  .completeSummary div,
+  .promptCard,
+  .promptActive,
+  .writingComposer,
+  .coachPanel {
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .primaryFixCard,
+  .feedbackMicroTip,
+  .secondaryLearningCard,
+  .rewriteStarterCard {
+    border-radius: 18px;
+  }
+}
+
+/* Amber Harvest difficulty-screen refinement */
+.pickFlow {
+  gap: 38px;
+}
+
+.welcomeCard {
+  position: relative;
+  overflow: hidden;
+  padding: 34px;
+  border-radius: 42px;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  background:
+    radial-gradient(circle at 88% 10%, rgba(254, 182, 76, 0.16) 0%, transparent 18%),
+    radial-gradient(circle at 12% 0%, rgba(255, 219, 164, 0.2) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(246, 240, 234, 0.98) 0%, rgba(241, 233, 223, 0.98) 100%);
+  box-shadow:
+    0 10px 30px -10px rgba(127, 82, 0, 0.12),
+    0 22px 56px -28px rgba(127, 82, 0, 0.16);
+}
+
+.welcomeHeroLayout {
+  grid-template-columns: 1fr;
+  gap: 28px;
+}
+
+.welcomeIntroPanel {
+  display: grid;
+  gap: 12px;
+  padding: 4px 8px 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.welcomeBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  box-shadow: 0 8px 18px -12px rgba(var(--warm-accent-rgb), 0.36);
+}
+
+.welcomeCard h1 {
+  font-size: clamp(3rem, 5vw, 4.6rem);
+  line-height: 0.92;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  color: var(--primary);
+}
+
+.welcomeCard p {
+  max-width: none;
+  font-size: 1.18rem;
+  line-height: 1.64;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.welcomeStreakStrip {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) 1px minmax(0, 1fr);
+  align-items: center;
+  gap: 28px;
+  width: 100%;
+  padding: 30px 32px;
+  border: 0;
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow:
+    inset 0 0 0 2px rgba(245, 214, 151, 0.54),
+    0 14px 38px -22px rgba(127, 82, 0, 0.16);
+  color: var(--text-main);
+  text-align: left;
+  font: inherit;
+}
+
+.welcomeStreakStripGuest {
+  grid-template-columns: minmax(188px, 228px) 1px minmax(0, 1fr);
+  gap: 14px;
+  padding-inline: 20px;
+}
+
+.welcomeStreakMetric {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.welcomeStreakMetricIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 70px;
+  height: 70px;
+  border-radius: 999px;
+  background: rgba(255, 213, 126, 0.34);
+  color: var(--primary);
+  font-size: 1.9rem;
+  box-shadow: 0 16px 26px -20px rgba(127, 82, 0, 0.42);
+}
+
+.welcomeStreakMetricCopy {
+  display: grid;
+  gap: 6px;
+}
+
+.welcomeStreakMetricCopyGuest {
+  gap: 4px;
+}
+
+.welcomeStreakMetricCopy strong {
+  color: var(--primary);
+  font-size: clamp(2.2rem, 3.4vw, 3.1rem);
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  font-weight: 900;
+}
+
+.welcomeStreakMetricCopyGuest strong {
+  font-size: clamp(1.56rem, 2.15vw, 2rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+  white-space: nowrap;
+}
+
+.welcomeStreakMetricCopy span {
+  color: var(--text-main);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.welcomeStreakMetricMeta {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 2px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.1);
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.welcomeStreakMetricCopyGuest span {
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.welcomeStreakDivider {
+  width: 1px;
+  align-self: stretch;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+}
+
+.welcomeStreakWeek {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.welcomeStreakWeekGuest {
+  gap: 4px;
+}
+
+.welcomeStreakDay {
+  justify-items: center;
+  gap: 10px;
+}
+
+.welcomeStreakDayDot {
+  width: 54px;
+  height: 54px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+  border-radius: 18px;
+  background: rgba(226, 220, 214, 0.72);
+  color: rgba(127, 82, 0, 0.18);
+  font-size: 1.18rem;
+  font-weight: 800;
+}
+
+.welcomeStreakWeekGuest .welcomeStreakDayDot {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+}
+
+.welcomeStreakDayCompleted .welcomeStreakDayDot {
+  background: rgba(var(--secondary-rgb), 0.14);
+  color: var(--secondary);
+  border-color: rgba(var(--secondary-rgb), 0.08);
+  box-shadow: none;
+}
+
+.welcomeStreakDayCompleted .welcomeStreakDayLabel {
+  color: var(--text-main);
+  font-weight: 800;
+}
+
+.welcomeStreakDayToday .welcomeStreakDayDot {
+  background: linear-gradient(180deg, rgba(255, 195, 95, 0.98) 0%, rgba(255, 178, 54, 0.98) 100%);
+  color: #fffaf2;
+  box-shadow: 0 15px 35px -5px rgba(254, 182, 76, 0.25);
+  animation: amberHarvestBounce 1.25s ease-in-out infinite;
+}
+
+.welcomeStreakDayToday .welcomeStreakDayDot::after {
+  display: none;
+}
+
+.welcomeStreakDayLabel {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.welcomeStreakWeekGuest .welcomeStreakDayLabel {
+  font-size: 0.72rem;
+}
+
+.welcomeStreakDayToday .welcomeStreakDayLabel {
+  color: var(--primary);
+  font-weight: 900;
+}
+
+.difficultyPickStage {
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.difficultyStageGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+}
+
+.difficultyStageButton,
+.difficultyStageButtonActive {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  min-height: 360px;
+  padding: 32px 30px 26px;
+  border-radius: 34px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.96);
+  transition:
+    transform 0.24s ease,
+    box-shadow 0.24s ease,
+    border-color 0.24s ease;
+}
+
+.difficultyStageButton {
+  border: 4px solid transparent;
+  box-shadow: 0 16px 38px -22px rgba(127, 82, 0, 0.16);
+}
+
+.difficultyStageButton:hover,
+.difficultyStageButtonActive:hover {
+  transform: translateY(-8px);
+}
+
+.difficultyStageButtonActive {
+  border: 4px solid rgba(255, 178, 53, 0.9);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 222, 170, 0.34) 0%, transparent 24%),
+    rgba(255, 255, 255, 0.98);
+  transform: translateY(-8px);
+  box-shadow:
+    0 15px 35px -5px rgba(254, 182, 76, 0.25),
+    0 22px 52px -24px rgba(127, 82, 0, 0.18);
+}
+
+.difficultyStageSelectedPill {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffcc62 0%, #ffb236 100%);
+  color: #6b4300;
+  font-size: 0.86rem;
+  font-weight: 800;
+  box-shadow: var(--shadow-active);
+}
+
+.difficultyStageTopRow {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.difficultyStageIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 114px;
+  height: 114px;
+  border-radius: 999px;
+  background: #eafaf0;
+  color: #22b45d;
+  font-size: 1rem;
+  overflow: hidden;
+}
+
+.difficultyStageIconSvg {
+  display: block;
+  width: 4rem;
+  height: 4rem;
+  flex: none;
+  color: currentColor;
+}
+
+.difficultyStageIconDetailStroke {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.68);
+  stroke-width: 3.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.difficultyStageIconDetailFill {
+  fill: rgba(255, 255, 255, 0.72);
+}
+
+.difficultyStageButton[data-tone="B"] .difficultyStageIcon,
+.difficultyStageButtonActive[data-tone="B"] .difficultyStageIcon {
+  background: #fff6da;
+  color: #e28b00;
+}
+
+.difficultyStageButton[data-tone="C"] .difficultyStageIcon,
+.difficultyStageButtonActive[data-tone="C"] .difficultyStageIcon {
+  background: #fee8ef;
+  color: #f45d7d;
+}
+
+.difficultyStageBadge {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: rgba(246, 240, 234, 0.9);
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.difficultyStageCopy {
+  justify-items: center;
+  align-content: start;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.difficultyStageButton strong,
+.difficultyStageButtonActive strong {
+  font-size: clamp(2.35rem, 3vw, 3rem);
+  font-weight: 900;
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+}
+
+.difficultyStageCopy span {
+  font-size: 1.05rem;
+  line-height: 1.62;
+  font-weight: 600;
+  color: #666158;
+}
+
+.difficultyStageMeter {
+  position: relative;
+  display: block;
+  width: 140px;
+  height: 8px;
+  margin-top: auto;
+  border-radius: 999px;
+  background: rgba(226, 220, 214, 0.92);
+  overflow: hidden;
+}
+
+.difficultyStageMeter::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 42%;
+  border-radius: inherit;
+  background: var(--secondary);
+}
+
+.difficultyStageButton[data-tone="B"] .difficultyStageMeter::before,
+.difficultyStageButtonActive[data-tone="B"] .difficultyStageMeter::before {
+  width: 62%;
+  background: #ffb236;
+}
+
+.difficultyStageButton[data-tone="C"] .difficultyStageMeter::before,
+.difficultyStageButtonActive[data-tone="C"] .difficultyStageMeter::before {
+  width: 100%;
+  background: #ff6f87;
+}
+
+.difficultyActionArea {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.difficultyActionArea .primaryButton {
+  position: relative;
+  min-width: 340px;
+  min-height: 82px;
+  padding-inline: 36px;
+  font-size: 1.5rem;
+  letter-spacing: -0.04em;
+  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  color: #583700;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.72),
+    0 8px 0 #6a4800,
+    0 16px 26px -14px rgba(106, 72, 0, 0.42);
+}
+
+.difficultyActionArea .primaryButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.78),
+    0 10px 0 #6a4800,
+    0 18px 28px -14px rgba(106, 72, 0, 0.46);
+}
+
+.difficultyActionArea .primaryButton:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.58),
+    0 4px 0 #6a4800,
+    0 10px 18px -14px rgba(106, 72, 0, 0.34);
+}
+
+.difficultyActionMeta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.difficultyActionMetaIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
+}
+
+.difficultyActionDescription {
+  margin: 0;
+  max-width: 560px;
+  text-align: center;
+  color: var(--text-soft);
+  line-height: 1.65;
+}
+
+.difficultyInfoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 34px;
+}
+
+.difficultyInfoCardForest,
+.difficultyInfoCardAmber {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+  padding: 28px 26px;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 12px 36px -24px rgba(127, 82, 0, 0.14);
+}
+
+.difficultyInfoCardForest {
+  background: rgba(143, 246, 208, 0.12);
+}
+
+.difficultyInfoCardAmber {
+  background: rgba(254, 248, 195, 0.32);
+}
+
+.difficultyInfoIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--secondary);
+  font-size: 1.2rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.difficultyInfoCardAmber .difficultyInfoIcon {
+  color: var(--primary);
+}
+
+.difficultyInfoCopy {
+  display: grid;
+  gap: 8px;
+}
+
+.difficultyInfoCopy strong {
+  color: var(--text-main);
+  font-size: 1.02rem;
+}
+
+.difficultyInfoCopy p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+@media (max-width: 900px) {
+  .welcomeCard {
+    padding: 22px 18px;
+    border-radius: 28px;
+  }
+
+  .welcomeIntroPanel {
+    padding: 6px 4px 0;
+  }
+
+  .welcomeCard h1 {
+    font-size: 2.35rem;
+  }
+
+  .welcomeCard p {
+    font-size: 1rem;
+  }
+
+  .welcomeStreakStrip {
+    grid-template-columns: 1fr;
+    gap: 18px;
+    padding: 20px 18px;
+    border-radius: 26px;
+  }
+
+  .welcomeStreakMetric {
+    justify-content: flex-start;
+  }
+
+  .welcomeStreakMetricMeta {
+    font-size: 0.76rem;
+  }
+
+  .welcomeStreakDivider {
+    display: none;
+  }
+
+  .welcomeStreakWeek {
+    gap: 8px;
+  }
+
+  .welcomeStreakDayDot {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+  }
+
+  .difficultyStageGrid,
+  .difficultyInfoGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .difficultyStageButton,
+  .difficultyStageButtonActive {
+    min-height: 0;
+    padding: 28px 22px 24px;
+    border-radius: 28px;
+  }
+
+  .difficultyStageIcon {
+    width: 82px;
+    height: 82px;
+    font-size: 1rem;
+  }
+
+  .difficultyStageIconSvg {
+    width: 3.15rem;
+    height: 3.15rem;
+  }
+
+  .difficultyActionArea .primaryButton {
+    width: 100%;
+    min-width: 0;
+    min-height: 64px;
+    font-size: 1.28rem;
+  }
+
+  .difficultyInfoCardForest,
+  .difficultyInfoCardAmber {
+    padding: 20px 18px;
+    border-radius: 22px;
+  }
+
+  .difficultyInfoIcon {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+.welcomeGreetingSparkle {
+  display: inline-flex;
+  width: 1.05em;
+  height: 1.05em;
+  margin-left: 0.18em;
+  vertical-align: -0.12em;
+  color: #ffb236;
+}
+
+.materialSymbolIcon,
+.welcomeStreakMetricGlyph,
+.welcomeStreakDayGlyph,
+.difficultyStageSelectedGlyph,
+.difficultyInfoIconGlyph,
+.primaryButtonIcon {
+  width: 100%;
+  height: 100%;
+}
+
+.welcomeStreakMetricGlyph {
+  width: 2rem;
+  height: 2rem;
+  font-size: 2rem;
+}
+
+.welcomeStreakDayGlyph {
+  width: 1.35rem;
+  height: 1.35rem;
+  font-size: 1.35rem;
+}
+
+.difficultyStageSelectedPill {
+  gap: 6px;
+}
+
+.difficultyStageSelectedGlyph {
+  width: 0.95rem;
+  height: 0.95rem;
+  font-size: 0.95rem;
+}
+
+.difficultyStageIconSvg {
+  width: 4rem;
+  height: 4rem;
+  display: block;
+  overflow: visible;
+}
+
+.difficultyStageIconDetailStroke {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.96);
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.difficultyStageIconDetailFill {
+  fill: rgba(255, 255, 255, 0.92);
+}
+
+.primaryButtonIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.difficultyInfoIconGlyph {
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 1.75rem;
+}
+
+@media (max-width: 900px) {
+  .welcomeCard h1 {
+    font-size: 2.45rem;
+  }
+
+  .welcomeCard p {
+    font-size: 1.08rem;
+  }
+
+  .difficultyStageIconSvg {
+    width: 3.55rem;
+    height: 3.55rem;
+  }
+
+  .difficultyInfoIconGlyph {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 1.5rem;
+  }
+}
+
+.writingStage {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.feedbackStageMobile {
+  display: grid;
+  gap: 16px;
+  margin-top: 0;
+  padding: 8px 0 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.mobileFeedbackHero {
+  display: grid;
+  gap: 10px;
+}
+
+.mobileFeedbackHeroTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mobileFeedbackStageBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.18);
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.mobileFeedbackAttemptMeta {
+  color: rgba(48, 46, 43, 0.56);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-align: right;
+}
+
+.mobileFeedbackHeroCopy h2 {
+  margin: 0;
+  color: var(--primary);
+  font-size: 2.2rem;
+  line-height: 0.96;
+  letter-spacing: -0.06em;
+}
+
+.mobileFeedbackHeroCopy p {
+  margin: 6px 0 0;
+  color: var(--text-sub);
+  font-size: 0.94rem;
+  font-weight: 600;
+  line-height: 1.55;
+}
+
+.mobileFeedbackContextCard,
+.mobileFeedbackSectionCard,
+.mobileFeedbackFooterCard {
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 32px -22px rgba(127, 82, 0, 0.24);
+}
+
+.mobileFeedbackContextCard {
+  display: grid;
+  gap: 14px;
+  background: var(--surface-low);
+}
+
+.mobileFeedbackContextBlock {
+  display: grid;
+  gap: 6px;
+}
+
+.mobileFeedbackContextBlock h4,
+.mobileFeedbackChipSection h4,
+.mobileFeedbackSuggestionTitle {
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mobileFeedbackContextBlock p {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.mobileFeedbackAnswerText {
+  font-style: italic;
+}
+
+.mobileFeedbackContextTranslation {
+  color: var(--text-sub);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.mobileFeedbackContextDivider {
+  width: 100%;
+  height: 1px;
+  background: rgba(48, 46, 43, 0.1);
+}
+
+.mobileFeedbackSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mobileFeedbackSectionHeader h3,
+.mobileFeedbackPracticeSection h3 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.22rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.mobileFeedbackSectionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+}
+
+.mobileFeedbackSectionIcon span {
+  font-size: 1.5rem;
+}
+
+.mobileFeedbackSectionIconGood {
+  background: rgba(var(--secondary-rgb), 0.14);
+  color: var(--secondary);
+}
+
+.mobileFeedbackSectionIconFix {
+  background: rgba(249, 86, 48, 0.1);
+  color: #b02500;
+}
+
+.mobileFeedbackSectionIconExample {
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: var(--primary);
+}
+
+.mobileFeedbackStrengthList {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mobileFeedbackStrengthList li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  color: var(--text-sub);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.mobileFeedbackStrengthList li span:first-child {
+  color: var(--secondary);
+  font-weight: 900;
+}
+
+.mobileFeedbackChipSection {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(48, 46, 43, 0.08);
+}
+
+.mobileFeedbackChipList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mobileFeedbackChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(var(--secondary-rgb), 0.12);
+  color: #0f5f49;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.mobileFeedbackFixList {
+  display: grid;
+  gap: 16px;
+}
+
+.mobileFeedbackFixEntry + .mobileFeedbackFixEntry {
+  padding-top: 16px;
+  border-top: 1px solid rgba(48, 46, 43, 0.08);
+}
+
+.mobileFeedbackFixTip {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(246, 240, 234, 0.88);
+}
+
+.mobileFeedbackFixTip span {
+  color: rgba(48, 46, 43, 0.56);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mobileFeedbackFixTip p {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.mobileFeedbackFixOriginal,
+.mobileFeedbackFixRevised {
+  margin: 10px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.mobileFeedbackFixOriginal {
+  color: rgba(48, 46, 43, 0.54);
+}
+
+.mobileFeedbackFixRevised {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 6px;
+  align-items: start;
+  color: var(--secondary);
+  font-weight: 800;
+}
+
+.mobileFeedbackFixCheck {
+  width: 1rem;
+  height: 1rem;
+  font-size: 1rem;
+}
+
+.mobileFeedbackPracticeSection {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 24px;
+  border: 2px solid rgba(var(--warm-accent-rgb), 0.18);
+  background:
+    radial-gradient(circle at top right, rgba(255, 214, 138, 0.16) 0%, transparent 22%),
+    rgba(var(--warm-accent-rgb), 0.08);
+}
+
+.mobileFeedbackPracticeCard {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 12px 26px -18px rgba(127, 82, 0, 0.22);
+}
+
+.mobileFeedbackStarterBlock {
+  display: grid;
+  gap: 8px;
+}
+
+.mobileFeedbackStarterText {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.mobileFeedbackStarterHint {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.mobileFeedbackSuggestionBlock {
+  display: grid;
+  gap: 10px;
+}
+
+.mobileFeedbackSuggestionList {
+  display: grid;
+  gap: 10px;
+}
+
+.mobileFeedbackSuggestionCard {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(48, 46, 43, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.mobileFeedbackSuggestionTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.mobileFeedbackSuggestionTop strong {
+  color: var(--primary);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.mobileFeedbackSuggestionCard p {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.mobileFeedbackSuggestionDot {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  border-radius: 999px;
+  border: 2px solid rgba(48, 46, 43, 0.22);
+}
+
+.mobileFeedbackPracticeAction {
+  padding-top: 2px;
+}
+
+.mobileFeedbackPracticeButton {
+  width: 100%;
+}
+
+.mobileFeedbackExampleCard {
+  display: grid;
+  gap: 6px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--surface-low);
+}
+
+.mobileFeedbackExampleText {
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.mobileFeedbackExampleTranslation {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.mobileFeedbackFooterCard {
+  display: grid;
+  gap: 14px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 214, 138, 0.16) 0%, transparent 22%),
+    rgba(var(--warm-accent-rgb), 0.08);
+}
+
+.mobileFeedbackFooterCopy {
+  display: grid;
+  gap: 6px;
+}
+
+.mobileFeedbackFooterBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.mobileFeedbackFooterCopy strong {
+  color: var(--text-main);
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.mobileFeedbackFooterCopy p {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.mobileFeedbackFooterActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mobileFeedbackFooterActions > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.mobileFeedbackFooterActions .primaryButton,
+.mobileFeedbackFooterActions .ghostButton {
+  width: 100%;
+  min-height: 46px;
+  padding-inline: 12px;
+  font-size: 0.84rem;
+}
+
+@media (min-width: 901px) {
+  .feedbackStageMobile {
+    width: min(100%, 980px);
+    margin-inline: auto;
+    gap: 20px;
+    padding-top: 4px;
+  }
+
+  .mobileFeedbackHero {
+    gap: 14px;
+  }
+
+  .mobileFeedbackStageBadge {
+    min-height: 28px;
+    padding: 5px 12px;
+    font-size: 0.76rem;
+  }
+
+  .mobileFeedbackAttemptMeta {
+    font-size: 0.78rem;
+  }
+
+  .mobileFeedbackHeroCopy h2 {
+    font-size: 3.2rem;
+  }
+
+  .mobileFeedbackHeroCopy p {
+    max-width: 720px;
+    font-size: 1rem;
+  }
+
+  .mobileFeedbackContextCard,
+  .mobileFeedbackSectionCard,
+  .mobileFeedbackFooterCard,
+  .mobileFeedbackPracticeSection {
+    padding: 24px 26px;
+    border-radius: 30px;
+  }
+
+  .mobileFeedbackContextCard {
+    grid-template-columns: minmax(0, 1fr) 1px minmax(0, 1fr);
+    align-items: start;
+    gap: 18px;
+  }
+
+  .mobileFeedbackContextDivider {
+    width: 1px;
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .mobileFeedbackContextBlock p,
+  .mobileFeedbackFixTip p,
+  .mobileFeedbackStrengthList li,
+  .mobileFeedbackExampleText {
+    font-size: 0.96rem;
+  }
+
+  .mobileFeedbackSectionHeader {
+    margin-bottom: 18px;
+  }
+
+  .mobileFeedbackSectionHeader h3,
+  .mobileFeedbackPracticeSection h3 {
+    font-size: 1.38rem;
+  }
+
+  .mobileFeedbackSectionIcon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .mobileFeedbackSectionIcon span {
+    font-size: 1.7rem;
+  }
+
+  .mobileFeedbackChip {
+    min-height: 34px;
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+
+  .mobileFeedbackFixList {
+    gap: 18px;
+  }
+
+  .mobileFeedbackFixTip {
+    padding: 16px;
+  }
+
+  .mobileFeedbackFixOriginal,
+  .mobileFeedbackFixRevised {
+    font-size: 0.94rem;
+  }
+
+  .mobileFeedbackPracticeCard {
+    padding: 22px;
+    border-radius: 24px;
+  }
+
+  .mobileFeedbackStarterText {
+    font-size: 1.08rem;
+  }
+
+  .mobileFeedbackSuggestionList {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .mobileFeedbackSuggestionCard {
+    min-height: 100%;
+  }
+
+  .mobileFeedbackPracticeAction {
+    display: flex;
+    justify-content: flex-start;
+  }
+
+  .mobileFeedbackPracticeButton {
+    width: auto;
+    min-width: 240px;
+  }
+
+  .mobileFeedbackExampleCard {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .mobileFeedbackFooterCard {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 18px;
+  }
+
+  .mobileFeedbackFooterCopy strong {
+    font-size: 1.08rem;
+  }
+
+  .mobileFeedbackFooterActions {
+    grid-template-columns: repeat(3, minmax(160px, auto));
+    align-items: center;
+  }
+
+  .mobileFeedbackFooterActions > :last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+}
+
+.writingStageLayout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.writingStageSidebar {
+  position: sticky;
+  top: 108px;
+  display: grid;
+  gap: 16px;
+  align-self: start;
+}
+
+.writingStageMain {
+  display: grid;
+  gap: 18px;
+  min-width: 0;
+}
+
+.writingPhaseCard,
+.writingPromptCard,
+.writingActionCard,
+.writingGuideDock {
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 34px -20px rgba(127, 82, 0, 0.2);
+}
+
+.writingPhaseCard {
+  padding: 22px 22px 18px;
+  background:
+    radial-gradient(circle at top right, rgba(254, 182, 76, 0.16) 0%, transparent 28%),
+    linear-gradient(180deg, rgba(246, 240, 234, 0.98) 0%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+.writingPhaseCardTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+.writingPhaseCopy {
+  display: grid;
+  gap: 6px;
+}
+
+.writingPhaseLabel {
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.writingPhaseValue {
+  color: var(--text-main);
+  font-size: 2rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.06em;
+}
+
+.writingPhaseValue span {
+  color: var(--warm-accent);
+}
+
+.writingPhaseGlyph {
+  width: 2rem;
+  height: 2rem;
+  font-size: 2rem;
+  color: var(--warm-accent);
+}
+
+.writingPhaseProgressTrack {
+  overflow: hidden;
+  width: 100%;
+  height: 10px;
+  margin-top: 18px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.14);
+}
+
+.writingPhaseProgressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #b87b1d 0%, var(--primary) 100%);
+}
+
+.writingPromptCard {
+  padding: 24px 22px;
+  border-left: 4px solid rgba(var(--warm-accent-rgb), 0.92);
+}
+
+.writingPromptBadge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.14);
+  color: var(--warm-accent-deep);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.writingPromptCard h3 {
+  margin: 14px 0 0;
+  color: var(--text-main);
+  font-size: 1.45rem;
+  line-height: 1.38;
+  letter-spacing: -0.04em;
+}
+
+.writingPromptTranslation {
+  margin: 12px 0 0;
+  color: var(--text-sub);
+  font-size: 0.95rem;
+  line-height: 1.65;
+}
+
+.writingActionCard {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 214, 138, 0.18) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(246, 240, 234, 0.96) 0%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+.writingActionButton {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 14px;
+  border: 0;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 22px -18px rgba(127, 82, 0, 0.22);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease;
+}
+
+.writingActionButton:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 14px 26px -18px rgba(127, 82, 0, 0.28);
+}
+
+.writingActionButtonActive {
+  background:
+    radial-gradient(circle at top right, rgba(255, 214, 138, 0.22) 0%, transparent 28%),
+    linear-gradient(180deg, #fffdfa 0%, #fbf2e4 100%);
+  box-shadow:
+    inset 0 0 0 2px rgba(var(--warm-accent-rgb), 0.16),
+    0 14px 28px -18px rgba(127, 82, 0, 0.3);
+}
+
+.writingActionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.14);
+  color: var(--primary);
+  box-shadow: 0 10px 20px -16px rgba(127, 82, 0, 0.4);
+}
+
+.writingActionGlyph {
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 1.2rem;
+}
+
+.writingActionCopy {
+  display: grid;
+  gap: 3px;
+}
+
+.writingActionCopy strong {
+  color: var(--text-main);
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.writingActionCopy small {
+  color: var(--text-sub);
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.writingGuideDock {
+  padding: 18px;
+}
+
+.writingGuideDock .writingGuideSummary {
+  margin-top: 0;
+}
+
+.writingGuideDock .writingGuideHintSection,
+.writingGuideDock .writingGuidePanel {
+  gap: 8px;
+}
+
+.writingComposer {
+  display: flex;
+  flex-direction: column;
+  min-height: 560px;
+  padding: 6px;
+  border: 0;
+  border-radius: 32px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    inset 0 0 0 1px rgba(127, 82, 0, 0.06),
+    0 18px 40px -24px rgba(127, 82, 0, 0.26);
+}
+
+.writingComposerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px 16px;
+  border-radius: 26px 26px 0 0;
+  background: rgba(246, 240, 234, 0.92);
+}
+
+.writingComposerWindowDots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.writingComposerWindowDots span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.22);
+}
+
+.writingComposerWindowDots span:nth-child(1) {
+  background: rgba(249, 86, 48, 0.2);
+}
+
+.writingComposerWindowDots span:nth-child(2) {
+  background: rgba(var(--warm-accent-rgb), 0.24);
+}
+
+.writingComposerWindowDots span:nth-child(3) {
+  background: rgba(var(--secondary-rgb), 0.24);
+}
+
+.writingComposerMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(48, 46, 43, 0.56);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.writingComposerMetaDivider {
+  width: 1px;
+  height: 10px;
+  background: rgba(48, 46, 43, 0.18);
+}
+
+.writingComposerAnswer {
+  position: relative;
+  display: block;
+  flex: 1;
+  min-height: 0;
+  padding: 14px 18px 72px;
+  border-top: 0;
+  border-radius: 0 0 26px 26px;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.composerTextarea {
+  min-height: 100%;
+  height: 100%;
+  margin-top: 0;
+  padding: 18px 18px 24px;
+  border: 0;
+  border-radius: 22px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-main);
+  font-size: 1.1rem;
+  line-height: 1.9;
+}
+
+.composerTextarea::placeholder {
+  color: rgba(48, 46, 43, 0.26);
+}
+
+.composerTextarea:focus {
+  box-shadow: none;
+}
+
+.writingComposerToolbar {
+  position: absolute;
+  right: 22px;
+  bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(127, 82, 0, 0.08);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 16px 30px -20px rgba(127, 82, 0, 0.28);
+  backdrop-filter: blur(12px);
+}
+
+.writingToolButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary);
+  cursor: pointer;
+  transition:
+    background 0.18s ease,
+    transform 0.18s ease,
+    color 0.18s ease;
+}
+
+.writingToolButton:hover {
+  transform: translateY(-1px);
+  background: rgba(var(--warm-accent-rgb), 0.12);
+}
+
+.writingToolButtonActive {
+  background: rgba(var(--warm-accent-rgb), 0.14);
+  color: var(--warm-accent-deep);
+}
+
+.writingToolIcon {
+  width: 1.15rem;
+  height: 1.15rem;
+  font-size: 1.15rem;
+}
+
+.writingStageActions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.writingSubmitButton {
+  min-width: 220px;
+}
+
+.writingStageMain > .responseCard,
+.writingStageMain > .rewriteFeedbackPanel {
+  margin-top: 0;
+}
+
+.draftStatusText {
+  margin: -2px 4px 0;
+}
+
+@media (max-width: 900px) {
+  .writingStageLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .writingStageSidebar {
+    display: contents;
+    position: static;
+    top: auto;
+  }
+
+  .writingPhaseCard {
+    order: 1;
+  }
+
+  .writingPromptCard {
+    order: 2;
+  }
+
+  .writingStageMain {
+    order: 3;
+  }
+
+  .writingActionCard {
+    order: 4;
+  }
+
+  .writingPhaseCard,
+  .writingPromptCard,
+  .writingActionCard,
+  .writingGuideDock {
+    border-radius: 22px;
+  }
+
+  .writingComposer {
+    min-height: 285px;
+    border-radius: 24px;
+  }
+
+  .writingComposerHeader {
+    padding: 14px 16px;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .writingComposerMeta {
+    gap: 8px;
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+  }
+
+  .writingComposerAnswer {
+    padding: 8px 10px 66px;
+    border-radius: 0 0 18px 18px;
+  }
+
+  .composerTextarea {
+    min-height: 220px;
+    padding: 14px 14px 20px;
+    font-size: 1rem;
+    line-height: 1.75;
+  }
+
+  .writingComposerToolbar {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .writingStageActions {
+    display: none;
+  }
+}
+
+@keyframes amberHarvestBounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+
+  30% {
+    transform: translateY(-5px) scale(1.04);
+  }
+
+  55% {
+    transform: translateY(0) scale(0.98);
+  }
+
+  75% {
+    transform: translateY(-2px) scale(1.02);
+  }
+}

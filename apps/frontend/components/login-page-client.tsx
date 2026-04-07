@@ -13,6 +13,7 @@ export function LoginPageClient() {
   const [returnTo, setReturnTo] = useState("/");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [verificationCode, setVerificationCode] = useState("");
   const [pendingEmail, setPendingEmail] = useState("");
   const [showVerify, setShowVerify] = useState(false);
@@ -160,77 +161,88 @@ export function LoginPageClient() {
   }
 
   return (
-    <main className={`${styles.page} ${styles.authShell}`}>
-      <section className={styles.hero}>
-        <div className={styles.intro}>
-          <div className={styles.eyebrow}>로그인</div>
-          <h1>기존 학습 흐름을 그대로 이어서 다시 시작해 보세요.</h1>
-          <p>
-            로그인하면 오늘의 질문, 답변 기록, 자주 받은 피드백까지 모두 이어서 볼 수 있어요.
-          </p>
-        </div>
+    <main className={`${styles.page} ${styles.authShell} ${styles.loginPage}`}>
+      <section className={styles.loginHero}>
+        <section className={styles.loginPanel}>
+          <Link href="/" className={styles.loginBrandWordmark}>
+            writeLoop
+          </Link>
 
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div>
-              <Link href="/" className={`${styles.eyebrow} ${styles.brandLink}`}>
-                writeLoop 계정
-              </Link>
-              <h2>{showVerify ? "이메일 인증" : "로그인"}</h2>
-            </div>
-          </div>
+          <nav className={styles.loginSegmentedTabs} aria-label="로그인 이동">
+            <Link href="/login" className={styles.loginSegmentedTabActive} aria-current="page">
+              로그인
+            </Link>
+            <Link href={registerHref} className={styles.loginSegmentedTab}>
+              회원가입
+            </Link>
+          </nav>
 
           {!showVerify ? (
             <>
               <form
-                className={styles.form}
+                className={`${styles.form} ${styles.loginForm}`}
                 onSubmit={(event) => {
                   event.preventDefault();
                   void handleLogin();
                 }}
               >
-                <label className={styles.field}>
+                <label className={`${styles.field} ${styles.loginField}`}>
                   <span>이메일</span>
                   <input
                     className={styles.input}
                     type="email"
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    placeholder="you@example.com"
+                    placeholder="이메일을 입력해 주세요."
                   />
                 </label>
-                <label className={styles.field}>
-                  <span>비밀번호</span>
+                <label className={`${styles.field} ${styles.loginField}`}>
+                  <span className={styles.loginFieldHeader}>
+                    <span>비밀번호</span>
+                    <button
+                      type="button"
+                      className={styles.loginInlineAction}
+                      onClick={() => setShowPassword((current) => !current)}
+                    >
+                      {showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                    </button>
+                  </span>
                   <input
                     className={styles.input}
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     placeholder="비밀번호를 입력해 주세요."
                   />
                 </label>
-                <div className={styles.checkboxGroup}>
-                  <label className={styles.checkboxField}>
-                    <input
-                      type="checkbox"
-                      checked={saveLoginId}
-                      onChange={(event) => setSaveLoginId(event.target.checked)}
-                    />
-                    <span>ID 저장하기</span>
-                  </label>
-                  <label className={styles.checkboxField}>
-                    <input
-                      type="checkbox"
-                      checked={rememberMe}
-                      onChange={(event) => setRememberMe(event.target.checked)}
-                    />
-                    <span>로그인 상태 유지</span>
-                  </label>
+
+                <div className={styles.loginUtilityRow}>
+                  <div className={`${styles.checkboxGroup} ${styles.loginCheckboxGroup}`}>
+                    <label className={styles.checkboxField}>
+                      <input
+                        type="checkbox"
+                        checked={saveLoginId}
+                        onChange={(event) => setSaveLoginId(event.target.checked)}
+                      />
+                      <span>ID 저장하기</span>
+                    </label>
+                    <label className={styles.checkboxField}>
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(event) => setRememberMe(event.target.checked)}
+                      />
+                      <span>로그인 상태 유지</span>
+                    </label>
+                  </div>
+                  <Link href={forgotPasswordHref} className={styles.loginSupportLink}>
+                    비밀번호를 잊으셨나요?
+                  </Link>
                 </div>
 
-                {!showVerify && error ? <p className={styles.error}>{error}</p> : null}
+                {error ? <p className={styles.error}>{error}</p> : null}
 
-                <div className={styles.primaryActionRow}>
+                <div className={`${styles.primaryActionRow} ${styles.loginPrimaryActionRow}`}>
                   <button
                     type="submit"
                     className={`${styles.primaryButton} ${styles.primaryButtonWide}`}
@@ -241,42 +253,39 @@ export function LoginPageClient() {
                 </div>
               </form>
 
-              <div className={styles.secondaryActionRow}>
-                <Link href={forgotPasswordHref} className={styles.secondaryActionLink}>
-                  비밀번호 찾기
-                </Link>
-                <Link href={registerHref} className={styles.secondaryActionLink}>
-                  회원가입
-                </Link>
-              </div>
-
-              <div className={styles.socialSection}>
+              <div className={`${styles.socialSection} ${styles.loginSocialSection}`}>
                 <div className={styles.socialDivider}>
-                  <span>또는</span>
+                  <span>소셜 로그인</span>
                 </div>
                 <div className={styles.socialGrid}>
-                  <a href={`${API_BASE}/api/auth/social/naver/start?${socialLoginQuery}`} className={styles.naverButton}>
-                    <span className={styles.socialButtonContent}>
-                      <span className={styles.socialButtonIcon}>
-                        <img src="/login/naver.png" alt="" />
-                      </span>
-                      <span>네이버로 계속하기</span>
+                  <a
+                    href={`${API_BASE}/api/auth/social/naver/start?${socialLoginQuery}`}
+                    className={styles.naverButton}
+                    aria-label="네이버 로그인"
+                    title="네이버 로그인"
+                  >
+                    <span className={styles.socialButtonIcon}>
+                      <img src="/login/naver.png" alt="" />
                     </span>
                   </a>
-                  <a href={`${API_BASE}/api/auth/social/google/start?${socialLoginQuery}`} className={styles.googleButton}>
-                    <span className={styles.socialButtonContent}>
-                      <span className={styles.socialButtonIcon}>
-                        <img src="/login/google.png" alt="" />
-                      </span>
-                      <span>구글로 계속하기</span>
+                  <a
+                    href={`${API_BASE}/api/auth/social/google/start?${socialLoginQuery}`}
+                    className={styles.googleButton}
+                    aria-label="Google 로그인"
+                    title="Google 로그인"
+                  >
+                    <span className={styles.socialButtonIcon}>
+                      <img src="/login/google.png" alt="" />
                     </span>
                   </a>
-                  <a href={`${API_BASE}/api/auth/social/kakao/start?${socialLoginQuery}`} className={styles.kakaoButton}>
-                    <span className={styles.socialButtonContent}>
-                      <span className={styles.socialButtonIcon}>
-                        <img src="/login/kakao.png" alt="" />
-                      </span>
-                      <span>카카오로 계속하기</span>
+                  <a
+                    href={`${API_BASE}/api/auth/social/kakao/start?${socialLoginQuery}`}
+                    className={styles.kakaoButton}
+                    aria-label="카카오 로그인"
+                    title="카카오 로그인"
+                  >
+                    <span className={styles.socialButtonIcon}>
+                      <img src="/login/kakao.png" alt="" />
                     </span>
                   </a>
                 </div>
@@ -284,10 +293,14 @@ export function LoginPageClient() {
             </>
           ) : (
             <>
-              <p className={styles.subText}>
-                이메일 인증을 마치면 바로 로그인돼요. 메일로 받은 6자리 코드를 입력해 주세요.
+              <div className={styles.loginPanelHeader}>
+                <h2>이메일 인증</h2>
+                <p>메일로 받은 6자리 코드를 입력하면 바로 로그인돼요.</p>
+              </div>
+              <p className={`${styles.subText} ${styles.loginVerifyCopy}`}>
+                학습을 이어가기 전에 받은 인증 코드를 먼저 확인해 주세요.
               </p>
-              <div className={styles.form}>
+              <div className={`${styles.form} ${styles.loginForm}`}>
                 <label className={styles.field}>
                   <span>이메일</span>
                   <input
@@ -298,7 +311,7 @@ export function LoginPageClient() {
                       setPendingEmail(event.target.value);
                       setEmail(event.target.value);
                     }}
-                    placeholder="you@example.com"
+                    placeholder="이메일을 입력해 주세요."
                   />
                 </label>
                 <label className={styles.field}>
@@ -311,10 +324,10 @@ export function LoginPageClient() {
                   />
                 </label>
               </div>
-              <div className={styles.actions}>
+              <div className={`${styles.actions} ${styles.loginVerifyActions}`}>
                 <button
                   type="button"
-                  className={styles.primaryButton}
+                  className={`${styles.primaryButton} ${styles.primaryButtonWide}`}
                   onClick={() => void handleVerify()}
                   disabled={isSubmitting}
                 >
@@ -322,12 +335,17 @@ export function LoginPageClient() {
                 </button>
                 <button
                   type="button"
-                  className={styles.ghostButton}
+                  className={`${styles.ghostButton} ${styles.primaryButtonWide}`}
                   onClick={() => void handleResend()}
                   disabled={isSubmitting}
                 >
                   인증 코드 다시 받기
                 </button>
+              </div>
+              <div className={styles.loginVerifyFooter}>
+                <Link href={registerHref} className={styles.loginRegisterLink}>
+                  회원가입으로 이동
+                </Link>
               </div>
             </>
           )}
@@ -336,6 +354,9 @@ export function LoginPageClient() {
           {showVerify && error ? <p className={styles.error}>{error}</p> : null}
         </section>
       </section>
+      <div className={styles.loginMetaFooter}>
+        <span>© 2026 writeLoop. Built for the scholarly mind.</span>
+      </div>
     </main>
   );
 }

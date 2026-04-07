@@ -1,12 +1,20 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
+import { Be_Vietnam_Pro, Plus_Jakarta_Sans } from "next/font/google";
 import { TopNavigation } from "../components/top-navigation";
 import "./globals.css";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-  display: "swap"
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-plus-jakarta-sans"
+});
+
+const beVietnamPro = Be_Vietnam_Pro({
+  subsets: ["latin", "vietnamese"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-be-vietnam-pro"
 });
 
 const siteTitle = "writeLoop";
@@ -56,7 +64,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={plusJakartaSans.className}>
+      <body className={`${plusJakartaSans.variable} ${beVietnamPro.variable}`}>
         <TopNavigation />
         {children}
       </body>

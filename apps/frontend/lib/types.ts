@@ -288,11 +288,12 @@ export interface Feedback {
   score: number;
   loopComplete: boolean;
   completionMessage: string | null;
+  /** Legacy persistence/history field. The main feedback screen no longer renders this directly. */
   summary: string;
   strengths: string[];
   corrections: Correction[];
+  /** Legacy analysis/history field. Main feedback UI is fixPoints-based and does not render this directly. */
   inlineFeedback: FeedbackInlineSegment[] | null;
-  grammarFeedback?: GrammarFeedbackItem[] | null;
   correctedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
   usedExpressions?: FeedbackUsedExpression[] | null;
@@ -334,11 +335,12 @@ export interface StoredFeedback {
   score: number;
   loopComplete: boolean;
   completionMessage: string | null;
+  /** Legacy persistence/history field. The main feedback screen no longer renders this directly. */
   summary: string;
   strengths: string[];
   corrections: Correction[];
+  /** Legacy analysis/history field. Main feedback UI is fixPoints-based and does not render this directly. */
   inlineFeedback: FeedbackInlineSegment[] | null;
-  grammarFeedback?: GrammarFeedbackItem[] | null;
   correctedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
   usedExpressions?: FeedbackUsedExpression[] | null;

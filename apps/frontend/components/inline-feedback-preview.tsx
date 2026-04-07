@@ -1,11 +1,10 @@
-import type { GrammarFeedbackItem } from "../lib/types";
+import type { FeedbackFixPoint } from "../lib/types";
 import styles from "./inline-feedback-preview.module.css";
 
 type InlineFeedbackPreviewProps = {
   originalAnswer: string;
   correctedAnswer?: string | null;
-  inlineFeedback?: unknown;
-  grammarFeedback?: GrammarFeedbackItem[] | null;
+  fixPoints?: FeedbackFixPoint[] | null;
   title?: string;
   compact?: boolean;
   variant?: "default" | "embedded";
@@ -27,7 +26,7 @@ function isPunctuationOnly(text: string | null | undefined) {
   return Boolean(value) && !/[A-Za-z0-9\u00C0-\u024F\uAC00-\uD7AF]/.test(value);
 }
 
-function hasVisibleChange(item: GrammarFeedbackItem) {
+function hasVisibleChange(item: FeedbackFixPoint) {
   const originalText = item.originalText?.trim() ?? "";
   const revisedText = item.revisedText?.trim() ?? "";
 
@@ -41,13 +40,13 @@ function hasVisibleChange(item: GrammarFeedbackItem) {
 function resolveGrammarCards(
   originalAnswer: string,
   correctedAnswer?: string | null,
-  grammarFeedback?: GrammarFeedbackItem[] | null
+  fixPoints?: FeedbackFixPoint[] | null
 ) {
   const safeOriginal = originalAnswer.trim();
   const safeCorrected = correctedAnswer?.trim() ?? "";
   const cards =
-    grammarFeedback
-      ?.filter((item) => item && hasVisibleChange(item))
+    fixPoints
+      ?.filter((item) => item && item.kind !== "EXPRESSION" && hasVisibleChange(item))
       .map((item) => {
         const originalText = item.originalText?.trim() ?? "";
         const revisedText = item.revisedText?.trim() ?? "";
@@ -64,14 +63,14 @@ function resolveGrammarCards(
           return {
             originalText: safeOriginal,
             revisedText: safeCorrected,
-            reasons: splitGrammarReasons(item.reasonKo)
+            reasons: splitGrammarReasons(item.supportText)
           };
         }
 
         return {
           originalText,
           revisedText,
-          reasons: splitGrammarReasons(item.reasonKo)
+          reasons: splitGrammarReasons(item.supportText)
         };
       })
       .filter((item) => item.originalText || item.revisedText) ?? [];
@@ -100,7 +99,7 @@ function resolveGrammarCards(
 export function InlineFeedbackPreview({
   originalAnswer,
   correctedAnswer,
-  grammarFeedback,
+  fixPoints,
   title = "\uBB38\uBC95 \uD53C\uB4DC\uBC31",
   compact = false,
   variant = "default"
@@ -109,7 +108,7 @@ export function InlineFeedbackPreview({
     return null;
   }
 
-  const grammarCards = resolveGrammarCards(originalAnswer, correctedAnswer, grammarFeedback);
+  const grammarCards = resolveGrammarCards(originalAnswer, correctedAnswer, fixPoints);
   if (grammarCards.length === 0) {
     return null;
   }

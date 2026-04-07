@@ -1665,3 +1665,1959 @@
     background: var(--my-page-section-neutral);
   }
 }
+
+/* Amber Harvest overrides */
+.page {
+  max-width: 1280px;
+  padding: 124px 28px 104px;
+}
+
+.hero,
+.stackedHero {
+  gap: 30px;
+}
+
+.intro {
+  position: relative;
+  overflow: hidden;
+  padding: 40px;
+  border-radius: 36px;
+  background:
+    radial-gradient(circle at 14% 12%, rgba(255, 215, 154, 0.3) 0%, transparent 22%),
+    radial-gradient(circle at 88% 10%, rgba(0, 104, 79, 0.08) 0%, transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(246, 240, 234, 0.98) 100%);
+  color: var(--text-main);
+  box-shadow: var(--shadow-card);
+}
+
+.eyebrow,
+.authShell .cardHeader .eyebrow,
+.historyEyebrow {
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: var(--primary);
+  letter-spacing: 0.12em;
+}
+
+.intro h1,
+.card h2,
+.emptyCard h2 {
+  color: var(--primary);
+  letter-spacing: -0.05em;
+}
+
+.intro h1 {
+  font-size: clamp(2.5rem, 4vw, 3.6rem);
+  line-height: 0.98;
+}
+
+.intro p,
+.subText,
+.historySessionInfo p,
+.historySummary,
+.historyFeedbackBlock p,
+.expressionHistoryCard p,
+.mistakeCard p {
+  color: var(--text-sub);
+}
+
+.points {
+  color: var(--text-main);
+}
+
+.streakBanner,
+.card,
+.infoCard,
+.expressionHistoryCard,
+.mistakeCard,
+.historyDateButton,
+.historySessionCard,
+.historyComparisonPanel,
+.historyFeedbackBlock,
+.historyEmpty,
+.emptyCard {
+  border: 0;
+  background: var(--surface-low);
+  box-shadow: var(--shadow-soft);
+}
+
+.streakBanner,
+.card,
+.emptyCard {
+  border-radius: 34px;
+}
+
+.card {
+  padding: 34px;
+}
+
+.tabButton,
+.tabButtonActive,
+.secondaryActionLink,
+.primaryButton,
+.ghostButton,
+.dangerButton,
+.primaryLink,
+.ghostLink,
+.historyUsedExpressionChip {
+  border: 0;
+  border-radius: 999px;
+}
+
+.tabButton,
+.tabButtonActive,
+.secondaryActionLink,
+.primaryButton,
+.ghostButton,
+.dangerButton,
+.primaryLink,
+.ghostLink {
+  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  color: #583700;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.72),
+    0 6px 0 #644000,
+    0 14px 24px -14px rgba(100, 64, 0, 0.4);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.tabButton:hover,
+.tabButtonActive:hover,
+.secondaryActionLink:hover,
+.primaryButton:hover,
+.ghostButton:hover,
+.dangerButton:hover,
+.primaryLink:hover,
+.ghostLink:hover {
+  background: linear-gradient(180deg, #ffd07a 0%, #ffbb45 100%);
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.78),
+    0 8px 0 #644000,
+    0 16px 26px -14px rgba(100, 64, 0, 0.44);
+}
+
+.tabButton:active,
+.tabButtonActive:active,
+.secondaryActionLink:active,
+.primaryButton:active:not(:disabled),
+.ghostButton:active:not(:disabled),
+.dangerButton:active:not(:disabled),
+.primaryLink:active,
+.ghostLink:active {
+  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.58),
+    0 3px 0 #644000,
+    0 10px 18px -14px rgba(100, 64, 0, 0.32);
+}
+
+.dangerButton {
+  background: linear-gradient(180deg, #ffb37d 0%, #ef8053 100%);
+  color: #5a1f0a;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 232, 0.78),
+    0 6px 0 #8d3c1d,
+    0 14px 24px -14px rgba(141, 60, 29, 0.42);
+}
+
+.dangerButton:hover {
+  background: linear-gradient(180deg, #ffc193 0%, #f48b5f 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 232, 0.82),
+    0 8px 0 #8d3c1d,
+    0 16px 26px -14px rgba(141, 60, 29, 0.46);
+}
+
+.dangerButton:active:not(:disabled) {
+  background: linear-gradient(180deg, #ffb37d 0%, #ef8053 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 232, 0.62),
+    0 3px 0 #8d3c1d,
+    0 10px 18px -14px rgba(141, 60, 29, 0.34);
+}
+
+.input {
+  border: 0;
+  border-radius: 20px;
+  background: var(--surface-lowest);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 24px -20px rgba(127, 82, 0, 0.16);
+}
+
+.input:focus {
+  border-color: transparent;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 0 0 4px rgba(var(--warm-accent-rgb), 0.12),
+    0 12px 26px -20px rgba(127, 82, 0, 0.2);
+}
+
+.field span,
+.checkboxField,
+.historyDateTitle,
+.mistakeHeader strong,
+.expressionHistoryCardTop strong,
+.historySessionInfo h4,
+.historyComparisonHeader strong,
+.historyComparisonMeta span {
+  color: var(--text-main);
+}
+
+.socialDivider::before,
+.historySection,
+.historySessionBody,
+.historyAttemptCard,
+.historyFeedbackBody,
+.historyFeedbackBlock {
+  border-color: rgba(var(--warm-accent-rgb), 0.1);
+}
+
+.infoCard {
+  background: var(--surface-lowest);
+}
+
+.historyComparisonPanel {
+  background:
+    radial-gradient(circle at top right, rgba(255, 215, 154, 0.18) 0%, transparent 24%),
+    linear-gradient(180deg, rgba(246, 240, 234, 0.94) 0%, rgba(255, 255, 255, 0.98) 100%);
+}
+
+.historyComparisonStat {
+  border: 0;
+  background: rgba(var(--warm-accent-rgb), 0.08);
+}
+
+.historyComparisonColumn {
+  border: 0;
+  background: var(--surface-lowest);
+  box-shadow: 0 10px 24px -18px rgba(127, 82, 0, 0.2);
+}
+
+.historyAttemptInitial {
+  background: rgba(var(--warm-accent-rgb), 0.1);
+}
+
+.historyAttemptRewrite {
+  background: rgba(var(--secondary-rgb), 0.08);
+}
+
+.historyAttemptTypeInitial {
+  border: 0;
+  background: rgba(var(--warm-accent-rgb), 0.14);
+  color: var(--primary);
+}
+
+.historyAttemptTypeRewrite {
+  border: 0;
+  background: rgba(var(--secondary-rgb), 0.12);
+  color: var(--secondary);
+}
+
+.historyFeedbackBlock,
+.expressionHistoryCard,
+.mistakeCard,
+.historyDateButton,
+.historySessionCard {
+  border-radius: 24px;
+}
+
+@media (max-width: 900px) {
+  .page {
+    padding: 96px 12px 76px;
+  }
+
+  .intro,
+  .card,
+  .emptyCard,
+  .streakBanner {
+    padding: 22px 20px;
+    border-radius: 24px;
+  }
+
+  .intro h1 {
+    font-size: 2rem;
+  }
+
+  .authShell .cardHeader,
+  .myPageShell .cardHeader {
+    border: 0;
+    background: var(--surface-low);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .authShell .form,
+  .authShell .socialSection,
+  .myPageShell .historySection,
+  .myPageShell .infoCard,
+  .myPageShell .expressionHistoryCard,
+  .myPageShell .mistakeCard,
+  .myPageShell .historyDateButton,
+  .myPageShell .historySessionCard,
+  .myPageShell .historyEmpty,
+  .myPageShell .emptyCard {
+    border: 0;
+    background: var(--surface-low);
+    box-shadow: var(--shadow-soft);
+  }
+
+  .authShell .primaryButton,
+  .authShell .ghostButton,
+  .authShell .primaryLink,
+  .authShell .ghostLink,
+  .authShell .secondaryActionLink {
+    border-radius: 999px;
+  }
+}
+
+.myPageAccountShell {
+  max-width: 1280px;
+}
+
+.accountSettingsLayout {
+  display: grid;
+  gap: 28px;
+}
+
+.accountPageTitle {
+  display: grid;
+  gap: 10px;
+}
+
+.accountPageTitle h1 {
+  margin: 0;
+  color: var(--primary);
+  font-size: clamp(2.4rem, 4vw, 3.25rem);
+  letter-spacing: -0.05em;
+}
+
+.accountPageTitle p {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+
+.accountSettingsGrid {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.accountSidebarCard,
+.accountFormCard {
+  border: 1px solid rgba(119, 87, 61, 0.08);
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-soft);
+}
+
+.accountSidebarCard {
+  display: grid;
+  gap: 18px;
+  padding: 28px 24px;
+  border-radius: 32px;
+  text-align: center;
+}
+
+.accountAvatarWrap {
+  position: relative;
+  width: 128px;
+  height: 128px;
+  margin: 0 auto;
+}
+
+.accountAvatarBadge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 4px solid rgba(254, 182, 76, 0.92);
+  background:
+    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.92) 0%, transparent 30%),
+    linear-gradient(180deg, #fff8ef 0%, #f7dfb7 100%);
+  color: var(--primary);
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  box-shadow: 0 16px 28px -22px rgba(127, 82, 0, 0.38);
+}
+
+.accountAvatarStatus {
+  position: absolute;
+  right: 4px;
+  bottom: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  color: #583700;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.68),
+    0 4px 0 #644000,
+    0 12px 18px -16px rgba(100, 64, 0, 0.42);
+}
+
+.accountAvatarStatus span {
+  font-size: 1rem;
+}
+
+.accountSidebarName {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.55rem;
+  line-height: 1.1;
+}
+
+.accountSidebarEmail {
+  margin: -8px 0 0;
+  color: var(--text-sub);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.accountSidebarMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface-low);
+  color: var(--text-sub);
+  font-size: 0.92rem;
+}
+
+.accountSidebarMeta strong {
+  color: var(--primary);
+  font-size: 0.94rem;
+  font-weight: 800;
+}
+
+.accountSidebarActions {
+  display: grid;
+  gap: 12px;
+}
+
+.accountSidebarActions > * {
+  width: 100%;
+}
+
+.accountSettingsMain {
+  display: grid;
+  gap: 22px;
+}
+
+.accountFormCard {
+  padding: 32px;
+  border-radius: 32px;
+}
+
+.accountSectionHeader {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.accountSectionHeader h3,
+.accountDangerHeader h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  color: var(--primary);
+  font-size: 1.25rem;
+  letter-spacing: -0.03em;
+}
+
+.accountSectionHeader h3 span,
+.accountDangerHeader h3 span,
+.accountPrimaryAction .primaryButton span,
+.accountFooterActions button span {
+  font-size: 1.15rem;
+}
+
+.accountSectionHeader p,
+.accountDangerHeader p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+
+.accountFieldGrid,
+.accountDangerForm {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px 20px;
+  align-items: start;
+}
+
+.accountReadonlyNotice {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 24px;
+  background: rgba(var(--secondary-rgb), 0.08);
+}
+
+.accountReadonlyNotice strong {
+  color: var(--secondary);
+  font-size: 1rem;
+}
+
+.accountReadonlyNotice p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.accountPrimaryAction {
+  display: flex;
+  justify-content: flex-start;
+  margin-top: 10px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(var(--warm-accent-rgb), 0.12);
+}
+
+.accountPrimaryAction .primaryButton,
+.accountFooterActions button {
+  gap: 8px;
+}
+
+.accountDangerCard {
+  padding: 28px 30px;
+  border-radius: 32px;
+  border: 2px dashed rgba(240, 86, 48, 0.28);
+  background: rgba(255, 248, 244, 0.82);
+  box-shadow: var(--shadow-soft);
+}
+
+.accountDangerHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.accountDangerHeader h3 {
+  color: #b02500;
+}
+
+.accountDangerToggle {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.accountDangerToggleBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #b02500;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.accountDangerToggleBadge span {
+  font-size: 1rem;
+}
+
+.accountDangerPanel {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.accountDangerAction {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.accountFooterActions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+}
+
+.accountFooterActions > * {
+  min-width: 200px;
+}
+
+@media (max-width: 960px) {
+  .accountSettingsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .accountSidebarCard,
+  .accountFormCard,
+  .accountDangerCard {
+    padding: 24px 20px;
+    border-radius: 26px;
+  }
+
+  .accountPageTitle {
+    text-align: center;
+  }
+
+  .accountFieldGrid,
+  .accountDangerForm {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .accountDangerAction,
+  .accountPrimaryAction {
+    justify-content: stretch;
+  }
+
+  .accountDangerToggle {
+    flex-direction: column;
+  }
+
+  .accountDangerToggleBadge {
+    align-self: flex-start;
+  }
+
+  .accountDangerAction > *,
+  .accountPrimaryAction > * {
+    width: 100%;
+  }
+
+  .accountFooterActions > * {
+    width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  .myPageAccountShell {
+    padding-top: 96px;
+  }
+
+  .accountSettingsLayout {
+    gap: 22px;
+  }
+
+  .accountPageTitle h1 {
+    font-size: 2rem;
+  }
+
+  .accountPageTitle p {
+    font-size: 0.96rem;
+  }
+
+  .accountSidebarMeta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.myPageWritingShell {
+  max-width: 1320px;
+}
+
+.writingHistoryLayout {
+  display: grid;
+  gap: 28px;
+}
+
+.writingDashboardHeader {
+  display: grid;
+  gap: 20px;
+}
+
+.writingDashboardHeader h1,
+.writingHistoryHeader h2,
+.writingPanelHeader h2 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: clamp(2.2rem, 4vw, 3.1rem);
+  letter-spacing: -0.05em;
+}
+
+.writingStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.writingStatCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 24px;
+  border-radius: 30px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-soft);
+}
+
+.writingStatIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+}
+
+.writingStatIcon span {
+  font-size: 1.8rem;
+}
+
+.writingStatIconWarm {
+  background: rgba(var(--warm-accent-rgb), 0.18);
+  color: var(--primary);
+}
+
+.writingStatIconMint {
+  background: rgba(var(--secondary-rgb), 0.16);
+  color: var(--secondary);
+}
+
+.writingStatIconAmber {
+  background: rgba(255, 190, 83, 0.18);
+  color: #b26b00;
+}
+
+.writingStatLabel {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--text-sub);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.writingStatCard strong {
+  display: block;
+  color: var(--text-main);
+  font-size: 1.65rem;
+  line-height: 1.1;
+}
+
+.writingStatCard p {
+  margin: 8px 0 0;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.writingBentoGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.writingExpressionsPanel,
+.writingFeedbackPanel,
+.writingHistoryBoard {
+  background: var(--surface-low);
+  box-shadow: var(--shadow-soft);
+}
+
+.writingExpressionsPanel {
+  padding: 28px;
+  border-radius: 32px;
+}
+
+.writingFeedbackPanel {
+  padding: 28px;
+  border-radius: 32px;
+  border: 2px solid rgba(var(--warm-accent-rgb), 0.14);
+  background: rgba(255, 240, 214, 0.34);
+}
+
+.writingPanelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 18px;
+  margin-bottom: 22px;
+}
+
+.writingPanelHeader h2 {
+  font-size: 2rem;
+}
+
+.writingPanelHeader p,
+.writingHistoryHeader p {
+  margin: 8px 0 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.writingPanelLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.writingExpressionsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.writingExpressionCard,
+.writingExpressionMoreCard {
+  display: grid;
+  gap: 10px;
+  min-height: 150px;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--surface-lowest);
+  box-shadow: 0 10px 24px -18px rgba(127, 82, 0, 0.22);
+}
+
+.writingExpressionCard {
+  border-left: 4px solid rgba(var(--warm-accent-rgb), 0.78);
+}
+
+.writingExpressionCard:nth-child(3n + 2) {
+  border-left-color: rgba(var(--secondary-rgb), 0.82);
+}
+
+.writingExpressionCard:nth-child(3n) {
+  border-left-color: rgba(234, 163, 40, 0.92);
+}
+
+.writingExpressionTag {
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.writingExpressionCard strong {
+  color: var(--text-main);
+  font-size: 1.04rem;
+  line-height: 1.35;
+}
+
+.writingExpressionCard p,
+.writingExpressionCard small {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.55;
+}
+
+.writingExpressionMoreCard {
+  place-items: center;
+  align-content: center;
+  border: 2px dashed rgba(16, 36, 76, 0.14);
+  background: rgba(255, 255, 255, 0.56);
+  color: var(--text-sub);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.writingExpressionMoreCard span:first-child {
+  font-size: 2rem;
+  color: var(--primary);
+}
+
+.writingFeedbackHeader {
+  margin-bottom: 20px;
+}
+
+.writingFeedbackHeader h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 1.6rem;
+}
+
+.writingFeedbackList {
+  display: grid;
+  gap: 18px;
+}
+
+.writingFeedbackItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+}
+
+.writingFeedbackMarker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 8px;
+  border-radius: 999px;
+  color: #fffaf7;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.writingFeedbackMarkerAlert {
+  background: linear-gradient(180deg, #f76e4b 0%, #c63f1d 100%);
+}
+
+.writingFeedbackMarkerTip {
+  background: linear-gradient(180deg, #6fb89d 0%, #2c7d63 100%);
+}
+
+.writingFeedbackMarkerGuide {
+  background: linear-gradient(180deg, #ffc35f 0%, #d88900 100%);
+  color: #583700;
+}
+
+.writingFeedbackItem strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--text-main);
+}
+
+.writingFeedbackItem p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.writingPanelEmpty {
+  display: grid;
+  gap: 14px;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.writingPanelEmpty p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+
+.writingHistoryBoard {
+  display: grid;
+  gap: 18px;
+  padding: 28px;
+  border-radius: 32px;
+}
+
+.writingHistoryHeader {
+  display: grid;
+  gap: 10px;
+}
+
+.writingHistoryHeader h2 {
+  font-size: 2.05rem;
+}
+
+.writingHistoryFeatured {
+  overflow: hidden;
+  border-radius: 30px;
+  border: 2px solid rgba(var(--warm-accent-rgb), 0.48);
+  background: var(--surface-lowest);
+  box-shadow: 0 15px 35px -5px rgba(254, 182, 76, 0.25);
+}
+
+.writingHistoryFeaturedTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  padding: 18px 22px;
+  border: 0;
+  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  color: var(--on-primary-container);
+  cursor: pointer;
+  text-align: left;
+}
+
+.writingHistoryFeaturedTop > span:last-child {
+  transition: transform 0.18s ease;
+}
+
+.writingHistoryFeaturedTop[aria-expanded="true"] > span:last-child {
+  transform: rotate(0deg);
+}
+
+.writingHistoryFeaturedMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.writingHistoryFeaturedMeta h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.writingHistoryTodayBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.writingHistoryFeaturedBody {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+  border-top: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.writingHistoryPromptCard {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 22px;
+  background: var(--surface-low);
+}
+
+.writingHistoryPromptCard span {
+  color: var(--primary);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.writingHistoryPromptCard p {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.06rem;
+  line-height: 1.7;
+}
+
+.writingHistoryFeaturedColumns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.writingHistoryDraftColumn {
+  display: grid;
+  gap: 12px;
+}
+
+.writingHistoryDraftColumn h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--text-main);
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.writingHistoryDraftColumn h4 span {
+  font-size: 1rem;
+  color: var(--secondary);
+}
+
+.writingHistoryDraftBody {
+  min-height: 154px;
+  padding: 18px;
+  border-radius: 22px;
+  border: 1px solid rgba(16, 36, 76, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-main);
+  line-height: 1.85;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+
+.writingHistoryDraftBodyImproved {
+  background: rgba(var(--secondary-rgb), 0.06);
+  border-color: rgba(var(--secondary-rgb), 0.18);
+}
+
+.writingHistoryFeaturedActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  border-top: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.writingHistoryList {
+  display: grid;
+  gap: 14px;
+}
+
+.writingHistoryListItem {
+  border-radius: 24px;
+  background: var(--surface-lowest);
+  box-shadow: 0 10px 24px -18px rgba(127, 82, 0, 0.22);
+  overflow: hidden;
+}
+
+.writingHistoryListButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 18px 20px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.writingHistoryListMeta {
+  display: grid;
+  gap: 6px;
+}
+
+.writingHistoryListMeta > span {
+  color: rgba(94, 91, 87, 0.82);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.writingHistoryListMeta h4 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.writingHistoryRowBadges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.writingHistoryStatusBadge,
+.writingHistoryWordBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.writingHistoryStatusPerfect {
+  background: rgba(var(--secondary-rgb), 0.16);
+  color: var(--secondary);
+}
+
+.writingHistoryStatusGood {
+  background: rgba(var(--warm-accent-rgb), 0.14);
+  color: var(--primary);
+}
+
+.writingHistoryStatusWarm {
+  background: rgba(234, 163, 40, 0.16);
+  color: #b26b00;
+}
+
+.writingHistoryWordBadge {
+  background: rgba(16, 36, 76, 0.06);
+  color: rgba(94, 91, 87, 0.9);
+}
+
+.writingHistoryExpanded {
+  display: grid;
+  gap: 16px;
+  padding: 0 20px 20px;
+  border-top: 1px solid rgba(16, 36, 76, 0.08);
+}
+
+.writingHistoryExpandedSummary {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 22px;
+  background: rgba(var(--warm-accent-rgb), 0.1);
+  color: var(--primary);
+}
+
+.writingHistoryExpandedSummary span {
+  font-size: 1.1rem;
+  color: var(--primary);
+}
+
+.writingHistoryExpandedSummary p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+
+.writingHistoryFeedbackDetails {
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.14);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 12px 28px -22px rgba(127, 82, 0, 0.28);
+}
+
+.writingHistoryFeedbackDetails summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 18px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.writingHistoryFeedbackDetails summary::-webkit-details-marker {
+  display: none;
+}
+
+.writingHistoryFeedbackSummaryIcon {
+  font-size: 1.2rem;
+  transition: transform 0.18s ease;
+}
+
+.writingHistoryFeedbackDetails[open] .writingHistoryFeedbackSummaryIcon {
+  transform: rotate(180deg);
+}
+
+.writingHistoryFeedbackBody {
+  display: grid;
+  gap: 18px;
+  padding: 0 18px 18px;
+  border-top: 1px solid rgba(var(--warm-accent-rgb), 0.1);
+}
+
+.writingHistoryFeedbackPreview {
+  padding: 16px;
+  border-radius: 22px;
+  background: var(--surface-low);
+}
+
+.writingHistoryFeedbackGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.writingHistoryFeedbackColumn {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+
+.writingHistoryFeedbackCard {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  align-self: flex-start;
+  padding: 18px;
+  border-radius: 22px;
+  background: var(--surface-lowest);
+  box-shadow: 0 10px 24px -20px rgba(127, 82, 0, 0.24);
+}
+
+.writingHistoryFeedbackCardFull {
+  grid-column: 1 / -1;
+}
+
+.writingHistoryFeedbackLabel {
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.writingHistoryFeedbackCard h5 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.02rem;
+}
+
+.writingHistoryFeedbackCard p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+
+.writingHistoryFeedbackBulletList {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-sub);
+}
+
+.writingHistoryFeedbackBulletList li {
+  line-height: 1.65;
+}
+
+.writingHistoryFeedbackCorrectionList {
+  display: grid;
+  gap: 10px;
+}
+
+.writingHistoryFeedbackCorrectionItem {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(var(--warm-accent-rgb), 0.08);
+}
+
+.writingHistoryFeedbackCorrectionItem strong {
+  color: var(--text-main);
+  font-size: 0.92rem;
+}
+
+.writingHistoryFeedbackModelAnswer {
+  color: var(--text-main) !important;
+  font-weight: 700;
+}
+
+.writingHistoryFeedbackModelAnswerKo {
+  font-size: 0.92rem;
+}
+
+.writingHistoryFeedbackSuggestionSection {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.writingHistoryFeedbackSuggestionSection strong {
+  color: var(--primary);
+  font-size: 0.86rem;
+}
+
+.writingHistoryFeedbackSuggestionList {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.writingHistoryFeedbackExpressionList {
+  display: grid;
+  gap: 10px;
+}
+
+.writingHistoryFeedbackExpressionItem {
+  display: grid;
+  gap: 6px;
+  padding: 14px 15px;
+  border-radius: 16px;
+  background: rgba(var(--secondary-rgb), 0.08);
+}
+
+.writingHistoryFeedbackExpressionItem strong {
+  color: var(--text-main);
+  font-size: 0.94rem;
+}
+
+.writingHistoryFeedbackExpressionMeaning {
+  color: var(--primary) !important;
+  font-weight: 700;
+}
+
+.writingHistoryFeedbackExpressionExample {
+  color: var(--text-main) !important;
+  font-style: italic;
+}
+
+.writingHistoryFeedbackSuggestionChip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(var(--secondary-rgb), 0.12);
+  color: var(--secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.writingHistoryFeedbackCompletion {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(var(--secondary-rgb), 0.08);
+}
+
+.writingHistoryFeedbackCompletion strong {
+  color: var(--secondary);
+  font-size: 0.9rem;
+}
+
+.writingHistoryFeedbackGrammarList {
+  display: grid;
+  gap: 10px;
+}
+
+.writingHistoryFeedbackGrammarItem {
+  display: grid;
+  gap: 8px;
+  padding: 14px 15px;
+  border-radius: 16px;
+  background: rgba(var(--warm-accent-rgb), 0.08);
+}
+
+.writingHistoryFeedbackGrammarItem strong {
+  color: var(--text-main);
+  font-size: 0.92rem;
+}
+
+.writingHistoryFeedbackGrammarItem p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.writingHistoryFeedbackGrammarItem p span:first-child {
+  color: rgba(176, 37, 0, 0.9);
+}
+
+.writingHistoryFeedbackGrammarItem p span:last-child {
+  color: var(--secondary);
+  font-weight: 700;
+}
+
+.writingHistoryFeedbackGrammarItem p .material-symbols-outlined {
+  font-size: 1rem;
+  color: var(--primary);
+}
+
+.writingHistoryFeedbackRewriteSuggestions {
+  display: grid;
+  gap: 10px;
+}
+
+.writingHistoryFeedbackRewriteSuggestions strong {
+  color: var(--primary);
+  font-size: 0.88rem;
+}
+
+.writingHistoryFeedbackRewriteSuggestionEn {
+  display: block;
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+@media (max-width: 1080px) {
+  .writingStatsGrid,
+  .writingBentoGrid,
+  .writingHistoryFeaturedColumns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .writingHistoryFeedbackGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .writingHistoryFeedbackColumn {
+    gap: 16px;
+  }
+
+  .writingHistoryFeedbackCard {
+    min-width: 0;
+  }
+
+  .writingHistoryFeedbackCardFull {
+    grid-column: auto;
+  }
+
+  .writingExpressionsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .myPageWritingShell {
+    padding-top: 96px;
+  }
+
+  .writingHistoryLayout {
+    gap: 22px;
+  }
+
+  .writingDashboardHeader h1,
+  .writingHistoryHeader h2,
+  .writingPanelHeader h2 {
+    font-size: 1.9rem;
+  }
+
+  .writingStatCard,
+  .writingExpressionsPanel,
+  .writingFeedbackPanel,
+  .writingHistoryBoard,
+  .writingHistoryFeaturedBody,
+  .writingHistoryExpanded {
+    padding: 20px 18px;
+  }
+
+  .writingHistoryFeaturedTop {
+    padding: 16px 18px;
+  }
+
+  .writingExpressionsGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .writingPanelHeader,
+  .writingHistoryFeaturedActions,
+  .writingHistoryFeaturedMeta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .writingHistoryListButton {
+    align-items: flex-start;
+  }
+}
+
+.loginPage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: none;
+  min-height: 100vh;
+  margin: 0;
+  padding: 108px 16px 0;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(255, 198, 109, 0.24) 0%, transparent 28%),
+    linear-gradient(180deg, rgba(255, 250, 244, 0.98) 0%, #f6f0e8 100%);
+}
+
+.loginHero {
+  width: min(100%, 580px);
+  margin: 0 auto;
+}
+
+.loginPanel {
+  width: 100%;
+  margin: 0;
+  padding: 34px 30px 28px;
+  border-radius: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(250, 244, 236, 0.98) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 24px 54px -34px rgba(112, 74, 20, 0.34);
+}
+
+.loginBrandWordmark {
+  display: block;
+  width: fit-content;
+  margin: 0 auto 22px;
+  color: #d88200;
+  font-size: clamp(2.5rem, 5vw, 3.35rem);
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  text-decoration: none;
+}
+
+.loginBrandWordmark:hover {
+  color: #d88200;
+}
+
+.loginBrandWordmark:focus-visible {
+  outline: 2px solid rgba(var(--warm-accent-rgb), 0.25);
+  outline-offset: 4px;
+}
+
+.loginSegmentedTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 24px;
+  padding: 8px;
+  border-radius: 999px;
+  background: rgba(126, 98, 71, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
+}
+
+.loginSegmentedTab,
+.loginSegmentedTabActive {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  border-radius: 999px;
+  text-decoration: none;
+  font-size: 1.12rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    color 0.18s ease;
+}
+
+.loginSegmentedTab {
+  color: rgba(72, 55, 35, 0.54);
+}
+
+.loginSegmentedTab:hover {
+  color: rgba(72, 55, 35, 0.82);
+}
+
+.loginSegmentedTabActive {
+  background: rgba(255, 255, 255, 0.96);
+  color: #8b4b00;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 8px 18px -14px rgba(79, 57, 26, 0.3);
+}
+
+.loginPanelHeader {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.loginPanelHeader h2 {
+  margin: 0;
+  color: #1f1810;
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+
+.loginPanelHeader p {
+  margin: 0;
+  color: rgba(49, 46, 42, 0.7);
+  line-height: 1.6;
+}
+
+.loginPage .form,
+.loginPage .socialSection {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.loginForm {
+  gap: 18px;
+}
+
+.loginField {
+  gap: 10px;
+}
+
+.loginField span {
+  color: #3d2f1d;
+  font-size: 0.96rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.loginFieldHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.loginInlineAction {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: rgba(139, 75, 0, 0.82);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.loginInlineAction:hover {
+  text-decoration: underline;
+}
+
+.loginInlineAction:focus-visible {
+  outline: 2px solid rgba(var(--warm-accent-rgb), 0.22);
+  outline-offset: 4px;
+  border-radius: 8px;
+}
+
+.loginPage .input {
+  min-height: 54px;
+  padding: 14px 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 8px 22px -18px rgba(127, 82, 0, 0.16);
+}
+
+.loginPage .input::placeholder {
+  color: rgba(49, 46, 42, 0.34);
+}
+
+.loginUtilityRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px 16px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.loginCheckboxGroup {
+  gap: 10px 16px;
+  margin-top: 0;
+}
+
+.loginPage .checkboxField {
+  color: rgba(49, 46, 42, 0.72);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.loginPage .checkboxField input {
+  accent-color: #f59a32;
+}
+
+.loginSupportLink,
+.loginRegisterLink {
+  color: #8b4b00;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.loginSupportLink:hover,
+.loginRegisterLink:hover {
+  text-decoration: underline;
+}
+
+.loginPrimaryActionRow {
+  margin-top: 4px;
+}
+
+.loginPage .primaryButtonWide {
+  width: 100%;
+  min-height: 60px;
+}
+
+.loginPage .primaryButton,
+.loginPage .ghostButton {
+  font-size: 1rem;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.7),
+    0 7px 0 #644000,
+    0 18px 30px -16px rgba(100, 64, 0, 0.48);
+}
+
+.loginPage .primaryButton:hover,
+.loginPage .ghostButton:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.8),
+    0 9px 0 #644000,
+    0 20px 34px -16px rgba(100, 64, 0, 0.5);
+}
+
+.loginPage .primaryButton:active:not(:disabled),
+.loginPage .ghostButton:active:not(:disabled) {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 247, 229, 0.6),
+    0 4px 0 #644000,
+    0 10px 18px -16px rgba(100, 64, 0, 0.34);
+}
+
+.loginSocialSection {
+  margin-top: 20px;
+}
+
+.loginPage .socialDivider {
+  margin-bottom: 14px;
+}
+
+.loginPage .socialDivider span {
+  padding: 0 12px;
+  background: rgba(250, 244, 236, 0.98);
+  color: rgba(49, 46, 42, 0.46);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.loginPage .socialGrid {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.loginPage .naverButton,
+.loginPage .googleButton,
+.loginPage .kakaoButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  min-height: 64px;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    0 12px 24px -18px rgba(49, 46, 42, 0.34);
+}
+
+.loginPage .googleButton {
+  background: rgba(255, 255, 255, 0.98);
+}
+
+.loginPage .kakaoButton {
+  grid-column: auto;
+}
+
+.loginPage .socialButtonIcon {
+  width: 26px;
+  height: 26px;
+}
+
+.loginVerifyCopy {
+  margin-bottom: 18px;
+  text-align: center;
+}
+
+.loginVerifyActions {
+  display: grid;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.loginVerifyFooter {
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.loginPage .notice,
+.loginPage .error {
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  text-align: center;
+}
+
+.loginMetaFooter {
+  display: flex;
+  justify-content: center;
+  width: min(100%, 580px);
+  margin: auto auto 0;
+  padding: 0 0 14px;
+  color: rgba(49, 46, 42, 0.38);
+  font-size: 0.62rem;
+  letter-spacing: 0.14em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+@media (max-width: 640px) {
+  .loginPage {
+    padding: 88px 12px 0;
+  }
+
+  .loginHero {
+    width: min(100%, 100%);
+  }
+
+  .loginPanel {
+    padding: 26px 18px 24px;
+    border-radius: 28px;
+  }
+
+  .loginBrandWordmark {
+    margin-bottom: 18px;
+    font-size: 2.45rem;
+  }
+
+  .loginSegmentedTabs {
+    margin-bottom: 18px;
+    padding: 6px;
+    gap: 6px;
+  }
+
+  .loginSegmentedTab,
+  .loginSegmentedTabActive {
+    min-height: 50px;
+    font-size: 1rem;
+  }
+
+  .loginUtilityRow {
+    align-items: stretch;
+  }
+
+  .loginCheckboxGroup {
+    width: 100%;
+  }
+
+  .loginSupportLink {
+    margin-left: auto;
+  }
+
+  .loginPage .naverButton,
+  .loginPage .googleButton,
+  .loginPage .kakaoButton {
+    width: 58px;
+    height: 58px;
+    min-height: 58px;
+  }
+
+  .loginMetaFooter {
+    padding: 0 12px 18px;
+    letter-spacing: 0.1em;
+  }
+}

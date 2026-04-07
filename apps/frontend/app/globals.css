@@ -1,35 +1,43 @@
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
+
 :root {
-  --background: #fbf6ef;
-  --surface: #fffdf9;
+  --background: #efe7de;
+  --surface: #f6f0ea;
+  --surface-low: #f6f0ea;
+  --surface-lowest: #ffffff;
   --surface-raised: #ffffff;
-  --surface-soft: #f3ece2;
-  --surface-muted: #efe6d9;
-  --primary: #bc664e;
-  --primary-soft: #f3d8cf;
-  --warm-accent: #bc664e;
-  --warm-accent-light: #d48a74;
-  --warm-accent-deep: #8d4e3a;
-  --warm-accent-rgb: 188, 102, 78;
-  --warm-accent-light-rgb: 212, 138, 116;
-  --warm-accent-deep-rgb: 141, 78, 58;
-  --warm-accent-paper: #f9f2e8;
-  --warm-accent-surface-1: #f7ede3;
-  --warm-accent-surface-2: #f4ddd5;
-  --warm-accent-surface-3: #efd0c6;
-  --warm-accent-surface-4: #e6bbab;
-  --warm-accent-surface-5: #d99c87;
-  --midnight-navy: #2a3142;
-  --midnight-navy-rgb: 42, 49, 66;
-  --muted-sage: #92b9a4;
-  --muted-sage-rgb: 146, 185, 164;
-  --text-main: #2a3142;
-  --text-sub: #5e5b56;
-  --text-soft: #7b746b;
-  --border: #e6dbcf;
-  --border-strong: #d8c4b5;
-  --ok: #628974;
-  --shadow-soft: 0 18px 42px rgba(62, 46, 34, 0.08);
-  --shadow-card: 0 22px 56px rgba(62, 46, 34, 0.1);
+  --surface-soft: #f8f2eb;
+  --surface-muted: #e2dcd6;
+  --surface-highest: #e2dcd6;
+  --primary: #7f5200;
+  --primary-soft: #f4e3c5;
+  --secondary: #00684f;
+  --secondary-rgb: 0, 104, 79;
+  --warm-accent: #7f5200;
+  --warm-accent-light: #c58a2c;
+  --warm-accent-deep: #5e3900;
+  --warm-accent-rgb: 127, 82, 0;
+  --warm-accent-light-rgb: 197, 138, 44;
+  --warm-accent-deep-rgb: 94, 57, 0;
+  --warm-accent-paper: #fdf8f2;
+  --warm-accent-surface-1: #f6f0ea;
+  --warm-accent-surface-2: #efe3d2;
+  --warm-accent-surface-3: #ebd3b1;
+  --warm-accent-surface-4: #d8b57a;
+  --warm-accent-surface-5: #b78028;
+  --midnight-navy: #302e2b;
+  --midnight-navy-rgb: 48, 46, 43;
+  --muted-sage: #7ea792;
+  --muted-sage-rgb: 126, 167, 146;
+  --text-main: #302e2b;
+  --text-sub: #5f5952;
+  --text-soft: #7b746d;
+  --border: #e2dcd6;
+  --border-strong: #d0c3b4;
+  --ok: #00684f;
+  --shadow-soft: 0 10px 30px -10px rgba(127, 82, 0, 0.12);
+  --shadow-card: 0 18px 48px -12px rgba(127, 82, 0, 0.14);
+  --shadow-active: 0 15px 35px -5px rgba(254, 182, 76, 0.25);
 }
 
 * {
@@ -42,18 +50,69 @@ body {
   padding: 0;
   min-height: 100%;
   background:
-    radial-gradient(circle at top left, rgba(255, 255, 255, 0.72) 0%, transparent 32%),
-    linear-gradient(180deg, #fffdf9 0%, var(--background) 18%, #f7f0e7 100%);
+    radial-gradient(circle at 12% 8%, rgba(255, 215, 154, 0.26) 0%, transparent 24%),
+    radial-gradient(circle at 88% 12%, rgba(0, 104, 79, 0.08) 0%, transparent 18%),
+    linear-gradient(180deg, #fbf7f2 0%, var(--surface-low) 28%, var(--background) 100%);
   color: var(--text-main);
 }
 
 body {
+  font-family:
+    var(--font-be-vietnam-pro),
+    "Pretendard",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    sans-serif;
   font-weight: 500;
   letter-spacing: -0.02em;
+  line-height: 1.6;
+}
+
+.materialSymbols {
+  font-family: "Material Symbols Outlined";
+  font-weight: 400;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 500,
+    "GRAD" 0,
+    "opsz" 24;
 }
 
 a {
   color: inherit;
+}
+
+button,
+input,
+textarea,
+select,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+label,
+strong,
+b {
+  font-family:
+    var(--font-plus-jakarta-sans),
+    "Pretendard",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    sans-serif;
 }
 
 button,

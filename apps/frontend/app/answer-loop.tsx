@@ -93,6 +93,8 @@ type RewriteSuggestion = {
   note?: string | null;
 };
 
+type DifficultyIconKind = "leaf" | "sprout" | "bloom";
+
 const EXPRESSION_SLOT_LABELS: Record<string, string> = {
   action: "동사",
   actions: "동사",
@@ -677,31 +679,143 @@ const DIFFICULTY_OPTIONS: Array<{
   value: DailyDifficulty;
   label: string;
   level: string;
-  icon: string;
+  icon: DifficultyIconKind;
   description: string;
+  duration: string;
 }> = [
   {
     value: "A",
-    label: "EASY",
+    label: "보통",
     level: "LEVEL 01",
-    icon: "☻",
-    description: "짧고 분명한 문장으로 가볍게 시작하기 좋아요."
+    icon: "leaf",
+    description: "다양한 어휘와 상황 묘사를 통해 실력을 한 단계 높여 보세요.",
+    duration: "3-5분"
   },
   {
     value: "B",
-    label: "MEDIUM",
+    label: "어려움",
     level: "LEVEL 02",
-    icon: "✎",
-    description: "이유와 예시를 덧붙여 조금 더 길게 표현해보기 좋아요."
+    icon: "sprout",
+    description: "논리적인 주장이나 창의적인 주제로 완벽한 영작에 도전해 보세요.",
+    duration: "5-8분"
   },
   {
     value: "C",
-    label: "HARD",
+    label: "심화",
     level: "LEVEL 03",
-    icon: "◆",
-    description: "생각과 근거를 구조적으로 풀어내는 연습에 잘 맞아요."
+    icon: "bloom",
+    description: "복잡한 사회 이슈에 대해 심도 있는 통찰을 영문으로 풀어내 보세요.",
+    duration: "8-12분"
   }
 ];
+
+function DifficultyStageIconGraphic({ kind }: { kind: DifficultyIconKind }) {
+  if (kind === "leaf") {
+    return (
+      <svg viewBox="0 0 64 64" className={styles.difficultyStageIconSvg} aria-hidden="true">
+        <path
+          d="M46.5 12.5c-14.6 0-28.2 11.6-28.2 27.4 0 8.5 6.1 13.8 13.8 13.8 15.4 0 20.8-17.2 20.8-31 0-6-2.2-10.2-6.4-10.2Z"
+          fill="currentColor"
+        />
+        <path
+          d="M27 40.5c4.8-7 11-13 19-18"
+          className={styles.difficultyStageIconDetailStroke}
+        />
+      </svg>
+    );
+  }
+
+  if (kind === "sprout") {
+    return (
+      <svg viewBox="0 0 64 64" className={styles.difficultyStageIconSvg} aria-hidden="true">
+        <path
+          d="M23 37h18l-2.8 10.5H25.8L23 37Z"
+          fill="currentColor"
+        />
+        <rect x="20.5" y="32.5" width="23" height="4.5" rx="2.25" fill="currentColor" />
+        <path d="M32 33V22" stroke="currentColor" strokeWidth="4.5" strokeLinecap="round" />
+        <path
+          d="M31 23c-7.8 0-12.7-5.3-13.8-12 7.8 0 13.9 3.6 15 12H31Z"
+          fill="currentColor"
+        />
+        <path
+          d="M33 23c7.8 0 12.7-5.3 13.8-12-7.8 0-13.9 3.6-15 12H33Z"
+          fill="currentColor"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 64 64" className={styles.difficultyStageIconSvg} aria-hidden="true">
+      <circle cx="32" cy="32" r="7" fill="currentColor" />
+      <circle cx="32" cy="18" r="7.5" fill="currentColor" />
+      <circle cx="32" cy="46" r="7.5" fill="currentColor" />
+      <circle cx="18" cy="32" r="7.5" fill="currentColor" />
+      <circle cx="46" cy="32" r="7.5" fill="currentColor" />
+      <circle cx="22.5" cy="22.5" r="7" fill="currentColor" />
+      <circle cx="41.5" cy="22.5" r="7" fill="currentColor" />
+      <circle cx="22.5" cy="41.5" r="7" fill="currentColor" />
+      <circle cx="41.5" cy="41.5" r="7" fill="currentColor" />
+      <circle cx="32" cy="32" r="4.5" className={styles.difficultyStageIconDetailFill} />
+    </svg>
+  );
+}
+
+function formatPromptCategoryLabel(prompt: Prompt) {
+  const source = trimNullable(prompt.topicCategory) ?? trimNullable(prompt.topic) ?? "Today's Prompt";
+  return source
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .slice(0, 2)
+    .join(" ")
+    .toUpperCase();
+}
+
+function getPromptShowcaseIcon(prompt: Prompt, index: number) {
+  const haystack = `${prompt.topicCategory} ${prompt.topic} ${prompt.questionEn}`.toLowerCase();
+
+  if (/(movie|film|cinema|genre)/.test(haystack)) {
+    return "movie";
+  }
+
+  if (/(routine|morning|afternoon|saturday|sunday|weekend|daily)/.test(haystack)) {
+    return "sunny";
+  }
+
+  if (/(travel|trip|vacation|flight|journey)/.test(haystack)) {
+    return "flight_takeoff";
+  }
+
+  if (/(food|cook|meal|restaurant|cafe)/.test(haystack)) {
+    return "restaurant";
+  }
+
+  if (/(book|read|study|school|class|learn)/.test(haystack)) {
+    return "school";
+  }
+
+  if (/(friend|family|people|relationship|community)/.test(haystack)) {
+    return "diversity_3";
+  }
+
+  if (/(music|song|concert|band)/.test(haystack)) {
+    return "music_note";
+  }
+
+  return ["lightbulb", "weekend", "auto_awesome"][index % 3];
+}
+
+function getPromptShowcaseMeta(prompt: Prompt) {
+  const tip = trimNullable(prompt.tip)?.replace(/\s+/g, " ");
+  if (tip) {
+    return tip.length > 36 ? `${tip.slice(0, 33).trimEnd()}...` : tip;
+  }
+
+  return `${getDifficultyLabel(prompt.difficulty)} 난이도 추천 질문`;
+}
 
 function getOrCreateGuestId() {
   if (typeof window === "undefined") {
@@ -1550,21 +1664,6 @@ export function AnswerLoop() {
     [todayStatus, welcomeCompletedDateKeys]
   );
   const monthCalendar = buildMonthCalendar(monthStatus, activeMonthView, todayStatus?.date);
-  const welcomeStreakMessage = useMemo(() => {
-    if (!todayStatus) {
-      return "이번 주 흐름을 채워보세요.";
-    }
-
-    if (todayStatus.completed) {
-      return "오늘도 연속 학습을 이어가고 있어요.";
-    }
-
-    if (todayStatus.streakDays > 0) {
-      return "오늘 한 번 더 쓰면 연속 기록이 이어져요.";
-    }
-
-    return "오늘부터 다시 연속 학습을 시작해보세요.";
-  }, [todayStatus]);
   const mobileComposerBarStyle = useMemo(
     () =>
       ({
@@ -1806,6 +1905,11 @@ export function AnswerLoop() {
       ...current,
       [promptId]: !current[promptId]
     }));
+  }
+
+  function handleSelectPromptCard(promptId: string) {
+    setSelectedPromptId(promptId);
+    setRevealedTranslations({});
   }
 
   const applyDraftSnapshot = useCallback((
@@ -2388,36 +2492,6 @@ export function AnswerLoop() {
     );
   }
 
-  function renderStageHeader({
-    stepNumber,
-    title,
-    meta,
-    action
-  }: {
-    stepNumber: number;
-    title: string;
-    meta?: string;
-    action?: ReactNode;
-  }) {
-    return (
-      <div className={styles.stageHeader}>
-        <div className={styles.stageHeaderMain}>
-          <div className={styles.stageHeaderTopRow}>
-            <div className={styles.stageHeaderLead}>
-              <span className={styles.stageStepLabel}>{stepNumber}</span>
-              <div className={styles.stageTitleStack}>
-                <span className={styles.stageStepCaption}>단계</span>
-                <h2>{title}</h2>
-              </div>
-            </div>
-            {meta ? <span className={styles.stageHeaderMeta}>{meta}</span> : null}
-          </div>
-        </div>
-        {action ? <div className={styles.stageHeaderAction}>{action}</div> : null}
-      </div>
-    );
-  }
-
   function openMonthStatus() {
     setMonthView(currentMonthView);
     setShowMonthStatus(true);
@@ -2434,89 +2508,86 @@ export function AnswerLoop() {
           <article className={styles.welcomeCard}>
             <div className={styles.welcomeHeroLayout}>
               <div className={styles.welcomeIntroPanel}>
-                <span className={styles.welcomeBadge}>Modern Scholar&apos;s Studio</span>
-                <h1>{currentUser ? `${currentUser.displayName}님, 반가워요!` : "Ready to write today?"}</h1>
+                <h1>난이도 선택</h1>
                 <p>
                   {currentUser
-                    ? "오늘도 당신의 영어 기록을 함께 채워볼까요? 작은 문장들이 모여 더 선명한 성장 곡선을 만듭니다."
-                    : "짧은 문장부터 천천히 쌓아도 충분해요. 난이도를 고르고 오늘의 질문으로 가볍게 시작해 보세요."}
+                    ? `안녕하세요, ${currentUser.displayName}님! 오늘도 함께 성장해 볼까요?`
+                    : "안녕하세요! 오늘도 차분하게 한 문장씩 쌓아 볼까요?"}{" "}
+                  <span className={styles.welcomeGreetingSparkle} aria-hidden="true">
+                    <span className={`materialSymbols ${styles.materialSymbolIcon}`}>auto_awesome</span>
+                  </span>
                 </p>
-                <div className={styles.welcomeStats}>
-                  {currentUser ? (
-                    <>
-                      <div className={styles.welcomeStatChip}>
-                        <span className={styles.welcomeStatLabel}>Total Sentences</span>
-                        <strong>{(todayStatus?.totalWrittenSentences ?? 0).toLocaleString()} Sentences</strong>
-                      </div>
-                      <div className={styles.welcomeStatChipMuted}>
-                        <span className={styles.welcomeStatLabel}>Scholar Mode</span>
-                        <strong>기록 이어쓰기</strong>
-                      </div>
-                    </>
-                  ) : (
-                    <div className={styles.welcomeStatChipMuted}>
-                      <span className={styles.welcomeStatLabel}>Warm Start</span>
-                      <strong>짧은 문장부터 차분하게</strong>
-                    </div>
-                  )}
-                </div>
               </div>
-              {currentUser ? (
-                <button
-                  type="button"
-                  className={`${styles.welcomeStreakCard} ${styles.welcomeStreakCardInteractive}`}
-                  aria-label="이번 달 학습 기록 열기"
-                  aria-haspopup="dialog"
-                  aria-expanded={showMonthStatus}
-                  onClick={openMonthStatus}
-                >
-                  <div className={styles.welcomeStreakTopRow}>
-                    <strong>연속 학습</strong>
-                    <span className={styles.welcomeStreakPill}>{todayStatus?.streakDays ?? 0} Days</span>
+              <button
+                type="button"
+                className={`${styles.welcomeStreakStrip} ${
+                  currentUser ? styles.welcomeStreakCardInteractive : styles.welcomeStreakStripGuest
+                }`}
+                aria-label={currentUser ? "이번 달 학습 기록 열기" : "학습 안내"}
+                aria-haspopup={currentUser ? "dialog" : undefined}
+                aria-expanded={currentUser ? showMonthStatus : undefined}
+                onClick={currentUser ? openMonthStatus : undefined}
+              >
+                <div className={styles.welcomeStreakMetric}>
+                  <span className={styles.welcomeStreakMetricIcon} aria-hidden="true">
+                    <span className={`materialSymbols ${styles.welcomeStreakMetricGlyph}`}>
+                      local_fire_department
+                    </span>
+                  </span>
+                  <div
+                    className={`${styles.welcomeStreakMetricCopy} ${
+                      currentUser ? "" : styles.welcomeStreakMetricCopyGuest
+                    }`}
+                  >
+                    {currentUser ? (
+                      <>
+                        <strong>{todayStatus?.streakDays ?? 0}일째</strong>
+                        <span>{todayStatus?.completed ? "연속 학습 중!" : "오늘 이어 쓰기 가능"}</span>
+                        <small className={styles.welcomeStreakMetricMeta}>
+                          총 {todayStatus?.totalWrittenSentences ?? 0}문장 작성
+                        </small>
+                      </>
+                    ) : (
+                      <>
+                        <strong>오늘 시작하기</strong>
+                        <span>오늘 첫 루프를 열어 보세요.</span>
+                      </>
+                    )}
                   </div>
-                  <div className={styles.welcomeStreakHeader}>
-                    <div className={styles.welcomeStreakIcon} aria-hidden="true">
-                      <span className={styles.welcomeStreakIconCore} />
-                    </div>
-                    <div className={styles.welcomeStreakCopy}>
-                      <strong>{welcomeStreakMessage}</strong>
-                      <span>이번 달 학습 흐름을 눌러 자세히 확인해 보세요.</span>
-                    </div>
-                  </div>
-                  <div className={styles.welcomeStreakWeek}>
-                    {welcomeWeekDays.map((day) => (
-                      <div
-                        key={day.key}
-                        className={`${styles.welcomeStreakDay} ${
-                          day.isCompleted ? styles.welcomeStreakDayCompleted : ""
-                        } ${day.isToday ? styles.welcomeStreakDayToday : ""}`}
-                      >
-                        <span className={styles.welcomeStreakDayLabel}>{day.label}</span>
-                        <span className={styles.welcomeStreakDayDot} aria-hidden="true" />
-                      </div>
-                    ))}
-                  </div>
-                </button>
-              ) : (
-                <div className={styles.welcomeGuestPanel}>
-                  <strong>오늘의 루프를 시작해 볼까요?</strong>
-                  <p>난이도를 고르고, 질문을 선택하고, 한 문장씩 차분하게 완성해 보세요.</p>
                 </div>
-              )}
+                <span className={styles.welcomeStreakDivider} aria-hidden="true" />
+                <div
+                  className={`${styles.welcomeStreakWeek} ${
+                    currentUser ? "" : styles.welcomeStreakWeekGuest
+                  }`}
+                >
+                  {welcomeWeekDays.map((day) => (
+                    <div
+                      key={day.key}
+                      className={`${styles.welcomeStreakDay} ${
+                        day.isCompleted ? styles.welcomeStreakDayCompleted : ""
+                      } ${day.isToday ? styles.welcomeStreakDayToday : ""}`}
+                    >
+                      <span className={styles.welcomeStreakDayDot} aria-hidden="true">
+                        <span className={`materialSymbols ${styles.welcomeStreakDayGlyph}`}>
+                          {day.isToday ? "auto_awesome" : day.isCompleted ? "auto_awesome" : "circle"}
+                        </span>
+                      </span>
+                      <span className={styles.welcomeStreakDayLabel}>{day.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </button>
             </div>
           </article>
 
-          <section className={styles.pickStage}>
-            {renderStageHeader({
-              stepNumber: 1,
-              title: "난이도 선택"
-            })}
-
+          <section className={`${styles.pickStage} ${styles.difficultyPickStage}`}>
             <div className={styles.difficultyStageGrid}>
               {DIFFICULTY_OPTIONS.map((option) => (
                 <button
                   key={option.value}
                   type="button"
+                  data-tone={option.value}
                   className={
                     pendingDifficultySelection === option.value
                       ? styles.difficultyStageButtonActive
@@ -2524,9 +2595,17 @@ export function AnswerLoop() {
                   }
                   onClick={() => handleSelectDifficulty(option.value)}
                 >
+                  {pendingDifficultySelection === option.value ? (
+                    <span className={styles.difficultyStageSelectedPill}>
+                      선택됨
+                      <span className={`materialSymbols ${styles.difficultyStageSelectedGlyph}`}>
+                        auto_awesome
+                      </span>
+                    </span>
+                  ) : null}
                   <div className={styles.difficultyStageTopRow}>
                     <span className={styles.difficultyStageIcon} aria-hidden="true">
-                      {option.icon}
+                      <DifficultyStageIconGraphic kind={option.icon} />
                     </span>
                     <span className={styles.difficultyStageBadge}>{option.level}</span>
                   </div>
@@ -2534,16 +2613,12 @@ export function AnswerLoop() {
                     <strong>{option.label}</strong>
                     <span>{option.description}</span>
                   </div>
+                  <span className={styles.difficultyStageMeter} aria-hidden="true" />
                 </button>
               ))}
             </div>
 
-            <div className={styles.stageFooter}>
-              <p>
-                {pendingDifficultyOption
-                  ? `선택하신 '${pendingDifficultyOption.label}' 난이도는 오늘 문장을 ${pendingDifficultyOption.description}`
-                  : "원하는 난이도를 먼저 선택해 주세요."}
-              </p>
+            <div className={styles.difficultyActionArea}>
               <button
                 type="button"
                 className={styles.primaryButton}
@@ -2551,8 +2626,46 @@ export function AnswerLoop() {
                 disabled={!pendingDifficultySelection}
               >
                 <span>이 난이도로 시작하기</span>
-                <span aria-hidden="true">→</span>
+                <span className={`materialSymbols ${styles.primaryButtonIcon}`} aria-hidden="true">
+                  arrow_forward
+                </span>
               </button>
+              <p className={styles.difficultyActionMeta}>
+                <span className={`materialSymbols ${styles.difficultyActionMetaIcon}`} aria-hidden="true">
+                  schedule
+                </span>
+                예상 소요 시간: {pendingDifficultyOption?.duration ?? "3-8분"}
+              </p>
+              <p className={styles.difficultyActionDescription}>
+                {pendingDifficultyOption
+                  ? `${pendingDifficultyOption.label} 난이도는 ${pendingDifficultyOption.description}`
+                  : "원하는 난이도를 고르면 오늘의 질문으로 바로 넘어갈 수 있어요."}
+              </p>
+            </div>
+
+            <div className={styles.difficultyInfoGrid}>
+              <article className={styles.difficultyInfoCardForest}>
+                <span className={styles.difficultyInfoIcon} aria-hidden="true">
+                  <span className={`materialSymbols ${styles.difficultyInfoIconGlyph}`}>
+                    lightbulb
+                  </span>
+                </span>
+                <div className={styles.difficultyInfoCopy}>
+                  <strong>작가의 팁</strong>
+                  <p>처음부터 문법을 걱정하지 말고, 먼저 떠오른 생각을 자연스럽게 적은 뒤 천천히 다듬어 보세요.</p>
+                </div>
+              </article>
+              <article className={styles.difficultyInfoCardAmber}>
+                <span className={styles.difficultyInfoIcon} aria-hidden="true">
+                  <span className={`materialSymbols ${styles.difficultyInfoIconGlyph}`}>
+                    psychology
+                  </span>
+                </span>
+                <div className={styles.difficultyInfoCopy}>
+                  <strong>알고 계셨나요?</strong>
+                  <p>하루 5분만 써도 표현 감각은 차곡차곡 쌓여요. 오늘도 작은 루프를 이어 가면 충분합니다.</p>
+                </div>
+              </article>
             </div>
           </section>
         </section>
@@ -2561,61 +2674,79 @@ export function AnswerLoop() {
 
     return (
       <section className={styles.pickStage}>
-        {renderStageHeader({
-          stepNumber: 2,
-          title: "질문 선택",
-          meta: getDifficultyLabel(selectedDifficulty),
-          action: (
-            <div className={styles.stageHeaderButtonGroup}>
-              <button
-                type="button"
-                className={styles.ghostButton}
-                onClick={handleRefreshPromptList}
-                disabled={isLoadingPrompts || isRefreshingQuestion || prompts.length === 0}
-              >
-                {isRefreshingQuestion ? "불러오는 중..." : "새 질문"}
-              </button>
-              <button
-                type="button"
-                className={styles.ghostButton}
-                onClick={() => {
-                  setPendingDifficultySelection(selectedDifficulty);
-                  setPickFlowScreen("difficulty");
-                }}
-              >
-                난이도 다시 고르기
-              </button>
-            </div>
-          )
-        })}
+        <div className={styles.promptSelectionHero}>
+          <div className={styles.promptSelectionCopy}>
+            <span className={styles.promptSelectionEyebrow}>{getDifficultyLabel(selectedDifficulty)}</span>
+            <h2 className={styles.promptSelectionTitle}>질문을 선택하세요</h2>
+            <p className={styles.promptSelectionDescription}>오늘 글쓰기 주제를 골라볼까요?</p>
+          </div>
+          <div className={styles.promptSelectionToolbar}>
+            <button
+              type="button"
+              className={styles.ghostButton}
+              onClick={handleRefreshPromptList}
+              disabled={isLoadingPrompts || isRefreshingQuestion || prompts.length === 0}
+            >
+              {isRefreshingQuestion ? "불러오는 중..." : "새 질문"}
+            </button>
+            <button
+              type="button"
+              className={styles.ghostButton}
+              onClick={() => {
+                setPendingDifficultySelection(selectedDifficulty);
+                setPickFlowScreen("difficulty");
+              }}
+            >
+              난이도 다시 고르기
+            </button>
+          </div>
+        </div>
 
-        <div className={styles.promptList}>
-          {prompts.map((prompt) => {
+        <div className={styles.promptShowcaseGrid}>
+          {prompts.map((prompt, index) => {
             const isSelected = prompt.id === selectedPromptId;
             const isTranslationVisible = Boolean(revealedTranslations[prompt.id]);
+            const categoryLabel = formatPromptCategoryLabel(prompt);
+            const showcaseIcon = getPromptShowcaseIcon(prompt, index);
+            const showcaseMeta = getPromptShowcaseMeta(prompt);
 
             return (
               <article
                 key={prompt.id}
-                className={isSelected ? styles.promptActive : styles.promptCard}
-                onClick={() => setSelectedPromptId(prompt.id)}
+                className={isSelected ? styles.promptShowcaseCardActive : styles.promptShowcaseCard}
+                onClick={() => handleSelectPromptCard(prompt.id)}
               >
-                <strong>{prompt.topic}</strong>
-                <span>{getDifficultyLabel(prompt.difficulty)}</span>
-                <p>{prompt.questionEn}</p>
-                {isTranslationVisible ? (
-                  <small className={styles.translationText}>{prompt.questionKo}</small>
+                {isSelected ? (
+                  <span className={styles.promptShowcaseSelectedBadge} aria-hidden="true">
+                    <span className={`materialSymbols ${styles.promptShowcaseSelectedIcon}`}>check_circle</span>
+                  </span>
                 ) : null}
-                <div className={styles.promptActionRow}>
+                <div className={styles.promptShowcaseTopRow}>
+                  <span className={styles.promptShowcaseChip}>{categoryLabel}</span>
+                  <span className={`materialSymbols ${styles.promptShowcaseLeadingIcon}`} aria-hidden="true">
+                    {showcaseIcon}
+                  </span>
+                </div>
+                <h3 className={styles.promptShowcaseQuestion}>{prompt.questionEn}</h3>
+                {isTranslationVisible ? (
+                  <p className={styles.promptShowcaseTranslation}>{prompt.questionKo}</p>
+                ) : null}
+                <div className={styles.promptShowcaseFooter}>
+                  <span className={styles.promptShowcaseMeta}>
+                    <span className={`materialSymbols ${styles.promptShowcaseMetaIcon}`} aria-hidden="true">
+                      auto_awesome
+                    </span>
+                    {showcaseMeta}
+                  </span>
                   <button
                     type="button"
-                    className={styles.promptTranslationButton}
+                    className={`${styles.promptTranslationButton} ${styles.promptShowcaseTranslateButton}`}
                     onClick={(event) => {
                       event.stopPropagation();
                       togglePromptTranslation(prompt.id);
                     }}
                   >
-                    {isTranslationVisible ? "번역 숨기기" : "번역 보기"}
+                    {isTranslationVisible ? "해석 숨기기" : "해석 보기"}
                   </button>
                 </div>
               </article>
@@ -2623,19 +2754,24 @@ export function AnswerLoop() {
           })}
         </div>
 
-        <div className={styles.stageFooter}>
+        <div className={styles.promptSelectionSupport}>
           <p>
             {isLoadingPrompts
               ? "오늘의 질문을 준비하고 있어요."
-              : "추천 질문 3개 중 하나를 골라 오늘의 작문을 시작해 보세요."}
+              : "마음에 드는 질문을 하나 고르면 바로 오늘의 작문을 시작할 수 있어요."}
           </p>
+        </div>
+        <div className={styles.promptSelectionActionDock}>
           <button
             type="button"
-            className={styles.primaryButton}
+            className={`${styles.primaryButton} ${styles.promptSelectionPrimaryButton}`}
             onClick={() => void handlePickPrompt(selectedPromptId)}
             disabled={!selectedPromptId || isLoadingPrompts}
           >
-            이 질문으로 시작하기
+            <span>시작하기!</span>
+            <span className={`materialSymbols ${styles.primaryButtonIcon}`} aria-hidden="true">
+              arrow_forward
+            </span>
           </button>
         </div>
       </section>
@@ -2685,45 +2821,36 @@ export function AnswerLoop() {
     placeholder: string;
     wordCount: number;
   }) {
+    const draftIndicatorText = (() => {
+      const message = draftStatusMessage.trim();
+      if (!message) {
+        return "자동 저장";
+      }
+
+      if (message.includes("불러")) {
+        return "임시저장 불러옴";
+      }
+
+      if (message.includes("문제") || message.includes("실패")) {
+        return "저장 대기";
+      }
+
+      return "임시 저장됨";
+    })();
+
     return (
       <section className={styles.writingComposer}>
-        <div className={styles.writingComposerQuestion}>
-          <div className={styles.writingComposerHeader}>
-            <span className={styles.writingComposerBadge}>{selectedPrompt?.topic ?? "오늘의 질문"}</span>
-            <div className={styles.writingComposerHeaderActions}>
-              <button
-                type="button"
-                className={`${styles.promptTranslationButton} ${styles.writingComposerToggle}`}
-                onClick={() => setShowAnswerTranslation((current) => !current)}
-              >
-                {showAnswerTranslation ? "번역 숨기기" : "번역 보기"}
-              </button>
-              <button
-                type="button"
-                className={styles.writingComposerHelpButton}
-                aria-haspopup={isMobileViewport ? "dialog" : undefined}
-                aria-expanded={showHelpSheet}
-                onClick={() => {
-                  if (isMobileViewport) {
-                    setShowHelpSheet(true);
-                    return;
-                  }
-
-                  setShowHelpSheet((current) => !current);
-                }}
-              >
-                작성 가이드
-              </button>
-            </div>
+        <div className={styles.writingComposerHeader}>
+          <div className={styles.writingComposerWindowDots} aria-hidden="true">
+            <span />
+            <span />
+            <span />
           </div>
-          <p className={styles.writingComposerQuestionText}>
-            {selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}
-          </p>
-          {showAnswerTranslation ? (
-            <small className={styles.writingComposerTranslation}>
-              {selectedPrompt?.questionKo ?? "질문 해석을 불러오는 중입니다."}
-            </small>
-          ) : null}
+          <div className={styles.writingComposerMeta}>
+            <span>단어 수 {wordCount}</span>
+            <span className={styles.writingComposerMetaDivider} aria-hidden="true" />
+            <span>{draftIndicatorText}</span>
+          </div>
         </div>
         <div className={styles.writingComposerAnswer}>
           <textarea
@@ -2733,7 +2860,6 @@ export function AnswerLoop() {
             placeholder={placeholder}
             rows={8}
           />
-          <span className={styles.composerWordCount}>{wordCount}단어</span>
           <div className={styles.coachTriggerDock}>
             {!showCoachAssistant && !value.trim() ? (
               <div className={styles.coachTriggerBubble}>
@@ -2762,6 +2888,88 @@ export function AnswerLoop() {
           </div>
         </div>
       </section>
+    );
+  }
+
+  function renderWritingSidebar({ stepNumber }: { stepNumber: number }) {
+    return (
+      <aside className={styles.writingStageSidebar}>
+        <section className={styles.writingPhaseCard}>
+          <div className={styles.writingPhaseCardTop}>
+            <div className={styles.writingPhaseCopy}>
+              <span className={styles.writingPhaseLabel}>Writing Phase</span>
+              <strong className={styles.writingPhaseValue}>
+                Step {stepNumber} <span>/ 5</span>
+              </strong>
+            </div>
+            <span className={`materialSymbols ${styles.writingPhaseGlyph}`} aria-hidden="true">
+              auto_stories
+            </span>
+          </div>
+          <div className={styles.writingPhaseProgressTrack} aria-hidden="true">
+            <span style={{ width: `${Math.max(0, Math.min(100, (stepNumber / 5) * 100))}%` }} />
+          </div>
+        </section>
+
+        <section className={styles.writingPromptCard}>
+          <span className={styles.writingPromptBadge}>Today&apos;s Prompt</span>
+          <h3>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</h3>
+          {showAnswerTranslation ? (
+            <p className={styles.writingPromptTranslation}>
+              {selectedPrompt?.questionKo ?? "질문 해석을 불러오는 중입니다."}
+            </p>
+          ) : null}
+        </section>
+
+        <section className={styles.writingActionCard}>
+          <button
+            type="button"
+            className={`${styles.writingActionButton} ${
+              showAnswerTranslation ? styles.writingActionButtonActive : ""
+            }`}
+            aria-pressed={showAnswerTranslation}
+            onClick={() => setShowAnswerTranslation((current) => !current)}
+          >
+            <span className={styles.writingActionIcon} aria-hidden="true">
+              <span className={`materialSymbols ${styles.writingActionGlyph}`}>translate</span>
+            </span>
+            <span className={styles.writingActionCopy}>
+              <strong>{showAnswerTranslation ? "한국어 번역 숨기기" : "한국어 번역 보기"}</strong>
+              <small>질문의 해석을 바로 확인할 수 있어요.</small>
+            </span>
+          </button>
+
+          <button
+            type="button"
+            className={`${styles.writingActionButton} ${
+              showHelpSheet ? styles.writingActionButtonActive : ""
+            }`}
+            aria-pressed={showHelpSheet}
+            aria-haspopup={isMobileViewport ? "dialog" : undefined}
+            aria-expanded={showHelpSheet}
+            onClick={() => {
+              if (isMobileViewport) {
+                setShowHelpSheet((current) => !current);
+                return;
+              }
+
+              setShowHelpSheet((current) => !current);
+            }}
+          >
+            <span className={styles.writingActionIcon} aria-hidden="true">
+              <span className={`materialSymbols ${styles.writingActionGlyph}`}>menu_book</span>
+            </span>
+            <span className={styles.writingActionCopy}>
+              <strong>{showHelpSheet ? "가이드 닫기" : "가이드 보기"}</strong>
+              <small>starter 문장과 유용한 단어 목록을 펼쳐요.</small>
+            </span>
+          </button>
+        </section>
+
+        {!isMobileViewport && showHelpSheet ? (
+          <div className={styles.writingGuideDock}>{renderWritingGuideSummary()}</div>
+        ) : null}
+      </aside>
     );
   }
 
@@ -3016,7 +3224,10 @@ export function AnswerLoop() {
         keepWhatWorksDisplayMode:
           feedback.strengths.length > 0 || usedExpressions.length > 0 ? "SHOW_EXPANDED" : "HIDE",
         fixFirstDisplayMode:
-          feedback.grammarFeedback?.length || feedback.corrections?.length ? "SHOW_EXPANDED" : "HIDE",
+          (feedback.ui?.fixPoints?.some((point) => point && point.kind !== "EXPRESSION") ||
+            feedback.corrections?.length)
+            ? "SHOW_EXPANDED"
+            : "HIDE",
         rewriteGuideDisplayMode: "SHOW_EXPANDED",
         rewriteGuideMode: feedback.loopComplete ? "OPTIONAL_POLISH" : "DETAIL_SCAFFOLD",
         modelAnswerDisplayMode: feedback.modelAnswer?.trim()
@@ -3646,14 +3857,6 @@ export function AnswerLoop() {
     );
   }
 
-  function renderFeedbackGroup(children: ReactNode) {
-    return (
-      <section className={styles.feedbackGroup}>
-        <div className={styles.feedbackGroupBody}>{children}</div>
-      </section>
-    );
-  }
-
   function renderFeedbackCoreSections() {
     return (
       <>
@@ -3663,6 +3866,249 @@ export function AnswerLoop() {
         {renderExampleAnswerSection()}
         {renderExpressionLearningSection()}
       </>
+    );
+  }
+
+  function renderMobileFeedbackFixPoint(point: FeedbackSecondaryLearningPoint, index: number) {
+    const label = point.kind === "GRAMMAR" ? "GRAMMAR TIP" : "STRUCTURE TIP";
+    const lead = resolveLearningPointLead(point);
+    const meaning = resolveLearningPointMeaning(point, lead);
+    const guidance = resolveLearningPointGuidance(point);
+    const support = resolveLearningPointSupport(point);
+    const originalText = trimNullable(point.originalText);
+    const revisedText = trimNullable(point.revisedText);
+
+    return (
+      <article
+        key={`${point.kind}-${point.headline ?? point.originalText ?? point.exampleEn ?? index}`}
+        className={styles.mobileFeedbackFixEntry}
+      >
+        <div className={styles.mobileFeedbackFixTip}>
+          <span>{label}</span>
+          <p>{support ?? guidance ?? meaning ?? lead ?? "이 부분을 한번 더 다듬어 보세요."}</p>
+        </div>
+        {originalText ? (
+          <p className={styles.mobileFeedbackFixOriginal}>{renderPrimaryFixDiff(originalText, revisedText, "original")}</p>
+        ) : null}
+        {revisedText ? (
+          <p className={styles.mobileFeedbackFixRevised}>
+            <span className={`materialSymbols ${styles.mobileFeedbackFixCheck}`} aria-hidden="true">
+              check_circle
+            </span>
+            <span>{renderPrimaryFixDiff(originalText, revisedText, "revised")}</span>
+          </p>
+        ) : null}
+      </article>
+    );
+  }
+
+  function renderMobileFeedbackStep({
+    screenPolicy,
+    loopStatus
+  }: {
+    screenPolicy: FeedbackScreenPolicy | null;
+    loopStatus: FeedbackLoopStatus | null;
+  }) {
+    if (!feedback) {
+      return (
+        <section className={`${styles.stage} ${styles.feedbackStageMobile}`}>
+          <p className={styles.placeholderText}>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
+        </section>
+      );
+    }
+
+    const keepStrengths = feedback.strengths.slice(0, screenPolicy?.keepWhatWorksMaxItems ?? 2);
+    const expressionChips = usedExpressions.slice(0, screenPolicy?.keepExpressionChipMaxItems ?? 2);
+    const fixPoints = resolveFixPoints();
+    const rewritePractice = feedback.ui?.rewritePractice ?? {
+      title: feedback.loopComplete ? "원하면 한 번 더 다듬어 보세요" : "한번 더 써보기",
+      starter: feedback.correctedAnswer?.trim() || lastSubmittedAnswer,
+      instruction: feedback.rewriteChallenge?.trim() || "이 문장을 시작점으로 삼아 다시 써 보세요.",
+      ctaLabel: "이 문장으로 시작해서 다시 쓰기",
+      optionalTone: Boolean(feedback.loopComplete)
+    };
+    const rewriteSuggestions = resolveRewritePracticeSuggestions(rewritePractice.starter);
+    const canShowModelAnswer =
+      Boolean(feedback.modelAnswer?.trim()) &&
+      (screenPolicy?.modelAnswerDisplayMode ?? "SHOW_EXPANDED") !== "HIDE";
+    const mobileBadge = loopStatus?.badge?.trim() || (shouldSuggestFinish ? "마무리 가능" : "다시 써보기 추천");
+    const mobileHeadline = "Great effort!";
+    const mobileSupport =
+      loopStatus?.headline?.trim() ||
+      feedback.completionMessage?.trim() ||
+      feedbackLevel?.summary ||
+      "문장을 아주 잘 이어 썼어요. 이제 몇 군데만 다듬으면 더 자연스러워져요.";
+
+    return (
+      <section className={`${styles.stage} ${styles.feedbackStageMobile}`}>
+        <header className={styles.mobileFeedbackHero}>
+          <div className={styles.mobileFeedbackHeroTop}>
+            <span className={styles.mobileFeedbackStageBadge}>4단계</span>
+            <span className={styles.mobileFeedbackAttemptMeta}>
+              {feedback.attemptNo}번째 시도 · {feedbackLevel?.label ?? "피드백"}
+            </span>
+          </div>
+          <div className={styles.mobileFeedbackHeroCopy}>
+            <h2>{mobileHeadline}</h2>
+            <p>{mobileSupport}</p>
+          </div>
+        </header>
+
+        <section className={styles.mobileFeedbackContextCard}>
+          <div className={styles.mobileFeedbackContextBlock}>
+            <h4>질문</h4>
+            <p>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</p>
+            {selectedPrompt?.questionKo ? (
+              <span className={styles.mobileFeedbackContextTranslation}>
+                {selectedPrompt.questionKo}
+              </span>
+            ) : null}
+          </div>
+          <div className={styles.mobileFeedbackContextDivider} />
+          <div className={styles.mobileFeedbackContextBlock}>
+            <h4>내가 제출한 답변</h4>
+            <p className={styles.mobileFeedbackAnswerText}>{lastSubmittedAnswer}</p>
+          </div>
+        </section>
+
+        {(keepStrengths.length > 0 || expressionChips.length > 0) ? (
+          <section className={styles.mobileFeedbackSectionCard}>
+            <div className={styles.mobileFeedbackSectionHeader}>
+              <div className={`${styles.mobileFeedbackSectionIcon} ${styles.mobileFeedbackSectionIconGood}`}>
+                <span className="material-symbols-outlined">thumb_up</span>
+              </div>
+              <h3>이건 잘했어</h3>
+            </div>
+            {keepStrengths.length > 0 ? (
+              <ul className={styles.mobileFeedbackStrengthList}>
+                {keepStrengths.map((strength) => (
+                  <li key={strength}>
+                    <span>+</span>
+                    <span>{strength}</span>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {expressionChips.length > 0 ? (
+              <div className={styles.mobileFeedbackChipSection}>
+                <h4>잘 쓴 표현</h4>
+                <div className={styles.mobileFeedbackChipList}>
+                  {expressionChips.map((expression) => (
+                    <span key={expression.key} className={styles.mobileFeedbackChip}>
+                      {expression.expression}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        {fixPoints.length > 0 ? (
+          <section className={styles.mobileFeedbackSectionCard}>
+            <div className={styles.mobileFeedbackSectionHeader}>
+              <div className={`${styles.mobileFeedbackSectionIcon} ${styles.mobileFeedbackSectionIconFix}`}>
+                <span className="material-symbols-outlined">edit_square</span>
+              </div>
+              <h3>고쳐볼 점</h3>
+            </div>
+            <div className={styles.mobileFeedbackFixList}>
+              {fixPoints.map((point, index) => renderMobileFeedbackFixPoint(point, index))}
+            </div>
+          </section>
+        ) : null}
+
+        {isDisplayVisible(screenPolicy?.rewriteGuideDisplayMode) ? (
+          <section className={styles.mobileFeedbackPracticeSection}>
+            <h3>{rewritePractice.title || "이 문장으로 다시 써보기"}</h3>
+            <div className={styles.mobileFeedbackPracticeCard}>
+              <div className={styles.mobileFeedbackStarterBlock}>
+                <p className={styles.mobileFeedbackStarterText}>{rewritePractice.starter}</p>
+                <p className={styles.mobileFeedbackStarterHint}>{rewritePractice.instruction}</p>
+              </div>
+              {rewriteSuggestions.length > 0 ? (
+                <div className={styles.mobileFeedbackSuggestionBlock}>
+                  <p className={styles.mobileFeedbackSuggestionTitle}>이런 표현으로 이어 써볼 수 있어요</p>
+                  <div className={styles.mobileFeedbackSuggestionList}>
+                    {rewriteSuggestions.map((suggestion) => (
+                      <article key={suggestion.key} className={styles.mobileFeedbackSuggestionCard}>
+                        <div className={styles.mobileFeedbackSuggestionTop}>
+                          <strong>{suggestion.english}</strong>
+                          <span className={styles.mobileFeedbackSuggestionDot} aria-hidden="true" />
+                        </div>
+                        {suggestion.korean ? (
+                          <p>{renderLocalizedExpression(suggestion.korean)}</p>
+                        ) : null}
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              <div className={styles.mobileFeedbackPracticeAction}>
+                <button
+                  type="button"
+                  className={`${styles.primaryButton} ${styles.mobileFeedbackPracticeButton}`}
+                  onClick={handleStartRewriteFromGuide}
+                >
+                  {rewritePractice.ctaLabel}
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {canShowModelAnswer ? (
+          <section className={styles.mobileFeedbackSectionCard}>
+            <div className={styles.mobileFeedbackSectionHeader}>
+              <div className={`${styles.mobileFeedbackSectionIcon} ${styles.mobileFeedbackSectionIconExample}`}>
+                <span className="material-symbols-outlined">auto_awesome</span>
+              </div>
+              <h3>예시 답안</h3>
+            </div>
+            <div className={styles.mobileFeedbackExampleCard}>
+              <p className={styles.mobileFeedbackExampleText}>{feedback.modelAnswer}</p>
+              {feedback.modelAnswerKo ? (
+                <p className={styles.mobileFeedbackExampleTranslation}>해석: {feedback.modelAnswerKo}</p>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        <section className={styles.mobileFeedbackFooterCard}>
+          <div className={styles.mobileFeedbackFooterCopy}>
+            <span className={styles.mobileFeedbackFooterBadge}>{mobileBadge}</span>
+            <strong>{loopStatus?.headline ?? "지금은 두세 가지만 먼저 고치면 충분해요."}</strong>
+            {loopStatus?.supportText ? <p>{loopStatus.supportText}</p> : null}
+          </div>
+          <div className={styles.mobileFeedbackFooterActions}>
+            {(screenPolicy?.showRewriteCta ?? Boolean(feedback)) ? (
+              <button
+                type="button"
+                className={styles.primaryButton}
+                onClick={handleRewriteFromCurrentAnswer}
+                disabled={!feedback}
+              >
+                {loopStatus?.rewriteCtaLabel ?? "다시 써보기"}
+              </button>
+            ) : null}
+            {(screenPolicy?.showCancelCta ?? Boolean(feedback)) ? (
+              <button
+                type="button"
+                className={styles.ghostButton}
+                onClick={handleCancelSubmittedAnswer}
+                disabled={!feedback}
+              >
+                {loopStatus?.cancelCtaLabel ?? "답변 취소"}
+              </button>
+            ) : null}
+            {(screenPolicy?.showFinishCta ?? shouldSuggestFinish) ? (
+              <button type="button" className={styles.ghostButton} onClick={handleFinishLoop}>
+                {loopStatus?.finishCtaLabel ?? "오늘 루프 완료"}
+              </button>
+            ) : null}
+          </div>
+        </section>
+      </section>
     );
   }
 
@@ -3829,20 +4275,35 @@ export function AnswerLoop() {
 
   function renderAnswerStep() {
     return (
-      <section className={styles.stage} style={mobileComposerBarStyle}>
-        {renderStageHeader({
-          stepNumber: 3,
-          title: "첫 답변",
-          meta: selectedPrompt ? getDifficultyLabel(selectedPrompt.difficulty) : "..."
-        })}
-        {renderWritingComposer({
-          value: answer,
-          onChange: setAnswer,
-          placeholder: "여기에 영어로 첫 답변을 작성해 주세요.",
-          wordCount: answerWordCount
-        })}
-        {!isMobileViewport && showHelpSheet ? renderWritingGuideSummary() : null}
-        {draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
+      <section className={`${styles.stage} ${styles.writingStage}`} style={mobileComposerBarStyle}>
+        <div className={styles.writingStageLayout}>
+          {renderWritingSidebar({ stepNumber: 3 })}
+          <div className={styles.writingStageMain}>
+            {renderWritingComposer({
+              value: answer,
+              onChange: setAnswer,
+              placeholder: "영작을 시작해 보세요...",
+              wordCount: answerWordCount
+            })}
+            {isMobileViewport && draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
+            <div className={styles.writingStageActions}>
+              <button type="button" className={styles.ghostButton} onClick={() => setStep("pick")}>
+                질문 다시 고르기
+              </button>
+              <button
+                type="button"
+                className={`${styles.primaryButton} ${styles.writingSubmitButton}`}
+                onClick={() => handleSubmit(answer, "INITIAL")}
+                disabled={isSubmitting || isLoadingPrompts}
+              >
+                <span>{isSubmitting ? "피드백 생성 중..." : "답변 제출하기"}</span>
+                <span className={`materialSymbols ${styles.primaryButtonIcon}`} aria-hidden="true">
+                  send
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
         {renderMobileComposerBar({
           secondaryLabel: "질문 목록",
           onSecondary: () => setStep("pick"),
@@ -3850,19 +4311,6 @@ export function AnswerLoop() {
           onPrimary: () => handleSubmit(answer, "INITIAL"),
           primaryDisabled: isSubmitting || isLoadingPrompts
         })}
-        <div className={`${styles.actionRow} ${styles.composerDesktopActions}`}>
-          <button type="button" className={styles.ghostButton} onClick={() => setStep("pick")}>
-            오늘의 질문으로
-          </button>
-          <button
-            type="button"
-            className={styles.primaryButton}
-            onClick={() => handleSubmit(answer, "INITIAL")}
-            disabled={isSubmitting || isLoadingPrompts}
-          >
-            {isSubmitting ? "피드백 생성 중..." : "답변 제출하기"}
-          </button>
-        </div>
       </section>
     );
   }
@@ -3871,135 +4319,79 @@ export function AnswerLoop() {
     const screenPolicy = resolveScreenPolicy();
     const loopStatus = resolveLoopStatus();
 
-    return (
-      <section className={styles.stage}>
-        {renderStageHeader({
-          stepNumber: 4,
-          title: "피드백",
-          meta: feedback ? `${feedback.attemptNo}번째 시도 · ${feedbackLevel?.label ?? "대기 중"}` : "대기 중"
-        })}
-        {feedback ? (
-          <div className={styles.feedbackBody}>
-            {renderFeedbackGroup(
-              <div className={styles.responseCard}>
-                <div className={styles.responsePrompt}>
-                  <span className={styles.responsePromptLabel}>질문</span>
-                  <p>{selectedPrompt?.questionEn ?? "질문을 불러오는 중입니다."}</p>
-                  {selectedPrompt?.questionKo ? (
-                    <small className={styles.translationText}>{selectedPrompt.questionKo}</small>
-                  ) : null}
-                </div>
-                <h3>내가 제출한 답변</h3>
-                <p>{lastSubmittedAnswer}</p>
-              </div>
-            )}
-            {renderFeedbackCoreSections()}
-          </div>
-        ) : (
-          <p className={styles.placeholderText}>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
-        )}
-        <div className={styles.stageFooter}>
-          {feedback ? (
-            <div className={styles.completionCallout}>
-              {loopStatus?.badge ? (
-                <span className={styles.completionCalloutBadge}>{loopStatus.badge}</span>
-              ) : null}
-              <strong>
-                {loopStatus?.headline ??
-                  feedback.completionMessage ??
-                  feedbackLevel?.summary ??
-                  "이 답변은 지금 단계에서 마무리해도 충분해요."}
-              </strong>
-              {loopStatus?.supportText ? <p>{loopStatus.supportText}</p> : null}
-            </div>
-          ) : null}
-          <div className={styles.actionRow}>
-            {(screenPolicy?.showRewriteCta ?? Boolean(feedback)) ? (
-              <button
-                type="button"
-                className={shouldSuggestFinish ? styles.ghostButton : styles.primaryButton}
-                onClick={handleRewriteFromCurrentAnswer}
-                disabled={!feedback}
-              >
-                {loopStatus?.rewriteCtaLabel ?? "다시 써보기"}
-              </button>
-            ) : null}
-            {(screenPolicy?.showCancelCta ?? Boolean(feedback)) ? (
-              <button
-                type="button"
-                className={styles.ghostButton}
-                onClick={handleCancelSubmittedAnswer}
-                disabled={!feedback}
-              >
-                {loopStatus?.cancelCtaLabel ?? "답변 취소"}
-              </button>
-            ) : null}
-          </div>
-          {(screenPolicy?.showFinishCta ?? shouldSuggestFinish) ? (
-            <div className={styles.actionRow}>
-              <button type="button" className={styles.primaryButton} onClick={handleFinishLoop}>
-                {loopStatus?.finishCtaLabel ?? "오늘 루프 완료하고 도장 받기"}
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </section>
-    );
+    return renderMobileFeedbackStep({ screenPolicy, loopStatus });
   }
 
   function renderRewriteStep() {
     return (
-      <section className={styles.stage} style={mobileComposerBarStyle}>
-        {renderStageHeader({
-          stepNumber: 5,
-          title: "다시쓰기",
-          meta: sessionId ? "같은 질문 이어쓰기" : "다시쓰기"
-        })}
-        {renderWritingComposer({
-          value: rewrite,
-          onChange: setRewrite,
-          placeholder: "피드백을 반영한 영어 답변을 다시 작성해 주세요.",
-          wordCount: rewriteWordCount
-        })}
-        {!isMobileViewport && showHelpSheet ? renderWritingGuideSummary() : null}
-        <div className={styles.responseCard}>
-          <div className={styles.mobileSectionHeader}>
-            <h3>이전 답변</h3>
-            <button
-              type="button"
-              className={styles.mobileSectionToggle}
-              onClick={() => setShowPreviousRewriteAnswer((current) => !current)}
-            >
-              {showPreviousRewriteAnswer ? "접기" : "보기"}
-            </button>
-          </div>
-          <div
-            className={`${styles.mobileSectionBody} ${
-              showPreviousRewriteAnswer ? styles.mobileSectionBodyOpen : ""
-            }`}
-          >
-            <p>{lastSubmittedAnswer || "먼저 첫 답변을 제출해 주세요."}</p>
-          </div>
-        </div>
-        {feedback ? (
-          <section className={styles.rewriteFeedbackPanel}>
-            <div className={styles.rewriteFeedbackHeader}>
-              <div>
-                <strong>이전 피드백</strong>
-                <p>직전 답변에서 받은 피드백을 같은 구조로 다시 보면서 문장을 다듬어 보세요.</p>
+      <section className={`${styles.stage} ${styles.writingStage}`} style={mobileComposerBarStyle}>
+        <div className={styles.writingStageLayout}>
+          {renderWritingSidebar({ stepNumber: 5 })}
+          <div className={styles.writingStageMain}>
+            {renderWritingComposer({
+              value: rewrite,
+              onChange: setRewrite,
+              placeholder: "피드백을 반영한 영어 답변을 다시 작성해 주세요.",
+              wordCount: rewriteWordCount
+            })}
+            <div className={styles.responseCard}>
+              <div className={styles.mobileSectionHeader}>
+                <h3>이전 답변</h3>
+                <button
+                  type="button"
+                  className={styles.mobileSectionToggle}
+                  onClick={() => setShowPreviousRewriteAnswer((current) => !current)}
+                >
+                  {showPreviousRewriteAnswer ? "접기" : "보기"}
+                </button>
               </div>
+              <div
+                className={`${styles.mobileSectionBody} ${
+                  showPreviousRewriteAnswer ? styles.mobileSectionBodyOpen : ""
+                }`}
+              >
+                <p>{lastSubmittedAnswer || "먼저 첫 답변을 제출해 주세요."}</p>
+              </div>
+            </div>
+            {feedback ? (
+              <section className={styles.rewriteFeedbackPanel}>
+                <div className={styles.rewriteFeedbackHeader}>
+                  <div>
+                    <strong>이전 피드백</strong>
+                    <p>직전 답변에서 받은 피드백을 같은 구조로 다시 보면서 문장을 다듬어 보세요.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.rewriteFeedbackToggle}
+                    onClick={() => setShowRewriteFeedback((current) => !current)}
+                  >
+                    {showRewriteFeedback ? "피드백 숨기기" : "피드백 보기"}
+                  </button>
+                </div>
+                {showRewriteFeedback ? (
+                  <div className={styles.rewriteFeedbackBody}>{renderFeedbackCoreSections()}</div>
+                ) : null}
+              </section>
+            ) : null}
+            {isMobileViewport && draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
+            <div className={styles.writingStageActions}>
+              <button type="button" className={styles.ghostButton} onClick={() => setStep("feedback")}>
+                피드백으로 돌아가기
+              </button>
               <button
                 type="button"
-                className={styles.rewriteFeedbackToggle}
-                onClick={() => setShowRewriteFeedback((current) => !current)}
-            >
-              {showRewriteFeedback ? "피드백 숨기기" : "피드백 보기"}
-            </button>
+                className={`${styles.primaryButton} ${styles.writingSubmitButton}`}
+                onClick={() => handleSubmit(rewrite, "REWRITE")}
+                disabled={isSubmitting || !feedback}
+              >
+                <span>{isSubmitting ? "피드백 생성 중..." : "다시쓰기 제출하기"}</span>
+                <span className={`materialSymbols ${styles.primaryButtonIcon}`} aria-hidden="true">
+                  send
+                </span>
+              </button>
+            </div>
           </div>
-            {showRewriteFeedback ? <div className={styles.rewriteFeedbackBody}>{renderFeedbackCoreSections()}</div> : null}
-          </section>
-        ) : null}
-        {draftStatusMessage ? <p className={styles.draftStatusText}>{draftStatusMessage}</p> : null}
+        </div>
         {renderMobileComposerBar({
           secondaryLabel: "피드백",
           onSecondary: () => setStep("feedback"),
@@ -4007,26 +4399,6 @@ export function AnswerLoop() {
           onPrimary: () => handleSubmit(rewrite, "REWRITE"),
           primaryDisabled: isSubmitting || !feedback
         })}
-        <div className={styles.stageFooter}>
-          <p>표현은 유지하되, 더 자연스럽고 구체적으로 문장을 다듬어 보세요.</p>
-          <div className={`${styles.actionRow} ${styles.composerDesktopActions}`}>
-            <button
-              type="button"
-              className={styles.ghostButton}
-              onClick={() => setStep("feedback")}
-            >
-              피드백으로 돌아가기
-            </button>
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={() => handleSubmit(rewrite, "REWRITE")}
-              disabled={isSubmitting || !feedback}
-            >
-              {isSubmitting ? "피드백 생성 중..." : "다시 쓴 답변 제출하기"}
-            </button>
-          </div>
-        </div>
       </section>
     );
   }

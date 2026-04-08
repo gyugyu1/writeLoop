@@ -317,6 +317,76 @@ function isSuggestionTooSimilarToNextStep(
   });
 }
 
+function normalizeOverlapAnchor(value?: string | null) {
+  const text = trimNullable(value);
+  if (!text) {
+    return "";
+  }
+
+  return stripRewriteSuggestionTerminalPunctuation(text).toLowerCase().replace(/\s+/g, " ");
+}
+
+function hasSubstantialAnchorOverlap(left?: string | null, right?: string | null) {
+  const normalizedLeft = normalizeOverlapAnchor(left);
+  const normalizedRight = normalizeOverlapAnchor(right);
+  if (!normalizedLeft || !normalizedRight) {
+    return false;
+  }
+
+  if (normalizedLeft === normalizedRight) {
+    return true;
+  }
+
+  const leftTokens = extractRewriteComparisonTokens(normalizedLeft);
+  const rightTokens = extractRewriteComparisonTokens(normalizedRight);
+  const shorter = normalizedLeft.length <= normalizedRight.length ? normalizedLeft : normalizedRight;
+  const longer = normalizedLeft.length <= normalizedRight.length ? normalizedRight : normalizedLeft;
+  const shorterTokens = leftTokens.length <= rightTokens.length ? leftTokens : rightTokens;
+
+  if ((shorterTokens.length >= 2 || shorter.length >= 10) && longer.includes(shorter)) {
+    return true;
+  }
+
+  if (shorterTokens.length < 2) {
+    return false;
+  }
+
+  const longerTokenSet = new Set(
+    leftTokens.length <= rightTokens.length ? rightTokens : leftTokens
+  );
+  const overlapCount = shorterTokens.filter((token) => longerTokenSet.has(token)).length;
+  return overlapCount / shorterTokens.length >= 0.75;
+}
+
+function isRefinementTooSimilarToFixPointsOrModelAnswer(
+  expression: { expression?: string | null; exampleEn?: string | null },
+  fixPoints: FeedbackSecondaryLearningPoint[],
+  modelAnswer?: string | null
+) {
+  const anchors = [trimNullable(expression.expression), trimNullable(expression.exampleEn)].filter(
+    (value): value is string => Boolean(value)
+  );
+  if (anchors.length === 0) {
+    return false;
+  }
+
+  const normalizedModelAnswer = trimNullable(modelAnswer);
+  const fixPointAnchors = fixPoints
+    .flatMap((point) => [
+      trimNullable(point.revisedText),
+      trimNullable(point.headline),
+      trimNullable(point.exampleEn),
+      trimNullable(point.originalText)
+    ])
+    .filter((value): value is string => Boolean(value));
+
+  return anchors.some(
+    (anchor) =>
+      (normalizedModelAnswer ? hasSubstantialAnchorOverlap(anchor, normalizedModelAnswer) : false) ||
+      fixPointAnchors.some((candidate) => hasSubstantialAnchorOverlap(anchor, candidate))
+  );
+}
+
 function renderLocalizedExpression(expression: string) {
   const parts: ReactNode[] = [];
   const pattern = /\[([A-Za-z]+)\]/g;
@@ -1737,9 +1807,25 @@ export function AnswerLoop() {
 
     const refinementExpressions = filterSuggestedRefinementExpressions(
       feedback?.refinementExpressions,
-      lastSubmittedAnswer
+      lastSubmittedAnswer,
+      feedback?.modelAnswer
     );
+    const fixPoints =
+      feedback?.ui?.fixPoints?.filter((point) => {
+        if (!point || point.kind === "EXPRESSION") {
+          return false;
+        }
+        return Boolean(
+          point.headline?.trim() ||
+            point.originalText?.trim() ||
+            point.revisedText?.trim() ||
+            point.supportText?.trim()
+        );
+      }) ?? [];
     for (const expression of refinementExpressions) {
+      if (isRefinementTooSimilarToFixPointsOrModelAnswer(expression, fixPoints, feedback?.modelAnswer)) {
+        continue;
+      }
       const key = normalizeExpressionKey(expression.expression);
       if (!key || seen.has(key)) {
         continue;
@@ -1754,7 +1840,13 @@ export function AnswerLoop() {
     }
 
     return nextExpressions.slice(0, 4);
-  }, [coachUsage?.unusedExpressions, feedback?.refinementExpressions, lastSubmittedAnswer]);
+  }, [
+    coachUsage?.unusedExpressions,
+    feedback?.refinementExpressions,
+    feedback?.ui?.fixPoints,
+    feedback?.modelAnswer,
+    lastSubmittedAnswer
+  ]);
   const completionRelatedPrompts = useMemo(
     () => coachRelatedPrompts.slice(0, 3),
     [coachRelatedPrompts]
@@ -3348,11 +3440,18 @@ export function AnswerLoop() {
       });
     }
 
+    const fixPoints = resolveFixPoints();
+
     filterSuggestedRefinementExpressions(
       feedback.refinementExpressions,
-      lastSubmittedAnswer
+      lastSubmittedAnswer,
+      feedback.modelAnswer
     )
       .filter((expression) => expression.displayable !== false)
+      .filter(
+        (expression) =>
+          !isRefinementTooSimilarToFixPointsOrModelAnswer(expression, fixPoints, feedback.modelAnswer)
+      )
       .forEach((expression) => {
         if (!expression.expression?.trim()) {
           return;

@@ -1609,11 +1609,16 @@ public class OpenAiFeedbackClient {
                 - Choose exactly one answerBand from: TOO_SHORT_FRAGMENT, SHORT_BUT_VALID, GRAMMAR_BLOCKING, CONTENT_THIN, NATURAL_BUT_BASIC, OFF_TOPIC.
                 - answerBand must reflect what the learner most needs next, not what sounds harshest.
                 - finishable=true only when the current answer already reads like an acceptable final submission.
+                - Do not set finishable=true for SHORT_BUT_VALID answers.
                 - Do not keep finishable=false only because the answer could be longer, more polished, or could support one optional upgrade.
+                - A short single-clause answer that only states the main answer, place, activity, preference, or plan without one supporting reason, detail, example, or time flow is usually not finishable.
+                - For routine, preference, opinion, and plan prompts, one clean base sentence is usually still too thin to mark as finishable.
                 - If a required reason, detail, or activity clause is still malformed or needs more than one small local repair, keep finishable=false.
                 - If attemptIndex >= 2, use previousAnswer only to detect progress and remaining issues. Do not repeat already-fixed issues as if they were still the main problem.
                 - NATURAL_BUT_BASIC is appropriate when the answer is already clear, on-topic, complete enough for the loop to end, and needs at most one very small local cleanup.
+                - Do not use NATURAL_BUT_BASIC for a minimal one-sentence answer that still feels underdeveloped even if the grammar is clean.
                 - Prefer CONTENT_THIN or SHORT_BUT_VALID over GRAMMAR_BLOCKING unless grammar truly blocks meaning or sentence structure.
+                - If you are unsure between SHORT_BUT_VALID and NATURAL_BUT_BASIC for a short answer, prefer SHORT_BUT_VALID.
 
                 Strengths and usedExpressions rules:
                 - strengths should usually be one short Korean keep-signal based on meaning, not a full raw quote unless it is already clean and necessary.
@@ -1626,7 +1631,10 @@ public class OpenAiFeedbackClient {
                 - Each fixPoints item must teach exactly one concrete correction point.
                 - Do not leave an unexplained edit in modelAnswer. If modelAnswer changes something, explain that change in fixPoints unless it is purely formatting or punctuation-only.
                 - Return every distinct fix as its own item instead of merging unrelated lessons or repeating the same lesson.
-                - Prefer the smallest aligned originalText / revisedText span that still teaches the point clearly.
+                - Prefer the smallest self-contained aligned originalText / revisedText span that still teaches the point clearly.
+                - Do not cut away left or right context if that would make the edit misleading. A fixPoints card should still make sense when read by itself.
+                - For connector, preposition, article, pronoun, and determiner edits, include enough surrounding words to show what the function word is attaching to.
+                - If a narrower span would falsely suggest adding or removing a word that is already present in the full learner sentence, widen the span until the change is truthful.
                 - If one originalText / revisedText pair contains multiple meaningful edits, either split it into multiple fixPoints or make supportText explicitly explain every changed part in that pair.
                 - supportText must match the size of the edit. Short reason text is only acceptable for a small local change; larger pairs need fuller explanation.
                 - For a fixPoints item with originalText / revisedText, use supportText as the single explanation field the UI will show under "이유".
@@ -1648,6 +1656,8 @@ public class OpenAiFeedbackClient {
                 refinementExpressions rules:
                 - refinementExpressions are optional reusable-expression cards beyond fixPoints.
                 - Return only genuinely useful, distinct items, and keep expression, meaningKo, guidanceKo, exampleEn, and exampleKo separate.
+                - Do not use refinementExpressions to restate a repaired phrase already taught in fixPoints.
+                - If a refinement expression or its example sentence substantially overlaps with a fixPoints repair or simply repeats the modelAnswer-level rewrite, omit it.
                 - exampleEn must not be identical to expression.
 
                 nextStepPractice rules:
@@ -2558,6 +2568,8 @@ public class OpenAiFeedbackClient {
             instructions.add("- Replace generic FIX_POINTS with specific ones. Each item should teach one point and name the exact phrase, word, connector, or slot to change when no original/revised pair is shown.");
             instructions.add("- If multiple distinct fixes remain, return them as separate FIX_POINTS instead of repeating the same lesson.");
             instructions.add("- If one FIX_POINTS pair changes several things, either split it into smaller cards or explain every changed part clearly in supportText. Do not explain only the first edit.");
+            instructions.add("- Do not use a tiny FIX_POINTS span that loses context. If the fix involves a connector, preposition, article, pronoun, or determiner, widen the pair enough that the card is still truthful when read alone.");
+            instructions.add("- Do not create a FIX_POINTS pair that implies adding or removing a word already present in the learner sentence outside the cropped span.");
             instructions.add("- For correction-pair FIX_POINTS, put the full explanation under supportText and avoid scattering the same explanation into meaningKo, guidanceKo, exampleEn, or exampleKo.");
             instructions.add("- Do not use vague supportText like '문법이 맞지 않아요' or '더 자연스럽습니다' by itself. Name the exact changed phrase and the concrete rule or usage reason.");
         }
@@ -2873,6 +2885,8 @@ public class OpenAiFeedbackClient {
                     """;
             case CONTENT_THIN, SHORT_BUT_VALID -> """
                     - Prioritize adding one more concrete reason, detail, image, or habit.
+                    - Keep finishable=false unless the answer already contains at least one clear supporting detail, reason, example, or time flow beyond the base answer.
+                    - A clean single-sentence main answer is usually still not enough to finish here.
                     - Keep grammar explanation brief unless it directly blocks the next rewrite.
                     - Prefer fixPoints that help the learner support the same main idea more concretely.
                     - Keep modelAnswer close to learner meaning and add at most one step-up detail.

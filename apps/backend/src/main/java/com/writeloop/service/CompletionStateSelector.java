@@ -6,6 +6,7 @@ final class CompletionStateSelector {
         AnswerBand answerBand = answerBand(answerProfile);
         if (answerBand == AnswerBand.OFF_TOPIC
                 || answerBand == AnswerBand.TOO_SHORT_FRAGMENT
+                || answerBand == AnswerBand.SHORT_BUT_VALID
                 || answerBand == AnswerBand.GRAMMAR_BLOCKING) {
             return CompletionState.NEEDS_REVISION;
         }

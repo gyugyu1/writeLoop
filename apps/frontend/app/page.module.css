@@ -3458,7 +3458,7 @@
   font-weight: 700;
 }
 
-.primaryFixCard {
+.correctionDiffCard {
   display: grid;
   gap: 12px;
   margin-top: 14px;
@@ -3468,35 +3468,46 @@
   background: rgba(16, 36, 76, 0.03);
 }
 
-.primaryFixCardCompact {
+.correctionDiffCardCompact {
   margin-top: 0;
 }
 
-.primaryFixRow {
+.correctionDiffRow {
   display: grid;
   gap: 6px;
 }
 
-.primaryFixLabel {
+.correctionDiffReasonStack {
+  display: grid;
+  gap: 6px;
+}
+
+.correctionDiffReasonLine {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.correctionDiffLabel {
   color: #7b4a1e;
   font-size: 0.84rem;
   font-weight: 800;
 }
 
-.primaryFixDiffText {
+.correctionDiffText {
   white-space: pre-wrap;
   word-break: break-word;
   line-height: 1.8;
 }
 
-.primaryFixRemoved {
+.correctionDiffRemoved {
   color: #9b1c1c;
   background: rgba(233, 95, 95, 0.12);
   border-radius: 6px;
   padding: 1px 2px;
 }
 
-.primaryFixAdded {
+.correctionDiffAdded {
   color: #0f5c38;
   background: rgba(57, 181, 74, 0.12);
   border-radius: 6px;
@@ -5597,7 +5608,7 @@
 .responseCard h3,
 .rewriteFeedbackBlock h3,
 .feedbackChipLabel,
-.primaryFixLabel,
+.correctionDiffLabel,
 .feedbackMicroTipHeader span,
 .secondaryLearningBadge,
 .secondaryLearningLabel {
@@ -5609,7 +5620,7 @@
   color: var(--primary);
 }
 
-.primaryFixCard,
+.correctionDiffCard,
 .feedbackMicroTip,
 .secondaryLearningCard,
 .rewriteStarterCard {
@@ -5619,12 +5630,12 @@
   box-shadow: 0 12px 30px -16px rgba(127, 82, 0, 0.18);
 }
 
-.primaryFixRemoved,
+.correctionDiffRemoved,
 .secondaryLearningOriginal {
   background: rgba(222, 86, 65, 0.12);
 }
 
-.primaryFixAdded,
+.correctionDiffAdded,
 .secondaryLearningRevised {
   background: rgba(var(--secondary-rgb), 0.12);
 }
@@ -5776,7 +5787,7 @@
     border-radius: 22px;
   }
 
-  .primaryFixCard,
+  .correctionDiffCard,
   .feedbackMicroTip,
   .secondaryLearningCard,
   .rewriteStarterCard {

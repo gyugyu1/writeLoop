@@ -44,7 +44,8 @@ final class FeedbackRetryPolicy {
                     };
             case SUMMARY_DUPLICATES_IMPROVEMENT -> false;
             case LOW_VALUE_SECTION ->
-                    failure.sectionKey() == SectionKey.PRIMARY_FIX;
+                    failure.sectionKey() == SectionKey.PRIMARY_FIX
+                            || failure.sectionKey() == SectionKey.IMPROVEMENT;
         };
     }
 }

@@ -2,7 +2,6 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
-import com.writeloop.dto.FeedbackPrimaryFixDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
@@ -42,10 +41,27 @@ public class OpenAiFeedbackClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenAiFeedbackClient.class);
     private static final int MAX_LOG_RESPONSE_BODY_LENGTH = 4000;
     private static final Pattern INLINE_TOKEN_PATTERN = Pattern.compile("[A-Za-z0-9']+|[^\\sA-Za-z0-9']+|\\s+");
-    private static final Pattern PRIMARY_FIX_ENGLISH_ANCHOR_PATTERN = Pattern.compile("[A-Za-z][A-Za-z' -]{2,}");
     private static final Set<String> EXPLANATION_ANCHOR_STOPWORDS = Set.of(
             "a", "an", "and", "are", "be", "been", "being", "for", "from", "had", "has", "have",
             "in", "is", "it", "its", "of", "on", "or", "that", "the", "to", "was", "were", "with"
+    );
+    private static final List<String> GENERIC_FIX_POINT_SUPPORT_PHRASES = List.of(
+            "\uBB38\uBC95\uC774 \uB9DE\uC9C0 \uC54A",
+            "\uB354 \uC790\uC5F0\uC2A4\uB7FD",
+            "\uC790\uC5F0\uC2A4\uB7FD\uAC8C \uBC14\uAFB8",
+            "\uBCF4\uD1B5 \uC774\uB807\uAC8C",
+            "\uBC14\uAFD4\uC57C \uD569\uB2C8\uB2E4",
+            "\uD45C\uD604\uC774 \uC5B4\uC0C9",
+            "\uC774\uC5B4 \uC8FC\uBA74 \uC790\uC5F0\uC2A4\uB7FD"
+    );
+    private static final Set<String> SPECIFIC_FIX_POINT_REASON_KEYWORDS = Set.of(
+            "\uC8FC\uC5B4", "\uB3D9\uC0AC", "\uC218\uC77C\uCE58", "\uC2DC\uC81C", "\uACFC\uAC70\uD615", "\uD604\uC7AC\uD615",
+            "\uBCF5\uC218", "\uBCF5\uC218\uD615", "\uB2E8\uC218", "\uAD00\uC0AC", "\uAC00\uC0B0", "\uBD88\uAC00\uC0B0",
+            "\uBA85\uC0AC", "\uB300\uBA85\uC0AC", "\uD615\uC6A9\uC0AC", "\uBD80\uC0AC", "\uC804\uCE58\uC0AC",
+            "\uC5B4\uC21C", "\uC811\uC18D\uC0AC", "\uC5F0\uACB0\uC5B4", "\uC870\uB3D9\uC0AC", "\uB3D9\uC0AC\uC6D0\uD615",
+            "\uBE44\uB3D9\uC0AC", "\uBE44\uAC00\uC0B0", "\uAD00\uC6A9", "\uCF5C\uB85C\uCF00\uC774\uC158", "\uBCF8\uB3D9\uC0AC",
+            "subject", "verb", "agreement", "singular", "plural", "article", "countable", "uncountable",
+            "auxiliary", "base verb", "tense", "pronoun", "preposition", "connector", "collocation"
     );
     static final String INTERNAL_AUTHORITATIVE_SESSION_ID = "__OPENAI_HYBRID_FINAL__";
     private final ObjectMapper objectMapper;
@@ -503,19 +519,8 @@ public class OpenAiFeedbackClient {
         )
                 : List.of();
         List<FeedbackSecondaryLearningPointDto> rawFixPoints = resolveGeneratedFixPoints(generatedSections);
-        List<FeedbackSecondaryLearningPointDto> normalizedFixPointCandidates = sanitizeSecondaryLearningPoints(rawFixPoints, null);
-        FeedbackPrimaryFixDto primaryFix = sanitizePrimaryFix(
-                derivePrimaryFixFromFixPoints(normalizedFixPointCandidates),
-                diagnosis,
-                answerProfile,
-                generatedSections.nextStepPractice() == null
-                        ? null
-                        : firstNonBlank(
-                        generatedSections.nextStepPractice().headline(),
-                        generatedSections.nextStepPractice().revisedText(),
-                        generatedSections.nextStepPractice().exampleEn()
-                )
-        );
+        List<FeedbackSecondaryLearningPointDto> normalizedFixPointCandidates = sanitizeSecondaryLearningPoints(rawFixPoints);
+        FeedbackSecondaryLearningPointDto referentFixPoint = firstCorrectionFixPoint(normalizedFixPointCandidates);
         String modelAnswerAnchor = anchorTextForModelAnswer(diagnosis, answerProfile);
         FeedbackSectionValidators.ModelAnswerContent guardedModelAnswer = modelAnswerRequested
                 ? feedbackSectionValidators.guardModelAnswer(
@@ -533,9 +538,9 @@ public class OpenAiFeedbackClient {
                 diagnosis.answerBand(),
                 sectionPolicy.modelAnswerMode()
         );
-        protectedModelAnswer = feedbackSectionValidators.alignModelAnswerWithPrimaryFixReferent(
+        protectedModelAnswer = feedbackSectionValidators.alignModelAnswerWithFixPointReferent(
                 protectedModelAnswer,
-                primaryFix,
+                referentFixPoint,
                 modelAnswerAnchor
         );
         String protectedModelAnswerKo = protectedModelAnswer != null
@@ -552,27 +557,28 @@ public class OpenAiFeedbackClient {
                 protectedModelAnswerKo = null;
             }
         }
+        List<FeedbackSecondaryLearningPointDto> normalizedSecondaryLearningPoints = sanitizeSecondaryLearningPoints(
+                generatedSections.secondaryLearningPoints()
+        );
+        List<FeedbackSecondaryLearningPointDto> fixPoints = normalizedFixPointCandidates.isEmpty()
+                ? dedupeCorrectionFixPoints(normalizedSecondaryLearningPoints)
+                : List.copyOf(normalizedFixPointCandidates);
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = extractSupplementaryLearningPoints(
+                normalizedSecondaryLearningPoints
+        );
         FeedbackNextStepPracticeDto nextStepPractice = generatedSections.nextStepPractice() != null
-                ? sanitizeRewritePractice(generatedSections.nextStepPractice(), diagnosis, answerProfile)
+                ? sanitizeRewritePractice(generatedSections.nextStepPractice(), diagnosis, answerProfile, fixPoints)
                 : null;
         List<FeedbackRewriteSuggestionDto> rewriteSuggestions = sanitizeRewriteSuggestions(
                 generatedSections.rewriteSuggestions(),
                 nextStepPractice
         );
-        List<FeedbackSecondaryLearningPointDto> laterFixPoints = sanitizeSecondaryLearningPoints(
-                deriveSecondaryLearningPointsFromFixPoints(normalizedFixPointCandidates),
-                primaryFix
-        );
-        List<FeedbackSecondaryLearningPointDto> fixPoints = toFixPoints(primaryFix, laterFixPoints);
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = generatedSections.secondaryLearningPoints().isEmpty()
-                ? laterFixPoints
-                : sanitizeSecondaryLearningPoints(generatedSections.secondaryLearningPoints(), primaryFix);
         failures.addAll(validateFixPointExplanationCoverage(fixPoints));
         GeneratedSections sanitized = new GeneratedSections(
                 null,
                 strengths,
                 null,
-                primaryFix,
+                null,
                 grammarFeedback,
                 corrections,
                 refinementExpressions,
@@ -599,7 +605,7 @@ public class OpenAiFeedbackClient {
                 continue;
             }
             return List.of(new ValidationFailure(
-                    SectionKey.PRIMARY_FIX,
+                    SectionKey.IMPROVEMENT,
                     ValidationFailureCode.LOW_VALUE_SECTION,
                     "Fix point explanation is too thin for the number of visible edits"
             ));
@@ -631,6 +637,10 @@ public class OpenAiFeedbackClient {
         List<String> changeAnchors = extractMeaningfulChangeAnchors(changedSegments);
         int coveredAnchors = countCoveredChangeAnchors(explanationText, changeAnchors);
 
+        if (isGenericFixPointSupport(supportText)) {
+            return true;
+        }
+
         if (changedSegments.size() >= 3 && (supportText == null || supportText.length() < 28)) {
             return true;
         }
@@ -638,6 +648,23 @@ public class OpenAiFeedbackClient {
         return changeAnchors.size() >= 2
                 && coveredAnchors < 2
                 && (supportText == null || supportText.length() < 40);
+    }
+
+    private boolean isGenericFixPointSupport(String supportText) {
+        String normalized = trimToNull(supportText);
+        if (normalized == null) {
+            return false;
+        }
+        String lowerCased = normalized.toLowerCase(Locale.ROOT);
+        boolean hasGenericPhrase = GENERIC_FIX_POINT_SUPPORT_PHRASES.stream()
+                .map(phrase -> phrase.toLowerCase(Locale.ROOT))
+                .anyMatch(lowerCased::contains);
+        if (!hasGenericPhrase) {
+            return false;
+        }
+        return SPECIFIC_FIX_POINT_REASON_KEYWORDS.stream()
+                .map(keyword -> keyword.toLowerCase(Locale.ROOT))
+                .noneMatch(lowerCased::contains);
     }
 
     private boolean isMeaningfulChangeSegment(InlineFeedbackSegmentDto segment) {
@@ -754,19 +781,16 @@ public class OpenAiFeedbackClient {
                 grammarFeedback
         );
         List<FeedbackSecondaryLearningPointDto> fixPoints = resolveGeneratedFixPoints(generatedSections);
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = !generatedSections.secondaryLearningPoints().isEmpty()
-                ? generatedSections.secondaryLearningPoints()
-                : deriveSecondaryLearningPointsFromFixPoints(fixPoints);
-        FeedbackPrimaryFixDto primaryFix = generatedSections.primaryFix() != null
-                ? generatedSections.primaryFix()
-                : derivePrimaryFixFromFixPoints(fixPoints);
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = extractSupplementaryLearningPoints(
+                generatedSections.secondaryLearningPoints()
+        );
         FeedbackUiDto generatedUi = (!secondaryLearningPoints.isEmpty()
                 || !fixPoints.isEmpty()
                 || generatedSections.nextStepPractice() != null
                 || !generatedSections.rewriteSuggestions().isEmpty())
                 ? new FeedbackUiDto(
                 null,
-                primaryFix,
+                null,
                 null,
                 secondaryLearningPoints,
                 fixPoints,
@@ -798,89 +822,85 @@ public class OpenAiFeedbackClient {
         );
     }
 
-    private List<FeedbackSecondaryLearningPointDto> toFixPoints(
-            FeedbackPrimaryFixDto primaryFix,
-            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints
-    ) {
-        List<FeedbackSecondaryLearningPointDto> fixPoints = new ArrayList<>();
-        LinkedHashSet<String> seen = new LinkedHashSet<>();
-
-        addFixPoint(fixPoints, seen, toFixPoint(primaryFix));
-        if (secondaryLearningPoints != null) {
-            for (FeedbackSecondaryLearningPointDto point : secondaryLearningPoints) {
-                if (point == null || "EXPRESSION".equals(trimToNull(point.kind()))) {
-                    continue;
-                }
-                addFixPoint(fixPoints, seen, point);
-            }
-        }
-
-        return List.copyOf(fixPoints);
-    }
-
     private List<FeedbackSecondaryLearningPointDto> resolveGeneratedFixPoints(GeneratedSections generatedSections) {
         if (generatedSections == null) {
             return List.of();
         }
         if (generatedSections.fixPoints() != null && !generatedSections.fixPoints().isEmpty()) {
-            return List.copyOf(generatedSections.fixPoints());
+            return dedupeCorrectionFixPoints(generatedSections.fixPoints());
         }
-        return toFixPoints(generatedSections.primaryFix(), generatedSections.secondaryLearningPoints());
+        return dedupeCorrectionFixPoints(generatedSections.secondaryLearningPoints());
     }
 
-    private FeedbackSecondaryLearningPointDto toFixPoint(FeedbackPrimaryFixDto primaryFix) {
-        if (primaryFix == null) {
-            return null;
-        }
-
-        String title = trimToNull(primaryFix.title());
-        String instruction = trimToNull(primaryFix.instruction());
-        String originalText = trimToNull(primaryFix.originalText());
-        String revisedText = trimToNull(primaryFix.revisedText());
-        String reasonKo = trimToNull(primaryFix.reasonKo());
-        if (title == null
-                && instruction == null
-                && originalText == null
-                && revisedText == null
-                && reasonKo == null) {
-            return null;
-        }
-
-        String kind = originalText != null && revisedText != null ? "GRAMMAR" : "CORRECTION";
-        return new FeedbackSecondaryLearningPointDto(
-                kind,
-                title,
-                instruction,
-                reasonKo,
-                originalText,
-                revisedText,
-                null,
-                null,
-                null,
-                null
-        );
-    }
-
-    private void addFixPoint(
-            List<FeedbackSecondaryLearningPointDto> fixPoints,
-            Set<String> seen,
-            FeedbackSecondaryLearningPointDto point
+    private List<FeedbackSecondaryLearningPointDto> dedupeCorrectionFixPoints(
+            List<FeedbackSecondaryLearningPointDto> candidates
     ) {
-        if (point == null) {
-            return;
+        if (candidates == null || candidates.isEmpty()) {
+            return List.of();
         }
-        String key = normalizeForComparison(
+        List<FeedbackSecondaryLearningPointDto> fixPoints = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (FeedbackSecondaryLearningPointDto point : candidates) {
+            if (point == null || "EXPRESSION".equals(trimToNull(point.kind()))) {
+                continue;
+            }
+            String key = learningPointKey(point);
+            if (key.isBlank() || !seen.add(key)) {
+                continue;
+            }
+            fixPoints.add(point);
+        }
+        return List.copyOf(fixPoints);
+    }
+
+    private List<FeedbackSecondaryLearningPointDto> extractSupplementaryLearningPoints(
+            List<FeedbackSecondaryLearningPointDto> candidates
+    ) {
+        if (candidates == null || candidates.isEmpty()) {
+            return List.of();
+        }
+        List<FeedbackSecondaryLearningPointDto> supplementaryPoints = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        for (FeedbackSecondaryLearningPointDto point : candidates) {
+            if (point == null || !"EXPRESSION".equals(trimToNull(point.kind()))) {
+                continue;
+            }
+            String key = learningPointKey(point);
+            if (key.isBlank() || !seen.add(key)) {
+                continue;
+            }
+            supplementaryPoints.add(point);
+        }
+        return List.copyOf(supplementaryPoints);
+    }
+
+    private FeedbackSecondaryLearningPointDto firstCorrectionFixPoint(
+            List<FeedbackSecondaryLearningPointDto> fixPoints
+    ) {
+        if (fixPoints == null || fixPoints.isEmpty()) {
+            return null;
+        }
+        for (FeedbackSecondaryLearningPointDto point : fixPoints) {
+            if (point != null && !"EXPRESSION".equals(trimToNull(point.kind()))) {
+                return point;
+            }
+        }
+        return null;
+    }
+
+    private String learningPointKey(FeedbackSecondaryLearningPointDto point) {
+        if (point == null) {
+            return "";
+        }
+        return normalizeForComparison(
                 firstNonBlank(point.kind(), "")
                         + "|" + firstNonBlank(point.title(), "")
                         + "|" + firstNonBlank(point.headline(), "")
                         + "|" + firstNonBlank(point.supportText(), "")
                         + "|" + firstNonBlank(point.originalText(), "")
                         + "|" + firstNonBlank(point.revisedText(), "")
+                        + "|" + firstNonBlank(point.exampleEn(), "")
         );
-        if (key.isBlank() || !seen.add(key)) {
-            return;
-        }
-        fixPoints.add(point);
     }
 
     private GeneratedSections buildDeterministicFallbackSections(
@@ -967,7 +987,7 @@ public class OpenAiFeedbackClient {
                 null,
                 generatedSections.strengths(),
                 generatedSections.focusCard() != null ? generatedSections.focusCard() : fallbackSections.focusCard(),
-                generatedSections.primaryFix() != null ? generatedSections.primaryFix() : fallbackSections.primaryFix(),
+                null,
                 grammarFeedback,
                 generatedSections.corrections(),
                 generatedSections.refinementExpressions(),
@@ -1579,6 +1599,7 @@ public class OpenAiFeedbackClient {
                   1) Write modelAnswer first as the closest natural, submission-ready rewrite of the learner answer.
                   2) Then build fixPoints as explanations of all visible differences between learner answer and modelAnswer.
                   3) Then use nextStepPractice only for one optional move beyond modelAnswer, if that extra move is clearly useful.
+                  4) If the only candidate nextStepPractice overlaps with fixPoints, return nextStepPractice as null.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
                 - Do not reuse a broken learner phrase in strengths, refinementExpressions, nextStepPractice, or modelAnswer.
                 - Keep Korean fields natural and concise.
@@ -1608,6 +1629,16 @@ public class OpenAiFeedbackClient {
                 - Prefer the smallest aligned originalText / revisedText span that still teaches the point clearly.
                 - If one originalText / revisedText pair contains multiple meaningful edits, either split it into multiple fixPoints or make supportText explicitly explain every changed part in that pair.
                 - supportText must match the size of the edit. Short reason text is only acceptable for a small local change; larger pairs need fuller explanation.
+                - For a fixPoints item with originalText / revisedText, use supportText as the single explanation field the UI will show under "이유".
+                - For that same correction-pair fixPoints item, fold any usage note, generalization, or short example into supportText instead of spreading it across meaningKo, guidanceKo, exampleEn, or exampleKo.
+                - For correction-pair fixPoints items, leave meaningKo, guidanceKo, exampleEn, and exampleKo null unless one of them is absolutely necessary and not a duplicate of supportText.
+                - In supportText, name the exact changed phrase and the concrete reason for the change, such as subject-verb agreement, auxiliary plus base verb, plural noun, article with singular countable noun, pronoun agreement, collocation, or connector choice.
+                - Avoid vague supportText such as "문법이 맞지 않아요", "더 자연스럽습니다", or "보통 이렇게 써요" unless you immediately add the exact rule and the specific changed words.
+                - Prefer supportText that explains the edit in a learner-usable way, for example: what word changed, what grammar pattern it follows, and why that pattern fits this sentence.
+                - Good supportText examples:
+                  1) `money`는 단수 주어라 `does`를 쓰고, `does` 뒤 동사는 원형 `make`로 둡니다.
+                  2) `many people`에 맞춰 `job`은 복수형 `jobs`로 바꾸고, 같은 사람들을 가리키므로 `their lives`처럼 복수 목적어를 씁니다.
+                  3) `life`는 여기서 단수 가산명사라 `a`가 필요하고, `balanced life`가 `balance life`보다 자연스러운 결합입니다.
                 - When possible, use originalText for the learner span and revisedText for the aligned corrected span from modelAnswer.
                 - A fixPoints item may use originalText / revisedText / supportText for a correction pair, or title / headline / supportText for one anchored instruction card when a clean pair is not possible.
                 - If there is no originalText / revisedText pair, the headline must still name the exact phrase, word, connector, or slot that changes in modelAnswer.
@@ -1622,11 +1653,16 @@ public class OpenAiFeedbackClient {
                 nextStepPractice rules:
                 - nextStepPractice is optional and should represent one genuine next step after the modelAnswer-level rewrite is already complete.
                 - Do not use nextStepPractice for a must-fix item that is already reflected in modelAnswer or fixPoints.
+                - nextStepPractice must not repeat the same originalText / revisedText pair, the same added phrase, or the same teaching point already covered in fixPoints.
+                - If fixPoints already teach adding a time marker, article, connector, reason, or other visible change, do not restate that same move in nextStepPractice.
+                - nextStepPractice should start where fixPoints end. It must go one step beyond the repaired modelAnswer, not explain how to reach that modelAnswer.
+                - If there is no clearly different optional add-on after fixPoints, set nextStepPractice to null.
                 - Use it only when there is one clearly optional add-on beyond modelAnswer; otherwise leave it null.
                 - It may use the same flexible fields as fixPoints; title should be short Korean, headline should show the English move when helpful, and supportText should briefly explain the add-on in Korean.
 
                 rewriteSuggestions rules:
                 - rewriteSuggestions are optional helper ideas for nextStepPractice.
+                - If nextStepPractice is null, rewriteSuggestions must be an empty array.
                 - They should support the same next step with 0-3 short English phrases, clauses, or example chunks, not long standalone answers.
                 - Do not restate the whole learner answer or duplicate the exact same English already shown in nextStepPractice.
 
@@ -1765,13 +1801,15 @@ public class OpenAiFeedbackClient {
                 item.path("exampleKo").isNull() ? null : item.path("exampleKo").asText(null),
                 item.path("meaningKo").isNull() ? null : item.path("meaningKo").asText(null)
         )));
+        List<FeedbackSecondaryLearningPointDto> normalizedSecondaryLearningPoints = sanitizeSecondaryLearningPoints(
+                parsedSecondaryLearningPoints
+        );
         List<FeedbackSecondaryLearningPointDto> parsedFixPoints = !fixPoints.isEmpty()
-                ? List.copyOf(fixPoints)
-                : toFixPoints(null, parsedSecondaryLearningPoints);
-        FeedbackPrimaryFixDto primaryFix = derivePrimaryFixFromFixPoints(parsedFixPoints);
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = parsedSecondaryLearningPoints.isEmpty() && !parsedFixPoints.isEmpty()
-                ? deriveSecondaryLearningPointsFromFixPoints(parsedFixPoints)
-                : parsedSecondaryLearningPoints;
+                ? dedupeCorrectionFixPoints(fixPoints)
+                : dedupeCorrectionFixPoints(normalizedSecondaryLearningPoints);
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = extractSupplementaryLearningPoints(
+                normalizedSecondaryLearningPoints
+        );
         FeedbackNextStepPracticeDto nextStepPractice = node.path("nextStepPractice").isObject()
                 ? new FeedbackNextStepPracticeDto(
                 textOrNull(node.path("nextStepPractice").path("kind")),
@@ -1804,7 +1842,7 @@ public class OpenAiFeedbackClient {
                 null,
                 strengths,
                 null,
-                primaryFix,
+                null,
                 List.of(),
                 List.of(),
                 refinementExpressions,
@@ -1954,7 +1992,7 @@ public class OpenAiFeedbackClient {
         return List.of(
                 SectionKey.STRENGTHS,
                 SectionKey.USED_EXPRESSIONS,
-                SectionKey.PRIMARY_FIX,
+                SectionKey.IMPROVEMENT,
                 SectionKey.REWRITE_GUIDE,
                 SectionKey.MODEL_ANSWER,
                 SectionKey.REFINEMENT
@@ -1965,7 +2003,7 @@ public class OpenAiFeedbackClient {
         List<SectionKey> effectiveSections = (requestedSections == null || requestedSections.isEmpty())
                 ? List.of(
                 SectionKey.STRENGTHS,
-                SectionKey.PRIMARY_FIX,
+                SectionKey.IMPROVEMENT,
                 SectionKey.REWRITE_GUIDE,
                 SectionKey.REFINEMENT,
                 SectionKey.MODEL_ANSWER,
@@ -1975,6 +2013,7 @@ public class OpenAiFeedbackClient {
 
         return effectiveSections.stream()
                 .map(this::formatSectionKeyForPrompt)
+                .filter(sectionName -> !sectionName.isBlank())
                 .distinct()
                 .reduce((left, right) -> left + ", " + right)
                 .orElse("");
@@ -1986,149 +2025,19 @@ public class OpenAiFeedbackClient {
         }
         return switch (sectionKey) {
             case STRENGTHS -> "STRENGTHS";
-            case PRIMARY_FIX, IMPROVEMENT -> "FIX_POINTS";
+            case IMPROVEMENT -> "FIX_POINTS";
             case GRAMMAR -> "GRAMMAR_FEEDBACK";
             case REFINEMENT -> "REFINEMENT_EXPRESSIONS";
             case SUMMARY -> "SUMMARY";
             case REWRITE_GUIDE -> "NEXT_STEP_PRACTICE";
             case MODEL_ANSWER -> "MODEL_ANSWER";
             case USED_EXPRESSIONS -> "USED_EXPRESSIONS";
+            default -> "";
         };
     }
 
     private boolean isRequested(List<SectionKey> requestedSections, SectionKey sectionKey) {
         return requestedSections != null && requestedSections.contains(sectionKey);
-    }
-
-    private FeedbackPrimaryFixDto derivePrimaryFixFromFixPoints(List<FeedbackSecondaryLearningPointDto> fixPoints) {
-        if (fixPoints == null || fixPoints.isEmpty()) {
-            return null;
-        }
-        for (FeedbackSecondaryLearningPointDto point : fixPoints) {
-            if (point == null || "EXPRESSION".equals(trimToNull(point.kind()))) {
-                continue;
-            }
-            return new FeedbackPrimaryFixDto(
-                    trimToNull(point.title()),
-                    trimToNull(point.headline()),
-                    trimToNull(point.originalText()),
-                    trimToNull(point.revisedText()),
-                    trimToNull(point.supportText())
-            );
-        }
-        return null;
-    }
-
-    private List<FeedbackSecondaryLearningPointDto> deriveSecondaryLearningPointsFromFixPoints(
-            List<FeedbackSecondaryLearningPointDto> fixPoints
-    ) {
-        if (fixPoints == null || fixPoints.isEmpty()) {
-            return List.of();
-        }
-        List<FeedbackSecondaryLearningPointDto> derived = new ArrayList<>();
-        boolean skippedFirstFix = false;
-        for (FeedbackSecondaryLearningPointDto point : fixPoints) {
-            if (point == null || "EXPRESSION".equals(trimToNull(point.kind()))) {
-                continue;
-            }
-            if (!skippedFirstFix) {
-                skippedFirstFix = true;
-                continue;
-            }
-            derived.add(point);
-        }
-        return List.copyOf(derived);
-    }
-
-    private FeedbackPrimaryFixDto sanitizePrimaryFix(
-            FeedbackPrimaryFixDto primaryFix,
-            FeedbackDiagnosisResult diagnosis,
-            AnswerProfile answerProfile,
-            String rewriteStarter
-    ) {
-        if (primaryFix == null) {
-            return null;
-        }
-
-        String title = firstNonBlank(primaryFix.title(), "Fix this first");
-        String instruction = firstNonBlank(primaryFix.instruction());
-        String originalText = firstNonBlank(primaryFix.originalText());
-        String revisedText = firstNonBlank(primaryFix.revisedText());
-        String reasonKo = firstNonBlank(primaryFix.reasonKo());
-
-        boolean grammarFirst = diagnosis != null
-                && diagnosis.answerBand() == AnswerBand.GRAMMAR_BLOCKING;
-
-        if (grammarFirst) {
-            if (originalText == null || revisedText == null || reasonKo == null) {
-                return null;
-            }
-            return new FeedbackPrimaryFixDto(title, instruction, originalText, revisedText, reasonKo);
-        }
-
-        if (instruction == null) {
-            return null;
-        }
-        if (!hasConcretePrimaryFixAnchor(primaryFix) && isGenericPrimaryFixInstruction(title, instruction)) {
-            return null;
-        }
-
-        return new FeedbackPrimaryFixDto(title, instruction, null, null, null);
-    }
-
-    private boolean isGenericTaskResetInstruction(String instruction) {
-        if (instruction == null || instruction.isBlank()) {
-            return false;
-        }
-        String normalized = normalizeForComparison(instruction);
-        return normalized.contains("answer the prompt first")
-                || normalized.contains("answer the question first")
-                || normalized.contains("write one sentence first")
-                || normalized.contains("answer in one sentence first");
-    }
-
-    private boolean isGenericPrimaryFixInstruction(String title, String instruction) {
-        String normalizedTitle = normalizeForComparison(title);
-        String normalizedInstruction = normalizeForComparison(instruction);
-        if (normalizedInstruction.isBlank()) {
-            return true;
-        }
-        return normalizedTitle.contains("fix this first")
-                || normalizedTitle.contains("add one more thing")
-                || normalizedInstruction.contains("fix this one thing first")
-                || normalizedInstruction.contains("your sentence will become more stable")
-                || normalizedInstruction.contains("add one more detail")
-                || normalizedInstruction.contains("try one more sentence")
-                || normalizedInstruction.contains("add one more detail")
-                || normalizedInstruction.contains("try one more sentence");
-    }
-
-    private boolean hasConcretePrimaryFixAnchor(FeedbackPrimaryFixDto primaryFix) {
-        if (primaryFix == null) {
-            return false;
-        }
-        if (!normalizeForComparison(firstNonBlank(primaryFix.originalText())).isBlank()
-                && !normalizeForComparison(firstNonBlank(primaryFix.revisedText())).isBlank()
-                && !normalizeForComparison(firstNonBlank(primaryFix.reasonKo())).isBlank()) {
-            return true;
-        }
-        return containsConcretePrimaryFixAnchor(primaryFix.title())
-                || containsConcretePrimaryFixAnchor(primaryFix.instruction());
-    }
-
-    private boolean containsConcretePrimaryFixAnchor(String value) {
-        String normalized = firstNonBlank(value);
-        if (normalized == null) {
-            return false;
-        }
-        Matcher matcher = PRIMARY_FIX_ENGLISH_ANCHOR_PATTERN.matcher(normalized);
-        while (matcher.find()) {
-            String anchor = normalizeForComparison(matcher.group());
-            if (anchor.contains(" ") || anchor.length() >= 4 || Set.of("and", "because", "to", "in", "on", "at", "my", "they", "it").contains(anchor)) {
-                return true;
-            }
-        }
-        return normalized.contains("'") || normalized.contains("\"");
     }
 
     private List<CorrectionDto> sanitizeCorrections(List<CorrectionDto> corrections) {
@@ -2155,16 +2064,13 @@ public class OpenAiFeedbackClient {
     }
 
     private List<FeedbackSecondaryLearningPointDto> sanitizeSecondaryLearningPoints(
-            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            FeedbackPrimaryFixDto primaryFix
+            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints
     ) {
         if (secondaryLearningPoints == null || secondaryLearningPoints.isEmpty()) {
             return List.of();
         }
         List<FeedbackSecondaryLearningPointDto> sanitized = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
-        String primaryOriginal = primaryFix == null ? null : trimToNull(primaryFix.originalText());
-        String primaryRevised = primaryFix == null ? null : trimToNull(primaryFix.revisedText());
 
         for (FeedbackSecondaryLearningPointDto point : secondaryLearningPoints) {
             if (point == null) {
@@ -2191,13 +2097,6 @@ public class OpenAiFeedbackClient {
             ) == null) {
                 continue;
             }
-            if ("GRAMMAR".equals(cleaned.kind())
-                    && primaryOriginal != null
-                    && primaryRevised != null
-                    && normalizeForComparison(primaryOriginal).equals(normalizeForComparison(cleaned.originalText()))
-                    && normalizeForComparison(primaryRevised).equals(normalizeForComparison(cleaned.revisedText()))) {
-                continue;
-            }
             String key = String.join("|",
                     firstNonBlank(cleaned.kind(), ""),
                     firstNonBlank(cleaned.title(), ""),
@@ -2217,7 +2116,8 @@ public class OpenAiFeedbackClient {
     private FeedbackNextStepPracticeDto sanitizeRewritePractice(
             FeedbackNextStepPracticeDto nextStepPractice,
             FeedbackDiagnosisResult diagnosis,
-            AnswerProfile answerProfile
+            AnswerProfile answerProfile,
+            List<FeedbackSecondaryLearningPointDto> fixPoints
     ) {
         if (nextStepPractice == null) {
             return null;
@@ -2239,7 +2139,7 @@ public class OpenAiFeedbackClient {
         if (firstNonBlank(headline, supportText, revisedText, meaningKo, guidanceKo, exampleEn) == null) {
             return null;
         }
-        return new FeedbackNextStepPracticeDto(
+        FeedbackNextStepPracticeDto sanitized = new FeedbackNextStepPracticeDto(
                 trimToNull(nextStepPractice.kind()),
                 trimToNull(nextStepPractice.title()),
                 headline,
@@ -2253,6 +2153,62 @@ public class OpenAiFeedbackClient {
                 trimToNull(nextStepPractice.ctaLabel()),
                 nextStepPractice.optionalTone()
         );
+        return overlapsWithFixPoints(sanitized, fixPoints) ? null : sanitized;
+    }
+
+    private boolean overlapsWithFixPoints(
+            FeedbackNextStepPracticeDto nextStepPractice,
+            List<FeedbackSecondaryLearningPointDto> fixPoints
+    ) {
+        if (nextStepPractice == null || fixPoints == null || fixPoints.isEmpty()) {
+            return false;
+        }
+
+        String practiceOriginal = trimToNull(nextStepPractice.originalText());
+        String practiceRevised = trimToNull(nextStepPractice.revisedText());
+        String practiceAnchor = firstNonBlank(
+                trimToNull(nextStepPractice.revisedText()),
+                trimToNull(nextStepPractice.headline()),
+                trimToNull(nextStepPractice.exampleEn())
+        );
+        String practiceSupport = trimToNull(nextStepPractice.supportText());
+
+        for (FeedbackSecondaryLearningPointDto point : fixPoints) {
+            if (point == null) {
+                continue;
+            }
+
+            String pointOriginal = trimToNull(point.originalText());
+            String pointRevised = trimToNull(point.revisedText());
+            if (practiceOriginal != null
+                    && practiceRevised != null
+                    && pointOriginal != null
+                    && pointRevised != null
+                    && feedbackSectionValidators.isNearDuplicateText(practiceOriginal, pointOriginal)
+                    && feedbackSectionValidators.isNearDuplicateText(practiceRevised, pointRevised)) {
+                return true;
+            }
+
+            String pointAnchor = firstNonBlank(
+                    trimToNull(point.revisedText()),
+                    trimToNull(point.headline()),
+                    trimToNull(point.exampleEn())
+            );
+            if (practiceAnchor != null
+                    && pointAnchor != null
+                    && feedbackSectionValidators.isNearDuplicateText(practiceAnchor, pointAnchor)) {
+                return true;
+            }
+
+            String pointSupport = trimToNull(point.supportText());
+            if (practiceSupport != null
+                    && pointSupport != null
+                    && feedbackSectionValidators.isNearDuplicateText(practiceSupport, pointSupport)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private List<FeedbackRewriteSuggestionDto> sanitizeRewriteSuggestions(
@@ -2590,11 +2546,11 @@ public class OpenAiFeedbackClient {
             return "- none";
         }
         List<String> instructions = new ArrayList<>();
-        boolean fixWorkRequested = requestedSections != null && requestedSections.contains(SectionKey.PRIMARY_FIX);
+        boolean fixWorkRequested = requestedSections != null
+                && requestedSections.contains(SectionKey.IMPROVEMENT);
         boolean strengthsRequested = requestedSections != null && requestedSections.contains(SectionKey.STRENGTHS);
 
         boolean fixPointRetryNeeded = fixWorkRequested && (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
-                || failureCodes.contains(ValidationFailureCode.UNALIGNED_PRIMARY_FIX)
                 || failureCodes.contains(ValidationFailureCode.LOW_VALUE_SECTION)
                 || failureCodes.contains(ValidationFailureCode.NEAR_DUPLICATE)
                 || failureCodes.contains(ValidationFailureCode.EMPTY_IMPROVEMENT));
@@ -2602,6 +2558,8 @@ public class OpenAiFeedbackClient {
             instructions.add("- Replace generic FIX_POINTS with specific ones. Each item should teach one point and name the exact phrase, word, connector, or slot to change when no original/revised pair is shown.");
             instructions.add("- If multiple distinct fixes remain, return them as separate FIX_POINTS instead of repeating the same lesson.");
             instructions.add("- If one FIX_POINTS pair changes several things, either split it into smaller cards or explain every changed part clearly in supportText. Do not explain only the first edit.");
+            instructions.add("- For correction-pair FIX_POINTS, put the full explanation under supportText and avoid scattering the same explanation into meaningKo, guidanceKo, exampleEn, or exampleKo.");
+            instructions.add("- Do not use vague supportText like '문법이 맞지 않아요' or '더 자연스럽습니다' by itself. Name the exact changed phrase and the concrete rule or usage reason.");
         }
         if (strengthsRequested && (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.NEAR_DUPLICATE)
@@ -2610,7 +2568,9 @@ public class OpenAiFeedbackClient {
         }
         if (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.UNALIGNED_REWRITE_TARGET)) {
-            instructions.add("- NEXT_STEP_PRACTICE should be one clearly different optional add-on or null, and REWRITE_SUGGESTIONS should be short helper ideas for that same next step.");
+            instructions.add("- NEXT_STEP_PRACTICE should be one clearly different optional add-on or null, not a restatement of any FIX_POINTS item.");
+            instructions.add("- If NEXT_STEP_PRACTICE repeats the same original/revised pair, added phrase, or advice already shown in FIX_POINTS, return null instead.");
+            instructions.add("- REWRITE_SUGGESTIONS should support only that distinct next step, and must be [] when NEXT_STEP_PRACTICE is null.");
         }
         if (instructions.isEmpty()) {
             return "- none";
@@ -3420,7 +3380,9 @@ public class OpenAiFeedbackClient {
         if (!onTopic) {
             return false;
         }
-        if (answerBand == AnswerBand.OFF_TOPIC || answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
+        if (answerBand == AnswerBand.OFF_TOPIC
+                || answerBand == AnswerBand.TOO_SHORT_FRAGMENT
+                || answerBand == AnswerBand.SHORT_BUT_VALID) {
             return false;
         }
         if (answerBand == AnswerBand.GRAMMAR_BLOCKING) {

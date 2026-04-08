@@ -2,6 +2,7 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackPrimaryFixDto;
+import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.RefinementExpressionDto;
 
@@ -14,12 +15,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 final class FeedbackSectionValidators {
-    private static final Pattern QUOTED_ENGLISH_TOKEN_PATTERN = Pattern.compile("[`'\"‘’“”]([a-z]{1,12})[`'\"‘’“”]", Pattern.CASE_INSENSITIVE);
+    private static final Pattern QUOTED_ENGLISH_TOKEN_PATTERN = Pattern.compile("[`'\"\u2018\u2019\u201C\u201D]?([a-z]{1,12})[`'\"\u2018\u2019\u201C\u201D]?", Pattern.CASE_INSENSITIVE);
     private static final Set<String> CONNECTOR_TOKENS = Set.of("and", "because", "so", "also", "then");
     private static final Pattern WORD_PATTERN = Pattern.compile("[\\p{L}][\\p{L}'-]*");
     private static final Pattern PLACEHOLDER_PATTERN = Pattern.compile("\\[[^\\]\\r\\n]{1,24}\\]");
     private static final Pattern BROKEN_PATCH_PATTERN = Pattern.compile("'.+?'\\s*->\\s*'.+?'");
-    private static final Pattern HANGUL_PATTERN = Pattern.compile("[가-힣]");
+    private static final Pattern HANGUL_PATTERN = Pattern.compile("[\\u1100-\\u11FF\\u3130-\\u318F\\uAC00-\\uD7AF]");
     private static final Pattern IT_REFERENT_PATTERN = Pattern.compile("(?i)\\b(it|it's|it is|its)\\b");
     private static final Pattern THEY_REFERENT_PATTERN = Pattern.compile("(?i)\\b(they|they're|they are|their|them)\\b");
     private static final Set<String> CONTENT_STOPWORDS = Set.of(
@@ -30,20 +31,20 @@ final class FeedbackSectionValidators {
     private static final Set<String> ARTICLE_TOKENS = Set.of("a", "an", "the");
     private static final Set<String> POSSESSIVE_DETERMINERS = Set.of("my", "your", "his", "her", "our", "their", "its");
     private static final Set<String> READABLE_GENERIC_MEANING_TEXTS = Set.of(
-            "다음 답변에서 자연스럽게 넣어 보면 좋은 표현이에요.",
-            "다음 답변에서 바로 가져다 쓸 수 있는 표현이에요."
+            "\uB2E4\uC74C \uBB38\uC7A5\uC5D0\uC11C \uC790\uC5F0\uC2A4\uB7FD\uAC8C \uC4F0\uBA74 \uC88B\uC740 \uD45C\uD604\uC785\uB2C8\uB2E4.",
+            "\uB2E4\uC74C \uBB38\uC7A5\uC5D0\uC11C \uBC14\uB85C \uAC00\uC838\uB2E4 \uC4F8 \uC218 \uC788\uB294 \uD45C\uD604\uC785\uB2C8\uB2E4."
     );
     private static final Set<String> READABLE_GENERIC_GUIDANCE_TEXTS = Set.of(
-            "다음 답변에서 자연스럽게 넣어 보면 좋은 표현이에요.",
-            "다음 답변에서 바로 가져다 쓸 수 있는 표현이에요."
+            "\uB2E4\uC74C \uBB38\uC7A5\uC5D0\uC11C \uC790\uC5F0\uC2A4\uB7FD\uAC8C \uC4F0\uBA74 \uC88B\uC740 \uD45C\uD604\uC785\uB2C8\uB2E4.",
+            "\uB2E4\uC74C \uBB38\uC7A5\uC5D0\uC11C \uBC14\uB85C \uAC00\uC838\uB2E4 \uC4F8 \uC218 \uC788\uB294 \uD45C\uD604\uC785\uB2C8\uB2E4."
     );
     private static final Set<String> GENERIC_MEANING_TEXTS = Set.of(
-            "다음 답변에서 자연스럽게 써 보면 좋은 표현이에요.",
-            "다음 답변에 바로 가져다 쓸 수 있는 표현이에요."
+            "\uB2E4\uC74C \uBB38\uC7A5\uC5D0\uC11C \uC790\uC5F0\uC2A4\uB7FD\uAC8C \uC4F0\uBA74 \uC88B\uC740 \uD45C\uD604\uC785\uB2C8\uB2E4.",
+            "\uB2E4\uC74C \uBB38\uC7A5\uC5D0\uC11C \uBC14\uB85C \uAC00\uC838\uB2E4 \uC4F8 \uC218 \uC788\uB294 \uD45C\uD604\uC785\uB2C8\uB2E4."
     );
     private static final Set<String> GENERIC_GUIDANCE_TEXTS = Set.of(
-            "다음 답변에서 자연스럽게 써 보면 좋은 표현이에요.",
-            "다음 답변에 바로 가져다 쓸 수 있는 표현이에요."
+            "\uB2E4\uC74C \uBB38\uC7A5\uC5D0\uC11C \uC790\uC5F0\uC2A4\uB7FD\uAC8C \uC4F0\uBA74 \uC88B\uC740 \uD45C\uD604\uC785\uB2C8\uB2E4.",
+            "\uB2E4\uC74C \uBB38\uC7A5\uC5D0\uC11C \uBC14\uB85C \uAC00\uC838\uB2E4 \uC4F8 \uC218 \uC788\uB294 \uD45C\uD604\uC785\uB2C8\uB2E4."
     );
 
     List<String> dedupeStrengths(List<String> strengths) {
@@ -340,6 +341,26 @@ final class FeedbackSectionValidators {
         return null;
     }
 
+    String alignModelAnswerWithFixPointReferent(
+            String modelAnswer,
+            FeedbackSecondaryLearningPointDto fixPoint,
+            String anchorText
+    ) {
+        String sanitized = blankToNull(modelAnswer);
+        if (sanitized == null || fixPoint == null) {
+            return sanitized;
+        }
+        ReferentTarget target = detectFixPointReferentTarget(fixPoint);
+        if (target == ReferentTarget.NONE || !conflictsWithReferentTarget(sanitized, target)) {
+            return sanitized;
+        }
+        String anchor = sanitizeCorrectedSentence(anchorText);
+        if (anchor != null && !conflictsWithReferentTarget(anchor, target)) {
+            return anchor;
+        }
+        return null;
+    }
+
     boolean losesMajorContent(String sourceText, String candidateText) {
         return omitsMajorLearnerClause(sourceText, candidateText);
     }
@@ -407,7 +428,7 @@ final class FeedbackSectionValidators {
         String stripped = rewriteGuide == null
                 ? null
                 : rewriteGuide
-                .replaceAll("\\s*힌트[^:]*:\\s*\"[^\"]+\"", "")
+                .replaceAll("\\s*\uD78C\uD2B8[^:]*:\\s*\"[^\"]+\"", "")
                 .replaceAll("\\s+", " ")
                 .trim();
         stripped = stripLeadingQuotedHint(cleanGuide);
@@ -420,7 +441,7 @@ final class FeedbackSectionValidators {
             return stripped;
         }
         if (grammarBlocking) {
-            return "문장을 먼저 자연스럽게 고친 뒤 이 방법이 어떻게 도움이 되는지 한 가지를 더 붙여 보세요.";
+            return "\uBB38\uC7A5\uC744 \uBA3C\uC800 \uC790\uC5F0\uC2A4\uB7FD\uAC8C \uACE0\uCE5C \uB4A4, \uC5B4\uB5A4 \uD45C\uD604\uC774 \uC5B4\uB5BB\uAC8C \uB2EC\uB77C\uC9C0\uB294\uC9C0 \uD55C\uB450 \uAC00\uC9C0\uB85C \uBD99\uC5EC \uBCF4\uC138\uC694.";
         }
         return stripped == null || stripped.isBlank() ? null : stripped;
     }
@@ -500,7 +521,7 @@ final class FeedbackSectionValidators {
         if (grammarFeedback == null || grammarFeedback.isEmpty()) {
             return false;
         }
-        if (issue.contains("문법") || suggestion.contains("문법") || issue.contains("교정") || suggestion.contains("교정")) {
+        if (issue.contains("\uBB38\uBC95") || suggestion.contains("\uBB38\uBC95") || issue.contains("\uAD50\uC815") || suggestion.contains("\uAD50\uC815")) {
             return true;
         }
         for (GrammarFeedbackItemDto item : grammarFeedback) {
@@ -763,9 +784,7 @@ final class FeedbackSectionValidators {
         boolean revisedHasIt = containsReferentToken(revised, IT_REFERENT_PATTERN);
         boolean originalHasThey = containsReferentToken(original, THEY_REFERENT_PATTERN);
         boolean originalHasIt = containsReferentToken(original, IT_REFERENT_PATTERN);
-        boolean reasonMentionsPronounOrNumber = reason.contains("대명사")
-                || reason.contains("복수형")
-                || reason.contains("단수");
+        boolean reasonMentionsPronounOrNumber = mentionsPronounOrNumber(reason);
 
         if (revisedHasThey && (originalHasIt || reasonMentionsPronounOrNumber)) {
             return ReferentTarget.PLURAL;
@@ -774,6 +793,45 @@ final class FeedbackSectionValidators {
             return ReferentTarget.SINGULAR;
         }
         return ReferentTarget.NONE;
+    }
+
+    private ReferentTarget detectFixPointReferentTarget(FeedbackSecondaryLearningPointDto fixPoint) {
+        if (fixPoint == null) {
+            return ReferentTarget.NONE;
+        }
+        String original = blankToNull(fixPoint.originalText());
+        String revised = blankToNull(fixPoint.revisedText());
+        String reason = normalizeExpressionForOverlap(fixPoint.supportText());
+        if (revised == null) {
+            return ReferentTarget.NONE;
+        }
+
+        boolean revisedHasThey = containsReferentToken(revised, THEY_REFERENT_PATTERN);
+        boolean revisedHasIt = containsReferentToken(revised, IT_REFERENT_PATTERN);
+        boolean originalHasThey = containsReferentToken(original, THEY_REFERENT_PATTERN);
+        boolean originalHasIt = containsReferentToken(original, IT_REFERENT_PATTERN);
+        boolean reasonMentionsPronounOrNumber = mentionsPronounOrNumber(reason);
+
+        if (revisedHasThey && (originalHasIt || reasonMentionsPronounOrNumber)) {
+            return ReferentTarget.PLURAL;
+        }
+        if (revisedHasIt && (originalHasThey || reasonMentionsPronounOrNumber)) {
+            return ReferentTarget.SINGULAR;
+        }
+        return ReferentTarget.NONE;
+    }
+
+    private boolean mentionsPronounOrNumber(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return false;
+        }
+        String normalized = reason.toLowerCase(Locale.ROOT);
+        return normalized.contains("pronoun")
+                || normalized.contains("plural")
+                || normalized.contains("singular")
+                || normalized.contains("\uB300\uBA85\uC0AC")
+                || normalized.contains("\uBCF5\uC218")
+                || normalized.contains("\uB2E8\uC218");
     }
 
     private boolean conflictsWithReferentTarget(String text, ReferentTarget target) {
@@ -847,19 +905,19 @@ final class FeedbackSectionValidators {
         if (normalized.isBlank()) {
             return false;
         }
-        return normalized.equals("표현 설명")
-                || normalized.equals("문장 설명")
-                || normalized.contains("표현입니다")
-                || normalized.contains("뜻입니다");
+        return normalized.equals("\uD45C\uD604 \uC124\uBA85")
+                || normalized.equals("\uBB38\uC7A5 \uC124\uBA85")
+                || normalized.contains("\uD45C\uD604\uC785\uB2C8\uB2E4")
+                || normalized.contains("\uB73B\uC785\uB2C8\uB2E4");
     }
     private boolean isGenericGuidance(String guidanceKo) {
         String normalized = normalizeText(guidanceKo);
         if (normalized.isBlank()) {
             return false;
         }
-        return normalized.equals("다음 답변에서 자연스럽게 써 보면 좋은 표현이에요.")
-                || normalized.equals("설명할 때 사용하면 유용해요.")
-                || normalized.equals("사용할 수 있어요.");
+        return normalized.equals("\uB2E4\uC74C \uBB38\uC7A5\uC5D0\uC11C \uC790\uC5F0\uC2A4\uB7FD\uAC8C \uC4F0\uBA74 \uC88B\uC740 \uD45C\uD604\uC785\uB2C8\uB2E4.")
+                || normalized.equals("\uC124\uBA85\uACFC \uD568\uAED8 \uC4F0\uBA74 \uC720\uC6A9\uD574\uC694.")
+                || normalized.equals("\uC0AC\uC6A9\uD560 \uC218 \uC788\uC5B4\uC694.");
     }
     private String trimToSentenceCount(String text, int maxSentences) {
         if (text == null || text.isBlank()) {

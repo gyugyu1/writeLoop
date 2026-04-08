@@ -212,7 +212,9 @@ function isGenericLearningPointTitle(value?: string | null) {
   return (
     normalized === "보조 학습 포인트" ||
     normalized === "써보면 좋은 표현" ||
-    normalized === "작은 표현 다듬기"
+    normalized === "작은 표현 다듬기" ||
+    normalized === "Fix this first" ||
+    normalized === "First thing to fix"
   );
 }
 
@@ -3447,6 +3449,53 @@ export function AnswerLoop() {
     return trimNullable(point.supportText);
   }
 
+  function resolveFixPointReasonLines(
+    point: FeedbackSecondaryLearningPoint,
+    lead: string | null
+  ): Array<{ key: string; content: ReactNode }> {
+    const seen = new Set<string>();
+    const lines: Array<{ key: string; content: ReactNode }> = [];
+
+    const pushLine = (key: string, text: string | null, localized = false) => {
+      const trimmed = trimNullable(text);
+      if (!trimmed) {
+        return;
+      }
+      const dedupeKey = trimmed.replace(/\s+/g, " ").trim().toLowerCase();
+      if (seen.has(dedupeKey)) {
+        return;
+      }
+      seen.add(dedupeKey);
+      lines.push({
+        key,
+        content: localized ? renderLocalizedExpression(trimmed) : trimmed
+      });
+    };
+
+    pushLine("support", resolveLearningPointSupport(point));
+    pushLine("meaning", resolveLearningPointMeaning(point, lead), true);
+    pushLine("guidance", resolveLearningPointGuidance(point));
+
+    const exampleEn = resolveLearningPointExampleEn(point, lead);
+    if (exampleEn) {
+      pushLine("exampleEn", `예문: ${exampleEn}`);
+    }
+
+    const exampleKo = trimNullable(point.exampleKo);
+    if (exampleKo) {
+      lines.push({
+        key: "exampleKo",
+        content: (
+          <>
+            해석: {renderLocalizedExpression(exampleKo)}
+          </>
+        )
+      });
+    }
+
+    return lines;
+  }
+
   function isLearningPointLeadFromExample(
     point: FeedbackSecondaryLearningPoint,
     lead: string | null
@@ -3589,7 +3638,7 @@ export function AnswerLoop() {
 
     return (
       <section className={styles.feedbackBlock}>
-        <h3>잘한 점</h3>
+        <h3>유지할 점</h3>
         {keepStrengths.length > 0 ? (
           <ul className={styles.list}>
             {keepStrengths.map((strength) => (
@@ -3616,11 +3665,7 @@ export function AnswerLoop() {
   function renderFixPointCard(point: FeedbackSecondaryLearningPoint, index: number) {
     const label = resolveLearningPointLabel(point);
     const lead = resolveLearningPointLead(point);
-    const meaning = resolveLearningPointMeaning(point, lead);
-    const guidance = resolveLearningPointGuidance(point);
-    const support = resolveLearningPointSupport(point);
-    const exampleEn = resolveLearningPointExampleEn(point, lead);
-    const exampleKo = trimNullable(point.exampleKo);
+    const reasonLines = resolveFixPointReasonLines(point, lead);
     const hasGrammarCard = Boolean(point.originalText?.trim()) && Boolean(point.revisedText?.trim());
     const showLead =
       Boolean(lead) &&
@@ -3643,41 +3688,37 @@ export function AnswerLoop() {
             {renderLocalizedExpression(lead)}
           </strong>
         ) : null}
-        {meaning ? (
-          <span className={styles.refinementMeaningText}>{renderLocalizedExpression(meaning)}</span>
-        ) : null}
-        <div className={`${styles.primaryFixCard} ${styles.primaryFixCardCompact}`}>
-          <div className={styles.primaryFixRow}>
-            <span className={styles.primaryFixLabel}>원문</span>
-            <p className={styles.primaryFixDiffText}>
-              {renderPrimaryFixDiff(point.originalText, point.revisedText, "original")}
+        <div className={`${styles.correctionDiffCard} ${styles.correctionDiffCardCompact}`}>
+          <div className={styles.correctionDiffRow}>
+            <span className={styles.correctionDiffLabel}>원문</span>
+            <p className={styles.correctionDiffText}>
+              {renderCorrectionDiff(point.originalText, point.revisedText, "original")}
             </p>
           </div>
-          <div className={styles.primaryFixRow}>
-            <span className={styles.primaryFixLabel}>수정문</span>
-            <p className={styles.primaryFixDiffText}>
-              {renderPrimaryFixDiff(point.originalText, point.revisedText, "revised")}
+          <div className={styles.correctionDiffRow}>
+            <span className={styles.correctionDiffLabel}>수정문</span>
+            <p className={styles.correctionDiffText}>
+              {renderCorrectionDiff(point.originalText, point.revisedText, "revised")}
             </p>
           </div>
-          {support ? (
-            <div className={styles.primaryFixRow}>
-              <span className={styles.primaryFixLabel}>이유</span>
-              <p>{support}</p>
+          {reasonLines.length > 0 ? (
+            <div className={styles.correctionDiffRow}>
+              <span className={styles.correctionDiffLabel}>이유</span>
+              <div className={styles.correctionDiffReasonStack}>
+                {reasonLines.map((line) => (
+                  <p key={line.key} className={styles.correctionDiffReasonLine}>
+                    {line.content}
+                  </p>
+                ))}
+              </div>
             </div>
           ) : null}
         </div>
-        {guidance ? <span className={styles.refinementGuidanceText}>{guidance}</span> : null}
-        {exampleEn ? <span className={styles.refinementExpressionExample}>{exampleEn}</span> : null}
-        {exampleKo ? (
-          <span className={styles.refinementExpressionExampleTranslation}>
-            {renderLocalizedExpression(exampleKo)}
-          </span>
-        ) : null}
       </article>
     );
   }
 
-  function renderPrimaryFixDiff(
+  function renderCorrectionDiff(
     originalTextValue?: string | null,
     revisedTextValue?: string | null,
     mode: "original" | "revised" = "original"
@@ -3693,14 +3734,14 @@ export function AnswerLoop() {
       );
 
       if (segments.length > 0) {
-        return segments.map((segment, index) => renderPrimaryFixDiffSegment(segment, mode, index));
+        return segments.map((segment, index) => renderCorrectionDiffSegment(segment, mode, index));
       }
     }
 
     return mode === "original" ? originalTextValue : revisedTextValue;
   }
 
-  function renderPrimaryFixDiffSegment(
+  function renderCorrectionDiffSegment(
     segment: RenderedInlineFeedbackSegment,
     mode: "original" | "revised",
     index: number
@@ -3710,23 +3751,23 @@ export function AnswerLoop() {
         return <span key={`${mode}-equal-${index}`}>{segment.text}</span>;
       case "replace":
         return mode === "original" ? (
-          <span key={`${mode}-replace-${index}`} className={styles.primaryFixRemoved}>
+          <span key={`${mode}-replace-${index}`} className={styles.correctionDiffRemoved}>
             {segment.removed}
           </span>
         ) : (
-          <span key={`${mode}-replace-${index}`} className={styles.primaryFixAdded}>
+          <span key={`${mode}-replace-${index}`} className={styles.correctionDiffAdded}>
             {segment.added}
           </span>
         );
       case "remove":
         return mode === "original" ? (
-          <span key={`${mode}-remove-${index}`} className={styles.primaryFixRemoved}>
+          <span key={`${mode}-remove-${index}`} className={styles.correctionDiffRemoved}>
             {segment.text}
           </span>
         ) : null;
       case "add":
         return mode === "revised" ? (
-          <span key={`${mode}-add-${index}`} className={styles.primaryFixAdded}>
+          <span key={`${mode}-add-${index}`} className={styles.correctionDiffAdded}>
             {segment.text}
           </span>
         ) : null;
@@ -3757,6 +3798,7 @@ export function AnswerLoop() {
   function resolveModelAnswerDiffSegments() {
     const modelAnswerState = resolveVisibleModelAnswer();
     const originalAnswer = trimNullable(lastSubmittedAnswer);
+    const isRewriteStep = step === "rewrite";
     if (!modelAnswerState || !originalAnswer) {
       return null;
     }
@@ -3770,6 +3812,13 @@ export function AnswerLoop() {
     const segments = buildInlineFeedbackSegments(originalAnswer, modelAnswerState.modelAnswer, null);
     if (segments.length === 0) {
       return null;
+    }
+    if (isRewriteStep) {
+      return {
+        originalAnswer,
+        modelAnswer: modelAnswerState.modelAnswer,
+        segments
+      };
     }
 
     const hasMeaningfulChange = segments.some((segment) => {
@@ -3907,39 +3956,7 @@ export function AnswerLoop() {
   }
 
   function renderExampleAnswerSection() {
-    const modelAnswerState = resolveVisibleModelAnswer();
-    if (!modelAnswerState) {
-      return null;
-    }
-
-    const nextStepSeed = resolveNextStepSeed(feedback?.ui?.nextStepPractice);
-    if (nextStepSeed && nextStepSeed === modelAnswerState.modelAnswer) {
-      return null;
-    }
-
-    const isTaskResetExample = modelAnswerState.modelAnswerMode === "TASK_RESET_EXAMPLE";
-    const title = isTaskResetExample ? "질문에 맞는 자연스러운 답안" : "자연스럽게 다듬은 답안";
-    const supportText = isTaskResetExample
-      ? "지금 답을 질문에 더 맞게 다듬으면 이런 톤과 방향으로 말할 수 있어요."
-      : "내 의미를 유지하면서 더 자연스럽게 다듬으면 이렇게 들려요.";
-
-    return (
-      <section className={`${styles.feedbackBlock} ${styles.modelAnswerShowcase}`}>
-        <div className={styles.modelAnswerShowcaseHeader}>
-          <span className={styles.modelAnswerEyebrow}>
-            {isTaskResetExample ? "TASK RESET" : "NATURAL REWRITE"}
-          </span>
-          <h3>{title}</h3>
-          <p>{supportText}</p>
-        </div>
-        <div className={styles.modelAnswerShowcaseCard}>
-          <p className={styles.modelAnswerText}>{modelAnswerState.modelAnswer}</p>
-          {feedback?.modelAnswerKo ? (
-            <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
-          ) : null}
-        </div>
-      </section>
-    );
+    return null;
   }
 
   function renderModelAnswerDiffSection() {
@@ -3951,25 +3968,28 @@ export function AnswerLoop() {
     return (
       <section className={`${styles.feedbackBlock} ${styles.modelAnswerDiffBlock}`}>
         <div className={styles.modelAnswerDiffHeader}>
-          <h3>원문과 이렇게 달라져요</h3>
+          <h3>내 답변과 다듬은 답안 비교</h3>
           <p>빨간 부분은 줄이거나 고친 표현, 초록 부분은 더 자연스럽게 다듬은 표현이에요.</p>
         </div>
         <div className={styles.modelAnswerDiffStack}>
-          <article className={styles.modelAnswerDiffCard}>
-            <span className={styles.modelAnswerDiffLabel}>내 답변</span>
-            <p className={styles.primaryFixDiffText}>
+            <article className={styles.modelAnswerDiffCard}>
+              <span className={styles.modelAnswerDiffLabel}>내 답변</span>
+            <p className={styles.correctionDiffText}>
               {diff.segments.map((segment, index) =>
-                renderPrimaryFixDiffSegment(segment, "original", index)
+                renderCorrectionDiffSegment(segment, "original", index)
               )}
             </p>
           </article>
           <article className={styles.modelAnswerDiffCard}>
             <span className={styles.modelAnswerDiffLabel}>다듬은 답안</span>
-            <p className={styles.primaryFixDiffText}>
+            <p className={styles.correctionDiffText}>
               {diff.segments.map((segment, index) =>
-                renderPrimaryFixDiffSegment(segment, "revised", index)
+                renderCorrectionDiffSegment(segment, "revised", index)
               )}
             </p>
+            {feedback?.modelAnswerKo ? (
+              <p className={styles.modelAnswerDiffHint}>해석: {feedback.modelAnswerKo}</p>
+            ) : null}
           </article>
         </div>
         <p className={styles.modelAnswerDiffHint}>
@@ -3985,7 +4005,7 @@ export function AnswerLoop() {
       return null;
     }
 
-    const title = resolveVisibleModelAnswer() ? "이렇게 바꾸는 이유" : "고쳐볼 점";
+    const title = "고쳐볼 점";
 
     return (
       <section className={`${styles.feedbackBlock} ${styles.secondaryLearningBlock}`}>
@@ -4046,7 +4066,7 @@ export function AnswerLoop() {
   function renderFeedbackCoreSections() {
     const modelAnswerSection = renderExampleAnswerSection();
     const modelAnswerDiffSection = renderModelAnswerDiffSection();
-    if (!modelAnswerSection) {
+    if (!modelAnswerSection && !modelAnswerDiffSection) {
       return (
         <>
           {renderKeepSection()}
@@ -4060,8 +4080,8 @@ export function AnswerLoop() {
       <>
         {modelAnswerSection}
         {modelAnswerDiffSection}
-        {renderFixPointsSection()}
         {renderKeepSection()}
+        {renderFixPointsSection()}
         {renderAdditionalIdeasSection()}
       </>
     );
@@ -4282,12 +4302,6 @@ export function AnswerLoop() {
         <div className={styles.writingStageLayout}>
           {renderWritingSidebar({ stepNumber: 4 })}
           <div className={styles.writingStageMain}>
-            <div className={styles.responseCard}>
-              <h3>내가 제출한 답변</h3>
-              <p className={styles.mobileFeedbackAnswerText}>
-                {lastSubmittedAnswer || "방금 제출한 답변이 여기에 표시됩니다."}
-              </p>
-            </div>
             {feedback ? (
               <section className={styles.rewriteFeedbackPanel}>
                 <div className={styles.rewriteFeedbackHeader}>

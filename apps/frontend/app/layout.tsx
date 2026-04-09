@@ -1,18 +1,48 @@
 import type { Metadata } from "next";
-import { Be_Vietnam_Pro, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { TopNavigation } from "../components/top-navigation";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+const plusJakartaSans = localFont({
+  src: [
+    {
+      path: "./fonts/plus-jakarta-sans-400-800-latin.woff2",
+      weight: "400 800",
+      style: "normal"
+    }
+  ],
   display: "swap",
   variable: "--font-plus-jakarta-sans"
 });
 
-const beVietnamPro = Be_Vietnam_Pro({
-  subsets: ["latin", "vietnamese"],
-  weight: ["400", "500", "600", "700", "800"],
+const beVietnamPro = localFont({
+  src: [
+    {
+      path: "./fonts/be-vietnam-pro-400-latin.woff2",
+      weight: "400",
+      style: "normal"
+    },
+    {
+      path: "./fonts/be-vietnam-pro-500-latin.woff2",
+      weight: "500",
+      style: "normal"
+    },
+    {
+      path: "./fonts/be-vietnam-pro-600-latin.woff2",
+      weight: "600",
+      style: "normal"
+    },
+    {
+      path: "./fonts/be-vietnam-pro-700-latin.woff2",
+      weight: "700",
+      style: "normal"
+    },
+    {
+      path: "./fonts/be-vietnam-pro-800-latin.woff2",
+      weight: "800",
+      style: "normal"
+    }
+  ],
   display: "swap",
   variable: "--font-be-vietnam-pro"
 });

@@ -11,13 +11,13 @@ import {
   logout,
   updateProfile
 } from "../lib/api";
+import { getDifficultyLabel } from "../lib/difficulty";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import type { AuthUser, CommonMistake, HistorySession, TodayWritingStatus } from "../lib/types";
 import styles from "./auth-page.module.css";
 
 type MyPageTab = "account" | "writing";
-type AccountSectionKey = "profile" | "delete";
 type HistoryDiffSegment = {
   text: string;
   changed: boolean;
@@ -28,6 +28,16 @@ type HistoryComparisonView = {
   rewriteAttempt: HistorySession["attempts"][number];
   initialSegments: HistoryDiffSegment[];
   rewriteSegments: HistoryDiffSegment[];
+  changedChunkCount: number;
+  addedWordCount: number;
+  removedWordCount: number;
+  beforeWordCount: number;
+  afterWordCount: number;
+};
+
+type HistoryTextComparison = {
+  beforeSegments: HistoryDiffSegment[];
+  afterSegments: HistoryDiffSegment[];
   changedChunkCount: number;
   addedWordCount: number;
   removedWordCount: number;
@@ -127,25 +137,21 @@ function mergeHistoryDiffSegments(segments: HistoryDiffSegment[]) {
   }, []);
 }
 
-function buildHistoryComparisonView(session: HistorySession): HistoryComparisonView | null {
-  const initialAttempt =
-    session.attempts.find((attempt) => attempt.attemptType === "INITIAL") ?? session.attempts[0];
-  const rewriteAttempts = session.attempts.filter((attempt) => attempt.attemptType === "REWRITE");
-  const rewriteAttempt = rewriteAttempts[rewriteAttempts.length - 1];
+function buildHistoryTextComparison(beforeText: string, afterText: string): HistoryTextComparison | null {
+  const beforeUnits = buildHistoryDiffUnits(beforeText);
+  const afterUnits = buildHistoryDiffUnits(afterText);
 
-  if (!initialAttempt || !rewriteAttempt) {
+  if (beforeUnits.length === 0 || afterUnits.length === 0) {
     return null;
   }
 
-  const initialUnits = buildHistoryDiffUnits(initialAttempt.answerText);
-  const rewriteUnits = buildHistoryDiffUnits(rewriteAttempt.answerText);
-  const lcs = Array.from({ length: initialUnits.length + 1 }, () =>
-    Array<number>(rewriteUnits.length + 1).fill(0)
+  const lcs = Array.from({ length: beforeUnits.length + 1 }, () =>
+    Array<number>(afterUnits.length + 1).fill(0)
   );
 
-  for (let leftIndex = initialUnits.length - 1; leftIndex >= 0; leftIndex -= 1) {
-    for (let rightIndex = rewriteUnits.length - 1; rightIndex >= 0; rightIndex -= 1) {
-      if (initialUnits[leftIndex].token === rewriteUnits[rightIndex].token) {
+  for (let leftIndex = beforeUnits.length - 1; leftIndex >= 0; leftIndex -= 1) {
+    for (let rightIndex = afterUnits.length - 1; rightIndex >= 0; rightIndex -= 1) {
+      if (beforeUnits[leftIndex].token === afterUnits[rightIndex].token) {
         lcs[leftIndex][rightIndex] = lcs[leftIndex + 1][rightIndex + 1] + 1;
       } else {
         lcs[leftIndex][rightIndex] = Math.max(
@@ -156,61 +162,88 @@ function buildHistoryComparisonView(session: HistorySession): HistoryComparisonV
     }
   }
 
-  const initialSegments: HistoryDiffSegment[] = [];
-  const rewriteSegments: HistoryDiffSegment[] = [];
+  const beforeSegments: HistoryDiffSegment[] = [];
+  const afterSegments: HistoryDiffSegment[] = [];
   let changedChunkCount = 0;
   let addedWordCount = 0;
   let removedWordCount = 0;
   let leftCursor = 0;
   let rightCursor = 0;
 
-  while (leftCursor < initialUnits.length && rightCursor < rewriteUnits.length) {
-    if (initialUnits[leftCursor].token === rewriteUnits[rightCursor].token) {
-      initialSegments.push({ text: initialUnits[leftCursor].text, changed: false });
-      rewriteSegments.push({ text: rewriteUnits[rightCursor].text, changed: false });
+  while (leftCursor < beforeUnits.length && rightCursor < afterUnits.length) {
+    if (beforeUnits[leftCursor].token === afterUnits[rightCursor].token) {
+      beforeSegments.push({ text: beforeUnits[leftCursor].text, changed: false });
+      afterSegments.push({ text: afterUnits[rightCursor].text, changed: false });
       leftCursor += 1;
       rightCursor += 1;
       continue;
     }
 
     if (lcs[leftCursor + 1][rightCursor] >= lcs[leftCursor][rightCursor + 1]) {
-      initialSegments.push({ text: initialUnits[leftCursor].text, changed: true });
+      beforeSegments.push({ text: beforeUnits[leftCursor].text, changed: true });
       changedChunkCount += 1;
       removedWordCount += 1;
       leftCursor += 1;
       continue;
     }
 
-    rewriteSegments.push({ text: rewriteUnits[rightCursor].text, changed: true });
+    afterSegments.push({ text: afterUnits[rightCursor].text, changed: true });
     changedChunkCount += 1;
     addedWordCount += 1;
     rightCursor += 1;
   }
 
-  while (leftCursor < initialUnits.length) {
-    initialSegments.push({ text: initialUnits[leftCursor].text, changed: true });
+  while (leftCursor < beforeUnits.length) {
+    beforeSegments.push({ text: beforeUnits[leftCursor].text, changed: true });
     changedChunkCount += 1;
     removedWordCount += 1;
     leftCursor += 1;
   }
 
-  while (rightCursor < rewriteUnits.length) {
-    rewriteSegments.push({ text: rewriteUnits[rightCursor].text, changed: true });
+  while (rightCursor < afterUnits.length) {
+    afterSegments.push({ text: afterUnits[rightCursor].text, changed: true });
     changedChunkCount += 1;
     addedWordCount += 1;
     rightCursor += 1;
   }
 
   return {
-    initialAttempt,
-    rewriteAttempt,
-    initialSegments: mergeHistoryDiffSegments(initialSegments),
-    rewriteSegments: mergeHistoryDiffSegments(rewriteSegments),
+    beforeSegments: mergeHistoryDiffSegments(beforeSegments),
+    afterSegments: mergeHistoryDiffSegments(afterSegments),
     changedChunkCount,
     addedWordCount,
     removedWordCount,
-    beforeWordCount: initialUnits.length,
-    afterWordCount: rewriteUnits.length
+    beforeWordCount: beforeUnits.length,
+    afterWordCount: afterUnits.length
+  };
+}
+
+function buildHistoryComparisonView(session: HistorySession): HistoryComparisonView | null {
+  const initialAttempt =
+    session.attempts.find((attempt) => attempt.attemptType === "INITIAL") ?? session.attempts[0];
+  const rewriteAttempts = session.attempts.filter((attempt) => attempt.attemptType === "REWRITE");
+  const rewriteAttempt = rewriteAttempts[rewriteAttempts.length - 1];
+
+  if (!initialAttempt || !rewriteAttempt) {
+    return null;
+  }
+
+  const textComparison = buildHistoryTextComparison(initialAttempt.answerText, rewriteAttempt.answerText);
+
+  if (!textComparison) {
+    return null;
+  }
+
+  return {
+    initialAttempt,
+    rewriteAttempt,
+    initialSegments: textComparison.beforeSegments,
+    rewriteSegments: textComparison.afterSegments,
+    changedChunkCount: textComparison.changedChunkCount,
+    addedWordCount: textComparison.addedWordCount,
+    removedWordCount: textComparison.removedWordCount,
+    beforeWordCount: textComparison.beforeWordCount,
+    afterWordCount: textComparison.afterWordCount
   };
 }
 
@@ -243,22 +276,14 @@ function getLoginMethodLabel(user: AuthUser) {
   }
 }
 
-function getProfileBadgeText(name: string) {
-  const normalized = Array.from(name.trim().replace(/\s+/g, ""));
-  if (normalized.length === 0) {
-    return "WL";
-  }
-
-  return normalized.slice(0, 2).join("").toUpperCase();
-}
-
-function formatHistoryCardDate(dateTime: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
+function formatHistoryDateHeading(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map((value) => Number(value));
+  const weekday = new Intl.DateTimeFormat("ko-KR", {
     timeZone: "Asia/Seoul",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit"
-  }).format(new Date(dateTime));
+    weekday: "short"
+  }).format(new Date(`${dateKey}T00:00:00+09:00`));
+
+  return `${year}년 ${month}월 ${day}일 ${weekday}`;
 }
 
 function getHistoryWordCount(text: string) {
@@ -308,14 +333,14 @@ export function MyPageClient() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<MyPageTab>("writing");
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
-  const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
+  const [, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [history, setHistory] = useState<HistorySession[]>([]);
   const [commonMistakes, setCommonMistakes] = useState<CommonMistake[]>([]);
   const [historyError, setHistoryError] = useState("");
   const [mistakeError, setMistakeError] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [, setOpenDates] = useState<Record<string, boolean>>({});
+  const [openDates, setOpenDates] = useState<Record<string, boolean>>({});
   const [openSessions, setOpenSessions] = useState<Record<string, boolean>>({});
   const [selectedHistoryDate, setSelectedHistoryDate] = useState("");
   const [profileDisplayName, setProfileDisplayName] = useState("");
@@ -377,31 +402,35 @@ export function MyPageClient() {
           return;
         }
 
-        try {
-          const [status, sessions, mistakes] = await Promise.all([
-            getTodayWritingStatus(),
-            getAnswerHistory(),
-            getCommonMistakes()
-          ]);
+        const [statusResult, sessionsResult, mistakesResult] = await Promise.allSettled([
+          getTodayWritingStatus(),
+          getAnswerHistory(),
+          getCommonMistakes()
+        ]);
 
-          if (!isMounted) {
-            return;
-          }
+        if (!isMounted) {
+          return;
+        }
 
-          setTodayStatus(status);
-          setHistory(sessions);
-          setCommonMistakes(mistakes);
-          setHistoryError("");
-          setMistakeError("");
-        } catch {
-          if (!isMounted) {
-            return;
-          }
-
+        if (statusResult.status === "fulfilled") {
+          setTodayStatus(statusResult.value);
+        } else {
           setTodayStatus(null);
+        }
+
+        if (sessionsResult.status === "fulfilled") {
+          setHistory(sessionsResult.value);
+          setHistoryError("");
+        } else {
           setHistory([]);
-          setCommonMistakes([]);
           setHistoryError("작문 기록을 아직 불러오지 못했어요.");
+        }
+
+        if (mistakesResult.status === "fulfilled") {
+          setCommonMistakes(mistakesResult.value);
+          setMistakeError("");
+        } else {
+          setCommonMistakes([]);
           setMistakeError("자주 받은 피드백을 아직 불러오지 못했어요.");
         }
       } catch {
@@ -632,6 +661,13 @@ export function MyPageClient() {
     }));
   }
 
+  function toggleDateGroup(dateKey: string) {
+    setOpenDates((current) => ({
+      ...current,
+      [dateKey]: !current[dateKey]
+    }));
+  }
+
   function toggleAttemptExpressions(attemptId: string) {
     setExpandedAttemptExpressions((current) => ({
       ...current,
@@ -679,14 +715,40 @@ export function MyPageClient() {
             point.supportText?.trim()
         );
       }) ?? [];
+    const correctionCards =
+      fixPoints.length > 0
+        ? fixPoints.map((point, index) => ({
+            key: `${point.headline ?? point.originalText ?? point.revisedText ?? index}`,
+            title: point.headline?.trim() || point.originalText?.trim() || "한 번 더 다듬어 보기",
+            body: point.supportText?.trim() || point.revisedText?.trim() || ""
+          }))
+        : (attempt.feedback.inlineFeedback ?? [])
+            .filter(
+              (segment) =>
+                segment.type !== "KEEP" &&
+                Boolean(segment.originalText?.trim() || segment.revisedText?.trim())
+            )
+            .map((segment, index) => ({
+              key: `inline-${segment.originalText}-${segment.revisedText}-${index}`,
+              title: segment.originalText?.trim() || segment.revisedText?.trim() || "한 번 더 다듬어 보기",
+              body:
+                segment.originalText?.trim() && segment.revisedText?.trim()
+                  ? `${segment.originalText} -> ${segment.revisedText}`
+                  : segment.revisedText?.trim() || segment.originalText?.trim() || ""
+            }));
     const feedbackSummary = attempt.feedback.summary?.trim() ?? "";
     const modelAnswer = attempt.feedback.modelAnswer?.trim() ?? "";
     const modelAnswerKo = attempt.feedback.modelAnswerKo?.trim() ?? "";
     const rewriteChallenge = attempt.feedback.rewriteChallenge?.trim() ?? "";
     const completionMessage = attempt.feedback.completionMessage?.trim() ?? "";
-    const hasModelAnswerSection = Boolean(modelAnswer) || Boolean(modelAnswerKo) || suggestedExpressions.length > 0;
-    const hasRefineSection = fixPoints.length > 0;
+    const comparisonTargetText = modelAnswer || attempt.feedback.correctedAnswer?.trim() || "";
+    const comparisonTargetLabel = modelAnswer ? "예시 답변" : "다듬은 답안";
+    const answerComparison = buildHistoryTextComparison(attempt.answerText, comparisonTargetText);
+    const hasComparisonSection = Boolean(answerComparison) || Boolean(comparisonTargetText);
+    const hasModelAnswerSection = hasComparisonSection || Boolean(modelAnswerKo) || suggestedExpressions.length > 0;
+    const hasRefineSection = correctionCards.length > 0;
     const hasStrengthsSection = attempt.feedback.strengths.length > 0;
+    const shouldShowSummaryCard = Boolean(feedbackSummary) && !hasStrengthsSection;
     const hasNextLoopSection =
       Boolean(rewriteChallenge) || rewriteSuggestions.length > 0 || Boolean(completionMessage);
 
@@ -879,14 +941,40 @@ export function MyPageClient() {
             point.supportText?.trim()
         );
       }) ?? [];
+    const correctionCards =
+      fixPoints.length > 0
+        ? fixPoints.map((point, index) => ({
+            key: `${point.headline ?? point.originalText ?? point.revisedText ?? index}`,
+            title: point.headline?.trim() || point.originalText?.trim() || "한 번 더 다듬어 보기",
+            body: point.supportText?.trim() || point.revisedText?.trim() || ""
+          }))
+        : (attempt.feedback.inlineFeedback ?? [])
+            .filter(
+              (segment) =>
+                segment.type !== "KEEP" &&
+                Boolean(segment.originalText?.trim() || segment.revisedText?.trim())
+            )
+            .map((segment, index) => ({
+              key: `inline-${segment.originalText}-${segment.revisedText}-${index}`,
+              title: segment.originalText?.trim() || segment.revisedText?.trim() || "한 번 더 다듬어 보기",
+              body:
+                segment.originalText?.trim() && segment.revisedText?.trim()
+                  ? `${segment.originalText} -> ${segment.revisedText}`
+                  : segment.revisedText?.trim() || segment.originalText?.trim() || ""
+            }));
     const feedbackSummary = attempt.feedback.summary?.trim() ?? "";
     const modelAnswer = attempt.feedback.modelAnswer?.trim() ?? "";
     const modelAnswerKo = attempt.feedback.modelAnswerKo?.trim() ?? "";
     const rewriteChallenge = attempt.feedback.rewriteChallenge?.trim() ?? "";
     const completionMessage = attempt.feedback.completionMessage?.trim() ?? "";
-    const hasModelAnswerSection = Boolean(modelAnswer) || Boolean(modelAnswerKo) || suggestedExpressions.length > 0;
-    const hasRefineSection = fixPoints.length > 0;
+    const comparisonTargetText = modelAnswer || attempt.feedback.correctedAnswer?.trim() || "";
+    const comparisonTargetLabel = modelAnswer ? "예시 답변" : "다듬은 답안";
+    const answerComparison = buildHistoryTextComparison(attempt.answerText, comparisonTargetText);
+    const hasComparisonSection = Boolean(answerComparison) || Boolean(comparisonTargetText);
+    const hasModelAnswerSection = hasComparisonSection || Boolean(modelAnswerKo) || suggestedExpressions.length > 0;
+    const hasRefineSection = correctionCards.length > 0;
     const hasStrengthsSection = attempt.feedback.strengths.length > 0;
+    const shouldShowSummaryCard = Boolean(feedbackSummary) && !hasStrengthsSection;
     const hasNextLoopSection =
       Boolean(rewriteChallenge) || rewriteSuggestions.length > 0 || Boolean(completionMessage);
 
@@ -901,17 +989,109 @@ export function MyPageClient() {
 
         <div className={styles.writingHistoryFeedbackBody}>
           <div className={styles.writingHistoryFeedbackGrid}>
-            {feedbackSummary ? (
-              <section
-                className={`${styles.writingHistoryFeedbackCard} ${styles.writingHistoryFeedbackCardFull}`}
-              >
-                <span className={styles.writingHistoryFeedbackLabel}>요약</span>
-                <p>{feedbackSummary}</p>
-              </section>
+            {hasModelAnswerSection || shouldShowSummaryCard ? (
+              <div className={`${styles.writingHistoryFeedbackColumn} ${styles.writingHistoryFeedbackColumnPrimary}`}>
+                {hasComparisonSection ? (
+                  <section
+                    className={`${styles.writingHistoryFeedbackCard} ${styles.writingHistoryFeedbackComparisonCard}`}
+                  >
+                    <span className={styles.writingHistoryFeedbackLabel}>내 답변 vs 예시 답변</span>
+                    <div className={styles.writingHistoryFeedbackCompareGrid}>
+                      <div className={styles.writingHistoryFeedbackCompareBlock}>
+                        <h5>내 답변</h5>
+                        <div className={styles.writingHistoryFeedbackCompareBody}>
+                          {answerComparison
+                            ? answerComparison.beforeSegments.map((segment, index) => (
+                                <span
+                                  key={`history-before-${attempt.id}-${index}`}
+                                  className={
+                                    segment.changed ? styles.historyComparisonChangedBefore : undefined
+                                  }
+                                >
+                                  {segment.text}
+                                </span>
+                              ))
+                            : attempt.answerText}
+                        </div>
+                      </div>
+
+                      <div
+                        className={`${styles.writingHistoryFeedbackCompareBlock} ${styles.writingHistoryFeedbackCompareBlockAccent}`}
+                      >
+                        <h5>{comparisonTargetLabel}</h5>
+                        <div
+                          className={`${styles.writingHistoryFeedbackCompareBody} ${styles.writingHistoryFeedbackCompareBodyAccent}`}
+                        >
+                          {answerComparison
+                            ? answerComparison.afterSegments.map((segment, index) => (
+                                <span
+                                  key={`history-after-${attempt.id}-${index}`}
+                                  className={segment.changed ? styles.historyComparisonChangedAfter : undefined}
+                                >
+                                  {segment.text}
+                                </span>
+                              ))
+                            : comparisonTargetText}
+                        </div>
+                      </div>
+                    </div>
+                    {modelAnswerKo ? (
+                      <p className={styles.writingHistoryFeedbackCompareTranslation}>{`해석: ${modelAnswerKo}`}</p>
+                    ) : null}
+                  </section>
+                ) : null}
+
+                {suggestedExpressions.length > 0 ? (
+                  <section className={styles.writingHistoryFeedbackCard}>
+                    <span className={styles.writingHistoryFeedbackLabel}>가져오면 좋은 표현</span>
+                    <div className={styles.writingHistoryFeedbackSuggestionSection}>
+                      <div className={styles.writingHistoryFeedbackSuggestionList}>
+                        {suggestedExpressions.map((expression, index) => (
+                          <span
+                            key={`${expression.expression}-${index}`}
+                            className={styles.writingHistoryFeedbackSuggestionChip}
+                          >
+                            {expression.expression}
+                          </span>
+                        ))}
+                      </div>
+                      <div className={styles.writingHistoryFeedbackExpressionList}>
+                        {suggestedExpressions.map((expression, index) => (
+                          <article
+                            key={`${expression.expression}-detail-${index}`}
+                            className={styles.writingHistoryFeedbackExpressionItem}
+                          >
+                            <strong>{expression.expression}</strong>
+                            {expression.meaningKo ? (
+                              <p className={styles.writingHistoryFeedbackExpressionMeaning}>
+                                {expression.meaningKo}
+                              </p>
+                            ) : null}
+                            {expression.guidanceKo ? <p>{expression.guidanceKo}</p> : null}
+                            {expression.exampleEn ? (
+                              <p className={styles.writingHistoryFeedbackExpressionExample}>
+                                {expression.exampleEn}
+                              </p>
+                            ) : null}
+                            {expression.exampleKo ? <p>{expression.exampleKo}</p> : null}
+                          </article>
+                        ))}
+                      </div>
+                    </div>
+                  </section>
+                ) : null}
+
+                {shouldShowSummaryCard ? (
+                  <section className={styles.writingHistoryFeedbackCard}>
+                    <span className={styles.writingHistoryFeedbackLabel}>핵심 피드백</span>
+                    <p>{feedbackSummary}</p>
+                  </section>
+                ) : null}
+              </div>
             ) : null}
 
-            {hasStrengthsSection || hasRefineSection ? (
-              <div className={styles.writingHistoryFeedbackColumn}>
+            {hasStrengthsSection || hasRefineSection || hasNextLoopSection ? (
+              <div className={`${styles.writingHistoryFeedbackColumn} ${styles.writingHistoryFeedbackColumnSecondary}`}>
                 {hasStrengthsSection ? (
                   <section className={styles.writingHistoryFeedbackCard}>
                     <span className={styles.writingHistoryFeedbackLabel}>잘한 점</span>
@@ -923,72 +1103,17 @@ export function MyPageClient() {
                   </section>
                 ) : null}
 
-                {fixPoints.length > 0 ? (
+                {hasRefineSection ? (
                   <section className={styles.writingHistoryFeedbackCard}>
                     <span className={styles.writingHistoryFeedbackLabel}>고쳐야 할 점</span>
                     <div className={styles.writingHistoryFeedbackCorrectionList}>
-                      {fixPoints.map((point, index) => (
-                        <article
-                          key={`${point.headline ?? point.originalText ?? point.revisedText ?? index}`}
-                          className={styles.writingHistoryFeedbackCorrectionItem}
-                        >
-                          <strong>{point.headline ?? point.originalText ?? "한 번 더 다듬어 보기"}</strong>
-                          {point.supportText?.trim() ? <p>{point.supportText}</p> : null}
-                          {!point.supportText?.trim() && point.revisedText?.trim() ? <p>{point.revisedText}</p> : null}
+                      {correctionCards.map((card) => (
+                        <article key={card.key} className={styles.writingHistoryFeedbackCorrectionItem}>
+                          <strong>{card.title}</strong>
+                          {card.body ? <p>{card.body}</p> : null}
                         </article>
                       ))}
                     </div>
-                  </section>
-                ) : null}
-              </div>
-            ) : null}
-
-            {hasModelAnswerSection || hasNextLoopSection ? (
-              <div className={styles.writingHistoryFeedbackColumn}>
-                {hasModelAnswerSection ? (
-                  <section className={styles.writingHistoryFeedbackCard}>
-                    <span className={styles.writingHistoryFeedbackLabel}>예시 답변</span>
-                    {modelAnswer ? <p className={styles.writingHistoryFeedbackModelAnswer}>{modelAnswer}</p> : null}
-                    {modelAnswerKo ? (
-                      <p className={styles.writingHistoryFeedbackModelAnswerKo}>{`해석: ${modelAnswerKo}`}</p>
-                    ) : null}
-                    {suggestedExpressions.length > 0 ? (
-                      <div className={styles.writingHistoryFeedbackSuggestionSection}>
-                        <strong>가져오면 좋은 표현</strong>
-                        <div className={styles.writingHistoryFeedbackSuggestionList}>
-                          {suggestedExpressions.map((expression, index) => (
-                            <span
-                              key={`${expression.expression}-${index}`}
-                              className={styles.writingHistoryFeedbackSuggestionChip}
-                            >
-                              {expression.expression}
-                            </span>
-                          ))}
-                        </div>
-                        <div className={styles.writingHistoryFeedbackExpressionList}>
-                          {suggestedExpressions.map((expression, index) => (
-                            <article
-                              key={`${expression.expression}-detail-${index}`}
-                              className={styles.writingHistoryFeedbackExpressionItem}
-                            >
-                              <strong>{expression.expression}</strong>
-                              {expression.meaningKo ? (
-                                <p className={styles.writingHistoryFeedbackExpressionMeaning}>
-                                  {expression.meaningKo}
-                                </p>
-                              ) : null}
-                              {expression.guidanceKo ? <p>{expression.guidanceKo}</p> : null}
-                              {expression.exampleEn ? (
-                                <p className={styles.writingHistoryFeedbackExpressionExample}>
-                                  {expression.exampleEn}
-                                </p>
-                              ) : null}
-                              {expression.exampleKo ? <p>{expression.exampleKo}</p> : null}
-                            </article>
-                          ))}
-                        </div>
-                      </div>
-                    ) : null}
                   </section>
                 ) : null}
 
@@ -1056,7 +1181,9 @@ export function MyPageClient() {
             </div>
 
             <p className={styles.historyAnswer}>{attempt.answerText}</p>
-            {attempt.feedbackSummary ? <p className={styles.historySummary}>{attempt.feedbackSummary}</p> : null}
+            {attempt.feedbackSummary && attempt.feedback.strengths.length === 0 ? (
+              <p className={styles.historySummary}>{attempt.feedbackSummary}</p>
+            ) : null}
 
             {attempt.usedExpressions.length > 0 ? (
               <div className={styles.historyUsedExpressionSection}>
@@ -1208,7 +1335,7 @@ export function MyPageClient() {
           </section>
         </div>
 
-        {latestAttempt?.feedbackSummary ? (
+        {latestAttempt?.feedbackSummary && latestAttempt.feedback.strengths.length === 0 ? (
           <div className={styles.writingHistoryExpandedSummary}>
             <span className="material-symbols-outlined">auto_awesome</span>
             <p>{latestAttempt.feedbackSummary}</p>
@@ -1299,20 +1426,6 @@ export function MyPageClient() {
         : section === "feedback"
           ? "writing-feedback-section"
           : "writing-history-section";
-
-    document.getElementById(sectionId)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
-  }
-
-  function scrollToAccountSection(section: AccountSectionKey) {
-    const sectionId =
-      section === "profile" ? "account-profile-section" : "account-delete-section";
-
-    if (section === "delete") {
-      setIsDangerZoneOpen(true);
-    }
 
     document.getElementById(sectionId)?.scrollIntoView({
       behavior: "smooth",
@@ -1613,45 +1726,44 @@ export function MyPageClient() {
         ? getLoginMethodLabel(currentUser)
         : "이메일 로그인"
       : "-";
+    const accountOwnerName = currentUser?.displayName?.trim() || "내";
 
     return (
       <section className={styles.accountSettingsLayout}>
         <div className={styles.accountPageTitle}>
-          <h1>내 정보</h1>
-          <p>프로필과 계정 보안 설정을 한 곳에서 관리해 보세요.</p>
+          <h1>
+            <span className={styles.accountPageTitleName}>{accountOwnerName}님</span>
+            <span className={styles.accountPageTitleSuffix}>의</span>
+            <span className={styles.accountPageTitleSubject}>
+              <span className={styles.accountPageTitleSubjectText}>계정설정</span>
+              <span className={styles.accountPageTitleUnderline} aria-hidden="true" />
+            </span>
+          </h1>
         </div>
 
         <div className={styles.accountSettingsGrid}>
-          <aside className={styles.accountSidebarCard}>
-            <div className={styles.accountAvatarWrap}>
-              <div className={styles.accountAvatarBadge}>{getProfileBadgeText(currentUser?.displayName ?? "")}</div>
-              <span className={styles.accountAvatarStatus}>
-                <span className="material-symbols-outlined">edit</span>
-              </span>
-            </div>
-            <h2 className={styles.accountSidebarName}>{currentUser?.displayName}</h2>
-            <p className={styles.accountSidebarEmail}>{currentUser?.email}</p>
-
-            <div className={styles.accountSidebarMeta}>
-              <span>로그인 방식</span>
-              <strong>{loginMethodLabel}</strong>
+          <aside className={styles.accountInfoCard}>
+            <div className={styles.accountInfoHeader}>
+              <div className={styles.accountInfoHeaderTitle}>
+                <h2>내 계정 정보</h2>
+              </div>
             </div>
 
-            <div className={styles.accountSidebarActions}>
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={() => scrollToAccountSection("profile")}
-              >
-                프로필 수정
-              </button>
-              <button
-                type="button"
-                className={styles.ghostButton}
-                onClick={() => scrollToAccountSection("delete")}
-              >
-                회원 탈퇴
-              </button>
+            <div className={styles.accountInfoFieldList}>
+              <div className={styles.accountInfoField}>
+                <span>이름</span>
+                <div className={styles.accountInfoValue}>{currentUser?.displayName || "-"}</div>
+              </div>
+              <div className={styles.accountInfoField}>
+                <span>이메일 주소</span>
+                <div className={styles.accountInfoValue}>{currentUser?.email || "-"}</div>
+              </div>
+              <div className={styles.accountInfoField}>
+                <span>로그인 방식</span>
+                <div className={`${styles.accountInfoValue} ${styles.accountInfoValueInline}`}>
+                  <span>{loginMethodLabel}</span>
+                </div>
+              </div>
             </div>
           </aside>
 
@@ -1661,21 +1773,17 @@ export function MyPageClient() {
               className={`${styles.accountFormCard} ${styles.historySectionAnchor}`}
             >
               <div className={styles.accountSectionHeader}>
-                <h3>
-                  <span className="material-symbols-outlined">person_edit</span>
-                  프로필과 보안 설정
-                </h3>
-                <p>표시 이름과 비밀번호를 이곳에서 수정할 수 있어요.</p>
+                <h3>계정 수정</h3>
               </div>
 
               <div className={`${styles.form} ${styles.accountFieldGrid}`}>
                 <label className={styles.field}>
-                  <span>표시 이름</span>
+                  <span>이름</span>
                   <input
                     className={styles.input}
                     value={profileDisplayName}
                     onChange={(event) => setProfileDisplayName(event.target.value)}
-                    placeholder="표시 이름을 입력해 주세요."
+                    placeholder="이름을 입력해 주세요."
                   />
                 </label>
 
@@ -1727,8 +1835,10 @@ export function MyPageClient() {
                   onClick={() => void handleSaveProfile()}
                   disabled={isSavingProfile}
                 >
-                  <span className="material-symbols-outlined">save</span>
-                  {isSavingProfile ? "저장 중..." : "프로필 저장"}
+                  {isSavingProfile ? "변경사항 저장 중..." : "변경사항 저장"}
+                </button>
+                <button type="button" className={styles.ghostButton} onClick={goHome}>
+                  홈으로 가기
                 </button>
               </div>
 
@@ -1834,6 +1944,12 @@ export function MyPageClient() {
       getLatestSessionTimestamp(right).localeCompare(getLatestSessionTimestamp(left))
     );
     const remainingSessions = sortedHistory;
+    const groupedHistoryEntries = historyDates.map((dateKey) => ({
+      dateKey,
+      sessions: [...(historyByDate[dateKey] ?? [])].sort((left, right) =>
+        getLatestSessionTimestamp(right).localeCompare(getLatestSessionTimestamp(left))
+      )
+    }));
     const expressionCards = visibleExpressionHistory.slice(
       0,
       showAllExpressionHistory ? visibleExpressionHistory.length : 5
@@ -1841,49 +1957,195 @@ export function MyPageClient() {
 
     return (
       <section className={styles.writingHistoryLayout}>
-        <div className={styles.writingDashboardHeader}>
-          <h1>작문 기록</h1>
-          <div className={styles.writingStatsGrid}>
-            <article className={styles.writingStatCard}>
-              <div className={`${styles.writingStatIcon} ${styles.writingStatIconWarm}`}>
-                <span className="material-symbols-outlined">local_fire_department</span>
-              </div>
-              <div>
-                <span className={styles.writingStatLabel}>연속 학습</span>
-                <strong>{`${todayStatus?.streakDays ?? 0}일째`}</strong>
-                <p>오늘도 루프를 이어가며 작문 감각을 꾸준히 쌓고 있어요.</p>
-              </div>
-            </article>
-
-            <article className={styles.writingStatCard}>
-              <div className={`${styles.writingStatIcon} ${styles.writingStatIconMint}`}>
-                <span className="material-symbols-outlined">edit_square</span>
-              </div>
-              <div>
-                <span className={styles.writingStatLabel}>총 작문 수</span>
-                <strong>{`${history.length}회`}</strong>
-                <p>초안부터 다시쓰기까지 누적된 연습 기록을 한눈에 살펴보세요.</p>
-              </div>
-            </article>
-
-            <article className={styles.writingStatCard}>
-              <div className={`${styles.writingStatIcon} ${styles.writingStatIconAmber}`}>
-                <span className="material-symbols-outlined">verified</span>
-              </div>
-              <div>
-                <span className={styles.writingStatLabel}>반복 실수</span>
-                <strong>{`${commonMistakes.length}건`}</strong>
-                <p>자주 헷갈린 포인트를 모아 다음 루프에서 더 빠르게 고칠 수 있어요.</p>
-              </div>
-            </article>
+        <div className={styles.writingHistoryHero}>
+          <div className={styles.writingDashboardHeader}>
+            <h1 className={styles.writingDashboardTitle}>
+              <span className={styles.writingDashboardTitleLead}>
+                <span className={styles.writingDashboardTitleLeadText}>작문</span>
+                <span className={styles.writingDashboardUnderline} aria-hidden="true" />
+              </span>
+              <span className={styles.writingDashboardTitleTail}>히스토리</span>
+            </h1>
           </div>
+
+          <nav className={styles.writingHistoryAnchorNav} aria-label="작문 히스토리 섹션 이동">
+            <a href="#writing-history-section" className={styles.writingHistoryAnchorButton}>
+              질문 기록
+            </a>
+            <a href="#writing-feedback-section" className={styles.writingHistoryAnchorButton}>
+              자주 고친 포인트
+            </a>
+            <a href="#writing-expressions-section" className={styles.writingHistoryAnchorButton}>
+              자주 꺼내 쓴 표현
+            </a>
+          </nav>
         </div>
 
-        <div className={styles.writingBentoGrid}>
+        <div className={styles.writingHistoryMainGrid}>
           <section
-            id="writing-expressions-section"
-            className={`${styles.writingExpressionsPanel} ${styles.historySectionAnchor}`}
+            id="writing-history-section"
+            className={`${styles.writingHistoryBoard} ${styles.historySectionAnchor}`}
           >
+            <div className={styles.writingHistoryBoardMeta}>
+              <strong>{`${history.length}개의 질문 기록`}</strong>
+            </div>
+
+            {historyError ? <p className={styles.error}>{historyError}</p> : null}
+
+            {remainingSessions.length === 0 ? (
+              <div className={styles.writingPanelEmpty}>
+                <p>아직 저장된 작문 기록이 없어요. 오늘의 질문으로 첫 작문을 시작해 보세요.</p>
+                <button type="button" className={styles.primaryButton} onClick={goHome}>
+                  홈으로 이동
+                </button>
+              </div>
+            ) : (
+              <div className={styles.writingHistoryDateFeed} id="writing-history-list">
+                {groupedHistoryEntries.map(({ dateKey, sessions }) => (
+                  <section
+                    key={dateKey}
+                    className={styles.writingHistoryDateGroup}
+                    data-history-date={dateKey}
+                  >
+                    <button
+                      type="button"
+                      className={styles.writingHistoryDateHeading}
+                      onClick={() => toggleDateGroup(dateKey)}
+                      aria-expanded={openDates[dateKey]}
+                    >
+                      <h3>{formatHistoryDateHeading(dateKey)}</h3>
+                      <span aria-hidden="true" />
+                      <span className={`material-symbols-outlined ${styles.writingHistoryDateToggleIcon}`}>
+                        {openDates[dateKey] ? "expand_less" : "expand_more"}
+                      </span>
+                    </button>
+
+                    {openDates[dateKey] ? (
+                      <div className={styles.writingHistoryDateStack}>
+                        {sessions.map((session) => {
+                          const latestAttempt = session.attempts[session.attempts.length - 1];
+                          const comparisonView = buildHistoryComparisonView(session);
+                          const badgeLabel = getFeedbackLevelInfo(
+                            latestAttempt?.score ?? 0,
+                            latestAttempt?.feedback.loopComplete ?? false
+                          ).label;
+                          const badgeVariant = getHistoryStatusVariant(
+                            latestAttempt?.score ?? 0,
+                            latestAttempt?.feedback.loopComplete ?? false
+                          );
+                          const improvedText =
+                            comparisonView?.rewriteAttempt.answerText ??
+                            latestAttempt?.feedback.correctedAnswer ??
+                            latestAttempt?.answerText ??
+                            "";
+
+                          return (
+                            <article key={session.sessionId} className={styles.writingHistoryListItem}>
+                              <button
+                                type="button"
+                                className={styles.writingHistoryListButton}
+                                onClick={() => toggleSession(session.sessionId)}
+                              >
+                                <div className={styles.writingHistoryListMeta}>
+                                  <div className={styles.writingHistoryQuestionChips}>
+                                    <span className={styles.writingHistoryQuestionChipPrimary}>
+                                      {session.topic}
+                                    </span>
+                                    <span className={styles.writingHistoryQuestionChipNeutral}>
+                                      {getDifficultyLabel(session.difficulty)}
+                                    </span>
+                                    <span className={styles.writingHistoryQuestionChipAccent}>
+                                      {latestAttempt?.attemptType === "REWRITE" ? "다시쓰기" : "첫 답변"}
+                                    </span>
+                                  </div>
+                                  <h4>{session.questionEn}</h4>
+                                  {openSessions[session.sessionId] ? <p>{session.questionKo}</p> : null}
+                                  <div className={styles.writingHistoryRowBadges}>
+                                    <span
+                                      className={`${styles.writingHistoryStatusBadge} ${
+                                        badgeVariant === "perfect"
+                                          ? styles.writingHistoryStatusPerfect
+                                          : badgeVariant === "good"
+                                            ? styles.writingHistoryStatusGood
+                                            : styles.writingHistoryStatusWarm
+                                      }`}
+                                    >
+                                      {badgeLabel}
+                                    </span>
+                                    <span className={styles.writingHistoryWordBadge}>
+                                      {getHistoryWordCount(latestAttempt?.answerText ?? "")} words
+                                    </span>
+                                  </div>
+                                </div>
+                                <span className="material-symbols-outlined">
+                                  {openSessions[session.sessionId] ? "expand_less" : "expand_more"}
+                                </span>
+                              </button>
+
+                              {openSessions[session.sessionId]
+                                ? renderWritingHistoryExpandedContent(
+                                    session,
+                                    comparisonView,
+                                    latestAttempt,
+                                    improvedText,
+                                    "질문",
+                                    session.questionKo,
+                                    styles.writingHistoryExpanded
+                                  )
+                                : null}
+                            </article>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </section>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <aside
+            id="writing-feedback-section"
+            className={`${styles.writingFeedbackPanel} ${styles.historySectionAnchor}`}
+          >
+            <div className={styles.writingFeedbackHeader}>
+              <h2>자주 고친 포인트</h2>
+            </div>
+            {mistakeError ? <p className={styles.error}>{mistakeError}</p> : null}
+            {commonMistakes.length === 0 ? (
+              <div className={styles.writingPanelEmpty}>
+                <p>아직 반복해서 잡힌 실수가 없어요. 작문을 이어가면 자주 고치는 포인트가 여기에 모여요.</p>
+              </div>
+            ) : (
+              <div className={styles.writingFeedbackList}>
+                {commonMistakes.slice(0, 3).map((mistake, index) => (
+                  <article key={mistake.issue} className={styles.writingFeedbackItem}>
+                    <span
+                      className={`${styles.writingFeedbackMarker} ${
+                        index === 0
+                          ? styles.writingFeedbackMarkerAlert
+                          : index === 1
+                            ? styles.writingFeedbackMarkerTip
+                            : styles.writingFeedbackMarkerGuide
+                      }`}
+                    >
+                      {index === 0 ? "!" : index === 1 ? "TIP" : "가이드"}
+                    </span>
+                    <div>
+                      <strong>{mistake.displayLabel}</strong>
+                      <p>{mistake.latestSuggestion}</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </aside>
+        </div>
+
+        <section
+          id="writing-expressions-section"
+          className={`${styles.writingExpressionsPanel} ${styles.historySectionAnchor}`}
+        >
             <div className={styles.writingPanelHeader}>
               <div>
                 <h2>자주 꺼내 쓴 표현</h2>
@@ -1931,135 +2193,13 @@ export function MyPageClient() {
                 ) : null}
               </div>
             )}
-          </section>
-
-          <aside
-            id="writing-feedback-section"
-            className={`${styles.writingFeedbackPanel} ${styles.historySectionAnchor}`}
-          >
-            <div className={styles.writingFeedbackHeader}>
-              <h2>
-                <span className="material-symbols-outlined">psychology</span>
-                자주 고친 포인트
-              </h2>
-            </div>
-            {mistakeError ? <p className={styles.error}>{mistakeError}</p> : null}
-            {commonMistakes.length === 0 ? (
-              <div className={styles.writingPanelEmpty}>
-                <p>아직 반복해서 잡힌 실수가 없어요. 작문을 이어가면 자주 고치는 포인트가 여기에 모여요.</p>
-              </div>
-            ) : (
-              <div className={styles.writingFeedbackList}>
-                {commonMistakes.slice(0, 3).map((mistake, index) => (
-                  <article key={mistake.issue} className={styles.writingFeedbackItem}>
-                    <span
-                      className={`${styles.writingFeedbackMarker} ${
-                        index === 0
-                          ? styles.writingFeedbackMarkerAlert
-                          : index === 1
-                            ? styles.writingFeedbackMarkerTip
-                            : styles.writingFeedbackMarkerGuide
-                      }`}
-                    >
-                      {index === 0 ? "!" : index === 1 ? "TIP" : "가이드"}
-                    </span>
-                    <div>
-                      <strong>{mistake.displayLabel}</strong>
-                      <p>{mistake.latestSuggestion}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </aside>
-        </div>
-
-        <section
-          id="writing-history-section"
-          className={`${styles.writingHistoryBoard} ${styles.historySectionAnchor}`}
-        >
-          <div className={styles.writingHistoryHeader}>
-            <h2>최근 작문 기록</h2>
-            <p>최근 기록부터 다시 훑어보며 어떤 표현과 수정이 쌓였는지 확인해 보세요.</p>
-          </div>
-
-          {historyError ? <p className={styles.error}>{historyError}</p> : null}
-
-          {remainingSessions.length === 0 ? (
-            <div className={styles.writingPanelEmpty}>
-              <p>아직 저장된 작문 기록이 없어요. 오늘의 질문으로 첫 작문을 시작해 보세요.</p>
-              <button type="button" className={styles.primaryButton} onClick={goHome}>
-                홈으로 이동
-              </button>
-            </div>
-          ) : (
-            <div className={styles.writingHistoryList} id="writing-history-list">
-              {remainingSessions.map((session) => {
-                const latestAttempt = session.attempts[session.attempts.length - 1];
-                const comparisonView = buildHistoryComparisonView(session);
-                const badgeLabel = getFeedbackLevelInfo(
-                  latestAttempt?.score ?? 0,
-                  latestAttempt?.feedback.loopComplete ?? false
-                ).label;
-                const badgeVariant = getHistoryStatusVariant(
-                  latestAttempt?.score ?? 0,
-                  latestAttempt?.feedback.loopComplete ?? false
-                );
-                const improvedText =
-                  comparisonView?.rewriteAttempt.answerText ??
-                  latestAttempt?.feedback.correctedAnswer ??
-                  latestAttempt?.answerText ??
-                  "";
-
-                return (
-                  <article key={session.sessionId} className={styles.writingHistoryListItem}>
-                    <button
-                      type="button"
-                      className={styles.writingHistoryListButton}
-                      onClick={() => toggleSession(session.sessionId)}
-                    >
-                      <div className={styles.writingHistoryListMeta}>
-                        <span>{formatHistoryCardDate(getLatestSessionTimestamp(session))}</span>
-                        {openSessions[session.sessionId] ? <h4>{session.questionKo}</h4> : null}
-                        <div className={styles.writingHistoryRowBadges}>
-                          <span
-                            className={`${styles.writingHistoryStatusBadge} ${
-                              badgeVariant === "perfect"
-                                ? styles.writingHistoryStatusPerfect
-                                : badgeVariant === "good"
-                                  ? styles.writingHistoryStatusGood
-                                  : styles.writingHistoryStatusWarm
-                            }`}
-                          >
-                            {badgeLabel}
-                          </span>
-                          <span className={styles.writingHistoryWordBadge}>
-                            {getHistoryWordCount(latestAttempt?.answerText ?? "")} words
-                          </span>
-                        </div>
-                      </div>
-                      <span className="material-symbols-outlined">
-                        {openSessions[session.sessionId] ? "expand_less" : "expand_more"}
-                      </span>
-                    </button>
-
-                    {openSessions[session.sessionId]
-                      ? renderWritingHistoryExpandedContent(
-                          session,
-                          comparisonView,
-                          latestAttempt,
-                          improvedText,
-                          "질문",
-                          session.questionKo,
-                          styles.writingHistoryExpanded
-                        )
-                      : null}
-                  </article>
-                );
-              })}
-            </div>
-          )}
         </section>
+
+        <div className={styles.writingHistoryFooterAction}>
+          <button type="button" className={styles.ghostButton} onClick={goHome}>
+            계속 써보기 →
+          </button>
+        </div>
       </section>
     );
   }

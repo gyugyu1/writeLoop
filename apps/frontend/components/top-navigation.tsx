@@ -96,7 +96,7 @@ export function TopNavigation() {
       return [
         {
           href: "/",
-          label: "레벨",
+          label: "홈",
           active: pathname === "/"
         },
         {
@@ -136,7 +136,7 @@ export function TopNavigation() {
     return [
       {
         href: "/",
-        label: "레벨",
+        label: "홈",
         active: pathname === "/"
       },
       {

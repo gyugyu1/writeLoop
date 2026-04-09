@@ -146,6 +146,8 @@ class FeedbackUiComposerTest {
         assertThat(ui.screenPolicy().modelAnswerDisplayMode()).isEqualTo("SHOW_EXPANDED");
         assertThat(ui.screenPolicy().refinementDisplayMode()).isEqualTo("HIDE");
         assertThat(ui.microTip()).isNull();
+        assertThat(ui.loopStatus().badge()).isNull();
+        assertThat(ui.loopStatus().supportText()).isNull();
         assertThat(ui.loopStatus().finishCtaLabel()).isEqualTo("오늘 루프 완료하고 도장 받기");
     }
 
@@ -165,7 +167,7 @@ class FeedbackUiComposerTest {
                 1,
                 88,
                 true,
-                "좋아요. 지금 단계에서 마무리해도 충분해요.",
+                "좋아요. 지금 단계에서 마무리해도 충분해요. 원하면 한 번 더 다듬어볼 수 있어요.",
                 "",
                 List.of("질문에 맞게 답의 흐름을 자연스럽게 이어 갔어요."),
                 List.of(),
@@ -203,6 +205,9 @@ class FeedbackUiComposerTest {
         assertThat(ui.nextStepPractice().starter()).isNotBlank();
         assertThat(ui.screenPolicy().completionState()).isEqualTo("OPTIONAL_POLISH");
         assertThat(ui.screenPolicy().modelAnswerDisplayMode()).isEqualTo("SHOW_COLLAPSED");
+        assertThat(ui.loopStatus().badge()).isNull();
+        assertThat(ui.loopStatus().headline()).isEqualTo("좋아요. 지금 단계에서 마무리해도 충분해요.");
+        assertThat(ui.loopStatus().supportText()).isNull();
         assertThat(ui.loopStatus().rewriteCtaLabel()).isEqualTo("한 번 더 다듬기");
     }
 

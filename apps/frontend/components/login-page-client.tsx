@@ -163,19 +163,17 @@ export function LoginPageClient() {
   return (
     <main className={`${styles.page} ${styles.authShell} ${styles.loginPage}`}>
       <section className={styles.loginHero}>
+        <div className={styles.loginPageTitleWrap}>
+          <h1 className={styles.loginPageTitle}>로그인</h1>
+        </div>
         <section className={styles.loginPanel}>
-          <Link href="/" className={styles.loginBrandWordmark}>
-            writeLoop
-          </Link>
-
-          <nav className={styles.loginSegmentedTabs} aria-label="로그인 이동">
-            <Link href="/login" className={styles.loginSegmentedTabActive} aria-current="page">
-              로그인
-            </Link>
-            <Link href={registerHref} className={styles.loginSegmentedTab}>
-              회원가입
-            </Link>
-          </nav>
+          <div className={styles.loginBrandHeader}>
+            <div className={styles.loginBrandCopy}>
+              <h2 className={styles.loginWelcomeHeading}>
+                {showVerify ? "이메일 인증" : "다시 오신 것을 환영합니다"}
+              </h2>
+            </div>
+          </div>
 
           {!showVerify ? (
             <>
@@ -235,9 +233,6 @@ export function LoginPageClient() {
                       <span>로그인 상태 유지</span>
                     </label>
                   </div>
-                  <Link href={forgotPasswordHref} className={styles.loginSupportLink}>
-                    비밀번호를 잊으셨나요?
-                  </Link>
                 </div>
 
                 {error ? <p className={styles.error}>{error}</p> : null}
@@ -250,6 +245,12 @@ export function LoginPageClient() {
                   >
                     {isSubmitting ? "처리 중..." : "이메일로 로그인"}
                   </button>
+                </div>
+
+                <div className={styles.loginForgotRow}>
+                  <Link href={forgotPasswordHref} className={styles.loginSupportLink}>
+                    비밀번호를 잊으셨나요?
+                  </Link>
                 </div>
               </form>
 
@@ -290,13 +291,18 @@ export function LoginPageClient() {
                   </a>
                 </div>
               </div>
+
+              <div className={styles.loginRegisterPrompt}>
+                <p>
+                  아직 계정이 없으신가요?
+                  <Link href={registerHref} className={styles.loginRegisterLink}>
+                    회원가입
+                  </Link>
+                </p>
+              </div>
             </>
           ) : (
             <>
-              <div className={styles.loginPanelHeader}>
-                <h2>이메일 인증</h2>
-                <p>메일로 받은 6자리 코드를 입력하면 바로 로그인돼요.</p>
-              </div>
               <p className={`${styles.subText} ${styles.loginVerifyCopy}`}>
                 학습을 이어가기 전에 받은 인증 코드를 먼저 확인해 주세요.
               </p>
@@ -342,10 +348,13 @@ export function LoginPageClient() {
                   인증 코드 다시 받기
                 </button>
               </div>
-              <div className={styles.loginVerifyFooter}>
-                <Link href={registerHref} className={styles.loginRegisterLink}>
-                  회원가입으로 이동
-                </Link>
+              <div className={styles.loginRegisterPrompt}>
+                <p>
+                  아직 계정이 없으신가요?
+                  <Link href={registerHref} className={styles.loginRegisterLink}>
+                    회원가입
+                  </Link>
+                </p>
               </div>
             </>
           )}

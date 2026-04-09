@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 import {
   ApiError,
   checkPasswordResetEmail,
@@ -54,6 +54,46 @@ export function ForgotPasswordPageClient() {
   const remainingMinutes = String(Math.floor(remainingMs / 60000)).padStart(2, "0");
   const remainingSeconds = String(Math.floor((remainingMs % 60000) / 1000)).padStart(2, "0");
 
+  const stageMeta = isCodeVerified
+    ? {
+        badge: "새 비밀번호 설정",
+        title: "새 비밀번호를 입력해 마무리해 주세요.",
+        description: "인증이 끝났어요. 새 비밀번호를 두 번 입력하면 바로 재설정할 수 있어요."
+      }
+    : isCodeSent
+      ? {
+          badge: "인증코드 확인",
+          title: "메일로 받은 인증코드를 입력해 주세요.",
+          description: "인증코드는 3분 동안만 유효해요. 코드가 맞으면 새 비밀번호 입력칸이 바로 열려요."
+        }
+      : isEmailChecked
+        ? {
+            badge: "이메일 확인 완료",
+            title: "이제 재설정 코드를 보내드릴게요.",
+            description: "등록된 이메일이 확인됐어요. 메일로 받은 코드로 본인 확인을 이어가면 돼요."
+          }
+        : null;
+
+  const primaryActionLabel = !isEmailChecked
+    ? isCheckingEmail
+      ? "이메일 확인 중..."
+      : "이메일 확인"
+    : !isCodeSent
+      ? isSendingCode
+        ? "인증코드 보내는 중..."
+        : "인증코드 보내기"
+      : isCodeVerified
+        ? isResettingPassword
+          ? "처리 중..."
+          : "새 비밀번호로 변경"
+        : null;
+
+  const isPrimaryActionDisabled = !isEmailChecked
+    ? isCheckingEmail
+    : !isCodeSent
+      ? isSendingCode
+      : isResettingPassword || isCodeExpired;
+
   useEffect(() => {
     const trimmedCode = code.trim();
 
@@ -101,6 +141,8 @@ export function ForgotPasswordPageClient() {
     setCode("");
     setNewPassword("");
     setConfirmPassword("");
+    setError("");
+    setNotice("");
   }
 
   async function handleCheckEmail() {
@@ -197,140 +239,188 @@ export function ForgotPasswordPageClient() {
     }
   }
 
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!isEmailChecked) {
+      void handleCheckEmail();
+      return;
+    }
+
+    if (!isCodeSent) {
+      void handleSendCode();
+      return;
+    }
+
+    if (isCodeVerified) {
+      void handleResetPassword();
+    }
+  }
+
   return (
-    <main className={styles.page}>
-      <section className={styles.hero}>
-        <div className={styles.intro}>
-          <div className={styles.eyebrow}>비밀번호 찾기</div>
-          <h1>이메일 확인부터 코드 인증까지 차례대로 진행하면 돼요.</h1>
-          <p>
-            등록된 이메일을 먼저 확인하고 인증코드를 받으면, 코드 확인 뒤 새 비밀번호를 설정할 수
-            있어요.
-          </p>
-          <ul className={styles.points}>
-            <li>먼저 등록된 이메일인지 확인한 뒤에만 인증코드를 보낼 수 있어요.</li>
-            <li>인증코드는 3분 동안만 입력할 수 있어요.</li>
-            <li>코드 확인이 끝나면 새 비밀번호 입력칸이 열려요.</li>
-          </ul>
-        </div>
+    <main className={`${styles.page} ${styles.authShell} ${styles.forgotPasswordPage}`}>
+      <section className={styles.forgotPasswordShell}>
+        <header className={styles.forgotPasswordTitleWrap}>
+          <h1 className={styles.forgotPasswordPageTitle}>비밀번호 재설정</h1>
+        </header>
 
-        <section className={styles.card}>
-          <div className={styles.cardHeader}>
-            <div>
-              <Link href="/" className={`${styles.eyebrow} ${styles.brandLink}`}>
-                writeLoop 계정
-              </Link>
-              <h2>비밀번호 재설정</h2>
+        <section className={styles.forgotPasswordCard}>
+          {stageMeta ? (
+            <div className={styles.forgotPasswordStageBanner}>
+              <span className={styles.forgotPasswordStageEyebrow}>{stageMeta.badge}</span>
+              <div className={styles.forgotPasswordStageCopy}>
+                <strong>{stageMeta.title}</strong>
+                <p>{stageMeta.description}</p>
+              </div>
             </div>
-          </div>
+          ) : null}
 
-          <p className={styles.subText}>
-            이메일 확인부터 새 비밀번호 설정까지 순서대로 진행해 주세요.
-          </p>
-
-          <div className={styles.form}>
-            <label className={styles.field}>
-              <span>이메일 확인</span>
-              <div className={styles.inlineFieldRow}>
+          <form className={styles.forgotPasswordForm} onSubmit={handleSubmit}>
+            <label className={`${styles.field} ${styles.forgotPasswordField}`}>
+              <span className={styles.forgotPasswordFieldLabel}>이메일 확인</span>
+              <div className={styles.forgotPasswordInputWrap}>
                 <input
-                  className={`${styles.input} ${styles.inlineFieldInput}`}
+                  className={`${styles.input} ${styles.forgotPasswordInput}`}
                   type="email"
                   value={email}
                   onChange={(event) => resetAfterEmailChange(event.target.value)}
-                  placeholder="you@example.com"
+                  placeholder="example@writeloop.com"
+                  autoComplete="email"
                 />
-                <button
-                  type="button"
-                  className={styles.primaryButton}
-                  onClick={() => void handleCheckEmail()}
-                  disabled={isCheckingEmail}
+                <span
+                  className={`material-symbols-outlined ${styles.forgotPasswordInputIcon}`}
+                  aria-hidden="true"
                 >
-                  {isCheckingEmail ? "확인 중..." : "이메일 확인"}
-                </button>
+                  mail
+                </span>
               </div>
             </label>
 
-            {isEmailChecked ? (
-              <div className={styles.field}>
-                <span>인증코드 받기</span>
-                <button
-                  type="button"
-                  className={styles.primaryButton}
-                  onClick={() => void handleSendCode()}
-                  disabled={isSendingCode}
-                >
-                  {isSendingCode ? "보내는 중..." : "인증코드 보내기"}
-                </button>
-              </div>
-            ) : null}
-
             {isCodeSent ? (
-              <label className={styles.field}>
-                <span>인증코드 입력</span>
-                <input
-                  className={styles.input}
-                  value={code}
-                  onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
-                  placeholder="메일로 받은 6자리 코드를 입력해 주세요."
-                  disabled={isCodeExpired}
-                />
-                <span className={isCodeExpired ? styles.errorText : styles.timerText}>
+              <label className={`${styles.field} ${styles.forgotPasswordField}`}>
+                <span className={styles.forgotPasswordFieldHeader}>
+                  <span className={styles.forgotPasswordFieldLabel}>인증코드 입력</span>
+                  {!isCodeExpired ? (
+                    <span className={styles.forgotPasswordTimerPill}>
+                      {remainingMinutes}:{remainingSeconds}
+                    </span>
+                  ) : null}
+                </span>
+                <div className={styles.forgotPasswordInputWrap}>
+                  <input
+                    className={`${styles.input} ${styles.forgotPasswordInput}`}
+                    value={code}
+                    onChange={(event) => setCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="메일로 받은 6자리 코드를 입력해 주세요."
+                    autoComplete="one-time-code"
+                    inputMode="numeric"
+                    disabled={isCodeExpired}
+                  />
+                  <span
+                    className={`material-symbols-outlined ${styles.forgotPasswordInputIcon}`}
+                    aria-hidden="true"
+                  >
+                    mark_email_read
+                  </span>
+                </div>
+                <p className={styles.forgotPasswordInlineHint}>
                   {isCodeExpired
                     ? "인증번호 입력 시간이 만료됐어요. 다시 인증코드를 받아 주세요."
-                    : `남은 시간 ${remainingMinutes}:${remainingSeconds}`}
-                </span>
-                {isVerifyingCode ? (
-                  <span className={styles.subText}>코드를 확인하는 중이에요...</span>
-                ) : isCodeVerified ? (
-                  <span className={styles.notice}>코드 확인이 완료됐어요.</span>
-                ) : null}
+                    : isVerifyingCode
+                      ? "코드를 확인하는 중이에요..."
+                      : isCodeVerified
+                        ? "코드 확인이 완료됐어요."
+                        : "코드가 맞으면 자동으로 다음 단계로 넘어가요."}
+                </p>
               </label>
             ) : null}
 
             {isCodeVerified ? (
-              <>
-                <label className={styles.field}>
-                  <span>새 비밀번호 입력</span>
-                  <input
-                    className={styles.input}
-                    type="password"
-                    value={newPassword}
-                    onChange={(event) => setNewPassword(event.target.value)}
-                    placeholder="새 비밀번호를 입력해 주세요."
-                  />
+              <div className={styles.forgotPasswordPasswordGrid}>
+                <label className={`${styles.field} ${styles.forgotPasswordField}`}>
+                  <span className={styles.forgotPasswordFieldLabel}>새 비밀번호</span>
+                  <div className={styles.forgotPasswordInputWrap}>
+                    <input
+                      className={`${styles.input} ${styles.forgotPasswordInput}`}
+                      type="password"
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      placeholder="새 비밀번호를 입력해 주세요."
+                      autoComplete="new-password"
+                    />
+                    <span
+                      className={`material-symbols-outlined ${styles.forgotPasswordInputIcon}`}
+                      aria-hidden="true"
+                    >
+                      lock
+                    </span>
+                  </div>
                 </label>
 
-                <label className={styles.field}>
-                  <span>새 비밀번호 확인</span>
-                  <input
-                    className={styles.input}
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    placeholder="새 비밀번호를 한 번 더 입력해 주세요."
-                  />
+                <label className={`${styles.field} ${styles.forgotPasswordField}`}>
+                  <span className={styles.forgotPasswordFieldLabel}>비밀번호 확인</span>
+                  <div className={styles.forgotPasswordInputWrap}>
+                    <input
+                      className={`${styles.input} ${styles.forgotPasswordInput}`}
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      placeholder="비밀번호를 한 번 더 입력해 주세요."
+                      autoComplete="new-password"
+                    />
+                    <span
+                      className={`material-symbols-outlined ${styles.forgotPasswordInputIcon}`}
+                      aria-hidden="true"
+                    >
+                      verified_user
+                    </span>
+                  </div>
                 </label>
-              </>
+              </div>
             ) : null}
-          </div>
 
-          <div className={styles.actions}>
-            <button
-              type="button"
-              className={styles.primaryButton}
-              onClick={() => void handleResetPassword()}
-              disabled={isResettingPassword || !isCodeVerified || isCodeExpired}
-            >
-              {isResettingPassword ? "처리 중..." : "새 비밀번호로 변경"}
-            </button>
-            <Link href={`/login?returnTo=${encodeURIComponent(returnTo)}`} className={styles.ghostLink}>
-              로그인으로 돌아가기
-            </Link>
-          </div>
+            <div className={styles.forgotPasswordFeedbackStack} aria-live="polite">
+              {notice ? <p className={styles.forgotPasswordStatusNotice}>{notice}</p> : null}
+              {error ? <p className={styles.forgotPasswordStatusError}>{error}</p> : null}
+            </div>
 
-          {notice ? <p className={styles.notice}>{notice}</p> : null}
-          {error ? <p className={styles.error}>{error}</p> : null}
+            {primaryActionLabel ? (
+              <button
+                type="submit"
+                className={`${styles.primaryButton} ${styles.primaryButtonWide}`}
+                disabled={isPrimaryActionDisabled}
+              >
+                {primaryActionLabel}
+              </button>
+            ) : null}
+
+            {isCodeSent && !isCodeVerified ? (
+              <button
+                type="button"
+                className={styles.forgotPasswordResendButton}
+                onClick={() => void handleSendCode()}
+                disabled={isSendingCode}
+              >
+                {isSendingCode ? "인증코드를 다시 보내는 중..." : "인증코드 다시 받기"}
+              </button>
+            ) : null}
+          </form>
         </section>
+
+        <footer className={styles.forgotPasswordFooter}>
+          <Link
+            href={`/login?returnTo=${encodeURIComponent(returnTo)}`}
+            className={styles.forgotPasswordBackLink}
+          >
+            <span
+              className={`material-symbols-outlined ${styles.forgotPasswordBackIcon}`}
+              aria-hidden="true"
+            >
+              arrow_back
+            </span>
+            로그인 페이지로 돌아가기
+          </Link>
+        </footer>
       </section>
     </main>
   );

@@ -1678,17 +1678,17 @@ final class FeedbackUiComposer {
         String completionMessage = feedback == null ? null : normalizeNullable(feedback.completionMessage());
         return switch (completionState) {
             case OPTIONAL_POLISH -> new FeedbackLoopStatusDto(
-                    "루프 완료 가능",
-                    firstNonBlank(completionMessage, "지금도 충분히 좋아요."),
-                    "원하면 한 번 더 다듬어 볼 수 있지만, 지금 단계에서 마무리해도 괜찮아요.",
+                    null,
+                    sanitizeLoopStatusHeadline(completionMessage, "지금도 충분히 좋아요."),
+                    null,
                     "한 번 더 다듬기",
                     screenPolicy.showFinishCta() ? "오늘 루프 완료하고 도장 받기" : null,
                     screenPolicy.showCancelCta() ? "답변 취소" : null
             );
             case CAN_FINISH -> new FeedbackLoopStatusDto(
-                    "루프 완료 가능",
-                    firstNonBlank(completionMessage, "지금 단계에서는 마무리 가능해요."),
-                    "원하면 한 번 더 다듬어 보거나, 지금 여기서 마무리할 수도 있어요.",
+                    null,
+                    sanitizeLoopStatusHeadline(completionMessage, "지금 단계에서는 마무리 가능해요."),
+                    null,
                     "다시 써보기",
                     screenPolicy.showFinishCta() ? "오늘 루프 완료하고 도장 받기" : null,
                     screenPolicy.showCancelCta() ? "답변 취소" : null
@@ -1702,6 +1702,27 @@ final class FeedbackUiComposer {
                     screenPolicy.showCancelCta() ? "답변 취소" : null
             );
         };
+    }
+
+    private String sanitizeLoopStatusHeadline(String completionMessage, String fallbackHeadline) {
+        String normalized = normalizeNullable(completionMessage);
+        if (normalized == null) {
+            return fallbackHeadline;
+        }
+
+        String[] sentences = normalized.split("(?<=[.!?])\\s+");
+        for (String sentence : sentences) {
+            String candidate = normalizeNullable(sentence);
+            if (candidate == null) {
+                continue;
+            }
+            if (candidate.contains("원하면") || candidate.contains("다듬")) {
+                continue;
+            }
+            return candidate;
+        }
+
+        return fallbackHeadline;
     }
 
     private FeedbackScreenPolicyDto toDto(FeedbackScreenPolicy screenPolicy) {

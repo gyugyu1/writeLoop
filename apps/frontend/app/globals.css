@@ -1,7 +1,19 @@
 @import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap");
 
 :root {
-  --background: #efe7de;
+  --font-primary:
+    var(--font-plus-jakarta-sans),
+    "Pretendard",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    sans-serif;
+  --font-secondary:
+    var(--font-be-vietnam-pro),
+    "Pretendard",
+    "Apple SD Gothic Neo",
+    "Malgun Gothic",
+    sans-serif;
+  --background: #faf9f6;
   --surface: #f6f0ea;
   --surface-low: #f6f0ea;
   --surface-lowest: #ffffff;
@@ -49,20 +61,12 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100%;
-  background:
-    radial-gradient(circle at 12% 8%, rgba(255, 215, 154, 0.26) 0%, transparent 24%),
-    radial-gradient(circle at 88% 12%, rgba(0, 104, 79, 0.08) 0%, transparent 18%),
-    linear-gradient(180deg, #fbf7f2 0%, var(--surface-low) 28%, var(--background) 100%);
+  background: var(--background);
   color: var(--text-main);
 }
 
 body {
-  font-family:
-    var(--font-be-vietnam-pro),
-    "Pretendard",
-    "Apple SD Gothic Neo",
-    "Malgun Gothic",
-    sans-serif;
+  font-family: var(--font-secondary);
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.6;
@@ -106,20 +110,32 @@ h5,
 h6,
 label,
 strong,
-b {
-  font-family:
-    var(--font-plus-jakarta-sans),
-    "Pretendard",
-    "Apple SD Gothic Neo",
-    "Malgun Gothic",
-    sans-serif;
+b,
+summary,
+legend,
+th,
+dt,
+nav {
+  font-family: var(--font-primary);
 }
 
-button,
+.fontPrimary {
+  font-family: var(--font-primary);
+}
+
+.fontSecondary {
+  font-family: var(--font-secondary);
+}
+
 input,
 textarea,
 select {
   font: inherit;
+}
+
+button {
+  font: inherit;
+  font-family: var(--font-primary);
 }
 
 ::selection {

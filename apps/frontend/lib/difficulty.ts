@@ -3,11 +3,11 @@ import type { DailyDifficulty, PromptDifficulty } from "./types";
 export function getDifficultyLabel(difficulty: DailyDifficulty | PromptDifficulty): string {
   switch (difficulty) {
     case "A":
-      return "EASY";
+      return "쉬움";
     case "B":
-      return "MEDIUM";
+      return "보통";
     case "C":
-      return "HARD";
+      return "어려움";
     default:
       return difficulty;
   }

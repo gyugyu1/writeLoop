@@ -1,116 +1,231 @@
-.hero {
+.pageShell {
+  position: relative;
   display: grid;
-  gap: 18px;
-  padding: 32px;
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at top right, rgba(var(--warm-accent-light-rgb), 0.34), transparent 28%),
-    linear-gradient(135deg, #173058 0%, #0d2141 55%, #08162c 100%);
-  color: #f8fbff;
-  box-shadow: 0 24px 80px rgba(9, 28, 59, 0.18);
+  gap: 24px;
+  width: min(1400px, 100%);
+  margin: 0 auto;
+  padding-bottom: 88px;
 }
 
-.hero h1 {
-  margin: 0;
-  font-size: clamp(2rem, 3vw, 2.8rem);
+.pageHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
 }
 
-.hero p {
-  margin: 0;
-  max-width: 760px;
-  line-height: 1.7;
-  color: rgba(248, 251, 255, 0.84);
+.pageHeaderCopy {
+  display: grid;
+  gap: 10px;
 }
 
-.eyebrow,
+.pageEyebrow,
 .sectionEyebrow {
-  display: inline-flex;
   width: fit-content;
-  padding: 8px 12px;
+  margin: 0;
+  padding: 8px 14px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  font-size: 0.82rem;
-  letter-spacing: 0.08em;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
-.sectionEyebrow {
-  background: rgba(16, 36, 76, 0.06);
-  color: var(--warm-accent-deep);
+.pageTitle {
+  margin: 0;
+  color: var(--text-main);
+  font-size: clamp(2.4rem, 4vw, 3.4rem);
+  font-weight: 800;
+  letter-spacing: -0.05em;
+  line-height: 1;
 }
 
-.summaryCards {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+.pageSubtitle {
+  max-width: 720px;
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 1rem;
+  line-height: 1.65;
 }
 
-.summaryCard {
-  padding: 18px 20px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+.pageMetaRow {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
-.summaryCard span {
+.pageMetaChip {
+  min-width: 148px;
+  padding: 16px 18px;
+  border-radius: 24px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-card);
+}
+
+.pageMetaChip span {
   display: block;
-  font-size: 0.86rem;
-  color: rgba(248, 251, 255, 0.78);
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  font-weight: 700;
 }
 
-.summaryCard strong {
+.pageMetaChip strong {
   display: block;
   margin-top: 8px;
-  font-size: 1.4rem;
+  color: var(--primary);
+  font-size: 1.45rem;
+  font-weight: 800;
 }
 
 .createCard,
 .listSection {
-  margin-top: 24px;
-  padding: 28px;
-  border-radius: 28px;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(16, 36, 76, 0.08);
-  box-shadow: 0 22px 50px rgba(18, 34, 68, 0.08);
+  padding: 32px;
+  border-radius: 36px;
+  background: var(--surface-low);
+  box-shadow: var(--shadow-card);
 }
 
-.sectionHeader {
+.createHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
-.sectionHeader h2 {
-  margin: 6px 0 0;
-  font-size: 1.5rem;
-}
-
-.formGrid,
-.hintFormGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.field {
+.createHeaderCopy {
   display: grid;
   gap: 8px;
 }
 
+.createHeaderCopy h2,
+.sectionHeaderCompact h2 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: clamp(1.8rem, 3vw, 2.3rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.createHeaderCopy p:last-child {
+  margin: 0;
+  max-width: 720px;
+  color: var(--text-sub);
+  line-height: 1.7;
+}
+
+.createHeaderSparkle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffd690 0%, #fbb54b 100%);
+  color: #7f5200;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.72),
+    0 12px 24px -16px rgba(127, 82, 0, 0.34);
+}
+
+.createHeaderSparkle :global(.material-symbols-outlined) {
+  font-size: 1.8rem;
+}
+
+.formGrid,
+.hintFormGrid,
+.profileGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 10px;
+}
+
 .field span {
-  font-size: 0.92rem;
-  font-weight: 700;
-  color: #30415f;
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.input,
+.textarea {
+  width: 100%;
+  border: 0;
+  border-radius: 22px;
+  background: var(--surface-lowest);
+  padding: 14px 16px;
+  font: inherit;
+  color: var(--text-main);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 10px 24px -20px rgba(127, 82, 0, 0.14);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 112px;
+}
+
+.input:focus,
+.textarea:focus {
+  outline: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 0 0 4px rgba(var(--warm-accent-rgb), 0.12),
+    0 12px 28px -20px rgba(127, 82, 0, 0.2);
+}
+
+.fullWidth {
+  grid-column: 1 / -1;
+}
+
+.difficultySelector {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.difficultyOption {
+  min-height: 52px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-sub);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 10px 20px -18px rgba(127, 82, 0, 0.22);
+  transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.difficultyOption:hover {
+  transform: translateY(-1px);
+}
+
+.difficultyOptionActive {
+  background: rgba(0, 104, 79, 0.12);
+  color: #0b6c56;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    0 14px 24px -18px rgba(0, 104, 79, 0.3);
 }
 
 .checkboxField {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #30415f;
-  font-weight: 700;
+  min-height: 52px;
+  color: var(--text-sub);
+  font-weight: 800;
 }
 
 .checkboxField input {
@@ -118,37 +233,66 @@
   height: 18px;
 }
 
-.input,
-.textarea {
-  width: 100%;
-  border: 1px solid rgba(16, 36, 76, 0.14);
-  border-radius: 16px;
-  padding: 13px 14px;
-  font: inherit;
-  background: #ffffff;
+.profilePanel,
+.hintCard,
+.newHintCard {
+  padding: 20px;
+  border-radius: 28px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-soft);
 }
 
-.textarea {
-  resize: vertical;
+.profileHeader {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
 }
 
-.input:focus,
-.textarea:focus {
-  outline: none;
-  border-color: var(--warm-accent-light);
-  box-shadow: 0 0 0 4px rgba(var(--warm-accent-rgb), 0.14);
+.profileHeader strong,
+.hintTopRow strong {
+  color: var(--text-main);
+  font-size: 1rem;
 }
 
-.fullWidth {
-  grid-column: 1 / -1;
+.profileHeader span {
+  color: var(--text-sub);
+  font-size: 0.92rem;
 }
 
 .actions {
   display: flex;
+  justify-content: flex-end;
   gap: 12px;
-  align-items: center;
+  margin-top: 24px;
   flex-wrap: wrap;
-  margin-top: 18px;
+}
+
+.listHeaderBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.sectionHeaderCompact {
+  display: grid;
+  gap: 8px;
+}
+
+.listSortButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-sub);
+  font: inherit;
+  font-weight: 800;
+  box-shadow: var(--shadow-soft);
 }
 
 .promptList {
@@ -157,96 +301,82 @@
 }
 
 .promptCard {
-  border-radius: 22px;
-  border: 1px solid rgba(16, 36, 76, 0.08);
-  background: var(--warm-accent-paper);
   overflow: hidden;
+  border-radius: 30px;
+  background: var(--surface-lowest);
+  box-shadow: var(--shadow-soft);
 }
 
 .promptToggle {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   gap: 16px;
-  padding: 20px;
+  width: 100%;
+  padding: 20px 22px;
+  border: 0;
   background: transparent;
-  border: none;
   text-align: left;
   cursor: pointer;
+}
+
+.promptLeadingIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 20px;
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: var(--primary);
+  font-size: 1.5rem;
+}
+
+.promptToggleMain {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
 }
 
 .promptMeta {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 10px;
 }
 
 .promptMeta span {
   display: inline-flex;
-  padding: 4px 9px;
+  align-items: center;
+  padding: 6px 10px;
   border-radius: 999px;
-  background: rgba(16, 36, 76, 0.06);
-  color: #30415f;
-  font-size: 0.8rem;
-  font-weight: 700;
+  background: rgba(var(--warm-accent-rgb), 0.08);
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
 }
 
-.promptToggle h3 {
+.promptToggleMain h3 {
   margin: 0;
-  color: #10244c;
-  font-size: 1.16rem;
+  color: var(--text-main);
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.5;
 }
 
-.promptToggle p {
-  margin: 8px 0 0;
-  color: #5d6c86;
-  line-height: 1.6;
-}
-
-.promptToggle strong {
-  color: var(--warm-accent-deep);
-  font-size: 0.92rem;
+.promptChevron {
+  align-self: center;
+  color: var(--primary);
+  font-size: 1.5rem;
 }
 
 .promptEditor {
-  border-top: 1px solid rgba(16, 36, 76, 0.08);
-  padding: 22px 20px 20px;
+  border-top: 1px solid rgba(var(--warm-accent-rgb), 0.12);
+  padding: 24px 22px 22px;
 }
 
 .hintSection {
-  margin-top: 24px;
-  padding-top: 22px;
-  border-top: 1px solid rgba(16, 36, 76, 0.08);
-}
-
-.profilePanel {
-  display: grid;
-  gap: 14px;
-  padding: 18px;
-  border-radius: 20px;
-  background: rgba(16, 36, 76, 0.03);
-  border: 1px solid rgba(16, 36, 76, 0.08);
-}
-
-.profileHeader {
-  display: grid;
-  gap: 4px;
-}
-
-.profileHeader strong {
-  color: #10244c;
-}
-
-.profileHeader span {
-  color: #5d6c86;
-  font-size: 0.92rem;
-}
-
-.profileGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(var(--warm-accent-rgb), 0.12);
 }
 
 .hintHeader {
@@ -260,25 +390,20 @@
 .hintHeader h4,
 .newHintCard h5 {
   margin: 0;
+  color: var(--text-main);
+  font-size: 1.05rem;
+  font-weight: 800;
 }
 
 .hintHeader span {
-  color: var(--warm-accent-deep);
+  color: var(--primary);
   font-size: 0.9rem;
-  font-weight: 700;
+  font-weight: 800;
 }
 
 .hintList {
   display: grid;
-  gap: 12px;
-}
-
-.hintCard,
-.newHintCard {
-  padding: 16px;
-  border-radius: 18px;
-  background: rgba(16, 36, 76, 0.03);
-  border: 1px solid rgba(16, 36, 76, 0.08);
+  gap: 14px;
 }
 
 .hintTopRow {
@@ -289,163 +414,102 @@
   margin-bottom: 14px;
 }
 
-.hintTopRow strong {
-  color: #10244c;
-  font-size: 0.94rem;
+.createFab {
+  position: fixed;
+  right: max(24px, calc((100vw - min(1400px, 100vw)) / 2 + 24px));
+  bottom: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #ffc76e 0%, #f5a83f 100%);
+  color: #6e4200;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 16px 26px -18px rgba(127, 82, 0, 0.5),
+    0 8px 0 rgba(99, 63, 0, 0.92);
+  cursor: pointer;
 }
 
-@media (max-width: 900px) {
-  .summaryCards,
+.createFab :global(.material-symbols-outlined) {
+  font-size: 2rem;
+}
+
+@media (max-width: 980px) {
+  .pageHeader,
+  .listHeaderBar,
+  .hintTopRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pageMetaRow,
+  .actions {
+    justify-content: flex-start;
+  }
+
   .formGrid,
   .hintFormGrid,
   .profileGrid {
     grid-template-columns: 1fr;
   }
 
-  .promptToggle,
-  .hintTopRow,
-  .sectionHeader {
-    flex-direction: column;
-    align-items: flex-start;
+  .promptToggle {
+    grid-template-columns: 1fr auto;
+  }
+
+  .promptLeadingIcon {
+    display: none;
   }
 }
 
-/* Amber Harvest overrides */
-.hero,
-.createCard,
-.listSection,
-.promptCard,
-.profilePanel,
-.hintCard,
-.newHintCard {
-  border: 0;
-  box-shadow: var(--shadow-card);
-}
+@media (max-width: 720px) {
+  .pageShell {
+    gap: 18px;
+    padding-bottom: 96px;
+  }
 
-.hero {
-  padding: 38px;
-  border-radius: 36px;
-  background:
-    radial-gradient(circle at 12% 10%, rgba(255, 215, 154, 0.28) 0%, transparent 24%),
-    radial-gradient(circle at 88% 12%, rgba(0, 104, 79, 0.08) 0%, transparent 20%),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 240, 234, 0.98) 100%);
-  color: var(--text-main);
-}
-
-.hero h1,
-.sectionHeader h2 {
-  color: var(--primary);
-  letter-spacing: -0.05em;
-}
-
-.hero h1 {
-  font-size: clamp(2.5rem, 4vw, 3.4rem);
-  line-height: 0.98;
-}
-
-.hero p,
-.promptToggle p,
-.profileHeader span,
-.field span {
-  color: var(--text-sub);
-}
-
-.eyebrow,
-.sectionEyebrow {
-  padding: 9px 14px;
-  border-radius: 999px;
-  background: rgba(var(--warm-accent-rgb), 0.12);
-  color: var(--primary);
-  letter-spacing: 0.12em;
-}
-
-.summaryCard {
-  border: 0;
-  background: rgba(255, 255, 255, 0.84);
-  box-shadow: var(--shadow-soft);
-}
-
-.summaryCard span {
-  color: var(--text-soft);
-}
-
-.summaryCard strong {
-  color: var(--primary);
-}
-
-.createCard,
-.listSection {
-  padding: 32px;
-  border-radius: 34px;
-  background: var(--surface-low);
-}
-
-.input,
-.textarea {
-  border: 0;
-  border-radius: 20px;
-  background: var(--surface-lowest);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    0 10px 24px -20px rgba(127, 82, 0, 0.16);
-}
-
-.input:focus,
-.textarea:focus {
-  border-color: transparent;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    0 0 0 4px rgba(var(--warm-accent-rgb), 0.12),
-    0 12px 26px -20px rgba(127, 82, 0, 0.2);
-}
-
-.promptCard,
-.profilePanel,
-.hintCard,
-.newHintCard {
-  border-radius: 28px;
-  background: var(--surface-lowest);
-}
-
-.promptMeta span {
-  background: rgba(var(--warm-accent-rgb), 0.08);
-  color: var(--primary);
-}
-
-.promptToggle h3,
-.profileHeader strong,
-.hintTopRow strong {
-  color: var(--text-main);
-}
-
-.promptToggle strong,
-.hintHeader span {
-  color: var(--primary);
-}
-
-.promptEditor,
-.hintSection {
-  border-top-color: rgba(var(--warm-accent-rgb), 0.1);
-}
-
-@media (max-width: 900px) {
-  .hero,
   .createCard,
-  .listSection,
-  .promptCard,
+  .listSection {
+    padding: 22px 18px;
+    border-radius: 28px;
+  }
+
+  .pageTitle {
+    font-size: 2.1rem;
+  }
+
+  .difficultySelector {
+    grid-template-columns: 1fr;
+  }
+
+  .promptToggle {
+    grid-template-columns: 1fr auto;
+    padding: 18px;
+  }
+
+  .promptToggleMain h3 {
+    font-size: 1.06rem;
+  }
+
   .profilePanel,
   .hintCard,
   .newHintCard {
-    border-radius: 24px;
+    padding: 16px;
+    border-radius: 22px;
   }
 
-  .hero,
-  .createCard,
-  .listSection {
-    padding: 22px 20px;
+  .promptEditor {
+    padding: 20px 18px 18px;
   }
 
-  .hero h1 {
-    font-size: 2rem;
+  .createFab {
+    right: 18px;
+    bottom: 18px;
+    width: 60px;
+    height: 60px;
   }
 }

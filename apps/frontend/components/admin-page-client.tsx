@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   createAdminPrompt,
   createAdminPromptHint,
@@ -141,7 +141,40 @@ function getPromptTopicDetails(
   return [...(topicCatalog.find((entry) => entry.category === category)?.details ?? [])];
 }
 
+function getDifficultyDisplayLabel(difficulty: PromptDifficulty) {
+  switch (difficulty) {
+    case "A":
+      return "쉬움";
+    case "B":
+      return "보통";
+    case "C":
+      return "어려움";
+    default:
+      return difficulty;
+  }
+}
+
+function getPromptCardIcon(topicCategory: string, topicDetail: string) {
+  const source = `${topicCategory} ${topicDetail}`.toLowerCase();
+
+  if (source.includes("travel") || source.includes("여행")) {
+    return "flight_takeoff";
+  }
+  if (source.includes("food") || source.includes("음식") || source.includes("restaurant")) {
+    return "restaurant";
+  }
+  if (source.includes("work") || source.includes("business") || source.includes("직장")) {
+    return "work";
+  }
+  if (source.includes("study") || source.includes("school") || source.includes("교육")) {
+    return "school";
+  }
+
+  return "edit_note";
+}
+
 export function AdminPageClient() {
+  const createSectionRef = useRef<HTMLElement | null>(null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
   const [topicCatalog, setTopicCatalog] = useState<AdminPromptTopicCatalogEntry[]>([]);
   const [prompts, setPrompts] = useState<AdminPrompt[]>([]);
@@ -350,6 +383,10 @@ export function AdminPageClient() {
     }));
   }
 
+  function resetNewPromptForm() {
+    setNewPromptForm({ ...emptyPromptForm, coachProfile: { ...emptyCoachProfile } });
+  }
+
   if (loading || currentUser === undefined) {
     return (
       <main className={authStyles.page}>
@@ -385,357 +422,429 @@ export function AdminPageClient() {
 
   return (
     <main className={authStyles.page}>
-      <section className={styles.hero}>
-        <div className={styles.eyebrow}>콘텐츠 관리</div>
-        <h1>질문과 힌트를 한곳에서 관리해요</h1>
-        <p>
-          운영 중인 질문을 바로 수정하고, starter와 활용 단어 힌트까지 함께 다듬을 수 있어요.
-          삭제는 실제 제거 대신 비활성화로 처리해서 기존 학습 기록을 안전하게 보존합니다.
-        </p>
-        <div className={styles.summaryCards}>
-          <article className={styles.summaryCard}>
-            <span>전체 질문</span>
-            <strong>{prompts.length}개</strong>
-          </article>
-          <article className={styles.summaryCard}>
-            <span>활성 질문</span>
-            <strong>{activePromptCount}개</strong>
-          </article>
-        </div>
-      </section>
-
-      <section className={styles.createCard}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <div className={styles.sectionEyebrow}>새 질문 추가</div>
-            <h2>새로운 오늘의 질문 만들기</h2>
+      <div className={styles.pageShell}>
+        <section className={styles.pageHeader}>
+          <div className={styles.pageHeaderCopy}>
+            <p className={styles.pageEyebrow}>관리자 대시보드</p>
+            <h1 className={styles.pageTitle}>질문 및 콘텐츠 관리</h1>
+            <p className={styles.pageSubtitle}>
+              시스템의 오늘의 질문과 힌트를 넓은 작업 영역에서 빠르게 관리하세요.
+            </p>
           </div>
-        </div>
-        <div className={styles.formGrid}>
-          <label className={styles.field}>
-            <span>주제 대분류</span>
-            <select
-              className={styles.input}
-              value={newPromptForm.topicCategory}
-              onChange={(event) =>
-                setNewPromptForm((current) =>
-                  updateTopicSelection(topicCatalog, current, event.target.value)
-                )
-              }
-            >
-              <option value="">선택하세요</option>
-              {topicCatalog.map((entry) => (
-                <option key={entry.category} value={entry.category}>
-                  {entry.category}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles.field}>
-            <span>세부 토픽</span>
-            <select
-              className={styles.input}
-              value={newPromptForm.topicDetail}
-              disabled={!newPromptForm.topicCategory}
-              onChange={(event) =>
-                setNewPromptForm((current) =>
-                  updateTopicSelection(topicCatalog, current, current.topicCategory, event.target.value)
-                )
-              }
-            >
-              <option value="">선택하세요</option>
-              {getPromptTopicDetails(topicCatalog, newPromptForm.topicCategory).map((detail) => (
-                <option key={detail} value={detail}>
-                  {detail}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles.field}>
-            <span>난이도</span>
-            <select
-              className={styles.input}
-              value={newPromptForm.difficulty}
-              onChange={(event) =>
-                setNewPromptForm((current) => ({
-                  ...current,
-                  difficulty: event.target.value as PromptDifficulty
-                }))
-              }
-            >
-              {difficultyOptions.map((difficulty) => (
-                <option key={difficulty} value={difficulty}>
-                  {difficulty}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles.field}>
-            <span>정렬 순서</span>
-            <input
-              className={styles.input}
-              type="number"
-              value={newPromptForm.displayOrder}
-              onChange={(event) =>
-                setNewPromptForm((current) => ({
-                  ...current,
-                  displayOrder: Number(event.target.value)
-                }))
-              }
-            />
-          </label>
-          <label className={styles.checkboxField}>
-            <input
-              type="checkbox"
-              checked={newPromptForm.active}
-              onChange={(event) =>
-                setNewPromptForm((current) => ({ ...current, active: event.target.checked }))
-              }
-            />
-            <span>바로 활성화</span>
-          </label>
-          <label className={`${styles.field} ${styles.fullWidth}`}>
-            <span>영어 질문</span>
-            <textarea
-              className={styles.textarea}
-              rows={3}
-              value={newPromptForm.questionEn}
-              onChange={(event) =>
-                setNewPromptForm((current) => ({ ...current, questionEn: event.target.value }))
-              }
-            />
-          </label>
-          <label className={`${styles.field} ${styles.fullWidth}`}>
-            <span>한국어 질문</span>
-            <textarea
-              className={styles.textarea}
-              rows={3}
-              value={newPromptForm.questionKo}
-              onChange={(event) =>
-                setNewPromptForm((current) => ({ ...current, questionKo: event.target.value }))
-              }
-            />
-          </label>
-          <label className={`${styles.field} ${styles.fullWidth}`}>
-            <span>TIP</span>
-            <textarea
-              className={styles.textarea}
-              rows={2}
-              value={newPromptForm.tip}
-              onChange={(event) =>
-                setNewPromptForm((current) => ({ ...current, tip: event.target.value }))
-              }
-            />
-          </label>
-          <div className={`${styles.fullWidth} ${styles.profilePanel}`}>
-            <div className={styles.profileHeader}>
-              <strong>코치 프로필</strong>
-              <span>질문 분류와 추천 표현 방향을 저장합니다.</span>
+          <div className={styles.pageMetaRow}>
+            <div className={styles.pageMetaChip}>
+              <span>전체 질문</span>
+              <strong>{prompts.length}개</strong>
             </div>
-            <div className={styles.profileGrid}>
-              <label className={styles.field}>
-                <span>Primary Category</span>
-                <input
-                  className={styles.input}
-                  value={newPromptForm.coachProfile?.primaryCategory ?? emptyCoachProfile.primaryCategory}
-                  onChange={(event) =>
-                    setNewPromptForm((current) => ({
-                      ...current,
-                      coachProfile: {
-                        ...(current.coachProfile ?? emptyCoachProfile),
-                        primaryCategory: event.target.value
-                      }
-                    }))
-                  }
-                />
-              </label>
-              <label className={styles.field}>
-                <span>Starter Style</span>
-                <input
-                  className={styles.input}
-                  value={newPromptForm.coachProfile?.starterStyle ?? emptyCoachProfile.starterStyle}
-                  onChange={(event) =>
-                    setNewPromptForm((current) => ({
-                      ...current,
-                      coachProfile: {
-                        ...(current.coachProfile ?? emptyCoachProfile),
-                        starterStyle: event.target.value
-                      }
-                    }))
-                  }
-                />
-              </label>
-              <label className={`${styles.field} ${styles.fullWidth}`}>
-                <span>Secondary Categories</span>
-                <input
-                  className={styles.input}
-                  value={formatListInput(newPromptForm.coachProfile?.secondaryCategories)}
-                  onChange={(event) =>
-                    setNewPromptForm((current) => ({
-                      ...current,
-                      coachProfile: {
-                        ...(current.coachProfile ?? emptyCoachProfile),
-                        secondaryCategories: parseListInput(event.target.value)
-                      }
-                    }))
-                  }
-                />
-              </label>
-              <label className={`${styles.field} ${styles.fullWidth}`}>
-                <span>Preferred Expression Families</span>
-                <input
-                  className={styles.input}
-                  value={formatListInput(newPromptForm.coachProfile?.preferredExpressionFamilies)}
-                  onChange={(event) =>
-                    setNewPromptForm((current) => ({
-                      ...current,
-                      coachProfile: {
-                        ...(current.coachProfile ?? emptyCoachProfile),
-                        preferredExpressionFamilies: parseListInput(event.target.value)
-                      }
-                    }))
-                  }
-                />
-              </label>
-              <label className={`${styles.field} ${styles.fullWidth}`}>
-                <span>Avoid Families</span>
-                <input
-                  className={styles.input}
-                  value={formatListInput(newPromptForm.coachProfile?.avoidFamilies)}
-                  onChange={(event) =>
-                    setNewPromptForm((current) => ({
-                      ...current,
-                      coachProfile: {
-                        ...(current.coachProfile ?? emptyCoachProfile),
-                        avoidFamilies: parseListInput(event.target.value)
-                      }
-                    }))
-                  }
-                />
-              </label>
-              <label className={`${styles.field} ${styles.fullWidth}`}>
-                <span>Notes</span>
-                <textarea
-                  className={styles.textarea}
-                  rows={2}
-                  value={newPromptForm.coachProfile?.notes ?? ""}
-                  onChange={(event) =>
-                    setNewPromptForm((current) => ({
-                      ...current,
-                      coachProfile: {
-                        ...(current.coachProfile ?? emptyCoachProfile),
-                        notes: event.target.value
-                      }
-                    }))
-                  }
-                />
-              </label>
+            <div className={styles.pageMetaChip}>
+              <span>활성 질문</span>
+              <strong>{activePromptCount}개</strong>
             </div>
           </div>
-        </div>
-        <div className={styles.actions}>
-          <button type="button" className={authStyles.primaryButton} onClick={() => void handleCreatePrompt()}>
-            질문 추가하기
-          </button>
-        </div>
-      </section>
+        </section>
 
-      {notice ? <p className={authStyles.notice}>{notice}</p> : null}
-      {error ? <p className={authStyles.error}>{error}</p> : null}
+        {notice ? <p className={authStyles.notice}>{notice}</p> : null}
+        {error ? <p className={authStyles.error}>{error}</p> : null}
 
-      <section className={styles.listSection}>
-        <div className={styles.sectionHeader}>
-          <div>
-            <div className={styles.sectionEyebrow}>기존 질문</div>
-            <h2>질문과 힌트 수정하기</h2>
+        <section ref={createSectionRef} className={styles.createCard}>
+          <div className={styles.createHeader}>
+            <div className={styles.createHeaderCopy}>
+              <p className={styles.sectionEyebrow}>새 질문 만들기</p>
+              <h2>새로운 오늘의 질문 만들기</h2>
+              <p>
+                사용자에게 보여 줄 질문 문장, 번역, 힌트와 코치 프로필을 한 번에 정리할 수 있어요.
+              </p>
+            </div>
+            <div className={styles.createHeaderSparkle} aria-hidden="true">
+              <span className="material-symbols-outlined">auto_awesome</span>
+            </div>
           </div>
-        </div>
 
-        <div className={styles.promptList}>
-          {prompts.map((prompt) => {
-            const form = promptForms[prompt.id] ?? toPromptForm(prompt);
-            const isExpanded = expandedPromptIds[prompt.id] ?? false;
+          <div className={styles.formGrid}>
+            <label className={styles.field}>
+              <span>카테고리</span>
+              <select
+                className={styles.input}
+                value={newPromptForm.topicCategory}
+                onChange={(event) =>
+                  setNewPromptForm((current) =>
+                    updateTopicSelection(topicCatalog, current, event.target.value)
+                  )
+                }
+              >
+                <option value="">선택해 주세요</option>
+                {topicCatalog.map((entry) => (
+                  <option key={entry.category} value={entry.category}>
+                    {entry.category}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-            return (
-              <article key={prompt.id} className={styles.promptCard}>
-                <button
-                  type="button"
-                  className={styles.promptToggle}
-                  onClick={() => togglePrompt(prompt.id)}
-                >
-                  <div>
-                    <div className={styles.promptMeta}>
-                      <span>{prompt.id}</span>
-                      <span>{prompt.difficulty}</span>
-                      <span>{prompt.active ? "활성" : "비활성"}</span>
+            <label className={styles.field}>
+              <span>세부 주제</span>
+              <select
+                className={styles.input}
+                value={newPromptForm.topicDetail}
+                disabled={!newPromptForm.topicCategory}
+                onChange={(event) =>
+                  setNewPromptForm((current) =>
+                    updateTopicSelection(
+                      topicCatalog,
+                      current,
+                      current.topicCategory,
+                      event.target.value
+                    )
+                  )
+                }
+              >
+                <option value="">선택해 주세요</option>
+                {getPromptTopicDetails(topicCatalog, newPromptForm.topicCategory).map((detail) => (
+                  <option key={detail} value={detail}>
+                    {detail}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className={`${styles.field} ${styles.fullWidth}`}>
+              <span>난이도</span>
+              <div className={styles.difficultySelector}>
+                {difficultyOptions.map((difficulty) => (
+                  <button
+                    key={difficulty}
+                    type="button"
+                    className={
+                      newPromptForm.difficulty === difficulty
+                        ? `${styles.difficultyOption} ${styles.difficultyOptionActive}`
+                        : styles.difficultyOption
+                    }
+                    onClick={() =>
+                      setNewPromptForm((current) => ({
+                        ...current,
+                        difficulty
+                      }))
+                    }
+                  >
+                    {getDifficultyDisplayLabel(difficulty)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className={styles.field}>
+              <span>정렬 순서</span>
+              <input
+                className={styles.input}
+                type="number"
+                value={newPromptForm.displayOrder}
+                onChange={(event) =>
+                  setNewPromptForm((current) => ({
+                    ...current,
+                    displayOrder: Number(event.target.value)
+                  }))
+                }
+              />
+            </label>
+
+            <label className={styles.checkboxField}>
+              <input
+                type="checkbox"
+                checked={newPromptForm.active}
+                onChange={(event) =>
+                  setNewPromptForm((current) => ({ ...current, active: event.target.checked }))
+                }
+              />
+              <span>바로 활성화</span>
+            </label>
+
+            <label className={`${styles.field} ${styles.fullWidth}`}>
+              <span>영어 질문</span>
+              <textarea
+                className={styles.textarea}
+                rows={4}
+                placeholder="What topic should users write about today?"
+                value={newPromptForm.questionEn}
+                onChange={(event) =>
+                  setNewPromptForm((current) => ({ ...current, questionEn: event.target.value }))
+                }
+              />
+            </label>
+
+            <label className={`${styles.field} ${styles.fullWidth}`}>
+              <span>한국어 질문</span>
+              <textarea
+                className={styles.textarea}
+                rows={3}
+                placeholder="사용자에게 보여 줄 한국어 질문을 입력해 주세요."
+                value={newPromptForm.questionKo}
+                onChange={(event) =>
+                  setNewPromptForm((current) => ({ ...current, questionKo: event.target.value }))
+                }
+              />
+            </label>
+
+            <label className={`${styles.field} ${styles.fullWidth}`}>
+              <span>TIP</span>
+              <textarea
+                className={styles.textarea}
+                rows={3}
+                placeholder="질문 아래에 보여 줄 짧은 작문 팁을 적어 주세요."
+                value={newPromptForm.tip}
+                onChange={(event) =>
+                  setNewPromptForm((current) => ({ ...current, tip: event.target.value }))
+                }
+              />
+            </label>
+
+            <div className={`${styles.fullWidth} ${styles.profilePanel}`}>
+              <div className={styles.profileHeader}>
+                <strong>코치 프로필</strong>
+                <span>Starter, 표현 힌트, 추천 가이드 방향을 함께 저장합니다.</span>
+              </div>
+              <div className={styles.profileGrid}>
+                <label className={styles.field}>
+                  <span>Primary Category</span>
+                  <input
+                    className={styles.input}
+                    value={
+                      newPromptForm.coachProfile?.primaryCategory ?? emptyCoachProfile.primaryCategory
+                    }
+                    onChange={(event) =>
+                      setNewPromptForm((current) => ({
+                        ...current,
+                        coachProfile: {
+                          ...(current.coachProfile ?? emptyCoachProfile),
+                          primaryCategory: event.target.value
+                        }
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className={styles.field}>
+                  <span>Starter Style</span>
+                  <input
+                    className={styles.input}
+                    value={newPromptForm.coachProfile?.starterStyle ?? emptyCoachProfile.starterStyle}
+                    onChange={(event) =>
+                      setNewPromptForm((current) => ({
+                        ...current,
+                        coachProfile: {
+                          ...(current.coachProfile ?? emptyCoachProfile),
+                          starterStyle: event.target.value
+                        }
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className={`${styles.field} ${styles.fullWidth}`}>
+                  <span>Secondary Categories</span>
+                  <input
+                    className={styles.input}
+                    value={formatListInput(newPromptForm.coachProfile?.secondaryCategories)}
+                    onChange={(event) =>
+                      setNewPromptForm((current) => ({
+                        ...current,
+                        coachProfile: {
+                          ...(current.coachProfile ?? emptyCoachProfile),
+                          secondaryCategories: parseListInput(event.target.value)
+                        }
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className={`${styles.field} ${styles.fullWidth}`}>
+                  <span>Preferred Expression Families</span>
+                  <input
+                    className={styles.input}
+                    value={formatListInput(
+                      newPromptForm.coachProfile?.preferredExpressionFamilies
+                    )}
+                    onChange={(event) =>
+                      setNewPromptForm((current) => ({
+                        ...current,
+                        coachProfile: {
+                          ...(current.coachProfile ?? emptyCoachProfile),
+                          preferredExpressionFamilies: parseListInput(event.target.value)
+                        }
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className={`${styles.field} ${styles.fullWidth}`}>
+                  <span>Avoid Families</span>
+                  <input
+                    className={styles.input}
+                    value={formatListInput(newPromptForm.coachProfile?.avoidFamilies)}
+                    onChange={(event) =>
+                      setNewPromptForm((current) => ({
+                        ...current,
+                        coachProfile: {
+                          ...(current.coachProfile ?? emptyCoachProfile),
+                          avoidFamilies: parseListInput(event.target.value)
+                        }
+                      }))
+                    }
+                  />
+                </label>
+
+                <label className={`${styles.field} ${styles.fullWidth}`}>
+                  <span>Notes</span>
+                  <textarea
+                    className={styles.textarea}
+                    rows={3}
+                    value={newPromptForm.coachProfile?.notes ?? ""}
+                    onChange={(event) =>
+                      setNewPromptForm((current) => ({
+                        ...current,
+                        coachProfile: {
+                          ...(current.coachProfile ?? emptyCoachProfile),
+                          notes: event.target.value
+                        }
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className={styles.actions}>
+            <button
+              type="button"
+              className={authStyles.ghostButton}
+              onClick={resetNewPromptForm}
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              className={authStyles.primaryButton}
+              onClick={() => void handleCreatePrompt()}
+            >
+              새 질문 추가
+            </button>
+          </div>
+        </section>
+
+        <section className={styles.listSection}>
+          <div className={styles.listHeaderBar}>
+            <div className={styles.sectionHeaderCompact}>
+              <p className={styles.sectionEyebrow}>질문 수정</p>
+              <h2>질문 및 힌트 수정하기</h2>
+            </div>
+            <button type="button" className={styles.listSortButton}>
+              최신순
+              <span className="material-symbols-outlined">expand_more</span>
+            </button>
+          </div>
+
+          <div className={styles.promptList}>
+            {prompts.map((prompt) => {
+              const form = promptForms[prompt.id] ?? toPromptForm(prompt);
+              const isExpanded = expandedPromptIds[prompt.id] ?? false;
+
+              return (
+                <article key={prompt.id} className={styles.promptCard}>
+                  <button
+                    type="button"
+                    className={styles.promptToggle}
+                    onClick={() => togglePrompt(prompt.id)}
+                  >
+                    <span className={`${styles.promptLeadingIcon} material-symbols-outlined`}>
+                      {getPromptCardIcon(prompt.topicCategory, prompt.topicDetail)}
+                    </span>
+
+                    <div className={styles.promptToggleMain}>
+                      <div className={styles.promptMeta}>
+                        <span>{prompt.topicCategory}</span>
+                        <span>{prompt.topicDetail}</span>
+                        <span>{getDifficultyDisplayLabel(prompt.difficulty)}</span>
+                        <span>{prompt.active ? "활성" : "비활성"}</span>
+                      </div>
+                      <h3>{prompt.questionEn}</h3>
                     </div>
-                    <h3>{prompt.questionEn}</h3>
-                    <p>{prompt.questionKo}</p>
-                  </div>
-                  <strong>{isExpanded ? "접기" : "열기"}</strong>
-                </button>
 
-                {isExpanded ? (
-                  <div className={styles.promptEditor}>
-                    <div className={styles.formGrid}>
-                      <label className={styles.field}>
-                        <span>주제 대분류</span>
-                        <select
-                          className={styles.input}
-                          value={form.topicCategory}
-                          onChange={(event) =>
-                            updatePromptForm(prompt.id, (current) =>
-                              updateTopicSelection(topicCatalog, current, event.target.value)
-                            )
-                          }
-                        >
-                          <option value="">선택하세요</option>
-                          {topicCatalog.map((entry) => (
-                            <option key={entry.category} value={entry.category}>
-                              {entry.category}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className={styles.field}>
-                        <span>세부 토픽</span>
-                        <select
-                          className={styles.input}
-                          value={form.topicDetail}
-                          disabled={!form.topicCategory}
-                          onChange={(event) =>
-                            updatePromptForm(prompt.id, (current) =>
-                              updateTopicSelection(topicCatalog, current, current.topicCategory, event.target.value)
-                            )
-                          }
-                        >
-                          <option value="">선택하세요</option>
-                          {getPromptTopicDetails(topicCatalog, form.topicCategory).map((detail) => (
-                            <option key={detail} value={detail}>
-                              {detail}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label className={styles.field}>
-                        <span>난이도</span>
-                        <select
-                          className={styles.input}
-                          value={form.difficulty}
-                          onChange={(event) =>
-                            updatePromptForm(prompt.id, (current) => ({
-                              ...current,
-                              difficulty: event.target.value as PromptDifficulty
-                            }))
-                          }
-                        >
-                          {difficultyOptions.map((difficulty) => (
-                            <option key={difficulty} value={difficulty}>
-                              {difficulty}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                    <span className={`${styles.promptChevron} material-symbols-outlined`}>
+                      {isExpanded ? "expand_less" : "chevron_right"}
+                    </span>
+                  </button>
+
+                  {isExpanded ? (
+                    <div className={styles.promptEditor}>
+                      <div className={styles.formGrid}>
+                        <label className={styles.field}>
+                          <span>카테고리</span>
+                          <select
+                            className={styles.input}
+                            value={form.topicCategory}
+                            onChange={(event) =>
+                              updatePromptForm(prompt.id, (current) =>
+                                updateTopicSelection(topicCatalog, current, event.target.value)
+                              )
+                            }
+                          >
+                            <option value="">선택해 주세요</option>
+                            {topicCatalog.map((entry) => (
+                              <option key={entry.category} value={entry.category}>
+                                {entry.category}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className={styles.field}>
+                          <span>세부 주제</span>
+                          <select
+                            className={styles.input}
+                            value={form.topicDetail}
+                            disabled={!form.topicCategory}
+                            onChange={(event) =>
+                              updatePromptForm(prompt.id, (current) =>
+                                updateTopicSelection(
+                                  topicCatalog,
+                                  current,
+                                  current.topicCategory,
+                                  event.target.value
+                                )
+                              )
+                            }
+                          >
+                            <option value="">선택해 주세요</option>
+                            {getPromptTopicDetails(topicCatalog, form.topicCategory).map((detail) => (
+                              <option key={detail} value={detail}>
+                                {detail}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <div className={`${styles.field} ${styles.fullWidth}`}>
+                          <span>난이도</span>
+                          <div className={styles.difficultySelector}>
+                            {difficultyOptions.map((difficulty) => (
+                              <button
+                                key={difficulty}
+                                type="button"
+                                className={
+                                  form.difficulty === difficulty
+                                    ? `${styles.difficultyOption} ${styles.difficultyOptionActive}`
+                                    : styles.difficultyOption
+                                }
+                                onClick={() =>
+                                  updatePromptForm(prompt.id, (current) => ({
+                                    ...current,
+                                    difficulty
+                                  }))
+                                }
+                              >
+                                {getDifficultyDisplayLabel(difficulty)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
                       <label className={styles.field}>
                         <span>정렬 순서</span>
                         <input
@@ -1104,8 +1213,20 @@ export function AdminPageClient() {
               </article>
             );
           })}
-        </div>
-      </section>
+          </div>
+        </section>
+
+        <button
+          type="button"
+          className={styles.createFab}
+          onClick={() =>
+            createSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+          }
+          aria-label="새 질문 만들기 영역으로 이동"
+        >
+          <span className="material-symbols-outlined">add</span>
+        </button>
+      </div>
     </main>
   );
 }

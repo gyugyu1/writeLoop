@@ -276,17 +276,88 @@ public class AnswerHistoryService {
                         attempt.getFeedbackPayloadJson(),
                         FeedbackResponseDto.class
                 );
-                return feedback.corrections();
+                List<CorrectionDto> payloadCorrections = extractCorrections(feedback);
+                if (!payloadCorrections.isEmpty()) {
+                    return payloadCorrections;
+                }
             } catch (Exception ignored) {
                 // Fall back to legacy correction columns below.
             }
         }
 
-        try {
-            return objectMapper.readValue(attempt.getCorrectionsJson(), CORRECTION_LIST_TYPE);
-        } catch (Exception exception) {
-            throw new IllegalStateException("Failed to deserialize stored corrections", exception);
+        if (attempt.getCorrectionsJson() == null || attempt.getCorrectionsJson().isBlank()) {
+            return Collections.emptyList();
         }
+
+        try {
+            List<CorrectionDto> legacyCorrections = objectMapper.readValue(attempt.getCorrectionsJson(), CORRECTION_LIST_TYPE);
+            return legacyCorrections == null ? Collections.emptyList() : legacyCorrections;
+        } catch (Exception ignored) {
+            return Collections.emptyList();
+        }
+    }
+
+    private List<CorrectionDto> extractCorrections(FeedbackResponseDto feedback) {
+        if (feedback == null) {
+            return Collections.emptyList();
+        }
+
+        if (feedback.ui() != null && feedback.ui().fixPoints() != null && !feedback.ui().fixPoints().isEmpty()) {
+            List<CorrectionDto> fixPointCorrections = feedback.ui().fixPoints().stream()
+                    .filter(point -> point != null && !"EXPRESSION".equalsIgnoreCase(nullSafe(point.kind())))
+                    .map(point -> new CorrectionDto(
+                            firstNonBlank(point.title(), point.headline(), point.originalText(), point.supportText()),
+                            firstNonBlank(point.revisedText(), point.supportText(), point.headline(), point.originalText())
+                    ))
+                    .filter(correction -> isNotBlank(correction.issue()) || isNotBlank(correction.suggestion()))
+                    .toList();
+            if (!fixPointCorrections.isEmpty()) {
+                return fixPointCorrections;
+            }
+        }
+
+        if (feedback.corrections() != null && !feedback.corrections().isEmpty()) {
+            return feedback.corrections().stream()
+                    .filter(correction -> correction != null)
+                    .filter(correction -> isNotBlank(correction.issue()) || isNotBlank(correction.suggestion()))
+                    .toList();
+        }
+
+        if (feedback.inlineFeedback() != null && !feedback.inlineFeedback().isEmpty()) {
+            return feedback.inlineFeedback().stream()
+                    .filter(segment -> segment != null)
+                    .filter(segment -> segment.type() == null || !"KEEP".equalsIgnoreCase(segment.type()))
+                    .map(segment -> new CorrectionDto(
+                            firstNonBlank(segment.originalText(), segment.revisedText()),
+                            firstNonBlank(segment.revisedText(), segment.originalText())
+                    ))
+                    .filter(correction -> isNotBlank(correction.issue()) || isNotBlank(correction.suggestion()))
+                    .toList();
+        }
+
+        return Collections.emptyList();
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return "";
+        }
+
+        for (String value : values) {
+            if (isNotBlank(value)) {
+                return value.trim();
+            }
+        }
+
+        return "";
+    }
+
+    private boolean isNotBlank(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private String nullSafe(String value) {
+        return value == null ? "" : value;
     }
 
     private MistakeCategory categorizeCorrection(String issue, String suggestion) {

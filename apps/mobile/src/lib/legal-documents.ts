@@ -1,0 +1,161 @@
+export type LegalDocumentId = "privacy-policy" | "privacy-consent";
+
+type LegalDocumentSection = {
+  title: string;
+  paragraphs?: string[];
+  bullets?: string[];
+};
+
+export type LegalDocument = {
+  id: LegalDocumentId;
+  title: string;
+  subtitle: string;
+  effectiveDate: string;
+  sections: LegalDocumentSection[];
+};
+
+const LEGAL_DOCUMENTS: Record<LegalDocumentId, LegalDocument> = {
+  "privacy-policy": {
+    id: "privacy-policy",
+    title: "개인정보처리방침",
+    subtitle: "WriteLoop가 어떤 개인정보를 왜 처리하는지 안내합니다.",
+    effectiveDate: "2026.04.11",
+    sections: [
+      {
+        title: "1. 처리하는 개인정보 항목",
+        bullets: [
+          "회원가입 및 로그인: 이메일 주소, 비밀번호(암호화 저장), 닉네임(표시 이름)",
+          "소셜 로그인: 네이버, 구글, 카카오 계정 식별 정보와 제공된 이메일/이름 또는 닉네임",
+          "서비스 이용 과정에서 생성되는 정보: 작성한 영어 문장, 다시쓰기 답변, 임시저장 초안, AI 피드백 결과, AI 코치 질문 및 응답, 학습 기록, 이용 로그, 접속 일시, 기기/앱 정보"
+        ]
+      },
+      {
+        title: "2. 개인정보의 처리 목적",
+        bullets: [
+          "회원 식별, 회원가입, 로그인 및 계정 관리",
+          "이메일 인증, 비밀번호 재설정, 보안 및 부정 이용 방지",
+          "영어 작문 피드백 및 AI 코치 기능 제공",
+          "학습 기록 저장, 다시쓰기 기능 제공, 서비스 개선 및 문의 대응"
+        ]
+      },
+      {
+        title: "3. 개인정보의 처리 및 보유 기간",
+        bullets: [
+          "회원정보와 학습기록은 회원 탈퇴 시까지 보관합니다.",
+          "이메일 인증 및 비밀번호 재설정 정보는 목적 달성 후 지체 없이 삭제합니다.",
+          "관련 법령에 따라 보관이 필요한 경우에는 해당 법령에서 정한 기간 동안 보관한 뒤 파기합니다."
+        ]
+      },
+      {
+        title: "4. 개인정보의 제3자 제공",
+        paragraphs: [
+          "WriteLoop는 원칙적으로 이용자의 개인정보를 외부에 제공하지 않습니다.",
+          "다만, 이용자가 사전에 동의했거나 법령에 특별한 규정이 있는 경우에는 예외가 될 수 있습니다."
+        ]
+      },
+      {
+        title: "5. 개인정보 처리의 위탁 및 국외 이전",
+        paragraphs: [
+          "AI 피드백 및 AI 코치 기능 제공을 위해 외부 AI 서비스 사업자를 이용할 수 있습니다."
+        ],
+        bullets: [
+          "이전받는 자: Google LLC (Gemini API), OpenAI, L.L.C. (OpenAI API)",
+          "이전 국가: 미국",
+          "이전 항목: 사용자가 입력한 영어 문장, 다시쓰기 답변, AI 코치 질문, 피드백 생성에 필요한 최소 문맥 정보",
+          "이전 목적: AI 피드백 및 AI 코치 응답 생성",
+          "보유 및 이용 기간: 요청 처리에 필요한 기간 및 각 제공업체의 정책에 따른 기간",
+          "동의를 거부할 수 있으나, 이 경우 AI 피드백 및 AI 코치 기능 이용이 제한될 수 있습니다."
+        ]
+      },
+      {
+        title: "6. 개인정보의 파기절차 및 파기방법",
+        bullets: [
+          "보유기간이 지나거나 처리 목적이 달성되면 지체 없이 파기합니다.",
+          "전자적 파일은 복구 또는 재생되지 않도록 안전한 방법으로 삭제합니다.",
+          "종이 문서 등 출력물은 분쇄 또는 소각 등의 방법으로 파기합니다."
+        ]
+      },
+      {
+        title: "7. 정보주체의 권리 및 행사방법",
+        paragraphs: [
+          "이용자는 언제든지 자신의 개인정보에 대해 조회, 정정, 삭제, 처리정지, 동의 철회 및 회원 탈퇴를 요청할 수 있습니다.",
+          "앱 내 계정 설정 또는 아래 문의처를 통해 권리 행사를 요청할 수 있습니다."
+        ]
+      },
+      {
+        title: "8. 개인정보의 안전성 확보조치",
+        bullets: [
+          "비밀번호 암호화 저장",
+          "접근 권한 최소화",
+          "인증정보 및 세션 관리",
+          "보안 업데이트 및 기술적 보호조치 적용"
+        ]
+      },
+      {
+        title: "9. 만 14세 미만 아동의 가입 제한",
+        paragraphs: [
+          "WriteLoop는 만 14세 미만 아동의 회원가입을 허용하지 않습니다."
+        ]
+      },
+      {
+        title: "10. 문의처",
+        bullets: [
+          "개인정보 보호 담당자: WriteLoop 운영자",
+          "문의 이메일: lwd33021@naver.com"
+        ]
+      },
+      {
+        title: "11. 처리방침 변경",
+        paragraphs: [
+          "본 방침은 관련 법령, 서비스 내용 또는 내부 정책에 따라 변경될 수 있으며, 중요한 변경이 있는 경우 앱 또는 관련 페이지를 통해 안내합니다."
+        ]
+      }
+    ]
+  },
+  "privacy-consent": {
+    id: "privacy-consent",
+    title: "개인정보 수집·이용 동의",
+    subtitle: "회원가입을 위해 필요한 최소 정보와 이용 목적을 안내합니다.",
+    effectiveDate: "2026.04.11",
+    sections: [
+      {
+        title: "수집·이용 목적",
+        bullets: [
+          "회원 식별, 회원가입 및 로그인",
+          "계정 관리, 이메일 인증, 비밀번호 재설정",
+          "영어 작문 피드백, 학습 기록 저장 및 AI 코치 기능 제공"
+        ]
+      },
+      {
+        title: "수집 항목",
+        bullets: [
+          "이메일 주소",
+          "비밀번호",
+          "닉네임(표시 이름)"
+        ]
+      },
+      {
+        title: "보유 및 이용 기간",
+        paragraphs: [
+          "회원 탈퇴 시까지 보관합니다. 다만, 관련 법령에 따라 보관이 필요한 경우 해당 기간 동안 보관한 뒤 파기합니다."
+        ]
+      },
+      {
+        title: "동의 거부 권리 및 불이익",
+        paragraphs: [
+          "이용자는 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다.",
+          "다만, 필수 항목에 동의하지 않으면 회원가입 및 기본 서비스 이용이 제한됩니다."
+        ]
+      }
+    ]
+  }
+};
+
+export function getLegalDocument(id?: string | string[] | null) {
+  const normalizedId = Array.isArray(id) ? id[0] : id;
+  if (!normalizedId) {
+    return null;
+  }
+
+  return LEGAL_DOCUMENTS[normalizedId as LegalDocumentId] ?? null;
+}

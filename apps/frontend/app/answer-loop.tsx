@@ -370,6 +370,22 @@ function normalizePromptTopicKey(value: string | null | undefined) {
   return (value ?? "").trim().toUpperCase();
 }
 
+function getPromptCategoryKey(prompt: Prompt | null | undefined) {
+  return (
+    normalizePromptTopicKey(prompt?.topicCategory) ||
+    normalizePromptTopicKey(prompt?.topic) ||
+    (prompt?.id ?? "")
+  );
+}
+
+function countDistinctPromptCategories(prompts: Prompt[]) {
+  return new Set(
+    prompts
+      .map((prompt) => getPromptCategoryKey(prompt))
+      .filter((categoryKey) => categoryKey !== "")
+  ).size;
+}
+
 function getPromptCoachCategories(prompt: Prompt | null | undefined) {
   if (!prompt?.coachProfile) {
     return [];
@@ -629,12 +645,21 @@ function pickLeastOverlappingPromptSet(
 
   const selected: Prompt[] = [];
   const seenSet = new Set(seenPromptIds);
+  const selectedCategoryKeys = new Set<string>();
   const remaining = [...uniqueCandidates];
 
   while (selected.length < desiredCount && remaining.length > 0) {
+    const eligibleCandidates = remaining.filter(
+      (candidate) => !selectedCategoryKeys.has(getPromptCategoryKey(candidate))
+    );
+
+    if (eligibleCandidates.length === 0) {
+      break;
+    }
+
     const anchorPrompts = [...currentPrompts, ...selected];
     const nextPrompt =
-      remaining
+      eligibleCandidates
         .map((candidate, index) => ({
           candidate,
           index,
@@ -661,6 +686,7 @@ function pickLeastOverlappingPromptSet(
     }
 
     selected.push(nextPrompt);
+    selectedCategoryKeys.add(getPromptCategoryKey(nextPrompt));
     const nextPromptIndex = remaining.findIndex((prompt) => prompt.id === nextPrompt.id);
     if (nextPromptIndex >= 0) {
       remaining.splice(nextPromptIndex, 1);
@@ -1966,7 +1992,19 @@ export function AnswerLoop() {
     const sameDifficultyCandidates = sourcePrompts.filter(
       (prompt) => prompt.difficulty === selectedDifficulty
     );
-    const desiredCount = prompts.length > 0 ? prompts.length : 3;
+    const currentPromptIds = new Set(prompts.map((prompt) => prompt.id));
+    const refreshCandidates = sameDifficultyCandidates.filter(
+      (prompt) => !currentPromptIds.has(prompt.id)
+    );
+    const desiredCount = Math.min(
+      prompts.length > 0 ? prompts.length : 3,
+      countDistinctPromptCategories(refreshCandidates)
+    );
+
+    if (desiredCount === 0) {
+      setError("이 난이도에서 보여드릴 질문을 아직 고르지 못했어요.");
+      return;
+    }
 
     const nextPrompts = pickLeastOverlappingPromptSet(
       prompts,
@@ -1976,7 +2014,7 @@ export function AnswerLoop() {
     );
 
     if (nextPrompts.length < desiredCount) {
-      setError("이 난이도에서 새로 보여드릴 질문 3개를 아직 고르지 못했어요.");
+      setError("이 난이도에서 새로 보여드릴 다른 카테고리 질문을 아직 고르지 못했어요.");
       return;
     }
 

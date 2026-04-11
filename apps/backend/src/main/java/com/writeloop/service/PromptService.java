@@ -17,10 +17,13 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -69,8 +72,7 @@ public class PromptService {
         List<PromptEntity> shuffledPool = new ArrayList<>(exactDifficultyPrompts);
         Collections.shuffle(shuffledPool, new Random((today + ":" + difficulty.name()).hashCode()));
 
-        List<PromptDto> selected = shuffledPool.stream()
-                .limit(3)
+        List<PromptDto> selected = selectDistinctCategoryPrompts(shuffledPool, 3).stream()
                 .map(this::toDto)
                 .toList();
 
@@ -99,6 +101,55 @@ public class PromptService {
                 promptCoachProfileSupport.toDto(prompt),
                 promptTaskMetaSupport.toDto(prompt)
         );
+    }
+
+    private List<PromptEntity> selectDistinctCategoryPrompts(List<PromptEntity> prompts, int limit) {
+        if (limit <= 0 || prompts.isEmpty()) {
+            return List.of();
+        }
+
+        List<PromptEntity> selected = new ArrayList<>();
+        Set<String> selectedCategoryKeys = new HashSet<>();
+
+        for (PromptEntity prompt : prompts) {
+            if (selected.size() >= limit) {
+                break;
+            }
+
+            String categoryKey = resolvePromptCategoryKey(prompt);
+            if (!categoryKey.isBlank() && selectedCategoryKeys.contains(categoryKey)) {
+                continue;
+            }
+
+            selected.add(prompt);
+            if (!categoryKey.isBlank()) {
+                selectedCategoryKeys.add(categoryKey);
+            }
+        }
+
+        return selected;
+    }
+
+    private String resolvePromptCategoryKey(PromptEntity prompt) {
+        if (prompt == null) {
+            return "";
+        }
+
+        String topicCategory = normalizePromptCategoryKey(prompt.getTopicCategory());
+        if (!topicCategory.isBlank()) {
+            return topicCategory;
+        }
+
+        String topic = normalizePromptCategoryKey(prompt.getTopic());
+        if (!topic.isBlank()) {
+            return topic;
+        }
+
+        return prompt.getId() == null ? "" : prompt.getId().trim().toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizePromptCategoryKey(String value) {
+        return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
     }
 
     private PromptHintDto toHintDto(PromptHintEntity hint, List<PromptHintItemEntity> persistedItems) {

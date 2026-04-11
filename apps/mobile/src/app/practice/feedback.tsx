@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { PracticeFeedbackContent } from "@/components/practice-feedback-content";
+import { buildIncompleteLoopPromptSnapshot, saveIncompleteLoop } from "@/lib/incomplete-loop";
 import { buildLoginHref } from "@/lib/login-redirect";
 import {
   getPracticeFeedbackState,
@@ -13,7 +14,7 @@ import { isDailyDifficulty } from "@/lib/practice";
 import { useSession } from "@/lib/session";
 import type { DailyDifficulty } from "@/lib/types";
 
-const coachMascotImage = require("@/assets/images/coach-mascote-face.png");
+const completionMascotImage = require("@/assets/images/feedback-completion-mascot.png");
 
 function trimText(value?: string | null) {
   return value?.trim() ?? "";
@@ -91,11 +92,21 @@ export default function PracticeFeedbackScreen() {
     });
   }
 
-  function handleRewrite() {
+  async function handleRewrite() {
     if (!feedbackState) {
       handleBackToQuestions();
       return;
     }
+
+    await saveIncompleteLoop({
+      promptId: feedbackState.prompt.id,
+      difficulty: requestedDifficulty,
+      step: "rewrite",
+      draftType: "REWRITE",
+      sessionId: feedbackState.feedback.sessionId,
+      updatedAt: new Date().toISOString(),
+      promptSnapshot: buildIncompleteLoopPromptSnapshot(feedbackState.prompt)
+    });
 
     router.push({
       pathname: "/practice/write",
@@ -130,7 +141,7 @@ export default function PracticeFeedbackScreen() {
             <Text style={styles.ghostButtonText}>질문 목록으로</Text>
           </Pressable>
           {feedbackState ? (
-            <Pressable style={styles.ghostButton} onPress={handleRewrite}>
+            <Pressable style={styles.ghostButton} onPress={() => void handleRewrite()}>
               <Text style={styles.ghostButtonText}>다시 써보기</Text>
             </Pressable>
           ) : null}
@@ -168,17 +179,16 @@ export default function PracticeFeedbackScreen() {
                       <View style={styles.completionBubble}>
                         <Text style={styles.completionHeadline}>{completionHeadline}</Text>
                       </View>
-                      <View style={styles.completionBubbleTail} />
                     </View>
 
                     <View style={styles.completionMascotFrame}>
-                      <Image source={coachMascotImage} style={styles.completionMascot} />
+                      <Image source={completionMascotImage} style={styles.completionMascot} />
                     </View>
                   </View>
                 </View>
               ) : null}
 
-              <Pressable style={styles.primaryButton} onPress={handleRewrite}>
+              <Pressable style={styles.primaryButton} onPress={() => void handleRewrite()}>
                 <Text style={styles.primaryButtonText}>{rewriteButtonLabel}</Text>
               </Pressable>
 
@@ -245,11 +255,10 @@ const styles = StyleSheet.create({
   completionSpeechRow: {
     flexDirection: "row",
     alignItems: "flex-end",
-    gap: 10
+    gap: 14
   },
   completionBubbleWrap: {
-    flex: 1,
-    position: "relative"
+    flex: 1
   },
   completionBubble: {
     backgroundColor: "#FFFEFC",
@@ -259,18 +268,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     paddingVertical: 20
   },
-  completionBubbleTail: {
-    position: "absolute",
-    right: -8,
-    bottom: 18,
-    width: 18,
-    height: 18,
-    backgroundColor: "#FFFEFC",
-    borderRightWidth: 2,
-    borderBottomWidth: 2,
-    borderColor: "#F2994A",
-    transform: [{ rotate: "-45deg" }]
-  },
   completionHeadline: {
     fontSize: 18,
     lineHeight: 28,
@@ -278,19 +275,20 @@ const styles = StyleSheet.create({
     color: "#2F312D"
   },
   completionMascotFrame: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
     borderWidth: 2,
     borderColor: "#E0A45E",
     backgroundColor: "#FFFEFC",
     alignItems: "center",
     justifyContent: "center",
-    padding: 6
+    padding: 3,
+    flexShrink: 0
   },
   completionMascot: {
-    width: 64,
-    height: 64,
+    width: 104,
+    height: 104,
     resizeMode: "contain"
   },
   primaryButton: {

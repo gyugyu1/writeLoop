@@ -1,5 +1,6 @@
 import { router, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Image,
   Modal,
@@ -12,10 +13,13 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
-import { getTodayWritingStatus } from "@/lib/api";
+import { getTodayWritingStatus, getWritingDraft } from "@/lib/api";
 import { difficultyDeck } from "@/lib/difficulty";
+import { clearIncompleteLoop, getIncompleteLoop, type IncompleteLoopState } from "@/lib/incomplete-loop";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
+import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
+import { getLocalWritingDraft } from "@/lib/writing-drafts";
 import type { DailyDifficulty, TodayWritingStatus } from "@/lib/types";
 
 type WeekDayChip = {
@@ -28,6 +32,12 @@ type WeekDayChip = {
 type HomeGuideStep = {
   title: string;
   body: string;
+};
+
+type IncompleteLoopCopy = {
+  title: string;
+  body: string;
+  ctaLabel: string;
 };
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -58,6 +68,54 @@ function formatWeekDay(date: Date) {
 
 function toDateKey(date: Date) {
   return date.toISOString().slice(0, 10);
+}
+
+function getIncompleteLoopCopy(step: IncompleteLoopState["step"]): IncompleteLoopCopy {
+  switch (step) {
+    case "feedback":
+      return {
+        title: "받아둔 피드백이 남아 있어요",
+        body: "고쳐볼 점을 확인하고 다음 루프로 이어갈 수 있어요.",
+        ctaLabel: "피드백 이어보기"
+      };
+    case "rewrite":
+      return {
+        title: "다시 쓰기 초안이 남아 있어요",
+        body: "방금 다듬던 답안을 이어서 마무리해볼 수 있어요.",
+        ctaLabel: "다시 쓰기"
+      };
+    case "answer":
+    default:
+      return {
+        title: "작성하던 답안이 있어요",
+        body: "멈춘 지점부터 바로 이어서 써볼 수 있어요.",
+        ctaLabel: "이어서 쓰기"
+      };
+  }
+}
+
+function getIncompleteLoopInlineTitle(step: IncompleteLoopState["step"]) {
+  switch (step) {
+    case "feedback":
+      return "받아둔 피드백이 있어요";
+    case "rewrite":
+      return "다시 쓰던 답안이 있어요";
+    case "answer":
+    default:
+      return "쓰던 답안이 있어요";
+  }
+}
+
+function formatIncompleteLoopSavedAt(updatedAt: string) {
+  const savedAt = new Date(updatedAt);
+  if (Number.isNaN(savedAt.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    hour: "numeric",
+    minute: "2-digit"
+  }).format(savedAt);
 }
 
 function buildWeekChips(todayStatus: TodayWritingStatus | null): WeekDayChip[] {
@@ -92,12 +150,64 @@ function buildWeekChips(todayStatus: TodayWritingStatus | null): WeekDayChip[] {
 export default function HomeScreen() {
   const { currentUser, refreshSession } = useSession();
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
+  const [incompleteLoop, setIncompleteLoop] = useState<IncompleteLoopState | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusError, setStatusError] = useState("");
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const historyRoute: Href = currentUser ? "/records" : buildLoginHref("/records");
 
   const weekChips = useMemo(() => buildWeekChips(todayStatus), [todayStatus]);
+  const incompleteLoopCopy = useMemo(
+    () => (incompleteLoop ? getIncompleteLoopCopy(incompleteLoop.step) : null),
+    [incompleteLoop]
+  );
+  const incompleteLoopSavedAt = useMemo(
+    () => (incompleteLoop ? formatIncompleteLoopSavedAt(incompleteLoop.updatedAt) : ""),
+    [incompleteLoop]
+  );
+  const incompleteLoopInlineNote = useMemo(() => {
+    if (!incompleteLoop) {
+      return "";
+    }
+
+    return [getIncompleteLoopInlineTitle(incompleteLoop.step), incompleteLoopSavedAt]
+      .filter(Boolean)
+      .join(" · ");
+  }, [incompleteLoop, incompleteLoopSavedAt]);
+  const incompleteLoopRoute = useMemo<Href | null>(() => {
+    if (!incompleteLoop) {
+      return null;
+    }
+
+    if (incompleteLoop.step === "feedback") {
+      return {
+        pathname: "/practice/feedback",
+        params: {
+          difficulty: incompleteLoop.difficulty,
+          promptId: incompleteLoop.promptId
+        }
+      };
+    }
+
+    if (incompleteLoop.step === "rewrite") {
+      return {
+        pathname: "/practice/write",
+        params: {
+          difficulty: incompleteLoop.difficulty,
+          promptId: incompleteLoop.promptId,
+          mode: "rewrite"
+        }
+      };
+    }
+
+    return {
+      pathname: "/practice/write",
+      params: {
+        difficulty: incompleteLoop.difficulty,
+        promptId: incompleteLoop.promptId
+      }
+    };
+  }, [incompleteLoop]);
 
   const loadTodayStatus = useCallback(async () => {
     try {
@@ -120,6 +230,67 @@ export default function HomeScreen() {
     void loadTodayStatus();
   }, [currentUser, loadTodayStatus]);
 
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+
+      const loadIncompleteLoop = async () => {
+        const nextLoop = await getIncompleteLoop();
+        if (!nextLoop) {
+          if (!cancelled) {
+            setIncompleteLoop(null);
+          }
+          return;
+        }
+
+        if (nextLoop.step === "feedback") {
+          const feedbackState = await hydratePracticeFeedbackState(nextLoop.difficulty, nextLoop.promptId);
+          if (!feedbackState) {
+            await clearIncompleteLoop();
+            if (!cancelled) {
+              setIncompleteLoop(null);
+            }
+            return;
+          }
+        } else {
+          const draftType = nextLoop.draftType ?? (nextLoop.step === "rewrite" ? "REWRITE" : "ANSWER");
+          const localDraft = await getLocalWritingDraft(nextLoop.promptId, draftType);
+
+          if (currentUser) {
+            try {
+              const serverDraft = await getWritingDraft(nextLoop.promptId, draftType);
+              if (!localDraft && !serverDraft) {
+                await clearIncompleteLoop();
+                if (!cancelled) {
+                  setIncompleteLoop(null);
+                }
+                return;
+              }
+            } catch {
+              // Keep the card when the server check fails temporarily.
+            }
+          } else if (!localDraft) {
+            await clearIncompleteLoop();
+            if (!cancelled) {
+              setIncompleteLoop(null);
+            }
+            return;
+          }
+        }
+
+        if (!cancelled) {
+          setIncompleteLoop(nextLoop);
+        }
+      };
+
+      void loadIncompleteLoop();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [currentUser])
+  );
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     const user = await refreshSession();
@@ -141,6 +312,14 @@ export default function HomeScreen() {
     });
   }, []);
 
+  const handleResumeLoop = useCallback(() => {
+    if (!incompleteLoopRoute) {
+      return;
+    }
+
+    router.push(incompleteLoopRoute);
+  }, [incompleteLoopRoute]);
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <View style={styles.screen}>
@@ -160,10 +339,8 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <Pressable
-          style={styles.statusPanel}
-          onPress={() => router.push(historyRoute)}
-        >
+        <View style={styles.statusPanel}>
+          <Pressable style={styles.statusPanelMain} onPress={() => router.push(historyRoute)}>
           <View style={styles.statusLead}>
             <View style={styles.statusIconCircle}>
               <Image source={homeStatusMascotImage} style={styles.statusMascotImage} />
@@ -174,7 +351,7 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.statusDescription}>
                 {currentUser
-                  ? `현재 ${todayStatus?.streakDays ?? 0}일 연속으로 문장을 차분하게 쌓아가고 계십니다.`
+                  ? `현재 ${todayStatus?.streakDays ?? 0}일 연속으로 문장을 차분하게 쌓아가고 있어요.`
                   : "부담 없이 첫 루프를 시작하고 오늘의 작문 감각을 깨워 보세요."}
               </Text>
               {currentUser ? (
@@ -208,7 +385,15 @@ export default function HomeScreen() {
               </View>
             ))}
           </View>
-        </Pressable>
+          </Pressable>
+
+        {incompleteLoop && incompleteLoopCopy ? (
+          <Pressable style={styles.statusResumeSection} onPress={handleResumeLoop}>
+            <Text style={styles.resumeActionText}>{`${incompleteLoopCopy.ctaLabel} >`}</Text>
+            <Text style={styles.resumeMeta}>{incompleteLoopInlineNote}</Text>
+          </Pressable>
+        ) : null}
+        </View>
 
         <View style={styles.difficultySectionHeader}>
           <View style={styles.difficultySectionTopRow}>
@@ -370,7 +555,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FDFDFB",
     borderRadius: 34,
     padding: 22,
-    gap: 18,
+    gap: 0,
     borderWidth: 1,
     borderColor: "#EBDCCB",
     shadowColor: "#D89A51",
@@ -378,6 +563,9 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
     elevation: 3
+  },
+  statusPanelMain: {
+    gap: 18
   },
   statusLead: {
     flexDirection: "row",
@@ -423,6 +611,26 @@ const styles = StyleSheet.create({
   statusError: {
     fontSize: 13,
     color: "#B34A2B"
+  },
+  statusResumeSection: {
+    marginTop: 18,
+    borderRadius: 20,
+    backgroundColor: "#FFF1DB",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 4
+  },
+  resumeActionText: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "900",
+    color: "#9A611E"
+  },
+  resumeMeta: {
+    fontSize: 11,
+    lineHeight: 16,
+    fontWeight: "700",
+    color: "#8B7761"
   },
   weekRow: {
     flexDirection: "row",

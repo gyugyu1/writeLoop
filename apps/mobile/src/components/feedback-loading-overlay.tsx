@@ -7,7 +7,7 @@ type FeedbackLoadingOverlayProps = {
   message: string;
 };
 
-const mascotImage = require("@/assets/images/coach-mascote-face.png");
+const mascotImage = require("@/assets/images/feedback-loading-mascot-cutout.png");
 const DOT_COUNT = 3;
 
 export default function FeedbackLoadingOverlay({
@@ -203,28 +203,28 @@ const styles = StyleSheet.create({
     elevation: 8
   },
   illustrationFrame: {
-    width: 148,
-    height: 148,
+    width: 164,
+    height: 164,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12
   },
   halo: {
     position: "absolute",
-    width: 148,
-    height: 148,
+    width: 152,
+    height: 152,
     borderRadius: 999,
     backgroundColor: "#F9C27C"
   },
   mascotFrame: {
-    width: 116,
-    height: 116,
+    width: 132,
+    height: 132,
     alignItems: "center",
     justifyContent: "center"
   },
   mascotImage: {
-    width: 116,
-    height: 116
+    width: 132,
+    height: 132
   },
   title: {
     fontSize: 22,

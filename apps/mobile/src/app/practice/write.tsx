@@ -32,6 +32,12 @@ import {
 } from "@/lib/api";
 import { getOrCreateGuestId } from "@/lib/guest-id";
 import {
+  buildIncompleteLoopPromptSnapshot,
+  clearIncompleteLoopForPrompt,
+  saveIncompleteLoop,
+  type IncompleteLoopStep
+} from "@/lib/incomplete-loop";
+import {
   getPracticeFeedbackState,
   hydratePracticeFeedbackState,
   savePracticeFeedbackState
@@ -422,6 +428,9 @@ export default function PracticeWriteScreen() {
       await clearPersistedDraft(selectedPrompt.id, activeDraftType);
       setDraftStatusMessage("");
       setFeedback(nextFeedback);
+      await saveIncompleteLoopSnapshot("feedback", selectedPrompt, new Date().toISOString(), {
+        sessionId: nextFeedback.sessionId
+      });
       router.push({
         pathname: "/practice/feedback",
         params: {
@@ -537,6 +546,29 @@ export default function PracticeWriteScreen() {
     [activeDraftType, feedback?.sessionId, requestedDifficulty, rewriteSeedAnswer]
   );
 
+  const saveIncompleteLoopSnapshot = useCallback(
+    async (
+      step: IncompleteLoopStep,
+      prompt: Prompt,
+      updatedAt: string,
+      options?: {
+        draftType?: WritingDraftType | null;
+        sessionId?: string | null;
+      }
+    ) => {
+      await saveIncompleteLoop({
+        promptId: prompt.id,
+        difficulty: requestedDifficulty,
+        step,
+        draftType: options?.draftType ?? null,
+        sessionId: options?.sessionId ?? feedback?.sessionId ?? undefined,
+        updatedAt,
+        promptSnapshot: buildIncompleteLoopPromptSnapshot(prompt)
+      });
+    },
+    [feedback?.sessionId, requestedDifficulty]
+  );
+
   /*
   const persistDraftSnapshot = useCallback(
     async (draftText: string, prompt: Prompt | null, allowUiUpdate = true) => {
@@ -553,6 +585,16 @@ export default function PracticeWriteScreen() {
       if (!draftText.trim()) {
         cancelDraftAutosave();
         await clearPersistedDraft(prompt.id, activeDraftType);
+        if (activeDraftType === "REWRITE" && feedback) {
+          await saveIncompleteLoopSnapshot("feedback", prompt, new Date().toISOString(), {
+            sessionId: feedback.sessionId
+          });
+        } else {
+          await clearIncompleteLoopForPrompt(
+            prompt.id,
+            activeDraftType === "REWRITE" ? "rewrite" : "answer"
+          );
+        }
         updateDraftStatus("");
         return;
       }
@@ -619,6 +661,16 @@ export default function PracticeWriteScreen() {
       if (!draftText.trim()) {
         cancelDraftAutosave();
         await clearPersistedDraft(prompt.id, activeDraftType);
+        if (activeDraftType === "REWRITE" && feedback) {
+          await saveIncompleteLoopSnapshot("feedback", prompt, new Date().toISOString(), {
+            sessionId: feedback.sessionId
+          });
+        } else {
+          await clearIncompleteLoopForPrompt(
+            prompt.id,
+            activeDraftType === "REWRITE" ? "rewrite" : "answer"
+          );
+        }
         updateDraftStatus("");
         return;
       }
@@ -629,23 +681,52 @@ export default function PracticeWriteScreen() {
         if (currentUser) {
           const savedDraft = await saveWritingDraft(prompt.id, draftPayload);
           await deleteLocalWritingDraft(prompt.id, activeDraftType);
+          await saveIncompleteLoopSnapshot(
+            activeDraftType === "REWRITE" ? "rewrite" : "answer",
+            prompt,
+            savedDraft.updatedAt,
+            {
+              draftType: activeDraftType,
+              sessionId: draftPayload.sessionId
+            }
+          );
           updateDraftStatus(`Saved at ${formatDraftSavedAt(savedDraft.updatedAt)}`);
           return;
         }
 
+        const localUpdatedAt = new Date().toISOString();
         await saveLocalWritingDraft({
           promptId: prompt.id,
-          updatedAt: new Date().toISOString(),
+          updatedAt: localUpdatedAt,
           ...draftPayload
         });
+        await saveIncompleteLoopSnapshot(
+          activeDraftType === "REWRITE" ? "rewrite" : "answer",
+          prompt,
+          localUpdatedAt,
+          {
+            draftType: activeDraftType,
+            sessionId: draftPayload.sessionId
+          }
+        );
         updateDraftStatus("Saved on this device");
       } catch {
         try {
+          const localUpdatedAt = new Date().toISOString();
           await saveLocalWritingDraft({
             promptId: prompt.id,
-            updatedAt: new Date().toISOString(),
+            updatedAt: localUpdatedAt,
             ...draftPayload
           });
+          await saveIncompleteLoopSnapshot(
+            activeDraftType === "REWRITE" ? "rewrite" : "answer",
+            prompt,
+            localUpdatedAt,
+            {
+              draftType: activeDraftType,
+              sessionId: draftPayload.sessionId
+            }
+          );
           updateDraftStatus(
             currentUser ? "Server sync failed, but the draft was saved on this device." : "Saved on this device"
           );
@@ -660,6 +741,9 @@ export default function PracticeWriteScreen() {
       activeDraftType,
       buildDraftPayload,
       clearPersistedDraft,
+      clearIncompleteLoopForPrompt,
+      feedback,
+      saveIncompleteLoopSnapshot,
       cancelDraftAutosave,
       currentUser,
       isDraftPersistencePaused,
@@ -689,6 +773,16 @@ export default function PracticeWriteScreen() {
       const persist = async () => {
         if (!answer.trim()) {
           await clearPersistedDraft(selectedPrompt.id, activeDraftType);
+          if (activeDraftType === "REWRITE" && feedback) {
+            await saveIncompleteLoopSnapshot("feedback", selectedPrompt, new Date().toISOString(), {
+              sessionId: feedback.sessionId
+            });
+          } else {
+            await clearIncompleteLoopForPrompt(
+              selectedPrompt.id,
+              activeDraftType === "REWRITE" ? "rewrite" : "answer"
+            );
+          }
           if (!cancelled) {
             setDraftStatusMessage("");
           }
@@ -701,27 +795,56 @@ export default function PracticeWriteScreen() {
           if (currentUser) {
             const savedDraft = await saveWritingDraft(selectedPrompt.id, draftPayload);
             await deleteLocalWritingDraft(selectedPrompt.id, activeDraftType);
+            await saveIncompleteLoopSnapshot(
+              activeDraftType === "REWRITE" ? "rewrite" : "answer",
+              selectedPrompt,
+              savedDraft.updatedAt,
+              {
+                draftType: activeDraftType,
+                sessionId: draftPayload.sessionId
+              }
+            );
             if (!cancelled) {
               setDraftStatusMessage(`임시저장됨 · ${formatDraftSavedAt(savedDraft.updatedAt)}`);
             }
             return;
           }
 
+          const localUpdatedAt = new Date().toISOString();
           await saveLocalWritingDraft({
             promptId: selectedPrompt.id,
-            updatedAt: new Date().toISOString(),
+            updatedAt: localUpdatedAt,
             ...draftPayload
           });
+          await saveIncompleteLoopSnapshot(
+            activeDraftType === "REWRITE" ? "rewrite" : "answer",
+            selectedPrompt,
+            localUpdatedAt,
+            {
+              draftType: activeDraftType,
+              sessionId: draftPayload.sessionId
+            }
+          );
           if (!cancelled) {
             setDraftStatusMessage("이 기기에 임시저장됨");
           }
         } catch {
           try {
+            const localUpdatedAt = new Date().toISOString();
             await saveLocalWritingDraft({
               promptId: selectedPrompt.id,
-              updatedAt: new Date().toISOString(),
+              updatedAt: localUpdatedAt,
               ...draftPayload
             });
+            await saveIncompleteLoopSnapshot(
+              activeDraftType === "REWRITE" ? "rewrite" : "answer",
+              selectedPrompt,
+              localUpdatedAt,
+              {
+                draftType: activeDraftType,
+                sessionId: draftPayload.sessionId
+              }
+            );
             if (!cancelled) {
               setDraftStatusMessage(
                 currentUser ? "서버 저장이 불안정해 이 기기에 임시저장했어요." : "이 기기에 임시저장됨"
@@ -753,6 +876,7 @@ export default function PracticeWriteScreen() {
     answer,
     buildDraftPayload,
     clearPersistedDraft,
+    clearIncompleteLoopForPrompt,
     cancelDraftAutosave,
     currentUser,
     feedback,
@@ -762,6 +886,7 @@ export default function PracticeWriteScreen() {
     isSubmitting,
     requestedDifficulty,
     rewriteSeedAnswer,
+    saveIncompleteLoopSnapshot,
     selectedPrompt
   ]);
 

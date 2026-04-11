@@ -89,6 +89,10 @@ export default function PracticeQuestionScreen() {
     });
   }
 
+  function handleBackToDifficultySelection() {
+    router.replace("/");
+  }
+
   async function handleRefreshPromptList() {
     try {
       setIsRefreshingQuestions(true);
@@ -153,7 +157,11 @@ export default function PracticeQuestionScreen() {
           <View style={styles.heroSection}>
             <View style={styles.heroTopRow}>
               <Text style={styles.heroTitle}>질문 선택</Text>
-              <Pressable
+              <View style={styles.heroActionGroup}>
+                <Pressable style={styles.heroSecondaryButton} onPress={handleBackToDifficultySelection}>
+                  <Text style={styles.heroSecondaryButtonText}>난이도 선택</Text>
+                </Pressable>
+                <Pressable
                 style={[styles.heroActionButton, isRefreshingQuestions && styles.disabledButton]}
                 onPress={() => void handleRefreshPromptList()}
                 disabled={isRefreshingQuestions}
@@ -163,7 +171,8 @@ export default function PracticeQuestionScreen() {
                 ) : (
                   <Text style={styles.heroActionButtonText}>새 질문</Text>
                 )}
-              </Pressable>
+                </Pressable>
+              </View>
             </View>
             <View style={styles.heroUnderline} />
           </View>
@@ -238,9 +247,14 @@ const styles = StyleSheet.create({
   },
   heroTopRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12
+  },
+  heroActionGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8
   },
   heroTitle: {
     fontSize: 44,
@@ -248,6 +262,19 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: -2,
     color: "#232128"
+  },
+  heroSecondaryButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E6D2BC",
+    backgroundColor: "#FFFEFC",
+    paddingHorizontal: 14,
+    paddingVertical: 8
+  },
+  heroSecondaryButtonText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#8A6431"
   },
   heroActionButton: {
     borderRadius: 999,

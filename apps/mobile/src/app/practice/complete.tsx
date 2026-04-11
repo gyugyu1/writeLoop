@@ -20,27 +20,28 @@ import {
   hydratePracticeFeedbackState,
   type PracticeFeedbackState
 } from "@/lib/practice-feedback-state";
+import { clearIncompleteLoop } from "@/lib/incomplete-loop";
 import { isDailyDifficulty } from "@/lib/practice";
 import { useSession } from "@/lib/session";
 import { deleteLocalWritingDraft } from "@/lib/writing-drafts";
 import type { DailyDifficulty, Prompt, TodayWritingStatus } from "@/lib/types";
 
 const completionMascotImage = require("@/assets/images/complete-excellent-cutout.png");
-const CONFETTI_COLORS = ["#FF9F1A", "#FFD57A", "#2F7CF6", "#173058", "#FFFFFF"] as const;
-const CONFETTI_BURST_DELAYS = [0, 240, 480, 760, 1040] as const;
-const CONFETTI_CYCLE_DURATION = 3600;
+const CONFETTI_COLORS = ["#FF9F1A", "#FFD166", "#2F7CF6", "#2251A5", "#FFF4CC"] as const;
+const CONFETTI_BURST_DELAYS = [0, 320, 760, 1220] as const;
+const CONFETTI_CYCLE_DURATION = 4300;
 const CONFETTI_EMITTERS = [
-  { key: "left", originX: 20, originY: 126, angle: 58, spread: 76, count: 12, power: 150, delay: 0 },
-  { key: "right", originX: 260, originY: 126, angle: 122, spread: 76, count: 12, power: 150, delay: 0 },
+  { key: "left", originX: 18, originY: 130, angle: 58, spread: 70, count: 10, power: 158, delay: 0 },
+  { key: "right", originX: 262, originY: 130, angle: 122, spread: 70, count: 10, power: 158, delay: 0 },
   {
     key: "center",
     originX: 140,
-    originY: 102,
+    originY: 98,
     angle: 90,
-    spread: 114,
-    count: 8,
-    power: 118,
-    delay: 70
+    spread: 92,
+    count: 6,
+    power: 124,
+    delay: 120
   }
 ] as const;
 
@@ -53,6 +54,8 @@ type CelebrationConfettiPiece = {
   height: number;
   apexX: number;
   apexY: number;
+  midX: number;
+  midY: number;
   endX: number;
   endY: number;
   rotationStart: number;
@@ -71,27 +74,31 @@ function buildCelebrationConfettiPieces(): CelebrationConfettiPiece[] {
     CONFETTI_EMITTERS.flatMap((emitter, emitterIndex) => {
       return Array.from({ length: emitter.count }, (_, pieceIndex) => {
         const progress = pieceIndex / Math.max(emitter.count - 1, 1);
-        const angleJitter = ((burstIndex + pieceIndex) % 3) * 4 - 4;
+        const wave = Math.sin((pieceIndex + 1) * 1.35 + burstIndex * 0.9 + emitterIndex * 0.7);
+        const drift = Math.cos((pieceIndex + 1) * 0.92 + burstIndex * 1.1 - emitterIndex * 0.5);
+        const angleJitter = wave * (emitter.key === "center" ? 8 : 6);
         const angle = toRadians(
           emitter.angle - emitter.spread / 2 + emitter.spread * progress + angleJitter
         );
-        const travel = emitter.power * (0.94 + ((burstIndex + pieceIndex) % 5) * 0.05);
+        const travel = emitter.power * (0.86 + ((drift + 1) / 2) * 0.26);
         const burstOffsetX =
           emitter.key === "center"
-            ? (burstIndex % 2 === 0 ? -1 : 1) * (6 + burstIndex * 2)
+            ? drift * 8 + (burstIndex - 1.5) * 3
             : emitter.key === "left"
-              ? -burstIndex * 2
-              : burstIndex * 2;
-        const burstOffsetY = burstIndex % 2 === 0 ? 0 : 4;
-        const apexX = Math.cos(angle) * travel * (emitter.key === "center" ? 0.82 : 1);
-        const apexY = -Math.sin(angle) * travel * (emitter.key === "center" ? 0.96 : 1);
-        const endX = apexX * (1.14 + ((pieceIndex % 4) - 1.5) * 0.1);
-        const endY = Math.abs(apexY) * (0.82 + (pieceIndex % 4) * 0.06) + 30 + burstIndex * 6;
+              ? -burstIndex * 4 + drift * 3
+              : burstIndex * 4 + drift * 3;
+        const burstOffsetY = Math.sin((burstIndex + 1) * 1.4 + pieceIndex * 0.55) * 3 + (burstIndex % 2) * 2;
+        const apexX = Math.cos(angle) * travel * (emitter.key === "center" ? 0.76 : 1);
+        const apexY = -Math.sin(angle) * travel * (emitter.key === "center" ? 0.88 : 1);
+        const midX = apexX * (0.76 + drift * 0.08);
+        const midY = apexY * (0.9 + ((wave + 1) / 2) * 0.08) - 6;
+        const endX = apexX * (1.08 + drift * 0.18);
+        const endY = Math.abs(apexY) * (0.9 + ((wave + 1) / 2) * 0.16) + 44 + burstIndex * 8;
         const isRound = pieceIndex % 6 === 0;
-        const width = isRound ? 8 + (burstIndex % 2) : pieceIndex % 3 === 0 ? 14 : 12;
-        const height = isRound ? width : pieceIndex % 2 === 0 ? 20 : 16;
-        const rotationStart = (pieceIndex % 2 === 0 ? -1 : 1) * (24 + pieceIndex * 11);
-        const rotationEnd = rotationStart + (pieceIndex % 2 === 0 ? 420 : -420);
+        const width = isRound ? 7 + (pieceIndex % 3) : pieceIndex % 4 === 0 ? 5 : pieceIndex % 3 === 0 ? 13 : 11;
+        const height = isRound ? width : pieceIndex % 4 === 0 ? 18 : pieceIndex % 2 === 0 ? 16 : 12;
+        const rotationStart = wave * 34 + (pieceIndex % 2 === 0 ? -16 : 16);
+        const rotationEnd = rotationStart + (pieceIndex % 2 === 0 ? 300 + burstIndex * 22 : -300 - burstIndex * 22);
 
         return {
           key: `${emitter.key}-${burstIndex}-${pieceIndex}`,
@@ -102,12 +109,14 @@ function buildCelebrationConfettiPieces(): CelebrationConfettiPiece[] {
           height,
           apexX,
           apexY,
+          midX,
+          midY,
           endX,
           endY,
           rotationStart,
           rotationEnd,
-          duration: 1180 + burstIndex * 90 + (pieceIndex % 3) * 80,
-          delay: burstDelay + emitter.delay + pieceIndex * 12,
+          duration: 1260 + burstIndex * 110 + (pieceIndex % 4) * 90,
+          delay: burstDelay + emitter.delay + pieceIndex * 16,
           isRound
         };
       });
@@ -287,7 +296,7 @@ function CelebrationFireworks() {
           Animated.timing(value, {
             toValue: 1,
             duration: piece.duration,
-            easing: Easing.out(Easing.cubic),
+            easing: Easing.in(Easing.quad),
             useNativeDriver: true
           }),
           Animated.timing(value, {
@@ -313,24 +322,24 @@ function CelebrationFireworks() {
       {CELEBRATION_CONFETTI_PIECES.map((piece, index) => {
         const progress = progressValues[index];
         const translateX = progress.interpolate({
-          inputRange: [0, 0.28, 1],
-          outputRange: [0, piece.apexX, piece.endX]
+          inputRange: [0, 0.58, 1],
+          outputRange: [piece.midX, piece.endX * 0.88, piece.endX]
         });
         const translateY = progress.interpolate({
-          inputRange: [0, 0.28, 1],
-          outputRange: [0, piece.apexY, piece.endY]
+          inputRange: [0, 0.58, 1],
+          outputRange: [piece.midY, piece.endY * 0.56, piece.endY]
         });
         const rotate = progress.interpolate({
           inputRange: [0, 1],
           outputRange: [`${piece.rotationStart}deg`, `${piece.rotationEnd}deg`]
         });
         const opacity = progress.interpolate({
-          inputRange: [0, 0.04, 0.68, 1],
-          outputRange: [0, 1, 1, 0]
+          inputRange: [0, 0.04, 0.82, 1],
+          outputRange: [0, 1, 0.72, 0]
         });
         const scale = progress.interpolate({
-          inputRange: [0, 0.14, 1],
-          outputRange: [0.35, 1.18, 0.96]
+          inputRange: [0, 0.12, 0.72, 1],
+          outputRange: [0.86, 1.04, 0.96, 0.8]
         });
 
         return (
@@ -460,6 +469,8 @@ export default function PracticeCompleteScreen() {
     const promptId = feedbackState.prompt.id;
 
     const clearCompletedDrafts = async () => {
+      await clearIncompleteLoop();
+
       if (currentUser) {
         await Promise.allSettled([
           deleteWritingDraft(promptId, "ANSWER"),

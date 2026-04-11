@@ -7,6 +7,7 @@ import com.writeloop.dto.AdminPromptRequestDto;
 import com.writeloop.dto.AdminPromptTopicCatalogDto;
 import com.writeloop.service.AdminPromptService;
 import com.writeloop.service.AuthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -31,38 +32,43 @@ public class AdminPromptController {
     private final AdminPromptService adminPromptService;
 
     @GetMapping
-    public List<AdminPromptDto> findPrompts(HttpSession session) {
-        authService.requireAdmin(session);
+    public List<AdminPromptDto> findPrompts(HttpServletRequest request, HttpSession session) {
+        authService.requireAdmin(request, session);
         return adminPromptService.findAll();
     }
 
     @GetMapping("/topic-catalog")
-    public List<AdminPromptTopicCatalogDto> findTopicCatalog(HttpSession session) {
-        authService.requireAdmin(session);
+    public List<AdminPromptTopicCatalogDto> findTopicCatalog(HttpServletRequest request, HttpSession session) {
+        authService.requireAdmin(request, session);
         return adminPromptService.findTopicCatalog();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public AdminPromptDto createPrompt(@RequestBody AdminPromptRequestDto request, HttpSession session) {
-        authService.requireAdmin(session);
-        return adminPromptService.createPrompt(request);
+    public AdminPromptDto createPrompt(
+            @RequestBody AdminPromptRequestDto promptRequest,
+            HttpServletRequest request,
+            HttpSession session
+    ) {
+        authService.requireAdmin(request, session);
+        return adminPromptService.createPrompt(promptRequest);
     }
 
     @PutMapping("/{promptId}")
     public AdminPromptDto updatePrompt(
             @PathVariable String promptId,
-            @RequestBody AdminPromptRequestDto request,
+            @RequestBody AdminPromptRequestDto promptRequest,
+            HttpServletRequest request,
             HttpSession session
     ) {
-        authService.requireAdmin(session);
-        return adminPromptService.updatePrompt(promptId, request);
+        authService.requireAdmin(request, session);
+        return adminPromptService.updatePrompt(promptId, promptRequest);
     }
 
     @DeleteMapping("/{promptId}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePrompt(@PathVariable String promptId, HttpSession session) {
-        authService.requireAdmin(session);
+    public void deletePrompt(@PathVariable String promptId, HttpServletRequest request, HttpSession session) {
+        authService.requireAdmin(request, session);
         adminPromptService.deletePrompt(promptId);
     }
 
@@ -70,22 +76,24 @@ public class AdminPromptController {
     @ResponseStatus(HttpStatus.CREATED)
     public AdminPromptHintDto createHint(
             @PathVariable String promptId,
-            @RequestBody AdminPromptHintRequestDto request,
+            @RequestBody AdminPromptHintRequestDto hintRequest,
+            HttpServletRequest request,
             HttpSession session
     ) {
-        authService.requireAdmin(session);
-        return adminPromptService.createHint(promptId, request);
+        authService.requireAdmin(request, session);
+        return adminPromptService.createHint(promptId, hintRequest);
     }
 
     @PutMapping("/{promptId}/hints/{hintId}")
     public AdminPromptHintDto updateHint(
             @PathVariable String promptId,
             @PathVariable String hintId,
-            @RequestBody AdminPromptHintRequestDto request,
+            @RequestBody AdminPromptHintRequestDto hintRequest,
+            HttpServletRequest request,
             HttpSession session
     ) {
-        authService.requireAdmin(session);
-        return adminPromptService.updateHint(promptId, hintId, request);
+        authService.requireAdmin(request, session);
+        return adminPromptService.updateHint(promptId, hintId, hintRequest);
     }
 
     @DeleteMapping("/{promptId}/hints/{hintId}")
@@ -93,9 +101,10 @@ public class AdminPromptController {
     public void deleteHint(
             @PathVariable String promptId,
             @PathVariable String hintId,
+            HttpServletRequest request,
             HttpSession session
     ) {
-        authService.requireAdmin(session);
+        authService.requireAdmin(request, session);
         adminPromptService.deleteHint(promptId, hintId);
     }
 }

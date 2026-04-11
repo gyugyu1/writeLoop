@@ -3,6 +3,9 @@ server:
   servlet:
     session:
       timeout: 30m
+      cookie:
+        same-site: ${APP_SESSION_COOKIE_SAME_SITE:Lax}
+        secure: ${APP_SESSION_COOKIE_SECURE:false}
 
 spring:
   datasource:
@@ -64,6 +67,11 @@ app:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://writeloop.localtest.me}
   auth:
     remember-me-days: ${APP_AUTH_REMEMBER_ME_DAYS:30}
+    token-secret: ${APP_AUTH_TOKEN_SECRET:writeloop-dev-token-secret-change-me}
+    access-token-minutes: ${APP_AUTH_ACCESS_TOKEN_MINUTES:15}
+    refresh-token-days: ${APP_AUTH_REFRESH_TOKEN_DAYS:30}
+    mobile-social-code-minutes: ${APP_AUTH_MOBILE_SOCIAL_CODE_MINUTES:5}
+    mobile-redirect-prefixes: ${APP_AUTH_MOBILE_REDIRECT_PREFIXES:writeloop://,exp://}
   admin:
     emails: ${APP_ADMIN_EMAILS:}
   mail:

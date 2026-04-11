@@ -34,6 +34,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -51,16 +52,20 @@ import java.util.stream.Collectors;
 public class AuthService {
 
     public static final String SESSION_USER_ID = "AUTH_USER_ID";
+    public static final String REQUEST_USER_ID_ATTRIBUTE = "AUTH_REQUEST_USER_ID";
     private static final Duration VERIFICATION_CODE_TTL = Duration.ofMinutes(3);
     private static final String SESSION_NAVER_STATE = "NAVER_OAUTH_STATE";
     private static final String SESSION_NAVER_RETURN_TO = "NAVER_OAUTH_RETURN_TO";
     private static final String SESSION_NAVER_REMEMBER_ME = "NAVER_OAUTH_REMEMBER_ME";
+    private static final String SESSION_NAVER_APP_REDIRECT = "NAVER_OAUTH_APP_REDIRECT";
     private static final String SESSION_GOOGLE_STATE = "GOOGLE_OAUTH_STATE";
     private static final String SESSION_GOOGLE_RETURN_TO = "GOOGLE_OAUTH_RETURN_TO";
     private static final String SESSION_GOOGLE_REMEMBER_ME = "GOOGLE_OAUTH_REMEMBER_ME";
+    private static final String SESSION_GOOGLE_APP_REDIRECT = "GOOGLE_OAUTH_APP_REDIRECT";
     private static final String SESSION_KAKAO_STATE = "KAKAO_OAUTH_STATE";
     private static final String SESSION_KAKAO_RETURN_TO = "KAKAO_OAUTH_RETURN_TO";
     private static final String SESSION_KAKAO_REMEMBER_ME = "KAKAO_OAUTH_REMEMBER_ME";
+    private static final String SESSION_KAKAO_APP_REDIRECT = "KAKAO_OAUTH_APP_REDIRECT";
 
     private final UserRepository userRepository;
     private final AnswerSessionRepository answerSessionRepository;
@@ -71,6 +76,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final VerificationMailService verificationMailService;
     private final RememberLoginService rememberLoginService;
+    private final RefreshTokenService refreshTokenService;
+    private final MobileSocialAuthCodeService mobileSocialAuthCodeService;
     private final NaverOAuthService naverOAuthService;
     private final GoogleOAuthService googleOAuthService;
     private final KakaoOAuthService kakaoOAuthService;
@@ -80,6 +87,9 @@ public class AuthService {
 
     @Value("${app.admin.emails:}")
     private String adminEmails;
+
+    @Value("${app.auth.mobile-redirect-prefixes:writeloop://,exp://}")
+    private String mobileRedirectPrefixes;
 
     public AuthNoticeDto register(RegisterRequestDto request) {
         String email = normalizeEmail(request.email());
@@ -315,6 +325,7 @@ public class AuthService {
             passwordResetTokenRepository.saveAll(activeTokens);
         }
         rememberLoginService.revokeAllForUser(user.getId());
+        refreshTokenService.revokeAllForUser(user.getId());
 
         return new AuthNoticeDto(
                 user.getEmail(),
@@ -327,12 +338,61 @@ public class AuthService {
         session.invalidate();
     }
 
+    public AuthResponseDto getCurrentUser(HttpServletRequest request) {
+        Long userId = getCurrentUserIdOrNull(request, request.getSession(false));
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+        }
+        return toResponse(findUserEntity(userId));
+    }
+
     public AuthResponseDto getCurrentUser(HttpSession session) {
         Long userId = getCurrentUserId(session);
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }
         return toResponse(findUserEntity(userId));
+    }
+
+    public AuthResponseDto updateProfile(UpdateProfileRequestDto request, HttpServletRequest httpRequest) {
+        Long userId = getCurrentUserIdOrNull(httpRequest, httpRequest.getSession(false));
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+        }
+
+        UserEntity user = findUserEntity(userId);
+        user.updateDisplayName(normalizeDisplayName(request.displayName()));
+
+        boolean wantsPasswordChange = request.newPassword() != null && !request.newPassword().isBlank();
+        if (wantsPasswordChange) {
+            if (user.getSocialProvider() != null && !user.getSocialProvider().isBlank()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "SOCIAL_PASSWORD_CHANGE_UNSUPPORTED",
+                        "소셜 로그인 계정은 비밀번호를 변경할 수 없어요."
+                );
+            }
+
+            if (request.currentPassword() == null || request.currentPassword().isBlank()) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "CURRENT_PASSWORD_REQUIRED",
+                        "현재 비밀번호를 입력해 주세요."
+                );
+            }
+
+            if (!passwordEncoder.matches(request.currentPassword().trim(), user.getPasswordHash())) {
+                throw new ApiException(
+                        HttpStatus.BAD_REQUEST,
+                        "INVALID_CURRENT_PASSWORD",
+                        "현재 비밀번호가 올바르지 않아요."
+                );
+            }
+
+            user.updatePasswordHash(passwordEncoder.encode(normalizePassword(request.newPassword())));
+        }
+
+        return toResponse(userRepository.save(user));
     }
 
     public AuthResponseDto updateProfile(UpdateProfileRequestDto request, HttpSession session) {
@@ -432,6 +492,7 @@ public class AuthService {
         emailVerificationTokenRepository.deleteAllByUserId(userId);
         passwordResetTokenRepository.deleteAllByUserId(userId);
         rememberLoginService.revokeAllForUser(userId);
+        refreshTokenService.revokeAllForUser(userId);
         userRepository.delete(user);
 
         rememberLoginService.clearRememberedLogin(httpRequest, httpResponse);
@@ -444,13 +505,44 @@ public class AuthService {
         return getCurrentUserId(session);
     }
 
+    public Long getCurrentUserIdOrNull(HttpServletRequest request, HttpSession session) {
+        Long tokenUserId = getRequestUserId(request);
+        if (tokenUserId != null) {
+            return tokenUserId;
+        }
+        if (session == null) {
+            return null;
+        }
+        return getCurrentUserId(session);
+    }
+
+    public Long getCurrentUserIdOrNull(HttpServletRequest request) {
+        return getCurrentUserIdOrNull(request, request.getSession(false));
+    }
+
     public UserEntity findUserEntity(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자 정보를 찾을 수 없어요."));
     }
 
+    public AuthResponseDto toAuthResponse(UserEntity user) {
+        return toResponse(user);
+    }
+
     public void requireAdmin(HttpSession session) {
         Long userId = getCurrentUserId(session);
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+        }
+
+        UserEntity user = findUserEntity(userId);
+        if (!isAdminUser(user)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "관리자 권한이 필요해요.");
+        }
+    }
+
+    public void requireAdmin(HttpServletRequest request, HttpSession session) {
+        Long userId = getCurrentUserIdOrNull(request, session);
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }
@@ -472,6 +564,7 @@ public class AuthService {
     public void startNaverLogin(
             String returnTo,
             boolean rememberMe,
+            String appRedirect,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
@@ -483,6 +576,7 @@ public class AuthService {
         session.setAttribute(SESSION_NAVER_STATE, state);
         session.setAttribute(SESSION_NAVER_RETURN_TO, normalizeReturnTo(returnTo));
         session.setAttribute(SESSION_NAVER_REMEMBER_ME, rememberMe);
+        session.setAttribute(SESSION_NAVER_APP_REDIRECT, normalizeAppRedirectUri(appRedirect));
 
         response.sendRedirect(naverOAuthService.buildAuthorizationUrl(state));
     }
@@ -497,10 +591,12 @@ public class AuthService {
         String expectedState = (String) session.getAttribute(SESSION_NAVER_STATE);
         String returnTo = (String) session.getAttribute(SESSION_NAVER_RETURN_TO);
         boolean rememberMe = Boolean.TRUE.equals(session.getAttribute(SESSION_NAVER_REMEMBER_ME));
+        String appRedirect = (String) session.getAttribute(SESSION_NAVER_APP_REDIRECT);
 
         session.removeAttribute(SESSION_NAVER_STATE);
         session.removeAttribute(SESSION_NAVER_RETURN_TO);
         session.removeAttribute(SESSION_NAVER_REMEMBER_ME);
+        session.removeAttribute(SESSION_NAVER_APP_REDIRECT);
 
         if (expectedState == null || !expectedState.equals(state)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SOCIAL_STATE", "소셜 로그인 상태 검증에 실패했어요.");
@@ -508,14 +604,13 @@ public class AuthService {
 
         NaverOAuthService.NaverUserProfile profile = naverOAuthService.fetchUserProfile(code, state);
         UserEntity user = upsertSocialUser("NAVER", profile.providerUserId(), profile.email(), profile.displayName());
-        completeLogin(user, session, request, response, rememberMe);
-
-        response.sendRedirect(frontendBaseUrl + normalizeReturnTo(returnTo));
+        finishSocialLogin(user, appRedirect, returnTo, rememberMe, session, request, response);
     }
 
     public void startGoogleLogin(
             String returnTo,
             boolean rememberMe,
+            String appRedirect,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
@@ -527,6 +622,7 @@ public class AuthService {
         session.setAttribute(SESSION_GOOGLE_STATE, state);
         session.setAttribute(SESSION_GOOGLE_RETURN_TO, normalizeReturnTo(returnTo));
         session.setAttribute(SESSION_GOOGLE_REMEMBER_ME, rememberMe);
+        session.setAttribute(SESSION_GOOGLE_APP_REDIRECT, normalizeAppRedirectUri(appRedirect));
 
         response.sendRedirect(googleOAuthService.buildAuthorizationUrl(state));
     }
@@ -541,10 +637,12 @@ public class AuthService {
         String expectedState = (String) session.getAttribute(SESSION_GOOGLE_STATE);
         String returnTo = (String) session.getAttribute(SESSION_GOOGLE_RETURN_TO);
         boolean rememberMe = Boolean.TRUE.equals(session.getAttribute(SESSION_GOOGLE_REMEMBER_ME));
+        String appRedirect = (String) session.getAttribute(SESSION_GOOGLE_APP_REDIRECT);
 
         session.removeAttribute(SESSION_GOOGLE_STATE);
         session.removeAttribute(SESSION_GOOGLE_RETURN_TO);
         session.removeAttribute(SESSION_GOOGLE_REMEMBER_ME);
+        session.removeAttribute(SESSION_GOOGLE_APP_REDIRECT);
 
         if (expectedState == null || !expectedState.equals(state)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SOCIAL_STATE", "소셜 로그인 상태 검증에 실패했어요.");
@@ -552,14 +650,13 @@ public class AuthService {
 
         GoogleOAuthService.GoogleUserProfile profile = googleOAuthService.fetchUserProfile(code);
         UserEntity user = upsertSocialUser("GOOGLE", profile.providerUserId(), profile.email(), profile.displayName());
-        completeLogin(user, session, request, response, rememberMe);
-
-        response.sendRedirect(frontendBaseUrl + normalizeReturnTo(returnTo));
+        finishSocialLogin(user, appRedirect, returnTo, rememberMe, session, request, response);
     }
 
     public void startKakaoLogin(
             String returnTo,
             boolean rememberMe,
+            String appRedirect,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
@@ -571,6 +668,7 @@ public class AuthService {
         session.setAttribute(SESSION_KAKAO_STATE, state);
         session.setAttribute(SESSION_KAKAO_RETURN_TO, normalizeReturnTo(returnTo));
         session.setAttribute(SESSION_KAKAO_REMEMBER_ME, rememberMe);
+        session.setAttribute(SESSION_KAKAO_APP_REDIRECT, normalizeAppRedirectUri(appRedirect));
 
         response.sendRedirect(kakaoOAuthService.buildAuthorizationUrl(state));
     }
@@ -585,10 +683,12 @@ public class AuthService {
         String expectedState = (String) session.getAttribute(SESSION_KAKAO_STATE);
         String returnTo = (String) session.getAttribute(SESSION_KAKAO_RETURN_TO);
         boolean rememberMe = Boolean.TRUE.equals(session.getAttribute(SESSION_KAKAO_REMEMBER_ME));
+        String appRedirect = (String) session.getAttribute(SESSION_KAKAO_APP_REDIRECT);
 
         session.removeAttribute(SESSION_KAKAO_STATE);
         session.removeAttribute(SESSION_KAKAO_RETURN_TO);
         session.removeAttribute(SESSION_KAKAO_REMEMBER_ME);
+        session.removeAttribute(SESSION_KAKAO_APP_REDIRECT);
 
         if (expectedState == null || !expectedState.equals(state)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SOCIAL_STATE", "소셜 로그인 상태 검증에 실패했어요.");
@@ -596,9 +696,35 @@ public class AuthService {
 
         KakaoOAuthService.KakaoUserProfile profile = kakaoOAuthService.fetchUserProfile(code);
         UserEntity user = upsertSocialUser("KAKAO", profile.providerUserId(), profile.email(), profile.displayName());
-        completeLogin(user, session, request, response, rememberMe);
+        finishSocialLogin(user, appRedirect, returnTo, rememberMe, session, request, response);
+    }
 
+    private void finishSocialLogin(
+            UserEntity user,
+            String appRedirect,
+            String returnTo,
+            boolean rememberMe,
+            HttpSession session,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws IOException {
+        if (appRedirect != null && !appRedirect.isBlank()) {
+            recordSuccessfulLogin(user);
+            String mobileAuthCode = mobileSocialAuthCodeService.issue(user.getId());
+            response.sendRedirect(buildMobileSocialRedirectUri(appRedirect, mobileAuthCode));
+            return;
+        }
+
+        completeLogin(user, session, request, response, rememberMe);
         response.sendRedirect(frontendBaseUrl + normalizeReturnTo(returnTo));
+    }
+
+    private String buildMobileSocialRedirectUri(String appRedirect, String code) {
+        return UriComponentsBuilder.fromUriString(appRedirect)
+                .replaceQueryParam("code")
+                .queryParam("code", code)
+                .build(true)
+                .toUriString();
     }
 
     private UserEntity upsertSocialUser(
@@ -648,6 +774,28 @@ public class AuthService {
         return userRepository.save(user);
     }
 
+    public UserEntity authenticateLocalUser(LoginRequestDto request) {
+        String email = normalizeEmail(request.email());
+        String password = normalizePassword(request.password());
+
+        UserEntity user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(
+                        HttpStatus.UNAUTHORIZED,
+                        "INVALID_CREDENTIALS",
+                        "이메일 또는 비밀번호가 올바르지 않아요."
+                ));
+
+        if (!user.isEmailVerified()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "EMAIL_NOT_VERIFIED", "이메일 인증을 먼저 완료해 주세요.");
+        }
+
+        if (!passwordEncoder.matches(password, user.getPasswordHash())) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "이메일 또는 비밀번호가 올바르지 않아요.");
+        }
+
+        return user;
+    }
+
     private String normalizeSocialEmail(String provider, String providerUserId) {
         String normalizedProvider = provider == null || provider.isBlank()
                 ? "social"
@@ -668,8 +816,7 @@ public class AuthService {
             HttpServletResponse response,
             boolean rememberMe
     ) {
-        user.markLoggedIn();
-        userRepository.save(user);
+        recordSuccessfulLogin(user);
         session.setAttribute(SESSION_USER_ID, user.getId());
 
         if (rememberMe) {
@@ -679,6 +826,11 @@ public class AuthService {
         }
     }
 
+    public void recordSuccessfulLogin(UserEntity user) {
+        user.markLoggedIn();
+        userRepository.save(user);
+    }
+
     private Long getCurrentUserId(HttpSession session) {
         Object value = session.getAttribute(SESSION_USER_ID);
         if (value instanceof Long longValue) {
@@ -686,6 +838,28 @@ public class AuthService {
         }
         if (value instanceof Integer intValue) {
             return intValue.longValue();
+        }
+        return null;
+    }
+
+    private Long getRequestUserId(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+
+        Object value = request.getAttribute(REQUEST_USER_ID_ATTRIBUTE);
+        if (value instanceof Long longValue) {
+            return longValue;
+        }
+        if (value instanceof Integer intValue) {
+            return intValue.longValue();
+        }
+        if (value instanceof String stringValue && !stringValue.isBlank()) {
+            try {
+                return Long.parseLong(stringValue.trim());
+            } catch (NumberFormatException ignored) {
+                return null;
+            }
         }
         return null;
     }
@@ -735,6 +909,28 @@ public class AuthService {
             return "/";
         }
         return returnTo;
+    }
+
+    private String normalizeAppRedirectUri(String appRedirect) {
+        if (appRedirect == null || appRedirect.isBlank()) {
+            return null;
+        }
+
+        String trimmed = appRedirect.trim();
+        boolean allowed = Arrays.stream(mobileRedirectPrefixes.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .anyMatch(trimmed::startsWith);
+
+        if (!allowed) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_APP_REDIRECT",
+                    "앱 로그인으로 돌아갈 주소가 올바르지 않아요."
+            );
+        }
+
+        return trimmed;
     }
 
     private String defaultPendingDisplayName(String email) {

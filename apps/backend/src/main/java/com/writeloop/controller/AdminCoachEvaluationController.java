@@ -4,6 +4,7 @@ import com.writeloop.dto.AdminCoachEvaluationRunResponseDto;
 import com.writeloop.dto.AdminCoachEvaluationSummaryDto;
 import com.writeloop.service.AuthService;
 import com.writeloop.service.CoachEvaluationService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,17 +22,18 @@ public class AdminCoachEvaluationController {
     private final CoachEvaluationService coachEvaluationService;
 
     @GetMapping("/summary")
-    public AdminCoachEvaluationSummaryDto summary(HttpSession session) {
-        authService.requireAdmin(session);
+    public AdminCoachEvaluationSummaryDto summary(HttpServletRequest request, HttpSession session) {
+        authService.requireAdmin(request, session);
         return coachEvaluationService.getSummary();
     }
 
     @PostMapping("/run")
     public AdminCoachEvaluationRunResponseDto run(
             @RequestParam(name = "limit", required = false) Integer limit,
+            HttpServletRequest request,
             HttpSession session
     ) {
-        authService.requireAdmin(session);
+        authService.requireAdmin(request, session);
         return coachEvaluationService.evaluatePendingInteractions(limit);
     }
 }

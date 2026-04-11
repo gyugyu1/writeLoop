@@ -11,10 +11,15 @@ import com.writeloop.dto.RegisterRequestDto;
 import com.writeloop.dto.ResendVerificationRequestDto;
 import com.writeloop.dto.SendPasswordResetCodeRequestDto;
 import com.writeloop.dto.SendRegistrationCodeRequestDto;
+import com.writeloop.dto.SocialTokenExchangeRequestDto;
+import com.writeloop.dto.TokenAuthResponseDto;
+import com.writeloop.dto.TokenLogoutRequestDto;
+import com.writeloop.dto.TokenRefreshRequestDto;
 import com.writeloop.dto.UpdateProfileRequestDto;
 import com.writeloop.dto.VerifyPasswordResetCodeRequestDto;
 import com.writeloop.dto.VerifyEmailRequestDto;
 import com.writeloop.service.AuthService;
+import com.writeloop.service.TokenAuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -37,6 +42,7 @@ import java.io.IOException;
 public class AuthController {
 
     private final AuthService authService;
+    private final TokenAuthService tokenAuthService;
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
@@ -70,6 +76,30 @@ public class AuthController {
             HttpServletResponse httpResponse
     ) {
         return authService.login(request, session, httpRequest, httpResponse);
+    }
+
+    @PostMapping("/token/login")
+    @ResponseStatus(HttpStatus.OK)
+    public TokenAuthResponseDto tokenLogin(@RequestBody LoginRequestDto request) {
+        return tokenAuthService.login(request);
+    }
+
+    @PostMapping("/token/refresh")
+    @ResponseStatus(HttpStatus.OK)
+    public TokenAuthResponseDto refreshToken(@RequestBody TokenRefreshRequestDto request) {
+        return tokenAuthService.refresh(request);
+    }
+
+    @PostMapping("/token/social/exchange")
+    @ResponseStatus(HttpStatus.OK)
+    public TokenAuthResponseDto exchangeSocialToken(@RequestBody SocialTokenExchangeRequestDto request) {
+        return tokenAuthService.exchangeSocialCode(request);
+    }
+
+    @PostMapping("/token/logout")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void tokenLogout(@RequestBody(required = false) TokenLogoutRequestDto request) {
+        tokenAuthService.logout(request);
     }
 
     @PostMapping("/verify-email")
@@ -127,17 +157,17 @@ public class AuthController {
 
     @GetMapping("/me")
     @ResponseStatus(HttpStatus.OK)
-    public AuthResponseDto me(HttpSession session) {
-        return authService.getCurrentUser(session);
+    public AuthResponseDto me(HttpServletRequest request) {
+        return authService.getCurrentUser(request);
     }
 
     @PostMapping("/profile")
     @ResponseStatus(HttpStatus.OK)
     public AuthResponseDto updateProfile(
             @RequestBody UpdateProfileRequestDto request,
-            HttpSession session
+            HttpServletRequest httpRequest
     ) {
-        return authService.updateProfile(request, session);
+        return authService.updateProfile(request, httpRequest);
     }
 
     @DeleteMapping("/account")
@@ -155,10 +185,11 @@ public class AuthController {
     public void startNaverLogin(
             @RequestParam(name = "returnTo", required = false) String returnTo,
             @RequestParam(name = "remember", defaultValue = "false") boolean rememberMe,
+            @RequestParam(name = "appRedirect", required = false) String appRedirect,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
-        authService.startNaverLogin(returnTo, rememberMe, session, response);
+        authService.startNaverLogin(returnTo, rememberMe, appRedirect, session, response);
     }
 
     @GetMapping("/social/naver/callback")
@@ -176,10 +207,11 @@ public class AuthController {
     public void startGoogleLogin(
             @RequestParam(name = "returnTo", required = false) String returnTo,
             @RequestParam(name = "remember", defaultValue = "false") boolean rememberMe,
+            @RequestParam(name = "appRedirect", required = false) String appRedirect,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
-        authService.startGoogleLogin(returnTo, rememberMe, session, response);
+        authService.startGoogleLogin(returnTo, rememberMe, appRedirect, session, response);
     }
 
     @GetMapping("/social/google/callback")
@@ -197,10 +229,11 @@ public class AuthController {
     public void startKakaoLogin(
             @RequestParam(name = "returnTo", required = false) String returnTo,
             @RequestParam(name = "remember", defaultValue = "false") boolean rememberMe,
+            @RequestParam(name = "appRedirect", required = false) String appRedirect,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
-        authService.startKakaoLogin(returnTo, rememberMe, session, response);
+        authService.startKakaoLogin(returnTo, rememberMe, appRedirect, session, response);
     }
 
     @GetMapping("/social/kakao/callback")

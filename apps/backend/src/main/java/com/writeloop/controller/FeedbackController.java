@@ -5,6 +5,7 @@ import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.exception.GuestLimitExceededException;
 import com.writeloop.service.AuthService;
 import com.writeloop.service.FeedbackService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -29,12 +30,16 @@ public class FeedbackController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.OK)
-    public FeedbackResponseDto review(@RequestBody FeedbackRequestDto request, HttpSession session) {
+    public FeedbackResponseDto review(
+            @RequestBody FeedbackRequestDto request,
+            HttpServletRequest httpRequest,
+            HttpSession session
+    ) {
         if (request == null || request.answer() == null || request.answer().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "answer is required");
         }
 
-        return feedbackService.review(request, authService.getCurrentUserIdOrNull(session));
+        return feedbackService.review(request, authService.getCurrentUserIdOrNull(httpRequest, session));
     }
 
     @ExceptionHandler(IllegalStateException.class)

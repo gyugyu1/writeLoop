@@ -6,7 +6,7 @@ import com.writeloop.dto.MonthWritingStatusDto;
 import com.writeloop.dto.TodayWritingStatusDto;
 import com.writeloop.service.AnswerHistoryService;
 import com.writeloop.service.AuthService;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,8 +28,8 @@ public class AnswerHistoryController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<AnswerHistorySessionDto> getHistory(HttpSession session) {
-        Long currentUserId = authService.getCurrentUserIdOrNull(session);
+    public List<AnswerHistorySessionDto> getHistory(HttpServletRequest request) {
+        Long currentUserId = authService.getCurrentUserIdOrNull(request);
         if (currentUserId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }
@@ -39,8 +39,8 @@ public class AnswerHistoryController {
 
     @GetMapping("/today-status")
     @ResponseStatus(HttpStatus.OK)
-    public TodayWritingStatusDto getTodayStatus(HttpSession session) {
-        Long currentUserId = authService.getCurrentUserIdOrNull(session);
+    public TodayWritingStatusDto getTodayStatus(HttpServletRequest request) {
+        Long currentUserId = authService.getCurrentUserIdOrNull(request);
         if (currentUserId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }
@@ -53,9 +53,9 @@ public class AnswerHistoryController {
     public MonthWritingStatusDto getMonthStatus(
             @RequestParam int year,
             @RequestParam int month,
-            HttpSession session
+            HttpServletRequest request
     ) {
-        Long currentUserId = authService.getCurrentUserIdOrNull(session);
+        Long currentUserId = authService.getCurrentUserIdOrNull(request);
         if (currentUserId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }
@@ -65,8 +65,8 @@ public class AnswerHistoryController {
 
     @GetMapping("/common-mistakes")
     @ResponseStatus(HttpStatus.OK)
-    public List<CommonMistakeDto> getCommonMistakes(HttpSession session) {
-        Long currentUserId = authService.getCurrentUserIdOrNull(session);
+    public List<CommonMistakeDto> getCommonMistakes(HttpServletRequest request) {
+        Long currentUserId = authService.getCurrentUserIdOrNull(request);
         if (currentUserId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }

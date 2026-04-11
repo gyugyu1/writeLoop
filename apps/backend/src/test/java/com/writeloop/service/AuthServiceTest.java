@@ -59,6 +59,12 @@ class AuthServiceTest {
     private RememberLoginService rememberLoginService;
 
     @Mock
+    private RefreshTokenService refreshTokenService;
+
+    @Mock
+    private MobileSocialAuthCodeService mobileSocialAuthCodeService;
+
+    @Mock
     private NaverOAuthService naverOAuthService;
 
     @Mock
@@ -90,6 +96,8 @@ class AuthServiceTest {
                 passwordEncoder,
                 verificationMailService,
                 rememberLoginService,
+                refreshTokenService,
+                mobileSocialAuthCodeService,
                 naverOAuthService,
                 googleOAuthService,
                 kakaoOAuthService

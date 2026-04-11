@@ -5,7 +5,7 @@ import com.writeloop.dto.WritingDraftDto;
 import com.writeloop.dto.WritingDraftTypeDto;
 import com.writeloop.service.AuthService;
 import com.writeloop.service.DraftService;
-import jakarta.servlet.http.HttpSession;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,9 +32,9 @@ public class DraftController {
     public ResponseEntity<WritingDraftDto> getDraft(
             @PathVariable String promptId,
             @RequestParam WritingDraftTypeDto draftType,
-            HttpSession session
+            HttpServletRequest request
     ) {
-        Long currentUserId = requireCurrentUserId(session);
+        Long currentUserId = requireCurrentUserId(request);
         WritingDraftDto draft = draftService.getDraft(currentUserId, promptId, draftType);
         if (draft == null) {
             return ResponseEntity.notFound().build();
@@ -46,10 +46,10 @@ public class DraftController {
     @ResponseStatus(HttpStatus.OK)
     public WritingDraftDto saveDraft(
             @PathVariable String promptId,
-            @RequestBody SaveWritingDraftRequestDto request,
-            HttpSession session
+            @RequestBody SaveWritingDraftRequestDto draftRequest,
+            HttpServletRequest request
     ) {
-        return draftService.saveDraft(requireCurrentUserId(session), promptId, request);
+        return draftService.saveDraft(requireCurrentUserId(request), promptId, draftRequest);
     }
 
     @DeleteMapping("/{promptId}")
@@ -57,13 +57,13 @@ public class DraftController {
     public void deleteDraft(
             @PathVariable String promptId,
             @RequestParam WritingDraftTypeDto draftType,
-            HttpSession session
+            HttpServletRequest request
     ) {
-        draftService.deleteDraft(requireCurrentUserId(session), promptId, draftType);
+        draftService.deleteDraft(requireCurrentUserId(request), promptId, draftType);
     }
 
-    private Long requireCurrentUserId(HttpSession session) {
-        Long currentUserId = authService.getCurrentUserIdOrNull(session);
+    private Long requireCurrentUserId(HttpServletRequest request) {
+        Long currentUserId = authService.getCurrentUserIdOrNull(request);
         if (currentUserId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }

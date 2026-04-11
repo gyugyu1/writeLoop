@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,6 +35,12 @@ public class RememberLoginService {
 
     @Value("${app.auth.remember-me-days:30}")
     private long rememberMeDays;
+
+    @Value("${APP_SESSION_COOKIE_SAME_SITE:Lax}")
+    private String sameSite;
+
+    @Value("${APP_SESSION_COOKIE_SECURE:false}")
+    private boolean secureCookie;
 
     public void rememberUser(Long userId, HttpServletResponse response) {
         String rawToken = generateRawToken();
@@ -128,7 +135,8 @@ public class RememberLoginService {
         ResponseCookie cookie = ResponseCookie.from(COOKIE_NAME, rawToken)
                 .httpOnly(true)
                 .path("/")
-                .sameSite("Lax")
+                .secure(secureCookie)
+                .sameSite(normalizeSameSite(sameSite))
                 .maxAge(Duration.ofDays(maxAgeDays))
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
@@ -138,10 +146,23 @@ public class RememberLoginService {
         ResponseCookie cookie = ResponseCookie.from(COOKIE_NAME, "")
                 .httpOnly(true)
                 .path("/")
-                .sameSite("Lax")
+                .secure(secureCookie)
+                .sameSite(normalizeSameSite(sameSite))
                 .maxAge(Duration.ZERO)
                 .build();
         response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+    }
+
+    private String normalizeSameSite(String value) {
+        if (value == null || value.isBlank()) {
+            return "Lax";
+        }
+
+        return switch (value.trim().toLowerCase(Locale.ROOT)) {
+            case "none" -> "None";
+            case "strict" -> "Strict";
+            default -> "Lax";
+        };
     }
 
     private String generateRawToken() {

@@ -2609,34 +2609,7 @@
 
 .writingFeedbackItem {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  gap: 12px;
-}
-
-.writingFeedbackMarker {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 34px;
-  height: 34px;
-  padding: 0 8px;
-  border-radius: 999px;
-  color: #fffaf7;
-  font-size: 0.7rem;
-  font-weight: 800;
-}
-
-.writingFeedbackMarkerAlert {
-  background: linear-gradient(180deg, #f76e4b 0%, #c63f1d 100%);
-}
-
-.writingFeedbackMarkerTip {
-  background: linear-gradient(180deg, #6fb89d 0%, #2c7d63 100%);
-}
-
-.writingFeedbackMarkerGuide {
-  background: linear-gradient(180deg, #ffc35f 0%, #d88900 100%);
-  color: #583700;
+  gap: 4px;
 }
 
 .writingFeedbackItem strong {

@@ -2118,19 +2118,8 @@ export function MyPageClient() {
               </div>
             ) : (
               <div className={styles.writingFeedbackList}>
-                {commonMistakes.slice(0, 3).map((mistake, index) => (
+                {commonMistakes.slice(0, 3).map((mistake) => (
                   <article key={mistake.issue} className={styles.writingFeedbackItem}>
-                    <span
-                      className={`${styles.writingFeedbackMarker} ${
-                        index === 0
-                          ? styles.writingFeedbackMarkerAlert
-                          : index === 1
-                            ? styles.writingFeedbackMarkerTip
-                            : styles.writingFeedbackMarkerGuide
-                      }`}
-                    >
-                      {index === 0 ? "!" : index === 1 ? "TIP" : "가이드"}
-                    </span>
                     <div>
                       <strong>{mistake.displayLabel}</strong>
                       <p>{mistake.latestSuggestion}</p>

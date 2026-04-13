@@ -76,6 +76,7 @@ app:
     emails: ${APP_ADMIN_EMAILS:}
   mail:
     from: ${APP_MAIL_FROM:no-reply@writeloop.local}
+    from-name: ${APP_MAIL_FROM_NAME:WriteLoop}
   drafts:
     ttl-days: ${APP_DRAFT_TTL_DAYS:7}
   coach-evaluation:

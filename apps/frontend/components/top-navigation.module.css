@@ -4,9 +4,9 @@
   left: 0;
   right: 0;
   z-index: 40;
-  background: rgba(251, 245, 240, 0.94);
+  background: rgba(255, 254, 252, 0.94);
   backdrop-filter: blur(18px);
-  box-shadow: 0 4px 20px -10px rgba(127, 82, 0, 0.1);
+  box-shadow: 0 4px 20px -10px rgba(216, 154, 81, 0.12);
 }
 
 .inner {
@@ -20,7 +20,7 @@
 }
 
 .logo {
-  color: #da8100;
+  color: #e38b12;
   text-decoration: none;
   font-size: 2.05rem;
   font-weight: 900;
@@ -43,7 +43,7 @@
   align-items: center;
   justify-content: center;
   padding: 6px 0 10px;
-  color: rgba(127, 82, 0, 0.72);
+  color: rgba(var(--warm-accent-deep-rgb), 0.74);
   text-decoration: none;
   font-size: 1.2rem;
   font-weight: 700;
@@ -72,7 +72,7 @@
   bottom: 0;
   height: 4px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #ffb236 0%, var(--primary) 100%);
+  background: linear-gradient(135deg, rgba(var(--warm-accent-light-rgb), 1) 0%, var(--warm-accent) 100%);
 }
 
 .actions {
@@ -89,7 +89,7 @@
   width: 42px;
   height: 42px;
   border-radius: 999px;
-  color: rgba(127, 82, 0, 0.72);
+  color: rgba(var(--warm-accent-deep-rgb), 0.74);
   text-decoration: none;
   transition:
     transform 0.18s ease,
@@ -100,7 +100,7 @@
 .actionButton:hover {
   transform: translateY(-1px);
   color: var(--primary);
-  background: rgba(255, 190, 88, 0.16);
+  background: rgba(var(--warm-accent-rgb), 0.16);
 }
 
 .actionIcon {
@@ -117,10 +117,10 @@
   height: 48px;
   margin-left: 4px;
   border-radius: 999px;
-  border: 3px solid rgba(255, 190, 88, 0.9);
+  border: 3px solid rgba(var(--warm-accent-rgb), 0.9);
   background:
-    radial-gradient(circle at 30% 24%, rgba(255, 232, 183, 0.9) 0%, rgba(255, 255, 255, 0.88) 42%, rgba(247, 239, 229, 0.96) 100%);
-  box-shadow: 0 12px 24px -20px rgba(127, 82, 0, 0.32);
+    radial-gradient(circle at 30% 24%, rgba(255, 232, 183, 0.9) 0%, rgba(255, 255, 255, 0.88) 42%, rgba(255, 249, 242, 0.96) 100%);
+  box-shadow: 0 12px 24px -20px rgba(var(--warm-accent-deep-rgb), 0.24);
   text-decoration: none;
 }
 

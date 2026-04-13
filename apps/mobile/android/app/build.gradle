@@ -120,9 +120,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'kr.writeloop.app'
+    namespace 'kr.writeloop'
     defaultConfig {
-        applicationId 'kr.writeloop.app'
+        applicationId 'kr.writeloop'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

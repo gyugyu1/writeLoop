@@ -1,4 +1,4 @@
-package kr.writeloop.app
+package kr.writeloop
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

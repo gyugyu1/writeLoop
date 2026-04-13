@@ -12,7 +12,7 @@
       "bundleIdentifier": "kr.writeloop.app"
     },
     "android": {
-      "package": "kr.writeloop.app",
+      "package": "kr.writeloop",
       "adaptiveIcon": {
         "backgroundColor": "#F7F2EB",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

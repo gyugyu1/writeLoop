@@ -202,7 +202,7 @@
 }
 
 .homeProgressDayBoxDone {
-  background: #f2994a;
+  background: #f2a14a;
   color: #fff;
 }
 
@@ -263,7 +263,7 @@
   min-height: 24px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #f2994a;
+  background: #f2a14a;
   color: #fff;
   font-size: 0.58rem;
   font-weight: 800;
@@ -372,7 +372,7 @@
   font-size: 1rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  background: #f2994a;
+  background: #f2a14a;
   color: #fff;
   box-shadow: 0 10px 22px -16px rgba(242, 153, 74, 0.44);
 }
@@ -1609,7 +1609,7 @@
   margin-top: -8px;
   padding: 6px 14px;
   border-radius: 999px;
-  background: linear-gradient(180deg, #ffb764 0%, #f2994a 100%);
+  background: linear-gradient(180deg, #f6bb69 0%, #f2a14a 100%);
   color: #fff9f1;
   font-size: 0.78rem;
   font-weight: 900;
@@ -6291,7 +6291,7 @@
   width: 56px;
   height: 40px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #b87b1d 0%, var(--primary) 100%);
+  background: linear-gradient(135deg, #e38b12 0%, var(--primary) 100%);
   color: #fff9f2;
   font-size: 1rem;
   box-shadow: var(--shadow-active);
@@ -6395,7 +6395,7 @@
 .mobileSectionToggle,
 .monthStatusNavButton {
   border: 0;
-  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  background: linear-gradient(180deg, #f6bb69 0%, #f2a14a 100%);
   color: #583700;
   transition:
     transform 0.18s ease,
@@ -6424,7 +6424,7 @@
 .mobileComposerPrimary:hover,
 .mobileSectionToggle:hover,
 .monthStatusNavButton:hover:not(:disabled) {
-  background: linear-gradient(180deg, #ffd07a 0%, #ffbb45 100%);
+  background: linear-gradient(180deg, #f8cf97 0%, #f2a14a 100%);
   transform: translateY(-2px);
   box-shadow:
     inset 0 1px 0 rgba(255, 247, 229, 0.78),
@@ -6497,7 +6497,7 @@
   width: 132px;
   height: 6px;
   border-radius: 999px;
-  background: #f3a24c;
+  background: #f2a14a;
 }
 
 .promptSelectionDescription {
@@ -6745,7 +6745,7 @@
   font-size: 1.42rem;
   font-weight: 900;
   letter-spacing: -0.04em;
-  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  background: linear-gradient(180deg, #f6bb69 0%, #f2a14a 100%);
   color: #583700;
   box-shadow:
     inset 0 1px 0 rgba(255, 247, 229, 0.72),
@@ -7348,7 +7348,7 @@
   min-height: 38px;
   padding: 8px 16px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #ffcc62 0%, #ffb236 100%);
+  background: linear-gradient(135deg, #f6bb69 0%, #f2a14a 100%);
   color: #6b4300;
   font-size: 0.86rem;
   font-weight: 800;
@@ -7475,7 +7475,7 @@
 .difficultyStageButton[data-tone="B"] .difficultyStageMeter::before,
 .difficultyStageButtonActive[data-tone="B"] .difficultyStageMeter::before {
   width: 62%;
-  background: #ffb236;
+  background: #f2a14a;
 }
 
 .difficultyStageButton[data-tone="C"] .difficultyStageMeter::before,
@@ -7498,7 +7498,7 @@
   padding-inline: 36px;
   font-size: 1.5rem;
   letter-spacing: -0.04em;
-  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  background: linear-gradient(180deg, #f6bb69 0%, #f2a14a 100%);
   color: #583700;
   box-shadow:
     inset 0 1px 0 rgba(255, 247, 229, 0.72),
@@ -7714,7 +7714,7 @@
   height: 1.05em;
   margin-left: 0.18em;
   vertical-align: -0.12em;
-  color: #ffb236;
+  color: #f2a14a;
 }
 
 .materialSymbolIcon,
@@ -8501,7 +8501,7 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(180deg, #b87b1d 0%, var(--primary) 100%);
+  background: linear-gradient(180deg, #e38b12 0%, var(--primary) 100%);
 }
 
 .writingPromptCard {
@@ -8982,7 +8982,7 @@
   min-width: 158px;
   padding: 0 24px;
   border: 0;
-  background: linear-gradient(180deg, #ffc35f 0%, #ffb236 100%);
+  background: linear-gradient(180deg, #f6bb69 0%, #f2a14a 100%);
   color: #583700;
   box-shadow:
     inset 0 1px 0 rgba(255, 247, 229, 0.72),
@@ -8997,7 +8997,7 @@
 }
 
 .writingEditorPrimaryButton:hover {
-  background: linear-gradient(180deg, #ffd07a 0%, #ffbb45 100%);
+  background: linear-gradient(180deg, #f8cf97 0%, #f2a14a 100%);
   transform: translateY(-2px);
   box-shadow:
     inset 0 1px 0 rgba(255, 247, 229, 0.78),
@@ -9208,7 +9208,7 @@
    ========================================================================== */
 
 .premiumFeedbackTheme {
-  --fb-primary: #904e00;
+  --fb-primary: #8a6431;
   --fb-primary-dim: #6b3900;
   --fb-secondary: #ffb06a;
   --fb-secondary-container: #ffdcbe;
@@ -9826,7 +9826,7 @@
   min-width: 0;
   padding: 20px 22px;
   border-radius: 24px;
-  border: 2px solid #f2994a;
+  border: 2px solid #f2a14a;
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 12px 24px -22px rgba(144, 78, 0, 0.16);
 }
@@ -9839,8 +9839,8 @@
   width: 16px;
   height: 16px;
   background: rgba(255, 255, 255, 0.96);
-  border-right: 2px solid #f2994a;
-  border-bottom: 2px solid #f2994a;
+  border-right: 2px solid #f2a14a;
+  border-bottom: 2px solid #f2a14a;
   transform: rotate(-45deg);
 }
 
@@ -9895,7 +9895,7 @@
 }
 
 .premiumFeedbackTheme .primaryButton {
-  background: linear-gradient(180deg, #f8b35e 0%, #f2994a 100%);
+  background: linear-gradient(180deg, #f6bb69 0%, #f2a14a 100%);
   color: #fff8f1;
   border: 0;
   box-shadow: 0 6px 0 #6f4700;
@@ -9936,7 +9936,7 @@
 }
 
 .footerButtonRewrite {
-  background: #ffb24b;
+  background: #f2a14a;
   color: #5a3700;
   border-radius: 9999px;
   padding: 20px 48px;
@@ -9956,7 +9956,7 @@
 }
 
 .footerButtonRewrite:hover {
-  background: #ffc15f;
+  background: #f6bb69;
   transform: translateY(-2px);
   box-shadow:
     inset 0 1px 0 rgba(255, 247, 229, 0.78),
@@ -10114,8 +10114,8 @@
     width: 12px;
     height: 12px;
     border-top: 0;
-    border-right: 2px solid #f2994a;
-    border-bottom: 2px solid #f2994a;
+    border-right: 2px solid #f2a14a;
+    border-bottom: 2px solid #f2a14a;
     border-left: 0;
     transform: translateY(-50%) rotate(-45deg);
   }
@@ -10378,13 +10378,13 @@
   }
 
   .feedbackShowcase .feedbackRefinePanel .feedbackRefineOriginal::before {
-    content: "원문 : ";
+    content: "?�문 : ";
     color: var(--fb-error);
     font-weight: 900;
   }
 
   .feedbackShowcase .feedbackRefinePanel .feedbackRefineRevised::before {
-    content: "수정문 : ";
+    content: "?�정�?: ";
     color: var(--fb-primary);
     font-weight: 900;
   }
@@ -10549,7 +10549,7 @@
   width: 100%;
   height: 6px;
   border-radius: 999px;
-  background: #f3a24c;
+  background: #f2a14a;
 }
 
 .difficultyHomeCoachRow {
@@ -10745,7 +10745,7 @@
 }
 
 .difficultyHomeWeekDayDone {
-  background: #f2994a;
+  background: #f2a14a;
   color: #ffffff;
 }
 
@@ -10864,7 +10864,7 @@
   padding: 14px 22px;
   border: none;
   border-radius: 999px;
-  background: #f6b74f;
+  background: #f2a14a;
   color: #4b3413;
   font-size: 0.98rem;
   font-weight: 900;
@@ -10928,7 +10928,7 @@
 }
 
 .difficultyHomeCardActive {
-  border: 3px solid #f2994a;
+  border: 3px solid #f2a14a;
   box-shadow: 0 24px 48px -34px rgba(242, 153, 74, 0.4);
 }
 
@@ -10944,7 +10944,7 @@
   min-height: 38px;
   padding: 8px 18px;
   border-radius: 999px;
-  background: #f6b74f;
+  background: #f2a14a;
   color: #7a4f14;
   font-size: 0.86rem;
   font-weight: 900;
@@ -11046,7 +11046,7 @@
   padding: 18px 38px;
   border: none;
   border-radius: 999px;
-  background: #f6b74f;
+  background: #f2a14a;
   color: #4b3413;
   font-size: 1.15rem;
   font-weight: 900;
@@ -11242,7 +11242,7 @@
 }
 
 .promptSelectionStatusSlotActive {
-  background: #f2994a;
+  background: #f2a14a;
   color: #ffffff;
 }
 
@@ -11278,7 +11278,7 @@
 }
 
 .promptSelectionCardActive {
-  border: 3px solid #f2994a;
+  border: 3px solid #f2a14a;
   box-shadow: 0 24px 48px -34px rgba(242, 153, 74, 0.4);
   transform: translateY(-2px);
 }

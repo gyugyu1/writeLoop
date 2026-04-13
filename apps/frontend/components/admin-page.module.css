@@ -124,8 +124,8 @@
   width: 64px;
   height: 64px;
   border-radius: 22px;
-  background: linear-gradient(180deg, #ffd690 0%, #fbb54b 100%);
-  color: #7f5200;
+  background: linear-gradient(180deg, #f8cf97 0%, #f2a14a 100%);
+  color: #8a6431;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.72),
     0 12px 24px -16px rgba(127, 82, 0, 0.34);
@@ -425,7 +425,7 @@
   height: 68px;
   border: 0;
   border-radius: 999px;
-  background: linear-gradient(180deg, #ffc76e 0%, #f5a83f 100%);
+  background: linear-gradient(180deg, #f6bb69 0%, #f2a14a 100%);
   color: #6e4200;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.85),

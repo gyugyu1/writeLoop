@@ -276,6 +276,23 @@ function getLoginMethodLabel(user: AuthUser) {
   }
 }
 
+function getAccountEmailLabel(user: AuthUser) {
+  if (!user.socialProvider) {
+    return user.email;
+  }
+
+  switch (user.socialProvider) {
+    case "NAVER":
+      return "네이버 이메일";
+    case "GOOGLE":
+      return "구글 이메일";
+    case "KAKAO":
+      return "카카오 이메일";
+    default:
+      return "소셜 로그인 이메일";
+  }
+}
+
 function formatHistoryDateHeading(dateKey: string) {
   const [year, month, day] = dateKey.split("-").map((value) => Number(value));
   const weekday = new Intl.DateTimeFormat("ko-KR", {
@@ -1726,6 +1743,7 @@ export function MyPageClient() {
         ? getLoginMethodLabel(currentUser)
         : "이메일 로그인"
       : "-";
+    const accountEmailLabel = currentUser ? getAccountEmailLabel(currentUser) : "-";
     const accountOwnerName = currentUser?.displayName?.trim() || "내";
 
     return (
@@ -1756,7 +1774,7 @@ export function MyPageClient() {
               </div>
               <div className={styles.accountInfoField}>
                 <span>이메일 주소</span>
-                <div className={styles.accountInfoValue}>{currentUser?.email || "-"}</div>
+                <div className={styles.accountInfoValue}>{accountEmailLabel}</div>
               </div>
               <div className={styles.accountInfoField}>
                 <span>로그인 방식</span>

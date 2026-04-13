@@ -2,6 +2,7 @@ import { router, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
+  ActivityIndicator,
   Image,
   Modal,
   Pressable,
@@ -13,20 +14,36 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
-import { getTodayWritingStatus, getWritingDraft } from "@/lib/api";
+import { getAnswerHistory, getTodayWritingStatus, getWritingDraft } from "@/lib/api";
 import { difficultyDeck } from "@/lib/difficulty";
 import { clearIncompleteLoop, getIncompleteLoop, type IncompleteLoopState } from "@/lib/incomplete-loop";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
 import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { getLocalWritingDraft } from "@/lib/writing-drafts";
-import type { DailyDifficulty, TodayWritingStatus } from "@/lib/types";
+import type { DailyDifficulty, HistorySession, TodayWritingStatus } from "@/lib/types";
 
 type WeekDayChip = {
   key: string;
   label: string;
   isToday: boolean;
   isCompleted: boolean;
+};
+
+type MonthCalendarCell = {
+  key: string;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  isCompleted: boolean;
+  isToday: boolean;
+};
+
+type MonthCalendarData = {
+  monthLabel: string;
+  streakDays: number;
+  completedCount: number;
+  isReferenceMonth: boolean;
+  cells: MonthCalendarCell[];
 };
 
 type HomeGuideStep = {
@@ -41,6 +58,12 @@ type IncompleteLoopCopy = {
 };
 
 const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+const SEOUL_DATE_KEY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Seoul",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit"
+});
 const homeGuidePreviewImage = require("@/assets/images/tutorial-web.png");
 const homeStatusMascotImage = require("@/assets/images/main-mascote.png");
 const HOME_GUIDE_STEPS: HomeGuideStep[] = [
@@ -66,8 +89,16 @@ function formatWeekDay(date: Date) {
   return WEEKDAY_LABELS[date.getDay()] ?? "";
 }
 
-function toDateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
+function toDateKey(value: Date | string) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const parts = SEOUL_DATE_KEY_FORMATTER.formatToParts(date);
+  const lookup = Object.fromEntries(
+    parts
+      .filter((part) => part.type === "year" || part.type === "month" || part.type === "day")
+      .map((part) => [part.type, part.value])
+  ) as Record<"year" | "month" | "day", string>;
+
+  return `${lookup.year}-${lookup.month}-${lookup.day}`;
 }
 
 function getIncompleteLoopCopy(step: IncompleteLoopState["step"]): IncompleteLoopCopy {
@@ -118,8 +149,96 @@ function formatIncompleteLoopSavedAt(updatedAt: string) {
   }).format(savedAt);
 }
 
+function parseStatusDate(dateString?: string | null) {
+  return dateString ? new Date(`${dateString}T12:00:00+09:00`) : new Date();
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function getMonthStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 12);
+}
+
+function isSameMonth(left: Date, right: Date) {
+  return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth();
+}
+
+function formatMonthLabel(date: Date) {
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
+}
+
+function getLatestHistoryTimestamp(session: HistorySession) {
+  return session.attempts[session.attempts.length - 1]?.createdAt ?? session.updatedAt ?? session.createdAt;
+}
+
+function buildFallbackCompletedDateKeys(todayStatus: TodayWritingStatus | null) {
+  const referenceDate = parseStatusDate(todayStatus?.date);
+  const streakDays = Math.max(todayStatus?.streakDays ?? 0, todayStatus?.completed ? 1 : 0);
+  const streakEndDate =
+    streakDays > 0 ? addDays(referenceDate, todayStatus?.completed === false ? -1 : 0) : referenceDate;
+  const completedDateKeys = new Set<string>();
+
+  for (let offset = 0; offset < streakDays; offset += 1) {
+    completedDateKeys.add(toDateKey(addDays(streakEndDate, -offset)));
+  }
+
+  return completedDateKeys;
+}
+
+function buildMonthCalendar(
+  todayStatus: TodayWritingStatus | null,
+  completedDateKeys: Set<string>,
+  visibleMonth: Date
+): MonthCalendarData {
+  const referenceDate = parseStatusDate(todayStatus?.date);
+  const todayKey = toDateKey(referenceDate);
+  const monthStart = getMonthStart(visibleMonth);
+  const monthEnd = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0, 12);
+  const calendarStart = addDays(monthStart, -monthStart.getDay());
+  const calendarEnd = addDays(monthEnd, 6 - monthEnd.getDay());
+  const cells: MonthCalendarCell[] = [];
+  let completedCount = 0;
+
+  for (
+    let currentDate = new Date(calendarStart);
+    currentDate <= calendarEnd;
+    currentDate = addDays(currentDate, 1)
+  ) {
+    const key = toDateKey(currentDate);
+    cells.push({
+      key,
+      dayNumber: currentDate.getDate(),
+      isCurrentMonth:
+        currentDate.getFullYear() === visibleMonth.getFullYear() &&
+        currentDate.getMonth() === visibleMonth.getMonth(),
+      isCompleted: completedDateKeys.has(key),
+      isToday: key === todayKey
+    });
+
+    if (
+      completedDateKeys.has(key) &&
+      currentDate.getFullYear() === visibleMonth.getFullYear() &&
+      currentDate.getMonth() === visibleMonth.getMonth()
+    ) {
+      completedCount += 1;
+    }
+  }
+
+  return {
+    monthLabel: formatMonthLabel(visibleMonth),
+    streakDays: Math.max(todayStatus?.streakDays ?? 0, todayStatus?.completed ? 1 : 0),
+    completedCount,
+    isReferenceMonth: isSameMonth(visibleMonth, referenceDate),
+    cells
+  };
+}
+
 function buildWeekChips(todayStatus: TodayWritingStatus | null): WeekDayChip[] {
-  const baseDate = todayStatus?.date ? new Date(`${todayStatus.date}T00:00:00`) : new Date();
+  const baseDate = parseStatusDate(todayStatus?.date);
   const streakDays = Math.min(todayStatus?.streakDays ?? 0, 7);
   const lastCompletedDate = new Date(baseDate);
 
@@ -154,6 +273,11 @@ export default function HomeScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusError, setStatusError] = useState("");
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarMonthCursor, setCalendarMonthCursor] = useState(() => getMonthStart(new Date()));
+  const [calendarCompletedDateKeys, setCalendarCompletedDateKeys] = useState<string[]>([]);
+  const [isCalendarLoading, setIsCalendarLoading] = useState(false);
+  const [calendarError, setCalendarError] = useState("");
   const historyRoute: Href = currentUser ? "/records" : buildLoginHref("/records");
 
   const weekChips = useMemo(() => buildWeekChips(todayStatus), [todayStatus]);
@@ -174,6 +298,56 @@ export default function HomeScreen() {
       .filter(Boolean)
       .join(" · ");
   }, [incompleteLoop, incompleteLoopSavedAt]);
+  const calendarCompletedDateKeySet = useMemo(() => {
+    const nextSet = buildFallbackCompletedDateKeys(todayStatus);
+    calendarCompletedDateKeys.forEach((key) => nextSet.add(key));
+    return nextSet;
+  }, [calendarCompletedDateKeys, todayStatus]);
+  const calendarReferenceMonth = useMemo(
+    () => getMonthStart(parseStatusDate(todayStatus?.date)),
+    [todayStatus?.date]
+  );
+  const monthCalendar = useMemo(
+    () => buildMonthCalendar(todayStatus, calendarCompletedDateKeySet, calendarMonthCursor),
+    [calendarCompletedDateKeySet, calendarMonthCursor, todayStatus]
+  );
+  const calendarSummaryLabel = useMemo(() => {
+    if (monthCalendar.streakDays > 1) {
+      return `현재 ${monthCalendar.streakDays}일 연속 학습 중`;
+    }
+
+    if (todayStatus?.completed) {
+      return "오늘도 학습 기록이 쌓였어요";
+    }
+
+    return "이번 달 학습 기록";
+  }, [monthCalendar.streakDays, todayStatus?.completed]);
+  const calendarFooterLabel = useMemo(() => {
+    if (currentUser) {
+      return `총 ${(todayStatus?.totalWrittenSentences ?? 0).toLocaleString("ko-KR")}문장 작성`;
+    }
+
+    return "학습을 시작하면 달력에 기록이 쌓여요.";
+  }, [currentUser, todayStatus?.totalWrittenSentences]);
+  const calendarSummaryText = useMemo(() => {
+    if (monthCalendar.isReferenceMonth && monthCalendar.streakDays > 1) {
+      return `현재 ${monthCalendar.streakDays}일 연속 학습 중`;
+    }
+
+    if (monthCalendar.isReferenceMonth && todayStatus?.completed) {
+      return "오늘도 학습 기록이 쌓였어요";
+    }
+
+    if (monthCalendar.completedCount > 0) {
+      return `${monthCalendar.completedCount}일 기록이 있어요`;
+    }
+
+    return "기록이 없어요";
+  }, [monthCalendar.completedCount, monthCalendar.isReferenceMonth, monthCalendar.streakDays, todayStatus?.completed]);
+  const canGoToNextCalendarMonth = useMemo(
+    () => !isSameMonth(calendarMonthCursor, calendarReferenceMonth),
+    [calendarMonthCursor, calendarReferenceMonth]
+  );
   const incompleteLoopRoute = useMemo<Href | null>(() => {
     if (!incompleteLoop) {
       return null;
@@ -303,6 +477,53 @@ export default function HomeScreen() {
     setIsRefreshing(false);
   }, [loadTodayStatus, refreshSession]);
 
+  useEffect(() => {
+    if (!isCalendarOpen) {
+      return;
+    }
+
+    if (!currentUser) {
+      setCalendarCompletedDateKeys([]);
+      setCalendarError("");
+      setIsCalendarLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadCalendarHistory = async () => {
+      try {
+        setIsCalendarLoading(true);
+        setCalendarError("");
+        const history = await getAnswerHistory();
+        if (cancelled) {
+          return;
+        }
+
+        const nextKeys = Array.from(
+          new Set(history.map((session) => toDateKey(getLatestHistoryTimestamp(session))))
+        );
+        setCalendarCompletedDateKeys(nextKeys);
+      } catch (caughtError) {
+        if (cancelled) {
+          return;
+        }
+
+        setCalendarError(caughtError instanceof Error ? caughtError.message : "달력을 불러오지 못했어요.");
+      } finally {
+        if (!cancelled) {
+          setIsCalendarLoading(false);
+        }
+      }
+    };
+
+    void loadCalendarHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser, isCalendarOpen]);
+
   const handleStart = useCallback((difficulty: DailyDifficulty) => {
     router.push({
       pathname: "/practice/[difficulty]",
@@ -311,6 +532,35 @@ export default function HomeScreen() {
       }
     });
   }, []);
+
+  const handleOpenCalendar = useCallback(() => {
+    setCalendarMonthCursor(calendarReferenceMonth);
+    setIsCalendarOpen(true);
+  }, [calendarReferenceMonth]);
+
+  const handleCloseCalendar = useCallback(() => {
+    setIsCalendarOpen(false);
+  }, []);
+
+  const handleChangeCalendarMonth = useCallback((direction: -1 | 1) => {
+    setCalendarMonthCursor((current) => getMonthStart(new Date(current.getFullYear(), current.getMonth() + direction, 1, 12)));
+  }, []);
+
+  const handleOpenHistoryDate = useCallback(
+    (dateKey: string) => {
+      setIsCalendarOpen(false);
+      const nextHref: Href = currentUser
+        ? ({
+            pathname: "/records",
+            params: {
+              date: dateKey
+            }
+          } as Href)
+        : buildLoginHref(`/records?date=${dateKey}`);
+      router.push(nextHref);
+    },
+    [currentUser]
+  );
 
   const handleResumeLoop = useCallback(() => {
     if (!incompleteLoopRoute) {
@@ -363,6 +613,9 @@ export default function HomeScreen() {
             </View>
           </View>
 
+          </Pressable>
+
+          <Pressable style={styles.weekRowButton} onPress={handleOpenCalendar}>
           <View style={styles.weekRow}>
             {weekChips.map((chip) => (
               <View
@@ -424,6 +677,99 @@ export default function HomeScreen() {
       </ScrollView>
         <MobileNavBar activeTab="home" />
       </View>
+
+      <Modal
+        visible={isCalendarOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCloseCalendar}
+      >
+        <View style={styles.calendarModalOverlay}>
+          <Pressable style={styles.calendarModalBackdrop} onPress={handleCloseCalendar} />
+          <SafeAreaView style={styles.calendarModalFrame} edges={["top", "bottom"]}>
+            <View style={styles.calendarModalCard}>
+              <View style={styles.calendarModalHeader}>
+                <View style={styles.calendarModalHeaderCopy}>
+                  <View style={styles.calendarMonthNavRow}>
+                    <Pressable
+                      style={styles.calendarMonthNavButton}
+                      onPress={() => handleChangeCalendarMonth(-1)}
+                    >
+                      <Text style={styles.calendarMonthNavButtonText}>{"<"}</Text>
+                    </Pressable>
+                    <Text style={styles.calendarModalTitle}>{monthCalendar.monthLabel}</Text>
+                    <Pressable
+                      style={[
+                        styles.calendarMonthNavButton,
+                        !canGoToNextCalendarMonth && styles.calendarMonthNavButtonDisabled
+                      ]}
+                      onPress={() => handleChangeCalendarMonth(1)}
+                      disabled={!canGoToNextCalendarMonth}
+                    >
+                      <Text
+                        style={[
+                          styles.calendarMonthNavButtonText,
+                          !canGoToNextCalendarMonth && styles.calendarMonthNavButtonTextDisabled
+                        ]}
+                      >
+                        {">"}
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <Text style={styles.calendarModalSubtitle}>{calendarSummaryText}</Text>
+                </View>
+                <Pressable style={styles.calendarModalCloseButton} onPress={handleCloseCalendar}>
+                  <Text style={styles.calendarModalCloseText}>닫기</Text>
+                </Pressable>
+              </View>
+
+              {isCalendarLoading ? (
+                <View style={styles.calendarLoadingRow}>
+                  <ActivityIndicator color="#E38B12" />
+                </View>
+              ) : null}
+              {calendarError ? <Text style={styles.calendarErrorText}>{calendarError}</Text> : null}
+
+              <View style={styles.calendarWeekHeader}>
+                {WEEKDAY_LABELS.map((label) => (
+                  <Text key={label} style={styles.calendarWeekLabel}>
+                    {label}
+                  </Text>
+                ))}
+              </View>
+
+              <View style={styles.calendarGrid}>
+                {monthCalendar.cells.map((cell) => (
+                  <View key={cell.key} style={styles.calendarCellWrap}>
+                    <Pressable
+                      onPress={() => handleOpenHistoryDate(cell.key)}
+                      style={[
+                        styles.calendarCell,
+                        cell.isCompleted && styles.calendarCellCompleted,
+                        cell.isToday && styles.calendarCellToday,
+                        !cell.isCurrentMonth && styles.calendarCellOutside
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.calendarCellText,
+                          cell.isCompleted && styles.calendarCellTextCompleted,
+                          cell.isToday && styles.calendarCellTextToday,
+                          !cell.isCurrentMonth && styles.calendarCellTextOutside
+                        ]}
+                      >
+                        {cell.dayNumber}
+                      </Text>
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+
+              <Text style={styles.calendarFooterMeta}>{calendarFooterLabel}</Text>
+            </View>
+          </SafeAreaView>
+        </View>
+      </Modal>
 
       <Modal visible={isGuideOpen} animationType="slide" onRequestClose={() => setIsGuideOpen(false)}>
         <SafeAreaView style={styles.guideModalRoot} edges={["top", "bottom"]}>
@@ -632,6 +978,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#8B7761"
   },
+  weekRowButton: {
+    marginTop: 18
+  },
   weekRow: {
     flexDirection: "row",
     justifyContent: "space-between"
@@ -689,6 +1038,168 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     textAlign: "center",
     color: "#6B5E4E"
+  },
+  calendarModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(36, 27, 17, 0.22)"
+  },
+  calendarModalBackdrop: {
+    ...StyleSheet.absoluteFillObject
+  },
+  calendarModalFrame: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 24
+  },
+  calendarModalCard: {
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "#EBDCCB",
+    backgroundColor: "#FFF9F1",
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    gap: 16,
+    shadowColor: "#D89A51",
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 6
+  },
+  calendarModalHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12
+  },
+  calendarModalHeaderCopy: {
+    flex: 1,
+    gap: 4
+  },
+  calendarMonthNavRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12
+  },
+  calendarMonthNavButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "#E6D2BC",
+    backgroundColor: "#FFFEFC",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  calendarMonthNavButtonDisabled: {
+    opacity: 0.45
+  },
+  calendarMonthNavButtonText: {
+    fontSize: 18,
+    lineHeight: 20,
+    fontWeight: "900",
+    color: "#8A6431"
+  },
+  calendarMonthNavButtonTextDisabled: {
+    color: "#B7A38A"
+  },
+  calendarModalTitle: {
+    flex: 1,
+    fontSize: 28,
+    lineHeight: 34,
+    fontWeight: "900",
+    textAlign: "center",
+    color: "#232128"
+  },
+  calendarModalSubtitle: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#77695A"
+  },
+  calendarModalCloseButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E6D2BC",
+    backgroundColor: "#FFFEFC",
+    paddingHorizontal: 14,
+    paddingVertical: 8
+  },
+  calendarModalCloseText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#8A6431"
+  },
+  calendarLoadingRow: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4
+  },
+  calendarErrorText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#B34A2B"
+  },
+  calendarWeekHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between"
+  },
+  calendarWeekLabel: {
+    width: 40,
+    textAlign: "center",
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#A17A42"
+  },
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap"
+  },
+  calendarCellWrap: {
+    width: "14.285%",
+    alignItems: "center",
+    marginBottom: 10
+  },
+  calendarCell: {
+    width: 40,
+    height: 40,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#EADDCB",
+    backgroundColor: "#FFFDF9",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  calendarCellOutside: {
+    backgroundColor: "#F8F1E7",
+    borderColor: "#F1E4D4"
+  },
+  calendarCellCompleted: {
+    backgroundColor: "#FFB347",
+    borderColor: "#E48B21"
+  },
+  calendarCellToday: {
+    borderWidth: 3,
+    borderColor: "#C4832F"
+  },
+  calendarCellText: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#7D6750"
+  },
+  calendarCellTextOutside: {
+    color: "#C6B8A6"
+  },
+  calendarCellTextCompleted: {
+    color: "#FFFDFB"
+  },
+  calendarCellTextToday: {
+    color: "#7D531D"
+  },
+  calendarFooterMeta: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#6D5E4E",
+    textAlign: "center"
   },
   guideModalRoot: {
     flex: 1,

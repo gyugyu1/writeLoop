@@ -1,7 +1,8 @@
-import { router } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  type LayoutChangeEvent,
   Modal,
   Pressable,
   RefreshControl,
@@ -498,6 +499,12 @@ const listStyles = StyleSheet.create({
   dateGroup: {
     backgroundColor: "transparent"
   },
+  dateGroupTargeted: {
+    borderRadius: 20,
+    backgroundColor: "#FFF7EC",
+    paddingHorizontal: 12,
+    paddingVertical: 8
+  },
   dateGroupSeparated: {
     borderTopWidth: 1,
     borderTopColor: "#E7D7C4",
@@ -713,7 +720,13 @@ const styles = {
 };
 
 export default function RecordsScreen() {
+  const params = useLocalSearchParams<{ date?: string }>();
+  const requestedDateKey = typeof params.date === "string" ? params.date : "";
+  const highlightedDateKey = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateKey) ? requestedDateKey : "";
   const { currentUser, isHydrating, refreshSession, signOut } = useSession();
+  const scrollViewRef = useRef<ScrollView | null>(null);
+  const dateGroupOffsetsRef = useRef<Record<string, number>>({});
+  const lastScrolledDateRef = useRef("");
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [history, setHistory] = useState<HistorySession[]>([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -771,9 +784,15 @@ export default function RecordsScreen() {
     setOpenDates((current) => {
       const next: Record<string, boolean> = {};
       let changed = Object.keys(current).length !== groupedHistoryEntries.length;
+      const hasHighlightedDate = highlightedDateKey
+        ? groupedHistoryEntries.some((entry) => entry.dateKey === highlightedDateKey)
+        : false;
 
       groupedHistoryEntries.forEach(({ dateKey }, index) => {
-        const nextValue = current[dateKey] ?? index === 0;
+        const nextValue =
+          dateKey === highlightedDateKey
+            ? true
+            : current[dateKey] ?? (hasHighlightedDate ? false : index === 0);
         next[dateKey] = nextValue;
         if (current[dateKey] !== nextValue) {
           changed = true;
@@ -782,7 +801,42 @@ export default function RecordsScreen() {
 
       return changed ? next : current;
     });
-  }, [groupedHistoryEntries]);
+  }, [groupedHistoryEntries, highlightedDateKey]);
+
+  useEffect(() => {
+    lastScrolledDateRef.current = "";
+  }, [highlightedDateKey]);
+
+  useEffect(() => {
+    if (!highlightedDateKey) {
+      return;
+    }
+
+    if (!groupedHistoryEntries.some((entry) => entry.dateKey === highlightedDateKey)) {
+      return;
+    }
+
+    if (!(openDates[highlightedDateKey] ?? false)) {
+      return;
+    }
+
+    const targetOffset = dateGroupOffsetsRef.current[highlightedDateKey];
+    if (typeof targetOffset !== "number" || lastScrolledDateRef.current === highlightedDateKey) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      scrollViewRef.current?.scrollTo({
+        y: Math.max(targetOffset - 12, 0),
+        animated: true
+      });
+      lastScrolledDateRef.current = highlightedDateKey;
+    }, 80);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [groupedHistoryEntries, highlightedDateKey, openDates]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -816,6 +870,30 @@ export default function RecordsScreen() {
     setSelectedHistoryFeedback(buildHistoryFeedbackState(selectedSession, attempt));
   }
 
+  const handleDateGroupLayout = useCallback(
+    (dateKey: string, event: LayoutChangeEvent) => {
+      const nextOffset = event.nativeEvent.layout.y;
+      dateGroupOffsetsRef.current[dateKey] = nextOffset;
+
+      if (dateKey !== highlightedDateKey || !(openDates[dateKey] ?? false)) {
+        return;
+      }
+
+      if (lastScrolledDateRef.current === highlightedDateKey) {
+        return;
+      }
+
+      setTimeout(() => {
+        scrollViewRef.current?.scrollTo({
+          y: Math.max(nextOffset - 12, 0),
+          animated: true
+        });
+        lastScrolledDateRef.current = highlightedDateKey;
+      }, 80);
+    },
+    [highlightedDateKey, openDates]
+  );
+
   if (isHydrating) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -834,6 +912,7 @@ export default function RecordsScreen() {
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         <View style={styles.screen}>
           <ScrollView
+            ref={scrollViewRef}
             contentContainerStyle={styles.content}
             refreshControl={
               <RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />
@@ -903,9 +982,11 @@ export default function RecordsScreen() {
                         return (
                           <View
                             key={dateKey}
+                            onLayout={(event) => handleDateGroupLayout(dateKey, event)}
                             style={[
                               styles.dateGroup,
-                              groupIndex > 0 && styles.dateGroupSeparated
+                              groupIndex > 0 && styles.dateGroupSeparated,
+                              dateKey === highlightedDateKey && styles.dateGroupTargeted
                             ]}
                           >
                             <Pressable

@@ -3717,51 +3717,6 @@
   padding: 34px 24px 30px;
 }
 
-.registerBrandHeader {
-  display: grid;
-  justify-items: center;
-  gap: 12px;
-  margin-bottom: 28px;
-}
-
-.registerIntroPill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 30px;
-  padding: 7px 14px;
-  border-radius: 999px;
-  background: rgba(242, 153, 74, 0.14);
-  color: #914d00;
-  font-size: 0.74rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-}
-
-.registerBrandCopy {
-  display: grid;
-  gap: 8px;
-  justify-items: center;
-}
-
-.registerWelcomeHeading {
-  margin: 0;
-  color: #242522;
-  font-size: clamp(1.46rem, 3.4vw, 1.88rem);
-  font-weight: 800;
-  letter-spacing: -0.05em;
-  text-align: center;
-}
-
-.registerWelcomeCopy {
-  margin: 0;
-  max-width: 430px;
-  color: rgba(93, 96, 92, 0.88);
-  font-size: 0.92rem;
-  line-height: 1.7;
-  text-align: center;
-}
-
 .registerForm {
   gap: 16px;
 }
@@ -4133,14 +4088,6 @@
 
   .registerPanel {
     padding: 26px 14px 24px;
-  }
-
-  .registerWelcomeHeading {
-    font-size: 1.34rem;
-  }
-
-  .registerWelcomeCopy {
-    font-size: 0.88rem;
   }
 
   .registerEmailRow {

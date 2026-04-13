@@ -140,16 +140,6 @@ export function RegisterPageClient() {
         </div>
 
         <section className={`${styles.loginPanel} ${styles.registerPanel}`}>
-          <div className={styles.registerBrandHeader}>
-            <span className={styles.registerIntroPill}>writeLoop 계정 만들기</span>
-            <div className={styles.registerBrandCopy}>
-              <h2 className={styles.registerWelcomeHeading}>지금부터 나만의 작문 루프를 시작해 볼까요?</h2>
-              <p className={styles.registerWelcomeCopy}>
-                이메일 인증을 마치면 오늘의 질문, 다시쓰기, 피드백 기록을 한 흐름으로 이어서 쓸 수 있어요.
-              </p>
-            </div>
-          </div>
-
           <form
             className={`${styles.form} ${styles.loginForm} ${styles.registerForm}`}
             onSubmit={(event) => {

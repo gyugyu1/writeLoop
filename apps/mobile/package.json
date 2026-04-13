@@ -10,6 +10,9 @@
     "android": "expo run:android",
     "android:emulator": "expo start --android --localhost --clear",
     "ios": "expo run:ios",
+    "eas:configure": "npx eas-cli build:configure",
+    "eas:build:ios": "npx eas-cli build --platform ios --profile production",
+    "eas:submit:ios": "npx eas-cli submit --platform ios --profile production",
     "web": "expo start --web",
     "lint": "expo lint",
     "typecheck": "tsc --noEmit"

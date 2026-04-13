@@ -2,8 +2,8 @@
   min-height: calc(100vh - 88px);
   padding: 104px 24px 72px;
   background:
-    radial-gradient(circle at top left, rgba(244, 227, 197, 0.92), transparent 36%),
-    linear-gradient(180deg, #faf6ef 0%, #f7f2eb 100%);
+    radial-gradient(circle at top right, rgba(239, 227, 210, 0.96), transparent 32%),
+    linear-gradient(180deg, #fbf7f1 0%, #f7f2eb 100%);
 }
 
 .shell {
@@ -13,12 +13,17 @@
   gap: 24px;
 }
 
+.hero,
+.actionCard,
+.documentCard {
+  border-radius: 32px;
+  background: rgba(255, 252, 247, 0.94);
+  box-shadow: 0 24px 60px -30px rgba(127, 82, 0, 0.22);
+}
+
 .hero {
   padding: 32px;
   border: 1px solid rgba(127, 82, 0, 0.14);
-  border-radius: 32px;
-  background: rgba(255, 252, 247, 0.9);
-  box-shadow: 0 24px 60px -28px rgba(127, 82, 0, 0.22);
 }
 
 .eyebrow {
@@ -34,7 +39,7 @@
 .title {
   margin: 0;
   color: var(--text-main);
-  font-size: clamp(2rem, 5vw, 3.25rem);
+  font-size: clamp(2rem, 5vw, 3.1rem);
   line-height: 1.08;
 }
 
@@ -73,12 +78,67 @@
   background: #fff3e0;
 }
 
+.actionCard {
+  display: grid;
+  gap: 20px;
+  padding: 28px 32px;
+  border: 1px solid rgba(127, 82, 0, 0.12);
+}
+
+.actionTitle {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 1.4rem;
+  line-height: 1.25;
+}
+
+.actionDescription {
+  margin: 10px 0 0;
+  color: var(--text-sub);
+}
+
+.actionButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font-family: var(--font-primary);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.primaryAction {
+  background: linear-gradient(135deg, #f2a14a 0%, #d88117 100%);
+  color: #fffdf8;
+  box-shadow: 0 14px 32px -18px rgba(216, 129, 23, 0.72);
+}
+
+.primaryAction:hover {
+  filter: brightness(1.03);
+}
+
+.secondaryAction {
+  border: 1px solid rgba(127, 82, 0, 0.16);
+  background: #fffaf3;
+  color: var(--warm-accent);
+}
+
+.secondaryAction:hover {
+  background: #fff3e0;
+}
+
 .documentCard {
   padding: 32px;
   border: 1px solid rgba(127, 82, 0, 0.12);
-  border-radius: 32px;
-  background: #fffdf9;
-  box-shadow: 0 20px 54px -32px rgba(48, 46, 43, 0.26);
 }
 
 .section + .section {
@@ -135,14 +195,14 @@
   gap: 16px;
 }
 
-.homeLink {
+.footerLink {
   color: var(--warm-accent);
   font-family: var(--font-primary);
   font-weight: 700;
   text-decoration: none;
 }
 
-.homeLink:hover {
+.footerLink:hover {
   text-decoration: underline;
 }
 
@@ -152,6 +212,7 @@
   }
 
   .hero,
+  .actionCard,
   .documentCard {
     padding: 24px;
     border-radius: 24px;

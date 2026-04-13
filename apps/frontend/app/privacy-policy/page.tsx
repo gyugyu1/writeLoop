@@ -63,9 +63,14 @@ export default function PrivacyPolicyPage() {
           <p className={styles.footerText}>
             계정 관련 요청은 앱 또는 웹의 계정 설정 화면에서도 진행할 수 있습니다.
           </p>
-          <Link href="/" className={styles.homeLink}>
-            writeLoop 홈으로
-          </Link>
+          <div className={styles.footerLinks}>
+            <Link href="/account-deletion" className={styles.homeLink}>
+              계정 삭제 안내
+            </Link>
+            <Link href="/" className={styles.homeLink}>
+              writeLoop 홈으로
+            </Link>
+          </div>
         </div>
       </div>
     </main>

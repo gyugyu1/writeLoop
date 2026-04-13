@@ -10755,6 +10755,143 @@
     0 0 0 4px rgba(242, 153, 74, 0.08);
 }
 
+.difficultyHomeResumeCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 24px 28px;
+  border: 1px solid rgba(242, 153, 74, 0.24);
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 226, 182, 0.46) 0%, transparent 32%),
+    linear-gradient(180deg, rgba(255, 253, 249, 0.98) 0%, rgba(255, 248, 239, 0.98) 100%);
+  box-shadow: 0 18px 38px -30px rgba(173, 113, 36, 0.24);
+}
+
+.difficultyHomeResumeLead {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.difficultyHomeResumeIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  background: rgba(242, 153, 74, 0.14);
+  color: #8c5b00;
+  flex-shrink: 0;
+}
+
+.difficultyHomeResumeIconGlyph {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: 1.5rem;
+  font-variation-settings:
+    "FILL" 1,
+    "wght" 500,
+    "GRAD" 0,
+    "opsz" 24;
+}
+
+.difficultyHomeResumeCopy {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.difficultyHomeResumeTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.difficultyHomeResumeTop strong {
+  color: #2d3436;
+  font-size: 1.12rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.difficultyHomeResumeBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 26px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: rgba(242, 153, 74, 0.14);
+  color: #965200;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.difficultyHomeResumeCopy p {
+  margin: 0;
+  color: #6f665d;
+  font-size: 0.96rem;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.difficultyHomeResumeQuestion {
+  color: #3a342d;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.difficultyHomeResumeMeta {
+  color: #8a7e70;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.difficultyHomeResumeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 58px;
+  padding: 14px 22px;
+  border: none;
+  border-radius: 999px;
+  background: #f6b74f;
+  color: #4b3413;
+  font-size: 0.98rem;
+  font-weight: 900;
+  box-shadow:
+    0 6px 0 0 #6a4413,
+    0 16px 28px -24px rgba(106, 68, 19, 0.36);
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.difficultyHomeResumeButton:hover {
+  transform: translateY(2px);
+  box-shadow:
+    0 4px 0 0 #6a4413,
+    0 14px 24px -24px rgba(106, 68, 19, 0.34);
+  filter: brightness(1.01);
+}
+
+.difficultyHomeResumeButtonIcon {
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 1.2rem;
+}
+
 .difficultyHomeStage {
   display: grid;
   gap: 26px;
@@ -11318,7 +11455,8 @@
   }
 
   .difficultyHomeTitleRow,
-  .difficultyHomeStatusPanel {
+  .difficultyHomeStatusPanel,
+  .difficultyHomeResumeCard {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -11360,6 +11498,16 @@
     padding: 20px;
     gap: 18px;
     border-radius: 24px;
+  }
+
+  .difficultyHomeResumeCard {
+    padding: 20px;
+    gap: 16px;
+    border-radius: 24px;
+  }
+
+  .difficultyHomeResumeLead {
+    align-items: flex-start;
   }
 
   .difficultyHomeWeekRow {
@@ -11481,6 +11629,18 @@
 
   .difficultyHomeStatusTop {
     flex-wrap: wrap;
+  }
+
+  .difficultyHomeResumeTop {
+    align-items: flex-start;
+  }
+
+  .difficultyHomeResumeQuestion {
+    font-size: 0.96rem;
+  }
+
+  .difficultyHomeResumeButton {
+    width: 100%;
   }
 
   .promptSelectionStatusButton {

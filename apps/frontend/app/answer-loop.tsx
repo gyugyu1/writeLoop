@@ -33,6 +33,14 @@ import {
   getPreferredLocalWritingDraft,
   saveLocalWritingDraft
 } from "../lib/home-writing-drafts";
+import {
+  buildIncompleteLoopPromptSnapshot,
+  clearIncompleteLoopForPrompt,
+  getIncompleteLoop,
+  saveIncompleteLoop,
+  type IncompleteLoopState,
+  type IncompleteLoopStep
+} from "../lib/incomplete-loop";
 import { buildCoachQuickQuestions } from "../lib/coach-quick-questions";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getDifficultyLabel } from "../lib/difficulty";
@@ -87,6 +95,13 @@ type RewriteSuggestion = {
   english: string;
   korean?: string | null;
   note?: string | null;
+};
+type IncompleteLoopCopy = {
+  title: string;
+  body: string;
+  ctaLabel: string;
+  badgeLabel: string;
+  icon: string;
 };
 type FixPointDetailLine = {
   key: string;
@@ -765,6 +780,48 @@ function countWords(text: string) {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
+function getIncompleteLoopCopy(step: IncompleteLoopStep): IncompleteLoopCopy {
+  switch (step) {
+    case "feedback":
+      return {
+        title: "받아둔 피드백이 남아 있어요",
+        body: "코치가 남긴 포인트를 확인하고 다음 루프로 자연스럽게 이어가 볼 수 있어요.",
+        ctaLabel: "피드백 이어보기",
+        badgeLabel: "FEEDBACK",
+        icon: "chat"
+      };
+    case "rewrite":
+      return {
+        title: "다시쓰기 초안이 남아 있어요",
+        body: "방금 다듬던 문장을 이어서 마무리하고 한 번 더 정리해 볼 수 있어요.",
+        ctaLabel: "다시 쓰러 가기",
+        badgeLabel: "REWRITE",
+        icon: "edit_note"
+      };
+    case "answer":
+    default:
+      return {
+        title: "작성하던 초안이 남아 있어요",
+        body: "멈춘 지점부터 바로 이어서 쓰고 오늘의 루프를 계속 진행할 수 있어요.",
+        ctaLabel: "이어서 쓰기",
+        badgeLabel: "DRAFT",
+        icon: "edit"
+      };
+  }
+}
+
+function formatIncompleteLoopSavedAt(updatedAt: string) {
+  const savedAt = new Date(updatedAt);
+  if (Number.isNaN(savedAt.getTime())) {
+    return "";
+  }
+
+  return savedAt.toLocaleTimeString("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
 function parseLocalDate(dateString: string) {
   const [year, month, day] = dateString.split("-").map(Number);
   return new Date(year, (month ?? 1) - 1, day ?? 1);
@@ -1063,6 +1120,8 @@ export function AnswerLoop() {
   const [didRestoreDraft, setDidRestoreDraft] = useState(false);
   const [didAttemptPersistedDraftRestore, setDidAttemptPersistedDraftRestore] = useState(false);
   const [draftStatusMessage, setDraftStatusMessage] = useState("");
+  const [incompleteLoop, setIncompleteLoop] = useState<IncompleteLoopState | null>(null);
+  const [isLoadingIncompleteLoop, setIsLoadingIncompleteLoop] = useState(true);
   const [questionRefreshHistory, setQuestionRefreshHistory] = useState<string[]>([]);
   const [isRefreshingQuestion, setIsRefreshingQuestion] = useState(false);
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
@@ -1147,6 +1206,15 @@ export function AnswerLoop() {
     setShowRewriteFeedback(false);
     setShowAnswerTranslation(false);
   }, [currentUser, didRestoreDraft]);
+
+  useEffect(() => {
+    if (isResolvingCurrentUser) {
+      return;
+    }
+
+    setIncompleteLoop(getIncompleteLoop());
+    setIsLoadingIncompleteLoop(false);
+  }, [currentUser?.id, isResolvingCurrentUser]);
 
   useEffect(() => {
     setDidAttemptPersistedDraftRestore(false);
@@ -1578,6 +1646,14 @@ export function AnswerLoop() {
     () => buildWelcomeWeek(todayStatus, welcomeCompletedDateKeys),
     [todayStatus, welcomeCompletedDateKeys]
   );
+  const incompleteLoopCopy = useMemo(
+    () => (incompleteLoop ? getIncompleteLoopCopy(incompleteLoop.step) : null),
+    [incompleteLoop]
+  );
+  const incompleteLoopSavedAt = useMemo(
+    () => (incompleteLoop ? formatIncompleteLoopSavedAt(incompleteLoop.updatedAt) : ""),
+    [incompleteLoop]
+  );
   const monthCalendar = buildMonthCalendar(monthStatus, activeMonthView, todayStatus?.date);
   const mobileComposerBarStyle = useMemo(
     () =>
@@ -1914,6 +1990,21 @@ export function AnswerLoop() {
     markPersistedDraftKnown(promptId, draftType, false);
   }, [isLoggedIn, markPersistedDraftKnown]);
 
+  const clearVisibleIncompleteLoop = useCallback((promptId: string, step?: IncompleteLoopStep) => {
+    clearIncompleteLoopForPrompt(promptId, step);
+    setIncompleteLoop((current) => {
+      if (!current || current.promptId !== promptId) {
+        return current;
+      }
+
+      if (step && current.step !== step) {
+        return current;
+      }
+
+      return null;
+    });
+  }, []);
+
   function clearCoachState() {
     setShowCoachAssistant(false);
     setShowHelpSheet(false);
@@ -1925,14 +2016,17 @@ export function AnswerLoop() {
     setIsCheckingCoachUsage(false);
   }
 
-  const restorePersistedDraft = useCallback(async (promptId: string): Promise<boolean> => {
+  const restorePersistedDraft = useCallback(async (
+    promptId: string,
+    message?: string
+  ): Promise<boolean> => {
     try {
       const draft = await loadPersistedDraft(promptId);
       if (!draft) {
         return false;
       }
 
-      applyDraftSnapshot(draft);
+      applyDraftSnapshot(draft, message);
       return true;
     } catch {
       return false;
@@ -2064,12 +2158,18 @@ export function AnswerLoop() {
   }
 
   function handleFinishLoop() {
+    if (selectedPromptId) {
+      clearVisibleIncompleteLoop(selectedPromptId);
+    }
     setShowLoginWall(false);
     setError("");
     setStep("complete");
   }
 
   function handleTryAnotherPrompt() {
+    if (selectedPromptId) {
+      clearVisibleIncompleteLoop(selectedPromptId);
+    }
     setFeedback(null);
     clearCoachState();
     setAnswer("");
@@ -2086,9 +2186,37 @@ export function AnswerLoop() {
     setStep("pick");
   }
 
+  const handleResumeIncompleteLoop = useCallback(async () => {
+    if (!incompleteLoop) {
+      return;
+    }
+
+    const resumeMessage = "이어서 쓰던 흐름을 불러왔어요.";
+
+    if (incompleteLoop.step !== "feedback") {
+      const restored = await restorePersistedDraft(incompleteLoop.promptId, resumeMessage);
+      if (restored) {
+        return;
+      }
+    }
+
+    if (incompleteLoop.snapshot) {
+      applyDraftSnapshot(incompleteLoop.snapshot, resumeMessage);
+      return;
+    }
+
+    setSelectedDifficulty(incompleteLoop.difficulty);
+    setPendingDifficultySelection(incompleteLoop.difficulty);
+    setSelectedPromptId(incompleteLoop.promptId);
+    setPickFlowScreen("prompt");
+    setError("이전 내용을 바로 불러오지 못해 질문부터 다시 열어두었어요.");
+  }, [applyDraftSnapshot, incompleteLoop, restorePersistedDraft]);
+
   useEffect(() => {
     if (
       isResolvingCurrentUser ||
+      isLoadingIncompleteLoop ||
+      incompleteLoop ||
       didAttemptPersistedDraftRestore ||
       step !== "pick" ||
       !selectedPromptId ||
@@ -2118,10 +2246,72 @@ export function AnswerLoop() {
     answer,
     didAttemptPersistedDraftRestore,
     feedback,
+    incompleteLoop,
+    isLoadingIncompleteLoop,
     isResolvingCurrentUser,
     rewrite,
     restorePersistedDraft,
     selectedPromptId,
+    step
+  ]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || isResolvingCurrentUser || !selectedPromptId) {
+      return;
+    }
+
+    if (step === "complete") {
+      clearVisibleIncompleteLoop(selectedPromptId);
+      return;
+    }
+
+    if (step !== "answer" && step !== "feedback" && step !== "rewrite") {
+      return;
+    }
+
+    if (!selectedPrompt) {
+      return;
+    }
+
+    const snapshot = buildHomeDraft();
+    const hasResumeContent =
+      step === "feedback"
+        ? Boolean(snapshot.feedback)
+        : step === "rewrite"
+          ? Boolean(snapshot.rewrite.trim() || snapshot.lastSubmittedAnswer.trim() || snapshot.feedback)
+          : Boolean(snapshot.answer.trim() || snapshot.feedback);
+
+    if (!hasResumeContent) {
+      clearVisibleIncompleteLoop(selectedPromptId, step);
+      return;
+    }
+
+    const nextLoop: IncompleteLoopState = {
+      promptId: selectedPromptId,
+      difficulty: selectedDifficulty,
+      step,
+      draftType: activeDraftType ?? (step === "rewrite" ? "REWRITE" : "ANSWER"),
+      sessionId: sessionId || undefined,
+      updatedAt: new Date().toISOString(),
+      promptSnapshot: buildIncompleteLoopPromptSnapshot(selectedPrompt),
+      snapshot
+    };
+
+    saveIncompleteLoop(nextLoop);
+    setIncompleteLoop(nextLoop);
+  }, [
+    activeDraftType,
+    answer,
+    buildHomeDraft,
+    clearVisibleIncompleteLoop,
+    feedback,
+    isResolvingCurrentUser,
+    lastSubmittedAnswer,
+    rewrite,
+    selectedDifficulty,
+    selectedPrompt,
+    selectedPromptId,
+    sessionId,
     step
   ]);
 
@@ -2384,6 +2574,52 @@ export function AnswerLoop() {
     setMonthView((current) => addMonthsToView(current ?? currentMonthView, delta));
   }
 
+  function renderIncompleteLoopResumeCard() {
+    if (!incompleteLoop || !incompleteLoopCopy) {
+      return null;
+    }
+
+    const promptQuestion = incompleteLoop.promptSnapshot.questionEn.trim();
+    const promptTopic = incompleteLoop.promptSnapshot.topic.trim();
+    const metaParts = [promptTopic, incompleteLoopSavedAt ? `${incompleteLoopSavedAt}에 저장` : ""].filter(Boolean);
+
+    return (
+      <section className={styles.difficultyHomeResumeCard}>
+        <div className={styles.difficultyHomeResumeLead}>
+          <span className={styles.difficultyHomeResumeIcon} aria-hidden="true">
+            <span className={`materialSymbols ${styles.difficultyHomeResumeIconGlyph}`}>
+              {incompleteLoopCopy.icon}
+            </span>
+          </span>
+          <div className={styles.difficultyHomeResumeCopy}>
+            <div className={styles.difficultyHomeResumeTop}>
+              <strong>{incompleteLoopCopy.title}</strong>
+              <span className={styles.difficultyHomeResumeBadge}>{incompleteLoopCopy.badgeLabel}</span>
+            </div>
+            <p>{incompleteLoopCopy.body}</p>
+            {promptQuestion ? (
+              <strong className={styles.difficultyHomeResumeQuestion}>{promptQuestion}</strong>
+            ) : null}
+            {metaParts.length > 0 ? (
+              <span className={styles.difficultyHomeResumeMeta}>{metaParts.join(" · ")}</span>
+            ) : null}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className={styles.difficultyHomeResumeButton}
+          onClick={() => void handleResumeIncompleteLoop()}
+        >
+          <span>{incompleteLoopCopy.ctaLabel}</span>
+          <span className={`materialSymbols ${styles.difficultyHomeResumeButtonIcon}`} aria-hidden="true">
+            arrow_forward
+          </span>
+        </button>
+      </section>
+    );
+  }
+
   function renderPickStep() {
     if (pickFlowScreen === "difficulty") {
       return (
@@ -2471,6 +2707,8 @@ export function AnswerLoop() {
               </div>
             </button>
           </section>
+
+          {renderIncompleteLoopResumeCard()}
 
           <section className={styles.difficultyHomeStage}>
             <div className={styles.difficultyHomeCardGrid}>
@@ -2614,6 +2852,8 @@ export function AnswerLoop() {
           </div>
 
         </section>
+
+        {renderIncompleteLoopResumeCard()}
 
         <section className={styles.difficultyHomeStage}>
           <div className={styles.promptSelectionCardGrid}>

@@ -1722,9 +1722,16 @@ final class FeedbackUiComposer {
         }
 
         String[] sentences = normalized.split("(?<=[.!?])\\s+");
-        for (String sentence : sentences) {
-            String candidate = normalizeNullable(sentence);
+        for (int index = 0; index < sentences.length; index++) {
+            String candidate = normalizeNullable(sentences[index]);
             if (candidate == null) {
+                continue;
+            }
+            if (sentences.length > 1 && isGenericAckSentence(candidate)) {
+                String followUp = nextSpecificLoopStatusSentence(sentences, index + 1);
+                if (followUp != null) {
+                    return candidate + " " + followUp;
+                }
                 continue;
             }
             if (candidate.contains("원하면") || candidate.contains("다듬")) {
@@ -1734,6 +1741,30 @@ final class FeedbackUiComposer {
         }
 
         return fallbackHeadline;
+    }
+
+    private boolean isGenericAckSentence(String candidate) {
+        String normalized = trimSentenceEnding(candidate).toLowerCase(Locale.ROOT);
+        return normalized.equals("좋아요")
+                || normalized.equals("좋습니다")
+                || normalized.equals("잘했어요");
+    }
+
+    private String nextSpecificLoopStatusSentence(String[] sentences, int startIndex) {
+        if (sentences == null || startIndex < 0) {
+            return null;
+        }
+        for (int index = startIndex; index < sentences.length; index++) {
+            String candidate = normalizeNullable(sentences[index]);
+            if (candidate == null) {
+                continue;
+            }
+            if (candidate.contains("원하면") || candidate.contains("다듬")) {
+                continue;
+            }
+            return candidate;
+        }
+        return null;
     }
 
     private FeedbackScreenPolicyDto toDto(FeedbackScreenPolicy screenPolicy) {

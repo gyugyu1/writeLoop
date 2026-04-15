@@ -546,13 +546,13 @@ export default function PracticeWriteScreen() {
       setIsSubmitting(true);
       setError("");
       const trimmedAnswer = answer.trim();
-      const guestId = currentUser ? undefined : await getOrCreateGuestId();
+      const guestId = await getOrCreateGuestId();
       const nextFeedback = await submitFeedback({
         promptId: selectedPrompt.id,
         answer: trimmedAnswer,
         sessionId: feedback?.sessionId,
         attemptType: feedback ? "REWRITE" : "INITIAL",
-        guestId
+        guestId: guestId || undefined
       });
 
       savePracticeFeedbackState({

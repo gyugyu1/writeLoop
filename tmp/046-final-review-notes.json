@@ -1,0 +1,11 @@
+{
+  "prompt-a-4": "Replace abstract mood words like relaxation, calm, and quiet with concrete after-work details. Favor direct routine words such as sofa, pajamas, shower, snack, takeout, or stretching.",
+  "prompt-goal-1127": "This is a Goal Plan prompt. Reduce abstract words like permission, boundary, and downtime. Favor actionable step or tool words such as calendar, bedtime, timer, journal, schedule, or reminder.",
+  "prompt-balance-16": "Strengthen the pros-versus-cons debate axis for online shopping. Include drawback-side words such as impulse buying, counterfeit, returns, packaging, or delivery delay instead of only convenience-side detail words.",
+  "prompt-balance-31": "Strengthen the debate axis for short-form videos. Avoid format-only words like editing or caption. Favor issue words such as attention span, addiction, creativity, misinformation, distraction, or overstimulation.",
+  "prompt-c-3": "Avoid topic-menu words like class or broad domain examples. Focus on belief-change words such as assumption, doubt, certainty, evidence, disagreement, reflection, realization, or perspective.",
+  "prompt-general-16": "Do not lock the answer to one specific hobby like photography. Use broad hobby-support words such as beginner, practice, routine, equipment, progress, motivation, relaxation, or stress relief.",
+  "prompt-general-46": "Do not list many different household items. Support one chosen item with descriptive and practical words such as texture, fabric, handle, durability, storage, convenience, cleaning, or everyday use.",
+  "prompt-general-1111": "Do not list many phone features. Support one relied-on feature with descriptive and functional words such as shortcut, settings, notification, access, security, reminder, navigation, or convenience.",
+  "prompt-general-1115": "Do not lock the answer to music. Support a discussion topic with conversation words such as opinion, debate, interpretation, example, disagreement, recommendation, curiosity, or perspective."
+}

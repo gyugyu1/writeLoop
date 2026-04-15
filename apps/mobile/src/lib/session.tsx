@@ -10,6 +10,9 @@ import {
   useState
 } from "react";
 import { getCurrentUser, login, loginWithSocial, logout } from "./api";
+import { clearIncompleteLoop } from "./incomplete-loop";
+import { clearPracticeFeedbackState } from "./practice-feedback-state";
+import { setActiveStorageOwnerScope } from "./storage-owner";
 import type { AuthUser, LoginRequest, SocialProvider } from "./types";
 
 type SessionContextValue = {
@@ -54,6 +57,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
   const refreshRequestIdRef = useRef(0);
 
   const applySessionUser = useCallback((user: AuthUser | null) => {
+    setActiveStorageOwnerScope(user?.id);
     currentUserRef.current = user;
     setCurrentUser(user);
     setIsHydrating(false);
@@ -124,6 +128,8 @@ export function SessionProvider({ children }: PropsWithChildren) {
     try {
       await logout();
     } finally {
+      await clearIncompleteLoop();
+      clearPracticeFeedbackState();
       applySessionUser(null);
     }
   }, [applySessionUser, invalidateRefreshRequests]);

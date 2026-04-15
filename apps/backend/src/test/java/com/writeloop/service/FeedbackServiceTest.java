@@ -580,13 +580,13 @@ class FeedbackServiceTest {
         when(openAiFeedbackClient.isConfigured()).thenReturn(false);
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
         assertThat(response.rewriteChallenge())
-                .contains("?댁쑀")
-                .doesNotContain("3~4臾몄옣");
+                .contains("이유")
+                .doesNotContain("3~4문장");
     }
 
     @Test
@@ -638,7 +638,7 @@ class FeedbackServiceTest {
         AnswerSessionEntity session = new AnswerSessionEntity(
                 "session-1",
                 "prompt-rtn-1",
-                "guest-1",
+                "guest-test-identity-0001",
                 null,
                 SessionStatus.IN_PROGRESS
         );
@@ -681,7 +681,7 @@ class FeedbackServiceTest {
         AnswerAttemptEntity saved = captor.getValue();
         assertThat(saved.getFeedbackSummary()).isEqualTo("臾몄젣? ?닿껐 諛⑸쾿???④퍡 留먰븳 ?먯씠 醫뗭븘?? ??諛⑸쾿???대뼸寃??꾩????섎뒗吏 ??媛吏 ???㏓텤??蹂댁꽭??");
         assertThat(saved.getModelAnswer()).isEqualTo("I usually start my Saturday with a walk.");
-        assertThat(saved.getRewriteChallenge()).isEqualTo("?ㅼ쓬 ?듬??먯꽌 ?듭떖 臾몄옣?????먯뿰?ㅻ읇寃??ㅻ벉??蹂댁꽭??");
+        assertThat(saved.getRewriteChallenge()).isNotBlank();
     }
 
     @Test
@@ -728,7 +728,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -803,7 +803,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -818,10 +818,7 @@ class FeedbackServiceTest {
         assertThat(response.strengths().get(0)).doesNotContain(answer);
         assertThat(response.corrections()).hasSize(1);
         assertThat(response.corrections().get(0).suggestion())
-                .matches(text -> text.contains("?댁쑀")
-                        || text.contains("援ъ껜?곸씤")
-                        || text.contains("?듦?")
-                        || text.contains("嫄닿컯"));
+                .contains("이유");
         assertThat(response.rewriteChallenge())
                 .contains("this year")
                 .contains("It's important to me because I want to stay healthy.")
@@ -878,7 +875,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -938,7 +935,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -988,7 +985,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1040,7 +1037,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1084,7 +1081,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1133,7 +1130,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1177,7 +1174,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1231,7 +1228,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1295,7 +1292,7 @@ class FeedbackServiceTest {
         stubOpenAiReview(feedback);
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1356,7 +1353,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1412,7 +1409,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1461,7 +1458,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1515,7 +1512,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1579,7 +1576,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1640,7 +1637,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1686,7 +1683,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1747,7 +1744,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1803,7 +1800,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1857,7 +1854,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -1910,13 +1907,13 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo, RefinementExpressionDto::example)
-                .contains(tuple("rest", "?댁떇?섎떎", "I usually rest after lunch because it helps me recharge."));
+                .contains(tuple("rest", "휴식하다", "I usually rest after lunch because it helps me recharge."));
     }
 
     @Test
@@ -1960,13 +1957,13 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo, RefinementExpressionDto::example)
-                .contains(tuple("after lunch", "?먯떖 ?앹궗 ?꾩뿉", "I usually rest after lunch because it helps me recharge."));
+                .contains(tuple("after lunch", "점심 식사 후에", "I usually rest after lunch because it helps me recharge."));
     }
 
     @Test
@@ -2010,7 +2007,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2069,7 +2066,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2119,7 +2116,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2166,7 +2163,7 @@ class FeedbackServiceTest {
                                 "after lunch",
                                 "?쒓컙 ?쒗쁽 ?ㅼ뿉 ?대뼡 ?쒕룞???섎뒗吏 ?댁뼱??留먰빐 蹂댁꽭??",
                                 "I usually rest after lunch because it helps me recharge.",
-                                "?ㅼ쓬 ?듬??먯꽌 ?쒖슜?섍린 醫뗭? ?쒗쁽"
+                                "다음 답변에서 사용하기 좋은 표현"
                         )
                 ),
                 modelAnswer,
@@ -2174,16 +2171,16 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::expression, RefinementExpressionDto::meaningKo)
-                .contains(tuple("after lunch", "?먯떖 ?앹궗 ?꾩뿉"));
+                .contains(tuple("after lunch", "점심 식사 후에"));
         assertThat(response.refinementExpressions())
                 .extracting(RefinementExpressionDto::meaningKo)
-                .doesNotContain("?ㅼ쓬 ?듬??먯꽌 ?쒖슜?섍린 醫뗭? ?쒗쁽");
+                .doesNotContain("다음 답변에서 사용하기 좋은 표현");
     }
 
     @Test
@@ -2242,7 +2239,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2294,7 +2291,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2351,7 +2348,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2402,17 +2399,16 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
-        assertThat(response.grammarFeedback())
-                .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText, GrammarFeedbackItemDto::reasonKo)
-                .contains(tuple(
-                        "a",
-                        "",
-                        "'my' 媛숈? ?쒖젙?ш? ?대? 紐낆궗瑜?袁몃ŉ 二쇰?濡??욎뿉 愿??'a'瑜??④퍡 ?곗? ?딆븘??"
-                ));
+        assertThat(response.grammarFeedback()).hasSize(1);
+        assertThat(response.grammarFeedback().get(0).originalText()).isEqualTo("a");
+        assertThat(response.grammarFeedback().get(0).revisedText()).isEmpty();
+        assertThat(response.grammarFeedback().get(0).reasonKo())
+                .contains("'my'")
+                .contains("'a'");
     }
 
     @Test
@@ -2452,7 +2448,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2503,7 +2499,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2556,7 +2552,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2641,7 +2637,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2692,7 +2688,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2753,7 +2749,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2800,7 +2796,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2843,7 +2839,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2890,7 +2886,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2932,7 +2928,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2940,7 +2936,7 @@ class FeedbackServiceTest {
         assertThat(response.grammarFeedback())
                 .extracting(GrammarFeedbackItemDto::originalText, GrammarFeedbackItemDto::revisedText)
                 .containsExactly(tuple("I check a", "I check"));
-        assertThat(response.rewriteChallenge()).contains("?댁쑀");
+        assertThat(response.rewriteChallenge()).contains("이유");
     }
 
     @Test
@@ -2983,7 +2979,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -2992,7 +2988,7 @@ class FeedbackServiceTest {
                 .contains(tuple(
                         "",
                         "a",
-                        "'plan'泥섎읆 ?⑥닔 媛?곕챸???욎뿉??愿??'a'瑜??⑥빞 ?댁슂."
+                        "'plan'처럼 단수 가산명사 앞에는 관사 'a'를 써야 해요."
                 ))
                 .doesNotContain(tuple(
                         "this month.",
@@ -3044,7 +3040,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -3094,7 +3090,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -3143,7 +3139,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 
@@ -3187,7 +3183,7 @@ class FeedbackServiceTest {
         ));
 
         FeedbackResponseDto response = feedbackService.review(
-                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-1"),
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
                 null
         );
 

@@ -6,6 +6,7 @@ public record CoachUsageCheckRequestDto(
         String promptId,
         String answer,
         String sessionId,
+        String guestId,
         Integer attemptNo,
         List<String> expressions,
         String interactionId
@@ -17,6 +18,28 @@ public record CoachUsageCheckRequestDto(
             Integer attemptNo,
             List<String> expressions
     ) {
-        this(promptId, answer, sessionId, attemptNo, expressions, null);
+        this(promptId, answer, sessionId, null, attemptNo, expressions, null);
+    }
+
+    public CoachUsageCheckRequestDto(
+            String promptId,
+            String answer,
+            String sessionId,
+            Integer attemptNo,
+            List<String> expressions,
+            String interactionId
+    ) {
+        this(promptId, answer, sessionId, null, attemptNo, expressions, interactionId);
+    }
+
+    public CoachUsageCheckRequestDto(
+            String promptId,
+            String answer,
+            String sessionId,
+            String guestId,
+            Integer attemptNo,
+            List<String> expressions
+    ) {
+        this(promptId, answer, sessionId, guestId, attemptNo, expressions, null);
     }
 }

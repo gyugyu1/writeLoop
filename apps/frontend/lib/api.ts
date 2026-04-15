@@ -386,6 +386,7 @@ export async function checkCoachExpressionUsage(
       promptId: request.promptId,
       answer: request.answer,
       sessionId: request.sessionId,
+      guestId: request.guestId,
       attemptNo: request.attemptNo,
       expressions: request.expressions.map((expression) => expression.expression),
       interactionId: request.interactionId

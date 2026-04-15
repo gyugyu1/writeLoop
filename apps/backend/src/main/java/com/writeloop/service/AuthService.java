@@ -82,13 +82,13 @@ public class AuthService {
     private final GoogleOAuthService googleOAuthService;
     private final KakaoOAuthService kakaoOAuthService;
 
-    @Value("${app.frontend-base-url:http://writeloop.localtest.me}")
+    @Value("${app.frontend-base-url:}")
     private String frontendBaseUrl;
 
     @Value("${app.admin.emails:}")
     private String adminEmails;
 
-    @Value("${app.auth.mobile-redirect-prefixes:writeloop://,exp://}")
+    @Value("${app.auth.mobile-redirect-prefixes:writeloop://}")
     private String mobileRedirectPrefixes;
 
     public AuthNoticeDto register(RegisterRequestDto request) {
@@ -324,8 +324,7 @@ public class AuthService {
         if (!activeTokens.isEmpty()) {
             passwordResetTokenRepository.saveAll(activeTokens);
         }
-        rememberLoginService.revokeAllForUser(user.getId());
-        refreshTokenService.revokeAllForUser(user.getId());
+        revokePersistentLoginState(user.getId());
 
         return new AuthNoticeDto(
                 user.getEmail(),
@@ -336,6 +335,34 @@ public class AuthService {
     public void logout(HttpSession session, HttpServletRequest request, HttpServletResponse response) {
         rememberLoginService.clearRememberedLogin(request, response);
         session.invalidate();
+    }
+
+    private void revokePersistentLoginState(Long userId) {
+        rememberLoginService.revokeAllForUser(userId);
+        refreshTokenService.revokeAllForUser(userId);
+    }
+
+    private void refreshAuthenticatedSession(HttpServletRequest request, Long userId, boolean createIfMissing) {
+        if (request == null || userId == null) {
+            return;
+        }
+
+        HttpSession session = createIfMissing ? request.getSession(true) : request.getSession(false);
+        if (session == null) {
+            return;
+        }
+
+        try {
+            request.changeSessionId();
+        } catch (IllegalStateException ignored) {
+            // Fall back to the existing session when the container cannot rotate it.
+        }
+
+        HttpSession refreshedSession = request.getSession(false);
+        if (refreshedSession == null) {
+            refreshedSession = session;
+        }
+        refreshedSession.setAttribute(SESSION_USER_ID, userId);
     }
 
     public AuthResponseDto getCurrentUser(HttpServletRequest request) {
@@ -354,7 +381,11 @@ public class AuthService {
         return toResponse(findUserEntity(userId));
     }
 
-    public AuthResponseDto updateProfile(UpdateProfileRequestDto request, HttpServletRequest httpRequest) {
+    public AuthResponseDto updateProfile(
+            UpdateProfileRequestDto request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
         Long userId = getCurrentUserIdOrNull(httpRequest, httpRequest.getSession(false));
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
@@ -390,6 +421,9 @@ public class AuthService {
             }
 
             user.updatePasswordHash(passwordEncoder.encode(normalizePassword(request.newPassword())));
+            revokePersistentLoginState(user.getId());
+            rememberLoginService.clearRememberedLogin(httpRequest, httpResponse);
+            refreshAuthenticatedSession(httpRequest, user.getId(), false);
         }
 
         return toResponse(userRepository.save(user));
@@ -817,7 +851,7 @@ public class AuthService {
             boolean rememberMe
     ) {
         recordSuccessfulLogin(user);
-        session.setAttribute(SESSION_USER_ID, user.getId());
+        refreshAuthenticatedSession(request, user.getId(), true);
 
         if (rememberMe) {
             rememberLoginService.rememberUser(user.getId(), response);

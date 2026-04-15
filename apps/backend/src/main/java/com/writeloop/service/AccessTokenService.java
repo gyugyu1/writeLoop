@@ -26,7 +26,7 @@ public class AccessTokenService {
 
     private final ObjectMapper objectMapper;
 
-    @Value("${app.auth.token-secret:writeloop-dev-token-secret-change-me}")
+    @Value("${app.auth.token-secret:}")
     private String tokenSecret;
 
     @Value("${app.auth.access-token-minutes:15}")

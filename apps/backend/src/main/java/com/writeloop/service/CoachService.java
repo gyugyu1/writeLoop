@@ -15,13 +15,17 @@ import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptHintItemDto;
 import com.writeloop.dto.AnswerHistoryUsedExpressionDto;
+import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
+import com.writeloop.persistence.AnswerSessionEntity;
+import com.writeloop.persistence.AnswerSessionRepository;
 import com.writeloop.persistence.AttemptType;
 import com.writeloop.persistence.CoachInteractionEntity;
 import com.writeloop.persistence.CoachInteractionRepository;
 import com.writeloop.persistence.CoachResponseSource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
@@ -140,6 +144,7 @@ public class CoachService {
     private final PromptService promptService;
     private final LlmCoachClient llmCoachClient;
     private final AnswerAttemptRepository answerAttemptRepository;
+    private final AnswerSessionRepository answerSessionRepository;
     private final CoachInteractionRepository coachInteractionRepository;
     private final ObjectMapper objectMapper;
     private final CoachQueryAnalyzer coachQueryAnalyzer;
@@ -795,7 +800,10 @@ public class CoachService {
             List<CoachExpressionUsageDto> usedExpressions,
             List<CoachExpressionUsageDto> unusedExpressions,
             List<String> suggestedPromptIds,
-            String coachReply
+            String coachReply,
+            Long currentUserId,
+            String httpSessionId,
+            String verifiedAnswerSessionId
     ) {
         String interactionId = blankToNull(request.interactionId());
         if (interactionId == null) {
@@ -808,6 +816,28 @@ public class CoachService {
             return;
         }
 
+        if (interaction.getUserId() != null) {
+            if (currentUserId == null || !interaction.getUserId().equals(currentUserId)) {
+                return;
+            }
+        } else if (interaction.getHttpSessionId() != null
+                && httpSessionId != null
+                && !interaction.getHttpSessionId().equals(httpSessionId)) {
+            return;
+        }
+
+        String safeAnswerSessionId = blankToNull(verifiedAnswerSessionId);
+        if (safeAnswerSessionId == null) {
+            safeAnswerSessionId = blankToNull(request.sessionId());
+        }
+
+        String existingAnswerSessionId = blankToNull(interaction.getAnswerSessionId());
+        if (existingAnswerSessionId != null
+                && safeAnswerSessionId != null
+                && !existingAnswerSessionId.equals(safeAnswerSessionId)) {
+            return;
+        }
+
         Map<String, Object> usagePayload = new LinkedHashMap<>();
         usagePayload.put("promptId", request.promptId());
         usagePayload.put("coachReply", coachReply);
@@ -816,7 +846,7 @@ public class CoachService {
         usagePayload.put("suggestedPromptIds", suggestedPromptIds);
 
         interaction.updateUsage(
-                blankToNull(request.sessionId()),
+                safeAnswerSessionId,
                 request.attemptNo(),
                 writeJson(usedExpressions),
                 writeJson(usagePayload)
@@ -853,12 +883,22 @@ public class CoachService {
         }
     }
 
-    public CoachUsageCheckResponseDto checkUsage(CoachUsageCheckRequestDto request) {
+    public CoachUsageCheckResponseDto checkUsage(
+            CoachUsageCheckRequestDto request
+    ) {
+        return checkUsage(request, null, null);
+    }
+
+    public CoachUsageCheckResponseDto checkUsage(
+            CoachUsageCheckRequestDto request,
+            Long currentUserId,
+            String httpSessionId
+    ) {
         PromptDto prompt = requirePrompt(request.promptId());
         String answer = request.answer();
         String normalizedAnswer = normalizeText(answer);
         List<String> expressions = normalizeExpressions(request.expressions());
-        AnswerAttemptEntity attempt = findAttempt(request);
+        AnswerAttemptEntity attempt = findOwnedAttempt(request, currentUserId);
 
         if (expressions.isEmpty()) {
             throw new IllegalArgumentException("expressions is required");
@@ -905,7 +945,16 @@ public class CoachService {
         List<String> suggestedPromptIds = suggestPromptIds(prompt, normalizedAnswer, usedCategories);
         String coachReply = buildUsageReply(usedExpressions, unusedExpressions);
         persistUsedExpressions(attempt, usedExpressions);
-        updateCoachInteractionUsage(request, usedExpressions, unusedExpressions, suggestedPromptIds, coachReply);
+        updateCoachInteractionUsage(
+                request,
+                usedExpressions,
+                unusedExpressions,
+                suggestedPromptIds,
+                coachReply,
+                currentUserId,
+                blankToNull(httpSessionId),
+                attempt == null ? null : attempt.getSessionId()
+        );
 
         return new CoachUsageCheckResponseDto(
                 prompt.id(),
@@ -1003,7 +1052,7 @@ public class CoachService {
         }
     }
 
-    private AnswerAttemptEntity findAttempt(CoachUsageCheckRequestDto request) {
+    private AnswerAttemptEntity findOwnedAttempt(CoachUsageCheckRequestDto request, Long currentUserId) {
         String sessionId = request.sessionId() == null ? "" : request.sessionId().trim();
         Integer attemptNo = request.attemptNo();
 
@@ -1011,8 +1060,34 @@ public class CoachService {
             return null;
         }
 
-        return answerAttemptRepository.findBySessionIdAndAttemptNo(sessionId, attemptNo)
+        AnswerAttemptEntity attempt = answerAttemptRepository.findBySessionIdAndAttemptNo(sessionId, attemptNo)
                 .orElse(null);
+        if (attempt == null) {
+            return null;
+        }
+
+        AnswerSessionEntity answerSession = answerSessionRepository.findById(attempt.getSessionId())
+                .orElse(null);
+        if (answerSession == null) {
+            return null;
+        }
+
+        if (answerSession.getUserId() != null) {
+            if (currentUserId == null || !answerSession.getUserId().equals(currentUserId)) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "ATTEMPT_OWNERSHIP_MISMATCH", "다른 사용자의 답변 시도예요.");
+            }
+            return attempt;
+        }
+
+        String guestId = GuestIdentitySupport.normalizeGuestId(request.guestId());
+        if (answerSession.getGuestId() != null) {
+            if (guestId == null || !answerSession.getGuestId().equals(guestId)) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "ATTEMPT_OWNERSHIP_MISMATCH", "다른 기기에서 시작한 게스트 답변 시도예요.");
+            }
+            return attempt;
+        }
+
+        return null;
     }
 
     private List<CoachExpressionUsageDto> findSelfDiscoveredExpressions(

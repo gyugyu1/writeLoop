@@ -103,6 +103,8 @@ class AuthServiceTest {
                 kakaoOAuthService
         );
         ReflectionTestUtils.setField(authService, "adminEmails", "");
+        when(httpRequest.getSession(true)).thenReturn(session);
+        when(httpRequest.getSession(false)).thenReturn(session);
     }
 
     @Test

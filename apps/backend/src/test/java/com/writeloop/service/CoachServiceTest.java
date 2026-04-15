@@ -14,10 +14,13 @@ import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptHintItemDto;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
+import com.writeloop.persistence.AnswerSessionEntity;
+import com.writeloop.persistence.AnswerSessionRepository;
 import com.writeloop.persistence.AttemptType;
 import com.writeloop.persistence.CoachInteractionEntity;
 import com.writeloop.persistence.CoachInteractionRepository;
 import com.writeloop.persistence.CoachResponseSource;
+import com.writeloop.persistence.SessionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +55,9 @@ class CoachServiceTest {
     private AnswerAttemptRepository answerAttemptRepository;
 
     @Mock
+    private AnswerSessionRepository answerSessionRepository;
+
+    @Mock
     private CoachInteractionRepository coachInteractionRepository;
 
     private CoachService coachService;
@@ -62,11 +68,21 @@ class CoachServiceTest {
                 promptService,
                 openAiCoachClient,
                 answerAttemptRepository,
+                answerSessionRepository,
                 coachInteractionRepository,
                 new ObjectMapper(),
                 new CoachQueryAnalyzer()
         );
         lenient().when(openAiCoachClient.isConfigured()).thenReturn(false);
+        lenient().when(answerSessionRepository.findById(any())).thenAnswer(invocation -> Optional.of(
+                new AnswerSessionEntity(
+                        invocation.getArgument(0),
+                        "prompt-default",
+                        null,
+                        null,
+                        SessionStatus.IN_PROGRESS
+                )
+        ));
     }
 
     @Test
@@ -369,12 +385,22 @@ class CoachServiceTest {
                 "{}"
         );
         when(answerAttemptRepository.findBySessionIdAndAttemptNo("session-1", 1)).thenReturn(Optional.of(attempt));
+        when(answerSessionRepository.findById("session-1")).thenReturn(Optional.of(
+                new AnswerSessionEntity(
+                        "session-1",
+                        prompt.id(),
+                        "guest-test-identity-0001",
+                        null,
+                        SessionStatus.IN_PROGRESS
+                )
+        ));
 
         coachService.checkUsage(
                 new CoachUsageCheckRequestDto(
                         prompt.id(),
                         "One reason is that it helps me focus.",
                         "session-1",
+                        "guest-test-identity-0001",
                         1,
                         List.of("One reason is that ...", "For example, ...")
                 )
@@ -463,12 +489,22 @@ class CoachServiceTest {
                 new ObjectMapper().writeValueAsString(feedbackPayload)
         );
         when(answerAttemptRepository.findBySessionIdAndAttemptNo("session-3", 1)).thenReturn(Optional.of(attempt));
+        when(answerSessionRepository.findById("session-3")).thenReturn(Optional.of(
+                new AnswerSessionEntity(
+                        "session-3",
+                        prompt.id(),
+                        "guest-test-identity-0001",
+                        null,
+                        SessionStatus.IN_PROGRESS
+                )
+        ));
 
         CoachUsageCheckResponseDto response = coachService.checkUsage(
                 new CoachUsageCheckRequestDto(
                         prompt.id(),
                         "I want to learn Spanish this year.",
                         "session-3",
+                        "guest-test-identity-0001",
                         1,
                         List.of("One reason is that ...")
                 )
@@ -621,12 +657,22 @@ class CoachServiceTest {
                 new ObjectMapper().writeValueAsString(feedbackPayload)
         );
         when(answerAttemptRepository.findBySessionIdAndAttemptNo("session-5", 1)).thenReturn(Optional.of(attempt));
+        when(answerSessionRepository.findById("session-5")).thenReturn(Optional.of(
+                new AnswerSessionEntity(
+                        "session-5",
+                        prompt.id(),
+                        "guest-test-identity-0001",
+                        null,
+                        SessionStatus.IN_PROGRESS
+                )
+        ));
 
         CoachUsageCheckResponseDto response = coachService.checkUsage(
                 new CoachUsageCheckRequestDto(
                         prompt.id(),
                         "Online conversations feel less awkward now.",
                         "session-5",
+                        "guest-test-identity-0001",
                         1,
                         List.of("One reason is that ...")
                 )
@@ -1546,6 +1592,15 @@ class CoachServiceTest {
         );
 
         when(answerAttemptRepository.findBySessionIdAndAttemptNo("session-1", 1)).thenReturn(Optional.of(attempt));
+        when(answerSessionRepository.findById("session-1")).thenReturn(Optional.of(
+                new AnswerSessionEntity(
+                        "session-1",
+                        prompt.id(),
+                        null,
+                        7L,
+                        SessionStatus.IN_PROGRESS
+                )
+        ));
         when(coachInteractionRepository.findByRequestId("interaction-1")).thenReturn(Optional.of(interaction));
 
         CoachUsageCheckResponseDto response = coachService.checkUsage(
@@ -1556,7 +1611,9 @@ class CoachServiceTest {
                         1,
                         List.of("I want to learn Spanish.", "practice Spanish"),
                         "interaction-1"
-                )
+                ),
+                7L,
+                "http-session-1"
         );
 
         assertThat(response.usedExpressions()).isNotEmpty();

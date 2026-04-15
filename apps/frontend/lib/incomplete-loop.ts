@@ -21,6 +21,14 @@ export interface IncompleteLoopState {
 
 const INCOMPLETE_LOOP_KEY = "writeloop_incomplete_loop";
 
+function buildIncompleteLoopKey(ownerId?: number | null) {
+  const ownerScope =
+    typeof ownerId === "number" && Number.isFinite(ownerId) && ownerId > 0
+      ? `user:${ownerId}`
+      : "guest";
+  return `${INCOMPLETE_LOOP_KEY}:${ownerScope}`;
+}
+
 export function buildIncompleteLoopPromptSnapshot(prompt: Prompt): IncompleteLoopPromptSnapshot {
   return {
     topic: prompt.topic,
@@ -29,20 +37,20 @@ export function buildIncompleteLoopPromptSnapshot(prompt: Prompt): IncompleteLoo
   };
 }
 
-export function saveIncompleteLoop(state: IncompleteLoopState) {
+export function saveIncompleteLoop(state: IncompleteLoopState, ownerId?: number | null) {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.setItem(INCOMPLETE_LOOP_KEY, JSON.stringify(state));
+  window.localStorage.setItem(buildIncompleteLoopKey(ownerId), JSON.stringify(state));
 }
 
-export function getIncompleteLoop(): IncompleteLoopState | null {
+export function getIncompleteLoop(ownerId?: number | null): IncompleteLoopState | null {
   if (typeof window === "undefined") {
     return null;
   }
 
-  const rawValue = window.localStorage.getItem(INCOMPLETE_LOOP_KEY);
+  const rawValue = window.localStorage.getItem(buildIncompleteLoopKey(ownerId));
   if (!rawValue) {
     return null;
   }
@@ -50,21 +58,43 @@ export function getIncompleteLoop(): IncompleteLoopState | null {
   try {
     return JSON.parse(rawValue) as IncompleteLoopState;
   } catch {
-    window.localStorage.removeItem(INCOMPLETE_LOOP_KEY);
+    window.localStorage.removeItem(buildIncompleteLoopKey(ownerId));
     return null;
   }
 }
 
-export function clearIncompleteLoop() {
+export function clearIncompleteLoop(ownerId?: number | null) {
   if (typeof window === "undefined") {
     return;
   }
 
-  window.localStorage.removeItem(INCOMPLETE_LOOP_KEY);
+  window.localStorage.removeItem(buildIncompleteLoopKey(ownerId));
 }
 
-export function clearIncompleteLoopForPrompt(promptId: string, step?: IncompleteLoopStep) {
-  const currentState = getIncompleteLoop();
+export function clearAllIncompleteLoops() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  const keysToDelete: string[] = [];
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (key && key.startsWith(`${INCOMPLETE_LOOP_KEY}:`)) {
+      keysToDelete.push(key);
+    }
+  }
+
+  keysToDelete.forEach((key) => {
+    window.localStorage.removeItem(key);
+  });
+}
+
+export function clearIncompleteLoopForPrompt(
+  promptId: string,
+  step?: IncompleteLoopStep,
+  ownerId?: number | null
+) {
+  const currentState = getIncompleteLoop(ownerId);
   if (!currentState || currentState.promptId !== promptId) {
     return;
   }
@@ -73,5 +103,5 @@ export function clearIncompleteLoopForPrompt(promptId: string, step?: Incomplete
     return;
   }
 
-  clearIncompleteLoop();
+  clearIncompleteLoop(ownerId);
 }

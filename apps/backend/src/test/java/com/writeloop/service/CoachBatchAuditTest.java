@@ -5,6 +5,7 @@ import com.writeloop.dto.CoachHelpRequestDto;
 import com.writeloop.dto.CoachHelpResponseDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.persistence.AnswerAttemptRepository;
+import com.writeloop.persistence.AnswerSessionRepository;
 import com.writeloop.persistence.CoachInteractionRepository;
 import org.junit.jupiter.api.Test;
 
@@ -43,6 +44,7 @@ class CoachBatchAuditTest {
         PromptService promptService = mock(PromptService.class);
         LlmCoachClient openAiCoachClient = mock(LlmCoachClient.class);
         AnswerAttemptRepository answerAttemptRepository = mock(AnswerAttemptRepository.class);
+        AnswerSessionRepository answerSessionRepository = mock(AnswerSessionRepository.class);
         CoachInteractionRepository coachInteractionRepository = mock(CoachInteractionRepository.class);
         ObjectMapper objectMapper = new ObjectMapper();
         CoachQueryAnalyzer coachQueryAnalyzer = new CoachQueryAnalyzer();
@@ -50,6 +52,7 @@ class CoachBatchAuditTest {
                 promptService,
                 openAiCoachClient,
                 answerAttemptRepository,
+                answerSessionRepository,
                 coachInteractionRepository,
                 objectMapper,
                 coachQueryAnalyzer

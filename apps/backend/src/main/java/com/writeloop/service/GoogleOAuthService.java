@@ -42,7 +42,7 @@ public class GoogleOAuthService {
     @Value("${app.oauth.google.user-info-uri:https://openidconnect.googleapis.com/v1/userinfo}")
     private String userInfoUri;
 
-    @Value("${app.oauth.google.redirect-uri:http://api.localtest.me/api/auth/social/google/callback}")
+    @Value("${app.oauth.google.redirect-uri:}")
     private String redirectUri;
 
     public boolean isConfigured() {

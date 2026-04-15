@@ -86,7 +86,16 @@ public class RememberLoginService {
         }
 
         HttpSession session = request.getSession(true);
-        session.setAttribute(AuthService.SESSION_USER_ID, entity.getUserId());
+        try {
+            request.changeSessionId();
+        } catch (IllegalStateException ignored) {
+            // Keep using the existing session when rotation is unavailable.
+        }
+        HttpSession refreshedSession = request.getSession(false);
+        if (refreshedSession == null) {
+            refreshedSession = session;
+        }
+        refreshedSession.setAttribute(AuthService.SESSION_USER_ID, entity.getUserId());
         userRepository.findById(entity.getUserId()).ifPresent(user -> {
             user.markLoggedIn();
             userRepository.save(user);

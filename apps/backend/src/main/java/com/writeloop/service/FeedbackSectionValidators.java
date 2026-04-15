@@ -147,7 +147,14 @@ final class FeedbackSectionValidators {
         if (grammarFeedback == null || grammarFeedback.isEmpty()) {
             return List.of();
         }
-        return List.copyOf(grammarFeedback);
+        List<GrammarFeedbackItemDto> filtered = new ArrayList<>();
+        for (GrammarFeedbackItemDto item : grammarFeedback) {
+            if (item == null || isLowValueGrammarItem(item)) {
+                continue;
+            }
+            filtered.add(item);
+        }
+        return List.copyOf(filtered);
     }
 
     List<CorrectionDto> reduceDuplicateCorrections(
@@ -202,11 +209,51 @@ final class FeedbackSectionValidators {
                 continue;
             }
             String key = normalizedExpression + "|" + normalizedExample + "|" + normalizeText(expression.guidanceKo());
-            if (seen.add(key)) {
-                sanitized.add(expression);
+            if (!seen.add(key)) {
+                continue;
             }
+            int overlapIndex = findOverlappingRefinementIndex(sanitized, expression);
+            if (overlapIndex >= 0) {
+                RefinementExpressionDto existing = sanitized.get(overlapIndex);
+                if (refinementSpecificityScore(expression) > refinementSpecificityScore(existing)) {
+                    sanitized.set(overlapIndex, expression);
+                }
+                continue;
+            }
+            sanitized.add(expression);
         }
         return List.copyOf(sanitized);
+    }
+
+    boolean isLowValueGrammarItem(GrammarFeedbackItemDto item) {
+        if (item == null) {
+            return false;
+        }
+        return isLowValueDefiniteArticleAddition(item.originalText(), item.revisedText());
+    }
+
+    private boolean isLowValueDefiniteArticleAddition(String originalText, String revisedText) {
+        String normalizedOriginal = normalizeExpressionForOverlap(originalText);
+        String normalizedRevised = normalizeExpressionForOverlap(revisedText);
+        if (normalizedOriginal.isBlank() || normalizedRevised.isBlank()) {
+            return false;
+        }
+        List<String> originalTokens = List.of(normalizedOriginal.split("\\s+"));
+        List<String> revisedTokens = List.of(normalizedRevised.split("\\s+"));
+        List<String> originalWithoutArticles = originalTokens.stream()
+                .filter(token -> !ARTICLE_TOKENS.contains(token))
+                .toList();
+        List<String> revisedWithoutArticles = revisedTokens.stream()
+                .filter(token -> !ARTICLE_TOKENS.contains(token))
+                .toList();
+        return !originalWithoutArticles.isEmpty()
+                && originalWithoutArticles.equals(revisedWithoutArticles)
+                && revisedTokens.size() == originalTokens.size() + 1
+                && !originalTokens.contains("the")
+                && revisedTokens.contains("the")
+                && !revisedTokens.contains("a")
+                && !revisedTokens.contains("an")
+                && Math.max(originalTokens.size(), revisedTokens.size()) <= 4;
     }
 
     List<RefinementCard> validateRefinementCardsDomain(List<RefinementCard> refinementCards) {

@@ -42,7 +42,7 @@ public class KakaoOAuthService {
     @Value("${app.oauth.kakao.user-info-uri:https://kapi.kakao.com/v2/user/me}")
     private String userInfoUri;
 
-    @Value("${app.oauth.kakao.redirect-uri:http://api.localtest.me/api/auth/social/kakao/callback}")
+    @Value("${app.oauth.kakao.redirect-uri:}")
     private String redirectUri;
 
     public boolean isConfigured() {

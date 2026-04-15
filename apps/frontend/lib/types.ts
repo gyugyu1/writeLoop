@@ -88,6 +88,7 @@ export interface CoachUsageCheckRequest {
   promptId: string;
   answer: string;
   sessionId?: string;
+  guestId?: string;
   attemptNo?: number;
   attemptType?: "INITIAL" | "REWRITE";
   expressions: CoachExpression[];

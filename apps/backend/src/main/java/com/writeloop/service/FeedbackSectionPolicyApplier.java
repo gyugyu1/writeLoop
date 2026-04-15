@@ -246,7 +246,9 @@ final class FeedbackSectionPolicyApplier {
         if (grammar.isEmpty() && answerProfile != null && answerProfile.grammar() != null) {
             grammar = validators.validateGrammarSectionFormat(fromGrammarIssues(answerProfile.grammar().issues()));
         }
-        grammar = validators.filterLowValueGrammarItems(grammar);
+        grammar = shouldHideLowValueGrammarForExpansion(answerProfile)
+                ? validators.filterLowValueGrammarItems(grammar)
+                : grammar;
         if (!policy.showGrammar()) {
             return List.of();
         }
@@ -419,7 +421,7 @@ final class FeedbackSectionPolicyApplier {
                 ? AnswerBand.SHORT_BUT_VALID
                 : answerProfile.task().answerBand();
         if (isGrammarBlocking(answerProfile) || shouldUseAlignedExpansionSummary(answerProfile)) {
-            return validators.reduceSummaryDuplication(
+            String summaryCandidate = validators.reduceSummaryDuplication(
                     deterministicSectionGenerator.buildSummary(
                             answerProfile,
                             buildMeaningBasedStrengthsV2(answerProfile),
@@ -429,6 +431,18 @@ final class FeedbackSectionPolicyApplier {
                     corrections,
                     rewriteGuide
             );
+            if (summaryCandidate == null && shouldUseAlignedExpansionSummary(answerProfile)) {
+                String alignedSummary = buildAlignedExpansionSummary(answerProfile);
+                summaryCandidate = validators.reduceSummaryDuplication(
+                        alignedSummary,
+                        corrections,
+                        rewriteGuide
+                );
+                if (summaryCandidate == null) {
+                    summaryCandidate = alignedSummary;
+                }
+            }
+            return summaryCandidate;
         }
         if (summary == null || summary.isBlank()) {
             return null;
@@ -1272,6 +1286,14 @@ final class FeedbackSectionPolicyApplier {
     }
     private boolean shouldUseAlignedExpansionGuide(AnswerProfile answerProfile, String alignedCorrection) {
         if (alignedCorrection == null || alignedCorrection.isBlank() || answerProfile == null || answerProfile.task() == null) {
+            return false;
+        }
+        AnswerBand answerBand = answerProfile.task().answerBand();
+        return answerBand == AnswerBand.SHORT_BUT_VALID || answerBand == AnswerBand.CONTENT_THIN;
+    }
+
+    private boolean shouldHideLowValueGrammarForExpansion(AnswerProfile answerProfile) {
+        if (answerProfile == null || answerProfile.task() == null) {
             return false;
         }
         AnswerBand answerBand = answerProfile.task().answerBand();

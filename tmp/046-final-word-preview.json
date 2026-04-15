@@ -1,0 +1,303 @@
+[
+  {
+    "promptId": "prompt-c-3",
+    "category": "Change Reflection",
+    "detailName": "Personal Belief",
+    "questionEn": "Describe a belief or opinion of yours that has changed over time, and explain what caused that change.",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "lesson",
+      "event",
+      "conversation",
+      "evidence",
+      "mistake",
+      "values"
+    ],
+    "newWords": [
+      "assumption",
+      "doubt",
+      "certainty",
+      "values",
+      "belief",
+      "evidence",
+      "conversation",
+      "disagreement",
+      "realization",
+      "lesson"
+    ],
+    "phraseItems": [
+      "after i experienced",
+      "because of",
+      "now i see",
+      "over time",
+      "what changed my mind was"
+    ]
+  },
+  {
+    "promptId": "prompt-a-4",
+    "category": "Routine",
+    "detailName": "After-Work Evenings",
+    "questionEn": "What do you usually do after work, and why do you enjoy it?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "dinner",
+      "music",
+      "reading",
+      "games",
+      "walk",
+      "bath"
+    ],
+    "newWords": [
+      "commute",
+      "apartment",
+      "sofa",
+      "dinner",
+      "music",
+      "reading",
+      "games",
+      "bath",
+      "snack",
+      "pajamas"
+    ],
+    "phraseItems": [
+      "after work",
+      "because it helps me",
+      "grab dinner",
+      "in the evening",
+      "once i finish work",
+      "when i get home",
+      "work out"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-16",
+    "category": "Balanced Opinion",
+    "detailName": "Online Shopping",
+    "questionEn": "How has online shopping changed daily life, and do you think the change is mostly positive?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "convenience",
+      "delivery",
+      "discounts",
+      "reviews",
+      "refunds",
+      "selection"
+    ],
+    "newWords": [
+      "convenience",
+      "discounts",
+      "selection",
+      "trust",
+      "temptation",
+      "delivery",
+      "reviews",
+      "refunds",
+      "counterfeit",
+      "packaging"
+    ],
+    "phraseItems": [
+      "buy things online",
+      "compare prices",
+      "save time",
+      "spend more than planned"
+    ]
+  },
+  {
+    "promptId": "prompt-general-16",
+    "category": "General",
+    "detailName": "Recommended Hobby",
+    "questionEn": "Describe a hobby you would recommend to others and explain why it is meaningful to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "reading",
+      "gardening",
+      "photography",
+      "baking",
+      "running",
+      "sketching"
+    ],
+    "newWords": [
+      "relaxing",
+      "rewarding",
+      "practice",
+      "routine",
+      "tools",
+      "materials",
+      "progress",
+      "beginner",
+      "journal",
+      "memory"
+    ],
+    "phraseItems": [
+      "a good way to",
+      "easy to start",
+      "i would recommend it because",
+      "in your free time"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-31",
+    "category": "Balanced Opinion",
+    "detailName": "Short-Form Videos",
+    "questionEn": "What are the benefits and drawbacks of short-form videos, and what is your view?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "clip",
+      "algorithm",
+      "editing",
+      "entertainment",
+      "distraction",
+      "trend"
+    ],
+    "newWords": [
+      "entertainment",
+      "creativity",
+      "inspiration",
+      "addiction",
+      "misinformation",
+      "algorithm",
+      "feed",
+      "creator",
+      "phone",
+      "screen"
+    ],
+    "phraseItems": [
+      "find new ideas",
+      "in a short time",
+      "keep people entertained",
+      "reduce attention span"
+    ]
+  },
+  {
+    "promptId": "prompt-general-46",
+    "category": "General",
+    "detailName": "Household Item",
+    "questionEn": "Describe a household item you use often and explain why it matters to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "blanket",
+      "mug",
+      "basket",
+      "remote",
+      "sponge",
+      "pillow"
+    ],
+    "newWords": [
+      "soft",
+      "cozy",
+      "blanket",
+      "fabric",
+      "warm",
+      "washable",
+      "durable",
+      "winter",
+      "bedtime",
+      "gift"
+    ],
+    "phraseItems": [
+      "can't imagine living without it",
+      "keep things organized",
+      "make life easier",
+      "use it every day"
+    ]
+  },
+  {
+    "promptId": "prompt-goal-1127",
+    "category": "Goal Plan",
+    "detailName": "Rest Without Guilt",
+    "questionEn": "What would you like to improve about your ability to rest without guilt this year, and what steps will you take?",
+    "mixPolicy": "goal/execution frame 4 + concrete action/measurement 6",
+    "currentDirectWords": [
+      "downtime",
+      "nap",
+      "pause",
+      "sleep",
+      "quiet",
+      "comfort"
+    ],
+    "newWords": [
+      "schedule",
+      "timer",
+      "reminder",
+      "calendar",
+      "bedtime",
+      "nap",
+      "pause",
+      "sleep",
+      "quiet",
+      "journal"
+    ],
+    "phraseItems": [
+      "keep track of",
+      "make time for",
+      "to stay consistent",
+      "week by week"
+    ]
+  },
+  {
+    "promptId": "prompt-general-1111",
+    "category": "General",
+    "detailName": "Useful Phone Feature",
+    "questionEn": "Tell me about a phone feature you rely on and explain why it is important to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "alarm",
+      "maps",
+      "calendar",
+      "notes",
+      "camera",
+      "fingerprint"
+    ],
+    "newWords": [
+      "reliable",
+      "convenient",
+      "alarm",
+      "snooze",
+      "notification",
+      "reminder",
+      "vibration",
+      "clock",
+      "bedtime",
+      "commute"
+    ],
+    "phraseItems": [
+      "one small detail",
+      "reminds me of",
+      "stands out to me",
+      "the reason it matters"
+    ]
+  },
+  {
+    "promptId": "prompt-general-1115",
+    "category": "General",
+    "detailName": "Favorite Discussion Topic",
+    "questionEn": "Describe a topic you enjoy talking about and explain why it has remained important to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "music",
+      "travel",
+      "technology",
+      "books",
+      "movies",
+      "cooking"
+    ],
+    "newWords": [
+      "curious",
+      "thoughtful",
+      "books",
+      "chapter",
+      "plot",
+      "character",
+      "theme",
+      "ending",
+      "opinion",
+      "interpretation"
+    ],
+    "phraseItems": [
+      "because of that",
+      "one small detail",
+      "the reason it matters",
+      "what i notice most"
+    ]
+  }
+]

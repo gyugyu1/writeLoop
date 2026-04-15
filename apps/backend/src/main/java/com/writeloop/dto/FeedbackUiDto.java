@@ -109,6 +109,32 @@ public record FeedbackUiDto(
         );
     }
 
+    public FeedbackUiDto(
+            FeedbackFocusCardDto focusCard,
+            FeedbackPrimaryFixDto primaryFix,
+            FeedbackMicroTipDto microTip,
+            java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
+            java.util.List<FeedbackSecondaryLearningPointDto> fixPoints,
+            FeedbackNextStepPracticeDto nextStepPractice,
+            java.util.List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
+            FeedbackScreenPolicyDto screenPolicy,
+            FeedbackLoopStatusDto loopStatus
+    ) {
+        this(
+                focusCard,
+                primaryFix,
+                microTip,
+                secondaryLearningPoints,
+                fixPoints,
+                nextStepPractice,
+                rewriteSuggestions,
+                null,
+                null,
+                screenPolicy,
+                loopStatus
+        );
+    }
+
     private static java.util.List<FeedbackRewriteIdeaDto> mergeRewriteIdeas(
             java.util.List<FeedbackRewriteIdeaDto> rewriteIdeas,
             FeedbackNextStepPracticeDto nextStepPractice,

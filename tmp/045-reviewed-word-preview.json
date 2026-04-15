@@ -1,0 +1,2257 @@
+[
+  {
+    "promptId": "prompt-a-3",
+    "category": "Routine",
+    "detailName": "Weekend",
+    "questionEn": "How do you usually spend your weekend?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "sleep",
+      "gym",
+      "homework",
+      "friends",
+      "family",
+      "movie"
+    ],
+    "newWords": [
+      "sleep",
+      "gym",
+      "homework",
+      "friends",
+      "family",
+      "movie",
+      "errands",
+      "laundry",
+      "brunch",
+      "park"
+    ],
+    "phraseItems": [
+      "go out",
+      "in the afternoon",
+      "in the morning",
+      "meet friends",
+      "most of the time",
+      "on weekends",
+      "with my family"
+    ]
+  },
+  {
+    "promptId": "prompt-b-1",
+    "category": "Problem Solving",
+    "detailName": "Work or School Challenge",
+    "questionEn": "What is one challenge you often face at work or school, and how do you deal with it?",
+    "mixPolicy": "issue/cause 4 + concrete context/tool/detail 6",
+    "currentDirectWords": [
+      "deadline",
+      "workload",
+      "pressure",
+      "conflict",
+      "confusion",
+      "stress"
+    ],
+    "newWords": [
+      "deadline",
+      "workload",
+      "pressure",
+      "confusion",
+      "notes",
+      "planner",
+      "laptop",
+      "email",
+      "classroom",
+      "meeting"
+    ],
+    "phraseItems": [
+      "i deal with it by",
+      "in the end",
+      "one thing i do is",
+      "step by step",
+      "when this happens"
+    ]
+  },
+  {
+    "promptId": "prompt-c-1",
+    "category": "Balanced Opinion",
+    "detailName": "Technology and Relationships",
+    "questionEn": "How has technology changed the way people build relationships, and do you think that change is mostly positive?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "screen time",
+      "privacy",
+      "distance",
+      "isolation",
+      "contact",
+      "support"
+    ],
+    "newWords": [
+      "connection",
+      "convenience",
+      "privacy",
+      "distance",
+      "isolation",
+      "screen time",
+      "messaging",
+      "video call",
+      "social media",
+      "notifications"
+    ],
+    "phraseItems": [
+      "at the same time",
+      "in some ways",
+      "on the one hand",
+      "on the other hand",
+      "overall"
+    ]
+  },
+  {
+    "promptId": "prompt-c-2",
+    "category": "Opinion Reason",
+    "detailName": "Corporate Responsibility",
+    "questionEn": "What social responsibilities should successful companies have in modern society?",
+    "mixPolicy": "public-value issue 5 + stakeholder/resource detail 5",
+    "currentDirectWords": [
+      "wages",
+      "safety",
+      "donations",
+      "emissions",
+      "training"
+    ],
+    "newWords": [
+      "wages",
+      "safety",
+      "emissions",
+      "donations",
+      "taxes",
+      "workers",
+      "customers",
+      "suppliers",
+      "budget",
+      "training"
+    ],
+    "phraseItems": [
+      "for example",
+      "in my opinion",
+      "one important role is",
+      "they should",
+      "this matters because"
+    ]
+  },
+  {
+    "promptId": "prompt-c-3",
+    "category": "Change Reflection",
+    "detailName": "Personal Belief",
+    "questionEn": "Describe a belief or opinion of yours that has changed over time, and explain what caused that change.",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "lesson",
+      "event",
+      "conversation",
+      "evidence",
+      "mistake",
+      "values"
+    ],
+    "newWords": [
+      "perspective",
+      "skepticism",
+      "conviction",
+      "values",
+      "evidence",
+      "conversation",
+      "lesson",
+      "mistake",
+      "class",
+      "realization"
+    ],
+    "phraseItems": [
+      "after i experienced",
+      "because of",
+      "now i see",
+      "over time",
+      "what changed my mind was"
+    ]
+  },
+  {
+    "promptId": "prompt-a-4",
+    "category": "Routine",
+    "detailName": "After-Work Evenings",
+    "questionEn": "What do you usually do after work, and why do you enjoy it?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "dinner",
+      "music",
+      "reading",
+      "games",
+      "walk",
+      "bath"
+    ],
+    "newWords": [
+      "relaxation",
+      "calm",
+      "quiet",
+      "dinner",
+      "music",
+      "reading",
+      "games",
+      "walk",
+      "bath",
+      "tea"
+    ],
+    "phraseItems": [
+      "after work",
+      "because it helps me",
+      "grab dinner",
+      "in the evening",
+      "once i finish work",
+      "when i get home",
+      "work out"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-01",
+    "category": "Routine",
+    "detailName": "Weekday Mornings",
+    "questionEn": "How do you usually spend your weekday mornings?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "alarm",
+      "shower",
+      "coffee",
+      "subway",
+      "desk",
+      "meeting"
+    ],
+    "newWords": [
+      "early",
+      "busy",
+      "commute",
+      "alarm",
+      "shower",
+      "coffee",
+      "subway",
+      "desk",
+      "meeting",
+      "breakfast"
+    ],
+    "phraseItems": [
+      "before work",
+      "get ready",
+      "in the morning",
+      "on weekdays",
+      "right after i wake up",
+      "wake up"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-16",
+    "category": "Routine",
+    "detailName": "Free Time at Home",
+    "questionEn": "How do you usually spend your free time at home?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "laundry",
+      "tv",
+      "games",
+      "music",
+      "snacks",
+      "podcast"
+    ],
+    "newWords": [
+      "cozy",
+      "quiet",
+      "indoor",
+      "tv",
+      "games",
+      "music",
+      "snacks",
+      "podcast",
+      "reading",
+      "couch"
+    ],
+    "phraseItems": [
+      "at home",
+      "in my free time",
+      "most of the time",
+      "stay home",
+      "watch shows",
+      "when i stay in"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-21",
+    "category": "Routine",
+    "detailName": "The Start of Saturday",
+    "questionEn": "How do you usually start your Saturdays?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "breakfast",
+      "run",
+      "chores",
+      "coffee",
+      "planner",
+      "market"
+    ],
+    "newWords": [
+      "slow",
+      "easy",
+      "calm",
+      "breakfast",
+      "coffee",
+      "run",
+      "chores",
+      "planner",
+      "market",
+      "journal"
+    ],
+    "phraseItems": [
+      "at the beginning of the weekend",
+      "before noon",
+      "on saturday mornings",
+      "sleep in",
+      "tidy up",
+      "to start my day"
+    ]
+  },
+  {
+    "promptId": "prompt-problem-06",
+    "category": "Problem Solving",
+    "detailName": "Staying Motivated",
+    "questionEn": "What is one challenge you often face when trying to stay motivated, and how do you handle it?",
+    "mixPolicy": "issue/cause 4 + concrete context/tool/detail 6",
+    "currentDirectWords": [
+      "motivation",
+      "routine",
+      "distraction",
+      "energy",
+      "boredom",
+      "fatigue"
+    ],
+    "newWords": [
+      "motivation",
+      "distraction",
+      "boredom",
+      "fatigue",
+      "phone",
+      "deadline",
+      "timer",
+      "notebook",
+      "desk",
+      "playlist"
+    ],
+    "phraseItems": [
+      "get back on track",
+      "keep going",
+      "lose motivation",
+      "remind myself why"
+    ]
+  },
+  {
+    "promptId": "prompt-problem-16",
+    "category": "Problem Solving",
+    "detailName": "Work-Life Balance",
+    "questionEn": "What is one challenge you often face when trying to balance work and rest, and how do you handle it?",
+    "mixPolicy": "issue/cause 4 + concrete context/tool/detail 6",
+    "currentDirectWords": [
+      "balance",
+      "workload",
+      "rest",
+      "burnout",
+      "boundary",
+      "overtime"
+    ],
+    "newWords": [
+      "workload",
+      "overtime",
+      "deadline",
+      "fatigue",
+      "boundary",
+      "laptop",
+      "phone",
+      "notification",
+      "planner",
+      "commute"
+    ],
+    "phraseItems": [
+      "after work",
+      "make time for",
+      "set boundaries",
+      "take a break"
+    ]
+  },
+  {
+    "promptId": "prompt-problem-21",
+    "category": "Problem Solving",
+    "detailName": "Teamwork",
+    "questionEn": "What is one challenge you often face when working in a team, and how do you handle it?",
+    "mixPolicy": "issue/cause 4 + concrete context/tool/detail 6",
+    "currentDirectWords": [
+      "teamwork",
+      "communication",
+      "conflict",
+      "cooperation",
+      "compromise"
+    ],
+    "newWords": [
+      "communication",
+      "conflict",
+      "compromise",
+      "coordination",
+      "meeting",
+      "deadline",
+      "chat",
+      "feedback",
+      "project",
+      "notes"
+    ],
+    "phraseItems": [
+      "listen to each other",
+      "share ideas",
+      "solve problems together",
+      "work as a team"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-01",
+    "category": "Balanced Opinion",
+    "detailName": "Social Media",
+    "questionEn": "How has social media changed daily life, and do you think the change is mostly positive?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "connection",
+      "distraction",
+      "communication",
+      "influence",
+      "privacy",
+      "comparison"
+    ],
+    "newWords": [
+      "connection",
+      "communication",
+      "distraction",
+      "privacy",
+      "comparison",
+      "smartphone",
+      "app",
+      "feed",
+      "notification",
+      "followers"
+    ],
+    "phraseItems": [
+      "in daily life",
+      "on the one hand",
+      "on the other hand",
+      "overall"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-11",
+    "category": "Balanced Opinion",
+    "detailName": "AI in Education",
+    "questionEn": "How has artificial intelligence in education changed daily life, and do you think the change is mostly positive?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "learning",
+      "feedback",
+      "access",
+      "cheating",
+      "efficiency",
+      "tutor"
+    ],
+    "newWords": [
+      "learning",
+      "feedback",
+      "access",
+      "efficiency",
+      "cheating",
+      "teacher",
+      "tutor",
+      "classroom",
+      "assignment",
+      "chatbot"
+    ],
+    "phraseItems": [
+      "at the same time",
+      "help students",
+      "in education",
+      "raise concerns"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-16",
+    "category": "Balanced Opinion",
+    "detailName": "Online Shopping",
+    "questionEn": "How has online shopping changed daily life, and do you think the change is mostly positive?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "convenience",
+      "delivery",
+      "discounts",
+      "reviews",
+      "refunds",
+      "selection"
+    ],
+    "newWords": [
+      "convenience",
+      "delivery",
+      "discounts",
+      "selection",
+      "refunds",
+      "app",
+      "website",
+      "cart",
+      "package",
+      "seller"
+    ],
+    "phraseItems": [
+      "buy things online",
+      "compare prices",
+      "save time",
+      "spend more than planned"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-21",
+    "category": "Balanced Opinion",
+    "detailName": "Smartphones",
+    "questionEn": "How has daily smartphone use changed people's lives, and do you think the change is mostly positive?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "convenience",
+      "screen time",
+      "communication",
+      "notifications",
+      "camera",
+      "battery"
+    ],
+    "newWords": [
+      "convenience",
+      "communication",
+      "distraction",
+      "dependence",
+      "privacy",
+      "screen time",
+      "notifications",
+      "camera",
+      "battery",
+      "apps"
+    ],
+    "phraseItems": [
+      "rely on technology",
+      "stay connected",
+      "use my phone",
+      "waste time"
+    ]
+  },
+  {
+    "promptId": "prompt-general-06",
+    "category": "General",
+    "detailName": "Place in Your Town",
+    "questionEn": "Describe a place in your town that you like and explain why it is meaningful to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "park",
+      "library",
+      "market",
+      "riverfront",
+      "square",
+      "cafe"
+    ],
+    "newWords": [
+      "peaceful",
+      "cozy",
+      "park",
+      "trees",
+      "bench",
+      "pond",
+      "flowers",
+      "path",
+      "childhood",
+      "memories"
+    ],
+    "phraseItems": [
+      "i like going there because",
+      "in my town",
+      "it feels",
+      "not far from"
+    ]
+  },
+  {
+    "promptId": "prompt-general-16",
+    "category": "General",
+    "detailName": "Recommended Hobby",
+    "questionEn": "Describe a hobby you would recommend to others and explain why it is meaningful to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "reading",
+      "gardening",
+      "photography",
+      "baking",
+      "running",
+      "sketching"
+    ],
+    "newWords": [
+      "creative",
+      "calming",
+      "camera",
+      "lens",
+      "shutter",
+      "portrait",
+      "nature",
+      "album",
+      "memories",
+      "travel"
+    ],
+    "phraseItems": [
+      "a good way to",
+      "easy to start",
+      "i would recommend it because",
+      "in your free time"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-41",
+    "category": "Routine",
+    "detailName": "Rainy Day at Home",
+    "questionEn": "What do you usually do on rainy days at home?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "tea",
+      "movie",
+      "book",
+      "soup",
+      "pajamas",
+      "candlelight"
+    ],
+    "newWords": [
+      "cozy",
+      "quiet",
+      "rainy",
+      "tea",
+      "movie",
+      "book",
+      "soup",
+      "pajamas",
+      "blanket",
+      "cookies"
+    ],
+    "phraseItems": [
+      "make a cup of tea",
+      "slow down",
+      "stay in",
+      "watch the rain"
+    ]
+  },
+  {
+    "promptId": "prompt-problem-31",
+    "category": "Problem Solving",
+    "detailName": "Group Projects",
+    "questionEn": "What is one challenge you often face when working on group projects, and how do you handle it?",
+    "mixPolicy": "issue/cause 4 + concrete context/tool/detail 6",
+    "currentDirectWords": [
+      "coordination",
+      "conflict",
+      "deadline",
+      "compromise"
+    ],
+    "newWords": [
+      "coordination",
+      "miscommunication",
+      "conflict",
+      "deadline",
+      "task list",
+      "shared doc",
+      "chat thread",
+      "slide deck",
+      "notes",
+      "meeting"
+    ],
+    "phraseItems": [
+      "check in regularly",
+      "divide the work",
+      "keep everyone on the same page",
+      "run into delays"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-31",
+    "category": "Balanced Opinion",
+    "detailName": "Short-Form Videos",
+    "questionEn": "What are the benefits and drawbacks of short-form videos, and what is your view?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "clip",
+      "algorithm",
+      "editing",
+      "entertainment",
+      "distraction",
+      "trend"
+    ],
+    "newWords": [
+      "convenience",
+      "variety",
+      "speed",
+      "distraction",
+      "addiction",
+      "clip",
+      "algorithm",
+      "editing",
+      "feed",
+      "caption"
+    ],
+    "phraseItems": [
+      "find new ideas",
+      "in a short time",
+      "keep people entertained",
+      "reduce attention span"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-41",
+    "category": "Balanced Opinion",
+    "detailName": "Online Reviews",
+    "questionEn": "What are the benefits and drawbacks of online reviews, and what is your view?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "star rating",
+      "fake review",
+      "comment",
+      "trust",
+      "bias",
+      "experience"
+    ],
+    "newWords": [
+      "trust",
+      "credibility",
+      "bias",
+      "accuracy",
+      "honesty",
+      "star rating",
+      "fake review",
+      "comment",
+      "platform",
+      "product"
+    ],
+    "phraseItems": [
+      "based on real experience",
+      "be misleading",
+      "help people decide",
+      "shape people's choices"
+    ]
+  },
+  {
+    "promptId": "prompt-opinion-31",
+    "category": "Opinion Reason",
+    "detailName": "School Uniforms",
+    "questionEn": "What role should school uniforms play in public schools today?",
+    "mixPolicy": "public-value issue 5 + stakeholder/resource detail 5",
+    "currentDirectWords": [
+      "dress code",
+      "blazer",
+      "tie",
+      "badge",
+      "shirt",
+      "shoes"
+    ],
+    "newWords": [
+      "equality",
+      "discipline",
+      "safety",
+      "identity",
+      "pressure",
+      "dress code",
+      "blazer",
+      "tie",
+      "badge",
+      "policy"
+    ],
+    "phraseItems": [
+      "create a sense of unity",
+      "limit self-expression",
+      "need flexible rules",
+      "reduce peer pressure"
+    ]
+  },
+  {
+    "promptId": "prompt-general-26",
+    "category": "General",
+    "detailName": "Favorite Small Shop",
+    "questionEn": "Describe a small shop you like and explain why it matters to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "counter",
+      "display",
+      "window",
+      "books",
+      "snacks",
+      "coffee"
+    ],
+    "newWords": [
+      "cozy",
+      "friendly",
+      "counter",
+      "display",
+      "window",
+      "books",
+      "snacks",
+      "coffee",
+      "owner",
+      "regulars"
+    ],
+    "phraseItems": [
+      "drop by often",
+      "feel welcome",
+      "know the owner",
+      "support local businesses"
+    ]
+  },
+  {
+    "promptId": "prompt-general-46",
+    "category": "General",
+    "detailName": "Household Item",
+    "questionEn": "Describe a household item you use often and explain why it matters to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "blanket",
+      "mug",
+      "basket",
+      "remote",
+      "sponge",
+      "pillow"
+    ],
+    "newWords": [
+      "soft",
+      "warm",
+      "blanket",
+      "pillow",
+      "sofa",
+      "bedroom",
+      "laundry",
+      "drawer",
+      "gift",
+      "hand-me-down"
+    ],
+    "phraseItems": [
+      "can't imagine living without it",
+      "keep things organized",
+      "make life easier",
+      "use it every day"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1103",
+    "category": "Routine",
+    "detailName": "After Grocery Shopping",
+    "questionEn": "After grocery shopping, what do you usually do, and why?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "fridge",
+      "pantry",
+      "freezer",
+      "bags",
+      "receipt",
+      "groceries"
+    ],
+    "newWords": [
+      "fridge",
+      "pantry",
+      "freezer",
+      "bags",
+      "receipt",
+      "containers",
+      "labels",
+      "produce",
+      "leftovers",
+      "meal plan"
+    ],
+    "phraseItems": [
+      "as part of my routine",
+      "by the time i finish",
+      "the part i repeat most",
+      "what helps most is"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1106",
+    "category": "Routine",
+    "detailName": "Quiet Sunday Evening",
+    "questionEn": "On a quiet Sunday evening, what do you usually do, and why?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "tea",
+      "book",
+      "sofa",
+      "movie",
+      "blanket",
+      "music"
+    ],
+    "newWords": [
+      "quiet",
+      "cozy",
+      "tea",
+      "book",
+      "sofa",
+      "movie",
+      "blanket",
+      "music",
+      "lamp",
+      "podcast"
+    ],
+    "phraseItems": [
+      "after that",
+      "as part of my routine",
+      "first of all",
+      "the part i repeat most"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1110",
+    "category": "Routine",
+    "detailName": "Indoor Rest Day",
+    "questionEn": "What do you usually do on a day when you stay indoors, and which part of that routine helps you the most?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "pajamas",
+      "laptop",
+      "blanket",
+      "movie",
+      "coffee",
+      "laundry"
+    ],
+    "newWords": [
+      "pajamas",
+      "laptop",
+      "blanket",
+      "movie",
+      "coffee",
+      "laundry",
+      "nap",
+      "book",
+      "music",
+      "snacks"
+    ],
+    "phraseItems": [
+      "by the time i finish",
+      "first of all",
+      "the part i repeat most",
+      "what helps most is"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1112",
+    "category": "Routine",
+    "detailName": "After a Late Lunch",
+    "questionEn": "After a late lunch, what do you usually do, and why?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "nap",
+      "coffee",
+      "water",
+      "book",
+      "sofa",
+      "tea"
+    ],
+    "newWords": [
+      "nap",
+      "coffee",
+      "water",
+      "book",
+      "sofa",
+      "tea",
+      "pillow",
+      "sleepiness",
+      "digestion",
+      "fullness"
+    ],
+    "phraseItems": [
+      "after that",
+      "as part of my routine",
+      "first of all",
+      "the part i repeat most"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1114",
+    "category": "Routine",
+    "detailName": "Friday Night at Home",
+    "questionEn": "What do you usually do on Friday night at home, and why does that routine work well for you?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "movie",
+      "pizza",
+      "blanket",
+      "sofa",
+      "game",
+      "music"
+    ],
+    "newWords": [
+      "movie",
+      "pizza",
+      "blanket",
+      "sofa",
+      "game",
+      "music",
+      "snacks",
+      "pajamas",
+      "controller",
+      "remote"
+    ],
+    "phraseItems": [
+      "after that",
+      "as part of my routine",
+      "by the time i finish",
+      "what helps most is"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1116",
+    "category": "Routine",
+    "detailName": "Weekend Evening",
+    "questionEn": "What do you usually do on weekend evenings, and which part of that routine helps you the most?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "movie",
+      "tea",
+      "sofa",
+      "music",
+      "book",
+      "dessert"
+    ],
+    "newWords": [
+      "movie",
+      "music",
+      "book",
+      "sofa",
+      "tea",
+      "blanket",
+      "dessert",
+      "snack",
+      "lamp",
+      "podcast"
+    ],
+    "phraseItems": [
+      "by the time i finish",
+      "first of all",
+      "the part i repeat most",
+      "what helps most is"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1117",
+    "category": "Routine",
+    "detailName": "Arriving Too Early",
+    "questionEn": "What do you usually do when you arrive somewhere too early, and why does that routine work well for you?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "coffee",
+      "bench",
+      "book",
+      "phone",
+      "music",
+      "window"
+    ],
+    "newWords": [
+      "cafe",
+      "lobby",
+      "bench",
+      "coffee",
+      "book",
+      "phone",
+      "music",
+      "window",
+      "water",
+      "magazine"
+    ],
+    "phraseItems": [
+      "after that",
+      "by the time i finish",
+      "first of all",
+      "the part i repeat most"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1122",
+    "category": "Routine",
+    "detailName": "Rainy Morning Indoors",
+    "questionEn": "What do you usually do on a rainy morning indoors, and which part of that routine helps you the most?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "blanket",
+      "tea",
+      "book",
+      "window",
+      "music",
+      "pajamas"
+    ],
+    "newWords": [
+      "rain",
+      "window",
+      "pajamas",
+      "blanket",
+      "tea",
+      "book",
+      "music",
+      "mug",
+      "candle",
+      "socks"
+    ],
+    "phraseItems": [
+      "by the time i finish",
+      "first of all",
+      "the part i repeat most",
+      "what helps most is"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1123",
+    "category": "Routine",
+    "detailName": "Before a Side Project",
+    "questionEn": "What do you usually do before starting a side project, and why does that routine work well for you?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "notes",
+      "goal",
+      "outline",
+      "laptop",
+      "timer",
+      "desk"
+    ],
+    "newWords": [
+      "plan",
+      "goal",
+      "outline",
+      "notes",
+      "laptop",
+      "desk",
+      "timer",
+      "research",
+      "checklist",
+      "folder"
+    ],
+    "phraseItems": [
+      "after that",
+      "by the time i finish",
+      "first of all",
+      "the part i repeat most"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-1127",
+    "category": "Routine",
+    "detailName": "Before Recording a Video",
+    "questionEn": "Before recording a video for yourself or class, what do you usually do, and why?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "camera",
+      "script",
+      "notes",
+      "lighting",
+      "tripod",
+      "microphone"
+    ],
+    "newWords": [
+      "camera",
+      "script",
+      "notes",
+      "lighting",
+      "tripod",
+      "microphone",
+      "background",
+      "battery",
+      "angle",
+      "frame"
+    ],
+    "phraseItems": [
+      "as part of my routine",
+      "by the time i finish",
+      "the part i repeat most",
+      "what helps most is"
+    ]
+  },
+  {
+    "promptId": "prompt-preference-1104",
+    "category": "Preference",
+    "detailName": "Phone Case Style",
+    "questionEn": "What is your favorite phone case style, and why do you like it?",
+    "mixPolicy": "evaluation/sensory 4 + target detail 6",
+    "currentDirectWords": [
+      "clear case",
+      "silicone case",
+      "slim case",
+      "wallet case",
+      "rugged case",
+      "patterned case"
+    ],
+    "newWords": [
+      "transparent",
+      "soft-touch",
+      "shockproof",
+      "minimalist",
+      "clear case",
+      "silicone case",
+      "slim case",
+      "wallet case",
+      "rugged case",
+      "patterned case"
+    ],
+    "phraseItems": [
+      "i always come back to it",
+      "it suits my mood",
+      "the thing that stands out",
+      "what i enjoy most"
+    ]
+  },
+  {
+    "promptId": "prompt-preference-1107",
+    "category": "Preference",
+    "detailName": "Kind of Soup",
+    "questionEn": "What is your favorite kind of soup, and why do you like it?",
+    "mixPolicy": "evaluation/sensory 4 + target detail 6",
+    "currentDirectWords": [
+      "miso soup",
+      "chicken noodle",
+      "tomato soup",
+      "pumpkin soup",
+      "lentil soup",
+      "clam chowder"
+    ],
+    "newWords": [
+      "warming",
+      "creamy",
+      "savory",
+      "hearty",
+      "miso soup",
+      "chicken noodle",
+      "tomato soup",
+      "pumpkin soup",
+      "lentil soup",
+      "clam chowder"
+    ],
+    "phraseItems": [
+      "i always come back to it",
+      "it feels right when",
+      "one reason i keep choosing it",
+      "what i enjoy most"
+    ]
+  },
+  {
+    "promptId": "prompt-preference-1118",
+    "category": "Preference",
+    "detailName": "Break Time Snack",
+    "questionEn": "Describe your favorite snack for work or study breaks and explain what you like most about it.",
+    "mixPolicy": "evaluation/sensory 4 + target detail 6",
+    "currentDirectWords": [
+      "crunch",
+      "sweetness",
+      "saltiness",
+      "chewiness",
+      "freshness",
+      "portability"
+    ],
+    "newWords": [
+      "crunch",
+      "sweetness",
+      "saltiness",
+      "freshness",
+      "portability",
+      "nuts",
+      "granola",
+      "crackers",
+      "trail mix",
+      "yogurt"
+    ],
+    "phraseItems": [
+      "it feels right when",
+      "it suits my mood",
+      "one reason i keep choosing it",
+      "what i enjoy most"
+    ]
+  },
+  {
+    "promptId": "prompt-goal-1116",
+    "category": "Goal Plan",
+    "detailName": "Reduce Food Waste",
+    "questionEn": "What is one goal you have for reducing food waste at home this year, and how will you work toward it?",
+    "mixPolicy": "goal/execution frame 4 + concrete action/measurement 6",
+    "currentDirectWords": [
+      "leftovers",
+      "fridge",
+      "expiration date",
+      "portions",
+      "shopping list",
+      "compost"
+    ],
+    "newWords": [
+      "tracking",
+      "planning",
+      "checking",
+      "schedule",
+      "leftovers",
+      "fridge",
+      "expiration date",
+      "portions",
+      "shopping list",
+      "compost"
+    ],
+    "phraseItems": [
+      "keep track of",
+      "make time for",
+      "my first step",
+      "week by week"
+    ]
+  },
+  {
+    "promptId": "prompt-goal-1124",
+    "category": "Goal Plan",
+    "detailName": "Plant Care",
+    "questionEn": "What would you like to improve about the way you take care of plants this year, and what steps will you take?",
+    "mixPolicy": "goal/execution frame 4 + concrete action/measurement 6",
+    "currentDirectWords": [
+      "water",
+      "sunlight",
+      "soil",
+      "pot",
+      "fertilizer",
+      "leaves"
+    ],
+    "newWords": [
+      "watering schedule",
+      "light level",
+      "drainage holes",
+      "repotting",
+      "soil",
+      "pot",
+      "fertilizer",
+      "moisture",
+      "roots",
+      "leaves"
+    ],
+    "phraseItems": [
+      "keep track of",
+      "little by little",
+      "my first step",
+      "to stay consistent"
+    ]
+  },
+  {
+    "promptId": "prompt-goal-1125",
+    "category": "Goal Plan",
+    "detailName": "Using Small Pockets of Time",
+    "questionEn": "What is one goal you have for making better use of small pockets of time this year, and how will you work toward it?",
+    "mixPolicy": "goal/execution frame 4 + concrete action/measurement 6",
+    "currentDirectWords": [
+      "break",
+      "commute",
+      "wait time",
+      "timer",
+      "checklist",
+      "mini-task"
+    ],
+    "newWords": [
+      "micro-goal",
+      "daily target",
+      "time block",
+      "schedule",
+      "timer",
+      "checklist",
+      "mini-task",
+      "commute",
+      "break",
+      "wait time"
+    ],
+    "phraseItems": [
+      "little by little",
+      "my first step",
+      "to stay consistent",
+      "week by week"
+    ]
+  },
+  {
+    "promptId": "prompt-goal-1127",
+    "category": "Goal Plan",
+    "detailName": "Rest Without Guilt",
+    "questionEn": "What would you like to improve about your ability to rest without guilt this year, and what steps will you take?",
+    "mixPolicy": "goal/execution frame 4 + concrete action/measurement 6",
+    "currentDirectWords": [
+      "downtime",
+      "nap",
+      "pause",
+      "sleep",
+      "quiet",
+      "comfort"
+    ],
+    "newWords": [
+      "permission",
+      "boundary",
+      "downtime",
+      "rest",
+      "nap",
+      "sleep",
+      "quiet",
+      "blanket",
+      "alarm",
+      "screen"
+    ],
+    "phraseItems": [
+      "keep track of",
+      "make time for",
+      "to stay consistent",
+      "week by week"
+    ]
+  },
+  {
+    "promptId": "prompt-problem-1103",
+    "category": "Problem Solving",
+    "detailName": "Asking When Confused",
+    "questionEn": "When it is hard to ask questions because you are confused, what do you usually do to deal with it?",
+    "mixPolicy": "issue/cause 4 + concrete context/tool/detail 6",
+    "currentDirectWords": [
+      "question",
+      "clarification",
+      "confidence",
+      "example",
+      "teacher",
+      "hint"
+    ],
+    "newWords": [
+      "unclear",
+      "stuck",
+      "nervous",
+      "shy",
+      "question",
+      "clarification",
+      "example",
+      "teacher",
+      "notes",
+      "hint"
+    ],
+    "phraseItems": [
+      "calm down first",
+      "make it manageable",
+      "step by step",
+      "what helps me most"
+    ]
+  },
+  {
+    "promptId": "prompt-problem-1124",
+    "category": "Problem Solving",
+    "detailName": "Distracting Messages",
+    "questionEn": "When it is hard to ignore distracting messages, what do you usually do to deal with it?",
+    "mixPolicy": "issue/cause 4 + concrete context/tool/detail 6",
+    "currentDirectWords": [
+      "message",
+      "notification",
+      "alert",
+      "ping",
+      "buzz",
+      "phone"
+    ],
+    "newWords": [
+      "constant",
+      "urgent",
+      "spam",
+      "temptation",
+      "message",
+      "notification",
+      "alert",
+      "phone",
+      "group chat",
+      "lock screen"
+    ],
+    "phraseItems": [
+      "calm down first",
+      "deal with it",
+      "step by step",
+      "when this happens"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-1105",
+    "category": "Balanced Opinion",
+    "detailName": "Online Petitions",
+    "questionEn": "Do you think online petitions are more helpful or harmful overall? Explain both sides and give your opinion.",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "signature",
+      "reach",
+      "awareness",
+      "fraud",
+      "support",
+      "crowd"
+    ],
+    "newWords": [
+      "awareness",
+      "reach",
+      "pressure",
+      "fraud",
+      "trust",
+      "signature",
+      "platform",
+      "account",
+      "campaign",
+      "organizer"
+    ],
+    "phraseItems": [
+      "in the long run",
+      "on the one hand",
+      "on the other hand",
+      "overall, i think"
+    ]
+  },
+  {
+    "promptId": "prompt-balance-1124",
+    "category": "Balanced Opinion",
+    "detailName": "Personal Data Rewards Programs",
+    "questionEn": "What do you see as the strengths and weaknesses of personal data rewards programs, and which side seems stronger to you?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "privacy",
+      "consent",
+      "data",
+      "tracking",
+      "rewards",
+      "misuse"
+    ],
+    "newWords": [
+      "privacy",
+      "consent",
+      "transparency",
+      "tracking",
+      "misuse",
+      "rewards",
+      "points",
+      "app",
+      "settings",
+      "profile"
+    ],
+    "phraseItems": [
+      "in some cases",
+      "on the one hand",
+      "on the other hand",
+      "overall, i think"
+    ]
+  },
+  {
+    "promptId": "prompt-opinion-1106",
+    "category": "Opinion Reason",
+    "detailName": "Convenience Stores",
+    "questionEn": "In your opinion, what should convenience stores do for people in modern society?",
+    "mixPolicy": "public-value issue 5 + stakeholder/resource detail 5",
+    "currentDirectWords": [
+      "essentials",
+      "daily goods",
+      "snacks",
+      "drinks",
+      "late-night access",
+      "quick service"
+    ],
+    "newWords": [
+      "access",
+      "affordability",
+      "speed",
+      "reliability",
+      "safety",
+      "essentials",
+      "daily goods",
+      "snacks",
+      "drinks",
+      "late-night hours"
+    ],
+    "phraseItems": [
+      "as a result",
+      "for the community",
+      "in my view",
+      "one important role"
+    ]
+  },
+  {
+    "promptId": "prompt-opinion-1111",
+    "category": "Opinion Reason",
+    "detailName": "Public Broadcasters",
+    "questionEn": "What responsibilities should public broadcasters have in the community today?",
+    "mixPolicy": "public-value issue 5 + stakeholder/resource detail 5",
+    "currentDirectWords": [
+      "news",
+      "local news",
+      "emergency alerts",
+      "fact-checking",
+      "cultural programs",
+      "educational shows"
+    ],
+    "newWords": [
+      "accuracy",
+      "neutrality",
+      "trust",
+      "access",
+      "education",
+      "news",
+      "local news",
+      "emergency alerts",
+      "fact-checking",
+      "cultural programs"
+    ],
+    "phraseItems": [
+      "as a result",
+      "for the community",
+      "in my view",
+      "in practice"
+    ]
+  },
+  {
+    "promptId": "prompt-opinion-1113",
+    "category": "Opinion Reason",
+    "detailName": "Local Farmers Markets",
+    "questionEn": "What role should local farmers' markets play in modern society?",
+    "mixPolicy": "public-value issue 5 + stakeholder/resource detail 5",
+    "currentDirectWords": [
+      "local food",
+      "freshness",
+      "seasonal produce",
+      "small farms",
+      "food miles",
+      "local economy"
+    ],
+    "newWords": [
+      "freshness",
+      "affordability",
+      "sustainability",
+      "traceability",
+      "variety",
+      "local food",
+      "seasonal produce",
+      "small farms",
+      "food miles",
+      "local economy"
+    ],
+    "phraseItems": [
+      "for the community",
+      "in my view",
+      "one important role",
+      "this matters because"
+    ]
+  },
+  {
+    "promptId": "prompt-opinion-1115",
+    "category": "Opinion Reason",
+    "detailName": "Train Stations",
+    "questionEn": "In your opinion, how should train stations serve people and communities today?",
+    "mixPolicy": "public-value issue 5 + stakeholder/resource detail 5",
+    "currentDirectWords": [
+      "ramps",
+      "elevators",
+      "signage",
+      "restrooms",
+      "shelter",
+      "security"
+    ],
+    "newWords": [
+      "accessibility",
+      "safety",
+      "cleanliness",
+      "comfort",
+      "efficiency",
+      "ramps",
+      "elevators",
+      "signage",
+      "restrooms",
+      "security"
+    ],
+    "phraseItems": [
+      "as a result",
+      "in practice",
+      "one important role",
+      "this matters because"
+    ]
+  },
+  {
+    "promptId": "prompt-opinion-1118",
+    "category": "Opinion Reason",
+    "detailName": "Restaurants Reducing Food Waste",
+    "questionEn": "In your opinion, what should restaurants reducing food waste do for people in modern society?",
+    "mixPolicy": "public-value issue 5 + stakeholder/resource detail 5",
+    "currentDirectWords": [
+      "donations",
+      "leftovers",
+      "portion sizes",
+      "food banks",
+      "compost",
+      "menu planning"
+    ],
+    "newWords": [
+      "food security",
+      "hunger",
+      "landfill",
+      "emissions",
+      "affordability",
+      "leftovers",
+      "portion sizes",
+      "donations",
+      "food banks",
+      "compost"
+    ],
+    "phraseItems": [
+      "as a result",
+      "for the community",
+      "in my view",
+      "one important role"
+    ]
+  },
+  {
+    "promptId": "prompt-opinion-1120",
+    "category": "Opinion Reason",
+    "detailName": "Heat Shelter Programs",
+    "questionEn": "What responsibilities should local governments running heat shelters have in the community today?",
+    "mixPolicy": "public-value issue 5 + stakeholder/resource detail 5",
+    "currentDirectWords": [
+      "water",
+      "shade",
+      "beds",
+      "air conditioning",
+      "medical care",
+      "transport"
+    ],
+    "newWords": [
+      "safety",
+      "access",
+      "dehydration",
+      "heatstroke",
+      "dignity",
+      "water",
+      "shade",
+      "beds",
+      "air conditioning",
+      "medical care"
+    ],
+    "phraseItems": [
+      "for the community",
+      "in practice",
+      "one important role",
+      "this matters because"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1101",
+    "category": "Change Reflection",
+    "detailName": "Competition",
+    "questionEn": "How has your view of competition changed over time, and why?",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "rivalry",
+      "pressure",
+      "motivation",
+      "comparison",
+      "confidence",
+      "improvement"
+    ],
+    "newWords": [
+      "skeptical",
+      "balanced",
+      "pragmatic",
+      "rivalry",
+      "pressure",
+      "motivation",
+      "comparison",
+      "confidence",
+      "setback",
+      "improvement"
+    ],
+    "phraseItems": [
+      "because of that",
+      "i used to think",
+      "now i see",
+      "over time"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1102",
+    "category": "Change Reflection",
+    "detailName": "Taking Breaks",
+    "questionEn": "How has your understanding of taking breaks changed as you have grown, and what influenced that change?",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "rest",
+      "burnout",
+      "stress",
+      "focus",
+      "energy",
+      "recovery"
+    ],
+    "newWords": [
+      "guilty",
+      "necessary",
+      "worthwhile",
+      "rest",
+      "burnout",
+      "stress",
+      "focus",
+      "energy",
+      "exhaustion",
+      "productivity"
+    ],
+    "phraseItems": [
+      "because of that",
+      "looking back",
+      "now i see",
+      "over time"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1103",
+    "category": "Change Reflection",
+    "detailName": "Living Alone",
+    "questionEn": "Tell me how your opinion of living alone has changed over time and explain why.",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "privacy",
+      "independence",
+      "loneliness",
+      "freedom",
+      "chores"
+    ],
+    "newWords": [
+      "lonely",
+      "manageable",
+      "comfortable",
+      "privacy",
+      "independence",
+      "loneliness",
+      "freedom",
+      "chores",
+      "budget",
+      "confidence"
+    ],
+    "phraseItems": [
+      "because of that",
+      "looking back",
+      "over time",
+      "these days"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1104",
+    "category": "Change Reflection",
+    "detailName": "Networking",
+    "questionEn": "How has your view of networking changed over time, and why?",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "contacts",
+      "connection",
+      "opportunity",
+      "confidence",
+      "event",
+      "icebreaker"
+    ],
+    "newWords": [
+      "mindset",
+      "confidence",
+      "comfort",
+      "contacts",
+      "introductions",
+      "event",
+      "small talk",
+      "follow-up",
+      "opportunity",
+      "referral"
+    ],
+    "phraseItems": [
+      "because of that",
+      "i used to think",
+      "looking back",
+      "these days"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1108",
+    "category": "Change Reflection",
+    "detailName": "Boredom",
+    "questionEn": "How has your understanding of boredom changed as you have grown, and what influenced that change?",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "idle time",
+      "restlessness",
+      "curiosity",
+      "patience",
+      "emptiness",
+      "quiet"
+    ],
+    "newWords": [
+      "patience",
+      "curiosity",
+      "awareness",
+      "idle time",
+      "restlessness",
+      "emptiness",
+      "quiet",
+      "silence",
+      "screen time",
+      "creativity"
+    ],
+    "phraseItems": [
+      "because of that",
+      "looking back",
+      "now i see",
+      "over time"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1122",
+    "category": "Change Reflection",
+    "detailName": "Privacy",
+    "questionEn": "How has your view of privacy changed over time, and why?",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "boundaries",
+      "password",
+      "data",
+      "curtains",
+      "lock",
+      "personal space"
+    ],
+    "newWords": [
+      "awareness",
+      "caution",
+      "trust",
+      "boundaries",
+      "password",
+      "data",
+      "lock",
+      "curtains",
+      "social media",
+      "settings"
+    ],
+    "phraseItems": [
+      "because of that",
+      "i used to think",
+      "looking back",
+      "these days"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1123",
+    "category": "Change Reflection",
+    "detailName": "Living Close to Work or School",
+    "questionEn": "How has your understanding of living close to work or school changed as you have grown, and what influenced that change?",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "commute",
+      "walking distance",
+      "location",
+      "traffic",
+      "convenience",
+      "proximity"
+    ],
+    "newWords": [
+      "comfort",
+      "stress",
+      "independence",
+      "commute",
+      "walking distance",
+      "location",
+      "traffic",
+      "convenience",
+      "sleep",
+      "lateness"
+    ],
+    "phraseItems": [
+      "i used to think",
+      "looking back",
+      "now i see",
+      "these days"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1124",
+    "category": "Change Reflection",
+    "detailName": "Cooking at Home",
+    "questionEn": "Tell me how your opinion of cooking at home has changed over time and explain why.",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "stove",
+      "ingredients",
+      "recipe",
+      "cleanup",
+      "freshness",
+      "cost"
+    ],
+    "newWords": [
+      "confidence",
+      "skill",
+      "independence",
+      "stove",
+      "ingredients",
+      "recipe",
+      "cleanup",
+      "freshness",
+      "takeout",
+      "cost"
+    ],
+    "phraseItems": [
+      "i used to think",
+      "now i see",
+      "over time",
+      "these days"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1125",
+    "category": "Change Reflection",
+    "detailName": "Public Speaking",
+    "questionEn": "How has your view of public speaking changed over time, and why?",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "stage",
+      "audience",
+      "nerves",
+      "confidence",
+      "microphone",
+      "presentation"
+    ],
+    "newWords": [
+      "shy",
+      "nervous",
+      "calm",
+      "confident",
+      "stage",
+      "audience",
+      "microphone",
+      "presentation",
+      "practice",
+      "feedback"
+    ],
+    "phraseItems": [
+      "because of that",
+      "i used to think",
+      "now i see",
+      "over time"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1126",
+    "category": "Change Reflection",
+    "detailName": "Part Time Jobs",
+    "questionEn": "How has your understanding of part-time jobs changed as you have grown, and what influenced that change?",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "paycheck",
+      "shift",
+      "manager",
+      "coworkers",
+      "workload",
+      "savings"
+    ],
+    "newWords": [
+      "easy",
+      "serious",
+      "independent",
+      "paycheck",
+      "shift",
+      "manager",
+      "coworkers",
+      "workload",
+      "savings",
+      "budget"
+    ],
+    "phraseItems": [
+      "because of that",
+      "looking back",
+      "now i see",
+      "over time"
+    ]
+  },
+  {
+    "promptId": "prompt-reflection-1127",
+    "category": "Change Reflection",
+    "detailName": "Planning Ahead",
+    "questionEn": "Tell me how your opinion of planning ahead has changed over time and explain why.",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "deadline",
+      "calendar",
+      "schedule",
+      "appointments",
+      "backup plan",
+      "stress"
+    ],
+    "newWords": [
+      "organized",
+      "prepared",
+      "relaxed",
+      "deadline",
+      "calendar",
+      "schedule",
+      "appointments",
+      "backup plan",
+      "stress",
+      "delay"
+    ],
+    "phraseItems": [
+      "because of that",
+      "looking back",
+      "over time",
+      "these days"
+    ]
+  },
+  {
+    "promptId": "prompt-general-1108",
+    "category": "General",
+    "detailName": "Meal You Learned to Cook",
+    "questionEn": "Tell me about a meal you learned to cook yourself and explain why it feels meaningful to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "recipe",
+      "ingredients",
+      "seasoning",
+      "homemade",
+      "stir-fry",
+      "soup"
+    ],
+    "newWords": [
+      "proud",
+      "comforting",
+      "recipe",
+      "ingredients",
+      "seasoning",
+      "stir-fry",
+      "pan",
+      "aroma",
+      "kitchen",
+      "family"
+    ],
+    "phraseItems": [
+      "because of that",
+      "one small detail",
+      "reminds me of",
+      "what i notice most"
+    ]
+  },
+  {
+    "promptId": "prompt-general-1111",
+    "category": "General",
+    "detailName": "Useful Phone Feature",
+    "questionEn": "Tell me about a phone feature you rely on and explain why it is important to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "alarm",
+      "maps",
+      "calendar",
+      "notes",
+      "camera",
+      "fingerprint"
+    ],
+    "newWords": [
+      "handy",
+      "reliable",
+      "alarm",
+      "maps",
+      "calendar",
+      "notes",
+      "camera",
+      "fingerprint",
+      "commute",
+      "trip"
+    ],
+    "phraseItems": [
+      "one small detail",
+      "reminds me of",
+      "stands out to me",
+      "the reason it matters"
+    ]
+  },
+  {
+    "promptId": "prompt-general-1115",
+    "category": "General",
+    "detailName": "Favorite Discussion Topic",
+    "questionEn": "Describe a topic you enjoy talking about and explain why it has remained important to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "music",
+      "travel",
+      "technology",
+      "books",
+      "movies",
+      "cooking"
+    ],
+    "newWords": [
+      "calm",
+      "nostalgia",
+      "music",
+      "songs",
+      "lyrics",
+      "albums",
+      "concerts",
+      "headphones",
+      "childhood",
+      "commute"
+    ],
+    "phraseItems": [
+      "because of that",
+      "one small detail",
+      "the reason it matters",
+      "what i notice most"
+    ]
+  },
+  {
+    "promptId": "prompt-general-1124",
+    "category": "General",
+    "detailName": "Recipe from Home",
+    "questionEn": "Describe a recipe from your home that stands out to you and explain why it has stayed in your memory.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "home cooking",
+      "broth",
+      "spices",
+      "noodles",
+      "stew",
+      "aroma"
+    ],
+    "newWords": [
+      "warm",
+      "nostalgic",
+      "home cooking",
+      "broth",
+      "spices",
+      "noodles",
+      "stew",
+      "aroma",
+      "grandmother",
+      "childhood"
+    ],
+    "phraseItems": [
+      "reminds me of",
+      "stands out to me",
+      "the reason it matters",
+      "what i notice most"
+    ]
+  },
+  {
+    "promptId": "prompt-general-1125",
+    "category": "General",
+    "detailName": "Second Hand Item",
+    "questionEn": "Describe a second-hand item you bought and explain why it matters to you.",
+    "mixPolicy": "meaning/impression 2 + target/sensory/action detail 6 + usage/memory 2",
+    "currentDirectWords": [
+      "vintage",
+      "book",
+      "jacket",
+      "lamp",
+      "chair",
+      "vinyl"
+    ],
+    "newWords": [
+      "retro",
+      "cozy",
+      "vintage",
+      "jacket",
+      "buttons",
+      "lining",
+      "pockets",
+      "fabric",
+      "thrift store",
+      "alteration"
+    ],
+    "phraseItems": [
+      "because of that",
+      "reminds me of",
+      "stands out to me",
+      "what i notice most"
+    ]
+  }
+]

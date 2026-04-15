@@ -1,0 +1,33 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+
+app:
+  frontend-base-url: http://writeloop.localtest.me
+  cors:
+    allowed-origins: http://writeloop.localtest.me,http://localhost,https://localhost,capacitor://localhost
+  auth:
+    token-secret: writeloop-dev-token-secret-change-me
+    mobile-redirect-prefixes: writeloop://,exp://
+  security:
+    allow-insecure-dev-defaults: true
+    rate-limit:
+      auth-max-requests: 30
+      email-max-requests: 20
+      feedback-max-requests: 30
+      coach-help-max-requests: 60
+      coach-usage-max-requests: 120
+  oauth:
+    google:
+      redirect-uri: http://api.localtest.me/api/auth/social/google/callback
+    kakao:
+      redirect-uri: http://api.localtest.me/api/auth/social/kakao/callback
+    naver:
+      redirect-uri: http://api.localtest.me/api/auth/social/naver/callback

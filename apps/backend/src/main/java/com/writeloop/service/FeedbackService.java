@@ -15,6 +15,7 @@ import com.writeloop.dto.RefinementExpressionSource;
 import com.writeloop.dto.RefinementExpressionType;
 import com.writeloop.dto.RefinementMeaningType;
 import com.writeloop.exception.GuestLimitExceededException;
+import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionEntity;
@@ -31,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -294,15 +296,27 @@ public class FeedbackService {
     }
 
     private AnswerSessionEntity resolveSession(FeedbackRequestDto request, String promptId, Long currentUserId) {
+        String guestId = GuestIdentitySupport.normalizeGuestId(request.guestId());
+
         if (request.sessionId() != null && !request.sessionId().isBlank()) {
             AnswerSessionEntity session = answerSessionRepository.findById(request.sessionId())
                     .orElseThrow(() -> new IllegalStateException("Answer session not found"));
 
+            if (!promptId.equals(session.getPromptId())) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "SESSION_OWNERSHIP_MISMATCH", "다른 질문의 세션이에요.");
+            }
+
             if (session.getUserId() != null) {
                 if (currentUserId == null || !session.getUserId().equals(currentUserId)) {
-                    throw new IllegalStateException("This answer session belongs to another user");
+                    throw new ApiException(HttpStatus.FORBIDDEN, "SESSION_OWNERSHIP_MISMATCH", "다른 사용자 세션이에요.");
                 }
                 return session;
+            }
+
+            if (session.getGuestId() != null) {
+                if (guestId == null || !session.getGuestId().equals(guestId)) {
+                    throw new ApiException(HttpStatus.FORBIDDEN, "SESSION_OWNERSHIP_MISMATCH", "다른 기기에서 시작한 게스트 세션이에요.");
+                }
             }
 
             if (currentUserId != null) {
@@ -327,7 +341,6 @@ public class FeedbackService {
             return answerSessionRepository.save(session);
         }
 
-        String guestId = normalizeGuestId(request.guestId());
         if (guestId != null && answerSessionRepository.countByGuestId(guestId) >= 1) {
             throw new GuestLimitExceededException();
         }
@@ -352,15 +365,6 @@ public class FeedbackService {
         } catch (IllegalArgumentException exception) {
             return AttemptType.INITIAL;
         }
-    }
-
-    private String normalizeGuestId(String guestId) {
-        if (guestId == null) {
-            return null;
-        }
-
-        String trimmed = guestId.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private AnswerAttemptEntity saveAttempt(

@@ -1,4 +1,5 @@
 import * as SecureStore from "expo-secure-store";
+import { getActiveStorageOwnerScope, isGuestStorageOwnerScope } from "./storage-owner";
 import type { DailyDifficulty, Prompt, WritingDraftType } from "./types";
 
 export type IncompleteLoopStep = "answer" | "feedback" | "rewrite";
@@ -21,6 +22,11 @@ export type IncompleteLoopState = {
 
 const INCOMPLETE_LOOP_KEY = "writeloop_incomplete_loop";
 
+type StoredIncompleteLoopState = {
+  ownerScope: string;
+  state: IncompleteLoopState;
+};
+
 export function buildIncompleteLoopPromptSnapshot(prompt: Prompt): IncompleteLoopPromptSnapshot {
   return {
     topic: prompt.topic,
@@ -30,17 +36,30 @@ export function buildIncompleteLoopPromptSnapshot(prompt: Prompt): IncompleteLoo
 }
 
 export async function saveIncompleteLoop(state: IncompleteLoopState) {
-  await SecureStore.setItemAsync(INCOMPLETE_LOOP_KEY, JSON.stringify(state));
+  const ownerScope = await getActiveStorageOwnerScope();
+  await SecureStore.setItemAsync(
+    INCOMPLETE_LOOP_KEY,
+    JSON.stringify({
+      ownerScope,
+      state
+    } satisfies StoredIncompleteLoopState)
+  );
 }
 
 export async function getIncompleteLoop(): Promise<IncompleteLoopState | null> {
+  const ownerScope = await getActiveStorageOwnerScope();
   const rawValue = await SecureStore.getItemAsync(INCOMPLETE_LOOP_KEY);
   if (!rawValue) {
     return null;
   }
 
   try {
-    return JSON.parse(rawValue) as IncompleteLoopState;
+    const parsedValue = JSON.parse(rawValue) as StoredIncompleteLoopState | IncompleteLoopState;
+    if ("state" in parsedValue && typeof parsedValue.ownerScope === "string") {
+      return parsedValue.ownerScope === ownerScope ? parsedValue.state : null;
+    }
+
+    return isGuestStorageOwnerScope(ownerScope) ? (parsedValue as IncompleteLoopState) : null;
   } catch {
     await clearIncompleteLoop();
     return null;

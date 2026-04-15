@@ -45,6 +45,7 @@ import { buildCoachQuickQuestions } from "../lib/coach-quick-questions";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getDifficultyLabel } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
+import { getOrCreateGuestId } from "../lib/guest-id";
 import { buildInlineFeedbackSegments, type RenderedInlineFeedbackSegment } from "../lib/inline-feedback";
 import { buildLocalCoachHelp, buildLocalCoachUsage } from "../lib/coach";
 import type {
@@ -72,7 +73,6 @@ import type {
 import { StreakSparkleEffect } from "../components/streak-sparkle-effect";
 import styles from "./page.module.css";
 
-const GUEST_ID_KEY = "writeloop_guest_id";
 const GUEST_SESSION_ID_KEY = "writeloop_guest_session_id";
 const GUEST_PROMPT_ID_KEY = "writeloop_guest_prompt_id";
 const HOME_RETURN_TO = "/";
@@ -1103,23 +1103,6 @@ const DIFFICULTY_OPTIONS: Array<{
   }
 ];
 
-function getOrCreateGuestId() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  const saved = window.localStorage.getItem(GUEST_ID_KEY);
-  if (saved) {
-    return saved;
-  }
-
-  const created =
-    window.crypto?.randomUUID?.() ??
-    `guest-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-  window.localStorage.setItem(GUEST_ID_KEY, created);
-  return created;
-}
-
 type WritingGuide = {
   title: string;
   description: string;
@@ -1576,7 +1559,7 @@ export function AnswerLoop() {
       return;
     }
 
-    setIncompleteLoop(getIncompleteLoop());
+    setIncompleteLoop(getIncompleteLoop(currentUser?.id ?? null));
     setIsLoadingIncompleteLoop(false);
   }, [currentUser?.id, isResolvingCurrentUser]);
 
@@ -2337,7 +2320,7 @@ export function AnswerLoop() {
       }
     }
 
-    const localDraft = getPreferredLocalWritingDraft(promptId);
+    const localDraft = getPreferredLocalWritingDraft(promptId, currentUser?.id ?? null);
     if (localDraft) {
       markPersistedDraftKnown(promptId, localDraft.draftType, true);
       return localDraft;
@@ -2346,25 +2329,25 @@ export function AnswerLoop() {
     markPersistedDraftKnown(promptId, "ANSWER", false);
     markPersistedDraftKnown(promptId, "REWRITE", false);
     return null;
-  }, [isLoggedIn, markPersistedDraftKnown]);
+  }, [currentUser?.id, isLoggedIn, markPersistedDraftKnown]);
 
   const clearPersistedDraft = useCallback(async (promptId: string, draftType: WritingDraftType) => {
     if (isLoggedIn) {
       try {
         await deleteWritingDraft(promptId, draftType);
       } finally {
-        deleteLocalWritingDraft(promptId, draftType);
+        deleteLocalWritingDraft(promptId, draftType, currentUser?.id ?? null);
         markPersistedDraftKnown(promptId, draftType, false);
       }
       return;
     }
 
-    deleteLocalWritingDraft(promptId, draftType);
+    deleteLocalWritingDraft(promptId, draftType, currentUser?.id ?? null);
     markPersistedDraftKnown(promptId, draftType, false);
-  }, [isLoggedIn, markPersistedDraftKnown]);
+  }, [currentUser?.id, isLoggedIn, markPersistedDraftKnown]);
 
   const clearVisibleIncompleteLoop = useCallback((promptId: string, step?: IncompleteLoopStep) => {
-    clearIncompleteLoopForPrompt(promptId, step);
+    clearIncompleteLoopForPrompt(promptId, step, currentUser?.id ?? null);
     setIncompleteLoop((current) => {
       if (!current || current.promptId !== promptId) {
         return current;
@@ -2376,7 +2359,7 @@ export function AnswerLoop() {
 
       return null;
     });
-  }, []);
+  }, [currentUser?.id]);
 
   function clearCoachState() {
     setShowCoachAssistant(false);
@@ -2670,7 +2653,7 @@ export function AnswerLoop() {
       snapshot
     };
 
-    saveIncompleteLoop(nextLoop);
+    saveIncompleteLoop(nextLoop, currentUser?.id ?? null);
     setIncompleteLoop(nextLoop);
   }, [
     activeDraftType,
@@ -2685,6 +2668,7 @@ export function AnswerLoop() {
     selectedPrompt,
     selectedPromptId,
     sessionId,
+    currentUser?.id,
     step
   ]);
 
@@ -2726,7 +2710,7 @@ export function AnswerLoop() {
                 selectedPromptId,
                 buildSaveDraftRequest(activeDraftType)
               );
-              deleteLocalWritingDraft(selectedPromptId, activeDraftType);
+              deleteLocalWritingDraft(selectedPromptId, activeDraftType, currentUser?.id ?? null);
               if (!cancelled) {
                 markPersistedDraftKnown(selectedPromptId, activeDraftType, true);
                 const savedAt = new Date(savedDraft.updatedAt).toLocaleTimeString("ko-KR", {
@@ -2737,7 +2721,7 @@ export function AnswerLoop() {
               }
               return;
             } catch {
-              saveLocalWritingDraft(selectedPromptId, activeDraftType, buildHomeDraft());
+              saveLocalWritingDraft(selectedPromptId, activeDraftType, buildHomeDraft(), currentUser?.id ?? null);
               if (!cancelled) {
                 markPersistedDraftKnown(selectedPromptId, activeDraftType, true);
                 setDraftStatusMessage("서버 저장이 불안정해 이 기기에 임시저장했어요.");
@@ -2747,7 +2731,7 @@ export function AnswerLoop() {
             return;
           }
 
-          saveLocalWritingDraft(selectedPromptId, activeDraftType, buildHomeDraft());
+          saveLocalWritingDraft(selectedPromptId, activeDraftType, buildHomeDraft(), currentUser?.id ?? null);
           if (!cancelled) {
             markPersistedDraftKnown(selectedPromptId, activeDraftType, true);
             setDraftStatusMessage("이 기기에 임시저장됨");
@@ -2784,6 +2768,7 @@ export function AnswerLoop() {
     selectedDifficulty,
     selectedPromptId,
     sessionId,
+    currentUser?.id,
     step
   ]);
 
@@ -2815,7 +2800,7 @@ export function AnswerLoop() {
       answer: nextAnswer.trim(),
       sessionId: sessionId || undefined,
       attemptType: mode,
-      guestId: isLoggedIn ? undefined : guestId || undefined
+      guestId: guestId || undefined
     })
       .then((result) => {
         setFeedback(result);
@@ -2862,6 +2847,7 @@ export function AnswerLoop() {
                 promptId: selectedPromptId,
                 answer: nextAnswer.trim(),
                 sessionId: result.sessionId,
+                guestId: guestId || undefined,
                 attemptNo: result.attemptNo,
                 attemptType: mode,
                 expressions: coachHelpSnapshot.expressions,

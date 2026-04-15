@@ -47,7 +47,11 @@ public class CoachController {
 
     @PostMapping("/usage-check")
     @ResponseStatus(HttpStatus.OK)
-    public CoachUsageCheckResponseDto checkUsage(@RequestBody CoachUsageCheckRequestDto request) {
+    public CoachUsageCheckResponseDto checkUsage(
+            @RequestBody CoachUsageCheckRequestDto request,
+            HttpServletRequest httpRequest,
+            HttpSession session
+    ) {
         if (request == null || request.promptId() == null || request.promptId().isBlank()) {
             throw new IllegalArgumentException("promptId is required");
         }
@@ -58,7 +62,11 @@ public class CoachController {
             throw new IllegalArgumentException("expressions is required");
         }
 
-        return coachService.checkUsage(request);
+        return coachService.checkUsage(
+                request,
+                authService.getCurrentUserIdOrNull(httpRequest, session),
+                session.getId()
+        );
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

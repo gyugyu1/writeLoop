@@ -14,15 +14,11 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final String[] allowedOrigins;
 
-    public WebConfig(@Value("${app.cors.allowed-origins:http://writeloop.localtest.me}") String allowedOrigins) {
+    public WebConfig(@Value("${app.cors.allowed-origins:}") String allowedOrigins) {
         Set<String> origins = new LinkedHashSet<>(Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(value -> !value.isEmpty())
                 .toList());
-
-        origins.add("http://localhost");
-        origins.add("https://localhost");
-        origins.add("capacitor://localhost");
 
         this.allowedOrigins = origins.toArray(String[]::new);
     }

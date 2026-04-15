@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.Map;
 
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE)
+@Order(Ordered.HIGHEST_PRECEDENCE + 10)
 @RequiredArgsConstructor
 public class AccessTokenFilter extends OncePerRequestFilter {
 

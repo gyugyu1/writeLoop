@@ -40,7 +40,7 @@ public class NaverOAuthService {
     @Value("${app.oauth.naver.user-info-uri:https://openapi.naver.com/v1/nid/me}")
     private String userInfoUri;
 
-    @Value("${app.oauth.naver.redirect-uri:http://api.localtest.me/api/auth/social/naver/callback}")
+    @Value("${app.oauth.naver.redirect-uri:}")
     private String redirectUri;
 
     public boolean isConfigured() {

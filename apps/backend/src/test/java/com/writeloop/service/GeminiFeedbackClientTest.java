@@ -105,17 +105,12 @@ class GeminiFeedbackClientTest {
                 "https://api.example.com/v1/responses", null, 120
         );
 
-        String outputText = mapper.writeValueAsString(Map.of(
-                "focusCard", Map.of(
-                        "title", "?대쾲 ?듬????섏젙 紐⑺몴",
-                        "headline", "??媛吏 ?뷀뀒???뷀븯湲?,
-                        "supportText", "吏湲??듭쓽 諛⑺뼢? 醫뗭븘??"
-                ),
-                "strengths", List.of("You clearly state the goal and reason."),
-                "fixPoints", List.of(
+        String outputText = mapper.writeValueAsString(Map.ofEntries(
+                Map.entry("strengths", List.of("You clearly state the goal and reason.")),
+                Map.entry("fixPoints", List.of(
                         Map.of(
                                 "kind", "CORRECTION",
-                                "title", "怨좎퀜蹂???,
+                                "title", "Add detail",
                                 "headline", "Add one more real habit.",
                                 "supportText", "Give one concrete habit after the goal.",
                                 "originalText", "",
@@ -127,7 +122,7 @@ class GeminiFeedbackClientTest {
                         ),
                         Map.of(
                                 "kind", "GRAMMAR",
-                                "title", "怨좎퀜蹂???,
+                                "title", "Fix grammar",
                                 "headline", "",
                                 "supportText", "Use diet, not to diet, after improve.",
                                 "originalText", "improve to diet",
@@ -137,32 +132,35 @@ class GeminiFeedbackClientTest {
                                 "exampleEn", "",
                                 "exampleKo", ""
                         )
-                ),
-                "usedExpressions", List.of(Map.of(
+                )),
+                Map.entry("usedExpressions", List.of(Map.of(
                         "expression", "stay healthy",
                         "usageTip", "Use this to explain why the goal matters."
-                )),
-                "refinementExpressions", List.of(Map.of(
+                ))),
+                Map.entry("refinementExpressions", List.of(Map.of(
                         "expression", "improve my diet",
                         "guidanceKo", "Use this when talking about a health goal.",
                         "exampleEn", "I want to improve my diet this year.",
                         "exampleKo", "Korean example",
                         "meaningKo", "make eating habits healthier"
-                )),
-                "nextStepPractice", Map.of(
-                        "title", "?쒕쾲 ???⑤낫湲?,
-                        "starter", "One health goal I have this year is to improve my diet because ______.",
-                        "instruction", "鍮덉뭏???댁쑀瑜??섎굹 ?ｌ뼱 蹂댁꽭??",
-                        "ctaLabel", "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
-                        "optionalTone", false
-                ),
-                "rewriteSuggestions", List.of(Map.of(
+                ))),
+                Map.entry("rewriteIdeas", List.of(Map.of(
+                        "title", "Add a reason",
                         "english", "it helps me feel more energetic",
-                        "meaningKo", "???쒓린李④쾶 ?먮겮寃???以섏꽌",
-                        "noteKo", "because ?ㅼ뿉 諛붾줈 遺숈뿬 ?????덈뒗 ?댁쑀?덉엯?덈떎."
-                )),
-                "modelAnswer", "One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy and feel more energetic.",
-                "modelAnswerKo", "Korean translation"
+                        "meaningKo", "feel more energetic",
+                        "noteKo", "A natural reason phrase that works well after because.",
+                        "originalText", "",
+                        "revisedText", "",
+                        "optionalTone", false
+                ))),
+                Map.entry("modelAnswerVariants", List.of(Map.of(
+                        "kind", "NATURALER",
+                        "answer", "I usually take a nap on Sunday afternoons.",
+                        "answerKo", "I usually take a nap on Sunday afternoons.",
+                        "reasonKo", "This version moves the time phrase to the end."
+                ))),
+                Map.entry("modelAnswer", "One health goal I have this year is to improve my diet. It's important to me because I want to stay healthy and feel more energetic."),
+                Map.entry("modelAnswerKo", "Korean translation")
         ));
         String body = mapper.writeValueAsString(Map.of("output_text", outputText));
 
@@ -192,11 +190,15 @@ class GeminiFeedbackClientTest {
             assertThat(card.expression()).isEqualTo("improve my diet");
             assertThat(card.meaningKo()).isEqualTo("make eating habits healthier");
         });
-        assertThat(sections.nextStepPractice()).isNotNull();
-        assertThat(sections.nextStepPractice().starter()).isNotBlank();
-        assertThat(sections.rewriteSuggestions()).singleElement().satisfies(suggestion -> {
-            assertThat(suggestion.english()).isEqualTo("it helps me feel more energetic");
-            assertThat(suggestion.meaningKo()).isEqualTo("???쒓린李④쾶 ?먮겮寃???以섏꽌");
+        assertThat(sections.nextStepPractice()).isNull();
+        assertThat(sections.rewriteSuggestions()).isEmpty();
+        assertThat(sections.rewriteIdeas()).singleElement().satisfies(idea -> {
+            assertThat(idea.english()).isEqualTo("it helps me feel more energetic");
+            assertThat(idea.noteKo()).isEqualTo("A natural reason phrase that works well after because.");
+        });
+        assertThat(sections.modelAnswerVariants()).singleElement().satisfies(variant -> {
+            assertThat(variant.answer()).isEqualTo("I usually take a nap on Sunday afternoons.");
+            assertThat(variant.kind()).isEqualTo("NATURALER");
         });
         assertThat(sections.modelAnswer()).contains("feel more energetic");
     }
@@ -391,8 +393,8 @@ class GeminiFeedbackClientTest {
                 null
         );
 
-        assertThat(text).contains("requestedSections: FIX_POINTS, NEXT_STEP_PRACTICE");
-        assertThat(text).contains("Prioritize learner focus and clarity over section completeness.");
+        assertThat(text).contains("requestedSections: FIX_POINTS, REWRITE_IDEAS");
+        assertThat(text).contains("Return all distinct, high-value items that genuinely help the learner, and avoid overlap or filler.");
         assertThat(text).contains("Generate fixPoints as one UI-ready list");
         assertThat(text).contains("Each fixPoints item must teach exactly one concrete correction point.");
         assertThat(text).contains("Include every remaining distinct useful fix as a separate fixPoints item instead of stopping after one representative correction.");
@@ -425,11 +427,11 @@ class GeminiFeedbackClientTest {
     void alignModelAnswerWithPrimaryFixReferent_falls_back_to_anchor_when_pronoun_direction_conflicts() {
         FeedbackSectionValidators validators = new FeedbackSectionValidators();
         FeedbackPrimaryFixDto primaryFix = new FeedbackPrimaryFixDto(
-                "臾몃쾿怨?泥좎옄 ?ㅻ벉湲?,
-                "蹂듭닔??movies??留욎떠 ?紐낆궗瑜?they濡?諛붽씀?몄슂.",
+                "Use a plural noun",
+                "Use movies so the pronoun they matches.",
                 "I like romantic comedy movi. it's funny and relatable.",
                 "I like romantic comedy movies. They are funny and relatable.",
-                "movies??蹂듭닔?뺤씠誘濡??⑥닔 ?紐낆궗 it ???they瑜??곕뒗 寃껋씠 ?먯뿰?ㅻ읇?듬땲??"
+                "Use the plural noun movies so the pronoun they is consistent."
         );
 
         String aligned = validators.alignModelAnswerWithPrimaryFixReferent(
@@ -458,25 +460,25 @@ class GeminiFeedbackClientTest {
                         List.of(
                                 new com.writeloop.dto.FeedbackRewriteSuggestionDto(
                                         "I love romantic comedy movies.",
-                                        "濡쒕㎤??肄붾????곹솕瑜?醫뗭븘?댁슂.",
-                                        "?꾩쟾????臾몄옣"
+                                        "A full opening sentence.",
+                                        "Use this when you want a stronger opening sentence."
                                 ),
                                 new com.writeloop.dto.FeedbackRewriteSuggestionDto(
                                         "they make me laugh",
-                                        "?껉쾶 留뚮뱾?댁꽌",
-                                        "because ?ㅼ뿉 諛붾줈 遺숈씪 ???덈뒗 ?댁쑀??
+                                        "They make me laugh.",
+                                        "A short reason that fits naturally after because."
                                 ),
                                 new com.writeloop.dto.FeedbackRewriteSuggestionDto(
                                         "because they are funny",
-                                        "?щ??덉뼱??,
-                                        "because瑜?諛섎났?섎㈃ ????
+                                        "Because they are funny.",
+                                        "Keep this only when the blank already expects a because clause."
                                 )
                         ),
                         new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                                "臾몄옣 ?곌껐 ?곗뒿?섍린",
+                                "Rewrite practice",
                                 "I like romantic comedy movies because ______.",
-                                "because ?ㅼ뿉 ?댁쑀瑜??㏓텤??蹂댁꽭??",
-                                "?ㅼ떆 ?⑤낫湲?,
+                                "Fill in the blank with one natural reason.",
+                                "Start rewriting with this sentence",
                                 false
                         )
                 );
@@ -953,73 +955,10 @@ class GeminiFeedbackClientTest {
                 List.of(),
                 List.of(),
                 new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                        "?쒕쾲 ???⑤낫湲?,
+                        "Rewrite practice",
                         "On weekday mornings, I usually take guitar lessons. After that, I ______.",
-                        "鍮덉뭏????媛吏 ?쒕룞???ｌ뼱 蹂댁꽭??",
-                        "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
-                        false
-                )
-        );
-        GeneratedSections unusedSectionsV2A = new GeneratedSections(
-                null,
-                sections.strengths(),
-                null,
-                null,
-                sections.grammarFeedback(),
-                sections.corrections(),
-                sections.refinementExpressions(),
-                null,
-                sections.modelAnswer(),
-                sections.modelAnswerKo(),
-                sections.usedExpressions(),
-                List.of(),
-                new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                        "?쒕쾲 ???⑤낫湲?,
-                        "I like bookstores because ______.",
-                        "鍮덉뭏???댁쑀瑜??ｌ뼱 蹂댁꽭??",
-                        "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
-                        false
-                )
-        );
-        GeneratedSections unusedSectionsV2B = new GeneratedSections(
-                null,
-                sections.strengths(),
-                null,
-                sections.primaryFix(),
-                sections.grammarFeedback(),
-                sections.corrections(),
-                sections.refinementExpressions(),
-                null,
-                sections.modelAnswer(),
-                sections.modelAnswerKo(),
-                sections.usedExpressions(),
-                List.of(),
-                new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                        "?쒕쾲 ???⑤낫湲?,
-                        "I want to visit Tokyo because ______. Also, I want to ______.",
-                        "鍮덉뭏???댁쑀瑜??ｌ뼱 蹂댁꽭??",
-                        "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
-                        false
-                )
-        );
-        GeneratedSections unusedSectionsV2C = new GeneratedSections(
-                null,
-                sections.strengths(),
-                null,
-                null,
-                sections.grammarFeedback(),
-                sections.corrections(),
-                sections.refinementExpressions(),
-                null,
-                sections.modelAnswer(),
-                sections.modelAnswerKo(),
-                sections.usedExpressions(),
-                List.of(),
-                new com.writeloop.dto.FeedbackNextStepPracticeDto(
-                        "?쒕쾲 ???⑤낫湲?,
-                        "My favorite season is spring because ______.",
-                        "鍮덉뭏???댁쑀瑜??ｌ뼱 蹂댁꽭??",
-                        "??臾몄옣?쇰줈 ?쒖옉?댁꽌 ?ㅼ떆 ?곌린",
+                        "Add one more activity after the blank.",
+                        "Start rewriting with this sentence",
                         false
                 )
         );
@@ -1057,7 +996,7 @@ class GeminiFeedbackClientTest {
                         SectionKey.REFINEMENT
                 );
         assertThat(validation.sanitizedSections().nextStepPractice()).isNotNull();
-        assertThat(validation.sanitizedSections().nextStepPractice().starter()).contains("______");
+        assertThat(validation.sanitizedSections().nextStepPractice().starter()).contains("_____");
     }
 
     @Test
@@ -1366,7 +1305,7 @@ class GeminiFeedbackClientTest {
         );
 
         assertThat(guidance).contains("Prioritize completing one full base sentence before any expansion.");
-        assertThat(guidance).contains("Use nextStepPractice only if there is one clearly optional add-on after the full base sentence is complete.");
+        assertThat(guidance).contains("After the base sentence is complete, use rewriteIdeas for natural follow-up reasons, details, or examples when helpful.");
         assertThat(guidance).contains("Avoid unsupported invention");
     }
 
@@ -1849,11 +1788,11 @@ class GeminiFeedbackClientTest {
                 AttemptOverlayPolicy.NONE
         );
         GeneratedSections sections = new GeneratedSections(
-                "?꾩떆? ?쒕룞? ?대? 蹂댁뿬?? ?댁젣 媛怨??띠? ?댁쑀瑜?because ?덈줈 ??臾몄옣 ????蹂댁꽭??",
-                List.of("媛怨??띠? ?μ냼? ?섍퀬 ?띠? ?쒕룞??遺꾨챸??留먰뻽?댁슂."),
+                "The answer is almost ready, but the reason still needs to be stated more directly.",
+                List.of("The learner already chose a clear destination."),
                 new com.writeloop.dto.FeedbackPrimaryFixDto(
-                        "??媛吏 ??異붽??섎㈃ 醫뗭븘??,
-                        "??Tokyo??媛怨??띠?吏 because濡???臾몄옣 ????蹂댁꽭??",
+                        "Add a direct reason",
+                        "Explain why you want to visit Tokyo with a because clause.",
                         null,
                         null,
                         null

@@ -5,7 +5,7 @@ server:
       timeout: 30m
       cookie:
         same-site: ${APP_SESSION_COOKIE_SAME_SITE:Lax}
-        secure: ${APP_SESSION_COOKIE_SECURE:false}
+        secure: ${APP_SESSION_COOKIE_SECURE:true}
 
 spring:
   datasource:
@@ -62,16 +62,38 @@ openai:
   api-url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}
 
 app:
-  frontend-base-url: ${APP_FRONTEND_BASE_URL:http://writeloop.localtest.me}
+  frontend-base-url: ${APP_FRONTEND_BASE_URL:}
   cors:
-    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://writeloop.localtest.me}
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:}
   auth:
     remember-me-days: ${APP_AUTH_REMEMBER_ME_DAYS:30}
-    token-secret: ${APP_AUTH_TOKEN_SECRET:writeloop-dev-token-secret-change-me}
+    token-secret: ${APP_AUTH_TOKEN_SECRET:}
     access-token-minutes: ${APP_AUTH_ACCESS_TOKEN_MINUTES:15}
     refresh-token-days: ${APP_AUTH_REFRESH_TOKEN_DAYS:30}
     mobile-social-code-minutes: ${APP_AUTH_MOBILE_SOCIAL_CODE_MINUTES:5}
-    mobile-redirect-prefixes: ${APP_AUTH_MOBILE_REDIRECT_PREFIXES:writeloop://,exp://}
+    mobile-redirect-prefixes: ${APP_AUTH_MOBILE_REDIRECT_PREFIXES:writeloop://}
+  security:
+    allow-insecure-dev-defaults: ${APP_SECURITY_ALLOW_INSECURE_DEV_DEFAULTS:false}
+    headers:
+      enabled: ${APP_SECURITY_HEADERS_ENABLED:true}
+      hsts-max-age-seconds: ${APP_SECURITY_HEADERS_HSTS_MAX_AGE_SECONDS:31536000}
+      content-security-policy: ${APP_SECURITY_HEADERS_CONTENT_SECURITY_POLICY:default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'}
+      referrer-policy: ${APP_SECURITY_HEADERS_REFERRER_POLICY:no-referrer}
+      permissions-policy: ${APP_SECURITY_HEADERS_PERMISSIONS_POLICY:camera=(), microphone=(), geolocation=()}
+    rate-limit:
+      enabled: ${APP_SECURITY_RATE_LIMIT_ENABLED:true}
+      cleanup-interval-ms: ${APP_SECURITY_RATE_LIMIT_CLEANUP_INTERVAL_MS:600000}
+      stale-bucket-seconds: ${APP_SECURITY_RATE_LIMIT_STALE_BUCKET_SECONDS:7200}
+      auth-window-seconds: ${APP_SECURITY_RATE_LIMIT_AUTH_WINDOW_SECONDS:300}
+      auth-max-requests: ${APP_SECURITY_RATE_LIMIT_AUTH_MAX_REQUESTS:10}
+      email-window-seconds: ${APP_SECURITY_RATE_LIMIT_EMAIL_WINDOW_SECONDS:600}
+      email-max-requests: ${APP_SECURITY_RATE_LIMIT_EMAIL_MAX_REQUESTS:5}
+      feedback-window-seconds: ${APP_SECURITY_RATE_LIMIT_FEEDBACK_WINDOW_SECONDS:60}
+      feedback-max-requests: ${APP_SECURITY_RATE_LIMIT_FEEDBACK_MAX_REQUESTS:6}
+      coach-help-window-seconds: ${APP_SECURITY_RATE_LIMIT_COACH_HELP_WINDOW_SECONDS:60}
+      coach-help-max-requests: ${APP_SECURITY_RATE_LIMIT_COACH_HELP_MAX_REQUESTS:20}
+      coach-usage-window-seconds: ${APP_SECURITY_RATE_LIMIT_COACH_USAGE_WINDOW_SECONDS:60}
+      coach-usage-max-requests: ${APP_SECURITY_RATE_LIMIT_COACH_USAGE_MAX_REQUESTS:60}
   admin:
     emails: ${APP_ADMIN_EMAILS:}
   mail:
@@ -89,18 +111,18 @@ app:
       authorization-uri: ${GOOGLE_AUTHORIZATION_URI:https://accounts.google.com/o/oauth2/v2/auth}
       token-uri: ${GOOGLE_TOKEN_URI:https://oauth2.googleapis.com/token}
       user-info-uri: ${GOOGLE_USER_INFO_URI:https://openidconnect.googleapis.com/v1/userinfo}
-      redirect-uri: ${GOOGLE_REDIRECT_URI:http://api.localtest.me/api/auth/social/google/callback}
+      redirect-uri: ${GOOGLE_REDIRECT_URI:}
     kakao:
       client-id: ${KAKAO_CLIENT_ID:}
       client-secret: ${KAKAO_CLIENT_SECRET:}
       authorization-uri: ${KAKAO_AUTHORIZATION_URI:https://kauth.kakao.com/oauth/authorize}
       token-uri: ${KAKAO_TOKEN_URI:https://kauth.kakao.com/oauth/token}
       user-info-uri: ${KAKAO_USER_INFO_URI:https://kapi.kakao.com/v2/user/me}
-      redirect-uri: ${KAKAO_REDIRECT_URI:http://api.localtest.me/api/auth/social/kakao/callback}
+      redirect-uri: ${KAKAO_REDIRECT_URI:}
     naver:
       client-id: ${NAVER_CLIENT_ID:}
       client-secret: ${NAVER_CLIENT_SECRET:}
       authorization-uri: ${NAVER_AUTHORIZATION_URI:https://nid.naver.com/oauth2.0/authorize}
       token-uri: ${NAVER_TOKEN_URI:https://nid.naver.com/oauth2.0/token}
       user-info-uri: ${NAVER_USER_INFO_URI:https://openapi.naver.com/v1/nid/me}
-      redirect-uri: ${NAVER_REDIRECT_URI:http://api.localtest.me/api/auth/social/naver/callback}
+      redirect-uri: ${NAVER_REDIRECT_URI:}

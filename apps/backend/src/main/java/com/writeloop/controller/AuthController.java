@@ -165,9 +165,10 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     public AuthResponseDto updateProfile(
             @RequestBody UpdateProfileRequestDto request,
-            HttpServletRequest httpRequest
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
     ) {
-        return authService.updateProfile(request, httpRequest);
+        return authService.updateProfile(request, httpRequest, httpResponse);
     }
 
     @DeleteMapping("/account")

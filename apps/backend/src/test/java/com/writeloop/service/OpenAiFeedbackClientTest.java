@@ -75,6 +75,33 @@ class OpenAiFeedbackClientTest {
     }
 
     @Test
+    void buildGenerationRequestBody_pushes_aggressive_rewrite_suggestions_for_thin_answers() throws Exception {
+        OpenAiFeedbackClient client = newClient();
+
+        String requestBody = ReflectionTestUtils.invokeMethod(
+                client,
+                "buildGenerationRequestBody",
+                samplePrompt(),
+                "I wake up at 8 a.m.",
+                List.of(),
+                sampleDiagnosis(),
+                sampleAnswerProfile(),
+                sampleSectionPolicy(),
+                1,
+                null,
+                List.of(SectionKey.STRENGTHS),
+                List.of(),
+                null
+        );
+
+        assertThat(requestBody)
+                .contains("Return as many distinct, high-value rewriteIdeas as the answer supports. Do not stop at a fixed count.")
+                .contains("For CONTENT_THIN and SHORT_BUT_VALID answers, actively generate multiple reason, example, detail, image, time-flow, or connector ideas when they would help the learner extend the same answer.")
+                .contains("Be proactive about returning multiple distinct reason, example, detail, time-flow, or connector ideas when they would help the learner extend the same answer.")
+                .contains("Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into rewriteIdeas instead of modelAnswer.");
+    }
+
+    @Test
     void llmPassThroughSectionPolicy_keeps_generation_limits_loose() {
         OpenAiFeedbackClient client = newClient();
 
@@ -84,6 +111,28 @@ class OpenAiFeedbackClientTest {
         assertThat(policy.maxRefinementCount()).isEqualTo(12);
         assertThat(policy.maxModelAnswerSentences()).isEqualTo(4);
         assertThat(policy.attemptOverlayPolicy()).isEqualTo(AttemptOverlayPolicy.NONE);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void sanitizeRewriteSuggestions_keeps_distinct_items_even_without_next_step_practice() {
+        OpenAiFeedbackClient client = newClient();
+
+        List<com.writeloop.dto.FeedbackRewriteSuggestionDto> sanitized =
+                (List<com.writeloop.dto.FeedbackRewriteSuggestionDto>) ReflectionTestUtils.invokeMethod(
+                        client,
+                        "sanitizeRewriteSuggestions",
+                        List.of(
+                                new com.writeloop.dto.FeedbackRewriteSuggestionDto("for example", "예를 들면", null),
+                                new com.writeloop.dto.FeedbackRewriteSuggestionDto("for example.", "예를 들면", null),
+                                new com.writeloop.dto.FeedbackRewriteSuggestionDto("because it feels peaceful", "평온하게 느껴져서", null)
+                        ),
+                        null
+                );
+
+        assertThat(sanitized)
+                .extracting(com.writeloop.dto.FeedbackRewriteSuggestionDto::english)
+                .containsExactly("for example", "because it feels peaceful");
     }
 
     private OpenAiFeedbackClient newClient() {

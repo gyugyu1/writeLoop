@@ -402,14 +402,14 @@ class GeminiFeedbackClientTest {
         assertThat(text).contains("Do not merge unrelated lessons into one fixPoints item, and do not split the same teaching point across multiple fixPoints items.");
         assertThat(text).contains("If the learner answer contains multiple distinct local errors, split them into separate fixPoints items instead of folding them into one revisedText or one broad umbrella note.");
         assertThat(text).contains("teach article/determiner vs plural/singular separately");
-        assertThat(text).contains("nextStepPractice is optional and should represent one genuine next step after the must-fix list");
-        assertThat(text).contains("Use nextStepPractice only when there is a locally acceptable base answer");
-        assertThat(text).contains("nextStepPractice may use the same flexible card fields as fixPoints and does not need to be a blank scaffold.");
-        assertThat(text).contains("rewriteSuggestions do not need to fit a blank. They should support the same next step as nextStepPractice");
-        assertThat(text).contains("modelAnswer is a one-step-up reference, not another nextStepPractice card.");
+        assertThat(text).contains("rewriteIdeas is the primary output for the optional");
+        assertThat(text).contains("Return as many high-value rewriteIdeas as the answer supports. Do not limit yourself to a fixed count.");
+        assertThat(text).contains("For CONTENT_THIN and SHORT_BUT_VALID answers, actively generate multiple reason, example, detail, image, time-flow, or connector ideas when they would help the learner extend the same answer.");
+        assertThat(text).contains("modelAnswer is a one-step-up reference, not another optional-add-on card.");
         assertThat(text).contains("modelAnswer must preserve learner meaning, keep the must-fix lessons from fixPoints");
+        assertThat(text).contains("Avoid folding optional expansion into modelAnswer unless it is necessary for fluency or coherence.");
+        assertThat(text).contains("Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into rewriteIdeas instead of modelAnswer.");
         assertThat(text).contains("Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.");
-        assertThat(text).contains("If attemptIndex >= 2, keep the list focused, but still include any other distinct useful fixPoints that are clearly worth teaching.");
         assertThat(text).contains("refinementExpressions are optional reusable-expression cards beyond fixPoints.");
         assertThat(text).contains("Return only genuinely useful, distinct refinementExpressions");
         assertThat(text).doesNotContain("primaryFix feeds the Fix First card");
@@ -488,6 +488,33 @@ class GeminiFeedbackClientTest {
                         "they make me laugh",
                         "because they are funny"
                 );
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void sanitizeRewriteSuggestions_keeps_distinct_items_even_without_next_step_practice() {
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses", null, 120
+        );
+
+        List<com.writeloop.dto.FeedbackRewriteSuggestionDto> sanitized =
+                (List<com.writeloop.dto.FeedbackRewriteSuggestionDto>) ReflectionTestUtils.invokeMethod(
+                        client,
+                        "sanitizeRewriteSuggestions",
+                        List.of(
+                                new com.writeloop.dto.FeedbackRewriteSuggestionDto("for example", "예를 들면", null),
+                                new com.writeloop.dto.FeedbackRewriteSuggestionDto("for example.", "예를 들면", null),
+                                new com.writeloop.dto.FeedbackRewriteSuggestionDto("because it helps me relax", "긴장을 푸는 데 도움이 돼서", null)
+                        ),
+                        null
+                );
+
+        assertThat(sanitized)
+                .extracting(com.writeloop.dto.FeedbackRewriteSuggestionDto::english)
+                .containsExactly("for example", "because it helps me relax");
     }
 
     @Test

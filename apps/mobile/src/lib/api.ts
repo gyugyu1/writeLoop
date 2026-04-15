@@ -16,6 +16,7 @@ import type {
   FeedbackRequest,
   HistorySession,
   LoginRequest,
+  PromptHint,
   Prompt,
   SaveWritingDraftRequest,
   SendRegistrationCodeRequest,
@@ -426,6 +427,16 @@ export async function getDailyPrompts(
   }
 
   return (await response.json()) as DailyPromptRecommendation;
+}
+
+export async function getPromptHints(promptId: string): Promise<PromptHint[]> {
+  const response = await apiFetch(`/api/prompts/${promptId}/hints`);
+
+  if (!response.ok) {
+    throw await parseApiError(response, "추천 단어와 표현을 불러오지 못했어요.");
+  }
+
+  return (await response.json()) as PromptHint[];
 }
 
 export async function getWritingDraft(

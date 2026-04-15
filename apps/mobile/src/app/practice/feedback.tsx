@@ -1,17 +1,19 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { PracticeFeedbackContent } from "@/components/practice-feedback-content";
+import {
+  PracticeFeedbackContent,
+  type FeedbackTabKey
+} from "@/components/practice-feedback-content";
 import { buildIncompleteLoopPromptSnapshot, saveIncompleteLoop } from "@/lib/incomplete-loop";
-import { buildLoginHref } from "@/lib/login-redirect";
 import {
   getPracticeFeedbackState,
   hydratePracticeFeedbackState,
   type PracticeFeedbackState
 } from "@/lib/practice-feedback-state";
 import { isDailyDifficulty } from "@/lib/practice";
-import { useSession } from "@/lib/session";
 import type { DailyDifficulty } from "@/lib/types";
 
 const completionMascotImage = require("@/assets/images/feedback-completion-mascot.png");
@@ -33,16 +35,20 @@ function pickFirstNonEmpty(...values: (string | null | undefined)[]) {
 
 export default function PracticeFeedbackScreen() {
   const params = useLocalSearchParams<{ difficulty?: string; promptId?: string }>();
+  const navigation = useNavigation();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
   const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "A";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
-  const { currentUser } = useSession();
   const [feedbackState, setFeedbackState] = useState<PracticeFeedbackState | null>(() =>
     getPracticeFeedbackState(requestedDifficulty, requestedPromptId)
   );
   const [isHydratingFeedbackState, setIsHydratingFeedbackState] = useState(
     () => !getPracticeFeedbackState(requestedDifficulty, requestedPromptId)
   );
+  const [activeTab, setActiveTab] = useState<FeedbackTabKey>("feedback");
+  const [tabBarY, setTabBarY] = useState<number | null>(null);
+  const [scrollY, setScrollY] = useState(0);
+
   const loopStatus = feedbackState?.feedback.ui?.loopStatus ?? null;
   const rewriteButtonLabel = pickFirstNonEmpty(loopStatus?.rewriteCtaLabel, "다시 써보기");
   const finishButtonLabel = pickFirstNonEmpty(
@@ -83,6 +89,12 @@ export default function PracticeFeedbackScreen() {
     };
   }, [requestedDifficulty, requestedPromptId]);
 
+  useEffect(() => {
+    setActiveTab("feedback");
+    setTabBarY(null);
+    setScrollY(0);
+  }, [requestedDifficulty, requestedPromptId]);
+
   function handleBackToQuestions() {
     router.replace({
       pathname: "/practice/[difficulty]",
@@ -90,6 +102,15 @@ export default function PracticeFeedbackScreen() {
         difficulty: requestedDifficulty
       }
     });
+  }
+
+  function handleHeaderBack() {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    handleBackToQuestions();
   }
 
   async function handleRewrite() {
@@ -133,84 +154,126 @@ export default function PracticeFeedbackScreen() {
     });
   }
 
+  const stickyThreshold = tabBarY === null ? Number.POSITIVE_INFINITY : Math.max(tabBarY - 8, 0);
+  const shouldShowStickyTabBar = Boolean(feedbackState) && scrollY >= stickyThreshold;
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.topBar}>
-          <Pressable style={styles.ghostButton} onPress={handleBackToQuestions}>
-            <Text style={styles.ghostButtonText}>질문 목록으로</Text>
-          </Pressable>
-          {feedbackState ? (
-            <Pressable style={styles.ghostButton} onPress={() => void handleRewrite()}>
-              <Text style={styles.ghostButtonText}>다시 써보기</Text>
-            </Pressable>
-          ) : null}
-          {!feedbackState ? null : (
+      <View style={styles.screen}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          onScroll={(event) => setScrollY(event.nativeEvent.contentOffset.y)}
+          scrollEventThrottle={16}
+        >
+          <View style={styles.header}>
             <Pressable
-              style={styles.ghostButton}
-              onPress={() =>
-                router.push(
-                  currentUser
-                    ? "/me"
-                    : buildLoginHref(
-                        `/practice/feedback?difficulty=${requestedDifficulty}&promptId=${requestedPromptId}`
-                      )
-                )
-              }
+              style={styles.headerBackButton}
+              onPress={handleHeaderBack}
+              accessibilityRole="button"
+              accessibilityLabel="뒤로가기"
             >
-              <Text style={styles.ghostButtonText}>{currentUser ? "마이페이지" : "로그인"}</Text>
+              <Text style={styles.headerBackIcon}>{"<"}</Text>
             </Pressable>
-          )}
-        </View>
-
-        {isHydratingFeedbackState ? (
-          <View style={styles.emptyStateCard}>
-            <ActivityIndicator color="#E38B12" />
+            <Text style={styles.headerTitle}>피드백</Text>
+            <View style={styles.headerSpacer} />
           </View>
-        ) : feedbackState ? (
-          <>
-            <PracticeFeedbackContent feedbackState={feedbackState} showCompletionSummary={false} />
 
-            <View style={styles.completionFooter}>
-              {shouldShowCompletionFooter ? (
-                <View style={styles.completionCard}>
-                  <View style={styles.completionSpeechRow}>
-                    <View style={styles.completionBubbleWrap}>
-                      <View style={styles.completionBubble}>
-                        <Text style={styles.completionHeadline}>{completionHeadline}</Text>
+          {isHydratingFeedbackState ? (
+            <View style={styles.emptyStateCard}>
+              <ActivityIndicator color="#E38B12" />
+            </View>
+          ) : feedbackState ? (
+            <>
+              <PracticeFeedbackContent
+                feedbackState={feedbackState}
+                showCompletionSummary={false}
+                activeTab={activeTab}
+                onActiveTabChange={setActiveTab}
+                onTabBarLayout={setTabBarY}
+              />
+
+              <View style={styles.completionFooter}>
+                {shouldShowCompletionFooter ? (
+                  <View style={styles.completionCard}>
+                    <View style={styles.completionSpeechRow}>
+                      <View style={styles.completionBubbleWrap}>
+                        <View style={styles.completionBubble}>
+                          <Text style={styles.completionHeadline}>{completionHeadline}</Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.completionMascotFrame}>
+                        <Image source={completionMascotImage} style={styles.completionMascot} />
                       </View>
                     </View>
-
-                    <View style={styles.completionMascotFrame}>
-                      <Image source={completionMascotImage} style={styles.completionMascot} />
-                    </View>
                   </View>
-                </View>
-              ) : null}
+                ) : null}
 
-              <Pressable style={styles.primaryButton} onPress={() => void handleRewrite()}>
-                <Text style={styles.primaryButtonText}>{rewriteButtonLabel}</Text>
+                <Pressable style={styles.primaryButton} onPress={() => void handleRewrite()}>
+                  <Text style={styles.primaryButtonText}>{rewriteButtonLabel}</Text>
+                </Pressable>
+
+                {shouldShowFinishButton ? (
+                  <Pressable style={styles.secondaryButton} onPress={handleFinishLoop}>
+                    <Text style={styles.secondaryButtonText}>{finishButtonLabel}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </>
+          ) : (
+            <View style={styles.emptyStateCard}>
+              <Text style={styles.emptyStateTitle}>피드백을 찾지 못했어요</Text>
+              <Text style={styles.emptyStateBody}>
+                방금 작성한 피드백이 초기화되었을 수 있어요. 질문 목록으로 돌아가 다시 시작해 주세요.
+              </Text>
+              <Pressable style={styles.primaryButton} onPress={handleBackToQuestions}>
+                <Text style={styles.primaryButtonText}>질문 목록으로 돌아가기</Text>
+              </Pressable>
+            </View>
+          )}
+        </ScrollView>
+
+        {shouldShowStickyTabBar ? (
+          <View pointerEvents="box-none" style={styles.stickyTabOverlay}>
+            <View style={styles.stickyTabBar}>
+              <Pressable
+                style={[
+                  styles.stickyTabButton,
+                  activeTab === "feedback" && styles.stickyTabButtonActive
+                ]}
+                onPress={() => setActiveTab("feedback")}
+              >
+                <Text
+                  style={[
+                    styles.stickyTabButtonText,
+                    activeTab === "feedback" && styles.stickyTabButtonTextActive
+                  ]}
+                >
+                  피드백
+                </Text>
               </Pressable>
 
-              {shouldShowFinishButton ? (
-                <Pressable style={styles.secondaryButton} onPress={handleFinishLoop}>
-                  <Text style={styles.secondaryButtonText}>{finishButtonLabel}</Text>
-                </Pressable>
-              ) : null}
+              <Pressable
+                style={[
+                  styles.stickyTabButton,
+                  activeTab === "improve" && styles.stickyTabButtonActive
+                ]}
+                onPress={() => setActiveTab("improve")}
+              >
+                <Text
+                  style={[
+                    styles.stickyTabButtonText,
+                    activeTab === "improve" && styles.stickyTabButtonTextActive
+                  ]}
+                >
+                  표현 더하기
+                </Text>
+              </Pressable>
             </View>
-          </>
-        ) : (
-          <View style={styles.emptyStateCard}>
-            <Text style={styles.emptyStateTitle}>피드백을 찾지 못했어요</Text>
-            <Text style={styles.emptyStateBody}>
-              방금 작성한 피드백이 초기화되었을 수 있어요. 질문 목록으로 돌아가 다시 시작해 주세요.
-            </Text>
-            <Pressable style={styles.primaryButton} onPress={handleBackToQuestions}>
-              <Text style={styles.primaryButtonText}>질문 목록으로 돌아가기</Text>
-            </Pressable>
           </View>
-        )}
-      </ScrollView>
+        ) : null}
+      </View>
     </SafeAreaView>
   );
 }
@@ -220,31 +283,85 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F7F2EB"
   },
+  screen: {
+    flex: 1,
+    position: "relative"
+  },
   content: {
     paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 40,
     gap: 16
   },
-  topBar: {
+  header: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
     alignItems: "center",
-    gap: 12
+    justifyContent: "space-between"
   },
-  ghostButton: {
+  headerBackButton: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  headerBackIcon: {
+    fontSize: 28,
+    lineHeight: 28,
+    fontWeight: "700",
+    color: "#4A4033"
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+    color: "#2F312D"
+  },
+  headerSpacer: {
+    width: 42,
+    height: 42
+  },
+  stickyTabOverlay: {
+    position: "absolute",
+    top: 8,
+    left: 20,
+    right: 20,
+    zIndex: 20
+  },
+  stickyTabBar: {
+    flexDirection: "row",
+    gap: 10,
+    paddingVertical: 6,
+    backgroundColor: "#F7F2EB"
+  },
+  stickyTabButton: {
+    flex: 1,
     borderRadius: 999,
-    backgroundColor: "#FFFDFC",
     borderWidth: 1,
-    borderColor: "#E7D7C4",
-    paddingHorizontal: 14,
-    paddingVertical: 10
+    borderColor: "#E2D4C3",
+    backgroundColor: "#FFFBF4",
+    paddingVertical: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#D89A51",
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: {
+      width: 0,
+      height: 4
+    },
+    elevation: 2
   },
-  ghostButtonText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#75624B"
+  stickyTabButtonActive: {
+    backgroundColor: "#F2A14A",
+    borderColor: "#E09128"
+  },
+  stickyTabButtonText: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#7A6244"
+  },
+  stickyTabButtonTextActive: {
+    color: "#2E2416"
   },
   completionFooter: {
     gap: 14

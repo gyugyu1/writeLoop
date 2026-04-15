@@ -126,6 +126,8 @@ final class FeedbackUiComposer {
                 fixPoints,
                 nextStepPractice,
                 rewriteSuggestions,
+                llmUi == null ? null : llmUi.rewriteIdeas(),
+                llmUi == null ? null : llmUi.modelAnswerVariants(),
                 toDto(screenPolicy),
                 buildLoopStatus(feedback, completionState, screenPolicy)
         );
@@ -750,7 +752,7 @@ final class FeedbackUiComposer {
             FeedbackUiDto llmUi,
             FeedbackNextStepPracticeDto nextStepPractice
     ) {
-        if (llmUi == null || nextStepPractice == null) {
+        if (llmUi == null) {
             return List.of();
         }
         if (llmUi.rewriteSuggestions() == null || llmUi.rewriteSuggestions().isEmpty()) {
@@ -759,18 +761,18 @@ final class FeedbackUiComposer {
 
         List<FeedbackRewriteSuggestionDto> suggestions = new ArrayList<>();
         LinkedHashSet<String> seen = new LinkedHashSet<>();
-        String practiceHeadline = normalizeNullable(nextStepPractice.headline());
-        String practiceExample = normalizeNullable(nextStepPractice.exampleEn());
-        String practiceRevised = normalizeNullable(nextStepPractice.revisedText());
+        String practiceHeadline = nextStepPractice == null ? null : normalizeNullable(nextStepPractice.headline());
+        String practiceExample = nextStepPractice == null ? null : normalizeNullable(nextStepPractice.exampleEn());
+        String practiceRevised = nextStepPractice == null ? null : normalizeNullable(nextStepPractice.revisedText());
         for (FeedbackRewriteSuggestionDto suggestion : llmUi.rewriteSuggestions()) {
             if (suggestion == null) {
                 continue;
             }
             String english = normalizeNullable(suggestion.english());
             if (english == null
-                    || sameMeaning(english, practiceHeadline)
-                    || sameMeaning(english, practiceExample)
-                    || sameMeaning(english, practiceRevised)) {
+                    || normalizedEqualsIgnoreCase(english, practiceHeadline)
+                    || normalizedEqualsIgnoreCase(english, practiceExample)
+                    || normalizedEqualsIgnoreCase(english, practiceRevised)) {
                 continue;
             }
             String key = normalizeNullable(english.toLowerCase(Locale.ROOT));
@@ -784,6 +786,15 @@ final class FeedbackUiComposer {
             ));
         }
         return List.copyOf(suggestions);
+    }
+
+    private boolean normalizedEqualsIgnoreCase(String left, String right) {
+        String normalizedLeft = normalizeNullable(left);
+        String normalizedRight = normalizeNullable(right);
+        if (normalizedLeft == null || normalizedRight == null) {
+            return false;
+        }
+        return normalizedLeft.equalsIgnoreCase(normalizedRight);
     }
 
     private FeedbackNextStepPracticeDto sanitizeLlmNextStepPractice(

@@ -2,8 +2,10 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
+import com.writeloop.dto.FeedbackModelAnswerVariantDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackNextStepPracticeDto;
+import com.writeloop.dto.FeedbackRewriteIdeaDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackUiDto;
@@ -585,11 +587,13 @@ public class OpenAiFeedbackClient {
                 null,
                 protectedModelAnswer,
                 protectedModelAnswerKo,
+                generatedSections.modelAnswerVariants(),
                 usedExpressions,
                 fixPoints,
                 secondaryLearningPoints,
                 nextStepPractice,
-                rewriteSuggestions
+                rewriteSuggestions,
+                generatedSections.rewriteIdeas()
         );
 
         boolean shouldRetry = failures.stream().anyMatch(failure -> feedbackRetryPolicy.shouldRetry(failure, diagnosis, sectionPolicy));
@@ -787,7 +791,9 @@ public class OpenAiFeedbackClient {
         FeedbackUiDto generatedUi = (!secondaryLearningPoints.isEmpty()
                 || !fixPoints.isEmpty()
                 || generatedSections.nextStepPractice() != null
-                || !generatedSections.rewriteSuggestions().isEmpty())
+                || !generatedSections.rewriteSuggestions().isEmpty()
+                || !generatedSections.rewriteIdeas().isEmpty()
+                || !generatedSections.modelAnswerVariants().isEmpty())
                 ? new FeedbackUiDto(
                 null,
                 null,
@@ -796,6 +802,8 @@ public class OpenAiFeedbackClient {
                 fixPoints,
                 generatedSections.nextStepPractice(),
                 generatedSections.rewriteSuggestions(),
+                generatedSections.rewriteIdeas(),
+                generatedSections.modelAnswerVariants(),
                 null,
                 null
         )
@@ -994,6 +1002,9 @@ public class OpenAiFeedbackClient {
                 null,
                 generatedSections.modelAnswer(),
                 generatedSections.modelAnswerKo(),
+                !generatedSections.modelAnswerVariants().isEmpty()
+                        ? generatedSections.modelAnswerVariants()
+                        : fallbackSections.modelAnswerVariants(),
                 generatedSections.usedExpressions(),
                 !resolveGeneratedFixPoints(generatedSections).isEmpty()
                         ? resolveGeneratedFixPoints(generatedSections)
@@ -1006,7 +1017,10 @@ public class OpenAiFeedbackClient {
                         : fallbackSections.nextStepPractice(),
                 !generatedSections.rewriteSuggestions().isEmpty()
                         ? generatedSections.rewriteSuggestions()
-                        : fallbackSections.rewriteSuggestions()
+                        : fallbackSections.rewriteSuggestions(),
+                !generatedSections.rewriteIdeas().isEmpty()
+                        ? generatedSections.rewriteIdeas()
+                        : fallbackSections.rewriteIdeas()
         );
     }
 
@@ -1405,49 +1419,43 @@ public class OpenAiFeedbackClient {
                                         "required", List.of("expression", "guidanceKo", "exampleEn", "exampleKo", "meaningKo")
                                 )
                         )),
-                        Map.entry("nextStepPractice", Map.of(
-                                "type", List.of("object", "null"),
-                                "additionalProperties", false,
-                                "properties", Map.ofEntries(
-                                        Map.entry("kind", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("title", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("headline", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("supportText", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("originalText", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("revisedText", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("meaningKo", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("guidanceKo", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("exampleEn", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("exampleKo", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("ctaLabel", Map.of("type", List.of("string", "null"))),
-                                        Map.entry("optionalTone", Map.of("type", List.of("boolean", "null")))
-                                ),
-                                "required", List.of(
-                                        "kind",
-                                        "title",
-                                        "headline",
-                                        "supportText",
-                                        "originalText",
-                                        "revisedText",
-                                        "meaningKo",
-                                        "guidanceKo",
-                                        "exampleEn",
-                                        "exampleKo",
-                                        "ctaLabel",
-                                        "optionalTone"
-                                )
-                        )),
-                        Map.entry("rewriteSuggestions", Map.of(
+                        Map.entry("rewriteIdeas", Map.of(
                                 "type", "array",
                                 "items", Map.of(
                                         "type", "object",
                                         "additionalProperties", false,
                                         "properties", Map.of(
-                                                "english", Map.of("type", "string"),
+                                                "title", Map.of("type", List.of("string", "null")),
+                                                "english", Map.of("type", List.of("string", "null")),
                                                 "meaningKo", Map.of("type", List.of("string", "null")),
-                                                "noteKo", Map.of("type", List.of("string", "null"))
+                                                "noteKo", Map.of("type", List.of("string", "null")),
+                                                "originalText", Map.of("type", List.of("string", "null")),
+                                                "revisedText", Map.of("type", List.of("string", "null")),
+                                                "optionalTone", Map.of("type", List.of("boolean", "null"))
                                         ),
-                                        "required", List.of("english", "meaningKo", "noteKo")
+                                        "required", List.of(
+                                                "title",
+                                                "english",
+                                                "meaningKo",
+                                                "noteKo",
+                                                "originalText",
+                                                "revisedText",
+                                                "optionalTone"
+                                        )
+                                )
+                        )),
+                        Map.entry("modelAnswerVariants", Map.of(
+                                "type", "array",
+                                "items", Map.of(
+                                        "type", "object",
+                                        "additionalProperties", false,
+                                        "properties", Map.of(
+                                                "kind", Map.of("type", List.of("string", "null")),
+                                                "answer", Map.of("type", List.of("string", "null")),
+                                                "answerKo", Map.of("type", List.of("string", "null")),
+                                                "reasonKo", Map.of("type", List.of("string", "null"))
+                                        ),
+                                        "required", List.of("kind", "answer", "answerKo", "reasonKo")
                                 )
                         )),
                         Map.entry("modelAnswer", Map.of("type", List.of("string", "null"))),
@@ -1463,8 +1471,8 @@ public class OpenAiFeedbackClient {
                         "secondaryLearningPoints",
                         "usedExpressions",
                         "refinementExpressions",
-                        "nextStepPractice",
-                        "rewriteSuggestions",
+                        "rewriteIdeas",
+                        "modelAnswerVariants",
                         "modelAnswer",
                         "modelAnswerKo"
                 ))
@@ -1542,7 +1550,7 @@ public class OpenAiFeedbackClient {
             );
         }
         String bandGuidance = diagnosis == null
-                ? "- Derive the diagnosis first, then make the must-fix list, next step, and model answer consistent with that diagnosis."
+                ? "- Derive the diagnosis first, then make the must-fix list, rewriteIdeas, and modelAnswer consistent with that diagnosis."
                 : generationBandGuidance(diagnosis.answerBand());
         ProgressDelta progressDelta = answerProfile == null || answerProfile.rewrite() == null
                 ? null
@@ -1553,12 +1561,12 @@ public class OpenAiFeedbackClient {
                 ? """
                 First-pass diagnosis:
                 - Diagnose the learner answer inside this same JSON object first.
-                - Keep diagnosis, fixPoints, nextStepPractice, and modelAnswer aligned with each other.
+                - Keep diagnosis, fixPoints, rewriteIdeas, and modelAnswer aligned with each other.
                 - attemptIndex: %s
                 - previousAnswer: %s
                 - progress.improvedAreas: %s
                 - progress.remainingAreas: %s
-                - Prefer fewer, sharper teaching points over many overlapping ones.
+                - Return all distinct, high-value teaching points that genuinely help the learner, and avoid overlap or filler.
                 """.formatted(
                 attemptIndex,
                 previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
@@ -1598,13 +1606,13 @@ public class OpenAiFeedbackClient {
                 - Work in this order:
                   1) Write modelAnswer first as the closest natural, submission-ready rewrite of the learner answer.
                   2) Then build fixPoints as explanations of all visible differences between learner answer and modelAnswer.
-                  3) Then use nextStepPractice only for one optional move beyond modelAnswer, if that extra move is clearly useful.
-                  4) If the only candidate nextStepPractice overlaps with fixPoints, return nextStepPractice as null.
+                  3) Then fill rewriteIdeas as the single optional-improvement list for the learner's next rewrite.
+                  4) Each rewriteIdeas item may either teach one originalText/revisedText improvement pair or one short reusable English add-on with meaningKo and noteKo.
+                  5) Return as many distinct, high-value rewriteIdeas as the answer supports. Do not stop at a fixed count.
+                  6) Then, only when helpful, add modelAnswerVariants as alternate versions such as a smoother wording version or a richer-detail version.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
-                - Do not reuse a broken learner phrase in strengths, refinementExpressions, nextStepPractice, or modelAnswer.
+                - Do not reuse a broken learner phrase in strengths, refinementExpressions, rewriteIdeas, or modelAnswer.
                 - Keep Korean fields natural and concise.
-                - If attemptIndex >= 2, keep the writing concise, but do not leave a visible learner-to-modelAnswer change unexplained.
-
                 Diagnosis rules:
                 - Choose exactly one answerBand from: TOO_SHORT_FRAGMENT, SHORT_BUT_VALID, GRAMMAR_BLOCKING, CONTENT_THIN, NATURAL_BUT_BASIC, OFF_TOPIC.
                 - answerBand must reflect what the learner most needs next, not what sounds harshest.
@@ -1622,7 +1630,8 @@ public class OpenAiFeedbackClient {
 
                 Strengths and usedExpressions rules:
                 - strengths should usually be one short Korean keep-signal based on meaning, not a full raw quote unless it is already clean and necessary.
-                - usedExpressions may contain up to 2 short reusable learner-used chunks that are already good enough to keep.
+                - usedExpressions may contain as many distinct short reusable learner-used chunks as the answer genuinely supports.
+                - Do not force a fixed count for usedExpressions. Return only the useful ones, and omit weak or repetitive items.
                 - usedExpressions must not contain long broken spans or whole awkward sentences, and usageTip should be one short Korean reason.
 
                 fixPoints rules:
@@ -1660,30 +1669,36 @@ public class OpenAiFeedbackClient {
                 - If a refinement expression or its example sentence substantially overlaps with a fixPoints repair or simply repeats the modelAnswer-level rewrite, omit it.
                 - exampleEn must not be identical to expression.
 
-                nextStepPractice rules:
-                - nextStepPractice is optional and should represent one genuine next step after the modelAnswer-level rewrite is already complete.
-                - Do not use nextStepPractice for a must-fix item that is already reflected in modelAnswer or fixPoints.
-                - nextStepPractice must not repeat the same originalText / revisedText pair, the same added phrase, or the same teaching point already covered in fixPoints.
-                - If fixPoints already teach adding a time marker, article, connector, reason, or other visible change, do not restate that same move in nextStepPractice.
-                - nextStepPractice should start where fixPoints end. It must go one step beyond the repaired modelAnswer, not explain how to reach that modelAnswer.
-                - If there is no clearly different optional add-on after fixPoints, set nextStepPractice to null.
-                - Use it only when there is one clearly optional add-on beyond modelAnswer; otherwise leave it null.
-                - It may use the same flexible fields as fixPoints; title should be short Korean, headline should show the English move when helpful, and supportText should briefly explain the add-on in Korean.
-
-                rewriteSuggestions rules:
-                - rewriteSuggestions are optional helper ideas for nextStepPractice.
-                - If nextStepPractice is null, rewriteSuggestions must be an empty array.
-                - They should support the same next step with 0-3 short English phrases, clauses, or example chunks, not long standalone answers.
-                - Do not restate the whole learner answer or duplicate the exact same English already shown in nextStepPractice.
+                rewriteIdeas rules:
+                - rewriteIdeas is the primary output for the optional "표현 더하기" area.
+                - Do not include cardType or UI labels. The UI will infer the card style from originalText / revisedText.
+                - An item with originalText and revisedText should teach one concrete optional upgrade.
+                - An item without a pair should be one short reusable English phrase, clause, example starter, time marker, detail chunk, or connector.
+                - Keep rewriteIdeas prompt-fit, reusable, and distinct.
+                - Return as many high-value rewriteIdeas as the answer supports. Do not limit yourself to a fixed count.
+                - For CONTENT_THIN and SHORT_BUT_VALID answers, actively generate multiple reason, example, detail, image, time-flow, or connector ideas when they would help the learner extend the same answer.
+                - Do not return the same English idea twice in rewriteIdeas. If two candidates differ only by punctuation, title, or noteKo, keep only one.
+                - Do not pad rewriteIdeas with weak, repetitive, or near-duplicate ideas just to reach a count.
 
                 modelAnswer rules:
                 - modelAnswer should read like a natural polished rewrite of the learner answer, not a distant sample answer.
                 - Write modelAnswer first and let fixPoints explain all visible differences that appear in that rewrite.
                 - Keep modelAnswer as close as possible to the learner's meaning, facts, and sentence direction while making it natural and submission-ready.
                 - modelAnswer must already contain the must-fix changes that fixPoints later explain.
-                - Add at most one small optional upgrade only when it still clearly feels like the same answer, not a new answer.
+                - Avoid folding optional expansion into modelAnswer unless it is necessary for fluency or coherence.
+                - Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into rewriteIdeas instead of modelAnswer.
                 - For OFF_TOPIC or TOO_SHORT_FRAGMENT, modelAnswer may reset the answer toward the prompt or toward one complete base sentence, but should still stay as close as possible to what the learner seems to be trying to say.
                 - Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.
+
+                modelAnswerVariants rules:
+                - modelAnswerVariants are optional alternate versions of modelAnswer, not replacements for it.
+                - Use kind NATURAL_POLISH for a version that keeps the same core content but sounds smoother or more native.
+                - Use kind RICHER_DETAIL for a version that keeps the same core answer but adds one natural supporting detail, reason, example, or image.
+                - Return 0-2 items total, and never more than one item per kind.
+                - If a variant would be effectively the same as modelAnswer or another variant, omit it.
+                - answer should be the English variant.
+                - answerKo must be a short Korean translation written in Hangul. Never copy the English answer into answerKo. If you are not confident in the Korean translation, return answerKo as null.
+                - reasonKo should explain why this version is different in one short Korean line.
 
                 Diagnosis-to-section alignment:
                 %s
@@ -1820,33 +1835,22 @@ public class OpenAiFeedbackClient {
         List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = extractSupplementaryLearningPoints(
                 normalizedSecondaryLearningPoints
         );
-        FeedbackNextStepPracticeDto nextStepPractice = node.path("nextStepPractice").isObject()
-                ? new FeedbackNextStepPracticeDto(
-                textOrNull(node.path("nextStepPractice").path("kind")),
-                textOrNull(node.path("nextStepPractice").path("title")),
-                firstNonBlank(
-                        textOrNull(node.path("nextStepPractice").path("headline")),
-                        textOrNull(node.path("nextStepPractice").path("starter"))
-                ),
-                firstNonBlank(
-                        textOrNull(node.path("nextStepPractice").path("supportText")),
-                        textOrNull(node.path("nextStepPractice").path("instruction"))
-                ),
-                textOrNull(node.path("nextStepPractice").path("originalText")),
-                textOrNull(node.path("nextStepPractice").path("revisedText")),
-                textOrNull(node.path("nextStepPractice").path("meaningKo")),
-                textOrNull(node.path("nextStepPractice").path("guidanceKo")),
-                textOrNull(node.path("nextStepPractice").path("exampleEn")),
-                textOrNull(node.path("nextStepPractice").path("exampleKo")),
-                textOrNull(node.path("nextStepPractice").path("ctaLabel")),
-                node.path("nextStepPractice").path("optionalTone").asBoolean(false)
-        )
-                : null;
-        List<FeedbackRewriteSuggestionDto> rewriteSuggestions = new ArrayList<>();
-        node.path("rewriteSuggestions").forEach(item -> rewriteSuggestions.add(new FeedbackRewriteSuggestionDto(
-                item.path("english").asText(""),
-                item.path("meaningKo").isNull() ? null : item.path("meaningKo").asText(null),
-                item.path("noteKo").isNull() ? null : item.path("noteKo").asText(null)
+        List<FeedbackRewriteIdeaDto> rewriteIdeas = new ArrayList<>();
+        node.path("rewriteIdeas").forEach(item -> rewriteIdeas.add(new FeedbackRewriteIdeaDto(
+                textOrNull(item.path("title")),
+                textOrNull(item.path("english")),
+                textOrNull(item.path("meaningKo")),
+                textOrNull(item.path("noteKo")),
+                textOrNull(item.path("originalText")),
+                textOrNull(item.path("revisedText")),
+                item.path("optionalTone").asBoolean(false)
+        )));
+        List<FeedbackModelAnswerVariantDto> modelAnswerVariants = new ArrayList<>();
+        node.path("modelAnswerVariants").forEach(item -> modelAnswerVariants.add(new FeedbackModelAnswerVariantDto(
+                textOrNull(item.path("kind")),
+                textOrNull(item.path("answer")),
+                textOrNull(item.path("answerKo")),
+                textOrNull(item.path("reasonKo"))
         )));
         return new GeneratedSections(
                 null,
@@ -1859,11 +1863,13 @@ public class OpenAiFeedbackClient {
                 null,
                 node.path("modelAnswer").isNull() ? null : node.path("modelAnswer").asText(null),
                 node.path("modelAnswerKo").isNull() ? null : node.path("modelAnswerKo").asText(null),
+                modelAnswerVariants,
                 usedExpressions,
                 parsedFixPoints,
                 secondaryLearningPoints,
-                nextStepPractice,
-                rewriteSuggestions
+                null,
+                List.of(),
+                rewriteIdeas
         );
     }
 
@@ -2039,7 +2045,7 @@ public class OpenAiFeedbackClient {
             case GRAMMAR -> "GRAMMAR_FEEDBACK";
             case REFINEMENT -> "REFINEMENT_EXPRESSIONS";
             case SUMMARY -> "SUMMARY";
-            case REWRITE_GUIDE -> "NEXT_STEP_PRACTICE";
+            case REWRITE_GUIDE -> "REWRITE_IDEAS";
             case MODEL_ANSWER -> "MODEL_ANSWER";
             case USED_EXPRESSIONS -> "USED_EXPRESSIONS";
             default -> "";
@@ -2225,12 +2231,12 @@ public class OpenAiFeedbackClient {
             List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
             FeedbackNextStepPracticeDto nextStepPractice
     ) {
-        if (rewriteSuggestions == null || rewriteSuggestions.isEmpty() || nextStepPractice == null) {
+        if (rewriteSuggestions == null || rewriteSuggestions.isEmpty()) {
             return List.of();
         }
-        String practiceHeadline = trimToNull(nextStepPractice.headline());
-        String practiceExample = trimToNull(nextStepPractice.exampleEn());
-        String practiceRevised = trimToNull(nextStepPractice.revisedText());
+        String practiceHeadline = nextStepPractice == null ? null : trimToNull(nextStepPractice.headline());
+        String practiceExample = nextStepPractice == null ? null : trimToNull(nextStepPractice.exampleEn());
+        String practiceRevised = nextStepPractice == null ? null : trimToNull(nextStepPractice.revisedText());
 
         List<FeedbackRewriteSuggestionDto> sanitized = new ArrayList<>();
         LinkedHashSet<String> seen = new LinkedHashSet<>();
@@ -2580,9 +2586,8 @@ public class OpenAiFeedbackClient {
         }
         if (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.UNALIGNED_REWRITE_TARGET)) {
-            instructions.add("- NEXT_STEP_PRACTICE should be one clearly different optional add-on or null, not a restatement of any FIX_POINTS item.");
-            instructions.add("- If NEXT_STEP_PRACTICE repeats the same original/revised pair, added phrase, or advice already shown in FIX_POINTS, return null instead.");
-            instructions.add("- REWRITE_SUGGESTIONS should support only that distinct next step, and must be [] when NEXT_STEP_PRACTICE is null.");
+            instructions.add("- REWRITE_IDEAS should be the primary optional-improvement list. Keep it focused, skip cardType, and let originalText/revisedText decide whether an item becomes a comparison-style card.");
+            instructions.add("- If an idea repeats the same original/revised pair, added phrase, or advice already shown in FIX_POINTS, remove it instead of padding the list.");
         }
         if (instructions.isEmpty()) {
             return "- none";
@@ -2874,13 +2879,12 @@ public class OpenAiFeedbackClient {
             case GRAMMAR_BLOCKING -> """
                     - Prioritize the core sentence repair before extra expansion.
                     - Keep fixPoints compact and centered on the repair.
-                    - Prefer leaving nextStepPractice null unless there is one clearly optional add-on after the repair.
                     - Keep modelAnswer very close to learner meaning and the corrected direction.
                     """;
             case TOO_SHORT_FRAGMENT -> """
                     - Prioritize completing one full base sentence before any expansion.
                     - Keep fixPoints centered on finishing the fragment cleanly.
-                    - Use nextStepPractice only if there is one clearly optional add-on after the full base sentence is complete.
+                    - After the base sentence is complete, use rewriteIdeas for natural follow-up reasons, details, or examples when helpful.
                     - Avoid unsupported invention in fixPoints or modelAnswer.
                     """;
             case CONTENT_THIN, SHORT_BUT_VALID -> """
@@ -2889,17 +2893,20 @@ public class OpenAiFeedbackClient {
                     - A clean single-sentence main answer is usually still not enough to finish here.
                     - Keep grammar explanation brief unless it directly blocks the next rewrite.
                     - Prefer fixPoints that help the learner support the same main idea more concretely.
-                    - Keep modelAnswer close to learner meaning and add at most one step-up detail.
+                    - Keep modelAnswer close to learner meaning and move extra support, detail, or example into rewriteIdeas instead of baking it into modelAnswer.
+                    - Be proactive about returning multiple distinct reason, example, detail, time-flow, or connector ideas when they would help the learner extend the same answer.
+                    - When the answer supports it, prefer several useful rewriteIdeas instead of stopping after one.
                     """;
             case NATURAL_BUT_BASIC -> """
                     - Prioritize optional polish and naturalness over major correction.
                     - Prefer fixPoints that teach one small naturalness or phrasing upgrade.
                     - Keep modelAnswer short, close to learner meaning, and low-pressure.
+                    - Put optional polish, smoother wording, and extra detail into rewriteIdeas instead of overloading modelAnswer.
                     """;
             case OFF_TOPIC -> """
                     - Prioritize getting the learner back to the actual task before polishing language.
                     - Keep fixPoints centered on answering the prompt directly.
-                    - Use nextStepPractice only if there is one clearly optional add-on after task alignment.
+                    - After task alignment is clear, use rewriteIdeas for additional reasons, details, or examples when they strengthen the on-topic answer.
                     - Keep modelAnswer as a short task-reset example.
                     """;
         };

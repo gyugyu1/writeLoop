@@ -1,4 +1,4 @@
-import { router, type Href } from "expo-router";
+import { Redirect, router, type Href } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
+import MobileScreenHeader from "@/components/mobile-screen-header";
 import { getAnswerHistory, getTodayWritingStatus, getWritingDraft } from "@/lib/api";
 import { difficultyDeck } from "@/lib/difficulty";
 import { clearIncompleteLoop, getIncompleteLoop, type IncompleteLoopState } from "@/lib/incomplete-loop";
@@ -64,7 +65,6 @@ const SEOUL_DATE_KEY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
   month: "2-digit",
   day: "2-digit"
 });
-const homeGuidePreviewImage = require("@/assets/images/tutorial-web.png");
 const homeStatusMascotImage = require("@/assets/images/main-mascote.png");
 const HOME_GUIDE_STEPS: HomeGuideStep[] = [
   {
@@ -267,7 +267,7 @@ function buildWeekChips(todayStatus: TodayWritingStatus | null): WeekDayChip[] {
 }
 
 export default function HomeScreen() {
-  const { currentUser, refreshSession } = useSession();
+  const { currentUser, isHydrating, refreshSession } = useSession();
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [incompleteLoop, setIncompleteLoop] = useState<IncompleteLoopState | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -311,17 +311,6 @@ export default function HomeScreen() {
     () => buildMonthCalendar(todayStatus, calendarCompletedDateKeySet, calendarMonthCursor),
     [calendarCompletedDateKeySet, calendarMonthCursor, todayStatus]
   );
-  const calendarSummaryLabel = useMemo(() => {
-    if (monthCalendar.streakDays > 1) {
-      return `현재 ${monthCalendar.streakDays}일 연속 학습 중`;
-    }
-
-    if (todayStatus?.completed) {
-      return "오늘도 학습 기록이 쌓였어요";
-    }
-
-    return "이번 달 학습 기록";
-  }, [monthCalendar.streakDays, todayStatus?.completed]);
   const calendarFooterLabel = useMemo(() => {
     if (currentUser) {
       return `총 ${(todayStatus?.totalWrittenSentences ?? 0).toLocaleString("ko-KR")}문장 작성`;
@@ -369,7 +358,8 @@ export default function HomeScreen() {
         params: {
           difficulty: incompleteLoop.difficulty,
           promptId: incompleteLoop.promptId,
-          mode: "rewrite"
+          mode: "rewrite",
+          resume: "1"
         }
       };
     }
@@ -570,6 +560,22 @@ export default function HomeScreen() {
     router.push(incompleteLoopRoute);
   }, [incompleteLoopRoute]);
 
+  if (isHydrating) {
+    return (
+      <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+        <View style={styles.screen}>
+          <View style={styles.homeLoadingState}>
+            <ActivityIndicator color="#E38B12" />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!currentUser) {
+    return <Redirect href="/login" />;
+  }
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <View style={styles.screen}>
@@ -578,15 +584,14 @@ export default function HomeScreen() {
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />}
       >
         <View style={styles.heroSection}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.headerTitleBlock}>
-              <Text style={styles.heroTitle}>난이도 선택</Text>
-              <View style={styles.heroUnderline} />
-            </View>
-            <Pressable style={styles.guideButton} onPress={() => setIsGuideOpen(true)}>
-              <Text style={styles.guideButtonText}>가이드 보기</Text>
-            </Pressable>
-          </View>
+          <MobileScreenHeader
+            title="난이도 선택"
+            rightAccessory={
+              <Pressable style={styles.guideButton} onPress={() => setIsGuideOpen(true)}>
+                <Text style={styles.guideButtonText}>가이드 보기</Text>
+              </Pressable>
+            }
+          />
         </View>
 
         <View style={styles.statusPanel}>
@@ -649,15 +654,14 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.difficultySectionHeader}>
-          <View style={styles.difficultySectionTopRow}>
-            <View style={styles.headerTitleBlock}>
-              <Text style={styles.difficultySectionTitle}>난이도 선택</Text>
-              <View style={styles.heroUnderline} />
-            </View>
-            <Pressable style={styles.guideButton} onPress={() => setIsGuideOpen(true)}>
-              <Text style={styles.guideButtonText}>가이드 보기</Text>
-            </Pressable>
-          </View>
+          <MobileScreenHeader
+            title="난이도 선택"
+            rightAccessory={
+              <Pressable style={styles.guideButton} onPress={() => setIsGuideOpen(true)}>
+                <Text style={styles.guideButtonText}>가이드 보기</Text>
+              </Pressable>
+            }
+          />
         </View>
 
         <View style={styles.stageSection}>
@@ -775,7 +779,6 @@ export default function HomeScreen() {
         <SafeAreaView style={styles.guideModalRoot} edges={["top", "bottom"]}>
           <View style={styles.guideModalHeader}>
             <View style={styles.guideModalHeaderText}>
-              <Text style={styles.guideEyebrow}>QUICK GUIDE</Text>
               <Text style={styles.guideModalTitle}>바로 보는 학습 가이드</Text>
             </View>
             <Pressable style={styles.guideModalCloseButton} onPress={() => setIsGuideOpen(false)}>
@@ -788,13 +791,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.guideModalScrollContent}
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.guidePreviewCard}>
-              <Image source={homeGuidePreviewImage} style={styles.guidePreviewImage} resizeMode="cover" />
-              <View style={styles.guidePreviewOverlay}>
-                <Text style={styles.guidePreviewBadge}>START FLOW</Text>
-                <Text style={styles.guidePreviewTitle}>질문 선택, 코치 도움, 피드백까지 한 흐름으로 이어집니다.</Text>
-              </View>
-            </View>
+            <Text style={styles.guideLeadText}>질문 선택, 코치 도움, 피드백까지 한 흐름으로 이어집니다.</Text>
 
             <View style={styles.guideStepList}>
               {HOME_GUIDE_STEPS.map((step, index) => (
@@ -830,6 +827,11 @@ const styles = StyleSheet.create({
   },
   screen: {
     flex: 1
+  },
+  homeLoadingState: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center"
   },
   content: {
     flexGrow: 1,
@@ -1215,14 +1217,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14
   },
   guideModalHeaderText: {
-    gap: 4,
     flex: 1
-  },
-  guideEyebrow: {
-    fontSize: 11,
-    fontWeight: "900",
-    letterSpacing: 1.2,
-    color: "#B27B2E"
   },
   guideModalTitle: {
     fontSize: 28,
@@ -1256,33 +1251,7 @@ const styles = StyleSheet.create({
     paddingBottom: 28,
     gap: 18
   },
-  guidePreviewCard: {
-    borderRadius: 28,
-    overflow: "hidden",
-    backgroundColor: "#F2E6D9",
-    borderWidth: 1,
-    borderColor: "#E8DACB"
-  },
-  guidePreviewImage: {
-    width: "100%",
-    height: 210
-  },
-  guidePreviewOverlay: {
-    gap: 8,
-    padding: 18,
-    backgroundColor: "#FFFDF9"
-  },
-  guidePreviewBadge: {
-    alignSelf: "flex-start",
-    borderRadius: 999,
-    backgroundColor: "#FFE8CB",
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#A76518"
-  },
-  guidePreviewTitle: {
+  guideLeadText: {
     fontSize: 18,
     lineHeight: 26,
     fontWeight: "800",

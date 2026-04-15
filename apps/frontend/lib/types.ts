@@ -210,6 +210,16 @@ export interface FeedbackRewriteSuggestion {
   noteKo?: string | null;
 }
 
+export interface FeedbackRewriteIdea {
+  title?: string | null;
+  english?: string | null;
+  meaningKo?: string | null;
+  noteKo?: string | null;
+  originalText?: string | null;
+  revisedText?: string | null;
+  optionalTone?: boolean | null;
+}
+
 export type FeedbackCompletionState = "NEEDS_REVISION" | "CAN_FINISH" | "OPTIONAL_POLISH";
 export type FeedbackSectionDisplayMode = "HIDE" | "SHOW_EXPANDED" | "SHOW_COLLAPSED";
 export type FeedbackRewriteGuideMode =
@@ -250,12 +260,23 @@ export interface FeedbackLoopStatus {
   cancelCtaLabel?: string | null;
 }
 
+export type FeedbackModelAnswerVariantKind = "NATURAL_POLISH" | "RICHER_DETAIL";
+
+export interface FeedbackModelAnswerVariant {
+  kind?: FeedbackModelAnswerVariantKind | string | null;
+  answer?: string | null;
+  answerKo?: string | null;
+  reasonKo?: string | null;
+}
+
 export interface FeedbackUi {
   microTip?: FeedbackMicroTip | null;
   secondaryLearningPoints?: FeedbackSecondaryLearningPoint[] | null;
   fixPoints?: FeedbackFixPoint[] | null;
   nextStepPractice?: FeedbackNextStepPractice | null;
   rewriteSuggestions?: FeedbackRewriteSuggestion[] | null;
+  rewriteIdeas?: FeedbackRewriteIdea[] | null;
+  modelAnswerVariants?: FeedbackModelAnswerVariant[] | null;
   screenPolicy?: FeedbackScreenPolicy | null;
   loopStatus?: FeedbackLoopStatus | null;
 }

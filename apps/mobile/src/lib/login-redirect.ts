@@ -1,6 +1,6 @@
 import type { Href } from "expo-router";
 
-const DEFAULT_POST_LOGIN_ROUTE: Href = "/me";
+const DEFAULT_POST_LOGIN_ROUTE: Href = "/";
 
 function normalizeRedirectTo(redirectTo?: string | string[]) {
   if (Array.isArray(redirectTo)) {

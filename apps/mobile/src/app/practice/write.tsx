@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useIsFocused } from "@react-navigation/native";
+import { useIsFocused, useNavigation } from "@react-navigation/native";
 import {
   ActivityIndicator,
   AppState,
@@ -17,13 +17,13 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import { PracticeFeedbackContent } from "@/components/practice-feedback-content";
 import FeedbackLoadingOverlay from "@/components/feedback-loading-overlay";
 import {
   ApiError,
   deleteWritingDraft,
   getDailyPrompts,
+  getPromptHints,
   getPrompts,
   getWritingDraft,
   requestCoachHelp,
@@ -44,9 +44,9 @@ import {
 } from "@/lib/practice-feedback-state";
 import {
   buildDistinctCategoryPromptSelection,
-  countDistinctPromptCategories,
   isDailyDifficulty
 } from "@/lib/practice";
+import { getPromptHintMeaningFallback } from "@/lib/prompt-hint-meanings";
 import { useSession } from "@/lib/session";
 import { deleteLocalWritingDraft, getLocalWritingDraft, saveLocalWritingDraft } from "@/lib/writing-drafts";
 import type {
@@ -55,6 +55,7 @@ import type {
   DailyPromptRecommendation,
   Feedback,
   Prompt,
+  PromptHint,
   SaveWritingDraftRequest,
   WritingDraft,
   WritingDraftType
@@ -72,21 +73,23 @@ type WritingGuideChecklistItem = {
 type WritingGuide = {
   title: string;
   description: string;
-  sentenceRange: [number, number];
-  wordRange: [number, number];
   starter: string;
   checklist: WritingGuideChecklistItem[];
 };
 
-function getWritingGuide(difficulty: DailyDifficulty): WritingGuide {
+type WritingGuideHintCard = {
+  id: string;
+  content: string;
+  meaningKo?: string | null;
+};
+
+function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | null): WritingGuide {
   switch (difficulty) {
     case "A":
       return {
-        title: "짧고 분명한 답변부터 시작해 보세요.",
-        description: "완벽한 표현보다 내 의견을 한 줄로 말하는 게 먼저예요.",
-        sentenceRange: [2, 3],
-        wordRange: [20, 40],
-        starter: "I think ... because ...",
+        title: "완벽하지 않아도 일단 쓰는 것!",
+        description: "",
+        starter: starterHint ?? "I think ... because ...",
         checklist: [
           {
             title: "의견 한 줄 쓰기",
@@ -106,9 +109,7 @@ function getWritingGuide(difficulty: DailyDifficulty): WritingGuide {
       return {
         title: "의견, 이유, 예시를 한 흐름으로 묶어보세요.",
         description: "한 문장씩 차근차근 이어 쓰면 훨씬 안정적인 답변이 돼요.",
-        sentenceRange: [3, 4],
-        wordRange: [35, 60],
-        starter: "In my opinion, ... One reason is that ...",
+        starter: starterHint ?? "In my opinion, ... One reason is that ...",
         checklist: [
           {
             title: "내 입장 먼저 밝히기",
@@ -128,9 +129,7 @@ function getWritingGuide(difficulty: DailyDifficulty): WritingGuide {
       return {
         title: "주장과 근거를 구조적으로 풀어보세요.",
         description: "길게 쓰기보다 흐름이 보이게 정리하면 훨씬 강한 답변이 돼요.",
-        sentenceRange: [4, 6],
-        wordRange: [55, 90],
-        starter: "I believe ... because ... For example, ...",
+        starter: starterHint ?? "I believe ... because ... For example, ...",
         checklist: [
           {
             title: "주장을 먼저 세우기",
@@ -148,11 +147,9 @@ function getWritingGuide(difficulty: DailyDifficulty): WritingGuide {
       };
     default:
       return {
-        title: "의견을 한 줄로 시작해 보세요.",
-        description: "짧게 시작해도 충분히 좋은 첫 답변이 될 수 있어요.",
-        sentenceRange: [2, 3],
-        wordRange: [20, 40],
-        starter: "I think ... because ...",
+        title: "완벽하지 않아도 일단 쓰는 것!",
+        description: "",
+        starter: starterHint ?? "I think ... because ...",
         checklist: [
           {
             title: "의견 먼저 쓰기",
@@ -206,11 +203,18 @@ function toDraftStatusBadgeLabel(message: string) {
 const coachMascotImage = require("@/assets/images/coach-mascote-face.png");
 
 export default function PracticeWriteScreen() {
-  const params = useLocalSearchParams<{ difficulty?: string; promptId?: string; mode?: string }>();
+  const params = useLocalSearchParams<{
+    difficulty?: string;
+    promptId?: string;
+    mode?: string;
+    resume?: string;
+  }>();
+  const navigation = useNavigation();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
   const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "A";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
   const isRewriteMode = params.mode === "rewrite";
+  const shouldRestoreRewriteDraft = params.resume === "1";
   const { currentUser } = useSession();
   const isFocused = useIsFocused();
 
@@ -227,7 +231,10 @@ export default function PracticeWriteScreen() {
   const [isLoadingCoachHelp, setIsLoadingCoachHelp] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [promptHints, setPromptHints] = useState<PromptHint[]>([]);
+  const [isLoadingPromptHints, setIsLoadingPromptHints] = useState(false);
   const [rewriteSeedAnswer, setRewriteSeedAnswer] = useState("");
+  const [latestFeedbackAnswer, setLatestFeedbackAnswer] = useState("");
   const [draftStatusMessage, setDraftStatusMessage] = useState("");
   const [isDraftPersistencePaused, setIsDraftPersistencePaused] = useState(false);
   const [error, setError] = useState("");
@@ -252,9 +259,48 @@ export default function PracticeWriteScreen() {
     );
   }, [selectedPrompt?.topic]);
 
+  const vocabularyWordHintItems = useMemo<WritingGuideHintCard[]>(
+    () =>
+      promptHints
+        .filter((hint) => hint.hintType === "VOCAB_WORD")
+        .flatMap((hint) =>
+          (hint.items ?? [])
+            .filter((item) => item.content.trim().length > 0)
+            .map((item) => ({
+              id: item.id,
+              content: item.content,
+              meaningKo: item.meaningKo?.trim() || getPromptHintMeaningFallback(item.content)
+            }))
+        ),
+    [promptHints]
+  );
+  const vocabularyPhraseHintItems = useMemo<WritingGuideHintCard[]>(
+    () =>
+      promptHints
+        .filter((hint) => hint.hintType === "VOCAB_PHRASE")
+        .flatMap((hint) =>
+          (hint.items ?? [])
+            .filter((item) => item.content.trim().length > 0)
+            .map((item) => ({
+              id: item.id,
+              content: item.content,
+              meaningKo: item.meaningKo?.trim() || getPromptHintMeaningFallback(item.content)
+            }))
+        ),
+    [promptHints]
+  );
+  const starterHint = useMemo(
+    () =>
+      promptHints
+        .filter((hint) => hint.hintType === "STARTER")
+        .flatMap((hint) => hint.items ?? [])
+        .map((item) => item.content.trim())
+        .find((content) => content.length > 0) ?? null,
+    [promptHints]
+  );
   const answerGuide = useMemo(
-    () => getWritingGuide(selectedPrompt?.difficulty ?? requestedDifficulty),
-    [requestedDifficulty, selectedPrompt?.difficulty]
+    () => getWritingGuide(selectedPrompt?.difficulty ?? requestedDifficulty, starterHint),
+    [requestedDifficulty, selectedPrompt?.difficulty, starterHint]
   );
 
   const activeDraftType: WritingDraftType = isRewriteMode ? "REWRITE" : "ANSWER";
@@ -263,10 +309,47 @@ export default function PracticeWriteScreen() {
     () => (draftStatusMessage ? toDraftStatusBadgeLabel(draftStatusMessage) : ""),
     [draftStatusMessage]
   );
-  const feedbackLoadingTitle = feedback ? "다시 쓴 답변을 읽고 있어요" : "피드백을 만들고 있어요";
-  const feedbackLoadingMessage = feedback
-    ? "이전 피드백이 얼마나 반영됐는지 살펴보고 있어요. 잠시만 기다려 주세요."
-    : "답변을 바탕으로 맞춤 피드백을 정리하고 있어요. 잠시만 기다려 주세요.";
+  const feedbackLoadingStages = useMemo(
+    () =>
+      feedback
+        ? [
+            {
+              title: "다시 쓴 답변을 읽고 있어요",
+              message: "이전 피드백이 얼마나 반영됐는지 살펴보고 있어요. 잠시만 기다려 주세요."
+            },
+            {
+              title: "문장을 한 줄씩 비교하고 있어요",
+              message: "좋아진 부분과 아직 다듬을 부분을 함께 찾고 있어요."
+            },
+            {
+              title: "더 자연스럽게 들리도록 다듬는 중이에요",
+              message: "흐름이 매끄러워지는 표현도 함께 고르고 있어요."
+            },
+            {
+              title: "이번 다시쓰기의 포인트를 정리하고 있어요",
+              message: "한 번 더 성장한 답안이 되도록 핵심 힌트를 정리하고 있어요."
+            }
+          ]
+        : [
+            {
+              title: "피드백을 만들고 있어요",
+              message: "답변을 바탕으로 맞춤 피드백을 정리하고 있어요. 잠시만 기다려 주세요."
+            },
+            {
+              title: "문장을 찬찬히 읽고 있어요",
+              message: "좋은 점과 먼저 고칠 점을 나눠 보고 있어요."
+            },
+            {
+              title: "더 자연스럽게 들리도록 다듬는 중이에요",
+              message: "바로 써볼 수 있는 표현도 함께 고르고 있어요."
+            },
+            {
+              title: "표현을 하나 더 붙일 곳도 찾고 있어요",
+              message: "다음 다시쓰기에 도움이 될 힌트까지 챙기고 있어요."
+            }
+          ],
+    [feedback]
+  );
   const previousFeedbackState = useMemo(() => {
     if (!selectedPrompt || !feedback || !rewriteSeedAnswer.trim()) {
       return null;
@@ -279,26 +362,24 @@ export default function PracticeWriteScreen() {
       feedback
     };
   }, [feedback, requestedDifficulty, rewriteSeedAnswer, selectedPrompt]);
-  const answerChecklistSummary = useMemo(
-    () => answerGuide.checklist.map((item) => item.title).join(" · "),
-    [answerGuide]
+  const normalizedCurrentAnswer = useMemo(() => answer.trim(), [answer]);
+  const normalizedLatestFeedbackAnswer = useMemo(() => latestFeedbackAnswer.trim(), [latestFeedbackAnswer]);
+  const canViewLatestFeedback = useMemo(
+    () =>
+      Boolean(
+        feedback &&
+          normalizedCurrentAnswer &&
+          normalizedCurrentAnswer === normalizedLatestFeedbackAnswer
+      ),
+    [feedback, normalizedCurrentAnswer, normalizedLatestFeedbackAnswer]
   );
-  const answerProgressMessage = useMemo(() => {
-    if (!answer.trim()) {
-      return "첫 문장은 짧게 시작해도 괜찮아요.";
-    }
-
-    if (answerWordCount < answerGuide.wordRange[0]) {
-      return `${answerGuide.wordRange[0]}단어쯤까지 가면 더 안정적인 답변이 돼요.`;
-    }
-
-    if (answerWordCount <= answerGuide.wordRange[1]) {
-      return "지금 분량이면 흐름이 잘 보이고 있어요.";
-    }
-
-    return "분량은 충분해요. 문장 연결만 한 번 더 다듬어 보세요.";
-  }, [answer, answerGuide, answerWordCount]);
-
+  const isAnswerLocked = canViewLatestFeedback;
+  const feedbackReferenceLabel = canViewLatestFeedback ? "피드백 보기" : "이전 피드백 보기";
+  const primaryActionLabel = canViewLatestFeedback
+    ? "피드백 보기"
+    : feedback
+      ? "다시 쓴 답변 제출하기"
+      : "피드백 받기";
   const loadPrompt = useCallback(async () => {
     if (!requestedPromptId) {
       setError(getPromptNotFoundMessage());
@@ -324,7 +405,7 @@ export default function PracticeWriteScreen() {
       const savedFeedbackState =
         getPracticeFeedbackState(requestedDifficulty, requestedPromptId) ??
         (await hydratePracticeFeedbackState(requestedDifficulty, requestedPromptId));
-      const desiredPromptCount = Math.min(3, countDistinctPromptCategories(sameDifficultyPromptPool));
+      const desiredPromptCount = Math.min(3, sameDifficultyPromptPool.length);
       const normalizedRecommendation = {
         ...nextRecommendation,
         prompts: buildDistinctCategoryPromptSelection(
@@ -348,7 +429,7 @@ export default function PracticeWriteScreen() {
           restoredDraft = await getLocalWritingDraft(requestedPromptId, activeDraftType);
         }
 
-        if (restoredDraft) {
+        if (restoredDraft && (!isRewriteMode || shouldRestoreRewriteDraft)) {
           restoredAnswer =
             activeDraftType === "REWRITE"
               ? restoredDraft.rewrite || restoredDraft.answer
@@ -357,6 +438,20 @@ export default function PracticeWriteScreen() {
             currentUser && restoredDraft.updatedAt
               ? `임시저장됨 · ${formatDraftSavedAt(restoredDraft.updatedAt)}`
               : "이 기기에 임시저장됨";
+        } else if (restoredDraft && isRewriteMode && !shouldRestoreRewriteDraft) {
+          try {
+            if (currentUser) {
+              await deleteWritingDraft(requestedPromptId, "REWRITE");
+            }
+          } catch {
+            // Ignore server cleanup failures and still clear any local fallback.
+          }
+
+          try {
+            await deleteLocalWritingDraft(requestedPromptId, "REWRITE");
+          } catch {
+            // Ignore local cleanup failures as well.
+          }
         }
       } catch {
         restoredDraftStatusMessage = "";
@@ -367,6 +462,7 @@ export default function PracticeWriteScreen() {
       setRecommendation(normalizedRecommendation);
       setFeedback(isRewriteMode ? savedFeedbackState?.feedback ?? null : null);
       setRewriteSeedAnswer(savedFeedbackState?.answer ?? "");
+      setLatestFeedbackAnswer("");
       setAnswer(restoredAnswer);
       setDraftStatusMessage(restoredDraftStatusMessage);
       setIsDraftPersistencePaused(false);
@@ -386,11 +482,53 @@ export default function PracticeWriteScreen() {
     } finally {
       setIsLoading(false);
     }
-  }, [activeDraftType, currentUser, isRewriteMode, requestedDifficulty, requestedPromptId]);
+  }, [
+    activeDraftType,
+    currentUser,
+    isRewriteMode,
+    requestedDifficulty,
+    requestedPromptId,
+    shouldRestoreRewriteDraft
+  ]);
 
   useEffect(() => {
     void loadPrompt();
   }, [loadPrompt]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSelectedPromptHints() {
+      if (!selectedPrompt) {
+        setPromptHints([]);
+        setIsLoadingPromptHints(false);
+        return;
+      }
+
+      try {
+        setIsLoadingPromptHints(true);
+        setPromptHints([]);
+        const nextHints = await getPromptHints(selectedPrompt.id);
+        if (!cancelled) {
+          setPromptHints(nextHints);
+        }
+      } catch {
+        if (!cancelled) {
+          setPromptHints([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoadingPromptHints(false);
+        }
+      }
+    }
+
+    void loadSelectedPromptHints();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedPrompt?.id]);
 
   async function handleSubmit() {
     if (!selectedPrompt) {
@@ -428,6 +566,8 @@ export default function PracticeWriteScreen() {
       await clearPersistedDraft(selectedPrompt.id, activeDraftType);
       setDraftStatusMessage("");
       setFeedback(nextFeedback);
+      setRewriteSeedAnswer(trimmedAnswer);
+      setLatestFeedbackAnswer(trimmedAnswer);
       await saveIncompleteLoopSnapshot("feedback", selectedPrompt, new Date().toISOString(), {
         sessionId: nextFeedback.sessionId
       });
@@ -450,6 +590,21 @@ export default function PracticeWriteScreen() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleOpenLatestFeedback() {
+    if (!selectedPrompt || !feedback) {
+      setError(getPromptNotFoundMessage());
+      return;
+    }
+
+    router.push({
+      pathname: "/practice/feedback",
+      params: {
+        difficulty: requestedDifficulty,
+        promptId: selectedPrompt.id
+      }
+    });
   }
 
   function appendCoachExpression(expression: string) {
@@ -504,6 +659,15 @@ export default function PracticeWriteScreen() {
         difficulty: requestedDifficulty
       }
     });
+  }
+
+  function handleHeaderBack() {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+
+    handleBackToQuestions();
   }
 
   const clearPersistedDraft = useCallback(
@@ -926,6 +1090,19 @@ export default function PracticeWriteScreen() {
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
         >
+          <View style={styles.header}>
+            <Pressable
+              style={styles.headerBackButton}
+              onPress={handleHeaderBack}
+              accessibilityRole="button"
+              accessibilityLabel="뒤로가기"
+            >
+              <Text style={styles.headerBackIcon}>{"<"}</Text>
+            </Pressable>
+            <Text style={styles.headerTitle}>작문</Text>
+            <View style={styles.headerSpacer} />
+          </View>
+
           {isLoading ? (
             <View style={styles.loadingCard}>
               <ActivityIndicator color="#E38B12" />
@@ -944,7 +1121,7 @@ export default function PracticeWriteScreen() {
                         style={styles.translationButton}
                         onPress={() => setIsPreviousFeedbackOpen(true)}
                       >
-                        <Text style={styles.translationButtonText}>이전 피드백 보기</Text>
+                        <Text style={styles.translationButtonText}>{feedbackReferenceLabel}</Text>
                       </Pressable>
                     ) : null}
                     <Pressable style={styles.translationButton} onPress={() => setIsGuideOpen(true)}>
@@ -974,7 +1151,7 @@ export default function PracticeWriteScreen() {
                         style={styles.rewriteContextButton}
                         onPress={() => setIsPreviousFeedbackOpen(true)}
                       >
-                        <Text style={styles.rewriteContextButtonText}>이전 피드백 보기</Text>
+                        <Text style={styles.rewriteContextButtonText}>{feedbackReferenceLabel}</Text>
                       </Pressable>
                     </View>
                   ) : null}
@@ -987,13 +1164,14 @@ export default function PracticeWriteScreen() {
 
                   <View style={styles.answerInputFrame}>
                     <TextInput
-                      style={styles.answerInput}
+                      style={[styles.answerInput, isAnswerLocked && styles.answerInputDisabled]}
                       multiline
                       textAlignVertical="top"
                       placeholder="영어로 답안을 써 보세요."
                       placeholderTextColor="#AE9A87"
                       value={answer}
                       onChangeText={handleAnswerChange}
+                      editable={!isAnswerLocked}
                     />
 
                     <View pointerEvents="box-none" style={styles.composerFooterRow}>
@@ -1041,15 +1219,20 @@ export default function PracticeWriteScreen() {
 
                   <Pressable
                     style={[styles.submitButton, isSubmitting && styles.disabledButton]}
-                    onPress={() => void handleSubmit()}
+                    onPress={() => {
+                      if (canViewLatestFeedback) {
+                        handleOpenLatestFeedback();
+                        return;
+                      }
+
+                      void handleSubmit();
+                    }}
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
                       <ActivityIndicator color="#2E2416" />
                     ) : (
-                      <Text style={styles.submitButtonText}>
-                        {feedback ? "다시 쓴 답변 제출하기" : "피드백 받기"}
-                      </Text>
+                      <Text style={styles.submitButtonText}>{primaryActionLabel}</Text>
                     )}
                   </Pressable>
                 </View>
@@ -1068,12 +1251,14 @@ export default function PracticeWriteScreen() {
           )}
         </ScrollView>
       </KeyboardAvoidingView>
-
-      <MobileNavBar activeTab="home" />
       <FeedbackLoadingOverlay
         visible={isSubmitting}
-        title={feedbackLoadingTitle}
-        message={feedbackLoadingMessage}
+        title={feedbackLoadingStages[0]?.title ?? "피드백을 만들고 있어요"}
+        message={
+          feedbackLoadingStages[0]?.message ??
+          "답변을 바탕으로 맞춤 피드백을 정리하고 있어요. 잠시만 기다려 주세요."
+        }
+        stages={feedbackLoadingStages}
       />
 
       <Modal
@@ -1084,7 +1269,7 @@ export default function PracticeWriteScreen() {
         <SafeAreaView style={styles.feedbackModalRoot} edges={["top", "bottom"]}>
           <View style={styles.feedbackModalHeader}>
             <View style={styles.feedbackModalHeaderText}>
-              <Text style={styles.feedbackModalTitle}>이전 피드백 보기</Text>
+              <Text style={styles.feedbackModalTitle}>{feedbackReferenceLabel}</Text>
             </View>
             <Pressable
               style={styles.coachModalCloseButton}
@@ -1123,7 +1308,6 @@ export default function PracticeWriteScreen() {
         <SafeAreaView style={styles.guideModalRoot} edges={["top", "bottom"]}>
           <View style={styles.guideModalHeader}>
             <View style={styles.guideModalHeaderText}>
-              <Text style={styles.coachEyebrow}>WRITING GUIDE</Text>
               <Text style={styles.guideModalTitle}>작성 가이드</Text>
             </View>
             <Pressable style={styles.coachModalCloseButton} onPress={() => setIsGuideOpen(false)}>
@@ -1137,49 +1321,66 @@ export default function PracticeWriteScreen() {
             showsVerticalScrollIndicator={false}
           >
             <View style={styles.guideIntroCard}>
+              <Text style={styles.guideIntroLabel}>최고의 팁!</Text>
               <Text style={styles.guideIntroTitle}>{answerGuide.title}</Text>
-              <Text style={styles.guideIntroBody}>{answerGuide.description}</Text>
+              {answerGuide.description ? (
+                <Text style={styles.guideIntroBody}>{answerGuide.description}</Text>
+              ) : null}
             </View>
 
-            <View style={styles.guideStarterCard}>
-              <Text style={styles.guideCardLabel}>첫 문장 스타터</Text>
-              <Text style={styles.guideStarterText}>{answerGuide.starter}</Text>
+            <View style={styles.guideHintGroup}>
+              <Text style={styles.guideHintGroupTitle}>첫 문장 스타터</Text>
+              <View style={styles.guideStarterCard}>
+                <Text style={styles.guideStarterText}>{answerGuide.starter}</Text>
+              </View>
             </View>
 
-            <View style={styles.guideTipCard}>
-              <Text style={styles.guideCardLabel}>권장 분량</Text>
-              <Text style={styles.guideTipHeadline}>
-                {`${answerGuide.sentenceRange[0]}-${answerGuide.sentenceRange[1]}문장 / ${answerGuide.wordRange[0]}-${answerGuide.wordRange[1]}단어`}
-              </Text>
-              <Text style={styles.guideTipBody}>짧아도 흐름만 보이면 충분해요.</Text>
-            </View>
-
-            <View style={styles.guideTipCard}>
-              <Text style={styles.guideCardLabel}>지금 체크할 것</Text>
-              <Text style={styles.guideTipHeadline}>{answerChecklistSummary}</Text>
-              <Text style={styles.guideTipBody}>{answerProgressMessage}</Text>
-            </View>
-
-            <View style={styles.guideChecklistCard}>
-              {answerGuide.checklist.map((item, index) => (
-                <View key={item.title} style={styles.guideChecklistItem}>
-                  <View style={styles.guideChecklistIndex}>
-                    <Text style={styles.guideChecklistIndexText}>{index + 1}</Text>
-                  </View>
-                  <View style={styles.guideChecklistCopy}>
-                    <Text style={styles.guideChecklistTitle}>{item.title}</Text>
-                    <Text style={styles.guideChecklistBody}>{item.description}</Text>
-                  </View>
+            <View style={styles.guideHintSection}>
+              {isLoadingPromptHints ? (
+                <Text style={styles.guideHintEmptyText}>지금 추천 단어와 표현을 준비하고 있어요.</Text>
+              ) : vocabularyWordHintItems.length > 0 || vocabularyPhraseHintItems.length > 0 ? (
+                <View style={styles.guideHintGroups}>
+                  {vocabularyWordHintItems.length > 0 ? (
+                    <View style={styles.guideHintGroup}>
+                      <Text style={styles.guideHintGroupTitle}>추천 단어</Text>
+                      <View style={styles.guideHintWordCardList}>
+                        {vocabularyWordHintItems.map((hint) => (
+                          <View key={hint.id} style={styles.guideHintWordCard}>
+                            <Text style={styles.guideHintWordLine}>
+                              <Text style={styles.guideHintWordContent}>{hint.content}</Text>
+                              {hint.meaningKo ? (
+                                <Text style={styles.guideHintWordMeaningInline}>{` · ${hint.meaningKo}`}</Text>
+                              ) : null}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
+                  {vocabularyPhraseHintItems.length > 0 ? (
+                    <View style={styles.guideHintGroup}>
+                      <Text style={styles.guideHintGroupTitle}>추천 표현</Text>
+                      <View style={styles.guideHintPhraseCardList}>
+                        {vocabularyPhraseHintItems.map((hint) => (
+                          <View key={hint.id} style={styles.guideHintPhraseCard}>
+                            <Text style={styles.guideHintPhraseLine}>
+                              <Text style={styles.guideHintPhraseContent}>{hint.content}</Text>
+                              {hint.meaningKo ? (
+                                <Text style={styles.guideHintCardMeaningInline}>{` · ${hint.meaningKo}`}</Text>
+                              ) : null}
+                            </Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ) : null}
                 </View>
-              ))}
+              ) : (
+                <Text style={styles.guideHintEmptyText}>이 질문에는 아직 추천 단어와 표현이 없어요.</Text>
+              )}
             </View>
 
-            <View style={styles.guideFooterCard}>
-              <Text style={styles.guideFooterTitle}>표현이 막히면 AI 코치를 눌러도 좋아요.</Text>
-              <Text style={styles.guideFooterBody}>
-                첫 문장이나 이유를 어떻게 붙일지 막힐 때는 입력창 안 마스코트에서 바로 도움을 받을 수 있어요.
-              </Text>
-            </View>
+
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -1306,25 +1507,35 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: MOBILE_NAV_BOTTOM_SPACING + 28,
+    paddingBottom: 32,
     gap: 18
   },
-  topBar: {
+  header: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between"
   },
-  ghostButton: {
-    borderRadius: 999,
-    backgroundColor: "#FFFDFC",
-    borderWidth: 1,
-    borderColor: "#E7D7C4",
-    paddingHorizontal: 14,
-    paddingVertical: 10
+  headerBackButton: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center"
   },
-  ghostButtonText: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#75624B"
+  headerBackIcon: {
+    fontSize: 28,
+    lineHeight: 28,
+    fontWeight: "700",
+    color: "#4A4033"
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+    color: "#2F312D"
+  },
+  headerSpacer: {
+    width: 42,
+    height: 42
   },
   loadingCard: {
     paddingVertical: 48,
@@ -1332,12 +1543,11 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   practiceFlowCard: {
-    backgroundColor: "#FFFEFC",
-    borderRadius: 32,
-    padding: 22,
-    borderWidth: 1,
-    borderColor: "#E8DACB",
-    gap: 18
+    backgroundColor: "transparent",
+    borderRadius: 0,
+    padding: 0,
+    borderWidth: 0,
+    gap: 16
   },
   promptSummaryCard: {
     backgroundColor: "transparent",
@@ -1378,7 +1588,7 @@ const styles = StyleSheet.create({
     borderColor: "#E0D0BC",
     paddingHorizontal: 14,
     paddingVertical: 10,
-    backgroundColor: "#FFF9F2"
+    backgroundColor: "#FFFFFF"
   },
   translationButtonText: {
     fontSize: 13,
@@ -1593,6 +1803,11 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 8
   },
+  guideIntroLabel: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#A56B1F"
+  },
   guideIntroTitle: {
     fontSize: 22,
     lineHeight: 30,
@@ -1605,103 +1820,93 @@ const styles = StyleSheet.create({
     color: "#6D6050"
   },
   guideStarterCard: {
-    borderRadius: 24,
-    backgroundColor: "#FFF6E8",
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#ECD5B5",
-    padding: 18,
-    gap: 8
-  },
-  guideCardLabel: {
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 1.1,
-    color: "#A56B1F"
+    borderColor: "#F0DFC8",
+    paddingHorizontal: 14,
+    paddingVertical: 12
   },
   guideStarterText: {
     fontSize: 18,
     lineHeight: 26,
     fontWeight: "900",
-    color: "#4F3A21"
-  },
-  guideTipCard: {
-    borderRadius: 24,
-    backgroundColor: "#FFFEFC",
-    borderWidth: 1,
-    borderColor: "#E8DACB",
-    padding: 18,
-    gap: 8
-  },
-  guideTipHeadline: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "900",
     color: "#2B2620"
   },
-  guideTipBody: {
-    fontSize: 14,
-    lineHeight: 22,
-    color: "#6E6151"
-  },
-  guideChecklistCard: {
-    borderRadius: 28,
-    backgroundColor: "#FFFEFC",
-    borderWidth: 1,
-    borderColor: "#E8DACB",
-    padding: 18,
-    gap: 14
-  },
-  guideChecklistItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+  guideHintSection: {
     gap: 12
   },
-  guideChecklistIndex: {
-    width: 28,
-    height: 28,
-    borderRadius: 999,
-    backgroundColor: "#FFF0D7",
-    alignItems: "center",
-    justifyContent: "center"
+  guideHintGroups: {
+    gap: 14
   },
-  guideChecklistIndexText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#A76518"
-  },
-  guideChecklistCopy: {
-    flex: 1,
-    gap: 4
-  },
-  guideChecklistTitle: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: "900",
-    color: "#2C2520"
-  },
-  guideChecklistBody: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: "#6D6050"
-  },
-  guideFooterCard: {
-    borderRadius: 24,
-    backgroundColor: "#FFF7EA",
-    borderWidth: 1,
-    borderColor: "#ECD5B5",
-    padding: 18,
+  guideHintGroup: {
     gap: 8
   },
-  guideFooterTitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: "900",
-    color: "#5B4427"
+  guideHintGroupTitle: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#8A6431"
   },
-  guideFooterBody: {
+  guideHintWordCardList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  guideHintWordCard: {
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#F0DFC8",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    alignSelf: "flex-start",
+    maxWidth: "100%"
+  },
+  guideHintWordLine: {
     fontSize: 14,
+    lineHeight: 19
+  },
+  guideHintWordContent: {
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: "800",
+    color: "#2B2620"
+  },
+  guideHintWordMeaningInline: {
+    fontSize: 12,
+    lineHeight: 17,
+    color: "#7A6A59"
+  },
+  guideHintPhraseCardList: {
+    gap: 10
+  },
+  guideHintPhraseCard: {
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#F0DFC8",
+    paddingHorizontal: 14,
+    paddingVertical: 12
+  },
+  guideHintPhraseLine: {
+    fontSize: 15,
+    lineHeight: 22
+  },
+  guideHintPhraseContent: {
+    fontSize: 15,
     lineHeight: 22,
-    color: "#705E48"
+    fontWeight: "800",
+    color: "#2B2620"
+  },
+  guideHintCardMeaningInline: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#7A6A59"
+  },
+  guideHintEmptyText: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#8B7761"
   },
   coachModalRoot: {
     flex: 1,
@@ -1962,6 +2167,9 @@ const styles = StyleSheet.create({
     paddingBottom: 92,
     fontSize: 16,
     color: "#232128"
+  },
+  answerInputDisabled: {
+    color: "#7B6B59"
   },
   submitButton: {
     borderRadius: 22,

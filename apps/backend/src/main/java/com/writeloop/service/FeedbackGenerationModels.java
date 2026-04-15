@@ -3,8 +3,10 @@ package com.writeloop.service;
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackFocusCardDto;
+import com.writeloop.dto.FeedbackModelAnswerVariantDto;
 import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackPrimaryFixDto;
+import com.writeloop.dto.FeedbackRewriteIdeaDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
@@ -122,12 +124,52 @@ record GeneratedSections(
         String rewriteGuide,
         String modelAnswer,
         String modelAnswerKo,
+        List<FeedbackModelAnswerVariantDto> modelAnswerVariants,
         List<CoachExpressionUsageDto> usedExpressions,
         List<FeedbackSecondaryLearningPointDto> fixPoints,
         List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
         FeedbackNextStepPracticeDto nextStepPractice,
-        List<FeedbackRewriteSuggestionDto> rewriteSuggestions
+        List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
+        List<FeedbackRewriteIdeaDto> rewriteIdeas
 ) {
+    GeneratedSections(
+            String summary,
+            List<String> strengths,
+            FeedbackFocusCardDto focusCard,
+            FeedbackPrimaryFixDto primaryFix,
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            List<CorrectionDto> corrections,
+            List<RefinementCard> refinementExpressions,
+            String rewriteGuide,
+            String modelAnswer,
+            String modelAnswerKo,
+            List<CoachExpressionUsageDto> usedExpressions,
+            List<FeedbackSecondaryLearningPointDto> fixPoints,
+            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
+            FeedbackNextStepPracticeDto nextStepPractice,
+            List<FeedbackRewriteSuggestionDto> rewriteSuggestions
+    ) {
+        this(
+                summary,
+                strengths,
+                focusCard,
+                primaryFix,
+                grammarFeedback,
+                corrections,
+                refinementExpressions,
+                rewriteGuide,
+                modelAnswer,
+                modelAnswerKo,
+                List.of(),
+                usedExpressions,
+                fixPoints,
+                secondaryLearningPoints,
+                nextStepPractice,
+                rewriteSuggestions,
+                List.of()
+        );
+    }
+
     GeneratedSections(
             String summary,
             List<String> strengths,
@@ -151,10 +193,12 @@ record GeneratedSections(
                 rewriteGuide,
                 modelAnswer,
                 modelAnswerKo,
+                List.of(),
                 usedExpressions,
                 List.of(),
                 List.of(),
                 null,
+                List.of(),
                 List.of()
         );
     }
@@ -183,10 +227,12 @@ record GeneratedSections(
                 rewriteGuide,
                 modelAnswer,
                 modelAnswerKo,
+                List.of(),
                 usedExpressions,
                 List.of(),
                 List.of(),
                 null,
+                List.of(),
                 List.of()
         );
     }
@@ -213,10 +259,12 @@ record GeneratedSections(
                 rewriteGuide,
                 modelAnswer,
                 modelAnswerKo,
+                List.of(),
                 usedExpressions,
                 List.of(),
                 List.of(),
                 null,
+                List.of(),
                 List.of()
             );
     }
@@ -242,6 +290,7 @@ record GeneratedSections(
         rewriteGuide = blankToNull(rewriteGuide);
         modelAnswer = blankToNull(modelAnswer);
         modelAnswerKo = blankToNull(modelAnswerKo);
+        modelAnswerVariants = modelAnswerVariants == null ? List.of() : List.copyOf(modelAnswerVariants);
         usedExpressions = usedExpressions == null ? List.of() : List.copyOf(usedExpressions);
         fixPoints = fixPoints == null ? List.of() : List.copyOf(fixPoints);
         secondaryLearningPoints = secondaryLearningPoints == null ? List.of() : List.copyOf(secondaryLearningPoints);
@@ -260,6 +309,7 @@ record GeneratedSections(
                 nextStepPractice.optionalTone()
         );
         rewriteSuggestions = rewriteSuggestions == null ? List.of() : List.copyOf(rewriteSuggestions);
+        rewriteIdeas = rewriteIdeas == null ? List.of() : List.copyOf(rewriteIdeas);
     }
 
     GeneratedSections(
@@ -289,10 +339,12 @@ record GeneratedSections(
                 rewriteGuide,
                 modelAnswer,
                 modelAnswerKo,
+                List.of(),
                 usedExpressions,
                 fixPoints,
                 secondaryLearningPoints,
                 nextStepPractice,
+                List.of(),
                 List.of()
         );
     }
@@ -323,10 +375,12 @@ record GeneratedSections(
                 rewriteGuide,
                 modelAnswer,
                 modelAnswerKo,
+                List.of(),
                 usedExpressions,
                 List.of(),
                 secondaryLearningPoints,
                 nextStepPractice,
+                List.of(),
                 List.of()
         );
     }
@@ -346,11 +400,13 @@ record GeneratedSections(
                 override.rewriteGuide != null ? override.rewriteGuide : rewriteGuide,
                 override.modelAnswer != null ? override.modelAnswer : modelAnswer,
                 override.modelAnswerKo != null ? override.modelAnswerKo : modelAnswerKo,
+                !override.modelAnswerVariants.isEmpty() ? override.modelAnswerVariants : modelAnswerVariants,
                 !override.usedExpressions.isEmpty() ? override.usedExpressions : usedExpressions,
                 !override.fixPoints.isEmpty() ? override.fixPoints : fixPoints,
                 !override.secondaryLearningPoints.isEmpty() ? override.secondaryLearningPoints : secondaryLearningPoints,
                 override.nextStepPractice != null ? override.nextStepPractice : nextStepPractice,
-                !override.rewriteSuggestions.isEmpty() ? override.rewriteSuggestions : rewriteSuggestions
+                !override.rewriteSuggestions.isEmpty() ? override.rewriteSuggestions : rewriteSuggestions,
+                !override.rewriteIdeas.isEmpty() ? override.rewriteIdeas : rewriteIdeas
         );
     }
 
@@ -413,7 +469,25 @@ record ValidationResult(
 ) {
     ValidationResult {
         sanitizedSections = sanitizedSections == null
-                ? new GeneratedSections(null, List.of(), null, null, List.of(), List.of(), List.of(), null, null, null, List.of(), List.of(), List.of(), null)
+                ? new GeneratedSections(
+                null,
+                List.of(),
+                null,
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                null,
+                List.of(),
+                List.of()
+        )
                 : sanitizedSections;
         failures = failures == null ? List.of() : List.copyOf(failures);
     }

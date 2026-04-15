@@ -1,0 +1,224 @@
+[
+  {
+    "promptId": "prompt-a-1",
+    "category": "Routine",
+    "detailName": "After Dinner",
+    "questionEn": "What do you usually do after dinner?",
+    "currentDirectWords": [
+      "relax"
+    ],
+    "newWords": [
+      "relax",
+      "dishes",
+      "tea",
+      "tv",
+      "walk",
+      "dessert"
+    ],
+    "phraseItems": [
+      "after dinner",
+      "before bed",
+      "get ready for bed",
+      "in the evening",
+      "most days",
+      "right after i eat",
+      "take a walk",
+      "wash the dishes",
+      "watch videos"
+    ]
+  },
+  {
+    "promptId": "prompt-a-2",
+    "category": "Preference",
+    "detailName": "Favorite Food",
+    "questionEn": "What is your favorite food, and why do you like it?",
+    "currentDirectWords": [
+      "spicy",
+      "savory",
+      "sweet",
+      "comforting",
+      "delicious"
+    ],
+    "newWords": [
+      "spicy",
+      "savory",
+      "sweet",
+      "comforting",
+      "crispy",
+      "juicy"
+    ],
+    "phraseItems": [
+      "i especially like",
+      "it reminds me of",
+      "it tastes",
+      "my favorite food",
+      "one reason is"
+    ]
+  },
+  {
+    "promptId": "prompt-a-3",
+    "category": "Routine",
+    "detailName": "Weekend",
+    "questionEn": "How do you usually spend your weekend?",
+    "currentDirectWords": [
+      "rest",
+      "exercise",
+      "study"
+    ],
+    "newWords": [
+      "rest",
+      "exercise",
+      "study",
+      "sleep",
+      "shopping",
+      "movies"
+    ],
+    "phraseItems": [
+      "go out",
+      "in the afternoon",
+      "in the morning",
+      "meet friends",
+      "most of the time",
+      "on weekends",
+      "with my family"
+    ]
+  },
+  {
+    "promptId": "prompt-b-1",
+    "category": "Problem Solving",
+    "detailName": "Work or School Challenge",
+    "questionEn": "What is one challenge you often face at work or school, and how do you deal with it?",
+    "currentDirectWords": [
+      "deadline",
+      "pressure",
+      "teamwork",
+      "schedule"
+    ],
+    "newWords": [
+      "deadline",
+      "pressure",
+      "workload",
+      "miscommunication",
+      "teamwork",
+      "schedule"
+    ],
+    "phraseItems": [
+      "i deal with it by",
+      "in the end",
+      "one thing i do is",
+      "step by step",
+      "when this happens"
+    ]
+  },
+  {
+    "promptId": "prompt-b-2",
+    "category": "Goal Plan",
+    "detailName": "Travel Destination",
+    "questionEn": "Describe a city you want to visit and explain what you would like to do there.",
+    "currentDirectWords": [
+      "culture",
+      "scenery",
+      "landmark",
+      "local food",
+      "explore"
+    ],
+    "newWords": [
+      "culture",
+      "scenery",
+      "landmark",
+      "local food",
+      "museum",
+      "architecture"
+    ],
+    "phraseItems": [
+      "because it looks",
+      "i also want to",
+      "i want to visit",
+      "i would love to",
+      "once i get there"
+    ]
+  },
+  {
+    "promptId": "prompt-b-3",
+    "category": "Goal Plan",
+    "detailName": "Habit Building",
+    "questionEn": "What is one habit you want to build this year, and why is it important to you?",
+    "currentDirectWords": [
+      "consistency",
+      "routine",
+      "progress",
+      "improve"
+    ],
+    "newWords": [
+      "exercise",
+      "reading",
+      "sleep",
+      "study",
+      "journaling",
+      "meditation"
+    ],
+    "phraseItems": [
+      "because it helps me",
+      "every day",
+      "little by little",
+      "make time for",
+      "stick to it"
+    ]
+  },
+  {
+    "promptId": "prompt-c-1",
+    "category": "Balanced Opinion",
+    "detailName": "Technology and Relationships",
+    "questionEn": "How has technology changed the way people build relationships, and do you think that change is mostly positive?",
+    "currentDirectWords": [
+      "connection",
+      "convenience",
+      "distance",
+      "misunderstanding",
+      "communication"
+    ],
+    "newWords": [
+      "communication",
+      "connection",
+      "distance",
+      "misunderstanding",
+      "social media",
+      "video calls"
+    ],
+    "phraseItems": [
+      "at the same time",
+      "in some ways",
+      "on the one hand",
+      "on the other hand",
+      "overall"
+    ]
+  },
+  {
+    "promptId": "prompt-c-2",
+    "category": "Opinion Reason",
+    "detailName": "Corporate Responsibility",
+    "questionEn": "What social responsibilities should successful companies have in modern society?",
+    "currentDirectWords": [
+      "responsibility",
+      "employees",
+      "community",
+      "trust",
+      "sustainability"
+    ],
+    "newWords": [
+      "employees",
+      "community",
+      "trust",
+      "sustainability",
+      "fair wages",
+      "safety"
+    ],
+    "phraseItems": [
+      "for example",
+      "in my opinion",
+      "one important role is",
+      "they should",
+      "this matters because"
+    ]
+  }
+]

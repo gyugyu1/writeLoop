@@ -45,14 +45,14 @@ export function buildDistinctCategoryPromptSelection(
   const selectedIds = new Set<string>();
   const selectedCategoryKeys = new Set<string>();
 
-  const appendCandidates = (candidates: Prompt[]) => {
+  const appendCandidates = (candidates: Prompt[], allowCategoryRepeat = false) => {
     for (const prompt of candidates) {
       if (selected.length >= desiredCount || selectedIds.has(prompt.id)) {
         continue;
       }
 
       const categoryKey = getPromptCategoryKey(prompt);
-      if (categoryKey && selectedCategoryKeys.has(categoryKey)) {
+      if (!allowCategoryRepeat && categoryKey && selectedCategoryKeys.has(categoryKey)) {
         continue;
       }
 
@@ -67,6 +67,8 @@ export function buildDistinctCategoryPromptSelection(
 
   appendCandidates(primaryCandidates);
   appendCandidates(fallbackCandidates);
+  appendCandidates(primaryCandidates, true);
+  appendCandidates(fallbackCandidates, true);
 
   return selected;
 }

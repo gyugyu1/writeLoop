@@ -14,6 +14,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
+import MobileScreenHeader from "@/components/mobile-screen-header";
 import { deleteAccount, updateProfile } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import type { AuthUser } from "@/lib/types";
@@ -42,6 +43,7 @@ export default function MeScreen() {
   const [profileError, setProfileError] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);
+  const [isDeleteFormOpen, setIsDeleteFormOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
   const [deleteError, setDeleteError] = useState("");
@@ -57,20 +59,13 @@ export default function MeScreen() {
     setDeletePassword("");
     setDeleteError("");
     setIsDangerZoneOpen(false);
+    setIsDeleteFormOpen(false);
 
     if (!currentUser) {
       setProfileNotice("");
       setProfileError("");
     }
   }, [currentUser]);
-
-  const heroEyebrowText = useMemo(
-    () =>
-      currentUser?.displayName?.trim()
-        ? `${currentUser.displayName.trim()}님의`
-        : "내 계정",
-    [currentUser?.displayName]
-  );
 
   const loginMethodLabel = useMemo(
     () => (currentUser ? getLoginMethodLabel(currentUser) : "-"),
@@ -222,13 +217,7 @@ export default function MeScreen() {
             keyboardShouldPersistTaps="handled"
             refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />}
           >
-            <View style={styles.heroSection}>
-              <Text style={styles.heroEyebrow}>{heroEyebrowText}</Text>
-              <View style={styles.heroTitleBlock}>
-                <Text style={styles.heroTitle}>계정설정</Text>
-                <View style={styles.heroUnderline} />
-              </View>
-            </View>
+            <MobileScreenHeader title="계정 설정" />
 
             {!currentUser ? (
               <View style={styles.sectionCard}>
@@ -347,73 +336,6 @@ export default function MeScreen() {
                   {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
                 </View>
 
-                <View style={styles.dangerCard}>
-                  <Pressable
-                    style={styles.dangerToggle}
-                    onPress={() => setIsDangerZoneOpen((current) => !current)}
-                  >
-                    <View style={styles.dangerHeaderCopy}>
-                      <Text style={styles.dangerTitle}>위험 구역</Text>
-                      <Text style={styles.dangerDescription}>
-                        계정을 삭제하면 작문 기록과 계정 정보가 함께 사라져요.
-                      </Text>
-                    </View>
-                    <View style={styles.dangerBadge}>
-                      <Text style={styles.dangerBadgeText}>
-                        {isDangerZoneOpen ? "접기" : "펼치기"}
-                      </Text>
-                    </View>
-                  </Pressable>
-
-                  {isDangerZoneOpen ? (
-                    <View style={styles.dangerPanel}>
-                      <View style={styles.fieldGroup}>
-                        <Text style={styles.fieldLabel}>확인 문구</Text>
-                        <TextInput
-                          style={styles.input}
-                          value={deleteConfirmationText}
-                          onChangeText={setDeleteConfirmationText}
-                          placeholder="확인 문구로 '탈퇴'를 입력해 주세요."
-                          placeholderTextColor="#AE9A87"
-                        />
-                      </View>
-
-                      {!isSocialAccount ? (
-                        <View style={styles.fieldGroup}>
-                          <Text style={styles.fieldLabel}>현재 비밀번호</Text>
-                          <TextInput
-                            style={styles.input}
-                            secureTextEntry
-                            autoCapitalize="none"
-                            value={deletePassword}
-                            onChangeText={setDeletePassword}
-                            placeholder="현재 비밀번호를 입력해 주세요."
-                            placeholderTextColor="#AE9A87"
-                          />
-                        </View>
-                      ) : (
-                        <Text style={styles.dangerHelperText}>
-                          소셜 로그인 계정은 현재 비밀번호 없이 계정을 삭제할 수 있어요.
-                        </Text>
-                      )}
-
-                      <Pressable
-                        style={[styles.dangerButton, isDeletingAccount && styles.disabledButton]}
-                        onPress={() => void handleDeleteAccount()}
-                        disabled={isDeletingAccount}
-                      >
-                        {isDeletingAccount ? (
-                          <ActivityIndicator color="#A3371A" />
-                        ) : (
-                          <Text style={styles.dangerButtonText}>회원탈퇴</Text>
-                        )}
-                      </Pressable>
-
-                      {deleteError ? <Text style={styles.errorText}>{deleteError}</Text> : null}
-                    </View>
-                  ) : null}
-                </View>
-
                 <View style={styles.footerActionRow}>
                   <Pressable
                     style={[styles.footerButton, styles.footerGhostButton]}
@@ -433,6 +355,86 @@ export default function MeScreen() {
                       <Text style={styles.footerPrimaryButtonText}>로그아웃</Text>
                     )}
                   </Pressable>
+                </View>
+
+                <View style={styles.dangerSection}>
+                  <Pressable
+                    style={styles.dangerLink}
+                    onPress={() => {
+                      setIsDangerZoneOpen((current) => {
+                        const next = !current;
+                        if (!next) {
+                          setIsDeleteFormOpen(false);
+                          setDeleteError("");
+                        }
+                        return next;
+                      });
+                    }}
+                  >
+                    <Text style={styles.dangerLinkText}>위험 구역</Text>
+                  </Pressable>
+
+                  {isDangerZoneOpen ? (
+                    <View style={styles.dangerPanel}>
+                      {!isDeleteFormOpen ? (
+                        <Pressable
+                          style={styles.dangerEntryButton}
+                          onPress={() => {
+                            setDeleteError("");
+                            setIsDeleteFormOpen(true);
+                          }}
+                        >
+                          <Text style={styles.dangerEntryButtonText}>회원탈퇴</Text>
+                        </Pressable>
+                      ) : (
+                        <>
+                          <View style={styles.fieldGroup}>
+                            <Text style={styles.fieldLabel}>확인 문구</Text>
+                            <TextInput
+                              style={styles.input}
+                              value={deleteConfirmationText}
+                              onChangeText={setDeleteConfirmationText}
+                              placeholder="확인 문구로 '탈퇴'를 입력해 주세요."
+                              placeholderTextColor="#AE9A87"
+                            />
+                          </View>
+
+                          {!isSocialAccount ? (
+                            <View style={styles.fieldGroup}>
+                              <Text style={styles.fieldLabel}>현재 비밀번호</Text>
+                              <TextInput
+                                style={styles.input}
+                                secureTextEntry
+                                autoCapitalize="none"
+                                value={deletePassword}
+                                onChangeText={setDeletePassword}
+                                placeholder="현재 비밀번호를 입력해 주세요."
+                                placeholderTextColor="#AE9A87"
+                              />
+                            </View>
+                          ) : (
+                            <Text style={styles.dangerHelperText}>
+                              소셜 로그인 계정은 현재 비밀번호 없이 계정을 삭제할 수 있어요.
+                            </Text>
+                          )}
+
+                          <Pressable
+                            style={[styles.dangerButton, isDeletingAccount && styles.disabledButton]}
+                            onPress={() => void handleDeleteAccount()}
+                            disabled={isDeletingAccount}
+                          >
+                            {isDeletingAccount ? (
+                              <ActivityIndicator color="#A3371A" />
+                            ) : (
+                              <Text style={styles.dangerButtonText}>회원탈퇴</Text>
+                            )}
+                          </Pressable>
+
+                          {deleteError ? <Text style={styles.errorText}>{deleteError}</Text> : null}
+                        </>
+                      )}
+                    </View>
+                  ) : null}
                 </View>
               </>
             )}
@@ -593,52 +595,41 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "#7B682F"
   },
-  dangerCard: {
-    borderRadius: 28,
-    borderWidth: 1.5,
-    borderColor: "#F0C5B4",
-    borderStyle: "dashed",
-    backgroundColor: "#FFF8F5",
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    gap: 14
+  dangerSection: {
+    width: "100%",
+    alignItems: "stretch",
+    gap: 12
   },
-  dangerToggle: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 14
+  dangerLink: {
+    alignSelf: "flex-end"
   },
-  dangerHeaderCopy: {
-    flex: 1,
-    gap: 6
-  },
-  dangerTitle: {
-    fontSize: 22,
-    lineHeight: 28,
+  dangerLinkText: {
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: "900",
-    color: "#D24A1F"
-  },
-  dangerDescription: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: "#7D5A49"
-  },
-  dangerBadge: {
-    borderRadius: 999,
-    backgroundColor: "#FFFDFC",
-    borderWidth: 1,
-    borderColor: "#F0D4C8",
-    paddingHorizontal: 14,
-    paddingVertical: 8
-  },
-  dangerBadgeText: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#B95A36"
+    color: "#7A6244",
+    paddingBottom: 2,
+    borderBottomWidth: 1.5,
+    borderBottomColor: "#C9B7A1"
   },
   dangerPanel: {
     gap: 12
+  },
+  dangerEntryButton: {
+    alignSelf: "flex-start",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: "#FFF0EA",
+    borderWidth: 1,
+    borderColor: "#F0C5B4"
+  },
+  dangerEntryButtonText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#B95A36"
   },
   dangerHelperText: {
     fontSize: 14,

@@ -535,6 +535,11 @@ export default function PracticeCompleteScreen() {
     });
   }
 
+  function handleGoHome() {
+    clearPracticeFeedbackState();
+    router.replace("/");
+  }
+
   if (isHydratingFeedbackState) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -670,6 +675,9 @@ export default function PracticeCompleteScreen() {
             ) : null}
 
             <View style={styles.actionRow}>
+              <Pressable style={styles.ghostButton} onPress={handleGoHome}>
+                <Text style={styles.ghostButtonText}>홈으로 가기</Text>
+              </Pressable>
               <Pressable style={styles.ghostButton} onPress={handleGoToQuestions}>
                 <Text style={styles.ghostButtonText}>다른 질문 보기</Text>
               </Pressable>

@@ -191,8 +191,8 @@ public class PromptSeedConfig {
     private List<PromptHintEntity> seededHints() {
         return List.of(
                 hint("hint-a-1-1", "prompt-a-1", "STARTER", "\"After dinner, I usually...\"로 시작해 보세요.", 1),
-                hint("hint-a-1-2", "prompt-a-1", "VOCAB_WORD", "활용 단어: relax, wash the dishes, watch videos, take a walk, get ready for bed", 2),
-                hint("hint-a-1-3", "prompt-a-1", "VOCAB_PHRASE", "활용 표현: after dinner, in the evening, before bed, most days, right after I eat", 3),
+                hint("hint-a-1-2", "prompt-a-1", "VOCAB_WORD", "활용 단어: relax", 2),
+                hint("hint-a-1-3", "prompt-a-1", "VOCAB_PHRASE", "활용 표현: after dinner, in the evening, before bed, most days, right after I eat, wash the dishes, watch videos, take a walk, get ready for bed", 3),
                 hint("hint-a-1-4", "prompt-a-1", "STRUCTURE", "저녁을 먹은 뒤 하는 일 2개와 하루를 마무리하는 행동을 순서대로 이어 보세요.", 4),
 
                 hint("hint-a-2-1", "prompt-a-2", "STARTER", "\"My favorite food is ... because...\"로 시작해 보세요.", 1),
@@ -201,8 +201,8 @@ public class PromptSeedConfig {
                 hint("hint-a-2-4", "prompt-a-2", "DETAIL", "맛, 느낌, 자주 먹는 상황 중 2가지를 넣으면 답변이 더 자연스러워져요.", 4),
 
                 hint("hint-a-3-1", "prompt-a-3", "STARTER", "\"On weekends, I usually...\"로 시작해 보세요.", 1),
-                hint("hint-a-3-2", "prompt-a-3", "VOCAB_WORD", "활용 단어: rest, meet friends, exercise, study, go out", 2),
-                hint("hint-a-3-3", "prompt-a-3", "VOCAB_PHRASE", "활용 표현: on weekends, in the morning, in the afternoon, with my family, most of the time", 3),
+                hint("hint-a-3-2", "prompt-a-3", "VOCAB_WORD", "활용 단어: rest, exercise, study", 2),
+                hint("hint-a-3-3", "prompt-a-3", "VOCAB_PHRASE", "활용 표현: on weekends, in the morning, in the afternoon, with my family, most of the time, meet friends, go out", 3),
                 hint("hint-a-3-4", "prompt-a-3", "STRUCTURE", "주말에 하는 활동, 함께하는 사람, 자주 가는 장소를 순서대로 이어 보세요.", 4),
 
                 hint("hint-b-1-1", "prompt-b-1", "STARTER", "\"One challenge I often face at work or school is...\"로 시작해 보세요.", 1),
@@ -236,8 +236,8 @@ public class PromptSeedConfig {
                 hint("hint-c-3-4", "prompt-c-3", "STRUCTURE", "예전 생각, 바뀐 계기, 지금의 생각을 순서대로 연결해 보세요.", 4),
 
                 hint("hint-a-4-1", "prompt-a-4", "STARTER", "\"After work, I usually...\"로 시작해 보세요.", 1),
-                hint("hint-a-4-2", "prompt-a-4", "VOCAB_WORD", "활용 단어: relax, grab dinner, work out, rest, unwind", 2),
-                hint("hint-a-4-3", "prompt-a-4", "VOCAB_PHRASE", "활용 표현: after work, when I get home, in the evening, because it helps me, once I finish work", 3),
+                hint("hint-a-4-2", "prompt-a-4", "VOCAB_WORD", "활용 단어: relax, rest, unwind", 2),
+                hint("hint-a-4-3", "prompt-a-4", "VOCAB_PHRASE", "활용 표현: after work, when I get home, in the evening, because it helps me, once I finish work, grab dinner, work out", 3),
                 hint("hint-a-4-4", "prompt-a-4", "STRUCTURE", "퇴근 후 하는 일과 그 활동을 좋아하는 이유를 한 문장씩 이어 보세요.", 4),
 
                 hint("hint-b-4-1", "prompt-b-4", "STARTER", "\"One place I want to visit is...\"로 시작해 보세요.", 1),

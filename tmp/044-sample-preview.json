@@ -1,0 +1,418 @@
+[
+  {
+    "promptId": "prompt-a-1",
+    "category": "Routine",
+    "detailName": "After Dinner",
+    "questionEn": "What do you usually do after dinner?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "dishes",
+      "tea",
+      "dessert",
+      "reading",
+      "tv",
+      "walk"
+    ],
+    "newWords": [
+      "evening",
+      "kitchen",
+      "couch",
+      "dishes",
+      "tea",
+      "dessert",
+      "reading",
+      "tv",
+      "walk",
+      "cleanup"
+    ],
+    "phraseItems": [
+      "after dinner",
+      "before bed",
+      "get ready for bed",
+      "in the evening",
+      "most days",
+      "right after i eat",
+      "take a walk",
+      "wash the dishes",
+      "watch videos"
+    ]
+  },
+  {
+    "promptId": "prompt-a-2",
+    "category": "Preference",
+    "detailName": "Favorite Food",
+    "questionEn": "What is your favorite food, and why do you like it?",
+    "mixPolicy": "evaluation/sensory 4 + target detail 6",
+    "currentDirectWords": [
+      "spicy",
+      "savory",
+      "sweet",
+      "crispy",
+      "juicy",
+      "comforting"
+    ],
+    "newWords": [
+      "spicy",
+      "savory",
+      "crispy",
+      "comforting",
+      "ramen",
+      "sushi",
+      "pizza",
+      "dumplings",
+      "curry",
+      "tacos"
+    ],
+    "phraseItems": [
+      "i especially like",
+      "it reminds me of",
+      "it tastes",
+      "my favorite food",
+      "one reason is"
+    ]
+  },
+  {
+    "promptId": "prompt-a-3",
+    "category": "Routine",
+    "detailName": "Weekend",
+    "questionEn": "How do you usually spend your weekend?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "sleep",
+      "gym",
+      "homework",
+      "friends",
+      "family",
+      "movie"
+    ],
+    "newWords": [
+      "weekend",
+      "home",
+      "afternoon",
+      "sleep",
+      "gym",
+      "homework",
+      "friends",
+      "family",
+      "movie",
+      "park"
+    ],
+    "phraseItems": [
+      "go out",
+      "in the afternoon",
+      "in the morning",
+      "meet friends",
+      "most of the time",
+      "on weekends",
+      "with my family"
+    ]
+  },
+  {
+    "promptId": "prompt-b-1",
+    "category": "Problem Solving",
+    "detailName": "Work or School Challenge",
+    "questionEn": "What is one challenge you often face at work or school, and how do you deal with it?",
+    "mixPolicy": "issue/cause 4 + concrete context/tool/detail 6",
+    "currentDirectWords": [
+      "deadline",
+      "workload",
+      "pressure",
+      "conflict",
+      "confusion",
+      "stress"
+    ],
+    "newWords": [
+      "deadline",
+      "workload",
+      "pressure",
+      "conflict",
+      "emails",
+      "meetings",
+      "notes",
+      "planner",
+      "classroom",
+      "desk"
+    ],
+    "phraseItems": [
+      "i deal with it by",
+      "in the end",
+      "one thing i do is",
+      "step by step",
+      "when this happens"
+    ]
+  },
+  {
+    "promptId": "prompt-b-2",
+    "category": "Goal Plan",
+    "detailName": "Travel Destination",
+    "questionEn": "Describe a city you want to visit and explain what you would like to do there.",
+    "mixPolicy": "goal/execution frame 4 + concrete action/measurement 6",
+    "currentDirectWords": [
+      "architecture",
+      "museums",
+      "markets",
+      "parks",
+      "history",
+      "nightlife"
+    ],
+    "newWords": [
+      "itinerary",
+      "budget",
+      "tickets",
+      "schedule",
+      "sightseeing",
+      "shopping",
+      "walking",
+      "photos",
+      "cafes",
+      "subway"
+    ],
+    "phraseItems": [
+      "because it looks",
+      "i also want to",
+      "i want to visit",
+      "i would love to",
+      "once i get there"
+    ]
+  },
+  {
+    "promptId": "prompt-b-3",
+    "category": "Goal Plan",
+    "detailName": "Habit Building",
+    "questionEn": "What is one habit you want to build this year, and why is it important to you?",
+    "mixPolicy": "goal/execution frame 4 + concrete action/measurement 6",
+    "currentDirectWords": [
+      "exercise",
+      "reading",
+      "journaling",
+      "walking",
+      "sleep",
+      "saving"
+    ],
+    "newWords": [
+      "tracker",
+      "calendar",
+      "alarm",
+      "streak",
+      "exercise",
+      "reading",
+      "journaling",
+      "walking",
+      "sleep",
+      "saving"
+    ],
+    "phraseItems": [
+      "because it helps me",
+      "every day",
+      "little by little",
+      "make time for",
+      "stick to it"
+    ]
+  },
+  {
+    "promptId": "prompt-c-1",
+    "category": "Balanced Opinion",
+    "detailName": "Technology and Relationships",
+    "questionEn": "How has technology changed the way people build relationships, and do you think that change is mostly positive?",
+    "mixPolicy": "issue axis 5 + concrete system/user detail 5",
+    "currentDirectWords": [
+      "screen time",
+      "privacy",
+      "distance",
+      "isolation",
+      "contact",
+      "support"
+    ],
+    "newWords": [
+      "connection",
+      "closeness",
+      "privacy",
+      "distance",
+      "isolation",
+      "screen time",
+      "contact",
+      "support",
+      "messaging",
+      "video call"
+    ],
+    "phraseItems": [
+      "at the same time",
+      "in some ways",
+      "on the one hand",
+      "on the other hand",
+      "overall"
+    ]
+  },
+  {
+    "promptId": "prompt-c-2",
+    "category": "Opinion Reason",
+    "detailName": "Corporate Responsibility",
+    "questionEn": "What social responsibilities should successful companies have in modern society?",
+    "mixPolicy": "public-value issue 5 + stakeholder/resource detail 5",
+    "currentDirectWords": [
+      "wages",
+      "safety",
+      "donations",
+      "emissions",
+      "training"
+    ],
+    "newWords": [
+      "wages",
+      "safety",
+      "emissions",
+      "transparency",
+      "donations",
+      "workers",
+      "community",
+      "suppliers",
+      "taxes",
+      "training"
+    ],
+    "phraseItems": [
+      "for example",
+      "in my opinion",
+      "one important role is",
+      "they should",
+      "this matters because"
+    ]
+  },
+  {
+    "promptId": "prompt-c-3",
+    "category": "Change Reflection",
+    "detailName": "Personal Belief",
+    "questionEn": "Describe a belief or opinion of yours that has changed over time, and explain what caused that change.",
+    "mixPolicy": "perspective/shift 3 + topic direct 5 + trigger/result 2",
+    "currentDirectWords": [
+      "lesson",
+      "event",
+      "conversation",
+      "evidence",
+      "mistake",
+      "values"
+    ],
+    "newWords": [
+      "view",
+      "opinion",
+      "perspective",
+      "values",
+      "lesson",
+      "evidence",
+      "mistake",
+      "conversation",
+      "event",
+      "doubt"
+    ],
+    "phraseItems": [
+      "after i experienced",
+      "because of",
+      "now i see",
+      "over time",
+      "what changed my mind was"
+    ]
+  },
+  {
+    "promptId": "prompt-a-4",
+    "category": "Routine",
+    "detailName": "After-Work Evenings",
+    "questionEn": "What do you usually do after work, and why do you enjoy it?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "dinner",
+      "music",
+      "reading",
+      "games",
+      "walk",
+      "bath"
+    ],
+    "newWords": [
+      "evening",
+      "weekdays",
+      "home",
+      "dinner",
+      "music",
+      "reading",
+      "games",
+      "walk",
+      "bath",
+      "tea"
+    ],
+    "phraseItems": [
+      "after work",
+      "because it helps me",
+      "grab dinner",
+      "in the evening",
+      "once i finish work",
+      "when i get home",
+      "work out"
+    ]
+  },
+  {
+    "promptId": "prompt-b-5",
+    "category": "Goal Plan",
+    "detailName": "Skill Growth",
+    "questionEn": "What is one skill you want to improve this year, and how will you practice it?",
+    "mixPolicy": "goal/execution frame 4 + concrete action/measurement 6",
+    "currentDirectWords": [
+      "speaking",
+      "writing",
+      "listening",
+      "coding",
+      "presentation",
+      "vocabulary"
+    ],
+    "newWords": [
+      "speaking",
+      "writing",
+      "coding",
+      "presentation",
+      "practice",
+      "feedback",
+      "weekly",
+      "timer",
+      "notes",
+      "course"
+    ],
+    "phraseItems": [
+      "because it will help me",
+      "every week",
+      "i plan to",
+      "little by little",
+      "to get better at"
+    ]
+  },
+  {
+    "promptId": "prompt-routine-01",
+    "category": "Routine",
+    "detailName": "Weekday Mornings",
+    "questionEn": "How do you usually spend your weekday mornings?",
+    "mixPolicy": "focus/context 3 + concrete detail 7",
+    "currentDirectWords": [
+      "alarm",
+      "shower",
+      "coffee",
+      "subway",
+      "desk",
+      "meeting"
+    ],
+    "newWords": [
+      "morning",
+      "weekdays",
+      "home",
+      "alarm",
+      "shower",
+      "coffee",
+      "subway",
+      "desk",
+      "meeting",
+      "breakfast"
+    ],
+    "phraseItems": [
+      "before work",
+      "get ready",
+      "in the morning",
+      "on weekdays",
+      "right after i wake up",
+      "wake up"
+    ]
+  }
+]

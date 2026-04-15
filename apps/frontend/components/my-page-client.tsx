@@ -11,9 +11,12 @@ import {
   logout,
   updateProfile
 } from "../lib/api";
+import { clearHomeDraftForLogin } from "../lib/auth-flow";
 import { getDifficultyLabel } from "../lib/difficulty";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
+import { clearAllLocalWritingDrafts } from "../lib/home-writing-drafts";
+import { clearAllIncompleteLoops } from "../lib/incomplete-loop";
 import type { AuthUser, CommonMistake, HistorySession, TodayWritingStatus } from "../lib/types";
 import styles from "./auth-page.module.css";
 
@@ -719,7 +722,35 @@ export function MyPageClient() {
       attempt.answerText,
       attempt.feedback.correctedAnswer
     );
-    const rewriteSuggestions = attempt.feedback.ui?.rewriteSuggestions ?? [];
+    const rewriteIdeas =
+      attempt.feedback.ui?.rewriteIdeas
+        ?.map((idea, index) => {
+          const english =
+            idea.english?.trim() ||
+            idea.revisedText?.trim() ||
+            "";
+          const note = idea.noteKo?.trim() || idea.title?.trim() || "";
+          if (!english && !note) {
+            return null;
+          }
+
+          return {
+            key: `${english || note}-${index}`,
+            english,
+            meaningKo: idea.meaningKo?.trim() || "",
+            noteKo: note
+          };
+        })
+        .filter(
+          (
+            idea
+          ): idea is {
+            key: string;
+            english: string;
+            meaningKo: string;
+            noteKo: string;
+          } => Boolean(idea)
+        ) ?? [];
     const fixPoints =
       attempt.feedback.ui?.fixPoints?.filter((point) => {
         if (!point || point.kind === "EXPRESSION") {
@@ -767,7 +798,7 @@ export function MyPageClient() {
     const hasStrengthsSection = attempt.feedback.strengths.length > 0;
     const shouldShowSummaryCard = Boolean(feedbackSummary) && !hasStrengthsSection;
     const hasNextLoopSection =
-      Boolean(rewriteChallenge) || rewriteSuggestions.length > 0 || Boolean(completionMessage);
+      Boolean(rewriteChallenge) || rewriteIdeas.length > 0 || Boolean(completionMessage);
 
     return (
       <details className={styles.writingHistoryFeedbackDetails}>
@@ -944,7 +975,35 @@ export function MyPageClient() {
       attempt.answerText,
       attempt.feedback.correctedAnswer
     );
-    const rewriteSuggestions = attempt.feedback.ui?.rewriteSuggestions ?? [];
+    const rewriteIdeas =
+      attempt.feedback.ui?.rewriteIdeas
+        ?.map((idea, index) => {
+          const english =
+            idea.english?.trim() ||
+            idea.revisedText?.trim() ||
+            "";
+          const note = idea.noteKo?.trim() || idea.title?.trim() || "";
+          if (!english && !note) {
+            return null;
+          }
+
+          return {
+            key: `${english || note}-${index}`,
+            english,
+            meaningKo: idea.meaningKo?.trim() || "",
+            noteKo: note
+          };
+        })
+        .filter(
+          (
+            idea
+          ): idea is {
+            key: string;
+            english: string;
+            meaningKo: string;
+            noteKo: string;
+          } => Boolean(idea)
+        ) ?? [];
     const fixPoints =
       attempt.feedback.ui?.fixPoints?.filter((point) => {
         if (!point || point.kind === "EXPRESSION") {
@@ -993,7 +1052,7 @@ export function MyPageClient() {
     const hasStrengthsSection = attempt.feedback.strengths.length > 0;
     const shouldShowSummaryCard = Boolean(feedbackSummary) && !hasStrengthsSection;
     const hasNextLoopSection =
-      Boolean(rewriteChallenge) || rewriteSuggestions.length > 0 || Boolean(completionMessage);
+      Boolean(rewriteChallenge) || rewriteIdeas.length > 0 || Boolean(completionMessage);
 
     return (
       <details className={styles.writingHistoryFeedbackDetails}>
@@ -1138,12 +1197,12 @@ export function MyPageClient() {
                   <section className={styles.writingHistoryFeedbackCard}>
                     <span className={styles.writingHistoryFeedbackLabel}>다시쓰기 가이드</span>
                     {rewriteChallenge ? <p>{rewriteChallenge}</p> : null}
-                    {rewriteSuggestions.length > 0 ? (
+                    {rewriteIdeas.length > 0 ? (
                       <div className={styles.writingHistoryFeedbackRewriteSuggestions}>
                         <strong>이런 문장으로 확장해 보세요</strong>
                         <ul className={styles.writingHistoryFeedbackBulletList}>
-                          {rewriteSuggestions.map((suggestion, index) => (
-                            <li key={`${suggestion.english}-${index}`}>
+                          {rewriteIdeas.map((suggestion) => (
+                            <li key={suggestion.key}>
                               <span className={styles.writingHistoryFeedbackRewriteSuggestionEn}>
                                 {suggestion.english}
                               </span>
@@ -1521,6 +1580,9 @@ export function MyPageClient() {
       setIsSubmitting(true);
       setError("");
       await logout();
+      clearAllIncompleteLoops();
+      clearAllLocalWritingDrafts();
+      clearHomeDraftForLogin();
       setCurrentUser(null);
       setTodayStatus(null);
       setHistory([]);
@@ -1555,6 +1617,9 @@ export function MyPageClient() {
         confirmationText: deleteConfirmationText.trim(),
         currentPassword: deletePassword.trim() || undefined
       });
+      clearAllIncompleteLoops();
+      clearAllLocalWritingDrafts();
+      clearHomeDraftForLogin();
       window.location.assign("/");
     } catch (caughtError) {
       if (caughtError instanceof Error) {
@@ -1744,14 +1809,11 @@ export function MyPageClient() {
         : "이메일 로그인"
       : "-";
     const accountEmailLabel = currentUser ? getAccountEmailLabel(currentUser) : "-";
-    const accountOwnerName = currentUser?.displayName?.trim() || "내";
 
     return (
       <section className={styles.accountSettingsLayout}>
         <div className={styles.accountPageTitle}>
           <h1>
-            <span className={styles.accountPageTitleName}>{accountOwnerName}님</span>
-            <span className={styles.accountPageTitleSuffix}>의</span>
             <span className={styles.accountPageTitleSubject}>
               <span className={styles.accountPageTitleSubjectText}>계정설정</span>
               <span className={styles.accountPageTitleUnderline} aria-hidden="true" />
@@ -1865,6 +1927,22 @@ export function MyPageClient() {
               {error ? <p className={styles.error}>{error}</p> : null}
             </section>
 
+            <div className={styles.accountFooterActions}>
+              <button type="button" className={styles.ghostButton} onClick={goHome}>
+                <span className="material-symbols-outlined">home</span>
+                홈으로 이동
+              </button>
+              <button
+                type="button"
+                className={styles.ghostButton}
+                onClick={() => void handleLogout()}
+                disabled={isSubmitting}
+              >
+                <span className="material-symbols-outlined">logout</span>
+                {isSubmitting ? "로그아웃 중..." : "로그아웃"}
+              </button>
+            </div>
+
             <section
               id="account-delete-section"
               className={`${styles.accountDangerCard} ${styles.historySectionAnchor}`}
@@ -1882,7 +1960,6 @@ export function MyPageClient() {
                       <span className="material-symbols-outlined">warning</span>
                       위험 구역
                     </h3>
-                    <p>계정을 삭제하면 작문 기록과 계정 정보가 함께 사라져요.</p>
                   </div>
                 </div>
                 <span className={styles.accountDangerToggleBadge}>
@@ -1936,22 +2013,6 @@ export function MyPageClient() {
               ) : null}
             </section>
           </div>
-        </div>
-
-        <div className={styles.accountFooterActions}>
-          <button type="button" className={styles.ghostButton} onClick={goHome}>
-            <span className="material-symbols-outlined">home</span>
-            홈으로 이동
-          </button>
-          <button
-            type="button"
-            className={styles.ghostButton}
-            onClick={() => void handleLogout()}
-            disabled={isSubmitting}
-          >
-            <span className="material-symbols-outlined">logout</span>
-            {isSubmitting ? "로그아웃 중..." : "로그아웃"}
-          </button>
         </div>
       </section>
     );

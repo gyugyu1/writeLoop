@@ -11,13 +11,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import { getDailyPrompts, getPrompts } from "@/lib/api";
+import { getDifficultyLabel } from "@/lib/difficulty";
 import {
   buildDistinctCategoryPromptSelection,
-  countDistinctPromptCategories,
   getQuestionLabel,
   isDailyDifficulty
 } from "@/lib/practice";
 import type { DailyDifficulty, DailyPromptRecommendation, Prompt } from "@/lib/types";
+
+const HERO_META_GAP = 10;
 
 export default function PracticeQuestionScreen() {
   const params = useLocalSearchParams<{ difficulty?: string }>();
@@ -30,11 +32,17 @@ export default function PracticeQuestionScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingQuestions, setIsRefreshingQuestions] = useState(false);
   const [error, setError] = useState("");
+  const [heroTitleWidth, setHeroTitleWidth] = useState(0);
+  const [heroDifficultyLabelWidth, setHeroDifficultyLabelWidth] = useState(0);
 
   const availablePromptPool = useMemo(
     () => allDifficultyPrompts.filter((prompt) => prompt.difficulty === requestedDifficulty),
     [allDifficultyPrompts, requestedDifficulty]
   );
+  const heroUnderlineWidth =
+    heroTitleWidth > 0 && heroDifficultyLabelWidth > 0
+      ? Math.max(64, heroTitleWidth - heroDifficultyLabelWidth - HERO_META_GAP)
+      : 112;
 
   const loadPrompts = useCallback(async () => {
     try {
@@ -47,7 +55,7 @@ export default function PracticeQuestionScreen() {
       const sameDifficultyPromptPool = nextPromptPool.filter(
         (prompt) => prompt.difficulty === requestedDifficulty
       );
-      const desiredPromptCount = Math.min(3, countDistinctPromptCategories(sameDifficultyPromptPool));
+      const desiredPromptCount = Math.min(3, sameDifficultyPromptPool.length);
 
       setRecommendation({
         ...nextRecommendation,
@@ -112,7 +120,7 @@ export default function PracticeQuestionScreen() {
       const currentPromptIds = new Set((recommendation?.prompts ?? []).map((prompt) => prompt.id));
       const desiredPromptCount = Math.min(
         recommendation?.prompts.length || 3,
-        countDistinctPromptCategories(nextPromptPool)
+        nextPromptPool.length
       );
 
       const nextPrompts = [...nextPromptPool]
@@ -156,7 +164,14 @@ export default function PracticeQuestionScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.heroSection}>
             <View style={styles.heroTopRow}>
-              <Text style={styles.heroTitle}>질문 선택</Text>
+              <View style={styles.heroTitleGroup}>
+                <Text
+                  style={styles.heroTitle}
+                  onLayout={({ nativeEvent }) => setHeroTitleWidth(nativeEvent.layout.width)}
+                >
+                  질문 선택
+                </Text>
+              </View>
               <View style={styles.heroActionGroup}>
                 <Pressable style={styles.heroSecondaryButton} onPress={handleBackToDifficultySelection}>
                   <Text style={styles.heroSecondaryButtonText}>난이도 선택</Text>
@@ -174,7 +189,15 @@ export default function PracticeQuestionScreen() {
                 </Pressable>
               </View>
             </View>
-            <View style={styles.heroUnderline} />
+            <View style={styles.heroMetaRow}>
+              <View style={[styles.heroUnderline, { width: heroUnderlineWidth }]} />
+              <Text
+                style={styles.heroDifficultyLabel}
+                onLayout={({ nativeEvent }) => setHeroDifficultyLabelWidth(nativeEvent.layout.width)}
+              >
+                {getDifficultyLabel(requestedDifficulty)}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.promptSection}>
@@ -251,6 +274,16 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12
   },
+  heroTitleGroup: {
+    flexDirection: "column",
+    alignItems: "flex-start",
+    flexShrink: 1
+  },
+  heroMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: HERO_META_GAP
+  },
   heroActionGroup: {
     flexDirection: "row",
     alignItems: "center",
@@ -262,6 +295,13 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     letterSpacing: -2,
     color: "#232128"
+  },
+  heroDifficultyLabel: {
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: "900",
+    letterSpacing: -0.8,
+    color: "#4A454E"
   },
   heroSecondaryButton: {
     borderRadius: 999,
@@ -290,7 +330,7 @@ const styles = StyleSheet.create({
     color: "#8A6431"
   },
   heroUnderline: {
-    width: 144,
+    width: 112,
     height: 10,
     borderRadius: 999,
     backgroundColor: "#F2A14A"

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "writeLoop",
+    "name": "라이트루프",
     "slug": "writeloop-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -17,7 +17,7 @@
     "android": {
       "package": "kr.writeloop",
       "adaptiveIcon": {
-        "backgroundColor": "#F7F2EB",
+        "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"

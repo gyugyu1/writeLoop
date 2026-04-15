@@ -7109,7 +7109,7 @@
 }
 
 .welcomeCard p {
-  max-width: none;
+  max-width: 820px;
   font-size: 1.18rem;
   line-height: 1.64;
   font-weight: 600;
@@ -8636,17 +8636,18 @@
 
 .writingEditorStage {
   width: 100%;
-  max-width: none;
-  margin: 12px 0 0;
+  max-width: 820px;
+  margin: 12px auto 0;
   gap: 18px;
   padding: 0;
   border: 0;
   background: transparent;
   box-shadow: none;
+  justify-self: center;
 }
 
 .writingEditorStage.stage {
-  margin-top: 12px;
+  margin: 12px auto 0;
   padding: 0;
   border: 0;
   background: transparent;
@@ -9783,16 +9784,18 @@
 }
 
 .premiumFeedbackTheme .stageFooter {
+  width: 100%;
   max-width: 820px;
   margin: 0 auto;
   display: grid;
-  gap: 16px;
-  padding-top: 18px;
+  justify-items: stretch;
+  align-items: start;
+  gap: 12px;
+  padding-top: 14px;
 }
-
 .feedbackCompletionFooter {
   width: 100%;
-  max-width: none;
+  max-width: 820px;
   margin: 0 auto;
   display: grid;
   gap: 16px;
@@ -9873,6 +9876,8 @@
 }
 
 .premiumFeedbackTheme .completionCallout {
+  width: 100%;
+  max-width: none;
   padding: 18px 20px;
   border-radius: 22px;
   border: 1px solid rgba(242, 153, 74, 0.14);
@@ -9880,9 +9885,33 @@
 }
 
 .premiumFeedbackTheme .actionRow {
-  justify-content: flex-end;
+  width: 100%;
+  justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
+}
+
+.premiumFeedbackTheme .feedbackActionFooter {
+  width: 100%;
+  max-width: 820px;
+  margin: 0 auto;
+  display: grid;
+  gap: 14px;
+}
+
+.premiumFeedbackTheme .feedbackActionCallout {
+  width: 100%;
+  max-width: none;
+}
+
+.premiumFeedbackTheme .feedbackActionRow {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.premiumFeedbackTheme .feedbackActionRow > button {
+  width: 100%;
 }
 
 .premiumFeedbackTheme .primaryButton,
@@ -10053,8 +10082,23 @@
   }
 
   .feedbackBody {
-    gap: 16px;
-    padding-inline: 10px;
+    gap: 14px;
+    padding-inline: 4px;
+  }
+
+  .feedbackCard {
+    padding: 16px 12px 12px;
+    border-radius: 18px;
+  }
+
+  .feedbackSectionTitle {
+    margin-bottom: 14px;
+    font-size: 1.18rem;
+  }
+
+  .feedbackSectionHeading {
+    margin: 0 0 10px;
+    font-size: 1rem;
   }
 
   .feedbackShowcase {
@@ -10081,8 +10125,8 @@
   }
 
   .feedbackBlock {
-    padding: 18px;
-    border-radius: 22px;
+    padding: 14px;
+    border-radius: 18px;
   }
 
   .feedbackTipBlock,
@@ -10140,7 +10184,7 @@
   }
 
   .premiumFeedbackTheme {
-    padding: 4px 0 24px;
+    padding: 0 0 18px;
   }
 
   .premiumFeedbackTheme .writingStageMain {
@@ -10211,13 +10255,13 @@
   .comparisonBox,
   .feedbackStrengthPanel,
   .feedbackRefinePanel {
-    padding: 16px 14px;
-    border-radius: 22px;
+    padding: 12px 10px;
+    border-radius: 18px;
   }
 
   .feedbackPromptCard {
-    padding: 14px 16px;
-    border-radius: 18px;
+    padding: 12px 12px;
+    border-radius: 16px;
   }
 
   .feedbackPromptText {
@@ -10273,10 +10317,10 @@
   .feedbackShowcase > .feedbackBlock > .feedbackSectionHeading {
     min-height: 0;
     gap: 0;
-    margin: 0 0 16px;
+    margin: 0 0 12px;
     padding: 0;
-    font-size: 1.42rem;
-    line-height: 1.24;
+    font-size: 1.34rem;
+    line-height: 1.22;
     text-align: center;
   }
 
@@ -10378,13 +10422,13 @@
   }
 
   .feedbackShowcase .feedbackRefinePanel .feedbackRefineOriginal::before {
-    content: "?�문 : ";
+    content: "?먮Ц : ";
     color: var(--fb-error);
     font-weight: 900;
   }
 
   .feedbackShowcase .feedbackRefinePanel .feedbackRefineRevised::before {
-    content: "?�정�?: ";
+    content: "?섏젙臾?: ";
     color: var(--fb-primary);
     font-weight: 900;
   }

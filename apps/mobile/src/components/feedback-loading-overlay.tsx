@@ -1,19 +1,27 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Animated, Easing, Image, StyleSheet, Text, View } from "react-native";
+
+type FeedbackLoadingStage = {
+  title: string;
+  message: string;
+};
 
 type FeedbackLoadingOverlayProps = {
   visible: boolean;
   title: string;
   message: string;
+  stages?: FeedbackLoadingStage[];
 };
 
 const mascotImage = require("@/assets/images/feedback-loading-mascot-cutout.png");
 const DOT_COUNT = 3;
+const COPY_ROTATION_INTERVAL_MS = 2300;
 
 export default function FeedbackLoadingOverlay({
   visible,
   title,
-  message
+  message,
+  stages
 }: FeedbackLoadingOverlayProps) {
   const haloScale = useRef(new Animated.Value(0.92)).current;
   const haloOpacity = useRef(new Animated.Value(0.34)).current;
@@ -21,6 +29,39 @@ export default function FeedbackLoadingOverlay({
   const dotProgressValues = useRef(
     Array.from({ length: DOT_COUNT }, () => new Animated.Value(0))
   ).current;
+  const [activeStageIndex, setActiveStageIndex] = useState(0);
+
+  const effectiveStages = useMemo(() => {
+    const normalizedStages =
+      stages?.filter(
+        (stage) => stage.title.trim().length > 0 || stage.message.trim().length > 0
+      ) ?? [];
+
+    if (normalizedStages.length > 0) {
+      return normalizedStages;
+    }
+
+    return [{ title, message }];
+  }, [message, stages, title]);
+
+  const stageSignature = useMemo(
+    () => effectiveStages.map((stage) => `${stage.title}\u0001${stage.message}`).join("\u0002"),
+    [effectiveStages]
+  );
+
+  useEffect(() => {
+    setActiveStageIndex(0);
+
+    if (!visible || effectiveStages.length <= 1) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setActiveStageIndex((current) => (current + 1) % effectiveStages.length);
+    }, COPY_ROTATION_INTERVAL_MS);
+
+    return () => clearInterval(interval);
+  }, [effectiveStages.length, stageSignature, visible]);
 
   useEffect(() => {
     if (!visible) {
@@ -114,6 +155,8 @@ export default function FeedbackLoadingOverlay({
     return null;
   }
 
+  const activeStage = effectiveStages[Math.min(activeStageIndex, effectiveStages.length - 1)];
+
   return (
     <View style={styles.overlay}>
       <View style={styles.card}>
@@ -139,8 +182,8 @@ export default function FeedbackLoadingOverlay({
           </Animated.View>
         </View>
 
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.message}>{message}</Text>
+        <Text style={styles.title}>{activeStage.title}</Text>
+        <Text style={styles.message}>{activeStage.message}</Text>
 
         <View style={styles.dotRow}>
           {dotProgressValues.map((value, index) => {

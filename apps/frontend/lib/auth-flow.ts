@@ -38,3 +38,11 @@ export function takeHomeDraftForLogin(): HomeDraft | null {
     return null;
   }
 }
+
+export function clearHomeDraftForLogin() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.sessionStorage.removeItem(HOME_DRAFT_KEY);
+}

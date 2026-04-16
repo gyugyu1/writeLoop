@@ -1,7 +1,12 @@
 package com.writeloop.service;
 
+import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
 import com.writeloop.dto.LoginRequestDto;
+import com.writeloop.dto.PasswordResetAvailabilityDto;
+import com.writeloop.dto.SendPasswordResetCodeRequestDto;
+import com.writeloop.dto.VerifyPasswordResetCodeRequestDto;
+import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionRepository;
 import com.writeloop.persistence.CoachInteractionRepository;
@@ -25,7 +30,10 @@ import java.time.Instant;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -103,8 +111,8 @@ class AuthServiceTest {
                 kakaoOAuthService
         );
         ReflectionTestUtils.setField(authService, "adminEmails", "");
-        when(httpRequest.getSession(true)).thenReturn(session);
-        when(httpRequest.getSession(false)).thenReturn(session);
+        lenient().when(httpRequest.getSession(true)).thenReturn(session);
+        lenient().when(httpRequest.getSession(false)).thenReturn(session);
     }
 
     @Test
@@ -133,5 +141,41 @@ class AuthServiceTest {
         assertThat(savedUser.getLastLoginAt()).isAfterOrEqualTo(savedUser.getVerifiedAt());
         assertThat(response.id()).isEqualTo(7L);
         assertThat(response.email()).isEqualTo("user@example.com");
+    }
+
+    @Test
+    void checkPasswordResetEmail_returns_generic_notice_for_unknown_email() {
+        PasswordResetAvailabilityDto response = authService.checkPasswordResetEmail(
+                new SendPasswordResetCodeRequestDto("missing@example.com")
+        );
+
+        assertThat(response.email()).isEqualTo("missing@example.com");
+        assertThat(response.available()).isTrue();
+        assertThat(response.message()).isEqualTo("입력한 이메일로 계정이 확인되면 비밀번호 재설정 코드를 보내드릴게요.");
+    }
+
+    @Test
+    void sendPasswordResetCode_returns_generic_notice_without_sending_mail_for_unknown_email() {
+        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+        AuthNoticeDto response = authService.sendPasswordResetCode(
+                new SendPasswordResetCodeRequestDto("missing@example.com")
+        );
+
+        assertThat(response.email()).isEqualTo("missing@example.com");
+        assertThat(response.message()).isEqualTo("입력한 이메일로 계정이 확인되면 비밀번호 재설정 코드를 보내드릴게요.");
+        verifyNoInteractions(verificationMailService);
+    }
+
+    @Test
+    void verifyPasswordResetCode_returns_generic_invalid_code_for_unknown_email() {
+        when(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.verifyPasswordResetCode(
+                new VerifyPasswordResetCodeRequestDto("missing@example.com", "123456")
+        ))
+                .isInstanceOf(ApiException.class)
+                .extracting("code")
+                .isEqualTo("INVALID_PASSWORD_RESET_CODE");
     }
 }

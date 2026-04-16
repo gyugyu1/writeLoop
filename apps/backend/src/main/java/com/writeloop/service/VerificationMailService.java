@@ -41,7 +41,6 @@ public class VerificationMailService {
 
                         화면에서 이 코드를 입력해 이메일 인증을 완료해 주세요.
                         """.formatted(code),
-                code,
                 "verification"
         );
     }
@@ -57,7 +56,6 @@ public class VerificationMailService {
 
                         비밀번호 찾기 화면에서 이 코드를 입력하고 새 비밀번호를 설정해 주세요.
                         """.formatted(code),
-                code,
                 "password reset"
         );
     }
@@ -66,17 +64,16 @@ public class VerificationMailService {
             String email,
             String subject,
             String text,
-            String fallbackCode,
             String mailType
     ) {
         if (smtpHost == null || smtpHost.isBlank()) {
-            log.info("Email {} code for {} -> {}", mailType, email, fallbackCode);
+            log.info("Skipping {} email to {} because SMTP is not configured.", mailType, email);
             return;
         }
 
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.info("Email {} code for {} -> {}", mailType, email, fallbackCode);
+            log.warn("Skipping {} email to {} because JavaMailSender is unavailable.", mailType, email);
             return;
         }
 
@@ -89,7 +86,7 @@ public class VerificationMailService {
             helper.setText(text, false);
             mailSender.send(message);
         } catch (Exception exception) {
-            log.warn("Failed to send {} email to {}. Fallback code log: {}", mailType, email, fallbackCode, exception);
+            log.warn("Failed to send {} email to {}.", mailType, email, exception);
         }
     }
 

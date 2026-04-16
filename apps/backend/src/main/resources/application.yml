@@ -74,6 +74,8 @@ app:
     mobile-redirect-prefixes: ${APP_AUTH_MOBILE_REDIRECT_PREFIXES:writeloop://}
   security:
     allow-insecure-dev-defaults: ${APP_SECURITY_ALLOW_INSECURE_DEV_DEFAULTS:false}
+    csrf:
+      enabled: ${APP_SECURITY_CSRF_ENABLED:true}
     headers:
       enabled: ${APP_SECURITY_HEADERS_ENABLED:true}
       hsts-max-age-seconds: ${APP_SECURITY_HEADERS_HSTS_MAX_AGE_SECONDS:31536000}

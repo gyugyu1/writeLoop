@@ -74,6 +74,29 @@ class RequestRateLimitFilterTest {
         assertThat(blockedResponse.getContentAsString()).contains("로그인 요청이 너무 많아요");
     }
 
+    @Test
+    void limits_email_verification_by_client_ip() throws Exception {
+        MutableClock clock = new MutableClock(Instant.parse("2026-04-15T00:00:00Z"));
+        RequestRateLimiter limiter = new RequestRateLimiter(clock, Duration.ofHours(1));
+        RequestRateLimitFilter filter = new RequestRateLimitFilter(
+                limiter,
+                new ObjectMapper(),
+                true,
+                300, 10,
+                600, 1,
+                60, 6,
+                60, 20,
+                60, 60
+        );
+
+        MockHttpServletResponse firstResponse = filterOnce(filter, verifyEmailRequest("203.0.113.20"));
+        MockHttpServletResponse blockedResponse = filterOnce(filter, verifyEmailRequest("203.0.113.20"));
+
+        assertThat(firstResponse.getStatus()).isEqualTo(200);
+        assertThat(blockedResponse.getStatus()).isEqualTo(429);
+        assertThat(blockedResponse.getHeader("Retry-After")).isEqualTo("600");
+    }
+
     private MockHttpServletResponse filterOnce(
             RequestRateLimitFilter filter,
             MockHttpServletRequest request
@@ -92,6 +115,12 @@ class RequestRateLimitFilterTest {
 
     private MockHttpServletRequest loginRequest(String remoteAddr) {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/login");
+        request.setRemoteAddr(remoteAddr);
+        return request;
+    }
+
+    private MockHttpServletRequest verifyEmailRequest(String remoteAddr) {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/auth/verify-email");
         request.setRemoteAddr(remoteAddr);
         return request;
     }

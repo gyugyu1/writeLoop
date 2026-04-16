@@ -66,6 +66,7 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
                         "POST",
                         Set.of(
                                 "/api/auth/register/send-code",
+                                "/api/auth/verify-email",
                                 "/api/auth/resend-verification",
                                 "/api/auth/password-reset/check-email",
                                 "/api/auth/password-reset/send-code",

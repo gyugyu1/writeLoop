@@ -42,6 +42,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -66,6 +67,7 @@ public class AuthService {
     private static final String SESSION_KAKAO_RETURN_TO = "KAKAO_OAUTH_RETURN_TO";
     private static final String SESSION_KAKAO_REMEMBER_ME = "KAKAO_OAUTH_REMEMBER_ME";
     private static final String SESSION_KAKAO_APP_REDIRECT = "KAKAO_OAUTH_APP_REDIRECT";
+    private static final String PASSWORD_RESET_GENERIC_NOTICE_MESSAGE = "입력한 이메일로 계정이 확인되면 비밀번호 재설정 코드를 보내드릴게요.";
 
     private final UserRepository userRepository;
     private final AnswerSessionRepository answerSessionRepository;
@@ -256,32 +258,21 @@ public class AuthService {
 
     public PasswordResetAvailabilityDto checkPasswordResetEmail(SendPasswordResetCodeRequestDto request) {
         String email = normalizeEmail(request.email());
-
-        return userRepository.findByEmail(email)
-                .map(this::toPasswordResetAvailability)
-                .orElseGet(() -> new PasswordResetAvailabilityDto(
-                        email,
-                        false,
-                        "등록된 이메일을 찾지 못했어요."
-                ));
+        return buildPasswordResetAvailability(email);
     }
 
     public AuthNoticeDto sendPasswordResetCode(SendPasswordResetCodeRequestDto request) {
         String email = normalizeEmail(request.email());
-        UserEntity user = requirePasswordResetEligibleUser(email);
-        issuePasswordResetCode(user);
-
-        return new AuthNoticeDto(
-                email,
-                "비밀번호 재설정 코드를 보냈어요."
-        );
+        findPasswordResetEligibleUser(email).ifPresent(this::issuePasswordResetCode);
+        return buildPasswordResetCodeNotice(email);
     }
 
     public AuthNoticeDto verifyPasswordResetCode(VerifyPasswordResetCodeRequestDto request) {
         String email = normalizeEmail(request.email());
         String code = normalizeVerificationCode(request.code());
 
-        requirePasswordResetEligibleUser(email);
+        findPasswordResetEligibleUser(email)
+                .orElseThrow(this::invalidPasswordResetCodeException);
         PasswordResetTokenEntity token = findValidPasswordResetToken(email, code);
 
         if (token.isExpired()) {
@@ -303,7 +294,8 @@ public class AuthService {
         String code = normalizeVerificationCode(request.code());
         String newPassword = normalizePassword(request.newPassword());
 
-        UserEntity user = requirePasswordResetEligibleUser(email);
+        UserEntity user = findPasswordResetEligibleUser(email)
+                .orElseThrow(this::invalidPasswordResetCodeException);
         PasswordResetTokenEntity token = findValidPasswordResetToken(email, code);
 
         if (token.isExpired()) {
@@ -975,57 +967,33 @@ public class AuthService {
         return "writeLoop user";
     }
 
-    private PasswordResetAvailabilityDto toPasswordResetAvailability(UserEntity user) {
-        String email = user.getEmail();
-
-        if (!user.isEmailVerified()) {
-            return new PasswordResetAvailabilityDto(
-                    email,
-                    false,
-                    "이메일 인증이 아직 완료되지 않은 계정이에요."
-            );
-        }
-
-        if (user.getSocialProvider() != null && !user.getSocialProvider().isBlank()) {
-            return new PasswordResetAvailabilityDto(
-                    email,
-                    false,
-                    "소셜 로그인 계정은 해당 서비스에서 비밀번호를 재설정해 주세요."
-            );
-        }
-
+    private PasswordResetAvailabilityDto buildPasswordResetAvailability(String email) {
         return new PasswordResetAvailabilityDto(
                 email,
                 true,
-                "등록된 이메일을 확인했어요. 인증 코드를 보낼 수 있어요."
+                PASSWORD_RESET_GENERIC_NOTICE_MESSAGE
         );
     }
 
-    private UserEntity requirePasswordResetEligibleUser(String email) {
-        UserEntity user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.BAD_REQUEST,
-                        "INVALID_PASSWORD_RESET_REQUEST",
-                        "비밀번호 재설정 요청이 올바르지 않아요."
-                ));
+    private AuthNoticeDto buildPasswordResetCodeNotice(String email) {
+        return new AuthNoticeDto(
+                email,
+                PASSWORD_RESET_GENERIC_NOTICE_MESSAGE
+        );
+    }
 
-        if (!user.isEmailVerified()) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "EMAIL_NOT_VERIFIED",
-                    "이메일 인증이 아직 완료되지 않은 계정이에요."
-            );
-        }
+    private Optional<UserEntity> findPasswordResetEligibleUser(String email) {
+        return userRepository.findByEmail(email)
+                .filter(UserEntity::isEmailVerified)
+                .filter(user -> user.getSocialProvider() == null || user.getSocialProvider().isBlank());
+    }
 
-        if (user.getSocialProvider() != null && !user.getSocialProvider().isBlank()) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "SOCIAL_PASSWORD_RESET_UNSUPPORTED",
-                    "소셜 로그인 계정은 해당 서비스에서 비밀번호를 재설정해 주세요."
-            );
-        }
-
-        return user;
+    private ApiException invalidPasswordResetCodeException() {
+        return new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "INVALID_PASSWORD_RESET_CODE",
+                "재설정 코드가 올바르지 않아요."
+        );
     }
 
     private PasswordResetTokenEntity findValidPasswordResetToken(String email, String code) {

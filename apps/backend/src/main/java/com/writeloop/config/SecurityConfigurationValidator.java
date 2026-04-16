@@ -21,6 +21,9 @@ public class SecurityConfigurationValidator {
     @Value("${app.security.headers.enabled:true}")
     private boolean securityHeadersEnabled;
 
+    @Value("${app.security.csrf.enabled:true}")
+    private boolean csrfEnabled;
+
     @Value("${app.security.headers.content-security-policy:}")
     private String contentSecurityPolicy;
 
@@ -113,6 +116,9 @@ public class SecurityConfigurationValidator {
     private void validateProductionMode(List<String> issues) {
         if (!securityHeadersEnabled) {
             issues.add("`app.security.headers.enabled` must stay true outside the local profile.");
+        }
+        if (!csrfEnabled) {
+            issues.add("`app.security.csrf.enabled` must stay true outside the local profile.");
         }
         if (contentSecurityPolicy == null || contentSecurityPolicy.isBlank()) {
             issues.add("`app.security.headers.content-security-policy` must not be blank.");

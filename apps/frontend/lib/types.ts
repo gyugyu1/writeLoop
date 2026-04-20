@@ -147,6 +147,24 @@ export interface CommonMistake {
   latestSuggestion: string;
 }
 
+export type SavedExpressionSourceType = "USED_EXPRESSION" | "COACH_RECOMMENDATION";
+
+export interface SavedExpression {
+  id: number;
+  expression: string;
+  meaningKo?: string | null;
+  usageTipKo?: string | null;
+  exampleEn?: string | null;
+  sourceType: SavedExpressionSourceType;
+  promptId?: string | null;
+  promptTopic?: string | null;
+  promptQuestionEn?: string | null;
+  promptQuestionKo?: string | null;
+  saveCount: number;
+  lastSavedAt: string;
+  createdAt: string;
+}
+
 export interface Correction {
   issue: string;
   suggestion: string;

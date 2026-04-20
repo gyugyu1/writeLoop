@@ -25,6 +25,7 @@ import type {
   Prompt,
   RegisterRequest,
   ResetPasswordRequest,
+  SavedExpression,
   SendPasswordResetCodeRequest,
   SendRegistrationCodeRequest,
   SaveWritingDraftRequest,
@@ -734,6 +735,30 @@ export async function getCommonMistakes(): Promise<CommonMistake[]> {
   }
 
   return response.json();
+}
+
+export async function getSavedExpressions(): Promise<SavedExpression[]> {
+  const response = await fetch(`${API_BASE}/api/saved-expressions`, {
+    cache: "no-store",
+    credentials: "include"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to load saved expressions");
+  }
+
+  return response.json();
+}
+
+export async function deleteSavedExpression(savedExpressionId: number): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/saved-expressions/${savedExpressionId}`, {
+    method: "DELETE",
+    credentials: "include"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to delete saved expression");
+  }
 }
 
 export async function getWritingDraft(

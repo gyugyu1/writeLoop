@@ -2261,6 +2261,56 @@
   min-width: 200px;
 }
 
+.accountSettingsStack {
+  display: grid;
+  gap: 16px;
+}
+
+.accountFieldStack {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.accountDangerLinkRow {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.accountDangerLinkButton {
+  border: 0;
+  border-bottom: 2px solid rgba(94, 91, 87, 0.34);
+  padding: 0 0 2px;
+  background: transparent;
+  color: rgba(94, 91, 87, 0.82);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.accountDangerInlinePanel {
+  display: grid;
+  gap: 14px;
+  justify-items: end;
+}
+
+.accountDangerEntryButton {
+  min-width: 180px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 1px solid rgba(176, 37, 0, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 241, 236, 0.92);
+  color: #b02500;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.accountDangerHelper {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
 @media (max-width: 960px) {
   .accountSettingsGrid {
     grid-template-columns: minmax(0, 1fr);
@@ -2310,6 +2360,14 @@
   }
 
   .accountFooterActions > * {
+    width: 100%;
+  }
+
+  .accountDangerInlinePanel {
+    justify-items: stretch;
+  }
+
+  .accountDangerEntryButton {
     width: 100%;
   }
 }
@@ -3276,6 +3334,314 @@
   justify-content: center;
 }
 
+.writingProfileCard {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(119, 87, 61, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 14px 30px -28px rgba(127, 82, 0, 0.18);
+}
+
+.writingProfileIdentity {
+  display: grid;
+  gap: 6px;
+}
+
+.writingProfileIdentity strong {
+  color: var(--text-main);
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.writingProfileIdentity p {
+  margin: 0;
+  color: var(--text-sub);
+}
+
+.writingProfileMetricRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.writingProfileMetricCard {
+  display: grid;
+  gap: 6px;
+  padding: 18px 14px;
+  border-radius: 18px;
+  background: rgba(248, 242, 235, 0.9);
+  text-align: center;
+}
+
+.writingProfileMetricCard span {
+  color: var(--text-main);
+  font-size: 1.5rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+.writingProfileMetricCard p {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.writingContentTabRow {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.writingHistoryQuestionButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 22px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.writingHistoryQuestionButton > span {
+  font-size: 1.2rem;
+  color: rgba(94, 91, 87, 0.74);
+}
+
+.savedExpressionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.savedExpressionCard {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(119, 87, 61, 0.08);
+  box-shadow: 0 10px 24px -18px rgba(127, 82, 0, 0.16);
+}
+
+.savedExpressionHeaderRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.savedExpressionMetaWrap {
+  display: grid;
+  gap: 8px;
+}
+
+.savedExpressionText {
+  color: var(--text-main);
+  font-size: 1.2rem;
+  line-height: 1.35;
+}
+
+.savedExpressionBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.savedExpressionSourceBadge,
+.savedExpressionSaveCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.savedExpressionSourceBadge {
+  background: rgba(var(--secondary-rgb), 0.12);
+  color: var(--secondary);
+}
+
+.savedExpressionSaveCount {
+  background: rgba(16, 36, 76, 0.06);
+  color: rgba(94, 91, 87, 0.82);
+}
+
+.savedExpressionDeleteButton {
+  min-width: 72px;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid rgba(176, 37, 0, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 241, 236, 0.94);
+  color: #a3371a;
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.savedExpressionDeleteButton:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.savedExpressionMeaning {
+  margin: 0;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.savedExpressionUsageTip,
+.savedExpressionDate,
+.savedExpressionPrompt {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.savedExpressionExample {
+  margin: 0;
+  color: var(--text-main);
+  line-height: 1.75;
+}
+
+.savedExpressionExampleHighlight {
+  padding: 0 2px;
+  border-radius: 6px;
+  background: rgba(242, 161, 74, 0.18);
+  color: var(--text-main);
+}
+
+.savedExpressionPromptSection {
+  display: grid;
+  gap: 10px;
+}
+
+.savedExpressionPromptLink,
+.savedExpressionHistoryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.savedExpressionPromptLink {
+  border: 1px solid rgba(119, 87, 61, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--text-main);
+}
+
+.savedExpressionPromptBox {
+  display: grid;
+  gap: 10px;
+  padding: 14px 15px;
+  border-radius: 18px;
+  background: rgba(248, 242, 235, 0.74);
+}
+
+.savedExpressionHistoryButton {
+  border: 0;
+  background: rgba(var(--warm-accent-rgb), 0.16);
+  color: var(--primary);
+}
+
+.savedExpressionHistoryButton:disabled {
+  cursor: default;
+  background: rgba(16, 36, 76, 0.06);
+  color: rgba(94, 91, 87, 0.56);
+}
+
+.writingSessionModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(31, 25, 18, 0.42);
+  backdrop-filter: blur(6px);
+}
+
+.writingSessionModalDialog {
+  width: min(980px, 100%);
+  max-height: min(88vh, 920px);
+  overflow: auto;
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255, 248, 241, 0.98);
+  box-shadow: 0 28px 56px rgba(31, 25, 18, 0.18);
+}
+
+.writingSessionModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.writingSessionModalTitleBlock {
+  display: grid;
+  gap: 8px;
+}
+
+.writingSessionModalTitleBlock span {
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.writingSessionModalTitleBlock h2 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  line-height: 1.22;
+  letter-spacing: -0.05em;
+}
+
+.writingSessionModalTitleBlock p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.65;
+}
+
+.writingSessionModalCloseButton {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(119, 87, 61, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.94);
+  color: var(--text-main);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.writingSessionModalContent {
+  display: grid;
+  gap: 14px;
+}
+
 @media (max-width: 1080px) {
   .writingHistoryMainGrid,
   .writingHistoryUtilityGrid,
@@ -3301,6 +3667,10 @@
 
   .writingExpressionsGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .savedExpressionGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
@@ -3345,6 +3715,16 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .writingProfileCard,
+  .writingHistoryBoard,
+  .writingSessionModalDialog {
+    padding: 20px 18px;
+  }
+
+  .writingProfileMetricRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .writingPanelHeader,
   .writingHistoryMascotRow {
     align-items: flex-start;
@@ -3367,6 +3747,18 @@
 
   .writingHistoryListMeta h4 {
     font-size: 1.12rem;
+  }
+
+  .writingSessionModalOverlay {
+    padding: 14px;
+  }
+
+  .writingSessionModalHeader {
+    flex-direction: column;
+  }
+
+  .writingSessionModalCloseButton {
+    width: 100%;
   }
 }
 

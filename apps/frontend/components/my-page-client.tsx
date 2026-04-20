@@ -4,9 +4,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   deleteAccount,
+  deleteSavedExpression,
   getAnswerHistory,
-  getCommonMistakes,
   getCurrentUser,
+  getSavedExpressions,
   getTodayWritingStatus,
   logout,
   updateProfile
@@ -17,10 +18,11 @@ import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommen
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import { clearAllLocalWritingDrafts } from "../lib/home-writing-drafts";
 import { clearAllIncompleteLoops } from "../lib/incomplete-loop";
-import type { AuthUser, CommonMistake, HistorySession, TodayWritingStatus } from "../lib/types";
+import type { AuthUser, HistorySession, SavedExpression, TodayWritingStatus } from "../lib/types";
 import styles from "./auth-page.module.css";
 
 type MyPageTab = "account" | "writing";
+type WritingContentTab = "history" | "expressions";
 type HistoryDiffSegment = {
   text: string;
   changed: boolean;
@@ -48,18 +50,6 @@ type HistoryTextComparison = {
   afterWordCount: number;
 };
 
-type UsedExpressionHistoryItem = {
-  expression: string;
-  count: number;
-  lastUsedAt: string;
-  latestTopic: string;
-  latestQuestionKo: string;
-  matchedText: string | null;
-};
-
-type WritingSectionKey = "expressions" | "feedback" | "history";
-
-const EXPRESSION_HISTORY_PREVIEW_COUNT = 8;
 const ATTEMPT_USED_EXPRESSION_PREVIEW_COUNT = 4;
 
 function formatHistoryDateKey(dateTime: string) {
@@ -84,14 +74,6 @@ function formatHistoryTime(dateTime: string) {
     timeZone: "Asia/Seoul",
     hour: "2-digit",
     minute: "2-digit"
-  }).format(new Date(dateTime));
-}
-
-function formatExpressionHistoryDate(dateTime: string) {
-  return new Intl.DateTimeFormat("ko-KR", {
-    timeZone: "Asia/Seoul",
-    month: "long",
-    day: "numeric"
   }).format(new Date(dateTime));
 }
 
@@ -306,24 +288,87 @@ function formatHistoryDateHeading(dateKey: string) {
   return `${year}년 ${month}월 ${day}일 ${weekday}`;
 }
 
-function getHistoryWordCount(text: string) {
-  return text.trim().split(/\s+/).filter(Boolean).length;
+function getLatestAttempt(session: HistorySession) {
+  return session.attempts[session.attempts.length - 1];
+}
+
+function getAttemptLabel(value?: string | null) {
+  return value === "REWRITE" ? "다시쓰기" : "첫 답변";
+}
+
+function getSavedExpressionSourceLabel(sourceType: SavedExpression["sourceType"]) {
+  switch (sourceType) {
+    case "USED_EXPRESSION":
+      return "내가 쓴 표현";
+    case "COACH_RECOMMENDATION":
+      return "AI 코치 추천";
+    default:
+      return "저장한 표현";
+  }
+}
+
+function formatSavedExpressionDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function renderSavedExpressionExample(exampleEn?: string | null, expression?: string | null) {
+  const trimmedExample = exampleEn?.trim() ?? "";
+  const trimmedExpression = expression?.trim() ?? "";
+
+  if (!trimmedExample) {
+    return null;
+  }
+
+  if (!trimmedExpression) {
+    return trimmedExample;
+  }
+
+  const expressionPattern = new RegExp(`(${escapeRegExp(trimmedExpression)})`, "gi");
+  if (!expressionPattern.test(trimmedExample)) {
+    return trimmedExample;
+  }
+
+  const segments = trimmedExample.split(expressionPattern);
+
+  return segments.map((segment, index) =>
+    index % 2 === 1 ? (
+      <mark key={`saved-expression-example-match-${index}`} className={styles.savedExpressionExampleHighlight}>
+        {segment}
+      </mark>
+    ) : (
+      <span key={`saved-expression-example-${index}`}>{segment}</span>
+    )
+  );
+}
+
+function getSavedExpressionPromptText(savedExpression: SavedExpression) {
+  return (
+    savedExpression.promptQuestionEn?.trim() ||
+    savedExpression.promptQuestionKo?.trim() ||
+    savedExpression.promptTopic?.trim() ||
+    ""
+  );
+}
+
+function trimSavedExpressionLookupValue(value?: string | null) {
+  return value?.trim() ?? "";
 }
 
 function getLatestSessionTimestamp(session: HistorySession) {
   return session.attempts[session.attempts.length - 1]?.createdAt ?? session.updatedAt ?? session.createdAt;
-}
-
-function getHistoryStatusVariant(score: number, loopComplete: boolean) {
-  if (loopComplete || score >= 92) {
-    return "perfect";
-  }
-
-  if (score >= 80) {
-    return "good";
-  }
-
-  return "warm";
 }
 
 function parseMyPageTab(): MyPageTab {
@@ -352,16 +397,18 @@ function notifyTabChange(tab: MyPageTab) {
 export function MyPageClient() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<MyPageTab>("writing");
+  const [activeWritingTab, setActiveWritingTab] = useState<WritingContentTab>("history");
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
-  const [, setTodayStatus] = useState<TodayWritingStatus | null>(null);
+  const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [history, setHistory] = useState<HistorySession[]>([]);
-  const [commonMistakes, setCommonMistakes] = useState<CommonMistake[]>([]);
+  const [savedExpressions, setSavedExpressions] = useState<SavedExpression[]>([]);
+  const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [isSavedExpressionsLoading, setIsSavedExpressionsLoading] = useState(true);
   const [historyError, setHistoryError] = useState("");
-  const [mistakeError, setMistakeError] = useState("");
+  const [savedExpressionError, setSavedExpressionError] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openDates, setOpenDates] = useState<Record<string, boolean>>({});
-  const [openSessions, setOpenSessions] = useState<Record<string, boolean>>({});
   const [selectedHistoryDate, setSelectedHistoryDate] = useState("");
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -375,7 +422,10 @@ export function MyPageClient() {
   const [deleteError, setDeleteError] = useState("");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);
-  const [showAllExpressionHistory, setShowAllExpressionHistory] = useState(false);
+  const [isDeleteFormOpen, setIsDeleteFormOpen] = useState(false);
+  const [deletingSavedExpressionId, setDeletingSavedExpressionId] = useState<number | null>(null);
+  const [openSavedExpressionPrompts, setOpenSavedExpressionPrompts] = useState<Record<number, boolean>>({});
+  const [selectedSession, setSelectedSession] = useState<HistorySession | null>(null);
   const [expandedAttemptExpressions, setExpandedAttemptExpressions] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
@@ -406,6 +456,8 @@ export function MyPageClient() {
 
     async function loadPageData() {
       try {
+        setIsHistoryLoading(true);
+        setIsSavedExpressionsLoading(true);
         const user = await getCurrentUser();
         if (!isMounted) {
           return;
@@ -416,16 +468,18 @@ export function MyPageClient() {
         if (!user) {
           setTodayStatus(null);
           setHistory([]);
-          setCommonMistakes([]);
+          setSavedExpressions([]);
           setHistoryError("");
-          setMistakeError("");
+          setSavedExpressionError("");
+          setIsHistoryLoading(false);
+          setIsSavedExpressionsLoading(false);
           return;
         }
 
-        const [statusResult, sessionsResult, mistakesResult] = await Promise.allSettled([
+        const [statusResult, sessionsResult, savedExpressionsResult] = await Promise.allSettled([
           getTodayWritingStatus(),
           getAnswerHistory(),
-          getCommonMistakes()
+          getSavedExpressions()
         ]);
 
         if (!isMounted) {
@@ -445,14 +499,16 @@ export function MyPageClient() {
           setHistory([]);
           setHistoryError("작문 기록을 아직 불러오지 못했어요.");
         }
+        setIsHistoryLoading(false);
 
-        if (mistakesResult.status === "fulfilled") {
-          setCommonMistakes(mistakesResult.value);
-          setMistakeError("");
+        if (savedExpressionsResult.status === "fulfilled") {
+          setSavedExpressions(savedExpressionsResult.value);
+          setSavedExpressionError("");
         } else {
-          setCommonMistakes([]);
-          setMistakeError("자주 받은 피드백을 아직 불러오지 못했어요.");
+          setSavedExpressions([]);
+          setSavedExpressionError("저장한 표현을 아직 불러오지 못했어요.");
         }
+        setIsSavedExpressionsLoading(false);
       } catch {
         if (!isMounted) {
           return;
@@ -461,9 +517,11 @@ export function MyPageClient() {
         setCurrentUser(null);
         setTodayStatus(null);
         setHistory([]);
-        setCommonMistakes([]);
+        setSavedExpressions([]);
         setHistoryError("");
-        setMistakeError("");
+        setSavedExpressionError("");
+        setIsHistoryLoading(false);
+        setIsSavedExpressionsLoading(false);
       }
     }
 
@@ -482,46 +540,6 @@ export function MyPageClient() {
 
     setProfileDisplayName(currentUser.displayName);
   }, [currentUser]);
-
-  const usedExpressionHistory = useMemo(() => {
-    const items = new Map<string, UsedExpressionHistoryItem>();
-
-    for (const session of history) {
-      for (const attempt of session.attempts) {
-        for (const expression of attempt.usedExpressions ?? []) {
-          const key = expression.expression.trim().toLowerCase();
-          if (!key) {
-            continue;
-          }
-
-          const existing = items.get(key);
-          if (!existing) {
-            items.set(key, {
-              expression: expression.expression,
-              count: 1,
-              lastUsedAt: attempt.createdAt,
-              latestTopic: session.topic,
-              latestQuestionKo: session.questionKo,
-              matchedText: expression.matchedText ?? null
-            });
-            continue;
-          }
-
-          existing.count += 1;
-          if (attempt.createdAt > existing.lastUsedAt) {
-            existing.lastUsedAt = attempt.createdAt;
-            existing.latestTopic = session.topic;
-            existing.latestQuestionKo = session.questionKo;
-            existing.matchedText = expression.matchedText ?? null;
-          }
-        }
-      }
-    }
-
-    return Array.from(items.values()).sort(
-      (left, right) => right.count - left.count || right.lastUsedAt.localeCompare(left.lastUsedAt)
-    );
-  }, [history]);
 
   const historyByDate = useMemo(() => {
     return history.reduce<Record<string, HistorySession[]>>((accumulator, session) => {
@@ -549,17 +567,15 @@ export function MyPageClient() {
     [historyByDate]
   );
 
-  const visibleExpressionHistory = useMemo(
+  const groupedHistoryEntries = useMemo(
     () =>
-      showAllExpressionHistory
-        ? usedExpressionHistory
-        : usedExpressionHistory.slice(0, EXPRESSION_HISTORY_PREVIEW_COUNT),
-    [showAllExpressionHistory, usedExpressionHistory]
-  );
-
-  const hiddenExpressionHistoryCount = Math.max(
-    0,
-    usedExpressionHistory.length - visibleExpressionHistory.length
+      historyDates.map((dateKey) => ({
+        dateKey,
+        sessions: [...(historyByDate[dateKey] ?? [])].sort((left, right) =>
+          getLatestSessionTimestamp(right).localeCompare(getLatestSessionTimestamp(left))
+        )
+      })),
+    [historyByDate, historyDates]
   );
 
   useEffect(() => {
@@ -572,9 +588,14 @@ export function MyPageClient() {
       const next = { ...current };
       let changed = false;
 
+      const defaultOpenDateKey = selectedHistoryDate && historyDates.includes(selectedHistoryDate)
+        ? selectedHistoryDate
+        : historyDates[0];
+
       for (const dateKey of historyDates) {
-        if (!(dateKey in next)) {
-          next[dateKey] = false;
+        const nextValue = current[dateKey] ?? dateKey === defaultOpenDateKey;
+        if (current[dateKey] !== nextValue) {
+          next[dateKey] = nextValue;
           changed = true;
         }
       }
@@ -585,44 +606,9 @@ export function MyPageClient() {
           changed = true;
         }
       }
-
       return changed ? next : current;
     });
-  }, [historyDates]);
-
-  useEffect(() => {
-    if (usedExpressionHistory.length <= EXPRESSION_HISTORY_PREVIEW_COUNT && showAllExpressionHistory) {
-      setShowAllExpressionHistory(false);
-    }
-  }, [showAllExpressionHistory, usedExpressionHistory.length]);
-
-  useEffect(() => {
-    if (history.length === 0) {
-      setOpenSessions({});
-      return;
-    }
-
-    setOpenSessions((current) => {
-      const next = { ...current };
-      let changed = false;
-
-      for (const session of history) {
-        if (!(session.sessionId in next)) {
-          next[session.sessionId] = false;
-          changed = true;
-        }
-      }
-
-      for (const existingKey of Object.keys(next)) {
-        if (!history.some((session) => session.sessionId === existingKey)) {
-          delete next[existingKey];
-          changed = true;
-        }
-      }
-
-      return changed ? next : current;
-    });
-  }, [history]);
+  }, [historyDates, selectedHistoryDate]);
 
   useEffect(() => {
     const validAttemptIds = new Set<string>(
@@ -636,6 +622,27 @@ export function MyPageClient() {
       return Object.keys(next).length === Object.keys(current).length ? current : next;
     });
   }, [history]);
+
+  useEffect(() => {
+    const validSavedExpressionIds = new Set(savedExpressions.map((item) => String(item.id)));
+
+    setOpenSavedExpressionPrompts((current) => {
+      const next = Object.fromEntries(
+        Object.entries(current).filter(([savedExpressionId]) => validSavedExpressionIds.has(savedExpressionId))
+      );
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
+    });
+  }, [savedExpressions]);
+
+  useEffect(() => {
+    if (!selectedSession) {
+      return;
+    }
+
+    if (!history.some((session) => session.sessionId === selectedSession.sessionId)) {
+      setSelectedSession(null);
+    }
+  }, [history, selectedSession]);
 
   useEffect(() => {
     if (!selectedHistoryDate || !historyDates.includes(selectedHistoryDate)) {
@@ -653,33 +660,12 @@ export function MyPageClient() {
       };
     });
 
-    setOpenSessions((current) => {
-      const next = { ...current };
-      let changed = false;
-
-      for (const session of historyByDate[selectedHistoryDate] ?? []) {
-        if (!next[session.sessionId]) {
-          next[session.sessionId] = true;
-          changed = true;
-        }
-      }
-
-      return changed ? next : current;
-    });
-
     window.requestAnimationFrame(() => {
       document
         .querySelector<HTMLElement>(`[data-history-date="${selectedHistoryDate}"]`)
         ?.scrollIntoView({ behavior: "smooth", block: "start" });
     });
-  }, [historyByDate, historyDates, selectedHistoryDate]);
-
-  function toggleSession(sessionId: string) {
-    setOpenSessions((current) => ({
-      ...current,
-      [sessionId]: !current[sessionId]
-    }));
-  }
+  }, [historyDates, selectedHistoryDate]);
 
   function toggleDateGroup(dateKey: string) {
     setOpenDates((current) => ({
@@ -1461,7 +1447,7 @@ export function MyPageClient() {
           <section className={styles.writingHistoryDraftColumn}>
             <h4>
               <span className="material-symbols-outlined">magic_button</span>
-              개선 버전
+              최종 답안
             </h4>
             <div className={`${styles.writingHistoryDraftBody} ${styles.writingHistoryDraftBodyImproved}`}>
               {comparisonView
@@ -1492,21 +1478,6 @@ export function MyPageClient() {
 
   function goHome() {
     window.location.assign("/");
-  }
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  function scrollToWritingSection(section: WritingSectionKey) {
-    const sectionId =
-      section === "expressions"
-        ? "writing-expressions-section"
-        : section === "feedback"
-          ? "writing-feedback-section"
-          : "writing-history-section";
-
-    document.getElementById(sectionId)?.scrollIntoView({
-      behavior: "smooth",
-      block: "start"
-    });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -1586,7 +1557,9 @@ export function MyPageClient() {
       setCurrentUser(null);
       setTodayStatus(null);
       setHistory([]);
-      setCommonMistakes([]);
+      setSavedExpressions([]);
+      setOpenSavedExpressionPrompts({});
+      setSelectedSession(null);
       window.location.assign("/");
     } catch {
       setError("로그아웃하지 못했어요.");
@@ -1630,6 +1603,97 @@ export function MyPageClient() {
     } finally {
       setIsDeletingAccount(false);
     }
+  }
+
+  function handleOpenSession(session: HistorySession) {
+    setSelectedSession(session);
+  }
+
+  function handleCloseSelectedSession() {
+    setSelectedSession(null);
+  }
+
+  async function confirmDeleteSavedExpression(savedExpressionId: number) {
+    try {
+      setDeletingSavedExpressionId(savedExpressionId);
+      setSavedExpressionError("");
+      await deleteSavedExpression(savedExpressionId);
+      setSavedExpressions((current) => current.filter((item) => item.id !== savedExpressionId));
+      setOpenSavedExpressionPrompts((current) => {
+        const next = { ...current };
+        delete next[savedExpressionId];
+        return next;
+      });
+    } catch (caughtError) {
+      setSavedExpressionError(
+        caughtError instanceof Error ? caughtError.message : "저장한 표현을 삭제하지 못했어요."
+      );
+    } finally {
+      setDeletingSavedExpressionId(null);
+    }
+  }
+
+  function handleDeleteSavedExpression(savedExpression: SavedExpression) {
+    const shouldDelete = window.confirm(`'${savedExpression.expression}' 표현을 저장 목록에서 삭제할까요?`);
+    if (!shouldDelete) {
+      return;
+    }
+
+    void confirmDeleteSavedExpression(savedExpression.id);
+  }
+
+  function toggleSavedExpressionPrompt(savedExpressionId: number) {
+    setOpenSavedExpressionPrompts((current) => ({
+      ...current,
+      [savedExpressionId]: !current[savedExpressionId]
+    }));
+  }
+
+  function findHistorySessionForSavedExpression(savedExpression: SavedExpression) {
+    const promptId = trimSavedExpressionLookupValue(savedExpression.promptId);
+    const promptQuestionEn = trimSavedExpressionLookupValue(savedExpression.promptQuestionEn);
+    const promptQuestionKo = trimSavedExpressionLookupValue(savedExpression.promptQuestionKo);
+    const promptTopic = trimSavedExpressionLookupValue(savedExpression.promptTopic);
+
+    const matches = history.filter((session) => {
+      if (promptId && session.promptId === promptId) {
+        return true;
+      }
+      if (promptQuestionEn && session.questionEn.trim() === promptQuestionEn) {
+        return true;
+      }
+      if (promptQuestionKo && session.questionKo.trim() === promptQuestionKo) {
+        return true;
+      }
+      return Boolean(promptTopic && session.topic.trim() === promptTopic);
+    });
+
+    if (matches.length === 0) {
+      return null;
+    }
+
+    return [...matches].sort((left, right) =>
+      getLatestSessionTimestamp(right).localeCompare(getLatestSessionTimestamp(left))
+    )[0];
+  }
+
+  function handleOpenSavedExpressionHistory(savedExpression: SavedExpression) {
+    const targetSession = findHistorySessionForSavedExpression(savedExpression);
+    if (!targetSession) {
+      setSavedExpressionError("연결된 질문 기록을 아직 찾지 못했어요.");
+      return;
+    }
+
+    const dateKey = formatHistoryDateKey(getLatestSessionTimestamp(targetSession));
+    setSavedExpressionError("");
+    setActiveTab("writing");
+    setActiveWritingTab("history");
+    setSelectedHistoryDate(dateKey);
+    setOpenDates((current) => ({
+      ...current,
+      [dateKey]: true
+    }));
+    setSelectedSession(targetSession);
   }
 
   /*
@@ -1815,14 +1879,14 @@ export function MyPageClient() {
         <div className={styles.accountPageTitle}>
           <h1>
             <span className={styles.accountPageTitleSubject}>
-              <span className={styles.accountPageTitleSubjectText}>계정설정</span>
+              <span className={styles.accountPageTitleSubjectText}>계정 설정</span>
               <span className={styles.accountPageTitleUnderline} aria-hidden="true" />
             </span>
           </h1>
         </div>
 
-        <div className={styles.accountSettingsGrid}>
-          <aside className={styles.accountInfoCard}>
+        <div className={styles.accountSettingsStack}>
+          <section className={styles.accountInfoCard}>
             <div className={styles.accountInfoHeader}>
               <div className={styles.accountInfoHeaderTitle}>
                 <h2>내 계정 정보</h2>
@@ -1845,134 +1909,130 @@ export function MyPageClient() {
                 </div>
               </div>
             </div>
-          </aside>
+          </section>
 
-          <div className={styles.accountSettingsMain}>
-            <section
-              id="account-profile-section"
-              className={`${styles.accountFormCard} ${styles.historySectionAnchor}`}
-            >
-              <div className={styles.accountSectionHeader}>
-                <h3>계정 수정</h3>
-              </div>
+          <section className={styles.accountFormCard}>
+            <div className={styles.accountSectionHeader}>
+              <h3>계정 수정</h3>
+            </div>
 
-              <div className={`${styles.form} ${styles.accountFieldGrid}`}>
-                <label className={styles.field}>
-                  <span>이름</span>
-                  <input
-                    className={styles.input}
-                    value={profileDisplayName}
-                    onChange={(event) => setProfileDisplayName(event.target.value)}
-                    placeholder="이름을 입력해 주세요."
-                  />
-                </label>
+            <div className={`${styles.form} ${styles.accountFieldStack}`}>
+              <label className={styles.field}>
+                <span>이름</span>
+                <input
+                  className={styles.input}
+                  value={profileDisplayName}
+                  onChange={(event) => setProfileDisplayName(event.target.value)}
+                  placeholder="이름을 입력해 주세요."
+                />
+              </label>
 
-                {currentUser?.socialProvider ? (
-                  <div className={styles.accountReadonlyNotice}>
-                    <strong>소셜 로그인 계정</strong>
-                    <p>소셜 로그인 계정은 이 화면에서 비밀번호를 변경할 수 없어요.</p>
-                  </div>
-                ) : (
-                  <>
-                    <label className={styles.field}>
-                      <span>현재 비밀번호</span>
-                      <input
-                        className={styles.input}
-                        type="password"
-                        value={currentPassword}
-                        onChange={(event) => setCurrentPassword(event.target.value)}
-                        placeholder="현재 비밀번호를 입력해 주세요."
-                      />
-                    </label>
-                    <label className={styles.field}>
-                      <span>새 비밀번호</span>
-                      <input
-                        className={styles.input}
-                        type="password"
-                        value={newPassword}
-                        onChange={(event) => setNewPassword(event.target.value)}
-                        placeholder="새 비밀번호를 입력해 주세요."
-                      />
-                    </label>
-                    <label className={styles.field}>
-                      <span>새 비밀번호 확인</span>
-                      <input
-                        className={styles.input}
-                        type="password"
-                        value={confirmNewPassword}
-                        onChange={(event) => setConfirmNewPassword(event.target.value)}
-                        placeholder="새 비밀번호를 한 번 더 입력해 주세요."
-                      />
-                    </label>
-                  </>
-                )}
-              </div>
+              {currentUser?.socialProvider ? (
+                <div className={styles.accountReadonlyNotice}>
+                  <strong>소셜 로그인 계정</strong>
+                  <p>소셜 로그인 계정은 이 화면에서 비밀번호를 변경할 수 없어요.</p>
+                </div>
+              ) : (
+                <>
+                  <label className={styles.field}>
+                    <span>현재 비밀번호</span>
+                    <input
+                      className={styles.input}
+                      type="password"
+                      value={currentPassword}
+                      onChange={(event) => setCurrentPassword(event.target.value)}
+                      placeholder="현재 비밀번호를 입력해 주세요."
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>새 비밀번호</span>
+                    <input
+                      className={styles.input}
+                      type="password"
+                      value={newPassword}
+                      onChange={(event) => setNewPassword(event.target.value)}
+                      placeholder="새 비밀번호를 입력해 주세요."
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>새 비밀번호 확인</span>
+                    <input
+                      className={styles.input}
+                      type="password"
+                      value={confirmNewPassword}
+                      onChange={(event) => setConfirmNewPassword(event.target.value)}
+                      placeholder="새 비밀번호를 한 번 더 입력해 주세요."
+                    />
+                  </label>
+                </>
+              )}
+            </div>
 
-              <div className={styles.accountPrimaryAction}>
-                <button
-                  type="button"
-                  className={styles.primaryButton}
-                  onClick={() => void handleSaveProfile()}
-                  disabled={isSavingProfile}
-                >
-                  {isSavingProfile ? "변경사항 저장 중..." : "변경사항 저장"}
-                </button>
-                <button type="button" className={styles.ghostButton} onClick={goHome}>
-                  홈으로 가기
-                </button>
-              </div>
-
-              {profileNotice ? <p className={styles.notice}>{profileNotice}</p> : null}
-              {profileError ? <p className={styles.error}>{profileError}</p> : null}
-              {error ? <p className={styles.error}>{error}</p> : null}
-            </section>
-
-            <div className={styles.accountFooterActions}>
-              <button type="button" className={styles.ghostButton} onClick={goHome}>
-                <span className="material-symbols-outlined">home</span>
-                홈으로 이동
-              </button>
+            <div className={styles.accountPrimaryAction}>
               <button
                 type="button"
-                className={styles.ghostButton}
-                onClick={() => void handleLogout()}
-                disabled={isSubmitting}
+                className={styles.primaryButton}
+                onClick={() => void handleSaveProfile()}
+                disabled={isSavingProfile}
               >
-                <span className="material-symbols-outlined">logout</span>
-                {isSubmitting ? "로그아웃 중..." : "로그아웃"}
+                {isSavingProfile ? "변경사항 저장 중..." : "변경사항 저장"}
               </button>
             </div>
 
-            <section
-              id="account-delete-section"
-              className={`${styles.accountDangerCard} ${styles.historySectionAnchor}`}
-            >
-              <button
-                type="button"
-                className={styles.accountDangerToggle}
-                onClick={() => setIsDangerZoneOpen((current) => !current)}
-                aria-expanded={isDangerZoneOpen}
-                aria-controls="account-danger-panel"
-              >
-                <div className={styles.accountDangerHeader}>
-                  <div>
-                    <h3>
-                      <span className="material-symbols-outlined">warning</span>
-                      위험 구역
-                    </h3>
-                  </div>
-                </div>
-                <span className={styles.accountDangerToggleBadge}>
-                  {isDangerZoneOpen ? "접기" : "펼치기"}
-                  <span className="material-symbols-outlined">
-                    {isDangerZoneOpen ? "expand_less" : "expand_more"}
-                  </span>
-                </span>
-              </button>
+            {profileNotice ? <p className={styles.notice}>{profileNotice}</p> : null}
+            {profileError ? <p className={styles.error}>{profileError}</p> : null}
+            {error ? <p className={styles.error}>{error}</p> : null}
+          </section>
 
-              {isDangerZoneOpen ? (
-                <div id="account-danger-panel" className={styles.accountDangerPanel}>
-                  <div className={`${styles.form} ${styles.accountDangerForm}`}>
+          <div className={styles.accountFooterActions}>
+            <button type="button" className={styles.ghostButton} onClick={goHome}>
+              홈으로 이동
+            </button>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={() => void handleLogout()}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "로그아웃 중..." : "로그아웃"}
+            </button>
+          </div>
+
+          <div className={styles.accountDangerLinkRow}>
+            <button
+              type="button"
+              className={styles.accountDangerLinkButton}
+              onClick={() =>
+                setIsDangerZoneOpen((current) => {
+                  const next = !current;
+                  if (!next) {
+                    setIsDeleteFormOpen(false);
+                    setDeleteError("");
+                  }
+                  return next;
+                })
+              }
+            >
+              위험 구역
+            </button>
+          </div>
+
+          {isDangerZoneOpen ? (
+            <section className={styles.accountDangerInlinePanel}>
+              {!isDeleteFormOpen ? (
+                <button
+                  type="button"
+                  className={styles.accountDangerEntryButton}
+                  onClick={() => {
+                    setDeleteError("");
+                    setIsDeleteFormOpen(true);
+                  }}
+                >
+                  회원탈퇴
+                </button>
+              ) : (
+                <>
+                  <div className={`${styles.form} ${styles.accountFieldStack}`}>
                     <label className={styles.field}>
                       <span>확인 문구</span>
                       <input
@@ -1994,7 +2054,11 @@ export function MyPageClient() {
                           placeholder="현재 비밀번호를 입력해 주세요."
                         />
                       </label>
-                    ) : null}
+                    ) : (
+                      <p className={styles.accountDangerHelper}>
+                        소셜 로그인 계정은 현재 비밀번호 없이 회원탈퇴할 수 있어요.
+                      </p>
+                    )}
                   </div>
 
                   <div className={styles.accountDangerAction}>
@@ -2004,271 +2068,309 @@ export function MyPageClient() {
                       onClick={() => void handleDeleteAccount()}
                       disabled={isDeletingAccount}
                     >
-                      {isDeletingAccount ? "삭제 중..." : "계정 영구 삭제"}
+                      {isDeletingAccount ? "회원탈퇴 처리 중..." : "회원탈퇴"}
                     </button>
                   </div>
 
                   {deleteError ? <p className={styles.error}>{deleteError}</p> : null}
-                </div>
-              ) : null}
+                </>
+              )}
             </section>
-          </div>
+          ) : null}
         </div>
       </section>
     );
   }
 
   function renderWritingTab() {
-    const sortedHistory = [...history].sort((left, right) =>
-      getLatestSessionTimestamp(right).localeCompare(getLatestSessionTimestamp(left))
-    );
-    const remainingSessions = sortedHistory;
-    const groupedHistoryEntries = historyDates.map((dateKey) => ({
-      dateKey,
-      sessions: [...(historyByDate[dateKey] ?? [])].sort((left, right) =>
-        getLatestSessionTimestamp(right).localeCompare(getLatestSessionTimestamp(left))
-      )
-    }));
-    const expressionCards = visibleExpressionHistory.slice(
-      0,
-      showAllExpressionHistory ? visibleExpressionHistory.length : 5
-    );
-
     return (
       <section className={styles.writingHistoryLayout}>
-        <div className={styles.writingHistoryHero}>
-          <div className={styles.writingDashboardHeader}>
-            <h1 className={styles.writingDashboardTitle}>
-              <span className={styles.writingDashboardTitleLead}>
-                <span className={styles.writingDashboardTitleLeadText}>작문</span>
-                <span className={styles.writingDashboardUnderline} aria-hidden="true" />
-              </span>
-              <span className={styles.writingDashboardTitleTail}>히스토리</span>
-            </h1>
-          </div>
-
-          <nav className={styles.writingHistoryAnchorNav} aria-label="작문 히스토리 섹션 이동">
-            <a href="#writing-history-section" className={styles.writingHistoryAnchorButton}>
-              질문 기록
-            </a>
-            <a href="#writing-feedback-section" className={styles.writingHistoryAnchorButton}>
-              자주 고친 포인트
-            </a>
-            <a href="#writing-expressions-section" className={styles.writingHistoryAnchorButton}>
-              자주 꺼내 쓴 표현
-            </a>
-          </nav>
+        <div className={styles.writingDashboardHeader}>
+          <h1 className={styles.writingDashboardTitle}>
+            <span className={styles.writingDashboardTitleLead}>
+              <span className={styles.writingDashboardTitleLeadText}>작문 기록</span>
+              <span className={styles.writingDashboardUnderline} aria-hidden="true" />
+            </span>
+          </h1>
         </div>
 
-        <div className={styles.writingHistoryMainGrid}>
-          <section
-            id="writing-history-section"
-            className={`${styles.writingHistoryBoard} ${styles.historySectionAnchor}`}
+        <section className={styles.writingProfileCard}>
+          <div className={styles.writingProfileIdentity}>
+            <strong>{currentUser?.displayName || "-"}</strong>
+            <p>{currentUser?.email || "-"}</p>
+          </div>
+          <div className={styles.writingProfileMetricRow}>
+            <article className={styles.writingProfileMetricCard}>
+              <span>{todayStatus?.streakDays ?? 0}</span>
+              <p>연속 루프</p>
+            </article>
+            <article className={styles.writingProfileMetricCard}>
+              <span>{history.length}</span>
+              <p>질문 기록</p>
+            </article>
+            <article className={styles.writingProfileMetricCard}>
+              <span>{(todayStatus?.totalWrittenSentences ?? 0).toLocaleString("ko-KR")}</span>
+              <p>총 문장</p>
+            </article>
+          </div>
+        </section>
+
+        <div className={styles.writingContentTabRow}>
+          <button
+            type="button"
+            className={activeWritingTab === "history" ? styles.tabButtonActive : styles.tabButton}
+            onClick={() => setActiveWritingTab("history")}
           >
-            <div className={styles.writingHistoryBoardMeta}>
-              <strong>{`${history.length}개의 질문 기록`}</strong>
+            기록
+          </button>
+          <button
+            type="button"
+            className={activeWritingTab === "expressions" ? styles.tabButtonActive : styles.tabButton}
+            onClick={() => setActiveWritingTab("expressions")}
+          >
+            저장한 표현
+          </button>
+        </div>
+
+        {activeWritingTab === "history" ? (
+          <section className={styles.writingHistoryBoard}>
+            <div className={styles.writingPanelHeader}>
+              <div>
+                <h2>날짜별 기록</h2>
+                <p>{history.length}개의 질문</p>
+              </div>
             </div>
 
-            {historyError ? <p className={styles.error}>{historyError}</p> : null}
-
-            {remainingSessions.length === 0 ? (
+            {isHistoryLoading ? (
               <div className={styles.writingPanelEmpty}>
-                <p>아직 저장된 작문 기록이 없어요. 오늘의 질문으로 첫 작문을 시작해 보세요.</p>
+                <p>작문 기록을 불러오고 있어요.</p>
+              </div>
+            ) : groupedHistoryEntries.length === 0 ? (
+              <div className={styles.writingPanelEmpty}>
+                <p>아직 기록이 없어요. 오늘의 질문으로 첫 작문을 시작해 보세요.</p>
                 <button type="button" className={styles.primaryButton} onClick={goHome}>
                   홈으로 이동
                 </button>
               </div>
             ) : (
-              <div className={styles.writingHistoryDateFeed} id="writing-history-list">
-                {groupedHistoryEntries.map(({ dateKey, sessions }) => (
-                  <section
-                    key={dateKey}
-                    className={styles.writingHistoryDateGroup}
-                    data-history-date={dateKey}
-                  >
-                    <button
-                      type="button"
-                      className={styles.writingHistoryDateHeading}
-                      onClick={() => toggleDateGroup(dateKey)}
-                      aria-expanded={openDates[dateKey]}
+              <div className={styles.writingHistoryDateFeed}>
+                {groupedHistoryEntries.map(({ dateKey, sessions }) => {
+                  const isOpen = openDates[dateKey] ?? false;
+
+                  return (
+                    <section
+                      key={dateKey}
+                      className={styles.writingHistoryDateGroup}
+                      data-history-date={dateKey}
                     >
-                      <h3>{formatHistoryDateHeading(dateKey)}</h3>
-                      <span aria-hidden="true" />
-                      <span className={`material-symbols-outlined ${styles.writingHistoryDateToggleIcon}`}>
-                        {openDates[dateKey] ? "expand_less" : "expand_more"}
-                      </span>
-                    </button>
+                      <button
+                        type="button"
+                        className={styles.writingHistoryDateHeading}
+                        onClick={() => toggleDateGroup(dateKey)}
+                        aria-expanded={isOpen}
+                      >
+                        <h3>{formatHistoryDateHeading(dateKey)}</h3>
+                        <span aria-hidden="true" />
+                        <span className={`material-symbols-outlined ${styles.writingHistoryDateToggleIcon}`}>
+                          {isOpen ? "remove" : "add"}
+                        </span>
+                      </button>
 
-                    {openDates[dateKey] ? (
-                      <div className={styles.writingHistoryDateStack}>
-                        {sessions.map((session) => {
-                          const latestAttempt = session.attempts[session.attempts.length - 1];
-                          const comparisonView = buildHistoryComparisonView(session);
-                          const badgeLabel = getFeedbackLevelInfo(
-                            latestAttempt?.score ?? 0,
-                            latestAttempt?.feedback.loopComplete ?? false
-                          ).label;
-                          const badgeVariant = getHistoryStatusVariant(
-                            latestAttempt?.score ?? 0,
-                            latestAttempt?.feedback.loopComplete ?? false
-                          );
-                          const improvedText =
-                            comparisonView?.rewriteAttempt.answerText ??
-                            latestAttempt?.feedback.correctedAnswer ??
-                            latestAttempt?.answerText ??
-                            "";
+                      {isOpen ? (
+                        <div className={styles.writingHistoryDateStack}>
+                          {sessions.map((session) => {
+                            const latestAttempt = getLatestAttempt(session);
 
-                          return (
-                            <article key={session.sessionId} className={styles.writingHistoryListItem}>
-                              <button
-                                type="button"
-                                className={styles.writingHistoryListButton}
-                                onClick={() => toggleSession(session.sessionId)}
-                              >
-                                <div className={styles.writingHistoryListMeta}>
-                                  <div className={styles.writingHistoryQuestionChips}>
-                                    <span className={styles.writingHistoryQuestionChipPrimary}>
-                                      {session.topic}
-                                    </span>
-                                    <span className={styles.writingHistoryQuestionChipNeutral}>
-                                      {getDifficultyLabel(session.difficulty)}
-                                    </span>
-                                    <span className={styles.writingHistoryQuestionChipAccent}>
-                                      {latestAttempt?.attemptType === "REWRITE" ? "다시쓰기" : "첫 답변"}
-                                    </span>
+                            return (
+                              <article key={session.sessionId} className={styles.writingHistoryListItem}>
+                                <button
+                                  type="button"
+                                  className={styles.writingHistoryQuestionButton}
+                                  onClick={() => handleOpenSession(session)}
+                                >
+                                  <div className={styles.writingHistoryListMeta}>
+                                    <div className={styles.writingHistoryQuestionChips}>
+                                      <span className={styles.writingHistoryQuestionChipPrimary}>
+                                        {session.topic}
+                                      </span>
+                                      <span className={styles.writingHistoryQuestionChipNeutral}>
+                                        {getDifficultyLabel(session.difficulty)}
+                                      </span>
+                                      {latestAttempt ? (
+                                        <span className={styles.writingHistoryQuestionChipAccent}>
+                                          {getAttemptLabel(latestAttempt.attemptType)}
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                    <h4>{session.questionEn}</h4>
+                                    <p>{session.questionKo}</p>
                                   </div>
-                                  <h4>{session.questionEn}</h4>
-                                  {openSessions[session.sessionId] ? <p>{session.questionKo}</p> : null}
-                                  <div className={styles.writingHistoryRowBadges}>
-                                    <span
-                                      className={`${styles.writingHistoryStatusBadge} ${
-                                        badgeVariant === "perfect"
-                                          ? styles.writingHistoryStatusPerfect
-                                          : badgeVariant === "good"
-                                            ? styles.writingHistoryStatusGood
-                                            : styles.writingHistoryStatusWarm
-                                      }`}
-                                    >
-                                      {badgeLabel}
-                                    </span>
-                                    <span className={styles.writingHistoryWordBadge}>
-                                      {getHistoryWordCount(latestAttempt?.answerText ?? "")} words
-                                    </span>
-                                  </div>
-                                </div>
-                                <span className="material-symbols-outlined">
-                                  {openSessions[session.sessionId] ? "expand_less" : "expand_more"}
-                                </span>
-                              </button>
-
-                              {openSessions[session.sessionId]
-                                ? renderWritingHistoryExpandedContent(
-                                    session,
-                                    comparisonView,
-                                    latestAttempt,
-                                    improvedText,
-                                    "질문",
-                                    session.questionKo,
-                                    styles.writingHistoryExpanded
-                                  )
-                                : null}
-                            </article>
-                          );
-                        })}
-                      </div>
-                    ) : null}
-                  </section>
-                ))}
+                                  <span className="material-symbols-outlined">open_in_new</span>
+                                </button>
+                              </article>
+                            );
+                          })}
+                        </div>
+                      ) : null}
+                    </section>
+                  );
+                })}
               </div>
             )}
+
+            {historyError ? <p className={styles.error}>{historyError}</p> : null}
           </section>
-
-          <aside
-            id="writing-feedback-section"
-            className={`${styles.writingFeedbackPanel} ${styles.historySectionAnchor}`}
-          >
-            <div className={styles.writingFeedbackHeader}>
-              <h2>자주 고친 포인트</h2>
-            </div>
-            {mistakeError ? <p className={styles.error}>{mistakeError}</p> : null}
-            {commonMistakes.length === 0 ? (
-              <div className={styles.writingPanelEmpty}>
-                <p>아직 반복해서 잡힌 실수가 없어요. 작문을 이어가면 자주 고치는 포인트가 여기에 모여요.</p>
-              </div>
-            ) : (
-              <div className={styles.writingFeedbackList}>
-                {commonMistakes.slice(0, 3).map((mistake) => (
-                  <article key={mistake.issue} className={styles.writingFeedbackItem}>
-                    <div>
-                      <strong>{mistake.displayLabel}</strong>
-                      <p>{mistake.latestSuggestion}</p>
-                    </div>
-                  </article>
-                ))}
-              </div>
-            )}
-          </aside>
-        </div>
-
-        <section
-          id="writing-expressions-section"
-          className={`${styles.writingExpressionsPanel} ${styles.historySectionAnchor}`}
-        >
+        ) : (
+          <section className={styles.writingHistoryBoard}>
             <div className={styles.writingPanelHeader}>
               <div>
-                <h2>자주 꺼내 쓴 표현</h2>
-                <p>작문에서 여러 번 사용한 표현을 모아 다음 답변에서도 바로 활용해 보세요.</p>
+                <h2>저장한 표현</h2>
+                <p>{savedExpressions.length}개의 표현</p>
               </div>
-              {usedExpressionHistory.length > EXPRESSION_HISTORY_PREVIEW_COUNT ? (
-                <button
-                  type="button"
-                  className={styles.writingPanelLink}
-                  onClick={() => setShowAllExpressionHistory((current) => !current)}
-                >
-                  {showAllExpressionHistory ? "접어두기" : "모두 보기"}
-                  <span className="material-symbols-outlined">arrow_forward</span>
-                </button>
-              ) : null}
             </div>
 
-            {usedExpressionHistory.length === 0 ? (
+            {isSavedExpressionsLoading ? (
               <div className={styles.writingPanelEmpty}>
-                <p>아직 기록된 표현이 없어요. 작문을 이어가면 자주 쓰는 표현이 여기에 쌓여요.</p>
+                <p>저장한 표현을 불러오고 있어요.</p>
+              </div>
+            ) : savedExpressions.length === 0 ? (
+              <div className={styles.writingPanelEmpty}>
+                <p>아직 저장한 표현이 없어요. 피드백 카드에서 마음에 드는 표현을 저장해 보세요.</p>
+                <button type="button" className={styles.primaryButton} onClick={goHome}>
+                  질문으로 이동
+                </button>
               </div>
             ) : (
-              <div className={styles.writingExpressionsGrid}>
-                {expressionCards.map((expression, index) => (
-                  <article key={expression.expression} className={styles.writingExpressionCard}>
-                    <span className={styles.writingExpressionTag}>
-                      {index % 3 === 0 ? "표현" : index % 3 === 1 ? "주제" : "패턴"}
-                    </span>
-                    <strong>{expression.expression}</strong>
-                    <p>{expression.matchedText ?? expression.latestQuestionKo}</p>
-                    <small>
-                      {formatExpressionHistoryDate(expression.lastUsedAt)} · {expression.count}회 사용
-                    </small>
-                  </article>
-                ))}
-                {hiddenExpressionHistoryCount > 0 && !showAllExpressionHistory ? (
-                  <button
-                    type="button"
-                    className={styles.writingExpressionMoreCard}
-                    onClick={() => setShowAllExpressionHistory(true)}
-                  >
-                    <span className="material-symbols-outlined">add_circle</span>
-                    <span>{`표현 ${hiddenExpressionHistoryCount}개 더 보기`}</span>
-                  </button>
-                ) : null}
+              <div className={styles.savedExpressionGrid}>
+                {savedExpressions.map((item) => {
+                  const promptText = getSavedExpressionPromptText(item);
+                  const isPromptOpen = Boolean(openSavedExpressionPrompts[item.id]);
+                  const hasLinkedHistory = Boolean(findHistorySessionForSavedExpression(item));
+
+                  return (
+                    <article key={item.id} className={styles.savedExpressionCard}>
+                      <div className={styles.savedExpressionHeaderRow}>
+                        <div className={styles.savedExpressionMetaWrap}>
+                          <strong className={styles.savedExpressionText}>{item.expression}</strong>
+                          <div className={styles.savedExpressionBadgeRow}>
+                            <span className={styles.savedExpressionSourceBadge}>
+                              {getSavedExpressionSourceLabel(item.sourceType)}
+                            </span>
+                            {item.saveCount > 1 ? (
+                              <span className={styles.savedExpressionSaveCount}>{`${item.saveCount}번 저장`}</span>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          className={styles.savedExpressionDeleteButton}
+                          onClick={() => handleDeleteSavedExpression(item)}
+                          disabled={deletingSavedExpressionId === item.id}
+                        >
+                          {deletingSavedExpressionId === item.id ? "삭제 중" : "삭제"}
+                        </button>
+                      </div>
+
+                      {item.meaningKo ? <p className={styles.savedExpressionMeaning}>{item.meaningKo}</p> : null}
+                      {item.usageTipKo ? <p className={styles.savedExpressionUsageTip}>{item.usageTipKo}</p> : null}
+                      {item.exampleEn ? (
+                        <p className={styles.savedExpressionExample}>
+                          {renderSavedExpressionExample(item.exampleEn, item.expression)}
+                        </p>
+                      ) : null}
+
+                      {promptText ? (
+                        <div className={styles.savedExpressionPromptSection}>
+                          <button
+                            type="button"
+                            className={styles.savedExpressionPromptLink}
+                            onClick={() => toggleSavedExpressionPrompt(item.id)}
+                          >
+                            {isPromptOpen ? "질문 숨기기" : "어떤 질문에서 저장했는지 보기"}
+                          </button>
+
+                          {isPromptOpen ? (
+                            <div className={styles.savedExpressionPromptBox}>
+                              <p className={styles.savedExpressionPrompt}>{promptText}</p>
+                              <button
+                                type="button"
+                                className={styles.savedExpressionHistoryButton}
+                                onClick={() => handleOpenSavedExpressionHistory(item)}
+                                disabled={!hasLinkedHistory}
+                              >
+                                {hasLinkedHistory ? "질문 기록으로 가기" : "연결된 기록이 없어요"}
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+
+                      <p className={styles.savedExpressionDate}>{formatSavedExpressionDate(item.lastSavedAt)}</p>
+                    </article>
+                  );
+                })}
               </div>
             )}
-        </section>
 
-        <div className={styles.writingHistoryFooterAction}>
-          <button type="button" className={styles.ghostButton} onClick={goHome}>
-            계속 써보기 →
-          </button>
-        </div>
+            {savedExpressionError ? <p className={styles.error}>{savedExpressionError}</p> : null}
+          </section>
+        )}
       </section>
+    );
+  }
+
+  function renderSelectedSessionModal() {
+    if (!selectedSession) {
+      return null;
+    }
+
+    const latestAttempt = getLatestAttempt(selectedSession);
+    const comparisonView = buildHistoryComparisonView(selectedSession);
+    const improvedText =
+      comparisonView?.rewriteAttempt.answerText ??
+      latestAttempt?.feedback.correctedAnswer ??
+      latestAttempt?.answerText ??
+      "";
+
+    return (
+      <div
+        className={styles.writingSessionModalOverlay}
+        role="dialog"
+        aria-modal="true"
+        aria-label="작문 기록 상세"
+        onClick={handleCloseSelectedSession}
+      >
+        <div
+          className={styles.writingSessionModalDialog}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className={styles.writingSessionModalHeader}>
+            <div className={styles.writingSessionModalTitleBlock}>
+              <span>질문 상세</span>
+              <h2>{selectedSession.questionEn}</h2>
+              <p>{selectedSession.questionKo}</p>
+            </div>
+            <button
+              type="button"
+              className={styles.writingSessionModalCloseButton}
+              onClick={handleCloseSelectedSession}
+            >
+              닫기
+            </button>
+          </div>
+
+          {renderWritingHistoryExpandedContent(
+            selectedSession,
+            comparisonView,
+            latestAttempt,
+            improvedText,
+            "질문 해석",
+            selectedSession.questionKo,
+            styles.writingSessionModalContent
+          )}
+        </div>
+      </div>
     );
   }
 
@@ -2276,7 +2378,7 @@ export function MyPageClient() {
     return (
       <main className={`${styles.page} ${styles.myPageShell}`}>
         <section className={styles.emptyCard}>
-          <h2>내 정보를 불러오는 중이에요</h2>
+          <h2>{activeTab === "account" ? "계정 정보를 불러오고 있어요" : "작문 기록을 불러오고 있어요"}</h2>
           <p>잠시만 기다려 주세요.</p>
         </section>
       </main>
@@ -2288,7 +2390,11 @@ export function MyPageClient() {
       <main className={`${styles.page} ${styles.myPageShell}`}>
         <section className={styles.emptyCard}>
           <h2>로그인이 필요해요</h2>
-          <p>내 정보와 작문 기록은 로그인한 뒤에 확인할 수 있어요.</p>
+          <p>
+            {activeTab === "account"
+              ? "여기에서는 닉네임과 비밀번호를 바꾸고, 로그아웃이나 회원탈퇴를 할 수 있어요."
+              : "작문 기록은 로그인한 뒤 날짜별로 모아볼 수 있어요."}
+          </p>
           <div className={styles.linkRow}>
             <button type="button" className={styles.primaryButton} onClick={() => router.push("/login")}>
               로그인
@@ -2311,9 +2417,12 @@ export function MyPageClient() {
   }
 
   return (
-    <main className={`${styles.page} ${styles.myPageShell} ${styles.myPageWritingShell}`}>
-      {renderWritingTab()}
-    </main>
+    <>
+      <main className={`${styles.page} ${styles.myPageShell} ${styles.myPageWritingShell}`}>
+        {renderWritingTab()}
+      </main>
+      {renderSelectedSessionModal()}
+    </>
   );
 }
 

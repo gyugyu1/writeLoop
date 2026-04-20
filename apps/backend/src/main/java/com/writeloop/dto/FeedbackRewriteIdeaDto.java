@@ -5,6 +5,7 @@ public record FeedbackRewriteIdeaDto(
         String english,
         String meaningKo,
         String noteKo,
+        String exampleEn,
         String originalText,
         String revisedText,
         boolean optionalTone
@@ -14,6 +15,7 @@ public record FeedbackRewriteIdeaDto(
         english = normalize(english);
         meaningKo = normalize(meaningKo);
         noteKo = normalize(noteKo);
+        exampleEn = normalize(exampleEn);
         originalText = normalize(originalText);
         revisedText = normalize(revisedText);
     }
@@ -23,6 +25,7 @@ public record FeedbackRewriteIdeaDto(
             String english,
             String meaningKo,
             String noteKo,
+            String exampleEn,
             String originalText,
             String revisedText,
             boolean optionalTone
@@ -32,6 +35,7 @@ public record FeedbackRewriteIdeaDto(
                 english,
                 meaningKo,
                 noteKo,
+                exampleEn,
                 originalText,
                 revisedText,
                 optionalTone
@@ -41,13 +45,15 @@ public record FeedbackRewriteIdeaDto(
     public static FeedbackRewriteIdeaDto suggestion(
             String english,
             String meaningKo,
-            String noteKo
+            String noteKo,
+            String exampleEn
     ) {
         return new FeedbackRewriteIdeaDto(
                 null,
                 english,
                 meaningKo,
                 noteKo,
+                exampleEn,
                 null,
                 null,
                 false

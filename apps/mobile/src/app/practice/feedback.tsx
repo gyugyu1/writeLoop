@@ -16,7 +16,7 @@ import {
   PracticeFeedbackContent,
   type FeedbackTabKey
 } from "@/components/practice-feedback-content";
-import { saveExpression } from "@/lib/api";
+import { deleteSavedExpression, getSavedExpressions, saveExpression } from "@/lib/api";
 import { buildIncompleteLoopPromptSnapshot, saveIncompleteLoop } from "@/lib/incomplete-loop";
 import {
   getPracticeFeedbackState,
@@ -25,7 +25,7 @@ import {
 } from "@/lib/practice-feedback-state";
 import { isDailyDifficulty } from "@/lib/practice";
 import { useSession } from "@/lib/session";
-import type { DailyDifficulty } from "@/lib/types";
+import type { DailyDifficulty, SavedExpressionSourceType } from "@/lib/types";
 
 const completionMascotImage = require("@/assets/images/feedback-completion-mascot.png");
 
@@ -48,6 +48,20 @@ function normalizeExpressionKey(expression: string) {
   return expression.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+function buildSavedExpressionIdMap(
+  expressions: { id: number; expression: string }[]
+): Record<string, number> {
+  return expressions.reduce<Record<string, number>>((map, expression) => {
+    const normalizedKey = normalizeExpressionKey(expression.expression);
+    if (!normalizedKey) {
+      return map;
+    }
+
+    map[normalizedKey] = expression.id;
+    return map;
+  }, {});
+}
+
 export default function PracticeFeedbackScreen() {
   const params = useLocalSearchParams<{ difficulty?: string; promptId?: string }>();
   const navigation = useNavigation();
@@ -64,7 +78,9 @@ export default function PracticeFeedbackScreen() {
   const [activeTab, setActiveTab] = useState<FeedbackTabKey>("feedback");
   const [tabBarY, setTabBarY] = useState<number | null>(null);
   const [scrollY, setScrollY] = useState(0);
-  const [savedExpressionKeys, setSavedExpressionKeys] = useState<string[]>([]);
+  const [savedExpressionIdsByKey, setSavedExpressionIdsByKey] = useState<Record<string, number>>(
+    {}
+  );
   const [savingExpressionKeys, setSavingExpressionKeys] = useState<string[]>([]);
 
   const loopStatus = feedbackState?.feedback.ui?.loopStatus ?? null;
@@ -108,15 +124,44 @@ export default function PracticeFeedbackScreen() {
   }, [requestedDifficulty, requestedPromptId]);
 
   useEffect(() => {
+    if (!currentUser) {
+      setSavedExpressionIdsByKey({});
+      return;
+    }
+
+    let cancelled = false;
+
+    void getSavedExpressions()
+      .then((savedExpressions) => {
+        if (cancelled) {
+          return;
+        }
+
+        setSavedExpressionIdsByKey(buildSavedExpressionIdMap(savedExpressions));
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setSavedExpressionIdsByKey({});
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser]);
+
+  useEffect(() => {
     setActiveTab("feedback");
     setTabBarY(null);
     setScrollY(0);
-    setSavedExpressionKeys([]);
     setSavingExpressionKeys([]);
   }, [requestedDifficulty, requestedPromptId]);
 
-  async function handleSaveUsedExpression(
+  async function handleToggleFeedbackExpression(
     expression: string,
+    sourceType: SavedExpressionSourceType,
     meaningKo?: string | null,
     exampleEn?: string | null,
     usageTip?: string | null
@@ -141,28 +186,41 @@ export default function PracticeFeedbackScreen() {
       return;
     }
 
-    if (savedExpressionKeys.includes(normalizedKey) || savingExpressionKeys.includes(normalizedKey)) {
+    if (savingExpressionKeys.includes(normalizedKey)) {
       return;
     }
+
+    const savedExpressionId = savedExpressionIdsByKey[normalizedKey];
 
     setSavingExpressionKeys((current) =>
       current.includes(normalizedKey) ? current : [...current, normalizedKey]
     );
 
     try {
-      await saveExpression({
+      if (savedExpressionId) {
+        await deleteSavedExpression(savedExpressionId);
+        setSavedExpressionIdsByKey((current) => {
+          const next = { ...current };
+          delete next[normalizedKey];
+          return next;
+        });
+        return;
+      }
+
+      const savedExpression = await saveExpression({
         expression,
         meaningKo: meaningKo ?? undefined,
         exampleEn: exampleEn ?? undefined,
         usageTipKo: usageTip ?? undefined,
-        sourceType: "USED_EXPRESSION",
+        sourceType,
         promptId: feedbackState.prompt.id,
         answerSessionId: feedbackState.feedback.sessionId,
         answerAttemptNo: feedbackState.feedback.attemptNo
       });
-      setSavedExpressionKeys((current) =>
-        current.includes(normalizedKey) ? current : [...current, normalizedKey]
-      );
+      setSavedExpressionIdsByKey((current) => ({
+        ...current,
+        [normalizedKey]: savedExpression.id
+      }));
     } catch (caughtError) {
       Alert.alert(
         "표현 저장에 실패했어요",
@@ -270,12 +328,33 @@ export default function PracticeFeedbackScreen() {
                 onActiveTabChange={setActiveTab}
                 onTabBarLayout={setTabBarY}
                 onSaveUsedExpression={(expression, meaningKo, exampleEn, usageTip) =>
-                  void handleSaveUsedExpression(expression, meaningKo, exampleEn, usageTip)
+                  void handleToggleFeedbackExpression(
+                    expression,
+                    "USED_EXPRESSION",
+                    meaningKo,
+                    exampleEn,
+                    usageTip
+                  )
+                }
+                onSaveRefinementExpression={(expression, meaningKo, exampleEn, usageTip) =>
+                  void handleToggleFeedbackExpression(
+                    expression,
+                    "REFINEMENT_EXPRESSION",
+                    meaningKo,
+                    exampleEn,
+                    usageTip
+                  )
                 }
                 isUsedExpressionSaved={(expression) =>
-                  savedExpressionKeys.includes(normalizeExpressionKey(expression))
+                  Boolean(savedExpressionIdsByKey[normalizeExpressionKey(expression)])
                 }
                 isSavingUsedExpression={(expression) =>
+                  savingExpressionKeys.includes(normalizeExpressionKey(expression))
+                }
+                isRefinementExpressionSaved={(expression) =>
+                  Boolean(savedExpressionIdsByKey[normalizeExpressionKey(expression)])
+                }
+                isSavingRefinementExpression={(expression) =>
                   savingExpressionKeys.includes(normalizeExpressionKey(expression))
                 }
               />

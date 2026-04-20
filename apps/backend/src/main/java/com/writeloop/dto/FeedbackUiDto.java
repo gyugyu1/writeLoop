@@ -174,6 +174,7 @@ public record FeedbackUiDto(
                         english,
                         meaningKo,
                         noteKo,
+                        nextStepPractice.exampleEn(),
                         nextStepPractice.originalText(),
                         nextStepPractice.revisedText(),
                         nextStepPractice.optionalTone()
@@ -190,7 +191,8 @@ public record FeedbackUiDto(
                 FeedbackRewriteIdeaDto item = FeedbackRewriteIdeaDto.suggestion(
                         suggestion.english(),
                         suggestion.meaningKo(),
-                        suggestion.noteKo()
+                        suggestion.noteKo(),
+                        null
                 );
                 merged.putIfAbsent(dedupeKey(item), item);
             }

@@ -1420,6 +1420,7 @@ public class GeminiFeedbackClient {
                                                 "english", Map.of("type", List.of("string", "null")),
                                                 "meaningKo", Map.of("type", List.of("string", "null")),
                                                 "noteKo", Map.of("type", List.of("string", "null")),
+                                                "exampleEn", Map.of("type", List.of("string", "null")),
                                                 "originalText", Map.of("type", List.of("string", "null")),
                                                 "revisedText", Map.of("type", List.of("string", "null")),
                                                 "optionalTone", Map.of("type", List.of("boolean", "null"))
@@ -1429,6 +1430,7 @@ public class GeminiFeedbackClient {
                                                 "english",
                                                 "meaningKo",
                                                 "noteKo",
+                                                "exampleEn",
                                                 "originalText",
                                                 "revisedText",
                                                 "optionalTone"
@@ -1659,6 +1661,8 @@ public class GeminiFeedbackClient {
                 - Do not include cardType or UI labels. The UI will infer the card style from originalText / revisedText.
                 - An item with originalText and revisedText should teach one concrete optional upgrade.
                 - An item without a pair should be one short reusable English phrase, clause, example starter, time marker, detail chunk, or connector.
+                - For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence that shows how the English idea can be used in context.
+                - For correction-pair rewriteIdeas or full-sentence swap cards, leave exampleEn null unless a separate example is genuinely helpful and not redundant.
                 - Keep rewriteIdeas prompt-fit, reusable, and distinct.
                 - Return as many high-value rewriteIdeas as the answer supports. Do not limit yourself to a fixed count.
                 - For CONTENT_THIN and SHORT_BUT_VALID answers, actively generate multiple reason, example, detail, image, time-flow, or connector ideas when they would help the learner extend the same answer.
@@ -1897,6 +1901,7 @@ public class GeminiFeedbackClient {
                 textOrNull(item.path("english")),
                 textOrNull(item.path("meaningKo")),
                 textOrNull(item.path("noteKo")),
+                textOrNull(item.path("exampleEn")),
                 textOrNull(item.path("originalText")),
                 textOrNull(item.path("revisedText")),
                 item.path("optionalTone").asBoolean(false)

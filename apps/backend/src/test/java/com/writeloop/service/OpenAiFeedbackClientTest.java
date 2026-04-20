@@ -129,13 +129,22 @@ class OpenAiFeedbackClientTest {
                 .path("usedExpressions")
                 .path("items")
                 .path("properties");
+        JsonNode rewriteIdeaProperties = request.path("text")
+                .path("format")
+                .path("schema")
+                .path("properties")
+                .path("rewriteIdeas")
+                .path("items")
+                .path("properties");
         String promptText = request.path("input").get(0).path("content").get(0).path("text").asText("");
 
         assertThat(usedExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(rewriteIdeaProperties.path("exampleEn").isMissingNode()).isFalse();
         assertThat(promptText)
                 .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
                 .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
-                .contains("usedExpressions.exampleEn should be one short natural sentence");
+                .contains("usedExpressions.exampleEn should be one short natural sentence")
+                .contains("For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence");
     }
 
     @Test

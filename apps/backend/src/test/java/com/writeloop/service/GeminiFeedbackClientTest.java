@@ -152,6 +152,7 @@ class GeminiFeedbackClientTest {
                         "english", "it helps me feel more energetic",
                         "meaningKo", "feel more energetic",
                         "noteKo", "A natural reason phrase that works well after because.",
+                        "exampleEn", "It helps me feel more energetic during the day.",
                         "originalText", "",
                         "revisedText", "",
                         "optionalTone", false
@@ -203,6 +204,7 @@ class GeminiFeedbackClientTest {
         assertThat(sections.rewriteIdeas()).singleElement().satisfies(idea -> {
             assertThat(idea.english()).isEqualTo("it helps me feel more energetic");
             assertThat(idea.noteKo()).isEqualTo("A natural reason phrase that works well after because.");
+            assertThat(idea.exampleEn()).isEqualTo("It helps me feel more energetic during the day.");
         });
         assertThat(sections.modelAnswerVariants()).singleElement().satisfies(variant -> {
             assertThat(variant.answer()).isEqualTo("I usually take a nap on Sunday afternoons.");
@@ -244,13 +246,21 @@ class GeminiFeedbackClientTest {
                 .path("usedExpressions")
                 .path("items")
                 .path("properties");
+        JsonNode rewriteIdeaProperties = request.path("generationConfig")
+                .path("responseJsonSchema")
+                .path("properties")
+                .path("rewriteIdeas")
+                .path("items")
+                .path("properties");
         String promptText = request.path("contents").get(0).path("parts").get(0).path("text").asText("");
 
         assertThat(usedExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(rewriteIdeaProperties.path("exampleEn").isMissingNode()).isFalse();
         assertThat(promptText)
                 .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
                 .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
-                .contains("usedExpressions.exampleEn must be one short natural sentence");
+                .contains("usedExpressions.exampleEn must be one short natural sentence")
+                .contains("For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence");
     }
     @Test
     void buildDiagnosisPrompt_includes_attempt_context() {

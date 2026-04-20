@@ -189,6 +189,8 @@ function getSavedExpressionSourceLabel(sourceType: SavedExpression["sourceType"]
       return "내가 쓴 표현";
     case "COACH_RECOMMENDATION":
       return "AI 코치 추천";
+    case "REFINEMENT_EXPRESSION":
+      return "표현 더하기";
     default:
       return "저장한 표현";
   }
@@ -683,20 +685,24 @@ const listStyles = StyleSheet.create({
   sectionTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -1, color: "#232128" },
   sectionMeta: { fontSize: 14, fontWeight: "700", color: "#88745A" },
   savedExpressionList: {
-    gap: 12
+    gap: 0
   },
   savedExpressionCard: {
-    borderRadius: 22,
-    backgroundColor: "#FBF5EE",
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
     paddingVertical: 16,
-    gap: 8
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E6D8C8"
   },
   savedExpressionHeaderRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12
+  },
+  savedExpressionHeaderAside: {
+    alignItems: "flex-end",
+    gap: 8
   },
   savedExpressionMetaWrap: {
     flex: 1,
@@ -795,7 +801,8 @@ const listStyles = StyleSheet.create({
   savedExpressionDate: {
     fontSize: 12,
     lineHeight: 18,
-    color: "#9A856D"
+    color: "#9A856D",
+    textAlign: "right"
   },
   calendarOpenButton: {
     borderRadius: 999,
@@ -1818,7 +1825,6 @@ export default function RecordsScreen() {
                             <View key={item.id} style={styles.savedExpressionCard}>
                               <View style={styles.savedExpressionHeaderRow}>
                                 <View style={styles.savedExpressionMetaWrap}>
-                                  <Text style={styles.savedExpressionText}>{item.expression}</Text>
                                   <View style={styles.savedExpressionBadgeRow}>
                                     <View style={styles.savedExpressionSourceBadge}>
                                       <Text style={styles.savedExpressionSourceBadgeText}>
@@ -1831,25 +1837,31 @@ export default function RecordsScreen() {
                                       </Text>
                                     ) : null}
                                   </View>
+                                  <Text style={styles.savedExpressionText}>{item.expression}</Text>
                                 </View>
 
-                                <Pressable
-                                  style={styles.savedExpressionDeleteButton}
-                                  onPress={() => handleDeleteSavedExpression(item)}
-                                  disabled={deletingSavedExpressionId === item.id}
-                              >
-                                {deletingSavedExpressionId === item.id ? (
-                                  <ActivityIndicator color="#A3371A" size="small" />
-                                ) : (
-                                  <SymbolView
-                                    name={{ ios: "trash", android: "delete", web: "delete" }}
-                                    size={16}
-                                    weight="semibold"
-                                    tintColor="#B95A36"
-                                    type="hierarchical"
-                                  />
-                                )}
-                              </Pressable>
+                                <View style={styles.savedExpressionHeaderAside}>
+                                  <Text style={styles.savedExpressionDate}>
+                                    {formatSavedExpressionDate(item.lastSavedAt)}
+                                  </Text>
+                                  <Pressable
+                                    style={styles.savedExpressionDeleteButton}
+                                    onPress={() => handleDeleteSavedExpression(item)}
+                                    disabled={deletingSavedExpressionId === item.id}
+                                  >
+                                    {deletingSavedExpressionId === item.id ? (
+                                      <ActivityIndicator color="#A3371A" size="small" />
+                                    ) : (
+                                      <SymbolView
+                                        name={{ ios: "trash", android: "delete", web: "delete" }}
+                                        size={16}
+                                        weight="semibold"
+                                        tintColor="#B95A36"
+                                        type="hierarchical"
+                                      />
+                                    )}
+                                  </Pressable>
+                                </View>
                               </View>
 
                               {item.meaningKo ? (
@@ -1893,9 +1905,6 @@ export default function RecordsScreen() {
                                 </>
                               ) : null}
 
-                              <Text style={styles.savedExpressionDate}>
-                                {formatSavedExpressionDate(item.lastSavedAt)}
-                              </Text>
                             </View>
                           );
                         })}

@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { SymbolView } from "expo-symbols";
 import {
+  ActivityIndicator,
   Pressable,
   StyleSheet,
   Text,
@@ -52,6 +54,7 @@ type RewriteIdeaCard = {
   english: string;
   korean: string;
   note: string;
+  exampleEn: string;
   original: string;
   revised: string;
   hasSwapPair: boolean;
@@ -90,6 +93,14 @@ type PracticeFeedbackContentProps = {
   ) => void;
   isUsedExpressionSaved?: (expression: string) => boolean;
   isSavingUsedExpression?: (expression: string) => boolean;
+  onSaveRefinementExpression?: (
+    expression: string,
+    meaningKo?: string | null,
+    exampleEn?: string | null,
+    usageTip?: string | null
+  ) => void;
+  isRefinementExpressionSaved?: (expression: string) => boolean;
+  isSavingRefinementExpression?: (expression: string) => boolean;
 };
 
 function trimText(value?: string | null) {
@@ -612,6 +623,7 @@ function normalizeRewriteIdeaCard(
     english,
     korean,
     note,
+    exampleEn: trimText(idea.exampleEn),
     original,
     revised,
     hasSwapPair,
@@ -670,6 +682,7 @@ function buildRewriteIdeas(feedback: Feedback): RewriteIdeaCard[] {
         english,
         korean: resolveLearningPointMeaning(point, lead) || trimText(point.exampleKo),
         note: pickFirstNonEmpty(resolveLearningPointGuidance(point), resolveLearningPointSupport(point)),
+        exampleEn: trimText(point.exampleEn),
         original: "",
         revised: "",
         hasSwapPair: false,
@@ -678,6 +691,30 @@ function buildRewriteIdeas(feedback: Feedback): RewriteIdeaCard[] {
     });
 
   return merged;
+}
+
+function canSaveRewriteIdea(card: RewriteIdeaCard) {
+  return !card.hasSwapPair && Boolean(trimText(card.english));
+}
+
+function renderExpressionSaveIcon(saved: boolean, saving: boolean) {
+  if (saving) {
+    return <ActivityIndicator color="#8A5A1E" size="small" />;
+  }
+
+  return (
+    <SymbolView
+      name={{
+        ios: saved ? "bookmark.fill" : "bookmark",
+        android: saved ? "bookmark" : "bookmark_border",
+        web: saved ? "bookmark" : "bookmark_border"
+      }}
+      size={16}
+      weight="semibold"
+      tintColor={saved ? "#2F7A46" : "#8A5A1E"}
+      type="hierarchical"
+    />
+  );
 }
 
 function getModelAnswerVariantLabel(kind?: string | null) {
@@ -802,7 +839,10 @@ export function PracticeFeedbackContent({
   onTabBarLayout,
   onSaveUsedExpression,
   isUsedExpressionSaved,
-  isSavingUsedExpression
+  isSavingUsedExpression,
+  onSaveRefinementExpression,
+  isRefinementExpressionSaved,
+  isSavingRefinementExpression
 }: PracticeFeedbackContentProps) {
   const [internalActiveTab, setInternalActiveTab] = useState<FeedbackTabKey>("feedback");
   const [contentLayoutY, setContentLayoutY] = useState<number | null>(null);
@@ -1057,22 +1097,19 @@ export function PracticeFeedbackContent({
                               )
                             }
                             disabled={
-                              Boolean(isUsedExpressionSaved?.(item.expression)) ||
                               Boolean(isSavingUsedExpression?.(item.expression))
                             }
+                            accessibilityRole="button"
+                            accessibilityLabel={
+                              isUsedExpressionSaved?.(item.expression)
+                                ? "표현 저장 취소"
+                                : "표현 저장"
+                            }
                           >
-                            <Text
-                              style={[
-                                styles.expressionActionButtonText,
-                                isUsedExpressionSaved?.(item.expression) && styles.expressionActionButtonTextSaved
-                              ]}
-                            >
-                              {isSavingUsedExpression?.(item.expression)
-                                ? "저장 중"
-                                : isUsedExpressionSaved?.(item.expression)
-                                  ? "저장됨"
-                                  : "저장"}
-                            </Text>
+                            {renderExpressionSaveIcon(
+                              Boolean(isUsedExpressionSaved?.(item.expression)),
+                              Boolean(isSavingUsedExpression?.(item.expression))
+                            )}
                           </Pressable>
                         ) : null}
                       </View>
@@ -1171,7 +1208,41 @@ export function PracticeFeedbackContent({
                   </View>
                 ) : (
                   <View key={idea.key} style={styles.rewriteSuggestionCard}>
-                    <Text style={styles.rewriteSuggestionEnglish}>{idea.english}</Text>
+                    <View style={styles.rewriteSuggestionHeaderRow}>
+                      <Text style={styles.rewriteSuggestionEnglish}>{idea.english}</Text>
+                      {onSaveRefinementExpression && canSaveRewriteIdea(idea) ? (
+                        <Pressable
+                          style={[
+                            styles.expressionActionButton,
+                            styles.rewriteSuggestionSaveButton,
+                            isRefinementExpressionSaved?.(idea.english) &&
+                              styles.expressionActionButtonSaved
+                          ]}
+                          onPress={() =>
+                            onSaveRefinementExpression(
+                              idea.english,
+                              idea.korean || undefined,
+                              idea.exampleEn || undefined,
+                              idea.note || undefined
+                            )
+                          }
+                          disabled={
+                            Boolean(isSavingRefinementExpression?.(idea.english))
+                          }
+                          accessibilityRole="button"
+                          accessibilityLabel={
+                            isRefinementExpressionSaved?.(idea.english)
+                              ? "표현 저장 취소"
+                              : "표현 저장"
+                          }
+                        >
+                          {renderExpressionSaveIcon(
+                            Boolean(isRefinementExpressionSaved?.(idea.english)),
+                            Boolean(isSavingRefinementExpression?.(idea.english))
+                          )}
+                        </Pressable>
+                      ) : null}
+                    </View>
                     {idea.korean ? (
                       <Text style={styles.rewriteSuggestionKorean}>{idea.korean}</Text>
                     ) : null}
@@ -1464,8 +1535,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E3C39B",
     backgroundColor: "#FFFBF4",
-    paddingHorizontal: 10,
-    paddingVertical: 7
+    width: 34,
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center"
   },
   expressionActionButtonSaved: {
     backgroundColor: "#EAF7ED",
@@ -1535,11 +1608,23 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 6
   },
+  rewriteSuggestionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
   rewriteSuggestionEnglish: {
     fontSize: 16,
     lineHeight: 23,
     fontWeight: "900",
-    color: "#2D261E"
+    color: "#2D261E",
+    flex: 1
+  },
+  rewriteSuggestionSaveButton: {
+    width: 34,
+    height: 34,
+    paddingHorizontal: 0,
+    paddingVertical: 0
   },
   rewriteSuggestionKorean: {
     fontSize: 14,

@@ -4,7 +4,10 @@ export type SocialProvider = "naver" | "google" | "kakao";
 export type AttemptType = "INITIAL" | "REWRITE";
 export type InlineFeedbackType = "KEEP" | "REPLACE" | "ADD" | "REMOVE";
 export type WritingDraftType = "ANSWER" | "REWRITE";
-export type SavedExpressionSourceType = "USED_EXPRESSION" | "COACH_RECOMMENDATION";
+export type SavedExpressionSourceType =
+  | "USED_EXPRESSION"
+  | "COACH_RECOMMENDATION"
+  | "REFINEMENT_EXPRESSION";
 
 export interface Prompt {
   id: string;
@@ -249,6 +252,7 @@ export interface FeedbackRewriteIdea {
   english?: string | null;
   meaningKo?: string | null;
   noteKo?: string | null;
+  exampleEn?: string | null;
   originalText?: string | null;
   revisedText?: string | null;
   optionalTone?: boolean | null;

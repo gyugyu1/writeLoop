@@ -21,6 +21,7 @@ import java.util.Map;
 public class AccessTokenService {
 
     private static final String HMAC_SHA256 = "HmacSHA256";
+    private static final String DEV_TOKEN_SECRET = "writeloop-dev-token-secret-change-me";
     private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {
     };
 
@@ -28,6 +29,9 @@ public class AccessTokenService {
 
     @Value("${app.auth.token-secret:}")
     private String tokenSecret;
+
+    @Value("${app.security.allow-insecure-dev-defaults:false}")
+    private boolean allowInsecureDevDefaults;
 
     @Value("${app.auth.access-token-minutes:15}")
     private long accessTokenMinutes;
@@ -107,7 +111,7 @@ public class AccessTokenService {
     private String sign(String value) {
         try {
             Mac mac = Mac.getInstance(HMAC_SHA256);
-            mac.init(new SecretKeySpec(tokenSecret.getBytes(StandardCharsets.UTF_8), HMAC_SHA256));
+            mac.init(new SecretKeySpec(resolveTokenSecret().getBytes(StandardCharsets.UTF_8), HMAC_SHA256));
             return Base64.getUrlEncoder().withoutPadding().encodeToString(mac.doFinal(value.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception exception) {
             throw new ApiException(
@@ -137,6 +141,22 @@ public class AccessTokenService {
             throw invalidAccessToken();
         }
         return accessToken.trim();
+    }
+
+    private String resolveTokenSecret() {
+        if (tokenSecret != null && !tokenSecret.isBlank()) {
+            return tokenSecret.trim();
+        }
+
+        if (allowInsecureDevDefaults) {
+            return DEV_TOKEN_SECRET;
+        }
+
+        throw new ApiException(
+                HttpStatus.INTERNAL_SERVER_ERROR,
+                "ACCESS_TOKEN_SIGNING_FAILED",
+                "濡쒓렇???좏겙??留뚮뱾吏 紐삵뻽?댁슂."
+        );
     }
 
     private ApiException invalidAccessToken() {

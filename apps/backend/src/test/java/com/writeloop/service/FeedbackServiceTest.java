@@ -722,8 +722,8 @@ class FeedbackServiceTest {
                 null,
                 "Hint: " + answer,
                 List.of(
-                        new CoachExpressionUsageDto("stay on track", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", "Useful chunk."),
-                        new CoachExpressionUsageDto("I often struggle with meet the deadline", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", "Broken span.")
+                        new CoachExpressionUsageDto("stay on track", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", null, null, "Useful chunk."),
+                        new CoachExpressionUsageDto("I often struggle with meet the deadline", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", null, null, "Broken span.")
                 )
         ));
 
@@ -1050,7 +1050,7 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void review_extracts_used_expressions_even_without_coach_usage() {
+    void review_does_not_extract_used_expressions_when_llm_does_not_supply_them() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-2",
                 "Weekend",
@@ -1085,9 +1085,46 @@ class FeedbackServiceTest {
                 null
         );
 
-        assertThat(response.usedExpressions())
-                .extracting(CoachExpressionUsageDto::expression)
-                .contains("work out", "spend time with my family at the park");
+        assertThat(response.usedExpressions()).isEmpty();
+    }
+
+    @Test
+    void review_keeps_used_expressions_empty_when_only_fallback_candidates_exist() {
+        PromptDto prompt = new PromptDto(
+                "prompt-a-3",
+                "After Dinner",
+                "EASY",
+                "What do you usually do after dinner?",
+                "저녁을 먹고 난 뒤에는 보통 무엇을 하나요?",
+                "Mention one or two activities."
+        );
+        String answer = "I usually watch YouTube videos and get ready for the next day.";
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        stubOpenAiReview(new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                90,
+                false,
+                null,
+                "summary",
+                List.of("strength"),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", answer, answer)),
+                answer,
+                List.of(),
+                answer,
+                "rewrite"
+        ));
+
+        FeedbackResponseDto response = feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), answer, null, "INITIAL", "guest-test-identity-0001"),
+                null
+        );
+
+        assertThat(response.usedExpressions()).isEmpty();
     }
 
     @Test
@@ -1125,6 +1162,8 @@ class FeedbackServiceTest {
                         "SELF_DISCOVERED",
                         "I want to speak English fluently",
                         "SELF_DISCOVERED",
+                        null,
+                        null,
                         "紐⑺몴瑜?遺꾨챸?섍쾶 留먰븷 ???먯뿰?ㅻ읇寃??????덉뼱??"
                 ))
         ));

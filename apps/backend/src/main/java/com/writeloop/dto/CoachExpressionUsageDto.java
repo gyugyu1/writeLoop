@@ -6,6 +6,8 @@ public record CoachExpressionUsageDto(
         String matchType,
         String matchedText,
         String source,
+        String meaningKo,
+        String exampleEn,
         String usageTip
 ) {
 }

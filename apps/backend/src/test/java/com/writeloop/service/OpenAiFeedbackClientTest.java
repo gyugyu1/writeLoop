@@ -102,6 +102,43 @@ class OpenAiFeedbackClientTest {
     }
 
     @Test
+    void buildGenerationRequestBody_defines_reusable_used_expression_rules_and_example_schema() throws Exception {
+        OpenAiFeedbackClient client = newClient();
+
+        String requestBody = ReflectionTestUtils.invokeMethod(
+                client,
+                "buildGenerationRequestBody",
+                samplePrompt(),
+                "I usually watch YouTube videos and get ready for the next day.",
+                List.of(),
+                sampleDiagnosis(),
+                sampleAnswerProfile(),
+                sampleSectionPolicy(),
+                1,
+                null,
+                List.of(SectionKey.USED_EXPRESSIONS),
+                List.of(),
+                null
+        );
+
+        JsonNode request = objectMapper.readTree(requestBody);
+        JsonNode usedExpressionProperties = request.path("text")
+                .path("format")
+                .path("schema")
+                .path("properties")
+                .path("usedExpressions")
+                .path("items")
+                .path("properties");
+        String promptText = request.path("input").get(0).path("content").get(0).path("text").asText("");
+
+        assertThat(usedExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(promptText)
+                .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
+                .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
+                .contains("usedExpressions.exampleEn should be one short natural sentence");
+    }
+
+    @Test
     void llmPassThroughSectionPolicy_keeps_generation_limits_loose() {
         OpenAiFeedbackClient client = newClient();
 

@@ -12,6 +12,7 @@ import com.writeloop.persistence.AnswerSessionRepository;
 import com.writeloop.persistence.CoachInteractionRepository;
 import com.writeloop.persistence.EmailVerificationTokenRepository;
 import com.writeloop.persistence.PasswordResetTokenRepository;
+import com.writeloop.persistence.SavedExpressionRepository;
 import com.writeloop.persistence.UserEntity;
 import com.writeloop.persistence.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -58,6 +59,9 @@ class AuthServiceTest {
     private PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Mock
+    private SavedExpressionRepository savedExpressionRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -101,6 +105,7 @@ class AuthServiceTest {
                 coachInteractionRepository,
                 emailVerificationTokenRepository,
                 passwordResetTokenRepository,
+                savedExpressionRepository,
                 passwordEncoder,
                 verificationMailService,
                 rememberLoginService,

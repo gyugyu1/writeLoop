@@ -163,9 +163,9 @@ class FeedbackSectionPolicyApplierTest {
                 null,
                 "raw rewrite",
                 List.of(
-                        new CoachExpressionUsageDto("to-do list", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", "Useful for planning."),
-                        new CoachExpressionUsageDto("stay on track", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", "Useful for focus."),
-                        new CoachExpressionUsageDto("I often struggle with meet the deadline", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", "Too raw.")
+                        new CoachExpressionUsageDto("to-do list", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", null, null, "Useful for planning."),
+                        new CoachExpressionUsageDto("stay on track", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", null, null, "Useful for focus."),
+                        new CoachExpressionUsageDto("I often struggle with meet the deadline", true, "SELF_DISCOVERED", null, "SELF_DISCOVERED", null, null, "Too raw.")
                 )
         );
 

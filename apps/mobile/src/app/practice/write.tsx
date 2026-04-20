@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import {
   ActivityIndicator,
+  Alert,
   AppState,
   Image,
   Keyboard,
@@ -27,6 +28,7 @@ import {
   getPrompts,
   getWritingDraft,
   requestCoachHelp,
+  saveExpression,
   saveWritingDraft,
   submitFeedback
 } from "@/lib/api";
@@ -172,6 +174,10 @@ function countWords(text: string) {
   return text.trim() ? text.trim().split(/\s+/).length : 0;
 }
 
+function normalizeExpressionKey(expression: string) {
+  return expression.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 function formatDraftSavedAt(updatedAt: string) {
   return new Date(updatedAt).toLocaleTimeString("ko-KR", {
     hour: "2-digit",
@@ -229,6 +235,8 @@ export default function PracticeWriteScreen() {
   const [coachHelp, setCoachHelp] = useState<CoachHelpResponse | null>(null);
   const [coachHelpError, setCoachHelpError] = useState("");
   const [isLoadingCoachHelp, setIsLoadingCoachHelp] = useState(false);
+  const [savedCoachExpressionKeys, setSavedCoachExpressionKeys] = useState<string[]>([]);
+  const [savingCoachExpressionKeys, setSavingCoachExpressionKeys] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [promptHints, setPromptHints] = useState<PromptHint[]>([]);
@@ -528,6 +536,11 @@ export default function PracticeWriteScreen() {
     return () => {
       cancelled = true;
     };
+  }, [selectedPrompt]);
+
+  useEffect(() => {
+    setSavedCoachExpressionKeys([]);
+    setSavingCoachExpressionKeys([]);
   }, [selectedPrompt?.id]);
 
   async function handleSubmit() {
@@ -616,6 +629,63 @@ export default function PracticeWriteScreen() {
 
       return /\s$/.test(current) ? `${current}${expression}` : `${current} ${expression}`;
     });
+  }
+
+  async function handleSaveCoachExpression(
+    expression: CoachHelpResponse["expressions"][number]
+  ) {
+    const normalizedKey = normalizeExpressionKey(expression.expression);
+    if (!normalizedKey || !selectedPrompt) {
+      return;
+    }
+
+    if (!currentUser) {
+      Alert.alert(
+        "로그인이 필요해요",
+        "표현 저장은 로그인 후 사용할 수 있어요.",
+        [
+          { text: "취소", style: "cancel" },
+          {
+            text: "로그인하기",
+            onPress: () => router.push("/login")
+          }
+        ]
+      );
+      return;
+    }
+
+    if (
+      savedCoachExpressionKeys.includes(normalizedKey) ||
+      savingCoachExpressionKeys.includes(normalizedKey)
+    ) {
+      return;
+    }
+
+    setSavingCoachExpressionKeys((current) =>
+      current.includes(normalizedKey) ? current : [...current, normalizedKey]
+    );
+
+    try {
+      await saveExpression({
+        expression: expression.expression,
+        meaningKo: expression.meaningKo,
+        usageTipKo: expression.usageTip,
+        exampleEn: expression.example,
+        sourceType: "COACH_RECOMMENDATION",
+        promptId: selectedPrompt.id,
+        coachInteractionId: coachHelp?.interactionId
+      });
+      setSavedCoachExpressionKeys((current) =>
+        current.includes(normalizedKey) ? current : [...current, normalizedKey]
+      );
+    } catch (caughtError) {
+      Alert.alert(
+        "표현 저장에 실패했어요",
+        caughtError instanceof Error ? caughtError.message : "잠시 후 다시 시도해 주세요."
+      );
+    } finally {
+      setSavingCoachExpressionKeys((current) => current.filter((item) => item !== normalizedKey));
+    }
   }
 
   async function handleRequestCoachHelp(questionOverride?: string) {
@@ -905,7 +975,6 @@ export default function PracticeWriteScreen() {
       activeDraftType,
       buildDraftPayload,
       clearPersistedDraft,
-      clearIncompleteLoopForPrompt,
       feedback,
       saveIncompleteLoopSnapshot,
       cancelDraftAutosave,
@@ -1040,7 +1109,6 @@ export default function PracticeWriteScreen() {
     answer,
     buildDraftPayload,
     clearPersistedDraft,
-    clearIncompleteLoopForPrompt,
     cancelDraftAutosave,
     currentUser,
     feedback,
@@ -1470,18 +1538,58 @@ export default function PracticeWriteScreen() {
 
                       <View style={styles.coachExpressionList}>
                         {coachHelp.expressions.map((expression) => (
-                          <Pressable
-                            key={expression.id}
-                            style={styles.coachExpressionCard}
-                            onPress={() => appendCoachExpression(expression.expression)}
-                          >
+                          <View key={expression.id} style={styles.coachExpressionCard}>
                             <View style={styles.coachExpressionTop}>
                               <Text style={styles.coachExpressionText}>{expression.expression}</Text>
                               <Text style={styles.coachExpressionMeaning}>{expression.meaningKo}</Text>
                             </View>
                             <Text style={styles.coachExpressionTip}>{expression.usageTip}</Text>
                             <Text style={styles.coachExpressionExample}>{expression.example}</Text>
-                          </Pressable>
+                            <View style={styles.coachExpressionActionRow}>
+                              <Pressable
+                                style={styles.coachExpressionInsertButton}
+                                onPress={() => appendCoachExpression(expression.expression)}
+                              >
+                                <Text style={styles.coachExpressionInsertButtonText}>문장에 넣기</Text>
+                              </Pressable>
+                              <Pressable
+                                style={[
+                                  styles.coachExpressionSaveButton,
+                                  savedCoachExpressionKeys.includes(
+                                    normalizeExpressionKey(expression.expression)
+                                  ) && styles.coachExpressionSaveButtonSaved
+                                ]}
+                                onPress={() => void handleSaveCoachExpression(expression)}
+                                disabled={
+                                  savedCoachExpressionKeys.includes(
+                                    normalizeExpressionKey(expression.expression)
+                                  ) ||
+                                  savingCoachExpressionKeys.includes(
+                                    normalizeExpressionKey(expression.expression)
+                                  )
+                                }
+                              >
+                                <Text
+                                  style={[
+                                    styles.coachExpressionSaveButtonText,
+                                    savedCoachExpressionKeys.includes(
+                                      normalizeExpressionKey(expression.expression)
+                                    ) && styles.coachExpressionSaveButtonTextSaved
+                                  ]}
+                                >
+                                  {savingCoachExpressionKeys.includes(
+                                    normalizeExpressionKey(expression.expression)
+                                  )
+                                    ? "저장 중"
+                                    : savedCoachExpressionKeys.includes(
+                                          normalizeExpressionKey(expression.expression)
+                                        )
+                                      ? "저장됨"
+                                      : "저장"}
+                                </Text>
+                              </Pressable>
+                            </View>
+                          </View>
                         ))}
                       </View>
                     </View>
@@ -2136,6 +2244,11 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 8
   },
+  coachExpressionActionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4
+  },
   coachExpressionTop: {
     gap: 4
   },
@@ -2159,6 +2272,43 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 20,
     color: "#8A775E"
+  },
+  coachExpressionInsertButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 16,
+    backgroundColor: "#FFF4E2",
+    borderWidth: 1,
+    borderColor: "#EBCB97",
+    paddingVertical: 12
+  },
+  coachExpressionInsertButtonText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#8A5A19"
+  },
+  coachExpressionSaveButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 16,
+    backgroundColor: "#FFFBF4",
+    borderWidth: 1,
+    borderColor: "#E3C39B",
+    paddingHorizontal: 16,
+    paddingVertical: 12
+  },
+  coachExpressionSaveButtonSaved: {
+    backgroundColor: "#EAF7ED",
+    borderColor: "#AFD2B7"
+  },
+  coachExpressionSaveButtonText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#8A5A19"
+  },
+  coachExpressionSaveButtonTextSaved: {
+    color: "#2F7A46"
   },
   answerInput: {
     minHeight: 252,

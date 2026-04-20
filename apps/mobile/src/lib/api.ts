@@ -18,6 +18,8 @@ import type {
   LoginRequest,
   PromptHint,
   Prompt,
+  SavedExpression,
+  SaveExpressionRequest,
   SaveWritingDraftRequest,
   SendRegistrationCodeRequest,
   SocialProvider,
@@ -40,6 +42,8 @@ type TokenSession = {
 
 let tokenSessionCache: TokenSession | null | undefined = undefined;
 let refreshPromise: Promise<TokenSession | null> | null = null;
+const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
+const RETRY_DELAYS_MS = [350, 800];
 
 function createCoachExpressionId(promptId: string, expression: string, index: number) {
   const base = expression
@@ -195,16 +199,53 @@ async function refreshTokenSession(): Promise<TokenSession | null> {
   return refreshPromise;
 }
 
+function shouldRetryTransientFailure(init: RequestInit = {}) {
+  const method = (init.method ?? "GET").toUpperCase();
+  return method === "GET" || method === "HEAD";
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
+  const canRetry = shouldRetryTransientFailure(init);
+
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const response = await fetch(url, init);
+      if (
+        canRetry &&
+        RETRYABLE_STATUS_CODES.has(response.status) &&
+        attempt < RETRY_DELAYS_MS.length
+      ) {
+        await delay(RETRY_DELAYS_MS[attempt]);
+        continue;
+      }
+
+      return response;
+    } catch (error) {
+      if (!canRetry || attempt >= RETRY_DELAYS_MS.length) {
+        throw error;
+      }
+
+      await delay(RETRY_DELAYS_MS[attempt]);
+    }
+  }
+}
+
 async function apiFetch(path: string, init: RequestInit = {}, allowRefresh = true): Promise<Response> {
   const url = `${apiBaseUrl}${path}`;
   const tokenSession = await getStoredTokenSession();
+  const accessToken = tokenSession?.accessToken ?? null;
   const headers = new Headers(init.headers);
+  const hadAccessToken = Boolean(accessToken);
 
-  if (tokenSession?.accessToken) {
-    headers.set("Authorization", `Bearer ${tokenSession.accessToken}`);
+  if (hadAccessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
   }
 
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     ...init,
     headers
   });
@@ -213,21 +254,32 @@ async function apiFetch(path: string, init: RequestInit = {}, allowRefresh = tru
     return response;
   }
 
-  if (!tokenSession?.refreshToken) {
+  if (tokenSession?.refreshToken) {
+    const refreshedSession = await refreshTokenSession();
+    if (refreshedSession?.accessToken) {
+      const retryHeaders = new Headers(init.headers);
+      retryHeaders.set("Authorization", `Bearer ${refreshedSession.accessToken}`);
+
+      return fetchWithRetry(url, {
+        ...init,
+        headers: retryHeaders
+      });
+    }
+  }
+
+  if (!hadAccessToken) {
     return response;
   }
 
-  const refreshedSession = await refreshTokenSession();
-  if (!refreshedSession?.accessToken) {
+  await clearTokenSession();
+
+  if (!shouldRetryTransientFailure(init)) {
     return response;
   }
 
-  const retryHeaders = new Headers(init.headers);
-  retryHeaders.set("Authorization", `Bearer ${refreshedSession.accessToken}`);
-
-  return fetch(url, {
+  return fetchWithRetry(url, {
     ...init,
-    headers: retryHeaders
+    headers: new Headers(init.headers)
   });
 }
 
@@ -404,6 +456,42 @@ export async function deleteAccount(request: DeleteAccountRequest): Promise<void
 
   if (!response.ok) {
     throw await parseApiError(response, "계정을 삭제하지 못했어요.");
+  }
+}
+
+export async function getSavedExpressions(): Promise<SavedExpression[]> {
+  const response = await apiFetch("/api/saved-expressions");
+
+  if (!response.ok) {
+    throw await parseApiError(response, "저장한 표현을 불러오지 못했어요.");
+  }
+
+  return (await response.json()) as SavedExpression[];
+}
+
+export async function saveExpression(request: SaveExpressionRequest): Promise<SavedExpression> {
+  const response = await apiFetch("/api/saved-expressions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "표현을 저장하지 못했어요.");
+  }
+
+  return (await response.json()) as SavedExpression;
+}
+
+export async function deleteSavedExpression(savedExpressionId: number): Promise<void> {
+  const response = await apiFetch(`/api/saved-expressions/${savedExpressionId}`, {
+    method: "DELETE"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "저장한 표현을 삭제하지 못했어요.");
   }
 }
 

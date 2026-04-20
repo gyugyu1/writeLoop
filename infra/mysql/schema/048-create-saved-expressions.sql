@@ -1,0 +1,23 @@
+CREATE TABLE saved_expressions (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    expression VARCHAR(255) NOT NULL,
+    normalized_expression VARCHAR(255) NOT NULL,
+    meaning_ko VARCHAR(255) NULL,
+    usage_tip_ko TEXT NULL,
+    example_en TEXT NULL,
+    source_type VARCHAR(32) NOT NULL,
+    prompt_id VARCHAR(64) NULL,
+    answer_session_id VARCHAR(64) NULL,
+    answer_attempt_no INT NULL,
+    coach_interaction_request_id VARCHAR(64) NULL,
+    save_count INT NOT NULL DEFAULT 1,
+    last_saved_at DATETIME(6) NOT NULL,
+    created_at DATETIME(6) NOT NULL,
+    updated_at DATETIME(6) NOT NULL,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_saved_expressions_user_normalized (user_id, normalized_expression),
+    KEY idx_saved_expressions_user_last_saved (user_id, last_saved_at),
+    KEY idx_saved_expressions_prompt (prompt_id),
+    KEY idx_saved_expressions_coach_request (coach_interaction_request_id)
+);

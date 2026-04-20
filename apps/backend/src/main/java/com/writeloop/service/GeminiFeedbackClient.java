@@ -1388,9 +1388,11 @@ public class GeminiFeedbackClient {
                                         "additionalProperties", false,
                                         "properties", Map.of(
                                                 "expression", Map.of("type", "string"),
+                                                "meaningKo", Map.of("type", List.of("string", "null")),
+                                                "exampleEn", Map.of("type", List.of("string", "null")),
                                                 "usageTip", Map.of("type", "string")
                                         ),
-                                        "required", List.of("expression", "usageTip")
+                                        "required", List.of("expression", "meaningKo", "exampleEn", "usageTip")
                                 )
                         )),
                         Map.entry("refinementExpressions", Map.of(
@@ -1627,7 +1629,13 @@ public class GeminiFeedbackClient {
                 - strengths should usually be one short Korean line that tells the learner what to keep.
                 - usedExpressions should contain as many distinct short reusable learner-used chunks as the answer genuinely supports.
                 - Do not force a fixed count for usedExpressions. Return only the useful ones, and omit weak or repetitive items.
+                - Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors that the learner can reuse in another answer.
+                - Prefer 2-6 words when possible. Only go longer if the whole chunk is still a clean reusable expression, not a personalized clause.
+                - Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details that are not broadly reusable.
+                - Do not return dangling or broken spans that end with weak tails such as "and", "to", "because", "so", or similarly incomplete endings.
                 - usedExpressions must not contain long broken spans or whole awkward sentences.
+                - usedExpressions.meaningKo must be a short Korean meaning or gloss of the expression itself.
+                - usedExpressions.exampleEn must be one short natural sentence that uses the expression clearly, is not identical to the expression itself, and does not simply copy the full learner answer.
                 - usedExpressions.usageTip must be one short Korean note about why the expression is worth keeping.
 
                 fixPoints rules:
@@ -1864,6 +1872,8 @@ public class GeminiFeedbackClient {
                 "SELF_DISCOVERED",
                 null,
                 "SELF_DISCOVERED",
+                item.path("meaningKo").isNull() ? null : item.path("meaningKo").asText(null),
+                item.path("exampleEn").isNull() ? null : item.path("exampleEn").asText(null),
                 item.path("usageTip").asText("")
         )));
         List<RefinementCard> refinementExpressions = new ArrayList<>();
@@ -2548,6 +2558,7 @@ public class GeminiFeedbackClient {
                 continue;
             }
             String expression = usage.expression() == null ? "" : usage.expression().trim();
+            String meaningKo = usage.meaningKo() == null ? null : usage.meaningKo().trim();
             String usageTip = usage.usageTip() == null ? "" : usage.usageTip().trim();
             if (expression.isBlank() || usageTip.isBlank()) {
                 continue;
@@ -2560,6 +2571,8 @@ public class GeminiFeedbackClient {
                         usage.matchType(),
                         usage.matchedText(),
                         usage.source(),
+                        meaningKo == null || meaningKo.isBlank() ? null : meaningKo,
+                        usage.exampleEn() == null || usage.exampleEn().isBlank() ? null : usage.exampleEn().trim(),
                         usageTip
                 ));
             }

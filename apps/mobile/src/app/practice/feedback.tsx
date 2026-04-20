@@ -1,12 +1,22 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
+} from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   PracticeFeedbackContent,
   type FeedbackTabKey
 } from "@/components/practice-feedback-content";
+import { saveExpression } from "@/lib/api";
 import { buildIncompleteLoopPromptSnapshot, saveIncompleteLoop } from "@/lib/incomplete-loop";
 import {
   getPracticeFeedbackState,
@@ -14,6 +24,7 @@ import {
   type PracticeFeedbackState
 } from "@/lib/practice-feedback-state";
 import { isDailyDifficulty } from "@/lib/practice";
+import { useSession } from "@/lib/session";
 import type { DailyDifficulty } from "@/lib/types";
 
 const completionMascotImage = require("@/assets/images/feedback-completion-mascot.png");
@@ -33,12 +44,17 @@ function pickFirstNonEmpty(...values: (string | null | undefined)[]) {
   return "";
 }
 
+function normalizeExpressionKey(expression: string) {
+  return expression.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
 export default function PracticeFeedbackScreen() {
   const params = useLocalSearchParams<{ difficulty?: string; promptId?: string }>();
   const navigation = useNavigation();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
   const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "A";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
+  const { currentUser } = useSession();
   const [feedbackState, setFeedbackState] = useState<PracticeFeedbackState | null>(() =>
     getPracticeFeedbackState(requestedDifficulty, requestedPromptId)
   );
@@ -48,6 +64,8 @@ export default function PracticeFeedbackScreen() {
   const [activeTab, setActiveTab] = useState<FeedbackTabKey>("feedback");
   const [tabBarY, setTabBarY] = useState<number | null>(null);
   const [scrollY, setScrollY] = useState(0);
+  const [savedExpressionKeys, setSavedExpressionKeys] = useState<string[]>([]);
+  const [savingExpressionKeys, setSavingExpressionKeys] = useState<string[]>([]);
 
   const loopStatus = feedbackState?.feedback.ui?.loopStatus ?? null;
   const rewriteButtonLabel = pickFirstNonEmpty(loopStatus?.rewriteCtaLabel, "다시 써보기");
@@ -93,7 +111,67 @@ export default function PracticeFeedbackScreen() {
     setActiveTab("feedback");
     setTabBarY(null);
     setScrollY(0);
+    setSavedExpressionKeys([]);
+    setSavingExpressionKeys([]);
   }, [requestedDifficulty, requestedPromptId]);
+
+  async function handleSaveUsedExpression(
+    expression: string,
+    meaningKo?: string | null,
+    exampleEn?: string | null,
+    usageTip?: string | null
+  ) {
+    const normalizedKey = normalizeExpressionKey(expression);
+    if (!normalizedKey || !feedbackState) {
+      return;
+    }
+
+    if (!currentUser) {
+      Alert.alert(
+        "로그인이 필요해요",
+        "표현 저장은 로그인 후 사용할 수 있어요.",
+        [
+          { text: "취소", style: "cancel" },
+          {
+            text: "로그인하기",
+            onPress: () => router.push("/login")
+          }
+        ]
+      );
+      return;
+    }
+
+    if (savedExpressionKeys.includes(normalizedKey) || savingExpressionKeys.includes(normalizedKey)) {
+      return;
+    }
+
+    setSavingExpressionKeys((current) =>
+      current.includes(normalizedKey) ? current : [...current, normalizedKey]
+    );
+
+    try {
+      await saveExpression({
+        expression,
+        meaningKo: meaningKo ?? undefined,
+        exampleEn: exampleEn ?? undefined,
+        usageTipKo: usageTip ?? undefined,
+        sourceType: "USED_EXPRESSION",
+        promptId: feedbackState.prompt.id,
+        answerSessionId: feedbackState.feedback.sessionId,
+        answerAttemptNo: feedbackState.feedback.attemptNo
+      });
+      setSavedExpressionKeys((current) =>
+        current.includes(normalizedKey) ? current : [...current, normalizedKey]
+      );
+    } catch (caughtError) {
+      Alert.alert(
+        "표현 저장에 실패했어요",
+        caughtError instanceof Error ? caughtError.message : "잠시 후 다시 시도해 주세요."
+      );
+    } finally {
+      setSavingExpressionKeys((current) => current.filter((item) => item !== normalizedKey));
+    }
+  }
 
   function handleBackToQuestions() {
     router.replace({
@@ -191,6 +269,15 @@ export default function PracticeFeedbackScreen() {
                 activeTab={activeTab}
                 onActiveTabChange={setActiveTab}
                 onTabBarLayout={setTabBarY}
+                onSaveUsedExpression={(expression, meaningKo, exampleEn, usageTip) =>
+                  void handleSaveUsedExpression(expression, meaningKo, exampleEn, usageTip)
+                }
+                isUsedExpressionSaved={(expression) =>
+                  savedExpressionKeys.includes(normalizeExpressionKey(expression))
+                }
+                isSavingUsedExpression={(expression) =>
+                  savingExpressionKeys.includes(normalizeExpressionKey(expression))
+                }
               />
 
               <View style={styles.completionFooter}>

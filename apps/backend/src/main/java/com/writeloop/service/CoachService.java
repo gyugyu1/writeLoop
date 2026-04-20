@@ -916,6 +916,8 @@ public class CoachService {
                     match.matchType(),
                     match.matchedText(),
                     EXPRESSION_SOURCE_RECOMMENDED,
+                    null,
+                    null,
                     null
             );
 
@@ -1232,6 +1234,8 @@ public class CoachService {
                 EXPRESSION_SOURCE_SELF_DISCOVERED,
                 sanitizedCandidate,
                 EXPRESSION_SOURCE_SELF_DISCOVERED,
+                null,
+                null,
                 usageTip == null || usageTip.isBlank() ? SELF_DISCOVERED_USAGE_TIP : usageTip
         );
     }

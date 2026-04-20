@@ -16,6 +16,7 @@ import com.writeloop.dto.RefinementExpressionType;
 import com.writeloop.dto.RefinementMeaningType;
 import com.writeloop.exception.GuestLimitExceededException;
 import com.writeloop.exception.ApiException;
+import com.writeloop.util.UsedExpressionSanitizer;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionEntity;
@@ -91,20 +92,6 @@ public class FeedbackService {
     private static final Pattern FEEDBACK_USED_CLAUSE_BREAK_PATTERN = Pattern.compile(
             "\\b(?:because|since|so|which|while|although)\\b",
             Pattern.CASE_INSENSITIVE
-    );
-    private static final List<Pattern> FEEDBACK_USED_EXPRESSION_PATTERNS = List.of(
-            Pattern.compile("\\b(?:in my opinion|i think|one reason is that|this is because|for example|for instance|in the long run|as a result|at the same time|these days)\\b", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\b(?:i(?:'d| would)? like to|i would love to|i want to|i plan to|i hope to|i need to)(?: " + LETTER_TOKEN + "){1,4}\\b", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\b(?:i usually|i often|i sometimes|i always)(?: " + LETTER_TOKEN + "){1,5}\\b", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\b(?:work out|exercise)\\b", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\b(?:spend time with|keep in touch with|connect with|communicate with|meet|visit|explore|enjoy|care for|take responsibility for|provide|support)(?: " + LETTER_TOKEN + "){1,6}\\b", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\bbecause [^,.!?;]+", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\bby [A-Za-z]+ing [^,.!?;]+", Pattern.CASE_INSENSITIVE),
-            Pattern.compile("\\bso that [^,.!?;]+", Pattern.CASE_INSENSITIVE)
-    );
-    private static final Set<String> TRAILING_WEAK_TOKENS = Set.of(
-            "a", "an", "and", "are", "as", "at", "be", "because", "for", "from", "if",
-            "in", "into", "is", "my", "of", "on", "or", "our", "that", "the", "their", "to", "with", "your", "his", "her"
     );
     private static final Set<String> REFINEMENT_OVERLAP_STOP_TOKENS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "because", "by", "can", "for", "from",
@@ -765,7 +752,7 @@ public class FeedbackService {
         List<CoachExpressionUsageDto> usedExpressions = sanitizeUsedExpressions(
                 feedback.usedExpressions(),
                 learnerAnswer,
-                inlineFeedback
+                hints
         );
 
         return new FeedbackResponseDto(
@@ -2126,108 +2113,24 @@ public class FeedbackService {
     private List<CoachExpressionUsageDto> sanitizeUsedExpressions(
             List<CoachExpressionUsageDto> usedExpressions,
             String learnerAnswer,
-            List<InlineFeedbackSegmentDto> inlineFeedback
+            List<PromptHintDto> hints
     ) {
         List<CoachExpressionUsageDto> extracted = new ArrayList<>();
         if (usedExpressions != null) {
             for (CoachExpressionUsageDto usage : usedExpressions) {
-                CoachExpressionUsageDto sanitized = sanitizeUsedExpression(usage, learnerAnswer);
+                CoachExpressionUsageDto sanitized = sanitizeUsedExpression(usage, learnerAnswer, hints);
                 if (sanitized != null) {
                     extracted.add(sanitized);
                 }
             }
         }
-        if (extracted.size() < 3) {
-            extracted.addAll(buildUsedExpressions(learnerAnswer, inlineFeedback));
-        }
-        return deduplicateUsedExpressions(extracted).stream()
-                .limit(3)
-                .toList();
-    }
-
-    private List<CoachExpressionUsageDto> buildUsedExpressions(
-            String learnerAnswer,
-            List<InlineFeedbackSegmentDto> inlineFeedback
-    ) {
-        if (learnerAnswer == null || learnerAnswer.isBlank()) {
-            return List.of();
-        }
-
-        List<String> preservedSegments = extractPreservedSegments(inlineFeedback);
-        List<String> directCandidates = extractUsedExpressionCandidates(learnerAnswer);
-        List<String> preservedCandidates = directCandidates.stream()
-                .filter(candidate -> isPreservedCandidate(candidate, preservedSegments))
-                .toList();
-
-        LinkedHashSet<String> orderedCandidates = new LinkedHashSet<>();
-        preservedCandidates.forEach(orderedCandidates::add);
-        directCandidates.forEach(orderedCandidates::add);
-
-        List<CoachExpressionUsageDto> expressions = new ArrayList<>();
-        for (String candidate : orderedCandidates) {
-            CoachExpressionUsageDto usage = createUsedExpression(candidate);
-            if (usage != null) {
-                expressions.add(usage);
-            }
-            if (expressions.size() >= 5) {
-                break;
-            }
-        }
-
-        return expressions;
-    }
-
-    private List<String> extractPreservedSegments(List<InlineFeedbackSegmentDto> inlineFeedback) {
-        if (inlineFeedback == null || inlineFeedback.isEmpty()) {
-            return List.of();
-        }
-
-        return inlineFeedback.stream()
-                .filter(segment -> segment != null && "KEEP".equalsIgnoreCase(segment.type()))
-                .map(InlineFeedbackSegmentDto::originalText)
-                .map(text -> text == null ? "" : text.trim())
-                .filter(text -> !text.isBlank())
-                .toList();
-    }
-
-    private List<String> extractUsedExpressionCandidates(String learnerAnswer) {
-        if (learnerAnswer == null || learnerAnswer.isBlank()) {
-            return List.of();
-        }
-
-        LinkedHashSet<String> candidates = new LinkedHashSet<>();
-        for (Pattern pattern : FEEDBACK_USED_EXPRESSION_PATTERNS) {
-            Matcher matcher = pattern.matcher(learnerAnswer);
-            while (matcher.find()) {
-                String candidate = sanitizeExtractedExpression(matcher.group());
-                if (isValidUsedExpressionCandidate(candidate)) {
-                    candidates.add(candidate);
-                }
-            }
-        }
-
-        return List.copyOf(candidates);
-    }
-
-    private CoachExpressionUsageDto createUsedExpression(String candidate) {
-        String sanitizedCandidate = sanitizeExtractedExpression(candidate);
-        if (!isValidUsedExpressionCandidate(sanitizedCandidate)) {
-            return null;
-        }
-
-        return new CoachExpressionUsageDto(
-                sanitizedCandidate,
-                true,
-                FEEDBACK_USED_EXPRESSION_MATCH_TYPE,
-                null,
-                FEEDBACK_USED_EXPRESSION_SOURCE,
-                buildUsedExpressionUsageTip(sanitizedCandidate)
-        );
+        return deduplicateUsedExpressions(extracted);
     }
 
     private CoachExpressionUsageDto sanitizeUsedExpression(
             CoachExpressionUsageDto usage,
-            String learnerAnswer
+            String learnerAnswer,
+            List<PromptHintDto> hints
     ) {
         if (usage == null) {
             return null;
@@ -2249,15 +2152,104 @@ public class FeedbackService {
         String usageTip = usage.usageTip() == null || usage.usageTip().isBlank()
                 ? buildUsedExpressionUsageTip(sanitizedExpression)
                 : usage.usageTip().trim();
+        String meaningKo = resolveUsedExpressionMeaning(sanitizedExpression, usage.meaningKo(), hints);
+        String sanitizedMatchedText = sanitizeMatchedUsedExpressionText(
+                usage.matchedText(),
+                sanitizedExpression,
+                learnerAnswer
+        );
+        String exampleEn = resolveUsedExpressionExample(
+                sanitizedExpression,
+                usage.exampleEn(),
+                sanitizedMatchedText,
+                learnerAnswer
+        );
 
         return new CoachExpressionUsageDto(
                 sanitizedExpression,
                 true,
                 FEEDBACK_USED_EXPRESSION_MATCH_TYPE,
-                sanitizeMatchedUsedExpressionText(usage.matchedText(), sanitizedExpression, learnerAnswer),
+                sanitizedMatchedText,
                 FEEDBACK_USED_EXPRESSION_SOURCE,
+                meaningKo,
+                exampleEn,
                 usageTip
         );
+    }
+
+    private String resolveUsedExpressionMeaning(
+            String expression,
+            String explicitMeaningKo,
+            List<PromptHintDto> hints
+    ) {
+        String resolved = resolveRefinementMeaning(expression, explicitMeaningKo, hints);
+        if (resolved == null || resolved.isBlank() || isGenericMeaningPlaceholder(resolved)) {
+            return null;
+        }
+        return resolved.trim();
+    }
+
+    private String resolveUsedExpressionExample(
+            String expression,
+            String explicitExampleEn,
+            String matchedText,
+            String learnerAnswer
+    ) {
+        String explicit = normalizeUsedExpressionExample(explicitExampleEn, expression);
+        if (explicit != null) {
+            return explicit;
+        }
+
+        String sentenceExample = extractUsedExpressionSentenceExample(expression, learnerAnswer);
+        if (sentenceExample != null) {
+            return sentenceExample;
+        }
+
+        return normalizeUsedExpressionExample(matchedText, expression);
+    }
+
+    private String normalizeUsedExpressionExample(String exampleEn, String expression) {
+        if (exampleEn == null || exampleEn.isBlank()) {
+            return null;
+        }
+
+        String sanitizedExample = exampleEn.trim().replaceAll("\\s+", " ");
+        String normalizedExample = normalizeForComparison(sanitizedExample);
+        String normalizedExpression = normalizeForComparison(expression);
+        if (normalizedExample.isBlank() || normalizedExample.equals(normalizedExpression)) {
+            return null;
+        }
+
+        return sanitizedExample;
+    }
+
+    private String extractUsedExpressionSentenceExample(String expression, String learnerAnswer) {
+        if (expression == null || expression.isBlank() || learnerAnswer == null || learnerAnswer.isBlank()) {
+            return null;
+        }
+
+        String normalizedExpression = normalizeForComparison(expression);
+        if (normalizedExpression.isBlank()) {
+            return null;
+        }
+
+        for (String rawSentence : learnerAnswer.split("(?<=[.!?])\\s+|\\n+")) {
+            String sentence = rawSentence == null ? "" : rawSentence.trim().replaceAll("\\s+", " ");
+            if (sentence.isBlank()) {
+                continue;
+            }
+
+            String normalizedSentence = normalizeForComparison(sentence);
+            if (normalizedSentence.isBlank()
+                    || normalizedSentence.equals(normalizedExpression)
+                    || !normalizedSentence.contains(normalizedExpression)) {
+                continue;
+            }
+
+            return sentence;
+        }
+
+        return null;
     }
 
     private String sanitizeMatchedUsedExpressionText(
@@ -2282,25 +2274,6 @@ public class FeedbackService {
         }
 
         return sanitizedMatchedText;
-    }
-
-    private boolean isPreservedCandidate(String candidate, List<String> preservedSegments) {
-        if (preservedSegments.isEmpty()) {
-            return true;
-        }
-
-        String normalizedCandidate = normalizeForComparison(candidate);
-        if (normalizedCandidate.isBlank()) {
-            return false;
-        }
-
-        for (String segment : preservedSegments) {
-            if (normalizeForComparison(segment).contains(normalizedCandidate)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     private List<CoachExpressionUsageDto> deduplicateUsedExpressions(List<CoachExpressionUsageDto> usedExpressions) {
@@ -4351,17 +4324,7 @@ public class FeedbackService {
             }
         }
 
-        String[] tokens = sanitized.split("\\s+");
-        int end = tokens.length;
-        while (end > 0 && TRAILING_WEAK_TOKENS.contains(tokens[end - 1].toLowerCase(Locale.ROOT))) {
-            end -= 1;
-        }
-
-        if (end <= 0) {
-            return "";
-        }
-
-        return String.join(" ", Arrays.copyOf(tokens, end)).trim();
+        return UsedExpressionSanitizer.sanitizeCandidate(sanitized);
     }
 
     private boolean isValidUsedExpressionCandidate(String candidate) {

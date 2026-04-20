@@ -66,6 +66,13 @@ type ModelAnswerVariantCard = {
   reasonKo: string;
 };
 
+type UsedExpressionItem = {
+  expression: string;
+  meaningKo: string;
+  exampleEn: string;
+  usageTip: string;
+};
+
 export type FeedbackTabKey = "feedback" | "improve";
 
 type PracticeFeedbackContentProps = {
@@ -75,6 +82,14 @@ type PracticeFeedbackContentProps = {
   activeTab?: FeedbackTabKey;
   onActiveTabChange?: (tab: FeedbackTabKey) => void;
   onTabBarLayout?: (y: number) => void;
+  onSaveUsedExpression?: (
+    expression: string,
+    meaningKo?: string | null,
+    exampleEn?: string | null,
+    usageTip?: string | null
+  ) => void;
+  isUsedExpressionSaved?: (expression: string) => boolean;
+  isSavingUsedExpression?: (expression: string) => boolean;
 };
 
 function trimText(value?: string | null) {
@@ -784,7 +799,10 @@ export function PracticeFeedbackContent({
   style,
   activeTab,
   onActiveTabChange,
-  onTabBarLayout
+  onTabBarLayout,
+  onSaveUsedExpression,
+  isUsedExpressionSaved,
+  isSavingUsedExpression
 }: PracticeFeedbackContentProps) {
   const [internalActiveTab, setInternalActiveTab] = useState<FeedbackTabKey>("feedback");
   const [contentLayoutY, setContentLayoutY] = useState<number | null>(null);
@@ -815,20 +833,44 @@ export function PracticeFeedbackContent({
     [feedbackState]
   );
 
-  const usedExpressions = useMemo(
+  const usedExpressionItems = useMemo<UsedExpressionItem[]>(
     () =>
       Array.from(
-        new Set(
-          (feedbackState.feedback.usedExpressions ?? [])
-            .map((item) => trimText(item.expression))
-            .filter(Boolean)
-        )
+        (feedbackState.feedback.usedExpressions ?? []).reduce((items, item) => {
+          const expression = trimText(item.expression);
+          if (!expression) {
+            return items;
+          }
+
+          const key = expression.toLowerCase();
+          const existing = items.get(key);
+          if (!existing) {
+            items.set(key, {
+              expression,
+              meaningKo: trimText(item.meaningKo),
+              exampleEn: trimText(item.exampleEn ?? item.matchedText),
+              usageTip: trimText(item.usageTip)
+            });
+            return items;
+          }
+
+          if (!existing.meaningKo) {
+            existing.meaningKo = trimText(item.meaningKo);
+          }
+          if (!existing.exampleEn) {
+            existing.exampleEn = trimText(item.exampleEn ?? item.matchedText);
+          }
+          if (!existing.usageTip) {
+            existing.usageTip = trimText(item.usageTip);
+          }
+          return items;
+        }, new Map<string, UsedExpressionItem>()).values()
       ),
     [feedbackState]
   );
 
   const keepStrengths = useMemo(() => strengths.slice(0, 1), [strengths]);
-  const keepExpressions = useMemo(() => usedExpressions.slice(0, 2), [usedExpressions]);
+  const keepExpressions = useMemo(() => usedExpressionItems, [usedExpressionItems]);
   const rewriteIdeas = useMemo(() => buildRewriteIdeas(feedbackState.feedback), [feedbackState]);
   const completionHeadline = useMemo(
     () =>
@@ -996,8 +1038,43 @@ export function PracticeFeedbackContent({
                   <Text style={styles.expressionSectionLabel}>잘 쓴 표현</Text>
                   <View style={styles.expressionWrap}>
                     {keepExpressions.map((item) => (
-                      <View key={item} style={styles.expressionChip}>
-                        <Text style={styles.expressionChipText}>{item}</Text>
+                      <View key={item.expression} style={styles.expressionItem}>
+                        <View style={styles.expressionChip}>
+                          <Text style={styles.expressionChipText}>{item.expression}</Text>
+                        </View>
+                        {onSaveUsedExpression ? (
+                          <Pressable
+                            style={[
+                              styles.expressionActionButton,
+                              isUsedExpressionSaved?.(item.expression) && styles.expressionActionButtonSaved
+                            ]}
+                            onPress={() =>
+                              onSaveUsedExpression(
+                                item.expression,
+                                item.meaningKo || undefined,
+                                item.exampleEn || undefined,
+                                item.usageTip || undefined
+                              )
+                            }
+                            disabled={
+                              Boolean(isUsedExpressionSaved?.(item.expression)) ||
+                              Boolean(isSavingUsedExpression?.(item.expression))
+                            }
+                          >
+                            <Text
+                              style={[
+                                styles.expressionActionButtonText,
+                                isUsedExpressionSaved?.(item.expression) && styles.expressionActionButtonTextSaved
+                              ]}
+                            >
+                              {isSavingUsedExpression?.(item.expression)
+                                ? "저장 중"
+                                : isUsedExpressionSaved?.(item.expression)
+                                  ? "저장됨"
+                                  : "저장"}
+                            </Text>
+                          </Pressable>
+                        ) : null}
                       </View>
                     ))}
                   </View>
@@ -1366,6 +1443,11 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 8
   },
+  expressionItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
   expressionChip: {
     borderRadius: 999,
     backgroundColor: "#FFF0D7",
@@ -1376,6 +1458,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: "#A76518"
+  },
+  expressionActionButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E3C39B",
+    backgroundColor: "#FFFBF4",
+    paddingHorizontal: 10,
+    paddingVertical: 7
+  },
+  expressionActionButtonSaved: {
+    backgroundColor: "#EAF7ED",
+    borderColor: "#AFD2B7"
+  },
+  expressionActionButtonText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#8A5A1E"
+  },
+  expressionActionButtonTextSaved: {
+    color: "#2F7A46"
   },
   rewriteGuideCard: {
     gap: 14

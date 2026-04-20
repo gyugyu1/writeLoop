@@ -1,5 +1,6 @@
 package com.writeloop.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.CorrectionDto;
@@ -135,6 +136,8 @@ class GeminiFeedbackClientTest {
                 )),
                 Map.entry("usedExpressions", List.of(Map.of(
                         "expression", "stay healthy",
+                        "meaningKo", "건강을 유지하다",
+                        "exampleEn", "I want to stay healthy by sleeping earlier.",
                         "usageTip", "Use this to explain why the goal matters."
                 ))),
                 Map.entry("refinementExpressions", List.of(Map.of(
@@ -191,6 +194,11 @@ class GeminiFeedbackClientTest {
             assertThat(card.meaningKo()).isEqualTo("make eating habits healthier");
         });
         assertThat(sections.nextStepPractice()).isNull();
+        assertThat(sections.usedExpressions()).singleElement().satisfies(expression -> {
+            assertThat(expression.expression()).isEqualTo("stay healthy");
+            assertThat(expression.meaningKo()).isEqualTo("건강을 유지하다");
+            assertThat(expression.exampleEn()).isEqualTo("I want to stay healthy by sleeping earlier.");
+        });
         assertThat(sections.rewriteSuggestions()).isEmpty();
         assertThat(sections.rewriteIdeas()).singleElement().satisfies(idea -> {
             assertThat(idea.english()).isEqualTo("it helps me feel more energetic");
@@ -201,6 +209,48 @@ class GeminiFeedbackClientTest {
             assertThat(variant.kind()).isEqualTo("NATURALER");
         });
         assertThat(sections.modelAnswer()).contains("feel more energetic");
+    }
+
+    @Test
+    void buildGenerationRequestBody_defines_reusable_used_expression_rules_and_example_schema() throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        GeminiFeedbackClient client = new GeminiFeedbackClient(
+                mapper,
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses", null, 120
+        );
+
+        String requestBody = ReflectionTestUtils.invokeMethod(
+                client,
+                "buildGenerationRequestBody",
+                samplePromptForGeneration(),
+                "I usually watch YouTube videos and get ready for the next day.",
+                List.of(),
+                sampleDiagnosisForGeneration(),
+                sampleAnswerProfileForGeneration(),
+                sampleSectionPolicyForGeneration(),
+                1,
+                null,
+                List.of(SectionKey.USED_EXPRESSIONS),
+                List.of(),
+                null
+        );
+
+        JsonNode request = mapper.readTree(requestBody);
+        JsonNode usedExpressionProperties = request.path("generationConfig")
+                .path("responseJsonSchema")
+                .path("properties")
+                .path("usedExpressions")
+                .path("items")
+                .path("properties");
+        String promptText = request.path("contents").get(0).path("parts").get(0).path("text").asText("");
+
+        assertThat(usedExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(promptText)
+                .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
+                .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
+                .contains("usedExpressions.exampleEn must be one short natural sentence");
     }
     @Test
     void buildDiagnosisPrompt_includes_attempt_context() {
@@ -2048,5 +2098,73 @@ class GeminiFeedbackClientTest {
                 assertThat(summary).isNotBlank();
             }
         });
+    }
+
+    private PromptDto samplePromptForGeneration() {
+        return new PromptDto(
+                "prompt-1",
+                "Daily routine",
+                "EASY",
+                "What do you do on weekday mornings?",
+                "평일 아침에는 무엇을 하나요?",
+                "Mention one or two activities."
+        );
+    }
+
+    private FeedbackDiagnosisResult sampleDiagnosisForGeneration() {
+        return new FeedbackDiagnosisResult(
+                84,
+                AnswerBand.SHORT_BUT_VALID,
+                TaskCompletion.FULL,
+                true,
+                true,
+                GrammarSeverity.MINOR,
+                List.of(),
+                "I wake up at 8 a.m.",
+                "FIX_LOCAL_GRAMMAR",
+                "ADD_DETAIL",
+                new RewriteTarget("ADD_DETAIL", "I wake up at 8 a.m. and _____.", 1),
+                ExpansionBudget.ONE_DETAIL,
+                List.of("wake up at 8 a.m.")
+        );
+    }
+
+    private AnswerProfile sampleAnswerProfileForGeneration() {
+        return new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.SHORT_BUT_VALID, true),
+                new GrammarProfile(GrammarSeverity.MINOR, List.of(), "I wake up at 8 a.m.", true),
+                new ContentProfile(
+                        ContentLevel.LOW,
+                        new ContentSignals(true, false, false, false, true, true),
+                        List.of()
+                ),
+                new RewriteProfile(
+                        "FIX_LOCAL_GRAMMAR",
+                        "ADD_DETAIL",
+                        new RewriteTarget("ADD_DETAIL", "I wake up at 8 a.m. and _____.", 1),
+                        ExpansionBudget.ONE_DETAIL,
+                        List.of("wake up at 8 a.m."),
+                        new ProgressDelta(List.of(), List.of("add one detail"))
+                )
+        );
+    }
+
+    private SectionPolicy sampleSectionPolicyForGeneration() {
+        return new SectionPolicy(
+                true,
+                2,
+                true,
+                2,
+                true,
+                true,
+                2,
+                RefinementFocus.DETAIL_BUILDING,
+                true,
+                true,
+                true,
+                2,
+                ModelAnswerMode.ONE_STEP_UP,
+                AttemptOverlayPolicy.NONE
+        );
     }
 }

@@ -1399,9 +1399,11 @@ public class OpenAiFeedbackClient {
                                         "additionalProperties", false,
                                         "properties", Map.of(
                                                 "expression", Map.of("type", "string"),
+                                                "meaningKo", Map.of("type", List.of("string", "null")),
+                                                "exampleEn", Map.of("type", List.of("string", "null")),
                                                 "usageTip", Map.of("type", "string")
                                         ),
-                                        "required", List.of("expression", "usageTip")
+                                        "required", List.of("expression", "meaningKo", "exampleEn", "usageTip")
                                 )
                         )),
                         Map.entry("refinementExpressions", Map.of(
@@ -1632,7 +1634,14 @@ public class OpenAiFeedbackClient {
                 - strengths should usually be one short Korean keep-signal based on meaning, not a full raw quote unless it is already clean and necessary.
                 - usedExpressions may contain as many distinct short reusable learner-used chunks as the answer genuinely supports.
                 - Do not force a fixed count for usedExpressions. Return only the useful ones, and omit weak or repetitive items.
-                - usedExpressions must not contain long broken spans or whole awkward sentences, and usageTip should be one short Korean reason.
+                - Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors that the learner can reuse in another answer.
+                - Prefer 2-6 words when possible. Only go longer if the whole chunk is still a clean reusable expression, not a personalized clause.
+                - Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details that are not broadly reusable.
+                - Do not return dangling or broken spans that end with weak tails such as "and", "to", "because", "so", or similarly incomplete endings.
+                - usedExpressions must not contain long broken spans or whole awkward sentences.
+                - usedExpressions.meaningKo should be a short Korean meaning or gloss of the expression itself.
+                - usedExpressions.exampleEn should be one short natural sentence that uses the expression clearly, is not identical to the expression itself, and does not simply copy the full learner answer.
+                - usedExpressions.usageTip should be one short Korean reason why the expression is worth keeping.
 
                 fixPoints rules:
                 - fixPoints should collectively explain all visible differences between learner answer and modelAnswer.
@@ -1816,6 +1825,8 @@ public class OpenAiFeedbackClient {
                 "SELF_DISCOVERED",
                 null,
                 "SELF_DISCOVERED",
+                item.path("meaningKo").isNull() ? null : item.path("meaningKo").asText(null),
+                item.path("exampleEn").isNull() ? null : item.path("exampleEn").asText(null),
                 item.path("usageTip").asText("")
         )));
         List<RefinementCard> refinementExpressions = new ArrayList<>();
@@ -2394,6 +2405,7 @@ public class OpenAiFeedbackClient {
                 continue;
             }
             String expression = usage.expression() == null ? "" : usage.expression().trim();
+            String meaningKo = usage.meaningKo() == null ? null : usage.meaningKo().trim();
             String usageTip = usage.usageTip() == null ? "" : usage.usageTip().trim();
             if (expression.isBlank() || usageTip.isBlank()) {
                 continue;
@@ -2406,6 +2418,8 @@ public class OpenAiFeedbackClient {
                         usage.matchType(),
                         usage.matchedText(),
                         usage.source(),
+                        meaningKo == null || meaningKo.isBlank() ? null : meaningKo,
+                        usage.exampleEn() == null || usage.exampleEn().isBlank() ? null : usage.exampleEn().trim(),
                         usageTip
                 ));
             }

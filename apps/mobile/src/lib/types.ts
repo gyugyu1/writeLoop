@@ -4,6 +4,7 @@ export type SocialProvider = "naver" | "google" | "kakao";
 export type AttemptType = "INITIAL" | "REWRITE";
 export type InlineFeedbackType = "KEEP" | "REPLACE" | "ADD" | "REMOVE";
 export type WritingDraftType = "ANSWER" | "REWRITE";
+export type SavedExpressionSourceType = "USED_EXPRESSION" | "COACH_RECOMMENDATION";
 
 export interface Prompt {
   id: string;
@@ -117,6 +118,34 @@ export interface DeleteAccountRequest {
   currentPassword?: string;
 }
 
+export interface SaveExpressionRequest {
+  expression: string;
+  meaningKo?: string;
+  usageTipKo?: string;
+  exampleEn?: string;
+  sourceType: SavedExpressionSourceType;
+  promptId?: string;
+  answerSessionId?: string;
+  answerAttemptNo?: number;
+  coachInteractionId?: string;
+}
+
+export interface SavedExpression {
+  id: number;
+  expression: string;
+  meaningKo?: string | null;
+  usageTipKo?: string | null;
+  exampleEn?: string | null;
+  sourceType: SavedExpressionSourceType;
+  promptId?: string | null;
+  promptTopic?: string | null;
+  promptQuestionEn?: string | null;
+  promptQuestionKo?: string | null;
+  saveCount: number;
+  lastSavedAt: string;
+  createdAt: string;
+}
+
 export interface TokenAuthResponse {
   user: AuthUser;
   accessToken: string;
@@ -159,6 +188,8 @@ export interface CommonMistake {
 export interface FeedbackUsedExpression {
   expression: string;
   matchedText?: string | null;
+  meaningKo?: string | null;
+  exampleEn?: string | null;
   usageTip?: string | null;
 }
 

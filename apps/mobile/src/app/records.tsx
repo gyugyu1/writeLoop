@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   type LayoutChangeEvent,
   Modal,
   Pressable,
@@ -12,6 +13,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { SymbolView } from "expo-symbols";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import { PracticeFeedbackContent } from "@/components/practice-feedback-content";
@@ -19,12 +21,24 @@ import {
   buildInlineFeedbackSegments,
   type RenderedInlineFeedbackSegment
 } from "@/lib/inline-feedback";
-import { getAnswerHistory, getTodayWritingStatus } from "@/lib/api";
+import {
+  deleteSavedExpression,
+  getAnswerHistory,
+  getSavedExpressions,
+  getTodayWritingStatus
+} from "@/lib/api";
 import { getDifficultyLabel } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
 import type { PracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { useSession } from "@/lib/session";
-import type { Feedback, HistoryAttempt, HistorySession, Prompt, TodayWritingStatus } from "@/lib/types";
+import type {
+  Feedback,
+  HistoryAttempt,
+  HistorySession,
+  Prompt,
+  SavedExpression,
+  TodayWritingStatus
+} from "@/lib/types";
 
 type HistoryComparisonView = {
   initialAttempt: HistoryAttempt;
@@ -52,6 +66,8 @@ type RecordsMonthCalendarData = {
   monthLabel: string;
   cells: RecordsMonthCalendarCell[];
 };
+
+type RecordsContentTab = "history" | "expressions";
 
 const INITIAL_VISIBLE_DATE_GROUPS = 5;
 const CALENDAR_WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
@@ -165,6 +181,81 @@ function getAttemptLabel(value?: string | null) {
 
 function getAttemptCardLabel(attempt: HistoryAttempt) {
   return `${attempt.attemptNo}차 ${attempt.attemptType === "REWRITE" ? "다시쓰기" : "초안"}`;
+}
+
+function getSavedExpressionSourceLabel(sourceType: SavedExpression["sourceType"]) {
+  switch (sourceType) {
+    case "USED_EXPRESSION":
+      return "내가 쓴 표현";
+    case "COACH_RECOMMENDATION":
+      return "AI 코치 추천";
+    default:
+      return "저장한 표현";
+  }
+}
+
+function formatSavedExpressionDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function renderSavedExpressionExample(exampleEn?: string | null, expression?: string | null) {
+  const trimmedExample = exampleEn?.trim() ?? "";
+  const trimmedExpression = expression?.trim() ?? "";
+
+  if (!trimmedExample) {
+    return null;
+  }
+
+  if (!trimmedExpression) {
+    return <Text style={styles.savedExpressionExample}>{trimmedExample}</Text>;
+  }
+
+  const expressionPattern = new RegExp(`(${escapeRegExp(trimmedExpression)})`, "gi");
+  if (!expressionPattern.test(trimmedExample)) {
+    return <Text style={styles.savedExpressionExample}>{trimmedExample}</Text>;
+  }
+
+  const segments = trimmedExample.split(expressionPattern);
+
+  return (
+    <Text style={styles.savedExpressionExample}>
+      {segments.map((segment, index) =>
+        index % 2 === 1 ? (
+          <Text key={`saved-expression-example-match-${index}`} style={styles.savedExpressionExampleHighlight}>
+            {segment}
+          </Text>
+        ) : (
+          segment
+        )
+      )}
+    </Text>
+  );
+}
+
+function getSavedExpressionPromptText(savedExpression: SavedExpression) {
+  return (
+    savedExpression.promptQuestionEn?.trim() ||
+    savedExpression.promptQuestionKo?.trim() ||
+    savedExpression.promptTopic?.trim() ||
+    ""
+  );
+}
+
+function trimSavedExpressionLookupValue(value?: string | null) {
+  return value?.trim() ?? "";
 }
 
 function buildHistoryPrompt(session: HistorySession): Prompt {
@@ -543,6 +634,33 @@ const baseStyles = StyleSheet.create({
   errorText: { fontSize: 14, lineHeight: 20, color: "#B34A2B" }
 });
 const listStyles = StyleSheet.create({
+  contentTabRow: {
+    flexDirection: "row",
+    gap: 10
+  },
+  contentTabButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E3D3BF",
+    backgroundColor: "#FFF9F2",
+    paddingVertical: 12,
+    paddingHorizontal: 14
+  },
+  contentTabButtonActive: {
+    backgroundColor: "#F5A33B",
+    borderColor: "#E49A3B"
+  },
+  contentTabButtonText: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#7A6244"
+  },
+  contentTabButtonTextActive: {
+    color: "#232128"
+  },
   historyBoard: {
     backgroundColor: "#FFFEFC",
     borderRadius: 32,
@@ -564,6 +682,121 @@ const listStyles = StyleSheet.create({
   },
   sectionTitle: { fontSize: 24, fontWeight: "900", letterSpacing: -1, color: "#232128" },
   sectionMeta: { fontSize: 14, fontWeight: "700", color: "#88745A" },
+  savedExpressionList: {
+    gap: 12
+  },
+  savedExpressionCard: {
+    borderRadius: 22,
+    backgroundColor: "#FBF5EE",
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    gap: 8
+  },
+  savedExpressionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12
+  },
+  savedExpressionMetaWrap: {
+    flex: 1,
+    gap: 8
+  },
+  savedExpressionText: {
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "900",
+    color: "#2A2520"
+  },
+  savedExpressionBadgeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap"
+  },
+  savedExpressionSourceBadge: {
+    borderRadius: 999,
+    backgroundColor: "#FFF0D7",
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  savedExpressionSourceBadgeText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#A76518"
+  },
+  savedExpressionSaveCount: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#8A7259"
+  },
+  savedExpressionDeleteButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#F0C5B4",
+    backgroundColor: "#FFF0EA",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  savedExpressionMeaning: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: "#6F5D49",
+    fontWeight: "700"
+  },
+  savedExpressionExample: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#866F56"
+  },
+  savedExpressionExampleHighlight: {
+    fontWeight: "900",
+    color: "#866F56"
+  },
+  savedExpressionPromptLink: {
+    alignSelf: "flex-start",
+    paddingVertical: 2
+  },
+  savedExpressionPromptLinkText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#8C6C46",
+    textDecorationLine: "underline",
+    fontWeight: "700"
+  },
+  savedExpressionHistoryButton: {
+    alignSelf: "flex-start",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E0D1BD",
+    backgroundColor: "#FFFEFC",
+    paddingHorizontal: 12,
+    paddingVertical: 8
+  },
+  savedExpressionHistoryButtonDisabled: {
+    backgroundColor: "#F6F1EB",
+    borderColor: "#E7DDD2"
+  },
+  savedExpressionHistoryButtonText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#7A6244"
+  },
+  savedExpressionHistoryButtonTextDisabled: {
+    color: "#B2A08B"
+  },
+  savedExpressionPrompt: {
+    fontSize: 13,
+    lineHeight: 20,
+    color: "#7A6244"
+  },
+  savedExpressionDate: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#9A856D"
+  },
   calendarOpenButton: {
     borderRadius: 999,
     borderWidth: 1,
@@ -949,11 +1182,19 @@ export default function RecordsScreen() {
   const scrollViewRef = useRef<ScrollView | null>(null);
   const dateGroupOffsetsRef = useRef<Record<string, number>>({});
   const lastScrolledDateRef = useRef("");
+  const [activeTab, setActiveTab] = useState<RecordsContentTab>("history");
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [history, setHistory] = useState<HistorySession[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
+  const [savedExpressions, setSavedExpressions] = useState<SavedExpression[]>([]);
+  const [isSavedExpressionsLoading, setIsSavedExpressionsLoading] = useState(false);
+  const [savedExpressionError, setSavedExpressionError] = useState("");
+  const [deletingSavedExpressionId, setDeletingSavedExpressionId] = useState<number | null>(null);
+  const [openSavedExpressionPrompts, setOpenSavedExpressionPrompts] = useState<Record<number, boolean>>(
+    {}
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState("");
+  const [historyError, setHistoryError] = useState("");
   const [openDates, setOpenDates] = useState<Record<string, boolean>>({});
   const [showAllDateGroups, setShowAllDateGroups] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -1044,7 +1285,7 @@ export default function RecordsScreen() {
   const loadHistory = useCallback(async () => {
     try {
       setIsHistoryLoading(true);
-      setError("");
+      setHistoryError("");
       const [historyResponse, status] = await Promise.all([
         getAnswerHistory(),
         getTodayWritingStatus().catch(() => null)
@@ -1052,25 +1293,46 @@ export default function RecordsScreen() {
       setHistory(historyResponse);
       setTodayStatus(status);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "작문 기록을 불러오지 못했어요.");
+      setHistoryError(
+        caughtError instanceof Error ? caughtError.message : "작문 기록을 불러오지 못했어요."
+      );
     } finally {
       setIsHistoryLoading(false);
+    }
+  }, []);
+
+  const loadSavedExpressions = useCallback(async () => {
+    try {
+      setIsSavedExpressionsLoading(true);
+      setSavedExpressionError("");
+      const response = await getSavedExpressions();
+      setSavedExpressions(response);
+    } catch (caughtError) {
+      setSavedExpressionError(
+        caughtError instanceof Error ? caughtError.message : "저장한 표현을 불러오지 못했어요."
+      );
+    } finally {
+      setIsSavedExpressionsLoading(false);
     }
   }, []);
 
   useEffect(() => {
     if (!currentUser) {
       setIsHistoryLoading(false);
+      setIsSavedExpressionsLoading(false);
       setTodayStatus(null);
       setHistory([]);
-      setError("");
+      setHistoryError("");
+      setSavedExpressions([]);
+      setSavedExpressionError("");
       setSelectedSession(null);
       setSelectedHistoryFeedback(null);
       return;
     }
 
     void loadHistory();
-  }, [currentUser, loadHistory]);
+    void loadSavedExpressions();
+  }, [currentUser, loadHistory, loadSavedExpressions]);
 
   useEffect(() => {
     setSelectedDateKey(highlightedDateKey);
@@ -1138,10 +1400,12 @@ export default function RecordsScreen() {
     setIsRefreshing(true);
     const user = await refreshSession();
     if (user) {
-      await loadHistory();
+      await Promise.all([loadHistory(), loadSavedExpressions()]);
+    } else {
+      setSavedExpressions([]);
     }
     setIsRefreshing(false);
-  }, [loadHistory, refreshSession]);
+  }, [loadHistory, loadSavedExpressions, refreshSession]);
 
   function handleOpenSession(session: HistorySession) {
     setSelectedSession(session);
@@ -1159,6 +1423,95 @@ export default function RecordsScreen() {
     }
 
     setSelectedHistoryFeedback(buildHistoryFeedbackState(selectedSession, attempt));
+  }
+
+  function handleDeleteSavedExpression(savedExpression: SavedExpression) {
+    Alert.alert(
+      "저장한 표현을 삭제할까요?",
+      "삭제하면 이 표현은 저장 목록에서 사라져요.",
+      [
+        { text: "취소", style: "cancel" },
+        {
+          text: "삭제",
+          style: "destructive",
+          onPress: () => void confirmDeleteSavedExpression(savedExpression.id)
+        }
+      ]
+    );
+  }
+
+  async function confirmDeleteSavedExpression(savedExpressionId: number) {
+    try {
+      setDeletingSavedExpressionId(savedExpressionId);
+      await deleteSavedExpression(savedExpressionId);
+      setSavedExpressions((current) => current.filter((item) => item.id !== savedExpressionId));
+      setOpenSavedExpressionPrompts((current) => {
+        const next = { ...current };
+        delete next[savedExpressionId];
+        return next;
+      });
+    } catch (caughtError) {
+      Alert.alert(
+        "삭제에 실패했어요",
+        caughtError instanceof Error ? caughtError.message : "잠시 후 다시 시도해 주세요."
+      );
+    } finally {
+      setDeletingSavedExpressionId(null);
+    }
+  }
+
+  function toggleSavedExpressionPrompt(savedExpressionId: number) {
+    setOpenSavedExpressionPrompts((current) => ({
+      ...current,
+      [savedExpressionId]: !current[savedExpressionId]
+    }));
+  }
+
+  function findHistorySessionForSavedExpression(savedExpression: SavedExpression) {
+    const promptId = trimSavedExpressionLookupValue(savedExpression.promptId);
+    const promptQuestionEn = trimSavedExpressionLookupValue(savedExpression.promptQuestionEn);
+    const promptQuestionKo = trimSavedExpressionLookupValue(savedExpression.promptQuestionKo);
+    const promptTopic = trimSavedExpressionLookupValue(savedExpression.promptTopic);
+
+    const matches = history.filter((session) => {
+      if (promptId && session.promptId === promptId) {
+        return true;
+      }
+      if (promptQuestionEn && session.questionEn.trim() === promptQuestionEn) {
+        return true;
+      }
+      if (promptQuestionKo && session.questionKo.trim() === promptQuestionKo) {
+        return true;
+      }
+      return Boolean(promptTopic && session.topic.trim() === promptTopic);
+    });
+
+    if (matches.length === 0) {
+      return null;
+    }
+
+    return [...matches].sort((left, right) =>
+      getLatestSessionTimestamp(right).localeCompare(getLatestSessionTimestamp(left))
+    )[0];
+  }
+
+  function handleOpenSavedExpressionHistory(savedExpression: SavedExpression) {
+    const targetSession = findHistorySessionForSavedExpression(savedExpression);
+    if (!targetSession) {
+      Alert.alert("기록을 찾지 못했어요", "이 질문의 작문 기록을 아직 찾지 못했어요.");
+      return;
+    }
+
+    const dateKey = formatHistoryDateKey(getLatestSessionTimestamp(targetSession));
+    setActiveTab("history");
+    setShowAllDateGroups(true);
+    setSelectedDateKey(dateKey);
+    setOpenDates((current) => ({
+      ...current,
+      [dateKey]: true
+    }));
+    setSelectedHistoryFeedback(null);
+    setSelectedSession(targetSession);
   }
 
   function handleOpenCalendar() {
@@ -1275,6 +1628,42 @@ export default function RecordsScreen() {
                   </View>
                 </View>
 
+                <View style={styles.contentTabRow}>
+                  <Pressable
+                    style={[
+                      styles.contentTabButton,
+                      activeTab === "history" && styles.contentTabButtonActive
+                    ]}
+                    onPress={() => setActiveTab("history")}
+                  >
+                    <Text
+                      style={[
+                        styles.contentTabButtonText,
+                        activeTab === "history" && styles.contentTabButtonTextActive
+                      ]}
+                    >
+                      기록
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.contentTabButton,
+                      activeTab === "expressions" && styles.contentTabButtonActive
+                    ]}
+                    onPress={() => setActiveTab("expressions")}
+                  >
+                    <Text
+                      style={[
+                        styles.contentTabButtonText,
+                        activeTab === "expressions" && styles.contentTabButtonTextActive
+                      ]}
+                    >
+                      저장 표현
+                    </Text>
+                  </Pressable>
+                </View>
+
+                {activeTab === "history" ? (
                 <View style={styles.historyBoard}>
                   <View style={styles.sectionHeader}>
                     <View style={styles.sectionHeaderRow}>
@@ -1394,8 +1783,133 @@ export default function RecordsScreen() {
                     </Pressable>
                   ) : null}
                 </View>
+                ) : (
+                  <View style={styles.historyBoard}>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionHeaderCopy}>
+                        <Text style={styles.sectionTitle}>저장한 표현</Text>
+                        <Text style={styles.sectionMeta}>{savedExpressions.length}개의 표현</Text>
+                      </View>
+                    </View>
 
-                {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                    {isSavedExpressionsLoading ? (
+                      <View style={styles.emptyCard}>
+                        <Text style={styles.emptyTitle}>표현 목록을 불러오고 있어요</Text>
+                        <Text style={styles.emptyBody}>잠시만 기다려 주세요.</Text>
+                      </View>
+                    ) : savedExpressions.length === 0 ? (
+                      <View style={styles.emptyCard}>
+                        <Text style={styles.emptyTitle}>아직 저장한 표현이 없어요</Text>
+                        <Text style={styles.emptyBody}>
+                          피드백 화면이나 AI 코치 추천 카드에서 마음에 드는 표현을 저장해 보세요.
+                        </Text>
+                        <Pressable style={styles.primaryButton} onPress={() => router.replace("/")}>
+                          <Text style={styles.primaryButtonText}>질문 풀러 가기</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <View style={styles.savedExpressionList}>
+                        {savedExpressions.map((item) => {
+                          const promptText = getSavedExpressionPromptText(item);
+                          const isPromptOpen = Boolean(openSavedExpressionPrompts[item.id]);
+                          const hasLinkedHistory = Boolean(findHistorySessionForSavedExpression(item));
+
+                          return (
+                            <View key={item.id} style={styles.savedExpressionCard}>
+                              <View style={styles.savedExpressionHeaderRow}>
+                                <View style={styles.savedExpressionMetaWrap}>
+                                  <Text style={styles.savedExpressionText}>{item.expression}</Text>
+                                  <View style={styles.savedExpressionBadgeRow}>
+                                    <View style={styles.savedExpressionSourceBadge}>
+                                      <Text style={styles.savedExpressionSourceBadgeText}>
+                                        {getSavedExpressionSourceLabel(item.sourceType)}
+                                      </Text>
+                                    </View>
+                                    {item.saveCount > 1 ? (
+                                      <Text style={styles.savedExpressionSaveCount}>
+                                        {`${item.saveCount}번 저장`}
+                                      </Text>
+                                    ) : null}
+                                  </View>
+                                </View>
+
+                                <Pressable
+                                  style={styles.savedExpressionDeleteButton}
+                                  onPress={() => handleDeleteSavedExpression(item)}
+                                  disabled={deletingSavedExpressionId === item.id}
+                              >
+                                {deletingSavedExpressionId === item.id ? (
+                                  <ActivityIndicator color="#A3371A" size="small" />
+                                ) : (
+                                  <SymbolView
+                                    name={{ ios: "trash", android: "delete", web: "delete" }}
+                                    size={16}
+                                    weight="semibold"
+                                    tintColor="#B95A36"
+                                    type="hierarchical"
+                                  />
+                                )}
+                              </Pressable>
+                              </View>
+
+                              {item.meaningKo ? (
+                                <Text style={styles.savedExpressionMeaning}>{item.meaningKo}</Text>
+                              ) : null}
+                              {renderSavedExpressionExample(item.exampleEn, item.expression)}
+                              {promptText ? (
+                                <>
+                                  <Pressable
+                                    style={styles.savedExpressionPromptLink}
+                                    onPress={() => toggleSavedExpressionPrompt(item.id)}
+                                  >
+                                    <Text style={styles.savedExpressionPromptLinkText}>
+                                      {isPromptOpen
+                                        ? "질문 숨기기"
+                                        : "어떤 질문에서 저장했는지 보기"}
+                                    </Text>
+                                  </Pressable>
+                                  {isPromptOpen ? (
+                                    <>
+                                      <Text style={styles.savedExpressionPrompt}>{promptText}</Text>
+                                      <Pressable
+                                        style={[
+                                          styles.savedExpressionHistoryButton,
+                                          !hasLinkedHistory && styles.savedExpressionHistoryButtonDisabled
+                                        ]}
+                                        onPress={() => handleOpenSavedExpressionHistory(item)}
+                                        disabled={!hasLinkedHistory}
+                                      >
+                                        <Text
+                                          style={[
+                                            styles.savedExpressionHistoryButtonText,
+                                            !hasLinkedHistory && styles.savedExpressionHistoryButtonTextDisabled
+                                          ]}
+                                        >
+                                          질문 히스토리로 가기
+                                        </Text>
+                                      </Pressable>
+                                    </>
+                                  ) : null}
+                                </>
+                              ) : null}
+
+                              <Text style={styles.savedExpressionDate}>
+                                {formatSavedExpressionDate(item.lastSavedAt)}
+                              </Text>
+                            </View>
+                          );
+                        })}
+                      </View>
+                    )}
+                  </View>
+                )}
+
+                {activeTab === "history" && historyError ? (
+                  <Text style={styles.errorText}>{historyError}</Text>
+                ) : null}
+                {activeTab === "expressions" && savedExpressionError ? (
+                  <Text style={styles.errorText}>{savedExpressionError}</Text>
+                ) : null}
               </>
             )}
           </ScrollView>

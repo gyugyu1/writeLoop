@@ -23,6 +23,7 @@ import com.writeloop.persistence.AnswerSessionRepository;
 import com.writeloop.persistence.CoachInteractionRepository;
 import com.writeloop.persistence.PasswordResetTokenEntity;
 import com.writeloop.persistence.PasswordResetTokenRepository;
+import com.writeloop.persistence.SavedExpressionRepository;
 import com.writeloop.persistence.UserEntity;
 import com.writeloop.persistence.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -75,6 +76,7 @@ public class AuthService {
     private final CoachInteractionRepository coachInteractionRepository;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
+    private final SavedExpressionRepository savedExpressionRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationMailService verificationMailService;
     private final RememberLoginService rememberLoginService;
@@ -515,6 +517,7 @@ public class AuthService {
         }
 
         coachInteractionRepository.deleteAllByUserId(userId);
+        savedExpressionRepository.deleteAllByUserId(userId);
         emailVerificationTokenRepository.deleteAllByUserId(userId);
         passwordResetTokenRepository.deleteAllByUserId(userId);
         rememberLoginService.revokeAllForUser(userId);

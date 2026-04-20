@@ -71,7 +71,6 @@ export default function MeScreen() {
     () => (currentUser ? getLoginMethodLabel(currentUser) : "-"),
     [currentUser]
   );
-
   const isSocialAccount = Boolean(currentUser?.socialProvider);
 
   const handleRefresh = useCallback(async () => {
@@ -110,7 +109,7 @@ export default function MeScreen() {
       }
 
       if (newPassword !== confirmNewPassword) {
-        setProfileError("새 비밀번호와 확인 비밀번호가 서로 다릅니다.");
+        setProfileError("새 비밀번호와 확인 비밀번호가 서로 달라요.");
         setProfileNotice("");
         return;
       }
@@ -134,11 +133,9 @@ export default function MeScreen() {
       setConfirmNewPassword("");
       setProfileNotice("변경사항을 저장했어요.");
     } catch (caughtError) {
-      if (caughtError instanceof Error) {
-        setProfileError(caughtError.message);
-      } else {
-        setProfileError("프로필 설정을 저장하지 못했어요.");
-      }
+      setProfileError(
+        caughtError instanceof Error ? caughtError.message : "프로필 설정을 저장하지 못했어요."
+      );
       setProfileNotice("");
     } finally {
       setIsSavingProfile(false);
@@ -161,7 +158,7 @@ export default function MeScreen() {
     }
 
     if (deleteConfirmationText.trim() !== "탈퇴") {
-      setDeleteError("계정을 삭제하려면 확인 문구에 '탈퇴'를 입력해 주세요.");
+      setDeleteError("계정을 삭제하려면 확인 문구로 '탈퇴'를 입력해 주세요.");
       return;
     }
 
@@ -182,11 +179,9 @@ export default function MeScreen() {
       await signOut();
       router.replace("/");
     } catch (caughtError) {
-      if (caughtError instanceof Error) {
-        setDeleteError(caughtError.message);
-      } else {
-        setDeleteError("계정을 삭제하지 못했어요.");
-      }
+      setDeleteError(
+        caughtError instanceof Error ? caughtError.message : "계정을 삭제하지 못했어요."
+      );
     } finally {
       setIsDeletingAccount(false);
     }
@@ -223,7 +218,7 @@ export default function MeScreen() {
               <View style={styles.sectionCard}>
                 <Text style={styles.sectionTitle}>로그인이 필요해요</Text>
                 <Text style={styles.sectionBody}>
-                  내정보 화면에서 계정 설정과 작문 기록을 확인하려면 먼저 로그인해 주세요.
+                  여기에서는 닉네임과 비밀번호를 바꾸고, 로그아웃이나 회원탈퇴를 할 수 있어요.
                 </Text>
                 <Pressable style={styles.primaryButton} onPress={() => router.push("/login")}>
                   <Text style={styles.primaryButtonText}>로그인하러 가기</Text>
@@ -274,7 +269,7 @@ export default function MeScreen() {
                     <View style={styles.noticeCard}>
                       <Text style={styles.noticeCardTitle}>소셜 로그인 계정</Text>
                       <Text style={styles.noticeCardBody}>
-                        소셜 로그인 계정은 이 화면에서 비밀번호를 변경할 수 없어요.
+                        소셜 로그인 계정은 여기에서 비밀번호를 변경할 수 없어요.
                       </Text>
                     </View>
                   ) : (
@@ -345,7 +340,11 @@ export default function MeScreen() {
                   </Pressable>
 
                   <Pressable
-                    style={[styles.footerButton, styles.footerPrimaryButton, isSigningOut && styles.disabledButton]}
+                    style={[
+                      styles.footerButton,
+                      styles.footerPrimaryButton,
+                      isSigningOut && styles.disabledButton
+                    ]}
                     onPress={() => void handleSignOut()}
                     disabled={isSigningOut}
                   >
@@ -469,32 +468,6 @@ const styles = StyleSheet.create({
     paddingBottom: MOBILE_NAV_BOTTOM_SPACING + 24,
     gap: 18
   },
-  heroSection: {
-    gap: 8
-  },
-  heroEyebrow: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#7A6244"
-  },
-  heroTitleBlock: {
-    alignSelf: "flex-start",
-    gap: 8
-  },
-  heroTitle: {
-    fontSize: 40,
-    lineHeight: 46,
-    fontWeight: "900",
-    letterSpacing: -1.8,
-    color: "#232128"
-  },
-  heroUnderline: {
-    width: 126,
-    height: 8,
-    borderRadius: 999,
-    backgroundColor: "#F2A14A",
-    marginLeft: 2
-  },
   sectionCard: {
     backgroundColor: "#FFFEFC",
     borderRadius: 30,
@@ -595,6 +568,40 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: "#7B682F"
   },
+  errorText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#B34A2B"
+  },
+  footerActionRow: {
+    flexDirection: "row",
+    gap: 12
+  },
+  footerButton: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 22,
+    paddingVertical: 16
+  },
+  footerGhostButton: {
+    borderWidth: 1,
+    borderColor: "#E3D3BF",
+    backgroundColor: "#FFF9F2"
+  },
+  footerGhostButtonText: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#7A6244"
+  },
+  footerPrimaryButton: {
+    backgroundColor: "#FFC04E"
+  },
+  footerPrimaryButtonText: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#232128"
+  },
   dangerSection: {
     width: "100%",
     alignItems: "stretch",
@@ -649,39 +656,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     color: "#A3371A"
-  },
-  errorText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#B34A2B"
-  },
-  footerActionRow: {
-    flexDirection: "row",
-    gap: 12
-  },
-  footerButton: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 22,
-    paddingVertical: 16
-  },
-  footerGhostButton: {
-    borderWidth: 1,
-    borderColor: "#E3D3BF",
-    backgroundColor: "#FFF9F2"
-  },
-  footerGhostButtonText: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#7A6244"
-  },
-  footerPrimaryButton: {
-    backgroundColor: "#FFC04E"
-  },
-  footerPrimaryButtonText: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#232128"
   }
 });

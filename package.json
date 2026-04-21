@@ -7,6 +7,7 @@
     "apps/frontend"
   ],
   "scripts": {
+    "start:android-studio": "npm run mobile:rn:start:android-studio",
     "dev:frontend": "npm run dev --workspace @english-learning/frontend",
     "build:frontend": "npm run build --workspace @english-learning/frontend",
     "lint:frontend": "npm run lint --workspace @english-learning/frontend",

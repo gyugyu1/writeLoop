@@ -6,7 +6,7 @@
     "start": "expo start",
     "start:tunnel": "expo start --tunnel --clear",
     "start:localhost": "expo start --dev-client --localhost --clear",
-    "start:android-studio": "expo start --dev-client --clear",
+    "start:android-studio": "expo start --dev-client --lan --clear",
     "android": "expo run:android",
     "android:emulator": "expo start --android --localhost --clear",
     "ios": "expo run:ios",

@@ -32,6 +32,18 @@ Recommended local value on Android emulator:
 EXPO_PUBLIC_API_BASE_URL=http://10.0.2.2
 ```
 
+Recommended local value on a physical iPhone on the same Wi-Fi:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL_IOS=http://<your-pc-lan-ip>
+```
+
+Example:
+
+```bash
+EXPO_PUBLIC_API_BASE_URL_IOS=http://192.168.35.20
+```
+
 This repo's Docker setup exposes Nginx on port `80`, not the backend container on host `8080`.
 So the mobile app should call the host through Nginx.
 
@@ -74,6 +86,8 @@ For Android Studio debug runs on the Android emulator, use the dev-client Metro 
 cd C:\WriteLoop\apps\mobile
 npm run start:android-studio
 ```
+
+This script starts Metro in `--lan` mode so the Android emulator can attach through `10.0.2.2`.
 
 ## Run in Android Studio
 

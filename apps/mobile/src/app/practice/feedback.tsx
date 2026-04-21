@@ -164,7 +164,8 @@ export default function PracticeFeedbackScreen() {
     sourceType: SavedExpressionSourceType,
     meaningKo?: string | null,
     exampleEn?: string | null,
-    usageTip?: string | null
+    usageTip?: string | null,
+    tags?: string[] | null
   ) {
     const normalizedKey = normalizeExpressionKey(expression);
     if (!normalizedKey || !feedbackState) {
@@ -212,6 +213,7 @@ export default function PracticeFeedbackScreen() {
         meaningKo: meaningKo ?? undefined,
         exampleEn: exampleEn ?? undefined,
         usageTipKo: usageTip ?? undefined,
+        tags: tags?.length ? tags : undefined,
         sourceType,
         promptId: feedbackState.prompt.id,
         answerSessionId: feedbackState.feedback.sessionId,
@@ -327,22 +329,24 @@ export default function PracticeFeedbackScreen() {
                 activeTab={activeTab}
                 onActiveTabChange={setActiveTab}
                 onTabBarLayout={setTabBarY}
-                onSaveUsedExpression={(expression, meaningKo, exampleEn, usageTip) =>
+                onSaveUsedExpression={(expression, meaningKo, exampleEn, usageTip, tags) =>
                   void handleToggleFeedbackExpression(
                     expression,
                     "USED_EXPRESSION",
                     meaningKo,
                     exampleEn,
-                    usageTip
+                    usageTip,
+                    tags
                   )
                 }
-                onSaveRefinementExpression={(expression, meaningKo, exampleEn, usageTip) =>
+                onSaveRefinementExpression={(expression, meaningKo, exampleEn, usageTip, tags) =>
                   void handleToggleFeedbackExpression(
                     expression,
                     "REFINEMENT_EXPRESSION",
                     meaningKo,
                     exampleEn,
-                    usageTip
+                    usageTip,
+                    tags
                   )
                 }
                 isUsedExpressionSaved={(expression) =>

@@ -8,6 +8,7 @@ export type SavedExpressionSourceType =
   | "USED_EXPRESSION"
   | "COACH_RECOMMENDATION"
   | "REFINEMENT_EXPRESSION";
+export type ExpressionTag = string;
 
 export interface Prompt {
   id: string;
@@ -20,9 +21,31 @@ export interface Prompt {
   tip: string;
 }
 
+export interface PromptCoachProfile {
+  primaryCategory: string;
+  secondaryCategories: string[];
+  preferredExpressionFamilies: string[];
+  avoidFamilies: string[];
+  starterStyle: string;
+  notes: string;
+}
+
+export interface PromptRecommendationItem {
+  slot: string;
+  prompt: Prompt;
+  reasonCode: string;
+  reasonText: string;
+  reasonFacts: string[];
+  score: number;
+}
+
 export interface DailyPromptRecommendation {
   recommendedDate: string;
   difficulty: DailyDifficulty;
+  userState?: string;
+  fallbackUsed?: boolean;
+  featured?: PromptRecommendationItem | null;
+  alternatives?: PromptRecommendationItem[];
   prompts: Prompt[];
 }
 
@@ -88,6 +111,90 @@ export interface AuthUser {
   admin: boolean;
 }
 
+export interface AdminPromptHint {
+  id: string;
+  promptId: string;
+  hintType: string;
+  title?: string | null;
+  displayOrder: number;
+  active: boolean;
+  items?: PromptHintItem[];
+}
+
+export interface AdminPrompt {
+  id: string;
+  topic: string;
+  topicCategory: string;
+  topicDetail: string;
+  difficulty: PromptDifficulty;
+  questionEn: string;
+  questionKo: string;
+  tip: string;
+  displayOrder: number;
+  active: boolean;
+  coachProfile?: PromptCoachProfile | null;
+  hints: AdminPromptHint[];
+}
+
+export interface AdminPromptRecommendationMetricsItem {
+  promptId: string;
+  topic: string;
+  topicCategory: string;
+  topicDetail: string;
+  difficulty: PromptDifficulty;
+  questionEn: string;
+  slotType: string;
+  reasonCode: string;
+  shownCount: number;
+  clickedCount: number;
+  startedCount: number;
+  completedCount: number;
+  clickRate: number;
+  startRate: number;
+  completeRate: number;
+  completionAfterStartRate: number;
+}
+
+export interface AdminPromptRecommendationMetrics {
+  startDate: string;
+  endDate: string;
+  difficultyFilter?: DailyDifficulty | null;
+  totalShownCount: number;
+  totalClickedCount: number;
+  totalStartedCount: number;
+  totalCompletedCount: number;
+  clickRate: number;
+  startRate: number;
+  completeRate: number;
+  items: AdminPromptRecommendationMetricsItem[];
+}
+
+export interface AdminPromptTopicCatalogEntry {
+  category: string;
+  details: string[];
+}
+
+export interface AdminPromptRequest {
+  topic?: string;
+  topicCategory: string;
+  topicDetail: string;
+  difficulty: PromptDifficulty;
+  questionEn: string;
+  questionKo: string;
+  tip: string;
+  displayOrder: number;
+  active: boolean;
+  coachProfile?: PromptCoachProfile | null;
+}
+
+export interface AdminPromptHintRequest {
+  hintType: string;
+  title?: string | null;
+  items?: string[];
+  displayOrder: number;
+  active: boolean;
+}
+
 export interface AuthNotice {
   email: string;
   message: string;
@@ -126,6 +233,7 @@ export interface SaveExpressionRequest {
   meaningKo?: string;
   usageTipKo?: string;
   exampleEn?: string;
+  tags?: ExpressionTag[];
   sourceType: SavedExpressionSourceType;
   promptId?: string;
   answerSessionId?: string;
@@ -139,8 +247,10 @@ export interface SavedExpression {
   meaningKo?: string | null;
   usageTipKo?: string | null;
   exampleEn?: string | null;
+  tags?: ExpressionTag[] | null;
   sourceType: SavedExpressionSourceType;
   promptId?: string | null;
+  promptDifficulty?: PromptDifficulty | null;
   promptTopic?: string | null;
   promptQuestionEn?: string | null;
   promptQuestionKo?: string | null;
@@ -163,6 +273,7 @@ export interface CoachExpression {
   meaningKo: string;
   usageTip: string;
   example: string;
+  tags?: ExpressionTag[] | null;
 }
 
 export interface CoachHelpRequest {
@@ -194,6 +305,7 @@ export interface FeedbackUsedExpression {
   meaningKo?: string | null;
   exampleEn?: string | null;
   usageTip?: string | null;
+  tags?: ExpressionTag[] | null;
 }
 
 export interface HistoryUsedExpression {
@@ -253,6 +365,7 @@ export interface FeedbackRewriteIdea {
   meaningKo?: string | null;
   noteKo?: string | null;
   exampleEn?: string | null;
+  tags?: ExpressionTag[] | null;
   originalText?: string | null;
   revisedText?: string | null;
   optionalTone?: boolean | null;

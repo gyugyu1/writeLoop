@@ -139,12 +139,64 @@ class OpenAiFeedbackClientTest {
         String promptText = request.path("input").get(0).path("content").get(0).path("text").asText("");
 
         assertThat(usedExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(usedExpressionProperties.path("tags").isMissingNode()).isFalse();
         assertThat(rewriteIdeaProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(rewriteIdeaProperties.path("tags").isMissingNode()).isFalse();
         assertThat(promptText)
                 .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
                 .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
                 .contains("usedExpressions.exampleEn should be one short natural sentence")
-                .contains("For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence");
+                .contains("usedExpressions.tags must contain 2 to 6 tags")
+                .contains("Tag the reusable expression itself, not the surrounding example sentence or answer context.")
+                .contains("Do not assign `time_expression` to generic actions like `take a walk`, `read a book`, or `watch videos`")
+                .contains("For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence")
+                .contains("rewriteIdeas.tags must contain 2 to 6 tags");
+    }
+
+    @Test
+    void parseGeneratedSections_reads_and_normalizes_tags() throws Exception {
+        OpenAiFeedbackClient client = newClient();
+        JsonNode payload = objectMapper.readTree("""
+                {
+                  "usedExpressions": [
+                    {
+                      "expression": "stay healthy",
+                      "meaningKo": "건강을 유지하다",
+                      "exampleEn": "I want to stay healthy by sleeping earlier.",
+                      "usageTip": "자주 쓰는 건강 목표 표현이에요.",
+                      "tags": ["used_expression", "frequency"]
+                    }
+                  ],
+                  "rewriteIdeas": [
+                    {
+                      "title": "Add a reason",
+                      "english": "because it helps me feel calm",
+                      "meaningKo": "마음을 차분하게 해 주기 때문에",
+                      "noteKo": "이유를 덧붙일 때 자연스러워요.",
+                      "exampleEn": "I keep this habit because it helps me feel calm.",
+                      "originalText": null,
+                      "revisedText": null,
+                      "optionalTone": false,
+                      "tags": ["refinement", "reason"]
+                    }
+                  ]
+                }
+                """);
+
+        GeneratedSections sections = (GeneratedSections) ReflectionTestUtils.invokeMethod(
+                client,
+                "parseGeneratedSections",
+                payload
+        );
+
+        assertThat(sections.usedExpressions()).singleElement().satisfies(expression -> {
+            assertThat(expression.expression()).isEqualTo("stay healthy");
+            assertThat(expression.tags()).containsExactly("used_expression", "frequency_expression");
+        });
+        assertThat(sections.rewriteIdeas()).singleElement().satisfies(idea -> {
+            assertThat(idea.english()).isEqualTo("because it helps me feel calm");
+            assertThat(idea.tags()).containsExactly("refinement_expression", "reason_expression");
+        });
     }
 
     @Test

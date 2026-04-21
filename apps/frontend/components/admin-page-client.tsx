@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  getAdminPromptRecommendationMetrics,
   createAdminPrompt,
   createAdminPromptHint,
   deleteAdminPrompt,
@@ -13,12 +14,14 @@ import {
   updateAdminPromptHint
 } from "../lib/api";
 import type {
+  AdminPromptRecommendationMetrics,
   AdminPrompt,
   AdminPromptHint,
   AdminPromptHintRequest,
   AdminPromptRequest,
   AdminPromptTopicCatalogEntry,
   AuthUser,
+  DailyDifficulty,
   PromptCoachProfile,
   PromptDifficulty
 } from "../lib/types";
@@ -173,6 +176,74 @@ function getPromptCardIcon(topicCategory: string, topicDetail: string) {
   return "edit_note";
 }
 
+function formatDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getRelativeDateInputValue(offsetDays: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + offsetDays);
+  return formatDateInputValue(date);
+}
+
+function formatMetricRate(value: number) {
+  return new Intl.NumberFormat("ko-KR", {
+    style: "percent",
+    maximumFractionDigits: 1
+  }).format(value || 0);
+}
+
+function formatMetricCount(value: number) {
+  return value.toLocaleString("ko-KR");
+}
+
+function getRecommendationSlotLabel(slotType: string) {
+  switch (slotType) {
+    case "FEATURED":
+      return "대표 추천";
+    case "ALTERNATIVE_1":
+      return "대안 1";
+    case "ALTERNATIVE_2":
+      return "대안 2";
+    default:
+      return slotType;
+  }
+}
+
+function getRecommendationReasonLabel(reasonCode: string) {
+  switch (reasonCode) {
+    case "QUICK_START":
+      return "첫 문장 시작 쉬움";
+    case "REUSE_SAVED_EXPRESSION":
+      return "저장 표현 재사용";
+    case "ONE_REASON_UP":
+      return "이유 한 줄 확장";
+    case "TIME_MARKER_REUSE":
+      return "시간·장소 표현 재사용";
+    case "TOPIC_FRESH":
+      return "새로운 주제 감각";
+    case "STREAK_KEEPER":
+      return "연속 학습 유지";
+    case "HALF_STEP_GROWTH":
+      return "반 걸음 성장";
+    case "ADD_EXAMPLE":
+      return "예시 붙이기";
+    case "CATEGORY_BALANCE":
+      return "카테고리 균형";
+    case "LOW_PRESSURE_VALID":
+      return "가볍게 시작 가능";
+    case "SAVEABLE_OUTPUT":
+      return "표현 저장 기대";
+    case "TRANSFER_PRACTICE":
+      return "익숙한 표현 전이";
+    default:
+      return reasonCode;
+  }
+}
+
 export function AdminPageClient() {
   const createSectionRef = useRef<HTMLElement | null>(null);
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
@@ -186,6 +257,13 @@ export function AdminPageClient() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [expandedPromptIds, setExpandedPromptIds] = useState<Record<string, boolean>>({});
+  const [recommendationMetrics, setRecommendationMetrics] =
+    useState<AdminPromptRecommendationMetrics | null>(null);
+  const [recommendationMetricsLoading, setRecommendationMetricsLoading] = useState(false);
+  const [recommendationMetricsError, setRecommendationMetricsError] = useState("");
+  const [metricsStartDate, setMetricsStartDate] = useState(() => getRelativeDateInputValue(-13));
+  const [metricsEndDate, setMetricsEndDate] = useState(() => getRelativeDateInputValue(0));
+  const [metricsDifficulty, setMetricsDifficulty] = useState<DailyDifficulty | "">("");
 
   useEffect(() => {
     let mounted = true;
@@ -214,6 +292,7 @@ export function AdminPageClient() {
         setTopicCatalog(adminTopicCatalog);
         applyPromptState(adminPrompts);
         setLoading(false);
+        void loadRecommendationMetrics();
       } catch {
         if (!mounted) {
           return;
@@ -235,6 +314,33 @@ export function AdminPageClient() {
     () => prompts.filter((prompt) => prompt.active).length,
     [prompts]
   );
+
+  async function loadRecommendationMetrics(nextFilters?: {
+    startDate?: string;
+    endDate?: string;
+    difficulty?: DailyDifficulty | "";
+  }) {
+    const filters = {
+      startDate: nextFilters?.startDate ?? metricsStartDate,
+      endDate: nextFilters?.endDate ?? metricsEndDate,
+      difficulty: nextFilters?.difficulty ?? metricsDifficulty
+    };
+
+    try {
+      setRecommendationMetricsLoading(true);
+      setRecommendationMetricsError("");
+      const nextMetrics = await getAdminPromptRecommendationMetrics(filters);
+      setRecommendationMetrics(nextMetrics);
+    } catch (caughtError) {
+      setRecommendationMetricsError(
+        caughtError instanceof Error
+          ? caughtError.message
+          : "추천 성과 데이터를 불러오지 못했어요."
+      );
+    } finally {
+      setRecommendationMetricsLoading(false);
+    }
+  }
 
   function applyPromptState(adminPrompts: AdminPrompt[]) {
     setPrompts(adminPrompts);
@@ -387,6 +493,19 @@ export function AdminPageClient() {
     setNewPromptForm({ ...emptyPromptForm, coachProfile: { ...emptyCoachProfile } });
   }
 
+  function handleResetMetricsFilters() {
+    const nextStartDate = getRelativeDateInputValue(-13);
+    const nextEndDate = getRelativeDateInputValue(0);
+    setMetricsStartDate(nextStartDate);
+    setMetricsEndDate(nextEndDate);
+    setMetricsDifficulty("");
+    void loadRecommendationMetrics({
+      startDate: nextStartDate,
+      endDate: nextEndDate,
+      difficulty: ""
+    });
+  }
+
   if (loading || currentUser === undefined) {
     return (
       <main className={authStyles.page}>
@@ -445,6 +564,197 @@ export function AdminPageClient() {
 
         {notice ? <p className={authStyles.notice}>{notice}</p> : null}
         {error ? <p className={authStyles.error}>{error}</p> : null}
+
+        <section className={styles.listSection}>
+          <div className={styles.listHeaderBar}>
+            <div className={styles.sectionHeaderCompact}>
+              <p className={styles.sectionEyebrow}>추천 성과</p>
+              <h2>오늘의 질문 추천 성과 보기</h2>
+              <p className={styles.metricsSectionDescription}>
+                노출부터 클릭, 첫 제출, 루프 완료까지 추천 성과를 한 화면에서 확인해요.
+              </p>
+            </div>
+            <div className={styles.metricsHeaderActions}>
+              <button
+                type="button"
+                className={styles.listSortButton}
+                onClick={() => void loadRecommendationMetrics()}
+                disabled={recommendationMetricsLoading}
+              >
+                {recommendationMetricsLoading ? "불러오는 중..." : "새로고침"}
+                <span className="material-symbols-outlined">refresh</span>
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.metricsFilterGrid}>
+            <label className={styles.field}>
+              <span>시작일</span>
+              <input
+                className={styles.input}
+                type="date"
+                value={metricsStartDate}
+                onChange={(event) => setMetricsStartDate(event.target.value)}
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span>종료일</span>
+              <input
+                className={styles.input}
+                type="date"
+                value={metricsEndDate}
+                onChange={(event) => setMetricsEndDate(event.target.value)}
+              />
+            </label>
+
+            <label className={styles.field}>
+              <span>난이도</span>
+              <select
+                className={styles.input}
+                value={metricsDifficulty}
+                onChange={(event) =>
+                  setMetricsDifficulty((event.target.value as DailyDifficulty | "") ?? "")
+                }
+              >
+                <option value="">전체</option>
+                {difficultyOptions.map((difficulty) => (
+                  <option key={difficulty} value={difficulty}>
+                    {getDifficultyDisplayLabel(difficulty)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className={styles.metricsFilterActions}>
+              <button
+                type="button"
+                className={authStyles.ghostButton}
+                onClick={handleResetMetricsFilters}
+                disabled={recommendationMetricsLoading}
+              >
+                최근 14일로 초기화
+              </button>
+              <button
+                type="button"
+                className={authStyles.primaryButton}
+                onClick={() =>
+                  void loadRecommendationMetrics({
+                    startDate: metricsStartDate,
+                    endDate: metricsEndDate,
+                    difficulty: metricsDifficulty
+                  })
+                }
+                disabled={recommendationMetricsLoading}
+              >
+                적용
+              </button>
+            </div>
+          </div>
+
+          {recommendationMetricsError ? (
+            <p className={styles.metricsInlineError}>{recommendationMetricsError}</p>
+          ) : null}
+
+          {recommendationMetrics ? (
+            <>
+              <div className={styles.metricsSummaryGrid}>
+                <div className={styles.metricsSummaryCard}>
+                  <span>총 노출</span>
+                  <strong>{formatMetricCount(recommendationMetrics.totalShownCount)}</strong>
+                </div>
+                <div className={styles.metricsSummaryCard}>
+                  <span>총 클릭</span>
+                  <strong>{formatMetricCount(recommendationMetrics.totalClickedCount)}</strong>
+                  <small>{formatMetricRate(recommendationMetrics.clickRate)}</small>
+                </div>
+                <div className={styles.metricsSummaryCard}>
+                  <span>첫 제출 시작</span>
+                  <strong>{formatMetricCount(recommendationMetrics.totalStartedCount)}</strong>
+                  <small>{formatMetricRate(recommendationMetrics.startRate)}</small>
+                </div>
+                <div className={styles.metricsSummaryCard}>
+                  <span>루프 완료</span>
+                  <strong>{formatMetricCount(recommendationMetrics.totalCompletedCount)}</strong>
+                  <small>{formatMetricRate(recommendationMetrics.completeRate)}</small>
+                </div>
+              </div>
+
+              <p className={styles.metricsSectionDescription}>
+                집계 기간 {recommendationMetrics.startDate} ~ {recommendationMetrics.endDate}
+                {recommendationMetrics.difficultyFilter
+                  ? ` · 난이도 ${getDifficultyDisplayLabel(recommendationMetrics.difficultyFilter)}`
+                  : " · 전체 난이도"}
+              </p>
+
+              {recommendationMetrics.items.length > 0 ? (
+                <div className={styles.metricsTableWrap}>
+                  <table className={styles.metricsTable}>
+                    <thead>
+                      <tr>
+                        <th>질문</th>
+                        <th>추천 슬롯</th>
+                        <th>추천 이유</th>
+                        <th>노출</th>
+                        <th>클릭</th>
+                        <th>시작</th>
+                        <th>완료</th>
+                        <th>클릭률</th>
+                        <th>시작률</th>
+                        <th>완료율</th>
+                        <th>시작 후 완료율</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {recommendationMetrics.items.map((item) => (
+                        <tr key={`${item.promptId}-${item.slotType}-${item.reasonCode}`}>
+                          <td>
+                            <div className={styles.metricsQuestionCell}>
+                              <strong>{item.questionEn}</strong>
+                              <span>
+                                {item.topicCategory}
+                                {item.topicDetail ? ` · ${item.topicDetail}` : ""}
+                                {item.difficulty ? ` · ${getDifficultyDisplayLabel(item.difficulty)}` : ""}
+                              </span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className={styles.metricsBadge}>
+                              {getRecommendationSlotLabel(item.slotType)}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={styles.metricsBadgeMuted}>
+                              {getRecommendationReasonLabel(item.reasonCode)}
+                            </span>
+                          </td>
+                          <td>{formatMetricCount(item.shownCount)}</td>
+                          <td>{formatMetricCount(item.clickedCount)}</td>
+                          <td>{formatMetricCount(item.startedCount)}</td>
+                          <td>{formatMetricCount(item.completedCount)}</td>
+                          <td>{formatMetricRate(item.clickRate)}</td>
+                          <td>{formatMetricRate(item.startRate)}</td>
+                          <td>{formatMetricRate(item.completeRate)}</td>
+                          <td>{formatMetricRate(item.completionAfterStartRate)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className={styles.metricsEmptyState}>
+                  <strong>집계된 추천 로그가 아직 없어요.</strong>
+                  <span>선택한 기간이나 난이도 범위를 바꿔서 다시 확인해 보세요.</span>
+                </div>
+              )}
+            </>
+          ) : recommendationMetricsLoading ? (
+            <div className={styles.metricsEmptyState}>
+              <strong>추천 성과를 불러오고 있어요.</strong>
+              <span>최근 추천 로그와 전환 데이터를 집계하는 중이에요.</span>
+            </div>
+          ) : null}
+        </section>
 
         <section ref={createSectionRef} className={styles.createCard}>
           <div className={styles.createHeader}>

@@ -331,6 +331,24 @@ export default function MeScreen() {
                   {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
                 </View>
 
+                {currentUser.admin ? (
+                  <View style={styles.adminEntryCard}>
+                    <View style={styles.adminEntryCopy}>
+                      <Text style={styles.adminEntryEyebrow}>ADMIN</Text>
+                      <Text style={styles.adminEntryTitle}>모바일 관리자 도구</Text>
+                      <Text style={styles.adminEntryBody}>
+                        추천 성과와 질문 현황을 휴대폰에서 바로 확인할 수 있어요.
+                      </Text>
+                    </View>
+                    <Pressable
+                      style={styles.adminEntryButton}
+                      onPress={() => router.push("/admin")}
+                    >
+                      <Text style={styles.adminEntryButtonText}>열기</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+
                 <View style={styles.footerActionRow}>
                   <Pressable
                     style={[styles.footerButton, styles.footerGhostButton]}
@@ -572,6 +590,51 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: "#B34A2B"
+  },
+  adminEntryCard: {
+    borderRadius: 30,
+    paddingHorizontal: 22,
+    paddingVertical: 20,
+    borderWidth: 1,
+    borderColor: "#E8DACB",
+    backgroundColor: "#FFFEFC",
+    gap: 14
+  },
+  adminEntryCopy: {
+    gap: 6
+  },
+  adminEntryEyebrow: {
+    fontSize: 13,
+    fontWeight: "900",
+    letterSpacing: 1.3,
+    color: "#B27323"
+  },
+  adminEntryTitle: {
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "900",
+    color: "#232128"
+  },
+  adminEntryBody: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: "#6A5D4E"
+  },
+  adminEntryButton: {
+    alignSelf: "flex-start",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+    paddingHorizontal: 18,
+    paddingVertical: 11,
+    backgroundColor: "#FFF3E2",
+    borderWidth: 1,
+    borderColor: "#E6D2BA"
+  },
+  adminEntryButtonText: {
+    fontSize: 14,
+    fontWeight: "900",
+    color: "#8A6431"
   },
   footerActionRow: {
     flexDirection: "row",

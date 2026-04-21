@@ -3,6 +3,12 @@ import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import { apiBaseUrl } from "./env";
 import type {
+  AdminPrompt,
+  AdminPromptHint,
+  AdminPromptHintRequest,
+  AdminPromptRecommendationMetrics,
+  AdminPromptRequest,
+  AdminPromptTopicCatalogEntry,
   AuthNotice,
   AuthUser,
   CoachHelpRequest,
@@ -44,6 +50,7 @@ let tokenSessionCache: TokenSession | null | undefined = undefined;
 let refreshPromise: Promise<TokenSession | null> | null = null;
 const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
 const RETRY_DELAYS_MS = [350, 800];
+const FETCH_TIMEOUT_MS = 8000;
 
 function createCoachExpressionId(promptId: string, expression: string, index: number) {
   const base = expression
@@ -52,6 +59,20 @@ function createCoachExpressionId(promptId: string, expression: string, index: nu
     .replace(/^-+|-+$/g, "");
 
   return `coach-${promptId}-${base || index + 1}`;
+}
+
+function normalizeExpressionTags(tags?: string[] | null) {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      tags
+        .map((tag) => (typeof tag === "string" ? tag.trim() : ""))
+        .filter(Boolean)
+    )
+  );
 }
 
 function normalizeCoachHelpResponse(
@@ -66,6 +87,7 @@ function normalizeCoachHelpResponse(
       meaningKo?: string;
       usageTip?: string;
       example?: string;
+      tags?: string[] | null;
     }[];
   },
   fallbackPromptId: string,
@@ -80,7 +102,8 @@ function normalizeCoachHelpResponse(
       expression: expression.expression ?? "",
       meaningKo: expression.meaningKo ?? "이 질문에 바로 써먹을 수 있는 표현이에요.",
       usageTip: expression.usageTip ?? "답안 안에서 자연스럽게 풀어서 써 보세요.",
-      example: expression.example ?? expression.expression ?? ""
+      example: expression.example ?? expression.expression ?? "",
+      tags: normalizeExpressionTags(expression.tags)
     }));
 
   return {
@@ -208,12 +231,42 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function normalizeNetworkError(error: unknown) {
+  if (error instanceof Error && error.name === "AbortError") {
+    return new Error("서버 연결이 지연되고 있어요. 네트워크나 API 주소를 확인해 주세요.");
+  }
+
+  if (error instanceof TypeError) {
+    return new Error("서버에 연결하지 못했어요. 네트워크나 API 주소를 확인해 주세요.");
+  }
+
+  return error;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, FETCH_TIMEOUT_MS);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal
+    });
+  } catch (error) {
+    throw normalizeNetworkError(error);
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function fetchWithRetry(url: string, init: RequestInit): Promise<Response> {
   const canRetry = shouldRetryTransientFailure(init);
 
   for (let attempt = 0; ; attempt += 1) {
     try {
-      const response = await fetch(url, init);
+      const response = await fetchWithTimeout(url, init);
       if (
         canRetry &&
         RETRYABLE_STATUS_CODES.has(response.status) &&
@@ -226,7 +279,7 @@ async function fetchWithRetry(url: string, init: RequestInit): Promise<Response>
       return response;
     } catch (error) {
       if (!canRetry || attempt >= RETRY_DELAYS_MS.length) {
-        throw error;
+        throw normalizeNetworkError(error);
       }
 
       await delay(RETRY_DELAYS_MS[attempt]);
@@ -505,16 +558,181 @@ export async function getPrompts(): Promise<Prompt[]> {
   return (await response.json()) as Prompt[];
 }
 
+export async function getAdminPrompts(): Promise<AdminPrompt[]> {
+  const response = await apiFetch("/api/admin/prompts");
+
+  if (!response.ok) {
+    throw await parseApiError(response, "관리자 질문 목록을 불러오지 못했어요.");
+  }
+
+  return (await response.json()) as AdminPrompt[];
+}
+
+export async function getAdminPromptTopicCatalog(): Promise<AdminPromptTopicCatalogEntry[]> {
+  const response = await apiFetch("/api/admin/prompts/topic-catalog");
+
+  if (!response.ok) {
+    throw await parseApiError(response, "질문 주제 목록을 불러오지 못했어요.");
+  }
+
+  return (await response.json()) as AdminPromptTopicCatalogEntry[];
+}
+
+export async function getAdminPromptRecommendationMetrics(params?: {
+  startDate?: string;
+  endDate?: string;
+  difficulty?: DailyDifficulty | "";
+}): Promise<AdminPromptRecommendationMetrics> {
+  const query = new URLSearchParams();
+  if (params?.startDate) {
+    query.set("startDate", params.startDate);
+  }
+  if (params?.endDate) {
+    query.set("endDate", params.endDate);
+  }
+  if (params?.difficulty) {
+    query.set("difficulty", params.difficulty);
+  }
+
+  const queryString = query.toString();
+  const response = await apiFetch(
+    `/api/admin/prompts/recommendation-metrics${queryString ? `?${queryString}` : ""}`
+  );
+
+  if (!response.ok) {
+    throw await parseApiError(response, "추천 지표를 불러오지 못했어요.");
+  }
+
+  return (await response.json()) as AdminPromptRecommendationMetrics;
+}
+
+export async function createAdminPrompt(request: AdminPromptRequest): Promise<AdminPrompt> {
+  const response = await apiFetch("/api/admin/prompts", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "질문을 추가하지 못했어요.");
+  }
+
+  return (await response.json()) as AdminPrompt;
+}
+
+export async function updateAdminPrompt(
+  promptId: string,
+  request: AdminPromptRequest
+): Promise<AdminPrompt> {
+  const response = await apiFetch(`/api/admin/prompts/${promptId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "질문을 수정하지 못했어요.");
+  }
+
+  return (await response.json()) as AdminPrompt;
+}
+
+export async function deleteAdminPrompt(promptId: string): Promise<void> {
+  const response = await apiFetch(`/api/admin/prompts/${promptId}`, {
+    method: "DELETE"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "질문을 비활성화하지 못했어요.");
+  }
+}
+
+export async function createAdminPromptHint(
+  promptId: string,
+  request: AdminPromptHintRequest
+): Promise<AdminPromptHint> {
+  const response = await apiFetch(`/api/admin/prompts/${promptId}/hints`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "힌트를 추가하지 못했어요.");
+  }
+
+  return (await response.json()) as AdminPromptHint;
+}
+
+export async function updateAdminPromptHint(
+  promptId: string,
+  hintId: string,
+  request: AdminPromptHintRequest
+): Promise<AdminPromptHint> {
+  const response = await apiFetch(`/api/admin/prompts/${promptId}/hints/${hintId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "힌트를 수정하지 못했어요.");
+  }
+
+  return (await response.json()) as AdminPromptHint;
+}
+
+export async function deleteAdminPromptHint(promptId: string, hintId: string): Promise<void> {
+  const response = await apiFetch(`/api/admin/prompts/${promptId}/hints/${hintId}`, {
+    method: "DELETE"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "힌트를 비활성화하지 못했어요.");
+  }
+}
+
 export async function getDailyPrompts(
-  difficulty: DailyDifficulty
+  difficulty: DailyDifficulty,
+  guestId?: string
 ): Promise<DailyPromptRecommendation> {
-  const response = await apiFetch(`/api/prompts/daily?difficulty=${difficulty}`);
+  const query = new URLSearchParams({ difficulty });
+  if (guestId) {
+    query.set("guestId", guestId);
+  }
+
+  const response = await apiFetch(`/api/prompts/daily?${query.toString()}`);
 
   if (!response.ok) {
     throw await parseApiError(response, "오늘의 질문을 불러오지 못했어요.");
   }
 
   return (await response.json()) as DailyPromptRecommendation;
+}
+
+export async function trackDailyPromptClick(promptId: string, guestId?: string): Promise<void> {
+  const response = await apiFetch("/api/prompts/daily/click", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      promptId,
+      guestId
+    })
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "추천 질문 선택을 기록하지 못했어요.");
+  }
 }
 
 export async function getPromptHints(promptId: string): Promise<PromptHint[]> {
@@ -649,6 +867,7 @@ export async function requestCoachHelp(request: CoachHelpRequest): Promise<Coach
       meaningKo?: string;
       usageTip?: string;
       example?: string;
+      tags?: string[] | null;
     }[];
   };
 

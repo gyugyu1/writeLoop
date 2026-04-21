@@ -55,6 +55,7 @@ type RewriteIdeaCard = {
   korean: string;
   note: string;
   exampleEn: string;
+  tags: string[];
   original: string;
   revised: string;
   hasSwapPair: boolean;
@@ -74,6 +75,7 @@ type UsedExpressionItem = {
   meaningKo: string;
   exampleEn: string;
   usageTip: string;
+  tags: string[];
 };
 
 export type FeedbackTabKey = "feedback" | "improve";
@@ -89,7 +91,8 @@ type PracticeFeedbackContentProps = {
     expression: string,
     meaningKo?: string | null,
     exampleEn?: string | null,
-    usageTip?: string | null
+    usageTip?: string | null,
+    tags?: string[] | null
   ) => void;
   isUsedExpressionSaved?: (expression: string) => boolean;
   isSavingUsedExpression?: (expression: string) => boolean;
@@ -97,7 +100,8 @@ type PracticeFeedbackContentProps = {
     expression: string,
     meaningKo?: string | null,
     exampleEn?: string | null,
-    usageTip?: string | null
+    usageTip?: string | null,
+    tags?: string[] | null
   ) => void;
   isRefinementExpressionSaved?: (expression: string) => boolean;
   isSavingRefinementExpression?: (expression: string) => boolean;
@@ -116,6 +120,31 @@ function pickFirstNonEmpty(...values: (string | null | undefined)[]) {
   }
 
   return "";
+}
+
+function normalizeExpressionTags(tags?: (string | null | undefined)[] | null) {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      tags
+        .map((tag) => trimText(tag))
+        .filter(Boolean)
+    )
+  );
+}
+
+function mergeExpressionTags(...groups: (string[] | null | undefined)[]) {
+  return Array.from(
+    new Set(
+      groups
+        .flatMap((group) => group ?? [])
+        .map((tag) => trimText(tag))
+        .filter(Boolean)
+    )
+  );
 }
 
 const REWRITE_PLACEHOLDER_PATTERN = /(?:_{3,}|\.{3,})/;
@@ -624,6 +653,7 @@ function normalizeRewriteIdeaCard(
     korean,
     note,
     exampleEn: trimText(idea.exampleEn),
+    tags: normalizeExpressionTags(idea.tags),
     original,
     revised,
     hasSwapPair,
@@ -683,6 +713,7 @@ function buildRewriteIdeas(feedback: Feedback): RewriteIdeaCard[] {
         korean: resolveLearningPointMeaning(point, lead) || trimText(point.exampleKo),
         note: pickFirstNonEmpty(resolveLearningPointGuidance(point), resolveLearningPointSupport(point)),
         exampleEn: trimText(point.exampleEn),
+        tags: [],
         original: "",
         revised: "",
         hasSwapPair: false,
@@ -889,7 +920,8 @@ export function PracticeFeedbackContent({
               expression,
               meaningKo: trimText(item.meaningKo),
               exampleEn: trimText(item.exampleEn ?? item.matchedText),
-              usageTip: trimText(item.usageTip)
+              usageTip: trimText(item.usageTip),
+              tags: normalizeExpressionTags(item.tags)
             });
             return items;
           }
@@ -903,6 +935,7 @@ export function PracticeFeedbackContent({
           if (!existing.usageTip) {
             existing.usageTip = trimText(item.usageTip);
           }
+          existing.tags = mergeExpressionTags(existing.tags, normalizeExpressionTags(item.tags));
           return items;
         }, new Map<string, UsedExpressionItem>()).values()
       ),
@@ -1093,7 +1126,8 @@ export function PracticeFeedbackContent({
                                 item.expression,
                                 item.meaningKo || undefined,
                                 item.exampleEn || undefined,
-                                item.usageTip || undefined
+                                item.usageTip || undefined,
+                                item.tags
                               )
                             }
                             disabled={
@@ -1223,7 +1257,8 @@ export function PracticeFeedbackContent({
                               idea.english,
                               idea.korean || undefined,
                               idea.exampleEn || undefined,
-                              idea.note || undefined
+                              idea.note || undefined,
+                              idea.tags
                             )
                           }
                           disabled={

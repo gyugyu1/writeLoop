@@ -14,6 +14,7 @@ import com.writeloop.persistence.PromptRepository;
 import com.writeloop.persistence.SavedExpressionEntity;
 import com.writeloop.persistence.SavedExpressionRepository;
 import com.writeloop.persistence.SavedExpressionSourceType;
+import com.writeloop.util.ExpressionTagSupport;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,7 +39,11 @@ public class SavedExpressionService {
         List<SavedExpressionEntity> expressions = savedExpressionRepository.findByUserIdOrderByLastSavedAtDesc(userId);
         Map<String, PromptEntity> promptsById = loadPrompts(expressions);
         return expressions.stream()
-                .map(expression -> SavedExpressionDto.from(expression, promptsById.get(expression.getPromptId())))
+                .map(expression -> {
+                    String promptId = expression.getPromptId();
+                    PromptEntity prompt = isBlank(promptId) ? null : promptsById.get(promptId);
+                    return SavedExpressionDto.from(expression, prompt);
+                })
                 .toList();
     }
 
@@ -53,6 +58,15 @@ public class SavedExpressionService {
                             context.meaningKo(),
                             context.usageTipKo(),
                             context.exampleEn(),
+                            ExpressionTagSupport.toJson(ExpressionTagSupport.withSavedExpressionDefaults(
+                                    ExpressionTagSupport.mergeTagsForExpression(
+                                            context.expression(),
+                                            ExpressionTagSupport.fromJson(existing.getTagsJson()),
+                                            context.tags()
+                                    ),
+                                    context.sourceType(),
+                                    context.expression()
+                            )),
                             context.sourceType(),
                             context.promptId(),
                             context.answerSessionId(),
@@ -68,6 +82,7 @@ public class SavedExpressionService {
                         context.meaningKo(),
                         context.usageTipKo(),
                         context.exampleEn(),
+                        ExpressionTagSupport.toJson(context.tags()),
                         context.sourceType(),
                         context.promptId(),
                         context.answerSessionId(),
@@ -152,6 +167,7 @@ public class SavedExpressionService {
                 emptyToNull(normalizeText(request.meaningKo())),
                 emptyToNull(normalizeText(request.usageTipKo())),
                 emptyToNull(normalizeText(request.exampleEn())),
+                ExpressionTagSupport.withSavedExpressionDefaults(request.tags(), sourceType, expression),
                 sourceType,
                 emptyToNull(promptId),
                 emptyToNull(answerSessionId),
@@ -218,6 +234,7 @@ public class SavedExpressionService {
             String meaningKo,
             String usageTipKo,
             String exampleEn,
+            List<String> tags,
             SavedExpressionSourceType sourceType,
             String promptId,
             String answerSessionId,

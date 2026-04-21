@@ -1,5 +1,9 @@
 package com.writeloop.dto;
 
+import com.writeloop.util.ExpressionTagSupport;
+
+import java.util.List;
+
 public record FeedbackRewriteIdeaDto(
         String title,
         String english,
@@ -8,8 +12,22 @@ public record FeedbackRewriteIdeaDto(
         String exampleEn,
         String originalText,
         String revisedText,
-        boolean optionalTone
+        boolean optionalTone,
+        List<String> tags
 ) {
+    public FeedbackRewriteIdeaDto(
+            String title,
+            String english,
+            String meaningKo,
+            String noteKo,
+            String exampleEn,
+            String originalText,
+            String revisedText,
+            boolean optionalTone
+    ) {
+        this(title, english, meaningKo, noteKo, exampleEn, originalText, revisedText, optionalTone, List.of());
+    }
+
     public FeedbackRewriteIdeaDto {
         title = normalize(title);
         english = normalize(english);
@@ -18,6 +36,7 @@ public record FeedbackRewriteIdeaDto(
         exampleEn = normalize(exampleEn);
         originalText = normalize(originalText);
         revisedText = normalize(revisedText);
+        tags = ExpressionTagSupport.withRewriteIdeaDefaults(tags, english);
     }
 
     public static FeedbackRewriteIdeaDto highlight(

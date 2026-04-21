@@ -11430,6 +11430,13 @@
   line-height: 1.58;
 }
 
+.promptSelectionReasonText {
+  color: #8a6431;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.58;
+}
+
 .promptSelectionCardFooter {
   width: 100%;
   display: flex;

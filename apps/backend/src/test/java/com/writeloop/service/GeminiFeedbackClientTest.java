@@ -138,7 +138,8 @@ class GeminiFeedbackClientTest {
                         "expression", "stay healthy",
                         "meaningKo", "건강을 유지하다",
                         "exampleEn", "I want to stay healthy by sleeping earlier.",
-                        "usageTip", "Use this to explain why the goal matters."
+                        "usageTip", "Use this to explain why the goal matters.",
+                        "tags", List.of("used_expression", "frequency")
                 ))),
                 Map.entry("refinementExpressions", List.of(Map.of(
                         "expression", "improve my diet",
@@ -155,7 +156,8 @@ class GeminiFeedbackClientTest {
                         "exampleEn", "It helps me feel more energetic during the day.",
                         "originalText", "",
                         "revisedText", "",
-                        "optionalTone", false
+                        "optionalTone", false,
+                        "tags", List.of("refinement", "reason")
                 ))),
                 Map.entry("modelAnswerVariants", List.of(Map.of(
                         "kind", "NATURALER",
@@ -211,6 +213,8 @@ class GeminiFeedbackClientTest {
             assertThat(variant.kind()).isEqualTo("NATURALER");
         });
         assertThat(sections.modelAnswer()).contains("feel more energetic");
+        assertThat(sections.usedExpressions().get(0).tags()).containsExactly("used_expression", "frequency_expression");
+        assertThat(sections.rewriteIdeas().get(0).tags()).containsExactly("refinement_expression", "reason_expression");
     }
 
     @Test
@@ -255,12 +259,16 @@ class GeminiFeedbackClientTest {
         String promptText = request.path("contents").get(0).path("parts").get(0).path("text").asText("");
 
         assertThat(usedExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(usedExpressionProperties.path("tags").isMissingNode()).isFalse();
         assertThat(rewriteIdeaProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(rewriteIdeaProperties.path("tags").isMissingNode()).isFalse();
         assertThat(promptText)
                 .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
                 .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
                 .contains("usedExpressions.exampleEn must be one short natural sentence")
-                .contains("For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence");
+                .contains("usedExpressions.tags must contain 2 to 6 tags")
+                .contains("For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence")
+                .contains("rewriteIdeas.tags must contain 2 to 6 tags");
     }
     @Test
     void buildDiagnosisPrompt_includes_attempt_context() {

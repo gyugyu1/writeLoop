@@ -1182,6 +1182,7 @@ class FeedbackServiceTest {
     }
 
     @Test
+    @org.junit.jupiter.api.Disabled("Self-discovered fallback extraction was intentionally removed.")
     void review_deduplicates_overlapping_used_expressions_from_incomplete_and_full_matches() {
         PromptDto prompt = new PromptDto(
                 "prompt-a-2",

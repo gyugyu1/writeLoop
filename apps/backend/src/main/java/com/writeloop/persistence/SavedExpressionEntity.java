@@ -52,6 +52,9 @@ public class SavedExpressionEntity {
     @Column(name = "example_en", columnDefinition = "TEXT")
     private String exampleEn;
 
+    @Column(name = "tags_json", columnDefinition = "TEXT")
+    private String tagsJson;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "source_type", nullable = false, length = 32)
     private SavedExpressionSourceType sourceType;
@@ -87,6 +90,7 @@ public class SavedExpressionEntity {
             String meaningKo,
             String usageTipKo,
             String exampleEn,
+            String tagsJson,
             SavedExpressionSourceType sourceType,
             String promptId,
             String answerSessionId,
@@ -99,6 +103,7 @@ public class SavedExpressionEntity {
         this.meaningKo = meaningKo;
         this.usageTipKo = usageTipKo;
         this.exampleEn = exampleEn;
+        this.tagsJson = tagsJson;
         this.sourceType = sourceType;
         this.promptId = promptId;
         this.answerSessionId = answerSessionId;
@@ -128,6 +133,7 @@ public class SavedExpressionEntity {
             String meaningKo,
             String usageTipKo,
             String exampleEn,
+            String tagsJson,
             SavedExpressionSourceType sourceType,
             String promptId,
             String answerSessionId,
@@ -144,6 +150,9 @@ public class SavedExpressionEntity {
         }
         if (exampleEn != null && !exampleEn.isBlank()) {
             this.exampleEn = exampleEn;
+        }
+        if (tagsJson != null && !tagsJson.isBlank()) {
+            this.tagsJson = tagsJson;
         }
         if (promptId != null && !promptId.isBlank()) {
             this.promptId = promptId;

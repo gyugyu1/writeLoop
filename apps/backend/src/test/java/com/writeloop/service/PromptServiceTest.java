@@ -2,8 +2,6 @@ package com.writeloop.service;
 
 import com.writeloop.dto.DailyDifficultyDto;
 import com.writeloop.dto.DailyPromptRecommendationDto;
-import com.writeloop.dto.PromptDto;
-import com.writeloop.persistence.PromptEntity;
 import com.writeloop.persistence.PromptHintItemRepository;
 import com.writeloop.persistence.PromptHintRepository;
 import com.writeloop.persistence.PromptRepository;
@@ -16,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -39,6 +38,9 @@ class PromptServiceTest {
     @Mock
     private PromptTaskMetaSupport promptTaskMetaSupport;
 
+    @Mock
+    private TodayQuestionRecommendationService todayQuestionRecommendationService;
+
     private PromptService promptService;
 
     @BeforeEach
@@ -49,55 +51,35 @@ class PromptServiceTest {
                 promptHintItemRepository,
                 promptCoachProfileSupport,
                 promptHintItemSupport,
-                promptTaskMetaSupport
+                promptTaskMetaSupport,
+                todayQuestionRecommendationService
         );
     }
 
     @Test
-    void recommendDailyPrompts_skipsDuplicateCategories() {
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc()).thenReturn(List.of(
-                prompt("prompt-1", "Food", "Cooking", "A", 1),
-                prompt("prompt-2", "Food", "Restaurants", "A", 2),
-                prompt("prompt-3", "Travel", "Planning", "A", 3),
-                prompt("prompt-4", "Work", "Meetings", "A", 4),
-                prompt("prompt-5", "Health", "Habits", "B", 5)
-        ));
+    void recommendDailyPrompts_delegatesToRecommendationService() {
+        DailyPromptRecommendationDto expected = new DailyPromptRecommendationDto(
+                "2026-04-21",
+                DailyDifficultyDto.A,
+                "NEW",
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+
+        when(todayQuestionRecommendationService.recommend(DailyDifficultyDto.A, null, null))
+                .thenReturn(expected);
 
         DailyPromptRecommendationDto recommendation = promptService.recommendDailyPrompts(DailyDifficultyDto.A);
 
-        assertThat(recommendation.prompts()).hasSize(3);
-        assertThat(recommendation.prompts())
-                .extracting(PromptDto::topicCategory)
-                .doesNotHaveDuplicates();
+        assertThat(recommendation).isSameAs(expected);
     }
 
     @Test
-    void recommendDailyPrompts_returnsOnlyAvailableUniqueCategories() {
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc()).thenReturn(List.of(
-                prompt("prompt-1", "Food", "Cooking", "A", 1),
-                prompt("prompt-2", "Food", "Restaurants", "A", 2),
-                prompt("prompt-3", "Travel", "Planning", "A", 3)
-        ));
+    void recordDailyPromptClick_delegatesToRecommendationService() {
+        promptService.recordDailyPromptClick("prompt-a-1", 3L, null);
 
-        DailyPromptRecommendationDto recommendation = promptService.recommendDailyPrompts(DailyDifficultyDto.A);
-
-        assertThat(recommendation.prompts()).hasSize(2);
-        assertThat(recommendation.prompts())
-                .extracting(PromptDto::topicCategory)
-                .containsExactlyInAnyOrder("Food", "Travel");
-    }
-
-    private PromptEntity prompt(String id, String topicCategory, String topicDetail, String difficulty, int displayOrder) {
-        return new PromptEntity(
-                id,
-                topicCategory,
-                topicDetail,
-                difficulty,
-                "Sample question?",
-                "Sample question ko",
-                "Sample tip",
-                displayOrder,
-                true
-        );
+        verify(todayQuestionRecommendationService).recordClick("prompt-a-1", 3L, null);
     }
 }

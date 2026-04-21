@@ -178,6 +178,85 @@ function normalizeExpressionKey(expression: string) {
   return expression.trim().replace(/\s+/g, " ").toLowerCase();
 }
 
+const PRACTICE_EXPRESSION_TRAILING_WEAK_TOKENS = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "as",
+  "at",
+  "be",
+  "because",
+  "for",
+  "from",
+  "if",
+  "in",
+  "into",
+  "is",
+  "my",
+  "of",
+  "on",
+  "or",
+  "our",
+  "that",
+  "the",
+  "their",
+  "to",
+  "with",
+  "your",
+  "his",
+  "her"
+]);
+
+function isLikelyCompletePracticeExpression(expression: string) {
+  const normalized = expression.trim().replace(/\s+/g, " ");
+  if (!normalized) {
+    return false;
+  }
+
+  const tokens = normalized.toLowerCase().split(" ");
+  const lastToken = tokens[tokens.length - 1];
+  return !PRACTICE_EXPRESSION_TRAILING_WEAK_TOKENS.has(lastToken);
+}
+
+function parsePracticeExpressionsParam(value?: string | string[]) {
+  if (typeof value !== "string" || !value.trim()) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    const dedupedExpressions = new Set<string>();
+    const expressions: string[] = [];
+
+    parsed.forEach((item) => {
+      if (typeof item !== "string") {
+        return;
+      }
+
+      const normalized = normalizeExpressionKey(item);
+      if (
+        !normalized ||
+        dedupedExpressions.has(normalized) ||
+        !isLikelyCompletePracticeExpression(item)
+      ) {
+        return;
+      }
+
+      dedupedExpressions.add(normalized);
+      expressions.push(item.trim());
+    });
+
+    return expressions;
+  } catch {
+    return [];
+  }
+}
+
 function formatDraftSavedAt(updatedAt: string) {
   return new Date(updatedAt).toLocaleTimeString("ko-KR", {
     hour: "2-digit",
@@ -214,6 +293,10 @@ export default function PracticeWriteScreen() {
     promptId?: string;
     mode?: string;
     resume?: string;
+    prefillExpression?: string;
+    practiceTag?: string;
+    practiceTagLabel?: string;
+    practiceExpressions?: string;
   }>();
   const navigation = useNavigation();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
@@ -221,6 +304,35 @@ export default function PracticeWriteScreen() {
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
   const isRewriteMode = params.mode === "rewrite";
   const shouldRestoreRewriteDraft = params.resume === "1";
+  const prefillExpression =
+    typeof params.prefillExpression === "string" ? params.prefillExpression.trim() : "";
+  const practiceTagLabel =
+    typeof params.practiceTagLabel === "string" ? params.practiceTagLabel.trim() : "";
+  const practiceExpressions = useMemo(() => {
+    const parsedExpressions = parsePracticeExpressionsParam(params.practiceExpressions);
+    const dedupedExpressions = new Set<string>();
+    const expressions: string[] = [];
+
+    const prioritizedExpressions =
+      parsedExpressions.length > 0 ? parsedExpressions : prefillExpression ? [prefillExpression] : [];
+
+    prioritizedExpressions.forEach((expression) => {
+      if (!isLikelyCompletePracticeExpression(expression)) {
+        return;
+      }
+
+      const normalized = normalizeExpressionKey(expression);
+      if (!normalized || dedupedExpressions.has(normalized)) {
+        return;
+      }
+
+      dedupedExpressions.add(normalized);
+      expressions.push(expression.trim());
+    });
+
+    return expressions;
+  }, [params.practiceExpressions, prefillExpression]);
+  const primaryPracticeExpression = practiceExpressions[0] ?? prefillExpression;
   const { currentUser } = useSession();
   const isFocused = useIsFocused();
 
@@ -398,8 +510,9 @@ export default function PracticeWriteScreen() {
     try {
       setIsLoading(true);
       setError("");
+      const guestId = await getOrCreateGuestId();
       const [nextRecommendation, promptPool] = await Promise.all([
-        getDailyPrompts(requestedDifficulty),
+        getDailyPrompts(requestedDifficulty, guestId),
         getPrompts()
       ]);
       const sameDifficultyPromptPool = promptPool.filter(
@@ -465,6 +578,11 @@ export default function PracticeWriteScreen() {
         restoredDraftStatusMessage = "";
       }
 
+      if (!isRewriteMode && primaryPracticeExpression) {
+        restoredAnswer = primaryPracticeExpression;
+        restoredDraftStatusMessage = "";
+      }
+
       latestAnswerRef.current = restoredAnswer;
       latestSelectedPromptRef.current = nextPrompt;
       setRecommendation(normalizedRecommendation);
@@ -494,6 +612,7 @@ export default function PracticeWriteScreen() {
     activeDraftType,
     currentUser,
     isRewriteMode,
+    primaryPracticeExpression,
     requestedDifficulty,
     requestedPromptId,
     shouldRestoreRewriteDraft
@@ -671,6 +790,7 @@ export default function PracticeWriteScreen() {
         meaningKo: expression.meaningKo,
         usageTipKo: expression.usageTip,
         exampleEn: expression.example,
+        tags: expression.tags?.length ? expression.tags : undefined,
         sourceType: "COACH_RECOMMENDATION",
         promptId: selectedPrompt.id,
         coachInteractionId: coachHelp?.interactionId
@@ -1183,6 +1303,39 @@ export default function PracticeWriteScreen() {
                   {isTranslationVisible ? (
                     <Text style={styles.promptSummaryKo}>{selectedPrompt.questionKo}</Text>
                   ) : null}
+                  {practiceTagLabel && practiceExpressions.length > 0 && !feedback ? (
+                    <View style={styles.tagPracticeCard}>
+                      <Text style={styles.tagPracticeEyebrow}>태그 연습</Text>
+                      <Text style={styles.tagPracticeBody}>
+                        {`${practiceTagLabel} 태그로 저장한 표현을 활용해 새 문장을 써보세요.`}
+                      </Text>
+                      <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={styles.tagPracticeExpressionList}
+                        style={styles.tagPracticeExpressionScroller}
+                      >
+                        {practiceExpressions.map((expression, index) => (
+                          <View
+                            key={`${expression}-${index}`}
+                            style={[
+                              styles.tagPracticeExpressionChip,
+                              index === 0 && styles.tagPracticeExpressionChipPrimary
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.tagPracticeExpressionChipText,
+                                index === 0 && styles.tagPracticeExpressionChipTextPrimary
+                              ]}
+                            >
+                              {expression}
+                            </Text>
+                          </View>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  ) : null}
                   <View style={styles.promptToolRow}>
                     {feedback ? (
                       <Pressable
@@ -1674,6 +1827,59 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: "#756757"
+  },
+  tagPracticeCard: {
+    gap: 6,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E8D8C5",
+    backgroundColor: "#FFF8EF",
+    paddingHorizontal: 14,
+    paddingVertical: 12
+  },
+  tagPracticeEyebrow: {
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 0.3,
+    color: "#A56B1F"
+  },
+  tagPracticeBody: {
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#6B5A46",
+    fontWeight: "700"
+  },
+  tagPracticeExpressionScroller: {
+    flexGrow: 0
+  },
+  tagPracticeExpressionList: {
+    flexDirection: "row",
+    gap: 8,
+    paddingRight: 12
+  },
+  tagPracticeExpressionChip: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E7D6C1",
+    backgroundColor: "#FFFDF9",
+    paddingHorizontal: 12,
+    paddingVertical: 8
+  },
+  tagPracticeExpressionChipPrimary: {
+    borderColor: "#E9AF63",
+    backgroundColor: "#FFF1DC"
+  },
+  tagPracticeExpressionChipText: {
+    fontSize: 14,
+    lineHeight: 19,
+    color: "#5F5244",
+    fontWeight: "700"
+  },
+  tagPracticeExpressionChipTextPrimary: {
+    fontSize: 15,
+    lineHeight: 21,
+    color: "#2C2924",
+    fontWeight: "900"
   },
   questionActionRow: {
     display: "none"

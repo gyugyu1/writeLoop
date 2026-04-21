@@ -3,6 +3,8 @@ export type DailyDifficulty = "A" | "B" | "C";
 export type HomeFlowStep = "pick" | "answer" | "feedback" | "rewrite" | "complete";
 export type WritingDraftType = "ANSWER" | "REWRITE";
 
+export type ExpressionTag = string;
+
 export interface Prompt {
   id: string;
   topic: string;
@@ -51,6 +53,7 @@ export interface CoachExpression {
   meaningKo: string;
   usageTip: string;
   example: string;
+  tags?: ExpressionTag[] | null;
 }
 
 export interface CoachHelpRequest {
@@ -106,13 +109,29 @@ export interface CoachUsageCheckResponse {
 export interface FeedbackUsedExpression {
   expression: string;
   matchedText?: string | null;
+  meaningKo?: string | null;
+  exampleEn?: string | null;
   usageTip?: string | null;
+  tags?: ExpressionTag[] | null;
 }
 
 export interface DailyPromptRecommendation {
   recommendedDate: string;
   difficulty: DailyDifficulty;
+  userState?: string;
+  fallbackUsed?: boolean;
+  featured?: PromptRecommendationItem | null;
+  alternatives?: PromptRecommendationItem[];
   prompts: Prompt[];
+}
+
+export interface PromptRecommendationItem {
+  slot: string;
+  prompt: Prompt;
+  reasonCode: string;
+  reasonText: string;
+  reasonFacts: string[];
+  score: number;
 }
 
 export interface TodayWritingStatus {
@@ -147,7 +166,10 @@ export interface CommonMistake {
   latestSuggestion: string;
 }
 
-export type SavedExpressionSourceType = "USED_EXPRESSION" | "COACH_RECOMMENDATION";
+export type SavedExpressionSourceType =
+  | "USED_EXPRESSION"
+  | "COACH_RECOMMENDATION"
+  | "REFINEMENT_EXPRESSION";
 
 export interface SavedExpression {
   id: number;
@@ -155,8 +177,10 @@ export interface SavedExpression {
   meaningKo?: string | null;
   usageTipKo?: string | null;
   exampleEn?: string | null;
+  tags?: ExpressionTag[] | null;
   sourceType: SavedExpressionSourceType;
   promptId?: string | null;
+  promptDifficulty?: PromptDifficulty | null;
   promptTopic?: string | null;
   promptQuestionEn?: string | null;
   promptQuestionKo?: string | null;
@@ -234,6 +258,8 @@ export interface FeedbackRewriteIdea {
   english?: string | null;
   meaningKo?: string | null;
   noteKo?: string | null;
+  exampleEn?: string | null;
+  tags?: ExpressionTag[] | null;
   originalText?: string | null;
   revisedText?: string | null;
   optionalTone?: boolean | null;
@@ -430,6 +456,39 @@ export interface AdminPrompt {
 export interface AdminPromptTopicCatalogEntry {
   category: string;
   details: string[];
+}
+
+export interface AdminPromptRecommendationMetricsItem {
+  promptId: string;
+  topic: string;
+  topicCategory: string;
+  topicDetail: string;
+  difficulty: PromptDifficulty;
+  questionEn: string;
+  slotType: string;
+  reasonCode: string;
+  shownCount: number;
+  clickedCount: number;
+  startedCount: number;
+  completedCount: number;
+  clickRate: number;
+  startRate: number;
+  completeRate: number;
+  completionAfterStartRate: number;
+}
+
+export interface AdminPromptRecommendationMetrics {
+  startDate: string;
+  endDate: string;
+  difficultyFilter?: DailyDifficulty | null;
+  totalShownCount: number;
+  totalClickedCount: number;
+  totalStartedCount: number;
+  totalCompletedCount: number;
+  clickRate: number;
+  startRate: number;
+  completeRate: number;
+  items: AdminPromptRecommendationMetricsItem[];
 }
 
 export interface AdminPromptRequest {

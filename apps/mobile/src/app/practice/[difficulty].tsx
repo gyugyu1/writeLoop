@@ -10,8 +10,9 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
-import { getDailyPrompts, getPrompts } from "@/lib/api";
+import { getDailyPrompts, getPrompts, trackDailyPromptClick } from "@/lib/api";
 import { getDifficultyLabel } from "@/lib/difficulty";
+import { getOrCreateGuestId } from "@/lib/guest-id";
 import {
   buildDistinctCategoryPromptSelection,
   getQuestionLabel,
@@ -39,6 +40,19 @@ export default function PracticeQuestionScreen() {
     () => allDifficultyPrompts.filter((prompt) => prompt.difficulty === requestedDifficulty),
     [allDifficultyPrompts, requestedDifficulty]
   );
+  const recommendationReasonByPromptId = useMemo(() => {
+    const nextMap = new Map<string, string>();
+    const featured = recommendation?.featured;
+    if (featured?.prompt?.id && featured.reasonText) {
+      nextMap.set(featured.prompt.id, featured.reasonText);
+    }
+    for (const item of recommendation?.alternatives ?? []) {
+      if (item.prompt?.id && item.reasonText) {
+        nextMap.set(item.prompt.id, item.reasonText);
+      }
+    }
+    return nextMap;
+  }, [recommendation]);
   const heroUnderlineWidth =
     heroTitleWidth > 0 && heroDifficultyLabelWidth > 0
       ? Math.max(64, heroTitleWidth - heroDifficultyLabelWidth - HERO_META_GAP)
@@ -48,8 +62,9 @@ export default function PracticeQuestionScreen() {
     try {
       setIsLoading(true);
       setError("");
+      const guestId = await getOrCreateGuestId();
       const [nextRecommendation, nextPromptPool] = await Promise.all([
-        getDailyPrompts(requestedDifficulty),
+        getDailyPrompts(requestedDifficulty, guestId),
         getPrompts()
       ]);
       const sameDifficultyPromptPool = nextPromptPool.filter(
@@ -88,6 +103,11 @@ export default function PracticeQuestionScreen() {
   }
 
   function handleStartPrompt(prompt: Prompt) {
+    void (async () => {
+      const guestId = await getOrCreateGuestId();
+      await trackDailyPromptClick(prompt.id, guestId || undefined);
+    })().catch(() => undefined);
+
     router.push({
       pathname: "/practice/write",
       params: {
@@ -142,6 +162,8 @@ export default function PracticeQuestionScreen() {
         current
           ? {
               ...current,
+              featured: null,
+              alternatives: [],
               prompts: replacementPrompts
             }
           : {
@@ -206,6 +228,7 @@ export default function PracticeQuestionScreen() {
             ) : recommendation?.prompts.length ? (
               recommendation.prompts.map((prompt, index) => {
                 const isTranslationVisible = Boolean(revealedTranslations[prompt.id]);
+                const recommendationReason = recommendationReasonByPromptId.get(prompt.id);
 
                 return (
                   <Pressable
@@ -216,6 +239,9 @@ export default function PracticeQuestionScreen() {
                     <Text style={styles.promptIndex}>{getQuestionLabel(index)}</Text>
                     <View style={styles.promptCopy}>
                       <Text style={styles.promptQuestionEn}>{prompt.questionEn}</Text>
+                      {recommendationReason ? (
+                        <Text style={styles.promptReasonText}>{recommendationReason}</Text>
+                      ) : null}
                       {isTranslationVisible ? (
                         <Text style={styles.promptQuestionKo}>{prompt.questionKo}</Text>
                       ) : null}
@@ -370,6 +396,12 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     fontWeight: "800",
     color: "#2B2620"
+  },
+  promptReasonText: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "700",
+    color: "#8A6431"
   },
   promptQuestionKo: {
     fontSize: 15,

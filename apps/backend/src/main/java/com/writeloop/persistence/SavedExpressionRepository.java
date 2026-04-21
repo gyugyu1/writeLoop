@@ -11,6 +11,8 @@ public interface SavedExpressionRepository extends JpaRepository<SavedExpression
 
     List<SavedExpressionEntity> findByUserIdOrderByLastSavedAtDesc(Long userId);
 
+    List<SavedExpressionEntity> findTop50ByUserIdOrderByLastSavedAtDesc(Long userId);
+
     Optional<SavedExpressionEntity> findByIdAndUserId(Long id, Long userId);
 
     void deleteAllByUserId(Long userId);

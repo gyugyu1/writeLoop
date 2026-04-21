@@ -16,6 +16,7 @@ import com.writeloop.dto.RefinementExpressionType;
 import com.writeloop.dto.RefinementMeaningType;
 import com.writeloop.exception.GuestLimitExceededException;
 import com.writeloop.exception.ApiException;
+import com.writeloop.util.ExpressionTagSupport;
 import com.writeloop.util.UsedExpressionSanitizer;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
@@ -146,11 +147,15 @@ public class FeedbackService {
             feedback = feedback.withUi(feedbackUiComposer.compose(prompt, answer, feedback, answerProfile));
         }
 
+        AnswerAttemptEntity savedAttempt = saveAttempt(session, attemptType, attemptNo, answer, feedback);
+        if (attemptNo == 1) {
+            promptService.recordDailyPromptStart(prompt.id(), currentUserId, request.guestId(), session.getId());
+        }
         if (feedback.loopComplete()) {
             session.setStatus(SessionStatus.COMPLETED);
             answerSessionRepository.save(session);
+            promptService.recordDailyPromptComplete(prompt.id(), currentUserId, request.guestId(), session.getId());
         }
-        AnswerAttemptEntity savedAttempt = saveAttempt(session, attemptType, attemptNo, answer, feedback);
         saveFeedbackDiagnosisLog(
                 session,
                 savedAttempt,
@@ -2173,7 +2178,8 @@ public class FeedbackService {
                 FEEDBACK_USED_EXPRESSION_SOURCE,
                 meaningKo,
                 exampleEn,
-                usageTip
+                usageTip,
+                ExpressionTagSupport.withUsedExpressionDefaults(usage.tags(), sanitizedExpression)
         );
     }
 

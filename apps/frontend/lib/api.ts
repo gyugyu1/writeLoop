@@ -1,4 +1,5 @@
 import type {
+  AdminPromptRecommendationMetrics,
   AdminPrompt,
   AdminPromptHint,
   AdminPromptHintRequest,
@@ -46,6 +47,20 @@ function createCoachExpressionId(promptId: string, expression: string, index: nu
     .replace(/^-+|-+$/g, "");
 
   return `coach-${promptId}-${base || index + 1}`;
+}
+
+function normalizeExpressionTags(tags?: string[] | null) {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      tags
+        .map((tag) => tag?.trim() ?? "")
+        .filter(Boolean)
+    )
+  );
 }
 
 function normalizeRefinementExpressionItem(
@@ -169,6 +184,7 @@ function normalizeCoachHelpResponse(
       meaningKo?: string;
       usageTip?: string;
       example?: string;
+      tags?: string[] | null;
     }>;
   },
   fallbackPromptId: string,
@@ -183,7 +199,8 @@ function normalizeCoachHelpResponse(
       expression: expression.expression ?? "",
       meaningKo: expression.meaningKo ?? "이 질문에 바로 가져다 쓸 수 있는 표현이에요.",
       usageTip: expression.usageTip ?? "답변 흐름 안에 자연스럽게 한 번 넣어보세요.",
-      example: expression.example ?? expression.expression ?? ""
+      example: expression.example ?? expression.expression ?? "",
+      tags: normalizeExpressionTags(expression.tags)
     }));
 
   return {
@@ -206,6 +223,7 @@ function normalizeCoachUsageResponse(
       matchedText?: string | null;
       source?: string;
       usageTip?: string | null;
+      tags?: string[] | null;
     }>;
     unusedExpressions?: Array<{
       expression?: string;
@@ -214,6 +232,7 @@ function normalizeCoachUsageResponse(
       matchedText?: string | null;
       source?: string;
       usageTip?: string | null;
+      tags?: string[] | null;
     }>;
     suggestedPromptIds?: string[];
   },
@@ -231,6 +250,7 @@ function normalizeCoachUsageResponse(
       matchedText?: string | null;
       source?: string;
       usageTip?: string | null;
+      tags?: string[] | null;
     }> = []
   ) =>
     items
@@ -253,6 +273,7 @@ function normalizeCoachUsageResponse(
               ? "AI가 추천하지 않아도, 이런 표현은 다음 답변에서도 다시 써볼 수 있어요."
               : "답변 안에서 자연스럽게 연결해 보세요."),
           example: source?.example ?? item.matchedText ?? item.expression ?? "",
+          tags: normalizeExpressionTags(item.tags ?? source?.tags),
           source: expressionSource
         };
 
@@ -310,9 +331,15 @@ export async function getPrompts(): Promise<Prompt[]> {
 }
 
 export async function getDailyPrompts(
-  difficulty: DailyDifficulty
+  difficulty: DailyDifficulty,
+  guestId?: string
 ): Promise<DailyPromptRecommendation> {
-  const response = await fetch(`${API_BASE}/api/prompts/daily?difficulty=${difficulty}`, {
+  const query = new URLSearchParams({ difficulty });
+  if (guestId) {
+    query.set("guestId", guestId);
+  }
+
+  const response = await fetch(`${API_BASE}/api/prompts/daily?${query.toString()}`, {
     cache: "no-store",
     credentials: "include"
   });
@@ -322,6 +349,24 @@ export async function getDailyPrompts(
   }
 
   return response.json();
+}
+
+export async function trackDailyPromptClick(promptId: string, guestId?: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/api/prompts/daily/click`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      promptId,
+      guestId
+    })
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to track daily prompt click");
+  }
 }
 
 export async function getPromptHints(promptId: string): Promise<PromptHint[]> {
@@ -747,7 +792,11 @@ export async function getSavedExpressions(): Promise<SavedExpression[]> {
     throw await parseApiError(response, "Failed to load saved expressions");
   }
 
-  return response.json();
+  const payload = (await response.json()) as SavedExpression[];
+  return payload.map((item) => ({
+    ...item,
+    tags: normalizeExpressionTags(item.tags)
+  }));
 }
 
 export async function deleteSavedExpression(savedExpressionId: number): Promise<void> {
@@ -845,6 +894,38 @@ export async function getAdminPromptTopicCatalog(): Promise<AdminPromptTopicCata
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to load admin prompt topic catalog");
+  }
+
+  return response.json();
+}
+
+export async function getAdminPromptRecommendationMetrics(params?: {
+  startDate?: string;
+  endDate?: string;
+  difficulty?: DailyDifficulty | "";
+}): Promise<AdminPromptRecommendationMetrics> {
+  const query = new URLSearchParams();
+  if (params?.startDate) {
+    query.set("startDate", params.startDate);
+  }
+  if (params?.endDate) {
+    query.set("endDate", params.endDate);
+  }
+  if (params?.difficulty) {
+    query.set("difficulty", params.difficulty);
+  }
+
+  const queryString = query.toString();
+  const response = await fetch(
+    `${API_BASE}/api/admin/prompts/recommendation-metrics${queryString ? `?${queryString}` : ""}`,
+    {
+      cache: "no-store",
+      credentials: "include"
+    }
+  );
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to load prompt recommendation metrics");
   }
 
   return response.json();

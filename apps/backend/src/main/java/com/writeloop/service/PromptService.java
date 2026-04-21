@@ -13,23 +13,17 @@ import com.writeloop.persistence.PromptRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
 public class PromptService {
-
-    private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
 
     private final PromptRepository promptRepository;
     private final PromptHintRepository promptHintRepository;
@@ -37,6 +31,7 @@ public class PromptService {
     private final PromptCoachProfileSupport promptCoachProfileSupport;
     private final PromptHintItemSupport promptHintItemSupport;
     private final PromptTaskMetaSupport promptTaskMetaSupport;
+    private final TodayQuestionRecommendationService todayQuestionRecommendationService;
 
     public List<PromptDto> findAll() {
         return promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc().stream()
@@ -55,28 +50,27 @@ public class PromptService {
     }
 
     public DailyPromptRecommendationDto recommendDailyPrompts(DailyDifficultyDto difficulty) {
-        LocalDate today = LocalDate.now(KOREA_ZONE);
-        List<PromptEntity> activePrompts = promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc();
-        if (activePrompts.isEmpty()) {
-            throw new IllegalStateException("No prompts found in database");
-        }
+        return recommendDailyPrompts(difficulty, null, null);
+    }
 
-        List<PromptEntity> exactDifficultyPrompts = activePrompts.stream()
-                .filter(prompt -> difficulty.name().equalsIgnoreCase(prompt.getDifficulty()))
-                .toList();
+    public DailyPromptRecommendationDto recommendDailyPrompts(
+            DailyDifficultyDto difficulty,
+            Long currentUserId,
+            String guestId
+    ) {
+        return todayQuestionRecommendationService.recommend(difficulty, currentUserId, guestId);
+    }
 
-        if (exactDifficultyPrompts.isEmpty()) {
-            throw new IllegalStateException("No prompts found for difficulty " + difficulty.name());
-        }
+    public void recordDailyPromptClick(String promptId, Long currentUserId, String guestId) {
+        todayQuestionRecommendationService.recordClick(promptId, currentUserId, guestId);
+    }
 
-        List<PromptEntity> shuffledPool = new ArrayList<>(exactDifficultyPrompts);
-        Collections.shuffle(shuffledPool, new Random((today + ":" + difficulty.name()).hashCode()));
+    public void recordDailyPromptStart(String promptId, Long currentUserId, String guestId, String sessionId) {
+        todayQuestionRecommendationService.recordStart(promptId, currentUserId, guestId, sessionId);
+    }
 
-        List<PromptDto> selected = selectDistinctCategoryPrompts(shuffledPool, 3).stream()
-                .map(this::toDto)
-                .toList();
-
-        return new DailyPromptRecommendationDto(today.toString(), difficulty, selected);
+    public void recordDailyPromptComplete(String promptId, Long currentUserId, String guestId, String sessionId) {
+        todayQuestionRecommendationService.recordComplete(promptId, currentUserId, guestId, sessionId);
     }
 
     public List<PromptHintDto> findHintsByPromptId(String promptId) {

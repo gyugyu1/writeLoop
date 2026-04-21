@@ -7,6 +7,7 @@ import com.writeloop.dto.CoachHelpResponseDto;
 import com.writeloop.dto.CoachSelfDiscoveredCandidateDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
+import com.writeloop.util.ExpressionTagSupport;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -135,6 +136,7 @@ public class GeminiCoachClient implements CoachLlmEngine {
 
     private String buildRequestBody(PromptDto prompt, String userQuestion, List<PromptHintDto> hints)
             throws IOException {
+        Map<String, Object> expressionTagsSchema = ExpressionTagSupport.jsonSchema();
         Map<String, Object> schema = Map.of(
                 "type", "object",
                 "additionalProperties", false,
@@ -152,14 +154,16 @@ public class GeminiCoachClient implements CoachLlmEngine {
                                                 "meaningKo", Map.of("type", "string"),
                                                 "usageTip", Map.of("type", "string"),
                                                 "example", Map.of("type", "string"),
-                                                "sourceHintType", Map.of("type", "string")
+                                                "sourceHintType", Map.of("type", "string"),
+                                                "tags", expressionTagsSchema
                                         ),
                                         "required", List.of(
                                                 "expression",
                                                 "meaningKo",
                                                 "usageTip",
                                                 "example",
-                                                "sourceHintType"
+                                                "sourceHintType",
+                                                "tags"
                                         )
                                 )
                         )
@@ -184,6 +188,7 @@ public class GeminiCoachClient implements CoachLlmEngine {
                 .orElse("");
         String coachProfileText = PromptOpenAiContextFormatter.formatCoachProfile(prompt);
         String hintText = PromptOpenAiContextFormatter.formatPromptHints(hints);
+        String allowedExpressionTags = ExpressionTagSupport.formatAllowedTagsForPrompt();
 
         return """
                 You are a helpful English expression coach for Korean learners.
@@ -209,6 +214,11 @@ public class GeminiCoachClient implements CoachLlmEngine {
                 %s
                 - Prefer short, reusable chunks over long sentences.
                 - sourceHintType should be the hint type name if the expression comes from a hint, otherwise "COACH".
+                - expressions.tags must contain 2 to 6 tags chosen only from this allowed tag set: %s
+                - expressions.tags must always include `coach_recommendation` and may add form, function, topic, or tense-context tags that truly match the expression itself.
+                - Tag the recommended expression itself, not the surrounding example sentence or prompt context.
+                - Do not assign `time_expression` unless the expression text itself contains a direct time marker, duration marker, or time-flow wording.
+                - Do not assign `time_expression` to generic actions like `take a walk`, `read a book`, or `watch videos` just because the example sentence places them after dinner or at night.
                 - Keep the tone encouraging and practical.
 
                 Prompt topic: %s
@@ -228,6 +238,7 @@ public class GeminiCoachClient implements CoachLlmEngine {
                 starterIntent
                         ? "- If the learner asks for a first-sentence starter, recommend only opener expressions or opener sentences for the very first sentence. Exclude conclusion phrases, contrast markers, example linkers, detail markers, and body-paragraph transitions."
                         : "",
+                allowedExpressionTags,
                 prompt.topic(),
                  prompt.difficulty(),
                  prompt.questionEn(),
@@ -625,7 +636,8 @@ public class GeminiCoachClient implements CoachLlmEngine {
                         node.path("meaningKo").asText(),
                         node.path("usageTip").asText(),
                         node.path("example").asText(),
-                        node.path("sourceHintType").asText("COACH")
+                        node.path("sourceHintType").asText("COACH"),
+                        ExpressionTagSupport.fromJsonNode(node.path("tags"))
                 )
         ));
 

@@ -1,16 +1,20 @@
 package com.writeloop.controller;
 
+import com.writeloop.dto.AdminPromptRecommendationMetricsDto;
 import com.writeloop.dto.AdminPromptDto;
 import com.writeloop.dto.AdminPromptHintDto;
 import com.writeloop.dto.AdminPromptHintRequestDto;
 import com.writeloop.dto.AdminPromptRequestDto;
 import com.writeloop.dto.AdminPromptTopicCatalogDto;
+import com.writeloop.dto.DailyDifficultyDto;
+import com.writeloop.service.AdminPromptRecommendationMetricsService;
 import com.writeloop.service.AdminPromptService;
 import com.writeloop.service.AuthService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,9 +22,11 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -30,6 +36,7 @@ public class AdminPromptController {
 
     private final AuthService authService;
     private final AdminPromptService adminPromptService;
+    private final AdminPromptRecommendationMetricsService adminPromptRecommendationMetricsService;
 
     @GetMapping
     public List<AdminPromptDto> findPrompts(HttpServletRequest request, HttpSession session) {
@@ -41,6 +48,22 @@ public class AdminPromptController {
     public List<AdminPromptTopicCatalogDto> findTopicCatalog(HttpServletRequest request, HttpSession session) {
         authService.requireAdmin(request, session);
         return adminPromptService.findTopicCatalog();
+    }
+
+    @GetMapping("/recommendation-metrics")
+    public AdminPromptRecommendationMetricsDto findRecommendationMetrics(
+            @RequestParam(name = "startDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate startDate,
+            @RequestParam(name = "endDate", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate endDate,
+            @RequestParam(name = "difficulty", required = false) DailyDifficultyDto difficulty,
+            HttpServletRequest request,
+            HttpSession session
+    ) {
+        authService.requireAdmin(request, session);
+        return adminPromptRecommendationMetricsService.summarize(startDate, endDate, difficulty);
     }
 
     @PostMapping

@@ -25,7 +25,8 @@ import {
   getWritingDraft,
   saveWritingDraft,
   requestCoachHelp,
-  submitFeedback
+  submitFeedback,
+  trackDailyPromptClick
 } from "../lib/api";
 import { saveHomeDraftForLogin, takeHomeDraftForLogin } from "../lib/auth-flow";
 import {
@@ -1567,7 +1568,7 @@ export function AnswerLoop() {
 
   useEffect(() => {
     setQuestionRefreshHistory([]);
-  }, [selectedDifficulty]);
+  }, [selectedDifficulty, guestId, currentUser?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -1826,7 +1827,7 @@ export function AnswerLoop() {
       try {
         setIsLoadingPrompts(true);
         setError("");
-        const recommendation = await getDailyPrompts(selectedDifficulty);
+        const recommendation = await getDailyPrompts(selectedDifficulty, guestId || undefined);
         if (!isMounted) {
           return;
         }
@@ -1898,6 +1899,19 @@ export function AnswerLoop() {
   }, [selectedPromptId]);
 
   const prompts = useMemo(() => dailyRecommendation?.prompts ?? [], [dailyRecommendation]);
+  const recommendationReasonByPromptId = useMemo(() => {
+    const nextMap = new Map<string, string>();
+    const featured = dailyRecommendation?.featured;
+    if (featured?.prompt?.id && featured.reasonText) {
+      nextMap.set(featured.prompt.id, featured.reasonText);
+    }
+    for (const item of dailyRecommendation?.alternatives ?? []) {
+      if (item.prompt?.id && item.reasonText) {
+        nextMap.set(item.prompt.id, item.reasonText);
+      }
+    }
+    return nextMap;
+  }, [dailyRecommendation]);
   const selectedPrompt = useMemo(
     () =>
       prompts.find((prompt) => prompt.id === selectedPromptId) ??
@@ -2450,6 +2464,8 @@ export function AnswerLoop() {
       clearCoachState();
     }
 
+    void trackDailyPromptClick(promptId, guestId || undefined).catch(() => undefined);
+
     const targetPrompt = promptById.get(promptId);
     if (targetPrompt && targetPrompt.difficulty !== selectedDifficulty) {
       setSelectedDifficulty(targetPrompt.difficulty);
@@ -2507,11 +2523,15 @@ export function AnswerLoop() {
         ? {
             ...current,
             difficulty: selectedDifficulty,
+            featured: null,
+            alternatives: [],
             prompts: nextPrompts
           }
         : {
             recommendedDate: new Date().toISOString().slice(0, 10),
             difficulty: selectedDifficulty,
+            featured: null,
+            alternatives: [],
             prompts: nextPrompts
           }
     );
@@ -3109,6 +3129,7 @@ export function AnswerLoop() {
           <div className={styles.promptSelectionCardGrid}>
             {prompts.map((prompt, index) => {
               const isTranslationVisible = Boolean(revealedTranslations[prompt.id]);
+              const recommendationReason = recommendationReasonByPromptId.get(prompt.id);
 
               return (
                 <article
@@ -3131,6 +3152,9 @@ export function AnswerLoop() {
 
                   <div className={styles.promptSelectionCardCopy}>
                     <strong>{prompt.questionEn}</strong>
+                    {recommendationReason ? (
+                      <small className={styles.promptSelectionReasonText}>{recommendationReason}</small>
+                    ) : null}
                     {isTranslationVisible ? (
                       <small className={styles.translationText}>{prompt.questionKo}</small>
                     ) : null}

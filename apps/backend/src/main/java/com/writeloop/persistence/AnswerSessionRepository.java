@@ -45,4 +45,6 @@ public interface AnswerSessionRepository extends JpaRepository<AnswerSessionEnti
     List<AnswerSessionEntity> findByUserIdAndStatusOrderByUpdatedAtDesc(Long userId, SessionStatus status);
 
     List<AnswerSessionEntity> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    List<AnswerSessionEntity> findByGuestIdOrderByCreatedAtDesc(String guestId);
 }

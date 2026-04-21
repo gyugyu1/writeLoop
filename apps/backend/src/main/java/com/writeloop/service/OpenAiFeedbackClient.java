@@ -15,6 +15,7 @@ import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.exception.ApiException;
+import com.writeloop.util.ExpressionTagSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
@@ -1311,6 +1312,7 @@ public class OpenAiFeedbackClient {
             List<ValidationFailureCode> failureCodes,
             GeneratedSections previousSections
     ) throws IOException {
+        Map<String, Object> expressionTagsSchema = ExpressionTagSupport.jsonSchema();
         Map<String, Object> schema = Map.ofEntries(
                 Map.entry("type", "object"),
                 Map.entry("additionalProperties", false),
@@ -1401,9 +1403,10 @@ public class OpenAiFeedbackClient {
                                                 "expression", Map.of("type", "string"),
                                                 "meaningKo", Map.of("type", List.of("string", "null")),
                                                 "exampleEn", Map.of("type", List.of("string", "null")),
-                                                "usageTip", Map.of("type", "string")
+                                                "usageTip", Map.of("type", "string"),
+                                                "tags", expressionTagsSchema
                                         ),
-                                        "required", List.of("expression", "meaningKo", "exampleEn", "usageTip")
+                                        "required", List.of("expression", "meaningKo", "exampleEn", "usageTip", "tags")
                                 )
                         )),
                         Map.entry("refinementExpressions", Map.of(
@@ -1434,7 +1437,8 @@ public class OpenAiFeedbackClient {
                                                 "exampleEn", Map.of("type", List.of("string", "null")),
                                                 "originalText", Map.of("type", List.of("string", "null")),
                                                 "revisedText", Map.of("type", List.of("string", "null")),
-                                                "optionalTone", Map.of("type", List.of("boolean", "null"))
+                                                "optionalTone", Map.of("type", List.of("boolean", "null")),
+                                                "tags", expressionTagsSchema
                                         ),
                                         "required", List.of(
                                                 "title",
@@ -1444,7 +1448,8 @@ public class OpenAiFeedbackClient {
                                                 "exampleEn",
                                                 "originalText",
                                                 "revisedText",
-                                                "optionalTone"
+                                                "optionalTone",
+                                                "tags"
                                         )
                                 )
                         )),
@@ -1561,6 +1566,7 @@ public class OpenAiFeedbackClient {
                 : answerProfile.rewrite().progressDelta();
         String improvedAreas = progressDelta == null ? "[]" : progressDelta.improvedAreas().toString();
         String remainingAreas = progressDelta == null ? "[]" : progressDelta.remainingAreas().toString();
+        String allowedExpressionTags = ExpressionTagSupport.formatAllowedTagsForPrompt();
         String analysisContext = diagnosis == null
                 ? """
                 First-pass diagnosis:
@@ -1644,6 +1650,11 @@ public class OpenAiFeedbackClient {
                 - usedExpressions.meaningKo should be a short Korean meaning or gloss of the expression itself.
                 - usedExpressions.exampleEn should be one short natural sentence that uses the expression clearly, is not identical to the expression itself, and does not simply copy the full learner answer.
                 - usedExpressions.usageTip should be one short Korean reason why the expression is worth keeping.
+                - usedExpressions.tags must contain 2 to 6 tags chosen only from this allowed tag set: %s
+                - usedExpressions.tags must always include `used_expression` and may add function, topic, and tense-context tags that truly match the expression itself.
+                - Tag the reusable expression itself, not the surrounding example sentence or answer context.
+                - Do not assign `time_expression` unless the expression text itself contains a direct time marker, duration marker, or time-flow wording such as `before`, `after`, `when`, `during`, `at night`, `in the morning`, or `for a while`.
+                - Do not assign `time_expression` to generic actions like `take a walk`, `read a book`, or `watch videos` just because the learner sentence places them after dinner or at night.
 
                 fixPoints rules:
                 - fixPoints should collectively explain all visible differences between learner answer and modelAnswer.
@@ -1692,6 +1703,10 @@ public class OpenAiFeedbackClient {
                 - For CONTENT_THIN and SHORT_BUT_VALID answers, actively generate multiple reason, example, detail, image, time-flow, or connector ideas when they would help the learner extend the same answer.
                 - Do not return the same English idea twice in rewriteIdeas. If two candidates differ only by punctuation, title, or noteKo, keep only one.
                 - Do not pad rewriteIdeas with weak, repetitive, or near-duplicate ideas just to reach a count.
+                - rewriteIdeas.tags must contain 2 to 6 tags chosen only from this allowed tag set: %s
+                - rewriteIdeas.tags must always include `refinement_expression` and may add function, topic, and tense-context tags that truly match the idea itself.
+                - Tag the reusable idea itself, not the surrounding example sentence or prompt context.
+                - Do not assign `time_expression` unless the idea text itself contains a direct time marker, duration marker, or time-flow wording.
 
                 modelAnswer rules:
                 - modelAnswer should read like a natural polished rewrite of the learner answer, not a distant sample answer.
@@ -1731,6 +1746,8 @@ public class OpenAiFeedbackClient {
                 %s
                 """.formatted(
                 analysisContext,
+                allowedExpressionTags,
+                allowedExpressionTags,
                 bandGuidance,
                 retryContext,
                 prompt.topic(),
@@ -1831,7 +1848,8 @@ public class OpenAiFeedbackClient {
                 "SELF_DISCOVERED",
                 item.path("meaningKo").isNull() ? null : item.path("meaningKo").asText(null),
                 item.path("exampleEn").isNull() ? null : item.path("exampleEn").asText(null),
-                item.path("usageTip").asText("")
+                item.path("usageTip").asText(""),
+                ExpressionTagSupport.fromJsonNode(item.path("tags"))
         )));
         List<RefinementCard> refinementExpressions = new ArrayList<>();
         node.path("refinementExpressions").forEach(item -> refinementExpressions.add(new RefinementCard(
@@ -1859,7 +1877,8 @@ public class OpenAiFeedbackClient {
                 textOrNull(item.path("exampleEn")),
                 textOrNull(item.path("originalText")),
                 textOrNull(item.path("revisedText")),
-                item.path("optionalTone").asBoolean(false)
+                item.path("optionalTone").asBoolean(false),
+                ExpressionTagSupport.fromJsonNode(item.path("tags"))
         )));
         List<FeedbackModelAnswerVariantDto> modelAnswerVariants = new ArrayList<>();
         node.path("modelAnswerVariants").forEach(item -> modelAnswerVariants.add(new FeedbackModelAnswerVariantDto(
@@ -2425,7 +2444,8 @@ public class OpenAiFeedbackClient {
                         usage.source(),
                         meaningKo == null || meaningKo.isBlank() ? null : meaningKo,
                         usage.exampleEn() == null || usage.exampleEn().isBlank() ? null : usage.exampleEn().trim(),
-                        usageTip
+                        usageTip,
+                        ExpressionTagSupport.withUsedExpressionDefaults(usage.tags(), usage.expression())
                 ));
             }
         }

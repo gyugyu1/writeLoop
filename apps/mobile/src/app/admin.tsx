@@ -698,6 +698,16 @@ export default function AdminScreen() {
         >
           <MobileScreenHeader
             title="관리자 도구"
+            leftAccessory={
+              <Pressable
+                style={styles.headerBackButton}
+                onPress={() => router.replace("/me")}
+                accessibilityRole="button"
+                accessibilityLabel="내정보로 돌아가기"
+              >
+                <Text style={styles.headerBackIcon}>{"<"}</Text>
+              </Pressable>
+            }
             rightAccessory={
               <View style={styles.headerBadge}>
                 <Text style={styles.headerBadgeText}>ADMIN</Text>
@@ -2017,6 +2027,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center"
+  },
+  headerBackButton: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  headerBackIcon: {
+    fontSize: 28,
+    lineHeight: 28,
+    fontWeight: "700",
+    color: "#4A4033"
   },
   headerBadge: {
     borderRadius: 999,

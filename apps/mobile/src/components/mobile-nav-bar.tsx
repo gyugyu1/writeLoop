@@ -2,7 +2,6 @@ import { router, type Href } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import type { ComponentProps } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { useNavigation } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const MOBILE_NAV_BOTTOM_SPACING = 72;
@@ -57,35 +56,11 @@ const NAV_ITEMS: NavItem[] = [
 
 export default function MobileNavBar({ activeTab }: MobileNavBarProps) {
   const insets = useSafeAreaInsets();
-  const navigation = useNavigation();
   const bottomPadding = insets.bottom > 0 ? Math.max(insets.bottom - 24, 6) : 6;
-  const canGoBack = navigation.canGoBack();
 
   return (
     <View style={styles.shell}>
       <View style={[styles.bar, { paddingBottom: bottomPadding }]}>
-        <Pressable
-          style={styles.button}
-          onPress={() => {
-            if (canGoBack) {
-              navigation.goBack();
-            }
-          }}
-          disabled={!canGoBack}
-          accessibilityRole="button"
-          accessibilityLabel="뒤로가기"
-        >
-          <View style={[styles.iconFrame, styles.backIconFrame, !canGoBack && styles.backIconFrameDisabled]}>
-            <SymbolView
-              name={{ ios: "chevron.left", android: "arrow_back", web: "arrow_back" }}
-              size={18}
-              weight="semibold"
-              tintColor={canGoBack ? "#8D8176" : "#C6B7A4"}
-            />
-          </View>
-          <Text style={[styles.label, !canGoBack && styles.backLabelDisabled]}>뒤로</Text>
-        </Pressable>
-
         {NAV_ITEMS.map((item) => {
           const isActive = item.key === activeTab;
 
@@ -134,7 +109,7 @@ const styles = StyleSheet.create({
   bar: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     paddingHorizontal: 2,
     paddingTop: 6,
     borderRadius: 8,
@@ -146,12 +121,6 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     shadowOffset: { width: 0, height: -3 },
     elevation: 8
-  },
-  backIconFrame: {
-    backgroundColor: "#FFF4E5"
-  },
-  backIconFrameDisabled: {
-    backgroundColor: "#F7EFE6"
   },
   button: {
     flex: 1,
@@ -179,8 +148,5 @@ const styles = StyleSheet.create({
   labelActive: {
     color: "#2B2620",
     fontWeight: "900"
-  },
-  backLabelDisabled: {
-    color: "#C6B7A4"
   }
 });

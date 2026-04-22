@@ -16,8 +16,6 @@ import { getOrCreateGuestId } from "@/lib/guest-id";
 import { getQuestionLabel, isDailyDifficulty } from "@/lib/practice";
 import type { DailyDifficulty, DailyPromptRecommendation } from "@/lib/types";
 
-const HERO_META_GAP = 10;
-
 export default function PracticeQuestionScreen() {
   const params = useLocalSearchParams<{ difficulty?: string }>();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
@@ -28,14 +26,8 @@ export default function PracticeQuestionScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingQuestions, setIsRefreshingQuestions] = useState(false);
   const [error, setError] = useState("");
-  const [heroTitleWidth, setHeroTitleWidth] = useState(0);
-  const [heroDifficultyLabelWidth, setHeroDifficultyLabelWidth] = useState(0);
 
   const featuredPromptId = recommendation?.featured?.prompt?.id ?? null;
-  const heroUnderlineWidth =
-    heroTitleWidth > 0 && heroDifficultyLabelWidth > 0
-      ? Math.max(64, heroTitleWidth - heroDifficultyLabelWidth - HERO_META_GAP)
-      : 112;
 
   const loadPrompts = useCallback(async () => {
     try {
@@ -115,40 +107,32 @@ export default function PracticeQuestionScreen() {
       <View style={styles.screen}>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.heroSection}>
-            <View style={styles.heroTopRow}>
-              <View style={styles.heroTitleGroup}>
-                <Text
-                  style={styles.heroTitle}
-                  onLayout={({ nativeEvent }) => setHeroTitleWidth(nativeEvent.layout.width)}
-                >
-                  질문 선택
-                </Text>
-              </View>
-              <View style={styles.heroActionGroup}>
-                <Pressable style={styles.heroSecondaryButton} onPress={handleBackToDifficultySelection}>
-                  <Text style={styles.heroSecondaryButtonText}>난이도 선택</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.heroActionButton, isRefreshingQuestions && styles.disabledButton]}
-                  onPress={() => void handleRefreshPromptList()}
-                  disabled={isRefreshingQuestions}
-                >
-                  {isRefreshingQuestions ? (
-                    <ActivityIndicator color="#8A6431" size="small" />
-                  ) : (
-                    <Text style={styles.heroActionButtonText}>새 질문</Text>
-                  )}
-                </Pressable>
-              </View>
-            </View>
-            <View style={styles.heroMetaRow}>
-              <View style={[styles.heroUnderline, { width: heroUnderlineWidth }]} />
-              <Text
-                style={styles.heroDifficultyLabel}
-                onLayout={({ nativeEvent }) => setHeroDifficultyLabelWidth(nativeEvent.layout.width)}
+            <View style={styles.header}>
+              <Pressable
+                style={styles.headerBackButton}
+                onPress={handleBackToDifficultySelection}
+                accessibilityRole="button"
+                accessibilityLabel="난이도 선택으로 돌아가기"
               >
-                {getDifficultyLabel(requestedDifficulty)}
-              </Text>
+                <Text style={styles.headerBackIcon}>{"<"}</Text>
+              </Pressable>
+              <Text style={styles.headerTitle}>질문 선택</Text>
+              <View style={styles.headerSpacer} />
+            </View>
+
+            <View style={styles.heroToolbar}>
+              <Text style={styles.heroDifficultyLabel}>{getDifficultyLabel(requestedDifficulty)}</Text>
+              <Pressable
+                style={[styles.heroActionButton, isRefreshingQuestions && styles.disabledButton]}
+                onPress={() => void handleRefreshPromptList()}
+                disabled={isRefreshingQuestions}
+              >
+                {isRefreshingQuestions ? (
+                  <ActivityIndicator color="#8A6431" size="small" />
+                ) : (
+                  <Text style={styles.heroActionButtonText}>새 질문</Text>
+                )}
+              </Pressable>
             </View>
           </View>
 
@@ -226,55 +210,47 @@ const styles = StyleSheet.create({
     gap: 18
   },
   heroSection: {
-    gap: 10
+    gap: 14
   },
-  heroTopRow: {
+  header: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: -0.4,
+    color: "#2F312D"
+  },
+  headerSpacer: {
+    width: 42,
+    height: 42
+  },
+  heroToolbar: {
+    flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
     gap: 12
   },
-  heroTitleGroup: {
-    flexDirection: "column",
-    alignItems: "flex-start",
-    flexShrink: 1
-  },
-  heroMetaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: HERO_META_GAP
-  },
-  heroActionGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8
-  },
-  heroTitle: {
-    fontSize: 44,
-    lineHeight: 50,
-    fontWeight: "900",
-    letterSpacing: -2,
-    color: "#232128"
-  },
   heroDifficultyLabel: {
-    fontSize: 18,
-    lineHeight: 22,
+    fontSize: 24,
+    lineHeight: 28,
     fontWeight: "900",
     letterSpacing: -0.8,
     color: "#4A454E"
   },
-  heroSecondaryButton: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E6D2BC",
-    backgroundColor: "#FFFEFC",
-    paddingHorizontal: 14,
-    paddingVertical: 8
+  headerBackButton: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center"
   },
-  heroSecondaryButtonText: {
-    fontSize: 13,
-    fontWeight: "900",
-    color: "#8A6431"
+  headerBackIcon: {
+    fontSize: 28,
+    lineHeight: 28,
+    fontWeight: "700",
+    color: "#4A4033"
   },
   heroActionButton: {
     borderRadius: 999,
@@ -288,12 +264,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900",
     color: "#8A6431"
-  },
-  heroUnderline: {
-    width: 112,
-    height: 10,
-    borderRadius: 999,
-    backgroundColor: "#F2A14A"
   },
   promptSection: {
     gap: 16

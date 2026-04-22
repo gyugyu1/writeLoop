@@ -3,11 +3,13 @@ import { type LayoutChangeEvent, StyleSheet, Text, View } from "react-native";
 
 type MobileScreenHeaderProps = {
   title: string;
+  leftAccessory?: ReactNode;
   rightAccessory?: ReactNode;
 };
 
 export default function MobileScreenHeader({
   title,
+  leftAccessory,
   rightAccessory
 }: MobileScreenHeaderProps) {
   const [titleWidth, setTitleWidth] = useState<number | null>(null);
@@ -20,11 +22,14 @@ export default function MobileScreenHeader({
   return (
     <View style={styles.container}>
       <View style={styles.topRow}>
-        <View style={styles.titleBlock}>
-          <Text onLayout={handleTitleLayout} style={styles.title}>
-            {title}
-          </Text>
-          <View style={[styles.underline, titleWidth ? { width: titleWidth } : null]} />
+        <View style={styles.leadingGroup}>
+          {leftAccessory ? <View style={styles.leftAccessory}>{leftAccessory}</View> : null}
+          <View style={styles.titleBlock}>
+            <Text onLayout={handleTitleLayout} style={styles.title}>
+              {title}
+            </Text>
+            <View style={[styles.underline, titleWidth ? { width: titleWidth } : null]} />
+          </View>
         </View>
         {rightAccessory ? <View style={styles.accessory}>{rightAccessory}</View> : null}
       </View>
@@ -41,6 +46,17 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12
+  },
+  leadingGroup: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+    flex: 1,
+    flexShrink: 1
+  },
+  leftAccessory: {
+    flexShrink: 0,
+    alignSelf: "flex-start"
   },
   titleBlock: {
     alignSelf: "flex-start",

@@ -859,12 +859,11 @@ final class FeedbackUiComposer {
 
     private String defaultPrimaryFixTitle(FixFirstMode fixFirstMode) {
         return switch (fixFirstMode) {
-            case GRAMMAR_CARD, TASK_RESET_CARD -> "癒쇱? 怨좎튌 遺遺?";
-            case DETAIL_PROMPT_CARD -> "??媛吏 ??異붽??섎㈃ 醫뗭븘??";
-            case HIDE -> "癒쇱? 怨좎튌 遺遺?";
+            case GRAMMAR_CARD, TASK_RESET_CARD -> "먼저 고칠 부분";
+            case DETAIL_PROMPT_CARD -> "한 가지만 더하면 좋아요";
+            case HIDE -> "먼저 고칠 부분";
         };
     }
-
     private FeedbackMicroTipDto buildMicroTip(
             String learnerAnswer,
             FeedbackResponseDto feedback,

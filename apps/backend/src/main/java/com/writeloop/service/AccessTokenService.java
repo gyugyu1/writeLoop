@@ -116,8 +116,7 @@ public class AccessTokenService {
         } catch (Exception exception) {
             throw new ApiException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "ACCESS_TOKEN_SIGNING_FAILED",
-                    "로그인 토큰을 만들지 못했어요."
+                    "ACCESS_TOKEN_SIGNING_FAILED", "\uB85C\uADF8\uC778 \uD1A0\uD070\uC744 \uB9CC\uB4E4\uC9C0 \uBABB\uD588\uC5B4\uC694."
             );
         }
     }
@@ -154,12 +153,11 @@ public class AccessTokenService {
 
         throw new ApiException(
                 HttpStatus.INTERNAL_SERVER_ERROR,
-                "ACCESS_TOKEN_SIGNING_FAILED",
-                "濡쒓렇???좏겙??留뚮뱾吏 紐삵뻽?댁슂."
+                "ACCESS_TOKEN_SIGNING_FAILED", "\uB85C\uADF8\uC778 \uD1A0\uD070\uC744 \uB9CC\uB4E4\uC9C0 \uBABB\uD588\uC5B4\uC694."
         );
     }
 
     private ApiException invalidAccessToken() {
-        return new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_ACCESS_TOKEN", "로그인이 유효하지 않아요. 다시 로그인해 주세요.");
+        return new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_ACCESS_TOKEN", "\uB85C\uADF8\uC778\uC774 \uC720\uD6A8\uD558\uC9C0 \uC54A\uC544\uC694. \uB2E4\uC2DC \uB85C\uADF8\uC778\uD574 \uC8FC\uC138\uC694.");
     }
 }

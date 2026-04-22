@@ -362,7 +362,7 @@ public class AuthService {
     public AuthResponseDto getCurrentUser(HttpServletRequest request) {
         Long userId = getCurrentUserIdOrNull(request, request.getSession(false));
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD574\uC694.");
         }
         return toResponse(findUserEntity(userId));
     }
@@ -370,7 +370,7 @@ public class AuthService {
     public AuthResponseDto getCurrentUser(HttpSession session) {
         Long userId = getCurrentUserId(session);
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD574\uC694.");
         }
         return toResponse(findUserEntity(userId));
     }
@@ -382,7 +382,7 @@ public class AuthService {
     ) {
         Long userId = getCurrentUserIdOrNull(httpRequest, httpRequest.getSession(false));
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD574\uC694.");
         }
 
         UserEntity user = findUserEntity(userId);
@@ -426,7 +426,7 @@ public class AuthService {
     public AuthResponseDto updateProfile(UpdateProfileRequestDto request, HttpSession session) {
         Long userId = getCurrentUserId(session);
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "濡쒓렇?몄씠 ?꾩슂?댁슂.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD574\uC694.");
         }
 
         UserEntity user = findUserEntity(userId);
@@ -473,7 +473,7 @@ public class AuthService {
     ) {
         Long userId = getCurrentUserId(session);
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD574\uC694.");
         }
 
         UserEntity user = findUserEntity(userId);
@@ -561,7 +561,7 @@ public class AuthService {
     public void requireAdmin(HttpSession session) {
         Long userId = getCurrentUserId(session);
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD574\uC694.");
         }
 
         UserEntity user = findUserEntity(userId);
@@ -573,7 +573,7 @@ public class AuthService {
     public void requireAdmin(HttpServletRequest request, HttpSession session) {
         Long userId = getCurrentUserIdOrNull(request, session);
         if (userId == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD574\uC694.");
         }
 
         UserEntity user = findUserEntity(userId);

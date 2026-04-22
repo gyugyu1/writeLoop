@@ -1,5 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -10,15 +10,11 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
-import { getDailyPrompts, getPrompts, trackDailyPromptClick } from "@/lib/api";
+import { getDailyPrompts, trackDailyPromptClick } from "@/lib/api";
 import { getDifficultyLabel } from "@/lib/difficulty";
 import { getOrCreateGuestId } from "@/lib/guest-id";
-import {
-  buildDistinctCategoryPromptSelection,
-  getQuestionLabel,
-  isDailyDifficulty
-} from "@/lib/practice";
-import type { DailyDifficulty, DailyPromptRecommendation, Prompt } from "@/lib/types";
+import { getQuestionLabel, isDailyDifficulty } from "@/lib/practice";
+import type { DailyDifficulty, DailyPromptRecommendation } from "@/lib/types";
 
 const HERO_META_GAP = 10;
 
@@ -28,7 +24,6 @@ export default function PracticeQuestionScreen() {
   const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "A";
 
   const [recommendation, setRecommendation] = useState<DailyPromptRecommendation | null>(null);
-  const [allDifficultyPrompts, setAllDifficultyPrompts] = useState<Prompt[]>([]);
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingQuestions, setIsRefreshingQuestions] = useState(false);
@@ -36,23 +31,7 @@ export default function PracticeQuestionScreen() {
   const [heroTitleWidth, setHeroTitleWidth] = useState(0);
   const [heroDifficultyLabelWidth, setHeroDifficultyLabelWidth] = useState(0);
 
-  const availablePromptPool = useMemo(
-    () => allDifficultyPrompts.filter((prompt) => prompt.difficulty === requestedDifficulty),
-    [allDifficultyPrompts, requestedDifficulty]
-  );
-  const recommendationReasonByPromptId = useMemo(() => {
-    const nextMap = new Map<string, string>();
-    const featured = recommendation?.featured;
-    if (featured?.prompt?.id && featured.reasonText) {
-      nextMap.set(featured.prompt.id, featured.reasonText);
-    }
-    for (const item of recommendation?.alternatives ?? []) {
-      if (item.prompt?.id && item.reasonText) {
-        nextMap.set(item.prompt.id, item.reasonText);
-      }
-    }
-    return nextMap;
-  }, [recommendation]);
+  const featuredPromptId = recommendation?.featured?.prompt?.id ?? null;
   const heroUnderlineWidth =
     heroTitleWidth > 0 && heroDifficultyLabelWidth > 0
       ? Math.max(64, heroTitleWidth - heroDifficultyLabelWidth - HERO_META_GAP)
@@ -63,24 +42,8 @@ export default function PracticeQuestionScreen() {
       setIsLoading(true);
       setError("");
       const guestId = await getOrCreateGuestId();
-      const [nextRecommendation, nextPromptPool] = await Promise.all([
-        getDailyPrompts(requestedDifficulty, guestId),
-        getPrompts()
-      ]);
-      const sameDifficultyPromptPool = nextPromptPool.filter(
-        (prompt) => prompt.difficulty === requestedDifficulty
-      );
-      const desiredPromptCount = Math.min(3, sameDifficultyPromptPool.length);
-
-      setRecommendation({
-        ...nextRecommendation,
-        prompts: buildDistinctCategoryPromptSelection(
-          nextRecommendation.prompts,
-          sameDifficultyPromptPool,
-          desiredPromptCount
-        )
-      });
-      setAllDifficultyPrompts(nextPromptPool);
+      const nextRecommendation = await getDailyPrompts(requestedDifficulty, guestId);
+      setRecommendation(nextRecommendation);
       setRevealedTranslations({});
     } catch (caughtError) {
       setError(
@@ -102,7 +65,7 @@ export default function PracticeQuestionScreen() {
     }));
   }
 
-  function handleStartPrompt(prompt: Prompt) {
+  function handleStartPrompt(prompt: DailyPromptRecommendation["prompts"][number]) {
     void (async () => {
       const guestId = await getOrCreateGuestId();
       await trackDailyPromptClick(prompt.id, guestId || undefined);
@@ -126,52 +89,19 @@ export default function PracticeQuestionScreen() {
       setIsRefreshingQuestions(true);
       setError("");
 
-      let nextPromptPool = availablePromptPool;
-      if (!nextPromptPool.length) {
-        const fetchedPrompts = await getPrompts();
-        setAllDifficultyPrompts(fetchedPrompts);
-        nextPromptPool = fetchedPrompts.filter((prompt) => prompt.difficulty === requestedDifficulty);
-      }
-
-      if (!nextPromptPool.length) {
-        throw new Error("바꿀 수 있는 질문을 아직 불러오지 못했어요.");
-      }
-
-      const currentPromptIds = new Set((recommendation?.prompts ?? []).map((prompt) => prompt.id));
-      const desiredPromptCount = Math.min(
-        recommendation?.prompts.length || 3,
-        nextPromptPool.length
+      const guestId = await getOrCreateGuestId();
+      const excludePromptIds = recommendation?.prompts.map((prompt) => prompt.id) ?? [];
+      const nextRecommendation = await getDailyPrompts(
+        requestedDifficulty,
+        guestId,
+        excludePromptIds
       );
 
-      const nextPrompts = [...nextPromptPool]
-        .sort(() => Math.random() - 0.5)
-        .filter((prompt) => !currentPromptIds.has(prompt.id));
-      const fallbackPrompts = [...nextPromptPool].sort(() => Math.random() - 0.5);
-
-      const replacementPrompts = buildDistinctCategoryPromptSelection(
-        nextPrompts,
-        fallbackPrompts,
-        desiredPromptCount
-      );
-
-      if (!replacementPrompts.length) {
-        throw new Error("다른 카테고리 질문을 아직 불러오지 못했어요.");
+      if (!nextRecommendation.prompts.length) {
+        throw new Error("새 질문을 아직 불러오지 못했어요.");
       }
 
-      setRecommendation((current) =>
-        current
-          ? {
-              ...current,
-              featured: null,
-              alternatives: [],
-              prompts: replacementPrompts
-            }
-          : {
-              recommendedDate: new Date().toISOString().slice(0, 10),
-              difficulty: requestedDifficulty,
-              prompts: replacementPrompts
-            }
-      );
+      setRecommendation(nextRecommendation);
       setRevealedTranslations({});
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "새 질문을 불러오지 못했어요.");
@@ -199,15 +129,15 @@ export default function PracticeQuestionScreen() {
                   <Text style={styles.heroSecondaryButtonText}>난이도 선택</Text>
                 </Pressable>
                 <Pressable
-                style={[styles.heroActionButton, isRefreshingQuestions && styles.disabledButton]}
-                onPress={() => void handleRefreshPromptList()}
-                disabled={isRefreshingQuestions}
-              >
-                {isRefreshingQuestions ? (
-                  <ActivityIndicator color="#8A6431" size="small" />
-                ) : (
-                  <Text style={styles.heroActionButtonText}>새 질문</Text>
-                )}
+                  style={[styles.heroActionButton, isRefreshingQuestions && styles.disabledButton]}
+                  onPress={() => void handleRefreshPromptList()}
+                  disabled={isRefreshingQuestions}
+                >
+                  {isRefreshingQuestions ? (
+                    <ActivityIndicator color="#8A6431" size="small" />
+                  ) : (
+                    <Text style={styles.heroActionButtonText}>새 질문</Text>
+                  )}
                 </Pressable>
               </View>
             </View>
@@ -228,7 +158,7 @@ export default function PracticeQuestionScreen() {
             ) : recommendation?.prompts.length ? (
               recommendation.prompts.map((prompt, index) => {
                 const isTranslationVisible = Boolean(revealedTranslations[prompt.id]);
-                const recommendationReason = recommendationReasonByPromptId.get(prompt.id);
+                const isFeaturedPrompt = prompt.id === featuredPromptId;
 
                 return (
                   <Pressable
@@ -236,12 +166,16 @@ export default function PracticeQuestionScreen() {
                     style={({ pressed }) => [styles.promptCard, pressed && styles.promptCardPressed]}
                     onPress={() => handleStartPrompt(prompt)}
                   >
-                    <Text style={styles.promptIndex}>{getQuestionLabel(index)}</Text>
+                    <View style={styles.promptHeaderRow}>
+                      <Text style={styles.promptIndex}>{getQuestionLabel(index)}</Text>
+                      {isFeaturedPrompt ? (
+                        <View style={styles.featuredBadge}>
+                          <Text style={styles.featuredBadgeText}>오늘의 추천 질문</Text>
+                        </View>
+                      ) : null}
+                    </View>
                     <View style={styles.promptCopy}>
                       <Text style={styles.promptQuestionEn}>{prompt.questionEn}</Text>
-                      {recommendationReason ? (
-                        <Text style={styles.promptReasonText}>{recommendationReason}</Text>
-                      ) : null}
                       {isTranslationVisible ? (
                         <Text style={styles.promptQuestionKo}>{prompt.questionKo}</Text>
                       ) : null}
@@ -382,11 +316,31 @@ const styles = StyleSheet.create({
     transform: [{ translateY: 1 }],
     backgroundColor: "#FFF9F1"
   },
+  promptHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12
+  },
   promptIndex: {
     fontSize: 12,
     fontWeight: "900",
     letterSpacing: 1.1,
     color: "#8B7457"
+  },
+  featuredBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    backgroundColor: "#FFF1D9",
+    borderWidth: 1,
+    borderColor: "#F2D2A1"
+  },
+  featuredBadgeText: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#A56B1F",
+    letterSpacing: -0.2
   },
   promptCopy: {
     gap: 8
@@ -396,12 +350,6 @@ const styles = StyleSheet.create({
     lineHeight: 30,
     fontWeight: "800",
     color: "#2B2620"
-  },
-  promptReasonText: {
-    fontSize: 14,
-    lineHeight: 21,
-    fontWeight: "700",
-    color: "#8A6431"
   },
   promptQuestionKo: {
     fontSize: 15,

@@ -94,56 +94,56 @@ function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | nul
         starter: starterHint ?? "I think ... because ...",
         checklist: [
           {
-            title: "의견 한 줄 쓰기",
-            description: "먼저 내 생각을 짧고 분명하게 적어보세요."
+            title: "생각 먼저 적기",
+            description: "먼저 내 생각을 짧고 분명하게 적어 보세요."
           },
           {
             title: "이유 하나 붙이기",
-            description: "왜 그렇게 생각하는지 한 문장만 더해도 충분해요."
+            description: "왜 그렇게 생각하는지 한 문장만 덧붙여도 충분해요."
           },
           {
             title: "짧은 예시 더하기",
-            description: "내 경험이나 간단한 상황을 하나 넣으면 더 자연스러워져요."
+            description: "간단한 경험이나 상황을 하나 넣으면 더 자연스러워져요."
           }
         ]
       };
     case "B":
       return {
-        title: "의견, 이유, 예시를 한 흐름으로 묶어보세요.",
-        description: "한 문장씩 차근차근 이어 쓰면 훨씬 안정적인 답변이 돼요.",
+        title: "생각, 이유, 예시를 흐름 있게 적어 보세요.",
+        description: "한 문장씩 차근차근 이어 가면 답이 더 안정적으로 들려요.",
         starter: starterHint ?? "In my opinion, ... One reason is that ...",
         checklist: [
           {
             title: "내 입장 먼저 밝히기",
-            description: "질문에 대한 내 생각을 첫 문장에 분명히 적어보세요."
+            description: "질문에 대한 내 생각을 첫 문장에 분명하게 적어 보세요."
           },
           {
             title: "이유 하나 설명하기",
-            description: "왜 그런지 구체적인 이유를 한두 문장으로 이어가세요."
+            description: "왜 그런지 구체적인 이유를 한두 문장으로 이어 가요."
           },
           {
-            title: "예시나 경험 추가하기",
-            description: "짧은 사례를 붙이면 답변이 더 설득력 있어져요."
+            title: "예시나 경험 붙이기",
+            description: "짧은 예시를 붙이면 답이 더 살아 있는 느낌이 나요."
           }
         ]
       };
     case "C":
       return {
-        title: "주장과 근거를 구조적으로 풀어보세요.",
-        description: "길게 쓰기보다 흐름이 보이게 정리하면 훨씬 강한 답변이 돼요.",
+        title: "주장과 근거를 구조적으로 보여 주세요.",
+        description: "길게 쓰기보다 흐름이 보이게 정리하면 더 설득력 있어요.",
         starter: starterHint ?? "I believe ... because ... For example, ...",
         checklist: [
           {
-            title: "주장을 먼저 세우기",
-            description: "답변의 중심 생각을 첫 문장에 분명하게 잡아주세요."
+            title: "주장 먼저 세우기",
+            description: "답의 중심 생각을 첫 문장에 분명하게 적어 주세요."
           },
           {
-            title: "근거를 두텁게 만들기",
-            description: "이유를 한 문장으로 끝내지 말고 한 번 더 풀어보세요."
+            title: "근거를 한 단계 더 풀기",
+            description: "이유를 한 문장으로 끝내지 말고 한 번 더 풀어 보세요."
           },
           {
-            title: "예시나 비교 넣기",
-            description: "구체적인 사례나 다른 관점을 덧붙이면 답변이 깊어져요."
+            title: "예시나 비교 붙이기",
+            description: "구체적인 예시나 비교를 더하면 답이 더 탄탄해져요."
           }
         ]
       };
@@ -154,16 +154,16 @@ function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | nul
         starter: starterHint ?? "I think ... because ...",
         checklist: [
           {
-            title: "의견 먼저 쓰기",
-            description: "내 생각을 한 문장으로 먼저 적어보세요."
+            title: "생각 먼저 적기",
+            description: "내 생각을 한 문장으로 먼저 적어 보세요."
           },
           {
             title: "이유 하나 붙이기",
-            description: "왜 그렇게 생각하는지 한 줄을 이어보세요."
+            description: "왜 그렇게 생각하는지 한 줄을 이어 보세요."
           },
           {
-            title: "예시 하나 더하기",
-            description: "짧은 경험이나 상황을 덧붙여 답변을 완성해 보세요."
+            title: "짧은 예시 더하기",
+            description: "짧은 경험이나 상황을 더해 답을 완성해 보세요."
           }
         ]
       };
@@ -278,8 +278,8 @@ function toDraftStatusBadgeLabel(message: string) {
     return normalized;
   }
 
-  if (normalized.includes("이 기기에 임시저장")) {
-    return "이 기기에 임시저장";
+  if (normalized.includes("이 기기에 저장됨") || normalized.includes("이 기기에 임시저장됨")) {
+    return "이 기기에 저장됨";
   }
 
   return normalized;
@@ -435,19 +435,19 @@ export default function PracticeWriteScreen() {
         ? [
             {
               title: "다시 쓴 답변을 읽고 있어요",
-              message: "이전 피드백이 얼마나 반영됐는지 살펴보고 있어요. 잠시만 기다려 주세요."
+              message: "이전 피드백이 얼마나 반영됐는지 살펴보는 중이에요. 잠시만 기다려 주세요."
             },
             {
-              title: "문장을 한 줄씩 비교하고 있어요",
-              message: "좋아진 부분과 아직 다듬을 부분을 함께 찾고 있어요."
+              title: "문장 흐름을 비교하고 있어요",
+              message: "좋아진 부분과 더 다듬을 부분을 차근차근 보고 있어요."
             },
             {
-              title: "더 자연스럽게 들리도록 다듬는 중이에요",
-              message: "흐름이 매끄러워지는 표현도 함께 고르고 있어요."
+              title: "더 자연스러운 표현을 고르고 있어요",
+              message: "답을 더 매끄럽게 만들어 줄 표현을 정리하고 있어요."
             },
             {
-              title: "이번 다시쓰기의 포인트를 정리하고 있어요",
-              message: "한 번 더 성장한 답안이 되도록 핵심 힌트를 정리하고 있어요."
+              title: "다음 다시쓰기 힌트를 만들고 있어요",
+              message: "한 번 더 써 볼 때 바로 쓸 수 있는 팁까지 챙기고 있어요."
             }
           ]
         : [
@@ -457,15 +457,15 @@ export default function PracticeWriteScreen() {
             },
             {
               title: "문장을 찬찬히 읽고 있어요",
-              message: "좋은 점과 먼저 고칠 점을 나눠 보고 있어요."
+              message: "잘한 점과 먼저 고칠 점을 나눠 보고 있어요."
             },
             {
-              title: "더 자연스럽게 들리도록 다듬는 중이에요",
-              message: "바로 써볼 수 있는 표현도 함께 고르고 있어요."
+              title: "더 자연스러운 표현을 찾고 있어요",
+              message: "바로 써먹을 수 있는 표현도 함께 고르고 있어요."
             },
             {
-              title: "표현을 하나 더 붙일 곳도 찾고 있어요",
-              message: "다음 다시쓰기에 도움이 될 힌트까지 챙기고 있어요."
+              title: "표현을 하나 더 보탤 아이디어를 만들고 있어요",
+              message: "다음 다시쓰기에서 써 볼 힌트까지 챙기고 있어요."
             }
           ],
     [feedback]
@@ -750,7 +750,7 @@ export default function PracticeWriteScreen() {
     });
   }
 
-  async function handleSaveCoachExpression(
+  async function handleSaveCoachExpressionLegacy(
     expression: CoachHelpResponse["expressions"][number]
   ) {
     const normalizedKey = normalizeExpressionKey(expression.expression);
@@ -805,6 +805,98 @@ export default function PracticeWriteScreen() {
       );
     } finally {
       setSavingCoachExpressionKeys((current) => current.filter((item) => item !== normalizedKey));
+    }
+  }
+
+  async function handleSaveCoachExpression(
+    expression: CoachHelpResponse["expressions"][number]
+  ) {
+    const normalizedKey = normalizeExpressionKey(expression.expression);
+    if (!normalizedKey || !selectedPrompt) {
+      return;
+    }
+
+    if (!currentUser) {
+      Alert.alert(
+        "로그인이 필요해요",
+        "표현 저장은 로그인 후 사용할 수 있어요.",
+        [
+          { text: "취소", style: "cancel" },
+          {
+            text: "로그인하기",
+            onPress: () => router.push("/login")
+          }
+        ]
+      );
+      return;
+    }
+
+    if (
+      savedCoachExpressionKeys.includes(normalizedKey) ||
+      savingCoachExpressionKeys.includes(normalizedKey)
+    ) {
+      return;
+    }
+
+    setSavingCoachExpressionKeys((current) =>
+      current.includes(normalizedKey) ? current : [...current, normalizedKey]
+    );
+
+    try {
+      await saveExpression({
+        expression: expression.expression,
+        meaningKo: expression.meaningKo,
+        usageTipKo: expression.usageTip,
+        exampleEn: expression.example,
+        tags: expression.tags?.length ? expression.tags : undefined,
+        sourceType: "COACH_RECOMMENDATION",
+        promptId: selectedPrompt.id,
+        coachInteractionId: coachHelp?.interactionId
+      });
+      setSavedCoachExpressionKeys((current) =>
+        current.includes(normalizedKey) ? current : [...current, normalizedKey]
+      );
+    } catch (caughtError) {
+      Alert.alert(
+        "표현 저장에 실패했어요.",
+        caughtError instanceof Error ? caughtError.message : "잠시 후 다시 시도해 주세요."
+      );
+    } finally {
+      setSavingCoachExpressionKeys((current) => current.filter((item) => item !== normalizedKey));
+    }
+  }
+
+  async function handleRequestCoachHelpLegacy(questionOverride?: string) {
+    if (!selectedPrompt) {
+      setError(getPromptNotFoundMessage());
+      return;
+    }
+
+    const nextQuestion = (questionOverride ?? coachQuestion).trim();
+    if (!nextQuestion) {
+      setCoachHelpError("코치에게 물어볼 내용을 먼저 적어 주세요.");
+      setIsCoachOpen(true);
+      return;
+    }
+
+    try {
+      setIsCoachOpen(true);
+      setIsLoadingCoachHelp(true);
+      setCoachHelp(null);
+      setCoachHelpError("");
+      const nextCoachHelp = await requestCoachHelp({
+        promptId: selectedPrompt.id,
+        question: nextQuestion,
+        sessionId: feedback?.sessionId,
+        answer: answer.trim() || undefined,
+        attemptType: feedback ? "REWRITE" : "INITIAL"
+      });
+      setCoachQuestion(nextQuestion);
+      setCoachHelp(nextCoachHelp);
+    } catch (caughtError) {
+      setCoachHelpError(caughtError instanceof Error ? caughtError.message : "AI 코치를 불러오지 못했어요.");
+    } finally {
+      setIsLoadingCoachHelp(false);
     }
   }
 
@@ -959,7 +1051,7 @@ export default function PracticeWriteScreen() {
         if (currentUser) {
           const savedDraft = await saveWritingDraft(prompt.id, draftPayload);
           await deleteLocalWritingDraft(prompt.id, activeDraftType);
-          updateDraftStatus(`?꾩떆??λ맖 쨌 ${formatDraftSavedAt(savedDraft.updatedAt)}`);
+          updateDraftStatus(`임시저장됨 · ${formatDraftSavedAt(savedDraft.updatedAt)}`);
           return;
         }
 
@@ -968,7 +1060,7 @@ export default function PracticeWriteScreen() {
           updatedAt: new Date().toISOString(),
           ...draftPayload
         });
-        updateDraftStatus("??湲곌린???꾩떆??λ맖");
+        updateDraftStatus("이 기기에 임시저장됨");
       } catch {
         try {
           await saveLocalWritingDraft({
@@ -977,11 +1069,11 @@ export default function PracticeWriteScreen() {
             ...draftPayload
           });
           updateDraftStatus(
-            currentUser ? "?쒕쾭 ??μ씠 遺덉븞?뺥빐 ??湲곌린???꾩떆??ν뻽?댁슂." : "??湲곌린???꾩떆??λ맖"
+            currentUser ? "서버 저장이 불안정해 이 기기에 임시저장했어요." : "이 기기에 임시저장됨"
           );
         } catch {
           updateDraftStatus(
-            currentUser ? "?꾩떆??μ뿉 ?ㅽ뙣?덉뼱??" : "??湲곌린???꾩떆??ν븯吏 紐삵뻽?댁슂."
+            currentUser ? "임시저장에 실패했어요." : "이 기기에 임시저장하지 못했어요."
           );
         }
       }
@@ -1044,7 +1136,7 @@ export default function PracticeWriteScreen() {
               sessionId: draftPayload.sessionId
             }
           );
-          updateDraftStatus(`Saved at ${formatDraftSavedAt(savedDraft.updatedAt)}`);
+          updateDraftStatus(`??? ? ${formatDraftSavedAt(savedDraft.updatedAt)}`);
           return;
         }
 
@@ -1063,7 +1155,7 @@ export default function PracticeWriteScreen() {
             sessionId: draftPayload.sessionId
           }
         );
-        updateDraftStatus("Saved on this device");
+        updateDraftStatus("? ??? ???");
       } catch {
         try {
           const localUpdatedAt = new Date().toISOString();
@@ -1082,11 +1174,11 @@ export default function PracticeWriteScreen() {
             }
           );
           updateDraftStatus(
-            currentUser ? "Server sync failed, but the draft was saved on this device." : "Saved on this device"
+            currentUser ? "Server sync failed, but the draft was saved on this device." : "? ??? ???"
           );
         } catch {
           updateDraftStatus(
-            currentUser ? "Draft save failed." : "Could not save the draft on this device."
+            currentUser ? "??? ???." : "? ??? ?? ? ??."
           );
         }
       }

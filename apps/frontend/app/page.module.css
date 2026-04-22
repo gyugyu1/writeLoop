@@ -10422,13 +10422,13 @@
   }
 
   .feedbackShowcase .feedbackRefinePanel .feedbackRefineOriginal::before {
-    content: "?먮Ц : ";
+    content: "\C6D0\BB38: ";
     color: var(--fb-error);
     font-weight: 900;
   }
 
   .feedbackShowcase .feedbackRefinePanel .feedbackRefineRevised::before {
-    content: "?섏젙臾?: ";
+    content: "\C218\C815\BB38: ";
     color: var(--fb-primary);
     font-weight: 900;
   }
@@ -10936,6 +10936,132 @@
   font-size: 1.2rem;
 }
 
+.prefeaturedPromptSection {
+  display: grid;
+  gap: 14px;
+}
+
+.prefeaturedPromptHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.prefeaturedPromptHeader strong {
+  color: #232128;
+  font-size: clamp(1.35rem, 2vw, 1.6rem);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.05em;
+}
+
+.prefeaturedPromptDifficultyBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid #e9d8c5;
+  background: #fff4e4;
+  color: #8a6431;
+  font-size: 0.84rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.prefeaturedPromptCard,
+.prefeaturedPromptLoadingCard,
+.prefeaturedPromptFallbackCard {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  padding: 22px 22px 20px;
+  border-radius: 30px;
+  border: 1px solid #ebe3d8;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 16px 32px -28px rgba(122, 79, 20, 0.18);
+}
+
+.prefeaturedPromptCard {
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.prefeaturedPromptCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(242, 153, 74, 0.28);
+  box-shadow: 0 18px 34px -28px rgba(242, 153, 74, 0.24);
+}
+
+.prefeaturedPromptCard:focus-visible {
+  outline: 3px solid rgba(242, 153, 74, 0.4);
+  outline-offset: 3px;
+}
+
+.prefeaturedPromptCardCopy {
+  display: grid;
+  gap: 10px;
+}
+
+.prefeaturedPromptCardCopy strong {
+  color: #2b2620;
+  font-size: clamp(1.55rem, 2.4vw, 2rem);
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: -0.06em;
+}
+
+.prefeaturedPromptCardCopy p,
+.prefeaturedPromptFallbackCard p {
+  margin: 0;
+  color: #6f6255;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.prefeaturedPromptCardCopy small {
+  color: #8a6431;
+  font-size: 0.94rem;
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.prefeaturedPromptCardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  color: #8b7457;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.prefeaturedPromptLoadingCard {
+  place-items: center;
+  min-height: 168px;
+  text-align: center;
+}
+
+.prefeaturedPromptLoadingCard p {
+  margin: 0;
+  color: #7a6b5b;
+  font-size: 0.96rem;
+  font-weight: 700;
+}
+
+.prefeaturedPromptLoadingIcon {
+  font-size: 2rem;
+  color: #e38b12;
+}
+
 .difficultyHomeStage {
   display: grid;
   gap: 26px;
@@ -11430,13 +11556,6 @@
   line-height: 1.58;
 }
 
-.promptSelectionReasonText {
-  color: #8a6431;
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.58;
-}
-
 .promptSelectionCardFooter {
   width: 100%;
   display: flex;
@@ -11622,6 +11741,29 @@
   font-weight: 900;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+.promptSelectionCardTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.promptSelectionFeaturedBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #f2d2a1;
+  background: #fff1d9;
+  color: #a56b1f;
+  font-size: 0.76rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
 
 .guideOverviewCard {

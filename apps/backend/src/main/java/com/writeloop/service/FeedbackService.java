@@ -555,30 +555,29 @@ public class FeedbackService {
         if (firstStrength != null) {
             return firstStrength;
         }
-        return "피드백이 생성되었습니다.";
+        return "피드백이 생성되었어요.";
     }
-
     private String buildPersistedModelAnswer(FeedbackResponseDto feedback) {
-        return firstNonBlank(
+        if (feedback == null) {
+            return "";
+        }
+        String persistedModelAnswer = firstNonBlank(
                 normalizeNullable(feedback.modelAnswer()),
-                normalizeNullable(feedback.correctedAnswer()),
-                ""
+                normalizeNullable(feedback.correctedAnswer())
         );
+        return persistedModelAnswer != null ? persistedModelAnswer : "";
     }
 
     private String buildPersistedRewriteChallenge(FeedbackResponseDto feedback) {
-        if (feedback != null) {
-            return firstNonBlank(
-                    normalizeNullable(feedback.rewriteChallenge()),
-                    normalizeNullable(feedback.summary()),
-                    "다음 답변에서 핵심 문장을 더 자연스럽게 다듬어 보세요."
-            );
+        if (feedback == null) {
+            return "";
         }
-        return firstNonBlank(
+        String persistedRewriteChallenge = firstNonBlank(
                 normalizeNullable(feedback.rewriteChallenge()),
                 normalizeNullable(feedback.summary()),
-                "다음 답변에서 핵심 문장을 더 자연스럽게 다듬어 보세요."
+                "\uB2E4\uC74C \uB2F5\uBCC0\uC5D0\uC11C\uB294 \uBB38\uC7A5\uC744 \uC870\uAE08 \uB354 \uC790\uC5F0\uC2A4\uB7FD\uAC8C \uB2E4\uB4EC\uC5B4 \uBCF4\uC138\uC694."
         );
+        return persistedRewriteChallenge != null ? persistedRewriteChallenge : "";
     }
 
     private String firstCorrectionIssue(List<CorrectionDto> corrections) {
@@ -1222,7 +1221,6 @@ public class FeedbackService {
 
         return reasonKo;
     }
-
     private boolean hasNoVisibleGrammarChange(String originalText, String revisedText) {
         if (originalText == null || revisedText == null) {
             return false;
@@ -1312,7 +1310,6 @@ public class FeedbackService {
                 + articleToken
                 + "'를 함께 쓰지 않아요.";
     }
-
     private String buildSpecificArticleReason(
             GrammarFeedbackItemDto item,
             List<InlineFeedbackSegmentDto> inlineFeedback,
@@ -1370,11 +1367,10 @@ public class FeedbackService {
         }
 
         if (!resolvedNounHint.isBlank()) {
-            return "'" + resolvedNounHint + "'처럼 단수 가산명사 앞에는 " + formatArticleObject(article) + " 써야 해요.";
+            return "'" + resolvedNounHint + "'처럼 단수 가산명사 앞에는 " + formatArticleObject(article) + "를 써야 해요.";
         }
-        return "단수 가산명사 앞에는 " + formatArticleObject(article) + " 써야 해요.";
+        return "단수 가산명사 앞에는 " + formatArticleObject(article) + "를 써야 해요.";
     }
-
     private boolean shouldRefineArticleReason(String reasonKo) {
         if (reasonKo == null || reasonKo.isBlank()) {
             return true;
@@ -1388,6 +1384,7 @@ public class FeedbackService {
                 || reasonKo.contains("더 분명")
                 || reasonKo.contains("더 자연");
     }
+
     private boolean shouldRefinePossessiveArticleReason(String reasonKo) {
         if (reasonKo == null || reasonKo.isBlank()) {
             return true;
@@ -1395,14 +1392,15 @@ public class FeedbackService {
 
         return !containsGrammarReasonCue(reasonKo, "소유격", "한정사", "possessive", "determiner");
     }
+
     private String formatArticleObject(String article) {
         if (article == null || article.isBlank()) {
-            return "관사를";
+            return "관사";
         }
 
         return switch (article.trim().toLowerCase(Locale.ROOT)) {
-            case "an" -> "관사 'an'을";
-            default -> "관사 '" + article.trim().toLowerCase(Locale.ROOT) + "'를";
+            case "an" -> "관사 'an'";
+            default -> "관사 '" + article.trim().toLowerCase(Locale.ROOT) + "'";
         };
     }
     private String findArticleHeadNoun(List<String> revisedTokens) {
@@ -1503,6 +1501,7 @@ public class FeedbackService {
             default -> false;
         };
     }
+
     private boolean shouldRefineRemovedArticleReason(String reasonKo) {
         if (reasonKo == null || reasonKo.isBlank()) {
             return true;
@@ -1510,6 +1509,7 @@ public class FeedbackService {
 
         return !containsGrammarReasonCue(reasonKo, "관사", "한정사", "소유격", "article", "determiner", "possessive");
     }
+
     private String buildSpecificPunctuationReason(String punctuationText) {
         return switch (punctuationText) {
             case "," -> "쉼표를 넣어 앞부분의 도입 표현과 뒤의 본문을 구분해요.";
@@ -3464,6 +3464,7 @@ public class FeedbackService {
             default -> buildPatternBasedLexicalMeaning(lower);
         };
     }
+
     private String buildPatternBasedLexicalMeaning(String expression) {
         if (expression.startsWith("after ")) {
             return buildTemporalGloss(expression.substring("after ".length()), "후에");
@@ -3519,6 +3520,7 @@ public class FeedbackService {
             default -> null;
         };
     }
+
     private String buildPossessivePhraseGloss(String tail) {
         String normalizedTail = normalizeForComparison(tail);
         return switch (normalizedTail) {
@@ -3526,6 +3528,7 @@ public class FeedbackService {
             default -> null;
         };
     }
+
     private String buildInfinitiveGloss(String tail) {
         String normalizedTail = normalizeForComparison(tail);
         return switch (normalizedTail) {
@@ -3536,7 +3539,6 @@ public class FeedbackService {
             default -> null;
         };
     }
-
     private String buildRecommendationGuidance(String expression) {
         return buildReadableRecommendationGuidance(expression);
     }
@@ -4113,7 +4115,7 @@ public class FeedbackService {
             return List.of();
         }
 
-        return Arrays.stream(normalized.split("(?<=[.!?。！？])\\s+"))
+        return Arrays.stream(normalized.split("(?<=[.!??귨펯竊?)\\s+"))
                 .map(this::normalizeNullable)
                 .filter(sentence -> sentence != null && !sentence.isBlank())
                 .toList();
@@ -4405,12 +4407,11 @@ public class FeedbackService {
 
     private boolean isGenericMeaningPlaceholder(String meaningKo) {
         String normalized = meaningKo == null ? "" : meaningKo.trim().replaceAll("\\s+", " ");
-        return normalized.equals("다음 답변에서 사용하기 좋은 표현")
-                || normalized.equals("다음 답변에 바로 가져다 쓸 수 있는 표현")
-                || (normalized.contains("다음 답변에서") && normalized.contains("표현"))
-                || (normalized.contains("가져다 쓸 수 있는") && normalized.contains("표현"));
+        return normalized.equals("문장에 넣어 쓸 수 있는 표현")
+                || normalized.equals("문장을 조금 더 자연스럽게 만들 때 쓰는 표현")
+                || (normalized.contains("문장에 넣어") && normalized.contains("표현"))
+                || (normalized.contains("자연스럽게") && normalized.contains("표현"));
     }
-
     private String resolveRefinementMeaning(
             String candidate,
             String explicitMeaningKo,
@@ -4463,12 +4464,12 @@ public class FeedbackService {
 
     private boolean isGenericRefinementMeaning(String meaningKo) {
         String normalized = meaningKo == null ? "" : meaningKo.trim().replaceAll("\\s+", " ");
-        return normalized.equals("다음 답변에서 활용하기 좋은 표현")
-                || normalized.equals("다음 답변에 바로 가져다 쓸 수 있는 표현 틀")
-                || (normalized.contains("다음 답변에서") && normalized.contains("표현"))
-                || (normalized.contains("가져다 쓸 수") && normalized.contains("표현"));
-    }
-    private RefinementExpressionType determineRefinementType(String expression) {
+        return normalized.equals("??? ?? ? ? ?? ?????.")
+                || normalized.equals("??? ????? ??? ? ?? ?????.")
+                || normalized.equals("?? ? ???? ??? ?????.")
+                || (normalized.contains("???") && normalized.contains("??"))
+                || (normalized.contains("?????") && normalized.contains("??"));
+    }    private RefinementExpressionType determineRefinementType(String expression) {
         return expression != null && expression.contains("[") && expression.contains("]")
                 ? RefinementExpressionType.FRAME
                 : RefinementExpressionType.LEXICAL;
@@ -4623,7 +4624,7 @@ public class FeedbackService {
         if (alreadyStrong) {
             return "지금 답변을 바탕으로 문장 1~2개만 더 붙여 이유나 예시를 추가해 보세요.";
         }
-        return "\"" + prompt.topic() + "\"에 대해 3~4문장으로 다시 써 보세요. 첫 문장에서 핵심 생각을 말하고, 다음 문장에서 이유나 예시를 덧붙이면 더 좋아요.";
+        return "\"" + prompt.topic() + "\" 주제로 3~4문장으로 다시 써 보세요. 첫 문장에서 핵심 답을 말하고 다음 문장에서 이유나 예시를 덧붙이면 더 좋아요.";
     }
 
     private String buildRewriteChallenge(
@@ -4644,21 +4645,20 @@ public class FeedbackService {
             case "STATE_MAIN_ANSWER" ->
                     "질문에 대한 핵심 답을 첫 문장에서 분명하게 쓰고, 가능하면 why에 해당하는 이유를 짧게 덧붙여 보세요." + hint;
             case "FIX_BLOCKING_GRAMMAR" ->
-                    "지금 답의 뜻은 유지하고, 문장을 막는 문법만 최소한으로 고쳐 다시 써 보세요." + hint;
+                    "지금 답의 뜻은 유지하고, 문장을 막는 문법만 최소 수정으로 고쳐 다시 써 보세요." + hint;
             case "FIX_LOCAL_GRAMMAR" ->
-                    "지금 답의 내용은 유지한 채, 문법 표현 1~2곳만 다듬어 다시 써 보세요." + hint;
+                    "지금 답의 내용은 유지한 채 문법 표현 1~2곳만 다듬어 다시 써 보세요." + hint;
             case "ADD_REASON" ->
                     "핵심 답은 그대로 두고, 왜 그런지 이유를 1문장 더 붙여 보세요." + hint;
             case "ADD_EXAMPLE" ->
                     "핵심 답은 그대로 두고, 내용을 보여 주는 짧은 예시를 1문장 더 붙여 보세요." + hint;
             case "ADD_DETAIL" ->
-                    "핵심 답은 그대로 두고, 시간·장소·활동 같은 구체 디테일을 1문장 더 넣어 보세요." + hint;
+                    "핵심 답은 그대로 두고, 시간·장소·행동 같은 구체 디테일을 1문장 더 넣어 보세요." + hint;
             case "IMPROVE_NATURALNESS" ->
                     "지금 답을 바탕으로 문장 연결을 더 자연스럽게 다듬어 보세요." + hint;
             default -> fallback == null || fallback.isBlank() ? buildRewriteChallenge(prompt, false) : fallback;
         };
     }
-
     private String selectRewriteGuideHintSource(AnswerProfile answerProfile, String modelAnswer) {
         if (answerProfile == null) {
             return firstRewriteHintSentence(modelAnswer);
@@ -4687,7 +4687,7 @@ public class FeedbackService {
         if (skeleton == null || skeleton.isBlank()) {
             return "";
         }
-        return " 힌트 뼈대: \"" + skeleton.trim() + "\"";
+        return " ?뚰듃 堉덈?: \"" + skeleton.trim() + "\"";
     }
 }
 

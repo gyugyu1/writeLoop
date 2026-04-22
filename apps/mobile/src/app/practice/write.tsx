@@ -46,7 +46,9 @@ import {
 } from "@/lib/practice-feedback-state";
 import {
   buildDistinctCategoryPromptSelection,
-  isDailyDifficulty
+  isDailyDifficulty,
+  isPromptCompatibleWithDailyDifficulty,
+  resolvePracticeDifficulty
 } from "@/lib/practice";
 import { getPromptHintMeaningFallback } from "@/lib/prompt-hint-meanings";
 import { useSession } from "@/lib/session";
@@ -87,6 +89,26 @@ type WritingGuideHintCard = {
 
 function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | null): WritingGuide {
   switch (difficulty) {
+    case "I":
+      return {
+        title: "짧게라도 바로 영어로 시작해 보세요.",
+        description: "한두 문장만 써도 충분해요. 먼저 영어로 답하는 감각부터 익히면 됩니다.",
+        starter: starterHint ?? "I usually ...",
+        checklist: [
+          {
+            title: "핵심 답 한 줄 쓰기",
+            description: "질문에 대한 내 답을 아주 짧게 먼저 써 보세요."
+          },
+          {
+            title: "이유 한 줄 붙이기",
+            description: "because 뒤에 짧은 이유만 더해도 훨씬 자연스러워져요."
+          },
+          {
+            title: "쉬운 표현으로 끝내기",
+            description: "어려운 문장보다 익숙한 표현으로 끝까지 써 보는 게 더 중요해요."
+          }
+        ]
+      };
     case "A":
       return {
         title: "완벽하지 않아도 일단 쓰는 것!",
@@ -300,7 +322,7 @@ export default function PracticeWriteScreen() {
   }>();
   const navigation = useNavigation();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
-  const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "A";
+  const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "I";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
   const isRewriteMode = params.mode === "rewrite";
   const shouldRestoreRewriteDraft = params.resume === "1";
@@ -419,7 +441,7 @@ export default function PracticeWriteScreen() {
     [promptHints]
   );
   const answerGuide = useMemo(
-    () => getWritingGuide(selectedPrompt?.difficulty ?? requestedDifficulty, starterHint),
+    () => getWritingGuide(resolvePracticeDifficulty(requestedDifficulty, selectedPrompt?.difficulty), starterHint),
     [requestedDifficulty, selectedPrompt?.difficulty, starterHint]
   );
 
@@ -515,8 +537,8 @@ export default function PracticeWriteScreen() {
         getDailyPrompts(requestedDifficulty, guestId),
         getPrompts()
       ]);
-      const sameDifficultyPromptPool = promptPool.filter(
-        (prompt) => prompt.difficulty === requestedDifficulty
+      const sameDifficultyPromptPool = promptPool.filter((prompt) =>
+        isPromptCompatibleWithDailyDifficulty(prompt.difficulty, requestedDifficulty)
       );
       const fallbackPrompt =
         sameDifficultyPromptPool.find((prompt) => prompt.id === requestedPromptId) ?? null;

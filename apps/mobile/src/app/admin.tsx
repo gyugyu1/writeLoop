@@ -46,12 +46,13 @@ const PERIOD_OPTIONS = [
 
 const DIFFICULTY_FILTER_OPTIONS: { label: string; value: DailyDifficulty | "" }[] = [
   { label: "전체", value: "" },
+  { label: "입문", value: "I" },
   { label: "쉬움", value: "A" },
   { label: "보통", value: "B" },
   { label: "도전", value: "C" }
 ];
 
-const PROMPT_DIFFICULTY_OPTIONS: PromptDifficulty[] = ["A", "B", "C"];
+const PROMPT_DIFFICULTY_OPTIONS: PromptDifficulty[] = ["I", "A", "B", "C"];
 const HINT_TYPE_OPTIONS = [
   "STARTER",
   "VOCAB_WORD",
@@ -112,6 +113,8 @@ function getRangeEndDate() {
 
 function getDifficultyLabel(difficulty: PromptDifficulty | DailyDifficulty) {
   switch (difficulty) {
+    case "I":
+      return "입문";
     case "A":
       return "쉬움";
     case "B":
@@ -456,6 +459,7 @@ export default function AdminScreen() {
   );
   const promptsByDifficulty = useMemo(
     () => ({
+      I: prompts.filter((prompt) => prompt.difficulty === "I").length,
       A: prompts.filter((prompt) => prompt.difficulty === "A").length,
       B: prompts.filter((prompt) => prompt.difficulty === "B").length,
       C: prompts.filter((prompt) => prompt.difficulty === "C").length
@@ -923,7 +927,7 @@ export default function AdminScreen() {
                   <View style={styles.metricCard}>
                     <Text style={styles.metricLabel}>난이도 분포</Text>
                     <Text style={styles.metricRate}>
-                      A {promptsByDifficulty.A} · B {promptsByDifficulty.B} · C {promptsByDifficulty.C}
+                      입문 {promptsByDifficulty.I} · A {promptsByDifficulty.A} · B {promptsByDifficulty.B} · C {promptsByDifficulty.C}
                     </Text>
                   </View>
                 </View>

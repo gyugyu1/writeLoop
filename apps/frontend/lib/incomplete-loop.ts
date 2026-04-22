@@ -1,4 +1,5 @@
 import type { DailyDifficulty, HomeDraftSnapshot, Prompt, WritingDraftType } from "./types";
+import { normalizeDailyDifficulty } from "./difficulty";
 
 export type IncompleteLoopStep = "answer" | "feedback" | "rewrite";
 
@@ -17,6 +18,13 @@ export interface IncompleteLoopState {
   updatedAt: string;
   promptSnapshot: IncompleteLoopPromptSnapshot;
   snapshot?: HomeDraftSnapshot | null;
+}
+
+function normalizeIncompleteLoopState(state: IncompleteLoopState): IncompleteLoopState {
+  return {
+    ...state,
+    difficulty: normalizeDailyDifficulty(state.difficulty)
+  };
 }
 
 const INCOMPLETE_LOOP_KEY = "writeloop_incomplete_loop";
@@ -56,7 +64,7 @@ export function getIncompleteLoop(ownerId?: number | null): IncompleteLoopState 
   }
 
   try {
-    return JSON.parse(rawValue) as IncompleteLoopState;
+    return normalizeIncompleteLoopState(JSON.parse(rawValue) as IncompleteLoopState);
   } catch {
     window.localStorage.removeItem(buildIncompleteLoopKey(ownerId));
     return null;

@@ -30,7 +30,7 @@ import {
 } from "@/lib/api";
 import { getDifficultyLabel } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
-import { isDailyDifficulty } from "@/lib/practice";
+import { isDailyDifficulty, normalizeDailyDifficulty } from "@/lib/practice";
 import type { PracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { useSession } from "@/lib/session";
 import type {
@@ -476,14 +476,15 @@ function resolveSavedExpressionPracticeTarget(
   const difficultyCandidate =
     trimSavedExpressionLookupValue(savedExpression.promptDifficulty) ||
     trimSavedExpressionLookupValue(linkedSession?.difficulty);
+  const normalizedDifficulty = normalizeDailyDifficulty(difficultyCandidate, "I");
 
-  if (!promptId || !isDailyDifficulty(difficultyCandidate)) {
+  if (!promptId || !isDailyDifficulty(normalizedDifficulty)) {
     return null;
   }
 
   return {
     promptId,
-    difficulty: difficultyCandidate
+    difficulty: normalizedDifficulty
   };
 }
 

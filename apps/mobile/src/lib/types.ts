@@ -1,5 +1,5 @@
-export type DailyDifficulty = "A" | "B" | "C";
-export type PromptDifficulty = "A" | "B" | "C";
+export type DailyDifficulty = "I" | "A" | "B" | "C";
+export type PromptDifficulty = "I" | "A" | "B" | "C";
 export type SocialProvider = "naver" | "google" | "kakao";
 export type AttemptType = "INITIAL" | "REWRITE";
 export type InlineFeedbackType = "KEEP" | "REPLACE" | "ADD" | "REMOVE";
@@ -47,6 +47,14 @@ export interface DailyPromptRecommendation {
   featured?: PromptRecommendationItem | null;
   alternatives?: PromptRecommendationItem[];
   prompts: Prompt[];
+}
+
+export interface FeaturedDailyPromptRecommendation {
+  recommendedDate: string;
+  difficulty: DailyDifficulty;
+  userState?: string;
+  fallbackUsed?: boolean;
+  featured?: PromptRecommendationItem | null;
 }
 
 export interface PromptHintItem {

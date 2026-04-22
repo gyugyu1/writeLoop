@@ -1,5 +1,5 @@
 import { Redirect, router, type Href } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
   ActivityIndicator,
@@ -15,14 +15,25 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
-import { getAnswerHistory, getTodayWritingStatus, getWritingDraft } from "@/lib/api";
-import { difficultyDeck } from "@/lib/difficulty";
+import {
+  getAnswerHistory,
+  getFeaturedDailyPrompt,
+  getTodayWritingStatus,
+  getWritingDraft,
+  trackDailyPromptClick
+} from "@/lib/api";
+import { difficultyDeck, getDifficultyMeta } from "@/lib/difficulty";
 import { clearIncompleteLoop, getIncompleteLoop, type IncompleteLoopState } from "@/lib/incomplete-loop";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
 import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { getLocalWritingDraft } from "@/lib/writing-drafts";
-import type { DailyDifficulty, HistorySession, TodayWritingStatus } from "@/lib/types";
+import type {
+  DailyDifficulty,
+  FeaturedDailyPromptRecommendation,
+  HistorySession,
+  TodayWritingStatus
+} from "@/lib/types";
 
 type WeekDayChip = {
   key: string;
@@ -272,13 +283,27 @@ export default function HomeScreen() {
   const [incompleteLoop, setIncompleteLoop] = useState<IncompleteLoopState | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusError, setStatusError] = useState("");
+  const [featuredRecommendation, setFeaturedRecommendation] =
+    useState<FeaturedDailyPromptRecommendation | null>(null);
+  const [isFeaturedRecommendationLoading, setIsFeaturedRecommendationLoading] = useState(false);
+  const [featuredRecommendationError, setFeaturedRecommendationError] = useState("");
+  const [isFeaturedRecommendationTranslationVisible, setIsFeaturedRecommendationTranslationVisible] =
+    useState(false);
+  const [isResolvingIncompleteLoop, setIsResolvingIncompleteLoop] = useState(true);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonthCursor, setCalendarMonthCursor] = useState(() => getMonthStart(new Date()));
   const [calendarCompletedDateKeys, setCalendarCompletedDateKeys] = useState<string[]>([]);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [calendarError, setCalendarError] = useState("");
+  const featuredRecommendationRequestIdRef = useRef(0);
   const historyRoute: Href = currentUser ? "/records" : buildLoginHref("/records");
+  const featuredRecommendationDifficulty = incompleteLoop?.difficulty ?? "I";
+  const featuredRecommendationItem = featuredRecommendation?.featured ?? null;
+  const featuredRecommendationPrompt = featuredRecommendationItem?.prompt ?? null;
+  const featuredDifficultyMeta = getDifficultyMeta(
+    featuredRecommendation?.difficulty ?? featuredRecommendationDifficulty
+  );
 
   const weekChips = useMemo(() => buildWeekChips(todayStatus), [todayStatus]);
   const incompleteLoopCopy = useMemo(
@@ -388,62 +413,120 @@ export default function HomeScreen() {
     if (!currentUser) {
       setTodayStatus(null);
       setStatusError("");
+      setFeaturedRecommendation(null);
+      setFeaturedRecommendationError("");
       return;
     }
 
     void loadTodayStatus();
   }, [currentUser, loadTodayStatus]);
 
+  const loadFeaturedRecommendation = useCallback(
+    async (difficulty: DailyDifficulty = featuredRecommendationDifficulty) => {
+      if (!currentUser) {
+        setFeaturedRecommendation(null);
+        setFeaturedRecommendationError("");
+        setIsFeaturedRecommendationLoading(false);
+        return;
+      }
+
+      if (isResolvingIncompleteLoop) {
+        return;
+      }
+
+      const requestId = featuredRecommendationRequestIdRef.current + 1;
+      featuredRecommendationRequestIdRef.current = requestId;
+
+      try {
+        setIsFeaturedRecommendationLoading(true);
+        setFeaturedRecommendationError("");
+        const nextRecommendation = await getFeaturedDailyPrompt(difficulty);
+        if (featuredRecommendationRequestIdRef.current !== requestId) {
+          return;
+        }
+        setFeaturedRecommendation(nextRecommendation);
+      } catch (caughtError) {
+        if (featuredRecommendationRequestIdRef.current !== requestId) {
+          return;
+        }
+        setFeaturedRecommendation(null);
+        setFeaturedRecommendationError(
+          caughtError instanceof Error ? caughtError.message : "오늘의 추천 질문을 불러오지 못했어요."
+        );
+      } finally {
+        if (featuredRecommendationRequestIdRef.current === requestId) {
+          setIsFeaturedRecommendationLoading(false);
+        }
+      }
+    },
+    [currentUser, featuredRecommendationDifficulty, isResolvingIncompleteLoop]
+  );
+
+  useEffect(() => {
+    void loadFeaturedRecommendation(featuredRecommendationDifficulty);
+  }, [featuredRecommendationDifficulty, loadFeaturedRecommendation]);
+
+  useEffect(() => {
+    setIsFeaturedRecommendationTranslationVisible(false);
+  }, [featuredRecommendationPrompt?.id]);
+
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
+      setIsResolvingIncompleteLoop(true);
 
       const loadIncompleteLoop = async () => {
-        const nextLoop = await getIncompleteLoop();
-        if (!nextLoop) {
-          if (!cancelled) {
-            setIncompleteLoop(null);
-          }
-          return;
-        }
-
-        if (nextLoop.step === "feedback") {
-          const feedbackState = await hydratePracticeFeedbackState(nextLoop.difficulty, nextLoop.promptId);
-          if (!feedbackState) {
-            await clearIncompleteLoop();
+        try {
+          const nextLoop = await getIncompleteLoop();
+          if (!nextLoop) {
             if (!cancelled) {
               setIncompleteLoop(null);
             }
             return;
           }
-        } else {
-          const draftType = nextLoop.draftType ?? (nextLoop.step === "rewrite" ? "REWRITE" : "ANSWER");
-          const localDraft = await getLocalWritingDraft(nextLoop.promptId, draftType);
 
-          if (currentUser) {
-            try {
-              const serverDraft = await getWritingDraft(nextLoop.promptId, draftType);
-              if (!localDraft && !serverDraft) {
-                await clearIncompleteLoop();
-                if (!cancelled) {
-                  setIncompleteLoop(null);
-                }
-                return;
+          if (nextLoop.step === "feedback") {
+            const feedbackState = await hydratePracticeFeedbackState(nextLoop.difficulty, nextLoop.promptId);
+            if (!feedbackState) {
+              await clearIncompleteLoop();
+              if (!cancelled) {
+                setIncompleteLoop(null);
               }
-            } catch {
-              // Keep the card when the server check fails temporarily.
+              return;
             }
-          } else if (!localDraft) {
-            await clearIncompleteLoop();
-            if (!cancelled) {
-              setIncompleteLoop(null);
-            }
-            return;
-          }
-        }
+          } else {
+            const draftType = nextLoop.draftType ?? (nextLoop.step === "rewrite" ? "REWRITE" : "ANSWER");
+            const localDraft = await getLocalWritingDraft(nextLoop.promptId, draftType);
 
-        if (!cancelled) {
-          setIncompleteLoop(nextLoop);
+            if (currentUser) {
+              try {
+                const serverDraft = await getWritingDraft(nextLoop.promptId, draftType);
+                if (!localDraft && !serverDraft) {
+                  await clearIncompleteLoop();
+                  if (!cancelled) {
+                    setIncompleteLoop(null);
+                  }
+                  return;
+                }
+              } catch {
+                // Keep the card when the server check fails temporarily.
+              }
+            } else if (!localDraft) {
+              await clearIncompleteLoop();
+              if (!cancelled) {
+                setIncompleteLoop(null);
+              }
+              return;
+            }
+          }
+
+          if (!cancelled) {
+            setIncompleteLoop(nextLoop);
+          }
+        } finally {
+          if (!cancelled) {
+            setIsResolvingIncompleteLoop(false);
+          }
         }
       };
 
@@ -459,13 +542,15 @@ export default function HomeScreen() {
     setIsRefreshing(true);
     const user = await refreshSession();
     if (user) {
-      await loadTodayStatus();
+      await Promise.all([loadTodayStatus(), loadFeaturedRecommendation()]);
     } else {
       setTodayStatus(null);
       setStatusError("");
+      setFeaturedRecommendation(null);
+      setFeaturedRecommendationError("");
     }
     setIsRefreshing(false);
-  }, [loadTodayStatus, refreshSession]);
+  }, [loadFeaturedRecommendation, loadTodayStatus, refreshSession]);
 
   useEffect(() => {
     if (!isCalendarOpen) {
@@ -560,6 +645,25 @@ export default function HomeScreen() {
     router.push(incompleteLoopRoute);
   }, [incompleteLoopRoute]);
 
+  const handleStartFeaturedPrompt = useCallback(() => {
+    if (!featuredRecommendationPrompt) {
+      return;
+    }
+
+    void trackDailyPromptClick(featuredRecommendationPrompt.id).catch(() => undefined);
+    router.push({
+      pathname: "/practice/write",
+      params: {
+        difficulty: featuredRecommendation?.difficulty ?? featuredRecommendationDifficulty,
+        promptId: featuredRecommendationPrompt.id
+      }
+    });
+  }, [
+    featuredRecommendation?.difficulty,
+    featuredRecommendationDifficulty,
+    featuredRecommendationPrompt
+  ]);
+
   if (isHydrating) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
@@ -651,6 +755,76 @@ export default function HomeScreen() {
             <Text style={styles.resumeMeta}>{incompleteLoopInlineNote}</Text>
           </Pressable>
         ) : null}
+        </View>
+
+        <View style={styles.featuredRecommendationSection}>
+          <View style={styles.featuredRecommendationHeader}>
+            <Text style={styles.featuredRecommendationLabel}>오늘의 추천 질문</Text>
+            <View
+              style={[
+                styles.featuredRecommendationDifficultyBadge,
+                {
+                  backgroundColor: featuredDifficultyMeta.tint,
+                  borderColor: featuredDifficultyMeta.accent
+                }
+              ]}
+            >
+              <Text
+                style={[
+                  styles.featuredRecommendationDifficultyText,
+                  { color: featuredDifficultyMeta.accent }
+                ]}
+              >
+                {featuredDifficultyMeta.title}
+              </Text>
+            </View>
+          </View>
+
+          {isFeaturedRecommendationLoading ? (
+            <View style={styles.featuredRecommendationLoadingCard}>
+              <ActivityIndicator color="#E38B12" />
+            </View>
+          ) : featuredRecommendationPrompt ? (
+            <Pressable style={styles.featuredRecommendationCard} onPress={handleStartFeaturedPrompt}>
+              <Text style={styles.featuredRecommendationQuestion}>
+                {featuredRecommendationPrompt.questionEn}
+              </Text>
+              {isFeaturedRecommendationTranslationVisible ? (
+                <Text style={styles.featuredRecommendationTranslation}>
+                  {featuredRecommendationPrompt.questionKo}
+                </Text>
+              ) : null}
+              {featuredRecommendationItem?.reasonText ? (
+                <Text style={styles.featuredRecommendationReason}>
+                  {featuredRecommendationItem.reasonText}
+                </Text>
+              ) : null}
+              <View style={styles.featuredRecommendationFooter}>
+                <Text style={styles.featuredRecommendationMeta}>
+                  {featuredRecommendationPrompt.topic}
+                </Text>
+                <View style={styles.featuredRecommendationActions}>
+                  <Pressable
+                    style={styles.featuredRecommendationTranslationButton}
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      setIsFeaturedRecommendationTranslationVisible((current) => !current);
+                    }}
+                  >
+                    <Text style={styles.featuredRecommendationTranslationButtonText}>
+                      {isFeaturedRecommendationTranslationVisible ? "해석 숨기기" : "해석 보기"}
+                    </Text>
+                  </Pressable>
+                </View>
+              </View>
+            </Pressable>
+          ) : (
+            <View style={styles.featuredRecommendationFallbackCard}>
+              <Text style={styles.featuredRecommendationFallbackText}>
+                {featuredRecommendationError || "오늘의 추천 질문을 준비하고 있어요."}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.difficultySectionHeader}>
@@ -979,6 +1153,120 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontWeight: "700",
     color: "#8B7761"
+  },
+  featuredRecommendationSection: {
+    gap: 12
+  },
+  featuredRecommendationHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12
+  },
+  featuredRecommendationLabel: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: "900",
+    color: "#232128",
+    letterSpacing: -0.9
+  },
+  featuredRecommendationDifficultyBadge: {
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 6
+  },
+  featuredRecommendationDifficultyText: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: "900"
+  },
+  featuredRecommendationCard: {
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "#EADCCB",
+    backgroundColor: "#FFFEFC",
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    gap: 10,
+    shadowColor: "#D89A51",
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 2
+  },
+  featuredRecommendationLoadingCard: {
+    minHeight: 140,
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "#EADCCB",
+    backgroundColor: "#FFFEFC",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  featuredRecommendationFallbackCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#EADCCB",
+    backgroundColor: "#FFFEFC",
+    paddingHorizontal: 18,
+    paddingVertical: 16
+  },
+  featuredRecommendationFallbackText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: "#6F6255"
+  },
+  featuredRecommendationQuestion: {
+    fontSize: 24,
+    lineHeight: 33,
+    fontWeight: "900",
+    color: "#2B2620",
+    letterSpacing: -0.9
+  },
+  featuredRecommendationTranslation: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#6E6254"
+  },
+  featuredRecommendationReason: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: "#8A6431",
+    fontWeight: "700"
+  },
+  featuredRecommendationFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    marginTop: 4
+  },
+  featuredRecommendationActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10
+  },
+  featuredRecommendationMeta: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 18,
+    color: "#8B7457",
+    fontWeight: "700"
+  },
+  featuredRecommendationTranslationButton: {
+    alignItems: "center",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E0D0BC",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    backgroundColor: "#FFF9F2"
+  },
+  featuredRecommendationTranslationButtonText: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#7C6545"
   },
   weekRowButton: {
     marginTop: 18

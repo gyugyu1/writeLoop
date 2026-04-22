@@ -21,7 +21,7 @@ import {
   type PracticeFeedbackState
 } from "@/lib/practice-feedback-state";
 import { clearIncompleteLoop } from "@/lib/incomplete-loop";
-import { isDailyDifficulty } from "@/lib/practice";
+import { isDailyDifficulty, resolvePracticeDifficulty } from "@/lib/practice";
 import { useSession } from "@/lib/session";
 import { deleteLocalWritingDraft } from "@/lib/writing-drafts";
 import type { DailyDifficulty, Prompt, TodayWritingStatus } from "@/lib/types";
@@ -368,7 +368,7 @@ function CelebrationFireworks() {
 export default function PracticeCompleteScreen() {
   const params = useLocalSearchParams<{ difficulty?: string; promptId?: string }>();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
-  const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "A";
+  const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "I";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
   const { currentUser } = useSession();
   const [feedbackState, setFeedbackState] = useState<PracticeFeedbackState | null>(() =>
@@ -649,7 +649,7 @@ export default function PracticeCompleteScreen() {
                     onPress={() => handleStartPrompt(prompt)}
                   >
                     <Text style={styles.recommendationMeta}>
-                      {`${getDifficultyLabel(prompt.difficulty)} • ${prompt.topic}`}
+                      {`${getDifficultyLabel(resolvePracticeDifficulty(requestedDifficulty, prompt.difficulty))} • ${prompt.topic}`}
                     </Text>
                     <Text style={styles.recommendationQuestion}>{prompt.questionEn}</Text>
                   </Pressable>

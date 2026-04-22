@@ -21,7 +21,7 @@ const HERO_META_GAP = 10;
 export default function PracticeQuestionScreen() {
   const params = useLocalSearchParams<{ difficulty?: string }>();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
-  const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "A";
+  const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "I";
 
   const [recommendation, setRecommendation] = useState<DailyPromptRecommendation | null>(null);
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});

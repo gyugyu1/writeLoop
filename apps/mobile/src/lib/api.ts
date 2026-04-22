@@ -2,6 +2,7 @@ import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import { apiBaseUrl } from "./env";
+import { normalizeDailyDifficulty } from "./practice";
 import type {
   AdminPrompt,
   AdminPromptHint,
@@ -17,6 +18,7 @@ import type {
   CommonMistake,
   DailyDifficulty,
   DailyPromptRecommendation,
+  FeaturedDailyPromptRecommendation,
   DeleteAccountRequest,
   Feedback,
   FeedbackRequest,
@@ -50,7 +52,21 @@ let tokenSessionCache: TokenSession | null | undefined = undefined;
 let refreshPromise: Promise<TokenSession | null> | null = null;
 const RETRYABLE_STATUS_CODES = new Set([502, 503, 504]);
 const RETRY_DELAYS_MS = [350, 800];
-const FETCH_TIMEOUT_MS = 8000;
+const DEFAULT_FETCH_TIMEOUT_MS = 8000;
+const FEEDBACK_FETCH_TIMEOUT_MS = 90000;
+const COACH_FETCH_TIMEOUT_MS = 45000;
+
+function resolveFetchTimeoutMs(url: string) {
+  if (url.includes("/api/feedback")) {
+    return FEEDBACK_FETCH_TIMEOUT_MS;
+  }
+
+  if (url.includes("/api/coach/help")) {
+    return COACH_FETCH_TIMEOUT_MS;
+  }
+
+  return DEFAULT_FETCH_TIMEOUT_MS;
+}
 
 function createCoachExpressionId(promptId: string, expression: string, index: number) {
   const base = expression
@@ -112,6 +128,55 @@ function normalizeCoachHelpResponse(
     coachReply: payload.coachReply ?? "이 질문에 맞는 표현을 골라 답안에 자연스럽게 넣어 보세요.",
     expressions,
     interactionId: payload.interactionId
+  };
+}
+
+function normalizePromptItem(prompt: Prompt): Prompt {
+  return {
+    ...prompt,
+    difficulty: normalizeDailyDifficulty(prompt.difficulty)
+  };
+}
+
+function normalizeDailyPromptRecommendationPayload(
+  payload: DailyPromptRecommendation
+): DailyPromptRecommendation {
+  return {
+    ...payload,
+    difficulty: normalizeDailyDifficulty(payload.difficulty),
+    featured: payload.featured
+      ? {
+          ...payload.featured,
+          prompt: normalizePromptItem(payload.featured.prompt)
+        }
+      : payload.featured ?? null,
+    alternatives: (payload.alternatives ?? []).map((item) => ({
+      ...item,
+      prompt: normalizePromptItem(item.prompt)
+    })),
+    prompts: (payload.prompts ?? []).map((prompt) => normalizePromptItem(prompt))
+  };
+}
+
+function normalizeFeaturedDailyPromptRecommendationPayload(
+  payload: FeaturedDailyPromptRecommendation
+): FeaturedDailyPromptRecommendation {
+  return {
+    ...payload,
+    difficulty: normalizeDailyDifficulty(payload.difficulty),
+    featured: payload.featured
+      ? {
+          ...payload.featured,
+          prompt: normalizePromptItem(payload.featured.prompt)
+        }
+      : payload.featured ?? null
+  };
+}
+
+function normalizeWritingDraftPayload(draft: WritingDraft): WritingDraft {
+  return {
+    ...draft,
+    selectedDifficulty: normalizeDailyDifficulty(draft.selectedDifficulty)
   };
 }
 
@@ -243,11 +308,15 @@ function normalizeNetworkError(error: unknown) {
   return error;
 }
 
-async function fetchWithTimeout(url: string, init: RequestInit) {
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs = resolveFetchTimeoutMs(url)
+) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
     controller.abort();
-  }, FETCH_TIMEOUT_MS);
+  }, timeoutMs);
 
   try {
     return await fetch(url, {
@@ -702,12 +771,16 @@ export async function deleteAdminPromptHint(promptId: string, hintId: string): P
 
 export async function getDailyPrompts(
   difficulty: DailyDifficulty,
-  guestId?: string
+  guestId?: string,
+  excludePromptIds: string[] = []
 ): Promise<DailyPromptRecommendation> {
   const query = new URLSearchParams({ difficulty });
   if (guestId) {
     query.set("guestId", guestId);
   }
+  excludePromptIds
+    .filter((promptId) => typeof promptId === "string" && promptId.trim())
+    .forEach((promptId) => query.append("excludePromptIds", promptId.trim()));
 
   const response = await apiFetch(`/api/prompts/daily?${query.toString()}`);
 
@@ -715,7 +788,29 @@ export async function getDailyPrompts(
     throw await parseApiError(response, "오늘의 질문을 불러오지 못했어요.");
   }
 
-  return (await response.json()) as DailyPromptRecommendation;
+  return normalizeDailyPromptRecommendationPayload(
+    (await response.json()) as DailyPromptRecommendation
+  );
+}
+
+export async function getFeaturedDailyPrompt(
+  difficulty: DailyDifficulty,
+  guestId?: string
+): Promise<FeaturedDailyPromptRecommendation> {
+  const query = new URLSearchParams({ difficulty });
+  if (guestId) {
+    query.set("guestId", guestId);
+  }
+
+  const response = await apiFetch(`/api/prompts/daily/featured?${query.toString()}`);
+
+  if (!response.ok) {
+    throw await parseApiError(response, "오늘의 추천 질문을 불러오지 못했어요.");
+  }
+
+  return normalizeFeaturedDailyPromptRecommendationPayload(
+    (await response.json()) as FeaturedDailyPromptRecommendation
+  );
 }
 
 export async function trackDailyPromptClick(promptId: string, guestId?: string): Promise<void> {
@@ -759,7 +854,7 @@ export async function getWritingDraft(
     throw await parseApiError(response, "임시저장 초안을 불러오지 못했어요.");
   }
 
-  return (await response.json()) as WritingDraft;
+  return normalizeWritingDraftPayload((await response.json()) as WritingDraft);
 }
 
 export async function saveWritingDraft(
@@ -778,7 +873,7 @@ export async function saveWritingDraft(
     throw await parseApiError(response, "임시저장에 실패했어요.");
   }
 
-  return (await response.json()) as WritingDraft;
+  return normalizeWritingDraftPayload((await response.json()) as WritingDraft);
 }
 
 export async function deleteWritingDraft(promptId: string, draftType: WritingDraftType): Promise<void> {

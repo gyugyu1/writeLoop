@@ -1,9 +1,32 @@
 import type { DailyDifficulty, Prompt } from "./types";
 
-export const validDifficulties: DailyDifficulty[] = ["A", "B", "C"];
+export const validDifficulties: DailyDifficulty[] = ["I", "A", "B", "C"];
 
 export function isDailyDifficulty(value: string): value is DailyDifficulty {
   return validDifficulties.includes(value as DailyDifficulty);
+}
+
+export function normalizeDailyDifficulty(
+  value: string | null | undefined,
+  fallback: DailyDifficulty = "I"
+): DailyDifficulty {
+  const normalizedDifficulty = typeof value === "string" ? value.trim().toUpperCase() : "";
+  const nextDifficulty = normalizedDifficulty === "INTRO" ? "I" : normalizedDifficulty;
+  return isDailyDifficulty(nextDifficulty) ? nextDifficulty : fallback;
+}
+
+export function isPromptCompatibleWithDailyDifficulty(
+  promptDifficulty: string | null | undefined,
+  selectedDifficulty: DailyDifficulty
+) {
+  return normalizeDailyDifficulty(promptDifficulty, selectedDifficulty) === selectedDifficulty;
+}
+
+export function resolvePracticeDifficulty(
+  selectedDifficulty: DailyDifficulty,
+  promptDifficulty: string | null | undefined
+): DailyDifficulty {
+  return normalizeDailyDifficulty(promptDifficulty, selectedDifficulty);
 }
 
 export function getQuestionLabel(index: number) {

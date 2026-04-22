@@ -1,6 +1,14 @@
 import type { HomeDraftSnapshot, WritingDraft, WritingDraftType } from "./types";
+import { normalizeDailyDifficulty } from "./difficulty";
 
 const HOME_WRITING_DRAFT_KEY_PREFIX = "writeloop_home_writing_draft";
+
+function normalizeWritingDraft(draft: WritingDraft): WritingDraft {
+  return {
+    ...draft,
+    selectedDifficulty: normalizeDailyDifficulty(draft.selectedDifficulty)
+  };
+}
 
 function buildDraftKey(promptId: string, draftType: WritingDraftType, ownerId?: number | null) {
   const ownerScope =
@@ -45,7 +53,7 @@ export function getLocalWritingDraft(
   }
 
   try {
-    return JSON.parse(raw) as WritingDraft;
+    return normalizeWritingDraft(JSON.parse(raw) as WritingDraft);
   } catch {
     window.localStorage.removeItem(buildDraftKey(promptId, draftType, ownerId));
     return null;

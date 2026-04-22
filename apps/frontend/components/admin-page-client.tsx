@@ -28,7 +28,7 @@ import type {
 import authStyles from "./auth-page.module.css";
 import styles from "./admin-page.module.css";
 
-const difficultyOptions: PromptDifficulty[] = ["A", "B", "C"];
+const difficultyOptions: PromptDifficulty[] = ["I", "A", "B", "C"];
 const hintTypeOptions = [
   "STARTER",
   "VOCAB_WORD",
@@ -146,6 +146,8 @@ function getPromptTopicDetails(
 
 function getDifficultyDisplayLabel(difficulty: PromptDifficulty) {
   switch (difficulty) {
+    case "I":
+      return "입문";
     case "A":
       return "쉬움";
     case "B":

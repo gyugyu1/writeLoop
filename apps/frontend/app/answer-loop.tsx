@@ -16,6 +16,7 @@ import {
   checkCoachExpressionUsage,
   ApiError,
   deleteWritingDraft,
+  getFeaturedDailyPrompt,
   getCurrentUser,
   getDailyPrompts,
   getMonthStatus,
@@ -44,7 +45,7 @@ import {
 } from "../lib/incomplete-loop";
 import { buildCoachQuickQuestions } from "../lib/coach-quick-questions";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
-import { getDifficultyLabel } from "../lib/difficulty";
+import { getDifficultyLabel, resolvePracticeDifficulty } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import { getOrCreateGuestId } from "../lib/guest-id";
 import { buildInlineFeedbackSegments, type RenderedInlineFeedbackSegment } from "../lib/inline-feedback";
@@ -53,6 +54,7 @@ import type {
   AuthUser,
   DailyDifficulty,
   DailyPromptRecommendation,
+  FeaturedDailyPromptRecommendation,
   CoachHelpResponse,
   CoachUsageCheckResponse,
   Feedback,
@@ -750,6 +752,7 @@ function getPromptCategoryKey(prompt: Prompt | null | undefined) {
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function countDistinctPromptCategories(prompts: Prompt[]) {
   return new Set(
     prompts
@@ -998,6 +1001,7 @@ function calculatePromptOverlapPenalty(
   );
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function pickLeastOverlappingPromptSet(
   currentPrompts: Prompt[],
   candidates: Prompt[],
@@ -1078,9 +1082,17 @@ const DIFFICULTY_OPTIONS: Array<{
   recommended?: boolean;
 }> = [
   {
+    value: "I",
+    label: "입문",
+    level: "LEVEL 01",
+    icon: "auto_stories",
+    description: "짧은 한두 문장으로도 바로 답할 수 있는 가장 가벼운 질문부터 시작해 보세요.",
+    duration: "2-3분"
+  },
+  {
     value: "A",
     label: "쉬움",
-    level: "LEVEL 01",
+    level: "LEVEL 02",
     icon: "auto_stories",
     description: "기본 어휘와 쉬운 문장 구조로 부담 없이 첫 루프를 시작해 보세요.",
     duration: "3-5분"
@@ -1088,7 +1100,7 @@ const DIFFICULTY_OPTIONS: Array<{
   {
     value: "B",
     label: "보통",
-    level: "LEVEL 02",
+    level: "LEVEL 03",
     icon: "menu_book",
     description: "일상적인 주제와 문장 구조로 표현의 폭을 차분하게 넓혀 보세요.",
     recommended: true,
@@ -1097,7 +1109,7 @@ const DIFFICULTY_OPTIONS: Array<{
   {
     value: "C",
     label: "어려움",
-    level: "LEVEL 03",
+    level: "LEVEL 04",
     icon: "psychology",
     description: "한 단계 더 복잡한 내용과 논리를 담아 깊이 있는 작문에 도전해 보세요.",
     duration: "8-12분"
@@ -1321,6 +1333,28 @@ function getMonthStatusDayStyle(cell: MonthCalendarCell): CSSProperties | undefi
 
 function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | null): WritingGuide {
   switch (difficulty) {
+    case "I":
+      return {
+        title: "짧게라도 바로 영어로 시작해 보세요.",
+        description: "한두 문장만 써도 충분해요. 먼저 영어로 답하는 감각을 만드는 데 집중해 보세요.",
+        sentenceRange: [1, 2],
+        wordRange: [10, 25],
+        starter: starterHint ?? "I usually ...",
+        checklist: [
+          {
+            title: "질문에 바로 답하기",
+            description: "질문에서 묻는 핵심만 골라 아주 짧게 먼저 적어보세요."
+          },
+          {
+            title: "이유 한 줄 붙이기",
+            description: "because 뒤에 짧은 이유를 한 문장만 더하면 답이 훨씬 자연스러워져요."
+          },
+          {
+            title: "쉬운 표현으로 끝내기",
+            description: "어려운 문장보다 내가 바로 쓸 수 있는 표현으로 마무리하는 게 더 중요해요."
+          }
+        ]
+      };
     case "A":
       return {
         title: "완벽하지 않아도 일단 쓰는 것!",
@@ -1414,9 +1448,13 @@ function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | nul
 
 export function AnswerLoop() {
   const router = useRouter();
-  const [selectedDifficulty, setSelectedDifficulty] = useState<DailyDifficulty>("A");
+  const [selectedDifficulty, setSelectedDifficulty] = useState<DailyDifficulty>("I");
   const [dailyRecommendation, setDailyRecommendation] =
     useState<DailyPromptRecommendation | null>(null);
+  const [featuredDailyPrompt, setFeaturedDailyPrompt] =
+    useState<FeaturedDailyPromptRecommendation | null>(null);
+  const [isLandingFeaturedPromptTranslationVisible, setIsLandingFeaturedPromptTranslationVisible] =
+    useState(false);
   const [selectedPromptId, setSelectedPromptId] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [guestId, setGuestId] = useState("");
@@ -1429,6 +1467,7 @@ export function AnswerLoop() {
   const [error, setError] = useState("");
   const [showLoginWall, setShowLoginWall] = useState(false);
   const [isLoadingPrompts, setIsLoadingPrompts] = useState(true);
+  const [isLoadingFeaturedPrompt, setIsLoadingFeaturedPrompt] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [step, setStep] = useState<Step>("pick");
   const [pickFlowScreen, setPickFlowScreen] = useState<PickFlowScreen>("difficulty");
@@ -1823,7 +1862,58 @@ export function AnswerLoop() {
   useEffect(() => {
     let isMounted = true;
 
+    async function loadFeaturedPrompt() {
+      if (pickFlowScreen !== "difficulty" || isResolvingCurrentUser) {
+        return;
+      }
+
+      if (!currentUser && !guestId) {
+        return;
+      }
+
+      try {
+        setIsLoadingFeaturedPrompt(true);
+        const recommendation = await getFeaturedDailyPrompt(selectedDifficulty, guestId || undefined);
+        if (!isMounted) {
+          return;
+        }
+        setFeaturedDailyPrompt(recommendation);
+      } catch {
+        if (isMounted) {
+          setFeaturedDailyPrompt(null);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingFeaturedPrompt(false);
+        }
+      }
+    }
+
+    void loadFeaturedPrompt();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser, currentUser?.id, guestId, isResolvingCurrentUser, pickFlowScreen, selectedDifficulty]);
+
+  useEffect(() => {
+    let isMounted = true;
+
     async function loadDailyPrompts() {
+      if (pickFlowScreen !== "prompt" || isResolvingCurrentUser) {
+        if (isMounted) {
+          setIsLoadingPrompts(false);
+        }
+        return;
+      }
+
+      if (!currentUser && !guestId) {
+        if (isMounted) {
+          setIsLoadingPrompts(true);
+        }
+        return;
+      }
+
       try {
         setIsLoadingPrompts(true);
         setError("");
@@ -1858,7 +1948,7 @@ export function AnswerLoop() {
     return () => {
       isMounted = false;
     };
-  }, [selectedDifficulty]);
+  }, [currentUser, currentUser?.id, guestId, isResolvingCurrentUser, pickFlowScreen, selectedDifficulty]);
 
   useEffect(() => {
     let isMounted = true;
@@ -1899,19 +1989,12 @@ export function AnswerLoop() {
   }, [selectedPromptId]);
 
   const prompts = useMemo(() => dailyRecommendation?.prompts ?? [], [dailyRecommendation]);
-  const recommendationReasonByPromptId = useMemo(() => {
-    const nextMap = new Map<string, string>();
-    const featured = dailyRecommendation?.featured;
-    if (featured?.prompt?.id && featured.reasonText) {
-      nextMap.set(featured.prompt.id, featured.reasonText);
-    }
-    for (const item of dailyRecommendation?.alternatives ?? []) {
-      if (item.prompt?.id && item.reasonText) {
-        nextMap.set(item.prompt.id, item.reasonText);
-      }
-    }
-    return nextMap;
-  }, [dailyRecommendation]);
+  const landingFeaturedPromptItem = featuredDailyPrompt?.featured ?? null;
+  const landingFeaturedPrompt = landingFeaturedPromptItem?.prompt ?? null;
+  const featuredPromptId = dailyRecommendation?.featured?.prompt?.id ?? "";
+  useEffect(() => {
+    setIsLandingFeaturedPromptTranslationVisible(false);
+  }, [landingFeaturedPrompt?.id]);
   const selectedPrompt = useMemo(
     () =>
       prompts.find((prompt) => prompt.id === selectedPromptId) ??
@@ -1969,7 +2052,7 @@ export function AnswerLoop() {
     [hints]
   );
   const answerGuide = useMemo(
-    () => getWritingGuide(selectedPrompt?.difficulty ?? selectedDifficulty, starterHint),
+    () => getWritingGuide(resolvePracticeDifficulty(selectedDifficulty, selectedPrompt?.difficulty), starterHint),
     [selectedDifficulty, selectedPrompt?.difficulty, starterHint]
   );
   const feedbackLoadingStages = useMemo(
@@ -2478,67 +2561,46 @@ export function AnswerLoop() {
     resetFlowForPrompt(promptId);
   }
 
-  function handleRefreshPromptList() {
+  async function handleRefreshPromptList() {
     if (prompts.length === 0) {
       setError("질문을 먼저 불러와 주세요.");
       return;
     }
 
-    const sourcePrompts = allPrompts.length > 0 ? allPrompts : prompts;
-    const sameDifficultyCandidates = sourcePrompts.filter(
-      (prompt) => prompt.difficulty === selectedDifficulty
-    );
-    const currentPromptIds = new Set(prompts.map((prompt) => prompt.id));
-    const refreshCandidates = sameDifficultyCandidates.filter(
-      (prompt) => !currentPromptIds.has(prompt.id)
-    );
-    const desiredCount = Math.min(
-      prompts.length > 0 ? prompts.length : 3,
-      countDistinctPromptCategories(refreshCandidates)
-    );
+    try {
+      setIsRefreshingQuestion(true);
+      const excludePromptIds = Array.from(
+        new Set([...questionRefreshHistory, ...prompts.map((prompt) => prompt.id)])
+      );
+      const nextRecommendation = await getDailyPrompts(
+        selectedDifficulty,
+        guestId || undefined,
+        excludePromptIds
+      );
 
-    if (desiredCount === 0) {
-      setError("이 난이도에서 보여드릴 질문을 아직 고르지 못했어요.");
-      return;
-    }
+      if (nextRecommendation.prompts.length === 0) {
+        setError("이 난이도에서 새로 보여드릴 질문을 아직 고르지 못했어요.");
+        return;
+      }
 
-    const nextPrompts = pickLeastOverlappingPromptSet(
-      prompts,
-      sameDifficultyCandidates,
-      [...questionRefreshHistory, ...prompts.map((prompt) => prompt.id)],
-      desiredCount
-    );
-
-    if (nextPrompts.length < desiredCount) {
-      setError("이 난이도에서 새로 보여드릴 다른 카테고리 질문을 아직 고르지 못했어요.");
-      return;
-    }
-
-    setIsRefreshingQuestion(true);
-    setQuestionRefreshHistory((current) =>
-      Array.from(new Set([...current, ...prompts.map((prompt) => prompt.id), ...nextPrompts.map((prompt) => prompt.id)])).slice(-18)
-    );
-    setDailyRecommendation((current) =>
-      current
-        ? {
+      setQuestionRefreshHistory((current) =>
+        Array.from(
+          new Set([
             ...current,
-            difficulty: selectedDifficulty,
-            featured: null,
-            alternatives: [],
-            prompts: nextPrompts
-          }
-        : {
-            recommendedDate: new Date().toISOString().slice(0, 10),
-            difficulty: selectedDifficulty,
-            featured: null,
-            alternatives: [],
-            prompts: nextPrompts
-          }
-    );
-    setRevealedTranslations({});
-    setSelectedPromptId(nextPrompts[0]?.id ?? "");
-    setError("");
-    setIsRefreshingQuestion(false);
+            ...prompts.map((prompt) => prompt.id),
+            ...nextRecommendation.prompts.map((prompt) => prompt.id)
+          ])
+        ).slice(-18)
+      );
+      setDailyRecommendation(nextRecommendation);
+      setRevealedTranslations({});
+      setSelectedPromptId(nextRecommendation.prompts[0]?.id ?? "");
+      setError("");
+    } catch {
+      setError("이 난이도에서 새로 보여드릴 질문을 아직 고르지 못했어요.");
+    } finally {
+      setIsRefreshingQuestion(false);
+    }
   }
 
   function handleFinishLoop() {
@@ -3042,6 +3104,64 @@ export function AnswerLoop() {
 
           {renderIncompleteLoopResumeCard()}
 
+          <section className={styles.prefeaturedPromptSection}>
+            <div className={styles.prefeaturedPromptHeader}>
+              <strong>오늘의 추천 질문</strong>
+              <span className={styles.prefeaturedPromptDifficultyBadge}>
+                {getDifficultyLabel(selectedDifficulty)}
+              </span>
+            </div>
+
+            {isLoadingFeaturedPrompt ? (
+              <div className={styles.prefeaturedPromptLoadingCard}>
+                <span className={`materialSymbols ${styles.prefeaturedPromptLoadingIcon}`} aria-hidden="true">
+                  hourglass_top
+                </span>
+                <p>추천 질문을 고르고 있어요.</p>
+              </div>
+            ) : landingFeaturedPrompt ? (
+              <article
+                role="button"
+                tabIndex={0}
+                className={styles.prefeaturedPromptCard}
+                onClick={() => void handlePickPrompt(landingFeaturedPrompt.id)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    void handlePickPrompt(landingFeaturedPrompt.id);
+                  }
+                }}
+              >
+                <div className={styles.prefeaturedPromptCardCopy}>
+                  <strong>{landingFeaturedPrompt.questionEn}</strong>
+                  {isLandingFeaturedPromptTranslationVisible ? (
+                    <p>{landingFeaturedPrompt.questionKo}</p>
+                  ) : null}
+                  {landingFeaturedPromptItem?.reasonText ? (
+                    <small>{landingFeaturedPromptItem.reasonText}</small>
+                  ) : null}
+                </div>
+                <div className={styles.prefeaturedPromptCardFooter}>
+                  <span>{landingFeaturedPrompt.topic}</span>
+                  <button
+                    type="button"
+                    className={styles.promptTranslationButton}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setIsLandingFeaturedPromptTranslationVisible((current) => !current);
+                    }}
+                  >
+                    {isLandingFeaturedPromptTranslationVisible ? "해석 숨기기" : "해석 보기"}
+                  </button>
+                </div>
+              </article>
+            ) : (
+              <div className={styles.prefeaturedPromptFallbackCard}>
+                <p>오늘의 추천 질문을 준비하지 못했어요. 아래에서 난이도를 골라 시작할 수 있어요.</p>
+              </div>
+            )}
+          </section>
+
           <section className={styles.difficultyHomeStage}>
             <div className={styles.difficultyHomeCardGrid}>
               {DIFFICULTY_OPTIONS.map((option) => {
@@ -3125,11 +3245,11 @@ export function AnswerLoop() {
 
         {renderIncompleteLoopResumeCard()}
 
-        <section className={styles.difficultyHomeStage}>
-          <div className={styles.promptSelectionCardGrid}>
-            {prompts.map((prompt, index) => {
-              const isTranslationVisible = Boolean(revealedTranslations[prompt.id]);
-              const recommendationReason = recommendationReasonByPromptId.get(prompt.id);
+          <section className={styles.difficultyHomeStage}>
+            <div className={styles.promptSelectionCardGrid}>
+              {prompts.map((prompt, index) => {
+                const isTranslationVisible = Boolean(revealedTranslations[prompt.id]);
+                const isFeaturedPrompt = prompt.id === featuredPromptId;
 
               return (
                 <article
@@ -3146,15 +3266,17 @@ export function AnswerLoop() {
                     }
                   }}
                 >
-                  <span className={styles.promptSelectionCardIndex}>
-                    {`QUESTION ${String(index + 1).padStart(2, "0")}`}
-                  </span>
+                  <div className={styles.promptSelectionCardTopRow}>
+                    <span className={styles.promptSelectionCardIndex}>
+                      {`QUESTION ${String(index + 1).padStart(2, "0")}`}
+                    </span>
+                    {isFeaturedPrompt ? (
+                      <span className={styles.promptSelectionFeaturedBadge}>오늘의 추천 질문</span>
+                    ) : null}
+                  </div>
 
                   <div className={styles.promptSelectionCardCopy}>
                     <strong>{prompt.questionEn}</strong>
-                    {recommendationReason ? (
-                      <small className={styles.promptSelectionReasonText}>{recommendationReason}</small>
-                    ) : null}
                     {isTranslationVisible ? (
                       <small className={styles.translationText}>{prompt.questionKo}</small>
                     ) : null}

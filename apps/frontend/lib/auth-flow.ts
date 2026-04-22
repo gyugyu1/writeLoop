@@ -1,8 +1,16 @@
 import type { HomeDraftSnapshot } from "./types";
+import { normalizeDailyDifficulty } from "./difficulty";
 
 const HOME_DRAFT_KEY = "writeloop_post_login_home_draft";
 
 export type HomeDraft = HomeDraftSnapshot;
+
+function normalizeHomeDraft(draft: HomeDraft): HomeDraft {
+  return {
+    ...draft,
+    selectedDifficulty: normalizeDailyDifficulty(draft.selectedDifficulty)
+  };
+}
 
 export function resolveReturnTo(returnTo: string | null | undefined): string {
   if (!returnTo || !returnTo.startsWith("/")) {
@@ -33,7 +41,7 @@ export function takeHomeDraftForLogin(): HomeDraft | null {
   window.sessionStorage.removeItem(HOME_DRAFT_KEY);
 
   try {
-    return JSON.parse(raw) as HomeDraft;
+    return normalizeHomeDraft(JSON.parse(raw) as HomeDraft);
   } catch {
     return null;
   }

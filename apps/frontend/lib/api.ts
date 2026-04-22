@@ -16,6 +16,7 @@ import type {
   AuthUser,
   DailyDifficulty,
   DailyPromptRecommendation,
+  FeaturedDailyPromptRecommendation,
   HistoryMonthStatus,
   PasswordResetAvailability,
   Feedback,
@@ -37,6 +38,7 @@ import type {
   WritingDraft,
   WritingDraftType
 } from "./types";
+import { normalizeDailyDifficulty } from "./difficulty";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
 
@@ -110,6 +112,62 @@ function normalizeFeedbackPayload<T extends { refinementExpressions?: unknown[] 
     ...feedback,
     refinementExpressions
   };
+}
+
+function normalizePromptItem(prompt: Prompt): Prompt {
+  return {
+    ...prompt,
+    difficulty: normalizeDailyDifficulty(prompt.difficulty)
+  };
+}
+
+function normalizeDailyPromptRecommendationPayload(
+  payload: DailyPromptRecommendation
+): DailyPromptRecommendation {
+  return {
+    ...payload,
+    difficulty: normalizeDailyDifficulty(payload.difficulty),
+    featured: payload.featured
+      ? {
+          ...payload.featured,
+          prompt: normalizePromptItem(payload.featured.prompt)
+        }
+      : payload.featured ?? null,
+    alternatives: (payload.alternatives ?? []).map((item) => ({
+      ...item,
+      prompt: normalizePromptItem(item.prompt)
+    })),
+    prompts: (payload.prompts ?? []).map((prompt) => normalizePromptItem(prompt))
+  };
+}
+
+function normalizeFeaturedDailyPromptRecommendationPayload(
+  payload: FeaturedDailyPromptRecommendation
+): FeaturedDailyPromptRecommendation {
+  return {
+    ...payload,
+    difficulty: normalizeDailyDifficulty(payload.difficulty),
+    featured: payload.featured
+      ? {
+          ...payload.featured,
+          prompt: normalizePromptItem(payload.featured.prompt)
+        }
+      : payload.featured ?? null
+  };
+}
+
+function normalizeWritingDraftPayload(payload: WritingDraft): WritingDraft {
+  const nextPayload = {
+    ...payload,
+    selectedDifficulty: normalizeDailyDifficulty(payload.selectedDifficulty)
+  };
+
+  return payload.feedback
+    ? {
+        ...nextPayload,
+        feedback: normalizeFeedbackPayload(payload.feedback)
+      }
+    : nextPayload;
 }
 
 function normalizeCoachUsageExpression(value: string) {
@@ -327,17 +385,22 @@ export async function getPrompts(): Promise<Prompt[]> {
   if (!response.ok) {
     throw new Error("Failed to fetch prompts");
   }
-  return response.json();
+  const payload = (await response.json()) as Prompt[];
+  return payload.map((prompt) => normalizePromptItem(prompt));
 }
 
 export async function getDailyPrompts(
   difficulty: DailyDifficulty,
-  guestId?: string
+  guestId?: string,
+  excludePromptIds: string[] = []
 ): Promise<DailyPromptRecommendation> {
   const query = new URLSearchParams({ difficulty });
   if (guestId) {
     query.set("guestId", guestId);
   }
+  excludePromptIds
+    .filter((promptId) => typeof promptId === "string" && promptId.trim())
+    .forEach((promptId) => query.append("excludePromptIds", promptId.trim()));
 
   const response = await fetch(`${API_BASE}/api/prompts/daily?${query.toString()}`, {
     cache: "no-store",
@@ -348,7 +411,32 @@ export async function getDailyPrompts(
     throw await parseApiError(response, "Failed to fetch daily prompts");
   }
 
-  return response.json();
+  return normalizeDailyPromptRecommendationPayload(
+    (await response.json()) as DailyPromptRecommendation
+  );
+}
+
+export async function getFeaturedDailyPrompt(
+  difficulty: DailyDifficulty,
+  guestId?: string
+): Promise<FeaturedDailyPromptRecommendation> {
+  const query = new URLSearchParams({ difficulty });
+  if (guestId) {
+    query.set("guestId", guestId);
+  }
+
+  const response = await fetch(`${API_BASE}/api/prompts/daily/featured?${query.toString()}`, {
+    cache: "no-store",
+    credentials: "include"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to fetch featured daily prompt");
+  }
+
+  return normalizeFeaturedDailyPromptRecommendationPayload(
+    (await response.json()) as FeaturedDailyPromptRecommendation
+  );
 }
 
 export async function trackDailyPromptClick(promptId: string, guestId?: string): Promise<void> {
@@ -827,13 +915,7 @@ export async function getWritingDraft(
     throw await parseApiError(response, "Failed to load writing draft");
   }
 
-  const payload = (await response.json()) as WritingDraft;
-  return payload.feedback
-    ? {
-        ...payload,
-        feedback: normalizeFeedbackPayload(payload.feedback)
-      }
-    : payload;
+  return normalizeWritingDraftPayload((await response.json()) as WritingDraft);
 }
 
 export async function saveWritingDraft(
@@ -853,13 +935,7 @@ export async function saveWritingDraft(
     throw await parseApiError(response, "Failed to save writing draft");
   }
 
-  const payload = (await response.json()) as WritingDraft;
-  return payload.feedback
-    ? {
-        ...payload,
-        feedback: normalizeFeedbackPayload(payload.feedback)
-      }
-    : payload;
+  return normalizeWritingDraftPayload((await response.json()) as WritingDraft);
 }
 
 export async function deleteWritingDraft(promptId: string, draftType: WritingDraftType): Promise<void> {

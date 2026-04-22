@@ -66,7 +66,7 @@ export default function PracticeFeedbackScreen() {
   const params = useLocalSearchParams<{ difficulty?: string; promptId?: string }>();
   const navigation = useNavigation();
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
-  const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "A";
+  const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "I";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
   const { currentUser } = useSession();
   const [feedbackState, setFeedbackState] = useState<PracticeFeedbackState | null>(() =>

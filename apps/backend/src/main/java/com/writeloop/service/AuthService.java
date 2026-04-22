@@ -3,9 +3,11 @@ package com.writeloop.service;
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
 import com.writeloop.dto.CompleteRegistrationRequestDto;
+import com.writeloop.dto.CompleteSocialRegistrationRequestDto;
 import com.writeloop.dto.DeleteAccountRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.PasswordResetAvailabilityDto;
+import com.writeloop.dto.PendingSocialRegistrationDto;
 import com.writeloop.dto.ResetPasswordRequestDto;
 import com.writeloop.dto.RegisterRequestDto;
 import com.writeloop.dto.ResendVerificationRequestDto;
@@ -26,10 +28,12 @@ import com.writeloop.persistence.PasswordResetTokenRepository;
 import com.writeloop.persistence.SavedExpressionRepository;
 import com.writeloop.persistence.UserEntity;
 import com.writeloop.persistence.UserRepository;
+import com.writeloop.service.PendingSocialRegistrationService.PendingSocialRegistrationSession;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -82,6 +86,7 @@ public class AuthService {
     private final RememberLoginService rememberLoginService;
     private final RefreshTokenService refreshTokenService;
     private final MobileSocialAuthCodeService mobileSocialAuthCodeService;
+    private final PendingSocialRegistrationService pendingSocialRegistrationService;
     private final NaverOAuthService naverOAuthService;
     private final GoogleOAuthService googleOAuthService;
     private final KakaoOAuthService kakaoOAuthService;
@@ -103,6 +108,8 @@ public class AuthService {
         if (userRepository.existsByEmail(email)) {
             throw new ApiException(HttpStatus.CONFLICT, "EMAIL_ALREADY_EXISTS", "이미 가입된 이메일이에요.");
         }
+
+        ensureDisplayNameAvailable(displayName, null);
 
         UserEntity user = userRepository.save(new UserEntity(
                 email,
@@ -170,6 +177,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "VERIFICATION_CODE_EXPIRED", "인증코드가 만료됐어요. 다시 받아 주세요.");
         }
 
+        ensureDisplayNameAvailable(displayName, user.getId());
         user.completeLocalRegistration(passwordEncoder.encode(password), displayName);
         user.markEmailVerified();
         userRepository.save(user);
@@ -375,6 +383,61 @@ public class AuthService {
         return toResponse(findUserEntity(userId));
     }
 
+    public PendingSocialRegistrationDto getPendingSocialRegistration(String token) {
+        PendingSocialRegistrationSession pending = pendingSocialRegistrationService.require(token);
+        return new PendingSocialRegistrationDto(
+                pending.provider(),
+                resolveSuggestedDisplayName(pending.providerDisplayName()),
+                normalizeReturnTo(pending.returnTo())
+        );
+    }
+
+    public AuthResponseDto completeSocialRegistration(
+            CompleteSocialRegistrationRequestDto request,
+            HttpSession session,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        PendingSocialRegistrationSession pending = pendingSocialRegistrationService.require(request == null ? null : request.token());
+        UserEntity user = completeSocialRegistration(request, pending);
+        completeLogin(user, session, httpRequest, httpResponse, pending.rememberMe());
+        return toResponse(user);
+    }
+
+    public UserEntity completeSocialRegistration(CompleteSocialRegistrationRequestDto request) {
+        return completeSocialRegistration(
+                request,
+                pendingSocialRegistrationService.require(request == null ? null : request.token())
+        );
+    }
+
+    private UserEntity completeSocialRegistration(
+            CompleteSocialRegistrationRequestDto request,
+            PendingSocialRegistrationSession pending
+    ) {
+        String token = request == null ? null : request.token();
+        String displayName = normalizeDisplayName(request == null ? null : request.displayName());
+        ensureDisplayNameAvailable(displayName, null);
+
+        UserEntity user;
+        try {
+            user = createSocialUser(
+                    pending.provider(),
+                    pending.providerUserId(),
+                    resolveSocialSignupEmail(pending),
+                    displayName
+            );
+        } catch (DataIntegrityViolationException exception) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "SOCIAL_REGISTRATION_CONFLICT",
+                    "이미 사용 중인 닉네임이거나 연결된 소셜 계정이에요."
+            );
+        }
+        pendingSocialRegistrationService.delete(token);
+        return user;
+    }
+
     public AuthResponseDto updateProfile(
             UpdateProfileRequestDto request,
             HttpServletRequest httpRequest,
@@ -386,7 +449,9 @@ public class AuthService {
         }
 
         UserEntity user = findUserEntity(userId);
-        user.updateDisplayName(normalizeDisplayName(request.displayName()));
+        String displayName = normalizeDisplayName(request.displayName());
+        ensureDisplayNameAvailable(displayName, user.getId());
+        user.updateDisplayName(displayName);
 
         boolean wantsPasswordChange = request.newPassword() != null && !request.newPassword().isBlank();
         if (wantsPasswordChange) {
@@ -430,7 +495,9 @@ public class AuthService {
         }
 
         UserEntity user = findUserEntity(userId);
-        user.updateDisplayName(normalizeDisplayName(request.displayName()));
+        String displayName = normalizeDisplayName(request.displayName());
+        ensureDisplayNameAvailable(displayName, user.getId());
+        user.updateDisplayName(displayName);
 
         boolean wantsPasswordChange = request.newPassword() != null && !request.newPassword().isBlank();
         if (wantsPasswordChange) {
@@ -632,8 +699,18 @@ public class AuthService {
         }
 
         NaverOAuthService.NaverUserProfile profile = naverOAuthService.fetchUserProfile(code, state);
-        UserEntity user = upsertSocialUser("NAVER", profile.providerUserId(), profile.email(), profile.displayName());
-        finishSocialLogin(user, appRedirect, returnTo, rememberMe, session, request, response);
+        finishSocialLogin(
+                "NAVER",
+                profile.providerUserId(),
+                profile.email(),
+                profile.displayName(),
+                appRedirect,
+                returnTo,
+                rememberMe,
+                session,
+                request,
+                response
+        );
     }
 
     public void startGoogleLogin(
@@ -678,8 +755,18 @@ public class AuthService {
         }
 
         GoogleOAuthService.GoogleUserProfile profile = googleOAuthService.fetchUserProfile(code);
-        UserEntity user = upsertSocialUser("GOOGLE", profile.providerUserId(), profile.email(), profile.displayName());
-        finishSocialLogin(user, appRedirect, returnTo, rememberMe, session, request, response);
+        finishSocialLogin(
+                "GOOGLE",
+                profile.providerUserId(),
+                profile.email(),
+                profile.displayName(),
+                appRedirect,
+                returnTo,
+                rememberMe,
+                session,
+                request,
+                response
+        );
     }
 
     public void startKakaoLogin(
@@ -724,12 +811,25 @@ public class AuthService {
         }
 
         KakaoOAuthService.KakaoUserProfile profile = kakaoOAuthService.fetchUserProfile(code);
-        UserEntity user = upsertSocialUser("KAKAO", profile.providerUserId(), profile.email(), profile.displayName());
-        finishSocialLogin(user, appRedirect, returnTo, rememberMe, session, request, response);
+        finishSocialLogin(
+                "KAKAO",
+                profile.providerUserId(),
+                profile.email(),
+                profile.displayName(),
+                appRedirect,
+                returnTo,
+                rememberMe,
+                session,
+                request,
+                response
+        );
     }
 
     private void finishSocialLogin(
-            UserEntity user,
+            String provider,
+            String providerUserId,
+            String email,
+            String providerDisplayName,
             String appRedirect,
             String returnTo,
             boolean rememberMe,
@@ -737,15 +837,36 @@ public class AuthService {
             HttpServletRequest request,
             HttpServletResponse response
     ) throws IOException {
-        if (appRedirect != null && !appRedirect.isBlank()) {
-            recordSuccessfulLogin(user);
-            String mobileAuthCode = mobileSocialAuthCodeService.issue(user.getId());
-            response.sendRedirect(buildMobileSocialRedirectUri(appRedirect, mobileAuthCode));
+        Optional<UserEntity> existingUser = findSocialUser(provider, providerUserId);
+        if (existingUser.isPresent()) {
+            UserEntity user = updateSocialUser(existingUser.get(), provider, providerUserId);
+            if (appRedirect != null && !appRedirect.isBlank()) {
+                recordSuccessfulLogin(user);
+                String mobileAuthCode = mobileSocialAuthCodeService.issue(user.getId());
+                response.sendRedirect(buildMobileSocialRedirectUri(appRedirect, mobileAuthCode));
+                return;
+            }
+
+            completeLogin(user, session, request, response, rememberMe);
+            response.sendRedirect(frontendBaseUrl + normalizeReturnTo(returnTo));
             return;
         }
 
-        completeLogin(user, session, request, response, rememberMe);
-        response.sendRedirect(frontendBaseUrl + normalizeReturnTo(returnTo));
+        String signupToken = pendingSocialRegistrationService.issue(new PendingSocialRegistrationSession(
+                provider,
+                providerUserId,
+                email,
+                providerDisplayName,
+                normalizeReturnTo(returnTo),
+                rememberMe
+        ));
+
+        if (appRedirect != null && !appRedirect.isBlank()) {
+            response.sendRedirect(buildMobileSocialSignupRedirectUri(appRedirect, signupToken, provider));
+            return;
+        }
+
+        response.sendRedirect(buildWebSocialSignupRedirectUri(signupToken, returnTo));
     }
 
     private String buildMobileSocialRedirectUri(String appRedirect, String code) {
@@ -756,30 +877,38 @@ public class AuthService {
                 .toUriString();
     }
 
-    private UserEntity upsertSocialUser(
-            String provider,
-            String providerUserId,
-            String email,
-            String displayName
-    ) {
-        String normalizedEmail = normalizeSocialEmail(provider, providerUserId);
+    private String buildMobileSocialSignupRedirectUri(String appRedirect, String token, String provider) {
+        return UriComponentsBuilder.fromUriString(appRedirect)
+                .replaceQueryParam("code")
+                .replaceQueryParam("signupToken")
+                .replaceQueryParam("provider")
+                .queryParam("signupToken", token)
+                .queryParam("provider", provider.toLowerCase(Locale.ROOT))
+                .build(true)
+                .toUriString();
+    }
 
-        return userRepository.findBySocialProviderAndSocialProviderUserId(provider, providerUserId)
-                .map(existing -> updateSocialUser(existing, provider, providerUserId, displayName))
-                .orElseGet(() -> createSocialUser(provider, providerUserId, normalizedEmail, displayName));
+    private String buildWebSocialSignupRedirectUri(String token, String returnTo) {
+        return UriComponentsBuilder.fromUriString(frontendBaseUrl + "/social-signup")
+                .queryParam("token", token)
+                .queryParam("returnTo", normalizeReturnTo(returnTo))
+                .build(true)
+                .toUriString();
+    }
+
+    private Optional<UserEntity> findSocialUser(String provider, String providerUserId) {
+        return userRepository.findBySocialProviderAndSocialProviderUserId(provider, providerUserId);
     }
 
     private UserEntity updateSocialUser(
             UserEntity existing,
             String provider,
-            String providerUserId,
-            String displayName
+            String providerUserId
     ) {
         existing.linkSocialAccount(provider, providerUserId);
         if (!existing.isEmailVerified()) {
             existing.markEmailVerified();
         }
-        existing.updateDisplayName(displayName);
         return userRepository.save(existing);
     }
 
@@ -823,6 +952,20 @@ public class AuthService {
         }
 
         return user;
+    }
+
+    private String resolveSocialSignupEmail(PendingSocialRegistrationSession pending) {
+        if (pending != null && pending.email() != null && !pending.email().isBlank()) {
+            String normalizedEmail = normalizeEmail(pending.email());
+            if (!userRepository.existsByEmail(normalizedEmail)) {
+                return normalizedEmail;
+            }
+        }
+
+        return normalizeSocialEmail(
+                pending == null ? null : pending.provider(),
+                pending == null ? null : pending.providerUserId()
+        );
     }
 
     private String normalizeSocialEmail(String provider, String providerUserId) {
@@ -920,6 +1063,28 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "표시 이름은 2자 이상이어야 해요.");
         }
         return trimmed;
+    }
+
+    private void ensureDisplayNameAvailable(String displayName, Long currentUserId) {
+        boolean exists = currentUserId == null
+                ? userRepository.existsByDisplayNameIgnoreCase(displayName)
+                : userRepository.existsByDisplayNameIgnoreCaseAndIdNot(displayName, currentUserId);
+
+        if (exists) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "DISPLAY_NAME_ALREADY_EXISTS",
+                    "이미 사용 중인 닉네임이에요."
+            );
+        }
+    }
+
+    private String resolveSuggestedDisplayName(String providerDisplayName) {
+        if (providerDisplayName == null || providerDisplayName.isBlank()) {
+            return "";
+        }
+
+        return providerDisplayName.trim();
     }
 
     private String normalizeVerificationCode(String code) {

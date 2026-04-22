@@ -3,9 +3,11 @@ package com.writeloop.controller;
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
 import com.writeloop.dto.CompleteRegistrationRequestDto;
+import com.writeloop.dto.CompleteSocialRegistrationRequestDto;
 import com.writeloop.dto.DeleteAccountRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.PasswordResetAvailabilityDto;
+import com.writeloop.dto.PendingSocialRegistrationDto;
 import com.writeloop.dto.ResetPasswordRequestDto;
 import com.writeloop.dto.RegisterRequestDto;
 import com.writeloop.dto.ResendVerificationRequestDto;
@@ -96,6 +98,14 @@ public class AuthController {
         return tokenAuthService.exchangeSocialCode(request);
     }
 
+    @PostMapping("/token/social/complete")
+    @ResponseStatus(HttpStatus.OK)
+    public TokenAuthResponseDto completeSocialTokenRegistration(
+            @RequestBody CompleteSocialRegistrationRequestDto request
+    ) {
+        return tokenAuthService.completeSocialRegistration(request);
+    }
+
     @PostMapping("/token/logout")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void tokenLogout(@RequestBody(required = false) TokenLogoutRequestDto request) {
@@ -111,6 +121,25 @@ public class AuthController {
             HttpServletResponse httpResponse
     ) {
         return authService.verifyEmail(request, session, httpRequest, httpResponse);
+    }
+
+    @GetMapping("/social/pending")
+    @ResponseStatus(HttpStatus.OK)
+    public PendingSocialRegistrationDto getPendingSocialRegistration(
+            @RequestParam("token") String token
+    ) {
+        return authService.getPendingSocialRegistration(token);
+    }
+
+    @PostMapping("/social/complete")
+    @ResponseStatus(HttpStatus.OK)
+    public AuthResponseDto completeSocialRegistration(
+            @RequestBody CompleteSocialRegistrationRequestDto request,
+            HttpSession session,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        return authService.completeSocialRegistration(request, session, httpRequest, httpResponse);
     }
 
     @PostMapping("/resend-verification")

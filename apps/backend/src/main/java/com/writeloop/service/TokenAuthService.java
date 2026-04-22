@@ -1,6 +1,7 @@
 package com.writeloop.service;
 
 import com.writeloop.dto.AuthResponseDto;
+import com.writeloop.dto.CompleteSocialRegistrationRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.SocialTokenExchangeRequestDto;
 import com.writeloop.dto.TokenAuthResponseDto;
@@ -40,6 +41,12 @@ public class TokenAuthService {
     public TokenAuthResponseDto exchangeSocialCode(SocialTokenExchangeRequestDto request) {
         Long userId = mobileSocialAuthCodeService.consume(request == null ? null : request.code());
         UserEntity user = authService.findUserEntity(userId);
+        return issueTokens(user);
+    }
+
+    public TokenAuthResponseDto completeSocialRegistration(CompleteSocialRegistrationRequestDto request) {
+        UserEntity user = authService.completeSocialRegistration(request);
+        authService.recordSuccessfulLogin(user);
         return issueTokens(user);
     }
 

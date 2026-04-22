@@ -2,6 +2,7 @@ package com.writeloop.service;
 
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
+import com.writeloop.dto.CompleteSocialRegistrationRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.PasswordResetAvailabilityDto;
 import com.writeloop.dto.SendPasswordResetCodeRequestDto;
@@ -77,6 +78,9 @@ class AuthServiceTest {
     private MobileSocialAuthCodeService mobileSocialAuthCodeService;
 
     @Mock
+    private PendingSocialRegistrationService pendingSocialRegistrationService;
+
+    @Mock
     private NaverOAuthService naverOAuthService;
 
     @Mock
@@ -111,6 +115,7 @@ class AuthServiceTest {
                 rememberLoginService,
                 refreshTokenService,
                 mobileSocialAuthCodeService,
+                pendingSocialRegistrationService,
                 naverOAuthService,
                 googleOAuthService,
                 kakaoOAuthService
@@ -182,5 +187,26 @@ class AuthServiceTest {
                 .isInstanceOf(ApiException.class)
                 .extracting("code")
                 .isEqualTo("INVALID_PASSWORD_RESET_CODE");
+    }
+
+    @Test
+    void completeSocialRegistration_rejects_duplicate_display_name() {
+        when(pendingSocialRegistrationService.require("signup-token"))
+                .thenReturn(new PendingSocialRegistrationService.PendingSocialRegistrationSession(
+                        "google",
+                        "provider-user-1",
+                        "social@example.com",
+                        "Writer",
+                        "/",
+                        false
+                ));
+        when(userRepository.existsByDisplayNameIgnoreCase("Writer")).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.completeSocialRegistration(
+                new CompleteSocialRegistrationRequestDto("signup-token", "Writer")
+        ))
+                .isInstanceOf(ApiException.class)
+                .extracting("code")
+                .isEqualTo("DISPLAY_NAME_ALREADY_EXISTS");
     }
 }

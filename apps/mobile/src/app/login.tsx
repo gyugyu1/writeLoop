@@ -157,9 +157,17 @@ export default function LoginScreen() {
       setIsSubmitting(true);
       setActiveAction(provider);
       setError("");
-      const user = await signInWithSocial(provider);
-      if (user) {
+      const result = await signInWithSocial(provider);
+      if (result.status === "logged_in") {
         router.replace(postLoginHref);
+        return;
+      }
+
+      if (result.status === "signup_required") {
+        const nextHref = redirectTo
+          ? `/social-signup?token=${encodeURIComponent(result.token)}&provider=${encodeURIComponent(result.provider ?? provider)}&redirectTo=${encodeURIComponent(redirectTo)}`
+          : `/social-signup?token=${encodeURIComponent(result.token)}&provider=${encodeURIComponent(result.provider ?? provider)}`;
+        router.push(nextHref as Href);
       }
     } catch (caughtError) {
       setError(

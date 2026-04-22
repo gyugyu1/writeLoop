@@ -13,7 +13,7 @@ import { getCurrentUser, login, loginWithSocial, logout } from "./api";
 import { clearIncompleteLoop } from "./incomplete-loop";
 import { clearPracticeFeedbackState } from "./practice-feedback-state";
 import { setActiveStorageOwnerScope } from "./storage-owner";
-import type { AuthUser, LoginRequest, SocialProvider } from "./types";
+import type { AuthUser, LoginRequest, SocialLoginResult, SocialProvider } from "./types";
 
 type SessionContextValue = {
   currentUser: AuthUser | null | undefined;
@@ -21,7 +21,7 @@ type SessionContextValue = {
   refreshSession: () => Promise<AuthUser | null>;
   setSessionUser: (user: AuthUser | null) => void;
   signIn: (request: LoginRequest) => Promise<AuthUser>;
-  signInWithSocial: (provider: SocialProvider) => Promise<AuthUser | null>;
+  signInWithSocial: (provider: SocialProvider) => Promise<SocialLoginResult>;
   signOut: () => Promise<void>;
 };
 
@@ -113,12 +113,12 @@ export function SessionProvider({ children }: PropsWithChildren) {
 
   const signInWithSocial = useCallback(
     async (provider: SocialProvider) => {
-      const user = await loginWithSocial(provider);
-      if (user) {
+      const result = await loginWithSocial(provider);
+      if (result.status === "logged_in") {
         invalidateRefreshRequests();
-        applySessionUser(user);
+        applySessionUser(result.user);
       }
-      return user;
+      return result;
     },
     [applySessionUser, invalidateRefreshRequests]
   );

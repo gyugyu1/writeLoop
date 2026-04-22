@@ -14,6 +14,7 @@ import type {
   AuthUser,
   CoachHelpRequest,
   CoachHelpResponse,
+  CompleteSocialRegistrationRequest,
   CompleteRegistrationRequest,
   CommonMistake,
   DailyDifficulty,
@@ -24,12 +25,14 @@ import type {
   FeedbackRequest,
   HistorySession,
   LoginRequest,
+  PendingSocialRegistration,
   PromptHint,
   Prompt,
   SavedExpression,
   SaveExpressionRequest,
   SaveWritingDraftRequest,
   SendRegistrationCodeRequest,
+  SocialLoginResult,
   SocialProvider,
   TodayWritingStatus,
   TokenAuthResponse,
@@ -466,7 +469,7 @@ export async function login(request: LoginRequest): Promise<AuthUser> {
   return payload.user;
 }
 
-export async function loginWithSocial(provider: SocialProvider): Promise<AuthUser | null> {
+export async function loginWithSocial(provider: SocialProvider): Promise<SocialLoginResult> {
   const redirectUri = Linking.createURL("auth/callback");
   const socialLoginUrl = `${apiBaseUrl}/api/auth/social/${provider}/start?${new URLSearchParams({
     appRedirect: redirectUri
@@ -474,11 +477,13 @@ export async function loginWithSocial(provider: SocialProvider): Promise<AuthUse
 
   const authResult = await WebBrowser.openAuthSessionAsync(socialLoginUrl, redirectUri);
   if (authResult.type !== "success") {
-    return null;
+    return { status: "cancelled" };
   }
 
   const parsedUrl = Linking.parse(authResult.url);
   const exchangeCode = getStringQueryParam(parsedUrl.queryParams?.code);
+  const signupToken = getStringQueryParam(parsedUrl.queryParams?.signupToken);
+  const resolvedProvider = getStringQueryParam(parsedUrl.queryParams?.provider) as SocialProvider | null;
   const errorCode = getStringQueryParam(parsedUrl.queryParams?.error);
   const errorMessage = getStringQueryParam(parsedUrl.queryParams?.message);
 
@@ -486,11 +491,60 @@ export async function loginWithSocial(provider: SocialProvider): Promise<AuthUse
     throw createApiError(errorMessage ?? "소셜 로그인을 완료하지 못했어요.", 400, errorCode);
   }
 
+  if (signupToken) {
+    return {
+      status: "signup_required",
+      token: signupToken,
+      provider: resolvedProvider
+    };
+  }
+
   if (!exchangeCode) {
     throw createApiError("소셜 로그인 응답을 확인하지 못했어요.", 400, "SOCIAL_LOGIN_CODE_MISSING");
   }
 
-  return exchangeSocialCode(exchangeCode);
+  const user = await exchangeSocialCode(exchangeCode);
+  return {
+    status: "logged_in",
+    user
+  };
+}
+
+export async function getPendingSocialRegistration(
+  token: string
+): Promise<PendingSocialRegistration> {
+  const query = new URLSearchParams({
+    token: token.trim()
+  });
+  const response = await fetch(`${apiBaseUrl}/api/auth/social/pending?${query.toString()}`, {
+    method: "GET"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "?뚯뀥 媛???뺣낫瑜?遺덈윭?ㅼ? 紐삵뻽?댁슂.");
+  }
+
+  return (await response.json()) as PendingSocialRegistration;
+}
+
+export async function completeSocialRegistration(
+  request: CompleteSocialRegistrationRequest
+): Promise<AuthUser> {
+  const response = await fetch(`${apiBaseUrl}/api/auth/token/social/complete`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "?뚯뀥 媛?낆쓣 ?꾨즺?섏? 紐삵뻽?댁슂.");
+  }
+
+  const payload = (await response.json()) as TokenAuthResponse;
+  await writeTokenSession(payload);
+  return payload.user;
 }
 
 export async function logout(): Promise<void> {

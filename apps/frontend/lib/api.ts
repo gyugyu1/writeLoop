@@ -12,6 +12,7 @@ import type {
   CoachUsageCheckResponse,
   CommonMistake,
   CompleteRegistrationRequest,
+  CompleteSocialRegistrationRequest,
   DeleteAccountRequest,
   AuthUser,
   DailyDifficulty,
@@ -19,6 +20,7 @@ import type {
   FeaturedDailyPromptRecommendation,
   HistoryMonthStatus,
   PasswordResetAvailability,
+  PendingSocialRegistration,
   Feedback,
   FeedbackRequest,
   HistorySession,
@@ -705,6 +707,40 @@ export async function completeRegistration(request: CompleteRegistrationRequest)
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to complete registration");
+  }
+
+  return response.json();
+}
+
+export async function getPendingSocialRegistration(token: string): Promise<PendingSocialRegistration> {
+  const query = new URLSearchParams({ token: token.trim() });
+  const response = await fetch(`${API_BASE}/api/auth/social/pending?${query.toString()}`, {
+    method: "GET",
+    credentials: "include",
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to load social registration");
+  }
+
+  return response.json();
+}
+
+export async function completeSocialRegistration(
+  request: CompleteSocialRegistrationRequest
+): Promise<AuthUser> {
+  const response = await fetch(`${API_BASE}/api/auth/social/complete`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to complete social registration");
   }
 
   return response.json();

@@ -119,6 +119,31 @@ export interface AuthUser {
   admin: boolean;
 }
 
+export interface PendingSocialRegistration {
+  provider: string;
+  suggestedDisplayName: string;
+  returnTo: string;
+}
+
+export interface CompleteSocialRegistrationRequest {
+  token: string;
+  displayName: string;
+}
+
+export type SocialLoginResult =
+  | {
+      status: "logged_in";
+      user: AuthUser;
+    }
+  | {
+      status: "signup_required";
+      token: string;
+      provider?: SocialProvider | null;
+    }
+  | {
+      status: "cancelled";
+    };
+
 export interface AdminPromptHint {
   id: string;
   promptId: string;

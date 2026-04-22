@@ -525,6 +525,12 @@ export interface AuthNotice {
   message: string;
 }
 
+export interface PendingSocialRegistration {
+  provider: string;
+  suggestedDisplayName: string;
+  returnTo: string;
+}
+
 export interface LoginRequest {
   email: string;
   password: string;
@@ -553,6 +559,11 @@ export interface CompleteRegistrationRequest {
   email: string;
   code: string;
   password: string;
+  displayName: string;
+}
+
+export interface CompleteSocialRegistrationRequest {
+  token: string;
   displayName: string;
 }
 

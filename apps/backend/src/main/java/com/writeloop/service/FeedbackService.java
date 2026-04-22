@@ -94,6 +94,9 @@ public class FeedbackService {
             "\\b(?:because|since|so|which|while|although)\\b",
             Pattern.CASE_INSENSITIVE
     );
+    private static final Pattern REFINEMENT_SENTENCE_SPLIT_PATTERN = Pattern.compile(
+            "(?<=[.!?\\u3002\\uFF01\\uFF1F])\\s+"
+    );
     private static final Set<String> REFINEMENT_OVERLAP_STOP_TOKENS = Set.of(
             "a", "an", "and", "are", "as", "at", "be", "because", "by", "can", "for", "from",
             "i", "if", "in", "into", "is", "it", "its", "my", "of", "on", "one", "or", "our",
@@ -4115,7 +4118,7 @@ public class FeedbackService {
             return List.of();
         }
 
-        return Arrays.stream(normalized.split("(?<=[.!??귨펯竊?)\\s+"))
+        return Arrays.stream(REFINEMENT_SENTENCE_SPLIT_PATTERN.split(normalized))
                 .map(this::normalizeNullable)
                 .filter(sentence -> sentence != null && !sentence.isBlank())
                 .toList();
@@ -4409,8 +4412,11 @@ public class FeedbackService {
         String normalized = meaningKo == null ? "" : meaningKo.trim().replaceAll("\\s+", " ");
         return normalized.equals("문장에 넣어 쓸 수 있는 표현")
                 || normalized.equals("문장을 조금 더 자연스럽게 만들 때 쓰는 표현")
+                || normalized.equals("다음 답변에서 사용하기 좋은 표현")
                 || (normalized.contains("문장에 넣어") && normalized.contains("표현"))
-                || (normalized.contains("자연스럽게") && normalized.contains("표현"));
+                || (normalized.contains("자연스럽게") && normalized.contains("표현"))
+                || (normalized.contains("다음 답변에서") && normalized.contains("표현"))
+                || (normalized.contains("사용하기 좋은") && normalized.contains("표현"));
     }
     private String resolveRefinementMeaning(
             String candidate,

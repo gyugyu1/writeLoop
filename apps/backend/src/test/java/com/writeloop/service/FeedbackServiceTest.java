@@ -3257,4 +3257,23 @@ class FeedbackServiceTest {
         assertThat(expression.exampleKo()).isEqualTo("???蹂댄넻 ?먯떖 ?앹궗 ?꾩뿉 ?ъ뼱??");
         assertThat(expression.exampleSource()).isEqualTo(RefinementExampleSource.EXTRACTED);
     }
+
+    @Test
+    void splitRefinementSentences_splits_with_ascii_and_cjk_sentence_punctuation() {
+        @SuppressWarnings("unchecked")
+        List<String> sentences = (List<String>) ReflectionTestUtils.invokeMethod(
+                feedbackService,
+                "splitRefinementSentences",
+                "I usually take a nap after lunch. It helps me recharge for the afternoon. "
+                        + "\uC77C\uC694\uC77C \uC624\uD6C4\uC5D0\uB294 \uBCF4\uD1B5 \uB0AE\uC7A0\uC744 \uC790\uC694\u3002 "
+                        + "\uADF8\uB7EC\uBA74 \uC624\uD6C4\uB97C \uB354 \uC798 \uBCF4\uB0BC \uC218 \uC788\uC5B4\uC694\uFF01"
+        );
+
+        assertThat(sentences).containsExactly(
+                "I usually take a nap after lunch.",
+                "It helps me recharge for the afternoon.",
+                "\uC77C\uC694\uC77C \uC624\uD6C4\uC5D0\uB294 \uBCF4\uD1B5 \uB0AE\uC7A0\uC744 \uC790\uC694\u3002",
+                "\uADF8\uB7EC\uBA74 \uC624\uD6C4\uB97C \uB354 \uC798 \uBCF4\uB0BC \uC218 \uC788\uC5B4\uC694\uFF01"
+        );
+    }
 }

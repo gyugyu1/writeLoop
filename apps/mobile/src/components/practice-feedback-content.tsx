@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import { SymbolView } from "expo-symbols";
 import {
   ActivityIndicator,
@@ -724,6 +724,187 @@ function buildRewriteIdeas(feedback: Feedback): RewriteIdeaCard[] {
   return merged;
 }
 
+function shouldRenderRewriteIdeaExample(idea: RewriteIdeaCard) {
+  const exampleEn = trimText(idea.exampleEn);
+  if (!exampleEn || !looksLikeEnglishText(exampleEn)) {
+    return false;
+  }
+
+  return normalizeRewriteIdeaAnchor(exampleEn) !== normalizeRewriteIdeaAnchor(idea.english);
+}
+
+type RewriteIdeaHighlightToken = {
+  normalized: string;
+  start: number;
+  end: number;
+};
+
+type RewriteIdeaHighlightRange = {
+  start: number;
+  end: number;
+};
+
+function tokenizeRewriteIdeaHighlightText(value: string): RewriteIdeaHighlightToken[] {
+  const tokens: RewriteIdeaHighlightToken[] = [];
+  const tokenPattern = /[A-Za-z]+(?:'[A-Za-z]+)?/g;
+
+  for (const match of value.matchAll(tokenPattern)) {
+    const token = match[0];
+    const start = match.index ?? 0;
+    tokens.push({
+      normalized: token.toLowerCase(),
+      start,
+      end: start + token.length
+    });
+  }
+
+  return tokens;
+}
+
+function areRewriteIdeaHighlightTokensCompatible(queryToken: string, exampleToken: string) {
+  if (queryToken === exampleToken) {
+    return true;
+  }
+
+  const [shorterToken, longerToken] =
+    queryToken.length <= exampleToken.length
+      ? [queryToken, exampleToken]
+      : [exampleToken, queryToken];
+
+  if (shorterToken.length >= 4 && longerToken.startsWith(shorterToken)) {
+    const suffix = longerToken.slice(shorterToken.length);
+    if (["s", "es", "ed", "d", "ing", "ly", "er", "est"].includes(suffix)) {
+      return true;
+    }
+  }
+
+  if (shorterToken.length >= 3) {
+    if (shorterToken.endsWith("y") && longerToken === `${shorterToken.slice(0, -1)}ies`) {
+      return true;
+    }
+
+    if (shorterToken.endsWith("e") && longerToken === `${shorterToken}d`) {
+      return true;
+    }
+
+    if (shorterToken.endsWith("e") && longerToken === `${shorterToken.slice(0, -1)}ing`) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function resolveRewriteIdeaHighlightRange(
+  exampleEn: string,
+  expression: string
+): RewriteIdeaHighlightRange | null {
+  const example = trimText(exampleEn);
+  const query = stripRewriteSuggestionTerminalPunctuation(trimText(expression));
+
+  if (!example || !query) {
+    return null;
+  }
+
+  const lowerExample = example.toLowerCase();
+  const lowerQuery = query.toLowerCase();
+  const directMatchIndex = lowerExample.indexOf(lowerQuery);
+  if (directMatchIndex >= 0) {
+    return {
+      start: directMatchIndex,
+      end: directMatchIndex + query.length
+    };
+  }
+
+  const exampleTokens = tokenizeRewriteIdeaHighlightText(example);
+  const queryTokens = tokenizeRewriteIdeaHighlightText(query);
+
+  if (exampleTokens.length === 0 || queryTokens.length === 0) {
+    return null;
+  }
+
+  let bestRange: RewriteIdeaHighlightRange | null = null;
+  let bestLength = 0;
+  let bestMeaningfulTokenCount = 0;
+
+  for (let queryStart = 0; queryStart < queryTokens.length; queryStart += 1) {
+    for (let exampleStart = 0; exampleStart < exampleTokens.length; exampleStart += 1) {
+      let offset = 0;
+      let meaningfulTokenCount = 0;
+
+      while (
+        queryStart + offset < queryTokens.length &&
+        exampleStart + offset < exampleTokens.length &&
+        areRewriteIdeaHighlightTokensCompatible(
+          queryTokens[queryStart + offset].normalized,
+          exampleTokens[exampleStart + offset].normalized
+        )
+      ) {
+        const normalizedToken = queryTokens[queryStart + offset].normalized;
+        if (!REWRITE_OVERLAP_STOP_WORDS.has(normalizedToken)) {
+          meaningfulTokenCount += 1;
+        }
+
+        offset += 1;
+
+        const isMeaningfulSpan =
+          meaningfulTokenCount >= 2 ||
+          (offset === 1 && !REWRITE_OVERLAP_STOP_WORDS.has(normalizedToken));
+
+        if (!isMeaningfulSpan) {
+          continue;
+        }
+
+        const shouldReplaceBestRange =
+          offset > bestLength ||
+          (offset === bestLength && meaningfulTokenCount > bestMeaningfulTokenCount);
+
+        if (shouldReplaceBestRange) {
+          const firstExampleToken = exampleTokens[exampleStart];
+          const lastExampleToken = exampleTokens[exampleStart + offset - 1];
+          bestRange = {
+            start: firstExampleToken.start,
+            end: lastExampleToken.end
+          };
+          bestLength = offset;
+          bestMeaningfulTokenCount = meaningfulTokenCount;
+        }
+      }
+    }
+  }
+
+  return bestRange;
+}
+
+function renderHighlightedRewriteIdeaExample(exampleEn: string, expression: string) {
+  const example = trimText(exampleEn);
+  const highlightRange = resolveRewriteIdeaHighlightRange(exampleEn, expression);
+
+  if (!example || !highlightRange) {
+    return example;
+  }
+
+  const nodes: ReactNode[] = [];
+  if (highlightRange.start > 0) {
+    nodes.push(example.slice(0, highlightRange.start));
+  }
+
+  nodes.push(
+    <Text
+      key={`${highlightRange.start}-${highlightRange.end}`}
+      style={styles.rewriteSuggestionExampleHighlight}
+    >
+      {example.slice(highlightRange.start, highlightRange.end)}
+    </Text>
+  );
+
+  if (highlightRange.end < example.length) {
+    nodes.push(example.slice(highlightRange.end));
+  }
+
+  return nodes;
+}
+
 function canSaveRewriteIdea(card: RewriteIdeaCard) {
   return !card.hasSwapPair && Boolean(trimText(card.english));
 }
@@ -1281,6 +1462,11 @@ export function PracticeFeedbackContent({
                     {idea.korean ? (
                       <Text style={styles.rewriteSuggestionKorean}>{idea.korean}</Text>
                     ) : null}
+                    {shouldRenderRewriteIdeaExample(idea) ? (
+                      <Text style={styles.rewriteSuggestionExample}>
+                        {renderHighlightedRewriteIdeaExample(idea.exampleEn, idea.english)}
+                      </Text>
+                    ) : null}
                     {idea.note ? (
                       <Text style={styles.rewriteSuggestionNote}>{idea.note}</Text>
                     ) : null}
@@ -1665,6 +1851,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
     color: "#7A6247"
+  },
+  rewriteSuggestionExample: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: "#4F4337"
+  },
+  rewriteSuggestionExampleHighlight: {
+    fontWeight: "900",
+    color: "#2D261E"
   },
   rewriteSuggestionNote: {
     fontSize: 13,

@@ -2,6 +2,7 @@ package com.writeloop.service;
 
 import com.writeloop.dto.DailyDifficultyDto;
 import com.writeloop.dto.DailyPromptRecommendationDto;
+import com.writeloop.dto.FeaturedDailyPromptDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.persistence.PromptEntity;
@@ -58,7 +59,24 @@ public class PromptService {
             Long currentUserId,
             String guestId
     ) {
-        return todayQuestionRecommendationService.recommend(difficulty, currentUserId, guestId);
+        return recommendDailyPrompts(difficulty, currentUserId, guestId, List.of());
+    }
+
+    public DailyPromptRecommendationDto recommendDailyPrompts(
+            DailyDifficultyDto difficulty,
+            Long currentUserId,
+            String guestId,
+            List<String> excludePromptIds
+    ) {
+        return todayQuestionRecommendationService.recommend(difficulty, currentUserId, guestId, excludePromptIds);
+    }
+
+    public FeaturedDailyPromptDto recommendFeaturedDailyPrompt(
+            DailyDifficultyDto difficulty,
+            Long currentUserId,
+            String guestId
+    ) {
+        return todayQuestionRecommendationService.recommendFeatured(difficulty, currentUserId, guestId);
     }
 
     public void recordDailyPromptClick(String promptId, Long currentUserId, String guestId) {

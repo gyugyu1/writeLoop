@@ -14,10 +14,13 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -48,7 +51,9 @@ public class AdminPromptRecommendationMetricsService {
             );
         }
 
-        List<PromptRecommendationExposureEntity> exposures = loadExposures(startDate, endDate, difficultyFilter);
+        List<PromptRecommendationExposureEntity> exposures = normalizeExposures(
+                loadExposures(startDate, endDate, difficultyFilter)
+        );
         Map<String, PromptEntity> promptsById = loadPromptsById(exposures);
 
         Map<AggregationKey, AggregationBucket> buckets = new LinkedHashMap<>();
@@ -109,6 +114,42 @@ public class AdminPromptRecommendationMetricsService {
                 );
     }
 
+    private List<PromptRecommendationExposureEntity> normalizeExposures(
+            List<PromptRecommendationExposureEntity> exposures
+    ) {
+        if (exposures.isEmpty()) {
+            return List.of();
+        }
+
+        List<PromptRecommendationExposureEntity> ordered = new ArrayList<>(exposures);
+        ordered.sort(Comparator
+                .comparing(PromptRecommendationExposureEntity::getRecommendedDate)
+                .thenComparing(
+                        PromptRecommendationExposureEntity::getShownAt,
+                        Comparator.nullsLast(Comparator.naturalOrder())
+                )
+                .thenComparing(PromptRecommendationExposureEntity::getId, Comparator.nullsLast(Comparator.naturalOrder())));
+
+        Map<ExposureIdentityKey, PromptRecommendationExposureEntity> canonicalByKey = new LinkedHashMap<>();
+        for (PromptRecommendationExposureEntity exposure : ordered) {
+            ExposureIdentityKey key = new ExposureIdentityKey(
+                    exposure.getRecommendedDate(),
+                    exposure.getUserId(),
+                    exposure.getGuestId(),
+                    exposure.getPromptId()
+            );
+            PromptRecommendationExposureEntity canonical = canonicalByKey.get(key);
+            if (canonical == null) {
+                canonicalByKey.put(key, exposure);
+                continue;
+            }
+
+            mergeDuplicateExposure(canonical, exposure);
+        }
+
+        return List.copyOf(canonicalByKey.values());
+    }
+
     private Map<String, PromptEntity> loadPromptsById(List<PromptRecommendationExposureEntity> exposures) {
         Set<String> promptIds = new LinkedHashSet<>();
         for (PromptRecommendationExposureEntity exposure : exposures) {
@@ -164,11 +205,87 @@ public class AdminPromptRecommendationMetricsService {
         return Math.round((numerator / (double) denominator) * 10000D) / 10000D;
     }
 
+    private void mergeDuplicateExposure(
+            PromptRecommendationExposureEntity canonical,
+            PromptRecommendationExposureEntity duplicate
+    ) {
+        canonical.updateShownAtIfEarlier(duplicate.getShownAt());
+        canonical.updateClickedAtIfEarlier(duplicate.getClickedAt());
+        canonical.adoptStartedSessionId(duplicate.getStartedSessionId());
+        canonical.adoptCompletedSessionId(duplicate.getCompletedSessionId());
+        mergeRecommendationMetadata(
+                canonical,
+                duplicate.getDifficulty(),
+                duplicate.getSlotType(),
+                duplicate.getReasonCode(),
+                duplicate.getScore(),
+                duplicate.getShownAt()
+        );
+    }
+
+    private boolean mergeRecommendationMetadata(
+            PromptRecommendationExposureEntity exposure,
+            String difficulty,
+            String slotType,
+            String reasonCode,
+            Integer score,
+            Instant candidateShownAt
+    ) {
+        if (slotType == null || slotType.isBlank()) {
+            return false;
+        }
+
+        int currentPriority = slotPriority(exposure.getSlotType());
+        int candidatePriority = slotPriority(slotType);
+        boolean shouldReplace = candidatePriority > currentPriority
+                || (candidatePriority == currentPriority
+                && candidateShownAt != null
+                && exposure.getShownAt() != null
+                && candidateShownAt.isAfter(exposure.getShownAt()));
+
+        if (!shouldReplace) {
+            return false;
+        }
+
+        return exposure.updateRecommendation(difficulty, slotType, reasonCode, score);
+    }
+
+    private int slotPriority(String slotType) {
+        if (slotType == null || slotType.isBlank()) {
+            return 0;
+        }
+
+        if ("FEATURED".equalsIgnoreCase(slotType)) {
+            return 400;
+        }
+        if ("PREPICK_FEATURED".equalsIgnoreCase(slotType)) {
+            return 350;
+        }
+        if ("FRESH_ALTERNATIVE".equalsIgnoreCase(slotType)) {
+            return 230;
+        }
+        if ("GROWTH_ALTERNATIVE".equalsIgnoreCase(slotType)) {
+            return 220;
+        }
+        if (slotType.toUpperCase(Locale.ROOT).startsWith("ALTERNATIVE")) {
+            return 200;
+        }
+        return 100;
+    }
+
     private record AggregationKey(
             String promptId,
             String difficulty,
             String slotType,
             String reasonCode
+    ) {
+    }
+
+    private record ExposureIdentityKey(
+            LocalDate recommendedDate,
+            Long userId,
+            String guestId,
+            String promptId
     ) {
     }
 

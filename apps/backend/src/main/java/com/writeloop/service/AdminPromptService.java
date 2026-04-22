@@ -279,8 +279,8 @@ public class AdminPromptService {
 
     private String normalizeDifficulty(String difficulty) {
         String normalized = normalizeRequiredText(difficulty, "Difficulty is required.").toUpperCase(Locale.ROOT);
-        if (!List.of("A", "B", "C").contains(normalized)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Difficulty must be A, B, or C.");
+        if (!List.of("I", "A", "B", "C").contains(normalized)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Difficulty must be I, A, B, or C.");
         }
         return normalized;
     }

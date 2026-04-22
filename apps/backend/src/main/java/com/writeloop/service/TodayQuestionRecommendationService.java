@@ -2,6 +2,7 @@ package com.writeloop.service;
 
 import com.writeloop.dto.DailyDifficultyDto;
 import com.writeloop.dto.DailyPromptRecommendationDto;
+import com.writeloop.dto.FeaturedDailyPromptDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptRecommendationItemDto;
 import com.writeloop.persistence.AnswerAttemptEntity;
@@ -18,6 +19,7 @@ import com.writeloop.persistence.SavedExpressionEntity;
 import com.writeloop.persistence.SavedExpressionRepository;
 import com.writeloop.persistence.SessionStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +44,8 @@ public class TodayQuestionRecommendationService {
 
     private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
     private static final int MAX_RECOMMENDATIONS = 3;
+    private static final String SLOT_FEATURED = "FEATURED";
+    private static final String SLOT_PREPICK_FEATURED = "PREPICK_FEATURED";
 
     private final PromptRepository promptRepository;
     private final PromptHintRepository promptHintRepository;
@@ -58,8 +62,78 @@ public class TodayQuestionRecommendationService {
             Long currentUserId,
             String rawGuestId
     ) {
+        return recommend(difficulty, currentUserId, rawGuestId, List.of());
+    }
+
+    @Transactional
+    public DailyPromptRecommendationDto recommend(
+            DailyDifficultyDto difficulty,
+            Long currentUserId,
+            String rawGuestId,
+            List<String> excludePromptIds
+    ) {
+        String guestId = GuestIdentitySupport.normalizeGuestId(rawGuestId);
+        RecommendationComputation computation = computeRecommendation(
+                difficulty,
+                currentUserId,
+                guestId,
+                excludePromptIds
+        );
+
+        saveExposureLogs(computation.today(), difficulty, currentUserId, guestId, computation.items());
+
+        return new DailyPromptRecommendationDto(
+                computation.today().toString(),
+                difficulty,
+                computation.snapshot().userState().name(),
+                computation.fallbackUsed(),
+                computation.featured(),
+                computation.alternatives(),
+                computation.legacyPrompts()
+        );
+    }
+
+    @Transactional
+    public FeaturedDailyPromptDto recommendFeatured(
+            DailyDifficultyDto difficulty,
+            Long currentUserId,
+            String rawGuestId
+    ) {
+        String guestId = GuestIdentitySupport.normalizeGuestId(rawGuestId);
+        RecommendationComputation computation = computeRecommendation(
+                difficulty,
+                currentUserId,
+                guestId,
+                List.of()
+        );
+
+        if (computation.featured() != null) {
+            saveExposureLog(
+                    computation.today(),
+                    difficulty,
+                    currentUserId,
+                    guestId,
+                    computation.featured(),
+                    "PREPICK_FEATURED"
+            );
+        }
+
+        return new FeaturedDailyPromptDto(
+                computation.today().toString(),
+                difficulty,
+                computation.snapshot().userState().name(),
+                computation.fallbackUsed(),
+                computation.featured()
+        );
+    }
+
+    private RecommendationComputation computeRecommendation(
+            DailyDifficultyDto difficulty,
+            Long currentUserId,
+            String guestId,
+            List<String> excludePromptIds
+    ) {
         LocalDate today = LocalDate.now(KOREA_ZONE);
-        String guestId = currentUserId == null ? GuestIdentitySupport.normalizeGuestId(rawGuestId) : null;
 
         List<PromptEntity> activePrompts = promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc();
         if (activePrompts.isEmpty()) {
@@ -73,11 +147,25 @@ public class TodayQuestionRecommendationService {
             throw new IllegalStateException("No prompts found for difficulty " + difficulty.name());
         }
 
+        Set<String> externallyExcludedPromptIds = normalizePromptIds(excludePromptIds);
+        List<PromptEntity> availableDifficultyPrompts = exactDifficultyPrompts.stream()
+                .filter(prompt -> !externallyExcludedPromptIds.contains(prompt.getId()))
+                .toList();
+
         RecommendationSnapshot snapshot = buildSnapshot(exactDifficultyPrompts, today, currentUserId, guestId);
-        Map<String, HintSignals> hintSignalsByPromptId = loadHintSignals(exactDifficultyPrompts);
+        Map<String, HintSignals> hintSignalsByPromptId = loadHintSignals(availableDifficultyPrompts);
+        ScoredCandidate pinnedFeaturedCandidate = findPinnedFeaturedCandidate(
+                today,
+                difficulty,
+                currentUserId,
+                guestId,
+                availableDifficultyPrompts,
+                hintSignalsByPromptId,
+                snapshot
+        );
 
         List<ScoredCandidate> strictCandidates = scoreCandidates(
-                exactDifficultyPrompts,
+                availableDifficultyPrompts,
                 hintSignalsByPromptId,
                 snapshot,
                 false
@@ -87,7 +175,7 @@ public class TodayQuestionRecommendationService {
         List<ScoredCandidate> finalCandidates = strictCandidates;
         if (strictCandidates.size() < MAX_RECOMMENDATIONS) {
             List<ScoredCandidate> relaxedCandidates = scoreCandidates(
-                    exactDifficultyPrompts,
+                    availableDifficultyPrompts,
                     hintSignalsByPromptId,
                     snapshot,
                     true
@@ -96,7 +184,11 @@ public class TodayQuestionRecommendationService {
             fallbackUsed = finalCandidates.size() > strictCandidates.size();
         }
 
-        List<PromptRecommendationItemDto> composedItems = composeRecommendationItems(finalCandidates, difficulty, snapshot);
+        List<PromptRecommendationItemDto> composedItems = composeRecommendationItems(
+                finalCandidates,
+                snapshot,
+                pinnedFeaturedCandidate
+        );
         PromptRecommendationItemDto featured = composedItems.isEmpty() ? null : composedItems.get(0);
         List<PromptRecommendationItemDto> alternatives = composedItems.size() <= 1
                 ? List.of()
@@ -105,13 +197,11 @@ public class TodayQuestionRecommendationService {
                 .map(PromptRecommendationItemDto::prompt)
                 .toList();
 
-        saveExposureLogs(today, difficulty, currentUserId, guestId, composedItems);
-
-        return new DailyPromptRecommendationDto(
-                today.toString(),
-                difficulty,
-                snapshot.userState().name(),
+        return new RecommendationComputation(
+                today,
+                snapshot,
                 fallbackUsed,
+                composedItems,
                 featured,
                 alternatives,
                 legacyPrompts
@@ -120,7 +210,7 @@ public class TodayQuestionRecommendationService {
 
     @Transactional
     public void recordClick(String promptId, Long currentUserId, String rawGuestId) {
-        findLatestExposureForToday(promptId, currentUserId, rawGuestId)
+        findExposureForToday(promptId, currentUserId, rawGuestId)
                 .ifPresent(exposure -> {
                     exposure.markClicked();
                     promptRecommendationExposureRepository.save(exposure);
@@ -129,7 +219,7 @@ public class TodayQuestionRecommendationService {
 
     @Transactional
     public void recordStart(String promptId, Long currentUserId, String rawGuestId, String sessionId) {
-        findLatestExposureForToday(promptId, currentUserId, rawGuestId)
+        findExposureForToday(promptId, currentUserId, rawGuestId)
                 .ifPresent(exposure -> {
                     exposure.markStartedSession(sessionId);
                     promptRecommendationExposureRepository.save(exposure);
@@ -138,7 +228,7 @@ public class TodayQuestionRecommendationService {
 
     @Transactional
     public void recordComplete(String promptId, Long currentUserId, String rawGuestId, String sessionId) {
-        findLatestExposureForToday(promptId, currentUserId, rawGuestId)
+        findExposureForToday(promptId, currentUserId, rawGuestId)
                 .ifPresent(exposure -> {
                     exposure.markCompletedSession(sessionId);
                     promptRecommendationExposureRepository.save(exposure);
@@ -329,23 +419,115 @@ public class TodayQuestionRecommendationService {
 
     private Set<String> loadRecentExposurePromptIds(LocalDate today, Long currentUserId, String guestId) {
         LocalDate recentSince = today.minusDays(3);
-        List<PromptRecommendationExposureEntity> exposures;
+        List<PromptRecommendationExposureEntity> exposures = new ArrayList<>();
         if (currentUserId != null) {
-            exposures = promptRecommendationExposureRepository
+            List<PromptRecommendationExposureEntity> userExposures = promptRecommendationExposureRepository
                     .findByUserIdAndRecommendedDateGreaterThanEqualOrderByShownAtDesc(currentUserId, recentSince);
-        } else if (guestId != null) {
-            exposures = promptRecommendationExposureRepository
+            if (userExposures != null) {
+                exposures.addAll(userExposures);
+            }
+        }
+        if (guestId != null) {
+            List<PromptRecommendationExposureEntity> guestExposures = promptRecommendationExposureRepository
                     .findByGuestIdAndRecommendedDateGreaterThanEqualOrderByShownAtDesc(guestId, recentSince);
-        } else {
-            exposures = List.of();
+            if (guestExposures != null) {
+                exposures.addAll(guestExposures);
+            }
         }
 
         return exposures.stream()
+                .filter(exposure ->
+                        !SLOT_PREPICK_FEATURED.equalsIgnoreCase(exposure.getSlotType())
+                                || !today.equals(exposure.getRecommendedDate()))
                 .map(PromptRecommendationExposureEntity::getPromptId)
                 .collect(LinkedHashSet::new, Set::add, Set::addAll);
     }
 
-    private java.util.Optional<PromptRecommendationExposureEntity> findLatestExposureForToday(
+    private ScoredCandidate findPinnedFeaturedCandidate(
+            LocalDate today,
+            DailyDifficultyDto difficulty,
+            Long currentUserId,
+            String guestId,
+            List<PromptEntity> exactDifficultyPrompts,
+            Map<String, HintSignals> hintSignalsByPromptId,
+            RecommendationSnapshot snapshot
+    ) {
+        PromptRecommendationExposureEntity pinnedExposure = findPinnedFeaturedExposureForToday(
+                today,
+                difficulty,
+                currentUserId,
+                guestId
+        );
+        if (pinnedExposure == null) {
+            return null;
+        }
+
+        PromptEntity pinnedPrompt = exactDifficultyPrompts.stream()
+                .filter(prompt -> prompt.getId().equals(pinnedExposure.getPromptId()))
+                .findFirst()
+                .orElse(null);
+        if (pinnedPrompt == null) {
+            return null;
+        }
+
+        LocalDate pinnedPromptCompletedDate = snapshot.lastCompletedPromptDates().get(pinnedPrompt.getId());
+        if (today.equals(pinnedPromptCompletedDate)) {
+            return null;
+        }
+
+        HintSignals hintSignals = hintSignalsByPromptId.getOrDefault(pinnedPrompt.getId(), HintSignals.EMPTY);
+        CandidateFeatures features = buildFeatures(pinnedPrompt, hintSignals, snapshot);
+        int startabilityScore = calculateStartabilityScore(pinnedPrompt, hintSignals);
+        int freshnessScore = calculateFreshnessScore(pinnedPrompt, snapshot, features, true);
+        int stateFitScore = calculateStateFitScore(pinnedPrompt, snapshot, features);
+        int expressionReuseScore = calculateExpressionReuseScore(pinnedPrompt, snapshot, features);
+        int growthFitScore = calculateGrowthFitScore(pinnedPrompt, snapshot, features);
+        int repeatPenalty = calculateRepeatPenalty(pinnedPrompt, snapshot, true);
+        int score = pinnedExposure.getScore() == null
+                ? Math.max(0, 20 + startabilityScore + freshnessScore + stateFitScore + expressionReuseScore + growthFitScore - repeatPenalty)
+                : pinnedExposure.getScore();
+
+        RecommendationReason reason = buildPinnedReason(
+                pinnedExposure.getReasonCode(),
+                pinnedPrompt,
+                snapshot,
+                features,
+                score
+        );
+
+        return new ScoredCandidate(
+                pinnedPrompt,
+                score,
+                startabilityScore,
+                freshnessScore,
+                stateFitScore,
+                expressionReuseScore,
+                growthFitScore,
+                repeatPenalty,
+                features,
+                reason
+        );
+    }
+
+    private PromptRecommendationExposureEntity findPinnedFeaturedExposureForToday(
+            LocalDate today,
+            DailyDifficultyDto difficulty,
+            Long currentUserId,
+            String guestId
+    ) {
+        return loadExposuresForToday(today, currentUserId, guestId).stream()
+                .filter(exposure -> difficulty.name().equalsIgnoreCase(exposure.getDifficulty()))
+                .filter(exposure -> isPinnedFeaturedSlot(exposure.getSlotType()))
+                .min(Comparator.comparing(PromptRecommendationExposureEntity::getShownAt))
+                .orElse(null);
+    }
+
+    private boolean isPinnedFeaturedSlot(String slotType) {
+        return SLOT_FEATURED.equalsIgnoreCase(slotType)
+                || SLOT_PREPICK_FEATURED.equalsIgnoreCase(slotType);
+    }
+
+    private java.util.Optional<PromptRecommendationExposureEntity> findExposureForToday(
             String promptId,
             Long currentUserId,
             String rawGuestId
@@ -355,26 +537,228 @@ public class TodayQuestionRecommendationService {
         }
 
         LocalDate today = LocalDate.now(KOREA_ZONE);
-        if (currentUserId != null) {
-            return promptRecommendationExposureRepository
-                    .findFirstByUserIdAndPromptIdAndRecommendedDateOrderByShownAtDesc(
-                            currentUserId,
-                            promptId,
-                            today
-                    );
-        }
-
         String guestId = GuestIdentitySupport.normalizeGuestId(rawGuestId);
-        if (guestId == null) {
+        return findOrStabilizePromptExposureForToday(today, promptId, currentUserId, guestId);
+    }
+
+    private java.util.Optional<PromptRecommendationExposureEntity> findOrStabilizePromptExposureForToday(
+            LocalDate today,
+            String promptId,
+            Long currentUserId,
+            String guestId
+    ) {
+        return findOrStabilizePromptExposureForToday(today, promptId, currentUserId, guestId, false);
+    }
+
+    private java.util.Optional<PromptRecommendationExposureEntity> findOrStabilizePromptExposureForToday(
+            LocalDate today,
+            String promptId,
+            Long currentUserId,
+            String guestId,
+            boolean alreadyRetried
+    ) {
+        List<PromptRecommendationExposureEntity> exposures = loadPromptExposuresForToday(
+                today,
+                promptId,
+                currentUserId,
+                guestId
+        );
+        if (exposures.isEmpty()) {
             return java.util.Optional.empty();
         }
 
-        return promptRecommendationExposureRepository
-                .findFirstByGuestIdAndPromptIdAndRecommendedDateOrderByShownAtDesc(
-                        guestId,
-                        promptId,
-                        today
-                );
+        PromptRecommendationExposureEntity canonical = exposures.get(0);
+        boolean changed = false;
+        changed |= canonical.claimAuthenticatedUser(currentUserId);
+
+        if (exposures.size() == 1) {
+            return saveCanonicalAfterStabilization(
+                    today,
+                    promptId,
+                    currentUserId,
+                    guestId,
+                    canonical,
+                    changed,
+                    List.of(),
+                    alreadyRetried
+            );
+        }
+
+        List<PromptRecommendationExposureEntity> duplicatesToDelete = new ArrayList<>();
+
+        for (int index = 1; index < exposures.size(); index += 1) {
+            PromptRecommendationExposureEntity duplicate = exposures.get(index);
+            changed |= mergeDuplicateExposure(canonical, duplicate);
+            duplicatesToDelete.add(duplicate);
+        }
+
+        return saveCanonicalAfterStabilization(
+                today,
+                promptId,
+                currentUserId,
+                guestId,
+                canonical,
+                changed,
+                duplicatesToDelete,
+                alreadyRetried
+        );
+    }
+
+    private java.util.Optional<PromptRecommendationExposureEntity> saveCanonicalAfterStabilization(
+            LocalDate today,
+            String promptId,
+            Long currentUserId,
+            String guestId,
+            PromptRecommendationExposureEntity canonical,
+            boolean changed,
+            List<PromptRecommendationExposureEntity> duplicatesToDelete,
+            boolean alreadyRetried
+    ) {
+        try {
+            if (changed) {
+                promptRecommendationExposureRepository.save(canonical);
+            }
+            if (!duplicatesToDelete.isEmpty()) {
+                promptRecommendationExposureRepository.deleteAll(duplicatesToDelete);
+            }
+            return java.util.Optional.of(canonical);
+        } catch (DataIntegrityViolationException exception) {
+            if (alreadyRetried) {
+                throw exception;
+            }
+            return findOrStabilizePromptExposureForToday(today, promptId, currentUserId, guestId, true);
+        }
+    }
+
+    private List<PromptRecommendationExposureEntity> loadExposuresForToday(
+            LocalDate today,
+            Long currentUserId,
+            String guestId
+    ) {
+        List<PromptRecommendationExposureEntity> exposures = new ArrayList<>();
+
+        if (currentUserId != null) {
+            List<PromptRecommendationExposureEntity> userExposures = promptRecommendationExposureRepository
+                    .findByUserIdAndRecommendedDateOrderByShownAtAsc(currentUserId, today);
+            if (userExposures != null) {
+                exposures.addAll(userExposures);
+            }
+        }
+
+        if (guestId != null && !guestId.isBlank()) {
+            List<PromptRecommendationExposureEntity> guestExposures = promptRecommendationExposureRepository
+                    .findByGuestIdAndRecommendedDateOrderByShownAtAsc(guestId, today);
+            if (guestExposures != null) {
+                exposures.addAll(guestExposures);
+            }
+        }
+
+        exposures.sort(Comparator.comparing(PromptRecommendationExposureEntity::getShownAt));
+        return exposures;
+    }
+
+    private List<PromptRecommendationExposureEntity> loadPromptExposuresForToday(
+            LocalDate today,
+            String promptId,
+            Long currentUserId,
+            String guestId
+    ) {
+        if (promptId == null || promptId.isBlank()) {
+            return List.of();
+        }
+
+        List<PromptRecommendationExposureEntity> exposures = new ArrayList<>();
+
+        if (currentUserId != null) {
+            List<PromptRecommendationExposureEntity> userExposures = promptRecommendationExposureRepository
+                    .findByUserIdAndPromptIdAndRecommendedDateOrderByShownAtAsc(currentUserId, promptId, today);
+            if (userExposures != null) {
+                exposures.addAll(userExposures);
+            }
+        }
+
+        if (guestId != null && !guestId.isBlank()) {
+            List<PromptRecommendationExposureEntity> guestExposures = promptRecommendationExposureRepository
+                    .findByGuestIdAndPromptIdAndRecommendedDateOrderByShownAtAsc(guestId, promptId, today);
+            if (guestExposures != null) {
+                exposures.addAll(guestExposures);
+            }
+        }
+
+        exposures.sort(Comparator.comparing(PromptRecommendationExposureEntity::getShownAt));
+        return exposures;
+    }
+
+    private boolean mergeDuplicateExposure(
+            PromptRecommendationExposureEntity canonical,
+            PromptRecommendationExposureEntity duplicate
+    ) {
+        boolean changed = false;
+
+        changed |= canonical.updateShownAtIfEarlier(duplicate.getShownAt());
+        changed |= canonical.updateClickedAtIfEarlier(duplicate.getClickedAt());
+        changed |= canonical.adoptStartedSessionId(duplicate.getStartedSessionId());
+        changed |= canonical.adoptCompletedSessionId(duplicate.getCompletedSessionId());
+        changed |= mergeRecommendationMetadata(
+                canonical,
+                duplicate.getDifficulty(),
+                duplicate.getSlotType(),
+                duplicate.getReasonCode(),
+                duplicate.getScore(),
+                duplicate.getShownAt()
+        );
+
+        return changed;
+    }
+
+    private boolean mergeRecommendationMetadata(
+            PromptRecommendationExposureEntity exposure,
+            String difficulty,
+            String slotType,
+            String reasonCode,
+            Integer score,
+            Instant candidateShownAt
+    ) {
+        if (slotType == null || slotType.isBlank()) {
+            return false;
+        }
+
+        int currentPriority = slotPriority(exposure.getSlotType());
+        int candidatePriority = slotPriority(slotType);
+        boolean shouldReplace = candidatePriority > currentPriority
+                || (candidatePriority == currentPriority
+                && candidateShownAt != null
+                && exposure.getShownAt() != null
+                && candidateShownAt.isAfter(exposure.getShownAt()));
+
+        if (!shouldReplace) {
+            return false;
+        }
+
+        return exposure.updateRecommendation(difficulty, slotType, reasonCode, score);
+    }
+
+    private int slotPriority(String slotType) {
+        if (slotType == null || slotType.isBlank()) {
+            return 0;
+        }
+
+        if (SLOT_FEATURED.equalsIgnoreCase(slotType)) {
+            return 400;
+        }
+        if (SLOT_PREPICK_FEATURED.equalsIgnoreCase(slotType)) {
+            return 350;
+        }
+        if ("FRESH_ALTERNATIVE".equalsIgnoreCase(slotType)) {
+            return 230;
+        }
+        if ("GROWTH_ALTERNATIVE".equalsIgnoreCase(slotType)) {
+            return 220;
+        }
+        if (slotType.toUpperCase(Locale.ROOT).startsWith("ALTERNATIVE")) {
+            return 200;
+        }
+        return 100;
     }
 
     private double calculateRecentAverageWordCount(
@@ -854,18 +1238,24 @@ public class TodayQuestionRecommendationService {
 
     private List<PromptRecommendationItemDto> composeRecommendationItems(
             List<ScoredCandidate> candidates,
-            DailyDifficultyDto difficulty,
-            RecommendationSnapshot snapshot
+            RecommendationSnapshot snapshot,
+            ScoredCandidate pinnedFeaturedCandidate
     ) {
-        if (candidates.isEmpty()) {
+        if (candidates.isEmpty() && pinnedFeaturedCandidate == null) {
             return List.of();
         }
 
         List<PromptRecommendationItemDto> items = new ArrayList<>();
         List<ScoredCandidate> remaining = new ArrayList<>(candidates);
 
-        ScoredCandidate featured = remaining.remove(0);
-        items.add(toItem(featured, "FEATURED"));
+        ScoredCandidate featured;
+        if (pinnedFeaturedCandidate != null) {
+            featured = pinnedFeaturedCandidate;
+            remaining.removeIf(candidate -> samePrompt(candidate, pinnedFeaturedCandidate));
+        } else {
+            featured = remaining.remove(0);
+        }
+        items.add(toItem(featured, SLOT_FEATURED));
 
         ScoredCandidate freshAlternative = pickAlternative(
                 remaining,
@@ -968,8 +1358,15 @@ public class TodayQuestionRecommendationService {
             return;
         }
 
-        List<PromptRecommendationExposureEntity> exposures = items.stream()
-                .map(item -> new PromptRecommendationExposureEntity(
+        for (PromptRecommendationItemDto item : items) {
+            PromptRecommendationExposureEntity exposure = findOrStabilizePromptExposureForToday(
+                    today,
+                    item.prompt().id(),
+                    currentUserId,
+                    guestId
+            ).orElse(null);
+            if (exposure == null) {
+                exposure = new PromptRecommendationExposureEntity(
                         today,
                         currentUserId,
                         guestId,
@@ -978,9 +1375,166 @@ public class TodayQuestionRecommendationService {
                         item.slot(),
                         item.reasonCode(),
                         item.score()
-                ))
-                .toList();
-        promptRecommendationExposureRepository.saveAll(exposures);
+                );
+                persistExposure(today, currentUserId, guestId, exposure);
+                continue;
+            }
+
+            if (mergeRecommendationMetadata(
+                    exposure,
+                    difficulty.name(),
+                    item.slot(),
+                    item.reasonCode(),
+                    item.score(),
+                    Instant.now()
+            )) {
+                persistExposure(today, currentUserId, guestId, exposure);
+            }
+        }
+    }
+
+    private void saveExposureLog(
+            LocalDate today,
+            DailyDifficultyDto difficulty,
+            Long currentUserId,
+            String guestId,
+            PromptRecommendationItemDto item,
+            String slotType
+    ) {
+        PromptRecommendationExposureEntity exposure = findOrStabilizePromptExposureForToday(
+                today,
+                item.prompt().id(),
+                currentUserId,
+                guestId
+        ).orElse(null);
+        if (exposure == null) {
+            persistExposure(today, currentUserId, guestId, new PromptRecommendationExposureEntity(
+                    today,
+                    currentUserId,
+                    guestId,
+                    difficulty.name(),
+                    item.prompt().id(),
+                    slotType,
+                    item.reasonCode(),
+                    item.score()
+            ));
+            return;
+        }
+
+        if (mergeRecommendationMetadata(
+                exposure,
+                difficulty.name(),
+                slotType,
+                item.reasonCode(),
+                item.score(),
+                Instant.now()
+        )) {
+            persistExposure(today, currentUserId, guestId, exposure);
+        }
+    }
+
+    private void persistExposure(
+            LocalDate today,
+            Long currentUserId,
+            String guestId,
+            PromptRecommendationExposureEntity exposure
+    ) {
+        persistExposure(today, currentUserId, guestId, exposure, false);
+    }
+
+    private void persistExposure(
+            LocalDate today,
+            Long currentUserId,
+            String guestId,
+            PromptRecommendationExposureEntity exposure,
+            boolean alreadyRetried
+    ) {
+        try {
+            promptRecommendationExposureRepository.save(exposure);
+        } catch (DataIntegrityViolationException exception) {
+            if (alreadyRetried) {
+                throw exception;
+            }
+
+            PromptRecommendationExposureEntity canonical = findOrStabilizePromptExposureForToday(
+                    today,
+                    exposure.getPromptId(),
+                    currentUserId,
+                    guestId,
+                    true
+            ).orElseThrow(() -> exception);
+
+            boolean changed = false;
+            changed |= canonical.claimAuthenticatedUser(currentUserId);
+            changed |= canonical.updateShownAtIfEarlier(exposure.getShownAt());
+            changed |= canonical.updateClickedAtIfEarlier(exposure.getClickedAt());
+            changed |= canonical.adoptStartedSessionId(exposure.getStartedSessionId());
+            changed |= canonical.adoptCompletedSessionId(exposure.getCompletedSessionId());
+            changed |= mergeRecommendationMetadata(
+                    canonical,
+                    exposure.getDifficulty(),
+                    exposure.getSlotType(),
+                    exposure.getReasonCode(),
+                    exposure.getScore(),
+                    exposure.getShownAt()
+            );
+
+            if (changed) {
+                persistExposure(today, currentUserId, guestId, canonical, true);
+            }
+        }
+    }
+
+    private RecommendationReason buildPinnedReason(
+            String reasonCode,
+            PromptEntity prompt,
+            RecommendationSnapshot snapshot,
+            CandidateFeatures features,
+            int score
+    ) {
+        String normalizedReasonCode = reasonCode == null ? "" : reasonCode.trim();
+        String englishReasonText = reasonTextForCode(normalizedReasonCode);
+        if (englishReasonText != null) {
+            return new RecommendationReason(normalizedReasonCode, englishReasonText, List.of("pinned-featured"));
+        }
+
+        RecommendationReason fallbackReason = selectReason(prompt, snapshot, features, score);
+        if (normalizedReasonCode.isBlank()) {
+            return fallbackReason;
+        }
+        return new RecommendationReason(normalizedReasonCode, fallbackReason.text(), List.of("pinned-featured"));
+    }
+
+    private String reasonTextForCode(String reasonCode) {
+        return switch (reasonCode == null ? "" : reasonCode.trim()) {
+            case "RECOVERY_SAFE" ->
+                    "Recent loops stopped mid-way, so this is a safer question to restart your rhythm without extra pressure.";
+            case "REUSE_SAVED_EXPRESSION" ->
+                    "This question fits the expressions you recently saved, so it is a good chance to reuse what you learned in a new answer.";
+            case "ONE_REASON_UP" ->
+                    "Your recent answers were on the shorter side, and this prompt gets better fast when you add just one clear reason.";
+            case "TIME_MARKER_REUSE" ->
+                    "Time or place phrases fit naturally here, so it is an easy question for practicing expressions like usually, after lunch, or at home.";
+            case "TOPIC_FRESH" ->
+                    "You have not written on this topic recently, so it should feel fresher and easier to start today.";
+            case "STREAK_KEEPER" ->
+                    "Your recent completion flow looks steady, and this is a strong low-friction question for keeping that streak alive today.";
+            case "HALF_STEP_GROWTH" ->
+                    "This prompt lets you go half a step further by adding detail or an example without feeling like a full difficulty jump.";
+            case "ADD_EXAMPLE" ->
+                    "One short example fits naturally in this question, so your answer can become richer without getting much longer.";
+            case "QUICK_START" ->
+                    "This prompt gives you a clearer way to open the first sentence, so you can start writing before overthinking it.";
+            case "CATEGORY_BALANCE" ->
+                    "You have been writing in a similar lane recently, so this question helps widen the rhythm with a different category.";
+            case "LOW_PRESSURE_VALID" ->
+                    "This question still works even with a short answer, which makes it a good option for days when you want to begin without pressure.";
+            case "SAVEABLE_OUTPUT" ->
+                    "This prompt tends to produce reusable phrases and connectors, so it is a good one for collecting expressions after you write.";
+            case "TRANSFER_PRACTICE" ->
+                    "This question is good for moving familiar expressions into a slightly different context, which builds real usage rather than repetition.";
+            default -> null;
+        };
     }
 
     private PromptDto toPromptDto(PromptEntity prompt) {
@@ -998,7 +1552,7 @@ public class TodayQuestionRecommendationService {
         );
     }
 
-    private String translateReasonText(String englishText) {
+    private String translateReasonTextLegacy(String englishText) {
         return switch (englishText) {
             case "Recent loops stopped mid-way, so this is a safer question to restart your rhythm without extra pressure." ->
                     "최근 루프를 중간에 멈춘 적이 있어서, 오늘은 부담 없이 다시 흐름을 찾기 좋은 질문을 골랐어요.";
@@ -1026,6 +1580,37 @@ public class TodayQuestionRecommendationService {
                     "답을 쓰면서 건질 만한 표현이나 연결 표현이 잘 나오는 편이라 표현 저장까지 이어가기 좋아요.";
             default ->
                     "익숙한 표현을 조금 다른 문맥으로 옮겨 써보기에 좋은 질문이라 활용 연습에 잘 맞아요.";
+        };
+    }
+
+    private String translateReasonText(String englishText) {
+        return switch (englishText) {
+            case "Recent loops stopped mid-way, so this is a safer question to restart your rhythm without extra pressure." ->
+                    "최근 루프를 중간에 멈춘 날이 있어서, 오늘은 부담 없이 리듬을 다시 붙이기 좋은 질문이에요.";
+            case "This question fits the expressions you recently saved, so it is a good chance to reuse what you learned in a new answer." ->
+                    "최근 저장한 표현과 잘 이어지는 질문이라, 배운 표현을 새로운 답변 안에서 다시 써 보기 좋아요.";
+            case "Your recent answers were on the shorter side, and this prompt gets better fast when you add just one clear reason." ->
+                    "최근 답이 조금 짧은 편이라, 이 질문은 이유 한 줄만 더해도 금방 답이 탄탄해져요.";
+            case "Time or place phrases fit naturally here, so it is an easy question for practicing expressions like usually, after lunch, or at home." ->
+                    "시간이나 장소 표현이 자연스럽게 붙는 질문이라 usually, after lunch, at home 같은 표현을 다시 써 보기 좋아요.";
+            case "You have not written on this topic recently, so it should feel fresher and easier to start today." ->
+                    "최근에는 다루지 않았던 주제라서, 오늘은 조금 더 새롭게 시작하기 좋아요.";
+            case "Your recent completion flow looks steady, and this is a strong low-friction question for keeping that streak alive today." ->
+                    "최근 완주 흐름이 안정적이라, 오늘도 끊기지 않게 이어 가기 좋은 질문이에요.";
+            case "This prompt lets you go half a step further by adding detail or an example without feeling like a full difficulty jump." ->
+                    "난이도를 확 올리지 않고도 디테일이나 예시를 한 단계 더 붙여 볼 수 있는 질문이에요.";
+            case "One short example fits naturally in this question, so your answer can become richer without getting much longer." ->
+                    "짧은 예시 한 줄만 붙여도 답이 더 풍부해지는 질문이라, 길게 쓰지 않아도 성장 포인트가 보여요.";
+            case "This prompt gives you a clearer way to open the first sentence, so you can start writing before overthinking it." ->
+                    "첫 문장을 열기 쉬운 질문이라, 오래 고민하지 않고 바로 쓰기 시작하기 좋아요.";
+            case "You have been writing in a similar lane recently, so this question helps widen the rhythm with a different category." ->
+                    "최근 비슷한 결의 질문이 많아서, 오늘은 다른 카테고리로 흐름을 넓혀 보기 좋아요.";
+            case "This question still works even with a short answer, which makes it a good option for days when you want to begin without pressure." ->
+                    "짧게 답해도 성립하는 질문이라, 부담 없이 일단 시작하고 싶은 날에 잘 맞아요.";
+            case "This prompt tends to produce reusable phrases and connectors, so it is a good one for collecting expressions after you write." ->
+                    "쓰고 나면 저장해 둘 만한 표현이나 연결어가 나올 가능성이 높아서, 표현 수집까지 이어 가기 좋아요.";
+            default ->
+                    "익숙한 표현을 조금 다른 문맥으로 옮겨 써 보기 좋은 질문이라, 반복이 아니라 실제 사용 연습에 잘 맞아요.";
         };
     }
 
@@ -1107,6 +1692,17 @@ public class TodayQuestionRecommendationService {
         target.merge(key, candidate, (existing, incoming) -> incoming.isAfter(existing) ? incoming : existing);
     }
 
+    private Set<String> normalizePromptIds(List<String> promptIds) {
+        if (promptIds == null || promptIds.isEmpty()) {
+            return Set.of();
+        }
+
+        return promptIds.stream()
+                .filter(value -> value != null && !value.isBlank())
+                .map(String::trim)
+                .collect(LinkedHashSet::new, Set::add, Set::addAll);
+    }
+
     private String normalizeKey(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
     }
@@ -1132,6 +1728,17 @@ public class TodayQuestionRecommendationService {
             long recentStartedLastSevenDays,
             long recentCompletedLastSevenDays,
             long streakDays
+    ) {
+    }
+
+    private record RecommendationComputation(
+            LocalDate today,
+            RecommendationSnapshot snapshot,
+            boolean fallbackUsed,
+            List<PromptRecommendationItemDto> items,
+            PromptRecommendationItemDto featured,
+            List<PromptRecommendationItemDto> alternatives,
+            List<PromptDto> legacyPrompts
     ) {
     }
 

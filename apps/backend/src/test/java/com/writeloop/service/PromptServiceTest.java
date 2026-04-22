@@ -68,10 +68,39 @@ class PromptServiceTest {
                 List.of()
         );
 
-        when(todayQuestionRecommendationService.recommend(DailyDifficultyDto.A, null, null))
+        when(todayQuestionRecommendationService.recommend(DailyDifficultyDto.A, null, null, List.of()))
                 .thenReturn(expected);
 
         DailyPromptRecommendationDto recommendation = promptService.recommendDailyPrompts(DailyDifficultyDto.A);
+
+        assertThat(recommendation).isSameAs(expected);
+    }
+
+    @Test
+    void recommendDailyPrompts_withExcludedIds_delegatesToRecommendationService() {
+        DailyPromptRecommendationDto expected = new DailyPromptRecommendationDto(
+                "2026-04-21",
+                DailyDifficultyDto.A,
+                "STEADY",
+                false,
+                null,
+                List.of(),
+                List.of()
+        );
+
+        when(todayQuestionRecommendationService.recommend(
+                DailyDifficultyDto.A,
+                5L,
+                "guest-1",
+                List.of("prompt-a-1", "prompt-a-2")
+        )).thenReturn(expected);
+
+        DailyPromptRecommendationDto recommendation = promptService.recommendDailyPrompts(
+                DailyDifficultyDto.A,
+                5L,
+                "guest-1",
+                List.of("prompt-a-1", "prompt-a-2")
+        );
 
         assertThat(recommendation).isSameAs(expected);
     }

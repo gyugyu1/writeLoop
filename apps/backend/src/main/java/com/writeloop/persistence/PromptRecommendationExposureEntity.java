@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Entity
 @Table(
@@ -21,7 +22,9 @@ import java.time.LocalDate;
         indexes = {
                 @Index(name = "idx_prompt_reco_user_date", columnList = "user_id, recommended_date"),
                 @Index(name = "idx_prompt_reco_guest_date", columnList = "guest_id, recommended_date"),
-                @Index(name = "idx_prompt_reco_prompt_date", columnList = "prompt_id, recommended_date")
+                @Index(name = "idx_prompt_reco_prompt_date", columnList = "prompt_id, recommended_date"),
+                @Index(name = "idx_prompt_reco_user_prompt_date", columnList = "user_id, prompt_id, recommended_date, shown_at"),
+                @Index(name = "idx_prompt_reco_guest_prompt_date", columnList = "guest_id, prompt_id, recommended_date, shown_at")
         }
 )
 @Getter
@@ -93,6 +96,91 @@ public class PromptRecommendationExposureEntity {
         if (clickedAt == null) {
             clickedAt = Instant.now();
         }
+    }
+
+    public boolean updateShownAtIfEarlier(Instant candidateShownAt) {
+        if (candidateShownAt == null) {
+            return false;
+        }
+        if (shownAt == null || candidateShownAt.isBefore(shownAt)) {
+            shownAt = candidateShownAt;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean updateClickedAtIfEarlier(Instant candidateClickedAt) {
+        if (candidateClickedAt == null) {
+            return false;
+        }
+        if (clickedAt == null || candidateClickedAt.isBefore(clickedAt)) {
+            clickedAt = candidateClickedAt;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean adoptStartedSessionId(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            return false;
+        }
+        if (startedSessionId == null || startedSessionId.isBlank()) {
+            startedSessionId = sessionId;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean adoptCompletedSessionId(String sessionId) {
+        if (sessionId == null || sessionId.isBlank()) {
+            return false;
+        }
+        if (completedSessionId == null || completedSessionId.isBlank()) {
+            completedSessionId = sessionId;
+            return true;
+        }
+        return false;
+    }
+
+    public boolean updateRecommendation(String difficulty, String slotType, String reasonCode, Integer score) {
+        boolean changed = false;
+
+        if (difficulty != null && !difficulty.equals(this.difficulty)) {
+            this.difficulty = difficulty;
+            changed = true;
+        }
+        if (slotType != null && !slotType.equals(this.slotType)) {
+            this.slotType = slotType;
+            changed = true;
+        }
+        if (reasonCode != null && !reasonCode.equals(this.reasonCode)) {
+            this.reasonCode = reasonCode;
+            changed = true;
+        }
+        if (score != null && !score.equals(this.score)) {
+            this.score = score;
+            changed = true;
+        }
+
+        return changed;
+    }
+
+    public boolean claimAuthenticatedUser(Long userId) {
+        if (userId == null) {
+            return false;
+        }
+
+        boolean changed = false;
+        if (!Objects.equals(this.userId, userId)) {
+            this.userId = userId;
+            changed = true;
+        }
+        if (this.guestId != null) {
+            this.guestId = null;
+            changed = true;
+        }
+
+        return changed;
     }
 
     public void markStartedSession(String sessionId) {

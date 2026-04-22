@@ -43,10 +43,10 @@ class AdminPromptRecommendationMetricsServiceTest {
         LocalDate startDate = LocalDate.of(2026, 4, 1);
         LocalDate endDate = LocalDate.of(2026, 4, 21);
 
-        PromptRecommendationExposureEntity shownOnly = exposure("prompt-a-1", "A", "FEATURED", "QUICK_START");
-        PromptRecommendationExposureEntity started = exposure("prompt-a-1", "A", "FEATURED", "QUICK_START");
+        PromptRecommendationExposureEntity shownOnly = exposure(LocalDate.of(2026, 4, 19), 1L, "prompt-a-1", "A", "FEATURED", "QUICK_START");
+        PromptRecommendationExposureEntity started = exposure(LocalDate.of(2026, 4, 20), 1L, "prompt-a-1", "A", "FEATURED", "QUICK_START");
         started.markStartedSession("session-1");
-        PromptRecommendationExposureEntity completed = exposure("prompt-a-1", "A", "FEATURED", "QUICK_START");
+        PromptRecommendationExposureEntity completed = exposure(LocalDate.of(2026, 4, 21), 1L, "prompt-a-1", "A", "FEATURED", "QUICK_START");
         completed.markCompletedSession("session-2");
 
         when(promptRecommendationExposureRepository
@@ -81,9 +81,23 @@ class AdminPromptRecommendationMetricsServiceTest {
         LocalDate startDate = LocalDate.of(2026, 4, 10);
         LocalDate endDate = LocalDate.of(2026, 4, 21);
 
-        PromptRecommendationExposureEntity featuredQuickStart = exposure("prompt-a-2", "A", "FEATURED", "QUICK_START");
+        PromptRecommendationExposureEntity featuredQuickStart = exposure(
+                LocalDate.of(2026, 4, 20),
+                1L,
+                "prompt-a-2",
+                "A",
+                "FEATURED",
+                "QUICK_START"
+        );
         featuredQuickStart.markClicked();
-        PromptRecommendationExposureEntity alternativeReuse = exposure("prompt-a-2", "A", "ALTERNATIVE_1", "EXPRESSION_REUSE");
+        PromptRecommendationExposureEntity alternativeReuse = exposure(
+                LocalDate.of(2026, 4, 21),
+                1L,
+                "prompt-a-2",
+                "A",
+                "ALTERNATIVE_1",
+                "EXPRESSION_REUSE"
+        );
 
         when(promptRecommendationExposureRepository
                 .findByRecommendedDateBetweenOrderByRecommendedDateDescShownAtDesc(startDate, endDate))
@@ -102,15 +116,61 @@ class AdminPromptRecommendationMetricsServiceTest {
                 );
     }
 
+    @Test
+    void summarize_dedupes_same_day_duplicate_rows_per_prompt_and_identity() {
+        LocalDate startDate = LocalDate.of(2026, 4, 21);
+        LocalDate endDate = LocalDate.of(2026, 4, 21);
+
+        PromptRecommendationExposureEntity prepick = exposure(
+                LocalDate.of(2026, 4, 21),
+                1L,
+                "prompt-a-3",
+                "A",
+                "PREPICK_FEATURED",
+                "QUICK_START"
+        );
+        PromptRecommendationExposureEntity featured = exposure(
+                LocalDate.of(2026, 4, 21),
+                1L,
+                "prompt-a-3",
+                "A",
+                "FEATURED",
+                "STREAK_KEEPER"
+        );
+        featured.markStartedSession("session-3");
+
+        when(promptRecommendationExposureRepository
+                .findByRecommendedDateBetweenAndDifficultyOrderByRecommendedDateDescShownAtDesc(startDate, endDate, "A"))
+                .thenReturn(List.of(featured, prepick));
+        when(promptRepository.findAllById(any()))
+                .thenReturn(List.of(prompt("prompt-a-3", "Routine", "Weekend", "A")));
+
+        AdminPromptRecommendationMetricsDto metrics = metricsService.summarize(startDate, endDate, DailyDifficultyDto.A);
+
+        assertThat(metrics.totalShownCount()).isEqualTo(1);
+        assertThat(metrics.totalClickedCount()).isEqualTo(1);
+        assertThat(metrics.totalStartedCount()).isEqualTo(1);
+        assertThat(metrics.items()).singleElement().satisfies(item -> {
+            assertThat(item.promptId()).isEqualTo("prompt-a-3");
+            assertThat(item.slotType()).isEqualTo("FEATURED");
+            assertThat(item.reasonCode()).isEqualTo("STREAK_KEEPER");
+            assertThat(item.shownCount()).isEqualTo(1);
+            assertThat(item.clickedCount()).isEqualTo(1);
+            assertThat(item.startedCount()).isEqualTo(1);
+        });
+    }
+
     private PromptRecommendationExposureEntity exposure(
+            LocalDate recommendedDate,
+            Long userId,
             String promptId,
             String difficulty,
             String slotType,
             String reasonCode
     ) {
         return new PromptRecommendationExposureEntity(
-                LocalDate.of(2026, 4, 21),
-                1L,
+                recommendedDate,
+                userId,
                 null,
                 difficulty,
                 promptId,

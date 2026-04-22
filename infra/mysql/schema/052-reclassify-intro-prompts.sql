@@ -1,0 +1,35 @@
+UPDATE prompts
+SET difficulty = 'I'
+WHERE difficulty = 'A'
+  AND id IN (
+    'prompt-a-1',
+    'prompt-a-2',
+    'prompt-a-3',
+    'prompt-a-4',
+    'prompt-preference-06',
+    'prompt-preference-11',
+    'prompt-preference-1101',
+    'prompt-preference-1104',
+    'prompt-preference-1107',
+    'prompt-preference-1113',
+    'prompt-preference-1116',
+    'prompt-preference-1119',
+    'prompt-preference-1122',
+    'prompt-preference-1125',
+    'prompt-preference-16',
+    'prompt-preference-21',
+    'prompt-preference-26',
+    'prompt-preference-31',
+    'prompt-preference-36',
+    'prompt-preference-41',
+    'prompt-preference-46',
+    'prompt-routine-01',
+    'prompt-routine-11',
+    'prompt-routine-16',
+    'prompt-routine-21',
+    'prompt-routine-26',
+    'prompt-routine-31',
+    'prompt-routine-36',
+    'prompt-routine-41',
+    'prompt-routine-46'
+  );

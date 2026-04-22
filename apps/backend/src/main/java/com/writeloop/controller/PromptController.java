@@ -2,6 +2,7 @@ package com.writeloop.controller;
 
 import com.writeloop.dto.DailyDifficultyDto;
 import com.writeloop.dto.DailyPromptRecommendationDto;
+import com.writeloop.dto.FeaturedDailyPromptDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptRecommendationClickRequestDto;
@@ -39,10 +40,21 @@ public class PromptController {
     public DailyPromptRecommendationDto recommendDailyPrompts(
             @RequestParam(name = "difficulty", defaultValue = "A") DailyDifficultyDto difficulty,
             @RequestParam(name = "guestId", required = false) String guestId,
+            @RequestParam(name = "excludePromptIds", required = false) List<String> excludePromptIds,
             HttpServletRequest request
     ) {
         Long currentUserId = authService.getCurrentUserIdOrNull(request);
-        return promptService.recommendDailyPrompts(difficulty, currentUserId, guestId);
+        return promptService.recommendDailyPrompts(difficulty, currentUserId, guestId, excludePromptIds);
+    }
+
+    @GetMapping("/daily/featured")
+    public FeaturedDailyPromptDto recommendFeaturedDailyPrompt(
+            @RequestParam(name = "difficulty", defaultValue = "A") DailyDifficultyDto difficulty,
+            @RequestParam(name = "guestId", required = false) String guestId,
+            HttpServletRequest request
+    ) {
+        Long currentUserId = authService.getCurrentUserIdOrNull(request);
+        return promptService.recommendFeaturedDailyPrompt(difficulty, currentUserId, guestId);
     }
 
     @PostMapping("/daily/click")

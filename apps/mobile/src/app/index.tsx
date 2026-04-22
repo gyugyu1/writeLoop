@@ -27,6 +27,7 @@ import { clearIncompleteLoop, getIncompleteLoop, type IncompleteLoopState } from
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
 import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
+import { getStreakMascotStage } from "@/lib/streak-mascot";
 import { getLocalWritingDraft } from "@/lib/writing-drafts";
 import type {
   DailyDifficulty,
@@ -76,7 +77,6 @@ const SEOUL_DATE_KEY_FORMATTER = new Intl.DateTimeFormat("en-CA", {
   month: "2-digit",
   day: "2-digit"
 });
-const homeStatusMascotImage = require("@/assets/images/main-mascote.png");
 const HOME_GUIDE_STEPS: HomeGuideStep[] = [
   {
     title: "난이도 고르기",
@@ -303,6 +303,11 @@ export default function HomeScreen() {
   const featuredRecommendationPrompt = featuredRecommendationItem?.prompt ?? null;
   const featuredDifficultyMeta = getDifficultyMeta(
     featuredRecommendation?.difficulty ?? featuredRecommendationDifficulty
+  );
+  const displayedStreakDays = Math.max(todayStatus?.streakDays ?? 0, todayStatus?.completed ? 1 : 0);
+  const homeStatusMascot = useMemo(
+    () => getStreakMascotStage(displayedStreakDays),
+    [displayedStreakDays]
   );
 
   const weekChips = useMemo(() => buildWeekChips(todayStatus), [todayStatus]);
@@ -702,7 +707,7 @@ export default function HomeScreen() {
           <Pressable style={styles.statusPanelMain} onPress={() => router.push(historyRoute)}>
           <View style={styles.statusLead}>
             <View style={styles.statusIconCircle}>
-              <Image source={homeStatusMascotImage} style={styles.statusMascotImage} />
+              <Image source={homeStatusMascot.source} style={styles.statusMascotImage} />
             </View>
             <View style={styles.statusCopy}>
               <View style={styles.statusTopRow}>
@@ -710,7 +715,7 @@ export default function HomeScreen() {
               </View>
               <Text style={styles.statusDescription}>
                 {currentUser
-                  ? `현재 ${todayStatus?.streakDays ?? 0}일 연속으로 문장을 차분하게 쌓아가고 있어요.`
+                  ? `현재 ${displayedStreakDays}일 연속으로 문장을 차분하게 쌓아가고 있어요.`
                   : "부담 없이 첫 루프를 시작하고 오늘의 작문 감각을 깨워 보세요."}
               </Text>
               {currentUser ? (
@@ -1304,28 +1309,33 @@ const styles = StyleSheet.create({
   },
   stageSection: {
     flexGrow: 1,
-    justifyContent: "flex-end",
-    gap: 18
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 18
   },
   difficultyCard: {
+    width: "48.5%",
+    minHeight: 196,
     backgroundColor: "#FFFEFC",
     borderRadius: 34,
-    paddingHorizontal: 24,
-    paddingVertical: 22,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
     borderWidth: 3,
     borderColor: "#F0D8BF",
     alignItems: "center",
-    gap: 14
+    justifyContent: "center",
+    gap: 12
   },
   cardTitle: {
-    fontSize: 34,
+    fontSize: 28,
     fontWeight: "900",
-    letterSpacing: -1.4,
+    letterSpacing: -1.1,
     color: "#232128"
   },
   cardDescription: {
-    fontSize: 16,
-    lineHeight: 25,
+    fontSize: 14,
+    lineHeight: 22,
     textAlign: "center",
     color: "#6B5E4E"
   },

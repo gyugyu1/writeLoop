@@ -216,10 +216,11 @@ public class AuthController {
             @RequestParam(name = "returnTo", required = false) String returnTo,
             @RequestParam(name = "remember", defaultValue = "false") boolean rememberMe,
             @RequestParam(name = "appRedirect", required = false) String appRedirect,
+            @RequestParam(name = "mobileState", required = false) String mobileState,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
-        authService.startNaverLogin(returnTo, rememberMe, appRedirect, session, response);
+        authService.startNaverLogin(returnTo, rememberMe, appRedirect, mobileState, session, response);
     }
 
     @GetMapping("/social/naver/callback")
@@ -238,10 +239,11 @@ public class AuthController {
             @RequestParam(name = "returnTo", required = false) String returnTo,
             @RequestParam(name = "remember", defaultValue = "false") boolean rememberMe,
             @RequestParam(name = "appRedirect", required = false) String appRedirect,
+            @RequestParam(name = "mobileState", required = false) String mobileState,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
-        authService.startGoogleLogin(returnTo, rememberMe, appRedirect, session, response);
+        authService.startGoogleLogin(returnTo, rememberMe, appRedirect, mobileState, session, response);
     }
 
     @GetMapping("/social/google/callback")
@@ -260,10 +262,11 @@ public class AuthController {
             @RequestParam(name = "returnTo", required = false) String returnTo,
             @RequestParam(name = "remember", defaultValue = "false") boolean rememberMe,
             @RequestParam(name = "appRedirect", required = false) String appRedirect,
+            @RequestParam(name = "mobileState", required = false) String mobileState,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
-        authService.startKakaoLogin(returnTo, rememberMe, appRedirect, session, response);
+        authService.startKakaoLogin(returnTo, rememberMe, appRedirect, mobileState, session, response);
     }
 
     @GetMapping("/social/kakao/callback")

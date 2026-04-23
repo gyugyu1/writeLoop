@@ -643,6 +643,20 @@ function getStringQueryParam(value: string | string[] | undefined): string | nul
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
+function generateMobileOAuthState(): string {
+  if (!globalThis.crypto?.getRandomValues) {
+    throw createApiError(
+      "앱 로그인 보안 상태값을 만들지 못했어요. 앱을 다시 실행한 뒤 시도해 주세요.",
+      500,
+      "MOBILE_OAUTH_STATE_UNAVAILABLE"
+    );
+  }
+
+  const randomValues = new Uint8Array(24);
+  globalThis.crypto.getRandomValues(randomValues);
+  return Array.from(randomValues, (value) => value.toString(16).padStart(2, "0")).join("");
+}
+
 async function exchangeSocialCode(code: string): Promise<AuthUser> {
   const response = await fetch(`${apiBaseUrl}/api/auth/token/social/exchange`, {
     method: "POST",
@@ -698,8 +712,10 @@ export async function login(request: LoginRequest): Promise<AuthUser> {
 
 export async function loginWithSocial(provider: SocialProvider): Promise<SocialLoginResult> {
   const redirectUri = Linking.createURL("auth/callback");
+  const mobileState = generateMobileOAuthState();
   const socialLoginUrl = `${apiBaseUrl}/api/auth/social/${provider}/start?${new URLSearchParams({
-    appRedirect: redirectUri
+    appRedirect: redirectUri,
+    mobileState
   }).toString()}`;
 
   const authResult = await WebBrowser.openAuthSessionAsync(socialLoginUrl, redirectUri);
@@ -711,8 +727,17 @@ export async function loginWithSocial(provider: SocialProvider): Promise<SocialL
   const exchangeCode = getStringQueryParam(parsedUrl.queryParams?.code);
   const signupToken = getStringQueryParam(parsedUrl.queryParams?.signupToken);
   const resolvedProvider = getStringQueryParam(parsedUrl.queryParams?.provider) as SocialProvider | null;
+  const returnedState = getStringQueryParam(parsedUrl.queryParams?.state);
   const errorCode = getStringQueryParam(parsedUrl.queryParams?.error);
   const errorMessage = getStringQueryParam(parsedUrl.queryParams?.message);
+
+  if (returnedState !== mobileState) {
+    throw createApiError(
+      "소셜 로그인 응답을 안전하게 확인하지 못했어요. 다시 시도해 주세요.",
+      400,
+      "SOCIAL_LOGIN_STATE_MISMATCH"
+    );
+  }
 
   if (errorCode) {
     throw createApiError(errorMessage ?? "소셜 로그인을 완료하지 못했어요.", 400, errorCode);

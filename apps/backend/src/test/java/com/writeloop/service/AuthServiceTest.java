@@ -25,6 +25,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -34,6 +37,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -208,5 +212,50 @@ class AuthServiceTest {
                 .isInstanceOf(ApiException.class)
                 .extracting("code")
                 .isEqualTo("DISPLAY_NAME_ALREADY_EXISTS");
+    }
+
+    @Test
+    void mobile_social_login_redirect_includes_verified_mobile_state() throws Exception {
+        ReflectionTestUtils.setField(authService, "mobileRedirectPrefixes", "writeloop://");
+
+        MockHttpSession oauthSession = new MockHttpSession();
+        MockHttpServletResponse startResponse = new MockHttpServletResponse();
+        when(googleOAuthService.isConfigured()).thenReturn(true);
+        when(googleOAuthService.buildAuthorizationUrl(anyString())).thenReturn("https://provider.example/login");
+
+        authService.startGoogleLogin(
+                null,
+                false,
+                "writeloop://auth/callback?state=stale",
+                "mobile-state-123456",
+                oauthSession,
+                startResponse
+        );
+
+        ArgumentCaptor<String> providerStateCaptor = ArgumentCaptor.forClass(String.class);
+        verify(googleOAuthService).buildAuthorizationUrl(providerStateCaptor.capture());
+
+        UserEntity user = new UserEntity("social@example.com", "", "Writer");
+        user.linkSocialAccount("GOOGLE", "provider-user-1");
+        ReflectionTestUtils.setField(user, "id", 7L);
+
+        when(googleOAuthService.fetchUserProfile("provider-code"))
+                .thenReturn(new GoogleOAuthService.GoogleUserProfile("provider-user-1", "social@example.com", "Writer"));
+        when(userRepository.findBySocialProviderAndSocialProviderUserId("GOOGLE", "provider-user-1"))
+                .thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+        when(mobileSocialAuthCodeService.issue(7L)).thenReturn("mobile-code");
+
+        MockHttpServletResponse finishResponse = new MockHttpServletResponse();
+        authService.finishGoogleLogin(
+                "provider-code",
+                providerStateCaptor.getValue(),
+                oauthSession,
+                new MockHttpServletRequest(),
+                finishResponse
+        );
+
+        assertThat(finishResponse.getRedirectedUrl())
+                .isEqualTo("writeloop://auth/callback?code=mobile-code&state=mobile-state-123456");
     }
 }

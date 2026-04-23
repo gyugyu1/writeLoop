@@ -64,14 +64,17 @@ public class AuthService {
     private static final String SESSION_NAVER_RETURN_TO = "NAVER_OAUTH_RETURN_TO";
     private static final String SESSION_NAVER_REMEMBER_ME = "NAVER_OAUTH_REMEMBER_ME";
     private static final String SESSION_NAVER_APP_REDIRECT = "NAVER_OAUTH_APP_REDIRECT";
+    private static final String SESSION_NAVER_MOBILE_STATE = "NAVER_OAUTH_MOBILE_STATE";
     private static final String SESSION_GOOGLE_STATE = "GOOGLE_OAUTH_STATE";
     private static final String SESSION_GOOGLE_RETURN_TO = "GOOGLE_OAUTH_RETURN_TO";
     private static final String SESSION_GOOGLE_REMEMBER_ME = "GOOGLE_OAUTH_REMEMBER_ME";
     private static final String SESSION_GOOGLE_APP_REDIRECT = "GOOGLE_OAUTH_APP_REDIRECT";
+    private static final String SESSION_GOOGLE_MOBILE_STATE = "GOOGLE_OAUTH_MOBILE_STATE";
     private static final String SESSION_KAKAO_STATE = "KAKAO_OAUTH_STATE";
     private static final String SESSION_KAKAO_RETURN_TO = "KAKAO_OAUTH_RETURN_TO";
     private static final String SESSION_KAKAO_REMEMBER_ME = "KAKAO_OAUTH_REMEMBER_ME";
     private static final String SESSION_KAKAO_APP_REDIRECT = "KAKAO_OAUTH_APP_REDIRECT";
+    private static final String SESSION_KAKAO_MOBILE_STATE = "KAKAO_OAUTH_MOBILE_STATE";
     private static final String PASSWORD_RESET_GENERIC_NOTICE_MESSAGE = "입력한 이메일로 계정이 확인되면 비밀번호 재설정 코드를 보내드릴게요.";
 
     private final UserRepository userRepository;
@@ -661,6 +664,7 @@ public class AuthService {
             String returnTo,
             boolean rememberMe,
             String appRedirect,
+            String mobileState,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
@@ -673,6 +677,7 @@ public class AuthService {
         session.setAttribute(SESSION_NAVER_RETURN_TO, normalizeReturnTo(returnTo));
         session.setAttribute(SESSION_NAVER_REMEMBER_ME, rememberMe);
         session.setAttribute(SESSION_NAVER_APP_REDIRECT, normalizeAppRedirectUri(appRedirect));
+        session.setAttribute(SESSION_NAVER_MOBILE_STATE, normalizeMobileState(mobileState));
 
         response.sendRedirect(naverOAuthService.buildAuthorizationUrl(state));
     }
@@ -688,11 +693,13 @@ public class AuthService {
         String returnTo = (String) session.getAttribute(SESSION_NAVER_RETURN_TO);
         boolean rememberMe = Boolean.TRUE.equals(session.getAttribute(SESSION_NAVER_REMEMBER_ME));
         String appRedirect = (String) session.getAttribute(SESSION_NAVER_APP_REDIRECT);
+        String mobileState = (String) session.getAttribute(SESSION_NAVER_MOBILE_STATE);
 
         session.removeAttribute(SESSION_NAVER_STATE);
         session.removeAttribute(SESSION_NAVER_RETURN_TO);
         session.removeAttribute(SESSION_NAVER_REMEMBER_ME);
         session.removeAttribute(SESSION_NAVER_APP_REDIRECT);
+        session.removeAttribute(SESSION_NAVER_MOBILE_STATE);
 
         if (expectedState == null || !expectedState.equals(state)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SOCIAL_STATE", "소셜 로그인 상태 검증에 실패했어요.");
@@ -705,6 +712,7 @@ public class AuthService {
                 profile.email(),
                 profile.displayName(),
                 appRedirect,
+                mobileState,
                 returnTo,
                 rememberMe,
                 session,
@@ -717,6 +725,7 @@ public class AuthService {
             String returnTo,
             boolean rememberMe,
             String appRedirect,
+            String mobileState,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
@@ -729,6 +738,7 @@ public class AuthService {
         session.setAttribute(SESSION_GOOGLE_RETURN_TO, normalizeReturnTo(returnTo));
         session.setAttribute(SESSION_GOOGLE_REMEMBER_ME, rememberMe);
         session.setAttribute(SESSION_GOOGLE_APP_REDIRECT, normalizeAppRedirectUri(appRedirect));
+        session.setAttribute(SESSION_GOOGLE_MOBILE_STATE, normalizeMobileState(mobileState));
 
         response.sendRedirect(googleOAuthService.buildAuthorizationUrl(state));
     }
@@ -744,11 +754,13 @@ public class AuthService {
         String returnTo = (String) session.getAttribute(SESSION_GOOGLE_RETURN_TO);
         boolean rememberMe = Boolean.TRUE.equals(session.getAttribute(SESSION_GOOGLE_REMEMBER_ME));
         String appRedirect = (String) session.getAttribute(SESSION_GOOGLE_APP_REDIRECT);
+        String mobileState = (String) session.getAttribute(SESSION_GOOGLE_MOBILE_STATE);
 
         session.removeAttribute(SESSION_GOOGLE_STATE);
         session.removeAttribute(SESSION_GOOGLE_RETURN_TO);
         session.removeAttribute(SESSION_GOOGLE_REMEMBER_ME);
         session.removeAttribute(SESSION_GOOGLE_APP_REDIRECT);
+        session.removeAttribute(SESSION_GOOGLE_MOBILE_STATE);
 
         if (expectedState == null || !expectedState.equals(state)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SOCIAL_STATE", "소셜 로그인 상태 검증에 실패했어요.");
@@ -761,6 +773,7 @@ public class AuthService {
                 profile.email(),
                 profile.displayName(),
                 appRedirect,
+                mobileState,
                 returnTo,
                 rememberMe,
                 session,
@@ -773,6 +786,7 @@ public class AuthService {
             String returnTo,
             boolean rememberMe,
             String appRedirect,
+            String mobileState,
             HttpSession session,
             HttpServletResponse response
     ) throws IOException {
@@ -785,6 +799,7 @@ public class AuthService {
         session.setAttribute(SESSION_KAKAO_RETURN_TO, normalizeReturnTo(returnTo));
         session.setAttribute(SESSION_KAKAO_REMEMBER_ME, rememberMe);
         session.setAttribute(SESSION_KAKAO_APP_REDIRECT, normalizeAppRedirectUri(appRedirect));
+        session.setAttribute(SESSION_KAKAO_MOBILE_STATE, normalizeMobileState(mobileState));
 
         response.sendRedirect(kakaoOAuthService.buildAuthorizationUrl(state));
     }
@@ -800,11 +815,13 @@ public class AuthService {
         String returnTo = (String) session.getAttribute(SESSION_KAKAO_RETURN_TO);
         boolean rememberMe = Boolean.TRUE.equals(session.getAttribute(SESSION_KAKAO_REMEMBER_ME));
         String appRedirect = (String) session.getAttribute(SESSION_KAKAO_APP_REDIRECT);
+        String mobileState = (String) session.getAttribute(SESSION_KAKAO_MOBILE_STATE);
 
         session.removeAttribute(SESSION_KAKAO_STATE);
         session.removeAttribute(SESSION_KAKAO_RETURN_TO);
         session.removeAttribute(SESSION_KAKAO_REMEMBER_ME);
         session.removeAttribute(SESSION_KAKAO_APP_REDIRECT);
+        session.removeAttribute(SESSION_KAKAO_MOBILE_STATE);
 
         if (expectedState == null || !expectedState.equals(state)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_SOCIAL_STATE", "소셜 로그인 상태 검증에 실패했어요.");
@@ -817,6 +834,7 @@ public class AuthService {
                 profile.email(),
                 profile.displayName(),
                 appRedirect,
+                mobileState,
                 returnTo,
                 rememberMe,
                 session,
@@ -831,6 +849,7 @@ public class AuthService {
             String email,
             String providerDisplayName,
             String appRedirect,
+            String mobileState,
             String returnTo,
             boolean rememberMe,
             HttpSession session,
@@ -843,7 +862,7 @@ public class AuthService {
             if (appRedirect != null && !appRedirect.isBlank()) {
                 recordSuccessfulLogin(user);
                 String mobileAuthCode = mobileSocialAuthCodeService.issue(user.getId());
-                response.sendRedirect(buildMobileSocialRedirectUri(appRedirect, mobileAuthCode));
+                response.sendRedirect(buildMobileSocialRedirectUri(appRedirect, mobileAuthCode, mobileState));
                 return;
             }
 
@@ -862,30 +881,32 @@ public class AuthService {
         ));
 
         if (appRedirect != null && !appRedirect.isBlank()) {
-            response.sendRedirect(buildMobileSocialSignupRedirectUri(appRedirect, signupToken, provider));
+            response.sendRedirect(buildMobileSocialSignupRedirectUri(appRedirect, signupToken, provider, mobileState));
             return;
         }
 
         response.sendRedirect(buildWebSocialSignupRedirectUri(signupToken, returnTo));
     }
 
-    private String buildMobileSocialRedirectUri(String appRedirect, String code) {
-        return UriComponentsBuilder.fromUriString(appRedirect)
+    private String buildMobileSocialRedirectUri(String appRedirect, String code, String mobileState) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(appRedirect)
                 .replaceQueryParam("code")
+                .replaceQueryParam("state")
                 .queryParam("code", code)
-                .build(true)
-                .toUriString();
+                .queryParamIfPresent("state", Optional.ofNullable(mobileState));
+        return builder.build(true).toUriString();
     }
 
-    private String buildMobileSocialSignupRedirectUri(String appRedirect, String token, String provider) {
-        return UriComponentsBuilder.fromUriString(appRedirect)
+    private String buildMobileSocialSignupRedirectUri(String appRedirect, String token, String provider, String mobileState) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(appRedirect)
                 .replaceQueryParam("code")
                 .replaceQueryParam("signupToken")
                 .replaceQueryParam("provider")
+                .replaceQueryParam("state")
                 .queryParam("signupToken", token)
                 .queryParam("provider", provider.toLowerCase(Locale.ROOT))
-                .build(true)
-                .toUriString();
+                .queryParamIfPresent("state", Optional.ofNullable(mobileState));
+        return builder.build(true).toUriString();
     }
 
     private String buildWebSocialSignupRedirectUri(String token, String returnTo) {
@@ -1121,6 +1142,23 @@ public class AuthService {
                     HttpStatus.BAD_REQUEST,
                     "INVALID_APP_REDIRECT",
                     "앱 로그인으로 돌아갈 주소가 올바르지 않아요."
+            );
+        }
+
+        return trimmed;
+    }
+
+    private String normalizeMobileState(String mobileState) {
+        if (mobileState == null || mobileState.isBlank()) {
+            return null;
+        }
+
+        String trimmed = mobileState.trim();
+        if (trimmed.length() < 16 || trimmed.length() > 128 || !trimmed.matches("[A-Za-z0-9._~-]+")) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "INVALID_MOBILE_STATE",
+                    "앱 로그인 상태값이 올바르지 않아요."
             );
         }
 

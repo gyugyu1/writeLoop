@@ -1,4 +1,4 @@
-import { router } from "expo-router";
+import { router, type Href } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -829,16 +829,14 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
     try {
       setIsCompleting(true);
       setError("");
-      await saveEntry(finalText, false);
+      const completedEntry = await saveEntry(finalText, false);
       setContent(finalText);
       setIsReadOnly(true);
       setIsReadOnlyFeedbackOpen(false);
-      Alert.alert("일기쓰기 완료", "오늘의 영어일기를 남겼어요.", [
-        {
-          text: "기록 보기",
-          onPress: () => router.replace("/diary" as never)
-        }
-      ]);
+      router.replace({
+        pathname: "/diary/complete",
+        params: { entryId: completedEntry.entryId }
+      } as Href);
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : "일기를 완료하지 못했어요.";
       setError(message);

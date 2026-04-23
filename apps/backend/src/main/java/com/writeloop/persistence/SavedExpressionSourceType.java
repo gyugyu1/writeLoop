@@ -3,5 +3,6 @@ package com.writeloop.persistence;
 public enum SavedExpressionSourceType {
     USED_EXPRESSION,
     COACH_RECOMMENDATION,
-    REFINEMENT_EXPRESSION
+    REFINEMENT_EXPRESSION,
+    DIARY_EXPRESSION
 }

@@ -49,6 +49,7 @@ import java.util.regex.Pattern;
 @RequiredArgsConstructor
 public class CoachService {
 
+    private static final String DIARY_FREE_WRITING_PROMPT_ID = "diary-free-writing";
     private static final Pattern QUOTED_PHRASE_PATTERN = Pattern.compile("\"([^\"]+)\"");
     private static final Pattern ENGLISH_PHRASE_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9' -]{2,}");
     private static final Pattern NON_WORD_PATTERN = Pattern.compile("[^\\p{L}\\p{N}\\s']");
@@ -1374,6 +1375,16 @@ public class CoachService {
         String normalizedPromptId = promptId == null ? "" : promptId.trim();
         if (normalizedPromptId.isEmpty()) {
             throw new IllegalArgumentException("promptId is required");
+        }
+        if (DIARY_FREE_WRITING_PROMPT_ID.equals(normalizedPromptId)) {
+            return new PromptDto(
+                    DIARY_FREE_WRITING_PROMPT_ID,
+                    "Diary - Free Writing",
+                    "FREE",
+                    "Write a short English diary entry about your day.",
+                    "오늘 하루를 짧은 영어 일기로 남겨 보세요.",
+                    "Focus on one small moment, how you felt, and what happened next."
+            );
         }
 
         return promptService.findAll().stream()

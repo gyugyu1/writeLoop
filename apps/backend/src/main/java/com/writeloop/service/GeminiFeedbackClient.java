@@ -19,6 +19,7 @@ import com.writeloop.exception.ApiException;
 import com.writeloop.util.ExpressionTagSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,6 +76,8 @@ public class GeminiFeedbackClient {
     private final FeedbackDeterministicCorrectionResolver deterministicCorrectionResolver = new FeedbackDeterministicCorrectionResolver();
     private final FeedbackRetryPolicy feedbackRetryPolicy = new FeedbackRetryPolicy();
     private final ThreadLocal<FeedbackAnalysisSnapshot> latestAnalysisSnapshot = new ThreadLocal<>();
+    @Autowired(required = false)
+    private FeedbackTimingRecorder feedbackTimingRecorder;
 
     private record GeminiApiResponse(
             int statusCode,
@@ -334,46 +337,17 @@ public class GeminiFeedbackClient {
             );
             boolean retryAttempted = false;
             if (validation.shouldRetry()) {
-                retryAttempted = true;
-                RegenerationRequest retryRequest = toRegenerationRequest(validation, diagnosedProfile, sectionPolicy);
-                try {
-                    GenerationCallResult regenerationCallResult = generateSections(
-                            prompt,
-                            answer,
-                            hints,
-                            diagnosis,
-                            diagnosedProfile,
-                            sectionPolicy,
-                            attemptIndex,
-                            previousAnswer,
-                            retryRequest.failedSections(),
-                            retryRequest.failureCodes(),
-                            validation.sanitizedSections()
+                LOGGER.info(
+                        "Feedback regeneration skipped provider=gemini promptId={} attemptIndex={} failureCount={} fallback=deterministic",
+                        prompt.id(),
+                        attemptIndex,
+                        validation.failures().size()
+                );
+                if (feedbackTimingRecorder != null) {
+                    feedbackTimingRecorder.recordPolicyEvent(
+                            "regeneration_skipped",
+                            Map.of("provider", "gemini", "failureCount", validation.failures().size())
                     );
-                    GeneratedSections regenerated = regenerationCallResult.sections();
-                    regenerationResponseStatusCode = regenerationCallResult.statusCode();
-                    regenerationResponseBody = regenerationCallResult.rawResponseBody();
-                    validation = validateGeneratedSections(
-                            answer,
-                            diagnosis,
-                            diagnosedProfile,
-                            sectionPolicy,
-                            validation.sanitizedSections().merge(regenerated),
-                            generationRequestedSections
-                    );
-                } catch (GeminiApiHttpException apiException) {
-                    logGeminiFailure("regeneration-http", prompt.id(), attemptIndex, apiException);
-                    throw feedbackGenerationUnavailable();
-                } catch (IOException ioException) {
-                    logGeminiFailure("regeneration-io", prompt.id(), attemptIndex, ioException);
-                    throw feedbackGenerationUnavailable();
-                } catch (InterruptedException interruptedException) {
-                    logGeminiFailure("regeneration-interrupted", prompt.id(), attemptIndex, interruptedException);
-                    Thread.currentThread().interrupt();
-                    throw feedbackGenerationUnavailable();
-                } catch (RuntimeException runtimeException) {
-                    logGeminiFailure("regeneration-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
-                    // Use the validated first-pass sections plus deterministic fallback for any remaining gaps.
                 }
             }
             ValidationResult completed = validateGeneratedSections(
@@ -458,7 +432,15 @@ public class GeminiFeedbackClient {
             String previousAnswer
     )
             throws IOException, InterruptedException {
-        GeminiApiResponse response = sendResponsesRequest(buildDiagnosisRequestBody(prompt, answer, hints, attemptIndex, previousAnswer));
+        long startedAtNanos = System.nanoTime();
+        GeminiApiResponse response;
+        try {
+            response = sendResponsesRequest(buildDiagnosisRequestBody(prompt, answer, hints, attemptIndex, previousAnswer));
+            logLlmTiming("diagnosis", prompt.id(), attemptIndex, response.statusCode(), true, null, startedAtNanos);
+        } catch (IOException | InterruptedException | RuntimeException exception) {
+            logLlmTiming("diagnosis", prompt.id(), attemptIndex, null, false, exception, startedAtNanos);
+            throw exception;
+        }
         try {
             return new DiagnosisCallResult(parseDiagnosisResponse(response.body()), response.statusCode(), response.body());
         } catch (IOException exception) {
@@ -491,19 +473,28 @@ public class GeminiFeedbackClient {
             List<ValidationFailureCode> failureCodes,
             GeneratedSections previousSections
     ) throws IOException, InterruptedException {
-        GeminiApiResponse response = sendResponsesRequest(buildGenerationRequestBody(
-                prompt,
-                answer,
-                hints,
-                diagnosis,
-                answerProfile,
-                sectionPolicy,
-                attemptIndex,
-                previousAnswer,
-                requestedSections,
-                failureCodes,
-                previousSections
-        ));
+        String phase = previousSections == null ? "generation" : "regeneration";
+        long startedAtNanos = System.nanoTime();
+        GeminiApiResponse response;
+        try {
+            response = sendResponsesRequest(buildGenerationRequestBody(
+                    prompt,
+                    answer,
+                    hints,
+                    diagnosis,
+                    answerProfile,
+                    sectionPolicy,
+                    attemptIndex,
+                    previousAnswer,
+                    requestedSections,
+                    failureCodes,
+                    previousSections
+            ));
+            logLlmTiming(phase, prompt.id(), attemptIndex, response.statusCode(), true, null, startedAtNanos);
+        } catch (IOException | InterruptedException | RuntimeException exception) {
+            logLlmTiming(phase, prompt.id(), attemptIndex, null, false, exception, startedAtNanos);
+            throw exception;
+        }
         try {
             return new GenerationCallResult(parseGeneratedSections(response.body()), response.statusCode(), response.body());
         } catch (IOException exception) {
@@ -521,6 +512,49 @@ public class GeminiFeedbackClient {
                     exception
             );
         }
+    }
+
+    private void logLlmTiming(
+            String phase,
+            String promptId,
+            int attemptIndex,
+            Integer statusCode,
+            boolean success,
+            Throwable exception,
+            long startedAtNanos
+    ) {
+        long elapsedMs = elapsedMs(startedAtNanos);
+        LOGGER.info(
+                "Feedback LLM timing provider=gemini phase={} promptId={} attemptIndex={} model={} thinkingBudget={} success={} status={} exceptionClass={} elapsedMs={}",
+                phase,
+                promptId,
+                attemptIndex,
+                model,
+                thinkingBudget,
+                success,
+                statusCode,
+                exception == null ? null : exception.getClass().getName(),
+                elapsedMs
+        );
+        if (feedbackTimingRecorder != null) {
+            feedbackTimingRecorder.recordAnswerLlmPhase(
+                    phase,
+                    promptId,
+                    attemptIndex,
+                    "gemini",
+                    model,
+                    null,
+                    thinkingBudget,
+                    success,
+                    statusCode,
+                    exception == null ? null : exception.getClass().getName(),
+                    elapsedMs
+            );
+        }
+    }
+
+    private static long elapsedMs(long startedAtNanos) {
+        return (System.nanoTime() - startedAtNanos) / 1_000_000;
     }
 
     private ValidationResult validateGeneratedSections(

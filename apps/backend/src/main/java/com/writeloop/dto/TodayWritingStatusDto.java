@@ -6,6 +6,7 @@ public record TodayWritingStatusDto(
         long completedSessions,
         long startedSessions,
         long streakDays,
+        long totalAnswerSessions,
         long totalWrittenSentences
 ) {
 }

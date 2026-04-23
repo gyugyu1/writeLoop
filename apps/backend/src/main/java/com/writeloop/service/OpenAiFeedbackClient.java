@@ -18,6 +18,7 @@ import com.writeloop.exception.ApiException;
 import com.writeloop.util.ExpressionTagSupport;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -80,6 +81,8 @@ public class OpenAiFeedbackClient {
     private final FeedbackDeterministicCorrectionResolver deterministicCorrectionResolver = new FeedbackDeterministicCorrectionResolver();
     private final FeedbackRetryPolicy feedbackRetryPolicy = new FeedbackRetryPolicy();
     private final ThreadLocal<FeedbackAnalysisSnapshot> latestAnalysisSnapshot = new ThreadLocal<>();
+    @Autowired(required = false)
+    private FeedbackTimingRecorder feedbackTimingRecorder;
 
     private record OpenAiApiResponse(
             int statusCode,
@@ -302,46 +305,17 @@ public class OpenAiFeedbackClient {
             );
             boolean retryAttempted = false;
             if (validation.shouldRetry()) {
-                retryAttempted = true;
-                RegenerationRequest retryRequest = toRegenerationRequest(validation, diagnosedProfile, sectionPolicy);
-                try {
-                    GenerationCallResult regenerationCallResult = generateSections(
-                            prompt,
-                            answer,
-                            hints,
-                            diagnosis,
-                            diagnosedProfile,
-                            sectionPolicy,
-                            attemptIndex,
-                            previousAnswer,
-                            retryRequest.failedSections(),
-                            retryRequest.failureCodes(),
-                            validation.sanitizedSections()
+                LOGGER.info(
+                        "Feedback regeneration skipped provider=openai promptId={} attemptIndex={} failureCount={} fallback=deterministic",
+                        prompt.id(),
+                        attemptIndex,
+                        validation.failures().size()
+                );
+                if (feedbackTimingRecorder != null) {
+                    feedbackTimingRecorder.recordPolicyEvent(
+                            "regeneration_skipped",
+                            Map.of("provider", "openai", "failureCount", validation.failures().size())
                     );
-                    GeneratedSections regenerated = regenerationCallResult.sections();
-                    regenerationResponseStatusCode = regenerationCallResult.statusCode();
-                    regenerationResponseBody = regenerationCallResult.rawResponseBody();
-                    validation = validateGeneratedSections(
-                            answer,
-                            diagnosis,
-                            diagnosedProfile,
-                            sectionPolicy,
-                            validation.sanitizedSections().merge(regenerated),
-                            generationRequestedSections
-                    );
-                } catch (OpenAiApiHttpException apiException) {
-                    logOpenAiFailure("regeneration-http", prompt.id(), attemptIndex, apiException);
-                    throw feedbackGenerationUnavailable();
-                } catch (IOException ioException) {
-                    logOpenAiFailure("regeneration-io", prompt.id(), attemptIndex, ioException);
-                    throw feedbackGenerationUnavailable();
-                } catch (InterruptedException interruptedException) {
-                    logOpenAiFailure("regeneration-interrupted", prompt.id(), attemptIndex, interruptedException);
-                    Thread.currentThread().interrupt();
-                    throw feedbackGenerationUnavailable();
-                } catch (RuntimeException runtimeException) {
-                    logOpenAiFailure("regeneration-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
-                    // Use the validated first-pass sections plus deterministic fallback for any remaining gaps.
                 }
             }
             ValidationResult completed = validateGeneratedSections(
@@ -447,19 +421,28 @@ public class OpenAiFeedbackClient {
             List<ValidationFailureCode> failureCodes,
             GeneratedSections previousSections
     ) throws IOException, InterruptedException {
-        OpenAiApiResponse response = sendResponsesRequest(buildGenerationRequestBody(
-                prompt,
-                answer,
-                hints,
-                diagnosis,
-                answerProfile,
-                sectionPolicy,
-                attemptIndex,
-                previousAnswer,
-                requestedSections,
-                failureCodes,
-                previousSections
-        ));
+        String phase = resolveGenerationPhase(diagnosis, previousSections);
+        long startedAtNanos = System.nanoTime();
+        OpenAiApiResponse response;
+        try {
+            response = sendResponsesRequest(buildGenerationRequestBody(
+                    prompt,
+                    answer,
+                    hints,
+                    diagnosis,
+                    answerProfile,
+                    sectionPolicy,
+                    attemptIndex,
+                    previousAnswer,
+                    requestedSections,
+                    failureCodes,
+                    previousSections
+            ));
+            logLlmTiming(phase, prompt.id(), attemptIndex, response.statusCode(), true, null, startedAtNanos);
+        } catch (IOException | InterruptedException | RuntimeException exception) {
+            logLlmTiming(phase, prompt.id(), attemptIndex, null, false, exception, startedAtNanos);
+            throw exception;
+        }
         try {
             JsonNode node = objectMapper.readTree(extractOutputText(response.body()));
             return new GenerationCallResult(
@@ -483,6 +466,59 @@ public class OpenAiFeedbackClient {
                     exception
             );
         }
+    }
+
+    private String resolveGenerationPhase(FeedbackDiagnosisResult diagnosis, GeneratedSections previousSections) {
+        if (previousSections != null) {
+            return "regeneration";
+        }
+        if (diagnosis == null) {
+            return "generation_first_pass_with_diagnosis";
+        }
+        return "generation";
+    }
+
+    private void logLlmTiming(
+            String phase,
+            String promptId,
+            int attemptIndex,
+            Integer statusCode,
+            boolean success,
+            Throwable exception,
+            long startedAtNanos
+    ) {
+        long elapsedMs = elapsedMs(startedAtNanos);
+        LOGGER.info(
+                "Feedback LLM timing provider=openai phase={} promptId={} attemptIndex={} model={} reasoningEffort={} success={} status={} exceptionClass={} elapsedMs={}",
+                phase,
+                promptId,
+                attemptIndex,
+                model,
+                reasoningEffort == null || reasoningEffort.isBlank() ? "default" : reasoningEffort,
+                success,
+                statusCode,
+                exception == null ? null : exception.getClass().getName(),
+                elapsedMs
+        );
+        if (feedbackTimingRecorder != null) {
+            feedbackTimingRecorder.recordAnswerLlmPhase(
+                    phase,
+                    promptId,
+                    attemptIndex,
+                    "openai",
+                    model,
+                    reasoningEffort,
+                    null,
+                    success,
+                    statusCode,
+                    exception == null ? null : exception.getClass().getName(),
+                    elapsedMs
+            );
+        }
+    }
+
+    private static long elapsedMs(long startedAtNanos) {
+        return (System.nanoTime() - startedAtNanos) / 1_000_000;
     }
 
     private ValidationResult validateGeneratedSections(

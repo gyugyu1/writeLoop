@@ -102,6 +102,7 @@ public class AnswerHistoryService {
                 start,
                 end
         );
+        long totalAnswerSessions = answerAttemptRepository.countDistinctSessionsByUserId(userId);
         long totalWrittenSentences = answerAttemptRepository.countByUserId(userId);
 
         return new TodayWritingStatusDto(
@@ -110,6 +111,7 @@ public class AnswerHistoryService {
                 completedSessions,
                 startedSessions,
                 calculateStreakDays(userId, today),
+                totalAnswerSessions,
                 totalWrittenSentences
         );
     }

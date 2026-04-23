@@ -114,8 +114,12 @@ public class FeedbackService {
     private final FeedbackUiComposer feedbackUiComposer = new FeedbackUiComposer();
     @Autowired(required = false)
     private FeedbackDiagnosisLogRepository feedbackDiagnosisLogRepository;
+    @Autowired(required = false)
+    private FeedbackTimingRecorder feedbackTimingRecorder;
 
     public FeedbackResponseDto review(FeedbackRequestDto request, Long currentUserId) {
+        long totalStartedAtNanos = System.nanoTime();
+        long phaseStartedAtNanos = totalStartedAtNanos;
         PromptDto prompt = promptService.findById(request.promptId());
         String answer = request.answer() == null ? "" : request.answer().trim();
         AnswerSessionEntity session = resolveSession(request, prompt.id(), currentUserId);
@@ -125,10 +129,17 @@ public class FeedbackService {
         boolean llmConfigured = llmFeedbackClient.isConfigured();
         List<PromptHintDto> hints = promptService.findHintsByPromptId(prompt.id());
         FeedbackAnalysisSnapshot analysisSnapshot = null;
+        beginFeedbackTimingTrace(currentUserId, request.guestId(), prompt.id(), session.getId(), attemptNo);
+        try {
+        logFeedbackTiming("prepare", prompt.id(), session.getId(), attemptNo, phaseStartedAtNanos);
 
+        phaseStartedAtNanos = System.nanoTime();
         FeedbackResponseDto feedback = llmConfigured
                 ? fetchLlmFeedback(prompt, answer, hints, attemptNo, previousAnswer)
                 : buildLocalFeedback(prompt, answer);
+        logFeedbackTiming(llmConfigured ? "llm_feedback" : "local_feedback", prompt.id(), session.getId(), attemptNo, phaseStartedAtNanos);
+
+        phaseStartedAtNanos = System.nanoTime();
         if (llmConfigured) {
             analysisSnapshot = llmFeedbackClient.takeLastAnalysisSnapshot();
         }
@@ -149,8 +160,11 @@ public class FeedbackService {
         if (!authoritativeLlmFeedback) {
             feedback = feedback.withUi(feedbackUiComposer.compose(prompt, answer, feedback, answerProfile));
         }
+        logFeedbackTiming("postprocess", prompt.id(), session.getId(), attemptNo, phaseStartedAtNanos);
 
+        phaseStartedAtNanos = System.nanoTime();
         AnswerAttemptEntity savedAttempt = saveAttempt(session, attemptType, attemptNo, answer, feedback);
+        setFeedbackTimingAnswerAttemptId(savedAttempt.getId());
         if (attemptNo == 1) {
             promptService.recordDailyPromptStart(prompt.id(), currentUserId, request.guestId(), session.getId());
         }
@@ -172,8 +186,9 @@ public class FeedbackService {
                 analysisSnapshot,
                 answerProfile
         );
+        logFeedbackTiming("persist", prompt.id(), session.getId(), attemptNo, phaseStartedAtNanos);
 
-        return new FeedbackResponseDto(
+        FeedbackResponseDto response = new FeedbackResponseDto(
                 feedback.promptId(),
                 session.getId(),
                 attemptNo,
@@ -193,6 +208,54 @@ public class FeedbackService {
                 feedback.usedExpressions(),
                 feedback.ui()
         );
+        logFeedbackTiming("total", prompt.id(), session.getId(), attemptNo, totalStartedAtNanos);
+        return response;
+        } finally {
+            clearFeedbackTimingTrace();
+        }
+    }
+
+    private void beginFeedbackTimingTrace(Long userId, String guestId, String promptId, String sessionId, int attemptNo) {
+        if (feedbackTimingRecorder != null) {
+            feedbackTimingRecorder.beginAnswerTrace(userId, guestId, promptId, sessionId, attemptNo);
+        }
+    }
+
+    private void setFeedbackTimingAnswerAttemptId(Long answerAttemptId) {
+        if (feedbackTimingRecorder != null) {
+            feedbackTimingRecorder.setAnswerAttemptId(answerAttemptId);
+        }
+    }
+
+    private void clearFeedbackTimingTrace() {
+        if (feedbackTimingRecorder != null) {
+            feedbackTimingRecorder.clearTrace();
+        }
+    }
+
+    private void logFeedbackTiming(
+            String phase,
+            String promptId,
+            String sessionId,
+            int attemptNo,
+            long startedAtNanos
+    ) {
+        long elapsedMs = elapsedMs(startedAtNanos);
+        LOGGER.info(
+                "Feedback timing phase={} promptId={} sessionId={} attemptNo={} elapsedMs={}",
+                phase,
+                promptId,
+                sessionId,
+                attemptNo,
+                elapsedMs
+        );
+        if (feedbackTimingRecorder != null) {
+            feedbackTimingRecorder.recordServicePhase(phase, elapsedMs);
+        }
+    }
+
+    private static long elapsedMs(long startedAtNanos) {
+        return (System.nanoTime() - startedAtNanos) / 1_000_000;
     }
 
     private FeedbackResponseDto fetchLlmFeedback(

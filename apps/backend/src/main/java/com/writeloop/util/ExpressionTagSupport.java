@@ -226,6 +226,7 @@ public final class ExpressionTagSupport {
             case USED_EXPRESSION -> List.of("used_expression");
             case REFINEMENT_EXPRESSION -> List.of("refinement_expression");
             case COACH_RECOMMENDATION -> List.of("coach_recommendation");
+            case DIARY_EXPRESSION -> List.of("diary_expression");
         };
     }
 

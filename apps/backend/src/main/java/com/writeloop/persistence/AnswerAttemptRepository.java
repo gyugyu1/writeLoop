@@ -26,5 +26,16 @@ public interface AnswerAttemptRepository extends JpaRepository<AnswerAttemptEnti
             """)
     long countByUserId(@Param("userId") Long userId);
 
+    @Query("""
+            select count(distinct a.sessionId)
+            from AnswerAttemptEntity a
+            where exists (
+                select 1
+                from AnswerSessionEntity s
+                where s.id = a.sessionId and s.userId = :userId
+            )
+            """)
+    long countDistinctSessionsByUserId(@Param("userId") Long userId);
+
     void deleteBySessionIdIn(List<String> sessionIds);
 }

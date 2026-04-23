@@ -21,9 +21,11 @@ app:
     rate-limit:
       auth-max-requests: 30
       email-max-requests: 20
+      prompt-recommendation-max-requests: 180
       feedback-max-requests: 30
       coach-help-max-requests: 60
       coach-usage-max-requests: 120
+      draft-save-max-requests: 240
   oauth:
     google:
       redirect-uri: http://api.localtest.me/api/auth/social/google/callback

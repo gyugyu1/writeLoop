@@ -40,12 +40,16 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
             @Value("${app.security.rate-limit.auth-max-requests:10}") int authMaxRequests,
             @Value("${app.security.rate-limit.email-window-seconds:600}") long emailWindowSeconds,
             @Value("${app.security.rate-limit.email-max-requests:5}") int emailMaxRequests,
+            @Value("${app.security.rate-limit.prompt-recommendation-window-seconds:60}") long promptRecommendationWindowSeconds,
+            @Value("${app.security.rate-limit.prompt-recommendation-max-requests:60}") int promptRecommendationMaxRequests,
             @Value("${app.security.rate-limit.feedback-window-seconds:60}") long feedbackWindowSeconds,
             @Value("${app.security.rate-limit.feedback-max-requests:6}") int feedbackMaxRequests,
             @Value("${app.security.rate-limit.coach-help-window-seconds:60}") long coachHelpWindowSeconds,
             @Value("${app.security.rate-limit.coach-help-max-requests:20}") int coachHelpMaxRequests,
             @Value("${app.security.rate-limit.coach-usage-window-seconds:60}") long coachUsageWindowSeconds,
-            @Value("${app.security.rate-limit.coach-usage-max-requests:60}") int coachUsageMaxRequests
+            @Value("${app.security.rate-limit.coach-usage-max-requests:60}") int coachUsageMaxRequests,
+            @Value("${app.security.rate-limit.draft-save-window-seconds:60}") long draftSaveWindowSeconds,
+            @Value("${app.security.rate-limit.draft-save-max-requests:120}") int draftSaveMaxRequests
     ) {
         this.requestRateLimiter = requestRateLimiter;
         this.objectMapper = objectMapper;
@@ -79,14 +83,35 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
                         "인증 요청이 너무 많아요. 잠시 후 다시 시도해 주세요."
                 ),
                 new RateLimitPolicy(
+                        "prompt-recommendation",
+                        "GET",
+                        Set.of("/api/prompts/daily", "/api/prompts/daily/featured"),
+                        promptRecommendationMaxRequests,
+                        Duration.ofSeconds(Math.max(promptRecommendationWindowSeconds, 1)),
+                        KeyMode.USER_OR_IP,
+                        false,
+                        "추천 질문 요청이 너무 많아요. 잠시 후 다시 시도해 주세요."
+                ),
+                new RateLimitPolicy(
                         "feedback",
                         "POST",
                         Set.of("/api/feedback"),
                         feedbackMaxRequests,
                         Duration.ofSeconds(Math.max(feedbackWindowSeconds, 1)),
-                        KeyMode.USER_OR_SESSION_OR_IP,
-                        true,
+                        KeyMode.USER_OR_IP,
+                        false,
                         "피드백 요청이 너무 빨라요. 잠시 후 다시 받아 주세요."
+                ),
+                new RateLimitPolicy(
+                        "diary-feedback",
+                        "POST",
+                        Set.of(),
+                        Set.of(new PathPattern("/api/diary/entries/", "/feedback")),
+                        feedbackMaxRequests,
+                        Duration.ofSeconds(Math.max(feedbackWindowSeconds, 1)),
+                        KeyMode.USER_OR_IP,
+                        false,
+                        "일기 피드백 요청이 너무 빨라요. 잠시 후 다시 받아 주세요."
                 ),
                 new RateLimitPolicy(
                         "coach-help",
@@ -94,8 +119,8 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
                         Set.of("/api/coach/help"),
                         coachHelpMaxRequests,
                         Duration.ofSeconds(Math.max(coachHelpWindowSeconds, 1)),
-                        KeyMode.USER_OR_SESSION_OR_IP,
-                        true,
+                        KeyMode.USER_OR_IP,
+                        false,
                         "AI 코치 요청이 너무 빨라요. 잠시 후 다시 시도해 주세요."
                 ),
                 new RateLimitPolicy(
@@ -104,9 +129,20 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
                         Set.of("/api/coach/usage-check"),
                         coachUsageMaxRequests,
                         Duration.ofSeconds(Math.max(coachUsageWindowSeconds, 1)),
-                        KeyMode.USER_OR_SESSION_OR_IP,
-                        true,
+                        KeyMode.USER_OR_IP,
+                        false,
                         "AI 코치 요청이 너무 빨라요. 잠시 후 다시 시도해 주세요."
+                ),
+                new RateLimitPolicy(
+                        "draft-save",
+                        "PUT",
+                        Set.of(),
+                        Set.of(new PathPattern("/api/drafts/", "")),
+                        draftSaveMaxRequests,
+                        Duration.ofSeconds(Math.max(draftSaveWindowSeconds, 1)),
+                        KeyMode.USER_OR_IP,
+                        false,
+                        "임시저장 요청이 너무 빨라요. 잠시 후 다시 시도해 주세요."
                 )
         );
     }
@@ -167,6 +203,10 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
         Long currentUserId = extractCurrentUserId(request);
         if (currentUserId != null) {
             return "user:" + currentUserId;
+        }
+
+        if (policy.keyMode() == KeyMode.USER_OR_IP) {
+            return "ip:" + resolveClientIp(request);
         }
 
         HttpSession session = request.getSession(false);
@@ -286,6 +326,7 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
 
     private enum KeyMode {
         CLIENT_IP,
+        USER_OR_IP,
         USER_OR_SESSION_OR_IP
     }
 
@@ -293,14 +334,53 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
             String id,
             String method,
             Set<String> exactPaths,
+            Set<PathPattern> pathPatterns,
             int maxRequests,
             Duration window,
             KeyMode keyMode,
             boolean createSessionWhenMissing,
             String message
     ) {
+        private RateLimitPolicy(
+                String id,
+                String method,
+                Set<String> exactPaths,
+                int maxRequests,
+                Duration window,
+                KeyMode keyMode,
+                boolean createSessionWhenMissing,
+                String message
+        ) {
+            this(
+                    id,
+                    method,
+                    exactPaths,
+                    Set.of(),
+                    maxRequests,
+                    window,
+                    keyMode,
+                    createSessionWhenMissing,
+                    message
+            );
+        }
+
         private boolean matches(String requestMethod, String requestUri) {
-            return method.equalsIgnoreCase(requestMethod) && exactPaths.contains(requestUri);
+            if (!method.equalsIgnoreCase(requestMethod)) {
+                return false;
+            }
+            if (exactPaths.contains(requestUri)) {
+                return true;
+            }
+            return pathPatterns.stream().anyMatch((pattern) -> pattern.matches(requestUri));
+        }
+    }
+
+    private record PathPattern(String prefix, String suffix) {
+        private boolean matches(String requestUri) {
+            return requestUri != null
+                    && requestUri.startsWith(prefix)
+                    && requestUri.endsWith(suffix)
+                    && requestUri.length() > prefix.length() + suffix.length();
         }
     }
 }

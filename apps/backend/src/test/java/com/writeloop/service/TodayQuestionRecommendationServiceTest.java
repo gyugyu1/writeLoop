@@ -124,6 +124,25 @@ class TodayQuestionRecommendationServiceTest {
     }
 
     @Test
+    void recommend_without_user_or_guest_does_not_write_exposure_logs() {
+        PromptEntity promptOne = prompt("prompt-a-1", "Routine", "Free Time", "A");
+        PromptEntity promptTwo = prompt("prompt-a-2", "Preference", "Movie Genre", "A");
+        PromptEntity promptThree = prompt("prompt-a-3", "Food", "Lunch", "A");
+
+        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
+                .thenReturn(List.of(promptOne, promptTwo, promptThree));
+        when(promptRepository.findAllById(anyCollection()))
+                .thenReturn(List.of(promptOne, promptTwo, promptThree));
+        when(promptHintRepository.findAllByPromptIdInAndActiveTrueOrderByPromptIdAscDisplayOrderAsc(anyCollection()))
+                .thenReturn(List.of());
+
+        DailyPromptRecommendationDto recommendation = recommendationService.recommend(DailyDifficultyDto.A, null, null);
+
+        assertThat(recommendation.featured()).isNotNull();
+        verify(promptRecommendationExposureRepository, never()).save(any(PromptRecommendationExposureEntity.class));
+    }
+
+    @Test
     void recommend_introDifficulty_returnsOnlyIntroPrompts() {
         PromptEntity introOne = prompt("prompt-intro-1", "Routine", "Before Bed", "I");
         PromptEntity introTwo = prompt("prompt-intro-2", "Preference", "Favorite Food", "I");

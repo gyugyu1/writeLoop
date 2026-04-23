@@ -97,12 +97,16 @@ app:
       auth-max-requests: ${APP_SECURITY_RATE_LIMIT_AUTH_MAX_REQUESTS:10}
       email-window-seconds: ${APP_SECURITY_RATE_LIMIT_EMAIL_WINDOW_SECONDS:600}
       email-max-requests: ${APP_SECURITY_RATE_LIMIT_EMAIL_MAX_REQUESTS:5}
+      prompt-recommendation-window-seconds: ${APP_SECURITY_RATE_LIMIT_PROMPT_RECOMMENDATION_WINDOW_SECONDS:60}
+      prompt-recommendation-max-requests: ${APP_SECURITY_RATE_LIMIT_PROMPT_RECOMMENDATION_MAX_REQUESTS:60}
       feedback-window-seconds: ${APP_SECURITY_RATE_LIMIT_FEEDBACK_WINDOW_SECONDS:60}
       feedback-max-requests: ${APP_SECURITY_RATE_LIMIT_FEEDBACK_MAX_REQUESTS:6}
       coach-help-window-seconds: ${APP_SECURITY_RATE_LIMIT_COACH_HELP_WINDOW_SECONDS:60}
       coach-help-max-requests: ${APP_SECURITY_RATE_LIMIT_COACH_HELP_MAX_REQUESTS:20}
       coach-usage-window-seconds: ${APP_SECURITY_RATE_LIMIT_COACH_USAGE_WINDOW_SECONDS:60}
       coach-usage-max-requests: ${APP_SECURITY_RATE_LIMIT_COACH_USAGE_MAX_REQUESTS:60}
+      draft-save-window-seconds: ${APP_SECURITY_RATE_LIMIT_DRAFT_SAVE_WINDOW_SECONDS:60}
+      draft-save-max-requests: ${APP_SECURITY_RATE_LIMIT_DRAFT_SAVE_MAX_REQUESTS:120}
   admin:
     emails: ${APP_ADMIN_EMAILS:}
   mail:
@@ -110,6 +114,9 @@ app:
     from-name: ${APP_MAIL_FROM_NAME:WriteLoop}
   drafts:
     ttl-days: ${APP_DRAFT_TTL_DAYS:7}
+    max-per-user: ${APP_DRAFT_MAX_PER_USER:50}
+    max-payload-bytes: ${APP_DRAFT_MAX_PAYLOAD_BYTES:65536}
+    max-text-chars: ${APP_DRAFT_MAX_TEXT_CHARS:4000}
   coach-evaluation:
     scheduled-enabled: ${APP_COACH_EVALUATION_SCHEDULED_ENABLED:false}
     fixed-delay-ms: ${APP_COACH_EVALUATION_FIXED_DELAY_MS:900000}

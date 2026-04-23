@@ -1384,7 +1384,7 @@ public class TodayQuestionRecommendationService {
             String guestId,
             List<PromptRecommendationItemDto> items
     ) {
-        if (items.isEmpty()) {
+        if (items.isEmpty() || !hasExposureSubject(currentUserId, guestId)) {
             return;
         }
 
@@ -1431,6 +1431,10 @@ public class TodayQuestionRecommendationService {
             PromptRecommendationItemDto item,
             String slotType
     ) {
+        if (!hasExposureSubject(currentUserId, guestId)) {
+            return;
+        }
+
         PromptRecommendationExposureEntity exposure = findOrStabilizePromptExposureForToday(
                 today,
                 item.prompt().id(),
@@ -1479,6 +1483,10 @@ public class TodayQuestionRecommendationService {
             PromptRecommendationExposureEntity exposure,
             boolean alreadyRetried
     ) {
+        if (!hasExposureSubject(currentUserId, guestId)) {
+            return;
+        }
+
         try {
             promptRecommendationExposureRepository.save(exposure);
         } catch (DataIntegrityViolationException exception) {
@@ -1513,6 +1521,10 @@ public class TodayQuestionRecommendationService {
                 persistExposure(today, currentUserId, guestId, canonical, true);
             }
         }
+    }
+
+    private boolean hasExposureSubject(Long currentUserId, String guestId) {
+        return currentUserId != null || (guestId != null && !guestId.isBlank());
     }
 
     private RecommendationReason buildPinnedReason(

@@ -114,7 +114,8 @@ function DiaryFeedbackPanel({ feedback }: { feedback: DiaryFeedback }) {
     (point): point is DiaryCorrectionPoint => Boolean(point?.title || point?.reasonKo)
   );
   const rewriteIdeas = (feedback.rewriteIdeas ?? []).filter(
-    (idea): idea is DiaryRewriteIdea => Boolean(idea?.title || idea?.english || idea?.noteKo)
+    (idea): idea is DiaryRewriteIdea =>
+      Boolean(idea?.title || idea?.meaningKo || idea?.noteKo || idea?.exampleEn)
   );
   const diaryExpressions = [
     ...(feedback.usedDiaryExpressions ?? []),
@@ -224,13 +225,12 @@ function DiaryFeedbackPanel({ feedback }: { feedback: DiaryFeedback }) {
           <h3>다시 쓸 때 붙여볼 아이디어</h3>
           <div className={styles.ideaGrid}>
             {rewriteIdeas.slice(0, 5).map((idea, index) => {
-              const title = firstText(idea.title, idea.english, `아이디어 ${index + 1}`);
-              const note = firstText(idea.meaningKo, idea.noteKo);
+              const title = firstText(idea.title, idea.meaningKo, `아이디어 ${index + 1}`);
+              const note = firstText(idea.noteKo);
 
               return (
                 <article key={`${title}-${index}`} className={styles.ideaCard}>
                   <strong>{title}</strong>
-                  {idea.english ? <p className={styles.ideaEnglish}>{idea.english}</p> : null}
                   {note ? <span>{note}</span> : null}
                   {idea.exampleEn ? <em>{idea.exampleEn}</em> : null}
                 </article>

@@ -686,7 +686,6 @@ LLM이 잘못 내려도 백엔드에서 실제 entryId로 다시 덮어쓴다.
 ```json
 {
   "title": "기분 한 문장 추가하기",
-  "english": "I felt relieved after seeing the doctor.",
   "meaningKo": "의사를 보고 나서 안심이 됐어요.",
   "noteKo": "병원에 간 뒤 느낀 감정을 붙이면 일기 흐름이 좋아져요.",
   "exampleEn": "I felt relieved after seeing the doctor."
@@ -1128,7 +1127,6 @@ openai:
   "rewriteIdeas": [
     {
       "title": "몸 상태를 한 문장 더 붙이기",
-      "english": "I still felt tired, but I was relieved.",
       "meaningKo": "아직 피곤했지만 안심이 됐어요.",
       "noteKo": "병원에 다녀온 뒤의 감정을 붙이면 일기 느낌이 더 살아나요.",
       "exampleEn": "I still felt tired, but I was relieved."
@@ -1302,4 +1300,3 @@ LLM 응답이 스키마를 지키지 않으면 파싱 실패가 발생한다.
 이 구조 덕분에 WriteLoop는 질문 답변 학습 루프와 자유 영어일기 학습 루프를 각각 다른 목적에 맞게 발전시킬 수 있다.
 
 영어일기 기능의 핵심은 사용자의 글을 평가하는 것이 아니라, 사용자가 계속 영어로 하루를 기록하고 다시 써볼 수 있게 돕는 것이다.
-

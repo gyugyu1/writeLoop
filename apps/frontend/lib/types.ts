@@ -432,7 +432,6 @@ export interface DiaryExpression {
 
 export interface DiaryRewriteIdea {
   title: string;
-  english?: string | null;
   meaningKo?: string | null;
   noteKo: string;
   exampleEn?: string | null;

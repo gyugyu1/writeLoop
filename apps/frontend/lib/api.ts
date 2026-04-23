@@ -255,7 +255,6 @@ function normalizeDiaryRewriteIdeaPayload(value: unknown) {
   const payload = asRecord(value);
   return {
     title: asString(payload.title),
-    english: asNullableString(payload.english),
     meaningKo: asNullableString(payload.meaningKo),
     noteKo: asString(payload.noteKo),
     exampleEn: asNullableString(payload.exampleEn)

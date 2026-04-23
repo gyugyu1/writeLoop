@@ -264,7 +264,8 @@ function DiaryFeedbackPanel({
     (point): point is DiaryCorrectionPoint => Boolean(point?.title || point?.reasonKo)
   );
   const rewriteIdeas = (feedback.rewriteIdeas ?? []).filter(
-    (idea): idea is DiaryRewriteIdea => Boolean(idea?.title || idea?.english || idea?.noteKo)
+    (idea): idea is DiaryRewriteIdea =>
+      Boolean(idea?.title || idea?.meaningKo || idea?.noteKo || idea?.exampleEn)
   );
   const diaryExpressions = [
     ...(feedback.usedDiaryExpressions ?? []),
@@ -460,18 +461,14 @@ function DiaryFeedbackPanel({
           </View>
           {rewriteIdeas.slice(0, 5).map((idea, index) => {
             const translation = firstText(idea.meaningKo, `아이디어 ${index + 1}`);
-            const english = firstText(idea.english);
             const note = firstText(idea.noteKo);
-            const example = normalizeComparableText(idea.exampleEn) === normalizeComparableText(english)
-              ? ""
-              : firstText(idea.exampleEn);
+            const example = firstText(idea.exampleEn);
 
             return (
               <View
-                key={`${translation}-${english}-${index}`}
+                key={`${translation}-${example}-${index}`}
                 style={[styles.ideaCard, index > 0 && styles.innerDivider]}
               >
-                {english ? <Text style={styles.ideaEnglish}>{english}</Text> : null}
                 <Text style={styles.ideaTitle}>{translation}</Text>
                 {note ? <Text style={styles.ideaNote}>{note}</Text> : null}
                 {example ? <Text style={styles.exampleText}>{example}</Text> : null}
@@ -2002,12 +1999,6 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     fontWeight: "900",
     color: "#2A2620"
-  },
-  ideaEnglish: {
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: "800",
-    color: "#5D4733"
   },
   ideaNote: {
     fontSize: 14,

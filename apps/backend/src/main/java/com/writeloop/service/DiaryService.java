@@ -296,7 +296,6 @@ public class DiaryService {
                 ),
                 List.of(new DiaryRewriteIdeaDto(
                         "감정 한 문장 더하기",
-                        "I felt a little better after that.",
                         "그 후에 조금 나아졌어요.",
                         "오늘 일어난 일 뒤에 느낀 점을 붙여보세요.",
                         "I felt tired, but I was happy to finish my day."

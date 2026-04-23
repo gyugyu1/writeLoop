@@ -40,9 +40,9 @@ final class DiaryFeedbackPromptSupport {
                 - strengths must be 1 to 3 short Korean comments.
                 - fixPoints should contain the most useful required corrections, usually 1 to 5 items.
                 - rewriteIdeas.title and rewriteIdeas.meaningKo must be Korean. The title should be a short Korean action label, such as "감정 문장 붙이기" or "작은 다짐 더하기".
-                - rewriteIdeas.english and rewriteIdeas.exampleEn are the only places where English rewrite sentences should appear.
-                - Do not put the same English sentence in both rewriteIdeas.english and rewriteIdeas.exampleEn. If rewriteIdeas.english is already a full usable sentence, set exampleEn to an empty string.
-                - Use rewriteIdeas.exampleEn only when it shows a different context sentence that contains the suggested phrase.
+                - rewriteIdeas.exampleEn is the only rewriteIdeas field where an English rewrite sentence should appear.
+                - Only use the rewriteIdeas fields defined in the schema.
+                - Use rewriteIdeas.exampleEn for one short usable sentence the learner can add or adapt.
                 - rewriteIdeas.noteKo must explain in Korean where or why to add the idea.
                 - usedDiaryExpressions are reusable phrases the learner already used well.
                 - diaryExpressions are reusable diary expressions the learner can try next time.
@@ -115,12 +115,11 @@ final class DiaryFeedbackPromptSupport {
                 "additionalProperties", false,
                 "properties", Map.of(
                         "title", stringSchema,
-                        "english", nullableStringSchema,
                         "meaningKo", nullableStringSchema,
                         "noteKo", stringSchema,
                         "exampleEn", nullableStringSchema
                 ),
-                "required", List.of("title", "english", "meaningKo", "noteKo", "exampleEn")
+                "required", List.of("title", "meaningKo", "noteKo", "exampleEn")
         );
 
         Map<String, Object> diaryFlowSchema = Map.of(

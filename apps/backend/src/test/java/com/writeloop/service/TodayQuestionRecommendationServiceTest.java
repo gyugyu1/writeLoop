@@ -433,6 +433,36 @@ class TodayQuestionRecommendationServiceTest {
     }
 
     @Test
+    void recordStart_doesNotDeleteSameExposureReturnedByUserAndGuestLookup() {
+        String guestId = "guest-abcdef123456789012";
+        PromptRecommendationExposureEntity exposure = new PromptRecommendationExposureEntity(
+                LocalDate.now(),
+                21L,
+                guestId,
+                "A",
+                "prompt-a-14",
+                "FEATURED",
+                "QUICK_START",
+                90
+        );
+
+        when(promptRecommendationExposureRepository
+                .findByUserIdAndPromptIdAndRecommendedDateOrderByShownAtAsc(eq(21L), eq("prompt-a-14"), any(LocalDate.class)))
+                .thenReturn(List.of(exposure));
+        when(promptRecommendationExposureRepository
+                .findByGuestIdAndPromptIdAndRecommendedDateOrderByShownAtAsc(eq(guestId), eq("prompt-a-14"), any(LocalDate.class)))
+                .thenReturn(List.of(exposure));
+
+        recommendationService.recordStart("prompt-a-14", 21L, guestId, "session-21");
+
+        assertThat(exposure.getUserId()).isEqualTo(21L);
+        assertThat(exposure.getGuestId()).isNull();
+        assertThat(exposure.getStartedSessionId()).isEqualTo("session-21");
+        verify(promptRecommendationExposureRepository, never()).deleteAll(any());
+        verify(promptRecommendationExposureRepository, times(2)).save(exposure);
+    }
+
+    @Test
     void recommend_recovers_when_same_day_insert_hits_unique_constraint() {
         PromptEntity promptOne = prompt("prompt-a-15", "Routine", "Lunch Break", "A");
         PromptRecommendationExposureEntity existingExposure = new PromptRecommendationExposureEntity(

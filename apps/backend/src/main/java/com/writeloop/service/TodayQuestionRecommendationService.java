@@ -588,6 +588,9 @@ public class TodayQuestionRecommendationService {
 
         for (int index = 1; index < exposures.size(); index += 1) {
             PromptRecommendationExposureEntity duplicate = exposures.get(index);
+            if (isSameExposure(canonical, duplicate)) {
+                continue;
+            }
             changed |= mergeDuplicateExposure(canonical, duplicate);
             duplicatesToDelete.add(duplicate);
         }
@@ -640,17 +643,13 @@ public class TodayQuestionRecommendationService {
         if (currentUserId != null) {
             List<PromptRecommendationExposureEntity> userExposures = promptRecommendationExposureRepository
                     .findByUserIdAndRecommendedDateOrderByShownAtAsc(currentUserId, today);
-            if (userExposures != null) {
-                exposures.addAll(userExposures);
-            }
+            addDistinctExposures(exposures, userExposures);
         }
 
         if (guestId != null && !guestId.isBlank()) {
             List<PromptRecommendationExposureEntity> guestExposures = promptRecommendationExposureRepository
                     .findByGuestIdAndRecommendedDateOrderByShownAtAsc(guestId, today);
-            if (guestExposures != null) {
-                exposures.addAll(guestExposures);
-            }
+            addDistinctExposures(exposures, guestExposures);
         }
 
         exposures.sort(Comparator.comparing(PromptRecommendationExposureEntity::getShownAt));
@@ -672,21 +671,52 @@ public class TodayQuestionRecommendationService {
         if (currentUserId != null) {
             List<PromptRecommendationExposureEntity> userExposures = promptRecommendationExposureRepository
                     .findByUserIdAndPromptIdAndRecommendedDateOrderByShownAtAsc(currentUserId, promptId, today);
-            if (userExposures != null) {
-                exposures.addAll(userExposures);
-            }
+            addDistinctExposures(exposures, userExposures);
         }
 
         if (guestId != null && !guestId.isBlank()) {
             List<PromptRecommendationExposureEntity> guestExposures = promptRecommendationExposureRepository
                     .findByGuestIdAndPromptIdAndRecommendedDateOrderByShownAtAsc(guestId, promptId, today);
-            if (guestExposures != null) {
-                exposures.addAll(guestExposures);
-            }
+            addDistinctExposures(exposures, guestExposures);
         }
 
         exposures.sort(Comparator.comparing(PromptRecommendationExposureEntity::getShownAt));
         return exposures;
+    }
+
+    private void addDistinctExposures(
+            List<PromptRecommendationExposureEntity> target,
+            List<PromptRecommendationExposureEntity> source
+    ) {
+        if (source == null || source.isEmpty()) {
+            return;
+        }
+
+        for (PromptRecommendationExposureEntity exposure : source) {
+            if (exposure == null) {
+                continue;
+            }
+            boolean alreadyAdded = target.stream()
+                    .anyMatch(existing -> isSameExposure(existing, exposure));
+            if (!alreadyAdded) {
+                target.add(exposure);
+            }
+        }
+    }
+
+    private boolean isSameExposure(
+            PromptRecommendationExposureEntity left,
+            PromptRecommendationExposureEntity right
+    ) {
+        if (left == right) {
+            return true;
+        }
+        if (left == null || right == null) {
+            return false;
+        }
+        Long leftId = left.getId();
+        Long rightId = right.getId();
+        return leftId != null && leftId.equals(rightId);
     }
 
     private boolean mergeDuplicateExposure(

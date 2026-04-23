@@ -103,6 +103,8 @@ public class FeedbackService {
             "reason", "so", "that", "the", "their", "this", "to", "when", "with", "your", "his", "her"
     );
     private static final int MAX_REFINEMENT_EXPRESSION_COUNT = 12;
+    private static final int MAX_FEEDBACK_ANSWER_CHARS = 4_000;
+    private static final int MAX_SURFACE_FORM_DISTANCE_TOKEN_CHARS = 64;
 
     private final PromptService promptService;
     private final LlmFeedbackClient llmFeedbackClient;
@@ -122,6 +124,13 @@ public class FeedbackService {
         long phaseStartedAtNanos = totalStartedAtNanos;
         PromptDto prompt = promptService.findById(request.promptId());
         String answer = request.answer() == null ? "" : request.answer().trim();
+        if (answer.length() > MAX_FEEDBACK_ANSWER_CHARS) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "ANSWER_TOO_LONG",
+                    "답변은 4,000자 이하로 작성해 주세요."
+            );
+        }
         AnswerSessionEntity session = resolveSession(request, prompt.id(), currentUserId);
         int attemptNo = answerAttemptRepository.countBySessionId(session.getId()) + 1;
         String previousAnswer = findPreviousAnswer(session.getId(), attemptNo);
@@ -2047,8 +2056,11 @@ public class FeedbackService {
         if (original.isBlank() || revised.isBlank() || original.equals(revised)) {
             return false;
         }
+        if (Math.max(original.length(), revised.length()) > MAX_SURFACE_FORM_DISTANCE_TOKEN_CHARS) {
+            return false;
+        }
         if (original.length() <= 2 || revised.length() <= 2) {
-            return levenshteinDistance(original, revised) <= 1;
+            return isWithinLevenshteinDistance(original, revised, 1);
         }
         if (sharesGerundSurfaceBase(original, revised) || sharesGerundSurfaceBase(revised, original)) {
             return true;
@@ -2057,7 +2069,7 @@ public class FeedbackService {
             return false;
         }
 
-        return levenshteinDistance(original, revised) <= 2;
+        return isWithinLevenshteinDistance(original, revised, 2);
     }
 
     private boolean sharesGerundSurfaceBase(String maybeGerund, String otherToken) {
@@ -2073,26 +2085,48 @@ public class FeedbackService {
                 && otherToken.equals(base.substring(0, base.length() - 1));
     }
 
-    private int levenshteinDistance(String left, String right) {
-        int[][] dp = new int[left.length() + 1][right.length() + 1];
-        for (int i = 0; i <= left.length(); i++) {
-            dp[i][0] = i;
+    private boolean isWithinLevenshteinDistance(String left, String right, int maxDistance) {
+        if (maxDistance < 0) {
+            return false;
         }
-        for (int j = 0; j <= right.length(); j++) {
-            dp[0][j] = j;
+        if (Math.abs(left.length() - right.length()) > maxDistance) {
+            return false;
         }
 
-        for (int i = 1; i <= left.length(); i++) {
-            for (int j = 1; j <= right.length(); j++) {
-                int cost = left.charAt(i - 1) == right.charAt(j - 1) ? 0 : 1;
-                dp[i][j] = Math.min(
-                        Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1),
-                        dp[i - 1][j - 1] + cost
+        if (left.length() > right.length()) {
+            String temporary = left;
+            left = right;
+            right = temporary;
+        }
+
+        int[] previous = new int[right.length() + 1];
+        int[] current = new int[right.length() + 1];
+        for (int column = 0; column <= right.length(); column++) {
+            previous[column] = column;
+        }
+
+        for (int row = 1; row <= left.length(); row++) {
+            current[0] = row;
+            int rowMinimum = current[0];
+            for (int column = 1; column <= right.length(); column++) {
+                int cost = left.charAt(row - 1) == right.charAt(column - 1) ? 0 : 1;
+                current[column] = Math.min(
+                        Math.min(previous[column] + 1, current[column - 1] + 1),
+                        previous[column - 1] + cost
                 );
+                rowMinimum = Math.min(rowMinimum, current[column]);
             }
+
+            if (rowMinimum > maxDistance) {
+                return false;
+            }
+
+            int[] temporary = previous;
+            previous = current;
+            current = temporary;
         }
 
-        return dp[left.length()][right.length()];
+        return previous[right.length()] <= maxDistance;
     }
 
     private String buildGenericGrammarReason(String originalText, String revisedText) {

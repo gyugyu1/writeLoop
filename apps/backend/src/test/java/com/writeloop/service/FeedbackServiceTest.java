@@ -17,6 +17,7 @@ import com.writeloop.dto.PromptTaskMetaDto;
 import com.writeloop.dto.RefinementExampleSource;
 import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.dto.RefinementExpressionSource;
+import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionEntity;
@@ -36,6 +37,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -48,6 +50,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -112,6 +115,66 @@ class FeedbackServiceTest {
     private void stubOpenAiReview(FeedbackResponseDto feedback) {
         doReturn(feedback).when(openAiFeedbackClient)
                 .review(any(PromptDto.class), anyString(), anyList(), anyInt(), nullable(String.class));
+    }
+
+    @Test
+    void review_rejects_overlong_answer_before_llm_call() {
+        PromptDto prompt = new PromptDto(
+                "prompt-overlong-answer",
+                "Daily routine",
+                "EASY",
+                "What do you usually do in the morning?",
+                "아침에 보통 무엇을 하나요?",
+                "Write a short answer."
+        );
+        FeedbackRequestDto request = new FeedbackRequestDto(
+                prompt.id(),
+                "a".repeat(4_001),
+                "session-overlong-answer",
+                null,
+                null
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+
+        assertThatThrownBy(() -> feedbackService.review(request, 7L))
+                .isInstanceOf(ApiException.class)
+                .extracting("code")
+                .isEqualTo("ANSWER_TOO_LONG");
+        verifyNoInteractions(openAiFeedbackClient);
+    }
+
+    @Test
+    void long_single_token_replace_is_not_treated_as_surface_form_correction() {
+        String original = "a".repeat(80);
+        String revised = "a".repeat(79) + "b";
+
+        Boolean result = ReflectionTestUtils.invokeMethod(
+                feedbackService,
+                "isLikelySurfaceFormCorrection",
+                original,
+                revised
+        );
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
+    void precise_inline_feedback_falls_back_when_token_diff_matrix_would_be_too_large() {
+        GeminiFeedbackClient diffHelper = new GeminiFeedbackClient(
+                new ObjectMapper(),
+                "test-key",
+                "gpt-4o",
+                "https://api.example.com/v1/responses", null, 120
+        );
+        String original = "a ".repeat(350).trim();
+        String revised = "b ".repeat(350).trim();
+
+        List<InlineFeedbackSegmentDto> segments = diffHelper.buildPreciseInlineFeedback(original, revised);
+
+        assertThat(segments)
+                .extracting(InlineFeedbackSegmentDto::type, InlineFeedbackSegmentDto::originalText, InlineFeedbackSegmentDto::revisedText)
+                .containsExactly(tuple("REPLACE", original, revised));
     }
 
     @Test

@@ -45,6 +45,9 @@ import java.util.regex.Pattern;
 public class GeminiFeedbackClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(GeminiFeedbackClient.class);
     private static final int MAX_LOG_RESPONSE_BODY_LENGTH = 4000;
+    private static final int MAX_INLINE_DIFF_TEXT_CHARS = 4_000;
+    private static final int MAX_INLINE_DIFF_TOKENS = 600;
+    private static final int MAX_INLINE_DIFF_CELLS = 120_000;
     private static final Pattern INLINE_TOKEN_PATTERN = Pattern.compile("[A-Za-z0-9']+|[^\\sA-Za-z0-9']+|\\s+");
     private static final Pattern PRIMARY_FIX_ENGLISH_ANCHOR_PATTERN = Pattern.compile("[A-Za-z][A-Za-z' -]{2,}");
     static final String INTERNAL_AUTHORITATIVE_SESSION_ID = "__LLM_HYBRID_FINAL__";
@@ -1237,12 +1240,21 @@ public class GeminiFeedbackClient {
             return List.of(new InlineFeedbackSegmentDto("KEEP", safeOriginalText, safeOriginalText));
         }
 
+        if (isInlineDiffTooLarge(safeOriginalText, safeRevisedText)) {
+            return List.of(new InlineFeedbackSegmentDto("REPLACE", safeOriginalText, safeRevisedText));
+        }
+
         List<InlineFeedbackSegmentDto> expanded = expandReplaceSegment(safeOriginalText, safeRevisedText);
         if (expanded != null && !expanded.isEmpty()) {
             return mergeSegments(expanded);
         }
 
         return List.of(new InlineFeedbackSegmentDto("REPLACE", safeOriginalText, safeRevisedText));
+    }
+
+    private boolean isInlineDiffTooLarge(String originalText, String revisedText) {
+        return originalText.length() > MAX_INLINE_DIFF_TEXT_CHARS
+                || revisedText.length() > MAX_INLINE_DIFF_TEXT_CHARS;
     }
 
     private String buildDiagnosisRequestBody(
@@ -3340,6 +3352,9 @@ public class GeminiFeedbackClient {
                 tokenizeForInlineDiff(originalText),
                 tokenizeForInlineDiff(revisedText)
         );
+        if (operations == null) {
+            return null;
+        }
         List<InlineFeedbackSegmentDto> expanded = new ArrayList<>();
         StringBuilder removedBuffer = new StringBuilder();
         StringBuilder addedBuffer = new StringBuilder();
@@ -3391,6 +3406,10 @@ public class GeminiFeedbackClient {
     }
 
     private List<TokenDiffOperation> buildTokenDiffOperations(List<String> originalTokens, List<String> revisedTokens) {
+        if (isInlineTokenDiffTooLarge(originalTokens, revisedTokens)) {
+            return null;
+        }
+
         int[][] dp = new int[originalTokens.size() + 1][revisedTokens.size() + 1];
 
         for (int originalIndex = originalTokens.size() - 1; originalIndex >= 0; originalIndex--) {
@@ -3434,6 +3453,14 @@ public class GeminiFeedbackClient {
         }
 
         return operations;
+    }
+
+    private boolean isInlineTokenDiffTooLarge(List<String> originalTokens, List<String> revisedTokens) {
+        if (originalTokens.size() > MAX_INLINE_DIFF_TOKENS || revisedTokens.size() > MAX_INLINE_DIFF_TOKENS) {
+            return true;
+        }
+        long cellCount = (long) (originalTokens.size() + 1) * (long) (revisedTokens.size() + 1);
+        return cellCount > MAX_INLINE_DIFF_CELLS;
     }
 
     private void appendMergedSegment(List<InlineFeedbackSegmentDto> segments, InlineFeedbackSegmentDto segment) {

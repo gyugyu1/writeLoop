@@ -22,6 +22,8 @@ pnpm-debug.log*
 env_files/
 .artifacts/
 test-results/
+tmp/
+tmp_*
 .tmp-next-dev.log
 .tmp-next-dev.err.log
 *.tsbuildinfo

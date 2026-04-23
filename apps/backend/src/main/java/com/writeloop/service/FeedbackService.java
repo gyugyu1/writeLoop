@@ -4567,12 +4567,13 @@ public class FeedbackService {
 
     private boolean isGenericRefinementMeaning(String meaningKo) {
         String normalized = meaningKo == null ? "" : meaningKo.trim().replaceAll("\\s+", " ");
-        return normalized.equals("??? ?? ? ? ?? ?????.")
-                || normalized.equals("??? ????? ??? ? ?? ?????.")
-                || normalized.equals("?? ? ???? ??? ?????.")
-                || (normalized.contains("???") && normalized.contains("??"))
-                || (normalized.contains("?????") && normalized.contains("??"));
-    }    private RefinementExpressionType determineRefinementType(String expression) {
+        return isGenericMeaningPlaceholder(normalized)
+                || normalized.equals("문장에 넣어 쓸 수 있어요.")
+                || normalized.equals("답변을 자연스럽게 만들 때 쓸 수 있어요.")
+                || normalized.equals("다음 답변에 활용해 보세요.");
+    }
+
+    private RefinementExpressionType determineRefinementType(String expression) {
         return expression != null && expression.contains("[") && expression.contains("]")
                 ? RefinementExpressionType.FRAME
                 : RefinementExpressionType.LEXICAL;
@@ -4790,7 +4791,7 @@ public class FeedbackService {
         if (skeleton == null || skeleton.isBlank()) {
             return "";
         }
-        return " ?뚰듃 堉덈?: \"" + skeleton.trim() + "\"";
+        return " 힌트 틀: \"" + skeleton.trim() + "\"";
     }
 }
 

@@ -2571,7 +2571,7 @@ public class GeminiFeedbackClient {
                 return List.of(new GrammarFeedbackItemDto(
                         originalText == null || originalText.isBlank() ? "" : originalText,
                         revisedText,
-                        "???쒓낯????袁⑸젻泳?떑???癲ル슢????????????뽮덧????沃섅굥?? ?袁⑸즴??繞?????떋 ?怨뚮옖???빝??"
+                        "문법을 최소한으로 고치면 더 자연스럽게 읽혀요."
                 ));
             }
         }

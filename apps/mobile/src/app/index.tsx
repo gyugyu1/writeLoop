@@ -786,9 +786,20 @@ export default function HomeScreen() {
     setCalendarMonthCursor((current) => getMonthStart(new Date(current.getFullYear(), current.getMonth() + direction, 1, 12)));
   }, []);
 
-  const handleOpenHistoryDate = useCallback(
-    (dateKey: string) => {
+  const handleOpenCalendarDate = useCallback(
+    (dateKey: string, hasWritingActivity: boolean, hasDiaryActivity: boolean) => {
       setIsCalendarOpen(false);
+      if (currentUser && hasDiaryActivity && !hasWritingActivity) {
+        const entries = diaryEntriesByDate.get(dateKey) ?? [];
+        if (entries.length > 0) {
+          router.push({
+            pathname: "/diary/[entryId]",
+            params: { entryId: entries[0].entryId }
+          } as Href);
+          return;
+        }
+      }
+
       const nextHref: Href = currentUser
         ? ({
             pathname: "/records",
@@ -799,7 +810,7 @@ export default function HomeScreen() {
         : buildLoginHref(`/records?date=${dateKey}`);
       router.push(nextHref);
     },
-    [currentUser]
+    [currentUser, diaryEntriesByDate]
   );
 
   const handleChangeDiaryMonth = useCallback((direction: -1 | 1) => {
@@ -1227,30 +1238,70 @@ export default function HomeScreen() {
               </View>
 
               <View style={styles.calendarGrid}>
-                {monthCalendar.cells.map((cell) => (
-                  <View key={cell.key} style={styles.calendarCellWrap}>
-                    <Pressable
-                      onPress={() => handleOpenHistoryDate(cell.key)}
-                      style={[
-                        styles.calendarCell,
-                        cell.isCompleted && styles.calendarCellCompleted,
-                        cell.isToday && styles.calendarCellToday,
-                        !cell.isCurrentMonth && styles.calendarCellOutside
-                      ]}
-                    >
-                      <Text
+                {monthCalendar.cells.map((cell) => {
+                  const hasWritingActivity = cell.isCompleted;
+                  const hasDiaryActivity = diaryEntryDateKeys.has(cell.key);
+                  const activityLabel = [
+                    hasWritingActivity ? "작문 완료" : null,
+                    hasDiaryActivity ? "일기 작성" : null
+                  ]
+                    .filter(Boolean)
+                    .join(", ");
+
+                  return (
+                    <View key={cell.key} style={styles.calendarCellWrap}>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`${cell.dayNumber}일${activityLabel ? `, ${activityLabel}` : ""}`}
+                        onPress={() => handleOpenCalendarDate(cell.key, hasWritingActivity, hasDiaryActivity)}
                         style={[
-                          styles.calendarCellText,
-                          cell.isCompleted && styles.calendarCellTextCompleted,
-                          cell.isToday && styles.calendarCellTextToday,
-                          !cell.isCurrentMonth && styles.calendarCellTextOutside
+                          styles.calendarCell,
+                          hasDiaryActivity && !hasWritingActivity && styles.calendarCellDiaryOnly,
+                          cell.isCompleted && styles.calendarCellCompleted,
+                          cell.isToday && styles.calendarCellToday,
+                          !cell.isCurrentMonth && styles.calendarCellOutside
                         ]}
                       >
-                        {cell.dayNumber}
-                      </Text>
-                    </Pressable>
-                  </View>
-                ))}
+                        <Text
+                          style={[
+                            styles.calendarCellText,
+                            hasDiaryActivity && !hasWritingActivity && styles.calendarCellTextDiaryOnly,
+                            cell.isCompleted && styles.calendarCellTextCompleted,
+                            cell.isToday && styles.calendarCellTextToday,
+                            !cell.isCurrentMonth && styles.calendarCellTextOutside
+                          ]}
+                        >
+                          {cell.dayNumber}
+                        </Text>
+                        {hasWritingActivity || hasDiaryActivity ? (
+                          <View style={styles.calendarActivityMarkers} pointerEvents="none">
+                            <View style={styles.calendarActivityDotSlot}>
+                              {hasWritingActivity ? (
+                                <View style={[styles.calendarActivityDot, styles.calendarActivityDotWriting]} />
+                              ) : null}
+                            </View>
+                            <View style={styles.calendarActivityDotSlot}>
+                              {hasDiaryActivity ? (
+                                <View style={[styles.calendarActivityDot, styles.calendarActivityDotDiary]} />
+                              ) : null}
+                            </View>
+                          </View>
+                        ) : null}
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+
+              <View style={styles.calendarActivityLegend}>
+                <View style={styles.calendarActivityLegendItem}>
+                  <View style={[styles.calendarActivityDot, styles.calendarActivityDotWriting]} />
+                  <Text style={styles.calendarActivityLegendText}>작문</Text>
+                </View>
+                <View style={styles.calendarActivityLegendItem}>
+                  <View style={[styles.calendarActivityDot, styles.calendarActivityDotDiary]} />
+                  <Text style={styles.calendarActivityLegendText}>일기</Text>
+                </View>
               </View>
 
               <Text style={styles.calendarFooterMeta}>{calendarFooterLabel}</Text>
@@ -1833,15 +1884,10 @@ const styles = StyleSheet.create({
     borderRadius: 30,
     borderWidth: 1,
     borderColor: "#EBDCCB",
-    backgroundColor: "#FFF9F1",
+    backgroundColor: "#FFFEFC",
     paddingHorizontal: 20,
     paddingVertical: 20,
-    gap: 16,
-    shadowColor: "#D89A51",
-    shadowOpacity: 0.16,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
-    elevation: 6
+    gap: 14
   },
   calendarModalHeader: {
     flexDirection: "row",
@@ -1917,60 +1963,110 @@ const styles = StyleSheet.create({
     color: "#B34A2B"
   },
   calendarWeekHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between"
+    flexDirection: "row"
   },
   calendarWeekLabel: {
-    width: 40,
+    flex: 1,
     textAlign: "center",
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#A17A42"
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#A28D78"
   },
   calendarGrid: {
     flexDirection: "row",
-    flexWrap: "wrap"
+    flexWrap: "wrap",
+    rowGap: 8
   },
   calendarCellWrap: {
     width: "14.285%",
-    alignItems: "center",
-    marginBottom: 10
+    alignItems: "center"
   },
   calendarCell: {
-    width: 40,
-    height: 40,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#EADDCB",
-    backgroundColor: "#FFFDF9",
+    width: 38,
+    height: 42,
+    borderRadius: 18,
+    borderWidth: 0,
+    borderColor: "transparent",
+    backgroundColor: "transparent",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    gap: 2,
+    position: "relative"
   },
   calendarCellOutside: {
-    backgroundColor: "#F8F1E7",
-    borderColor: "#F1E4D4"
+    opacity: 0.45
+  },
+  calendarCellDiaryOnly: {
+    backgroundColor: "transparent"
   },
   calendarCellCompleted: {
-    backgroundColor: "#FFB347",
-    borderColor: "#E48B21"
+    backgroundColor: "transparent"
   },
   calendarCellToday: {
-    borderWidth: 3,
-    borderColor: "#C4832F"
+    borderWidth: 1,
+    borderColor: "#F2A14A"
   },
   calendarCellText: {
     fontSize: 15,
-    fontWeight: "800",
-    color: "#7D6750"
+    fontWeight: "900",
+    color: "#5E5247"
   },
   calendarCellTextOutside: {
-    color: "#C6B8A6"
+    color: "#B4A392"
   },
   calendarCellTextCompleted: {
-    color: "#FFFDFB"
+    color: "#5E5247"
+  },
+  calendarCellTextDiaryOnly: {
+    color: "#5E5247"
   },
   calendarCellTextToday: {
-    color: "#7D531D"
+    color: "#2E2416"
+  },
+  calendarActivityMarkers: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 3,
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 3
+  },
+  calendarActivityDotSlot: {
+    width: 8,
+    height: 8,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  calendarActivityDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 999,
+    borderWidth: 0
+  },
+  calendarActivityDotWriting: {
+    backgroundColor: "#EA920D"
+  },
+  calendarActivityDotDiary: {
+    backgroundColor: "#32835B"
+  },
+  calendarActivityLegend: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 14,
+    marginTop: 4,
+    marginBottom: 8
+  },
+  calendarActivityLegendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6
+  },
+  calendarActivityLegendText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#7A6856"
   },
   calendarFooterMeta: {
     fontSize: 13,

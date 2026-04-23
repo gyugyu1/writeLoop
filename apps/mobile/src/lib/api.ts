@@ -19,6 +19,11 @@ import type {
   CommonMistake,
   DailyDifficulty,
   DailyPromptRecommendation,
+  DiaryAttempt,
+  DiaryEntry,
+  DiaryEntryRequest,
+  DiaryFeedback,
+  DiaryFeedbackRequest,
   FeaturedDailyPromptRecommendation,
   DeleteAccountRequest,
   Feedback,
@@ -61,6 +66,10 @@ const COACH_FETCH_TIMEOUT_MS = 45000;
 
 function resolveFetchTimeoutMs(url: string) {
   if (url.includes("/api/feedback")) {
+    return FEEDBACK_FETCH_TIMEOUT_MS;
+  }
+
+  if (url.includes("/api/diary")) {
     return FEEDBACK_FETCH_TIMEOUT_MS;
   }
 
@@ -180,6 +189,204 @@ function normalizeWritingDraftPayload(draft: WritingDraft): WritingDraft {
   return {
     ...draft,
     selectedDifficulty: normalizeDailyDifficulty(draft.selectedDifficulty)
+  };
+}
+
+const DIARY_ANSWER_BANDS = new Set<DiaryFeedback["diaryAnswerBand"]>([
+  "DIARY_TOO_SHORT",
+  "DIARY_NOT_ENGLISH",
+  "DIARY_GRAMMAR_BLOCKING",
+  "DIARY_FLOW_THIN",
+  "DIARY_CLEAR_BASIC",
+  "DIARY_NATURAL_COMPLETE"
+]);
+
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function asString(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function asNullableString(value: unknown) {
+  return typeof value === "string" ? value : null;
+}
+
+function asNumber(value: unknown, fallback = 0) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function asBoolean(value: unknown, fallback = false) {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function asStringArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeDiaryAnswerBand(value: unknown): DiaryFeedback["diaryAnswerBand"] {
+  if (typeof value === "string" && DIARY_ANSWER_BANDS.has(value as DiaryFeedback["diaryAnswerBand"])) {
+    return value as DiaryFeedback["diaryAnswerBand"];
+  }
+
+  return "DIARY_CLEAR_BASIC";
+}
+
+function normalizeDiaryCorrectionPointPayload(value: unknown) {
+  const payload = asRecord(value);
+  return {
+    kind: asString(payload.kind),
+    title: asString(payload.title),
+    originalText: asNullableString(payload.originalText),
+    revisedText: asNullableString(payload.revisedText),
+    reasonKo: asString(payload.reasonKo),
+    exampleEn: asNullableString(payload.exampleEn)
+  };
+}
+
+function normalizeDiaryExpressionPayload(value: unknown) {
+  const payload = asRecord(value);
+  return {
+    expression: asString(payload.expression),
+    meaningKo: asString(payload.meaningKo),
+    exampleEn: asNullableString(payload.exampleEn),
+    usageTipKo: asString(payload.usageTipKo),
+    tags: normalizeExpressionTags(asStringArray(payload.tags))
+  };
+}
+
+function normalizeDiaryRewriteIdeaPayload(value: unknown) {
+  const payload = asRecord(value);
+  return {
+    title: asString(payload.title),
+    english: asNullableString(payload.english),
+    meaningKo: asNullableString(payload.meaningKo),
+    noteKo: asString(payload.noteKo),
+    exampleEn: asNullableString(payload.exampleEn)
+  };
+}
+
+function normalizeDiaryFlowPayload(value: unknown) {
+  const payload = asRecord(value);
+  return {
+    timeFlow: asString(payload.timeFlow),
+    emotion: asString(payload.emotion),
+    detail: asString(payload.detail),
+    reflection: asString(payload.reflection),
+    commentKo: asString(payload.commentKo),
+    connectionTips: asStringArray(payload.connectionTips)
+  };
+}
+
+function normalizeDiaryMissionPayload(value: unknown) {
+  const payload = asRecord(value);
+  return {
+    focus: asString(payload.focus),
+    titleKo: asString(payload.titleKo),
+    instructionKo: asString(payload.instructionKo),
+    starterEn: asNullableString(payload.starterEn)
+  };
+}
+
+function normalizeDiaryFeedbackPayload(value: unknown): DiaryFeedback | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  const payload = asRecord(value);
+  return {
+    schemaVersion: asString(payload.schemaVersion, "diary-feedback-v1"),
+    entryId: asString(payload.entryId),
+    attemptNo: asNumber(payload.attemptNo),
+    score: Math.max(0, Math.min(100, asNumber(payload.score))),
+    finishable: asBoolean(payload.finishable),
+    diaryAnswerBand: normalizeDiaryAnswerBand(payload.diaryAnswerBand),
+    summaryKo: asString(payload.summaryKo),
+    strengths: asStringArray(payload.strengths),
+    correctedDiary: asNullableString(payload.correctedDiary),
+    modelDiary: asNullableString(payload.modelDiary),
+    modelDiaryKo: asNullableString(payload.modelDiaryKo),
+    fixPoints: Array.isArray(payload.fixPoints)
+      ? payload.fixPoints.map((item) => normalizeDiaryCorrectionPointPayload(item))
+      : [],
+    diaryFlow: normalizeDiaryFlowPayload(payload.diaryFlow),
+    rewriteIdeas: Array.isArray(payload.rewriteIdeas)
+      ? payload.rewriteIdeas.map((item) => normalizeDiaryRewriteIdeaPayload(item))
+      : [],
+    usedDiaryExpressions: Array.isArray(payload.usedDiaryExpressions)
+      ? payload.usedDiaryExpressions.map((item) => normalizeDiaryExpressionPayload(item))
+      : [],
+    diaryExpressions: Array.isArray(payload.diaryExpressions)
+      ? payload.diaryExpressions.map((item) => normalizeDiaryExpressionPayload(item))
+      : [],
+    nextDiaryMission: normalizeDiaryMissionPayload(payload.nextDiaryMission),
+    safetyFlags: asStringArray(payload.safetyFlags)
+  };
+}
+
+function normalizeDiaryAttemptPayload(payload: {
+  id?: number | null;
+  attemptNo?: number | null;
+  diaryText?: string | null;
+  score?: number | null;
+  feedbackSummary?: string | null;
+  feedback?: unknown;
+  createdAt?: string | null;
+}): DiaryAttempt {
+  return {
+    id: payload.id ?? 0,
+    attemptNo: payload.attemptNo ?? 0,
+    diaryText: payload.diaryText ?? "",
+    score: payload.score ?? 0,
+    feedbackSummary: payload.feedbackSummary ?? null,
+    feedback: normalizeDiaryFeedbackPayload(payload.feedback),
+    createdAt: payload.createdAt ?? new Date().toISOString()
+  };
+}
+
+function normalizeDiaryEntryPayload(payload: {
+  entryId?: string | null;
+  entryDate?: string | null;
+  title?: string | null;
+  content?: string | null;
+  language?: string | null;
+  mood?: string | null;
+  tags?: string[] | null;
+  draft?: boolean | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  attempts?: {
+    id?: number | null;
+    attemptNo?: number | null;
+    diaryText?: string | null;
+    score?: number | null;
+    feedbackSummary?: string | null;
+    feedback?: unknown;
+    createdAt?: string | null;
+  }[] | null;
+}): DiaryEntry {
+  return {
+    entryId: payload.entryId ?? "",
+    title: payload.title ?? null,
+    content: payload.content ?? "",
+    language: payload.language ?? "en",
+    entryDate: payload.entryDate ?? null,
+    mood: payload.mood ?? null,
+    tags: Array.isArray(payload.tags) ? payload.tags : [],
+    draft: payload.draft ?? true,
+    createdAt: payload.createdAt ?? payload.updatedAt ?? new Date().toISOString(),
+    updatedAt: payload.updatedAt ?? payload.createdAt ?? new Date().toISOString(),
+    attempts: (payload.attempts ?? []).map((attempt) => normalizeDiaryAttemptPayload(attempt))
   };
 }
 
@@ -1037,4 +1244,133 @@ export async function submitFeedback(request: FeedbackRequest): Promise<Feedback
   }
 
   return (await response.json()) as Feedback;
+}
+
+export async function getDiaryEntries(): Promise<DiaryEntry[]> {
+  const response = await apiFetch("/api/diary/entries");
+
+  if (response.status === 401) {
+    return [];
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어일기 기록을 불러오지 못했어요.");
+  }
+
+  const payload = (await response.json()) as Parameters<typeof normalizeDiaryEntryPayload>[0][];
+  return (payload ?? []).map((entry) => normalizeDiaryEntryPayload(entry));
+}
+
+export async function getDiaryEntry(entryId: string): Promise<DiaryEntry | null> {
+  const normalizedEntryId = entryId.trim();
+  if (!normalizedEntryId) {
+    return null;
+  }
+
+  const response = await apiFetch(`/api/diary/entries/${encodeURIComponent(normalizedEntryId)}`);
+
+  if (response.status === 401 || response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어일기를 불러오지 못했어요.");
+  }
+
+  return normalizeDiaryEntryPayload((await response.json()) as Parameters<typeof normalizeDiaryEntryPayload>[0]);
+}
+
+export async function createDiaryEntry(request: DiaryEntryRequest): Promise<DiaryEntry> {
+  const response = await apiFetch("/api/diary/entries", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      title: request.title ?? null,
+      content: request.content ?? "",
+      language: request.language ?? "en",
+      entryDate: request.entryDate ?? null,
+      mood: request.mood ?? null,
+      tags: request.tags ?? [],
+      draft: request.draft ?? true
+    })
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어일기를 만들지 못했어요.");
+  }
+
+  return normalizeDiaryEntryPayload((await response.json()) as Parameters<typeof normalizeDiaryEntryPayload>[0]);
+}
+
+export async function updateDiaryEntry(
+  entryId: string,
+  request: DiaryEntryRequest
+): Promise<DiaryEntry> {
+  const response = await apiFetch(`/api/diary/entries/${encodeURIComponent(entryId)}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      title: request.title ?? null,
+      content: request.content ?? "",
+      language: request.language ?? "en",
+      entryDate: request.entryDate ?? null,
+      mood: request.mood ?? null,
+      tags: request.tags ?? [],
+      draft: request.draft ?? true
+    })
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어일기를 저장하지 못했어요.");
+  }
+
+  return normalizeDiaryEntryPayload((await response.json()) as Parameters<typeof normalizeDiaryEntryPayload>[0]);
+}
+
+export async function deleteDiaryEntry(entryId: string): Promise<void> {
+  const normalizedEntryId = entryId.trim();
+  if (!normalizedEntryId) {
+    throw createApiError("삭제할 일기 정보를 찾지 못했어요.", 400, "DIARY_ENTRY_ID_REQUIRED");
+  }
+
+  const response = await apiFetch(`/api/diary/entries/${encodeURIComponent(normalizedEntryId)}`, {
+    method: "DELETE"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "일기를 삭제하지 못했어요.");
+  }
+}
+
+export async function requestDiaryFeedback(
+  entryId: string | null | undefined,
+  request: DiaryFeedbackRequest
+): Promise<DiaryFeedback> {
+  const normalizedEntryId = entryId?.trim() ?? "";
+  if (!normalizedEntryId) {
+    throw createApiError("영어일기 정보를 먼저 저장해 주세요.", 400, "DIARY_ENTRY_ID_REQUIRED");
+  }
+
+  const response = await apiFetch(`/api/diary/entries/${encodeURIComponent(normalizedEntryId)}/feedback`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어일기 피드백을 생성하지 못했어요.");
+  }
+
+  const payload = normalizeDiaryFeedbackPayload(await response.json());
+  if (!payload) {
+    throw createApiError("영어일기 피드백 응답을 확인하지 못했어요.", 502, "DIARY_FEEDBACK_INVALID_RESPONSE");
+  }
+
+  return payload;
 }

@@ -17,6 +17,7 @@ import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import {
   getAnswerHistory,
+  getDiaryEntries,
   getFeaturedDailyPrompt,
   getTodayWritingStatus,
   getWritingDraft,
@@ -31,6 +32,7 @@ import { getStreakMascotStage } from "@/lib/streak-mascot";
 import { getLocalWritingDraft } from "@/lib/writing-drafts";
 import type {
   DailyDifficulty,
+  DiaryEntry,
   FeaturedDailyPromptRecommendation,
   HistorySession,
   TodayWritingStatus
@@ -57,6 +59,15 @@ type MonthCalendarData = {
   completedCount: number;
   isReferenceMonth: boolean;
   cells: MonthCalendarCell[];
+};
+
+type HomeDiaryCalendarCell = {
+  key: string;
+  dayNumber: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  hasEntries: boolean;
+  isFuture: boolean;
 };
 
 type HomeGuideStep = {
@@ -110,6 +121,11 @@ function toDateKey(value: Date | string) {
   ) as Record<"year" | "month" | "day", string>;
 
   return `${lookup.year}-${lookup.month}-${lookup.day}`;
+}
+
+function parseDateKey(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map((value) => Number(value));
+  return new Date(year, month - 1, day, 12);
 }
 
 function getIncompleteLoopCopy(step: IncompleteLoopState["step"]): IncompleteLoopCopy {
@@ -248,6 +264,63 @@ function buildMonthCalendar(
   };
 }
 
+function formatDiaryMonthLabel(date: Date) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long"
+  }).format(date);
+}
+
+function getDiaryEntryDateKey(entry: DiaryEntry) {
+  return entry.entryDate || toDateKey(entry.createdAt);
+}
+
+function calculateDiaryStreakDays(entryDateKeys: Set<string>, todayKey: string) {
+  const today = parseDateKey(todayKey);
+  const anchorDate = entryDateKeys.has(todayKey) ? today : addDays(today, -1);
+  let streakDays = 0;
+
+  for (
+    let cursor = new Date(anchorDate);
+    entryDateKeys.has(toDateKey(cursor));
+    cursor = addDays(cursor, -1)
+  ) {
+    streakDays += 1;
+  }
+
+  return streakDays;
+}
+
+function buildHomeDiaryMonthCalendar(
+  visibleMonth: Date,
+  entryDateKeys: Set<string>,
+  todayKey: string
+): HomeDiaryCalendarCell[] {
+  const monthStart = getMonthStart(visibleMonth);
+  const monthEnd = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0, 12);
+  const calendarStart = addDays(monthStart, -monthStart.getDay());
+  const calendarEnd = addDays(monthEnd, 6 - monthEnd.getDay());
+  const cells: HomeDiaryCalendarCell[] = [];
+
+  for (
+    let currentDate = new Date(calendarStart);
+    currentDate <= calendarEnd;
+    currentDate = addDays(currentDate, 1)
+  ) {
+    const key = toDateKey(currentDate);
+    cells.push({
+      key,
+      dayNumber: currentDate.getDate(),
+      isCurrentMonth: isSameMonth(currentDate, visibleMonth),
+      isToday: key === todayKey,
+      hasEntries: entryDateKeys.has(key),
+      isFuture: key > todayKey
+    });
+  }
+
+  return cells;
+}
+
 function buildWeekChips(todayStatus: TodayWritingStatus | null): WeekDayChip[] {
   const baseDate = parseStatusDate(todayStatus?.date);
   const streakDays = Math.min(todayStatus?.streakDays ?? 0, 7);
@@ -296,8 +369,13 @@ export default function HomeScreen() {
   const [calendarCompletedDateKeys, setCalendarCompletedDateKeys] = useState<string[]>([]);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [calendarError, setCalendarError] = useState("");
+  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
+  const [diaryMonthCursor, setDiaryMonthCursor] = useState(() => getMonthStart(new Date()));
+  const [isDiaryCalendarLoading, setIsDiaryCalendarLoading] = useState(false);
+  const [diaryCalendarError, setDiaryCalendarError] = useState("");
   const featuredRecommendationRequestIdRef = useRef(0);
   const historyRoute: Href = currentUser ? "/records" : buildLoginHref("/records");
+  const diaryOverviewRoute: Href = currentUser ? "/diary" : buildLoginHref("/diary");
   const featuredRecommendationDifficulty = incompleteLoop?.difficulty ?? "I";
   const featuredRecommendationItem = featuredRecommendation?.featured ?? null;
   const featuredRecommendationPrompt = featuredRecommendationItem?.prompt ?? null;
@@ -340,6 +418,47 @@ export default function HomeScreen() {
   const monthCalendar = useMemo(
     () => buildMonthCalendar(todayStatus, calendarCompletedDateKeySet, calendarMonthCursor),
     [calendarCompletedDateKeySet, calendarMonthCursor, todayStatus]
+  );
+  const diaryTodayKey = useMemo(() => toDateKey(new Date()), []);
+  const diaryEntriesByDate = useMemo(() => {
+    const grouped = new Map<string, DiaryEntry[]>();
+    diaryEntries.forEach((entry) => {
+      const dateKey = getDiaryEntryDateKey(entry);
+      grouped.set(dateKey, [...(grouped.get(dateKey) ?? []), entry]);
+    });
+
+    grouped.forEach((items, dateKey) => {
+      grouped.set(
+        dateKey,
+        [...items].sort(
+          (left, right) =>
+            new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+        )
+      );
+    });
+
+    return grouped;
+  }, [diaryEntries]);
+  const diaryEntryDateKeys = useMemo(() => new Set(diaryEntriesByDate.keys()), [diaryEntriesByDate]);
+  const diaryStreakDays = useMemo(
+    () => calculateDiaryStreakDays(diaryEntryDateKeys, diaryTodayKey),
+    [diaryEntryDateKeys, diaryTodayKey]
+  );
+  const answerHistoryCount = todayStatus?.totalAnswerSessions ?? 0;
+  const writingStreakBadgeLabel =
+    displayedStreakDays > 0 ? `작문 ${displayedStreakDays}일 연속` : "작문 대기 중";
+  const diaryStreakBadgeLabel =
+    diaryStreakDays > 0 ? `일기 ${diaryStreakDays}일 연속` : "일기 대기 중";
+  const statusMetaLabel = `총 ${answerHistoryCount.toLocaleString("ko-KR")}문항 작성 · 총 ${diaryEntries.length.toLocaleString("ko-KR")}개의 일기 작성`;
+  const todayDiaryEntries = diaryEntriesByDate.get(diaryTodayKey) ?? [];
+  const homeDiaryCalendar = useMemo(
+    () => buildHomeDiaryMonthCalendar(diaryMonthCursor, diaryEntryDateKeys, diaryTodayKey),
+    [diaryEntryDateKeys, diaryMonthCursor, diaryTodayKey]
+  );
+  const diaryMonthLabel = useMemo(() => formatDiaryMonthLabel(diaryMonthCursor), [diaryMonthCursor]);
+  const canGoToNextDiaryMonth = useMemo(
+    () => !isSameMonth(diaryMonthCursor, getMonthStart(parseDateKey(diaryTodayKey))),
+    [diaryMonthCursor, diaryTodayKey]
   );
   const calendarFooterLabel = useMemo(() => {
     if (currentUser) {
@@ -414,17 +533,41 @@ export default function HomeScreen() {
     }
   }, []);
 
+  const loadDiaryEntries = useCallback(async () => {
+    if (!currentUser) {
+      setDiaryEntries([]);
+      setDiaryCalendarError("");
+      setIsDiaryCalendarLoading(false);
+      return;
+    }
+
+    try {
+      setIsDiaryCalendarLoading(true);
+      setDiaryCalendarError("");
+      setDiaryEntries(await getDiaryEntries());
+    } catch (caughtError) {
+      setDiaryCalendarError(
+        caughtError instanceof Error ? caughtError.message : "영어일기 달력을 불러오지 못했어요."
+      );
+    } finally {
+      setIsDiaryCalendarLoading(false);
+    }
+  }, [currentUser]);
+
   useEffect(() => {
     if (!currentUser) {
       setTodayStatus(null);
       setStatusError("");
       setFeaturedRecommendation(null);
       setFeaturedRecommendationError("");
+      setDiaryEntries([]);
+      setDiaryCalendarError("");
       return;
     }
 
     void loadTodayStatus();
-  }, [currentUser, loadTodayStatus]);
+    void loadDiaryEntries();
+  }, [currentUser, loadDiaryEntries, loadTodayStatus]);
 
   const loadFeaturedRecommendation = useCallback(
     async (difficulty: DailyDifficulty = featuredRecommendationDifficulty) => {
@@ -543,19 +686,36 @@ export default function HomeScreen() {
     }, [currentUser])
   );
 
+  useFocusEffect(
+    useCallback(() => {
+      void loadDiaryEntries();
+    }, [loadDiaryEntries])
+  );
+
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     const user = await refreshSession();
     if (user) {
-      await Promise.all([loadTodayStatus(), loadFeaturedRecommendation()]);
+      await Promise.all([
+        loadTodayStatus(),
+        loadFeaturedRecommendation(),
+        loadDiaryEntries()
+      ]);
     } else {
       setTodayStatus(null);
       setStatusError("");
       setFeaturedRecommendation(null);
       setFeaturedRecommendationError("");
+      setDiaryEntries([]);
+      setDiaryCalendarError("");
     }
     setIsRefreshing(false);
-  }, [loadFeaturedRecommendation, loadTodayStatus, refreshSession]);
+  }, [
+    loadDiaryEntries,
+    loadFeaturedRecommendation,
+    loadTodayStatus,
+    refreshSession
+  ]);
 
   useEffect(() => {
     if (!isCalendarOpen) {
@@ -642,6 +802,59 @@ export default function HomeScreen() {
     [currentUser]
   );
 
+  const handleChangeDiaryMonth = useCallback((direction: -1 | 1) => {
+    setDiaryMonthCursor((current) =>
+      getMonthStart(new Date(current.getFullYear(), current.getMonth() + direction, 1, 12))
+    );
+  }, []);
+
+  const handleOpenDiaryDate = useCallback(
+    (cell: HomeDiaryCalendarCell) => {
+      if (cell.isFuture) {
+        return;
+      }
+
+      if (!currentUser) {
+        router.push(buildLoginHref("/diary"));
+        return;
+      }
+
+      const entries = diaryEntriesByDate.get(cell.key) ?? [];
+      if (entries.length > 0) {
+        router.push({
+          pathname: "/diary/[entryId]",
+          params: { entryId: entries[0].entryId }
+        } as Href);
+        return;
+      }
+
+      if (cell.isToday) {
+        router.push("/diary/write" as never);
+      } else {
+        router.push("/diary" as never);
+      }
+    },
+    [currentUser, diaryEntriesByDate]
+  );
+
+  const handleWriteTodayDiary = useCallback(() => {
+    if (!currentUser) {
+      router.push(buildLoginHref("/diary"));
+      return;
+    }
+
+    const existingTodayEntry = todayDiaryEntries[0];
+    if (existingTodayEntry) {
+      router.push({
+        pathname: "/diary/[entryId]",
+        params: { entryId: existingTodayEntry.entryId }
+      } as Href);
+      return;
+    }
+
+    router.push("/diary/write" as never);
+  }, [currentUser, todayDiaryEntries]);
+
   const handleResumeLoop = useCallback(() => {
     if (!incompleteLoopRoute) {
       return;
@@ -713,16 +926,15 @@ export default function HomeScreen() {
               <View style={styles.statusTopRow}>
                 <Text style={styles.statusTitle}>학습 일지</Text>
               </View>
-              <Text style={styles.statusDescription}>
-                {currentUser
-                  ? `현재 ${displayedStreakDays}일 연속으로 문장을 차분하게 쌓아가고 있어요.`
-                  : "부담 없이 첫 루프를 시작하고 오늘의 작문 감각을 깨워 보세요."}
-              </Text>
-              {currentUser ? (
-                <Text style={styles.statusMeta}>
-                  총 {(todayStatus?.totalWrittenSentences ?? 0).toLocaleString("ko-KR")}문장 작성
-                </Text>
-              ) : null}
+              <View style={styles.statusBadgeRow}>
+                <View style={styles.statusBadge}>
+                  <Text style={styles.statusBadgeText}>{writingStreakBadgeLabel}</Text>
+                </View>
+                <View style={[styles.statusBadge, styles.statusBadgeSecondary]}>
+                  <Text style={styles.statusBadgeText}>{diaryStreakBadgeLabel}</Text>
+                </View>
+              </View>
+              <Text style={styles.statusMeta}>{statusMetaLabel}</Text>
               {statusError ? <Text style={styles.statusError}>{statusError}</Text> : null}
             </View>
           </View>
@@ -856,6 +1068,99 @@ export default function HomeScreen() {
               </Pressable>
             );
           })}
+        </View>
+
+        <View style={styles.sectionDivider} />
+
+        <View style={styles.homeDiarySection}>
+          <MobileScreenHeader
+            title="영어일기"
+            rightAccessory={
+              <Pressable style={styles.homeDiaryOverviewButton} onPress={() => router.push(diaryOverviewRoute)}>
+                <Text style={styles.homeDiaryOverviewButtonText}>전체 보기</Text>
+              </Pressable>
+            }
+          />
+
+          <View style={styles.homeDiaryCalendarCard}>
+            <View style={styles.homeDiaryMonthRow}>
+              <Pressable style={styles.homeDiaryMonthButton} onPress={() => handleChangeDiaryMonth(-1)}>
+                <Text style={styles.homeDiaryMonthButtonText}>{"<"}</Text>
+              </Pressable>
+              <Text style={styles.homeDiaryMonthTitle}>{diaryMonthLabel}</Text>
+              <Pressable
+                style={[
+                  styles.homeDiaryMonthButton,
+                  !canGoToNextDiaryMonth && styles.homeDiaryMonthButtonDisabled
+                ]}
+                onPress={() => handleChangeDiaryMonth(1)}
+                disabled={!canGoToNextDiaryMonth}
+              >
+                <Text
+                  style={[
+                    styles.homeDiaryMonthButtonText,
+                    !canGoToNextDiaryMonth && styles.homeDiaryMonthButtonTextDisabled
+                  ]}
+                >
+                  {">"}
+                </Text>
+              </Pressable>
+            </View>
+
+            {isDiaryCalendarLoading ? (
+              <View style={styles.homeDiaryLoadingRow}>
+                <ActivityIndicator color="#E38B12" />
+              </View>
+            ) : null}
+            {diaryCalendarError ? <Text style={styles.homeDiaryErrorText}>{diaryCalendarError}</Text> : null}
+
+            <View style={styles.homeDiaryWeekHeader}>
+              {WEEKDAY_LABELS.map((label) => (
+                <Text key={`diary-${label}`} style={styles.homeDiaryWeekLabel}>
+                  {label}
+                </Text>
+              ))}
+            </View>
+
+            <View style={styles.homeDiaryCalendarGrid}>
+              {homeDiaryCalendar.map((cell) => (
+                <View key={cell.key} style={styles.homeDiaryCalendarCellWrap}>
+                  <Pressable
+                    style={[
+                      styles.homeDiaryCalendarCell,
+                      cell.hasEntries && styles.homeDiaryCalendarCellHasEntries,
+                      cell.isToday && styles.homeDiaryCalendarCellToday,
+                      !cell.isCurrentMonth && styles.homeDiaryCalendarCellOutside,
+                      cell.isFuture && styles.homeDiaryCalendarCellFuture
+                    ]}
+                    onPress={() => handleOpenDiaryDate(cell)}
+                    disabled={cell.isFuture}
+                    accessibilityRole="button"
+                    accessibilityLabel={`${cell.key} 영어일기 보기`}
+                  >
+                    <Text
+                      style={[
+                        styles.homeDiaryCalendarCellText,
+                        cell.hasEntries && styles.homeDiaryCalendarCellTextHasEntries,
+                        cell.isToday && styles.homeDiaryCalendarCellTextToday,
+                        !cell.isCurrentMonth && styles.homeDiaryCalendarCellTextOutside,
+                        cell.isFuture && styles.homeDiaryCalendarCellTextFuture
+                      ]}
+                    >
+                      {cell.dayNumber}
+                    </Text>
+                    {cell.hasEntries ? <View style={styles.homeDiaryCalendarDot} /> : null}
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+
+            <Pressable style={styles.homeDiaryWriteButton} onPress={handleWriteTodayDiary}>
+              <Text style={styles.homeDiaryWriteButtonText}>
+                {todayDiaryEntries.length > 0 ? "오늘 일기 이어보기" : "오늘의 일기 쓰기"}
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
         <MobileNavBar activeTab="home" />
@@ -1125,13 +1430,33 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#2A2620"
   },
-  statusDescription: {
-    fontSize: 15,
-    lineHeight: 23,
-    color: "#77695A"
+  statusBadgeRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 5
+  },
+  statusBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    backgroundColor: "#FFE7C2",
+    borderWidth: 1,
+    borderColor: "#F0C586",
+    paddingHorizontal: 8,
+    paddingVertical: 5
+  },
+  statusBadgeSecondary: {
+    backgroundColor: "#FFF5E8",
+    borderColor: "#EAD5B9"
+  },
+  statusBadgeText: {
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "900",
+    color: "#8A5A1E"
   },
   statusMeta: {
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 17,
     fontWeight: "700",
     color: "#6D5E4E"
   },
@@ -1158,6 +1483,158 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     fontWeight: "700",
     color: "#8B7761"
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: "#E5D4C0",
+    marginVertical: 4
+  },
+  homeDiarySection: {
+    gap: 12
+  },
+  homeDiaryOverviewButton: {
+    marginTop: 8,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E4D0B8",
+    backgroundColor: "#FFF9F2",
+    paddingHorizontal: 13,
+    paddingVertical: 9
+  },
+  homeDiaryOverviewButtonText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#8A6431"
+  },
+  homeDiaryCalendarCard: {
+    borderRadius: 30,
+    backgroundColor: "#FFFEFC",
+    borderWidth: 1,
+    borderColor: "#EADCCB",
+    padding: 18,
+    gap: 14
+  },
+  homeDiaryMonthRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12
+  },
+  homeDiaryMonthButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E4D0B8",
+    backgroundColor: "#FFF9F2",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  homeDiaryMonthButtonDisabled: {
+    opacity: 0.35
+  },
+  homeDiaryMonthButtonText: {
+    fontSize: 20,
+    lineHeight: 22,
+    fontWeight: "900",
+    color: "#8A6431"
+  },
+  homeDiaryMonthButtonTextDisabled: {
+    color: "#BFAE9D"
+  },
+  homeDiaryMonthTitle: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: "900",
+    color: "#2A2521"
+  },
+  homeDiaryLoadingRow: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4
+  },
+  homeDiaryErrorText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: "#B34A2B"
+  },
+  homeDiaryWeekHeader: {
+    flexDirection: "row"
+  },
+  homeDiaryWeekLabel: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#A28D78"
+  },
+  homeDiaryCalendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    rowGap: 8
+  },
+  homeDiaryCalendarCellWrap: {
+    width: "14.285%",
+    alignItems: "center"
+  },
+  homeDiaryCalendarCell: {
+    width: 38,
+    height: 42,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2
+  },
+  homeDiaryCalendarCellOutside: {
+    opacity: 0.45
+  },
+  homeDiaryCalendarCellFuture: {
+    opacity: 0.25
+  },
+  homeDiaryCalendarCellHasEntries: {
+    backgroundColor: "#FFF0D7"
+  },
+  homeDiaryCalendarCellToday: {
+    borderWidth: 1,
+    borderColor: "#F2A14A"
+  },
+  homeDiaryCalendarCellText: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#5E5247"
+  },
+  homeDiaryCalendarCellTextOutside: {
+    color: "#B4A392"
+  },
+  homeDiaryCalendarCellTextFuture: {
+    color: "#C4B8AC"
+  },
+  homeDiaryCalendarCellTextHasEntries: {
+    color: "#8A5A1E"
+  },
+  homeDiaryCalendarCellTextToday: {
+    color: "#2E2416"
+  },
+  homeDiaryCalendarDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#A76518"
+  },
+  homeDiaryWriteButton: {
+    minHeight: 52,
+    borderRadius: 999,
+    backgroundColor: "#EA920D",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 2
+  },
+  homeDiaryWriteButtonText: {
+    fontSize: 17,
+    fontWeight: "900",
+    color: "#24180B"
   },
   featuredRecommendationSection: {
     gap: 12

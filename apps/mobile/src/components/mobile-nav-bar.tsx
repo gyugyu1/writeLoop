@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export const MOBILE_NAV_BOTTOM_SPACING = 72;
 
-export type MobileNavTab = "home" | "records" | "me";
+export type MobileNavTab = "home" | "records" | "diary" | "expressions" | "me";
 
 type MobileNavBarProps = {
   activeTab: MobileNavTab;
@@ -34,12 +34,35 @@ const NAV_ITEMS: NavItem[] = [
   },
   {
     key: "records",
-    label: "작문기록",
+    label: "기록",
     href: "/records",
     icon: {
       ios: "doc.text.fill",
       android: "article",
       web: "description"
+    }
+  },
+  {
+    key: "diary",
+    label: "일기",
+    href: "/diary",
+    icon: {
+      ios: "book.closed.fill",
+      android: "menu_book",
+      web: "menu_book"
+    }
+  },
+  {
+    key: "expressions",
+    label: "표현",
+    href: {
+      pathname: "/records",
+      params: { tab: "expressions" }
+    } as Href,
+    icon: {
+      ios: "bookmark.fill",
+      android: "bookmarks",
+      web: "bookmarks"
     }
   },
   {

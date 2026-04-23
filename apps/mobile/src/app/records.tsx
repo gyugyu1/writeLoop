@@ -194,6 +194,8 @@ function getSavedExpressionSourceLabel(sourceType: SavedExpression["sourceType"]
       return "AI 코치 추천";
     case "REFINEMENT_EXPRESSION":
       return "표현 더하기";
+    case "DIARY_EXPRESSION":
+      return "영어일기 표현";
     default:
       return "저장한 표현";
   }
@@ -238,6 +240,8 @@ function getSavedExpressionSourceTag(sourceType: SavedExpression["sourceType"]) 
       return "coach_recommendation";
     case "REFINEMENT_EXPRESSION":
       return "refinement_expression";
+    case "DIARY_EXPRESSION":
+      return "diary_expression";
     default:
       return null;
   }
@@ -247,6 +251,7 @@ const SAVED_EXPRESSION_TAG_LABELS: Record<string, string> = {
   used_expression: "내가 쓴 표현",
   refinement_expression: "표현 더하기",
   coach_recommendation: "AI 코치 추천",
+  diary_expression: "영어일기 표현",
   verb_phrase: "동사 표현",
   noun_phrase: "명사 표현",
   adjective_phrase: "형용사 표현",
@@ -835,6 +840,30 @@ const baseStyles = StyleSheet.create({
   },
   metricValue: { fontSize: 20, fontWeight: "900", color: "#2A2620" },
   metricLabel: { fontSize: 12, fontWeight: "800", color: "#856C53" },
+  diaryShortcutButton: {
+    marginTop: 2,
+    borderRadius: 999,
+    backgroundColor: "#FFF4E1",
+    borderWidth: 1,
+    borderColor: "#EACFA9",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12
+  },
+  diaryShortcutButtonText: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#8A5A1E"
+  },
+  diaryShortcutButtonArrow: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#A76518"
+  },
   emptyCard: {
     backgroundColor: "#FFFEFC",
     borderRadius: 28,
@@ -1543,14 +1572,15 @@ const styles = {
 };
 
 export default function RecordsScreen() {
-  const params = useLocalSearchParams<{ date?: string }>();
+  const params = useLocalSearchParams<{ date?: string; tab?: string }>();
   const requestedDateKey = typeof params.date === "string" ? params.date : "";
+  const requestedTab: RecordsContentTab = params.tab === "expressions" ? "expressions" : "history";
   const highlightedDateKey = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateKey) ? requestedDateKey : "";
   const { currentUser, isHydrating, refreshSession } = useSession();
   const scrollViewRef = useRef<ScrollView | null>(null);
   const dateGroupOffsetsRef = useRef<Record<string, number>>({});
   const lastScrolledDateRef = useRef("");
-  const [activeTab, setActiveTab] = useState<RecordsContentTab>("history");
+  const [activeTab, setActiveTab] = useState<RecordsContentTab>(requestedTab);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [history, setHistory] = useState<HistorySession[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
@@ -1579,6 +1609,10 @@ export default function RecordsScreen() {
   const [selectedHistoryFeedback, setSelectedHistoryFeedback] =
     useState<PracticeFeedbackState | null>(null);
   const deferredSavedExpressionSearchQuery = useDeferredValue(savedExpressionSearchQuery);
+
+  useEffect(() => {
+    setActiveTab(requestedTab);
+  }, [requestedTab]);
 
   const groupedHistoryEntries = useMemo(() => {
     const grouped = history.reduce<Record<string, HistorySession[]>>((accumulator, session) => {
@@ -2162,7 +2196,7 @@ export default function RecordsScreen() {
           <View style={styles.loadingState}>
             <ActivityIndicator color="#E38B12" />
           </View>
-          <MobileNavBar activeTab="records" />
+          <MobileNavBar activeTab={activeTab === "expressions" ? "expressions" : "records"} />
         </View>
       </SafeAreaView>
     );
@@ -2215,6 +2249,11 @@ export default function RecordsScreen() {
                       <Text style={styles.metricLabel}>총 문장</Text>
                     </View>
                   </View>
+
+                  <Pressable style={styles.diaryShortcutButton} onPress={() => router.push("/diary" as never)}>
+                    <Text style={styles.diaryShortcutButtonText}>오늘 일기 쓰기</Text>
+                    <Text style={styles.diaryShortcutButtonArrow}>{">"}</Text>
+                  </Pressable>
                 </View>
 
                 <View style={styles.contentTabRow}>
@@ -2664,7 +2703,7 @@ export default function RecordsScreen() {
             )}
           </ScrollView>
 
-          <MobileNavBar activeTab="records" />
+          <MobileNavBar activeTab={activeTab === "expressions" ? "expressions" : "records"} />
         </View>
       </SafeAreaView>
 

@@ -7,7 +7,8 @@ export type WritingDraftType = "ANSWER" | "REWRITE";
 export type SavedExpressionSourceType =
   | "USED_EXPRESSION"
   | "COACH_RECOMMENDATION"
-  | "REFINEMENT_EXPRESSION";
+  | "REFINEMENT_EXPRESSION"
+  | "DIARY_EXPRESSION";
 export type ExpressionTag = string;
 
 export interface Prompt {
@@ -108,6 +109,7 @@ export interface TodayWritingStatus {
   completedSessions: number;
   startedSessions: number;
   streakDays: number;
+  totalAnswerSessions: number;
   totalWrittenSentences: number;
 }
 
@@ -519,6 +521,115 @@ export interface Feedback {
   modelAnswerKo?: string | null;
   rewriteChallenge: string;
   ui?: FeedbackUi | null;
+}
+
+export type DiaryAnswerBand =
+  | "DIARY_TOO_SHORT"
+  | "DIARY_NOT_ENGLISH"
+  | "DIARY_GRAMMAR_BLOCKING"
+  | "DIARY_FLOW_THIN"
+  | "DIARY_CLEAR_BASIC"
+  | "DIARY_NATURAL_COMPLETE";
+
+export interface DiaryCorrectionPoint {
+  kind: string;
+  title: string;
+  originalText?: string | null;
+  revisedText?: string | null;
+  reasonKo: string;
+  exampleEn?: string | null;
+}
+
+export interface DiaryFlow {
+  timeFlow: string;
+  emotion: string;
+  detail: string;
+  reflection: string;
+  commentKo: string;
+  connectionTips: string[];
+}
+
+export interface DiaryExpression {
+  expression: string;
+  meaningKo: string;
+  exampleEn?: string | null;
+  usageTipKo: string;
+  tags: ExpressionTag[];
+}
+
+export interface DiaryRewriteIdea {
+  title: string;
+  english?: string | null;
+  meaningKo?: string | null;
+  noteKo: string;
+  exampleEn?: string | null;
+}
+
+export interface DiaryMission {
+  focus: string;
+  titleKo: string;
+  instructionKo: string;
+  starterEn?: string | null;
+}
+
+export interface DiaryFeedback {
+  schemaVersion: "diary-feedback-v1" | string;
+  entryId: string;
+  attemptNo: number;
+  score: number;
+  finishable: boolean;
+  diaryAnswerBand: DiaryAnswerBand;
+  summaryKo: string;
+  strengths: string[];
+  correctedDiary?: string | null;
+  modelDiary?: string | null;
+  modelDiaryKo?: string | null;
+  fixPoints: DiaryCorrectionPoint[];
+  diaryFlow: DiaryFlow;
+  rewriteIdeas: DiaryRewriteIdea[];
+  usedDiaryExpressions: DiaryExpression[];
+  diaryExpressions: DiaryExpression[];
+  nextDiaryMission: DiaryMission;
+  safetyFlags: string[];
+}
+
+export interface DiaryEntryRequest {
+  entryDate?: string;
+  title?: string;
+  mood?: string;
+  content?: string;
+  language?: string;
+  tags?: string[];
+  draft?: boolean;
+}
+
+export interface DiaryFeedbackRequest {
+  bodyText: string;
+  attemptType?: AttemptType;
+}
+
+export interface DiaryAttempt {
+  id: number;
+  attemptNo: number;
+  diaryText: string;
+  score: number;
+  feedbackSummary?: string | null;
+  feedback?: DiaryFeedback | null;
+  createdAt: string;
+}
+
+export interface DiaryEntry {
+  entryId: string;
+  title?: string | null;
+  content: string;
+  language: string;
+  entryDate?: string | null;
+  mood?: string | null;
+  tags: string[];
+  draft: boolean;
+  createdAt: string;
+  updatedAt: string;
+  attempts: DiaryAttempt[];
 }
 
 export interface HistoryFeedback {

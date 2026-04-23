@@ -25,6 +25,7 @@ import com.writeloop.persistence.DiaryEntryRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -59,12 +60,15 @@ public class DiaryService {
     @Autowired(required = false)
     private FeedbackTimingRecorder feedbackTimingRecorder;
 
+    @Value("${app.diary.max-content-chars:4000}")
+    private int maxDiaryContentChars;
+
     public DiaryEntryDto createEntry(Long userId, CreateDiaryEntryRequestDto request) {
         DiaryEntryEntity entry = new DiaryEntryEntity(
                 UUID.randomUUID().toString(),
                 userId,
                 normalizeText(request.title()),
-                normalizeContent(request.content()),
+                normalizeDiaryContent(request.content()),
                 normalizeLanguage(request.language()),
                 request.entryDate(),
                 normalizeText(request.mood()),
@@ -82,7 +86,7 @@ public class DiaryService {
             entry.setTitle(normalizeText(request.title()));
         }
         if (request.content() != null) {
-            entry.setContent(normalizeContent(request.content()));
+            entry.setContent(normalizeDiaryContent(request.content()));
         }
         if (request.language() != null) {
             entry.setLanguage(normalizeLanguage(request.language()));
@@ -163,8 +167,8 @@ public class DiaryService {
         long totalStartedAtNanos = System.nanoTime();
         long phaseStartedAtNanos = totalStartedAtNanos;
         DiaryEntryEntity entry = requireOwnedEntry(userId, entryId);
-        String requestedText = request == null ? "" : normalizeContent(request.bodyText());
-        String diaryText = requestedText.isBlank() ? normalizeContent(entry.getContent()) : requestedText;
+        String requestedText = request == null ? "" : normalizeDiaryContent(request.bodyText());
+        String diaryText = requestedText.isBlank() ? normalizeDiaryContent(entry.getContent()) : requestedText;
         if (diaryText.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Diary text is required for feedback");
         }
@@ -618,6 +622,18 @@ public class DiaryService {
 
     private String normalizeContent(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private String normalizeDiaryContent(String value) {
+        String normalized = normalizeContent(value);
+        int maxContentChars = Math.max(1, maxDiaryContentChars);
+        if (normalized.length() > maxContentChars) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "일기는 %,d자 이하로 작성해 주세요.".formatted(maxContentChars)
+            );
+        }
+        return normalized;
     }
 
     private String normalizeLanguage(String value) {

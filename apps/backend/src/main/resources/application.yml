@@ -117,6 +117,8 @@ app:
     max-per-user: ${APP_DRAFT_MAX_PER_USER:50}
     max-payload-bytes: ${APP_DRAFT_MAX_PAYLOAD_BYTES:65536}
     max-text-chars: ${APP_DRAFT_MAX_TEXT_CHARS:4000}
+  diary:
+    max-content-chars: ${APP_DIARY_MAX_CONTENT_CHARS:4000}
   coach-evaluation:
     scheduled-enabled: ${APP_COACH_EVALUATION_SCHEDULED_ENABLED:false}
     fixed-delay-ms: ${APP_COACH_EVALUATION_FIXED_DELAY_MS:900000}

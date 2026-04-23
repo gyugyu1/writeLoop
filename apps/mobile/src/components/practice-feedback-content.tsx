@@ -358,9 +358,10 @@ function normalizeFixPoint(point: FeedbackFixPoint, index: number): FixCard | nu
   const revised = trimText(point.revisedText);
   const fallbackLead = pickFirstNonEmpty(point.supportText, point.meaningKo, point.guidanceKo);
   const headlineCandidate = pickFirstNonEmpty(point.headline, point.title);
+  const shouldUseHeadline = !fallbackLead && headlineCandidate !== original && headlineCandidate !== revised;
   const reasonLines = normalizeReasonLines(
     fallbackLead,
-    headlineCandidate !== original && headlineCandidate !== revised ? headlineCandidate : ""
+    shouldUseHeadline ? headlineCandidate : ""
   ).filter((line) => !isRedundantReplacementSummaryLine(line, original, revised));
 
   if (reasonLines.length === 0 && !original && !revised) {
@@ -1351,9 +1352,6 @@ export function PracticeFeedbackContent({
                     ))}
                     {item.original ? (
                       <View style={[styles.fixSentenceCard, styles.fixSentenceCardOriginal]}>
-                        <Text style={[styles.fixSentenceBadge, styles.fixSentenceBadgeOriginal]}>
-                          원문
-                        </Text>
                         <Text style={[styles.fixSentenceText, styles.fixSentenceTextOriginal]}>
                           {renderFixDiffText(item.original, item.revised, "original")}
                         </Text>
@@ -1361,9 +1359,6 @@ export function PracticeFeedbackContent({
                     ) : null}
                     {item.revised ? (
                       <View style={[styles.fixSentenceCard, styles.fixSentenceCardRevised]}>
-                        <Text style={[styles.fixSentenceBadge, styles.fixSentenceBadgeRevised]}>
-                          수정문
-                        </Text>
                         <Text style={[styles.fixSentenceText, styles.fixSentenceTextRevised]}>
                           {renderFixDiffText(item.original, item.revised, "revised")}
                         </Text>
@@ -1392,17 +1387,11 @@ export function PracticeFeedbackContent({
                     {idea.hasSwapPair ? (
                       <View style={styles.rewriteGuideSwapStack}>
                         <View style={[styles.fixSentenceCard, styles.fixSentenceCardOriginal]}>
-                          <Text style={[styles.fixSentenceBadge, styles.fixSentenceBadgeOriginal]}>
-                            원문
-                          </Text>
                           <Text style={[styles.fixSentenceText, styles.fixSentenceTextOriginal]}>
                             {renderFixDiffText(idea.original, idea.revised, "original")}
                           </Text>
                         </View>
                         <View style={[styles.fixSentenceCard, styles.fixSentenceCardRevised]}>
-                          <Text style={[styles.fixSentenceBadge, styles.fixSentenceBadgeRevised]}>
-                            수정문
-                          </Text>
                           <Text style={[styles.fixSentenceText, styles.fixSentenceTextRevised]}>
                             {renderFixDiffText(idea.original, idea.revised, "revised")}
                           </Text>
@@ -1668,30 +1657,15 @@ const styles = StyleSheet.create({
     fontWeight: "700"
   },
   fixSentenceCard: {
-    gap: 8
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10
   },
   fixSentenceCardOriginal: {
-    backgroundColor: "transparent"
+    backgroundColor: "#FDEDE8"
   },
   fixSentenceCardRevised: {
-    backgroundColor: "transparent"
-  },
-  fixSentenceBadge: {
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: "900",
-    overflow: "hidden"
-  },
-  fixSentenceBadgeOriginal: {
-    backgroundColor: "#FFD7CD",
-    color: "#B04328"
-  },
-  fixSentenceBadgeRevised: {
-    backgroundColor: "#FBE4B7",
-    color: "#8D5B16"
+    backgroundColor: "#EAF6EA"
   },
   fixSentenceText: {
     fontSize: 15,
@@ -1702,18 +1676,18 @@ const styles = StyleSheet.create({
     color: "#B04328"
   },
   fixSentenceTextRevised: {
-    color: "#6D4B1D"
+    color: "#236B34"
   },
   fixRemovedText: {
     color: "#B23A22",
-    backgroundColor: "#FFD9D2",
+    backgroundColor: "#F7D6CF",
     borderRadius: 6,
     paddingHorizontal: 2,
     textDecorationLine: "line-through"
   },
   fixAddedText: {
-    color: "#9A651F",
-    backgroundColor: "#FBE4B7",
+    color: "#236B34",
+    backgroundColor: "#CFEBD0",
     borderRadius: 6,
     paddingHorizontal: 2
   },

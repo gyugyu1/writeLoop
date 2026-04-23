@@ -40,6 +40,10 @@ public class LlmDiaryFeedbackClient {
         return delegate().provider();
     }
 
+    public String model() {
+        return delegate().model();
+    }
+
     public DiaryFeedbackResponseDto review(DiaryFeedbackPromptContext context) {
         return delegate().review(context).withIdentity(context.entryId(), context.attemptNo());
     }

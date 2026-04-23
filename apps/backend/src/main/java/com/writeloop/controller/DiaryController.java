@@ -1,6 +1,7 @@
 package com.writeloop.controller;
 
 import com.writeloop.dto.CreateDiaryEntryRequestDto;
+import com.writeloop.dto.DiaryCalendarSummaryDto;
 import com.writeloop.dto.DiaryEntryDto;
 import com.writeloop.dto.DiaryFeedbackRequestDto;
 import com.writeloop.dto.DiaryFeedbackResponseDto;
@@ -66,6 +67,12 @@ public class DiaryController {
     @ResponseStatus(HttpStatus.OK)
     public List<DiaryEntryDto> listEntries(HttpServletRequest httpRequest) {
         return diaryService.listEntries(requireCurrentUserId(httpRequest));
+    }
+
+    @GetMapping("/calendar")
+    @ResponseStatus(HttpStatus.OK)
+    public DiaryCalendarSummaryDto getCalendarSummary(HttpServletRequest httpRequest) {
+        return diaryService.getCalendarSummary(requireCurrentUserId(httpRequest));
     }
 
     @GetMapping("/{entryId}")

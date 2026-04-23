@@ -117,13 +117,6 @@ function firstText(...values: (string | null | undefined)[]) {
   return values.map((value) => trimText(value)).find(Boolean) ?? "";
 }
 
-function normalizeComparableText(value?: string | null) {
-  return trimText(value)
-    .toLowerCase()
-    .replace(/[“”"'.!?]+/g, "")
-    .replace(/\s+/g, " ");
-}
-
 function normalizeExpressionKey(expression: string) {
   return expression.trim().replace(/\s+/g, " ").toLowerCase();
 }
@@ -1618,17 +1611,23 @@ const styles = StyleSheet.create({
   },
   readMoodChip: {
     alignSelf: "flex-start",
+    minHeight: 30,
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 999,
     borderWidth: 1,
     borderColor: "#E4D3BE",
     backgroundColor: "#FFF9F2",
     paddingHorizontal: 13,
-    paddingVertical: 8
+    paddingVertical: 0
   },
   readMoodChipText: {
     fontSize: 13,
+    lineHeight: 16,
     fontWeight: "800",
-    color: "#7D6A55"
+    color: "#7D6A55",
+    includeFontPadding: false,
+    textAlignVertical: "center"
   },
   readDiaryPaper: {
     borderRadius: 18,

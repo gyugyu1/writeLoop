@@ -185,9 +185,6 @@ export default function DiaryCompleteScreen() {
             <View style={styles.mascotFrame}>
               <Image source={completionMascotImage} style={styles.mascotImage} />
             </View>
-            <View style={styles.mascotBadge}>
-              <Text style={styles.mascotBadgeText}>DIARY DONE!</Text>
-            </View>
           </View>
 
           <View style={styles.storyCopy}>
@@ -201,7 +198,7 @@ export default function DiaryCompleteScreen() {
             <Text style={styles.summaryDate}>{formatDiaryDate(entry.entryDate)}</Text>
             <Text style={styles.summaryTitle}>{entry.title?.trim() || "오늘의 영어일기"}</Text>
             <View style={styles.summaryMetricRow}>
-              <View style={styles.summaryMetric}>
+              <View style={[styles.summaryMetric, styles.summaryMetricDivider]}>
                 <Text style={styles.summaryMetricValue}>{wordCount}</Text>
                 <Text style={styles.summaryMetricLabel}>단어</Text>
               </View>
@@ -306,18 +303,6 @@ const styles = StyleSheet.create({
     height: 120,
     resizeMode: "contain"
   },
-  mascotBadge: {
-    borderRadius: 999,
-    backgroundColor: "#EF8A1F",
-    paddingHorizontal: 14,
-    paddingVertical: 7
-  },
-  mascotBadgeText: {
-    fontSize: 12,
-    fontWeight: "900",
-    letterSpacing: 1.1,
-    color: "#FFFDF7"
-  },
   confettiDot: {
     position: "absolute",
     width: 10,
@@ -376,13 +361,8 @@ const styles = StyleSheet.create({
     textAlign: "center"
   },
   summaryPanel: {
-    borderRadius: 28,
-    backgroundColor: "#FFF1D3",
-    borderWidth: 1,
-    borderColor: "#E8C688",
-    paddingHorizontal: 20,
-    paddingVertical: 18,
-    gap: 10
+    width: "100%",
+    gap: 12
   },
   summaryDate: {
     fontSize: 13,
@@ -397,15 +377,19 @@ const styles = StyleSheet.create({
   },
   summaryMetricRow: {
     flexDirection: "row",
-    gap: 10
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#E7D2AF",
+    paddingVertical: 12
   },
   summaryMetric: {
     flex: 1,
-    borderRadius: 20,
-    backgroundColor: "rgba(255, 255, 255, 0.64)",
-    paddingVertical: 13,
     alignItems: "center",
     gap: 3
+  },
+  summaryMetricDivider: {
+    borderRightWidth: 1,
+    borderRightColor: "#E7D2AF"
   },
   summaryMetricValue: {
     fontSize: 24,

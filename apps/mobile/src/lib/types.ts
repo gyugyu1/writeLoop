@@ -631,6 +631,17 @@ export interface DiaryEntry {
   attempts: DiaryAttempt[];
 }
 
+export interface DiaryCalendarDay {
+  date: string;
+  entryId: string;
+  entryCount: number;
+}
+
+export interface DiaryCalendarSummary {
+  totalEntries: number;
+  days: DiaryCalendarDay[];
+}
+
 export interface HistoryFeedback {
   score: number;
   loopComplete: boolean;

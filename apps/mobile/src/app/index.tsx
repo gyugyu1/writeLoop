@@ -17,7 +17,7 @@ import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import {
   getAnswerHistory,
-  getDiaryEntries,
+  getDiaryCalendarSummary,
   getFeaturedDailyPrompt,
   getTodayWritingStatus,
   getWritingDraft,
@@ -32,7 +32,7 @@ import { getStreakMascotStage } from "@/lib/streak-mascot";
 import { getLocalWritingDraft } from "@/lib/writing-drafts";
 import type {
   DailyDifficulty,
-  DiaryEntry,
+  DiaryCalendarSummary,
   FeaturedDailyPromptRecommendation,
   HistorySession,
   TodayWritingStatus
@@ -271,10 +271,6 @@ function formatDiaryMonthLabel(date: Date) {
   }).format(date);
 }
 
-function getDiaryEntryDateKey(entry: DiaryEntry) {
-  return entry.entryDate || toDateKey(entry.createdAt);
-}
-
 function calculateDiaryStreakDays(entryDateKeys: Set<string>, todayKey: string) {
   const today = parseDateKey(todayKey);
   const anchorDate = entryDateKeys.has(todayKey) ? today : addDays(today, -1);
@@ -369,7 +365,7 @@ export default function HomeScreen() {
   const [calendarCompletedDateKeys, setCalendarCompletedDateKeys] = useState<string[]>([]);
   const [isCalendarLoading, setIsCalendarLoading] = useState(false);
   const [calendarError, setCalendarError] = useState("");
-  const [diaryEntries, setDiaryEntries] = useState<DiaryEntry[]>([]);
+  const [diaryCalendarSummary, setDiaryCalendarSummary] = useState<DiaryCalendarSummary | null>(null);
   const [diaryMonthCursor, setDiaryMonthCursor] = useState(() => getMonthStart(new Date()));
   const [isDiaryCalendarLoading, setIsDiaryCalendarLoading] = useState(false);
   const [diaryCalendarError, setDiaryCalendarError] = useState("");
@@ -420,26 +416,15 @@ export default function HomeScreen() {
     [calendarCompletedDateKeySet, calendarMonthCursor, todayStatus]
   );
   const diaryTodayKey = useMemo(() => toDateKey(new Date()), []);
-  const diaryEntriesByDate = useMemo(() => {
-    const grouped = new Map<string, DiaryEntry[]>();
-    diaryEntries.forEach((entry) => {
-      const dateKey = getDiaryEntryDateKey(entry);
-      grouped.set(dateKey, [...(grouped.get(dateKey) ?? []), entry]);
-    });
-
-    grouped.forEach((items, dateKey) => {
-      grouped.set(
-        dateKey,
-        [...items].sort(
-          (left, right) =>
-            new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
-        )
-      );
+  const diaryDaysByDate = useMemo(() => {
+    const grouped = new Map<string, DiaryCalendarSummary["days"][number]>();
+    (diaryCalendarSummary?.days ?? []).forEach((day) => {
+      grouped.set(day.date, day);
     });
 
     return grouped;
-  }, [diaryEntries]);
-  const diaryEntryDateKeys = useMemo(() => new Set(diaryEntriesByDate.keys()), [diaryEntriesByDate]);
+  }, [diaryCalendarSummary?.days]);
+  const diaryEntryDateKeys = useMemo(() => new Set(diaryDaysByDate.keys()), [diaryDaysByDate]);
   const diaryStreakDays = useMemo(
     () => calculateDiaryStreakDays(diaryEntryDateKeys, diaryTodayKey),
     [diaryEntryDateKeys, diaryTodayKey]
@@ -449,8 +434,8 @@ export default function HomeScreen() {
     displayedStreakDays > 0 ? `작문 ${displayedStreakDays}일 연속` : "작문 대기 중";
   const diaryStreakBadgeLabel =
     diaryStreakDays > 0 ? `일기 ${diaryStreakDays}일 연속` : "일기 대기 중";
-  const statusMetaLabel = `총 ${answerHistoryCount.toLocaleString("ko-KR")}문항 작성 · 총 ${diaryEntries.length.toLocaleString("ko-KR")}개의 일기 작성`;
-  const todayDiaryEntries = diaryEntriesByDate.get(diaryTodayKey) ?? [];
+  const statusMetaLabel = `총 ${answerHistoryCount.toLocaleString("ko-KR")}문항 작성 · 총 ${(diaryCalendarSummary?.totalEntries ?? 0).toLocaleString("ko-KR")}개의 일기 작성`;
+  const todayDiaryEntry = diaryDaysByDate.get(diaryTodayKey) ?? null;
   const homeDiaryCalendar = useMemo(
     () => buildHomeDiaryMonthCalendar(diaryMonthCursor, diaryEntryDateKeys, diaryTodayKey),
     [diaryEntryDateKeys, diaryMonthCursor, diaryTodayKey]
@@ -535,7 +520,7 @@ export default function HomeScreen() {
 
   const loadDiaryEntries = useCallback(async () => {
     if (!currentUser) {
-      setDiaryEntries([]);
+      setDiaryCalendarSummary(null);
       setDiaryCalendarError("");
       setIsDiaryCalendarLoading(false);
       return;
@@ -544,7 +529,7 @@ export default function HomeScreen() {
     try {
       setIsDiaryCalendarLoading(true);
       setDiaryCalendarError("");
-      setDiaryEntries(await getDiaryEntries());
+      setDiaryCalendarSummary(await getDiaryCalendarSummary());
     } catch (caughtError) {
       setDiaryCalendarError(
         caughtError instanceof Error ? caughtError.message : "영어일기 달력을 불러오지 못했어요."
@@ -560,7 +545,7 @@ export default function HomeScreen() {
       setStatusError("");
       setFeaturedRecommendation(null);
       setFeaturedRecommendationError("");
-      setDiaryEntries([]);
+      setDiaryCalendarSummary(null);
       setDiaryCalendarError("");
       return;
     }
@@ -706,7 +691,7 @@ export default function HomeScreen() {
       setStatusError("");
       setFeaturedRecommendation(null);
       setFeaturedRecommendationError("");
-      setDiaryEntries([]);
+      setDiaryCalendarSummary(null);
       setDiaryCalendarError("");
     }
     setIsRefreshing(false);
@@ -790,11 +775,11 @@ export default function HomeScreen() {
     (dateKey: string, hasWritingActivity: boolean, hasDiaryActivity: boolean) => {
       setIsCalendarOpen(false);
       if (currentUser && hasDiaryActivity && !hasWritingActivity) {
-        const entries = diaryEntriesByDate.get(dateKey) ?? [];
-        if (entries.length > 0) {
+        const diaryDay = diaryDaysByDate.get(dateKey);
+        if (diaryDay) {
           router.push({
             pathname: "/diary/[entryId]",
-            params: { entryId: entries[0].entryId }
+            params: { entryId: diaryDay.entryId }
           } as Href);
           return;
         }
@@ -810,7 +795,7 @@ export default function HomeScreen() {
         : buildLoginHref(`/records?date=${dateKey}`);
       router.push(nextHref);
     },
-    [currentUser, diaryEntriesByDate]
+    [currentUser, diaryDaysByDate]
   );
 
   const handleChangeDiaryMonth = useCallback((direction: -1 | 1) => {
@@ -830,11 +815,11 @@ export default function HomeScreen() {
         return;
       }
 
-      const entries = diaryEntriesByDate.get(cell.key) ?? [];
-      if (entries.length > 0) {
+      const diaryDay = diaryDaysByDate.get(cell.key);
+      if (diaryDay) {
         router.push({
           pathname: "/diary/[entryId]",
-          params: { entryId: entries[0].entryId }
+          params: { entryId: diaryDay.entryId }
         } as Href);
         return;
       }
@@ -845,7 +830,7 @@ export default function HomeScreen() {
         router.push("/diary" as never);
       }
     },
-    [currentUser, diaryEntriesByDate]
+    [currentUser, diaryDaysByDate]
   );
 
   const handleWriteTodayDiary = useCallback(() => {
@@ -854,17 +839,16 @@ export default function HomeScreen() {
       return;
     }
 
-    const existingTodayEntry = todayDiaryEntries[0];
-    if (existingTodayEntry) {
+    if (todayDiaryEntry) {
       router.push({
         pathname: "/diary/[entryId]",
-        params: { entryId: existingTodayEntry.entryId }
+        params: { entryId: todayDiaryEntry.entryId }
       } as Href);
       return;
     }
 
     router.push("/diary/write" as never);
-  }, [currentUser, todayDiaryEntries]);
+  }, [currentUser, todayDiaryEntry]);
 
   const handleResumeLoop = useCallback(() => {
     if (!incompleteLoopRoute) {
@@ -1168,7 +1152,7 @@ export default function HomeScreen() {
 
             <Pressable style={styles.homeDiaryWriteButton} onPress={handleWriteTodayDiary}>
               <Text style={styles.homeDiaryWriteButtonText}>
-                {todayDiaryEntries.length > 0 ? "오늘 일기 이어보기" : "오늘의 일기 쓰기"}
+                {todayDiaryEntry ? "오늘 일기 이어보기" : "오늘의 일기 쓰기"}
               </Text>
             </Pressable>
           </View>

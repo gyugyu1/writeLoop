@@ -772,64 +772,6 @@ export default function PracticeWriteScreen() {
     });
   }
 
-  async function handleSaveCoachExpressionLegacy(
-    expression: CoachHelpResponse["expressions"][number]
-  ) {
-    const normalizedKey = normalizeExpressionKey(expression.expression);
-    if (!normalizedKey || !selectedPrompt) {
-      return;
-    }
-
-    if (!currentUser) {
-      Alert.alert(
-        "로그인이 필요해요",
-        "표현 저장은 로그인 후 사용할 수 있어요.",
-        [
-          { text: "취소", style: "cancel" },
-          {
-            text: "로그인하기",
-            onPress: () => router.push("/login")
-          }
-        ]
-      );
-      return;
-    }
-
-    if (
-      savedCoachExpressionKeys.includes(normalizedKey) ||
-      savingCoachExpressionKeys.includes(normalizedKey)
-    ) {
-      return;
-    }
-
-    setSavingCoachExpressionKeys((current) =>
-      current.includes(normalizedKey) ? current : [...current, normalizedKey]
-    );
-
-    try {
-      await saveExpression({
-        expression: expression.expression,
-        meaningKo: expression.meaningKo,
-        usageTipKo: expression.usageTip,
-        exampleEn: expression.example,
-        tags: expression.tags?.length ? expression.tags : undefined,
-        sourceType: "COACH_RECOMMENDATION",
-        promptId: selectedPrompt.id,
-        coachInteractionId: coachHelp?.interactionId
-      });
-      setSavedCoachExpressionKeys((current) =>
-        current.includes(normalizedKey) ? current : [...current, normalizedKey]
-      );
-    } catch (caughtError) {
-      Alert.alert(
-        "표현 저장에 실패했어요",
-        caughtError instanceof Error ? caughtError.message : "잠시 후 다시 시도해 주세요."
-      );
-    } finally {
-      setSavingCoachExpressionKeys((current) => current.filter((item) => item !== normalizedKey));
-    }
-  }
-
   async function handleSaveCoachExpression(
     expression: CoachHelpResponse["expressions"][number]
   ) {
@@ -885,40 +827,6 @@ export default function PracticeWriteScreen() {
       );
     } finally {
       setSavingCoachExpressionKeys((current) => current.filter((item) => item !== normalizedKey));
-    }
-  }
-
-  async function handleRequestCoachHelpLegacy(questionOverride?: string) {
-    if (!selectedPrompt) {
-      setError(getPromptNotFoundMessage());
-      return;
-    }
-
-    const nextQuestion = (questionOverride ?? coachQuestion).trim();
-    if (!nextQuestion) {
-      setCoachHelpError("코치에게 물어볼 내용을 먼저 적어 주세요.");
-      setIsCoachOpen(true);
-      return;
-    }
-
-    try {
-      setIsCoachOpen(true);
-      setIsLoadingCoachHelp(true);
-      setCoachHelp(null);
-      setCoachHelpError("");
-      const nextCoachHelp = await requestCoachHelp({
-        promptId: selectedPrompt.id,
-        question: nextQuestion,
-        sessionId: feedback?.sessionId,
-        answer: answer.trim() || undefined,
-        attemptType: feedback ? "REWRITE" : "INITIAL"
-      });
-      setCoachQuestion(nextQuestion);
-      setCoachHelp(nextCoachHelp);
-    } catch (caughtError) {
-      setCoachHelpError(caughtError instanceof Error ? caughtError.message : "AI 코치를 불러오지 못했어요.");
-    } finally {
-      setIsLoadingCoachHelp(false);
     }
   }
 

@@ -18,6 +18,7 @@ import type {
   CompleteRegistrationRequest,
   CommonMistake,
   DailyDifficulty,
+  DiaryCalendarSummary,
   DailyPromptRecommendation,
   DiaryAttempt,
   DiaryEntry,
@@ -389,6 +390,26 @@ function normalizeDiaryEntryPayload(payload: {
   };
 }
 
+function normalizeDiaryCalendarSummaryPayload(payload: {
+  totalEntries?: number | null;
+  days?: {
+    date?: string | null;
+    entryId?: string | null;
+    entryCount?: number | null;
+  }[] | null;
+}): DiaryCalendarSummary {
+  return {
+    totalEntries: payload.totalEntries ?? 0,
+    days: (payload.days ?? [])
+      .map((day) => ({
+        date: day.date ?? "",
+        entryId: day.entryId ?? "",
+        entryCount: day.entryCount ?? 0
+      }))
+      .filter((day) => day.date && day.entryId)
+  };
+}
+
 export class ApiError extends Error {
   code?: string;
   status: number;
@@ -727,7 +748,7 @@ export async function getPendingSocialRegistration(
   });
 
   if (!response.ok) {
-    throw await parseApiError(response, "?뚯뀥 媛???뺣낫瑜?遺덈윭?ㅼ? 紐삵뻽?댁슂.");
+    throw await parseApiError(response, "소셜 가입 정보를 불러오지 못했어요.");
   }
 
   return (await response.json()) as PendingSocialRegistration;
@@ -745,7 +766,7 @@ export async function completeSocialRegistration(
   });
 
   if (!response.ok) {
-    throw await parseApiError(response, "?뚯뀥 媛?낆쓣 ?꾨즺?섏? 紐삵뻽?댁슂.");
+    throw await parseApiError(response, "소셜 가입을 완료하지 못했어요.");
   }
 
   const payload = (await response.json()) as TokenAuthResponse;
@@ -1258,6 +1279,22 @@ export async function getDiaryEntries(): Promise<DiaryEntry[]> {
 
   const payload = (await response.json()) as Parameters<typeof normalizeDiaryEntryPayload>[0][];
   return (payload ?? []).map((entry) => normalizeDiaryEntryPayload(entry));
+}
+
+export async function getDiaryCalendarSummary(): Promise<DiaryCalendarSummary> {
+  const response = await apiFetch("/api/diary/entries/calendar");
+
+  if (response.status === 401) {
+    return { totalEntries: 0, days: [] };
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어일기 달력을 불러오지 못했어요.");
+  }
+
+  return normalizeDiaryCalendarSummaryPayload(
+    (await response.json()) as Parameters<typeof normalizeDiaryCalendarSummaryPayload>[0]
+  );
 }
 
 export async function getDiaryEntry(entryId: string): Promise<DiaryEntry | null> {

@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { ApiError, login, resendVerification, verifyEmail } from "../lib/api";
 import { resolveReturnTo } from "../lib/auth-flow";
@@ -266,7 +267,7 @@ export function LoginPageClient() {
                     title="네이버 로그인"
                   >
                     <span className={styles.socialButtonIcon}>
-                      <img src="/login/naver.png" alt="" />
+                      <Image src="/login/naver.png" alt="" width={28} height={28} />
                     </span>
                   </a>
                   <a
@@ -276,7 +277,7 @@ export function LoginPageClient() {
                     title="Google 로그인"
                   >
                     <span className={styles.socialButtonIcon}>
-                      <img src="/login/google.png" alt="" />
+                      <Image src="/login/google.png" alt="" width={28} height={28} />
                     </span>
                   </a>
                   <a
@@ -286,7 +287,7 @@ export function LoginPageClient() {
                     title="카카오 로그인"
                   >
                     <span className={styles.socialButtonIcon}>
-                      <img src="/login/kakao.png" alt="" />
+                      <Image src="/login/kakao.png" alt="" width={28} height={28} />
                     </span>
                   </a>
                 </div>

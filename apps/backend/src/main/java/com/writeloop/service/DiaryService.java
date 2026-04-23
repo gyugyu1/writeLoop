@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.CreateDiaryEntryRequestDto;
 import com.writeloop.dto.DiaryAnswerBand;
 import com.writeloop.dto.DiaryAttemptDto;
+import com.writeloop.dto.DiaryCalendarDayDto;
+import com.writeloop.dto.DiaryCalendarSummaryDto;
 import com.writeloop.dto.DiaryCorrectionPointDto;
 import com.writeloop.dto.DiaryEntryDto;
 import com.writeloop.dto.DiaryExpressionDto;
@@ -17,6 +19,7 @@ import com.writeloop.dto.DiaryRewriteIdeaDto;
 import com.writeloop.dto.UpdateDiaryEntryRequestDto;
 import com.writeloop.persistence.DiaryAttemptEntity;
 import com.writeloop.persistence.DiaryAttemptRepository;
+import com.writeloop.persistence.DiaryCalendarEntryProjection;
 import com.writeloop.persistence.DiaryEntryEntity;
 import com.writeloop.persistence.DiaryEntryRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +29,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -45,6 +50,7 @@ public class DiaryService {
     private static final TypeReference<List<DiaryCorrectionPointDto>> DIARY_CORRECTION_LIST_TYPE =
             new TypeReference<>() {
             };
+    private static final ZoneId SEOUL_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final DiaryEntryRepository diaryEntryRepository;
     private final DiaryAttemptRepository diaryAttemptRepository;
@@ -118,6 +124,32 @@ public class DiaryService {
         return toEntryDto(entry, loadAttemptsForEntry(entryId));
     }
 
+    public DiaryCalendarSummaryDto getCalendarSummary(Long userId) {
+        long totalEntries = diaryEntryRepository.countByUserId(userId);
+        Map<LocalDate, DiaryCalendarDayAccumulator> daysByDate = new java.util.LinkedHashMap<>();
+
+        for (DiaryCalendarEntryProjection entry : diaryEntryRepository.findCalendarEntriesByUserId(userId)) {
+            LocalDate date = resolveDiaryCalendarDate(entry);
+            daysByDate.compute(date, (key, current) -> {
+                if (current == null) {
+                    return new DiaryCalendarDayAccumulator(entry.getId(), 1);
+                }
+                current.increment();
+                return current;
+            });
+        }
+
+        List<DiaryCalendarDayDto> days = daysByDate.entrySet().stream()
+                .map(item -> new DiaryCalendarDayDto(
+                        item.getKey(),
+                        item.getValue().entryId(),
+                        item.getValue().entryCount()
+                ))
+                .toList();
+
+        return new DiaryCalendarSummaryDto(totalEntries, days);
+    }
+
     public void deleteEntry(Long userId, String entryId) {
         DiaryEntryEntity entry = requireOwnedEntry(userId, entryId);
         diaryEntryRepository.delete(entry);
@@ -164,8 +196,8 @@ public class DiaryService {
                 feedback.score(),
                 feedback.diaryAnswerBand().name(),
                 feedback.schemaVersion(),
-                resolveFeedbackProvider(),
-                null,
+                resolveFeedbackProvider(feedback),
+                resolveFeedbackModel(feedback),
                 safeText(feedback.summaryKo()),
                 toJsonString(feedback.strengths()),
                 toJsonString(feedback.fixPoints()),
@@ -343,6 +375,16 @@ public class DiaryService {
         return diaryAttemptRepository.findByEntryIdOrderByCreatedAtAsc(entryId);
     }
 
+    private LocalDate resolveDiaryCalendarDate(DiaryCalendarEntryProjection entry) {
+        if (entry.getEntryDate() != null) {
+            return entry.getEntryDate();
+        }
+        if (entry.getCreatedAt() != null) {
+            return LocalDate.ofInstant(entry.getCreatedAt(), SEOUL_ZONE_ID);
+        }
+        return LocalDate.now(SEOUL_ZONE_ID);
+    }
+
     private DiaryEntryEntity requireOwnedEntry(Long userId, String entryId) {
         return diaryEntryRepository.findByIdAndUserId(entryId, userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Diary entry not found"));
@@ -486,11 +528,53 @@ public class DiaryService {
         }
     }
 
-    private String resolveFeedbackProvider() {
+    private String resolveFeedbackProvider(DiaryFeedbackResponseDto feedback) {
+        if (usesLocalFallback(feedback)) {
+            return "local-fallback";
+        }
         try {
             return diaryFeedbackClient.isConfigured() ? diaryFeedbackClient.provider() : "local-fallback";
         } catch (RuntimeException exception) {
             return "local-fallback";
+        }
+    }
+
+    private String resolveFeedbackModel(DiaryFeedbackResponseDto feedback) {
+        if (usesLocalFallback(feedback)) {
+            return null;
+        }
+        try {
+            return diaryFeedbackClient.isConfigured() ? diaryFeedbackClient.model() : null;
+        } catch (RuntimeException exception) {
+            return null;
+        }
+    }
+
+    private boolean usesLocalFallback(DiaryFeedbackResponseDto feedback) {
+        return feedback != null
+                && feedback.safetyFlags() != null
+                && feedback.safetyFlags().stream().anyMatch("LOCAL_FALLBACK"::equals);
+    }
+
+    private static final class DiaryCalendarDayAccumulator {
+        private final String entryId;
+        private int entryCount;
+
+        private DiaryCalendarDayAccumulator(String entryId, int entryCount) {
+            this.entryId = entryId;
+            this.entryCount = entryCount;
+        }
+
+        private String entryId() {
+            return entryId;
+        }
+
+        private int entryCount() {
+            return entryCount;
+        }
+
+        private void increment() {
+            entryCount += 1;
         }
     }
 

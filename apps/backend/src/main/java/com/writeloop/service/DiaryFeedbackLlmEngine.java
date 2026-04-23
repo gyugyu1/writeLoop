@@ -6,6 +6,8 @@ interface DiaryFeedbackLlmEngine {
 
     String provider();
 
+    String model();
+
     boolean isConfigured();
 
     DiaryFeedbackResponseDto review(DiaryFeedbackPromptContext context);

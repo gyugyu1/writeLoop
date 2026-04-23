@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getAdminPromptRecommendationMetrics,
   createAdminPrompt,
@@ -248,6 +248,8 @@ function getRecommendationReasonLabel(reasonCode: string) {
 
 export function AdminPageClient() {
   const createSectionRef = useRef<HTMLElement | null>(null);
+  const initialMetricsStartDateRef = useRef(getRelativeDateInputValue(-13));
+  const initialMetricsEndDateRef = useRef(getRelativeDateInputValue(0));
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
   const [topicCatalog, setTopicCatalog] = useState<AdminPromptTopicCatalogEntry[]>([]);
   const [prompts, setPrompts] = useState<AdminPrompt[]>([]);
@@ -263,9 +265,33 @@ export function AdminPageClient() {
     useState<AdminPromptRecommendationMetrics | null>(null);
   const [recommendationMetricsLoading, setRecommendationMetricsLoading] = useState(false);
   const [recommendationMetricsError, setRecommendationMetricsError] = useState("");
-  const [metricsStartDate, setMetricsStartDate] = useState(() => getRelativeDateInputValue(-13));
-  const [metricsEndDate, setMetricsEndDate] = useState(() => getRelativeDateInputValue(0));
+  const [metricsStartDate, setMetricsStartDate] = useState(initialMetricsStartDateRef.current);
+  const [metricsEndDate, setMetricsEndDate] = useState(initialMetricsEndDateRef.current);
   const [metricsDifficulty, setMetricsDifficulty] = useState<DailyDifficulty | "">("");
+
+  const fetchRecommendationMetrics = useCallback(
+    async (filters: {
+      startDate: string;
+      endDate: string;
+      difficulty: DailyDifficulty | "";
+    }) => {
+      try {
+        setRecommendationMetricsLoading(true);
+        setRecommendationMetricsError("");
+        const nextMetrics = await getAdminPromptRecommendationMetrics(filters);
+        setRecommendationMetrics(nextMetrics);
+      } catch (caughtError) {
+        setRecommendationMetricsError(
+          caughtError instanceof Error
+            ? caughtError.message
+            : "추천 성과 데이터를 불러오지 못했어요."
+        );
+      } finally {
+        setRecommendationMetricsLoading(false);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -294,7 +320,11 @@ export function AdminPageClient() {
         setTopicCatalog(adminTopicCatalog);
         applyPromptState(adminPrompts);
         setLoading(false);
-        void loadRecommendationMetrics();
+        void fetchRecommendationMetrics({
+          startDate: initialMetricsStartDateRef.current,
+          endDate: initialMetricsEndDateRef.current,
+          difficulty: ""
+        });
       } catch {
         if (!mounted) {
           return;
@@ -310,7 +340,7 @@ export function AdminPageClient() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [fetchRecommendationMetrics]);
 
   const activePromptCount = useMemo(
     () => prompts.filter((prompt) => prompt.active).length,
@@ -328,20 +358,7 @@ export function AdminPageClient() {
       difficulty: nextFilters?.difficulty ?? metricsDifficulty
     };
 
-    try {
-      setRecommendationMetricsLoading(true);
-      setRecommendationMetricsError("");
-      const nextMetrics = await getAdminPromptRecommendationMetrics(filters);
-      setRecommendationMetrics(nextMetrics);
-    } catch (caughtError) {
-      setRecommendationMetricsError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "추천 성과 데이터를 불러오지 못했어요."
-      );
-    } finally {
-      setRecommendationMetricsLoading(false);
-    }
+    await fetchRecommendationMetrics(filters);
   }
 
   function applyPromptState(adminPrompts: AdminPrompt[]) {

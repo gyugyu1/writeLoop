@@ -1993,7 +1993,7 @@ export default function RecordsScreen() {
     });
   }
 
-  function findHistorySessionForSavedExpression(savedExpression: SavedExpression) {
+  const findHistorySessionForSavedExpression = useCallback((savedExpression: SavedExpression) => {
     const promptId = trimSavedExpressionLookupValue(savedExpression.promptId);
     const promptQuestionEn = trimSavedExpressionLookupValue(savedExpression.promptQuestionEn);
     const promptQuestionKo = trimSavedExpressionLookupValue(savedExpression.promptQuestionKo);
@@ -2019,7 +2019,7 @@ export default function RecordsScreen() {
     return [...matches].sort((left, right) =>
       getLatestSessionTimestamp(right).localeCompare(getLatestSessionTimestamp(left))
     )[0];
-  }
+  }, [history]);
 
   function handleOpenSavedExpressionHistory(savedExpression: SavedExpression) {
     const targetSession = findHistorySessionForSavedExpression(savedExpression);
@@ -2105,7 +2105,12 @@ export default function RecordsScreen() {
     }
 
     return null;
-  }, [history, selectedSavedExpressionTag, selectedSavedExpressionTagAnchorId, visibleSavedExpressions]);
+  }, [
+    findHistorySessionForSavedExpression,
+    selectedSavedExpressionTag,
+    selectedSavedExpressionTagAnchorId,
+    visibleSavedExpressions
+  ]);
   const selectedSavedExpressionTagLabel = selectedSavedExpressionTag
     ? formatSavedExpressionTagLabel(selectedSavedExpressionTag)
     : "";

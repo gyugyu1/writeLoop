@@ -669,10 +669,14 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     backgroundColor: "#FFF0D7",
     paddingHorizontal: 9,
-    paddingVertical: 3,
+    paddingVertical: 4,
     fontSize: 12,
+    lineHeight: 14,
     fontWeight: "900",
-    color: "#A15F10"
+    color: "#A15F10",
+    includeFontPadding: false,
+    overflow: "hidden",
+    textAlignVertical: "center"
   },
   entryArrow: {
     fontSize: 18,

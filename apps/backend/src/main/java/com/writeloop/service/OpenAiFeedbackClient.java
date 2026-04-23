@@ -438,20 +438,22 @@ public class OpenAiFeedbackClient {
                     failureCodes,
                     previousSections
             ));
-            logLlmTiming(phase, prompt.id(), attemptIndex, response.statusCode(), true, null, startedAtNanos);
         } catch (IOException | InterruptedException | RuntimeException exception) {
             logLlmTiming(phase, prompt.id(), attemptIndex, null, false, exception, startedAtNanos);
             throw exception;
         }
         try {
             JsonNode node = objectMapper.readTree(extractOutputText(response.body()));
-            return new GenerationCallResult(
+            GenerationCallResult result = new GenerationCallResult(
                     parseDiagnosisResponse(node),
                     parseGeneratedSections(node),
                     response.statusCode(),
                     response.body()
             );
+            logLlmTiming(phase, prompt.id(), attemptIndex, response.statusCode(), true, null, startedAtNanos);
+            return result;
         } catch (IOException exception) {
+            logLlmTiming(phase, prompt.id(), attemptIndex, response.statusCode(), false, exception, startedAtNanos);
             throw new OpenAiResponseParseException(
                     "OpenAI generation response parsing failed",
                     response.statusCode(),
@@ -459,6 +461,7 @@ public class OpenAiFeedbackClient {
                     exception
             );
         } catch (RuntimeException exception) {
+            logLlmTiming(phase, prompt.id(), attemptIndex, response.statusCode(), false, exception, startedAtNanos);
             throw new OpenAiResponseParseRuntimeException(
                     "OpenAI generation response parsing failed",
                     response.statusCode(),

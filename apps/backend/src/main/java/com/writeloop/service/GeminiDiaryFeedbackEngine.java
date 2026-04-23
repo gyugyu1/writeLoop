@@ -54,6 +54,11 @@ class GeminiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
     }
 
     @Override
+    public String model() {
+        return model;
+    }
+
+    @Override
     public boolean isConfigured() {
         return apiKey != null && !apiKey.isBlank();
     }
@@ -62,6 +67,7 @@ class GeminiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
     public DiaryFeedbackResponseDto review(DiaryFeedbackPromptContext context) {
         long startedAtNanos = System.nanoTime();
         boolean timingLogged = false;
+        Integer statusCode = null;
         try {
             String requestBody = GeminiStructuredOutputSupport.buildGenerateContentRequestBody(
                     objectMapper,
@@ -77,20 +83,22 @@ class GeminiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
                     requestTimeoutSeconds
             );
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            statusCode = response.statusCode();
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 logTiming(context, response.statusCode(), false, null, startedAtNanos);
                 timingLogged = true;
                 LOGGER.warn("Gemini diary feedback failed status={} body={}", response.statusCode(), truncate(response.body()));
                 throw new IllegalStateException("Gemini diary feedback request failed with status " + response.statusCode());
             }
-            logTiming(context, response.statusCode(), true, null, startedAtNanos);
-            timingLogged = true;
             String outputText = GeminiStructuredOutputSupport.extractStructuredOutputText(objectMapper, response.body());
-            return objectMapper.readValue(outputText, DiaryFeedbackResponseDto.class)
+            DiaryFeedbackResponseDto feedback = objectMapper.readValue(outputText, DiaryFeedbackResponseDto.class)
                     .withIdentity(context.entryId(), context.attemptNo());
+            logTiming(context, statusCode, true, null, startedAtNanos);
+            timingLogged = true;
+            return feedback;
         } catch (Exception exception) {
             if (!timingLogged) {
-                logTiming(context, null, false, exception, startedAtNanos);
+                logTiming(context, statusCode, false, exception, startedAtNanos);
             }
             throw new IllegalStateException("Gemini diary feedback request failed", exception);
         }

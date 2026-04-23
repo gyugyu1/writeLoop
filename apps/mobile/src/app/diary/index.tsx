@@ -104,6 +104,19 @@ function getAttemptLabel(entry: DiaryEntry) {
   return `${count}번 피드백`;
 }
 
+function getMoodTags(entry: DiaryEntry) {
+  const seen = new Set<string>();
+  const values = (entry.tags?.length ? entry.tags : entry.mood ? [entry.mood] : []).map((tag) => tag.trim());
+  return values.filter((tag) => {
+    if (!tag || seen.has(tag)) {
+      return false;
+    }
+
+    seen.add(tag);
+    return true;
+  });
+}
+
 function buildMonthCalendar(
   visibleMonth: Date,
   entryDateKeys: Set<string>,
@@ -374,7 +387,11 @@ export default function DiaryListScreen() {
                     <View style={styles.entryHeader}>
                       <View style={styles.entryMetaRow}>
                         <Text style={styles.entryBadge}>{getAttemptLabel(entry)}</Text>
-                        {entry.mood ? <Text style={styles.entryBadge}>{entry.mood}</Text> : null}
+                        {getMoodTags(entry).map((tag) => (
+                          <Text key={tag} style={styles.entryBadge}>
+                            {tag}
+                          </Text>
+                        ))}
                       </View>
                       <Text style={styles.entryArrow}>{">"}</Text>
                     </View>

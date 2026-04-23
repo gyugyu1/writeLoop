@@ -51,7 +51,24 @@ type DiaryEntryScreenProps = {
 type DiaryStep = "write" | "feedback" | "rewrite";
 
 const DIARY_COACH_PROMPT_ID = "diary-free-writing";
-const MOOD_OPTIONS = ["calm", "happy", "tired", "busy", "grateful"];
+const MOOD_OPTIONS = [
+  "calm",
+  "happy",
+  "grateful",
+  "excited",
+  "proud",
+  "relaxed",
+  "focused",
+  "hopeful",
+  "refreshed",
+  "tired",
+  "sleepy",
+  "busy",
+  "stressed",
+  "worried",
+  "sad",
+  "lonely"
+];
 const coachMascotImage = require("@/assets/images/coach-mascote-face.png");
 
 function todayDateKey() {
@@ -109,6 +126,25 @@ function normalizeComparableText(value?: string | null) {
 
 function normalizeExpressionKey(expression: string) {
   return expression.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizeMoodTags(tags: (string | null | undefined)[]) {
+  const seen = new Set<string>();
+  return tags
+    .map((tag) => trimText(tag))
+    .filter((tag) => {
+      if (!tag || seen.has(tag)) {
+        return false;
+      }
+
+      seen.add(tag);
+      return true;
+    });
+}
+
+function getDiaryMoodTags(entry: DiaryEntry) {
+  const tags = normalizeMoodTags(entry.tags ?? []);
+  return tags.length > 0 ? tags : normalizeMoodTags([entry.mood]);
 }
 
 function buildSavedExpressionIdMap(expressions: { id: number; expression: string }[]) {
@@ -499,7 +535,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
   const [entryId, setEntryId] = useState(initialEntryId ?? "");
   const [entryDate, setEntryDate] = useState(todayDateKey());
   const [title, setTitle] = useState(() => buildDefaultDiaryTitle(todayDateKey()));
-  const [mood, setMood] = useState("");
+  const [selectedMoodTags, setSelectedMoodTags] = useState<string[]>([]);
   const [content, setContent] = useState("");
   const [rewriteText, setRewriteText] = useState("");
   const [feedback, setFeedback] = useState<DiaryFeedback | null>(null);
@@ -527,7 +563,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
   const canSubmit = wordCount > 0 && !isReadOnly && !isSubmitting && !isSaving && !isCompleting && !isDeleting;
   const defaultTitle = useMemo(() => buildDefaultDiaryTitle(entryDate), [entryDate]);
   const displayTitle = title.trim() || defaultTitle;
-  const displayMood = mood.trim();
+  const displayMoodTags = useMemo(() => normalizeMoodTags(selectedMoodTags), [selectedMoodTags]);
   const readOnlyWordCount = useMemo(() => countWords(content), [content]);
   const diaryCoachQuickQuestions = useMemo(
     () => [
@@ -565,7 +601,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
         const loadedDate = formatDiaryDate(entry.entryDate);
         const loadedTitle = entry.title ?? "";
         setTitle(loadedTitle || buildDefaultDiaryTitle(loadedDate));
-        setMood(entry.mood ?? "");
+        setSelectedMoodTags(getDiaryMoodTags(entry));
         setContent(entry.content ?? "");
         const latestFeedback = getLatestFeedback(entry);
         const latestText = getLatestAttemptText(entry);
@@ -633,13 +669,14 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
   }
 
   async function saveEntry(nextContent = content, draft = true) {
+    const moodTags = normalizeMoodTags(selectedMoodTags);
     const payload = {
       title: title.trim() || defaultTitle,
       content: nextContent,
       language: "en",
       entryDate,
-      mood,
-      tags: mood ? [mood] : [],
+      mood: moodTags[0] ?? "",
+      tags: moodTags,
       draft
     };
 
@@ -701,7 +738,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
     const nextDate = todayDateKey();
     setEntryDate(nextDate);
     setTitle(buildDefaultDiaryTitle(nextDate));
-    setMood("");
+    setSelectedMoodTags([]);
     setContent("");
     setRewriteText("");
     setFeedback(null);
@@ -722,6 +759,12 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
       });
       diaryInputRef.current?.focus();
     }, 80);
+  }
+
+  function handleToggleMoodTag(tag: string) {
+    setSelectedMoodTags((current) =>
+      current.includes(tag) ? current.filter((item) => item !== tag) : [...current, tag]
+    );
   }
 
   function appendCoachExpression(expression: string) {
@@ -1008,11 +1051,13 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
               <Text style={styles.readMetaDate}>{entryDate}</Text>
             </View>
             <Text style={styles.readMetaTitle}>{displayTitle}</Text>
-            {displayMood ? (
+            {displayMoodTags.length > 0 ? (
               <View style={styles.readMoodRow}>
-                <View style={styles.readMoodChip}>
-                  <Text style={styles.readMoodChipText}>{displayMood}</Text>
-                </View>
+                {displayMoodTags.map((tag) => (
+                  <View key={tag} style={styles.readMoodChip}>
+                    <Text style={styles.readMoodChipText}>{tag}</Text>
+                  </View>
+                ))}
               </View>
             ) : null}
           </View>
@@ -1132,12 +1177,12 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
             <Text style={styles.fieldLabel}>기분 태그</Text>
             <View style={styles.moodRow}>
               {MOOD_OPTIONS.map((item) => {
-                const selected = mood === item;
+                const selected = selectedMoodTags.includes(item);
                 return (
                   <Pressable
                     key={item}
                     style={[styles.moodChip, selected && styles.moodChipActive]}
-                    onPress={() => setMood(selected ? "" : item)}
+                    onPress={() => handleToggleMoodTag(item)}
                   >
                     <Text style={[styles.moodChipText, selected && styles.moodChipTextActive]}>{item}</Text>
                   </Pressable>

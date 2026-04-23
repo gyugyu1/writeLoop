@@ -11,12 +11,6 @@
     "dev:frontend": "npm run dev --workspace @english-learning/frontend",
     "build:frontend": "npm run build --workspace @english-learning/frontend",
     "lint:frontend": "npm run lint --workspace @english-learning/frontend",
-    "mobile:build": "npm run mobile:build --workspace @english-learning/frontend",
-    "mobile:android:add": "npm run cap:add:android --workspace @english-learning/frontend",
-    "mobile:android:open": "npm run cap:open:android --workspace @english-learning/frontend",
-    "mobile:sync": "npm run cap:sync --workspace @english-learning/frontend",
-    "mobile:android:dev": "npm run mobile:build:android:dev --workspace @english-learning/frontend",
-    "mobile:android:run:dev": "npm run mobile:run:android:dev --workspace @english-learning/frontend",
     "mobile:rn:start": "npm --prefix apps/mobile run start",
     "mobile:rn:start:android-studio": "npm --prefix apps/mobile run start:android-studio",
     "mobile:rn:start:tunnel": "npm --prefix apps/mobile run start:tunnel",
@@ -24,6 +18,6 @@
     "mobile:rn:android:emulator": "npm --prefix apps/mobile run android:emulator",
     "mobile:rn:web": "npm --prefix apps/mobile run web",
     "mobile:rn:lint": "npm --prefix apps/mobile run lint",
-    "mobile:rn:typecheck": "npm --prefix apps/mobile exec tsc --noEmit"
+    "mobile:rn:typecheck": "npm --prefix apps/mobile run typecheck"
   }
 }

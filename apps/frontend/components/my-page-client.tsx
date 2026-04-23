@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   deleteAccount,
   deleteSavedExpression,
@@ -13,12 +13,12 @@ import {
   updateProfile
 } from "../lib/api";
 import { clearHomeDraftForLogin } from "../lib/auth-flow";
-import { getDifficultyLabel } from "../lib/difficulty";
+import { getDifficultyLabel, normalizeDailyDifficulty } from "../lib/difficulty";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import { clearAllLocalWritingDrafts } from "../lib/home-writing-drafts";
 import { clearAllIncompleteLoops } from "../lib/incomplete-loop";
-import type { AuthUser, HistorySession, SavedExpression, TodayWritingStatus } from "../lib/types";
+import type { AuthUser, DailyDifficulty, HistorySession, SavedExpression, TodayWritingStatus } from "../lib/types";
 import styles from "./auth-page.module.css";
 
 type MyPageTab = "account" | "writing";
@@ -51,6 +51,7 @@ type HistoryTextComparison = {
 };
 
 const ATTEMPT_USED_EXPRESSION_PREVIEW_COUNT = 4;
+const TAG_PRACTICE_EXPRESSION_LIMIT = 5;
 
 function formatHistoryDateKey(dateTime: string) {
   const formatter = new Intl.DateTimeFormat("en-CA", {
@@ -290,6 +291,194 @@ function getSavedExpressionSourceLabel(sourceType: SavedExpression["sourceType"]
   }
 }
 
+function normalizeSavedExpressionTag(tag?: string | null) {
+  return tag?.trim().toLowerCase() ?? "";
+}
+
+function normalizeSavedExpressionTags(tags?: string[] | null) {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(tags.map((tag) => normalizeSavedExpressionTag(tag)).filter(Boolean))
+  );
+}
+
+function getSavedExpressionSourceTag(sourceType: SavedExpression["sourceType"]) {
+  switch (sourceType) {
+    case "USED_EXPRESSION":
+      return "used_expression";
+    case "COACH_RECOMMENDATION":
+      return "coach_recommendation";
+    case "REFINEMENT_EXPRESSION":
+      return "refinement_expression";
+    default:
+      return null;
+  }
+}
+
+const SAVED_EXPRESSION_TAG_LABELS: Record<string, string> = {
+  used_expression: "내가 쓴 표현",
+  refinement_expression: "표현 더하기",
+  coach_recommendation: "AI 코치 추천",
+  verb_phrase: "동사 표현",
+  noun_phrase: "명사 표현",
+  adjective_phrase: "형용사 표현",
+  sentence_starter: "첫 문장 스타터",
+  frequency_expression: "빈도 표현",
+  time_expression: "시간 표현",
+  place_expression: "장소 표현",
+  reason_expression: "이유 표현",
+  example_expression: "예시 표현",
+  opinion_expression: "의견 표현",
+  comparison_expression: "비교 표현",
+  feeling_expression: "감정 표현",
+  daily_routine: "일상 루틴",
+  home: "집",
+  school: "학교",
+  work: "일",
+  study: "공부",
+  meal: "식사",
+  exercise: "운동",
+  hobby: "취미",
+  travel: "여행",
+  shopping: "쇼핑",
+  sleep: "수면",
+  health: "건강",
+  relationship: "관계",
+  technology: "기술",
+  present_habit: "현재 습관",
+  past_experience: "과거 경험",
+  future_plan: "미래 계획"
+};
+
+function formatSavedExpressionTagLabel(tag: string) {
+  const normalizedTag = tag.trim().toLowerCase();
+  return SAVED_EXPRESSION_TAG_LABELS[normalizedTag] ?? tag.trim().replace(/[_-]+/g, " ");
+}
+
+function getVisibleSavedExpressionTags(savedExpression: SavedExpression) {
+  const sourceTag = getSavedExpressionSourceTag(savedExpression.sourceType);
+  return normalizeSavedExpressionTags(savedExpression.tags).filter((tag) => tag !== sourceTag);
+}
+
+function normalizeSavedExpressionSearchValue(value?: string | null) {
+  return value?.trim().toLocaleLowerCase() ?? "";
+}
+
+function normalizeSavedExpressionTextKey(value: string) {
+  return value.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+const TAG_PRACTICE_TRAILING_WEAK_TOKENS = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "as",
+  "at",
+  "be",
+  "because",
+  "for",
+  "from",
+  "if",
+  "in",
+  "into",
+  "is",
+  "my",
+  "of",
+  "on",
+  "or",
+  "our",
+  "that",
+  "the",
+  "their",
+  "to",
+  "with",
+  "your",
+  "his",
+  "her"
+]);
+
+function isEligibleTagPracticeExpression(value: string) {
+  const normalized = value.trim().replace(/\s+/g, " ");
+  if (!normalized) {
+    return false;
+  }
+
+  const tokens = normalized.toLowerCase().split(" ");
+  return !TAG_PRACTICE_TRAILING_WEAK_TOKENS.has(tokens[tokens.length - 1]);
+}
+
+function buildSavedExpressionSearchText(savedExpression: SavedExpression) {
+  const visibleTags = getVisibleSavedExpressionTags(savedExpression);
+  const sourceTag = getSavedExpressionSourceTag(savedExpression.sourceType);
+
+  return [
+    savedExpression.expression,
+    savedExpression.meaningKo,
+    savedExpression.exampleEn,
+    savedExpression.promptQuestionEn,
+    savedExpression.promptQuestionKo,
+    savedExpression.promptTopic,
+    sourceTag,
+    getSavedExpressionSourceLabel(savedExpression.sourceType),
+    ...visibleTags,
+    ...visibleTags.map((tag) => formatSavedExpressionTagLabel(tag))
+  ]
+    .map((value) => normalizeSavedExpressionSearchValue(value))
+    .filter(Boolean)
+    .join(" ");
+}
+
+function collectTagPracticeExpressions(
+  tag: string,
+  anchorExpression: SavedExpression,
+  savedExpressions: SavedExpression[]
+) {
+  const normalizedTag = normalizeSavedExpressionTag(tag);
+  const anchorPromptId = trimSavedExpressionLookupValue(anchorExpression.promptId);
+  const uniqueExpressions = new Set<string>();
+  const collectedExpressions: string[] = [];
+  const prioritizedExpressions = [
+    anchorExpression,
+    ...savedExpressions.filter(
+      (item) =>
+        item.id !== anchorExpression.id &&
+        getVisibleSavedExpressionTags(item).includes(normalizedTag) &&
+        trimSavedExpressionLookupValue(item.promptId) === anchorPromptId
+    ),
+    ...savedExpressions.filter(
+      (item) =>
+        item.id !== anchorExpression.id &&
+        getVisibleSavedExpressionTags(item).includes(normalizedTag) &&
+        trimSavedExpressionLookupValue(item.promptId) !== anchorPromptId
+    )
+  ];
+
+  for (const item of prioritizedExpressions) {
+    const expression = item.expression.trim();
+    const normalizedExpression = normalizeSavedExpressionTextKey(expression);
+    if (
+      !expression ||
+      uniqueExpressions.has(normalizedExpression) ||
+      !isEligibleTagPracticeExpression(expression)
+    ) {
+      continue;
+    }
+
+    uniqueExpressions.add(normalizedExpression);
+    collectedExpressions.push(expression);
+
+    if (collectedExpressions.length >= TAG_PRACTICE_EXPRESSION_LIMIT) {
+      break;
+    }
+  }
+
+  return collectedExpressions;
+}
+
 function formatSavedExpressionDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
@@ -350,6 +539,32 @@ function trimSavedExpressionLookupValue(value?: string | null) {
   return value?.trim() ?? "";
 }
 
+function isDailyDifficulty(value?: string | null): value is DailyDifficulty {
+  return value === "I" || value === "A" || value === "B" || value === "C";
+}
+
+function resolveSavedExpressionPracticeTarget(
+  savedExpression: SavedExpression,
+  linkedSession?: HistorySession | null
+) {
+  const promptId =
+    trimSavedExpressionLookupValue(savedExpression.promptId) ||
+    trimSavedExpressionLookupValue(linkedSession?.promptId);
+  const difficultyCandidate =
+    trimSavedExpressionLookupValue(savedExpression.promptDifficulty) ||
+    trimSavedExpressionLookupValue(linkedSession?.difficulty);
+  const normalizedDifficulty = normalizeDailyDifficulty(difficultyCandidate, "I");
+
+  if (!promptId || !isDailyDifficulty(normalizedDifficulty)) {
+    return null;
+  }
+
+  return {
+    promptId,
+    difficulty: normalizedDifficulty
+  };
+}
+
 function getLatestSessionTimestamp(session: HistorySession) {
   return session.attempts[session.attempts.length - 1]?.createdAt ?? session.updatedAt ?? session.createdAt;
 }
@@ -408,6 +623,9 @@ export function MyPageClient() {
   const [isDeleteFormOpen, setIsDeleteFormOpen] = useState(false);
   const [deletingSavedExpressionId, setDeletingSavedExpressionId] = useState<number | null>(null);
   const [openSavedExpressionPrompts, setOpenSavedExpressionPrompts] = useState<Record<number, boolean>>({});
+  const [savedExpressionSearchQuery, setSavedExpressionSearchQuery] = useState("");
+  const [selectedSavedExpressionTag, setSelectedSavedExpressionTag] = useState<string | null>(null);
+  const [selectedSavedExpressionTagAnchorId, setSelectedSavedExpressionTagAnchorId] = useState<number | null>(null);
   const [selectedSession, setSelectedSession] = useState<HistorySession | null>(null);
   const [expandedAttemptExpressions, setExpandedAttemptExpressions] = useState<Record<string, boolean>>({});
 
@@ -452,6 +670,9 @@ export function MyPageClient() {
           setTodayStatus(null);
           setHistory([]);
           setSavedExpressions([]);
+          setSavedExpressionSearchQuery("");
+          setSelectedSavedExpressionTag(null);
+          setSelectedSavedExpressionTagAnchorId(null);
           setHistoryError("");
           setSavedExpressionError("");
           setIsHistoryLoading(false);
@@ -501,6 +722,9 @@ export function MyPageClient() {
         setTodayStatus(null);
         setHistory([]);
         setSavedExpressions([]);
+        setSavedExpressionSearchQuery("");
+        setSelectedSavedExpressionTag(null);
+        setSelectedSavedExpressionTagAnchorId(null);
         setHistoryError("");
         setSavedExpressionError("");
         setIsHistoryLoading(false);
@@ -561,6 +785,91 @@ export function MyPageClient() {
     [historyByDate, historyDates]
   );
 
+  const normalizedSavedExpressionSearch = useMemo(
+    () => normalizeSavedExpressionSearchValue(savedExpressionSearchQuery),
+    [savedExpressionSearchQuery]
+  );
+
+  const savedExpressionTagOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+
+    savedExpressions.forEach((item) => {
+      getVisibleSavedExpressionTags(item).forEach((tag) => {
+        counts.set(tag, (counts.get(tag) ?? 0) + 1);
+      });
+    });
+
+    return Array.from(counts.entries())
+      .sort((left, right) => {
+        const countCompare = right[1] - left[1];
+        if (countCompare !== 0) {
+          return countCompare;
+        }
+
+        return formatSavedExpressionTagLabel(left[0]).localeCompare(
+          formatSavedExpressionTagLabel(right[0]),
+          "ko"
+        );
+      })
+      .map(([tag, count]) => ({
+        tag,
+        count,
+        label: formatSavedExpressionTagLabel(tag)
+      }));
+  }, [savedExpressions]);
+
+  const visibleSavedExpressions = useMemo(() => {
+    const sortedByLatest = [...savedExpressions].sort((left, right) => {
+      const timeCompare = right.lastSavedAt.localeCompare(left.lastSavedAt);
+      if (timeCompare !== 0) {
+        return timeCompare;
+      }
+      return right.id - left.id;
+    });
+
+    const filteredExpressions = normalizedSavedExpressionSearch
+      ? sortedByLatest.filter((item) =>
+          buildSavedExpressionSearchText(item).includes(normalizedSavedExpressionSearch)
+        )
+      : sortedByLatest;
+
+    if (!selectedSavedExpressionTag) {
+      return filteredExpressions;
+    }
+
+    return [...filteredExpressions].sort((left, right) => {
+      const leftMatchesTag = getVisibleSavedExpressionTags(left).includes(selectedSavedExpressionTag);
+      const rightMatchesTag = getVisibleSavedExpressionTags(right).includes(selectedSavedExpressionTag);
+
+      if (leftMatchesTag !== rightMatchesTag) {
+        return leftMatchesTag ? -1 : 1;
+      }
+
+      const timeCompare = right.lastSavedAt.localeCompare(left.lastSavedAt);
+      if (timeCompare !== 0) {
+        return timeCompare;
+      }
+      return right.id - left.id;
+    });
+  }, [normalizedSavedExpressionSearch, savedExpressions, selectedSavedExpressionTag]);
+
+  const savedExpressionSectionMeta = useMemo(() => {
+    if (!normalizedSavedExpressionSearch && !selectedSavedExpressionTag) {
+      return `${savedExpressions.length}개의 표현`;
+    }
+
+    return `${visibleSavedExpressions.length}개 결과 · 전체 ${savedExpressions.length}개`;
+  }, [
+    normalizedSavedExpressionSearch,
+    savedExpressions.length,
+    selectedSavedExpressionTag,
+    visibleSavedExpressions.length
+  ]);
+
+  const selectedSavedExpressionTagLabel = selectedSavedExpressionTag
+    ? formatSavedExpressionTagLabel(selectedSavedExpressionTag)
+    : "";
+
   useEffect(() => {
     if (historyDates.length === 0) {
       setOpenDates({});
@@ -616,6 +925,20 @@ export function MyPageClient() {
       return Object.keys(next).length === Object.keys(current).length ? current : next;
     });
   }, [savedExpressions]);
+
+  useEffect(() => {
+    if (!selectedSavedExpressionTag) {
+      setSelectedSavedExpressionTagAnchorId(null);
+      return;
+    }
+
+    if (savedExpressionTagOptions.some((option) => option.tag === selectedSavedExpressionTag)) {
+      return;
+    }
+
+    setSelectedSavedExpressionTag(null);
+    setSelectedSavedExpressionTagAnchorId(null);
+  }, [savedExpressionTagOptions, selectedSavedExpressionTag]);
 
   useEffect(() => {
     if (!selectedSession) {
@@ -1240,7 +1563,30 @@ function renderWritingHistoryExpandedContent(
     }));
   }
 
-  function findHistorySessionForSavedExpression(savedExpression: SavedExpression) {
+  function handleResetSavedExpressionControls() {
+    setSavedExpressionSearchQuery("");
+    setSelectedSavedExpressionTag(null);
+    setSelectedSavedExpressionTagAnchorId(null);
+  }
+
+  function handleSelectSavedExpressionTag(tag: string, anchorSavedExpressionId?: number) {
+    const normalizedTag = normalizeSavedExpressionTag(tag);
+    if (!normalizedTag) {
+      return;
+    }
+
+    setSelectedSavedExpressionTag((current) => {
+      if (current === normalizedTag) {
+        setSelectedSavedExpressionTagAnchorId(null);
+        return null;
+      }
+
+      setSelectedSavedExpressionTagAnchorId(anchorSavedExpressionId ?? null);
+      return normalizedTag;
+    });
+  }
+
+  const findHistorySessionForSavedExpression = useCallback((savedExpression: SavedExpression) => {
     const promptId = trimSavedExpressionLookupValue(savedExpression.promptId);
     const promptQuestionEn = trimSavedExpressionLookupValue(savedExpression.promptQuestionEn);
     const promptQuestionKo = trimSavedExpressionLookupValue(savedExpression.promptQuestionKo);
@@ -1266,6 +1612,87 @@ function renderWritingHistoryExpandedContent(
     return [...matches].sort((left, right) =>
       getLatestSessionTimestamp(right).localeCompare(getLatestSessionTimestamp(left))
     )[0];
+  }, [history]);
+
+  function handlePracticeSavedExpression(savedExpression: SavedExpression) {
+    const linkedSession = findHistorySessionForSavedExpression(savedExpression);
+    const practiceTarget = resolveSavedExpressionPracticeTarget(savedExpression, linkedSession);
+    const expression = savedExpression.expression.trim();
+
+    if (!practiceTarget || !expression) {
+      setSavedExpressionError("이 표현을 다시 써볼 질문 정보를 아직 찾지 못했어요.");
+      return;
+    }
+
+    const params = new URLSearchParams({
+      difficulty: practiceTarget.difficulty,
+      promptId: practiceTarget.promptId,
+      prefillExpression: expression
+    });
+    router.push(`/?${params.toString()}`);
+  }
+
+  const selectedTagPracticeCandidate = useMemo(() => {
+    if (!selectedSavedExpressionTag) {
+      return null;
+    }
+
+    const anchorSavedExpression =
+      selectedSavedExpressionTagAnchorId == null
+        ? null
+        : visibleSavedExpressions.find((item) => item.id === selectedSavedExpressionTagAnchorId) ?? null;
+    const prioritizedSavedExpressions = anchorSavedExpression
+      ? [
+          anchorSavedExpression,
+          ...visibleSavedExpressions.filter((item) => item.id !== anchorSavedExpression.id)
+        ]
+      : visibleSavedExpressions;
+
+    for (const savedExpression of prioritizedSavedExpressions) {
+      if (!getVisibleSavedExpressionTags(savedExpression).includes(selectedSavedExpressionTag)) {
+        continue;
+      }
+
+      const linkedSession = findHistorySessionForSavedExpression(savedExpression);
+      const practiceTarget = resolveSavedExpressionPracticeTarget(savedExpression, linkedSession);
+      const expression = savedExpression.expression.trim();
+      const expressions = collectTagPracticeExpressions(
+        selectedSavedExpressionTag,
+        savedExpression,
+        visibleSavedExpressions
+      );
+
+      if (practiceTarget && expression && isEligibleTagPracticeExpression(expression) && expressions.length > 0) {
+        return {
+          practiceTarget,
+          expressions
+        };
+      }
+    }
+
+    return null;
+  }, [
+    findHistorySessionForSavedExpression,
+    selectedSavedExpressionTag,
+    selectedSavedExpressionTagAnchorId,
+    visibleSavedExpressions
+  ]);
+
+  function handlePracticeSelectedSavedExpressionTag() {
+    if (!selectedSavedExpressionTag || !selectedTagPracticeCandidate) {
+      setSavedExpressionError("이 태그에 연결된 다시 써보기 표현을 아직 찾지 못했어요.");
+      return;
+    }
+
+    const params = new URLSearchParams({
+      difficulty: selectedTagPracticeCandidate.practiceTarget.difficulty,
+      promptId: selectedTagPracticeCandidate.practiceTarget.promptId,
+      prefillExpression: selectedTagPracticeCandidate.expressions[0],
+      practiceTag: selectedSavedExpressionTag,
+      practiceTagLabel: selectedSavedExpressionTagLabel,
+      practiceExpressions: JSON.stringify(selectedTagPracticeCandidate.expressions)
+    });
+    router.push(`/?${params.toString()}`);
   }
 
   function handleOpenSavedExpressionHistory(savedExpression: SavedExpression) {
@@ -1650,9 +2077,80 @@ function renderWritingHistoryExpandedContent(
             <div className={styles.writingPanelHeader}>
               <div>
                 <h2>저장한 표현</h2>
-                <p>{savedExpressions.length}개의 표현</p>
+                <p>{savedExpressionSectionMeta}</p>
               </div>
             </div>
+
+            {savedExpressions.length > 0 ? (
+              <div className={styles.savedExpressionControls}>
+                <input
+                  className={styles.savedExpressionSearchInput}
+                  value={savedExpressionSearchQuery}
+                  onChange={(event) => setSavedExpressionSearchQuery(event.target.value)}
+                  placeholder="표현, 뜻, 예문, 질문, 태그 검색"
+                />
+
+                {savedExpressionTagOptions.length > 0 ? (
+                  <div className={styles.savedExpressionFilterScroller}>
+                    {savedExpressionTagOptions.map((tagOption) => {
+                      const isSelected = selectedSavedExpressionTag === tagOption.tag;
+
+                      return (
+                        <button
+                          key={tagOption.tag}
+                          type="button"
+                          className={
+                            isSelected
+                              ? styles.savedExpressionFilterChipActive
+                              : styles.savedExpressionFilterChip
+                          }
+                          onClick={() => handleSelectSavedExpressionTag(tagOption.tag)}
+                        >
+                          <span>{tagOption.label}</span>
+                          <small>{tagOption.count}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+
+                {normalizedSavedExpressionSearch || selectedSavedExpressionTag ? (
+                  <div className={styles.savedExpressionFilterSummary}>
+                    <span>
+                      {[
+                        normalizedSavedExpressionSearch
+                          ? `"${savedExpressionSearchQuery.trim()}" 검색`
+                          : null,
+                        selectedSavedExpressionTag
+                          ? `${selectedSavedExpressionTagLabel} 상단 우선 정렬`
+                          : null
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </span>
+                    <div className={styles.savedExpressionFilterSummaryActions}>
+                      {selectedSavedExpressionTag ? (
+                        <button
+                          type="button"
+                          className={styles.savedExpressionTextLinkButton}
+                          onClick={handlePracticeSelectedSavedExpressionTag}
+                          disabled={!selectedTagPracticeCandidate}
+                        >
+                          이 태그로 다시 써보기
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        className={styles.savedExpressionTextLinkButton}
+                        onClick={handleResetSavedExpressionControls}
+                      >
+                        초기화
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
 
             {isSavedExpressionsLoading ? (
               <div className={styles.writingPanelEmpty}>
@@ -1665,55 +2163,108 @@ function renderWritingHistoryExpandedContent(
                   질문으로 이동
                 </button>
               </div>
+            ) : visibleSavedExpressions.length === 0 ? (
+              <div className={styles.writingPanelEmpty}>
+                <p>검색 결과가 없어요. 다른 검색어나 태그로 다시 찾아보세요.</p>
+                <button type="button" className={styles.primaryButton} onClick={handleResetSavedExpressionControls}>
+                  검색 초기화
+                </button>
+              </div>
             ) : (
               <div className={styles.savedExpressionGrid}>
-                {savedExpressions.map((item) => {
+                {visibleSavedExpressions.map((item) => {
                   const promptText = getSavedExpressionPromptText(item);
+                  const linkedHistorySession = findHistorySessionForSavedExpression(item);
+                  const practiceTarget = resolveSavedExpressionPracticeTarget(item, linkedHistorySession);
+                  const savedExpressionTags = getVisibleSavedExpressionTags(item);
                   const isPromptOpen = Boolean(openSavedExpressionPrompts[item.id]);
-                  const hasLinkedHistory = Boolean(findHistorySessionForSavedExpression(item));
+                  const hasLinkedHistory = Boolean(linkedHistorySession);
 
                   return (
                     <article key={item.id} className={styles.savedExpressionCard}>
                       <div className={styles.savedExpressionHeaderRow}>
                         <div className={styles.savedExpressionMetaWrap}>
-                          <strong className={styles.savedExpressionText}>{item.expression}</strong>
-                          <div className={styles.savedExpressionBadgeRow}>
-                            <span className={styles.savedExpressionSourceBadge}>
-                              {getSavedExpressionSourceLabel(item.sourceType)}
-                            </span>
+                          {savedExpressionTags.length > 0 || item.saveCount > 1 ? (
+                            <div className={styles.savedExpressionBadgeRow}>
+                              {savedExpressionTags.map((tag) => {
+                                const isSelected = selectedSavedExpressionTag === tag;
+
+                                return (
+                                  <button
+                                    key={`${item.id}-${tag}`}
+                                    type="button"
+                                    className={
+                                      isSelected
+                                        ? styles.savedExpressionTagBadgeActive
+                                        : styles.savedExpressionTagBadge
+                                    }
+                                    onClick={() => handleSelectSavedExpressionTag(tag, item.id)}
+                                  >
+                                    {formatSavedExpressionTagLabel(tag)}
+                                  </button>
+                                );
+                              })}
                             {item.saveCount > 1 ? (
                               <span className={styles.savedExpressionSaveCount}>{`${item.saveCount}번 저장`}</span>
                             ) : null}
-                          </div>
+                            </div>
+                          ) : null}
+                          <strong className={styles.savedExpressionText}>{item.expression}</strong>
                         </div>
 
-                        <button
-                          type="button"
-                          className={styles.savedExpressionDeleteButton}
-                          onClick={() => handleDeleteSavedExpression(item)}
-                          disabled={deletingSavedExpressionId === item.id}
-                        >
-                          {deletingSavedExpressionId === item.id ? "삭제 중" : "삭제"}
-                        </button>
+                        <div className={styles.savedExpressionHeaderAside}>
+                          <span className={styles.savedExpressionDate}>{formatSavedExpressionDate(item.lastSavedAt)}</span>
+                          <button
+                            type="button"
+                            className={styles.savedExpressionDeleteButton}
+                            onClick={() => handleDeleteSavedExpression(item)}
+                            disabled={deletingSavedExpressionId === item.id}
+                            aria-label={`${item.expression} 삭제`}
+                          >
+                            <span className="material-symbols-outlined" aria-hidden="true">
+                              {deletingSavedExpressionId === item.id ? "hourglass_top" : "delete"}
+                            </span>
+                          </button>
+                        </div>
                       </div>
 
                       {item.meaningKo ? <p className={styles.savedExpressionMeaning}>{item.meaningKo}</p> : null}
-                      {item.usageTipKo ? <p className={styles.savedExpressionUsageTip}>{item.usageTipKo}</p> : null}
                       {item.exampleEn ? (
                         <p className={styles.savedExpressionExample}>
                           {renderSavedExpressionExample(item.exampleEn, item.expression)}
                         </p>
                       ) : null}
 
+                      {!promptText && practiceTarget ? (
+                        <button
+                          type="button"
+                          className={styles.savedExpressionTextLinkButton}
+                          onClick={() => handlePracticeSavedExpression(item)}
+                        >
+                          이 표현으로 한 문장 써보기
+                        </button>
+                      ) : null}
+
                       {promptText ? (
                         <div className={styles.savedExpressionPromptSection}>
-                          <button
-                            type="button"
-                            className={styles.savedExpressionPromptLink}
-                            onClick={() => toggleSavedExpressionPrompt(item.id)}
-                          >
-                            {isPromptOpen ? "질문 숨기기" : "어떤 질문에서 저장했는지 보기"}
-                          </button>
+                          <div className={styles.savedExpressionActionRow}>
+                            <button
+                              type="button"
+                              className={styles.savedExpressionPromptLink}
+                              onClick={() => toggleSavedExpressionPrompt(item.id)}
+                            >
+                              {isPromptOpen ? "질문 숨기기" : "어떤 질문에서 저장했는지 보기"}
+                            </button>
+                            {practiceTarget ? (
+                              <button
+                                type="button"
+                                className={styles.savedExpressionTextLinkButton}
+                                onClick={() => handlePracticeSavedExpression(item)}
+                              >
+                                이 표현으로 한 문장 써보기
+                              </button>
+                            ) : null}
+                          </div>
 
                           {isPromptOpen ? (
                             <div className={styles.savedExpressionPromptBox}>
@@ -1730,8 +2281,6 @@ function renderWritingHistoryExpandedContent(
                           ) : null}
                         </div>
                       ) : null}
-
-                      <p className={styles.savedExpressionDate}>{formatSavedExpressionDate(item.lastSavedAt)}</p>
                     </article>
                   );
                 })}

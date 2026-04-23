@@ -100,6 +100,11 @@ export function TopNavigation() {
           active: pathname === "/"
         },
         {
+          href: "/diary",
+          label: "영어일기",
+          active: pathname === "/diary"
+        },
+        {
           href: writingHref,
           label: "작문기록",
           active: pathname === "/me" && currentTab === "writing",
@@ -138,6 +143,11 @@ export function TopNavigation() {
         href: "/",
         label: "홈",
         active: pathname === "/"
+      },
+      {
+        href: "/diary",
+        label: "영어일기",
+        active: pathname === "/diary"
       },
       {
         href: loginHref,

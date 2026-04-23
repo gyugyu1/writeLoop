@@ -3578,6 +3578,56 @@
   color: #10244c;
 }
 
+.coachNotice {
+  margin: 0;
+  color: #7a4b16;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.coachExpressionActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.coachExpressionGhostButton,
+.coachExpressionSaveButton,
+.coachExpressionSaveButtonActive {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.coachExpressionGhostButton {
+  border: 1px solid rgba(16, 36, 76, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  color: #10244c;
+}
+
+.coachExpressionSaveButton {
+  border: 1px solid rgba(242, 161, 74, 0.32);
+  background: rgba(242, 161, 74, 0.12);
+  color: #9a4d18;
+}
+
+.coachExpressionSaveButtonActive {
+  border: 1px solid rgba(50, 120, 84, 0.24);
+  background: rgba(61, 143, 99, 0.14);
+  color: #22673f;
+}
+
+.coachExpressionSaveButton:disabled,
+.coachExpressionSaveButtonActive:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
 .coachUsagePanel {
   display: grid;
   gap: 14px;
@@ -4562,6 +4612,59 @@
   font-weight: 700;
 }
 
+.feedbackChipSaveButton,
+.feedbackChipSaveButtonActive {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.feedbackChipSaveButton {
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.18);
+  background: rgba(var(--warm-accent-rgb), 0.08);
+  color: #7d4316;
+}
+
+.feedbackChipSaveButtonActive {
+  border: 1px solid rgba(50, 120, 84, 0.24);
+  background: rgba(61, 143, 99, 0.12);
+  color: #22673f;
+}
+
+.feedbackChipSaveButton span,
+.feedbackChipSaveButtonActive span {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.feedbackChipSaveButton small,
+.feedbackChipSaveButtonActive small {
+  color: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  opacity: 0.74;
+}
+
+.feedbackExpressionNotice,
+.feedbackExpressionError {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.feedbackExpressionNotice {
+  color: #22673f;
+}
+
+.feedbackExpressionError {
+  color: #b14a24;
+}
+
 .feedbackStrengthBlock {
   display: grid;
   gap: 0;
@@ -5014,6 +5117,37 @@
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.78);
   box-shadow: 0 10px 24px -18px rgba(127, 82, 0, 0.18);
+}
+
+.feedbackRewriteSaveButton,
+.feedbackRewriteSaveButtonActive {
+  width: fit-content;
+  min-height: 34px;
+  margin-top: 10px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.feedbackRewriteSaveButton {
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.26);
+  background: rgba(var(--warm-accent-rgb), 0.1);
+  color: #8a4d1f;
+}
+
+.feedbackRewriteSaveButtonActive {
+  border: 1px solid rgba(50, 120, 84, 0.24);
+  background: rgba(61, 143, 99, 0.12);
+  color: #22673f;
+}
+
+.feedbackRewriteSaveButton:disabled,
+.feedbackRewriteSaveButtonActive:disabled {
+  cursor: default;
+  opacity: 0.72;
 }
 
 .rewriteSuggestionBlock {
@@ -8746,6 +8880,60 @@
     0 12px 28px -26px rgba(127, 82, 0, 0.22);
 }
 
+.practiceExpressionCard {
+  display: grid;
+  gap: 12px;
+  width: min(820px, 100%);
+  margin: 0 auto;
+  padding: 18px 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.22);
+  background: rgba(255, 250, 244, 0.96);
+  box-shadow: 0 14px 30px -26px rgba(122, 79, 20, 0.22);
+}
+
+.practiceExpressionEyebrow {
+  width: fit-content;
+  color: #9a4d18;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.practiceExpressionCard p {
+  margin: 0;
+  color: #6f5741;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.practiceExpressionScroller {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.practiceExpressionChip {
+  flex: 0 0 auto;
+  min-height: 44px;
+  max-width: 260px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid #ead7c2;
+  background: rgba(255, 255, 255, 0.94);
+  color: #6f5741;
+  font: inherit;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.practiceExpressionChipPrimary {
+  border-color: #f2a14a;
+  color: #2b2620;
+}
+
 .composerTextarea {
   min-height: 368px;
   height: 100%;
@@ -10939,6 +11127,71 @@
 .prefeaturedPromptSection {
   display: grid;
   gap: 14px;
+}
+
+.difficultyHomeDiaryShortcut {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 28px;
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.2);
+  background:
+    radial-gradient(circle at top right, rgba(255, 199, 120, 0.22), transparent 28%),
+    rgba(255, 250, 244, 0.98);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 16px 32px -28px rgba(122, 79, 20, 0.2);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.difficultyHomeDiaryShortcut:hover {
+  transform: translateY(-2px);
+  border-color: rgba(var(--warm-accent-rgb), 0.34);
+  box-shadow: 0 18px 34px -28px rgba(242, 153, 74, 0.28);
+}
+
+.difficultyHomeDiaryIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: rgba(var(--warm-accent-rgb), 0.14);
+  color: #9a4d18;
+}
+
+.difficultyHomeDiaryIconGlyph,
+.difficultyHomeDiaryArrow {
+  width: 1.35rem;
+  height: 1.35rem;
+  font-size: 1.35rem;
+}
+
+.difficultyHomeDiaryCopy {
+  display: grid;
+  gap: 4px;
+}
+
+.difficultyHomeDiaryCopy strong {
+  color: #2b2620;
+  font-size: 1.08rem;
+  font-weight: 900;
+}
+
+.difficultyHomeDiaryCopy small {
+  color: #6f6255;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.difficultyHomeDiaryArrow {
+  color: #9a4d18;
 }
 
 .prefeaturedPromptHeader {

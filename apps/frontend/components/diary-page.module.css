@@ -1,0 +1,579 @@
+.pageShell {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 126px 24px 96px;
+}
+
+.hero,
+.loginCard,
+.loadingCard,
+.sidebar,
+.workArea,
+.editorCard,
+.feedbackCard {
+  border: 1px solid rgba(232, 218, 203, 0.98);
+  background: rgba(255, 254, 252, 0.96);
+  box-shadow: 0 24px 60px -42px rgba(138, 100, 49, 0.32);
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding: 30px;
+  border-radius: 32px;
+}
+
+.hero h1,
+.loginCard h1 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: clamp(2.4rem, 5vw, 4.6rem);
+  line-height: 0.98;
+  font-weight: 900;
+  letter-spacing: -0.07em;
+}
+
+.hero p,
+.loginCard p {
+  max-width: 680px;
+  margin: 14px 0 0;
+  color: var(--text-sub);
+  font-size: 1.08rem;
+  line-height: 1.75;
+  font-weight: 650;
+}
+
+.eyebrow {
+  display: inline-flex;
+  margin-bottom: 8px;
+  color: #a56613;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.layoutGrid {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.sidebar {
+  position: sticky;
+  top: 104px;
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 28px;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sidebarHeader h2,
+.editorHeader h2,
+.feedbackCard h2,
+.feedbackSection h3 {
+  margin: 0;
+  color: var(--text-main);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+}
+
+.sidebarHeader h2 {
+  font-size: 1.35rem;
+}
+
+.sidebarHeader span,
+.wordBadge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #fff1da;
+  color: #8a6431;
+  font-size: 0.86rem;
+  font-weight: 900;
+  padding: 7px 11px;
+}
+
+.entryList {
+  display: grid;
+  gap: 10px;
+  max-height: calc(100vh - 220px);
+  overflow: auto;
+  padding-right: 2px;
+}
+
+.entryListItem,
+.entryListItemActive {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 14px;
+  border-radius: 18px;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background 0.18s ease;
+}
+
+.entryListItem {
+  border: 1px solid rgba(232, 218, 203, 0.86);
+  background: #fff9f2;
+}
+
+.entryListItemActive {
+  border: 2px solid rgba(242, 161, 74, 0.9);
+  background: #fff0dd;
+  transform: translateY(-1px);
+}
+
+.entryListItem span,
+.entryListItemActive span,
+.entryListItem small,
+.entryListItemActive small,
+.mutedText {
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.entryListItem strong,
+.entryListItemActive strong {
+  color: var(--text-main);
+  font-size: 1rem;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.workArea {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 32px;
+}
+
+.metaGrid {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.metaGrid label,
+.moodBlock {
+  display: grid;
+  gap: 8px;
+}
+
+.metaGrid span,
+.moodBlock > span {
+  color: #9a611e;
+  font-size: 0.92rem;
+  font-weight: 900;
+}
+
+.metaGrid input,
+.editorCard textarea {
+  width: 100%;
+  border: 1px solid #eadccb;
+  background: #fff9f2;
+  color: var(--text-main);
+  outline: none;
+}
+
+.metaGrid input {
+  min-height: 48px;
+  padding: 0 14px;
+  border-radius: 16px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.moodRow,
+.hintRow,
+.actionRow,
+.expressionGrid,
+.ideaGrid,
+.fixGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.moodChip,
+.moodChipActive,
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+  border: 0;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.moodChip,
+.moodChipActive {
+  padding: 9px 14px;
+  border-radius: 999px;
+}
+
+.moodChip {
+  border: 1px solid #e4d3be;
+  background: #fff9f2;
+  color: #7d6a55;
+}
+
+.moodChipActive {
+  border: 1px solid rgba(242, 161, 74, 0.95);
+  background: #fff0d7;
+  color: #a15f10;
+}
+
+.editorCard,
+.feedbackCard {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border-radius: 28px;
+}
+
+.editorHeader,
+.feedbackHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.editorHeader h2 {
+  font-size: 1.65rem;
+}
+
+.editorCard textarea {
+  min-height: 310px;
+  padding: 20px;
+  border-radius: 22px;
+  resize: vertical;
+  font-size: 1.28rem;
+  line-height: 1.7;
+  font-weight: 650;
+}
+
+.hintRow span {
+  display: inline-flex;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff3df;
+  color: #7a6042;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 18px;
+  text-decoration: none;
+  transition:
+    transform 0.18s ease,
+    opacity 0.18s ease;
+}
+
+.primaryButton {
+  background: #f2a14a;
+  color: #21160a;
+  box-shadow: 0 12px 24px -18px rgba(138, 100, 49, 0.46);
+}
+
+.secondaryButton {
+  border: 1px solid #e4d3be;
+  background: #fff9f2;
+  color: #8a6431;
+}
+
+.dangerButton {
+  border: 1px solid #f0c7b7;
+  background: #fff3ef;
+  color: #b9472c;
+  margin-left: auto;
+}
+
+.primaryButton:hover,
+.secondaryButton:hover,
+.dangerButton:hover {
+  transform: translateY(-1px);
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
+}
+
+.feedbackHeader h2 {
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  line-height: 1.12;
+}
+
+.scoreBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: #f2a14a;
+  color: #21160a;
+  font-size: 1.6rem;
+  font-weight: 900;
+}
+
+.feedbackSummary,
+.feedbackSection p,
+.softList,
+.emptyText {
+  margin: 0;
+  color: #5b4a3b;
+  font-size: 1rem;
+  line-height: 1.72;
+  font-weight: 650;
+}
+
+.feedbackSection {
+  display: grid;
+  gap: 12px;
+}
+
+.feedbackSection h3 {
+  color: #8a6431;
+  font-size: 1.12rem;
+}
+
+.softList {
+  display: grid;
+  gap: 6px;
+  padding-left: 20px;
+}
+
+.fixGrid,
+.ideaGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.fixCard,
+.ideaCard,
+.expressionCard,
+.challengeCard,
+.flowGrid {
+  border: 1px solid #eadccb;
+  background: #fff;
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.fixCard,
+.ideaCard,
+.expressionCard,
+.flowGrid {
+  display: grid;
+  gap: 8px;
+}
+
+.fixCard strong,
+.ideaCard strong,
+.expressionCard strong {
+  color: var(--text-main);
+  font-weight: 900;
+}
+
+.fixCard em,
+.ideaCard em,
+.challengeCard em {
+  color: #8b735a;
+  font-style: italic;
+}
+
+.repairBox {
+  display: grid;
+  gap: 8px;
+}
+
+.originalText,
+.revisedText {
+  margin: 0;
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+
+.originalText {
+  background: #fff0ec;
+  color: #a84228;
+}
+
+.revisedText {
+  background: #eef8ed;
+  color: #2e6c35;
+  font-weight: 800;
+}
+
+.flowGrid span,
+.expressionCard span,
+.ideaCard span {
+  color: #7a6856;
+  font-size: 0.93rem;
+  line-height: 1.55;
+  font-weight: 700;
+}
+
+.diaryTextBox,
+.modelDiary {
+  white-space: pre-wrap;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid #eadccb;
+  padding: 18px;
+}
+
+.expressionGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.expressionCard {
+  background: #fff4e7;
+}
+
+.expressionCard p {
+  font-size: 0.92rem;
+}
+
+.challengeCard {
+  display: grid;
+  gap: 6px;
+  background: #fff0dd;
+}
+
+.challengeCard span {
+  color: #c2761b;
+  font-size: 0.83rem;
+  font-weight: 900;
+}
+
+.challengeCard p {
+  margin: 0;
+  color: #4d4035;
+  font-weight: 800;
+}
+
+.noticeText,
+.errorText {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 16px;
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.noticeText {
+  background: #edf8ef;
+  color: #2f7a46;
+}
+
+.errorText {
+  background: #fff0ec;
+  color: #b34a2b;
+}
+
+.loginCard,
+.loadingCard {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  max-width: 840px;
+  margin: 0 auto;
+  padding: 42px;
+  border-radius: 34px;
+}
+
+.loadingCard {
+  justify-items: center;
+  color: var(--text-sub);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+@media (max-width: 980px) {
+  .layoutGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+  }
+
+  .entryList {
+    display: flex;
+    overflow-x: auto;
+    max-height: none;
+    padding-bottom: 4px;
+  }
+
+  .entryListItem,
+  .entryListItemActive {
+    min-width: 240px;
+  }
+
+  .metaGrid,
+  .fixGrid,
+  .expressionGrid,
+  .ideaGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .pageShell {
+    padding: 102px 14px 56px;
+  }
+
+  .hero,
+  .workArea,
+  .editorCard,
+  .feedbackCard,
+  .loginCard {
+    padding: 20px;
+    border-radius: 24px;
+  }
+
+  .hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .actionRow {
+    flex-direction: column;
+  }
+
+  .dangerButton {
+    margin-left: 0;
+  }
+}

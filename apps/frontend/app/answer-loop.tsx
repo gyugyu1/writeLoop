@@ -15,6 +15,7 @@ import {
 import {
   checkCoachExpressionUsage,
   ApiError,
+  deleteSavedExpression,
   deleteWritingDraft,
   getFeaturedDailyPrompt,
   getCurrentUser,
@@ -22,8 +23,10 @@ import {
   getMonthStatus,
   getPrompts,
   getPromptHints,
+  getSavedExpressions,
   getTodayWritingStatus,
   getWritingDraft,
+  saveExpression,
   saveWritingDraft,
   requestCoachHelp,
   submitFeedback,
@@ -69,6 +72,8 @@ import type {
   HomeFlowStep,
   Prompt,
   PromptHint,
+  SavedExpression,
+  SavedExpressionSourceType,
   TodayWritingStatus,
   WritingDraft,
   WritingDraftType
@@ -86,7 +91,10 @@ type UsedExpressionCard = {
   key: string;
   expression: string;
   matchedText?: string | null;
+  meaningKo?: string | null;
+  exampleEn?: string | null;
   usageTip: string;
+  tags?: string[] | null;
 };
 type WritingGuideHintItem = {
   id: string;
@@ -109,8 +117,16 @@ type RewriteIdeaCard = {
   note: string;
   originalText: string;
   revisedText: string;
+  exampleEn?: string | null;
+  tags?: string[] | null;
   hasSwapPair: boolean;
   optionalTone: boolean;
+};
+type PracticeExpressionHint = {
+  expression: string;
+  tag?: string | null;
+  tagLabel?: string | null;
+  expressions: string[];
 };
 type ModelAnswerVariantCard = {
   key: string;
@@ -378,6 +394,55 @@ function pickFirstNonEmpty(...values: Array<string | null | undefined>) {
     }
   }
   return null;
+}
+
+function normalizeSavedExpressionKey(value?: string | null) {
+  return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? "";
+}
+
+function normalizeExpressionTagList(tags?: string[] | null) {
+  if (!Array.isArray(tags)) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))
+  );
+}
+
+function buildSavedExpressionIdMap(savedExpressions: SavedExpression[]) {
+  return savedExpressions.reduce<Record<string, number>>((accumulator, item) => {
+    const key = normalizeSavedExpressionKey(item.expression);
+    if (key) {
+      accumulator[key] = item.id;
+    }
+    return accumulator;
+  }, {});
+}
+
+function isDailyDifficulty(value?: string | null): value is DailyDifficulty {
+  return value === "I" || value === "A" || value === "B" || value === "C";
+}
+
+function parsePracticeExpressionsParam(value: string | null) {
+  if (!value) {
+    return [];
+  }
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .filter((item): item is string => typeof item === "string")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, 5);
+  } catch {
+    return [];
+  }
 }
 
 function looksLikeEnglishText(value?: string | null) {
@@ -1497,6 +1562,11 @@ export function AnswerLoop() {
   const [isLoadingCoachHelp, setIsLoadingCoachHelp] = useState(false);
   const [coachUsage, setCoachUsage] = useState<CoachUsageCheckResponse | null>(null);
   const [, setIsCheckingCoachUsage] = useState(false);
+  const [savedExpressionIdsByKey, setSavedExpressionIdsByKey] = useState<Record<string, number>>({});
+  const [savingExpressionKeys, setSavingExpressionKeys] = useState<string[]>([]);
+  const [expressionSaveNotice, setExpressionSaveNotice] = useState("");
+  const [expressionSaveError, setExpressionSaveError] = useState("");
+  const [practiceExpressionHint, setPracticeExpressionHint] = useState<PracticeExpressionHint | null>(null);
   const [didRestoreDraft, setDidRestoreDraft] = useState(false);
   const [didAttemptPersistedDraftRestore, setDidAttemptPersistedDraftRestore] = useState(false);
   const [draftStatusMessage, setDraftStatusMessage] = useState("");
@@ -1511,6 +1581,7 @@ export function AnswerLoop() {
   const coachDialogCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const helpSheetCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const knownPersistedDraftKeysRef = useRef<Set<string>>(new Set());
+  const practiceParamsAppliedRef = useRef(false);
   const [mobileComposerBarHeight, setMobileComposerBarHeight] = useState(0);
   const monthStatusCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const currentMonthView = useMemo(
@@ -1535,6 +1606,42 @@ export function AnswerLoop() {
       setGuestPromptId(storedPromptId);
       setSessionId(storedSessionId);
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || practiceParamsAppliedRef.current) {
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const promptId = params.get("promptId")?.trim() ?? "";
+    const rawDifficulty = params.get("difficulty")?.trim().toUpperCase() ?? "";
+    const prefillExpression = params.get("prefillExpression")?.trim() ?? "";
+    const practiceTag = params.get("practiceTag")?.trim() ?? "";
+    const practiceTagLabel = params.get("practiceTagLabel")?.trim() ?? "";
+    const practiceExpressions = parsePracticeExpressionsParam(params.get("practiceExpressions"));
+    const expressionList = practiceExpressions.length > 0
+      ? practiceExpressions
+      : prefillExpression
+        ? [prefillExpression]
+        : [];
+
+    if (!promptId || !isDailyDifficulty(rawDifficulty) || expressionList.length === 0) {
+      return;
+    }
+
+    practiceParamsAppliedRef.current = true;
+    setSelectedDifficulty(rawDifficulty);
+    setSelectedPromptId(promptId);
+    setPracticeExpressionHint({
+      expression: expressionList[0],
+      tag: practiceTag || null,
+      tagLabel: practiceTagLabel || null,
+      expressions: expressionList
+    });
+    setPickFlowScreen("prompt");
+    setStep("answer");
+    setError("");
   }, []);
 
   useEffect(() => {
@@ -1591,6 +1698,34 @@ export function AnswerLoop() {
     setShowRewriteFeedback(false);
     setShowAnswerTranslation(false);
   }, [currentUser, didRestoreDraft]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setSavedExpressionIdsByKey({});
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadSavedExpressionIds() {
+      try {
+        const savedExpressions = await getSavedExpressions();
+        if (!cancelled) {
+          setSavedExpressionIdsByKey(buildSavedExpressionIdMap(savedExpressions));
+        }
+      } catch {
+        if (!cancelled) {
+          setSavedExpressionIdsByKey({});
+        }
+      }
+    }
+
+    void loadSavedExpressionIds();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     if (isResolvingCurrentUser) {
@@ -2144,7 +2279,10 @@ export function AnswerLoop() {
         key: expression.expression,
         expression: expression.expression,
         matchedText: expression.matchedText ?? null,
-        usageTip: expression.usageTip ?? "답변 안에서 자연스럽게 살린 표현이에요."
+        meaningKo: expression.meaningKo ?? null,
+        exampleEn: expression.exampleEn ?? null,
+        usageTip: expression.usageTip ?? "답변 안에서 자연스럽게 살린 표현이에요.",
+        tags: normalizeExpressionTagList(expression.tags)
       })),
     [feedback?.usedExpressions]
   );
@@ -2155,7 +2293,10 @@ export function AnswerLoop() {
             key: expression.id,
             expression: expression.expression,
             matchedText: expression.matchedText ?? null,
-            usageTip: expression.usageTip
+            meaningKo: expression.meaningKo ?? null,
+            exampleEn: expression.example ?? null,
+            usageTip: expression.usageTip,
+            tags: normalizeExpressionTagList(expression.tags)
           }))
         : fallbackUsedExpressions,
     [coachUsage?.usedExpressions, fallbackUsedExpressions]
@@ -2500,6 +2641,106 @@ export function AnswerLoop() {
     setIsCheckingCoachUsage(false);
   }
 
+  function isExpressionSaved(expression: string) {
+    return Boolean(savedExpressionIdsByKey[normalizeSavedExpressionKey(expression)]);
+  }
+
+  function isExpressionSaving(expression: string) {
+    return savingExpressionKeys.includes(normalizeSavedExpressionKey(expression));
+  }
+
+  function appendExpressionToCurrentDraft(expression: string) {
+    const trimmedExpression = expression.trim();
+    if (!trimmedExpression) {
+      return;
+    }
+
+    if (step === "rewrite") {
+      setRewrite((current) => (current.trim() ? `${current.trimEnd()} ${trimmedExpression}` : trimmedExpression));
+      return;
+    }
+
+    setAnswer((current) => (current.trim() ? `${current.trimEnd()} ${trimmedExpression}` : trimmedExpression));
+  }
+
+  async function handleToggleSavedExpression({
+    expression,
+    meaningKo,
+    exampleEn,
+    usageTipKo,
+    tags,
+    sourceType,
+    coachInteractionId
+  }: {
+    expression: string;
+    meaningKo?: string | null;
+    exampleEn?: string | null;
+    usageTipKo?: string | null;
+    tags?: string[] | null;
+    sourceType: SavedExpressionSourceType;
+    coachInteractionId?: string | null;
+  }) {
+    const trimmedExpression = expression.trim();
+    const key = normalizeSavedExpressionKey(trimmedExpression);
+    if (!key) {
+      return;
+    }
+
+    if (!currentUser) {
+      setShowLoginWall(true);
+      setExpressionSaveError("표현 저장은 로그인 후 사용할 수 있어요.");
+      setExpressionSaveNotice("");
+      return;
+    }
+
+    if (savingExpressionKeys.includes(key)) {
+      return;
+    }
+
+    const existingSavedExpressionId = savedExpressionIdsByKey[key];
+    setSavingExpressionKeys((current) => [...current, key]);
+    setExpressionSaveError("");
+    setExpressionSaveNotice("");
+
+    try {
+      if (existingSavedExpressionId) {
+        await deleteSavedExpression(existingSavedExpressionId);
+        setSavedExpressionIdsByKey((current) => {
+          const next = { ...current };
+          delete next[key];
+          return next;
+        });
+        setExpressionSaveNotice("저장을 취소했어요.");
+        return;
+      }
+
+      const savedExpression = await saveExpression({
+        expression: trimmedExpression,
+        meaningKo: trimNullable(meaningKo) ?? undefined,
+        exampleEn: trimNullable(exampleEn) ?? undefined,
+        usageTipKo: trimNullable(usageTipKo) ?? undefined,
+        tags: normalizeExpressionTagList(tags),
+        sourceType,
+        promptId: selectedPromptId || selectedPrompt?.id,
+        answerSessionId: feedback?.sessionId || sessionId || undefined,
+        answerAttemptNo: feedback?.attemptNo,
+        coachInteractionId: trimNullable(coachInteractionId) ?? undefined
+      });
+
+      setSavedExpressionIdsByKey((current) => ({
+        ...current,
+        [key]: savedExpression.id
+      }));
+      setExpressionSaveNotice("표현을 저장했어요.");
+    } catch (caughtError) {
+      setExpressionSaveError(
+        caughtError instanceof Error ? caughtError.message : "표현을 저장하지 못했어요."
+      );
+    } finally {
+      setSavingExpressionKeys((current) => current.filter((item) => item !== key));
+    }
+  }
+
   const restorePersistedDraft = useCallback(async (
     promptId: string,
     message?: string
@@ -2531,6 +2772,9 @@ export function AnswerLoop() {
     setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setDraftStatusMessage("");
+    setExpressionSaveNotice("");
+    setExpressionSaveError("");
+    setPracticeExpressionHint(null);
     setStep("answer");
   }
 
@@ -2627,6 +2871,9 @@ export function AnswerLoop() {
     setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setDraftStatusMessage("");
+    setExpressionSaveNotice("");
+    setExpressionSaveError("");
+    setPracticeExpressionHint(null);
     setPickFlowScreen("prompt");
     setStep("pick");
   }
@@ -2908,7 +3155,8 @@ export function AnswerLoop() {
             completedSessions: Math.max(1, current?.completedSessions ?? 0),
             startedSessions: Math.max(1, current?.startedSessions ?? 0),
             streakDays: Math.max(1, current?.streakDays ?? 0),
-            totalWrittenSentences: (current?.totalWrittenSentences ?? 0) + 1
+            totalWrittenSentences: (current?.totalWrittenSentences ?? 0) + 1,
+            totalAnswerSessions: (current?.totalAnswerSessions ?? 0) + 1
           }));
           setWelcomeCompletedDateKeys((current) => {
             const todayKey = formatDateKey(new Date());
@@ -3103,6 +3351,21 @@ export function AnswerLoop() {
           </section>
 
           {renderIncompleteLoopResumeCard()}
+
+          <Link href="/diary" className={styles.difficultyHomeDiaryShortcut}>
+            <span className={styles.difficultyHomeDiaryIcon} aria-hidden="true">
+              <span className={`materialSymbols ${styles.difficultyHomeDiaryIconGlyph}`}>
+                edit_note
+              </span>
+            </span>
+            <span className={styles.difficultyHomeDiaryCopy}>
+              <strong>자유 영어일기 쓰기</strong>
+              <small>질문 없이 오늘 있었던 일을 영어로 쓰고 일기 전용 피드백을 받아보세요.</small>
+            </span>
+            <span className={`materialSymbols ${styles.difficultyHomeDiaryArrow}`} aria-hidden="true">
+              arrow_forward
+            </span>
+          </Link>
 
           <section className={styles.prefeaturedPromptSection}>
             <div className={styles.prefeaturedPromptHeader}>
@@ -3484,6 +3747,43 @@ export function AnswerLoop() {
     );
   }
 
+  function renderPracticeExpressionHintCard() {
+    if (!practiceExpressionHint || feedback) {
+      return null;
+    }
+
+    const expressions = practiceExpressionHint.expressions.length > 0
+      ? practiceExpressionHint.expressions
+      : [practiceExpressionHint.expression];
+
+    return (
+      <section className={styles.practiceExpressionCard}>
+        <span className={styles.practiceExpressionEyebrow}>
+          {practiceExpressionHint.tagLabel ? "태그 연습" : "표현 연습"}
+        </span>
+        <p>
+          {practiceExpressionHint.tagLabel
+            ? `${practiceExpressionHint.tagLabel} 태그로 저장한 표현을 활용해 새 문장을 써보세요.`
+            : "저장한 표현을 활용해 새 문장을 써보세요."}
+        </p>
+        <div className={styles.practiceExpressionScroller}>
+          {expressions.map((expression, index) => (
+            <button
+              key={`${expression}-${index}`}
+              type="button"
+              className={`${styles.practiceExpressionChip} ${
+                index === 0 ? styles.practiceExpressionChipPrimary : ""
+              }`}
+              onClick={() => appendExpressionToCurrentDraft(expression)}
+            >
+              {expression}
+            </button>
+          ))}
+        </div>
+      </section>
+    );
+  }
+
   async function handleCoachQuestionSubmit() {
     if (!selectedPrompt) {
       setCoachHelpError("질문을 먼저 선택해 주세요.");
@@ -3577,6 +3877,8 @@ export function AnswerLoop() {
         </div>
 
         {coachHelpError ? <p className={styles.coachError}>{coachHelpError}</p> : null}
+        {expressionSaveError ? <p className={styles.coachError}>{expressionSaveError}</p> : null}
+        {expressionSaveNotice ? <p className={styles.coachNotice}>{expressionSaveNotice}</p> : null}
 
         {coachHelp ? (
           <div className={styles.coachResult}>
@@ -3593,6 +3895,41 @@ export function AnswerLoop() {
                   </div>
                   <p>{expression.usageTip}</p>
                   <small>{expression.example}</small>
+                  <div className={styles.coachExpressionActionRow}>
+                    <button
+                      type="button"
+                      className={styles.coachExpressionGhostButton}
+                      onClick={() => appendExpressionToCurrentDraft(expression.expression)}
+                    >
+                      문장에 넣기
+                    </button>
+                    <button
+                      type="button"
+                      className={
+                        isExpressionSaved(expression.expression)
+                          ? styles.coachExpressionSaveButtonActive
+                          : styles.coachExpressionSaveButton
+                      }
+                      onClick={() =>
+                        void handleToggleSavedExpression({
+                          expression: expression.expression,
+                          meaningKo: expression.meaningKo,
+                          exampleEn: expression.example,
+                          usageTipKo: expression.usageTip,
+                          tags: expression.tags,
+                          sourceType: "COACH_RECOMMENDATION",
+                          coachInteractionId: coachHelp.interactionId
+                        })
+                      }
+                      disabled={isExpressionSaving(expression.expression)}
+                    >
+                      {isExpressionSaving(expression.expression)
+                        ? "저장 중"
+                        : isExpressionSaved(expression.expression)
+                          ? "저장됨"
+                          : "저장"}
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>
@@ -3881,6 +4218,8 @@ export function AnswerLoop() {
       note,
       originalText,
       revisedText,
+      exampleEn: trimNullable(idea.exampleEn),
+      tags: normalizeExpressionTagList(idea.tags),
       hasSwapPair,
       optionalTone: Boolean(idea.optionalTone)
     };
@@ -3936,6 +4275,8 @@ export function AnswerLoop() {
           note: pickFirstNonEmpty(resolveLearningPointGuidance(point), resolveLearningPointSupport(point)) ?? "",
           originalText: "",
           revisedText: "",
+          exampleEn: trimNullable(point.exampleEn),
+          tags: null,
           hasSwapPair: false,
           optionalTone: false
         });
@@ -4007,13 +4348,41 @@ export function AnswerLoop() {
             <span className={styles.feedbackChipLabel}>잘 쓴 표현</span>
             <div className={styles.feedbackChipList}>
               {expressionChips.map((expression) => (
-                <span key={expression.key} className={styles.feedbackChip}>
-                  {expression.expression}
-                </span>
+                <button
+                  key={expression.key}
+                  type="button"
+                  className={
+                    isExpressionSaved(expression.expression)
+                      ? styles.feedbackChipSaveButtonActive
+                      : styles.feedbackChipSaveButton
+                  }
+                  onClick={() =>
+                    void handleToggleSavedExpression({
+                      expression: expression.expression,
+                      meaningKo: expression.meaningKo,
+                      exampleEn: expression.exampleEn,
+                      usageTipKo: expression.usageTip,
+                      tags: expression.tags,
+                      sourceType: "USED_EXPRESSION"
+                    })
+                  }
+                  disabled={isExpressionSaving(expression.expression)}
+                >
+                  <span>{expression.expression}</span>
+                  <small>
+                    {isExpressionSaving(expression.expression)
+                      ? "저장 중"
+                      : isExpressionSaved(expression.expression)
+                        ? "저장됨"
+                        : "저장"}
+                  </small>
+                </button>
               ))}
             </div>
           </div>
         ) : null}
+        {expressionSaveError ? <p className={styles.feedbackExpressionError}>{expressionSaveError}</p> : null}
+        {expressionSaveNotice ? <p className={styles.feedbackExpressionNotice}>{expressionSaveNotice}</p> : null}
       </section>
     );
   }
@@ -4131,6 +4500,33 @@ export function AnswerLoop() {
                     ) : null}
                   </div>
                 )}
+                {!idea.hasSwapPair && idea.english ? (
+                  <button
+                    type="button"
+                    className={
+                      isExpressionSaved(idea.english)
+                        ? styles.feedbackRewriteSaveButtonActive
+                        : styles.feedbackRewriteSaveButton
+                    }
+                    onClick={() =>
+                      void handleToggleSavedExpression({
+                        expression: idea.english,
+                        meaningKo: idea.korean,
+                        exampleEn: idea.exampleEn,
+                        usageTipKo: idea.note,
+                        tags: idea.tags,
+                        sourceType: "REFINEMENT_EXPRESSION"
+                      })
+                    }
+                    disabled={isExpressionSaving(idea.english)}
+                  >
+                    {isExpressionSaving(idea.english)
+                      ? "저장 중"
+                      : isExpressionSaved(idea.english)
+                        ? "저장됨"
+                        : "표현 저장"}
+                  </button>
+                ) : null}
                 {idea.note ? <p style={feedbackRewriteInstructionStyle}>{idea.note}</p> : null}
               </article>
             ))}
@@ -4483,6 +4879,7 @@ export function AnswerLoop() {
             </button>
           )
         })}
+        {renderPracticeExpressionHintCard()}
         {renderMobileComposerBar({
           secondaryLabel: "질문 목록",
           onSecondary: () => setStep("pick"),

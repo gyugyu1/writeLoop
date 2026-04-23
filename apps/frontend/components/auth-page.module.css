@@ -3420,6 +3420,90 @@
   gap: 14px;
 }
 
+.savedExpressionControls {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.savedExpressionSearchInput {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid rgba(119, 87, 61, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text-main);
+  font: inherit;
+  font-weight: 700;
+  outline: none;
+}
+
+.savedExpressionSearchInput:focus {
+  border-color: rgba(var(--warm-accent-rgb), 0.42);
+  box-shadow: 0 0 0 3px rgba(var(--warm-accent-rgb), 0.12);
+}
+
+.savedExpressionFilterScroller {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: thin;
+}
+
+.savedExpressionFilterChip,
+.savedExpressionFilterChipActive {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 13px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.savedExpressionFilterChip {
+  border: 1px solid rgba(119, 87, 61, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  color: #7a6244;
+}
+
+.savedExpressionFilterChipActive {
+  border: 1px solid rgba(var(--warm-accent-rgb), 0.5);
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: #9a4d18;
+}
+
+.savedExpressionFilterChip small,
+.savedExpressionFilterChipActive small {
+  font-size: 0.72rem;
+  opacity: 0.72;
+}
+
+.savedExpressionFilterSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: rgba(248, 242, 235, 0.76);
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.savedExpressionFilterSummaryActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
 .savedExpressionCard {
   display: grid;
   gap: 12px;
@@ -3435,6 +3519,13 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 14px;
+}
+
+.savedExpressionHeaderAside {
+  display: grid;
+  justify-items: end;
+  gap: 10px;
+  min-width: max-content;
 }
 
 .savedExpressionMetaWrap {
@@ -3454,21 +3545,33 @@
   gap: 8px;
 }
 
-.savedExpressionSourceBadge,
+.savedExpressionTagBadge,
+.savedExpressionTagBadgeActive,
 .savedExpressionSaveCount {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 28px;
+  border: 1px solid transparent;
   padding: 4px 10px;
   border-radius: 999px;
+  font: inherit;
   font-size: 0.78rem;
   font-weight: 800;
 }
 
-.savedExpressionSourceBadge {
-  background: rgba(var(--secondary-rgb), 0.12);
-  color: var(--secondary);
+.savedExpressionTagBadge {
+  border-color: rgba(119, 87, 61, 0.12);
+  background: rgba(248, 242, 235, 0.92);
+  color: #7a6244;
+  cursor: pointer;
+}
+
+.savedExpressionTagBadgeActive {
+  border-color: rgba(var(--warm-accent-rgb), 0.58);
+  background: rgba(var(--warm-accent-rgb), 0.12);
+  color: #9a4d18;
+  cursor: pointer;
 }
 
 .savedExpressionSaveCount {
@@ -3477,17 +3580,22 @@
 }
 
 .savedExpressionDeleteButton {
-  min-width: 72px;
-  min-height: 38px;
-  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
   border: 1px solid rgba(176, 37, 0, 0.12);
   border-radius: 999px;
   background: rgba(255, 241, 236, 0.94);
   color: #a3371a;
-  font: inherit;
-  font-size: 0.86rem;
-  font-weight: 800;
   cursor: pointer;
+}
+
+.savedExpressionDeleteButton span {
+  width: 1.05rem;
+  height: 1.05rem;
+  font-size: 1.05rem;
 }
 
 .savedExpressionDeleteButton:disabled {
@@ -3501,12 +3609,16 @@
   font-weight: 700;
 }
 
-.savedExpressionUsageTip,
 .savedExpressionDate,
 .savedExpressionPrompt {
   margin: 0;
   color: var(--text-sub);
   line-height: 1.65;
+}
+
+.savedExpressionDate {
+  font-size: 0.86rem;
+  white-space: nowrap;
 }
 
 .savedExpressionExample {
@@ -3527,24 +3639,34 @@
   gap: 10px;
 }
 
+.savedExpressionActionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  align-items: center;
+}
+
 .savedExpressionPromptLink,
-.savedExpressionHistoryButton {
+.savedExpressionHistoryButton,
+.savedExpressionTextLinkButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   width: fit-content;
   min-height: 38px;
-  padding: 0 14px;
-  border-radius: 999px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   font: inherit;
   font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
 }
 
 .savedExpressionPromptLink {
-  border: 1px solid rgba(119, 87, 61, 0.12);
-  background: rgba(255, 255, 255, 0.88);
-  color: var(--text-main);
+  color: #7a4f31;
 }
 
 .savedExpressionPromptBox {
@@ -3556,14 +3678,16 @@
 }
 
 .savedExpressionHistoryButton {
-  border: 0;
-  background: rgba(var(--warm-accent-rgb), 0.16);
   color: var(--primary);
 }
 
-.savedExpressionHistoryButton:disabled {
+.savedExpressionTextLinkButton {
+  color: #8a4d1f;
+}
+
+.savedExpressionHistoryButton:disabled,
+.savedExpressionTextLinkButton:disabled {
   cursor: default;
-  background: rgba(16, 36, 76, 0.06);
   color: rgba(94, 91, 87, 0.56);
 }
 

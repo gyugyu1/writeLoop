@@ -1012,35 +1012,6 @@ function renderWritingHistoryFeedbackDetails(attempt?: HistorySession["attempts"
       attempt.answerText,
       attempt.feedback.correctedAnswer
     );
-    const rewriteIdeas =
-      attempt.feedback.ui?.rewriteIdeas
-        ?.map((idea, index) => {
-          const english =
-            idea.english?.trim() ||
-            idea.revisedText?.trim() ||
-            "";
-          const note = idea.noteKo?.trim() || idea.title?.trim() || "";
-          if (!english && !note) {
-            return null;
-          }
-
-          return {
-            key: `${english || note}-${index}`,
-            english,
-            meaningKo: idea.meaningKo?.trim() || "",
-            noteKo: note
-          };
-        })
-        .filter(
-          (
-            idea
-          ): idea is {
-            key: string;
-            english: string;
-            meaningKo: string;
-            noteKo: string;
-          } => Boolean(idea)
-        ) ?? [];
     const fixPoints =
       attempt.feedback.ui?.fixPoints?.filter((point) => {
         if (!point || point.kind === "EXPRESSION") {
@@ -1088,8 +1059,7 @@ function renderWritingHistoryFeedbackDetails(attempt?: HistorySession["attempts"
     const hasRefineSection = correctionCards.length > 0;
     const hasStrengthsSection = attempt.feedback.strengths.length > 0;
     const shouldShowSummaryCard = Boolean(feedbackSummary) && !hasStrengthsSection;
-    const hasNextLoopSection =
-      Boolean(rewriteChallenge) || rewriteIdeas.length > 0 || Boolean(completionMessage);
+    const hasNextLoopSection = Boolean(rewriteChallenge) || Boolean(completionMessage);
 
     return (
       <details className={styles.writingHistoryFeedbackDetails}>
@@ -1234,11 +1204,11 @@ function renderWritingHistoryFeedbackDetails(attempt?: HistorySession["attempts"
                   <section className={styles.writingHistoryFeedbackCard}>
                     <span className={styles.writingHistoryFeedbackLabel}>다시쓰기 가이드</span>
                     {rewriteChallenge ? <p>{rewriteChallenge}</p> : null}
-                    {rewriteIdeas.length > 0 ? (
+                    {false ? (
                       <div className={styles.writingHistoryFeedbackRewriteSuggestions}>
                         <strong>이런 문장으로 확장해 보세요</strong>
                         <ul className={styles.writingHistoryFeedbackBulletList}>
-                          {rewriteIdeas.map((suggestion) => (
+                          {([] as Array<{ key: string; english: string; meaningKo: string; noteKo: string }>).map((suggestion) => (
                             <li key={suggestion.key}>
                               <span className={styles.writingHistoryFeedbackRewriteSuggestionEn}>
                                 {suggestion.english}

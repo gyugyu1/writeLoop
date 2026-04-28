@@ -64,7 +64,6 @@ import type {
   FeedbackInlineSegment,
   FeedbackLoopStatus,
   FeedbackModelAnswerVariant,
-  FeedbackRewriteIdea,
   FeedbackSecondaryLearningPoint,
   FeedbackScreenPolicy,
   HistoryMonthStatus,
@@ -109,7 +108,7 @@ type RewriteSuggestion = {
   korean?: string | null;
   note?: string | null;
 };
-type RewriteIdeaCard = {
+type RefinementIdeaCard = {
   key: string;
   title: string;
   english: string;
@@ -546,7 +545,7 @@ function stripRewriteSuggestionTerminalPunctuation(value: string) {
   return value.replace(/[.!?]+$/g, "").trim();
 }
 
-function normalizeRewriteIdeaAnchor(value?: string | null) {
+function normalizeRefinementIdeaAnchor(value?: string | null) {
   const normalized = trimNullable(value);
   if (!normalized) {
     return "";
@@ -4195,49 +4194,19 @@ export function AnswerLoop() {
 
   void resolveRewritePracticeSuggestions;
 
-  function normalizeRewriteIdeaCard(idea: FeedbackRewriteIdea, index: number): RewriteIdeaCard | null {
-    const originalText = trimNullable(idea.originalText) ?? "";
-    const revisedText = trimNullable(idea.revisedText) ?? "";
-    const hasSwapPair = Boolean(originalText && revisedText && originalText !== revisedText);
-    const englishSource = pickFirstNonEmpty(idea.english, revisedText) ?? "";
-    const english = hasSwapPair
-      ? englishSource
-      : stripRewriteSuggestionTerminalPunctuation(englishSource);
-    const korean = trimNullable(idea.meaningKo) ?? "";
-    const note = pickFirstNonEmpty(idea.noteKo, idea.title) ?? "";
-
-    if (!english && !note && !hasSwapPair) {
-      return null;
-    }
-
-    return {
-      key: `idea-${english || revisedText || originalText || index}`,
-      title: trimNullable(idea.title) ?? "",
-      english,
-      korean,
-      note,
-      originalText,
-      revisedText,
-      exampleEn: trimNullable(idea.exampleEn),
-      tags: normalizeExpressionTagList(idea.tags),
-      hasSwapPair,
-      optionalTone: Boolean(idea.optionalTone)
-    };
-  }
-
-  function buildRewriteIdeas(): RewriteIdeaCard[] {
-    const merged: RewriteIdeaCard[] = [];
+  function buildRefinementIdeaCards(): RefinementIdeaCard[] {
+    const merged: RefinementIdeaCard[] = [];
     const seen = new Set<string>();
 
-    const pushCard = (card: RewriteIdeaCard | null) => {
+    const pushCard = (card: RefinementIdeaCard | null) => {
       if (!card) {
         return;
       }
 
-      const englishAnchor = normalizeRewriteIdeaAnchor(card.english || card.revisedText);
+      const englishAnchor = normalizeRefinementIdeaAnchor(card.english || card.revisedText);
       const dedupeKey = englishAnchor
         ? englishAnchor
-        : `${normalizeRewriteIdeaAnchor(card.originalText)}|${normalizeRewriteIdeaAnchor(card.revisedText)}`;
+        : `${normalizeRefinementIdeaAnchor(card.originalText)}|${normalizeRefinementIdeaAnchor(card.revisedText)}`;
 
       if (!dedupeKey || seen.has(dedupeKey)) {
         return;
@@ -4247,16 +4216,33 @@ export function AnswerLoop() {
       merged.push(card);
     };
 
-    (feedback?.ui?.rewriteIdeas ?? []).forEach((idea, index) => {
-      if (!idea) {
+    filterSuggestedRefinementExpressions(
+      feedback?.refinementExpressions,
+      lastSubmittedAnswer,
+      feedback?.correctedAnswer
+    ).forEach((expression, index) => {
+      if (!expression || expression.displayable === false) {
         return;
       }
-      pushCard(normalizeRewriteIdeaCard(idea, index));
-    });
+      const english = stripRewriteSuggestionTerminalPunctuation(trimNullable(expression.expression) ?? "");
+      if (!english || !looksLikeEnglishText(english)) {
+        return;
+      }
 
-    if (merged.length > 0) {
-      return merged;
-    }
+      pushCard({
+        key: `refinement-${english.toLowerCase()}-${index}`,
+        title: "",
+        english,
+        korean: trimNullable(expression.meaningKo) ?? trimNullable(expression.exampleKo) ?? "",
+        note: trimNullable(expression.guidanceKo) ?? "",
+        originalText: "",
+        revisedText: "",
+        exampleEn: trimNullable(expression.exampleEn),
+        tags: null,
+        hasSwapPair: false,
+        optionalTone: false
+      });
+    });
 
     resolveSecondaryLearningPoints()
       .filter((point) => point.kind === "EXPRESSION")
@@ -4288,7 +4274,7 @@ export function AnswerLoop() {
   function buildModelAnswerVariantCards(baseAnswer?: string | null): ModelAnswerVariantCard[] {
     const merged: ModelAnswerVariantCard[] = [];
     const seen = new Set<string>();
-    const baseAnchor = normalizeRewriteIdeaAnchor(baseAnswer);
+    const baseAnchor = normalizeRefinementIdeaAnchor(baseAnswer);
 
     if (baseAnchor) {
       seen.add(baseAnchor);
@@ -4300,7 +4286,7 @@ export function AnswerLoop() {
         return;
       }
 
-      const answerAnchor = normalizeRewriteIdeaAnchor(answer);
+      const answerAnchor = normalizeRefinementIdeaAnchor(answer);
       if (!answerAnchor || seen.has(answerAnchor)) {
         return;
       }
@@ -4446,16 +4432,16 @@ export function AnswerLoop() {
   }
 
   function renderRewritePracticeSection() {
-    const rewriteIdeas = buildRewriteIdeas();
+    const refinementIdeaCards = buildRefinementIdeaCards();
 
     return (
       <section className={styles.feedbackCard}>
         <h3 className={styles.feedbackSectionHeading} style={feedbackSectionHeadingBlueStyle}>
           표현 더하기
         </h3>
-        {rewriteIdeas.length > 0 ? (
+        {refinementIdeaCards.length > 0 ? (
           <div style={isMobileViewport ? feedbackRewriteMobileListStyle : feedbackRewriteListStyle}>
-            {rewriteIdeas.map((idea, index) => (
+            {refinementIdeaCards.map((idea, index) => (
               <article
                 key={idea.key}
                 className={styles.feedbackSubsectionCard}
@@ -4463,7 +4449,7 @@ export function AnswerLoop() {
                   isMobileViewport
                     ? {
                         ...feedbackRewriteMobileItemStyle,
-                        ...(index < rewriteIdeas.length - 1 ? feedbackRewriteMobileItemDividerStyle : null)
+                        ...(index < refinementIdeaCards.length - 1 ? feedbackRewriteMobileItemDividerStyle : null)
                       }
                     : idea.optionalTone
                       ? { ...feedbackRewriteHeroStyle, ...feedbackRewriteHeroOptionalStyle }

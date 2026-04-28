@@ -12,7 +12,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { deleteWritingDraft, getPrompts, getTodayWritingStatus } from "@/lib/api";
+import { deleteWritingDraft, getDailyPrompts, getTodayWritingStatus } from "@/lib/api";
 import { getDifficultyLabel } from "@/lib/difficulty";
 import {
   clearPracticeFeedbackState,
@@ -21,6 +21,7 @@ import {
   type PracticeFeedbackState
 } from "@/lib/practice-feedback-state";
 import { clearIncompleteLoop } from "@/lib/incomplete-loop";
+import { getOrCreateGuestId } from "@/lib/guest-id";
 import { isDailyDifficulty, resolvePracticeDifficulty } from "@/lib/practice";
 import { useSession } from "@/lib/session";
 import { deleteLocalWritingDraft } from "@/lib/writing-drafts";
@@ -256,8 +257,11 @@ function buildStreakWeek(todayStatus: TodayWritingStatus | null): StreakWeekData
 }
 
 function buildRecommendedPrompts(currentPrompt: Prompt, prompts: Prompt[]) {
+  const currentDifficulty = resolvePracticeDifficulty("I", currentPrompt.difficulty);
   const sameDifficulty = prompts.filter(
-    (prompt) => prompt.difficulty === currentPrompt.difficulty && prompt.id !== currentPrompt.id
+    (prompt) =>
+      resolvePracticeDifficulty(currentDifficulty, prompt.difficulty) === currentDifficulty &&
+      prompt.id !== currentPrompt.id
   );
   const sameCategory = sameDifficulty.filter(
     (prompt) => prompt.topicCategory === currentPrompt.topicCategory
@@ -428,8 +432,13 @@ export default function PracticeCompleteScreen() {
         setIsLoadingRecommendations(true);
         setLoadError("");
 
-        const [allPrompts, nextTodayStatus] = await Promise.all([
-          getPrompts(),
+        const recommendationDifficulty = resolvePracticeDifficulty(
+          requestedDifficulty,
+          feedbackState.prompt.difficulty
+        );
+        const guestId = currentUser ? undefined : await getOrCreateGuestId();
+        const [nextRecommendation, nextTodayStatus] = await Promise.all([
+          getDailyPrompts(recommendationDifficulty, guestId, [feedbackState.prompt.id]),
           getTodayWritingStatus().catch(() => null)
         ]);
 
@@ -437,7 +446,7 @@ export default function PracticeCompleteScreen() {
           return;
         }
 
-        setRecommendedPrompts(buildRecommendedPrompts(feedbackState.prompt, allPrompts));
+        setRecommendedPrompts(buildRecommendedPrompts(feedbackState.prompt, nextRecommendation.prompts));
         setTodayStatus(nextTodayStatus);
       } catch (caughtError) {
         if (cancelled) {
@@ -459,7 +468,7 @@ export default function PracticeCompleteScreen() {
     return () => {
       cancelled = true;
     };
-  }, [feedbackState]);
+  }, [currentUser, feedbackState, requestedDifficulty]);
 
   useEffect(() => {
     if (!feedbackState) {

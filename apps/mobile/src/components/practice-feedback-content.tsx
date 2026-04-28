@@ -19,7 +19,6 @@ import type {
   FeedbackFixPoint,
   FeedbackInlineSegment,
   FeedbackModelAnswerVariant,
-  FeedbackRewriteIdea,
   FeedbackSecondaryLearningPoint
 } from "@/lib/types";
 
@@ -48,7 +47,7 @@ type RewriteSuggestionCard = {
   note: string;
 };
 
-type RewriteIdeaCard = {
+type RefinementIdeaCard = {
   key: string;
   title: string;
   english: string;
@@ -424,7 +423,7 @@ function stripRewriteSuggestionTerminalPunctuation(value: string) {
   return value.replace(/[.!?]+$/g, "").trim();
 }
 
-function normalizeRewriteIdeaAnchor(value?: string | null) {
+function normalizeRefinementIdeaAnchor(value?: string | null) {
   const text = trimText(value);
   if (!text) {
     return "";
@@ -629,54 +628,21 @@ function buildRewriteSuggestions(
 void buildRewritePractice;
 void buildRewriteSuggestions;
 
-function normalizeRewriteIdeaCard(
-  idea: FeedbackRewriteIdea,
-  index: number
-): RewriteIdeaCard | null {
-  const original = trimText(idea.originalText);
-  const revised = trimText(idea.revisedText);
-  const hasSwapPair = Boolean(original && revised && original !== revised);
-  const englishSource = pickFirstNonEmpty(idea.english, revised);
-  const english = hasSwapPair
-    ? englishSource
-    : stripRewriteSuggestionTerminalPunctuation(englishSource);
-  const korean = trimText(idea.meaningKo);
-  const note = pickFirstNonEmpty(idea.noteKo, idea.title);
-
-  if (!english && !note && !hasSwapPair) {
-    return null;
-  }
-
-  return {
-    key: `idea-${english || revised || original || index}`,
-    title: trimText(idea.title),
-    english,
-    korean,
-    note,
-    exampleEn: trimText(idea.exampleEn),
-    tags: normalizeExpressionTags(idea.tags),
-    original,
-    revised,
-    hasSwapPair,
-    optionalTone: Boolean(idea.optionalTone)
-  };
-}
-
-function buildRewriteIdeas(feedback: Feedback): RewriteIdeaCard[] {
-  const merged: RewriteIdeaCard[] = [];
+function buildRefinementIdeaCards(feedback: Feedback): RefinementIdeaCard[] {
+  const merged: RefinementIdeaCard[] = [];
   const seen = new Set<string>();
 
-  const pushCard = (card: RewriteIdeaCard | null) => {
+  const pushCard = (card: RefinementIdeaCard | null) => {
     if (!card) {
       return;
     }
 
-    const englishAnchor = normalizeRewriteIdeaAnchor(card.english || card.revised);
+    const englishAnchor = normalizeRefinementIdeaAnchor(card.english || card.revised);
     const dedupeKey = englishAnchor
       ? englishAnchor
       : [
-          normalizeRewriteIdeaAnchor(card.original),
-          normalizeRewriteIdeaAnchor(card.revised)
+          normalizeRefinementIdeaAnchor(card.original),
+          normalizeRefinementIdeaAnchor(card.revised)
         ].join("|");
 
     if (seen.has(dedupeKey)) {
@@ -687,16 +653,29 @@ function buildRewriteIdeas(feedback: Feedback): RewriteIdeaCard[] {
     merged.push(card);
   };
 
-  (feedback.ui?.rewriteIdeas ?? []).forEach((idea, index) => {
-    if (!idea) {
+  (feedback.refinementExpressions ?? []).forEach((expression, index) => {
+    if (!expression || expression.displayable === false) {
       return;
     }
-    pushCard(normalizeRewriteIdeaCard(idea, index));
-  });
+    const english = stripRewriteSuggestionTerminalPunctuation(trimText(expression.expression));
+    if (!english || !looksLikeEnglishText(english)) {
+      return;
+    }
 
-  if (merged.length > 0) {
-    return merged;
-  }
+    pushCard({
+      key: `refinement-${english.toLowerCase()}-${index}`,
+      title: "",
+      english,
+      korean: trimText(expression.meaningKo) || trimText(expression.exampleKo),
+      note: trimText(expression.guidanceKo),
+      exampleEn: trimText(expression.exampleEn),
+      tags: [],
+      original: "",
+      revised: "",
+      hasSwapPair: false,
+      optionalTone: false
+    });
+  });
 
   resolveSecondaryLearningPoints(feedback)
     .filter((point) => point.kind === "EXPRESSION")
@@ -725,28 +704,28 @@ function buildRewriteIdeas(feedback: Feedback): RewriteIdeaCard[] {
   return merged;
 }
 
-function shouldRenderRewriteIdeaExample(idea: RewriteIdeaCard) {
+function shouldRenderRefinementIdeaExample(idea: RefinementIdeaCard) {
   const exampleEn = trimText(idea.exampleEn);
   if (!exampleEn || !looksLikeEnglishText(exampleEn)) {
     return false;
   }
 
-  return normalizeRewriteIdeaAnchor(exampleEn) !== normalizeRewriteIdeaAnchor(idea.english);
+  return normalizeRefinementIdeaAnchor(exampleEn) !== normalizeRefinementIdeaAnchor(idea.english);
 }
 
-type RewriteIdeaHighlightToken = {
+type RefinementIdeaHighlightToken = {
   normalized: string;
   start: number;
   end: number;
 };
 
-type RewriteIdeaHighlightRange = {
+type RefinementIdeaHighlightRange = {
   start: number;
   end: number;
 };
 
-function tokenizeRewriteIdeaHighlightText(value: string): RewriteIdeaHighlightToken[] {
-  const tokens: RewriteIdeaHighlightToken[] = [];
+function tokenizeRefinementIdeaHighlightText(value: string): RefinementIdeaHighlightToken[] {
+  const tokens: RefinementIdeaHighlightToken[] = [];
   const tokenPattern = /[A-Za-z]+(?:'[A-Za-z]+)?/g;
 
   for (const match of value.matchAll(tokenPattern)) {
@@ -762,7 +741,7 @@ function tokenizeRewriteIdeaHighlightText(value: string): RewriteIdeaHighlightTo
   return tokens;
 }
 
-function areRewriteIdeaHighlightTokensCompatible(queryToken: string, exampleToken: string) {
+function areRefinementIdeaHighlightTokensCompatible(queryToken: string, exampleToken: string) {
   if (queryToken === exampleToken) {
     return true;
   }
@@ -796,10 +775,10 @@ function areRewriteIdeaHighlightTokensCompatible(queryToken: string, exampleToke
   return false;
 }
 
-function resolveRewriteIdeaHighlightRange(
+function resolveRefinementIdeaHighlightRange(
   exampleEn: string,
   expression: string
-): RewriteIdeaHighlightRange | null {
+): RefinementIdeaHighlightRange | null {
   const example = trimText(exampleEn);
   const query = stripRewriteSuggestionTerminalPunctuation(trimText(expression));
 
@@ -817,14 +796,14 @@ function resolveRewriteIdeaHighlightRange(
     };
   }
 
-  const exampleTokens = tokenizeRewriteIdeaHighlightText(example);
-  const queryTokens = tokenizeRewriteIdeaHighlightText(query);
+  const exampleTokens = tokenizeRefinementIdeaHighlightText(example);
+  const queryTokens = tokenizeRefinementIdeaHighlightText(query);
 
   if (exampleTokens.length === 0 || queryTokens.length === 0) {
     return null;
   }
 
-  let bestRange: RewriteIdeaHighlightRange | null = null;
+  let bestRange: RefinementIdeaHighlightRange | null = null;
   let bestLength = 0;
   let bestMeaningfulTokenCount = 0;
 
@@ -836,7 +815,7 @@ function resolveRewriteIdeaHighlightRange(
       while (
         queryStart + offset < queryTokens.length &&
         exampleStart + offset < exampleTokens.length &&
-        areRewriteIdeaHighlightTokensCompatible(
+        areRefinementIdeaHighlightTokensCompatible(
           queryTokens[queryStart + offset].normalized,
           exampleTokens[exampleStart + offset].normalized
         )
@@ -877,9 +856,9 @@ function resolveRewriteIdeaHighlightRange(
   return bestRange;
 }
 
-function renderHighlightedRewriteIdeaExample(exampleEn: string, expression: string) {
+function renderHighlightedRefinementIdeaExample(exampleEn: string, expression: string) {
   const example = trimText(exampleEn);
-  const highlightRange = resolveRewriteIdeaHighlightRange(exampleEn, expression);
+  const highlightRange = resolveRefinementIdeaHighlightRange(exampleEn, expression);
 
   if (!example || !highlightRange) {
     return example;
@@ -906,7 +885,7 @@ function renderHighlightedRewriteIdeaExample(exampleEn: string, expression: stri
   return nodes;
 }
 
-function canSaveRewriteIdea(card: RewriteIdeaCard) {
+function canSaveRefinementIdea(card: RefinementIdeaCard) {
   return !card.hasSwapPair && Boolean(trimText(card.english));
 }
 
@@ -965,7 +944,7 @@ function buildModelAnswerVariants(
 ): ModelAnswerVariantCard[] {
   const merged: ModelAnswerVariantCard[] = [];
   const seen = new Set<string>();
-  const baseAnchor = normalizeRewriteIdeaAnchor(baseAnswer);
+  const baseAnchor = normalizeRefinementIdeaAnchor(baseAnswer);
 
   if (baseAnchor) {
     seen.add(baseAnchor);
@@ -981,7 +960,7 @@ function buildModelAnswerVariants(
       return;
     }
 
-    const answerAnchor = normalizeRewriteIdeaAnchor(normalized.answer);
+    const answerAnchor = normalizeRefinementIdeaAnchor(normalized.answer);
     if (!answerAnchor || seen.has(answerAnchor)) {
       return;
     }
@@ -1126,7 +1105,7 @@ export function PracticeFeedbackContent({
 
   const keepStrengths = useMemo(() => strengths.slice(0, 1), [strengths]);
   const keepExpressions = useMemo(() => usedExpressionItems, [usedExpressionItems]);
-  const rewriteIdeas = useMemo(() => buildRewriteIdeas(feedbackState.feedback), [feedbackState]);
+  const refinementIdeaCards = useMemo(() => buildRefinementIdeaCards(feedbackState.feedback), [feedbackState]);
   const completionHeadline = useMemo(
     () =>
       pickFirstNonEmpty(
@@ -1169,7 +1148,7 @@ export function PracticeFeedbackContent({
     () => buildModelAnswerVariants(feedbackState.feedback, comparisonTarget),
     [comparisonTarget, feedbackState]
   );
-  const hasImproveContent = rewriteIdeas.length > 0;
+  const hasImproveContent = refinementIdeaCards.length > 0;
 
   return (
     <View
@@ -1375,7 +1354,7 @@ export function PracticeFeedbackContent({
           <Text style={styles.sectionHeading}>표현 더하기</Text>
           {hasImproveContent ? (
             <View style={styles.rewriteSuggestionList}>
-              {rewriteIdeas.map((idea) =>
+              {refinementIdeaCards.map((idea) =>
                 idea.hasSwapPair ? (
                   <View
                     key={idea.key}
@@ -1414,7 +1393,7 @@ export function PracticeFeedbackContent({
                   <View key={idea.key} style={styles.rewriteSuggestionCard}>
                     <View style={styles.rewriteSuggestionHeaderRow}>
                       <Text style={styles.rewriteSuggestionEnglish}>{idea.english}</Text>
-                      {onSaveRefinementExpression && canSaveRewriteIdea(idea) ? (
+                      {onSaveRefinementExpression && canSaveRefinementIdea(idea) ? (
                         <Pressable
                           style={[
                             styles.expressionActionButton,
@@ -1451,9 +1430,9 @@ export function PracticeFeedbackContent({
                     {idea.korean ? (
                       <Text style={styles.rewriteSuggestionKorean}>{idea.korean}</Text>
                     ) : null}
-                    {shouldRenderRewriteIdeaExample(idea) ? (
+                    {shouldRenderRefinementIdeaExample(idea) ? (
                       <Text style={styles.rewriteSuggestionExample}>
-                        {renderHighlightedRewriteIdeaExample(idea.exampleEn, idea.english)}
+                        {renderHighlightedRefinementIdeaExample(idea.exampleEn, idea.english)}
                       </Text>
                     ) : null}
                     {idea.note ? (

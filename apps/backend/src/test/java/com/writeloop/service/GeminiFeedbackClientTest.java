@@ -148,17 +148,6 @@ class GeminiFeedbackClientTest {
                         "exampleKo", "Korean example",
                         "meaningKo", "make eating habits healthier"
                 ))),
-                Map.entry("rewriteIdeas", List.of(Map.of(
-                        "title", "Add a reason",
-                        "english", "it helps me feel more energetic",
-                        "meaningKo", "feel more energetic",
-                        "noteKo", "A natural reason phrase that works well after because.",
-                        "exampleEn", "It helps me feel more energetic during the day.",
-                        "originalText", "",
-                        "revisedText", "",
-                        "optionalTone", false,
-                        "tags", List.of("refinement", "reason")
-                ))),
                 Map.entry("modelAnswerVariants", List.of(Map.of(
                         "kind", "NATURALER",
                         "answer", "I usually take a nap on Sunday afternoons.",
@@ -187,9 +176,7 @@ class GeminiFeedbackClientTest {
                 );
         assertThat(sections.primaryFix()).isNotNull();
         assertThat(sections.primaryFix().instruction()).isEqualTo("Add one more real habit.");
-        assertThat(sections.secondaryLearningPoints())
-                .extracting(FeedbackSecondaryLearningPointDto::headline, FeedbackSecondaryLearningPointDto::originalText)
-                .contains(tuple(null, "improve to diet"));
+        assertThat(sections.secondaryLearningPoints()).isEmpty();
         assertThat(sections.grammarFeedback()).isEmpty();
         assertThat(sections.corrections()).isEmpty();
         assertThat(sections.refinementExpressions()).singleElement().satisfies(card -> {
@@ -203,18 +190,12 @@ class GeminiFeedbackClientTest {
             assertThat(expression.exampleEn()).isEqualTo("I want to stay healthy by sleeping earlier.");
         });
         assertThat(sections.rewriteSuggestions()).isEmpty();
-        assertThat(sections.rewriteIdeas()).singleElement().satisfies(idea -> {
-            assertThat(idea.english()).isEqualTo("it helps me feel more energetic");
-            assertThat(idea.noteKo()).isEqualTo("A natural reason phrase that works well after because.");
-            assertThat(idea.exampleEn()).isEqualTo("It helps me feel more energetic during the day.");
-        });
         assertThat(sections.modelAnswerVariants()).singleElement().satisfies(variant -> {
             assertThat(variant.answer()).isEqualTo("I usually take a nap on Sunday afternoons.");
             assertThat(variant.kind()).isEqualTo("NATURALER");
         });
         assertThat(sections.modelAnswer()).contains("feel more energetic");
         assertThat(sections.usedExpressions().get(0).tags()).containsExactly("used_expression", "frequency_expression");
-        assertThat(sections.rewriteIdeas().get(0).tags()).containsExactly("refinement_expression", "reason_expression");
     }
 
     @Test
@@ -250,25 +231,25 @@ class GeminiFeedbackClientTest {
                 .path("usedExpressions")
                 .path("items")
                 .path("properties");
-        JsonNode rewriteIdeaProperties = request.path("generationConfig")
+        JsonNode refinementExpressionProperties = request.path("generationConfig")
                 .path("responseJsonSchema")
                 .path("properties")
-                .path("rewriteIdeas")
+                .path("refinementExpressions")
                 .path("items")
                 .path("properties");
         String promptText = request.path("contents").get(0).path("parts").get(0).path("text").asText("");
 
         assertThat(usedExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
         assertThat(usedExpressionProperties.path("tags").isMissingNode()).isFalse();
-        assertThat(rewriteIdeaProperties.path("exampleEn").isMissingNode()).isFalse();
-        assertThat(rewriteIdeaProperties.path("tags").isMissingNode()).isFalse();
+        assertThat(refinementExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(refinementExpressionProperties.path("guidanceKo").isMissingNode()).isFalse();
         assertThat(promptText)
                 .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
                 .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
                 .contains("usedExpressions.exampleEn must be one short natural sentence")
                 .contains("usedExpressions.tags must contain 2 to 6 tags")
-                .contains("For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence")
-                .contains("rewriteIdeas.tags must contain 2 to 6 tags");
+                .contains("refinementExpressions are the single source")
+                .contains("exampleEn must not be identical to expression");
     }
     @Test
     void buildDiagnosisPrompt_includes_attempt_context() {
@@ -461,7 +442,7 @@ class GeminiFeedbackClientTest {
                 null
         );
 
-        assertThat(text).contains("requestedSections: FIX_POINTS, REWRITE_IDEAS");
+        assertThat(text).contains("requestedSections: FIX_POINTS, REWRITE_GUIDE");
         assertThat(text).contains("Return all distinct, high-value items that genuinely help the learner, and avoid overlap or filler.");
         assertThat(text).contains("Generate fixPoints as one UI-ready list");
         assertThat(text).contains("Each fixPoints item must teach exactly one concrete correction point.");
@@ -472,15 +453,15 @@ class GeminiFeedbackClientTest {
         assertThat(text).contains("Do not merge unrelated lessons into one fixPoints item, and do not split the same teaching point across multiple fixPoints items.");
         assertThat(text).contains("If the learner answer contains multiple distinct local errors, split them into separate fixPoints items instead of folding them into one revisedText or one broad umbrella note.");
         assertThat(text).contains("teach article/determiner vs plural/singular separately");
-        assertThat(text).contains("rewriteIdeas is the primary output for the optional");
-        assertThat(text).contains("Return as many high-value rewriteIdeas as the answer supports. Do not limit yourself to a fixed count.");
-        assertThat(text).contains("For CONTENT_THIN and SHORT_BUT_VALID answers, actively generate multiple reason, example, detail, image, time-flow, or connector ideas when they would help the learner extend the same answer.");
+        assertThat(text).contains("refinementExpressions are the single source");
+        assertThat(text).contains("Return only genuinely useful, distinct refinementExpressions");
+        assertThat(text).contains("For CONTENT_THIN or SHORT_BUT_VALID answers, prefer a specific add-on mission");
         assertThat(text).contains("modelAnswer is a one-step-up reference, not another optional-add-on card.");
         assertThat(text).contains("modelAnswer must preserve learner meaning, keep the must-fix lessons from fixPoints");
         assertThat(text).contains("Avoid folding optional expansion into modelAnswer unless it is necessary for fluency or coherence.");
-        assertThat(text).contains("Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into rewriteIdeas instead of modelAnswer.");
+        assertThat(text).contains("Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into refinementExpressions instead of modelAnswer.");
         assertThat(text).contains("Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.");
-        assertThat(text).contains("refinementExpressions are optional reusable-expression cards beyond fixPoints.");
+        assertThat(text).contains("refinementExpressions are the single source");
         assertThat(text).contains("Return only genuinely useful, distinct refinementExpressions");
         assertThat(text).doesNotContain("primaryFix feeds the Fix First card");
         assertThat(text).doesNotContain("focusCard feeds the Top Status Card directly");
@@ -1373,7 +1354,7 @@ class GeminiFeedbackClientTest {
         );
 
         assertThat(guidance).contains("Prioritize completing one full base sentence before any expansion.");
-        assertThat(guidance).contains("After the base sentence is complete, use rewriteIdeas for natural follow-up reasons, details, or examples when helpful.");
+        assertThat(guidance).contains("After the base sentence is complete, use refinementExpressions for natural follow-up reasons, details, or examples when helpful.");
         assertThat(guidance).contains("Avoid unsupported invention");
     }
 

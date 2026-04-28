@@ -275,18 +275,6 @@ export interface FeedbackRewriteSuggestion {
   noteKo?: string | null;
 }
 
-export interface FeedbackRewriteIdea {
-  title?: string | null;
-  english?: string | null;
-  meaningKo?: string | null;
-  noteKo?: string | null;
-  exampleEn?: string | null;
-  tags?: ExpressionTag[] | null;
-  originalText?: string | null;
-  revisedText?: string | null;
-  optionalTone?: boolean | null;
-}
-
 export type FeedbackCompletionState = "NEEDS_REVISION" | "CAN_FINISH" | "OPTIONAL_POLISH";
 export type FeedbackSectionDisplayMode = "HIDE" | "SHOW_EXPANDED" | "SHOW_COLLAPSED";
 export type FeedbackRewriteGuideMode =
@@ -327,6 +315,48 @@ export interface FeedbackLoopStatus {
   cancelCtaLabel?: string | null;
 }
 
+export type FeedbackLoopAction = "rewrite" | "finish" | string;
+export type FeedbackLoopExperienceStatus = "NEEDS_REWRITE" | "COMPLETE" | string;
+
+export interface FeedbackLoop {
+  status?: FeedbackLoopExperienceStatus | null;
+  headline?: string | null;
+  nextAction?: FeedbackLoopAction | null;
+  nextActionLabel?: string | null;
+  detailToggleLabel?: string | null;
+}
+
+export interface FeedbackCoachMove {
+  focus?: string | null;
+  focusType?: string | null;
+  why?: string | null;
+  before?: string | null;
+  after?: string | null;
+  instruction?: string | null;
+  successCheck?: string | null;
+}
+
+export interface FeedbackRewriteWorkspace {
+  seedText?: string | null;
+  placeholder?: string | null;
+  targetTextHint?: string | null;
+  lockMeaning?: boolean | null;
+}
+
+export interface FeedbackCompletion {
+  headline?: string | null;
+  improvedPoint?: string | null;
+  encouragement?: string | null;
+  nextTinyGoal?: string | null;
+}
+
+export interface FeedbackRevealLater {
+  score?: number | null;
+  detailLabel?: string | null;
+  scoreLabel?: string | null;
+  modelAnswerLabel?: string | null;
+}
+
 export type FeedbackModelAnswerVariantKind = "NATURAL_POLISH" | "RICHER_DETAIL";
 
 export interface FeedbackModelAnswerVariant {
@@ -342,7 +372,6 @@ export interface FeedbackUi {
   fixPoints?: FeedbackFixPoint[] | null;
   nextStepPractice?: FeedbackNextStepPractice | null;
   rewriteSuggestions?: FeedbackRewriteSuggestion[] | null;
-  rewriteIdeas?: FeedbackRewriteIdea[] | null;
   modelAnswerVariants?: FeedbackModelAnswerVariant[] | null;
   screenPolicy?: FeedbackScreenPolicy | null;
   loopStatus?: FeedbackLoopStatus | null;
@@ -394,6 +423,11 @@ export interface Feedback {
   modelAnswerKo?: string | null;
   rewriteChallenge: string;
   ui?: FeedbackUi | null;
+  loop?: FeedbackLoop | null;
+  coachMove?: FeedbackCoachMove | null;
+  rewriteWorkspace?: FeedbackRewriteWorkspace | null;
+  completion?: FeedbackCompletion | null;
+  revealLater?: FeedbackRevealLater | null;
 }
 
 export type DiaryAnswerBand =

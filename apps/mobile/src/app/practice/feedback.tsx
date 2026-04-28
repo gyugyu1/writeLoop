@@ -5,10 +5,14 @@ import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -16,18 +20,32 @@ import {
   PracticeFeedbackContent,
   type FeedbackTabKey
 } from "@/components/practice-feedback-content";
-import { deleteSavedExpression, getSavedExpressions, saveExpression } from "@/lib/api";
+import {
+  ApiError,
+  deleteSavedExpression,
+  getSavedExpressions,
+  saveExpression,
+  submitFeedback
+} from "@/lib/api";
+import { getOrCreateGuestId } from "@/lib/guest-id";
 import { buildIncompleteLoopPromptSnapshot, saveIncompleteLoop } from "@/lib/incomplete-loop";
+import {
+  buildInlineFeedbackSegments,
+  type RenderedInlineFeedbackSegment
+} from "@/lib/inline-feedback";
 import {
   getPracticeFeedbackState,
   hydratePracticeFeedbackState,
+  savePracticeFeedbackState,
   type PracticeFeedbackState
 } from "@/lib/practice-feedback-state";
 import { isDailyDifficulty } from "@/lib/practice";
 import { useSession } from "@/lib/session";
-import type { DailyDifficulty, SavedExpressionSourceType } from "@/lib/types";
+import type { DailyDifficulty, FeedbackCoachMove, SavedExpressionSourceType } from "@/lib/types";
 
 const completionMascotImage = require("@/assets/images/feedback-completion-mascot.png");
+const COACH_MOVE_DIFF_MAX_CHARS = 700;
+const COACH_MOVE_DIFF_MAX_TOKENS = 140;
 
 function trimText(value?: string | null) {
   return value?.trim() ?? "";
@@ -46,6 +64,99 @@ function pickFirstNonEmpty(...values: (string | null | undefined)[]) {
 
 function normalizeExpressionKey(expression: string) {
   return expression.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function hasCoachMove(coachMove?: FeedbackCoachMove | null) {
+  return Boolean(
+    trimText(coachMove?.focus) ||
+      trimText(coachMove?.why) ||
+      trimText(coachMove?.before) ||
+      trimText(coachMove?.after) ||
+      trimText(coachMove?.instruction) ||
+      trimText(coachMove?.successCheck)
+  );
+}
+
+function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
+  const before = trimText(coachMove?.before);
+  const after = trimText(coachMove?.after);
+  if (!before || !after) {
+    return false;
+  }
+
+  const focusType = trimText(coachMove?.focusType).toUpperCase();
+  if (!focusType) {
+    return true;
+  }
+
+  return [
+    "MICRO_FIX",
+    "GRAMMAR",
+    "GRAMMAR_FIX",
+    "LOCAL_GRAMMAR",
+    "FIX_LOCAL_GRAMMAR",
+    "BLOCKING_GRAMMAR",
+    "FIX_BLOCKING_GRAMMAR",
+    "EXPRESSION",
+    "EXPRESSION_POLISH"
+  ].includes(focusType);
+}
+
+function countDiffTokens(text: string) {
+  return text.match(/[A-Za-z0-9']+|[^\sA-Za-z0-9']+|\s+/g)?.length ?? 0;
+}
+
+function canBuildCoachMoveDiff(original: string, revised: string) {
+  return (
+    original.length + revised.length <= COACH_MOVE_DIFF_MAX_CHARS &&
+    countDiffTokens(original) + countDiffTokens(revised) <= COACH_MOVE_DIFF_MAX_TOKENS
+  );
+}
+
+function renderCoachMoveDiffSegment(
+  segment: RenderedInlineFeedbackSegment,
+  mode: "original" | "revised",
+  index: number
+) {
+  switch (segment.kind) {
+    case "equal":
+      return <Text key={`${mode}-equal-${index}`}>{segment.text}</Text>;
+    case "replace":
+      return mode === "original" ? (
+        <Text key={`${mode}-replace-${index}`} style={styles.coachMoveBeforeHighlight}>
+          {segment.removed}
+        </Text>
+      ) : (
+        <Text key={`${mode}-replace-${index}`} style={styles.coachMoveAfterHighlight}>
+          {segment.added}
+        </Text>
+      );
+    case "remove":
+      return mode === "original" ? (
+        <Text key={`${mode}-remove-${index}`} style={styles.coachMoveBeforeHighlight}>
+          {segment.text}
+        </Text>
+      ) : null;
+    case "add":
+      return mode === "revised" ? (
+        <Text key={`${mode}-add-${index}`} style={styles.coachMoveAfterHighlight}>
+          {segment.text}
+        </Text>
+      ) : null;
+    default:
+      return null;
+  }
+}
+
+function renderCoachMoveDiffText(original: string, revised: string, mode: "original" | "revised") {
+  if (original && revised && original !== revised && canBuildCoachMoveDiff(original, revised)) {
+    const segments = buildInlineFeedbackSegments(original, revised, null);
+    if (segments.some((segment) => segment.kind !== "equal")) {
+      return segments.map((segment, index) => renderCoachMoveDiffSegment(segment, mode, index));
+    }
+  }
+
+  return mode === "original" ? original : revised;
 }
 
 function buildSavedExpressionIdMap(
@@ -68,7 +179,7 @@ export default function PracticeFeedbackScreen() {
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
   const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "I";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
-  const { currentUser } = useSession();
+  const { currentUser, refreshSession } = useSession();
   const [feedbackState, setFeedbackState] = useState<PracticeFeedbackState | null>(() =>
     getPracticeFeedbackState(requestedDifficulty, requestedPromptId)
   );
@@ -76,27 +187,64 @@ export default function PracticeFeedbackScreen() {
     () => !getPracticeFeedbackState(requestedDifficulty, requestedPromptId)
   );
   const [activeTab, setActiveTab] = useState<FeedbackTabKey>("feedback");
+  const [showDetailedFeedback, setShowDetailedFeedback] = useState(false);
   const [tabBarY, setTabBarY] = useState<number | null>(null);
   const [scrollY, setScrollY] = useState(0);
+  const [rewriteDraft, setRewriteDraft] = useState(() => feedbackState?.answer ?? "");
+  const [rewriteError, setRewriteError] = useState("");
+  const [isSubmittingRewrite, setIsSubmittingRewrite] = useState(false);
   const [savedExpressionIdsByKey, setSavedExpressionIdsByKey] = useState<Record<string, number>>(
     {}
   );
   const [savingExpressionKeys, setSavingExpressionKeys] = useState<string[]>([]);
 
-  const loopStatus = feedbackState?.feedback.ui?.loopStatus ?? null;
-  const rewriteButtonLabel = pickFirstNonEmpty(loopStatus?.rewriteCtaLabel, "다시 써보기");
+  const feedback = feedbackState?.feedback ?? null;
+  const loopStatus = feedback?.ui?.loopStatus ?? null;
+  const loopExperience = feedback?.loop ?? null;
+  const coachMove = feedback?.coachMove ?? null;
+  const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
+  const rewriteWorkspace = feedback?.rewriteWorkspace ?? null;
+  const completion = feedback?.completion ?? null;
+  const isLoopReadyToFinish =
+    feedback?.loopComplete || loopExperience?.nextAction === "finish" || loopExperience?.status === "COMPLETE";
+  const shouldShowInlineRewriteWorkspace = Boolean(feedbackState) && !isLoopReadyToFinish;
+  const rewriteButtonLabel = pickFirstNonEmpty(
+    loopExperience?.nextAction === "rewrite" ? loopExperience?.nextActionLabel : null,
+    loopStatus?.rewriteCtaLabel,
+    "이것만 고쳐서 다시 쓰기"
+  );
   const finishButtonLabel = pickFirstNonEmpty(
+    loopExperience?.nextAction === "finish" ? loopExperience?.nextActionLabel : null,
     loopStatus?.finishCtaLabel,
-    feedbackState?.feedback.loopComplete ? "루프 완료하기" : ""
+    feedback?.loopComplete ? "루프 완료하기" : ""
   );
   const shouldShowFinishButton = Boolean(finishButtonLabel);
   const shouldShowCompletionFooter = shouldShowFinishButton;
   const completionHeadline = pickFirstNonEmpty(
+    completion?.headline,
+    loopExperience?.headline,
     loopStatus?.headline,
-    feedbackState?.feedback.completionMessage,
-    feedbackState?.feedback.summary,
+    feedback?.completionMessage,
+    feedback?.summary,
     "좋아요. 지금 단계에서 마무리해도 충분해요."
   );
+  const coachHeadline = pickFirstNonEmpty(
+    coachMove?.focus,
+    loopExperience?.headline,
+    "오늘은 이것 하나만 적용해 볼게요."
+  );
+  const coachInstruction = pickFirstNonEmpty(
+    coachMove?.instruction,
+    rewriteWorkspace?.targetTextHint,
+    feedback?.rewriteChallenge,
+    "의미는 유지하고 오늘의 한 가지 코치만 반영해 다시 써보세요."
+  );
+  const detailToggleLabel = showDetailedFeedback
+    ? "자세한 피드백 접기"
+    : pickFirstNonEmpty(loopExperience?.detailToggleLabel, "자세한 피드백 보기");
+  const inlineRewriteSubmitLabel = isSubmittingRewrite
+    ? "피드백 받는 중..."
+    : pickFirstNonEmpty(loopExperience?.nextActionLabel, "코치 반영해서 제출하기");
 
   useEffect(() => {
     const inMemoryState = getPracticeFeedbackState(requestedDifficulty, requestedPromptId);
@@ -154,10 +302,20 @@ export default function PracticeFeedbackScreen() {
 
   useEffect(() => {
     setActiveTab("feedback");
+    setShowDetailedFeedback(false);
     setTabBarY(null);
     setScrollY(0);
     setSavingExpressionKeys([]);
   }, [requestedDifficulty, requestedPromptId]);
+
+  useEffect(() => {
+    setRewriteDraft(
+      feedbackState?.answer ??
+        feedbackState?.feedback.rewriteWorkspace?.seedText ??
+        ""
+    );
+    setRewriteError("");
+  }, [feedbackState?.prompt.id, feedbackState?.feedback.attemptNo]);
 
   async function handleToggleFeedbackExpression(
     expression: string,
@@ -277,6 +435,61 @@ export default function PracticeFeedbackScreen() {
     });
   }
 
+  async function handleSubmitInlineRewrite() {
+    if (!feedbackState) {
+      handleBackToQuestions();
+      return;
+    }
+
+    const trimmedAnswer = rewriteDraft.trim();
+    if (!trimmedAnswer) {
+      setRewriteError("다시 쓴 답변을 입력해 주세요.");
+      return;
+    }
+
+    try {
+      Keyboard.dismiss();
+      setIsSubmittingRewrite(true);
+      setRewriteError("");
+
+      const resolvedUser = currentUser ?? (await refreshSession().catch(() => null));
+      const guestId = resolvedUser ? undefined : await getOrCreateGuestId();
+      const nextFeedback = await submitFeedback({
+        promptId: feedbackState.prompt.id,
+        answer: trimmedAnswer,
+        sessionId: feedbackState.feedback.sessionId,
+        attemptType: "REWRITE",
+        guestId: guestId || undefined
+      });
+      const nextState: PracticeFeedbackState = {
+        difficulty: requestedDifficulty,
+        prompt: feedbackState.prompt,
+        answer: trimmedAnswer,
+        feedback: nextFeedback
+      };
+
+      savePracticeFeedbackState(nextState);
+      setFeedbackState(nextState);
+      setActiveTab("feedback");
+      setShowDetailedFeedback(false);
+      setTabBarY(null);
+      setScrollY(0);
+    } catch (caughtError) {
+      if (caughtError instanceof ApiError && caughtError.code === "GUEST_LIMIT_REACHED") {
+        setRewriteError(
+          "게스트는 질문 1개와 다시쓰기 1회까지만 체험할 수 있어요. 이어서 학습하려면 로그인해 주세요."
+        );
+        return;
+      }
+
+      setRewriteError(
+        caughtError instanceof Error ? caughtError.message : "피드백을 생성하지 못했어요."
+      );
+    } finally {
+      setIsSubmittingRewrite(false);
+    }
+  }
+
   function handleFinishLoop() {
     if (!feedbackState) {
       handleBackToQuestions();
@@ -293,14 +506,22 @@ export default function PracticeFeedbackScreen() {
   }
 
   const stickyThreshold = tabBarY === null ? Number.POSITIVE_INFINITY : Math.max(tabBarY - 8, 0);
-  const shouldShowStickyTabBar = Boolean(feedbackState) && scrollY >= stickyThreshold;
+  const shouldShowStickyTabBar =
+    Boolean(feedbackState) && showDetailedFeedback && scrollY >= stickyThreshold;
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.screen}>
-        <ScrollView
+      <KeyboardAvoidingView
+        style={styles.keyboardFrame}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
+      >
+        <View style={styles.screen}>
+          <ScrollView
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           onScroll={(event) => setScrollY(event.nativeEvent.contentOffset.y)}
           scrollEventThrottle={16}
         >
@@ -323,45 +544,150 @@ export default function PracticeFeedbackScreen() {
             </View>
           ) : feedbackState ? (
             <>
-              <PracticeFeedbackContent
-                feedbackState={feedbackState}
-                showCompletionSummary={false}
-                activeTab={activeTab}
-                onActiveTabChange={setActiveTab}
-                onTabBarLayout={setTabBarY}
-                onSaveUsedExpression={(expression, meaningKo, exampleEn, usageTip, tags) =>
-                  void handleToggleFeedbackExpression(
-                    expression,
-                    "USED_EXPRESSION",
-                    meaningKo,
-                    exampleEn,
-                    usageTip,
-                    tags
-                  )
-                }
-                onSaveRefinementExpression={(expression, meaningKo, exampleEn, usageTip, tags) =>
-                  void handleToggleFeedbackExpression(
-                    expression,
-                    "REFINEMENT_EXPRESSION",
-                    meaningKo,
-                    exampleEn,
-                    usageTip,
-                    tags
-                  )
-                }
-                isUsedExpressionSaved={(expression) =>
-                  Boolean(savedExpressionIdsByKey[normalizeExpressionKey(expression)])
-                }
-                isSavingUsedExpression={(expression) =>
-                  savingExpressionKeys.includes(normalizeExpressionKey(expression))
-                }
-                isRefinementExpressionSaved={(expression) =>
-                  Boolean(savedExpressionIdsByKey[normalizeExpressionKey(expression)])
-                }
-                isSavingRefinementExpression={(expression) =>
-                  savingExpressionKeys.includes(normalizeExpressionKey(expression))
-                }
-              />
+              <View style={styles.coachMoveCard}>
+                <Text style={styles.coachMoveHeadline}>{coachHeadline}</Text>
+
+                {hasCoachMove(coachMove) ? (
+                  <View style={styles.coachMoveBody}>
+                    {trimText(coachMove?.focus) ? (
+                      <Text style={styles.coachMoveFocus}>{coachMove?.focus}</Text>
+                    ) : null}
+
+                    {shouldShowCoachMoveComparison ? (
+                      <View style={styles.coachMoveSwap}>
+                        {trimText(coachMove?.before) ? (
+                          <View style={[styles.coachMoveSwapRow, styles.coachMoveBeforeRow]}>
+                            <Text style={styles.coachMoveSwapLabel}>지금</Text>
+                            <Text style={styles.coachMoveBefore}>
+                              {renderCoachMoveDiffText(
+                                trimText(coachMove?.before),
+                                trimText(coachMove?.after),
+                                "original"
+                              )}
+                            </Text>
+                          </View>
+                        ) : null}
+                        {trimText(coachMove?.after) ? (
+                          <View style={[styles.coachMoveSwapRow, styles.coachMoveAfterRow]}>
+                            <Text style={styles.coachMoveSwapLabel}>적용</Text>
+                            <Text style={styles.coachMoveAfter}>
+                              {renderCoachMoveDiffText(
+                                trimText(coachMove?.before),
+                                trimText(coachMove?.after),
+                                "revised"
+                              )}
+                            </Text>
+                          </View>
+                        ) : null}
+                      </View>
+                    ) : null}
+
+                    {trimText(coachMove?.why) ? (
+                      <Text style={styles.coachMoveWhy}>{coachMove?.why}</Text>
+                    ) : null}
+                  </View>
+                ) : null}
+
+                <View style={styles.coachMoveInstructionBox}>
+                  <Text style={styles.coachMoveInstructionLabel}>다시 쓸 때</Text>
+                  <Text style={styles.coachMoveInstruction}>{coachInstruction}</Text>
+                </View>
+
+                {trimText(coachMove?.successCheck) ? (
+                  <Text style={styles.coachMoveSuccess}>{coachMove?.successCheck}</Text>
+                ) : null}
+              </View>
+
+              <Pressable
+                style={styles.detailToggleButton}
+                onPress={() => setShowDetailedFeedback((current) => !current)}
+              >
+                <Text style={styles.detailToggleButtonText}>{detailToggleLabel}</Text>
+              </Pressable>
+
+              {showDetailedFeedback ? (
+                <PracticeFeedbackContent
+                  feedbackState={feedbackState}
+                  showCompletionSummary={false}
+                  activeTab={activeTab}
+                  onActiveTabChange={setActiveTab}
+                  onTabBarLayout={setTabBarY}
+                  onSaveUsedExpression={(expression, meaningKo, exampleEn, usageTip, tags) =>
+                    void handleToggleFeedbackExpression(
+                      expression,
+                      "USED_EXPRESSION",
+                      meaningKo,
+                      exampleEn,
+                      usageTip,
+                      tags
+                    )
+                  }
+                  onSaveRefinementExpression={(expression, meaningKo, exampleEn, usageTip, tags) =>
+                    void handleToggleFeedbackExpression(
+                      expression,
+                      "REFINEMENT_EXPRESSION",
+                      meaningKo,
+                      exampleEn,
+                      usageTip,
+                      tags
+                    )
+                  }
+                  isUsedExpressionSaved={(expression) =>
+                    Boolean(savedExpressionIdsByKey[normalizeExpressionKey(expression)])
+                  }
+                  isSavingUsedExpression={(expression) =>
+                    savingExpressionKeys.includes(normalizeExpressionKey(expression))
+                  }
+                  isRefinementExpressionSaved={(expression) =>
+                    Boolean(savedExpressionIdsByKey[normalizeExpressionKey(expression)])
+                  }
+                  isSavingRefinementExpression={(expression) =>
+                    savingExpressionKeys.includes(normalizeExpressionKey(expression))
+                  }
+                />
+              ) : null}
+
+              {shouldShowInlineRewriteWorkspace ? (
+                <View style={styles.inlineRewriteCard}>
+                  <Text style={styles.inlineRewriteTitle}>여기서 바로 한 번만 고쳐 써봐요.</Text>
+                  <Text style={styles.inlineRewriteHelp}>
+                    전체를 완벽하게 바꾸려 하지 말고, 위 코치 포인트 하나만 반영하면 돼요.
+                  </Text>
+                  <TextInput
+                    style={styles.inlineRewriteInput}
+                    value={rewriteDraft}
+                    onChangeText={(value) => {
+                      setRewriteDraft(value);
+                      if (rewriteError) {
+                        setRewriteError("");
+                      }
+                    }}
+                    multiline
+                    textAlignVertical="top"
+                    placeholder={pickFirstNonEmpty(
+                      rewriteWorkspace?.placeholder,
+                      "코치 포인트를 반영해서 다시 써보세요."
+                    )}
+                    placeholderTextColor="#B7A58F"
+                  />
+                  {rewriteError ? (
+                    <Text style={styles.inlineRewriteError}>{rewriteError}</Text>
+                  ) : null}
+                  <Pressable
+                    style={[
+                      styles.primaryButton,
+                      isSubmittingRewrite && styles.primaryButtonDisabled
+                    ]}
+                    onPress={() => void handleSubmitInlineRewrite()}
+                    disabled={isSubmittingRewrite}
+                  >
+                    <Text style={styles.primaryButtonText}>{inlineRewriteSubmitLabel}</Text>
+                  </Pressable>
+                  <Pressable style={styles.secondaryButton} onPress={() => void handleRewrite()}>
+                    <Text style={styles.secondaryButtonText}>큰 작문 화면에서 쓰기</Text>
+                  </Pressable>
+                </View>
+              ) : null}
 
               <View style={styles.completionFooter}>
                 {shouldShowCompletionFooter ? (
@@ -380,13 +706,17 @@ export default function PracticeFeedbackScreen() {
                   </View>
                 ) : null}
 
-                <Pressable style={styles.primaryButton} onPress={() => void handleRewrite()}>
-                  <Text style={styles.primaryButtonText}>{rewriteButtonLabel}</Text>
-                </Pressable>
+                {isLoopReadyToFinish ? (
+                  <Pressable style={styles.primaryButton} onPress={handleFinishLoop}>
+                    <Text style={styles.primaryButtonText}>
+                      {pickFirstNonEmpty(finishButtonLabel, "루프 완료하기")}
+                    </Text>
+                  </Pressable>
+                ) : null}
 
-                {shouldShowFinishButton ? (
-                  <Pressable style={styles.secondaryButton} onPress={handleFinishLoop}>
-                    <Text style={styles.secondaryButtonText}>{finishButtonLabel}</Text>
+                {isLoopReadyToFinish ? (
+                  <Pressable style={styles.secondaryButton} onPress={() => void handleRewrite()}>
+                    <Text style={styles.secondaryButtonText}>{rewriteButtonLabel}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -402,7 +732,7 @@ export default function PracticeFeedbackScreen() {
               </Pressable>
             </View>
           )}
-        </ScrollView>
+          </ScrollView>
 
         {shouldShowStickyTabBar ? (
           <View pointerEvents="box-none" style={styles.stickyTabOverlay}>
@@ -443,7 +773,8 @@ export default function PracticeFeedbackScreen() {
             </View>
           </View>
         ) : null}
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -453,6 +784,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F7F2EB"
   },
+  keyboardFrame: {
+    flex: 1
+  },
   screen: {
     flex: 1,
     position: "relative"
@@ -460,7 +794,7 @@ const styles = StyleSheet.create({
   content: {
     paddingHorizontal: 20,
     paddingTop: 8,
-    paddingBottom: 40,
+    paddingBottom: 180,
     gap: 16
   },
   header: {
@@ -533,6 +867,167 @@ const styles = StyleSheet.create({
   stickyTabButtonTextActive: {
     color: "#2E2416"
   },
+  coachMoveCard: {
+    backgroundColor: "#FFFEFC",
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "#E9D9C6",
+    paddingHorizontal: 22,
+    paddingVertical: 24,
+    gap: 16,
+    shadowColor: "#C58A43",
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: {
+      width: 0,
+      height: 8
+    },
+    elevation: 2
+  },
+  coachMoveHeadline: {
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: "900",
+    letterSpacing: -1.4,
+    color: "#232128"
+  },
+  coachMoveBody: {
+    gap: 12
+  },
+  coachMoveFocus: {
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "900",
+    color: "#2F2A24"
+  },
+  coachMoveSwap: {
+    gap: 10
+  },
+  coachMoveSwapRow: {
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    gap: 7
+  },
+  coachMoveBeforeRow: {
+    backgroundColor: "#FDEDE9"
+  },
+  coachMoveAfterRow: {
+    backgroundColor: "#EAF7EA"
+  },
+  coachMoveSwapLabel: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "900",
+    color: "#8B6A45"
+  },
+  coachMoveBefore: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "800",
+    color: "#A23B2B"
+  },
+  coachMoveBeforeHighlight: {
+    backgroundColor: "#F8CFC7",
+    color: "#8F2F23",
+    fontWeight: "900"
+  },
+  coachMoveAfter: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "900",
+    color: "#1F6B35"
+  },
+  coachMoveAfterHighlight: {
+    backgroundColor: "#BDEAC7",
+    color: "#145F2A",
+    fontWeight: "900"
+  },
+  coachMoveWhy: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: "#6D6050"
+  },
+  coachMoveInstructionBox: {
+    borderRadius: 22,
+    backgroundColor: "#FFF7EA",
+    borderWidth: 1,
+    borderColor: "#F2D4AA",
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    gap: 7
+  },
+  coachMoveInstructionLabel: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#A46612"
+  },
+  coachMoveInstruction: {
+    fontSize: 16,
+    lineHeight: 25,
+    fontWeight: "800",
+    color: "#3C342B"
+  },
+  coachMoveSuccess: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: "#7B6A55"
+  },
+  detailToggleButton: {
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#D8B17A",
+    backgroundColor: "#FFFBF4",
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  detailToggleButtonText: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#8A5A19"
+  },
+  inlineRewriteCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "#E8DACB",
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    gap: 13
+  },
+  inlineRewriteTitle: {
+    fontSize: 24,
+    lineHeight: 31,
+    fontWeight: "900",
+    letterSpacing: -1,
+    color: "#232128"
+  },
+  inlineRewriteHelp: {
+    fontSize: 15,
+    lineHeight: 23,
+    color: "#6D6050"
+  },
+  inlineRewriteInput: {
+    minHeight: 170,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#E1D0BC",
+    backgroundColor: "#FFFCF7",
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    fontSize: 17,
+    lineHeight: 26,
+    color: "#2F2A24",
+    fontWeight: "600"
+  },
+  inlineRewriteError: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#B6402D",
+    fontWeight: "800"
+  },
   completionFooter: {
     gap: 14
   },
@@ -584,6 +1079,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center"
+  },
+  primaryButtonDisabled: {
+    opacity: 0.58
   },
   primaryButtonText: {
     fontSize: 16,

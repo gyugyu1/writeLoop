@@ -2,10 +2,10 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
+import com.writeloop.dto.FeedbackCoachMissionDto;
 import com.writeloop.dto.FeedbackModelAnswerVariantDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackNextStepPracticeDto;
-import com.writeloop.dto.FeedbackRewriteIdeaDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackUiDto;
@@ -70,6 +70,20 @@ public class OpenAiFeedbackClient {
             "subject", "verb", "agreement", "singular", "plural", "article", "countable", "uncountable",
             "auxiliary", "base verb", "tense", "pronoun", "preposition", "connector", "collocation"
     );
+    private static final List<String> REWRITE_TARGET_ACTION_ENUM = List.of(
+            "MAKE_ON_TOPIC",
+            "STATE_MAIN_ANSWER",
+            "FIX_BLOCKING_GRAMMAR",
+            "FIX_LOCAL_GRAMMAR",
+            "ADD_REASON",
+            "ADD_EXAMPLE",
+            "ADD_DETAIL",
+            "ADD_SITUATION",
+            "ADD_FEELING",
+            "ADD_RESULT",
+            "IMPROVE_NATURALNESS"
+    );
+    private static final Set<String> REWRITE_TARGET_ACTION_CODES = Set.copyOf(REWRITE_TARGET_ACTION_ENUM);
     static final String INTERNAL_AUTHORITATIVE_SESSION_ID = "__OPENAI_HYBRID_FINAL__";
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -242,7 +256,12 @@ public class OpenAiFeedbackClient {
                 feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
                 feedback.usedExpressions(),
-                feedback.ui()
+                feedback.ui(),
+                feedback.loop(),
+                feedback.coachMove(),
+                feedback.rewriteWorkspace(),
+                feedback.completion(),
+                feedback.revealLater()
         );
     }
 
@@ -618,6 +637,18 @@ public class OpenAiFeedbackClient {
                 generatedSections.rewriteSuggestions(),
                 nextStepPractice
         );
+        FeedbackCoachMissionDto coachMission = resolveMissionSourceOfTruth(
+                generatedSections.coachMission(),
+                generatedSections.missionDecision(),
+                diagnosis,
+                answerProfile,
+                learnerAnswer,
+                fixPoints,
+                refinementExpressions,
+                protectedModelAnswer
+        );
+        fixPoints = alignFixPointsWithMission(coachMission, fixPoints);
+        refinementExpressions = alignRefinementsWithMission(coachMission, refinementExpressions);
         failures.addAll(validateFixPointExplanationCoverage(fixPoints));
         GeneratedSections sanitized = new GeneratedSections(
                 null,
@@ -636,11 +667,508 @@ public class OpenAiFeedbackClient {
                 secondaryLearningPoints,
                 nextStepPractice,
                 rewriteSuggestions,
-                generatedSections.rewriteIdeas()
+                coachMission,
+                generatedSections.missionDecision()
         );
 
         boolean shouldRetry = failures.stream().anyMatch(failure -> feedbackRetryPolicy.shouldRetry(failure, diagnosis, sectionPolicy));
         return new ValidationResult(sanitized, failures, shouldRetry);
+    }
+
+    private FeedbackCoachMissionDto resolveMissionSourceOfTruth(
+            FeedbackCoachMissionDto generatedMission,
+            MissionDecision missionDecision,
+            FeedbackDiagnosisResult diagnosis,
+            AnswerProfile answerProfile,
+            String learnerAnswer,
+            List<FeedbackSecondaryLearningPointDto> fixPoints,
+            List<RefinementCard> refinementExpressions,
+            String modelAnswer
+    ) {
+        FeedbackCoachMissionDto sanitized = sanitizeCoachMission(generatedMission, diagnosis);
+        if (isUsableMission(sanitized)) {
+            return sanitized;
+        }
+        return buildFallbackCoachMission(
+                diagnosis,
+                answerProfile,
+                learnerAnswer,
+                firstCorrectionFixPoint(fixPoints),
+                refinementExpressions,
+                modelAnswer
+        );
+    }
+
+    private FeedbackCoachMissionDto sanitizeCoachMission(
+            FeedbackCoachMissionDto mission,
+            FeedbackDiagnosisResult diagnosis
+    ) {
+        if (mission == null) {
+            return null;
+        }
+        String missionType = normalizeMissionType(mission.missionType(), diagnosis);
+        String title = trimToNull(mission.title());
+        String whyKo = trimToNull(mission.whyKo());
+        String instructionKo = trimToNull(mission.instructionKo());
+        String exampleEn = trimToNull(mission.exampleEn());
+        String placeholderEn = trimToNull(mission.placeholderEn());
+        String targetHintKo = trimToNull(mission.targetHintKo());
+        String successCheckKo = trimToNull(mission.successCheckKo());
+        String originalText = trimToNull(mission.originalText());
+        String revisedText = trimToNull(mission.revisedText());
+        boolean comparisonMission = isComparisonMissionType(missionType);
+        if (comparisonMission && (originalText == null || revisedText == null)) {
+            originalText = null;
+            revisedText = null;
+        }
+        if (!comparisonMission) {
+            originalText = null;
+            revisedText = null;
+        }
+        return new FeedbackCoachMissionDto(
+                missionType,
+                title,
+                originalText,
+                revisedText,
+                whyKo,
+                instructionKo,
+                exampleEn,
+                placeholderEn,
+                targetHintKo,
+                successCheckKo
+        );
+    }
+
+    private boolean isUsableMission(FeedbackCoachMissionDto mission) {
+        if (mission == null) {
+            return false;
+        }
+        if (firstNonBlank(mission.missionType(), mission.title(), mission.instructionKo()) == null) {
+            return false;
+        }
+        if (trimToNull(mission.title()) == null || trimToNull(mission.instructionKo()) == null) {
+            return false;
+        }
+        if (isComparisonMissionType(mission.missionType())) {
+            return trimToNull(mission.originalText()) != null && trimToNull(mission.revisedText()) != null;
+        }
+        return true;
+    }
+
+    private FeedbackCoachMissionDto buildFallbackCoachMission(
+            FeedbackDiagnosisResult diagnosis,
+            AnswerProfile answerProfile,
+            String learnerAnswer,
+            FeedbackSecondaryLearningPointDto firstFixPoint,
+            List<RefinementCard> refinementExpressions,
+            String modelAnswer
+    ) {
+        if (firstFixPoint != null
+                && trimToNull(firstFixPoint.originalText()) != null
+                && trimToNull(firstFixPoint.revisedText()) != null) {
+            String title = firstNonBlank(
+                    firstFixPoint.title(),
+                    firstFixPoint.headline(),
+                    "한 부분만 자연스럽게 고치기"
+            );
+            String reason = firstNonBlank(
+                    firstFixPoint.supportText(),
+                    "이 부분을 먼저 고치면 답변 전체가 더 자연스럽게 읽혀요."
+            );
+            return new FeedbackCoachMissionDto(
+                    "GRAMMAR_FIX",
+                    title,
+                    firstFixPoint.originalText(),
+                    firstFixPoint.revisedText(),
+                    reason,
+                    "위에 표시된 한 부분만 고쳐서 다시 써 보세요.",
+                    firstFixPoint.revisedText(),
+                    firstFixPoint.revisedText(),
+                    "원래 문장에서 같은 위치에 넣어 보세요.",
+                    "표시된 부분이 수정문처럼 바뀌면 성공이에요."
+            );
+        }
+
+        MissionDefaults defaults = missionDefaults(diagnosis, answerProfile);
+        String example = firstNonBlank(
+                refinementExpressions == null || refinementExpressions.isEmpty() ? null : refinementExpressions.get(0).exampleEn(),
+                modelAnswer,
+                defaults.exampleEn()
+        );
+        return new FeedbackCoachMissionDto(
+                defaults.type(),
+                defaults.titleKo(),
+                null,
+                null,
+                defaults.whyKo(),
+                defaults.instructionKo(),
+                example,
+                defaults.exampleEn(),
+                defaults.targetHintKo(),
+                defaults.successCheckKo()
+        );
+    }
+
+    private List<FeedbackSecondaryLearningPointDto> alignFixPointsWithMission(
+            FeedbackCoachMissionDto mission,
+            List<FeedbackSecondaryLearningPointDto> fixPoints
+    ) {
+        if (mission == null) {
+            return fixPoints == null ? List.of() : fixPoints;
+        }
+        FeedbackSecondaryLearningPointDto missionPoint = missionAsLearningPoint(mission);
+        if (missionPoint == null) {
+            return fixPoints == null ? List.of() : fixPoints;
+        }
+        List<FeedbackSecondaryLearningPointDto> aligned = new ArrayList<>();
+        aligned.add(missionPoint);
+        if (fixPoints != null) {
+            String missionKey = learningPointKey(missionPoint);
+            for (FeedbackSecondaryLearningPointDto point : fixPoints) {
+                if (point != null && !missionKey.equals(learningPointKey(point))) {
+                    aligned.add(point);
+                }
+            }
+        }
+        return List.copyOf(aligned);
+    }
+
+    private FeedbackSecondaryLearningPointDto missionAsLearningPoint(FeedbackCoachMissionDto mission) {
+        String title = firstNonBlank(mission.title(), "이번에 적용할 한 가지");
+        String support = firstNonBlank(mission.whyKo(), mission.successCheckKo(), mission.instructionKo());
+        if (trimToNull(title) == null || trimToNull(support) == null) {
+            return null;
+        }
+        return new FeedbackSecondaryLearningPointDto(
+                firstNonBlank(mission.missionType(), "MISSION"),
+                title,
+                firstNonBlank(mission.instructionKo(), title),
+                support,
+                isComparisonMissionType(mission.missionType()) ? mission.originalText() : null,
+                isComparisonMissionType(mission.missionType()) ? mission.revisedText() : null,
+                null,
+                null,
+                mission.exampleEn(),
+                null
+        );
+    }
+
+    private List<RefinementCard> alignRefinementsWithMission(
+            FeedbackCoachMissionDto mission,
+            List<RefinementCard> refinementExpressions
+    ) {
+        if (mission == null || refinementExpressions == null || refinementExpressions.isEmpty()) {
+            return refinementExpressions == null ? List.of() : refinementExpressions;
+        }
+        String missionOriginal = normalizeForComparison(firstNonBlank(mission.originalText(), ""));
+        String missionRevised = normalizeForComparison(firstNonBlank(mission.revisedText(), ""));
+        return refinementExpressions.stream()
+                .filter(card -> card != null)
+                .filter(card -> {
+                    String expression = normalizeForComparison(firstNonBlank(card.expression(), ""));
+                    String example = normalizeForComparison(firstNonBlank(card.exampleEn(), ""));
+                    return !expression.equals(missionOriginal)
+                            && !expression.equals(missionRevised)
+                            && !example.equals(missionRevised);
+                })
+                .toList();
+    }
+
+    private String normalizeMissionType(String rawType, FeedbackDiagnosisResult diagnosis) {
+        String normalized = trimToNull(rawType);
+        if (normalized != null) {
+            normalized = normalized
+                    .toUpperCase(Locale.ROOT)
+                    .replace('-', '_')
+                    .replaceAll("\\s+", "_")
+                    .replaceAll("[^A-Z_]", "_")
+                    .replaceAll("_+", "_")
+                    .replaceAll("^_+|_+$", "");
+        }
+        if (isKnownMissionType(normalized)) {
+            return normalized;
+        }
+        return missionDefaults(diagnosis, null).type();
+    }
+
+    private boolean isKnownMissionType(String missionType) {
+        return switch (missionType == null ? "" : missionType) {
+            case "REASON", "DETAIL", "SITUATION", "EXAMPLE", "FEELING", "RESULT",
+                    "GRAMMAR_FIX", "TASK_RESET", "EXPRESSION_POLISH" -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isComparisonMissionType(String missionType) {
+        String normalized = trimToNull(missionType);
+        if (normalized == null) {
+            return false;
+        }
+        return switch (normalized.toUpperCase(Locale.ROOT)) {
+            case "GRAMMAR_FIX", "EXPRESSION_POLISH" -> true;
+            default -> false;
+        };
+    }
+
+    private MissionDefaults missionDefaults(FeedbackDiagnosisResult diagnosis, AnswerProfile answerProfile) {
+        AnswerBand answerBand = diagnosis == null ? null : diagnosis.answerBand();
+        String action = diagnosis != null && diagnosis.rewriteTarget() != null
+                ? trimToNull(diagnosis.rewriteTarget().action())
+                : null;
+        MissionDefaults selectedByPhilosophy = missionDefaultsByMissionPhilosophy(diagnosis, action, answerBand);
+        if (selectedByPhilosophy != null) {
+            return selectedByPhilosophy;
+        }
+        if (answerBand == AnswerBand.OFF_TOPIC || "MAKE_ON_TOPIC".equals(action) || "STATE_MAIN_ANSWER".equals(action)) {
+            return new MissionDefaults(
+                    "TASK_RESET",
+                    "질문에 바로 답하는 문장 쓰기",
+                    "질문이 묻는 핵심부터 바로 말하면 답변 방향이 또렷해져요.",
+                    "질문이 묻는 행동이나 이유를 첫 문장에 바로 써 보세요.",
+                    "I usually ____ because ____.",
+                    "첫 문장을 질문에 대한 직접 답으로 시작해 보세요.",
+                    "질문에 대한 직접 답이 첫 문장에 들어가면 성공이에요."
+            );
+        }
+        if (answerBand == AnswerBand.GRAMMAR_BLOCKING || "FIX_BLOCKING_GRAMMAR".equals(action) || "FIX_LOCAL_GRAMMAR".equals(action)) {
+            return new MissionDefaults(
+                    "GRAMMAR_FIX",
+                    "가장 어색한 한 부분 고치기",
+                    "한 부분만 먼저 고쳐도 문장 흐름이 훨씬 자연스러워져요.",
+                    "의미를 바꾸지 말고 가장 어색한 한 부분만 자연스럽게 고쳐 보세요.",
+                    "I usually ____.",
+                    "틀린 표현이 있던 위치에 수정 표현을 넣어 보세요.",
+                    "한 부분이 자연스러운 영어 표현으로 바뀌면 성공이에요."
+            );
+        }
+        if ("ADD_REASON".equals(action)) {
+            return new MissionDefaults(
+                    "REASON",
+                    "이유 한 문장 더하기",
+                    "이유가 붙으면 답변이 질문에 더 충분하게 들려요.",
+                    "마지막에 왜 그런지 이유를 한 문장 더 붙여 보세요.",
+                    "I do this because ____.",
+                    "답변 끝에 because로 시작하는 이유를 붙여 보세요.",
+                    "왜 그런지 알 수 있는 이유가 한 문장 들어가면 성공이에요."
+            );
+        }
+        if ("ADD_EXAMPLE".equals(action)) {
+            return new MissionDefaults(
+                    "EXAMPLE",
+                    "예시 한 문장 더하기",
+                    "작은 예시가 있으면 답변이 더 구체적으로 보여요.",
+                    "자주 하는 행동이나 상황을 예시로 한 문장 더 써 보세요.",
+                    "For example, I ____.",
+                    "답변 뒤에 For example로 시작하는 문장을 붙여 보세요.",
+                    "구체적인 예시가 한 문장 들어가면 성공이에요."
+            );
+        }
+        if (answerBand == AnswerBand.NATURAL_BUT_BASIC || "IMPROVE_NATURALNESS".equals(action)) {
+            return new MissionDefaults(
+                    "EXPRESSION_POLISH",
+                    "조금 더 자연스럽게 다듬기",
+                    "지금 답도 괜찮지만 표현 하나를 다듬으면 더 매끄러워져요.",
+                    "의미는 유지하고 가장 어색한 표현 하나만 자연스럽게 바꿔 보세요.",
+                    "I usually ____ after that.",
+                    "가장 어색하게 느껴지는 한 표현만 바꿔 보세요.",
+                    "의미는 같고 표현만 더 자연스러워지면 성공이에요."
+            );
+        }
+        return new MissionDefaults(
+                "SITUATION",
+                "상황 한 문장 더하기",
+                "언제나 어떤 상황인지 조금만 더 붙이면 답변이 선명해져요.",
+                "언제, 어디서, 어떤 상황인지 한 문장 더 붙여 보세요.",
+                "When I ____, I ____.",
+                "답변 앞이나 뒤에 상황을 설명하는 짧은 문장을 붙여 보세요.",
+                "상황을 보여 주는 정보가 한 문장 들어가면 성공이에요."
+        );
+    }
+
+    private MissionDefaults missionDefaultsByMissionPhilosophy(
+            FeedbackDiagnosisResult diagnosis,
+            String action,
+            AnswerBand answerBand
+    ) {
+        if (answerBand == AnswerBand.OFF_TOPIC || "MAKE_ON_TOPIC".equals(action) || "STATE_MAIN_ANSWER".equals(action)) {
+            return missionDefault(
+                    "TASK_RESET",
+                    "질문에 바로 답하는 문장 쓰기",
+                    "질문이 묻는 핵심을 먼저 말하면 답변 방향이 분명해져요.",
+                    "첫 문장에서 질문에 대한 직접 답을 써 보세요.",
+                    "I usually ____ because ____.",
+                    "첫 문장에 질문에 대한 직접 답을 넣어 보세요.",
+                    "질문에 대한 직접 답이 첫 문장에 들어가면 성공이에요."
+            );
+        }
+        if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
+            return missionDefault(
+                    "TASK_RESET",
+                    "완전한 한 문장으로 시작하기",
+                    "먼저 한 문장을 완성해야 다음 단계 피드백이 쉬워져요.",
+                    "주어와 동사가 있는 짧은 한 문장으로 답해 보세요.",
+                    "I usually ____.",
+                    "첫 줄에 완전한 한 문장을 써 보세요.",
+                    "주어와 동사가 있는 한 문장이 되면 성공이에요."
+            );
+        }
+        if (isBlockingGrammarMission(diagnosis, action, answerBand)) {
+            return missionDefault(
+                    "GRAMMAR_FIX",
+                    "가장 중요한 문법 고치기",
+                    "이 부분을 먼저 고치면 문장 뜻이 훨씬 또렷해져요.",
+                    "의미를 바꾸지 말고 가장 어색한 부분 하나만 고쳐 보세요.",
+                    "I usually ____.",
+                    "원래 문장의 같은 위치에 수정 표현을 넣어 보세요.",
+                    "뜻이 막히던 부분이 자연스러운 표현으로 바뀌면 성공이에요."
+            );
+        }
+        ContentOpportunity opportunity = resolveContentOpportunity(diagnosis, action, answerBand);
+        if (opportunity != ContentOpportunity.NONE) {
+            return missionDefaultsForOpportunity(opportunity);
+        }
+        if (answerBand == AnswerBand.NATURAL_BUT_BASIC
+                || "IMPROVE_NATURALNESS".equals(action)
+                || (diagnosis != null && diagnosis.grammarImpact() != GrammarImpact.NONE)) {
+            return missionDefault(
+                    "EXPRESSION_POLISH",
+                    "조금 더 자연스럽게 다듬기",
+                    "이미 충분히 좋아요. 표현 하나만 다듬으면 더 매끄러워져요.",
+                    "의미는 그대로 두고 가장 어색한 표현 하나만 자연스럽게 바꿔 보세요.",
+                    "I usually ____ after that.",
+                    "어색한 표현 하나만 같은 자리에 바꿔 넣어 보세요.",
+                    "뜻은 같고 표현만 더 자연스러워지면 성공이에요."
+            );
+        }
+        return missionDefaultsForOpportunity(ContentOpportunity.DETAIL);
+    }
+
+    private boolean isBlockingGrammarMission(
+            FeedbackDiagnosisResult diagnosis,
+            String action,
+            AnswerBand answerBand
+    ) {
+        return (answerBand == AnswerBand.GRAMMAR_BLOCKING
+                && answerBand != AnswerBand.TOO_SHORT_FRAGMENT)
+                || "FIX_BLOCKING_GRAMMAR".equals(action)
+                || (diagnosis != null && (
+                diagnosis.grammarImpact() == GrammarImpact.BLOCKING
+                        || diagnosis.grammarSeverity() == GrammarSeverity.MAJOR
+                        || diagnosis.meaningClarity() == MeaningClarity.BLOCKED
+        ));
+    }
+
+    private ContentOpportunity resolveContentOpportunity(
+            FeedbackDiagnosisResult diagnosis,
+            String action,
+            AnswerBand answerBand
+    ) {
+        if (diagnosis != null && diagnosis.contentOpportunity() != ContentOpportunity.NONE) {
+            return diagnosis.contentOpportunity();
+        }
+        if ("ADD_REASON".equals(action)) {
+            return ContentOpportunity.REASON;
+        }
+        if ("ADD_EXAMPLE".equals(action)) {
+            return ContentOpportunity.EXAMPLE;
+        }
+        if ("ADD_SITUATION".equals(action)) {
+            return ContentOpportunity.SITUATION;
+        }
+        if ("ADD_FEELING".equals(action)) {
+            return ContentOpportunity.FEELING;
+        }
+        if ("ADD_RESULT".equals(action)) {
+            return ContentOpportunity.RESULT;
+        }
+        if ("ADD_DETAIL".equals(action)
+                || answerBand == AnswerBand.CONTENT_THIN
+                || answerBand == AnswerBand.SHORT_BUT_VALID) {
+            return ContentOpportunity.DETAIL;
+        }
+        return ContentOpportunity.NONE;
+    }
+
+    private MissionDefaults missionDefaultsForOpportunity(ContentOpportunity opportunity) {
+        return switch (opportunity == null ? ContentOpportunity.DETAIL : opportunity) {
+            case REASON -> missionDefault(
+                    "REASON",
+                    "이유 한 문장 더하기",
+                    "이유가 붙으면 답변이 질문에 더 충분하게 느껴져요.",
+                    "마지막에 왜 그런지 한 문장 더 붙여 보세요.",
+                    "I do this because ____.",
+                    "답변 끝에 because 문장을 붙여 보세요.",
+                    "왜 그런지 알 수 있는 이유가 한 문장 들어가면 성공이에요."
+            );
+            case EXAMPLE -> missionDefault(
+                    "EXAMPLE",
+                    "예시 한 문장 더하기",
+                    "예시가 있으면 답변이 더 실제 상황처럼 보여요.",
+                    "자주 하는 행동이나 상황을 예시로 한 문장 더 써 보세요.",
+                    "For example, I ____.",
+                    "답변 뒤에 For example로 시작하는 문장을 붙여 보세요.",
+                    "구체적인 예시가 한 문장 들어가면 성공이에요."
+            );
+            case SITUATION -> missionDefault(
+                    "SITUATION",
+                    "상황 한 문장 더하기",
+                    "언제나 어떤 상황인지 붙이면 답변 흐름이 더 선명해져요.",
+                    "언제, 어디서, 어떤 상황인지 한 문장 더 붙여 보세요.",
+                    "When I ____, I ____.",
+                    "답변 앞이나 뒤에 상황을 설명하는 짧은 문장을 붙여 보세요.",
+                    "상황을 보여 주는 정보가 한 문장 들어가면 성공이에요."
+            );
+            case FEELING -> missionDefault(
+                    "FEELING",
+                    "느낌 한 문장 더하기",
+                    "느낌이 들어가면 답변이 더 개인적으로 들려요.",
+                    "그때 어떤 기분이었는지 한 문장 더 붙여 보세요.",
+                    "I feel ____ when ____.",
+                    "답변 끝에 느낌을 말하는 문장을 붙여 보세요.",
+                    "내 감정이 한 문장 들어가면 성공이에요."
+            );
+            case RESULT -> missionDefault(
+                    "RESULT",
+                    "결과 한 문장 더하기",
+                    "그 행동 뒤에 어떻게 되었는지 말하면 답변이 잘 마무리돼요.",
+                    "그다음 어떤 결과가 있었는지 한 문장 더 붙여 보세요.",
+                    "After that, I ____.",
+                    "답변 마지막에 결과를 말하는 문장을 붙여 보세요.",
+                    "행동 뒤의 결과가 한 문장 들어가면 성공이에요."
+            );
+            case DETAIL, NONE -> missionDefault(
+                    "DETAIL",
+                    "구체적인 정보 한 문장 더하기",
+                    "작은 정보 하나가 붙으면 답변이 덜 막연해져요.",
+                    "언제, 어디서, 무엇을 하는지 구체적인 정보 하나를 더해 보세요.",
+                    "I usually do this when ____.",
+                    "기존 답변 뒤에 구체적인 정보 한 문장을 붙여 보세요.",
+                    "구체적인 장면이나 정보가 하나 들어가면 성공이에요."
+            );
+        };
+    }
+
+    private MissionDefaults missionDefault(
+            String type,
+            String titleKo,
+            String whyKo,
+            String instructionKo,
+            String exampleEn,
+            String targetHintKo,
+            String successCheckKo
+    ) {
+        return new MissionDefaults(type, titleKo, whyKo, instructionKo, exampleEn, targetHintKo, successCheckKo);
+    }
+
+    private record MissionDefaults(
+            String type,
+            String titleKo,
+            String whyKo,
+            String instructionKo,
+            String exampleEn,
+            String targetHintKo,
+            String successCheckKo
+    ) {
     }
 
     private List<ValidationFailure> validateFixPointExplanationCoverage(List<FeedbackSecondaryLearningPointDto> fixPoints) {
@@ -835,7 +1363,6 @@ public class OpenAiFeedbackClient {
                 || !fixPoints.isEmpty()
                 || generatedSections.nextStepPractice() != null
                 || !generatedSections.rewriteSuggestions().isEmpty()
-                || !generatedSections.rewriteIdeas().isEmpty()
                 || !generatedSections.modelAnswerVariants().isEmpty())
                 ? new FeedbackUiDto(
                 null,
@@ -845,12 +1372,12 @@ public class OpenAiFeedbackClient {
                 fixPoints,
                 generatedSections.nextStepPractice(),
                 generatedSections.rewriteSuggestions(),
-                generatedSections.rewriteIdeas(),
                 generatedSections.modelAnswerVariants(),
                 null,
                 null
         )
                 : null;
+        FeedbackCoachMissionDto coachMission = generatedSections.coachMission();
         return new FeedbackResponseDto(
                 promptId,
                 INTERNAL_AUTHORITATIVE_SESSION_ID,
@@ -869,7 +1396,12 @@ public class OpenAiFeedbackClient {
                 generatedSections.modelAnswerKo(),
                 null,
                 generatedSections.usedExpressions(),
-                generatedUi
+                generatedUi,
+                null,
+                coachMission == null ? null : coachMission.toCoachMove(),
+                coachMission == null ? null : coachMission.toRewriteWorkspace(learnerAnswer),
+                null,
+                null
         );
     }
 
@@ -1061,9 +1593,12 @@ public class OpenAiFeedbackClient {
                 !generatedSections.rewriteSuggestions().isEmpty()
                         ? generatedSections.rewriteSuggestions()
                         : fallbackSections.rewriteSuggestions(),
-                !generatedSections.rewriteIdeas().isEmpty()
-                        ? generatedSections.rewriteIdeas()
-                        : fallbackSections.rewriteIdeas()
+                generatedSections.coachMission() != null
+                        ? generatedSections.coachMission()
+                        : fallbackSections.coachMission(),
+                generatedSections.missionDecision() != null
+                        ? generatedSections.missionDecision()
+                        : fallbackSections.missionDecision()
         );
     }
 
@@ -1215,16 +1750,16 @@ public class OpenAiFeedbackClient {
         );
         List<GrammarIssue> diagnosisIssues = toGrammarIssues(diagnosis);
         GrammarProfile mergedGrammar = new GrammarProfile(
-                baseProfile.grammar().severity(),
+                diagnosis.grammarSeverity(),
                 diagnosisIssues.isEmpty() ? baseProfile.grammar().issues() : diagnosisIssues,
-                baseProfile.grammar().minimalCorrection(),
+                firstNonBlank(diagnosis.minimalCorrection(), baseProfile.grammar().minimalCorrection()),
                 false
         );
         RewriteProfile mergedRewrite = new RewriteProfile(
-                baseProfile.rewrite().primaryIssueCode(),
-                baseProfile.rewrite().secondaryIssueCode(),
-                baseProfile.rewrite().target(),
-                baseProfile.rewrite().expansionBudget(),
+                firstNonBlank(diagnosis.primaryIssueCode(), baseProfile.rewrite().primaryIssueCode()),
+                firstNonBlank(diagnosis.secondaryIssueCode(), baseProfile.rewrite().secondaryIssueCode()),
+                diagnosis.rewriteTarget() == null ? baseProfile.rewrite().target() : diagnosis.rewriteTarget(),
+                diagnosis.expansionBudget() == null ? baseProfile.rewrite().expansionBudget() : diagnosis.expansionBudget(),
                 diagnosis.regressionSensitiveFacts().isEmpty()
                         ? baseProfile.rewrite().regressionSensitiveFacts()
                         : diagnosis.regressionSensitiveFacts(),
@@ -1252,7 +1787,8 @@ public class OpenAiFeedbackClient {
             AnswerBand answerBand,
             TaskCompletion taskCompletion,
             boolean onTopic,
-            boolean finishable
+            boolean finishable,
+            GrammarSeverity grammarSeverity
     ) {
         if (scoreNode != null && scoreNode.isInt()) {
             return scoreNode.asInt();
@@ -1263,7 +1799,7 @@ public class OpenAiFeedbackClient {
         if (answerBand == AnswerBand.TOO_SHORT_FRAGMENT) {
             return 45;
         }
-        if (answerBand == AnswerBand.GRAMMAR_BLOCKING) {
+        if (answerBand == AnswerBand.GRAMMAR_BLOCKING || grammarSeverity == GrammarSeverity.MAJOR) {
             return 58;
         }
         if (taskCompletion != TaskCompletion.FULL) {
@@ -1365,6 +1901,7 @@ public class OpenAiFeedbackClient {
                 Map.entry("type", "object"),
                 Map.entry("additionalProperties", false),
                 Map.entry("properties", Map.ofEntries(
+                        Map.entry("score", Map.of("type", List.of("integer", "null"))),
                         Map.entry("answerBand", Map.of("type", "string", "enum", List.of(
                                 "TOO_SHORT_FRAGMENT",
                                 "SHORT_BUT_VALID",
@@ -1376,42 +1913,62 @@ public class OpenAiFeedbackClient {
                         Map.entry("taskCompletion", Map.of("type", "string", "enum", List.of("FULL", "PARTIAL", "MISS"))),
                         Map.entry("onTopic", Map.of("type", "boolean")),
                         Map.entry("finishable", Map.of("type", "boolean")),
-                        Map.entry("strengths", Map.of(
+                        Map.entry("meaningClarity", Map.of("type", "string", "enum", List.of("CLEAR", "PARTLY_CLEAR", "BLOCKED"))),
+                        Map.entry("grammarImpact", Map.of("type", "string", "enum", List.of("NONE", "POLISH", "LOCAL", "BLOCKING"))),
+                        Map.entry("contentOpportunity", Map.of("type", "string", "enum", List.of(
+                                "NONE",
+                                "REASON",
+                                "DETAIL",
+                                "EXAMPLE",
+                                "SITUATION",
+                                "FEELING",
+                                "RESULT"
+                        ))),
+                        Map.entry("selectedMissionReason", Map.of("type", List.of("string", "null"))),
+                        Map.entry("grammarSeverity", Map.of("type", "string", "enum", List.of("NONE", "MINOR", "MODERATE", "MAJOR"))),
+                        Map.entry("minimalCorrection", Map.of("type", List.of("string", "null"))),
+                        Map.entry("primaryIssueCode", Map.of("type", "string")),
+                        Map.entry("secondaryIssueCode", Map.of("type", List.of("string", "null"))),
+                        Map.entry("rewriteTarget", Map.of(
+                                "type", "object",
+                                "additionalProperties", false,
+                                "properties", Map.of(
+                                        "action", Map.of("type", "string", "enum", REWRITE_TARGET_ACTION_ENUM),
+                                        "skeleton", Map.of("type", List.of("string", "null")),
+                                        "maxNewSentenceCount", Map.of("type", "integer")
+                                ),
+                                "required", List.of("action", "skeleton", "maxNewSentenceCount")
+                        )),
+                        Map.entry("expansionBudget", Map.of("type", "string", "enum", List.of(
+                                "NONE",
+                                "ONE_DETAIL",
+                                "ONE_SUPPORT_SENTENCE"
+                        ))),
+                        Map.entry("regressionSensitiveFacts", Map.of(
                                 "type", "array",
                                 "items", Map.of("type", "string")
                         )),
-                        Map.entry("fixPoints", Map.of(
+                        Map.entry("grammarIssues", Map.of(
                                 "type", "array",
                                 "items", Map.of(
                                         "type", "object",
                                         "additionalProperties", false,
                                         "properties", Map.of(
-                                                "kind", Map.of("type", List.of("string", "null")),
-                                                "title", Map.of("type", List.of("string", "null")),
-                                                "headline", Map.of("type", List.of("string", "null")),
-                                                "supportText", Map.of("type", List.of("string", "null")),
-                                                "originalText", Map.of("type", List.of("string", "null")),
-                                                "revisedText", Map.of("type", List.of("string", "null")),
-                                                "meaningKo", Map.of("type", List.of("string", "null")),
-                                                "guidanceKo", Map.of("type", List.of("string", "null")),
-                                                "exampleEn", Map.of("type", List.of("string", "null")),
-                                                "exampleKo", Map.of("type", List.of("string", "null"))
+                                                "code", Map.of("type", "string"),
+                                                "span", Map.of("type", "string"),
+                                                "correction", Map.of("type", "string"),
+                                                "reasonKo", Map.of("type", "string"),
+                                                "blocksMeaning", Map.of("type", "boolean"),
+                                                "severity", Map.of("type", "string", "enum", List.of("NONE", "MINOR", "MODERATE", "MAJOR"))
                                         ),
-                                        "required", List.of(
-                                                "kind",
-                                                "title",
-                                                "headline",
-                                                "supportText",
-                                                "originalText",
-                                                "revisedText",
-                                                "meaningKo",
-                                                "guidanceKo",
-                                                "exampleEn",
-                                                "exampleKo"
-                                        )
+                                        "required", List.of("code", "span", "correction", "reasonKo", "blocksMeaning", "severity")
                                 )
                         )),
-                        Map.entry("secondaryLearningPoints", Map.of(
+                        Map.entry("strengths", Map.of(
+                                "type", "array",
+                                "items", Map.of("type", "string")
+                        )),
+                        Map.entry("fixPoints", Map.of(
                                 "type", "array",
                                 "items", Map.of(
                                         "type", "object",
@@ -1472,35 +2029,6 @@ public class OpenAiFeedbackClient {
                                         "required", List.of("expression", "guidanceKo", "exampleEn", "exampleKo", "meaningKo")
                                 )
                         )),
-                        Map.entry("rewriteIdeas", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "title", Map.of("type", List.of("string", "null")),
-                                                "english", Map.of("type", List.of("string", "null")),
-                                                "meaningKo", Map.of("type", List.of("string", "null")),
-                                                "noteKo", Map.of("type", List.of("string", "null")),
-                                                "exampleEn", Map.of("type", List.of("string", "null")),
-                                                "originalText", Map.of("type", List.of("string", "null")),
-                                                "revisedText", Map.of("type", List.of("string", "null")),
-                                                "optionalTone", Map.of("type", List.of("boolean", "null")),
-                                                "tags", expressionTagsSchema
-                                        ),
-                                        "required", List.of(
-                                                "title",
-                                                "english",
-                                                "meaningKo",
-                                                "noteKo",
-                                                "exampleEn",
-                                                "originalText",
-                                                "revisedText",
-                                                "optionalTone",
-                                                "tags"
-                                        )
-                                )
-                        )),
                         Map.entry("modelAnswerVariants", Map.of(
                                 "type", "array",
                                 "items", Map.of(
@@ -1515,21 +2043,121 @@ public class OpenAiFeedbackClient {
                                         "required", List.of("kind", "answer", "answerKo", "reasonKo")
                                 )
                         )),
+                        Map.entry("missionDecision", Map.of(
+                                "type", "object",
+                                "additionalProperties", false,
+                                "properties", Map.of(
+                                        "chosenType", Map.of("type", "string", "enum", List.of(
+                                                "REASON",
+                                                "DETAIL",
+                                                "SITUATION",
+                                                "EXAMPLE",
+                                                "FEELING",
+                                                "RESULT",
+                                                "GRAMMAR_FIX",
+                                                "TASK_RESET",
+                                                "EXPRESSION_POLISH"
+                                        )),
+                                        "grammarPriority", Map.of("type", "string", "enum", List.of(
+                                                "NONE",
+                                                "LOW_VALUE_POLISH",
+                                                "HIGH_VALUE_LOCAL",
+                                                "BLOCKING"
+                                        )),
+                                        "contentNeed", Map.of("type", "string", "enum", List.of(
+                                                "NONE",
+                                                "REASON",
+                                                "DETAIL",
+                                                "SITUATION",
+                                                "EXAMPLE",
+                                                "FEELING",
+                                                "RESULT"
+                                        )),
+                                        "whyChosenKo", Map.of("type", "string"),
+                                        "whyNotGrammarFirstKo", Map.of("type", List.of("string", "null")),
+                                        "addOnExampleEn", Map.of("type", List.of("string", "null")),
+                                        "addOnPlacementKo", Map.of("type", List.of("string", "null")),
+                                        "minorFixes", Map.of(
+                                                "type", "array",
+                                                "items", Map.of(
+                                                        "type", "object",
+                                                        "additionalProperties", false,
+                                                        "properties", Map.of(
+                                                                "originalText", Map.of("type", List.of("string", "null")),
+                                                                "revisedText", Map.of("type", List.of("string", "null")),
+                                                                "reasonKo", Map.of("type", List.of("string", "null"))
+                                                        ),
+                                                        "required", List.of("originalText", "revisedText", "reasonKo")
+                                                )
+                                        )
+                                ),
+                                "required", List.of(
+                                        "chosenType",
+                                        "grammarPriority",
+                                        "contentNeed",
+                                        "whyChosenKo",
+                                        "whyNotGrammarFirstKo",
+                                        "addOnExampleEn",
+                                        "addOnPlacementKo",
+                                        "minorFixes"
+                                )
+                        )),
+                        Map.entry("coachMission", Map.of(
+                                "type", "object",
+                                "additionalProperties", false,
+                                "properties", Map.of(
+                                        "missionType", Map.of("type", "string"),
+                                        "title", Map.of("type", "string"),
+                                        "originalText", Map.of("type", List.of("string", "null")),
+                                        "revisedText", Map.of("type", List.of("string", "null")),
+                                        "whyKo", Map.of("type", "string"),
+                                        "instructionKo", Map.of("type", "string"),
+                                        "exampleEn", Map.of("type", "string"),
+                                        "placeholderEn", Map.of("type", "string"),
+                                        "targetHintKo", Map.of("type", "string"),
+                                        "successCheckKo", Map.of("type", "string")
+                                ),
+                                "required", List.of(
+                                        "missionType",
+                                        "title",
+                                        "originalText",
+                                        "revisedText",
+                                        "whyKo",
+                                        "instructionKo",
+                                        "exampleEn",
+                                        "placeholderEn",
+                                        "targetHintKo",
+                                        "successCheckKo"
+                                )
+                        )),
                         Map.entry("modelAnswer", Map.of("type", List.of("string", "null"))),
                         Map.entry("modelAnswerKo", Map.of("type", List.of("string", "null")))
                 )),
                 Map.entry("required", List.of(
+                        "score",
                         "answerBand",
                         "taskCompletion",
                         "onTopic",
                         "finishable",
+                        "meaningClarity",
+                        "grammarImpact",
+                        "contentOpportunity",
+                        "selectedMissionReason",
+                        "grammarSeverity",
+                        "minimalCorrection",
+                        "primaryIssueCode",
+                        "secondaryIssueCode",
+                        "rewriteTarget",
+                        "expansionBudget",
+                        "regressionSensitiveFacts",
+                        "grammarIssues",
                         "strengths",
                         "fixPoints",
-                        "secondaryLearningPoints",
                         "usedExpressions",
                         "refinementExpressions",
-                        "rewriteIdeas",
                         "modelAnswerVariants",
+                        "missionDecision",
+                        "coachMission",
                         "modelAnswer",
                         "modelAnswerKo"
                 ))
@@ -1607,7 +2235,7 @@ public class OpenAiFeedbackClient {
             );
         }
         String bandGuidance = diagnosis == null
-                ? "- Derive the diagnosis first, then make the must-fix list, rewriteIdeas, and modelAnswer consistent with that diagnosis."
+                ? "- Derive the diagnosis first, then choose coachMission as the source of truth and make every section consistent with it."
                 : generationBandGuidance(diagnosis.answerBand());
         ProgressDelta progressDelta = answerProfile == null || answerProfile.rewrite() == null
                 ? null
@@ -1619,7 +2247,8 @@ public class OpenAiFeedbackClient {
                 ? """
                 First-pass diagnosis:
                 - Diagnose the learner answer inside this same JSON object first.
-                - Keep diagnosis, fixPoints, rewriteIdeas, and modelAnswer aligned with each other.
+                - Fill missionDecision immediately after diagnosis, then build coachMission from that decision.
+                - Keep diagnosis, missionDecision, coachMission, fixPoints, refinementExpressions, and modelAnswer aligned with each other.
                 - attemptIndex: %s
                 - previousAnswer: %s
                 - progress.improvedAreas: %s
@@ -1662,17 +2291,33 @@ public class OpenAiFeedbackClient {
                 Response rules:
                 - Fill both the diagnosis fields and the feedback section fields in the same JSON object.
                 - Work in this order:
-                  1) Write modelAnswer first as the closest natural, submission-ready rewrite of the learner answer.
-                  2) Then build fixPoints as explanations of all visible differences between learner answer and modelAnswer.
-                  3) Then fill rewriteIdeas as the single optional-improvement list for the learner's next rewrite.
-                  4) Each rewriteIdeas item may either teach one originalText/revisedText improvement pair or one short reusable English add-on with meaningKo and noteKo.
-                  5) Return as many distinct, high-value rewriteIdeas as the answer supports. Do not stop at a fixed count.
-                  6) Then, only when helpful, add modelAnswerVariants as alternate versions such as a smoother wording version or a richer-detail version.
+                  1) Diagnose the answer against the prompt obligations.
+                  2) Fill missionDecision by comparing the best content add-on mission against the best grammar/polish mission.
+                  3) Build exactly one coachMission from missionDecision.chosenType.
+                  4) Build fixPoints so the first fixPoint explains the same issue/action as missionDecision and coachMission.
+                  5) Add refinementExpressions only when they support the same next rewrite without repeating fixPoints.
+                  6) Write modelAnswer only as a quiet reference. It must not introduce changes that conflict with coachMission.
+                  7) Add modelAnswerVariants only when they are genuinely useful and still support the same mission.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
-                - Do not reuse a broken learner phrase in strengths, refinementExpressions, rewriteIdeas, or modelAnswer.
+                - Do not reuse a broken learner phrase in strengths, refinementExpressions, coachMission, or modelAnswer.
+                - The top-card mission, detailed feedback, rewrite guide, and successCheck must all point to the same one action.
+                - Do not rely on a generic backend fallback. The mission text, example, and success condition must be specific enough to show the learner exactly what to do next.
                 - Keep Korean fields natural and concise.
                 Diagnosis rules:
                 - Choose exactly one answerBand from: TOO_SHORT_FRAGMENT, SHORT_BUT_VALID, GRAMMAR_BLOCKING, CONTENT_THIN, NATURAL_BUT_BASIC, OFF_TOPIC.
+                - score should reflect current submission readiness from 0 to 100.
+                - taskCompletion means whether the answer satisfies the prompt's required parts, not whether the English is perfect.
+                - meaningClarity is about whether the learner's intended meaning is understandable: CLEAR, PARTLY_CLEAR, or BLOCKED.
+                - grammarImpact is about whether grammar should control the top mission: BLOCKING means meaning/task is blocked, LOCAL means a real repair is useful but the answer is still understandable, POLISH means a small cosmetic cleanup, NONE means no meaningful grammar issue.
+                - contentOpportunity is the best expansion opportunity if the answer is understandable: REASON, DETAIL, EXAMPLE, SITUATION, FEELING, RESULT, or NONE.
+                - selectedMissionReason must briefly explain why the top mission deserves priority over other possible fixes.
+                - grammarSeverity must describe grammar/naturalness damage in the learner answer: NONE, MINOR, MODERATE, or MAJOR.
+                - grammarIssues should include only concrete learner spans that need repair. Use empty array if no visible local grammar issue matters.
+                - primaryIssueCode must be one concise uppercase code such as OFF_TOPIC_RESPONSE, STATE_MAIN_ANSWER, FIX_BLOCKING_GRAMMAR, FIX_LOCAL_GRAMMAR, ADD_REASON, ADD_DETAIL, ADD_EXAMPLE, ADD_SITUATION, ADD_FEELING, ADD_RESULT, IMPROVE_NATURALNESS.
+                - rewriteTarget.action must be one of MAKE_ON_TOPIC, STATE_MAIN_ANSWER, FIX_BLOCKING_GRAMMAR, FIX_LOCAL_GRAMMAR, ADD_REASON, ADD_EXAMPLE, ADD_DETAIL, ADD_SITUATION, ADD_FEELING, ADD_RESULT, IMPROVE_NATURALNESS.
+                - rewriteTarget.skeleton should be a short safe rewrite frame or null. Do not put the whole answer there.
+                - expansionBudget: NONE when no expansion is needed, ONE_DETAIL for one phrase/detail, ONE_SUPPORT_SENTENCE for one extra sentence.
+                - regressionSensitiveFacts should list facts that must not be changed in rewrite, such as people, places, times, preferences, or actions.
                 - answerBand must reflect what the learner most needs next, not what sounds harshest.
                 - finishable=true only when the current answer already reads like an acceptable final submission.
                 - Do not set finishable=true for SHORT_BUT_VALID answers.
@@ -1685,6 +2330,20 @@ public class OpenAiFeedbackClient {
                 - Do not use NATURAL_BUT_BASIC for a minimal one-sentence answer that still feels underdeveloped even if the grammar is clean.
                 - Prefer CONTENT_THIN or SHORT_BUT_VALID over GRAMMAR_BLOCKING unless grammar truly blocks meaning or sentence structure.
                 - If you are unsure between SHORT_BUT_VALID and NATURAL_BUT_BASIC for a short answer, prefer SHORT_BUT_VALID.
+                - If meaningClarity is CLEAR or PARTLY_CLEAR and grammarImpact is NONE, POLISH, or LOCAL, do not let small grammar polish control the top mission.
+                - If the answer is understandable but thin, choose CONTENT_THIN or SHORT_BUT_VALID and make coachMission an add-on mission even when small local errors exist.
+                - Small issues such as capitalization, contraction, article preference, a plural ending, or one nicer word choice belong in fixPoints/refinementExpressions, not the top mission.
+                - Use GRAMMAR_FIX as the top mission only when grammarImpact is BLOCKING, grammarSeverity is MAJOR/MODERATE, or the local error prevents the learner from answering the prompt clearly.
+
+                Mission selection ladder:
+                1) If the answer is off topic or misses the prompt's main task, choose TASK_RESET.
+                2) Else if grammarImpact is BLOCKING, choose GRAMMAR_FIX.
+                3) Else if the prompt asks "why" and the reason is missing, generic, or could be personal, choose REASON.
+                4) Else if the answer would become clearer with one concrete scene/time/place/detail, choose SITUATION or DETAIL.
+                5) Else if the answer needs proof or specificity, choose EXAMPLE.
+                6) Else if the answer would feel more personal with emotion or outcome, choose FEELING or RESULT.
+                7) Else if grammarImpact is LOCAL and the local error is more important than any expansion opportunity, choose GRAMMAR_FIX.
+                8) Else if the answer is already acceptable, mark finishable=true or choose a tiny EXPRESSION_POLISH mission only if it has real value.
 
                 Strengths and usedExpressions rules:
                 - strengths should usually be one short Korean keep-signal based on meaning, not a full raw quote unless it is already clean and necessary.
@@ -1705,11 +2364,13 @@ public class OpenAiFeedbackClient {
                 - Do not assign `time_expression` to generic actions like `take a walk`, `read a book`, or `watch videos` just because the learner sentence places them after dinner or at night.
 
                 fixPoints rules:
-                - fixPoints should collectively explain all visible differences between learner answer and modelAnswer.
-                - Each fixPoints item should explain one visible difference between learner answer and modelAnswer.
+                - fixPoints are the detailed feedback area. The first item must explain the same one action as coachMission.
+                - fixPoints should explain the important visible changes needed for the next rewrite, not every possible polish.
+                - If coachMission is GRAMMAR_FIX or EXPRESSION_POLISH, the first fixPoints originalText/revisedText must match coachMission.originalText/revisedText.
+                - If coachMission is REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, or TASK_RESET, the first fixPoints item should be an anchored instruction card with no forced originalText/revisedText pair.
                 - Each fixPoints item must teach exactly one concrete correction point.
-                - Do not leave an unexplained edit in modelAnswer. If modelAnswer changes something, explain that change in fixPoints unless it is purely formatting or punctuation-only.
-                - Return every distinct fix as its own item instead of merging unrelated lessons or repeating the same lesson.
+                - Do not make modelAnswer the plan. The plan is coachMission; modelAnswer is only a reference.
+                - Return every distinct high-value fix as its own item instead of merging unrelated lessons or repeating the same lesson.
                 - Prefer the smallest self-contained aligned originalText / revisedText span that still teaches the point clearly.
                 - Do not cut away left or right context if that would make the edit misleading. A fixPoints card should still make sense when read by itself.
                 - For connector, preposition, article, pronoun, and determiner edits, include enough surrounding words to show what the function word is attaching to.
@@ -1733,36 +2394,77 @@ public class OpenAiFeedbackClient {
                 - Keep article/determiner, singular/plural, pronoun agreement, and connector choice separate when they are distinct problems.
 
                 refinementExpressions rules:
-                - refinementExpressions are optional reusable-expression cards beyond fixPoints.
+                - refinementExpressions are the single source for the optional "표현 더하기" area.
+                - Use refinementExpressions for reusable expressions, sentence starters, short add-on phrases, and prompt-fit optional improvements beyond fixPoints.
                 - Return only genuinely useful, distinct items, and keep expression, meaningKo, guidanceKo, exampleEn, and exampleKo separate.
                 - Do not use refinementExpressions to restate a repaired phrase already taught in fixPoints.
                 - If a refinement expression or its example sentence substantially overlaps with a fixPoints repair or simply repeats the modelAnswer-level rewrite, omit it.
                 - exampleEn must not be identical to expression.
 
-                rewriteIdeas rules:
-                - rewriteIdeas is the primary output for the optional "표현 더하기" area.
-                - Do not include cardType or UI labels. The UI will infer the card style from originalText / revisedText.
-                - An item with originalText and revisedText should teach one concrete optional upgrade.
-                - An item without a pair should be one short reusable English phrase, clause, example starter, time marker, detail chunk, or connector.
-                - For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence that shows how the English idea can be used in context.
-                - For correction-pair rewriteIdeas or full-sentence swap cards, leave exampleEn null unless a separate example is genuinely helpful and not redundant.
-                - Keep rewriteIdeas prompt-fit, reusable, and distinct.
-                - Return as many high-value rewriteIdeas as the answer supports. Do not limit yourself to a fixed count.
-                - For CONTENT_THIN and SHORT_BUT_VALID answers, actively generate multiple reason, example, detail, image, time-flow, or connector ideas when they would help the learner extend the same answer.
-                - Do not return the same English idea twice in rewriteIdeas. If two candidates differ only by punctuation, title, or noteKo, keep only one.
-                - Do not pad rewriteIdeas with weak, repetitive, or near-duplicate ideas just to reach a count.
-                - rewriteIdeas.tags must contain 2 to 6 tags chosen only from this allowed tag set: %s
-                - rewriteIdeas.tags must always include `refinement_expression` and may add function, topic, and tense-context tags that truly match the idea itself.
-                - Tag the reusable idea itself, not the surrounding example sentence or prompt context.
-                - Do not assign `time_expression` unless the idea text itself contains a direct time marker, duration marker, or time-flow wording.
+                missionDecision rules:
+                - missionDecision is the source of truth for selecting the top mission. Fill it before coachMission.
+                - missionDecision.chosenType must exactly match coachMission.missionType.
+                - grammarPriority means whether grammar should win the top mission:
+                  * BLOCKING: grammar prevents the learner from answering the question clearly.
+                  * HIGH_VALUE_LOCAL: one local repair is more important than any content add-on.
+                  * LOW_VALUE_POLISH: grammar/naturalness can be improved, but the answer is understandable and the issue is not the best next action.
+                  * NONE: no meaningful grammar repair is needed.
+                - contentNeed is the single best add-on slot if the answer is understandable: REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, or NONE.
+                - If meaningClarity is CLEAR or PARTLY_CLEAR, contentNeed is not NONE, and grammarPriority is NONE or LOW_VALUE_POLISH, chosenType must be the contentNeed value, not GRAMMAR_FIX or EXPRESSION_POLISH.
+                - If the answer is understandable but thin, pick the most useful add-on mission even if there are small grammar issues. Put those small issues in missionDecision.minorFixes and later fixPoints.
+                - Treat flat/generic endings or generic reasons as contentNeed, not polish: examples include "That is all", "I feel good", "It is fun", "because I am tired", "give me energy", and vague future/job reasons.
+                - If the learner uses "That is all" as a final sentence, never choose EXPRESSION_POLISH just to change it to "That's all." Treat it as a flat ending and choose RESULT, FEELING, DETAIL, or REASON with a meaningful sentence that can replace or follow it.
+                - Do not choose EXPRESSION_POLISH or GRAMMAR_FIX only to improve a natural collocation, article, singular/plural, verb agreement, or one short phrase when the answer could become more personal with one detail, feeling, result, example, or reason.
+                - Concrete low-priority grammar examples that should usually become minorFixes, not the top mission: "sunny day" -> "sunny weather", "give" -> "gives", "future job need English" -> "my future job will need English", "put the food in the refrigerator" -> "put the food away".
+                - For weather-feeling prompts, if the learner says a generic feeling such as "I feel good", "I feel happy", or "It makes me feel good", choose FEELING or DETAIL to make the feeling more specific. Do not choose "sunny day" -> "sunny weather" as the top mission.
+                - If an answer already has the minimum required parts but still feels flat, choose FEELING, RESULT, DETAIL, or EXAMPLE before EXPRESSION_POLISH.
+                - EXPRESSION_POLISH is a last-resort mission for an answer that is already personal and sufficiently developed. Do not use it as a shortcut for a visible correction pair when a stronger GRAMMAR_FIX or content add-on mission exists.
+                - When several local fixes exist, do not pick the tiniest polish. Either choose the highest-value local repair that affects the core action, or choose a content add-on if the answer is understandable but flat.
+                - If chosenType is REASON, DETAIL, SITUATION, EXAMPLE, FEELING, or RESULT, addOnExampleEn must be a complete, natural, learner-specific sentence that can be added to the current answer. It must reuse concrete nouns/actions from the learner answer and may add one plausible detail.
+                - For add-on missions, addOnPlacementKo must explain exactly where the new sentence belongs, such as after the main answer, after the action, before the reason, or at the end.
+                - whyChosenKo must explain why this mission is the most useful next action for this answer.
+                - whyNotGrammarFirstKo must explain why grammar is not first when grammarPriority is LOW_VALUE_POLISH. Use null only when grammar is chosen or there is no visible grammar issue.
+                - minorFixes should contain only small grammar/naturalness edits that should not steal the top mission.
+                - Do not create a generic add-on mission. If chosenType is content-based, the learner should be able to copy the idea in addOnExampleEn and know what to add.
+
+                coachMission rules:
+                - Always return coachMission as the single visible action for the top feedback card.
+                - coachMission must be built from missionDecision. Every visible section should support this one mission.
+                - coachMission.title must be a concrete Korean mission name the learner can do immediately, not a vague label such as "디테일 추가" or "한 가지 더 추가".
+                - Choose missionType from REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, GRAMMAR_FIX, TASK_RESET, or EXPRESSION_POLISH.
+                - coachMission.missionType must exactly equal missionDecision.chosenType.
+                - For GRAMMAR_FIX or EXPRESSION_POLISH, set coachMission.originalText to the exact learner span that should change and coachMission.revisedText to the directly corrected span. Keep both short, aligned, and replaceable.
+                - The originalText/revisedText pair must match instructionKo exactly. If instructionKo says to remove or replace one connector such as "for that", originalText should be that connector or the smallest phrase around it, not a whole sentence that drops other ideas.
+                - For REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, or TASK_RESET, set coachMission.originalText and coachMission.revisedText to null.
+                - Do not put an optional add-on example into revisedText. exampleEn is only an imitation example or starter, not the green comparison sentence.
+                - If the prompt asks for multiple parts, choose a mission that fills the most important missing part rather than a vague "make it richer" instruction.
+                - If the learner already answered the basic question but sounds thin, choose one concrete add-on mission: a reason, situation, example, feeling, or result.
+                - For add-on missions, instructionKo must name exactly what kind of sentence to add and where to add it.
+                - For add-on missions, coachMission.exampleEn should match missionDecision.addOnExampleEn or be a very close adaptation of it.
+                - successCheckKo must be a simple condition the learner can verify after rewriting.
+                - Do not use a correction-first priority. If the learner's meaning is understandable and the answer is thin, choose an add-on mission first even when there are small local grammar or naturalness issues.
+                - Use EXPRESSION_POLISH as the top mission only when the answer already has enough personal support and contentOpportunity is NONE.
+                - Do not use EXPRESSION_POLISH to repair a flat closing phrase such as "That is all"; turn that into a meaningful RESULT, FEELING, DETAIL, or REASON mission instead.
+                - Do not use GRAMMAR_FIX to repair `sunny day` when the prompt asks about feeling and the answer only says `I feel good`; the better mission is to make the feeling more specific.
+                - Use GRAMMAR_FIX as the top mission only when that single repair is more important than adding content: meaning is blocked, grammarImpact is BLOCKING, grammarSeverity is MAJOR/MODERATE, or contentOpportunity is NONE.
+                - A single small collocation, article, plural, or subject-verb agreement fix is usually not enough reason to choose GRAMMAR_FIX if the answer needs one more personal detail, feeling, result, or example.
+                - For comparison missions, placeholderEn must still be a full rewrite frame or sentence starter, not just the revisedText fragment.
+                - For CONTENT_THIN or SHORT_BUT_VALID answers, prefer a specific add-on mission such as reason, detail, situation, example, feeling, or result.
+                - For GRAMMAR_BLOCKING answers, make the mission about the one most important repair and include the corrected phrase as exampleEn when possible.
+                - whyKo should explain why this one mission helps the current answer in one short Korean sentence.
+                - instructionKo should tell the learner exactly what to add or fix in one actionable Korean sentence.
+                - exampleEn must be one short English sentence or phrase the learner can imitate.
+                - placeholderEn must be a short starter with blanks or a reusable frame, for example "I like it because ____.".
+                - targetHintKo must say where to put the mission in the rewrite.
+                - successCheckKo must define a simple success condition for the rewrite.
 
                 modelAnswer rules:
-                - modelAnswer should read like a natural polished rewrite of the learner answer, not a distant sample answer.
-                - Write modelAnswer first and let fixPoints explain all visible differences that appear in that rewrite.
+                - modelAnswer should read like a natural reference rewrite, not the main feedback.
+                - Write modelAnswer after coachMission and keep it consistent with the mission.
                 - Keep modelAnswer as close as possible to the learner's meaning, facts, and sentence direction while making it natural and submission-ready.
-                - modelAnswer must already contain the must-fix changes that fixPoints later explain.
+                - modelAnswer must include the coachMission change when the mission is a correction.
                 - Avoid folding optional expansion into modelAnswer unless it is necessary for fluency or coherence.
-                - Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into rewriteIdeas instead of modelAnswer.
+                - Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into refinementExpressions instead of modelAnswer.
                 - For OFF_TOPIC or TOO_SHORT_FRAGMENT, modelAnswer may reset the answer toward the prompt or toward one complete base sentence, but should still stay as close as possible to what the learner seems to be trying to say.
                 - Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.
 
@@ -1795,7 +2497,6 @@ public class OpenAiFeedbackClient {
                 """.formatted(
                 analysisContext,
                 allowedExpressionTags,
-                allowedExpressionTags,
                 bandGuidance,
                 retryContext,
                 prompt.topic(),
@@ -1814,6 +2515,7 @@ public class OpenAiFeedbackClient {
         TaskCompletion taskCompletion = parseTaskCompletion(node.path("taskCompletion").asText("PARTIAL"));
         boolean onTopic = node.path("onTopic").asBoolean(true);
         boolean finishable = node.path("finishable").asBoolean(false);
+        GrammarSeverity grammarSeverity = parseGrammarSeverity(node.path("grammarSeverity").asText("NONE"));
         List<DiagnosedGrammarIssue> grammarIssues = new ArrayList<>();
         node.path("grammarIssues").forEach(item -> grammarIssues.add(new DiagnosedGrammarIssue(
                 item.path("code").asText(""),
@@ -1825,22 +2527,72 @@ public class OpenAiFeedbackClient {
         )));
         List<String> regressionSensitiveFacts = new ArrayList<>();
         node.path("regressionSensitiveFacts").forEach(item -> regressionSensitiveFacts.add(item.asText("")));
-        int score = resolveDiagnosisScore(node.path("score"), answerBand, taskCompletion, onTopic, finishable);
+        String primaryIssueCode = node.path("primaryIssueCode").asText("");
+        JsonNode rewriteTargetNode = node.path("rewriteTarget");
+        RewriteTarget rewriteTarget = rewriteTargetNode.isMissingNode()
+                ? null
+                : new RewriteTarget(
+                normalizeRewriteTargetAction(rewriteTargetNode.path("action").asText(""), primaryIssueCode),
+                rewriteTargetNode.path("skeleton").isNull() ? null : rewriteTargetNode.path("skeleton").asText(null),
+                rewriteTargetNode.path("maxNewSentenceCount").asInt(1)
+        );
+        int score = resolveDiagnosisScore(node.path("score"), answerBand, taskCompletion, onTopic, finishable, grammarSeverity);
         return new FeedbackDiagnosisResult(
                 score,
                 answerBand,
                 taskCompletion,
                 onTopic,
                 finishable,
-                GrammarSeverity.NONE,
+                parseMeaningClarity(node.path("meaningClarity").asText("CLEAR")),
+                parseGrammarImpact(node.path("grammarImpact").asText("NONE")),
+                parseContentOpportunity(node.path("contentOpportunity").asText("NONE")),
+                node.path("selectedMissionReason").isNull() ? null : node.path("selectedMissionReason").asText(null),
+                grammarSeverity,
                 grammarIssues,
                 node.path("minimalCorrection").isNull() ? null : node.path("minimalCorrection").asText(null),
-                "",
+                primaryIssueCode,
                 node.path("secondaryIssueCode").isNull() ? null : node.path("secondaryIssueCode").asText(null),
-                null,
-                ExpansionBudget.NONE,
+                rewriteTarget,
+                parseExpansionBudget(node.path("expansionBudget").asText("ONE_DETAIL")),
                 regressionSensitiveFacts
         );
+    }
+
+    private String normalizeRewriteTargetAction(String rawAction, String primaryIssueCode) {
+        String normalized = trimToNull(rawAction);
+        if (normalized != null) {
+            normalized = normalized
+                    .toUpperCase(Locale.ROOT)
+                    .replace('-', '_')
+                    .replaceAll("\\s+", "_")
+                    .replaceAll("[^A-Z_]", "_")
+                    .replaceAll("_+", "_")
+                    .replaceAll("^_+|_+$", "");
+        }
+        if (normalized != null && REWRITE_TARGET_ACTION_CODES.contains(normalized)) {
+            return normalized;
+        }
+        return defaultRewriteTargetAction(primaryIssueCode);
+    }
+
+    private String defaultRewriteTargetAction(String primaryIssueCode) {
+        String normalized = trimToNull(primaryIssueCode);
+        if (normalized == null) {
+            return "IMPROVE_NATURALNESS";
+        }
+        return switch (normalized.toUpperCase(Locale.ROOT)) {
+            case "OFF_TOPIC_RESPONSE" -> "MAKE_ON_TOPIC";
+            case "MISSING_MAIN_TASK", "STATE_MAIN_ANSWER" -> "STATE_MAIN_ANSWER";
+            case "FIX_BLOCKING_GRAMMAR" -> "FIX_BLOCKING_GRAMMAR";
+            case "FIX_LOCAL_GRAMMAR" -> "FIX_LOCAL_GRAMMAR";
+            case "ADD_REASON" -> "ADD_REASON";
+            case "ADD_EXAMPLE" -> "ADD_EXAMPLE";
+            case "ADD_SITUATION" -> "ADD_SITUATION";
+            case "ADD_FEELING" -> "ADD_FEELING";
+            case "ADD_RESULT" -> "ADD_RESULT";
+            case "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC" -> "ADD_DETAIL";
+            default -> "IMPROVE_NATURALNESS";
+        };
     }
 
     private String trimToNull(String value) {
@@ -1856,6 +2608,46 @@ public class OpenAiFeedbackClient {
             return null;
         }
         return trimToNull(node.asText(null));
+    }
+
+    private FeedbackCoachMissionDto parseCoachMission(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        return new FeedbackCoachMissionDto(
+                textOrNull(node.path("missionType")),
+                textOrNull(node.path("title")),
+                textOrNull(node.path("originalText")),
+                textOrNull(node.path("revisedText")),
+                textOrNull(node.path("whyKo")),
+                textOrNull(node.path("instructionKo")),
+                textOrNull(node.path("exampleEn")),
+                textOrNull(node.path("placeholderEn")),
+                textOrNull(node.path("targetHintKo")),
+                textOrNull(node.path("successCheckKo"))
+        );
+    }
+
+    private MissionDecision parseMissionDecision(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        List<MissionMinorFix> minorFixes = new ArrayList<>();
+        node.path("minorFixes").forEach(item -> minorFixes.add(new MissionMinorFix(
+                textOrNull(item.path("originalText")),
+                textOrNull(item.path("revisedText")),
+                textOrNull(item.path("reasonKo"))
+        )));
+        return new MissionDecision(
+                textOrNull(node.path("chosenType")),
+                textOrNull(node.path("grammarPriority")),
+                textOrNull(node.path("contentNeed")),
+                textOrNull(node.path("whyChosenKo")),
+                textOrNull(node.path("whyNotGrammarFirstKo")),
+                textOrNull(node.path("addOnExampleEn")),
+                textOrNull(node.path("addOnPlacementKo")),
+                minorFixes
+        );
     }
 
     private GeneratedSections parseGeneratedSections(JsonNode node) {
@@ -1916,18 +2708,6 @@ public class OpenAiFeedbackClient {
         List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = extractSupplementaryLearningPoints(
                 normalizedSecondaryLearningPoints
         );
-        List<FeedbackRewriteIdeaDto> rewriteIdeas = new ArrayList<>();
-        node.path("rewriteIdeas").forEach(item -> rewriteIdeas.add(new FeedbackRewriteIdeaDto(
-                textOrNull(item.path("title")),
-                textOrNull(item.path("english")),
-                textOrNull(item.path("meaningKo")),
-                textOrNull(item.path("noteKo")),
-                textOrNull(item.path("exampleEn")),
-                textOrNull(item.path("originalText")),
-                textOrNull(item.path("revisedText")),
-                item.path("optionalTone").asBoolean(false),
-                ExpressionTagSupport.fromJsonNode(item.path("tags"))
-        )));
         List<FeedbackModelAnswerVariantDto> modelAnswerVariants = new ArrayList<>();
         node.path("modelAnswerVariants").forEach(item -> modelAnswerVariants.add(new FeedbackModelAnswerVariantDto(
                 textOrNull(item.path("kind")),
@@ -1952,7 +2732,8 @@ public class OpenAiFeedbackClient {
                 secondaryLearningPoints,
                 null,
                 List.of(),
-                rewriteIdeas
+                parseCoachMission(node.path("coachMission")),
+                parseMissionDecision(node.path("missionDecision"))
         );
     }
 
@@ -2128,7 +2909,7 @@ public class OpenAiFeedbackClient {
             case GRAMMAR -> "GRAMMAR_FEEDBACK";
             case REFINEMENT -> "REFINEMENT_EXPRESSIONS";
             case SUMMARY -> "SUMMARY";
-            case REWRITE_GUIDE -> "REWRITE_IDEAS";
+            case REWRITE_GUIDE -> "REWRITE_GUIDE";
             case MODEL_ANSWER -> "MODEL_ANSWER";
             case USED_EXPRESSIONS -> "USED_EXPRESSIONS";
             default -> "";
@@ -2669,8 +3450,8 @@ public class OpenAiFeedbackClient {
         }
         if (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.UNALIGNED_REWRITE_TARGET)) {
-            instructions.add("- REWRITE_IDEAS should be the primary optional-improvement list. Keep it focused, skip cardType, and let originalText/revisedText decide whether an item becomes a comparison-style card.");
-            instructions.add("- If an idea repeats the same original/revised pair, added phrase, or advice already shown in FIX_POINTS, remove it instead of padding the list.");
+            instructions.add("- REFINEMENT_EXPRESSIONS should carry optional expression/detail ideas. Keep them distinct from FIX_POINTS and avoid padding.");
+            instructions.add("- If optional advice repeats the same original/revised pair, added phrase, or advice already shown in FIX_POINTS, remove it instead of padding the response.");
         }
         if (instructions.isEmpty()) {
             return "- none";
@@ -2960,7 +3741,7 @@ public class OpenAiFeedbackClient {
             case TOO_SHORT_FRAGMENT -> """
                     - Prioritize completing one full base sentence before any expansion.
                     - Keep fixPoints centered on finishing the fragment cleanly.
-                    - After the base sentence is complete, use rewriteIdeas for natural follow-up reasons, details, or examples when helpful.
+                    - After the base sentence is complete, use refinementExpressions for natural follow-up reasons, details, or examples when helpful.
                     - Avoid unsupported invention in fixPoints or modelAnswer.
                     """;
             case CONTENT_THIN, SHORT_BUT_VALID -> """
@@ -2969,20 +3750,20 @@ public class OpenAiFeedbackClient {
                     - A clean single-sentence main answer is usually still not enough to finish here.
                     - Keep grammar explanation brief unless it directly blocks the next rewrite.
                     - Prefer fixPoints that help the learner support the same main idea more concretely.
-                    - Keep modelAnswer close to learner meaning and move extra support, detail, or example into rewriteIdeas instead of baking it into modelAnswer.
+                    - Keep modelAnswer close to learner meaning and move extra support, detail, or example into refinementExpressions instead of baking it into modelAnswer.
                     - Be proactive about returning multiple distinct reason, example, detail, time-flow, or connector ideas when they would help the learner extend the same answer.
-                    - When the answer supports it, prefer several useful rewriteIdeas instead of stopping after one.
+                    - When the answer supports it, prefer several useful refinementExpressions instead of stopping after one.
                     """;
             case NATURAL_BUT_BASIC -> """
                     - Prioritize optional polish and naturalness over major correction.
                     - Prefer fixPoints that teach one small naturalness or phrasing upgrade.
                     - Keep modelAnswer short, close to learner meaning, and low-pressure.
-                    - Put optional polish, smoother wording, and extra detail into rewriteIdeas instead of overloading modelAnswer.
+                    - Put optional polish, smoother wording, and extra detail into refinementExpressions instead of overloading modelAnswer.
                     """;
             case OFF_TOPIC -> """
                     - Prioritize getting the learner back to the actual task before polishing language.
                     - Keep fixPoints centered on answering the prompt directly.
-                    - After task alignment is clear, use rewriteIdeas for additional reasons, details, or examples when they strengthen the on-topic answer.
+                    - After task alignment is clear, use refinementExpressions for additional reasons, details, or examples when they strengthen the on-topic answer.
                     - Keep modelAnswer as a short task-reset example.
                     """;
         };
@@ -2998,6 +3779,22 @@ public class OpenAiFeedbackClient {
 
     private GrammarSeverity parseGrammarSeverity(String value) {
         return parseEnum(value, GrammarSeverity.NONE, GrammarSeverity.class);
+    }
+
+    private ExpansionBudget parseExpansionBudget(String value) {
+        return parseEnum(value, ExpansionBudget.ONE_DETAIL, ExpansionBudget.class);
+    }
+
+    private MeaningClarity parseMeaningClarity(String value) {
+        return parseEnum(value, MeaningClarity.CLEAR, MeaningClarity.class);
+    }
+
+    private GrammarImpact parseGrammarImpact(String value) {
+        return parseEnum(value, GrammarImpact.NONE, GrammarImpact.class);
+    }
+
+    private ContentOpportunity parseContentOpportunity(String value) {
+        return parseEnum(value, ContentOpportunity.NONE, ContentOpportunity.class);
     }
 
     private <T extends Enum<T>> T parseEnum(String value, T fallback, Class<T> enumClass) {

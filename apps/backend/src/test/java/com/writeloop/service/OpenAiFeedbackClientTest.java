@@ -2,6 +2,8 @@ package com.writeloop.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.writeloop.dto.FeedbackCoachMissionDto;
+import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.PromptDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -39,7 +41,7 @@ class OpenAiFeedbackClientTest {
     }
 
     @Test
-    void buildGenerationRequestBody_includesDiagnosisFieldsInCombinedSchema() throws Exception {
+    void buildGenerationRequestBody_includesDiagnosisAndMissionDecisionFields() throws Exception {
         OpenAiFeedbackClient client = newClient();
 
         String requestBody = ReflectionTestUtils.invokeMethod(
@@ -62,20 +64,22 @@ class OpenAiFeedbackClientTest {
                 .contains("\"answerBand\"")
                 .contains("\"taskCompletion\"")
                 .contains("\"finishable\"")
-                .doesNotContain("\"primaryIssueCode\"")
-                .doesNotContain("\"minimalCorrection\"")
-                .doesNotContain("\"grammarSeverity\"")
-                .doesNotContain("\"expansionBudget\"")
-                .doesNotContain("\"rewriteTarget\"")
-                .doesNotContain("\"secondaryIssueCode\"")
-                .doesNotContain("\"regressionSensitiveFacts\"")
-                .doesNotContain("\"grammarIssues\"")
-                .doesNotContain("\"score\"")
+                .contains("\"meaningClarity\"")
+                .contains("\"grammarImpact\"")
+                .contains("\"contentOpportunity\"")
+                .contains("\"selectedMissionReason\"")
+                .contains("\"missionDecision\"")
+                .contains("\"chosenType\"")
+                .contains("\"grammarPriority\"")
+                .contains("\"addOnExampleEn\"")
+                .contains("\"minorFixes\"")
+                .contains("\"coachMission\"")
+                .contains("\"score\"")
                 .contains("Fill both the diagnosis fields and the feedback section fields");
     }
 
     @Test
-    void buildGenerationRequestBody_pushes_aggressive_rewrite_suggestions_for_thin_answers() throws Exception {
+    void buildGenerationRequestBody_pushesMissionDecisionBeforeCoachMission() throws Exception {
         OpenAiFeedbackClient client = newClient();
 
         String requestBody = ReflectionTestUtils.invokeMethod(
@@ -95,14 +99,18 @@ class OpenAiFeedbackClientTest {
         );
 
         assertThat(requestBody)
-                .contains("Return as many distinct, high-value rewriteIdeas as the answer supports. Do not stop at a fixed count.")
-                .contains("For CONTENT_THIN and SHORT_BUT_VALID answers, actively generate multiple reason, example, detail, image, time-flow, or connector ideas when they would help the learner extend the same answer.")
-                .contains("Be proactive about returning multiple distinct reason, example, detail, time-flow, or connector ideas when they would help the learner extend the same answer.")
-                .contains("Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into rewriteIdeas instead of modelAnswer.");
+                .contains("Fill missionDecision by comparing the best content add-on mission against the best grammar/polish mission")
+                .contains("Build exactly one coachMission from missionDecision.chosenType")
+                .contains("Mission selection ladder:")
+                .contains("missionDecision is the source of truth for selecting the top mission")
+                .contains("missionDecision.chosenType must exactly match coachMission.missionType")
+                .contains("If meaningClarity is CLEAR or PARTLY_CLEAR, contentNeed is not NONE")
+                .contains("For add-on missions, coachMission.exampleEn should match missionDecision.addOnExampleEn")
+                .contains("Do not rely on a generic backend fallback");
     }
 
     @Test
-    void buildGenerationRequestBody_defines_reusable_used_expression_rules_and_example_schema() throws Exception {
+    void buildGenerationRequestBody_definesReusableUsedExpressionRulesAndExampleSchema() throws Exception {
         OpenAiFeedbackClient client = newClient();
 
         String requestBody = ReflectionTestUtils.invokeMethod(
@@ -129,107 +137,177 @@ class OpenAiFeedbackClientTest {
                 .path("usedExpressions")
                 .path("items")
                 .path("properties");
-        JsonNode rewriteIdeaProperties = request.path("text")
+        JsonNode refinementExpressionProperties = request.path("text")
                 .path("format")
                 .path("schema")
                 .path("properties")
-                .path("rewriteIdeas")
+                .path("refinementExpressions")
                 .path("items")
                 .path("properties");
         String promptText = request.path("input").get(0).path("content").get(0).path("text").asText("");
 
         assertThat(usedExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
         assertThat(usedExpressionProperties.path("tags").isMissingNode()).isFalse();
-        assertThat(rewriteIdeaProperties.path("exampleEn").isMissingNode()).isFalse();
-        assertThat(rewriteIdeaProperties.path("tags").isMissingNode()).isFalse();
+        assertThat(refinementExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
+        assertThat(refinementExpressionProperties.path("guidanceKo").isMissingNode()).isFalse();
         assertThat(promptText)
                 .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
                 .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
                 .contains("usedExpressions.exampleEn should be one short natural sentence")
                 .contains("usedExpressions.tags must contain 2 to 6 tags")
                 .contains("Tag the reusable expression itself, not the surrounding example sentence or answer context.")
-                .contains("Do not assign `time_expression` to generic actions like `take a walk`, `read a book`, or `watch videos`")
-                .contains("For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence")
-                .contains("rewriteIdeas.tags must contain 2 to 6 tags");
+                .contains("refinementExpressions are the single source")
+                .contains("exampleEn must not be identical to expression");
     }
 
     @Test
-    void parseGeneratedSections_reads_and_normalizes_tags() throws Exception {
+    void parseGeneratedSectionsReadsMissionDecisionAndNormalizesTags() throws Exception {
         OpenAiFeedbackClient client = newClient();
         JsonNode payload = objectMapper.readTree("""
                 {
+                  "missionDecision": {
+                    "chosenType": "DETAIL",
+                    "grammarPriority": "LOW_VALUE_POLISH",
+                    "contentNeed": "DETAIL",
+                    "whyChosenKo": "The answer is clear, so adding one detail matters most.",
+                    "whyNotGrammarFirstKo": "The grammar issue is small and does not block meaning.",
+                    "addOnExampleEn": "I do it because it helps me feel calm.",
+                    "addOnPlacementKo": "Add it after the main habit sentence.",
+                    "minorFixes": [
+                      {
+                        "originalText": "sleep earlier",
+                        "revisedText": "go to bed earlier",
+                        "reasonKo": "A more natural verb phrase."
+                      }
+                    ]
+                  },
                   "usedExpressions": [
                     {
                       "expression": "stay healthy",
-                      "meaningKo": "건강을 유지하다",
+                      "meaningKo": "stay healthy",
                       "exampleEn": "I want to stay healthy by sleeping earlier.",
-                      "usageTip": "자주 쓰는 건강 목표 표현이에요.",
+                      "usageTip": "Use this for health goals.",
                       "tags": ["used_expression", "frequency"]
                     }
                   ],
-                  "rewriteIdeas": [
+                  "refinementExpressions": [
                     {
-                      "title": "Add a reason",
-                      "english": "because it helps me feel calm",
-                      "meaningKo": "마음을 차분하게 해 주기 때문에",
-                      "noteKo": "이유를 덧붙일 때 자연스러워요.",
+                      "expression": "because it helps me feel calm",
+                      "guidanceKo": "Use this to add a reason.",
+                      "meaningKo": "because it helps me feel calm",
                       "exampleEn": "I keep this habit because it helps me feel calm.",
-                      "originalText": null,
-                      "revisedText": null,
-                      "optionalTone": false,
-                      "tags": ["refinement", "reason"]
+                      "exampleKo": null
                     }
                   ]
                 }
                 """);
 
-        GeneratedSections sections = (GeneratedSections) ReflectionTestUtils.invokeMethod(
+        GeneratedSections sections = ReflectionTestUtils.invokeMethod(
                 client,
                 "parseGeneratedSections",
                 payload
         );
 
+        assertThat(sections).isNotNull();
         assertThat(sections.usedExpressions()).singleElement().satisfies(expression -> {
             assertThat(expression.expression()).isEqualTo("stay healthy");
             assertThat(expression.tags()).containsExactly("used_expression", "frequency_expression");
         });
-        assertThat(sections.rewriteIdeas()).singleElement().satisfies(idea -> {
-            assertThat(idea.english()).isEqualTo("because it helps me feel calm");
-            assertThat(idea.tags()).containsExactly("refinement_expression", "reason_expression");
+        assertThat(sections.refinementExpressions()).singleElement().satisfies(idea -> {
+            assertThat(idea.expression()).isEqualTo("because it helps me feel calm");
+            assertThat(idea.exampleEn()).isEqualTo("I keep this habit because it helps me feel calm.");
+        });
+        assertThat(sections.missionDecision()).isNotNull();
+        assertThat(sections.missionDecision().chosenType()).isEqualTo("DETAIL");
+        assertThat(sections.missionDecision().minorFixes()).singleElement().satisfies(fix -> {
+            assertThat(fix.originalText()).isEqualTo("sleep earlier");
+            assertThat(fix.revisedText()).isEqualTo("go to bed earlier");
         });
     }
 
     @Test
-    void llmPassThroughSectionPolicy_keeps_generation_limits_loose() {
+    void resolveMissionSourceOfTruthKeepsUsableLlmMissionInsteadOfGenericFallback() {
         OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedCorrectionMission = new FeedbackCoachMissionDto(
+                "GRAMMAR_FIX",
+                "끝 표현 고치기",
+                "That is all",
+                "That's all",
+                "표현을 조금 줄일 수 있어요.",
+                "마지막 표현만 바꿔 보세요.",
+                "That's all.",
+                "That's all.",
+                "마지막 문장에 넣어 보세요.",
+                "표현이 자연스러워지면 성공이에요."
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                76,
+                AnswerBand.CONTENT_THIN,
+                TaskCompletion.FULL,
+                true,
+                false,
+                MeaningClarity.CLEAR,
+                GrammarImpact.POLISH,
+                ContentOpportunity.REASON,
+                "The answer is understandable but needs a reason more than a small polish.",
+                GrammarSeverity.MINOR,
+                List.of(),
+                null,
+                "ADD_REASON",
+                null,
+                new RewriteTarget("ADD_REASON", "I do this because ____.", 1),
+                ExpansionBudget.ONE_SUPPORT_SENTENCE,
+                List.of()
+        );
+        MissionDecision missionDecision = new MissionDecision(
+                "GRAMMAR_FIX",
+                "LOW_VALUE_POLISH",
+                "REASON",
+                "The LLM deliberately chose this repair.",
+                "Grammar was chosen for a direct comparison card.",
+                null,
+                null,
+                List.of()
+        );
 
-        SectionPolicy policy = (SectionPolicy) ReflectionTestUtils.invokeMethod(client, "llmPassThroughSectionPolicy");
+        FeedbackCoachMissionDto resolved = ReflectionTestUtils.invokeMethod(
+                client,
+                "resolveMissionSourceOfTruth",
+                generatedCorrectionMission,
+                missionDecision,
+                diagnosis,
+                sampleAnswerProfile(),
+                "After grocery shopping, I usually go home. That is all.",
+                List.of(),
+                List.of(),
+                null
+        );
 
-        assertThat(policy.maxStrengthCount()).isEqualTo(4);
-        assertThat(policy.maxRefinementCount()).isEqualTo(12);
-        assertThat(policy.maxModelAnswerSentences()).isEqualTo(4);
-        assertThat(policy.attemptOverlayPolicy()).isEqualTo(AttemptOverlayPolicy.NONE);
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.missionType()).isEqualTo("GRAMMAR_FIX");
+        assertThat(resolved.originalText()).isEqualTo("That is all");
+        assertThat(resolved.revisedText()).isEqualTo("That's all");
     }
 
     @Test
     @SuppressWarnings("unchecked")
-    void sanitizeRewriteSuggestions_keeps_distinct_items_even_without_next_step_practice() {
+    void sanitizeRewriteSuggestionsKeepsDistinctItemsEvenWithoutNextStepPractice() {
         OpenAiFeedbackClient client = newClient();
 
-        List<com.writeloop.dto.FeedbackRewriteSuggestionDto> sanitized =
-                (List<com.writeloop.dto.FeedbackRewriteSuggestionDto>) ReflectionTestUtils.invokeMethod(
+        List<FeedbackRewriteSuggestionDto> sanitized =
+                (List<FeedbackRewriteSuggestionDto>) ReflectionTestUtils.invokeMethod(
                         client,
                         "sanitizeRewriteSuggestions",
                         List.of(
-                                new com.writeloop.dto.FeedbackRewriteSuggestionDto("for example", "예를 들면", null),
-                                new com.writeloop.dto.FeedbackRewriteSuggestionDto("for example.", "예를 들면", null),
-                                new com.writeloop.dto.FeedbackRewriteSuggestionDto("because it feels peaceful", "평온하게 느껴져서", null)
+                                new FeedbackRewriteSuggestionDto("for example", "for example", null),
+                                new FeedbackRewriteSuggestionDto("for example.", "for example", null),
+                                new FeedbackRewriteSuggestionDto("because it feels peaceful", "because it feels peaceful", null)
                         ),
                         null
                 );
 
         assertThat(sanitized)
-                .extracting(com.writeloop.dto.FeedbackRewriteSuggestionDto::english)
+                .extracting(FeedbackRewriteSuggestionDto::english)
                 .containsExactly("for example", "because it feels peaceful");
     }
 

@@ -2,11 +2,11 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.CorrectionDto;
+import com.writeloop.dto.FeedbackCoachMissionDto;
 import com.writeloop.dto.FeedbackFocusCardDto;
 import com.writeloop.dto.FeedbackModelAnswerVariantDto;
 import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackPrimaryFixDto;
-import com.writeloop.dto.FeedbackRewriteIdeaDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
@@ -18,6 +18,29 @@ enum ExpansionBudget {
     NONE,
     ONE_DETAIL,
     ONE_SUPPORT_SENTENCE
+}
+
+enum MeaningClarity {
+    CLEAR,
+    PARTLY_CLEAR,
+    BLOCKED
+}
+
+enum GrammarImpact {
+    NONE,
+    POLISH,
+    LOCAL,
+    BLOCKING
+}
+
+enum ContentOpportunity {
+    NONE,
+    REASON,
+    DETAIL,
+    EXAMPLE,
+    SITUATION,
+    FEELING,
+    RESULT
 }
 
 record DiagnosedGrammarIssue(
@@ -43,6 +66,10 @@ record FeedbackDiagnosisResult(
         TaskCompletion taskCompletion,
         boolean onTopic,
         boolean finishable,
+        MeaningClarity meaningClarity,
+        GrammarImpact grammarImpact,
+        ContentOpportunity contentOpportunity,
+        String selectedMissionReason,
         GrammarSeverity grammarSeverity,
         List<DiagnosedGrammarIssue> grammarIssues,
         String minimalCorrection,
@@ -52,10 +79,54 @@ record FeedbackDiagnosisResult(
         ExpansionBudget expansionBudget,
         List<String> regressionSensitiveFacts
 ) {
+    FeedbackDiagnosisResult(
+            int score,
+            AnswerBand answerBand,
+            TaskCompletion taskCompletion,
+            boolean onTopic,
+            boolean finishable,
+            GrammarSeverity grammarSeverity,
+            List<DiagnosedGrammarIssue> grammarIssues,
+            String minimalCorrection,
+            String primaryIssueCode,
+            String secondaryIssueCode,
+            RewriteTarget rewriteTarget,
+            ExpansionBudget expansionBudget,
+            List<String> regressionSensitiveFacts
+    ) {
+        this(
+                score,
+                answerBand,
+                taskCompletion,
+                onTopic,
+                finishable,
+                inferMeaningClarity(onTopic, answerBand, taskCompletion, grammarSeverity),
+                inferGrammarImpact(answerBand, grammarSeverity, grammarIssues),
+                inferContentOpportunity(primaryIssueCode, rewriteTarget, expansionBudget, answerBand, taskCompletion),
+                null,
+                grammarSeverity,
+                grammarIssues,
+                minimalCorrection,
+                primaryIssueCode,
+                secondaryIssueCode,
+                rewriteTarget,
+                expansionBudget,
+                regressionSensitiveFacts
+        );
+    }
+
     FeedbackDiagnosisResult {
         score = Math.max(0, Math.min(100, score));
         answerBand = answerBand == null ? AnswerBand.SHORT_BUT_VALID : answerBand;
         taskCompletion = taskCompletion == null ? TaskCompletion.PARTIAL : taskCompletion;
+        meaningClarity = meaningClarity == null ? inferMeaningClarity(onTopic, answerBand, taskCompletion, grammarSeverity) : meaningClarity;
+        grammarImpact = grammarImpact == null ? inferGrammarImpact(answerBand, grammarSeverity, grammarIssues) : grammarImpact;
+        contentOpportunity = contentOpportunity == null
+                ? inferContentOpportunity(primaryIssueCode, rewriteTarget, expansionBudget, answerBand, taskCompletion)
+                : contentOpportunity;
+        selectedMissionReason = selectedMissionReason == null || selectedMissionReason.isBlank()
+                ? null
+                : selectedMissionReason.trim();
         grammarSeverity = grammarSeverity == null ? GrammarSeverity.NONE : grammarSeverity;
         grammarIssues = grammarIssues == null ? List.of() : List.copyOf(grammarIssues);
         minimalCorrection = minimalCorrection == null || minimalCorrection.isBlank()
@@ -67,6 +138,80 @@ record FeedbackDiagnosisResult(
                 : secondaryIssueCode.trim();
         expansionBudget = expansionBudget == null ? ExpansionBudget.NONE : expansionBudget;
         regressionSensitiveFacts = regressionSensitiveFacts == null ? List.of() : List.copyOf(regressionSensitiveFacts);
+    }
+
+    private static MeaningClarity inferMeaningClarity(
+            boolean onTopic,
+            AnswerBand answerBand,
+            TaskCompletion taskCompletion,
+            GrammarSeverity grammarSeverity
+    ) {
+        if (!onTopic || answerBand == AnswerBand.OFF_TOPIC || taskCompletion == TaskCompletion.MISS) {
+            return MeaningClarity.BLOCKED;
+        }
+        if (answerBand == AnswerBand.GRAMMAR_BLOCKING || grammarSeverity == GrammarSeverity.MAJOR) {
+            return MeaningClarity.PARTLY_CLEAR;
+        }
+        return MeaningClarity.CLEAR;
+    }
+
+    private static GrammarImpact inferGrammarImpact(
+            AnswerBand answerBand,
+            GrammarSeverity grammarSeverity,
+            List<DiagnosedGrammarIssue> grammarIssues
+    ) {
+        if (answerBand == AnswerBand.GRAMMAR_BLOCKING || grammarSeverity == GrammarSeverity.MAJOR) {
+            return GrammarImpact.BLOCKING;
+        }
+        boolean hasMeaningBlockingIssue = grammarIssues != null
+                && grammarIssues.stream().anyMatch(issue -> issue != null && issue.blocksMeaning());
+        if (hasMeaningBlockingIssue) {
+            return GrammarImpact.BLOCKING;
+        }
+        if (grammarSeverity == GrammarSeverity.MODERATE) {
+            return GrammarImpact.LOCAL;
+        }
+        if (grammarSeverity == GrammarSeverity.MINOR) {
+            return GrammarImpact.POLISH;
+        }
+        return GrammarImpact.NONE;
+    }
+
+    private static ContentOpportunity inferContentOpportunity(
+            String primaryIssueCode,
+            RewriteTarget rewriteTarget,
+            ExpansionBudget expansionBudget,
+            AnswerBand answerBand,
+            TaskCompletion taskCompletion
+    ) {
+        String action = rewriteTarget == null ? null : rewriteTarget.action();
+        String code = action == null || action.isBlank() ? primaryIssueCode : action;
+        if (code != null) {
+            return switch (code.trim().toUpperCase()) {
+                case "ADD_REASON" -> ContentOpportunity.REASON;
+                case "ADD_EXAMPLE" -> ContentOpportunity.EXAMPLE;
+                case "ADD_SITUATION" -> ContentOpportunity.SITUATION;
+                case "ADD_FEELING" -> ContentOpportunity.FEELING;
+                case "ADD_RESULT" -> ContentOpportunity.RESULT;
+                case "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC" -> ContentOpportunity.DETAIL;
+                default -> fallbackContentOpportunity(expansionBudget, answerBand, taskCompletion);
+            };
+        }
+        return fallbackContentOpportunity(expansionBudget, answerBand, taskCompletion);
+    }
+
+    private static ContentOpportunity fallbackContentOpportunity(
+            ExpansionBudget expansionBudget,
+            AnswerBand answerBand,
+            TaskCompletion taskCompletion
+    ) {
+        if (expansionBudget == ExpansionBudget.ONE_SUPPORT_SENTENCE || expansionBudget == ExpansionBudget.ONE_DETAIL) {
+            return ContentOpportunity.DETAIL;
+        }
+        if (answerBand == AnswerBand.CONTENT_THIN || taskCompletion == TaskCompletion.PARTIAL) {
+            return ContentOpportunity.DETAIL;
+        }
+        return ContentOpportunity.NONE;
     }
 }
 
@@ -113,6 +258,61 @@ record RefinementCard(
     }
 }
 
+record MissionMinorFix(
+        String originalText,
+        String revisedText,
+        String reasonKo
+) {
+    MissionMinorFix {
+        originalText = blankToNull(originalText);
+        revisedText = blankToNull(revisedText);
+        reasonKo = blankToNull(reasonKo);
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+}
+
+record MissionDecision(
+        String chosenType,
+        String grammarPriority,
+        String contentNeed,
+        String whyChosenKo,
+        String whyNotGrammarFirstKo,
+        String addOnExampleEn,
+        String addOnPlacementKo,
+        List<MissionMinorFix> minorFixes
+) {
+    MissionDecision {
+        chosenType = normalizeCode(chosenType);
+        grammarPriority = normalizeCode(grammarPriority);
+        contentNeed = normalizeCode(contentNeed);
+        whyChosenKo = blankToNull(whyChosenKo);
+        whyNotGrammarFirstKo = blankToNull(whyNotGrammarFirstKo);
+        addOnExampleEn = blankToNull(addOnExampleEn);
+        addOnPlacementKo = blankToNull(addOnPlacementKo);
+        minorFixes = minorFixes == null ? List.of() : List.copyOf(minorFixes);
+    }
+
+    private static String normalizeCode(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim()
+                .toUpperCase()
+                .replace('-', '_')
+                .replaceAll("\\s+", "_")
+                .replaceAll("[^A-Z_]", "_")
+                .replaceAll("_+", "_")
+                .replaceAll("^_+|_+$", "");
+    }
+
+    private static String blankToNull(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+}
+
 record GeneratedSections(
         String summary,
         List<String> strengths,
@@ -130,7 +330,8 @@ record GeneratedSections(
         List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
         FeedbackNextStepPracticeDto nextStepPractice,
         List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
-        List<FeedbackRewriteIdeaDto> rewriteIdeas
+        FeedbackCoachMissionDto coachMission,
+        MissionDecision missionDecision
 ) {
     GeneratedSections(
             String summary,
@@ -166,7 +367,8 @@ record GeneratedSections(
                 secondaryLearningPoints,
                 nextStepPractice,
                 rewriteSuggestions,
-                List.of()
+                null,
+                null
         );
     }
 
@@ -199,7 +401,8 @@ record GeneratedSections(
                 List.of(),
                 null,
                 List.of(),
-                List.of()
+                null,
+                null
         );
     }
 
@@ -233,7 +436,8 @@ record GeneratedSections(
                 List.of(),
                 null,
                 List.of(),
-                List.of()
+                null,
+                null
         );
     }
 
@@ -265,7 +469,8 @@ record GeneratedSections(
                 List.of(),
                 null,
                 List.of(),
-                List.of()
+                null,
+                null
             );
     }
 
@@ -309,7 +514,28 @@ record GeneratedSections(
                 nextStepPractice.optionalTone()
         );
         rewriteSuggestions = rewriteSuggestions == null ? List.of() : List.copyOf(rewriteSuggestions);
-        rewriteIdeas = rewriteIdeas == null ? List.of() : List.copyOf(rewriteIdeas);
+        coachMission = coachMission == null ? null : new FeedbackCoachMissionDto(
+                coachMission.missionType(),
+                coachMission.title(),
+                coachMission.originalText(),
+                coachMission.revisedText(),
+                coachMission.whyKo(),
+                coachMission.instructionKo(),
+                coachMission.exampleEn(),
+                coachMission.placeholderEn(),
+                coachMission.targetHintKo(),
+                coachMission.successCheckKo()
+        );
+        missionDecision = missionDecision == null ? null : new MissionDecision(
+                missionDecision.chosenType(),
+                missionDecision.grammarPriority(),
+                missionDecision.contentNeed(),
+                missionDecision.whyChosenKo(),
+                missionDecision.whyNotGrammarFirstKo(),
+                missionDecision.addOnExampleEn(),
+                missionDecision.addOnPlacementKo(),
+                missionDecision.minorFixes()
+        );
     }
 
     GeneratedSections(
@@ -345,7 +571,8 @@ record GeneratedSections(
                 secondaryLearningPoints,
                 nextStepPractice,
                 List.of(),
-                List.of()
+                null,
+                null
         );
     }
 
@@ -381,7 +608,8 @@ record GeneratedSections(
                 secondaryLearningPoints,
                 nextStepPractice,
                 List.of(),
-                List.of()
+                null,
+                null
         );
     }
 
@@ -406,7 +634,8 @@ record GeneratedSections(
                 !override.secondaryLearningPoints.isEmpty() ? override.secondaryLearningPoints : secondaryLearningPoints,
                 override.nextStepPractice != null ? override.nextStepPractice : nextStepPractice,
                 !override.rewriteSuggestions.isEmpty() ? override.rewriteSuggestions : rewriteSuggestions,
-                !override.rewriteIdeas.isEmpty() ? override.rewriteIdeas : rewriteIdeas
+                override.coachMission != null ? override.coachMission : coachMission,
+                override.missionDecision != null ? override.missionDecision : missionDecision
         );
     }
 
@@ -486,7 +715,8 @@ record ValidationResult(
                 List.of(),
                 null,
                 List.of(),
-                List.of()
+                null,
+                null
         )
                 : sanitizedSections;
         failures = failures == null ? List.of() : List.copyOf(failures);

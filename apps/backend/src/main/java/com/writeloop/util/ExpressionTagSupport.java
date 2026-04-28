@@ -197,14 +197,6 @@ public final class ExpressionTagSupport {
         return mergeTagsForExpression(expression, List.of("used_expression"), tags);
     }
 
-    public static List<String> withRewriteIdeaDefaults(List<String> tags) {
-        return withRewriteIdeaDefaults(tags, null);
-    }
-
-    public static List<String> withRewriteIdeaDefaults(List<String> tags, String expression) {
-        return mergeTagsForExpression(expression, List.of("refinement_expression"), tags);
-    }
-
     public static List<String> withSavedExpressionDefaults(List<String> tags, SavedExpressionSourceType sourceType) {
         return withSavedExpressionDefaults(tags, sourceType, null);
     }

@@ -2,11 +2,11 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
+import com.writeloop.dto.FeedbackCoachMissionDto;
 import com.writeloop.dto.FeedbackPrimaryFixDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackModelAnswerVariantDto;
-import com.writeloop.dto.FeedbackRewriteIdeaDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackUiDto;
@@ -243,7 +243,12 @@ public class GeminiFeedbackClient {
                 feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
                 feedback.usedExpressions(),
-                feedback.ui()
+                feedback.ui(),
+                feedback.loop(),
+                feedback.coachMove(),
+                feedback.rewriteWorkspace(),
+                feedback.completion(),
+                feedback.revealLater()
         );
     }
 
@@ -678,7 +683,8 @@ public class GeminiFeedbackClient {
                 secondaryLearningPoints,
                 nextStepPractice,
                 rewriteSuggestions,
-                generatedSections.rewriteIdeas()
+                generatedSections.coachMission(),
+                generatedSections.missionDecision()
         );
 
         boolean shouldRetry = failures.stream().anyMatch(failure -> feedbackRetryPolicy.shouldRetry(failure, diagnosis, sectionPolicy));
@@ -732,9 +738,7 @@ public class GeminiFeedbackClient {
                 grammarFeedback
         );
         List<FeedbackSecondaryLearningPointDto> fixPoints = resolveGeneratedFixPoints(generatedSections);
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = !generatedSections.secondaryLearningPoints().isEmpty()
-                ? generatedSections.secondaryLearningPoints()
-                : deriveSecondaryLearningPointsFromFixPoints(fixPoints);
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = generatedSections.secondaryLearningPoints();
         FeedbackPrimaryFixDto primaryFix = generatedSections.primaryFix() != null
                 ? generatedSections.primaryFix()
                 : derivePrimaryFixFromFixPoints(fixPoints);
@@ -742,7 +746,6 @@ public class GeminiFeedbackClient {
                 || !fixPoints.isEmpty()
                 || generatedSections.nextStepPractice() != null
                 || !generatedSections.rewriteSuggestions().isEmpty()
-                || !generatedSections.rewriteIdeas().isEmpty()
                 || !generatedSections.modelAnswerVariants().isEmpty())
                 ? new FeedbackUiDto(
                 null,
@@ -752,12 +755,12 @@ public class GeminiFeedbackClient {
                 fixPoints,
                 generatedSections.nextStepPractice(),
                 generatedSections.rewriteSuggestions(),
-                generatedSections.rewriteIdeas(),
                 generatedSections.modelAnswerVariants(),
                 null,
                 null
         )
                 : null;
+        FeedbackCoachMissionDto coachMission = generatedSections.coachMission();
         return new FeedbackResponseDto(
                 promptId,
                 INTERNAL_AUTHORITATIVE_SESSION_ID,
@@ -776,7 +779,12 @@ public class GeminiFeedbackClient {
                 generatedSections.modelAnswerKo(),
                 null,
                 generatedSections.usedExpressions(),
-                generatedUi
+                generatedUi,
+                null,
+                coachMission == null ? null : coachMission.toCoachMove(),
+                coachMission == null ? null : coachMission.toRewriteWorkspace(learnerAnswer),
+                null,
+                null
         );
     }
 
@@ -972,9 +980,12 @@ public class GeminiFeedbackClient {
                 !generatedSections.rewriteSuggestions().isEmpty()
                         ? generatedSections.rewriteSuggestions()
                         : fallbackSections.rewriteSuggestions(),
-                !generatedSections.rewriteIdeas().isEmpty()
-                        ? generatedSections.rewriteIdeas()
-                        : fallbackSections.rewriteIdeas()
+                generatedSections.coachMission() != null
+                        ? generatedSections.coachMission()
+                        : fallbackSections.coachMission(),
+                generatedSections.missionDecision() != null
+                        ? generatedSections.missionDecision()
+                        : fallbackSections.missionDecision()
         );
     }
 
@@ -1395,37 +1406,6 @@ public class GeminiFeedbackClient {
                                         )
                                 )
                         )),
-                        Map.entry("secondaryLearningPoints", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "kind", Map.of("type", List.of("string", "null")),
-                                                "title", Map.of("type", List.of("string", "null")),
-                                                "headline", Map.of("type", List.of("string", "null")),
-                                                "supportText", Map.of("type", List.of("string", "null")),
-                                                "originalText", Map.of("type", List.of("string", "null")),
-                                                "revisedText", Map.of("type", List.of("string", "null")),
-                                                "meaningKo", Map.of("type", List.of("string", "null")),
-                                                "guidanceKo", Map.of("type", List.of("string", "null")),
-                                                "exampleEn", Map.of("type", List.of("string", "null")),
-                                                "exampleKo", Map.of("type", List.of("string", "null"))
-                                        ),
-                                        "required", List.of(
-                                                "kind",
-                                                "title",
-                                                "headline",
-                                                "supportText",
-                                                "originalText",
-                                                "revisedText",
-                                                "meaningKo",
-                                                "guidanceKo",
-                                                "exampleEn",
-                                                "exampleKo"
-                                        )
-                                )
-                        )),
                         Map.entry("usedExpressions", Map.of(
                                 "type", "array",
                                 "items", Map.of(
@@ -1456,35 +1436,6 @@ public class GeminiFeedbackClient {
                                         "required", List.of("expression", "guidanceKo", "exampleEn", "exampleKo", "meaningKo")
                                 )
                         )),
-                        Map.entry("rewriteIdeas", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "title", Map.of("type", List.of("string", "null")),
-                                                "english", Map.of("type", List.of("string", "null")),
-                                                "meaningKo", Map.of("type", List.of("string", "null")),
-                                                "noteKo", Map.of("type", List.of("string", "null")),
-                                                "exampleEn", Map.of("type", List.of("string", "null")),
-                                                "originalText", Map.of("type", List.of("string", "null")),
-                                                "revisedText", Map.of("type", List.of("string", "null")),
-                                                "optionalTone", Map.of("type", List.of("boolean", "null")),
-                                                "tags", expressionTagsSchema
-                                        ),
-                                        "required", List.of(
-                                                "title",
-                                                "english",
-                                                "meaningKo",
-                                                "noteKo",
-                                                "exampleEn",
-                                                "originalText",
-                                                "revisedText",
-                                                "optionalTone",
-                                                "tags"
-                                        )
-                                )
-                        )),
                         Map.entry("modelAnswerVariants", Map.of(
                                 "type", "array",
                                 "items", Map.of(
@@ -1499,6 +1450,34 @@ public class GeminiFeedbackClient {
                                         "required", List.of("kind", "answer", "answerKo", "reasonKo")
                                 )
                         )),
+                        Map.entry("coachMission", Map.of(
+                                "type", List.of("object", "null"),
+                                "additionalProperties", false,
+                                "properties", Map.of(
+                                        "missionType", Map.of("type", List.of("string", "null")),
+                                        "title", Map.of("type", List.of("string", "null")),
+                                        "originalText", Map.of("type", List.of("string", "null")),
+                                        "revisedText", Map.of("type", List.of("string", "null")),
+                                        "whyKo", Map.of("type", List.of("string", "null")),
+                                        "instructionKo", Map.of("type", List.of("string", "null")),
+                                        "exampleEn", Map.of("type", List.of("string", "null")),
+                                        "placeholderEn", Map.of("type", List.of("string", "null")),
+                                        "targetHintKo", Map.of("type", List.of("string", "null")),
+                                        "successCheckKo", Map.of("type", List.of("string", "null"))
+                                ),
+                                "required", List.of(
+                                        "missionType",
+                                        "title",
+                                        "originalText",
+                                        "revisedText",
+                                        "whyKo",
+                                        "instructionKo",
+                                        "exampleEn",
+                                        "placeholderEn",
+                                        "targetHintKo",
+                                        "successCheckKo"
+                                )
+                        )),
                         Map.entry("modelAnswer", Map.of("type", List.of("string", "null"))),
                         Map.entry("modelAnswerKo", Map.of("type", List.of("string", "null")))
                 )),
@@ -1507,8 +1486,8 @@ public class GeminiFeedbackClient {
                         "fixPoints",
                         "usedExpressions",
                         "refinementExpressions",
-                        "rewriteIdeas",
                         "modelAnswerVariants",
+                        "coachMission",
                         "modelAnswer",
                         "modelAnswerKo"
                 ))
@@ -1672,7 +1651,7 @@ public class GeminiFeedbackClient {
 
                 General output rules:
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
-                - Do not reuse a broken learner phrase in strengths, refinementExpressions, rewriteIdeas, or modelAnswer.
+                - Do not reuse a broken learner phrase in strengths, refinementExpressions, or modelAnswer.
                 - If requestedSections does not include a section, return [] for arrays or null for strings.
                 - Keep Korean fields natural and concise.
                 Strengths and usedExpressions rules:
@@ -1706,32 +1685,36 @@ public class GeminiFeedbackClient {
                 - In particular, teach article/determiner vs plural/singular separately, and teach pronoun agreement vs connector choice separately, when both need correction.
 
                 refinementExpressions rules:
-                - refinementExpressions are optional reusable-expression cards beyond fixPoints.
+                - refinementExpressions are the single source for the optional "표현 더하기" area.
+                - Use refinementExpressions for reusable expressions, sentence starters, short add-on phrases, and prompt-fit optional improvements beyond fixPoints.
                 - Return only genuinely useful, distinct refinementExpressions, and keep expression, meaningKo, guidanceKo, exampleEn, and exampleKo separate.
                 - exampleEn must not be identical to expression.
 
-                rewriteIdeas rules:
-                - rewriteIdeas is the primary output for the optional "표현 더하기" area.
-                - Do not include cardType or UI labels. The UI will infer the card style from originalText / revisedText.
-                - An item with originalText and revisedText should teach one concrete optional upgrade.
-                - An item without a pair should be one short reusable English phrase, clause, example starter, time marker, detail chunk, or connector.
-                - For reusable no-pair rewriteIdeas, include exampleEn as one short natural sentence that shows how the English idea can be used in context.
-                - For correction-pair rewriteIdeas or full-sentence swap cards, leave exampleEn null unless a separate example is genuinely helpful and not redundant.
-                - Keep rewriteIdeas prompt-fit, reusable, and distinct.
-                - Return as many high-value rewriteIdeas as the answer supports. Do not limit yourself to a fixed count.
-                - For CONTENT_THIN and SHORT_BUT_VALID answers, actively generate multiple reason, example, detail, image, time-flow, or connector ideas when they would help the learner extend the same answer.
-                - Do not return the same English idea twice in rewriteIdeas. If two candidates differ only by punctuation, title, or noteKo, keep only one.
-                - Do not pad rewriteIdeas with weak, repetitive, or near-duplicate ideas just to reach a count.
-                - rewriteIdeas.tags must contain 2 to 6 tags chosen only from this allowed tag set: %s
-                - rewriteIdeas.tags must always include `refinement_expression` and may add function, topic, and tense-context tags that truly match the idea itself.
-                - Tag the reusable idea itself, not the surrounding example sentence or prompt context.
-                - Do not assign `time_expression` unless the idea text itself contains a direct time marker, duration marker, or time-flow wording.
+                coachMission rules:
+                - Always return coachMission as the single visible action for the top feedback card.
+                - coachMission.title must be a concrete Korean mission name the learner can do immediately, not a vague label such as "디테일 추가" or "한 가지 더 추가".
+                - Choose missionType from REASON, SITUATION, EXAMPLE, FEELING, RESULT, GRAMMAR_FIX, TASK_RESET, or EXPRESSION_POLISH.
+                - For GRAMMAR_FIX or EXPRESSION_POLISH, set coachMission.originalText to the exact learner span that should change and coachMission.revisedText to the directly corrected span. Keep both short, aligned, and replaceable.
+                - The originalText/revisedText pair must match instructionKo exactly. If instructionKo says to remove or replace one connector such as "for that", originalText should be that connector or the smallest phrase around it, not a whole sentence that drops other ideas.
+                - For REASON, SITUATION, EXAMPLE, FEELING, RESULT, or TASK_RESET, set coachMission.originalText and coachMission.revisedText to null.
+                - Do not put an optional add-on example into revisedText. exampleEn is only an imitation example or starter, not the green comparison sentence.
+                - Prefer GRAMMAR_FIX or EXPRESSION_POLISH when the learner's main answer contains a clear local grammar or naturalness problem. Choose add-on missions only when the base answer is already usable.
+                - This correction-first priority overrides CONTENT_THIN: if the answer has an obvious wrong word form, missing preposition, unnatural collocation, or Korean-to-English transfer in the main idea, choose GRAMMAR_FIX or EXPRESSION_POLISH before asking for more detail.
+                - For comparison missions, placeholderEn must still be a full rewrite frame or sentence starter, not just the revisedText fragment.
+                - For CONTENT_THIN or SHORT_BUT_VALID answers, prefer a specific add-on mission such as "이유 한 문장 더하기", "상황 한 문장 더하기", "예시 한 문장 더하기", "감정 한 문장 더하기", or "결과 한 문장 더하기".
+                - For GRAMMAR_BLOCKING answers, make the mission about the one most important repair and include the corrected phrase as exampleEn when possible.
+                - whyKo should explain why this one mission helps the current answer in one short Korean sentence.
+                - instructionKo should tell the learner exactly what to add or fix in one actionable Korean sentence.
+                - exampleEn must be one short English sentence or phrase the learner can imitate.
+                - placeholderEn must be a short starter with blanks or a reusable frame, for example "I like it because ____.".
+                - targetHintKo must say where to put the mission in the rewrite.
+                - successCheckKo must define a simple success condition for the rewrite.
 
                 modelAnswer rules:
                 - modelAnswer is a one-step-up reference, not another optional-add-on card.
                 - modelAnswer must preserve learner meaning, keep the must-fix lessons from fixPoints, and stay close to the learner's current answer.
                 - Avoid folding optional expansion into modelAnswer unless it is necessary for fluency or coherence.
-                - Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into rewriteIdeas instead of modelAnswer.
+                - Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into refinementExpressions instead of modelAnswer.
                 - Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.
 
                 modelAnswerVariants rules:
@@ -1787,7 +1770,6 @@ public class GeminiFeedbackClient {
                 previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
                 improvedAreas,
                 remainingAreas,
-                allowedExpressionTags,
                 allowedExpressionTags,
                 bandGuidance,
                 retryFailures,
@@ -1899,6 +1881,24 @@ public class GeminiFeedbackClient {
         return trimToNull(node.asText(null));
     }
 
+    private FeedbackCoachMissionDto parseCoachMission(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull()) {
+            return null;
+        }
+        return new FeedbackCoachMissionDto(
+                textOrNull(node.path("missionType")),
+                textOrNull(node.path("title")),
+                textOrNull(node.path("originalText")),
+                textOrNull(node.path("revisedText")),
+                textOrNull(node.path("whyKo")),
+                textOrNull(node.path("instructionKo")),
+                textOrNull(node.path("exampleEn")),
+                textOrNull(node.path("placeholderEn")),
+                textOrNull(node.path("targetHintKo")),
+                textOrNull(node.path("successCheckKo"))
+        );
+    }
+
     private GeneratedSections parseGeneratedSections(String body) throws IOException {
         JsonNode node = objectMapper.readTree(extractOutputText(body));
         List<String> strengths = new ArrayList<>();
@@ -1953,21 +1953,7 @@ public class GeminiFeedbackClient {
                 ? List.copyOf(fixPoints)
                 : toFixPoints(null, parsedSecondaryLearningPoints);
         FeedbackPrimaryFixDto primaryFix = derivePrimaryFixFromFixPoints(parsedFixPoints);
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = parsedSecondaryLearningPoints.isEmpty() && !parsedFixPoints.isEmpty()
-                ? deriveSecondaryLearningPointsFromFixPoints(parsedFixPoints)
-                : parsedSecondaryLearningPoints;
-        List<FeedbackRewriteIdeaDto> rewriteIdeas = new ArrayList<>();
-        node.path("rewriteIdeas").forEach(item -> rewriteIdeas.add(new FeedbackRewriteIdeaDto(
-                textOrNull(item.path("title")),
-                textOrNull(item.path("english")),
-                textOrNull(item.path("meaningKo")),
-                textOrNull(item.path("noteKo")),
-                textOrNull(item.path("exampleEn")),
-                textOrNull(item.path("originalText")),
-                textOrNull(item.path("revisedText")),
-                item.path("optionalTone").asBoolean(false),
-                ExpressionTagSupport.fromJsonNode(item.path("tags"))
-        )));
+        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = parsedSecondaryLearningPoints;
         List<FeedbackModelAnswerVariantDto> modelAnswerVariants = new ArrayList<>();
         node.path("modelAnswerVariants").forEach(item -> modelAnswerVariants.add(new FeedbackModelAnswerVariantDto(
                 textOrNull(item.path("kind")),
@@ -1992,7 +1978,8 @@ public class GeminiFeedbackClient {
                 secondaryLearningPoints,
                 null,
                 List.of(),
-                rewriteIdeas
+                parseCoachMission(node.path("coachMission")),
+                null
         );
     }
 
@@ -2160,7 +2147,7 @@ public class GeminiFeedbackClient {
             case GRAMMAR -> "GRAMMAR_FEEDBACK";
             case REFINEMENT -> "REFINEMENT_EXPRESSIONS";
             case SUMMARY -> "SUMMARY";
-            case REWRITE_GUIDE -> "REWRITE_IDEAS";
+            case REWRITE_GUIDE -> "REWRITE_GUIDE";
             case MODEL_ANSWER -> "MODEL_ANSWER";
             case USED_EXPRESSIONS -> "USED_EXPRESSIONS";
         };
@@ -2816,7 +2803,7 @@ public class GeminiFeedbackClient {
         }
         if (failureCodes.contains(ValidationFailureCode.GENERIC_TEXT)
                 || failureCodes.contains(ValidationFailureCode.UNALIGNED_REWRITE_TARGET)) {
-            instructions.add("- REWRITE_IDEAS should be the primary optional-improvement list. Keep it focused, skip cardType, and let originalText/revisedText decide whether an item becomes a comparison-style card.");
+            instructions.add("- REFINEMENT_EXPRESSIONS should carry optional expression/detail ideas. Keep them distinct from FIX_POINTS and avoid padding.");
         }
         if (instructions.isEmpty()) {
             return "- none";
@@ -3113,7 +3100,7 @@ public class GeminiFeedbackClient {
             case TOO_SHORT_FRAGMENT -> """
                     - Prioritize completing one full base sentence before any expansion.
                     - Keep fixPoints centered on finishing the fragment cleanly.
-                    - After the base sentence is complete, use rewriteIdeas for natural follow-up reasons, details, or examples when helpful.
+                    - After the base sentence is complete, use refinementExpressions for natural follow-up reasons, details, or examples when helpful.
                     - Avoid unsupported invention in fixPoints or modelAnswer.
                     """;
             case CONTENT_THIN, SHORT_BUT_VALID -> """
@@ -3122,20 +3109,20 @@ public class GeminiFeedbackClient {
                     - A clean single-sentence main answer is usually still not enough to finish here.
                     - Keep grammar explanation brief unless it directly blocks the next rewrite.
                     - Prefer fixPoints that help the learner support the same main idea more concretely.
-                    - Keep modelAnswer close to learner meaning and move extra support, detail, or example into rewriteIdeas instead of baking it into modelAnswer.
+                    - Keep modelAnswer close to learner meaning and move extra support, detail, or example into refinementExpressions instead of baking it into modelAnswer.
                     - Be proactive about returning multiple distinct reason, example, detail, time-flow, or connector ideas when they would help the learner extend the same answer.
-                    - When the answer supports it, prefer several useful rewriteIdeas instead of stopping after one.
+                    - When the answer supports it, prefer several useful refinementExpressions instead of stopping after one.
                     """;
             case NATURAL_BUT_BASIC -> """
                     - Prioritize optional polish and naturalness over major correction.
                     - Prefer fixPoints that teach one small naturalness or phrasing upgrade.
                     - Keep modelAnswer short, close to learner meaning, and low-pressure.
-                    - Put optional polish, smoother wording, and extra detail into rewriteIdeas instead of overloading modelAnswer.
+                    - Put optional polish, smoother wording, and extra detail into refinementExpressions instead of overloading modelAnswer.
                     """;
             case OFF_TOPIC -> """
                     - Prioritize getting the learner back to the actual task before polishing language.
                     - Keep fixPoints centered on answering the prompt directly.
-                    - After task alignment is clear, use rewriteIdeas for additional reasons, details, or examples when they strengthen the on-topic answer.
+                    - After task alignment is clear, use refinementExpressions for additional reasons, details, or examples when they strengthen the on-topic answer.
                     - Keep modelAnswer as a short task-reset example.
                     """;
         };

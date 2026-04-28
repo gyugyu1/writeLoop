@@ -2,8 +2,18 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
+import com.writeloop.dto.FeedbackCoachMoveDto;
+import com.writeloop.dto.FeedbackCompletionDto;
+import com.writeloop.dto.FeedbackLoopDto;
+import com.writeloop.dto.FeedbackLoopStatusDto;
+import com.writeloop.dto.FeedbackNextStepPracticeDto;
+import com.writeloop.dto.FeedbackPrimaryFixDto;
 import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.FeedbackRevealLaterDto;
+import com.writeloop.dto.FeedbackRewriteWorkspaceDto;
+import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
+import com.writeloop.dto.FeedbackUiDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
@@ -169,6 +179,7 @@ public class FeedbackService {
         if (!authoritativeLlmFeedback) {
             feedback = feedback.withUi(feedbackUiComposer.compose(prompt, answer, feedback, answerProfile));
         }
+        feedback = attachLoopExperience(prompt, answer, feedback);
         logFeedbackTiming("postprocess", prompt.id(), session.getId(), attemptNo, phaseStartedAtNanos);
 
         phaseStartedAtNanos = System.nanoTime();
@@ -215,7 +226,12 @@ public class FeedbackService {
                 feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
                 feedback.usedExpressions(),
-                feedback.ui()
+                feedback.ui(),
+                feedback.loop(),
+                feedback.coachMove(),
+                feedback.rewriteWorkspace(),
+                feedback.completion(),
+                feedback.revealLater()
         );
         logFeedbackTiming("total", prompt.id(), session.getId(), attemptNo, totalStartedAtNanos);
         return response;
@@ -717,6 +733,505 @@ public class FeedbackService {
         return null;
     }
 
+    private FeedbackResponseDto attachLoopExperience(PromptDto prompt, String learnerAnswer, FeedbackResponseDto feedback) {
+        if (feedback == null) {
+            return null;
+        }
+
+        FeedbackUiDto ui = feedback.ui();
+        FeedbackCoachMoveDto existingCoachMove = feedback.coachMove();
+        FeedbackRewriteWorkspaceDto existingRewriteWorkspace = feedback.rewriteWorkspace();
+        FeedbackLoopStatusDto loopStatus = ui == null ? null : ui.loopStatus();
+        FeedbackPrimaryFixDto primaryFix = ui == null ? null : ui.primaryFix();
+        FeedbackNextStepPracticeDto nextStepPractice = ui == null ? null : ui.nextStepPractice();
+        FeedbackSecondaryLearningPointDto firstFixPoint = firstFixPoint(ui);
+        CoachMoveDraft coachDraft = resolveCoachMoveDraft(
+                prompt,
+                learnerAnswer,
+                feedback,
+                existingCoachMove,
+                existingRewriteWorkspace,
+                primaryFix,
+                nextStepPractice,
+                firstFixPoint
+        );
+        String focus = firstNonBlank(
+                coachDraft.focus(),
+                feedback.loopComplete() ? "오늘 답변 마무리" : "오늘의 한 가지 적용"
+        );
+        String before = coachDraft.before();
+        String after = coachDraft.after();
+        String why = firstNonBlank(
+                coachDraft.why(),
+                feedback.summary()
+        );
+        String instruction = firstNonBlank(
+                coachDraft.instruction(),
+                feedback.rewriteChallenge(),
+                after == null ? null : "'" + after + "' 느낌만 반영해서 다시 써보세요.",
+                "오늘은 한 가지만 고쳐서 다시 써보세요."
+        );
+        String focusType = firstNonBlank(
+                coachDraft.focusType(),
+                before == null || after == null ? "REWRITE" : "MICRO_FIX"
+        );
+        String successCheck = firstNonBlank(
+                coachDraft.successCheck(),
+                after == null ? null : "'" + after + "'처럼 바뀌면 오늘의 적용은 성공이에요.",
+                "질문에 대한 답이 더 분명해지면 성공이에요."
+        );
+
+        FeedbackCoachMoveDto coachMove = new FeedbackCoachMoveDto(
+                focus,
+                focusType,
+                why,
+                before,
+                after,
+                instruction,
+                successCheck
+        );
+        boolean canFinish = feedback.loopComplete();
+        FeedbackLoopDto loop = new FeedbackLoopDto(
+                canFinish ? "COMPLETE" : "NEEDS_REWRITE",
+                firstNonBlank(
+                        loopStatus == null ? null : loopStatus.headline(),
+                        canFinish ? feedback.completionMessage() : null,
+                        canFinish ? "좋아요. 오늘 루프는 마무리해도 충분해요." : "오늘은 이것 하나만 적용해 다시 써볼게요."
+                ),
+                canFinish ? "finish" : "rewrite",
+                firstNonBlank(
+                        canFinish && loopStatus != null ? loopStatus.finishCtaLabel() : null,
+                        !canFinish && loopStatus != null ? loopStatus.rewriteCtaLabel() : null,
+                        canFinish ? "루프 완료하기" : "이것만 고쳐서 다시 쓰기"
+                ),
+                "자세한 피드백 보기"
+        );
+        FeedbackRewriteWorkspaceDto rewriteWorkspace = new FeedbackRewriteWorkspaceDto(
+                learnerAnswer,
+                firstNonBlank(
+                        coachDraft.placeholder(),
+                        after == null ? null : after,
+                        nextStepPractice == null ? null : nextStepPractice.headline(),
+                        "피드백의 한 가지만 반영해서 다시 써보세요."
+                ),
+                firstNonBlank(
+                        coachDraft.targetHint(),
+                        instruction,
+                        "의미는 유지하고 오늘의 한 가지 코치만 반영해 보세요."
+                ),
+                true
+        );
+        FeedbackCompletionDto completion = canFinish
+                ? new FeedbackCompletionDto(
+                firstNonBlank(feedback.completionMessage(), loop.headline()),
+                firstNonBlank(successCheck, "오늘 답변의 흐름이 한 단계 더 자연스러워졌어요."),
+                "완벽하지 않아도 괜찮아요. 오늘 루프는 충분히 쌓였어요.",
+                "다음에는 이유나 예시를 한 문장 더 붙여 보세요."
+        )
+                : null;
+        FeedbackRevealLaterDto revealLater = new FeedbackRevealLaterDto(
+                feedback.score(),
+                "자세한 피드백 보기",
+                "점수와 전체 수정은 자세한 피드백에서 확인해요.",
+                "예시 답변도 필요할 때만 열어볼 수 있어요."
+        );
+
+        return feedback.withLoopExperience(loop, coachMove, rewriteWorkspace, completion, revealLater);
+    }
+
+    private CoachMoveDraft resolveCoachMoveDraft(
+            PromptDto prompt,
+            String learnerAnswer,
+            FeedbackResponseDto feedback,
+            FeedbackCoachMoveDto existingCoachMove,
+            FeedbackRewriteWorkspaceDto existingRewriteWorkspace,
+            FeedbackPrimaryFixDto primaryFix,
+            FeedbackNextStepPracticeDto nextStepPractice,
+            FeedbackSecondaryLearningPointDto firstFixPoint
+    ) {
+        CoachMoveDraft existingDraft = draftFromExistingCoachMove(existingCoachMove, existingRewriteWorkspace);
+        if (existingDraft.isUsable()) {
+            return existingDraft;
+        }
+
+        CoachMoveDraft primaryDraft = draftFromPrimaryFix(primaryFix);
+        if (primaryDraft.isUsable()) {
+            return primaryDraft;
+        }
+
+        CoachMoveDraft practiceDraft = draftFromNextStepPractice(nextStepPractice);
+        if (practiceDraft.isUsable()) {
+            return practiceDraft;
+        }
+
+        CoachMoveDraft fixPointDraft = draftFromFixPoint(firstFixPoint);
+        if (fixPointDraft.isUsable()) {
+            return fixPointDraft;
+        }
+
+        DetailMission detailMission = resolveDetailMission(
+                prompt,
+                learnerAnswer,
+                null,
+                feedback == null ? null : feedback.rewriteChallenge(),
+                feedback == null ? null : feedback.summary(),
+                null,
+                null
+        );
+        return draftFromDetailMission(detailMission);
+    }
+
+    private CoachMoveDraft draftFromExistingCoachMove(
+            FeedbackCoachMoveDto coachMove,
+            FeedbackRewriteWorkspaceDto rewriteWorkspace
+    ) {
+        if (!hasConcreteCoachMission(coachMove)) {
+            return CoachMoveDraft.EMPTY;
+        }
+
+        boolean usesComparison = isComparisonCoachMove(coachMove);
+        String before = normalizeNullable(coachMove.before());
+        String after = normalizeNullable(coachMove.after());
+        if (usesComparison) {
+            CoachComparisonPair pair = pairOrEmpty(before, after);
+            if (pair.hasPair() && isFocusedCoachComparisonPair(pair)) {
+                before = pair.before();
+                after = pair.after();
+            } else {
+                before = null;
+                after = null;
+            }
+        } else {
+            before = null;
+            after = null;
+        }
+
+        return new CoachMoveDraft(
+                coachMove.focus(),
+                coachMove.focusType(),
+                coachMove.why(),
+                before,
+                after,
+                coachMove.instruction(),
+                coachMove.successCheck(),
+                rewriteWorkspace == null ? null : rewriteWorkspace.placeholder(),
+                rewriteWorkspace == null ? null : rewriteWorkspace.targetTextHint()
+        );
+    }
+
+    private CoachMoveDraft draftFromPrimaryFix(FeedbackPrimaryFixDto primaryFix) {
+        if (primaryFix == null) {
+            return CoachMoveDraft.EMPTY;
+        }
+
+        CoachComparisonPair pair = pairOrEmpty(primaryFix.originalText(), primaryFix.revisedText());
+        return new CoachMoveDraft(
+                primaryFix.title(),
+                pair.hasPair() ? "GRAMMAR_FIX" : "REWRITE",
+                primaryFix.reasonKo(),
+                pair.before(),
+                pair.after(),
+                primaryFix.instruction(),
+                null,
+                pair.hasPair() ? pair.after() : null,
+                primaryFix.instruction()
+        );
+    }
+
+    private CoachMoveDraft draftFromNextStepPractice(FeedbackNextStepPracticeDto nextStepPractice) {
+        if (nextStepPractice == null) {
+            return CoachMoveDraft.EMPTY;
+        }
+
+        CoachComparisonPair pair = pairOrEmpty(nextStepPractice.originalText(), nextStepPractice.revisedText());
+        boolean hasConcreteAction = pair.hasPair()
+                || normalizeNullable(nextStepPractice.revisedText()) != null
+                || normalizeNullable(nextStepPractice.headline()) != null
+                || normalizeNullable(nextStepPractice.exampleEn()) != null
+                || normalizeNullable(nextStepPractice.guidanceKo()) != null;
+        if (!hasConcreteAction) {
+            return CoachMoveDraft.EMPTY;
+        }
+
+        return new CoachMoveDraft(
+                nextStepPractice.title(),
+                firstNonBlank(nextStepPractice.kind(), pair.hasPair() ? "MICRO_FIX" : "REWRITE"),
+                firstNonBlank(nextStepPractice.supportText(), nextStepPractice.meaningKo()),
+                pair.before(),
+                pair.after(),
+                firstNonBlank(nextStepPractice.guidanceKo(), nextStepPractice.supportText()),
+                null,
+                firstNonBlank(nextStepPractice.revisedText(), nextStepPractice.headline(), nextStepPractice.exampleEn()),
+                firstNonBlank(nextStepPractice.guidanceKo(), nextStepPractice.supportText())
+        );
+    }
+
+    private CoachMoveDraft draftFromFixPoint(FeedbackSecondaryLearningPointDto fixPoint) {
+        if (fixPoint == null) {
+            return CoachMoveDraft.EMPTY;
+        }
+
+        CoachComparisonPair pair = pairOrEmpty(fixPoint.originalText(), fixPoint.revisedText());
+        String instruction = firstNonBlank(fixPoint.guidanceKo(), fixPoint.supportText(), fixPoint.headline());
+        return new CoachMoveDraft(
+                firstNonBlank(fixPoint.title(), fixPoint.headline()),
+                firstNonBlank(fixPoint.kind(), pair.hasPair() ? "GRAMMAR_FIX" : "REWRITE"),
+                firstNonBlank(fixPoint.supportText(), fixPoint.meaningKo(), fixPoint.guidanceKo()),
+                pair.before(),
+                pair.after(),
+                instruction,
+                null,
+                firstNonBlank(fixPoint.revisedText(), fixPoint.exampleEn(), fixPoint.headline()),
+                instruction
+        );
+    }
+
+    private CoachMoveDraft draftFromDetailMission(DetailMission detailMission) {
+        if (detailMission == null) {
+            return CoachMoveDraft.EMPTY;
+        }
+
+        return new CoachMoveDraft(
+                detailMission.title(),
+                detailMission.kind(),
+                detailMission.why(),
+                null,
+                detailMission.example(),
+                detailMission.instruction(),
+                detailMission.successCheck(),
+                detailMission.placeholder(),
+                detailMission.targetHint()
+        );
+    }
+
+    private boolean hasConcreteCoachMission(FeedbackCoachMoveDto coachMove) {
+        if (coachMove == null) {
+            return false;
+        }
+        return normalizeNullable(coachMove.focus()) != null
+                && (normalizeNullable(coachMove.instruction()) != null
+                || normalizeNullable(coachMove.after()) != null
+                || normalizeNullable(coachMove.why()) != null);
+    }
+
+    private boolean isComparisonCoachMove(FeedbackCoachMoveDto coachMove) {
+        if (coachMove == null) {
+            return false;
+        }
+
+        String focusType = normalizeNullable(coachMove.focusType());
+        if (focusType == null) {
+            return normalizeNullable(coachMove.before()) != null && normalizeNullable(coachMove.after()) != null;
+        }
+
+        return switch (focusType.toUpperCase(Locale.ROOT)) {
+            case "MICRO_FIX",
+                    "GRAMMAR",
+                    "GRAMMAR_FIX",
+                    "LOCAL_GRAMMAR",
+                    "FIX_LOCAL_GRAMMAR",
+                    "BLOCKING_GRAMMAR",
+                    "FIX_BLOCKING_GRAMMAR",
+                    "EXPRESSION",
+                    "EXPRESSION_POLISH" -> true;
+            default -> false;
+        };
+    }
+
+    private CoachComparisonPair pairOrEmpty(String before, String after) {
+        String normalizedBefore = normalizeNullable(before);
+        String normalizedAfter = normalizeNullable(after);
+        if (normalizedBefore == null || normalizedAfter == null) {
+            return CoachComparisonPair.EMPTY;
+        }
+
+        return new CoachComparisonPair(normalizedBefore, normalizedAfter);
+    }
+
+    private boolean isFocusedCoachComparisonPair(CoachComparisonPair pair) {
+        if (pair == null || !pair.hasPair()) {
+            return false;
+        }
+
+        int beforeWords = countWords(pair.before());
+        int afterWords = countWords(pair.after());
+        if (beforeWords <= 10) {
+            return true;
+        }
+
+        // A top-card comparison should teach one focused replacement, not drop half of a sentence.
+        return afterWords >= Math.max(4, beforeWords - 4);
+    }
+
+    private int countWords(String value) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null) {
+            return 0;
+        }
+        return normalized.split("\\s+").length;
+    }
+
+    private record CoachComparisonPair(String before, String after) {
+        private static final CoachComparisonPair EMPTY = new CoachComparisonPair(null, null);
+
+        private boolean hasPair() {
+            return before != null && after != null;
+        }
+    }
+
+    private record CoachMoveDraft(
+            String focus,
+            String focusType,
+            String why,
+            String before,
+            String after,
+            String instruction,
+            String successCheck,
+            String placeholder,
+            String targetHint
+    ) {
+        private static final CoachMoveDraft EMPTY = new CoachMoveDraft(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        private boolean isUsable() {
+            return hasText(focus)
+                    || hasText(why)
+                    || hasText(before)
+                    || hasText(after)
+                    || hasText(instruction)
+                    || hasText(successCheck)
+                    || hasText(placeholder)
+                    || hasText(targetHint);
+        }
+
+        private static boolean hasText(String value) {
+            return value != null && !value.isBlank();
+        }
+    }
+
+    private DetailMission resolveDetailMission(
+            PromptDto prompt,
+            String learnerAnswer,
+            String focus,
+            String instruction,
+            String why,
+            String before,
+            String after
+    ) {
+        if (normalizeNullable(before) != null || normalizeNullable(after) != null) {
+            return null;
+        }
+
+        String joined = String.join(" ",
+                firstNonBlank(prompt == null ? null : prompt.questionEn(), ""),
+                firstNonBlank(prompt == null ? null : prompt.questionKo(), ""),
+                firstNonBlank(prompt == null ? null : prompt.topic(), ""),
+                firstNonBlank(focus, ""),
+                firstNonBlank(instruction, ""),
+                firstNonBlank(why, ""),
+                firstNonBlank(learnerAnswer, "")
+        ).toLowerCase(Locale.ROOT);
+        boolean asksForContent = containsAny(joined, "디테일", "구체", "이유", "예시", "상황", "감정", "결과", "더 붙", "더 보태", "add", "detail", "specific", "reason", "example");
+        if (!asksForContent) {
+            return null;
+        }
+
+        if (containsAny(joined, "why", "왜", "favorite", "like", "좋아", "prefer")) {
+            return new DetailMission(
+                    "REASON",
+                    "이유 한 문장 더하기",
+                    "왜 그런지 한 문장만 붙이면 답이 바로 더 설득력 있어져요.",
+                    "because로 이유를 한 문장만 붙여 보세요.",
+                    "I like it because it makes me feel relaxed.",
+                    "I like it because ____.",
+                    "기존 답 뒤에 because 문장 하나만 붙여 보세요.",
+                    "왜 그런지 한 문장이 붙으면 오늘의 적용은 성공이에요."
+            );
+        }
+        if (containsAny(joined, "routine", "usually", "morning", "afternoon", "weekend", "sunday", "after", "before", "루틴", "보통", "아침", "오후", "주말", "순서")) {
+            return new DetailMission(
+                    "SITUATION",
+                    "상황 한 문장 더하기",
+                    "언제나 어떤 순서로 하는지 붙이면 장면이 훨씬 선명해져요.",
+                    "언제/어떤 순서로 하는지 한 문장만 붙여 보세요.",
+                    "After that, I usually listen to music.",
+                    "After that, I usually ____.",
+                    "기존 답 뒤에 시간이나 순서를 보여주는 문장 하나만 붙여 보세요.",
+                    "시간이나 순서를 보여주는 문장이 붙으면 성공이에요."
+            );
+        }
+        if (containsAny(joined, "feel", "기분", "느낌", "happy", "tired", "excited", "sad")) {
+            return new DetailMission(
+                    "FEELING",
+                    "감정 한 문장 더하기",
+                    "그때 기분을 붙이면 답이 더 개인적인 글처럼 느껴져요.",
+                    "그때 어떤 기분이었는지 한 문장만 붙여 보세요.",
+                    "It makes me feel calm.",
+                    "It makes me feel ____.",
+                    "기존 답 뒤에 기분을 말하는 문장 하나만 붙여 보세요.",
+                    "기분을 말하는 문장이 붙으면 성공이에요."
+            );
+        }
+        if (containsAny(joined, "for example", "example", "예를", "예시")) {
+            return new DetailMission(
+                    "EXAMPLE",
+                    "예시 한 문장 더하기",
+                    "짧은 예시 하나가 있으면 답이 덜 추상적으로 보여요.",
+                    "실제로 있었던 예시나 장면을 한 문장만 붙여 보세요.",
+                    "For example, I often do it after school.",
+                    "For example, ____.",
+                    "기존 답 뒤에 For example 문장 하나만 붙여 보세요.",
+                    "짧은 예시가 하나 붙으면 성공이에요."
+            );
+        }
+
+        return new DetailMission(
+                "RESULT",
+                "결과 한 문장 더하기",
+                "그래서 어떤 점이 좋았는지 붙이면 답의 마무리가 더 또렷해져요.",
+                "그 결과 어떤 점이 좋았는지 한 문장만 붙여 보세요.",
+                "It helps me start the day well.",
+                "It helps me ____.",
+                "기존 답 뒤에 결과를 말하는 문장 하나만 붙여 보세요.",
+                "결과를 말하는 문장이 붙으면 성공이에요."
+        );
+    }
+
+    private record DetailMission(
+            String kind,
+            String title,
+            String why,
+            String instruction,
+            String example,
+            String placeholder,
+            String targetHint,
+            String successCheck
+    ) {
+    }
+
+    private FeedbackSecondaryLearningPointDto firstFixPoint(FeedbackUiDto ui) {
+        if (ui == null || ui.fixPoints() == null || ui.fixPoints().isEmpty()) {
+            return null;
+        }
+
+        for (FeedbackSecondaryLearningPointDto fixPoint : ui.fixPoints()) {
+            if (fixPoint != null) {
+                return fixPoint;
+            }
+        }
+
+        return null;
+    }
+
     private FeedbackResponseDto buildLocalFeedback(PromptDto prompt, String answer) {
         List<String> strengths = new ArrayList<>();
         List<CorrectionDto> corrections = new ArrayList<>();
@@ -852,7 +1367,12 @@ public class FeedbackService {
                 feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
                 usedExpressions,
-                feedback.ui()
+                feedback.ui(),
+                feedback.loop(),
+                feedback.coachMove(),
+                feedback.rewriteWorkspace(),
+                feedback.completion(),
+                feedback.revealLater()
         );
     }
 

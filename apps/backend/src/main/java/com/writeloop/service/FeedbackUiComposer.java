@@ -126,7 +126,6 @@ final class FeedbackUiComposer {
                 fixPoints,
                 nextStepPractice,
                 rewriteSuggestions,
-                llmUi == null ? null : llmUi.rewriteIdeas(),
                 llmUi == null ? null : llmUi.modelAnswerVariants(),
                 toDto(screenPolicy),
                 buildLoopStatus(feedback, completionState, screenPolicy)

@@ -307,6 +307,22 @@ function toDraftStatusBadgeLabel(message: string) {
   return normalized;
 }
 
+function trimNullableText(value?: string | null) {
+  const trimmed = value?.trim() ?? "";
+  return trimmed || null;
+}
+
+function pickFirstNonEmpty(...values: (string | null | undefined)[]) {
+  for (const value of values) {
+    const trimmed = trimNullableText(value);
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return "";
+}
+
 const coachMascotImage = require("@/assets/images/coach-mascote-face.png");
 
 export default function PracticeWriteScreen() {
@@ -355,7 +371,7 @@ export default function PracticeWriteScreen() {
     return expressions;
   }, [params.practiceExpressions, prefillExpression]);
   const primaryPracticeExpression = practiceExpressions[0] ?? prefillExpression;
-  const { currentUser } = useSession();
+  const { currentUser, isHydrating: isSessionHydrating, refreshSession } = useSession();
   const isFocused = useIsFocused();
 
   const [recommendation, setRecommendation] = useState<DailyPromptRecommendation | null>(null);
@@ -517,12 +533,33 @@ export default function PracticeWriteScreen() {
   );
   const isAnswerLocked = canViewLatestFeedback;
   const feedbackReferenceLabel = canViewLatestFeedback ? "피드백 보기" : "이전 피드백 보기";
+  const rewriteCoachTitle = pickFirstNonEmpty(
+    feedback?.coachMove?.focus,
+    feedback?.loop?.headline,
+    "이번엔 한 가지만 적용해 봐요"
+  );
+  const rewriteCoachBody = pickFirstNonEmpty(
+    feedback?.coachMove?.instruction,
+    feedback?.rewriteWorkspace?.targetTextHint,
+    feedback?.completionMessage,
+    feedback?.summary,
+    "방금 받은 피드백을 반영해 다시 써 보세요."
+  );
   const primaryActionLabel = canViewLatestFeedback
     ? "피드백 보기"
     : feedback
       ? "다시 쓴 답변 제출하기"
       : "피드백 받기";
+  const resolveFeedbackGuestId = useCallback(async () => {
+    const resolvedUser = currentUser ?? (await refreshSession().catch(() => null));
+    return resolvedUser ? undefined : (await getOrCreateGuestId()) || undefined;
+  }, [currentUser, refreshSession]);
+
   const loadPrompt = useCallback(async () => {
+    if (isSessionHydrating) {
+      return;
+    }
+
     if (!requestedPromptId) {
       setError(getPromptNotFoundMessage());
       setIsLoading(false);
@@ -532,28 +569,36 @@ export default function PracticeWriteScreen() {
     try {
       setIsLoading(true);
       setError("");
-      const guestId = await getOrCreateGuestId();
-      const [nextRecommendation, promptPool] = await Promise.all([
-        getDailyPrompts(requestedDifficulty, guestId),
-        getPrompts()
-      ]);
-      const sameDifficultyPromptPool = promptPool.filter((prompt) =>
-        isPromptCompatibleWithDailyDifficulty(prompt.difficulty, requestedDifficulty)
-      );
-      const fallbackPrompt =
-        sameDifficultyPromptPool.find((prompt) => prompt.id === requestedPromptId) ?? null;
-      const nextPrompt =
-        nextRecommendation.prompts.find((prompt) => prompt.id === requestedPromptId) ?? fallbackPrompt;
+      const guestId = await resolveFeedbackGuestId();
+      const nextRecommendation = await getDailyPrompts(requestedDifficulty, guestId);
+      let sameDifficultyPromptPool: Prompt[] | null = null;
+      let nextPrompt = nextRecommendation.prompts.find((prompt) => prompt.id === requestedPromptId) ?? null;
+
+      if (!nextPrompt) {
+        const promptPool = await getPrompts();
+        sameDifficultyPromptPool = promptPool.filter((prompt) =>
+          isPromptCompatibleWithDailyDifficulty(prompt.difficulty, requestedDifficulty)
+        );
+        nextPrompt =
+          sameDifficultyPromptPool.find((prompt) => prompt.id === requestedPromptId) ?? null;
+      }
 
       const savedFeedbackState =
         getPracticeFeedbackState(requestedDifficulty, requestedPromptId) ??
         (await hydratePracticeFeedbackState(requestedDifficulty, requestedPromptId));
-      const desiredPromptCount = Math.min(3, sameDifficultyPromptPool.length);
+      const fallbackPromptPool = sameDifficultyPromptPool ?? nextRecommendation.prompts;
+      const primaryPromptCandidates = nextPrompt
+        ? [nextPrompt, ...nextRecommendation.prompts]
+        : nextRecommendation.prompts;
+      const desiredPromptCount = Math.min(
+        3,
+        Math.max(primaryPromptCandidates.length, fallbackPromptPool.length)
+      );
       const normalizedRecommendation = {
         ...nextRecommendation,
         prompts: buildDistinctCategoryPromptSelection(
-          nextPrompt ? [nextPrompt, ...nextRecommendation.prompts] : nextRecommendation.prompts,
-          sameDifficultyPromptPool,
+          primaryPromptCandidates,
+          fallbackPromptPool,
           desiredPromptCount
         )
       };
@@ -633,10 +678,12 @@ export default function PracticeWriteScreen() {
   }, [
     activeDraftType,
     currentUser,
+    isSessionHydrating,
     isRewriteMode,
     primaryPracticeExpression,
     requestedDifficulty,
     requestedPromptId,
+    resolveFeedbackGuestId,
     shouldRestoreRewriteDraft
   ]);
 
@@ -700,7 +747,7 @@ export default function PracticeWriteScreen() {
       setIsSubmitting(true);
       setError("");
       const trimmedAnswer = answer.trim();
-      const guestId = await getOrCreateGuestId();
+      const guestId = await resolveFeedbackGuestId();
       const nextFeedback = await submitFeedback({
         promptId: selectedPrompt.id,
         answer: trimmedAnswer,
@@ -1386,10 +1433,9 @@ export default function PracticeWriteScreen() {
                 <View style={styles.composerCard}>
                   {feedback ? (
                     <View style={styles.rewriteContextCard}>
-                      <Text style={styles.rewriteContextEyebrow}>REWRITE MODE</Text>
-                      <Text style={styles.rewriteContextBody}>
-                        {feedback.completionMessage ?? feedback.summary ?? "방금 받은 피드백을 반영해 다시 써 보세요."}
-                      </Text>
+                      <Text style={styles.rewriteContextEyebrow}>오늘의 한 가지 적용</Text>
+                      <Text style={styles.rewriteContextTitle}>{rewriteCoachTitle}</Text>
+                      <Text style={styles.rewriteContextBody}>{rewriteCoachBody}</Text>
                       <Pressable
                         style={styles.rewriteContextButton}
                         onPress={() => setIsPreviousFeedbackOpen(true)}
@@ -1939,13 +1985,25 @@ const styles = StyleSheet.create({
     gap: 16
   },
   rewriteContextCard: {
-    display: "none"
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#E8D6BE",
+    backgroundColor: "#FFF8EA",
+    paddingHorizontal: 16,
+    paddingVertical: 15,
+    gap: 8
   },
   rewriteContextEyebrow: {
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 1.1,
     color: "#A56B1F"
+  },
+  rewriteContextTitle: {
+    fontSize: 18,
+    lineHeight: 25,
+    fontWeight: "900",
+    color: "#2F2A24"
   },
   rewriteContextBody: {
     fontSize: 14,

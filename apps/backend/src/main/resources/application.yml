@@ -144,3 +144,7 @@ app:
       token-uri: ${NAVER_TOKEN_URI:https://nid.naver.com/oauth2.0/token}
       user-info-uri: ${NAVER_USER_INFO_URI:https://openapi.naver.com/v1/nid/me}
       redirect-uri: ${NAVER_REDIRECT_URI:}
+    apple:
+      audience: ${APPLE_CLIENT_ID:kr.writeloop}
+      issuer: ${APPLE_ISSUER:https://appleid.apple.com}
+      jwks-uri: ${APPLE_JWKS_URI:https://appleid.apple.com/auth/keys}

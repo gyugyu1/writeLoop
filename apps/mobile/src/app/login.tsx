@@ -1,3 +1,4 @@
+import * as AppleAuthentication from "expo-apple-authentication";
 import { router, useLocalSearchParams } from "expo-router";
 import type { Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -90,14 +91,15 @@ function normalizeQueryParam(value?: string | string[]) {
 
 export default function LoginScreen() {
   const params = useLocalSearchParams<{ redirectTo?: string | string[]; mode?: string | string[] }>();
-  const { currentUser, isHydrating, signIn, signInWithSocial } = useSession();
+  const { currentUser, isHydrating, signIn, signInWithApple, signInWithSocial } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
   const isEmailFormOpen = false;
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [activeAction, setActiveAction] = useState<"email" | SocialProvider | null>(null);
+  const [activeAction, setActiveAction] = useState<"email" | "apple" | SocialProvider | null>(null);
+  const [isAppleAuthAvailable, setIsAppleAuthAvailable] = useState(false);
   const postLoginHref = useMemo(() => resolvePostLoginHref(params.redirectTo), [params.redirectTo]);
   const loginMode = useMemo(() => normalizeQueryParam(params.mode), [params.mode]);
   const redirectTo = useMemo(() => normalizeQueryParam(params.redirectTo), [params.redirectTo]);
@@ -127,6 +129,46 @@ export default function LoginScreen() {
       router.replace(postLoginHref);
     }
   }, [currentUser, isHydrating, postLoginHref]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (Platform.OS !== "ios") {
+      setIsAppleAuthAvailable(false);
+      return;
+    }
+
+    AppleAuthentication.isAvailableAsync()
+      .then((available) => {
+        if (!cancelled) {
+          setIsAppleAuthAvailable(available);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setIsAppleAuthAvailable(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  function formatAppleFullName(fullName: AppleAuthentication.AppleAuthenticationFullName | null) {
+    if (!fullName) {
+      return "";
+    }
+
+    return [
+      fullName.givenName,
+      fullName.middleName,
+      fullName.familyName
+    ]
+      .filter((value): value is string => Boolean(value?.trim()))
+      .join(" ")
+      .trim();
+  }
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
@@ -173,6 +215,44 @@ export default function LoginScreen() {
       setError(
         caughtError instanceof ApiError ? caughtError.message : "소셜 로그인을 완료하지 못했어요."
       );
+    } finally {
+      setIsSubmitting(false);
+      setActiveAction(null);
+    }
+  }
+
+  async function handleAppleLogin() {
+    try {
+      setIsSubmitting(true);
+      setActiveAction("apple");
+      setError("");
+
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL
+        ]
+      });
+
+      if (!credential.identityToken) {
+        throw new Error("Apple 로그인 정보를 확인하지 못했어요.");
+      }
+
+      await signInWithApple({
+        identityToken: credential.identityToken,
+        email: credential.email,
+        fullName: formatAppleFullName(credential.fullName)
+      });
+      router.replace(postLoginHref);
+    } catch (caughtError) {
+      const errorCode = typeof caughtError === "object" && caughtError !== null
+        ? (caughtError as { code?: string }).code
+        : null;
+      if (errorCode === "ERR_REQUEST_CANCELED") {
+        return;
+      }
+
+      setError(caughtError instanceof ApiError ? caughtError.message : "Apple 로그인을 완료하지 못했어요.");
     } finally {
       setIsSubmitting(false);
       setActiveAction(null);
@@ -370,6 +450,27 @@ export default function LoginScreen() {
                         <Text style={styles.formSubmitButtonText}>이메일로 로그인</Text>
                       )}
                     </Pressable>
+                  </View>
+                ) : null}
+
+                {isAppleAuthAvailable ? (
+                  <View style={[styles.appleButtonWrap, isSubmitting && styles.disabledButton]}>
+                    <AppleAuthentication.AppleAuthenticationButton
+                      buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+                      buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                      cornerRadius={22}
+                      style={styles.appleButton}
+                      onPress={() => {
+                        if (!isSubmitting) {
+                          void handleAppleLogin();
+                        }
+                      }}
+                    />
+                    {activeAction === "apple" ? (
+                      <View style={styles.appleLoadingOverlay}>
+                        <ActivityIndicator color="#FFFFFF" />
+                      </View>
+                    ) : null}
                   </View>
                 ) : null}
 
@@ -687,6 +788,22 @@ const styles = StyleSheet.create({
   socialButtonText: {
     fontSize: 16,
     fontWeight: "900"
+  },
+  appleButtonWrap: {
+    height: 58,
+    borderRadius: 22,
+    overflow: "hidden",
+    backgroundColor: "#000000"
+  },
+  appleButton: {
+    width: "100%",
+    height: 58
+  },
+  appleLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.32)"
   },
   signupRow: {
     flexDirection: "row",

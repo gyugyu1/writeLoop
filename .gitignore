@@ -19,6 +19,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+metro-dev.log
 env_files/
 .artifacts/
 test-results/

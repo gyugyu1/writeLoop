@@ -2,6 +2,7 @@ package com.writeloop.controller;
 
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
+import com.writeloop.dto.AppleTokenLoginRequestDto;
 import com.writeloop.dto.CompleteRegistrationRequestDto;
 import com.writeloop.dto.CompleteSocialRegistrationRequestDto;
 import com.writeloop.dto.DeleteAccountRequestDto;
@@ -96,6 +97,12 @@ public class AuthController {
     @ResponseStatus(HttpStatus.OK)
     public TokenAuthResponseDto exchangeSocialToken(@RequestBody SocialTokenExchangeRequestDto request) {
         return tokenAuthService.exchangeSocialCode(request);
+    }
+
+    @PostMapping("/token/apple")
+    @ResponseStatus(HttpStatus.OK)
+    public TokenAuthResponseDto appleTokenLogin(@RequestBody AppleTokenLoginRequestDto request) {
+        return tokenAuthService.loginWithApple(request);
     }
 
     @PostMapping("/token/social/complete")

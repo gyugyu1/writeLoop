@@ -441,6 +441,30 @@ public class AuthService {
         return user;
     }
 
+    @Transactional
+    public UserEntity authenticateAppleUser(String providerUserId, String email, String providerDisplayName) {
+        String normalizedProviderUserId = normalizeProviderUserId(providerUserId);
+        Optional<UserEntity> existingUser = findSocialUser("APPLE", normalizedProviderUserId);
+        if (existingUser.isPresent()) {
+            return updateSocialUser(existingUser.get(), "APPLE", normalizedProviderUserId);
+        }
+
+        try {
+            return createSocialUser(
+                    "APPLE",
+                    normalizedProviderUserId,
+                    resolveAppleSignupEmail(email, normalizedProviderUserId),
+                    resolveUniqueSocialDisplayName(providerDisplayName)
+            );
+        } catch (DataIntegrityViolationException exception) {
+            throw new ApiException(
+                    HttpStatus.CONFLICT,
+                    "APPLE_REGISTRATION_CONFLICT",
+                    "Apple 계정을 연결하지 못했어요. 다른 로그인 방법으로 이미 가입한 계정인지 확인해 주세요."
+            );
+        }
+    }
+
     public AuthResponseDto updateProfile(
             UpdateProfileRequestDto request,
             HttpServletRequest httpRequest,
@@ -953,6 +977,17 @@ public class AuthService {
         return userRepository.save(user);
     }
 
+    private String normalizeProviderUserId(String providerUserId) {
+        if (providerUserId == null || providerUserId.isBlank()) {
+            throw new ApiException(
+                    HttpStatus.UNAUTHORIZED,
+                    "INVALID_SOCIAL_PROVIDER_USER_ID",
+                    "소셜 로그인 사용자 정보를 확인하지 못했어요."
+            );
+        }
+        return providerUserId.trim();
+    }
+
     public UserEntity authenticateLocalUser(LoginRequestDto request) {
         String email = normalizeEmail(request.email());
         String password = normalizePassword(request.password());
@@ -987,6 +1022,57 @@ public class AuthService {
                 pending == null ? null : pending.provider(),
                 pending == null ? null : pending.providerUserId()
         );
+    }
+
+    private String resolveAppleSignupEmail(String email, String providerUserId) {
+        if (email != null && !email.isBlank()) {
+            String normalizedEmail = normalizeEmail(email);
+            if (!userRepository.existsByEmail(normalizedEmail)) {
+                return normalizedEmail;
+            }
+        }
+
+        String syntheticEmail = normalizeSocialEmail("apple", providerUserId);
+        if (!userRepository.existsByEmail(syntheticEmail)) {
+            return syntheticEmail;
+        }
+
+        return normalizeSocialEmail("apple", providerUserId + "-" + UUID.randomUUID());
+    }
+
+    private String resolveUniqueSocialDisplayName(String providerDisplayName) {
+        String base = providerDisplayName == null ? "" : providerDisplayName.trim();
+        if (base.length() < 2) {
+            base = "Apple user";
+        }
+        base = truncateDisplayName(base);
+
+        if (!userRepository.existsByDisplayNameIgnoreCase(base)) {
+            return base;
+        }
+
+        for (int attempt = 0; attempt < 20; attempt += 1) {
+            String suffix = " " + ThreadLocalRandom.current().nextInt(1000, 10000);
+            String candidate = truncateDisplayName(base, suffix.length()) + suffix;
+            if (!userRepository.existsByDisplayNameIgnoreCase(candidate)) {
+                return candidate;
+            }
+        }
+
+        return truncateDisplayName("Apple user " + UUID.randomUUID().toString().substring(0, 8));
+    }
+
+    private String truncateDisplayName(String value) {
+        return truncateDisplayName(value, 0);
+    }
+
+    private String truncateDisplayName(String value, int reservedChars) {
+        int maxLength = Math.max(2, 80 - Math.max(0, reservedChars));
+        String trimmed = value == null ? "" : value.trim();
+        if (trimmed.length() <= maxLength) {
+            return trimmed;
+        }
+        return trimmed.substring(0, maxLength).trim();
     }
 
     private String normalizeSocialEmail(String provider, String providerUserId) {

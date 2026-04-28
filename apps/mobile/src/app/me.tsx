@@ -27,6 +27,8 @@ function getLoginMethodLabel(user: AuthUser) {
       return "구글";
     case "KAKAO":
       return "카카오";
+    case "APPLE":
+      return "Apple";
     default:
       return "이메일 로그인";
   }
@@ -42,7 +44,6 @@ export default function MeScreen() {
   const [profileNotice, setProfileNotice] = useState("");
   const [profileError, setProfileError] = useState("");
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [isDangerZoneOpen, setIsDangerZoneOpen] = useState(false);
   const [isDeleteFormOpen, setIsDeleteFormOpen] = useState(false);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState("");
   const [deletePassword, setDeletePassword] = useState("");
@@ -58,7 +59,6 @@ export default function MeScreen() {
     setDeleteConfirmationText("");
     setDeletePassword("");
     setDeleteError("");
-    setIsDangerZoneOpen(false);
     setIsDeleteFormOpen(false);
 
     if (!currentUser) {
@@ -375,83 +375,70 @@ export default function MeScreen() {
                 </View>
 
                 <View style={styles.dangerSection}>
-                  <Pressable
-                    style={styles.dangerLink}
-                    onPress={() => {
-                      setIsDangerZoneOpen((current) => {
-                        const next = !current;
-                        if (!next) {
-                          setIsDeleteFormOpen(false);
-                          setDeleteError("");
-                        }
-                        return next;
-                      });
-                    }}
-                  >
-                    <Text style={styles.dangerLinkText}>위험 구역</Text>
-                  </Pressable>
+                  <View style={styles.dangerHeader}>
+                    <Text style={styles.dangerTitle}>계정 삭제</Text>
+                    <Text style={styles.dangerDescription}>
+                      계정과 저장된 학습 기록을 삭제하려면 여기에서 바로 시작할 수 있어요.
+                    </Text>
+                  </View>
 
-                  {isDangerZoneOpen ? (
-                    <View style={styles.dangerPanel}>
-                      {!isDeleteFormOpen ? (
-                        <Pressable
-                          style={styles.dangerEntryButton}
-                          onPress={() => {
-                            setDeleteError("");
-                            setIsDeleteFormOpen(true);
-                          }}
-                        >
-                          <Text style={styles.dangerEntryButtonText}>회원탈퇴</Text>
-                        </Pressable>
+                  {!isDeleteFormOpen ? (
+                    <Pressable
+                      style={styles.dangerEntryButton}
+                      onPress={() => {
+                        setDeleteError("");
+                        setIsDeleteFormOpen(true);
+                      }}
+                    >
+                      <Text style={styles.dangerEntryButtonText}>계정 삭제 시작</Text>
+                    </Pressable>
+                  ) : (
+                    <>
+                      <View style={styles.fieldGroup}>
+                        <Text style={styles.fieldLabel}>확인 문구</Text>
+                        <TextInput
+                          style={styles.input}
+                          value={deleteConfirmationText}
+                          onChangeText={setDeleteConfirmationText}
+                          placeholder="확인 문구로 '탈퇴'를 입력해 주세요."
+                          placeholderTextColor="#AE9A87"
+                        />
+                      </View>
+
+                      {!isSocialAccount ? (
+                        <View style={styles.fieldGroup}>
+                          <Text style={styles.fieldLabel}>현재 비밀번호</Text>
+                          <TextInput
+                            style={styles.input}
+                            secureTextEntry
+                            autoCapitalize="none"
+                            value={deletePassword}
+                            onChangeText={setDeletePassword}
+                            placeholder="현재 비밀번호를 입력해 주세요."
+                            placeholderTextColor="#AE9A87"
+                          />
+                        </View>
                       ) : (
-                        <>
-                          <View style={styles.fieldGroup}>
-                            <Text style={styles.fieldLabel}>확인 문구</Text>
-                            <TextInput
-                              style={styles.input}
-                              value={deleteConfirmationText}
-                              onChangeText={setDeleteConfirmationText}
-                              placeholder="확인 문구로 '탈퇴'를 입력해 주세요."
-                              placeholderTextColor="#AE9A87"
-                            />
-                          </View>
-
-                          {!isSocialAccount ? (
-                            <View style={styles.fieldGroup}>
-                              <Text style={styles.fieldLabel}>현재 비밀번호</Text>
-                              <TextInput
-                                style={styles.input}
-                                secureTextEntry
-                                autoCapitalize="none"
-                                value={deletePassword}
-                                onChangeText={setDeletePassword}
-                                placeholder="현재 비밀번호를 입력해 주세요."
-                                placeholderTextColor="#AE9A87"
-                              />
-                            </View>
-                          ) : (
-                            <Text style={styles.dangerHelperText}>
-                              소셜 로그인 계정은 현재 비밀번호 없이 계정을 삭제할 수 있어요.
-                            </Text>
-                          )}
-
-                          <Pressable
-                            style={[styles.dangerButton, isDeletingAccount && styles.disabledButton]}
-                            onPress={() => void handleDeleteAccount()}
-                            disabled={isDeletingAccount}
-                          >
-                            {isDeletingAccount ? (
-                              <ActivityIndicator color="#A3371A" />
-                            ) : (
-                              <Text style={styles.dangerButtonText}>회원탈퇴</Text>
-                            )}
-                          </Pressable>
-
-                          {deleteError ? <Text style={styles.errorText}>{deleteError}</Text> : null}
-                        </>
+                        <Text style={styles.dangerHelperText}>
+                          소셜 로그인 계정은 현재 비밀번호 없이 계정을 삭제할 수 있어요.
+                        </Text>
                       )}
-                    </View>
-                  ) : null}
+
+                      <Pressable
+                        style={[styles.dangerButton, isDeletingAccount && styles.disabledButton]}
+                        onPress={() => void handleDeleteAccount()}
+                        disabled={isDeletingAccount}
+                      >
+                        {isDeletingAccount ? (
+                          <ActivityIndicator color="#A3371A" />
+                        ) : (
+                          <Text style={styles.dangerButtonText}>계정 영구 삭제</Text>
+                        )}
+                      </Pressable>
+
+                      {deleteError ? <Text style={styles.errorText}>{deleteError}</Text> : null}
+                    </>
+                  )}
                 </View>
               </>
             )}
@@ -668,22 +655,27 @@ const styles = StyleSheet.create({
   dangerSection: {
     width: "100%",
     alignItems: "stretch",
-    gap: 12
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#F0C5B4",
+    borderRadius: 26,
+    backgroundColor: "#FFF8F4",
+    paddingHorizontal: 18,
+    paddingVertical: 18
   },
-  dangerLink: {
-    alignSelf: "flex-end"
+  dangerHeader: {
+    gap: 6
   },
-  dangerLinkText: {
-    fontSize: 15,
-    lineHeight: 20,
+  dangerTitle: {
+    fontSize: 20,
+    lineHeight: 26,
     fontWeight: "900",
-    color: "#7A6244",
-    paddingBottom: 2,
-    borderBottomWidth: 1.5,
-    borderBottomColor: "#C9B7A1"
+    color: "#A3371A"
   },
-  dangerPanel: {
-    gap: 12
+  dangerDescription: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: "#7D5A49"
   },
   dangerEntryButton: {
     alignSelf: "flex-start",

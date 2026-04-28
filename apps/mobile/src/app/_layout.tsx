@@ -1,10 +1,22 @@
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
 import { StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "@/lib/session";
 
+void SplashScreen.hideAsync().catch(() => {
+  // The native splash can already be gone during fast refresh.
+});
+
 export default function RootLayout() {
+  useEffect(() => {
+    void SplashScreen.hideAsync().catch(() => {
+      // The native splash can already be gone during fast refresh.
+    });
+  }, []);
+
   return (
     <SafeAreaProvider>
       <View style={styles.root}>

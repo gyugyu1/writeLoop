@@ -1,6 +1,7 @@
 package com.writeloop.service;
 
 import com.writeloop.dto.AuthResponseDto;
+import com.writeloop.dto.AppleTokenLoginRequestDto;
 import com.writeloop.dto.CompleteSocialRegistrationRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.SocialTokenExchangeRequestDto;
@@ -20,6 +21,7 @@ public class TokenAuthService {
     private final AccessTokenService accessTokenService;
     private final RefreshTokenService refreshTokenService;
     private final MobileSocialAuthCodeService mobileSocialAuthCodeService;
+    private final AppleIdentityTokenService appleIdentityTokenService;
 
     public TokenAuthResponseDto login(LoginRequestDto request) {
         UserEntity user = authService.authenticateLocalUser(request);
@@ -41,6 +43,21 @@ public class TokenAuthService {
     public TokenAuthResponseDto exchangeSocialCode(SocialTokenExchangeRequestDto request) {
         Long userId = mobileSocialAuthCodeService.consume(request == null ? null : request.code());
         UserEntity user = authService.findUserEntity(userId);
+        return issueTokens(user);
+    }
+
+    public TokenAuthResponseDto loginWithApple(AppleTokenLoginRequestDto request) {
+        AppleIdentityTokenService.AppleUserProfile profile = appleIdentityTokenService.verify(
+                request == null ? null : request.identityToken(),
+                request == null ? null : request.email(),
+                request == null ? null : request.fullName()
+        );
+        UserEntity user = authService.authenticateAppleUser(
+                profile.providerUserId(),
+                profile.email(),
+                profile.displayName()
+        );
+        authService.recordSuccessfulLogin(user);
         return issueTokens(user);
     }
 

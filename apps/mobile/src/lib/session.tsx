@@ -9,11 +9,11 @@ import {
   useRef,
   useState
 } from "react";
-import { getCurrentUser, login, loginWithSocial, logout } from "./api";
+import { getCurrentUser, login, loginWithApple, loginWithSocial, logout } from "./api";
 import { clearIncompleteLoop } from "./incomplete-loop";
 import { clearPracticeFeedbackState } from "./practice-feedback-state";
 import { setActiveStorageOwnerScope } from "./storage-owner";
-import type { AuthUser, LoginRequest, SocialLoginResult, SocialProvider } from "./types";
+import type { AppleLoginRequest, AuthUser, LoginRequest, SocialLoginResult, SocialProvider } from "./types";
 
 type SessionContextValue = {
   currentUser: AuthUser | null | undefined;
@@ -21,6 +21,7 @@ type SessionContextValue = {
   refreshSession: () => Promise<AuthUser | null>;
   setSessionUser: (user: AuthUser | null) => void;
   signIn: (request: LoginRequest) => Promise<AuthUser>;
+  signInWithApple: (request: AppleLoginRequest) => Promise<AuthUser>;
   signInWithSocial: (provider: SocialProvider) => Promise<SocialLoginResult>;
   signOut: () => Promise<void>;
 };
@@ -123,6 +124,16 @@ export function SessionProvider({ children }: PropsWithChildren) {
     [applySessionUser, invalidateRefreshRequests]
   );
 
+  const signInWithApple = useCallback(
+    async (request: AppleLoginRequest) => {
+      const user = await loginWithApple(request);
+      invalidateRefreshRequests();
+      applySessionUser(user);
+      return user;
+    },
+    [applySessionUser, invalidateRefreshRequests]
+  );
+
   const signOut = useCallback(async () => {
     invalidateRefreshRequests();
     try {
@@ -164,10 +175,11 @@ export function SessionProvider({ children }: PropsWithChildren) {
       refreshSession,
       setSessionUser,
       signIn,
+      signInWithApple,
       signInWithSocial,
       signOut
     }),
-    [currentUser, isHydrating, refreshSession, setSessionUser, signIn, signInWithSocial, signOut]
+    [currentUser, isHydrating, refreshSession, setSessionUser, signIn, signInWithApple, signInWithSocial, signOut]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

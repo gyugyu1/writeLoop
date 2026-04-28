@@ -10,6 +10,7 @@ import type {
   AdminPromptRecommendationMetrics,
   AdminPromptRequest,
   AdminPromptTopicCatalogEntry,
+  AppleLoginRequest,
   AuthNotice,
   AuthUser,
   CoachHelpRequest,
@@ -64,6 +65,9 @@ const RETRY_DELAYS_MS = [350, 800];
 const DEFAULT_FETCH_TIMEOUT_MS = 8000;
 const FEEDBACK_FETCH_TIMEOUT_MS = 90000;
 const COACH_FETCH_TIMEOUT_MS = 45000;
+const PROMPTS_CACHE_TTL_MS = 60_000;
+
+let promptsCache: { expiresAt: number; value: Prompt[] } | null = null;
 
 function resolveFetchTimeoutMs(url: string) {
   if (url.includes("/api/feedback")) {
@@ -724,6 +728,24 @@ export async function login(request: LoginRequest): Promise<AuthUser> {
   return payload.user;
 }
 
+export async function loginWithApple(request: AppleLoginRequest): Promise<AuthUser> {
+  const response = await fetch(`${apiBaseUrl}/api/auth/token/apple`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Apple 로그인에 실패했어요.");
+  }
+
+  const payload = (await response.json()) as TokenAuthResponse;
+  await writeTokenSession(payload);
+  return payload.user;
+}
+
 export async function loginWithSocial(provider: SocialProvider): Promise<SocialLoginResult> {
   const redirectUri = Linking.createURL("auth/callback");
   const mobileState = await generateMobileOAuthState();
@@ -938,13 +960,23 @@ export async function deleteSavedExpression(savedExpressionId: number): Promise<
 }
 
 export async function getPrompts(): Promise<Prompt[]> {
+  const now = Date.now();
+  if (promptsCache && now < promptsCache.expiresAt) {
+    return promptsCache.value;
+  }
+
   const response = await apiFetch("/api/prompts");
 
   if (!response.ok) {
     throw await parseApiError(response, "질문 목록을 불러오지 못했어요.");
   }
 
-  return (await response.json()) as Prompt[];
+  const prompts = ((await response.json()) as Prompt[]).map((prompt) => normalizePromptItem(prompt));
+  promptsCache = {
+    expiresAt: Date.now() + PROMPTS_CACHE_TTL_MS,
+    value: prompts
+  };
+  return prompts;
 }
 
 export async function getAdminPrompts(): Promise<AdminPrompt[]> {
@@ -1290,12 +1322,20 @@ export async function requestCoachHelp(request: CoachHelpRequest): Promise<Coach
 }
 
 export async function submitFeedback(request: FeedbackRequest): Promise<Feedback> {
+  const tokenSession = await getStoredTokenSession();
+  const feedbackRequest = tokenSession?.accessToken
+    ? {
+        ...request,
+        guestId: undefined
+      }
+    : request;
+
   const response = await apiFetch("/api/feedback", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(request)
+    body: JSON.stringify(feedbackRequest)
   });
 
   if (!response.ok) {

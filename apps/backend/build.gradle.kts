@@ -22,6 +22,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
     implementation("org.springframework.boot:spring-boot-starter-mail")
     implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("com.nimbusds:nimbus-jose-jwt:9.47")
     implementation("org.springframework.security:spring-security-core")
     implementation("org.springframework.security:spring-security-crypto")
     compileOnly("org.projectlombok:lombok")

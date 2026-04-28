@@ -30,6 +30,19 @@ public interface PromptRepository extends JpaRepository<PromptEntity, String> {
             left join fetch tp.answerMode
             left join fetch tp.slotAssignments tsa
             left join fetch tsa.slot
+            where p.active = true and upper(p.difficulty) = upper(:difficulty)
+            order by p.displayOrder asc
+            """)
+    List<PromptEntity> findAllActiveByDifficultyOrderByDisplayOrderAsc(@Param("difficulty") String difficulty);
+
+    @Query("""
+            select distinct p
+            from PromptEntity p
+            left join fetch p.coachProfile
+            left join fetch p.taskProfile tp
+            left join fetch tp.answerMode
+            left join fetch tp.slotAssignments tsa
+            left join fetch tsa.slot
             order by p.displayOrder asc
             """)
     List<PromptEntity> findAllByOrderByDisplayOrderAsc();

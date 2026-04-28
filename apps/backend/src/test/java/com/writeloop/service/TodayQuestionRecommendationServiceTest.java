@@ -65,6 +65,9 @@ class TodayQuestionRecommendationServiceTest {
     @Mock
     private PromptTaskMetaSupport promptTaskMetaSupport;
 
+    @Mock
+    private PromptRecommendationTimingRecorder promptRecommendationTimingRecorder;
+
     private TodayQuestionRecommendationService recommendationService;
 
     @BeforeEach
@@ -77,7 +80,8 @@ class TodayQuestionRecommendationServiceTest {
                 savedExpressionRepository,
                 promptRecommendationExposureRepository,
                 promptCoachProfileSupport,
-                promptTaskMetaSupport
+                promptTaskMetaSupport,
+                promptRecommendationTimingRecorder
         );
     }
 
@@ -87,13 +91,13 @@ class TodayQuestionRecommendationServiceTest {
         PromptEntity promptTwo = prompt("prompt-a-2", "Preference", "Movie Genre", "A");
         PromptEntity promptThree = prompt("prompt-a-3", "Food", "Lunch", "A");
 
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
+        when(promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc("A"))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
         when(promptRepository.findAllById(anyCollection()))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
         when(promptHintRepository.findAllByPromptIdInAndActiveTrueOrderByPromptIdAscDisplayOrderAsc(anyCollection()))
                 .thenReturn(List.of());
-        when(answerSessionRepository.findByUserIdOrderByCreatedAtDesc(7L))
+        when(answerSessionRepository.findTop40ByUserIdOrderByCreatedAtDesc(7L))
                 .thenReturn(List.of(completedSession("session-1", "prompt-a-1", 7L)));
         when(answerAttemptRepository.findBySessionIdInOrderByCreatedAtAsc(any()))
                 .thenReturn(List.of(new AnswerAttemptEntity(
@@ -129,7 +133,7 @@ class TodayQuestionRecommendationServiceTest {
         PromptEntity promptTwo = prompt("prompt-a-2", "Preference", "Movie Genre", "A");
         PromptEntity promptThree = prompt("prompt-a-3", "Food", "Lunch", "A");
 
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
+        when(promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc("A"))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
         when(promptRepository.findAllById(anyCollection()))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
@@ -148,13 +152,13 @@ class TodayQuestionRecommendationServiceTest {
         PromptEntity introTwo = prompt("prompt-intro-2", "Preference", "Favorite Food", "I");
         PromptEntity easyPrompt = prompt("prompt-a-1", "Routine", "After Dinner", "A");
 
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
-                .thenReturn(List.of(introOne, introTwo, easyPrompt));
+        when(promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc("I"))
+                .thenReturn(List.of(introOne, introTwo));
         when(promptRepository.findAllById(anyCollection()))
                 .thenReturn(List.of(introOne, introTwo, easyPrompt));
         when(promptHintRepository.findAllByPromptIdInAndActiveTrueOrderByPromptIdAscDisplayOrderAsc(anyCollection()))
                 .thenReturn(List.of());
-        when(answerSessionRepository.findByUserIdOrderByCreatedAtDesc(5L)).thenReturn(List.of());
+        when(answerSessionRepository.findTop40ByUserIdOrderByCreatedAtDesc(5L)).thenReturn(List.of());
         when(savedExpressionRepository.findTop50ByUserIdOrderByLastSavedAtDesc(5L)).thenReturn(List.of());
         when(promptRecommendationExposureRepository.findByUserIdAndRecommendedDateGreaterThanEqualOrderByShownAtDesc(any(), any()))
                 .thenReturn(List.of());
@@ -171,13 +175,13 @@ class TodayQuestionRecommendationServiceTest {
     void recommend_marksFallbackUsed_when_recent_exposure_removes_all_strict_candidates() {
         PromptEntity promptOne = prompt("prompt-a-4", "Routine", "Home", "A");
 
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
+        when(promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc("A"))
                 .thenReturn(List.of(promptOne));
         when(promptRepository.findAllById(anyCollection()))
                 .thenReturn(List.of(promptOne));
         when(promptHintRepository.findAllByPromptIdInAndActiveTrueOrderByPromptIdAscDisplayOrderAsc(anyCollection()))
                 .thenReturn(List.of());
-        when(answerSessionRepository.findByUserIdOrderByCreatedAtDesc(9L)).thenReturn(List.of());
+        when(answerSessionRepository.findTop40ByUserIdOrderByCreatedAtDesc(9L)).thenReturn(List.of());
         when(savedExpressionRepository.findTop50ByUserIdOrderByLastSavedAtDesc(9L)).thenReturn(List.of());
         when(promptRecommendationExposureRepository.findByUserIdAndRecommendedDateGreaterThanEqualOrderByShownAtDesc(any(), any()))
                 .thenReturn(List.of(new PromptRecommendationExposureEntity(
@@ -202,13 +206,13 @@ class TodayQuestionRecommendationServiceTest {
         PromptEntity promptOne = prompt("prompt-a-2", "Preference", "Movie Genre", "A");
         PromptEntity promptTwo = prompt("prompt-a-3", "Food", "Lunch", "A");
 
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
+        when(promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc("A"))
                 .thenReturn(List.of(promptOne, promptTwo));
         when(promptRepository.findAllById(anyCollection()))
                 .thenReturn(List.of(promptOne, promptTwo));
         when(promptHintRepository.findAllByPromptIdInAndActiveTrueOrderByPromptIdAscDisplayOrderAsc(anyCollection()))
                 .thenReturn(List.of());
-        when(answerSessionRepository.findByUserIdOrderByCreatedAtDesc(21L)).thenReturn(List.of());
+        when(answerSessionRepository.findTop40ByUserIdOrderByCreatedAtDesc(21L)).thenReturn(List.of());
         when(savedExpressionRepository.findTop50ByUserIdOrderByLastSavedAtDesc(21L)).thenReturn(List.of());
         when(promptRecommendationExposureRepository.findByUserIdAndRecommendedDateGreaterThanEqualOrderByShownAtDesc(any(), any()))
                 .thenReturn(List.of());
@@ -231,13 +235,13 @@ class TodayQuestionRecommendationServiceTest {
         PromptEntity promptThree = prompt("prompt-a-4", "Routine", "Weekend", "A");
         List<PromptRecommendationExposureEntity> exposures = new ArrayList<>();
 
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
+        when(promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc("A"))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
         when(promptRepository.findAllById(anyCollection()))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
         when(promptHintRepository.findAllByPromptIdInAndActiveTrueOrderByPromptIdAscDisplayOrderAsc(anyCollection()))
                 .thenReturn(List.of());
-        when(answerSessionRepository.findByUserIdOrderByCreatedAtDesc(25L)).thenReturn(List.of());
+        when(answerSessionRepository.findTop40ByUserIdOrderByCreatedAtDesc(25L)).thenReturn(List.of());
         when(savedExpressionRepository.findTop50ByUserIdOrderByLastSavedAtDesc(25L)).thenReturn(List.of());
         when(promptRecommendationExposureRepository.findByUserIdAndRecommendedDateGreaterThanEqualOrderByShownAtDesc(any(), any()))
                 .thenAnswer(invocation -> List.copyOf(exposures));
@@ -273,13 +277,13 @@ class TodayQuestionRecommendationServiceTest {
         PromptEntity promptThree = prompt("prompt-a-4", "Routine", "Weekend", "A");
         List<PromptRecommendationExposureEntity> exposures = new ArrayList<>();
 
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
+        when(promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc("A"))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
         when(promptRepository.findAllById(anyCollection()))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
         when(promptHintRepository.findAllByPromptIdInAndActiveTrueOrderByPromptIdAscDisplayOrderAsc(anyCollection()))
                 .thenReturn(List.of());
-        when(answerSessionRepository.findByUserIdOrderByCreatedAtDesc(31L))
+        when(answerSessionRepository.findTop40ByUserIdOrderByCreatedAtDesc(31L))
                 .thenReturn(List.of(completedSessionToday("session-31", "prompt-a-2", 31L)));
         when(answerAttemptRepository.findBySessionIdInOrderByCreatedAtAsc(any()))
                 .thenReturn(List.of());
@@ -313,13 +317,13 @@ class TodayQuestionRecommendationServiceTest {
         PromptEntity promptTwo = prompt("prompt-a-3", "Food", "Lunch", "A");
         PromptEntity promptThree = prompt("prompt-a-4", "Routine", "Weekend", "A");
 
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
+        when(promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc("A"))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
         when(promptRepository.findAllById(anyCollection()))
                 .thenReturn(List.of(promptOne, promptTwo, promptThree));
         when(promptHintRepository.findAllByPromptIdInAndActiveTrueOrderByPromptIdAscDisplayOrderAsc(anyCollection()))
                 .thenReturn(List.of());
-        when(answerSessionRepository.findByUserIdOrderByCreatedAtDesc(37L)).thenReturn(List.of());
+        when(answerSessionRepository.findTop40ByUserIdOrderByCreatedAtDesc(37L)).thenReturn(List.of());
         when(savedExpressionRepository.findTop50ByUserIdOrderByLastSavedAtDesc(37L)).thenReturn(List.of());
         when(promptRecommendationExposureRepository.findByUserIdAndRecommendedDateGreaterThanEqualOrderByShownAtDesc(any(), any()))
                 .thenReturn(List.of());
@@ -495,13 +499,13 @@ class TodayQuestionRecommendationServiceTest {
                 84
         );
 
-        when(promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc())
+        when(promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc("A"))
                 .thenReturn(List.of(promptOne));
         when(promptRepository.findAllById(anyCollection()))
                 .thenReturn(List.of(promptOne));
         when(promptHintRepository.findAllByPromptIdInAndActiveTrueOrderByPromptIdAscDisplayOrderAsc(anyCollection()))
                 .thenReturn(List.of());
-        when(answerSessionRepository.findByUserIdOrderByCreatedAtDesc(41L)).thenReturn(List.of());
+        when(answerSessionRepository.findTop40ByUserIdOrderByCreatedAtDesc(41L)).thenReturn(List.of());
         when(savedExpressionRepository.findTop50ByUserIdOrderByLastSavedAtDesc(41L)).thenReturn(List.of());
         when(promptRecommendationExposureRepository.findByUserIdAndRecommendedDateGreaterThanEqualOrderByShownAtDesc(any(), any()))
                 .thenReturn(List.of());

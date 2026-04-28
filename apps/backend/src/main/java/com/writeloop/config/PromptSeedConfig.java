@@ -80,7 +80,7 @@ public class PromptSeedConfig {
                 prompt(
                         "prompt-a-1",
                         "Routine - After Dinner",
-                        "A",
+                        "I",
                         "What do you usually do after dinner?",
                         "저녁을 먹고 난 뒤에는 보통 무엇을 하나요?",
                         "시간 순서와 자주 하는 행동을 함께 말해 보세요.",
@@ -88,17 +88,17 @@ public class PromptSeedConfig {
                 ),
                 prompt(
                         "prompt-a-2",
-                        "Preference - Favorite Food",
-                        "A",
-                        "What is your favorite food, and why do you like it?",
-                        "가장 좋아하는 음식은 무엇이고, 왜 좋아하나요?",
-                        "좋아하는 이유를 형용사와 함께 말해 보세요.",
+                        "Preference - Quick Meal",
+                        "I",
+                        "When do you like to make a quick meal at home, and what do you usually choose?",
+                        "집에서 간단한 음식을 만들고 싶어지는 때는 언제이고, 보통 무엇을 선택하나요?",
+                        "상황을 먼저 말하고, 그때 고르는 음식과 이유를 덧붙여 보세요.",
                         2
                 ),
                 prompt(
                         "prompt-a-3",
                         "Routine - Weekend",
-                        "A",
+                        "I",
                         "How do you usually spend your weekend?",
                         "주말은 보통 어떻게 보내나요?",
                         "장소나 함께 있는 사람도 함께 덧붙여 보세요.",
@@ -144,7 +144,7 @@ public class PromptSeedConfig {
                         "prompt-c-2",
                         "Opinion Reason - Corporate Responsibility",
                         "C",
-                        "What kind of social responsibility should successful companies have in modern society?",
+                        "What social responsibilities should successful companies have in modern society?",
                         "현대 사회에서 성공한 기업이 어떤 사회적 책임을 가져야 하는지 말해 주세요.",
                         "입장과 근거를 함께 전개해 보세요.",
                         8
@@ -161,7 +161,7 @@ public class PromptSeedConfig {
                 prompt(
                         "prompt-a-4",
                         "Routine - After-Work Evenings",
-                        "A",
+                        "I",
                         "What do you usually do after work, and why do you enjoy it?",
                         "보통 퇴근 후에 무엇을 하고, 왜 그것을 좋아하는지 이야기해 주세요.",
                         "퇴근 후 하는 일과 그 이유를 함께 말해 보세요.",
@@ -169,11 +169,11 @@ public class PromptSeedConfig {
                 ),
                 prompt(
                         "prompt-b-4",
-                        "Goal Plan - Travel Destination",
+                        "Goal Plan - Travel Preparation",
                         "B",
-                        "Tell me about a place you want to visit and what you want to do there.",
-                        "가고 싶은 장소와 그곳에서 무엇을 하고 싶은지 설명해 주세요.",
-                        "가고 싶은 이유와 하고 싶은 활동을 연결 표현과 함께 말해 보세요.",
+                        "What kind of trip would you like to take next year, and how would you prepare for it?",
+                        "내년에 어떤 여행을 해 보고 싶고, 어떻게 준비하고 싶나요?",
+                        "가고 싶은 여행의 종류와 준비 방법을 한두 가지로 연결해 보세요.",
                         11
                 ),
                 prompt(
@@ -195,9 +195,9 @@ public class PromptSeedConfig {
                 hint("hint-a-1-3", "prompt-a-1", "VOCAB_PHRASE", "활용 표현: after dinner, in the evening, before bed, most days, right after I eat, wash the dishes, watch videos, take a walk, get ready for bed", 3),
                 hint("hint-a-1-4", "prompt-a-1", "STRUCTURE", "저녁을 먹은 뒤 하는 일 2개와 하루를 마무리하는 행동을 순서대로 이어 보세요.", 4),
 
-                hint("hint-a-2-1", "prompt-a-2", "STARTER", "\"My favorite food is ... because...\"로 시작해 보세요.", 1),
-                hint("hint-a-2-2", "prompt-a-2", "VOCAB_WORD", "활용 단어: spicy, savory, sweet, comforting, delicious", 2),
-                hint("hint-a-2-3", "prompt-a-2", "VOCAB_PHRASE", "활용 표현: my favorite food, one reason is, I especially like, it tastes, it reminds me of", 3),
+                hint("hint-a-2-1", "prompt-a-2", "STARTER", "\"When I need a quick meal at home, I usually choose...\"로 시작해 보세요.", 1),
+                hint("hint-a-2-2", "prompt-a-2", "VOCAB_WORD", "활용 단어: quick, simple, warm, filling, delicious", 2),
+                hint("hint-a-2-3", "prompt-a-2", "VOCAB_PHRASE", "활용 표현: my favorite quick meal, easy to make, ready in minutes, when I am busy, it tastes", 3),
                 hint("hint-a-2-4", "prompt-a-2", "DETAIL", "맛, 느낌, 자주 먹는 상황 중 2가지를 넣으면 답변이 더 자연스러워져요.", 4),
 
                 hint("hint-a-3-1", "prompt-a-3", "STARTER", "\"On weekends, I usually...\"로 시작해 보세요.", 1),
@@ -240,10 +240,10 @@ public class PromptSeedConfig {
                 hint("hint-a-4-3", "prompt-a-4", "VOCAB_PHRASE", "활용 표현: after work, when I get home, in the evening, because it helps me, once I finish work, grab dinner, work out", 3),
                 hint("hint-a-4-4", "prompt-a-4", "STRUCTURE", "퇴근 후 하는 일과 그 활동을 좋아하는 이유를 한 문장씩 이어 보세요.", 4),
 
-                hint("hint-b-4-1", "prompt-b-4", "STARTER", "\"One place I want to visit is...\"로 시작해 보세요.", 1),
-                hint("hint-b-4-2", "prompt-b-4", "VOCAB_WORD", "활용 단어: destination, scenery, museum, food, experience", 2),
-                hint("hint-b-4-3", "prompt-b-4", "VOCAB_PHRASE", "활용 표현: I want to go there because, I also want to, so I can, when I visit, one thing I would do", 3),
-                hint("hint-b-4-4", "prompt-b-4", "LINKER", "because, also, so를 활용해 이유와 하고 싶은 활동을 자연스럽게 연결해 보세요.", 4),
+                hint("hint-b-4-1", "prompt-b-4", "STARTER", "\"Next year, I would like to take...\"로 시작해 보세요.", 1),
+                hint("hint-b-4-2", "prompt-b-4", "VOCAB_WORD", "활용 단어: trip, budget, schedule, ticket, reservation, suitcase", 2),
+                hint("hint-b-4-3", "prompt-b-4", "VOCAB_PHRASE", "활용 표현: prepare my budget, book a ticket, make a simple plan, pack my suitcase, check the weather", 3),
+                hint("hint-b-4-4", "prompt-b-4", "LINKER", "first, then, because를 활용해 여행 종류와 준비 방법을 자연스럽게 연결해 보세요.", 4),
 
                 hint("hint-b-5-1", "prompt-b-5", "STARTER", "\"One skill I want to improve this year is...\"로 시작해 보세요.", 1),
                 hint("hint-b-5-2", "prompt-b-5", "VOCAB_WORD", "활용 단어: practice, improve, routine, confidence, goal", 2),
@@ -409,7 +409,7 @@ public class PromptSeedConfig {
         jdbcTemplate.update("UPDATE prompts SET difficulty = 'B' WHERE difficulty IN ('B1', 'B2')");
         jdbcTemplate.update("UPDATE prompts SET difficulty = 'C' WHERE difficulty IN ('C1', 'C2')");
 
-        migrateLegacyPrompt(jdbcTemplate, "prompt-1", "prompt-a-4", "A", 10);
+        migrateLegacyPrompt(jdbcTemplate, "prompt-1", "prompt-a-4", "I", 10);
         migrateLegacyPrompt(jdbcTemplate, "prompt-2", "prompt-b-4", "B", 11);
         migrateLegacyPrompt(jdbcTemplate, "prompt-3", "prompt-b-5", "B", 12);
     }

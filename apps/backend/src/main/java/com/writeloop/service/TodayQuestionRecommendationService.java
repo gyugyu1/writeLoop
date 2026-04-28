@@ -55,6 +55,7 @@ public class TodayQuestionRecommendationService {
     private final PromptRecommendationExposureRepository promptRecommendationExposureRepository;
     private final PromptCoachProfileSupport promptCoachProfileSupport;
     private final PromptTaskMetaSupport promptTaskMetaSupport;
+    private final PromptRecommendationTimingRecorder promptRecommendationTimingRecorder;
 
     @Transactional
     public DailyPromptRecommendationDto recommend(
@@ -73,24 +74,55 @@ public class TodayQuestionRecommendationService {
             List<String> excludePromptIds
     ) {
         String guestId = GuestIdentitySupport.normalizeGuestId(rawGuestId);
-        RecommendationComputation computation = computeRecommendation(
+        long totalStartedAtNanos = System.nanoTime();
+        promptRecommendationTimingRecorder.beginTrace(
+                "DAILY",
                 difficulty,
                 currentUserId,
                 guestId,
-                excludePromptIds
+                excludePromptIds == null ? 0 : excludePromptIds.size()
         );
+        try {
+            long phaseStartedAtNanos = System.nanoTime();
+            RecommendationComputation computation = computeRecommendation(
+                    difficulty,
+                    currentUserId,
+                    guestId,
+                    excludePromptIds
+            );
+            promptRecommendationTimingRecorder.recordPhase(
+                    "compute_total",
+                    elapsedMs(phaseStartedAtNanos),
+                    null,
+                    computation.items().size(),
+                    computation.fallbackUsed(),
+                    Map.of("legacyPromptCount", computation.legacyPrompts().size())
+            );
 
-        saveExposureLogs(computation.today(), difficulty, currentUserId, guestId, computation.items());
+            phaseStartedAtNanos = System.nanoTime();
+            saveExposureLogs(computation.today(), difficulty, currentUserId, guestId, computation.items());
+            promptRecommendationTimingRecorder.recordPhase(
+                    "save_exposures",
+                    elapsedMs(phaseStartedAtNanos),
+                    null,
+                    computation.items().size(),
+                    computation.fallbackUsed(),
+                    null
+            );
 
-        return new DailyPromptRecommendationDto(
-                computation.today().toString(),
-                difficulty,
-                computation.snapshot().userState().name(),
-                computation.fallbackUsed(),
-                computation.featured(),
-                computation.alternatives(),
-                computation.legacyPrompts()
-        );
+            return new DailyPromptRecommendationDto(
+                    computation.today().toString(),
+                    difficulty,
+                    computation.snapshot().userState().name(),
+                    computation.fallbackUsed(),
+                    computation.featured(),
+                    computation.alternatives(),
+                    computation.legacyPrompts()
+            );
+        } finally {
+            promptRecommendationTimingRecorder.recordPhase("total", elapsedMs(totalStartedAtNanos));
+            promptRecommendationTimingRecorder.clearTrace();
+        }
     }
 
     @Transactional
@@ -100,31 +132,56 @@ public class TodayQuestionRecommendationService {
             String rawGuestId
     ) {
         String guestId = GuestIdentitySupport.normalizeGuestId(rawGuestId);
-        RecommendationComputation computation = computeRecommendation(
-                difficulty,
-                currentUserId,
-                guestId,
-                List.of()
-        );
-
-        if (computation.featured() != null) {
-            saveExposureLog(
-                    computation.today(),
+        long totalStartedAtNanos = System.nanoTime();
+        promptRecommendationTimingRecorder.beginTrace("FEATURED", difficulty, currentUserId, guestId, 0);
+        try {
+            long phaseStartedAtNanos = System.nanoTime();
+            RecommendationComputation computation = computeRecommendation(
                     difficulty,
                     currentUserId,
                     guestId,
-                    computation.featured(),
-                    "PREPICK_FEATURED"
+                    List.of()
             );
-        }
+            promptRecommendationTimingRecorder.recordPhase(
+                    "compute_total",
+                    elapsedMs(phaseStartedAtNanos),
+                    null,
+                    computation.featured() == null ? 0 : 1,
+                    computation.fallbackUsed(),
+                    Map.of("legacyPromptCount", computation.legacyPrompts().size())
+            );
 
-        return new FeaturedDailyPromptDto(
-                computation.today().toString(),
-                difficulty,
-                computation.snapshot().userState().name(),
-                computation.fallbackUsed(),
-                computation.featured()
-        );
+            phaseStartedAtNanos = System.nanoTime();
+            if (computation.featured() != null) {
+                saveExposureLog(
+                        computation.today(),
+                        difficulty,
+                        currentUserId,
+                        guestId,
+                        computation.featured(),
+                        "PREPICK_FEATURED"
+                );
+            }
+            promptRecommendationTimingRecorder.recordPhase(
+                    "save_featured_exposure",
+                    elapsedMs(phaseStartedAtNanos),
+                    null,
+                    computation.featured() == null ? 0 : 1,
+                    computation.fallbackUsed(),
+                    null
+            );
+
+            return new FeaturedDailyPromptDto(
+                    computation.today().toString(),
+                    difficulty,
+                    computation.snapshot().userState().name(),
+                    computation.fallbackUsed(),
+                    computation.featured()
+            );
+        } finally {
+            promptRecommendationTimingRecorder.recordPhase("total", elapsedMs(totalStartedAtNanos));
+            promptRecommendationTimingRecorder.clearTrace();
+        }
     }
 
     private RecommendationComputation computeRecommendation(
@@ -135,14 +192,17 @@ public class TodayQuestionRecommendationService {
     ) {
         LocalDate today = LocalDate.now(KOREA_ZONE);
 
-        List<PromptEntity> activePrompts = promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc();
-        if (activePrompts.isEmpty()) {
-            throw new IllegalStateException("No prompts found in database");
-        }
-
-        List<PromptEntity> exactDifficultyPrompts = activePrompts.stream()
-                .filter(prompt -> difficulty.name().equalsIgnoreCase(prompt.getDifficulty()))
-                .toList();
+        long phaseStartedAtNanos = System.nanoTime();
+        List<PromptEntity> exactDifficultyPrompts =
+                promptRepository.findAllActiveByDifficultyOrderByDisplayOrderAsc(difficulty.name());
+        promptRecommendationTimingRecorder.recordPhase(
+                "difficulty_prompts",
+                elapsedMs(phaseStartedAtNanos),
+                exactDifficultyPrompts.size(),
+                null,
+                null,
+                null
+        );
         if (exactDifficultyPrompts.isEmpty()) {
             throw new IllegalStateException("No prompts found for difficulty " + difficulty.name());
         }
@@ -152,8 +212,32 @@ public class TodayQuestionRecommendationService {
                 .filter(prompt -> !externallyExcludedPromptIds.contains(prompt.getId()))
                 .toList();
 
+        phaseStartedAtNanos = System.nanoTime();
         RecommendationSnapshot snapshot = buildSnapshot(exactDifficultyPrompts, today, currentUserId, guestId);
+        promptRecommendationTimingRecorder.recordPhase(
+                "build_snapshot",
+                elapsedMs(phaseStartedAtNanos),
+                exactDifficultyPrompts.size(),
+                null,
+                null,
+                Map.of(
+                        "userState", snapshot.userState().name(),
+                        "recentStartedLastSevenDays", snapshot.recentStartedLastSevenDays(),
+                        "recentCompletedLastSevenDays", snapshot.recentCompletedLastSevenDays(),
+                        "streakDays", snapshot.streakDays()
+                )
+        );
+        phaseStartedAtNanos = System.nanoTime();
         Map<String, HintSignals> hintSignalsByPromptId = loadHintSignals(availableDifficultyPrompts);
+        promptRecommendationTimingRecorder.recordPhase(
+                "load_hint_signals",
+                elapsedMs(phaseStartedAtNanos),
+                availableDifficultyPrompts.size(),
+                hintSignalsByPromptId.size(),
+                null,
+                null
+        );
+        phaseStartedAtNanos = System.nanoTime();
         ScoredCandidate pinnedFeaturedCandidate = findPinnedFeaturedCandidate(
                 today,
                 difficulty,
@@ -163,17 +247,35 @@ public class TodayQuestionRecommendationService {
                 hintSignalsByPromptId,
                 snapshot
         );
+        promptRecommendationTimingRecorder.recordPhase(
+                "find_pinned_featured",
+                elapsedMs(phaseStartedAtNanos),
+                availableDifficultyPrompts.size(),
+                pinnedFeaturedCandidate == null ? 0 : 1,
+                null,
+                null
+        );
 
+        phaseStartedAtNanos = System.nanoTime();
         List<ScoredCandidate> strictCandidates = scoreCandidates(
                 availableDifficultyPrompts,
                 hintSignalsByPromptId,
                 snapshot,
                 false
         );
+        promptRecommendationTimingRecorder.recordPhase(
+                "score_strict",
+                elapsedMs(phaseStartedAtNanos),
+                availableDifficultyPrompts.size(),
+                strictCandidates.size(),
+                false,
+                null
+        );
 
         boolean fallbackUsed = false;
         List<ScoredCandidate> finalCandidates = strictCandidates;
         if (strictCandidates.size() < MAX_RECOMMENDATIONS) {
+            phaseStartedAtNanos = System.nanoTime();
             List<ScoredCandidate> relaxedCandidates = scoreCandidates(
                     availableDifficultyPrompts,
                     hintSignalsByPromptId,
@@ -182,12 +284,29 @@ public class TodayQuestionRecommendationService {
             );
             finalCandidates = mergeCandidates(strictCandidates, relaxedCandidates);
             fallbackUsed = finalCandidates.size() > strictCandidates.size();
+            promptRecommendationTimingRecorder.recordPhase(
+                    "score_relaxed",
+                    elapsedMs(phaseStartedAtNanos),
+                    availableDifficultyPrompts.size(),
+                    relaxedCandidates.size(),
+                    fallbackUsed,
+                    Map.of("mergedCandidateCount", finalCandidates.size())
+            );
         }
 
+        phaseStartedAtNanos = System.nanoTime();
         List<PromptRecommendationItemDto> composedItems = composeRecommendationItems(
                 finalCandidates,
                 snapshot,
                 pinnedFeaturedCandidate
+        );
+        promptRecommendationTimingRecorder.recordPhase(
+                "compose_items",
+                elapsedMs(phaseStartedAtNanos),
+                finalCandidates.size(),
+                composedItems.size(),
+                fallbackUsed,
+                null
         );
         PromptRecommendationItemDto featured = composedItems.isEmpty() ? null : composedItems.get(0);
         List<PromptRecommendationItemDto> alternatives = composedItems.size() <= 1
@@ -206,6 +325,10 @@ public class TodayQuestionRecommendationService {
                 alternatives,
                 legacyPrompts
         );
+    }
+
+    private static long elapsedMs(long startedAtNanos) {
+        return (System.nanoTime() - startedAtNanos) / 1_000_000;
     }
 
     @Transactional
@@ -370,17 +493,13 @@ public class TodayQuestionRecommendationService {
     private List<AnswerSessionEntity> loadRecentSessions(Long currentUserId, String guestId) {
         List<AnswerSessionEntity> sessions;
         if (currentUserId != null) {
-            sessions = answerSessionRepository.findByUserIdOrderByCreatedAtDesc(currentUserId);
+            sessions = answerSessionRepository.findTop40ByUserIdOrderByCreatedAtDesc(currentUserId);
         } else if (guestId != null) {
-            sessions = answerSessionRepository.findByGuestIdOrderByCreatedAtDesc(guestId);
+            sessions = answerSessionRepository.findTop40ByGuestIdOrderByCreatedAtDesc(guestId);
         } else {
             sessions = List.of();
         }
-
-        if (sessions.size() <= 40) {
-            return sessions;
-        }
-        return sessions.subList(0, 40);
+        return sessions;
     }
 
     private Map<String, List<AnswerAttemptEntity>> loadAttemptsBySessionId(List<String> sessionIds) {
@@ -1259,11 +1378,7 @@ public class TodayQuestionRecommendationService {
                 break;
             }
         }
-        return merged.values().stream()
-                .sorted(Comparator
-                        .comparingInt(ScoredCandidate::score).reversed()
-                        .thenComparing(candidate -> candidate.prompt().getDisplayOrder()))
-                .toList();
+        return List.copyOf(merged.values());
     }
 
     private List<PromptRecommendationItemDto> composeRecommendationItems(

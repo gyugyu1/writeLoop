@@ -47,4 +47,8 @@ public interface AnswerSessionRepository extends JpaRepository<AnswerSessionEnti
     List<AnswerSessionEntity> findByUserIdOrderByCreatedAtDesc(Long userId);
 
     List<AnswerSessionEntity> findByGuestIdOrderByCreatedAtDesc(String guestId);
+
+    List<AnswerSessionEntity> findTop40ByUserIdOrderByCreatedAtDesc(Long userId);
+
+    List<AnswerSessionEntity> findTop40ByGuestIdOrderByCreatedAtDesc(String guestId);
 }

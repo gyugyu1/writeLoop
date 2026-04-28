@@ -49,6 +49,10 @@ import type {
 import { normalizeDailyDifficulty } from "./difficulty";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8080";
+const PROMPTS_CACHE_TTL_MS = 60_000;
+
+let promptsCache: { expiresAt: number; value: Prompt[] } | null = null;
+let promptsRequest: Promise<Prompt[]> | null = null;
 
 function createCoachExpressionId(promptId: string, expression: string, index: number) {
   const base = expression
@@ -583,15 +587,37 @@ async function parseApiError(response: Response, fallbackMessage: string): Promi
 }
 
 export async function getPrompts(): Promise<Prompt[]> {
-  const response = await fetch(`${API_BASE}/api/prompts`, {
-    cache: "no-store",
-    credentials: "include"
-  });
-  if (!response.ok) {
-    throw new Error("Failed to fetch prompts");
+  const now = Date.now();
+  if (promptsCache && now < promptsCache.expiresAt) {
+    return promptsCache.value;
   }
-  const payload = (await response.json()) as Prompt[];
-  return payload.map((prompt) => normalizePromptItem(prompt));
+
+  if (promptsRequest) {
+    return promptsRequest;
+  }
+
+  promptsRequest = (async () => {
+    const response = await fetch(`${API_BASE}/api/prompts`, {
+      cache: "no-store",
+      credentials: "include"
+    });
+    if (!response.ok) {
+      throw new Error("Failed to fetch prompts");
+    }
+    const payload = (await response.json()) as Prompt[];
+    const prompts = payload.map((prompt) => normalizePromptItem(prompt));
+    promptsCache = {
+      expiresAt: Date.now() + PROMPTS_CACHE_TTL_MS,
+      value: prompts
+    };
+    return prompts;
+  })();
+
+  try {
+    return await promptsRequest;
+  } finally {
+    promptsRequest = null;
+  }
 }
 
 export async function getDailyPrompts(

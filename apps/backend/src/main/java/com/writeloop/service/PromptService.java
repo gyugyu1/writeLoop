@@ -14,6 +14,8 @@ import com.writeloop.persistence.PromptRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -26,6 +28,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class PromptService {
 
+    private static final Duration ACTIVE_PROMPTS_CACHE_TTL = Duration.ofSeconds(60);
+
     private final PromptRepository promptRepository;
     private final PromptHintRepository promptHintRepository;
     private final PromptHintItemRepository promptHintItemRepository;
@@ -34,19 +38,38 @@ public class PromptService {
     private final PromptTaskMetaSupport promptTaskMetaSupport;
     private final TodayQuestionRecommendationService todayQuestionRecommendationService;
 
+    private volatile List<PromptDto> cachedActivePrompts;
+    private volatile Instant cachedActivePromptsExpiresAt = Instant.EPOCH;
+
     public List<PromptDto> findAll() {
-        return promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc().stream()
-                .map(this::toDto)
-                .toList();
+        Instant now = Instant.now();
+        List<PromptDto> cachedPrompts = cachedActivePrompts;
+        if (cachedPrompts != null && now.isBefore(cachedActivePromptsExpiresAt)) {
+            return cachedPrompts;
+        }
+
+        synchronized (this) {
+            now = Instant.now();
+            cachedPrompts = cachedActivePrompts;
+            if (cachedPrompts != null && now.isBefore(cachedActivePromptsExpiresAt)) {
+                return cachedPrompts;
+            }
+
+            List<PromptDto> nextPrompts = promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc().stream()
+                    .map(this::toDto)
+                    .toList();
+            cachedActivePrompts = nextPrompts;
+            cachedActivePromptsExpiresAt = now.plus(ACTIVE_PROMPTS_CACHE_TTL);
+            return nextPrompts;
+        }
     }
 
     public PromptDto findById(String promptId) {
         return promptRepository.findByIdWithCoachProfile(promptId)
                 .filter(prompt -> Boolean.TRUE.equals(prompt.getActive()))
                 .map(this::toDto)
-                .orElseGet(() -> promptRepository.findAllByActiveTrueOrderByDisplayOrderAsc().stream()
+                .orElseGet(() -> findAll().stream()
                         .findFirst()
-                        .map(this::toDto)
                         .orElseThrow(() -> new IllegalStateException("No prompts found in database")));
     }
 

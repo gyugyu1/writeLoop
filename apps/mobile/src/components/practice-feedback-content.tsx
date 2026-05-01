@@ -17,9 +17,7 @@ import type { PracticeFeedbackState } from "@/lib/practice-feedback-state";
 import type {
   Feedback,
   FeedbackFixPoint,
-  FeedbackInlineSegment,
-  FeedbackModelAnswerVariant,
-  FeedbackSecondaryLearningPoint
+  FeedbackInlineSegment
 } from "@/lib/types";
 
 type FixCard = {
@@ -40,13 +38,6 @@ type RewritePracticeCard = {
   optionalTone: boolean;
 };
 
-type RewriteSuggestionCard = {
-  key: string;
-  english: string;
-  korean: string;
-  note: string;
-};
-
 type RefinementIdeaCard = {
   key: string;
   title: string;
@@ -59,14 +50,6 @@ type RefinementIdeaCard = {
   revised: string;
   hasSwapPair: boolean;
   optionalTone: boolean;
-};
-
-type ModelAnswerVariantCard = {
-  key: string;
-  label: string;
-  answer: string;
-  answerKo: string;
-  reasonKo: string;
 };
 
 type UsedExpressionItem = {
@@ -478,155 +461,7 @@ function buildRewritePractice(feedback: Feedback): RewritePracticeCard | null {
   };
 }
 
-function resolveSecondaryLearningPoints(feedback: Feedback): FeedbackSecondaryLearningPoint[] {
-  const uiPoints =
-    feedback.ui?.secondaryLearningPoints?.filter((point) => {
-      if (!point) {
-        return false;
-      }
-
-      return Boolean(
-        trimText(point.headline) ||
-          trimText(point.originalText) ||
-          trimText(point.revisedText) ||
-          trimText(point.exampleEn)
-      );
-    }) ?? [];
-
-  if (uiPoints.length > 0) {
-    return uiPoints;
-  }
-
-  const fallback: FeedbackSecondaryLearningPoint[] = [];
-  const microTip = feedback.ui?.microTip;
-  if (
-    trimText(microTip?.originalText) &&
-    trimText(microTip?.revisedText) &&
-    trimText(microTip?.reasonKo)
-  ) {
-    fallback.push({
-      kind: "GRAMMAR",
-      title: microTip?.title || "작은 표현 다듬기",
-      originalText: microTip?.originalText,
-      revisedText: microTip?.revisedText,
-      supportText: microTip?.reasonKo
-    });
-  }
-
-  (feedback.refinementExpressions ?? [])
-    .filter((expression) => expression?.displayable !== false && trimText(expression?.expression))
-    .forEach((expression) => {
-      fallback.push({
-        kind: "EXPRESSION",
-        title: "써보면 좋은 표현",
-        headline: expression.expression,
-        meaningKo: expression.meaningKo,
-        guidanceKo: expression.guidanceKo,
-        exampleEn: expression.exampleEn,
-        exampleKo: expression.exampleKo
-      });
-    });
-
-  return fallback;
-}
-
-function resolveLearningPointLead(point: FeedbackSecondaryLearningPoint) {
-  const headline = trimText(point.headline);
-  const exampleEn = trimText(point.exampleEn);
-  if (looksLikeEnglishText(headline)) {
-    return headline;
-  }
-  if (looksLikeEnglishText(exampleEn)) {
-    return exampleEn;
-  }
-  return pickFirstNonEmpty(headline, point.revisedText, point.originalText, exampleEn);
-}
-
-function resolveLearningPointMeaning(point: FeedbackSecondaryLearningPoint, lead: string) {
-  const headline = trimText(point.headline);
-  const meaningKo = trimText(point.meaningKo);
-  const exampleKo = trimText(point.exampleKo);
-  if (meaningKo) {
-    if (looksLikeEnglishSentence(lead) && exampleKo) {
-      return "";
-    }
-    return meaningKo;
-  }
-  if (headline && headline !== lead && !looksLikeEnglishText(headline)) {
-    return headline;
-  }
-  return "";
-}
-
-function resolveLearningPointGuidance(point: FeedbackSecondaryLearningPoint) {
-  return trimText(point.guidanceKo);
-}
-
-function resolveLearningPointSupport(point: FeedbackSecondaryLearningPoint) {
-  return trimText(point.supportText);
-}
-
-function buildRewriteSuggestions(
-  feedback: Feedback,
-  starter?: string | null
-): RewriteSuggestionCard[] {
-  const seen = new Set<string>();
-  const uiSuggestions = feedback.ui?.rewriteSuggestions ?? [];
-
-  const suggestions = uiSuggestions
-    .map((suggestion, index) => {
-      const english = stripRewriteSuggestionTerminalPunctuation(suggestion?.english ?? "");
-      if (!english || !canSuggestionFillRewriteStarter(english, starter)) {
-        return null;
-      }
-
-      const dedupeKey = english.toLowerCase();
-      if (seen.has(dedupeKey)) {
-        return null;
-      }
-
-      seen.add(dedupeKey);
-      return {
-        key: `ui-${dedupeKey}-${index}`,
-        english,
-        korean: trimText(suggestion?.meaningKo),
-        note: trimText(suggestion?.noteKo)
-      };
-    })
-    .filter((item): item is RewriteSuggestionCard => Boolean(item));
-
-  if (suggestions.length > 0) {
-    return suggestions.slice(0, 3);
-  }
-
-  return resolveSecondaryLearningPoints(feedback)
-    .filter((point) => point.kind === "EXPRESSION")
-    .map((point, index) => {
-      const lead = resolveLearningPointLead(point);
-      const english = stripRewriteSuggestionTerminalPunctuation(lead);
-      if (!english || !looksLikeEnglishText(english) || !canSuggestionFillRewriteStarter(english, starter)) {
-        return null;
-      }
-
-      const dedupeKey = english.toLowerCase();
-      if (seen.has(dedupeKey)) {
-        return null;
-      }
-
-      seen.add(dedupeKey);
-      return {
-        key: `point-${dedupeKey}-${index}`,
-        english,
-        korean: resolveLearningPointMeaning(point, lead) || trimText(point.exampleKo),
-        note: pickFirstNonEmpty(resolveLearningPointGuidance(point), resolveLearningPointSupport(point))
-      };
-    })
-    .filter((item): item is RewriteSuggestionCard => Boolean(item))
-    .slice(0, 3);
-}
-
 void buildRewritePractice;
-void buildRewriteSuggestions;
 
 function buildRefinementIdeaCards(feedback: Feedback): RefinementIdeaCard[] {
   const merged: RefinementIdeaCard[] = [];
@@ -676,30 +511,6 @@ function buildRefinementIdeaCards(feedback: Feedback): RefinementIdeaCard[] {
       optionalTone: false
     });
   });
-
-  resolveSecondaryLearningPoints(feedback)
-    .filter((point) => point.kind === "EXPRESSION")
-    .forEach((point, index) => {
-      const lead = resolveLearningPointLead(point);
-      const english = stripRewriteSuggestionTerminalPunctuation(lead);
-      if (!english || !looksLikeEnglishText(english)) {
-        return;
-      }
-
-      pushCard({
-        key: `point-${english.toLowerCase()}-${index}`,
-        title: "",
-        english,
-        korean: resolveLearningPointMeaning(point, lead) || trimText(point.exampleKo),
-        note: pickFirstNonEmpty(resolveLearningPointGuidance(point), resolveLearningPointSupport(point)),
-        exampleEn: trimText(point.exampleEn),
-        tags: [],
-        original: "",
-        revised: "",
-        hasSwapPair: false,
-        optionalTone: false
-      });
-    });
 
   return merged;
 }
@@ -909,69 +720,6 @@ function renderExpressionSaveIcon(saved: boolean, saving: boolean) {
   );
 }
 
-function getModelAnswerVariantLabel(kind?: string | null) {
-  switch (trimText(kind).toUpperCase()) {
-    case "NATURAL_POLISH":
-      return "더 자연스럽게 쓴 버전";
-    case "RICHER_DETAIL":
-      return "더 풍부하게 쓴 버전";
-    default:
-      return "다른 버전";
-  }
-}
-
-function normalizeModelAnswerVariantCard(
-  variant: FeedbackModelAnswerVariant,
-  index: number
-): ModelAnswerVariantCard | null {
-  const answer = trimText(variant.answer);
-  if (!answer) {
-    return null;
-  }
-
-  return {
-    key: `variant-${trimText(variant.kind) || index}-${answer}`,
-    label: getModelAnswerVariantLabel(variant.kind),
-    answer,
-    answerKo: trimText(variant.answerKo),
-    reasonKo: trimText(variant.reasonKo)
-  };
-}
-
-function buildModelAnswerVariants(
-  feedback: Feedback,
-  baseAnswer?: string | null
-): ModelAnswerVariantCard[] {
-  const merged: ModelAnswerVariantCard[] = [];
-  const seen = new Set<string>();
-  const baseAnchor = normalizeRefinementIdeaAnchor(baseAnswer);
-
-  if (baseAnchor) {
-    seen.add(baseAnchor);
-  }
-
-  (feedback.ui?.modelAnswerVariants ?? []).forEach((variant, index) => {
-    if (!variant) {
-      return;
-    }
-
-    const normalized = normalizeModelAnswerVariantCard(variant, index);
-    if (!normalized) {
-      return;
-    }
-
-    const answerAnchor = normalizeRefinementIdeaAnchor(normalized.answer);
-    if (!answerAnchor || seen.has(answerAnchor)) {
-      return;
-    }
-
-    seen.add(answerAnchor);
-    merged.push(normalized);
-  });
-
-  return merged;
-}
-
 function renderDiffSegment(
   segment: RenderedInlineFeedbackSegment,
   mode: "original" | "revised",
@@ -1144,10 +892,6 @@ export function PracticeFeedbackContent({
         : [],
     [comparisonTarget, feedbackState, hasComparison]
   );
-  const modelAnswerVariants = useMemo(
-    () => buildModelAnswerVariants(feedbackState.feedback, comparisonTarget),
-    [comparisonTarget, feedbackState]
-  );
   const hasImproveContent = refinementIdeaCards.length > 0;
 
   return (
@@ -1237,22 +981,6 @@ export function PracticeFeedbackContent({
                         </Text>
                       ) : null}
                     </View>
-                    {modelAnswerVariants.map((variant) => (
-                      <View key={variant.key} style={[styles.answerCard, styles.answerCardVariant]}>
-                        <Text style={[styles.answerLabel, styles.answerLabelVariant]}>
-                          {variant.label}
-                        </Text>
-                        <Text style={[styles.answerText, styles.answerTextVariant]}>
-                          {variant.answer}
-                        </Text>
-                        {hasHangulText(variant.answerKo) ? (
-                          <Text style={styles.answerTranslation}>{variant.answerKo}</Text>
-                        ) : null}
-                        {variant.reasonKo ? (
-                          <Text style={styles.answerVariantReason}>{variant.reasonKo}</Text>
-                        ) : null}
-                      </View>
-                    ))}
                   </>
                 ) : null}
               </View>

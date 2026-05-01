@@ -225,6 +225,9 @@ class GeminiFeedbackClientTest {
         );
 
         JsonNode request = mapper.readTree(requestBody);
+        JsonNode schemaProperties = request.path("generationConfig")
+                .path("responseJsonSchema")
+                .path("properties");
         JsonNode usedExpressionProperties = request.path("generationConfig")
                 .path("responseJsonSchema")
                 .path("properties")
@@ -243,13 +246,15 @@ class GeminiFeedbackClientTest {
         assertThat(usedExpressionProperties.path("tags").isMissingNode()).isFalse();
         assertThat(refinementExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
         assertThat(refinementExpressionProperties.path("guidanceKo").isMissingNode()).isFalse();
+        assertThat(schemaProperties.has("modelAnswerVariants")).isFalse();
         assertThat(promptText)
                 .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
                 .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
                 .contains("usedExpressions.exampleEn must be one short natural sentence")
                 .contains("usedExpressions.tags must contain 2 to 6 tags")
                 .contains("refinementExpressions are the single source")
-                .contains("exampleEn must not be identical to expression");
+                .contains("exampleEn must not be identical to expression")
+                .doesNotContain("modelAnswerVariants rules");
     }
     @Test
     void buildDiagnosisPrompt_includes_attempt_context() {

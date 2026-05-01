@@ -362,10 +362,10 @@ export interface FeedbackInlineSegment {
   revisedText: string;
 }
 
-export type FeedbackSecondaryLearningPointKind = "GRAMMAR" | "CORRECTION" | "EXPRESSION";
+export type FeedbackFixPointKind = "GRAMMAR" | "CORRECTION" | "EXPRESSION";
 
-export interface FeedbackSecondaryLearningPoint {
-  kind: FeedbackSecondaryLearningPointKind;
+export interface FeedbackFixPoint {
+  kind: FeedbackFixPointKind;
   title?: string | null;
   headline?: string | null;
   supportText?: string | null;
@@ -377,10 +377,8 @@ export interface FeedbackSecondaryLearningPoint {
   exampleKo?: string | null;
 }
 
-export type FeedbackFixPoint = FeedbackSecondaryLearningPoint;
-
 export interface FeedbackNextStepPractice {
-  kind?: FeedbackSecondaryLearningPointKind | null;
+  kind?: FeedbackFixPointKind | null;
   title?: string | null;
   headline?: string | null;
   supportText?: string | null;
@@ -492,22 +490,11 @@ export interface FeedbackRevealLater {
   modelAnswerLabel?: string | null;
 }
 
-export type FeedbackModelAnswerVariantKind = "NATURAL_POLISH" | "RICHER_DETAIL";
-
-export interface FeedbackModelAnswerVariant {
-  kind?: FeedbackModelAnswerVariantKind | string | null;
-  answer?: string | null;
-  answerKo?: string | null;
-  reasonKo?: string | null;
-}
-
 export interface FeedbackUi {
   microTip?: FeedbackMicroTip | null;
-  secondaryLearningPoints?: FeedbackSecondaryLearningPoint[] | null;
   fixPoints?: FeedbackFixPoint[] | null;
   nextStepPractice?: FeedbackNextStepPractice | null;
   rewriteSuggestions?: FeedbackRewriteSuggestion[] | null;
-  modelAnswerVariants?: FeedbackModelAnswerVariant[] | null;
   screenPolicy?: FeedbackScreenPolicy | null;
   loopStatus?: FeedbackLoopStatus | null;
 }

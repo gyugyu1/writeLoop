@@ -7,14 +7,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record FeedbackUiDto(
-        @Deprecated @JsonIgnore FeedbackFocusCardDto focusCard,
-        @Deprecated @JsonIgnore FeedbackPrimaryFixDto primaryFix,
+        @JsonIgnore FeedbackFocusCardDto focusCard,
+        @JsonIgnore FeedbackPrimaryFixDto primaryFix,
         FeedbackMicroTipDto microTip,
-        java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
+        @JsonIgnore java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
         java.util.List<FeedbackSecondaryLearningPointDto> fixPoints,
         FeedbackNextStepPracticeDto nextStepPractice,
         java.util.List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
-        java.util.List<FeedbackModelAnswerVariantDto> modelAnswerVariants,
+        @JsonIgnore java.util.List<FeedbackModelAnswerVariantDto> modelAnswerVariants,
         FeedbackScreenPolicyDto screenPolicy,
         FeedbackLoopStatusDto loopStatus
 ) {

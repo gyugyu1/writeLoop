@@ -1436,20 +1436,6 @@ public class GeminiFeedbackClient {
                                         "required", List.of("expression", "guidanceKo", "exampleEn", "exampleKo", "meaningKo")
                                 )
                         )),
-                        Map.entry("modelAnswerVariants", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "kind", Map.of("type", List.of("string", "null")),
-                                                "answer", Map.of("type", List.of("string", "null")),
-                                                "answerKo", Map.of("type", List.of("string", "null")),
-                                                "reasonKo", Map.of("type", List.of("string", "null"))
-                                        ),
-                                        "required", List.of("kind", "answer", "answerKo", "reasonKo")
-                                )
-                        )),
                         Map.entry("coachMission", Map.of(
                                 "type", List.of("object", "null"),
                                 "additionalProperties", false,
@@ -1486,7 +1472,6 @@ public class GeminiFeedbackClient {
                         "fixPoints",
                         "usedExpressions",
                         "refinementExpressions",
-                        "modelAnswerVariants",
                         "coachMission",
                         "modelAnswer",
                         "modelAnswerKo"
@@ -1716,16 +1701,6 @@ public class GeminiFeedbackClient {
                 - Avoid folding optional expansion into modelAnswer unless it is necessary for fluency or coherence.
                 - Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into refinementExpressions instead of modelAnswer.
                 - Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.
-
-                modelAnswerVariants rules:
-                - modelAnswerVariants are optional alternate versions of modelAnswer, not replacements for it.
-                - Use kind NATURAL_POLISH for a version that keeps the same core content but sounds smoother or more native.
-                - Use kind RICHER_DETAIL for a version that keeps the same core answer but adds one natural supporting detail, reason, example, or image.
-                - Return 0-2 items total, and never more than one item per kind.
-                - If a variant would be effectively the same as modelAnswer or another variant, omit it.
-                - answer should be the English variant.
-                - answerKo must be a short Korean translation written in Hangul. Never copy the English answer into answerKo. If you are not confident in the Korean translation, return answerKo as null.
-                - reasonKo should explain why this version is different in one short Korean line.
 
                 Band-specific guidance:
                 %s

@@ -1,0 +1,61 @@
+{
+  "extends": ["regression"],
+  "cases": [
+    {
+      "name": "release critical thin grocery answer should add substance",
+      "category": "CONTENT_THIN",
+      "promptId": "prompt-routine-1103",
+      "answer": "After grocery shopping, I usually go home. I put the food in the refrigerator. Then I rest because I am tired. That is all.",
+      "expectedFocusTypes": ["DETAIL", "FEELING", "RESULT", "SITUATION"],
+      "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+      "mustContainAny": {
+        "coachMove.instruction": ["add", "detail", "feeling", "result", "specific", "one more", "추가", "디테일", "감정", "결과", "하나", "도움", "장점", "마지막"],
+        "coachMove.successCheck": ["one", "specific", "detail", "feeling", "result", "하나", "1개", "구체", "디테일", "감정", "결과", "행동"]
+      },
+      "expectedBehavior": "Ask for one concrete add-on, not a vague flow summary.",
+      "badBehavior": "Do not merely say to connect the actions into one flow."
+    },
+    {
+      "name": "release critical generic delicious answer should not polish wording",
+      "category": "GENERIC_REASON",
+      "promptId": "prompt-preference-1101",
+      "answer": "I usually choose pasta for breakfast when I am busy. I like it because it is delicious.",
+      "expectedFocusTypes": ["REASON", "DETAIL", "EXAMPLE"],
+      "forbiddenFocusTypes": ["GRAMMAR_FIX", "EXPRESSION_POLISH"],
+      "mustContainAny": {
+        "coachMove.instruction": ["why", "reason", "personal", "specific", "detail", "이유", "개인", "구체", "디테일", "설명", "맞는 이유"]
+      },
+      "expectedBehavior": "Move the learner toward a personal reason."
+    },
+    {
+      "name": "release critical blocking grammar needs comparison pair",
+      "category": "BLOCKING_GRAMMAR",
+      "promptId": "prompt-routine-01",
+      "answer": "Morning I wake and wash face then breakfast eat and school go.",
+      "expectedFocusTypes": ["GRAMMAR_FIX", "SITUATION", "DETAIL"],
+      "requiresComparison": true,
+      "expectedBehavior": "If grammar is chosen, show a short before/after pair."
+    },
+    {
+      "name": "release critical off-topic answer should reset task",
+      "category": "OFF_TOPIC",
+      "promptId": "prompt-preference-06",
+      "answer": "I usually clean my room and take a shower in the morning.",
+      "expectedFocusTypes": ["TASK_RESET"],
+      "forbiddenFocusTypes": ["GRAMMAR_FIX", "EXPRESSION_POLISH"],
+      "mustContainAny": {
+        "coachMove.instruction": ["movie", "genre", "answer", "question", "영화", "장르", "질문"]
+      },
+      "expectedBehavior": "Guide the learner back to the movie-genre prompt."
+    },
+    {
+      "name": "release critical Korean transfer should pick useful local repair",
+      "category": "MINOR_GRAMMAR_CONTENT_THIN",
+      "promptId": "prompt-routine-16",
+      "answer": "I use phone long time and take a rest in home.",
+      "expectedFocusTypes": ["GRAMMAR_FIX", "DETAIL", "FEELING", "RESULT"],
+      "requiresComparison": false,
+      "expectedBehavior": "Either fix one high-value local phrase or ask for a concrete add-on."
+    }
+  ]
+}

@@ -18,6 +18,7 @@
     "mobile:rn:android:emulator": "npm --prefix apps/mobile run android:emulator",
     "mobile:rn:web": "npm --prefix apps/mobile run web",
     "mobile:rn:lint": "npm --prefix apps/mobile run lint",
-    "mobile:rn:typecheck": "npm --prefix apps/mobile run typecheck"
+    "mobile:rn:typecheck": "npm --prefix apps/mobile run typecheck",
+    "feedback:quality": "node scripts/run-feedback-quality-check.mjs"
   }
 }

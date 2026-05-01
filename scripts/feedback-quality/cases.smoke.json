@@ -1,0 +1,65 @@
+[
+  {
+    "name": "thin evening routine should ask for a specific add-on",
+    "category": "CONTENT_THIN",
+    "promptId": "prompt-routine-2093",
+    "promptQuestionIncludesAny": ["play music at home"],
+    "answer": "Before I play music at home, I put my bag down. Then I turn on music. That is all.",
+    "expectedFocusTypes": ["DETAIL", "RESULT", "FEELING", "SITUATION"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "mustContainAny": {
+      "coachMove.instruction": ["add", "detail", "feeling", "result", "one more", "추가", "디테일", "감정", "결과", "하나"],
+      "coachMove.successCheck": ["one", "specific", "detail", "feeling", "result", "하나", "1개", "구체", "디테일", "감정", "결과", "행동"]
+    },
+    "expectedBehavior": "Ask for one concrete add-on, not tiny expression polish.",
+    "badBehavior": "Do not only polish That is all or mark the answer as complete."
+  },
+  {
+    "name": "minor grammar plus thin free-time answer should not become tiny polish",
+    "category": "MINOR_GRAMMAR_CONTENT_THIN",
+    "promptId": "prompt-routine-16",
+    "promptQuestionIncludesAny": ["free time at home"],
+    "answer": "I watch TV a little. Sometimes I use phone long time. I just lay on bed and rest.",
+    "expectedFocusTypes": ["DETAIL", "RESULT", "FEELING", "GRAMMAR_FIX"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Prefer a useful add-on or meaningful local repair over pure wording polish.",
+    "badBehavior": "Do not only polish a small phrase while ignoring thin content."
+  },
+  {
+    "name": "weekday breakfast with generic reason",
+    "category": "GENERIC_REASON",
+    "promptId": "prompt-preference-1101",
+    "promptQuestionIncludesAny": ["weekday breakfast"],
+    "answer": "I usually choose toast for breakfast when I am busy. I like it because it is delicious.",
+    "expectedFocusTypes": ["REASON", "DETAIL", "EXAMPLE"],
+    "forbiddenFocusTypes": ["GRAMMAR_FIX", "EXPRESSION_POLISH"],
+    "mustContainAny": {
+      "coachMove.instruction": ["reason", "detail", "specific", "personal", "why", "이유", "디테일", "구체", "개인"],
+      "coachMove.successCheck": ["reason", "detail", "specific", "personal", "이유", "디테일", "구체", "개인"]
+    },
+    "expectedBehavior": "Ask the learner to add a more personal reason or detail.",
+    "badBehavior": "Do not only polish delicious or say the answer is already enough."
+  },
+  {
+    "name": "blocking morning routine grammar can become grammar fix",
+    "category": "BLOCKING_GRAMMAR",
+    "promptId": "prompt-routine-01",
+    "promptQuestionIncludesAny": ["weekday mornings"],
+    "answer": "Morning I wake and wash face then breakfast eat and school go.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "SITUATION", "DETAIL"],
+    "requiresComparison": true,
+    "expectedBehavior": "Repair the broken routine sentence or give one clear routine frame.",
+    "badBehavior": "Do not ask for optional detail before the core sentence is understandable."
+  },
+  {
+    "name": "short goal answer should ask for support sentence",
+    "category": "CONTENT_THIN",
+    "promptId": "prompt-goal-16",
+    "promptQuestionIncludesAny": ["language goal"],
+    "answer": "I will study English this year. It is important for me.",
+    "expectedFocusTypes": ["REASON", "DETAIL", "EXAMPLE", "RESULT"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a concrete plan, reason, or result sentence.",
+    "badBehavior": "Do not only polish the wording."
+  }
+]

@@ -23,6 +23,7 @@ metro-dev.log
 env_files/
 .artifacts/
 test-results/
+reports/feedback-quality*/
 tmp/
 tmp_*
 .tmp-next-dev.log

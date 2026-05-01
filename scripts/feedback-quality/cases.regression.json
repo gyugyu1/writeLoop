@@ -1,0 +1,481 @@
+[
+  {
+    "name": "generic food reason should ask for personal reason",
+    "category": "GENERIC_REASON",
+    "promptId": "prompt-preference-1101",
+    "answer": "I usually choose pasta for breakfast when I am busy. I like it because it is delicious.",
+    "expectedFocusTypes": ["REASON", "DETAIL", "EXAMPLE"],
+    "forbiddenFocusTypes": ["GRAMMAR_FIX", "EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a personal reason or concrete detail."
+  },
+  {
+    "name": "favorite movie genre needs scene or reason",
+    "category": "GENERIC_REASON",
+    "promptId": "prompt-preference-06",
+    "answer": "I like action movie. It is fun and exciting.",
+    "expectedFocusTypes": ["FEELING", "REASON", "DETAIL", "EXAMPLE", "GRAMMAR_FIX"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Prefer one example scene or more specific reason over tiny wording polish."
+  },
+  {
+    "name": "favorite relaxing place has place but weak why",
+    "category": "GENERIC_REASON",
+    "promptId": "prompt-preference-11",
+    "answer": "My favorite place to relax is my room. I like it because it is good.",
+    "expectedFocusTypes": ["REASON", "DETAIL", "FEELING"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask what makes the room relaxing."
+  },
+  {
+    "name": "favorite season generic feeling",
+    "category": "GENERIC_REASON",
+    "promptId": "prompt-preference-16",
+    "answer": "My favorite season is spring. I like it because I feel good.",
+    "expectedFocusTypes": ["REASON", "DETAIL", "FEELING", "EXAMPLE"],
+    "forbiddenFocusTypes": ["GRAMMAR_FIX", "EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a specific feeling, weather detail, or spring activity."
+  },
+  {
+    "name": "favorite music needs example",
+    "category": "CONTENT_THIN",
+    "promptId": "prompt-preference-21",
+    "answer": "I like pop music. It makes me happy.",
+    "expectedFocusTypes": ["SITUATION", "EXAMPLE", "DETAIL", "REASON", "FEELING"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a song, singer, moment, or more specific reason."
+  },
+  {
+    "name": "weekday morning list lacks order detail",
+    "category": "CONTENT_THIN",
+    "promptId": "prompt-routine-01",
+    "answer": "I wake up. I wash my face. I eat breakfast.",
+    "expectedFocusTypes": ["DETAIL", "SITUATION", "RESULT"],
+    "forbiddenFocusTypes": ["GRAMMAR_FIX", "EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for time/order detail or one result."
+  },
+  {
+    "name": "after work evening flat ending",
+    "category": "FLAT_ENDING",
+    "promptId": "prompt-routine-1114",
+    "answer": "After work I go home. I eat dinner. I watch TV. That is all.",
+    "expectedFocusTypes": ["REASON", "DETAIL", "FEELING", "RESULT", "SITUATION"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Treat That is all as flat content, not a polish target."
+  },
+  {
+    "name": "sunday afternoon needs concrete activity detail",
+    "category": "CONTENT_THIN",
+    "promptId": "prompt-routine-11",
+    "answer": "On Sunday afternoon, I rest at home. I use my phone.",
+    "expectedFocusTypes": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for what they do on the phone or why it helps."
+  },
+  {
+    "name": "free time has Korean transfer but understandable",
+    "category": "MINOR_GRAMMAR_CONTENT_THIN",
+    "promptId": "prompt-routine-16",
+    "answer": "I watch TV a little. Sometimes I use phone long time. I just lay on bed and rest.",
+    "expectedFocusTypes": ["DETAIL", "RESULT", "FEELING", "GRAMMAR_FIX"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Either fix the strongest local phrase or ask for one richer detail."
+  },
+  {
+    "name": "start of saturday needs first action flow",
+    "category": "CONTENT_THIN",
+    "promptId": "prompt-routine-21",
+    "answer": "On Saturday, I wake up late. Then I do nothing special.",
+    "expectedFocusTypes": ["DETAIL", "SITUATION", "FEELING", "RESULT"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for one concrete first action or feeling."
+  },
+  {
+    "name": "blocking morning word order",
+    "category": "BLOCKING_GRAMMAR",
+    "promptId": "prompt-routine-01",
+    "answer": "Morning I wake and wash face then breakfast eat and school go.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "SITUATION", "DETAIL"],
+    "requiresComparison": false,
+    "expectedBehavior": "Repair word order or give a clear routine sentence."
+  },
+  {
+    "name": "missing subject and verbs in routine",
+    "category": "BLOCKING_GRAMMAR",
+    "promptId": "prompt-routine-1114",
+    "answer": "After work, tired. home go. dinner eat and sleep.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "SITUATION"],
+    "requiresComparison": true,
+    "expectedBehavior": "Prioritize a clear sentence structure."
+  },
+  {
+    "name": "habit answer with tense issue but clear",
+    "category": "MINOR_GRAMMAR",
+    "promptId": "prompt-routine-11",
+    "answer": "On Sunday afternoon, I usually went to cafe and read book.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "DETAIL", "SITUATION"],
+    "requiresComparison": false,
+    "expectedBehavior": "Fix habitual tense or ask for one richer cafe detail."
+  },
+  {
+    "name": "preposition transfer at home",
+    "category": "MINOR_GRAMMAR",
+    "promptId": "prompt-routine-16",
+    "answer": "In home, I take a rest and see drama.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "DETAIL", "EXPRESSION_POLISH"],
+    "requiresComparison": false,
+    "expectedBehavior": "A focused local repair is acceptable because the answer is very short."
+  },
+  {
+    "name": "Saturday routine with awkward prepare",
+    "category": "MINOR_GRAMMAR_CONTENT_THIN",
+    "promptId": "prompt-routine-21",
+    "answer": "I prepare for go out and meet friend.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "DETAIL", "SITUATION"],
+    "requiresComparison": false,
+    "expectedBehavior": "Fix the core action phrase or add a clear next action."
+  },
+  {
+    "name": "too short food answer",
+    "category": "TOO_SHORT",
+    "promptId": "prompt-preference-1101",
+    "answer": "Pasta.",
+    "expectedFocusTypes": ["TASK_RESET", "SITUATION", "REASON", "DETAIL"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for one complete answer sentence with a reason."
+  },
+  {
+    "name": "too short relaxing place answer",
+    "category": "TOO_SHORT",
+    "promptId": "prompt-preference-11",
+    "answer": "My room.",
+    "expectedFocusTypes": ["TASK_RESET", "REASON", "DETAIL", "FEELING"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a complete sentence and why it is relaxing."
+  },
+  {
+    "name": "fragment weekday morning",
+    "category": "TOO_SHORT",
+    "promptId": "prompt-routine-01",
+    "answer": "Wake up and breakfast.",
+    "expectedFocusTypes": ["TASK_RESET", "GRAMMAR_FIX", "SITUATION", "DETAIL"],
+    "expectedBehavior": "Help build one complete routine sentence."
+  },
+  {
+    "name": "blank-like answer should reset task",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-preference-1101",
+    "answer": "I don't know.",
+    "expectedFocusTypes": ["TASK_RESET", "REASON", "DETAIL"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Guide the learner back to answering the prompt."
+  },
+  {
+    "name": "off topic weather answer to food prompt",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-preference-1101",
+    "answer": "Today is sunny and I went to school by bus.",
+    "expectedFocusTypes": ["TASK_RESET"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH", "GRAMMAR_FIX"],
+    "expectedBehavior": "Reset to favorite food and reason."
+  },
+  {
+    "name": "goal answer has goal but no plan",
+    "category": "MISSING_REQUIRED_PART",
+    "promptId": "prompt-goal-16",
+    "answer": "I want to improve my English speaking this year. It is important for my future.",
+    "expectedFocusTypes": ["DETAIL", "EXAMPLE", "RESULT"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a concrete practice plan."
+  },
+  {
+    "name": "habit goal has plan but no reason",
+    "category": "MISSING_REQUIRED_PART",
+    "promptId": "prompt-goal-1101",
+    "answer": "I want to wake up early this year. I will set alarm every day.",
+    "expectedFocusTypes": ["EXPRESSION_POLISH", "REASON", "RESULT", "DETAIL"],
+    "expectedBehavior": "Ask why the habit matters or what result it brings."
+  },
+  {
+    "name": "health goal plan too generic",
+    "category": "GENERIC_PLAN",
+    "promptId": "prompt-goal-11",
+    "answer": "I want to be healthy. I will exercise more.",
+    "expectedFocusTypes": ["DETAIL", "EXAMPLE", "RESULT"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a concrete exercise plan or result."
+  },
+  {
+    "name": "language goal has Korean transfer",
+    "category": "MINOR_GRAMMAR_CONTENT_THIN",
+    "promptId": "prompt-goal-16",
+    "answer": "I want to do English well. I will study little every day.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "DETAIL", "RESULT"],
+    "requiresComparison": false,
+    "expectedBehavior": "Fix the unnatural phrase or ask for a specific daily action."
+  },
+  {
+    "name": "confidence goal too abstract",
+    "category": "CONTENT_THIN",
+    "promptId": "prompt-goal-21",
+    "answer": "I want to be confident. I will try hard.",
+    "expectedFocusTypes": ["DETAIL", "EXAMPLE", "REASON", "RESULT"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for the area and one concrete small step."
+  },
+  {
+    "name": "food answer already acceptable but can finish",
+    "category": "GOOD_ENOUGH",
+    "promptId": "prompt-preference-1101",
+    "answer": "I usually choose kimchi fried rice for breakfast on slow weekday mornings because it is spicy and reminds me of dinner with my family.",
+    "expectedFocusTypes": ["EXPRESSION_POLISH", "DETAIL", "REASON"],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "It may mark the loop complete or offer only tiny optional polish."
+  },
+  {
+    "name": "movie answer has clear personal reason",
+    "category": "GOOD_ENOUGH",
+    "promptId": "prompt-preference-06",
+    "answer": "My favorite movie genre is comedy because it helps me relax after a stressful day.",
+    "expectedFocusTypes": ["EXPRESSION_POLISH", "EXAMPLE", "DETAIL"],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Do not force a major rewrite."
+  },
+  {
+    "name": "routine answer with enough sequence",
+    "category": "GOOD_ENOUGH",
+    "promptId": "prompt-routine-01",
+    "answer": "On weekday mornings, I usually wake up at seven, take a quick shower, and eat toast before I leave.",
+    "expectedFocusTypes": ["EXPRESSION_POLISH", "DETAIL", "RESULT"],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Mostly complete; optional polish is acceptable."
+  },
+  {
+    "name": "goal answer has concrete plan",
+    "category": "GOOD_ENOUGH",
+    "promptId": "prompt-goal-16",
+    "answer": "I want to improve my presentation skills this year, so I will practice one short speech every weekend.",
+    "expectedFocusTypes": ["EXPRESSION_POLISH", "DETAIL", "RESULT"],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "The answer can finish or receive minor optional polish."
+  },
+  {
+    "name": "season answer clear but could add example",
+    "category": "NATURAL_BUT_BASIC",
+    "promptId": "prompt-preference-16",
+    "answer": "My favorite season is fall because the weather is cool and comfortable.",
+    "expectedFocusTypes": ["EXAMPLE", "DETAIL", "FEELING"],
+    "expectedBehavior": "A gentle example or finish is acceptable."
+  },
+  {
+    "name": "favorite music has no why",
+    "category": "MISSING_REASON",
+    "promptId": "prompt-preference-21",
+    "answer": "My favorite type of music is jazz.",
+    "expectedFocusTypes": ["SITUATION", "REASON", "DETAIL", "EXAMPLE"],
+    "forbiddenFocusTypes": ["GRAMMAR_FIX", "EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for why jazz appeals to them."
+  },
+  {
+    "name": "favorite place grammar small but why missing",
+    "category": "MISSING_REASON",
+    "promptId": "prompt-preference-11",
+    "answer": "My favorite place relax is cafe.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "REASON", "DETAIL"],
+    "requiresComparison": false,
+    "expectedBehavior": "Either fix the core phrase or ask why the cafe is relaxing."
+  },
+  {
+    "name": "favorite food two reasons required but only one reason",
+    "category": "MISSING_REQUIRED_PART",
+    "promptId": "prompt-preference-1101",
+    "answer": "I usually choose ramen for breakfast when it is cold because it is warm.",
+    "expectedFocusTypes": ["FEELING", "EXPRESSION_POLISH", "REASON", "DETAIL", "EXAMPLE"],
+    "expectedBehavior": "Ask for a second reason or a concrete detail."
+  },
+  {
+    "name": "movie genre two reasons required but only vague reason",
+    "category": "MISSING_REQUIRED_PART",
+    "promptId": "prompt-preference-06",
+    "answer": "I like romance movies because they are good.",
+    "expectedFocusTypes": ["REASON", "EXAMPLE", "DETAIL"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a specific reason or example scene."
+  },
+  {
+    "name": "season two reasons required with one detail",
+    "category": "MISSING_REQUIRED_PART",
+    "promptId": "prompt-preference-16",
+    "answer": "I like winter because snow is pretty.",
+    "expectedFocusTypes": ["REASON", "DETAIL", "EXAMPLE", "FEELING"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for one more reason or winter activity."
+  },
+  {
+    "name": "music two reasons with grammar noise",
+    "category": "MISSING_REQUIRED_PART",
+    "promptId": "prompt-preference-21",
+    "answer": "I listen to ballads at night because the lyrics touch me.",
+    "expectedFocusTypes": ["EXPRESSION_POLISH", "REASON", "GRAMMAR_FIX", "EXAMPLE", "DETAIL"],
+    "requiresComparison": false,
+    "expectedBehavior": "Prefer one more reason/example or a meaningful local repair."
+  },
+  {
+    "name": "routine answer uses and then repeatedly",
+    "category": "NATURALNESS",
+    "promptId": "prompt-routine-1114",
+    "answer": "After work, I go home and then I eat dinner and then I watch YouTube and then I sleep.",
+    "expectedFocusTypes": ["REASON", "EXPRESSION_POLISH", "DETAIL", "RESULT"],
+    "expectedBehavior": "A flow/naturalness mission or one detail is acceptable."
+  },
+  {
+    "name": "routine answer has reason but awkward collocation",
+    "category": "MINOR_GRAMMAR",
+    "promptId": "prompt-routine-11",
+    "answer": "On Sunday afternoons, I take a walk in park because it gives me fresh mood.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "EXPRESSION_POLISH", "DETAIL", "FEELING"],
+    "requiresComparison": false,
+    "expectedBehavior": "Fix the local naturalness or ask for a concrete feeling."
+  },
+  {
+    "name": "free time answer repeats sometimes",
+    "category": "NATURALNESS",
+    "promptId": "prompt-routine-16",
+    "answer": "Sometimes I watch drama. Sometimes I eat snacks. Sometimes I sleep.",
+    "expectedFocusTypes": ["DETAIL", "SITUATION", "EXPRESSION_POLISH", "RESULT"],
+    "expectedBehavior": "Ask for a connected flow or one richer detail."
+  },
+  {
+    "name": "saturday answer has wrong tense for habit",
+    "category": "MINOR_GRAMMAR",
+    "promptId": "prompt-routine-21",
+    "answer": "I woke up late and made coffee every Saturday.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "DETAIL", "SITUATION"],
+    "requiresComparison": false,
+    "expectedBehavior": "Habitual tense repair is useful."
+  },
+  {
+    "name": "goal answer has broken future plan",
+    "category": "BLOCKING_GRAMMAR",
+    "promptId": "prompt-goal-1101",
+    "answer": "I want make habit wake up early and every day do it.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "DETAIL"],
+    "requiresComparison": true,
+    "expectedBehavior": "Repair the sentence frame before asking for more."
+  },
+  {
+    "name": "health goal answer with generic future",
+    "category": "GENERIC_PLAN",
+    "promptId": "prompt-goal-11",
+    "answer": "I want to lose weight. I will do many things.",
+    "expectedFocusTypes": ["DETAIL", "EXAMPLE", "RESULT"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for one concrete action."
+  },
+  {
+    "name": "language goal answer missing method",
+    "category": "MISSING_REQUIRED_PART",
+    "promptId": "prompt-goal-16",
+    "answer": "I want to speak English better because I need it for travel.",
+    "expectedFocusTypes": ["DETAIL", "EXAMPLE", "RESULT"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask how they will practice."
+  },
+  {
+    "name": "confidence goal answer has area but vague plan",
+    "category": "GENERIC_PLAN",
+    "promptId": "prompt-goal-21",
+    "answer": "I want to build confidence in speaking. I will practice.",
+    "expectedFocusTypes": ["DETAIL", "EXAMPLE", "RESULT"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a specific practice step."
+  },
+  {
+    "name": "off-topic answer to goal prompt",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-goal-16",
+    "answer": "My favorite food is chicken and I eat it on weekends.",
+    "expectedFocusTypes": ["TASK_RESET"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH", "GRAMMAR_FIX"],
+    "expectedBehavior": "Reset to one skill and practice plan."
+  },
+  {
+    "name": "off-topic answer to routine prompt",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-routine-1114",
+    "answer": "I think online shopping is very convenient for people.",
+    "expectedFocusTypes": ["TASK_RESET"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH", "GRAMMAR_FIX"],
+    "expectedBehavior": "Reset to after-work evening routine."
+  },
+  {
+    "name": "answer says no idea",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-preference-16",
+    "answer": "No idea. I don't have favorite season.",
+    "expectedFocusTypes": ["TASK_RESET", "REASON", "DETAIL"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Help choose a season or explain no preference clearly."
+  },
+  {
+    "name": "food answer with unnatural reason but understandable",
+    "category": "MINOR_GRAMMAR_CONTENT_THIN",
+    "promptId": "prompt-preference-1101",
+    "answer": "I usually choose pizza for breakfast when I am busy because it gives me happy.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "REASON", "FEELING"],
+    "requiresComparison": false,
+    "expectedBehavior": "Fix the phrase or ask for a more specific feeling."
+  },
+  {
+    "name": "movie answer with Korean transfer expression",
+    "category": "MINOR_GRAMMAR",
+    "promptId": "prompt-preference-06",
+    "answer": "I like comedy because it makes my stress disappear.",
+    "expectedFocusTypes": ["EXPRESSION_POLISH", "DETAIL", "EXAMPLE", "REASON"],
+    "expectedBehavior": "Naturalness polish or one example is acceptable."
+  },
+  {
+    "name": "relaxing place answer with article errors",
+    "category": "MINOR_GRAMMAR",
+    "promptId": "prompt-preference-11",
+    "answer": "I like library because it is quiet place.",
+    "expectedFocusTypes": ["GRAMMAR_FIX", "DETAIL", "FEELING"],
+    "requiresComparison": false,
+    "expectedBehavior": "A focused article/collocation repair is acceptable."
+  },
+  {
+    "name": "season answer flat but grammatical",
+    "category": "CONTENT_THIN",
+    "promptId": "prompt-preference-16",
+    "answer": "I like summer. It is hot. I like it.",
+    "expectedFocusTypes": ["REASON", "DETAIL", "EXAMPLE", "FEELING"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for a real reason, activity, or feeling."
+  },
+  {
+    "name": "music answer with one specific example",
+    "category": "NATURAL_BUT_BASIC",
+    "promptId": "prompt-preference-21",
+    "answer": "I like hip-hop because the beat gives me energy when I exercise.",
+    "expectedFocusTypes": ["EXPRESSION_POLISH", "EXAMPLE", "DETAIL"],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "It may finish or offer light optional polish."
+  },
+  {
+    "name": "morning routine no reason needed but thin",
+    "category": "CONTENT_THIN",
+    "promptId": "prompt-routine-01",
+    "answer": "I get up and take a shower. Then I go out.",
+    "expectedFocusTypes": ["DETAIL", "SITUATION", "RESULT"],
+    "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
+    "expectedBehavior": "Ask for time, breakfast, or one transition detail."
+  },
+  {
+    "name": "evening routine with clear feeling",
+    "category": "GOOD_ENOUGH",
+    "promptId": "prompt-routine-1114",
+    "answer": "On Friday night at home, I cook a simple dinner and watch a comedy show because it helps me relax.",
+    "expectedFocusTypes": ["EXPRESSION_POLISH", "DETAIL", "RESULT", "SITUATION"],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Do not force a large rewrite."
+  }
+]

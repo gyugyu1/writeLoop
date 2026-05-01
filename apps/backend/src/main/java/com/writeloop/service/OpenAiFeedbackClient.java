@@ -52,6 +52,29 @@ public class OpenAiFeedbackClient {
             "a", "an", "and", "are", "be", "been", "being", "for", "from", "had", "has", "have",
             "in", "is", "it", "its", "of", "on", "or", "that", "the", "to", "was", "were", "with"
     );
+    private static final Pattern ALPHA_WORD_PATTERN = Pattern.compile("[A-Za-z]+(?:'[A-Za-z]+)?");
+    private static final Set<String> ROMANIZED_KOREAN_TOKENS = Set.of(
+            "annyeong", "ani", "aniya", "arasso", "eotteoke", "eotteon", "eodi", "eonje",
+            "beoseu", "chingu", "eumryo", "gaja", "gayo", "geu", "geuge", "geunyang",
+            "geurae", "geuraeseo", "geureom", "hago", "haeyo", "hakgyo", "haneun",
+            "hanguk", "ige", "ije", "jigeum", "jinjja", "joa", "joayo", "jota",
+            "keopi", "mashisseo", "masisseo", "meok", "meogeoyo", "molla", "mollayo",
+            "naneun", "neomu", "pigon", "tago", "wae", "yo"
+    );
+    private static final Set<String> ENGLISH_SENTENCE_SIGNAL_WORDS = Set.of(
+            "i", "my", "me", "we", "you", "he", "she", "it", "they", "this", "that",
+            "am", "is", "are", "was", "were", "be", "been", "do", "does", "did",
+            "have", "has", "had", "will", "can", "want", "wants", "need", "needs",
+            "like", "likes", "go", "goes", "went", "eat", "eats", "drink", "drinks",
+            "watch", "watches", "listen", "listens", "feel", "feels", "make", "makes",
+            "choose", "chooses", "order", "orders", "study", "work", "works", "rest",
+            "use", "uses", "because", "when", "after", "before", "usually", "often",
+            "sometimes", "always", "then", "and", "but", "to", "for", "with", "in", "on", "at"
+    );
+    private static final Set<String> WORD_SALAD_TOKENS = Set.of(
+            "banana", "chair", "blue", "computer", "table", "pencil", "rabbit", "window",
+            "cloud", "pizza", "sleep", "happy", "orange", "desk", "phone"
+    );
     private static final List<String> GENERIC_FIX_POINT_SUPPORT_PHRASES = List.of(
             "\uBB38\uBC95\uC774 \uB9DE\uC9C0 \uC54A",
             "\uB354 \uC790\uC5F0\uC2A4\uB7FD",
@@ -685,17 +708,144 @@ public class OpenAiFeedbackClient {
             List<RefinementCard> refinementExpressions,
             String modelAnswer
     ) {
+        if (shouldForceTaskResetAnswer(learnerAnswer)) {
+            return buildForcedTaskResetCoachMission(diagnosis, modelAnswer);
+        }
         FeedbackCoachMissionDto sanitized = sanitizeCoachMission(generatedMission, diagnosis);
-        if (isUsableMission(sanitized)) {
+        sanitized = downgradeReadyAnswerGrammarMission(sanitized, diagnosis);
+        FeedbackSecondaryLearningPointDto firstFixPoint = firstCorrectionFixPoint(fixPoints);
+        if (isUsableMission(sanitized)
+                && shouldPreferGrammarFallback(sanitized, diagnosis, learnerAnswer, firstFixPoint, modelAnswer)) {
+            return buildGrammarFallbackCoachMission(
+                    diagnosis,
+                    answerProfile,
+                    learnerAnswer,
+                    firstFixPoint,
+                    refinementExpressions,
+                    modelAnswer
+            );
+        }
+        if (isUsableMission(sanitized)
+                && !shouldRejectGeneratedMission(sanitized, missionDecision, diagnosis, answerProfile, learnerAnswer)) {
             return sanitized;
+        }
+        if (!isUsableMission(sanitized)
+                && shouldPreferGrammarFallback(sanitized, diagnosis, learnerAnswer, firstFixPoint, modelAnswer)) {
+            return buildGrammarFallbackCoachMission(
+                    diagnosis,
+                    answerProfile,
+                    learnerAnswer,
+                    firstFixPoint,
+                    refinementExpressions,
+                    modelAnswer
+            );
+        }
+        if (shouldPreferContentFallback(sanitized, missionDecision, diagnosis, answerProfile, learnerAnswer)) {
+            return buildContentFallbackCoachMission(
+                    diagnosis,
+                    answerProfile,
+                    learnerAnswer,
+                    missionDecision,
+                    refinementExpressions,
+                    modelAnswer
+            );
         }
         return buildFallbackCoachMission(
                 diagnosis,
                 answerProfile,
                 learnerAnswer,
-                firstCorrectionFixPoint(fixPoints),
+                firstFixPoint,
                 refinementExpressions,
                 modelAnswer
+        );
+    }
+
+    private boolean shouldForceTaskResetAnswer(String learnerAnswer) {
+        String normalized = normalizeForComparison(learnerAnswer).toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return true;
+        }
+
+        List<String> words = alphabeticWords(normalized);
+        if (words.isEmpty()) {
+            return true;
+        }
+        if (countNonEnglishScriptLetters(learnerAnswer) >= 2) {
+            return true;
+        }
+
+        long romanizedKoreanWords = words.stream()
+                .filter(ROMANIZED_KOREAN_TOKENS::contains)
+                .count();
+        if (romanizedKoreanWords >= 3
+                || (romanizedKoreanWords >= 2 && romanizedKoreanWords * 2 >= words.size())) {
+            return true;
+        }
+
+        long sentenceSignals = words.stream()
+                .filter(ENGLISH_SENTENCE_SIGNAL_WORDS::contains)
+                .count();
+        long saladWords = words.stream()
+                .filter(WORD_SALAD_TOKENS::contains)
+                .count();
+        return words.size() >= 4
+                && saladWords >= 3
+                && sentenceSignals <= 1;
+    }
+
+    private List<String> alphabeticWords(String value) {
+        if (value == null || value.isBlank()) {
+            return List.of();
+        }
+        Matcher matcher = ALPHA_WORD_PATTERN.matcher(value);
+        List<String> words = new ArrayList<>();
+        while (matcher.find()) {
+            words.add(matcher.group().toLowerCase(Locale.ROOT));
+        }
+        return words;
+    }
+
+    private long countNonEnglishScriptLetters(String value) {
+        if (value == null || value.isBlank()) {
+            return 0;
+        }
+        return value.codePoints()
+                .filter(Character::isLetter)
+                .filter(this::isNonEnglishScriptLetter)
+                .count();
+    }
+
+    private boolean isNonEnglishScriptLetter(int codePoint) {
+        Character.UnicodeScript script = Character.UnicodeScript.of(codePoint);
+        return script == Character.UnicodeScript.HANGUL
+                || script == Character.UnicodeScript.HAN
+                || script == Character.UnicodeScript.HIRAGANA
+                || script == Character.UnicodeScript.KATAKANA
+                || script == Character.UnicodeScript.CYRILLIC
+                || script == Character.UnicodeScript.ARABIC
+                || script == Character.UnicodeScript.DEVANAGARI;
+    }
+
+    private FeedbackCoachMissionDto buildForcedTaskResetCoachMission(
+            FeedbackDiagnosisResult diagnosis,
+            String modelAnswer
+    ) {
+        String example = firstNonBlank(
+                modelAnswer,
+                diagnosis == null || diagnosis.rewriteTarget() == null ? null : diagnosis.rewriteTarget().skeleton(),
+                "I usually ____ because ____."
+        );
+        return new FeedbackCoachMissionDto(
+                "TASK_RESET",
+                "질문에 맞는 영어 문장으로 다시 쓰기",
+                null,
+                null,
+                "지금 답변은 영어 문장으로 보기 어렵거나 질문과 연결되는 정보가 부족해요.",
+                "질문에서 묻는 핵심을 영어 한 문장으로 다시 써 보세요.",
+                example,
+                "I usually ____ because ____.",
+                "첫 문장에 질문의 주제와 이유나 상황을 함께 넣어 보세요.",
+                "영어 문장 안에 질문의 핵심 주제와 이유나 상황이 들어가면 성공이에요."
         );
     }
 
@@ -717,7 +867,7 @@ public class OpenAiFeedbackClient {
         String originalText = trimToNull(mission.originalText());
         String revisedText = trimToNull(mission.revisedText());
         boolean comparisonMission = isComparisonMissionType(missionType);
-        if (comparisonMission && (originalText == null || revisedText == null)) {
+        if (comparisonMission && !isMeaningfulComparisonPair(originalText, revisedText)) {
             originalText = null;
             revisedText = null;
         }
@@ -750,9 +900,239 @@ public class OpenAiFeedbackClient {
             return false;
         }
         if (isComparisonMissionType(mission.missionType())) {
-            return trimToNull(mission.originalText()) != null && trimToNull(mission.revisedText()) != null;
+            return isMeaningfulComparisonPair(mission.originalText(), mission.revisedText());
         }
         return true;
+    }
+
+    private boolean shouldRejectGeneratedMission(
+            FeedbackCoachMissionDto mission,
+            MissionDecision missionDecision,
+            FeedbackDiagnosisResult diagnosis,
+            AnswerProfile answerProfile,
+            String learnerAnswer
+    ) {
+        if (isAdditiveContentComparisonMission(mission)) {
+            return true;
+        }
+        return shouldPreferContentFallback(mission, missionDecision, diagnosis, answerProfile, learnerAnswer);
+    }
+
+    private boolean shouldPreferContentFallback(
+            FeedbackCoachMissionDto mission,
+            MissionDecision missionDecision,
+            FeedbackDiagnosisResult diagnosis,
+            AnswerProfile answerProfile,
+            String learnerAnswer
+    ) {
+        if (isAdditiveContentComparisonMission(mission)) {
+            return true;
+        }
+        if (isLowValuePolishComparisonMission(mission)
+                && (isThinAnswer(diagnosis, answerProfile) || !looksLikeBrokenSentenceFrame(learnerAnswer))) {
+            return true;
+        }
+        String missionType = normalizedMissionType(mission);
+        if (hasGenericAdjectiveReason(learnerAnswer)
+                && ("SITUATION".equals(missionType)
+                || "EXPRESSION_POLISH".equals(missionType)
+                || "RESULT".equals(missionType))) {
+            return true;
+        }
+        if ("EXAMPLE".equals(missionType) && isGoodEnoughForOptionalFallback(diagnosis, answerProfile, learnerAnswer)) {
+            return true;
+        }
+        if (isExpressionPolishMission(mission)) {
+            return isThinAnswer(diagnosis, answerProfile)
+                    || countWords(learnerAnswer) < 10
+                    || looksLikeThinSingleSentenceAnswer(learnerAnswer)
+                    || hasFlatClosing(learnerAnswer)
+                    || contentOpportunityFromMissionDecision(missionDecision) != ContentOpportunity.NONE;
+        }
+        return false;
+    }
+
+    private FeedbackCoachMissionDto downgradeReadyAnswerGrammarMission(
+            FeedbackCoachMissionDto mission,
+            FeedbackDiagnosisResult diagnosis
+    ) {
+        if (mission == null || !"GRAMMAR_FIX".equals(normalizedMissionType(mission)) || diagnosis == null) {
+            return mission;
+        }
+        if (diagnosis.answerBand() == AnswerBand.GRAMMAR_BLOCKING
+                || diagnosis.grammarImpact() == GrammarImpact.BLOCKING
+                || diagnosis.grammarSeverity().ordinal() >= GrammarSeverity.MODERATE.ordinal()
+                || diagnosis.meaningClarity() == MeaningClarity.BLOCKED) {
+            return mission;
+        }
+        if (!diagnosis.finishable() && diagnosis.score() < 85 && diagnosis.answerBand() != AnswerBand.NATURAL_BUT_BASIC) {
+            return mission;
+        }
+        return new FeedbackCoachMissionDto(
+                "EXPRESSION_POLISH",
+                mission.title(),
+                mission.originalText(),
+                mission.revisedText(),
+                mission.whyKo(),
+                mission.instructionKo(),
+                mission.exampleEn(),
+                mission.placeholderEn(),
+                mission.targetHintKo(),
+                mission.successCheckKo()
+        );
+    }
+
+    private boolean isExpressionPolishMission(FeedbackCoachMissionDto mission) {
+        return "EXPRESSION_POLISH".equals(normalizedMissionType(mission));
+    }
+
+    private String normalizedMissionType(FeedbackCoachMissionDto mission) {
+        return mission == null ? "" : firstNonBlank(mission.missionType(), "").toUpperCase(Locale.ROOT);
+    }
+
+    private boolean shouldPreferGrammarFallback(
+            FeedbackCoachMissionDto mission,
+            FeedbackDiagnosisResult diagnosis,
+            String learnerAnswer,
+            FeedbackSecondaryLearningPointDto firstFixPoint,
+            String modelAnswer
+    ) {
+        if (mission == null || isComparisonMissionType(mission.missionType())) {
+            return false;
+        }
+        boolean brokenFrame = looksLikeBrokenSentenceFrame(learnerAnswer);
+        if (diagnosis != null && (
+                !diagnosis.onTopic()
+                        || diagnosis.answerBand() == AnswerBand.OFF_TOPIC
+                        || (diagnosis.answerBand() == AnswerBand.NATURAL_BUT_BASIC && !brokenFrame)
+        )) {
+            return false;
+        }
+        if (diagnosis != null && diagnosis.score() >= 80 && !brokenFrame) {
+            return false;
+        }
+        boolean hasFixPair = isMeaningfulComparisonPair(
+                firstFixPoint == null ? null : firstFixPoint.originalText(),
+                firstFixPoint == null ? null : firstFixPoint.revisedText()
+        );
+        boolean hasModelPair = isMeaningfulComparisonPair(
+                learnerAnswer,
+                firstNonBlank(diagnosis == null ? null : diagnosis.minimalCorrection(), modelAnswer)
+        );
+        if (!hasFixPair && !hasModelPair) {
+            return false;
+        }
+        if (diagnosis != null && (
+                diagnosis.answerBand() == AnswerBand.GRAMMAR_BLOCKING
+                        || diagnosis.grammarImpact() == GrammarImpact.BLOCKING
+                        || diagnosis.grammarSeverity().ordinal() >= GrammarSeverity.MAJOR.ordinal()
+                        || diagnosis.meaningClarity() == MeaningClarity.BLOCKED
+        )) {
+            return true;
+        }
+        return brokenFrame;
+    }
+
+    private boolean looksLikeBrokenSentenceFrame(String learnerAnswer) {
+        String normalized = normalizeForComparison(learnerAnswer).toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return false;
+        }
+        return normalized.matches(".*\\b(want|need|try|plan|like)\\s+(be|build|choose|do|drink|eat|exercise|feel|get|go|have|learn|listen|look|make|meet|order|play|rest|see|sleep|speak|study|take|use|visit|wake|walk|wash|watch|work|write)\\b.*")
+                || normalized.matches(".*\\b(go|goes|went)\\s+(company|school|academy|home|work)\\b.*")
+                || normalized.matches(".*\\b(listen|listens|listened)\\s+(music|song|songs|podcast|podcasts)\\b.*")
+                || normalized.matches(".*\\b(wash|washes|washed)\\s+(dish|dishes|face|hair|hand|hands)\\b.*")
+                || normalized.matches(".*\\b(look|looks|looked)\\s+(the\\s+)?(scene|scenery|view|window)\\b.*")
+                || normalized.matches(".*\\bit\\s+(make|makes|made)\\s+me\\s+(exciting|boring|relaxing|interesting|tiring)\\b.*")
+                || normalized.matches(".*\\b(he|she|it|hero|movie|story|drink|taste|scent|habit|goal)\\s+(make|go|save|help|feel|give|need|work)\\b.*")
+                || normalized.matches(".*\\b(in night|on sofa|speak confident|is not hear by|are not hear by|body is heavy)\\b.*")
+                || normalized.matches(".*\\bbecause\\s+[a-z]+\\s+(good|bad|important|fun|healthy|useful|hard|easy)\\b.*")
+                || normalized.matches(".*\\b(health|english|exercise|study|work|school)\\s+(good|important|hard|easy|fun)\\b.*");
+    }
+
+    private boolean isAdditiveContentComparisonMission(FeedbackCoachMissionDto mission) {
+        if (mission == null || !isComparisonMissionType(mission.missionType())) {
+            return false;
+        }
+        String original = normalizeForComparison(mission.originalText()).toLowerCase(Locale.ROOT);
+        String revised = normalizeForComparison(mission.revisedText()).toLowerCase(Locale.ROOT);
+        if (original.isBlank() || revised.isBlank()) {
+            return false;
+        }
+        int extraWords = countWords(revised) - countWords(original);
+        if (countWords(original) <= 3 && extraWords >= 4) {
+            return true;
+        }
+        String originalWithoutTerminalPunctuation = original.replaceAll("[.!?]+$", "");
+        if (!revised.startsWith(original) && !revised.startsWith(originalWithoutTerminalPunctuation)) {
+            return false;
+        }
+        return extraWords >= 3
+                && revised.matches(".*\\b(because|so|when|after that|then|for example|one reason)\\b.*");
+    }
+
+    private boolean isLowValuePolishComparisonMission(FeedbackCoachMissionDto mission) {
+        if (mission == null || !isComparisonMissionType(mission.missionType())) {
+            return false;
+        }
+        String original = normalizeForComparison(mission.originalText()).toLowerCase(Locale.ROOT);
+        String revised = normalizeForComparison(mission.revisedText()).toLowerCase(Locale.ROOT);
+        return (original.contains("put food in the refrigerator")
+                || original.contains("put the food in the refrigerator")
+                || original.contains("put food in refrigerator"))
+                && revised.contains("put")
+                && revised.contains("food")
+                && revised.contains("away");
+    }
+
+    private boolean looksLikeThinSingleSentenceAnswer(String learnerAnswer) {
+        String normalized = normalizeForComparison(learnerAnswer).toLowerCase(Locale.ROOT);
+        int wordCount = countWords(learnerAnswer);
+        if (normalized.isBlank() || wordCount < 8 || wordCount > 14) {
+            return false;
+        }
+        if (normalized.matches(".*\\b(because|so|when|if|that is why|for example)\\b.*")) {
+            return false;
+        }
+        int sentenceCount = 0;
+        Matcher matcher = Pattern.compile("[^.!?]+[.!?]*").matcher(learnerAnswer == null ? "" : learnerAnswer.trim());
+        while (matcher.find()) {
+            if (!matcher.group().trim().isBlank()) {
+                sentenceCount++;
+            }
+        }
+        return sentenceCount <= 1;
+    }
+
+    private boolean isThinAnswer(FeedbackDiagnosisResult diagnosis, AnswerProfile answerProfile) {
+        AnswerBand answerBand = diagnosis != null && diagnosis.answerBand() != null
+                ? diagnosis.answerBand()
+                : answerProfile == null || answerProfile.task() == null ? null : answerProfile.task().answerBand();
+        return answerBand == AnswerBand.CONTENT_THIN
+                || answerBand == AnswerBand.SHORT_BUT_VALID
+                || answerBand == AnswerBand.TOO_SHORT_FRAGMENT;
+    }
+
+    private boolean isMeaningfulComparisonPair(String originalText, String revisedText) {
+        String original = trimToNull(originalText);
+        String revised = trimToNull(revisedText);
+        return original != null
+                && revised != null
+                && !normalizeForComparison(original).equalsIgnoreCase(normalizeForComparison(revised));
+    }
+
+    private boolean hasGenericAdjectiveReason(String learnerAnswer) {
+        String normalized = normalizeForComparison(learnerAnswer).toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return false;
+        }
+        return normalized.matches(".*\\bbecause\\s+(it|this|that|they|he|she)?\\s*(is|are|was|were|feels?|make[s]? me)?\\s*(very\\s+|really\\s+|so\\s+)?(good|nice|delicious|fun|interesting|exciting|excited|happy|comfortable|important|easy|convenient|warm|sweet|special|useful|healthy)\\b.*")
+                || normalized.matches(".*\\bi like (it|this|that|them) because (it|this|that|they) (is|are|was|were) (good|nice|delicious|fun|interesting|exciting|warm|sweet|special|useful)\\b.*");
+    }
+
+    private boolean hasFlatClosing(String learnerAnswer) {
+        String normalized = normalizeForComparison(learnerAnswer).toLowerCase(Locale.ROOT);
+        return normalized.matches(".*\\b(that is all|that's all|that s all|that all|it is all)\\b.*");
     }
 
     private FeedbackCoachMissionDto buildFallbackCoachMission(
@@ -764,8 +1144,7 @@ public class OpenAiFeedbackClient {
             String modelAnswer
     ) {
         if (firstFixPoint != null
-                && trimToNull(firstFixPoint.originalText()) != null
-                && trimToNull(firstFixPoint.revisedText()) != null) {
+                && isMeaningfulComparisonPair(firstFixPoint.originalText(), firstFixPoint.revisedText())) {
             String title = firstNonBlank(
                     firstFixPoint.title(),
                     firstFixPoint.headline(),
@@ -790,6 +1169,32 @@ public class OpenAiFeedbackClient {
         }
 
         MissionDefaults defaults = missionDefaults(diagnosis, answerProfile);
+        if (isComparisonMissionType(defaults.type())) {
+            String revised = firstNonBlank(
+                    diagnosis == null ? null : diagnosis.minimalCorrection(),
+                    modelAnswer
+            );
+            if (isMeaningfulComparisonPair(learnerAnswer, revised)) {
+                return new FeedbackCoachMissionDto(
+                        defaults.type(),
+                        defaults.titleKo(),
+                        learnerAnswer,
+                        revised,
+                        defaults.whyKo(),
+                        defaults.instructionKo(),
+                        revised,
+                        revised,
+                        defaults.targetHintKo(),
+                        defaults.successCheckKo()
+                );
+            }
+            defaults = missionDefaultsForOpportunity(resolveContentFallbackOpportunity(
+                    diagnosis,
+                    answerProfile,
+                    learnerAnswer,
+                    null
+            ));
+        }
         String example = firstNonBlank(
                 refinementExpressions == null || refinementExpressions.isEmpty() ? null : refinementExpressions.get(0).exampleEn(),
                 modelAnswer,
@@ -809,6 +1214,150 @@ public class OpenAiFeedbackClient {
         );
     }
 
+    private FeedbackCoachMissionDto buildGrammarFallbackCoachMission(
+            FeedbackDiagnosisResult diagnosis,
+            AnswerProfile answerProfile,
+            String learnerAnswer,
+            FeedbackSecondaryLearningPointDto firstFixPoint,
+            List<RefinementCard> refinementExpressions,
+            String modelAnswer
+    ) {
+        if (firstFixPoint != null
+                && isMeaningfulComparisonPair(firstFixPoint.originalText(), firstFixPoint.revisedText())) {
+            return buildFallbackCoachMission(
+                    diagnosis,
+                    answerProfile,
+                    learnerAnswer,
+                    firstFixPoint,
+                    refinementExpressions,
+                    modelAnswer
+            );
+        }
+        String revised = firstNonBlank(
+                diagnosis == null ? null : diagnosis.minimalCorrection(),
+                modelAnswer
+        );
+        return new FeedbackCoachMissionDto(
+                "GRAMMAR_FIX",
+                "문장 골격 먼저 고치기",
+                learnerAnswer,
+                revised,
+                "단어 뜻은 보이지만 문장 골격이 흔들려서, 내용을 더 붙이기 전에 한 번 자연스러운 문장으로 세우는 게 좋아요.",
+                "새 내용을 더하기 전에, 같은 뜻을 주어와 동사가 분명한 한 문장으로 먼저 고쳐 보세요.",
+                revised,
+                revised,
+                "원래 말하려던 뜻은 유지하고 문장 골격만 먼저 바로잡아 보세요.",
+                "같은 뜻이 자연스러운 영어 문장으로 바뀌면 성공입니다."
+        );
+    }
+
+    private FeedbackCoachMissionDto buildContentFallbackCoachMission(
+            FeedbackDiagnosisResult diagnosis,
+            AnswerProfile answerProfile,
+            String learnerAnswer,
+            MissionDecision missionDecision,
+            List<RefinementCard> refinementExpressions,
+            String modelAnswer
+    ) {
+        MissionDefaults defaults = missionDefaultsForOpportunity(resolveContentFallbackOpportunity(
+                diagnosis,
+                answerProfile,
+                learnerAnswer,
+                missionDecision
+        ));
+        String example = firstNonBlank(
+                missionDecision == null ? null : missionDecision.addOnExampleEn(),
+                refinementExpressions == null || refinementExpressions.isEmpty() ? null : refinementExpressions.get(0).exampleEn(),
+                modelAnswer,
+                defaults.exampleEn()
+        );
+        return new FeedbackCoachMissionDto(
+                defaults.type(),
+                defaults.titleKo(),
+                null,
+                null,
+                defaults.whyKo(),
+                defaults.instructionKo(),
+                example,
+                defaults.exampleEn(),
+                defaults.targetHintKo(),
+                defaults.successCheckKo()
+        );
+    }
+
+    private ContentOpportunity resolveContentFallbackOpportunity(
+            FeedbackDiagnosisResult diagnosis,
+            AnswerProfile answerProfile,
+            String learnerAnswer,
+            MissionDecision missionDecision
+    ) {
+        if (hasGenericAdjectiveReason(learnerAnswer)) {
+            return ContentOpportunity.REASON;
+        }
+        if (isGoodEnoughForOptionalFallback(diagnosis, answerProfile, learnerAnswer)) {
+            return ContentOpportunity.DETAIL;
+        }
+        ContentOpportunity decisionOpportunity = contentOpportunityFromMissionDecision(missionDecision);
+        if (decisionOpportunity != ContentOpportunity.NONE) {
+            return decisionOpportunity;
+        }
+        if (diagnosis != null && diagnosis.contentOpportunity() != ContentOpportunity.NONE) {
+            return diagnosis.contentOpportunity();
+        }
+        if (hasFlatClosing(learnerAnswer)) {
+            return ContentOpportunity.RESULT;
+        }
+        AnswerBand answerBand = diagnosis != null && diagnosis.answerBand() != null
+                ? diagnosis.answerBand()
+                : answerProfile == null || answerProfile.task() == null ? null : answerProfile.task().answerBand();
+        String action = diagnosis != null && diagnosis.rewriteTarget() != null
+                ? diagnosis.rewriteTarget().action()
+                : diagnosis == null ? null : diagnosis.primaryIssueCode();
+        ContentOpportunity inferred = resolveContentOpportunity(diagnosis, action, answerBand);
+        return inferred == ContentOpportunity.NONE ? ContentOpportunity.DETAIL : inferred;
+    }
+
+    private boolean isGoodEnoughForOptionalFallback(
+            FeedbackDiagnosisResult diagnosis,
+            AnswerProfile answerProfile,
+            String learnerAnswer
+    ) {
+        AnswerBand answerBand = diagnosis != null && diagnosis.answerBand() != null
+                ? diagnosis.answerBand()
+                : answerProfile == null || answerProfile.task() == null ? null : answerProfile.task().answerBand();
+        TaskCompletion taskCompletion = diagnosis != null && diagnosis.taskCompletion() != null
+                ? diagnosis.taskCompletion()
+                : answerProfile == null || answerProfile.task() == null ? null : answerProfile.task().taskCompletion();
+        GrammarSeverity grammarSeverity = diagnosis != null && diagnosis.grammarSeverity() != null
+                ? diagnosis.grammarSeverity()
+                : answerProfile == null || answerProfile.grammar() == null ? GrammarSeverity.NONE : answerProfile.grammar().severity();
+        return answerBand == AnswerBand.NATURAL_BUT_BASIC
+                && taskCompletion == TaskCompletion.FULL
+                && grammarSeverity.ordinal() <= GrammarSeverity.MINOR.ordinal()
+                && hasRequiredSupportClause(answerProfile)
+                && !hasGenericAdjectiveReason(learnerAnswer)
+                && !hasFlatClosing(learnerAnswer);
+    }
+
+    private ContentOpportunity contentOpportunityFromMissionDecision(MissionDecision missionDecision) {
+        if (missionDecision == null) {
+            return ContentOpportunity.NONE;
+        }
+        String contentNeed = firstNonBlank(missionDecision.contentNeed(), missionDecision.chosenType());
+        if (contentNeed == null) {
+            return ContentOpportunity.NONE;
+        }
+        return switch (contentNeed.toUpperCase(Locale.ROOT)) {
+            case "REASON", "ADD_REASON" -> ContentOpportunity.REASON;
+            case "DETAIL", "ADD_DETAIL" -> ContentOpportunity.DETAIL;
+            case "EXAMPLE", "ADD_EXAMPLE" -> ContentOpportunity.EXAMPLE;
+            case "SITUATION", "ADD_SITUATION" -> ContentOpportunity.SITUATION;
+            case "FEELING", "ADD_FEELING" -> ContentOpportunity.FEELING;
+            case "RESULT", "ADD_RESULT" -> ContentOpportunity.RESULT;
+            default -> ContentOpportunity.NONE;
+        };
+    }
+
     private List<FeedbackSecondaryLearningPointDto> alignFixPointsWithMission(
             FeedbackCoachMissionDto mission,
             List<FeedbackSecondaryLearningPointDto> fixPoints
@@ -819,6 +1368,9 @@ public class OpenAiFeedbackClient {
         FeedbackSecondaryLearningPointDto missionPoint = missionAsLearningPoint(mission);
         if (missionPoint == null) {
             return fixPoints == null ? List.of() : fixPoints;
+        }
+        if ("TASK_RESET".equals(normalizedMissionType(mission))) {
+            return List.of(missionPoint);
         }
         List<FeedbackSecondaryLearningPointDto> aligned = new ArrayList<>();
         aligned.add(missionPoint);
@@ -859,6 +1411,9 @@ public class OpenAiFeedbackClient {
     ) {
         if (mission == null || refinementExpressions == null || refinementExpressions.isEmpty()) {
             return refinementExpressions == null ? List.of() : refinementExpressions;
+        }
+        if ("TASK_RESET".equals(normalizedMissionType(mission))) {
+            return List.of();
         }
         String missionOriginal = normalizeForComparison(firstNonBlank(mission.originalText(), ""));
         String missionRevised = normalizeForComparison(firstNonBlank(mission.revisedText(), ""));
@@ -1464,6 +2019,13 @@ public class OpenAiFeedbackClient {
             return null;
         }
         for (FeedbackSecondaryLearningPointDto point : fixPoints) {
+            if (point != null
+                    && !"EXPRESSION".equals(trimToNull(point.kind()))
+                    && isMeaningfulComparisonPair(point.originalText(), point.revisedText())) {
+                return point;
+            }
+        }
+        for (FeedbackSecondaryLearningPointDto point : fixPoints) {
             if (point != null && !"EXPRESSION".equals(trimToNull(point.kind()))) {
                 return point;
             }
@@ -2029,20 +2591,6 @@ public class OpenAiFeedbackClient {
                                         "required", List.of("expression", "guidanceKo", "exampleEn", "exampleKo", "meaningKo")
                                 )
                         )),
-                        Map.entry("modelAnswerVariants", Map.of(
-                                "type", "array",
-                                "items", Map.of(
-                                        "type", "object",
-                                        "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "kind", Map.of("type", List.of("string", "null")),
-                                                "answer", Map.of("type", List.of("string", "null")),
-                                                "answerKo", Map.of("type", List.of("string", "null")),
-                                                "reasonKo", Map.of("type", List.of("string", "null"))
-                                        ),
-                                        "required", List.of("kind", "answer", "answerKo", "reasonKo")
-                                )
-                        )),
                         Map.entry("missionDecision", Map.of(
                                 "type", "object",
                                 "additionalProperties", false,
@@ -2155,7 +2703,6 @@ public class OpenAiFeedbackClient {
                         "fixPoints",
                         "usedExpressions",
                         "refinementExpressions",
-                        "modelAnswerVariants",
                         "missionDecision",
                         "coachMission",
                         "modelAnswer",
@@ -2297,7 +2844,6 @@ public class OpenAiFeedbackClient {
                   4) Build fixPoints so the first fixPoint explains the same issue/action as missionDecision and coachMission.
                   5) Add refinementExpressions only when they support the same next rewrite without repeating fixPoints.
                   6) Write modelAnswer only as a quiet reference. It must not introduce changes that conflict with coachMission.
-                  7) Add modelAnswerVariants only when they are genuinely useful and still support the same mission.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
                 - Do not reuse a broken learner phrase in strengths, refinementExpressions, coachMission, or modelAnswer.
                 - The top-card mission, detailed feedback, rewrite guide, and successCheck must all point to the same one action.
@@ -2334,16 +2880,29 @@ public class OpenAiFeedbackClient {
                 - If the answer is understandable but thin, choose CONTENT_THIN or SHORT_BUT_VALID and make coachMission an add-on mission even when small local errors exist.
                 - Small issues such as capitalization, contraction, article preference, a plural ending, or one nicer word choice belong in fixPoints/refinementExpressions, not the top mission.
                 - Use GRAMMAR_FIX as the top mission only when grammarImpact is BLOCKING, grammarSeverity is MAJOR/MODERATE, or the local error prevents the learner from answering the prompt clearly.
+                - taskCompletion=PARTIAL means the learner answered part of the prompt but missed one required slot. It is not OFF_TOPIC by itself.
+                - Use OFF_TOPIC only when the answer has no prompt-relevant anchor, such as no relevant preference, action, place, plan, reason, time, or topic noun from the question.
+                - A short, generic, or partially complete but on-topic answer should be SHORT_BUT_VALID or CONTENT_THIN, never OFF_TOPIC.
+                - If the answer has no prompt-relevant anchor, set answerBand=OFF_TOPIC and make the top mission TASK_RESET. Do not disguise a reset as REASON, DETAIL, or SITUATION.
+                - Romanized Korean without a real English sentence frame is not an English answer. Examples: "beoseu tago hakgyo gayo", "geunyang joayo", "molla". Treat it as OFF_TOPIC/TASK_RESET, not a grammar repair.
+                - Treat word-order fragments without normal subject-verb structure as GRAMMAR_BLOCKING when they need a full sentence frame, for example "home go", "dinner eat", "breakfast eat", "school go", "I want make habit", "every day do it", or a sequence of noun/verb fragments.
+                - Treat repeated Korean-learner frame errors as GRAMMAR_BLOCKING when the core sentence needs repair before expansion: missing `to` after want/need/try/plan, missing object/preposition after listen/look/go, or patterns like "it make me exciting", "go company", "wash face", "listen music".
+                - If the learner already answers the required slots with a clear action/preference/plan plus a reason or fitting moment when the prompt asks for it, do not force another optional detail. Mark finishable=true unless a blocking grammar issue remains.
+                - Generic adjective reasons such as "it is delicious", "it is good", "it is fun", "it is exciting", or "it makes me happy" are weak reasons, not completion proof. If the prompt asks why, choose REASON, DETAIL, EXAMPLE, FEELING, or RESULT before EXPRESSION_POLISH.
 
                 Mission selection ladder:
-                1) If the answer is off topic or misses the prompt's main task, choose TASK_RESET.
-                2) Else if grammarImpact is BLOCKING, choose GRAMMAR_FIX.
-                3) Else if the prompt asks "why" and the reason is missing, generic, or could be personal, choose REASON.
-                4) Else if the answer would become clearer with one concrete scene/time/place/detail, choose SITUATION or DETAIL.
-                5) Else if the answer needs proof or specificity, choose EXAMPLE.
-                6) Else if the answer would feel more personal with emotion or outcome, choose FEELING or RESULT.
-                7) Else if grammarImpact is LOCAL and the local error is more important than any expansion opportunity, choose GRAMMAR_FIX.
-                8) Else if the answer is already acceptable, mark finishable=true or choose a tiny EXPRESSION_POLISH mission only if it has real value.
+                1) Choose TASK_RESET only as a last-resort reset: blank/refusal, non-English gibberish, truly different topic, or no prompt-relevant anchor.
+                1a) If the answer is mostly romanized Korean, Hangul, emoji/noise, random words, or a refusal, choose TASK_RESET even if the words hint at the topic.
+                2) If the learner names any relevant food, movie, place, season, music, routine, goal, action, time, or reason from the question, TASK_RESET is forbidden.
+                3) If grammarImpact is BLOCKING, choose GRAMMAR_FIX.
+                4) If the prompt asks "why" and the reason is missing, generic, or could be personal, choose REASON.
+                5) If the answer needs one concrete action, object, scene, or descriptive fact, choose DETAIL.
+                6) If the missing slot is specifically time/place/context, choose SITUATION.
+                7) If the answer needs proof, a concrete instance, or "for example" support, choose EXAMPLE.
+                8) If the answer would feel more personal with emotion or outcome, choose FEELING or RESULT.
+                9) If grammarImpact is LOCAL and the local error is more important than any expansion opportunity, choose GRAMMAR_FIX.
+                10) If the answer is already acceptable, mark finishable=true or choose a tiny EXPRESSION_POLISH mission only if it has real value.
+                11) If the answer is finishable and the only issue is collocation/natural wording, choose EXPRESSION_POLISH rather than GRAMMAR_FIX.
 
                 Strengths and usedExpressions rules:
                 - strengths should usually be one short Korean keep-signal based on meaning, not a full raw quote unless it is already clean and necessary.
@@ -2410,15 +2969,27 @@ public class OpenAiFeedbackClient {
                   * LOW_VALUE_POLISH: grammar/naturalness can be improved, but the answer is understandable and the issue is not the best next action.
                   * NONE: no meaningful grammar repair is needed.
                 - contentNeed is the single best add-on slot if the answer is understandable: REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, or NONE.
+                - TASK_RESET is a last-resort reset, not a label for thinness, generic reasons, missing examples, or one missing required slot.
+                - Before choosing TASK_RESET, ask: does the answer contain any prompt-relevant anchor? If yes, chosenType must be the missing-slot mission instead.
+                - If the answer contains no prompt-relevant anchor, chosenType must be TASK_RESET. Do not choose SITUATION, REASON, DETAIL, EXAMPLE, FEELING, or RESULT for a completely unrelated answer.
+                - If taskCompletion is PARTIAL, chosenType should normally be the missing required slot: REASON for missing/generic why, EXAMPLE for missing proof, DETAIL for missing concrete action/detail, SITUATION for missing time/place/context, FEELING or RESULT for missing personal reaction/outcome.
+                - SITUATION means adding when/where/context. Do not use it as a generic "make richer" bucket for missing reasons or examples.
+                - If the answer is made of broken word-order fragments and needs a sentence frame before any content can be added, choose GRAMMAR_FIX even if a reason/detail is also missing.
+                - If the answer has two or more sentence-frame errors such as missing `to`, missing possessive object, wrong verb pattern, missing preposition after listen/look/go, or wrong emotional adjective after make me, set grammarPriority=BLOCKING and choose GRAMMAR_FIX before adding content.
+                - For already complete answers with clear required slots, set finishable=true and choose no add-on mission just to make the answer longer. A good action plus reason should be allowed to finish.
                 - If meaningClarity is CLEAR or PARTLY_CLEAR, contentNeed is not NONE, and grammarPriority is NONE or LOW_VALUE_POLISH, chosenType must be the contentNeed value, not GRAMMAR_FIX or EXPRESSION_POLISH.
                 - If the answer is understandable but thin, pick the most useful add-on mission even if there are small grammar issues. Put those small issues in missionDecision.minorFixes and later fixPoints.
                 - Treat flat/generic endings or generic reasons as contentNeed, not polish: examples include "That is all", "I feel good", "It is fun", "because I am tired", "give me energy", and vague future/job reasons.
+                - When the only reason is a generic adjective such as delicious/good/fun/exciting/happy, do not mark finishable=true and do not choose EXPRESSION_POLISH. Ask for a personal reason, concrete detail, example, feeling, or result.
                 - If the learner uses "That is all" as a final sentence, never choose EXPRESSION_POLISH just to change it to "That's all." Treat it as a flat ending and choose RESULT, FEELING, DETAIL, or REASON with a meaningful sentence that can replace or follow it.
+                - Never set EXPRESSION_POLISH for "That is all", "That's all", "That's my routine", or any formal closing phrase. These are not useful polish targets. Choose RESULT, FEELING, DETAIL, or REASON and give a meaningful closing sentence instead.
+                - If an answer ends with "That is all", keep finishable=false unless the top mission is already a meaningful content mission. Do not use a contraction, article, plural, or tiny wording polish as the top mission for that answer.
                 - Do not choose EXPRESSION_POLISH or GRAMMAR_FIX only to improve a natural collocation, article, singular/plural, verb agreement, or one short phrase when the answer could become more personal with one detail, feeling, result, example, or reason.
                 - Concrete low-priority grammar examples that should usually become minorFixes, not the top mission: "sunny day" -> "sunny weather", "give" -> "gives", "future job need English" -> "my future job will need English", "put the food in the refrigerator" -> "put the food away".
                 - For weather-feeling prompts, if the learner says a generic feeling such as "I feel good", "I feel happy", or "It makes me feel good", choose FEELING or DETAIL to make the feeling more specific. Do not choose "sunny day" -> "sunny weather" as the top mission.
                 - If an answer already has the minimum required parts but still feels flat, choose FEELING, RESULT, DETAIL, or EXAMPLE before EXPRESSION_POLISH.
                 - EXPRESSION_POLISH is a last-resort mission for an answer that is already personal and sufficiently developed. Do not use it as a shortcut for a visible correction pair when a stronger GRAMMAR_FIX or content add-on mission exists.
+                - If an answer is only one plain sentence with no reason, feeling, result, example, or concrete support, do not choose EXPRESSION_POLISH. Choose the missing content slot instead.
                 - When several local fixes exist, do not pick the tiniest polish. Either choose the highest-value local repair that affects the core action, or choose a content add-on if the answer is understandable but flat.
                 - If chosenType is REASON, DETAIL, SITUATION, EXAMPLE, FEELING, or RESULT, addOnExampleEn must be a complete, natural, learner-specific sentence that can be added to the current answer. It must reuse concrete nouns/actions from the learner answer and may add one plausible detail.
                 - For add-on missions, addOnPlacementKo must explain exactly where the new sentence belongs, such as after the main answer, after the action, before the reason, or at the end.
@@ -2434,10 +3005,15 @@ public class OpenAiFeedbackClient {
                 - Choose missionType from REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, GRAMMAR_FIX, TASK_RESET, or EXPRESSION_POLISH.
                 - coachMission.missionType must exactly equal missionDecision.chosenType.
                 - For GRAMMAR_FIX or EXPRESSION_POLISH, set coachMission.originalText to the exact learner span that should change and coachMission.revisedText to the directly corrected span. Keep both short, aligned, and replaceable.
+                - Never return the same text for coachMission.originalText and coachMission.revisedText. If there is no concrete before/after change, do not choose GRAMMAR_FIX or EXPRESSION_POLISH.
                 - The originalText/revisedText pair must match instructionKo exactly. If instructionKo says to remove or replace one connector such as "for that", originalText should be that connector or the smallest phrase around it, not a whole sentence that drops other ideas.
                 - For REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, or TASK_RESET, set coachMission.originalText and coachMission.revisedText to null.
                 - Do not put an optional add-on example into revisedText. exampleEn is only an imitation example or starter, not the green comparison sentence.
                 - If the prompt asks for multiple parts, choose a mission that fills the most important missing part rather than a vague "make it richer" instruction.
+                - If the learner answered at least one prompt-relevant part, do not use TASK_RESET. Give a concrete missing-slot mission instead.
+                - If coachMission is TASK_RESET, title, instructionKo, and successCheckKo must explicitly name the current prompt topic and the part the learner must answer from scratch.
+                - If the answer has no prompt-relevant anchor, coachMission.missionType must be TASK_RESET and the instruction must tell the learner to answer the actual question from scratch.
+                - If the answer is a broken fragment sequence such as "home go. dinner eat", coachMission.missionType should normally be GRAMMAR_FIX with a short originalText/revisedText comparison pair.
                 - If the learner already answered the basic question but sounds thin, choose one concrete add-on mission: a reason, situation, example, feeling, or result.
                 - For add-on missions, instructionKo must name exactly what kind of sentence to add and where to add it.
                 - For add-on missions, coachMission.exampleEn should match missionDecision.addOnExampleEn or be a very close adaptation of it.
@@ -2445,6 +3021,8 @@ public class OpenAiFeedbackClient {
                 - Do not use a correction-first priority. If the learner's meaning is understandable and the answer is thin, choose an add-on mission first even when there are small local grammar or naturalness issues.
                 - Use EXPRESSION_POLISH as the top mission only when the answer already has enough personal support and contentOpportunity is NONE.
                 - Do not use EXPRESSION_POLISH to repair a flat closing phrase such as "That is all"; turn that into a meaningful RESULT, FEELING, DETAIL, or REASON mission instead.
+                - Do not use "That is all" as coachMission.originalText for EXPRESSION_POLISH. If that phrase appears, the mission must ask for a real final feeling, result, reason, or detail.
+                - Do not choose EXPRESSION_POLISH for generic reasons like "it is delicious" or "it is fun and exciting" when the prompt asks why. The visible mission should tell the learner what personal reason/detail/example/feeling to add.
                 - Do not use GRAMMAR_FIX to repair `sunny day` when the prompt asks about feeling and the answer only says `I feel good`; the better mission is to make the feeling more specific.
                 - Use GRAMMAR_FIX as the top mission only when that single repair is more important than adding content: meaning is blocked, grammarImpact is BLOCKING, grammarSeverity is MAJOR/MODERATE, or contentOpportunity is NONE.
                 - A single small collocation, article, plural, or subject-verb agreement fix is usually not enough reason to choose GRAMMAR_FIX if the answer needs one more personal detail, feeling, result, or example.
@@ -2467,16 +3045,6 @@ public class OpenAiFeedbackClient {
                 - Prefer putting extra reasons, examples, details, time flow, imagery, and optional polish into refinementExpressions instead of modelAnswer.
                 - For OFF_TOPIC or TOO_SHORT_FRAGMENT, modelAnswer may reset the answer toward the prompt or toward one complete base sentence, but should still stay as close as possible to what the learner seems to be trying to say.
                 - Preserve referent, pronoun, and singular/plural agreement taught in fixPoints, and do not switch between plural they and singular it unless one fixPoint explicitly teaches that shift.
-
-                modelAnswerVariants rules:
-                - modelAnswerVariants are optional alternate versions of modelAnswer, not replacements for it.
-                - Use kind NATURAL_POLISH for a version that keeps the same core content but sounds smoother or more native.
-                - Use kind RICHER_DETAIL for a version that keeps the same core answer but adds one natural supporting detail, reason, example, or image.
-                - Return 0-2 items total, and never more than one item per kind.
-                - If a variant would be effectively the same as modelAnswer or another variant, omit it.
-                - answer should be the English variant.
-                - answerKo must be a short Korean translation written in Hangul. Never copy the English answer into answerKo. If you are not confident in the Korean translation, return answerKo as null.
-                - reasonKo should explain why this version is different in one short Korean line.
 
                 Diagnosis-to-section alignment:
                 %s
@@ -4294,16 +4862,57 @@ public class OpenAiFeedbackClient {
                 || answerBand == AnswerBand.SHORT_BUT_VALID) {
             return false;
         }
+        if (shouldForceTaskResetAnswer(learnerAnswer)) {
+            return false;
+        }
         if (answerBand == AnswerBand.GRAMMAR_BLOCKING) {
             return false;
         }
-        if (taskCompletion != TaskCompletion.FULL) {
+        if (taskCompletion != TaskCompletion.FULL && !hasConcreteGoalCompletionCue(learnerAnswer)) {
             return false;
         }
         if (!isSubmissionReadyForCompletion(learnerAnswer, answerProfile, grammarFeedback)) {
             return false;
         }
-        return finishable;
+        return finishable || shouldAutoComplete(answerBand, learnerAnswer, answerProfile);
+    }
+
+    private boolean shouldAutoComplete(
+            AnswerBand answerBand,
+            String learnerAnswer,
+            AnswerProfile answerProfile
+    ) {
+        if (answerBand != AnswerBand.NATURAL_BUT_BASIC) {
+            return answerBand == AnswerBand.CONTENT_THIN
+                    && countWords(learnerAnswer) >= 12
+                    && (hasStrongCompletionSignals(answerProfile) || hasConcreteGoalCompletionCue(learnerAnswer))
+                    && !hasGenericAdjectiveReason(learnerAnswer)
+                    && !hasFlatClosing(learnerAnswer);
+        }
+        return hasRequiredSupportClause(answerProfile)
+                && !hasGenericAdjectiveReason(learnerAnswer)
+                && !hasFlatClosing(learnerAnswer);
+    }
+
+    private boolean hasStrongCompletionSignals(AnswerProfile answerProfile) {
+        if (answerProfile == null || answerProfile.content() == null || answerProfile.content().signals() == null) {
+            return false;
+        }
+        ContentSignals signals = answerProfile.content().signals();
+        return signals.hasMainAnswer()
+                && signals.hasReason()
+                && signals.hasActivity()
+                && signals.hasTimeOrPlace();
+    }
+
+    private boolean hasConcreteGoalCompletionCue(String learnerAnswer) {
+        String normalized = normalizeForComparison(learnerAnswer).toLowerCase(Locale.ROOT);
+        if (!normalized.contains("because")) {
+            return false;
+        }
+        return normalized.matches(".*\\b\\d+\\s+times?\\s+a\\s+week\\b.*")
+                || normalized.matches(".*\\b(one|two|three|four|five|six|seven)\\s+times?\\s+a\\s+week\\b.*")
+                || normalized.matches(".*\\b(every day|this year|next year|every morning|every night)\\b.*");
     }
 
     private boolean isSubmissionReadyForCompletion(

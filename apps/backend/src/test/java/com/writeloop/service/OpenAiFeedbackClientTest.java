@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.FeedbackCoachMissionDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
+import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.PromptDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -104,6 +105,15 @@ class OpenAiFeedbackClientTest {
                 .contains("Mission selection ladder:")
                 .contains("missionDecision is the source of truth for selecting the top mission")
                 .contains("missionDecision.chosenType must exactly match coachMission.missionType")
+                .contains("TASK_RESET is a last-resort reset")
+                .contains("If the answer contains no prompt-relevant anchor, chosenType must be TASK_RESET")
+                .contains("If taskCompletion is PARTIAL")
+                .contains("SITUATION means adding when/where/context")
+                .contains("broken word-order fragments")
+                .contains("Never set EXPRESSION_POLISH for")
+                .contains("Generic adjective reasons")
+                .contains("it is delicious")
+                .contains("Never return the same text for coachMission.originalText")
                 .contains("If meaningClarity is CLEAR or PARTLY_CLEAR, contentNeed is not NONE")
                 .contains("For add-on missions, coachMission.exampleEn should match missionDecision.addOnExampleEn")
                 .contains("Do not rely on a generic backend fallback");
@@ -130,6 +140,10 @@ class OpenAiFeedbackClientTest {
         );
 
         JsonNode request = objectMapper.readTree(requestBody);
+        JsonNode schemaProperties = request.path("text")
+                .path("format")
+                .path("schema")
+                .path("properties");
         JsonNode usedExpressionProperties = request.path("text")
                 .path("format")
                 .path("schema")
@@ -150,6 +164,7 @@ class OpenAiFeedbackClientTest {
         assertThat(usedExpressionProperties.path("tags").isMissingNode()).isFalse();
         assertThat(refinementExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
         assertThat(refinementExpressionProperties.path("guidanceKo").isMissingNode()).isFalse();
+        assertThat(schemaProperties.has("modelAnswerVariants")).isFalse();
         assertThat(promptText)
                 .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
                 .contains("Do not return full sentences, subject-heavy clauses, or chunks with answer-specific tail details")
@@ -157,7 +172,8 @@ class OpenAiFeedbackClientTest {
                 .contains("usedExpressions.tags must contain 2 to 6 tags")
                 .contains("Tag the reusable expression itself, not the surrounding example sentence or answer context.")
                 .contains("refinementExpressions are the single source")
-                .contains("exampleEn must not be identical to expression");
+                .contains("exampleEn must not be identical to expression")
+                .doesNotContain("modelAnswerVariants rules");
     }
 
     @Test
@@ -290,6 +306,517 @@ class OpenAiFeedbackClientTest {
     }
 
     @Test
+    void resolveMissionSourceOfTruthRejectsSameTextComparisonAndUsesMeaningfulFixPoint() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
+                "GRAMMAR_FIX",
+                "Fix tense",
+                "I go home",
+                "I go home",
+                "The comparison is not useful.",
+                "Fix only the tense.",
+                "I went home.",
+                "I went home.",
+                "Change the verb tense.",
+                "The sentence uses past tense."
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                68,
+                AnswerBand.GRAMMAR_BLOCKING,
+                TaskCompletion.FULL,
+                true,
+                false,
+                MeaningClarity.PARTLY_CLEAR,
+                GrammarImpact.BLOCKING,
+                ContentOpportunity.NONE,
+                "A real before/after pair is needed.",
+                GrammarSeverity.MAJOR,
+                List.of(),
+                "I went home.",
+                "FIX_BLOCKING_GRAMMAR",
+                null,
+                new RewriteTarget("FIX_BLOCKING_GRAMMAR", "I went home.", 1),
+                ExpansionBudget.NONE,
+                List.of()
+        );
+        FeedbackSecondaryLearningPointDto fixPoint = new FeedbackSecondaryLearningPointDto(
+                "GRAMMAR_FIX",
+                "Fix tense",
+                "Fix tense",
+                "Past action needs past tense.",
+                "I go home",
+                "I went home",
+                null,
+                null,
+                "I went home.",
+                null
+        );
+
+        FeedbackCoachMissionDto resolved = ReflectionTestUtils.invokeMethod(
+                client,
+                "resolveMissionSourceOfTruth",
+                generatedMission,
+                null,
+                diagnosis,
+                supportedCompleteProfile(),
+                "I go home.",
+                List.of(fixPoint),
+                List.of(),
+                "I went home."
+        );
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.missionType()).isEqualTo("GRAMMAR_FIX");
+        assertThat(resolved.originalText()).isEqualTo("I go home");
+        assertThat(resolved.revisedText()).isEqualTo("I went home");
+    }
+
+    @Test
+    void resolveMissionSourceOfTruthPrefersContentMissionForThinGenericReasonOverPolish() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
+                "EXPRESSION_POLISH",
+                "Make it natural",
+                "because it is delicious",
+                "because it tastes rich and creamy",
+                "A richer expression is possible.",
+                "Change the expression.",
+                "because it tastes rich and creamy.",
+                "because it tastes rich and creamy.",
+                "Replace the phrase.",
+                "The expression sounds more natural."
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                78,
+                AnswerBand.CONTENT_THIN,
+                TaskCompletion.FULL,
+                true,
+                false,
+                MeaningClarity.CLEAR,
+                GrammarImpact.POLISH,
+                ContentOpportunity.REASON,
+                "The answer needs a personal reason more than expression polish.",
+                GrammarSeverity.MINOR,
+                List.of(),
+                null,
+                "ADD_REASON",
+                null,
+                new RewriteTarget("ADD_REASON", "I like it because ____.", 1),
+                ExpansionBudget.ONE_SUPPORT_SENTENCE,
+                List.of()
+        );
+        MissionDecision missionDecision = new MissionDecision(
+                "EXPRESSION_POLISH",
+                "LOW_VALUE_POLISH",
+                "REASON",
+                "Prefer a reason.",
+                "Minor polish is not the main issue.",
+                "I like it because it reminds me of weekends.",
+                "Add the reason at the end.",
+                List.of()
+        );
+
+        FeedbackCoachMissionDto resolved = ReflectionTestUtils.invokeMethod(
+                client,
+                "resolveMissionSourceOfTruth",
+                generatedMission,
+                missionDecision,
+                diagnosis,
+                sampleAnswerProfile(),
+                "My favorite food is pasta. I like it because it is delicious.",
+                List.of(),
+                List.of(),
+                null
+        );
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.missionType()).isEqualTo("REASON");
+        assertThat(resolved.originalText()).isNull();
+        assertThat(resolved.revisedText()).isNull();
+    }
+
+    @Test
+    void resolveMissionSourceOfTruthPrefersReasonForGenericReasonEvenWhenLlmChoosesSituation() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
+                "SITUATION",
+                "Add a moment",
+                null,
+                null,
+                "The answer could mention when.",
+                "Add when you choose it.",
+                "I like action movies because they feel exciting after a long day.",
+                "When I ____, I ____.",
+                "Add a situation.",
+                "A situation is added."
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                72,
+                AnswerBand.CONTENT_THIN,
+                TaskCompletion.FULL,
+                true,
+                false,
+                MeaningClarity.CLEAR,
+                GrammarImpact.NONE,
+                ContentOpportunity.SITUATION,
+                "The LLM chose situation, but the reason is too generic.",
+                GrammarSeverity.NONE,
+                List.of(),
+                null,
+                "ADD_SITUATION",
+                null,
+                new RewriteTarget("ADD_SITUATION", "I like it when ____.", 1),
+                ExpansionBudget.ONE_SUPPORT_SENTENCE,
+                List.of()
+        );
+        MissionDecision missionDecision = new MissionDecision(
+                "SITUATION",
+                "NONE",
+                "SITUATION",
+                "Add situation.",
+                null,
+                "I like action movies because they help me feel excited after a long day.",
+                "Add it after because.",
+                List.of()
+        );
+
+        FeedbackCoachMissionDto resolved = ReflectionTestUtils.invokeMethod(
+                client,
+                "resolveMissionSourceOfTruth",
+                generatedMission,
+                missionDecision,
+                diagnosis,
+                sampleAnswerProfile(),
+                "I like action movies because they are fun.",
+                List.of(),
+                List.of(),
+                null
+        );
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.missionType()).isEqualTo("REASON");
+    }
+
+    @Test
+    void resolveMissionSourceOfTruthPrefersGrammarFrameForBrokenSentenceEvenWhenLlmChoosesReason() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
+                "REASON",
+                "Add a better reason",
+                null,
+                null,
+                "The reason is vague.",
+                "Add why exercise is important.",
+                "I want to make exercise a habit because it helps me stay healthy.",
+                "I do this because ____.",
+                "Add a reason.",
+                "A reason is added."
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                58,
+                AnswerBand.CONTENT_THIN,
+                TaskCompletion.FULL,
+                true,
+                false,
+                MeaningClarity.PARTLY_CLEAR,
+                GrammarImpact.LOCAL,
+                ContentOpportunity.REASON,
+                "The sentence frame is broken enough to fix first.",
+                GrammarSeverity.MINOR,
+                List.of(),
+                "I want to make exercise a habit because my health is important.",
+                "ADD_REASON",
+                null,
+                new RewriteTarget("ADD_REASON", "I want to make exercise a habit because ____.", 1),
+                ExpansionBudget.ONE_SUPPORT_SENTENCE,
+                List.of()
+        );
+        FeedbackSecondaryLearningPointDto fixPoint = new FeedbackSecondaryLearningPointDto(
+                "GRAMMAR_FIX",
+                "Fix the sentence frame",
+                "want make -> want to make",
+                "The verb after want needs to.",
+                "I want make exercise habit",
+                "I want to make exercise a habit",
+                null,
+                null,
+                "I want to make exercise a habit.",
+                null
+        );
+
+        FeedbackCoachMissionDto resolved = ReflectionTestUtils.invokeMethod(
+                client,
+                "resolveMissionSourceOfTruth",
+                generatedMission,
+                null,
+                diagnosis,
+                sampleAnswerProfile(),
+                "I want make exercise habit because health good.",
+                List.of(fixPoint),
+                List.of(),
+                "I want to make exercise a habit because my health is important."
+        );
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.missionType()).isEqualTo("GRAMMAR_FIX");
+        assertThat(resolved.originalText()).isEqualTo("I want make exercise habit");
+        assertThat(resolved.revisedText()).isEqualTo("I want to make exercise a habit");
+    }
+
+    @Test
+    void resolveMissionSourceOfTruthForcesTaskResetForRomanizedKoreanAnswer() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
+                "GRAMMAR_FIX",
+                "Rewrite as English",
+                "molla geunyang joa yo cafe eumryo",
+                "I like to order a cafe drink when I need a boost.",
+                "The answer can be rewritten.",
+                "Rewrite it in English.",
+                "I like to order a cafe drink when I need a boost.",
+                "I like to order ____ when ____.",
+                "Rewrite the answer.",
+                "The sentence is in English."
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                34,
+                AnswerBand.GRAMMAR_BLOCKING,
+                TaskCompletion.PARTIAL,
+                true,
+                false,
+                MeaningClarity.BLOCKED,
+                GrammarImpact.BLOCKING,
+                ContentOpportunity.SITUATION,
+                "The model tried to repair romanized Korean.",
+                GrammarSeverity.MAJOR,
+                List.of(),
+                "I like to order a cafe drink when I need a boost.",
+                "FIX_BLOCKING_GRAMMAR",
+                null,
+                new RewriteTarget("FIX_BLOCKING_GRAMMAR", "I like to order ____ when ____.", 1),
+                ExpansionBudget.ONE_SUPPORT_SENTENCE,
+                List.of()
+        );
+
+        FeedbackCoachMissionDto resolved = ReflectionTestUtils.invokeMethod(
+                client,
+                "resolveMissionSourceOfTruth",
+                generatedMission,
+                null,
+                diagnosis,
+                sampleAnswerProfile(),
+                "molla geunyang joa yo cafe eumryo",
+                List.of(),
+                List.of(),
+                "I like to order a cafe drink when I need a boost."
+        );
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.missionType()).isEqualTo("TASK_RESET");
+        assertThat(resolved.originalText()).isNull();
+        assertThat(resolved.revisedText()).isNull();
+    }
+
+    @Test
+    void shouldForceTaskResetAnswerDetectsMeaninglessAndNonEnglishAnswersConservatively() {
+        OpenAiFeedbackClient client = newClient();
+
+        Boolean wordSalad = ReflectionTestUtils.invokeMethod(
+                client,
+                "shouldForceTaskResetAnswer",
+                "banana chair blue sleep 123"
+        );
+        Boolean romanizedKoreanCommute = ReflectionTestUtils.invokeMethod(
+                client,
+                "shouldForceTaskResetAnswer",
+                "beoseu tago hakgyo gayo geunyang pigon"
+        );
+        Boolean hangul = ReflectionTestUtils.invokeMethod(
+                client,
+                "shouldForceTaskResetAnswer",
+                "그냥 아무거나 좋아요"
+        );
+        Boolean validEnglish = ReflectionTestUtils.invokeMethod(
+                client,
+                "shouldForceTaskResetAnswer",
+                "I like banana bread because it tastes sweet."
+        );
+
+        assertThat(wordSalad).isTrue();
+        assertThat(romanizedKoreanCommute).isTrue();
+        assertThat(hangul).isTrue();
+        assertThat(validEnglish).isFalse();
+    }
+
+    @Test
+    void looksLikeBrokenSentenceFrameCatchesCommonKoreanLearnerFrames() {
+        OpenAiFeedbackClient client = newClient();
+
+        Boolean wantBuild = ReflectionTestUtils.invokeMethod(
+                client,
+                "looksLikeBrokenSentenceFrame",
+                "I want build reading habit because it make me smart."
+        );
+        Boolean needWake = ReflectionTestUtils.invokeMethod(
+                client,
+                "looksLikeBrokenSentenceFrame",
+                "I drink ice americano when I need wake up because bitter taste is good."
+        );
+        Boolean goCompany = ReflectionTestUtils.invokeMethod(
+                client,
+                "looksLikeBrokenSentenceFrame",
+                "In weekday morning, I wake up and wash face then go company."
+        );
+        Boolean listenMusic = ReflectionTestUtils.invokeMethod(
+                client,
+                "looksLikeBrokenSentenceFrame",
+                "I go to work by subway and listen music in the train."
+        );
+        Boolean washDish = ReflectionTestUtils.invokeMethod(
+                client,
+                "looksLikeBrokenSentenceFrame",
+                "After dinner I wash dish and take a rest on sofa."
+        );
+        Boolean speakConfident = ReflectionTestUtils.invokeMethod(
+                client,
+                "looksLikeBrokenSentenceFrame",
+                "I want speak confident in meeting because my idea is not hear by people."
+        );
+        Boolean cleanSentence = ReflectionTestUtils.invokeMethod(
+                client,
+                "looksLikeBrokenSentenceFrame",
+                "I like comedy movies because they are fun."
+        );
+
+        assertThat(wantBuild).isTrue();
+        assertThat(needWake).isTrue();
+        assertThat(goCompany).isTrue();
+        assertThat(listenMusic).isTrue();
+        assertThat(washDish).isTrue();
+        assertThat(speakConfident).isTrue();
+        assertThat(cleanSentence).isFalse();
+    }
+
+    @Test
+    void shouldRejectGeneratedMissionRejectsComparisonThatActuallyAddsContent() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto additiveComparison = new FeedbackCoachMissionDto(
+                "GRAMMAR_FIX",
+                "Add a reason",
+                "After grocery shopping, I go home and put food in the refrigerator. Then I rest.",
+                "After grocery shopping, I go home and put food in the refrigerator. Then I rest because I feel tired.",
+                "This adds a reason, not a grammar repair.",
+                "Add one reason sentence.",
+                "Then I rest because I feel tired.",
+                "Then I rest because ____.",
+                "Add it at the end.",
+                "A reason is included."
+        );
+
+        Boolean rejected = ReflectionTestUtils.invokeMethod(
+                client,
+                "shouldRejectGeneratedMission",
+                additiveComparison,
+                null,
+                sampleDiagnosis(),
+                sampleAnswerProfile(),
+                "After grocery shopping, I go home and put food in the refrigerator. Then I rest."
+        );
+
+        assertThat(rejected).isTrue();
+    }
+
+    @Test
+    void resolveMissionSourceOfTruthDowngradesReadyAnswerGrammarFixToExpressionPolish() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
+                "GRAMMAR_FIX",
+                "Make the phrase natural",
+                "that time is easier to keep",
+                "that time is easier to stick to",
+                "The answer is already complete, but this phrase can be more natural.",
+                "Change only the highlighted phrase.",
+                "that time is easier to stick to",
+                "that time is easier to stick to",
+                "Change the marked phrase.",
+                "The phrase sounds natural."
+        );
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                93,
+                AnswerBand.NATURAL_BUT_BASIC,
+                TaskCompletion.FULL,
+                true,
+                true,
+                MeaningClarity.CLEAR,
+                GrammarImpact.POLISH,
+                ContentOpportunity.NONE,
+                "The answer is finishable; this is only a small naturalness polish.",
+                GrammarSeverity.MINOR,
+                List.of(),
+                null,
+                "IMPROVE_NATURALNESS",
+                null,
+                new RewriteTarget("IMPROVE_NATURALNESS", null, 0),
+                ExpansionBudget.NONE,
+                List.of()
+        );
+
+        FeedbackCoachMissionDto resolved = ReflectionTestUtils.invokeMethod(
+                client,
+                "resolveMissionSourceOfTruth",
+                generatedMission,
+                null,
+                diagnosis,
+                sampleAnswerProfile(),
+                "My health goal is to build a steady walking habit. I plan to walk for twenty minutes after dinner because that time is easier to keep.",
+                List.of(),
+                List.of(),
+                null
+        );
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.missionType()).isEqualTo("EXPRESSION_POLISH");
+        assertThat(resolved.originalText()).isEqualTo("that time is easier to keep");
+        assertThat(resolved.revisedText()).isEqualTo("that time is easier to stick to");
+    }
+
+    @Test
+    void isLoopCompleteAllowsSupportedNaturalAnswerEvenWhenModelDoesNotMarkFinishable() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                88,
+                AnswerBand.NATURAL_BUT_BASIC,
+                TaskCompletion.FULL,
+                true,
+                false,
+                MeaningClarity.CLEAR,
+                GrammarImpact.NONE,
+                ContentOpportunity.NONE,
+                "The answer is clear and supported.",
+                GrammarSeverity.NONE,
+                List.of(),
+                null,
+                "IMPROVE_NATURALNESS",
+                null,
+                new RewriteTarget("IMPROVE_NATURALNESS", null, 0),
+                ExpansionBudget.NONE,
+                List.of()
+        );
+
+        Boolean complete = ReflectionTestUtils.invokeMethod(
+                client,
+                "isLoopComplete",
+                "After grocery shopping, I go home and put the food in the refrigerator because I am tired.",
+                diagnosis,
+                supportedCompleteProfile(),
+                List.of(),
+                List.of()
+        );
+
+        assertThat(complete).isTrue();
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void sanitizeRewriteSuggestionsKeepsDistinctItemsEvenWithoutNextStepPractice() {
         OpenAiFeedbackClient client = newClient();
@@ -367,6 +894,26 @@ class OpenAiFeedbackClientTest {
                         ExpansionBudget.ONE_DETAIL,
                         List.of("wake up at 8 a.m."),
                         new ProgressDelta(List.of(), List.of("add one detail"))
+                )
+        );
+    }
+
+    private AnswerProfile supportedCompleteProfile() {
+        return new AnswerProfile(
+                new TaskProfile(true, TaskCompletion.FULL, AnswerBand.NATURAL_BUT_BASIC, false),
+                new GrammarProfile(GrammarSeverity.NONE, List.of(), null, true),
+                new ContentProfile(
+                        ContentLevel.MEDIUM,
+                        new ContentSignals(true, true, false, false, true, true),
+                        List.of()
+                ),
+                new RewriteProfile(
+                        "IMPROVE_NATURALNESS",
+                        null,
+                        new RewriteTarget("IMPROVE_NATURALNESS", null, 0),
+                        ExpansionBudget.NONE,
+                        List.of(),
+                        new ProgressDelta(List.of("answer the question"), List.of())
                 )
         );
     }

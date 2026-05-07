@@ -22,8 +22,10 @@ pnpm-debug.log*
 metro-dev.log
 env_files/
 .artifacts/
+.codex_logs/
 test-results/
 reports/feedback-quality*/
+scripts/feedback-quality/cases.generated-*.json
 tmp/
 tmp_*
 .tmp-next-dev.log

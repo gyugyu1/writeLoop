@@ -17,6 +17,14 @@ export const PRIVACY_POLICY_DOCUMENT: PublicLegalDocument = {
   effectiveDate: "2026.04.11",
   sections: [
     {
+      title: "0. 적용 대상 및 개발자 정보",
+      paragraphs: [
+        "본 개인정보처리방침은 Google Play와 App Store에 등록된 영어 작문 학습 앱 라이트루프(WriteLoop, 패키지명 kr.writeloop)에 적용됩니다.",
+        "라이트루프(WriteLoop)는 개발자 박규원(Gyuwon Park)이 제공하고 운영합니다.",
+        "문의 이메일: lwd33021@naver.com"
+      ]
+    },
+    {
       title: "1. 처리하는 개인정보 항목",
       bullets: [
         "회원가입 및 로그인: 이메일 주소, 비밀번호(암호화 저장), 닉네임(표시 이름)",

@@ -41,6 +41,25 @@
     "badBehavior": "Do not only polish delicious or say the answer is already enough."
   },
   {
+    "name": "commute answer already has action place and reason",
+    "category": "SLOT_AWARE_MISSION",
+    "promptId": "prompt-routine-31",
+    "promptQuestionIncludesAny": ["commute"],
+    "answer": "I usually watch YouTube videos on the bus or subway to pass the time.",
+    "expectedFocusTypes": ["FEELING", "RESULT"],
+    "forbiddenFocusTypes": ["DETAIL", "SITUATION", "GRAMMAR_FIX", "EXPRESSION_POLISH"],
+    "mustContainAny": {
+      "coachMove.instruction": ["feeling", "effect", "relax", "less boring", "feel", "느낌", "효과", "편", "덜 지루"],
+      "coachMove.successCheck": ["feeling", "effect", "relax", "less boring", "feel", "느낌", "효과", "편", "덜 지루"]
+    },
+    "mustNotContainAny": {
+      "coachMove.instruction": ["where", "what you do", "어디서", "무엇을 하는지"],
+      "coachMove.successCheck": ["where", "what you do", "어디서", "무엇을 하는지"]
+    },
+    "expectedBehavior": "Do not ask for action/place/reason again; ask for the feeling or effect of watching videos during the commute.",
+    "badBehavior": "Do not choose DETAIL or SITUATION after the learner already gave what, where, and why."
+  },
+  {
     "name": "blocking morning routine grammar can become grammar fix",
     "category": "BLOCKING_GRAMMAR",
     "promptId": "prompt-routine-01",

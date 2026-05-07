@@ -278,16 +278,47 @@ record MissionDecision(
         String chosenType,
         String grammarPriority,
         String contentNeed,
+        List<String> presentSlots,
+        List<String> missingSlots,
+        String chosenSlot,
         String whyChosenKo,
         String whyNotGrammarFirstKo,
         String addOnExampleEn,
         String addOnPlacementKo,
         List<MissionMinorFix> minorFixes
 ) {
+    MissionDecision(
+            String chosenType,
+            String grammarPriority,
+            String contentNeed,
+            String whyChosenKo,
+            String whyNotGrammarFirstKo,
+            String addOnExampleEn,
+            String addOnPlacementKo,
+            List<MissionMinorFix> minorFixes
+    ) {
+        this(
+                chosenType,
+                grammarPriority,
+                contentNeed,
+                List.of(),
+                List.of(),
+                null,
+                whyChosenKo,
+                whyNotGrammarFirstKo,
+                addOnExampleEn,
+                addOnPlacementKo,
+                minorFixes
+        );
+    }
+
     MissionDecision {
         chosenType = normalizeCode(chosenType);
         grammarPriority = normalizeCode(grammarPriority);
         contentNeed = normalizeCode(contentNeed);
+        presentSlots = normalizeSlots(presentSlots);
+        missingSlots = normalizeSlots(missingSlots);
+        chosenSlot = normalizeCode(chosenSlot);
         whyChosenKo = blankToNull(whyChosenKo);
         whyNotGrammarFirstKo = blankToNull(whyNotGrammarFirstKo);
         addOnExampleEn = blankToNull(addOnExampleEn);
@@ -306,6 +337,17 @@ record MissionDecision(
                 .replaceAll("[^A-Z_]", "_")
                 .replaceAll("_+", "_")
                 .replaceAll("^_+|_+$", "");
+    }
+
+    private static List<String> normalizeSlots(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+        return values.stream()
+                .map(MissionDecision::normalizeCode)
+                .filter(value -> value != null && !value.isBlank())
+                .distinct()
+                .toList();
     }
 
     private static String blankToNull(String value) {
@@ -530,6 +572,9 @@ record GeneratedSections(
                 missionDecision.chosenType(),
                 missionDecision.grammarPriority(),
                 missionDecision.contentNeed(),
+                missionDecision.presentSlots(),
+                missionDecision.missingSlots(),
+                missionDecision.chosenSlot(),
                 missionDecision.whyChosenKo(),
                 missionDecision.whyNotGrammarFirstKo(),
                 missionDecision.addOnExampleEn(),

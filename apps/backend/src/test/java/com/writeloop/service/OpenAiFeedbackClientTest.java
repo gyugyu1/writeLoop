@@ -72,6 +72,9 @@ class OpenAiFeedbackClientTest {
                 .contains("\"missionDecision\"")
                 .contains("\"chosenType\"")
                 .contains("\"grammarPriority\"")
+                .contains("\"presentSlots\"")
+                .contains("\"missingSlots\"")
+                .contains("\"chosenSlot\"")
                 .contains("\"addOnExampleEn\"")
                 .contains("\"minorFixes\"")
                 .contains("\"coachMission\"")
@@ -100,15 +103,23 @@ class OpenAiFeedbackClientTest {
         );
 
         assertThat(requestBody)
-                .contains("Fill missionDecision by comparing the best content add-on mission against the best grammar/polish mission")
+                .contains("Fill missionDecision by comparing the best missing-slot add-on mission against the best grammar/polish mission")
+                .contains("Fill missionDecision.presentSlots and missionDecision.missingSlots before choosing the mission")
                 .contains("Build exactly one coachMission from missionDecision.chosenType")
                 .contains("Mission selection ladder:")
                 .contains("missionDecision is the source of truth for selecting the top mission")
                 .contains("missionDecision.chosenType must exactly match coachMission.missionType")
+                .contains("missionDecision.presentSlots is the learner answer's content inventory")
+                .contains("missionDecision.chosenSlot is the exact content slot the learner should add next")
+                .contains("must appear in missingSlots")
                 .contains("TASK_RESET is a last-resort reset")
                 .contains("If the answer contains no prompt-relevant anchor, chosenType must be TASK_RESET")
                 .contains("If taskCompletion is PARTIAL")
                 .contains("SITUATION means adding when/where/context")
+                .contains("fill missionDecision.presentSlots with content slots already present")
+                .contains("Do not choose a mission that asks for a content slot already present")
+                .contains("If the learner already says what they do, where/when/context, and why")
+                .contains("commute, routine, or free-time answers that already include action + place/context + reason")
                 .contains("broken word-order fragments")
                 .contains("Never set EXPRESSION_POLISH for")
                 .contains("Generic adjective reasons")
@@ -185,6 +196,9 @@ class OpenAiFeedbackClientTest {
                     "chosenType": "DETAIL",
                     "grammarPriority": "LOW_VALUE_POLISH",
                     "contentNeed": "DETAIL",
+                    "presentSlots": ["ACTION", "SITUATION"],
+                    "missingSlots": ["DETAIL", "REASON"],
+                    "chosenSlot": "DETAIL",
                     "whyChosenKo": "The answer is clear, so adding one detail matters most.",
                     "whyNotGrammarFirstKo": "The grammar issue is small and does not block meaning.",
                     "addOnExampleEn": "I do it because it helps me feel calm.",
@@ -235,6 +249,9 @@ class OpenAiFeedbackClientTest {
         });
         assertThat(sections.missionDecision()).isNotNull();
         assertThat(sections.missionDecision().chosenType()).isEqualTo("DETAIL");
+        assertThat(sections.missionDecision().presentSlots()).containsExactly("ACTION", "SITUATION");
+        assertThat(sections.missionDecision().missingSlots()).containsExactly("DETAIL", "REASON");
+        assertThat(sections.missionDecision().chosenSlot()).isEqualTo("DETAIL");
         assertThat(sections.missionDecision().minorFixes()).singleElement().satisfies(fix -> {
             assertThat(fix.originalText()).isEqualTo("sleep earlier");
             assertThat(fix.revisedText()).isEqualTo("go to bed earlier");
@@ -242,7 +259,73 @@ class OpenAiFeedbackClientTest {
     }
 
     @Test
-    void resolveMissionSourceOfTruthKeepsUsableLlmMissionInsteadOfGenericFallback() {
+    void resolveMissionSourceOfTruthRejectsDetailWhenAnswerAlreadyHasActionSituationAndReason() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
+                "DETAIL",
+                "구체적인 정보 한 문장 더하기",
+                null,
+                null,
+                "작은 정보 하나가 붙으면 답변이 덜 막연해져요.",
+                "언제, 어디서, 무엇을 하는지 구체적인 정보 하나를 더해 보세요.",
+                "It helps me relax after work.",
+                "It helps me ____.",
+                "문장 끝에 붙여 보세요.",
+                "느낌이나 효과가 한 문장 들어가면 성공이에요."
+        );
+
+        FeedbackCoachMissionDto resolved = ReflectionTestUtils.invokeMethod(
+                client,
+                "resolveMissionSourceOfTruth",
+                generatedMission,
+                null,
+                sampleDiagnosis(),
+                sampleAnswerProfile(),
+                "I usually watch YouTube videos on the bus or subway to pass the time.",
+                List.of(),
+                List.of(),
+                null
+        );
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.missionType()).isIn("FEELING", "RESULT");
+    }
+
+    @Test
+    void resolveMissionSourceOfTruthRejectsSituationForGenericReasonAnswer() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
+                "SITUATION",
+                "상황 한 문장 더하기",
+                null,
+                null,
+                "언제 먹는지 말하면 더 좋아요.",
+                "언제, 어디서, 어떤 상황인지 한 문장 더 붙여 보세요.",
+                "I eat it on busy mornings.",
+                "I eat it when ____.",
+                "문장 끝에 붙여 보세요.",
+                "상황을 보여 주는 정보가 한 문장 들어가면 성공이에요."
+        );
+
+        FeedbackCoachMissionDto resolved = ReflectionTestUtils.invokeMethod(
+                client,
+                "resolveMissionSourceOfTruth",
+                generatedMission,
+                null,
+                sampleDiagnosis(),
+                sampleAnswerProfile(),
+                "I eat toast for breakfast on weekdays because it is delicious.",
+                List.of(),
+                List.of(),
+                null
+        );
+
+        assertThat(resolved).isNotNull();
+        assertThat(resolved.missionType()).isEqualTo("REASON");
+    }
+
+    @Test
+    void resolveMissionSourceOfTruthRejectsFlatClosingPolishMission() {
         OpenAiFeedbackClient client = newClient();
         FeedbackCoachMissionDto generatedCorrectionMission = new FeedbackCoachMissionDto(
                 "GRAMMAR_FIX",
@@ -300,9 +383,9 @@ class OpenAiFeedbackClientTest {
         );
 
         assertThat(resolved).isNotNull();
-        assertThat(resolved.missionType()).isEqualTo("GRAMMAR_FIX");
-        assertThat(resolved.originalText()).isEqualTo("That is all");
-        assertThat(resolved.revisedText()).isEqualTo("That's all");
+        assertThat(resolved.missionType()).isEqualTo("RESULT");
+        assertThat(resolved.originalText()).isNull();
+        assertThat(resolved.revisedText()).isNull();
     }
 
     @Test
@@ -829,8 +912,7 @@ class OpenAiFeedbackClientTest {
                                 new FeedbackRewriteSuggestionDto("for example", "for example", null),
                                 new FeedbackRewriteSuggestionDto("for example.", "for example", null),
                                 new FeedbackRewriteSuggestionDto("because it feels peaceful", "because it feels peaceful", null)
-                        ),
-                        null
+                        )
                 );
 
         assertThat(sanitized)

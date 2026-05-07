@@ -34,6 +34,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -899,6 +900,9 @@ public class OpenAiFeedbackClient {
         if (isAdditiveContentComparisonMission(mission)) {
             return true;
         }
+        if (missionAsksForAnsweredSlot(mission, missionDecision, learnerAnswer)) {
+            return true;
+        }
         return shouldPreferContentFallback(mission, missionDecision, diagnosis, answerProfile, learnerAnswer);
     }
 
@@ -917,10 +921,37 @@ public class OpenAiFeedbackClient {
             return true;
         }
         String missionType = normalizedMissionType(mission);
+        boolean blockingGrammar = diagnosis != null && (
+                diagnosis.answerBand() == AnswerBand.GRAMMAR_BLOCKING
+                        || diagnosis.grammarImpact() == GrammarImpact.BLOCKING
+                        || diagnosis.grammarSeverity().ordinal() >= GrammarSeverity.MODERATE.ordinal()
+                        || diagnosis.meaningClarity() == MeaningClarity.BLOCKED
+        );
         if (hasGenericAdjectiveReason(learnerAnswer)
-                && ("SITUATION".equals(missionType)
+                && !blockingGrammar
+                && ("GRAMMAR_FIX".equals(missionType)
+                || "SITUATION".equals(missionType)
                 || "EXPRESSION_POLISH".equals(missionType)
                 || "RESULT".equals(missionType))) {
+            return true;
+        }
+        if (hasFlatClosing(learnerAnswer)
+                && !blockingGrammar
+                && ("GRAMMAR_FIX".equals(missionType)
+                || "EXPRESSION_POLISH".equals(missionType))) {
+            return true;
+        }
+        if ("SITUATION".equals(missionType) && inferAnswerSlots(learnerAnswer).hasSituation()) {
+            return true;
+        }
+        if ("SITUATION".equals(missionType) && looksLikePreferenceWithReason(learnerAnswer)) {
+            return true;
+        }
+        if ("SITUATION".equals(missionType) && looksLikeSingleWordAnswer(learnerAnswer)) {
+            return true;
+        }
+        if ("DETAIL".equals(missionType)
+                && inferAnswerSlots(learnerAnswer).hasActionSituationReason()) {
             return true;
         }
         if ("EXAMPLE".equals(missionType) && isGoodEnoughForOptionalFallback(diagnosis, answerProfile, learnerAnswer)) {
@@ -934,6 +965,32 @@ public class OpenAiFeedbackClient {
                     || contentOpportunityFromMissionDecision(missionDecision) != ContentOpportunity.NONE;
         }
         return false;
+    }
+
+    private boolean missionAsksForAnsweredSlot(
+            FeedbackCoachMissionDto mission,
+            MissionDecision missionDecision,
+            String learnerAnswer
+    ) {
+        ContentOpportunity opportunity = contentOpportunityFromCode(normalizedMissionType(mission));
+        AnswerSlotEvidence answerSlots = inferAnswerSlots(learnerAnswer);
+        if (opportunity == ContentOpportunity.NONE) {
+            return false;
+        }
+        if (slotAlreadyPresent(missionDecision, opportunity) || answerSlotAlreadyPresent(answerSlots, opportunity)) {
+            return true;
+        }
+        if (opportunity == ContentOpportunity.DETAIL
+                && (hasCoreActionSituationReason(missionDecision) || answerSlots.hasActionSituationReason())
+                && (slotMissing(missionDecision, ContentOpportunity.FEELING)
+                || slotMissing(missionDecision, ContentOpportunity.RESULT)
+                || !answerSlots.hasFeelingOrResult())) {
+            return true;
+        }
+        return missionDecision != null
+                && !missionDecision.missingSlots().isEmpty()
+                && !slotMissing(missionDecision, opportunity)
+                && firstMissingOpportunity(missionDecision) != ContentOpportunity.NONE;
     }
 
     private FeedbackCoachMissionDto downgradeReadyAnswerGrammarMission(
@@ -1111,12 +1168,26 @@ public class OpenAiFeedbackClient {
             return false;
         }
         return normalized.matches(".*\\bbecause\\s+(it|this|that|they|he|she)?\\s*(is|are|was|were|feels?|make[s]? me)?\\s*(very\\s+|really\\s+|so\\s+)?(good|nice|delicious|fun|interesting|exciting|excited|happy|comfortable|important|easy|convenient|warm|sweet|special|useful|healthy)\\b.*")
-                || normalized.matches(".*\\bi like (it|this|that|them) because (it|this|that|they) (is|are|was|were) (good|nice|delicious|fun|interesting|exciting|warm|sweet|special|useful)\\b.*");
+                || normalized.matches(".*\\bi like (it|this|that|them) because (it|this|that|they) (is|are|was|were) (good|nice|delicious|fun|interesting|exciting|warm|sweet|special|useful)\\b.*")
+                || normalized.matches(".*\\b(it|this|that|they)\\s+(is|are|was|were|feels?|make[s]? me)\\s+(very\\s+|really\\s+|so\\s+)?(good|nice|delicious|fun|interesting|exciting|excited|happy|comfortable|important|easy|convenient|warm|sweet|special|useful|healthy)\\b.*");
     }
 
     private boolean hasFlatClosing(String learnerAnswer) {
         String normalized = normalizeForComparison(learnerAnswer).toLowerCase(Locale.ROOT);
         return normalized.matches(".*\\b(that is all|that's all|that s all|that all|it is all)\\b.*");
+    }
+
+    private boolean looksLikePreferenceWithReason(String learnerAnswer) {
+        String normalized = normalizeForComparison(learnerAnswer).toLowerCase(Locale.ROOT);
+        return normalized.matches(".*\\bi\\s+(really\\s+|usually\\s+)?like\\s+.+\\bbecause\\b.+")
+                || normalized.matches(".*\\bmy favorite\\s+.+\\bis\\s+.+\\bbecause\\b.+");
+    }
+
+    private boolean looksLikeSingleWordAnswer(String learnerAnswer) {
+        String normalized = normalizeForComparison(learnerAnswer);
+        return !normalized.isBlank()
+                && countWords(normalized) <= 1
+                && normalized.matches("[A-Za-z][A-Za-z'\\-]*\\.?");
     }
 
     private FeedbackCoachMissionDto buildFallbackCoachMission(
@@ -1153,6 +1224,15 @@ public class OpenAiFeedbackClient {
         }
 
         MissionDefaults defaults = missionDefaults(diagnosis, answerProfile);
+        ContentOpportunity slotAwareOpportunity = resolveContentFallbackOpportunity(
+                diagnosis,
+                answerProfile,
+                learnerAnswer,
+                null
+        );
+        if (slotAwareOpportunity != ContentOpportunity.NONE && !shouldProtectGrammarFallback(diagnosis)) {
+            defaults = missionDefaultsForOpportunity(slotAwareOpportunity);
+        }
         if (isComparisonMissionType(defaults.type())) {
             String revised = firstNonBlank(
                     diagnosis == null ? null : diagnosis.minimalCorrection(),
@@ -1195,6 +1275,15 @@ public class OpenAiFeedbackClient {
                 defaults.exampleEn(),
                 defaults.targetHintKo(),
                 defaults.successCheckKo()
+        );
+    }
+
+    private boolean shouldProtectGrammarFallback(FeedbackDiagnosisResult diagnosis) {
+        return diagnosis != null && (
+                diagnosis.answerBand() == AnswerBand.GRAMMAR_BLOCKING
+                        || diagnosis.grammarImpact() == GrammarImpact.BLOCKING
+                        || diagnosis.grammarSeverity().ordinal() >= GrammarSeverity.MODERATE.ordinal()
+                        || diagnosis.meaningClarity() == MeaningClarity.BLOCKED
         );
     }
 
@@ -1278,6 +1367,19 @@ public class OpenAiFeedbackClient {
         if (hasGenericAdjectiveReason(learnerAnswer)) {
             return ContentOpportunity.REASON;
         }
+        if (hasFlatClosing(learnerAnswer)) {
+            return ContentOpportunity.RESULT;
+        }
+        if (looksLikeSingleWordAnswer(learnerAnswer)) {
+            return ContentOpportunity.DETAIL;
+        }
+        if (looksLikePreferenceWithReason(learnerAnswer)) {
+            return ContentOpportunity.EXAMPLE;
+        }
+        ContentOpportunity slotAwareOpportunity = slotAwareFallbackOpportunity(learnerAnswer, missionDecision);
+        if (slotAwareOpportunity != ContentOpportunity.NONE) {
+            return slotAwareOpportunity;
+        }
         if (isGoodEnoughForOptionalFallback(diagnosis, answerProfile, learnerAnswer)) {
             return ContentOpportunity.DETAIL;
         }
@@ -1287,9 +1389,6 @@ public class OpenAiFeedbackClient {
         }
         if (diagnosis != null && diagnosis.contentOpportunity() != ContentOpportunity.NONE) {
             return diagnosis.contentOpportunity();
-        }
-        if (hasFlatClosing(learnerAnswer)) {
-            return ContentOpportunity.RESULT;
         }
         AnswerBand answerBand = diagnosis != null && diagnosis.answerBand() != null
                 ? diagnosis.answerBand()
@@ -1327,11 +1426,30 @@ public class OpenAiFeedbackClient {
         if (missionDecision == null) {
             return ContentOpportunity.NONE;
         }
-        String contentNeed = firstNonBlank(missionDecision.contentNeed(), missionDecision.chosenType());
-        if (contentNeed == null) {
+        ContentOpportunity chosenSlot = contentOpportunityFromCode(missionDecision.chosenSlot());
+        ContentOpportunity contentNeed = contentOpportunityFromCode(missionDecision.contentNeed());
+        ContentOpportunity chosenType = contentOpportunityFromCode(missionDecision.chosenType());
+        ContentOpportunity opportunity = firstNonNone(chosenSlot, contentNeed, chosenType);
+        if (opportunity == ContentOpportunity.NONE) {
+            return firstMissingOpportunity(missionDecision);
+        }
+        if (slotAlreadyPresent(missionDecision, opportunity)) {
+            ContentOpportunity missing = firstMissingOpportunity(missionDecision);
+            return missing == ContentOpportunity.NONE ? ContentOpportunity.NONE : missing;
+        }
+        if (!missionDecision.missingSlots().isEmpty() && !slotMissing(missionDecision, opportunity)) {
+            ContentOpportunity missing = firstMissingOpportunity(missionDecision);
+            return missing == ContentOpportunity.NONE ? opportunity : missing;
+        }
+        return opportunity;
+    }
+
+    private ContentOpportunity contentOpportunityFromCode(String value) {
+        String normalized = trimToNull(value);
+        if (normalized == null) {
             return ContentOpportunity.NONE;
         }
-        return switch (contentNeed.toUpperCase(Locale.ROOT)) {
+        return switch (normalized.toUpperCase(Locale.ROOT)) {
             case "REASON", "ADD_REASON" -> ContentOpportunity.REASON;
             case "DETAIL", "ADD_DETAIL" -> ContentOpportunity.DETAIL;
             case "EXAMPLE", "ADD_EXAMPLE" -> ContentOpportunity.EXAMPLE;
@@ -1340,6 +1458,163 @@ public class OpenAiFeedbackClient {
             case "RESULT", "ADD_RESULT" -> ContentOpportunity.RESULT;
             default -> ContentOpportunity.NONE;
         };
+    }
+
+    private ContentOpportunity firstNonNone(ContentOpportunity... opportunities) {
+        if (opportunities == null) {
+            return ContentOpportunity.NONE;
+        }
+        for (ContentOpportunity opportunity : opportunities) {
+            if (opportunity != null && opportunity != ContentOpportunity.NONE) {
+                return opportunity;
+            }
+        }
+        return ContentOpportunity.NONE;
+    }
+
+    private ContentOpportunity firstMissingOpportunity(MissionDecision missionDecision) {
+        if (missionDecision == null || missionDecision.missingSlots().isEmpty()) {
+            return ContentOpportunity.NONE;
+        }
+        List<ContentOpportunity> preferred = hasCoreActionSituationReason(missionDecision)
+                ? List.of(
+                ContentOpportunity.FEELING,
+                ContentOpportunity.RESULT,
+                ContentOpportunity.EXAMPLE,
+                ContentOpportunity.DETAIL,
+                ContentOpportunity.REASON,
+                ContentOpportunity.SITUATION
+        )
+                : List.of(
+                ContentOpportunity.REASON,
+                ContentOpportunity.DETAIL,
+                ContentOpportunity.EXAMPLE,
+                ContentOpportunity.SITUATION,
+                ContentOpportunity.FEELING,
+                ContentOpportunity.RESULT
+        );
+        for (ContentOpportunity opportunity : preferred) {
+            if (slotMissing(missionDecision, opportunity)) {
+                return opportunity;
+            }
+        }
+        return ContentOpportunity.NONE;
+    }
+
+    private boolean hasCoreActionSituationReason(MissionDecision missionDecision) {
+        return missionDecision != null
+                && hasSlot(missionDecision.presentSlots(), "ACTION")
+                && hasSlot(missionDecision.presentSlots(), "SITUATION")
+                && hasSlot(missionDecision.presentSlots(), "REASON");
+    }
+
+    private boolean slotAlreadyPresent(MissionDecision missionDecision, ContentOpportunity opportunity) {
+        return missionDecision != null && slotMatches(missionDecision.presentSlots(), opportunity);
+    }
+
+    private boolean slotMissing(MissionDecision missionDecision, ContentOpportunity opportunity) {
+        return missionDecision != null && slotMatches(missionDecision.missingSlots(), opportunity);
+    }
+
+    private boolean slotMatches(List<String> slots, ContentOpportunity opportunity) {
+        if (slots == null || opportunity == null || opportunity == ContentOpportunity.NONE) {
+            return false;
+        }
+        return switch (opportunity) {
+            case REASON -> hasAnySlot(slots, "REASON", "WHY");
+            case DETAIL -> hasAnySlot(slots, "DETAIL", "CONCRETE_DETAIL");
+            case EXAMPLE -> hasAnySlot(slots, "EXAMPLE", "INSTANCE");
+            case SITUATION -> hasAnySlot(slots, "SITUATION", "PLACE", "CONTEXT", "TIME", "WHERE", "WHEN");
+            case FEELING -> hasAnySlot(slots, "FEELING", "REACTION", "EMOTION");
+            case RESULT -> hasAnySlot(slots, "RESULT", "EFFECT", "OUTCOME");
+            case NONE -> false;
+        };
+    }
+
+    private boolean hasAnySlot(List<String> slots, String... candidates) {
+        if (candidates == null) {
+            return false;
+        }
+        for (String candidate : candidates) {
+            if (hasSlot(slots, candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasSlot(List<String> slots, String candidate) {
+        if (slots == null || candidate == null) {
+            return false;
+        }
+        String normalizedCandidate = candidate.toUpperCase(Locale.ROOT);
+        return slots.stream()
+                .filter(Objects::nonNull)
+                .map(slot -> slot.toUpperCase(Locale.ROOT))
+                .anyMatch(normalizedCandidate::equals);
+    }
+
+    private ContentOpportunity slotAwareFallbackOpportunity(
+            String learnerAnswer,
+            MissionDecision missionDecision
+    ) {
+        ContentOpportunity declaredMissing = firstMissingOpportunity(missionDecision);
+        if (declaredMissing != ContentOpportunity.NONE) {
+            return declaredMissing;
+        }
+
+        AnswerSlotEvidence answerSlots = inferAnswerSlots(learnerAnswer);
+        if (answerSlots.hasActionSituationReason()) {
+            return answerSlots.hasFeelingOrResult()
+                    ? ContentOpportunity.RESULT
+                    : ContentOpportunity.FEELING;
+        }
+        if (answerSlots.hasAction() && answerSlots.hasSituation() && !answerSlots.hasReason()) {
+            return ContentOpportunity.REASON;
+        }
+        if (answerSlots.hasAction() && !answerSlots.hasSituation()) {
+            return ContentOpportunity.SITUATION;
+        }
+        return ContentOpportunity.NONE;
+    }
+
+    private boolean answerSlotAlreadyPresent(AnswerSlotEvidence evidence, ContentOpportunity opportunity) {
+        if (evidence == null || opportunity == null || opportunity == ContentOpportunity.NONE) {
+            return false;
+        }
+        return switch (opportunity) {
+            case REASON -> evidence.hasReason() && !evidence.hasGenericReason();
+            case SITUATION -> evidence.hasSituation();
+            case FEELING, RESULT -> evidence.hasFeelingOrResult();
+            case DETAIL, EXAMPLE, NONE -> false;
+        };
+    }
+
+    private AnswerSlotEvidence inferAnswerSlots(String learnerAnswer) {
+        String normalized = normalizeForComparison(learnerAnswer).toLowerCase(Locale.ROOT);
+        if (normalized.isBlank()) {
+            return new AnswerSlotEvidence(false, false, false, false, false);
+        }
+        boolean hasAction = normalized.matches(".*\\b(i|we|they|he|she|it)\\s+(usually\\s+|often\\s+|sometimes\\s+|will\\s+|can\\s+|want\\s+to\\s+|like\\s+to\\s+)?[a-z]+\\b.*")
+                || countWords(learnerAnswer) >= 3;
+        boolean hasSituation = normalized.matches(".*\\b(on|in|at|during|before|after|when|near|inside|outside)\\b.*")
+                || normalized.matches(".*\\b(bus|subway|train|car|commute|home|school|work|office|company|cafe|restaurant|morning|afternoon|evening|night|weekend|weekday|sunday|monday|tuesday|wednesday|thursday|friday|saturday|breakfast|dinner)\\b.*");
+        boolean hasReason = normalized.matches(".*\\b(because|so|since|to pass|to relax|to save|to improve|to get|to feel|in order to|helps? me|makes? me|for fun)\\b.*");
+        boolean hasFeelingOrResult = normalized.matches(".*\\b(feel|feels|felt|happy|tired|relaxed|relaxing|calm|comfortable|better|less boring|shorter|clear my head|gives? me energy|helps? me|makes? me)\\b.*");
+        boolean genericReason = hasGenericAdjectiveReason(learnerAnswer);
+        return new AnswerSlotEvidence(hasAction, hasSituation, hasReason, hasFeelingOrResult, genericReason);
+    }
+
+    private record AnswerSlotEvidence(
+            boolean hasAction,
+            boolean hasSituation,
+            boolean hasReason,
+            boolean hasFeelingOrResult,
+            boolean hasGenericReason
+    ) {
+        boolean hasActionSituationReason() {
+            return hasAction && hasSituation && hasReason;
+        }
     }
 
     private List<FeedbackSecondaryLearningPointDto> alignFixPointsWithMission(
@@ -2408,6 +2683,24 @@ public class OpenAiFeedbackClient {
             GeneratedSections previousSections
     ) throws IOException {
         Map<String, Object> expressionTagsSchema = ExpressionTagSupport.jsonSchema();
+        List<String> missionSlotEnum = List.of(
+                "ACTION",
+                "SITUATION",
+                "REASON",
+                "DETAIL",
+                "EXAMPLE",
+                "FEELING",
+                "RESULT"
+        );
+        List<String> chosenSlotEnum = List.of(
+                "NONE",
+                "REASON",
+                "DETAIL",
+                "SITUATION",
+                "EXAMPLE",
+                "FEELING",
+                "RESULT"
+        );
         Map<String, Object> schema = Map.ofEntries(
                 Map.entry("type", "object"),
                 Map.entry("additionalProperties", false),
@@ -2543,8 +2836,8 @@ public class OpenAiFeedbackClient {
                         Map.entry("missionDecision", Map.of(
                                 "type", "object",
                                 "additionalProperties", false,
-                                "properties", Map.of(
-                                        "chosenType", Map.of("type", "string", "enum", List.of(
+                                "properties", Map.ofEntries(
+                                        Map.entry("chosenType", Map.of("type", "string", "enum", List.of(
                                                 "REASON",
                                                 "DETAIL",
                                                 "SITUATION",
@@ -2554,14 +2847,14 @@ public class OpenAiFeedbackClient {
                                                 "GRAMMAR_FIX",
                                                 "TASK_RESET",
                                                 "EXPRESSION_POLISH"
-                                        )),
-                                        "grammarPriority", Map.of("type", "string", "enum", List.of(
+                                        ))),
+                                        Map.entry("grammarPriority", Map.of("type", "string", "enum", List.of(
                                                 "NONE",
                                                 "LOW_VALUE_POLISH",
                                                 "HIGH_VALUE_LOCAL",
                                                 "BLOCKING"
-                                        )),
-                                        "contentNeed", Map.of("type", "string", "enum", List.of(
+                                        ))),
+                                        Map.entry("contentNeed", Map.of("type", "string", "enum", List.of(
                                                 "NONE",
                                                 "REASON",
                                                 "DETAIL",
@@ -2569,12 +2862,21 @@ public class OpenAiFeedbackClient {
                                                 "EXAMPLE",
                                                 "FEELING",
                                                 "RESULT"
+                                        ))),
+                                        Map.entry("presentSlots", Map.of(
+                                                "type", "array",
+                                                "items", Map.of("type", "string", "enum", missionSlotEnum)
                                         )),
-                                        "whyChosenKo", Map.of("type", "string"),
-                                        "whyNotGrammarFirstKo", Map.of("type", List.of("string", "null")),
-                                        "addOnExampleEn", Map.of("type", List.of("string", "null")),
-                                        "addOnPlacementKo", Map.of("type", List.of("string", "null")),
-                                        "minorFixes", Map.of(
+                                        Map.entry("missingSlots", Map.of(
+                                                "type", "array",
+                                                "items", Map.of("type", "string", "enum", missionSlotEnum)
+                                        )),
+                                        Map.entry("chosenSlot", Map.of("type", "string", "enum", chosenSlotEnum)),
+                                        Map.entry("whyChosenKo", Map.of("type", "string")),
+                                        Map.entry("whyNotGrammarFirstKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("addOnExampleEn", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("addOnPlacementKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("minorFixes", Map.of(
                                                 "type", "array",
                                                 "items", Map.of(
                                                         "type", "object",
@@ -2586,12 +2888,15 @@ public class OpenAiFeedbackClient {
                                                         ),
                                                         "required", List.of("originalText", "revisedText", "reasonKo")
                                                 )
-                                        )
+                                        ))
                                 ),
                                 "required", List.of(
                                         "chosenType",
                                         "grammarPriority",
                                         "contentNeed",
+                                        "presentSlots",
+                                        "missingSlots",
+                                        "chosenSlot",
                                         "whyChosenKo",
                                         "whyNotGrammarFirstKo",
                                         "addOnExampleEn",
@@ -2788,11 +3093,12 @@ public class OpenAiFeedbackClient {
                 - Fill both the diagnosis fields and the feedback section fields in the same JSON object.
                 - Work in this order:
                   1) Diagnose the answer against the prompt obligations.
-                  2) Fill missionDecision by comparing the best content add-on mission against the best grammar/polish mission.
-                  3) Build exactly one coachMission from missionDecision.chosenType.
-                  4) Build fixPoints so the first fixPoint explains the same issue/action as missionDecision and coachMission.
-                  5) Add refinementExpressions only when they support the same next rewrite without repeating fixPoints.
-                  6) Write modelAnswer only as a quiet reference. It must not introduce changes that conflict with coachMission.
+                  2) Fill missionDecision.presentSlots and missionDecision.missingSlots before choosing the mission.
+                  3) Fill missionDecision by comparing the best missing-slot add-on mission against the best grammar/polish mission.
+                  4) Build exactly one coachMission from missionDecision.chosenType.
+                  5) Build fixPoints so the first fixPoint explains the same issue/action as missionDecision and coachMission.
+                  6) Add refinementExpressions only when they support the same next rewrite without repeating fixPoints.
+                  7) Write modelAnswer only as a quiet reference. It must not introduce changes that conflict with coachMission.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
                 - Do not reuse a broken learner phrase in strengths, refinementExpressions, coachMission, or modelAnswer.
                 - The top-card mission, detailed feedback, rewrite guide, and successCheck must all point to the same one action.
@@ -2805,6 +3111,12 @@ public class OpenAiFeedbackClient {
                 - meaningClarity is about whether the learner's intended meaning is understandable: CLEAR, PARTLY_CLEAR, or BLOCKED.
                 - grammarImpact is about whether grammar should control the top mission: BLOCKING means meaning/task is blocked, LOCAL means a real repair is useful but the answer is still understandable, POLISH means a small cosmetic cleanup, NONE means no meaningful grammar issue.
                 - contentOpportunity is the best expansion opportunity if the answer is understandable: REASON, DETAIL, EXAMPLE, SITUATION, FEELING, RESULT, or NONE.
+                - Before selecting contentOpportunity, fill missionDecision.presentSlots with content slots already present in the learner answer: ACTION, SITUATION, REASON, DETAIL, EXAMPLE, FEELING, RESULT.
+                - Fill missionDecision.missingSlots with useful slots that are not yet present and would improve this exact answer. If no add-on slot is useful, return an empty array.
+                - For content missions, missionDecision.chosenSlot must be one value from missionDecision.missingSlots and must match missionDecision.chosenType/contentNeed.
+                - For GRAMMAR_FIX, EXPRESSION_POLISH, or TASK_RESET, missionDecision.chosenSlot must be NONE.
+                - contentOpportunity must target the most useful missing slot. Do not choose a mission that asks for a content slot already present in the learner answer.
+                - If the answer already contains action/what + place-or-situation + reason/why, do not choose DETAIL or SITUATION only because the answer is short. Prefer FEELING or RESULT if it still feels flat, or NONE/finishable if it is already acceptable.
                 - selectedMissionReason must briefly explain why the top mission deserves priority over other possible fixes.
                 - grammarSeverity must describe grammar/naturalness damage in the learner answer: NONE, MINOR, MODERATE, or MAJOR.
                 - grammarIssues should include only concrete learner spans that need repair. Use empty array if no visible local grammar issue matters.
@@ -2845,6 +3157,7 @@ public class OpenAiFeedbackClient {
                 2) If the learner names any relevant food, movie, place, season, music, routine, goal, action, time, or reason from the question, TASK_RESET is forbidden.
                 3) If grammarImpact is BLOCKING, choose GRAMMAR_FIX.
                 4) If the prompt asks "why" and the reason is missing, generic, or could be personal, choose REASON.
+                4a) Do not ask for an already-present slot again. If the learner already says what they do, where/when/context, and why, DETAIL and SITUATION are usually wrong; choose FEELING, RESULT, or NONE instead.
                 5) If the answer needs one concrete action, object, scene, or descriptive fact, choose DETAIL.
                 6) If the missing slot is specifically time/place/context, choose SITUATION.
                 7) If the answer needs proof, a concrete instance, or "for example" support, choose EXAMPLE.
@@ -2912,12 +3225,19 @@ public class OpenAiFeedbackClient {
                 missionDecision rules:
                 - missionDecision is the source of truth for selecting the top mission. Fill it before coachMission.
                 - missionDecision.chosenType must exactly match coachMission.missionType.
+                - missionDecision.presentSlots is the learner answer's content inventory. Use only these slot names: ACTION, SITUATION, REASON, DETAIL, EXAMPLE, FEELING, RESULT.
+                - missionDecision.missingSlots is the improvement inventory. Include only useful slots not already present. Do not list a slot in both presentSlots and missingSlots.
+                - missionDecision.chosenSlot is the exact content slot the learner should add next. For content missions it must equal chosenType/contentNeed and must appear in missingSlots. For GRAMMAR_FIX, EXPRESSION_POLISH, or TASK_RESET it must be NONE.
+                - If ACTION, SITUATION, and REASON are all in presentSlots, then DETAIL and SITUATION are not valid chosenSlot values unless the answer truly lacks a distinct concrete example. Prefer FEELING or RESULT for flat but understandable answers.
+                - If the learner already says where/when/context, do not choose SITUATION. If the learner already says why, do not choose REASON. If the learner already says what they do, do not choose DETAIL only to ask "what".
                 - grammarPriority means whether grammar should win the top mission:
                   * BLOCKING: grammar prevents the learner from answering the question clearly.
                   * HIGH_VALUE_LOCAL: one local repair is more important than any content add-on.
                   * LOW_VALUE_POLISH: grammar/naturalness can be improved, but the answer is understandable and the issue is not the best next action.
                   * NONE: no meaningful grammar repair is needed.
                 - contentNeed is the single best add-on slot if the answer is understandable: REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, or NONE.
+                - Choose contentNeed from missing information only. Never ask for action/what, place/context, or reason/why when the learner already gave that slot clearly enough.
+                - For commute, routine, or free-time answers that already include action + place/context + reason, contentNeed should normally be FEELING or RESULT if the answer still needs one personal sentence. Do not choose DETAIL or SITUATION for that pattern.
                 - TASK_RESET is a last-resort reset, not a label for thinness, generic reasons, missing examples, or one missing required slot.
                 - Before choosing TASK_RESET, ask: does the answer contain any prompt-relevant anchor? If yes, chosenType must be the missing-slot mission instead.
                 - If the answer contains no prompt-relevant anchor, chosenType must be TASK_RESET. Do not choose SITUATION, REASON, DETAIL, EXAMPLE, FEELING, or RESULT for a completely unrelated answer.
@@ -2959,6 +3279,7 @@ public class OpenAiFeedbackClient {
                 - For REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, or TASK_RESET, set coachMission.originalText and coachMission.revisedText to null.
                 - Do not put an optional add-on example into revisedText. exampleEn is only an imitation example or starter, not the green comparison sentence.
                 - If the prompt asks for multiple parts, choose a mission that fills the most important missing part rather than a vague "make it richer" instruction.
+                - Do not make coachMission ask for a slot the learner already answered. If action, place/context, and reason are present, coachMission should ask for feeling/result only when more support is still useful.
                 - If the learner answered at least one prompt-relevant part, do not use TASK_RESET. Give a concrete missing-slot mission instead.
                 - If coachMission is TASK_RESET, title, instructionKo, and successCheckKo must explicitly name the current prompt topic and the part the learner must answer from scratch.
                 - If the answer has no prompt-relevant anchor, coachMission.missionType must be TASK_RESET and the instruction must tell the learner to answer the actual question from scratch.
@@ -3127,6 +3448,20 @@ public class OpenAiFeedbackClient {
         return trimToNull(node.asText(null));
     }
 
+    private List<String> textArray(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull() || !node.isArray()) {
+            return List.of();
+        }
+        List<String> values = new ArrayList<>();
+        node.forEach(item -> {
+            String value = textOrNull(item);
+            if (value != null) {
+                values.add(value);
+            }
+        });
+        return List.copyOf(values);
+    }
+
     private FeedbackCoachMissionDto parseCoachMission(JsonNode node) {
         if (node == null || node.isMissingNode() || node.isNull()) {
             return null;
@@ -3159,6 +3494,9 @@ public class OpenAiFeedbackClient {
                 textOrNull(node.path("chosenType")),
                 textOrNull(node.path("grammarPriority")),
                 textOrNull(node.path("contentNeed")),
+                textArray(node.path("presentSlots")),
+                textArray(node.path("missingSlots")),
+                textOrNull(node.path("chosenSlot")),
                 textOrNull(node.path("whyChosenKo")),
                 textOrNull(node.path("whyNotGrammarFirstKo")),
                 textOrNull(node.path("addOnExampleEn")),

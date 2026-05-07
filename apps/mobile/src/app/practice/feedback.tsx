@@ -629,20 +629,22 @@ export default function PracticeFeedbackScreen() {
                   </View>
                 ) : null}
 
+                {trimText(coachMove?.successCheck) ? (
+                  <View style={styles.coachMoveSuccessBox}>
+                    <Text style={styles.coachMoveSuccessLabel}>성공 기준</Text>
+                    <Text style={styles.coachMoveSuccess}>{coachMove?.successCheck}</Text>
+                  </View>
+                ) : null}
+
                 <View style={styles.coachMoveInstructionBox}>
                   <Text style={styles.coachMoveInstructionLabel}>다시 쓸 때</Text>
                   <Text style={styles.coachMoveInstruction}>{coachInstruction}</Text>
                   {coachExample ? (
                     <View style={styles.coachMoveExampleBox}>
-                      <Text style={styles.coachMoveExampleLabel}>예시</Text>
                       <Text style={styles.coachMoveExample}>{coachExample}</Text>
                     </View>
                   ) : null}
                 </View>
-
-                {trimText(coachMove?.successCheck) ? (
-                  <Text style={styles.coachMoveSuccess}>{coachMove?.successCheck}</Text>
-                ) : null}
               </View>
 
               <Pressable
@@ -999,13 +1001,8 @@ const styles = StyleSheet.create({
     color: "#6D6050"
   },
   coachMoveInstructionBox: {
-    borderRadius: 22,
-    backgroundColor: "#FFF7EA",
-    borderWidth: 1,
-    borderColor: "#F2D4AA",
-    paddingHorizontal: 16,
-    paddingVertical: 15,
-    gap: 7
+    paddingVertical: 2,
+    gap: 8
   },
   coachMoveInstructionLabel: {
     fontSize: 13,
@@ -1020,23 +1017,22 @@ const styles = StyleSheet.create({
     color: "#3C342B"
   },
   coachMoveExampleBox: {
-    borderTopWidth: 1,
-    borderTopColor: "#F0DEC3",
-    marginTop: 4,
-    paddingTop: 10,
-    gap: 5
-  },
-  coachMoveExampleLabel: {
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: "900",
-    color: "#A46612"
+    marginTop: 2
   },
   coachMoveExample: {
     fontSize: 15,
     lineHeight: 23,
     fontWeight: "800",
     color: "#5A4630"
+  },
+  coachMoveSuccessBox: {
+    gap: 6
+  },
+  coachMoveSuccessLabel: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#A46612"
   },
   coachMoveSuccess: {
     fontSize: 14,

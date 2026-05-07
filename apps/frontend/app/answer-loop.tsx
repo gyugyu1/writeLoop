@@ -63,7 +63,6 @@ import type {
   Feedback,
   FeedbackInlineSegment,
   FeedbackLoopStatus,
-  FeedbackModelAnswerVariant,
   FeedbackSecondaryLearningPoint,
   FeedbackScreenPolicy,
   HistoryMonthStatus,
@@ -126,13 +125,6 @@ type PracticeExpressionHint = {
   tag?: string | null;
   tagLabel?: string | null;
   expressions: string[];
-};
-type ModelAnswerVariantCard = {
-  key: string;
-  label: string;
-  answer: string;
-  answerKo: string;
-  reasonKo: string;
 };
 type FeedbackPanelTab = "feedback" | "improve";
 type IncompleteLoopCopy = {
@@ -361,25 +353,6 @@ const feedbackTabEmptyStateTextStyle: CSSProperties = {
   lineHeight: 1.6
 };
 
-const answerCardVariantStyle: CSSProperties = {
-  background: "#fffdfc"
-};
-
-const answerLabelVariantStyle: CSSProperties = {
-  color: "#8a5a1e"
-};
-
-const answerTextVariantStyle: CSSProperties = {
-  color: "#3e3428"
-};
-
-const answerVariantReasonStyle: CSSProperties = {
-  margin: "8px 0 0",
-  color: "#7b624b",
-  fontSize: "0.9rem",
-  lineHeight: 1.6
-};
-
 function trimNullable(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
@@ -555,17 +528,6 @@ function normalizeRefinementIdeaAnchor(value?: string | null) {
     .replace(/\s+/g, " ")
     .trim()
     .toLowerCase();
-}
-
-function getModelAnswerVariantLabel(kind?: string | null) {
-  switch ((trimNullable(kind) ?? "").toUpperCase()) {
-    case "NATURAL_POLISH":
-      return "더 자연스럽게 쓴 버전";
-    case "RICHER_DETAIL":
-      return "더 풍부하게 쓴 버전";
-    default:
-      return "다른 버전";
-  }
 }
 
 function extractRewriteComparisonTokens(value?: string | null) {
@@ -4038,7 +4000,7 @@ export function AnswerLoop() {
     }
 
     const uiPoints =
-      feedback.ui?.secondaryLearningPoints?.filter((point) => {
+      feedback.ui?.fixPoints?.filter((point) => {
         if (!point) {
           return false;
         }
@@ -4267,39 +4229,6 @@ export function AnswerLoop() {
           optionalTone: false
         });
       });
-
-    return merged;
-  }
-
-  function buildModelAnswerVariantCards(baseAnswer?: string | null): ModelAnswerVariantCard[] {
-    const merged: ModelAnswerVariantCard[] = [];
-    const seen = new Set<string>();
-    const baseAnchor = normalizeRefinementIdeaAnchor(baseAnswer);
-
-    if (baseAnchor) {
-      seen.add(baseAnchor);
-    }
-
-    (feedback?.ui?.modelAnswerVariants ?? []).forEach((variant: FeedbackModelAnswerVariant, index) => {
-      const answer = trimNullable(variant?.answer);
-      if (!answer) {
-        return;
-      }
-
-      const answerAnchor = normalizeRefinementIdeaAnchor(answer);
-      if (!answerAnchor || seen.has(answerAnchor)) {
-        return;
-      }
-
-      seen.add(answerAnchor);
-      merged.push({
-        key: `variant-${trimNullable(variant.kind) ?? index}-${answer}`,
-        label: getModelAnswerVariantLabel(variant.kind),
-        answer,
-        answerKo: trimNullable(variant.answerKo) ?? "",
-        reasonKo: trimNullable(variant.reasonKo) ?? ""
-      });
-    });
 
     return merged;
   }
@@ -4610,7 +4539,6 @@ export function AnswerLoop() {
       comparisonTarget,
       feedback.inlineFeedback
     );
-    const modelAnswerVariants = buildModelAnswerVariantCards(comparisonTarget);
 
     return (
       <section className={styles.feedbackCard}>
@@ -4639,20 +4567,6 @@ export function AnswerLoop() {
               <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
             ) : null}
           </article>
-          {modelAnswerVariants.map((variant) => (
-            <article key={variant.key} className={styles.answerCard} style={answerCardVariantStyle}>
-              <span className={styles.answerLabel} style={answerLabelVariantStyle}>
-                {variant.label}
-              </span>
-              <p className={styles.answerText} style={answerTextVariantStyle}>{variant.answer}</p>
-              {hasHangulText(variant.answerKo) ? (
-                <p className={styles.modelAnswerTranslation}>해석: {variant.answerKo}</p>
-              ) : null}
-              {variant.reasonKo ? (
-                <p style={answerVariantReasonStyle}>{variant.reasonKo}</p>
-              ) : null}
-            </article>
-          ))}
         </div>
       </section>
     );

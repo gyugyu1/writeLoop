@@ -27,17 +27,6 @@ type FixCard = {
   revised: string;
 };
 
-type RewritePracticeCard = {
-  title: string;
-  starter: string;
-  starterKo: string;
-  instruction: string;
-  original: string;
-  revised: string;
-  hasSwapPair: boolean;
-  optionalTone: boolean;
-};
-
 type RefinementIdeaCard = {
   key: string;
   title: string;
@@ -417,51 +406,6 @@ function normalizeRefinementIdeaAnchor(value?: string | null) {
     .trim()
     .toLowerCase();
 }
-
-function buildRewritePractice(feedback: Feedback): RewritePracticeCard | null {
-  const nextStepPractice = feedback.ui?.nextStepPractice;
-  if (!nextStepPractice) {
-    return null;
-  }
-
-  const rawTitle = trimText(nextStepPractice.title);
-  const title =
-    rawTitle &&
-    !["한번 더 써보기", "한 번 더 써보기", "원하면 한 번 더 다듬어 보세요"].includes(rawTitle)
-      ? rawTitle
-      : "추가하면 좋을 점";
-  const starter = pickFirstNonEmpty(
-    nextStepPractice.revisedText,
-    nextStepPractice.headline,
-    nextStepPractice.exampleEn
-  );
-  const starterKo = pickFirstNonEmpty(nextStepPractice.exampleKo, nextStepPractice.meaningKo);
-  const instruction = pickFirstNonEmpty(
-    nextStepPractice.supportText,
-    nextStepPractice.guidanceKo,
-    nextStepPractice.meaningKo
-  );
-  const original = trimText(nextStepPractice.originalText);
-  const revised = trimText(nextStepPractice.revisedText);
-  const hasSwapPair = Boolean(original && revised && original !== revised);
-
-  if (!starter && !instruction && !hasSwapPair) {
-    return null;
-  }
-
-  return {
-    title,
-    starter,
-    starterKo,
-    instruction,
-    original,
-    revised,
-    hasSwapPair,
-    optionalTone: Boolean(nextStepPractice.optionalTone ?? feedback.loopComplete)
-  };
-}
-
-void buildRewritePractice;
 
 function buildRefinementIdeaCards(feedback: Feedback): RefinementIdeaCard[] {
   const merged: RefinementIdeaCard[] = [];

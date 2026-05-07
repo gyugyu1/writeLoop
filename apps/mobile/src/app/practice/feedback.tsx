@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -73,6 +73,7 @@ function hasCoachMove(coachMove?: FeedbackCoachMove | null) {
       trimText(coachMove?.before) ||
       trimText(coachMove?.after) ||
       trimText(coachMove?.instruction) ||
+      trimText(coachMove?.exampleEn) ||
       trimText(coachMove?.successCheck)
   );
 }
@@ -189,7 +190,10 @@ export default function PracticeFeedbackScreen() {
   const [activeTab, setActiveTab] = useState<FeedbackTabKey>("feedback");
   const [showDetailedFeedback, setShowDetailedFeedback] = useState(false);
   const [tabBarY, setTabBarY] = useState<number | null>(null);
+  const [inlineRewriteY, setInlineRewriteY] = useState<number | null>(null);
   const [scrollY, setScrollY] = useState(0);
+  const scrollViewRef = useRef<ScrollView | null>(null);
+  const [isCompletionRewriteOpen, setIsCompletionRewriteOpen] = useState(false);
   const [rewriteDraft, setRewriteDraft] = useState(() => feedbackState?.answer ?? "");
   const [rewriteError, setRewriteError] = useState("");
   const [isSubmittingRewrite, setIsSubmittingRewrite] = useState(false);
@@ -207,11 +211,12 @@ export default function PracticeFeedbackScreen() {
   const completion = feedback?.completion ?? null;
   const isLoopReadyToFinish =
     feedback?.loopComplete || loopExperience?.nextAction === "finish" || loopExperience?.status === "COMPLETE";
-  const shouldShowInlineRewriteWorkspace = Boolean(feedbackState) && !isLoopReadyToFinish;
+  const shouldShowInlineRewriteWorkspace =
+    Boolean(feedbackState) && (!isLoopReadyToFinish || isCompletionRewriteOpen);
   const rewriteButtonLabel = pickFirstNonEmpty(
     loopExperience?.nextAction === "rewrite" ? loopExperience?.nextActionLabel : null,
     loopStatus?.rewriteCtaLabel,
-    "이것만 고쳐서 다시 쓰기"
+    "그래도 더 다듬어서 써보기"
   );
   const finishButtonLabel = pickFirstNonEmpty(
     loopExperience?.nextAction === "finish" ? loopExperience?.nextActionLabel : null,
@@ -233,18 +238,28 @@ export default function PracticeFeedbackScreen() {
     loopExperience?.headline,
     "오늘은 이것 하나만 적용해 볼게요."
   );
+  const shouldShowCoachFocus =
+    Boolean(trimText(coachMove?.focus)) &&
+    trimText(coachMove?.focus) !== trimText(coachHeadline);
   const coachInstruction = pickFirstNonEmpty(
     coachMove?.instruction,
     rewriteWorkspace?.targetTextHint,
     feedback?.rewriteChallenge,
     "의미는 유지하고 오늘의 한 가지 코치만 반영해 다시 써보세요."
   );
+  const coachExample = pickFirstNonEmpty(coachMove?.exampleEn);
   const detailToggleLabel = showDetailedFeedback
     ? "자세한 피드백 접기"
     : pickFirstNonEmpty(loopExperience?.detailToggleLabel, "자세한 피드백 보기");
   const inlineRewriteSubmitLabel = isSubmittingRewrite
     ? "피드백 받는 중..."
-    : pickFirstNonEmpty(loopExperience?.nextActionLabel, "코치 반영해서 제출하기");
+    : pickFirstNonEmpty(
+        !isLoopReadyToFinish && loopExperience?.nextAction === "rewrite"
+          ? loopExperience?.nextActionLabel
+          : null,
+        !isLoopReadyToFinish ? loopStatus?.rewriteCtaLabel : null,
+        isLoopReadyToFinish ? "다듬은 답변으로 피드백 받기" : "코치 반영해서 제출하기"
+      );
 
   useEffect(() => {
     const inMemoryState = getPracticeFeedbackState(requestedDifficulty, requestedPromptId);
@@ -304,8 +319,10 @@ export default function PracticeFeedbackScreen() {
     setActiveTab("feedback");
     setShowDetailedFeedback(false);
     setTabBarY(null);
+    setInlineRewriteY(null);
     setScrollY(0);
     setSavingExpressionKeys([]);
+    setIsCompletionRewriteOpen(false);
   }, [requestedDifficulty, requestedPromptId]);
 
   useEffect(() => {
@@ -315,7 +332,22 @@ export default function PracticeFeedbackScreen() {
         ""
     );
     setRewriteError("");
+    setIsCompletionRewriteOpen(false);
+    setInlineRewriteY(null);
   }, [feedbackState?.prompt.id, feedbackState?.feedback.attemptNo]);
+
+  useEffect(() => {
+    if (!isCompletionRewriteOpen || inlineRewriteY == null) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({
+        y: Math.max(inlineRewriteY - 12, 0),
+        animated: true
+      });
+    });
+  }, [inlineRewriteY, isCompletionRewriteOpen]);
 
   async function handleToggleFeedbackExpression(
     expression: string,
@@ -435,6 +467,11 @@ export default function PracticeFeedbackScreen() {
     });
   }
 
+  function handleOpenCompletionRewrite() {
+    setInlineRewriteY(null);
+    setIsCompletionRewriteOpen(true);
+  }
+
   async function handleSubmitInlineRewrite() {
     if (!feedbackState) {
       handleBackToQuestions();
@@ -474,6 +511,9 @@ export default function PracticeFeedbackScreen() {
       setShowDetailedFeedback(false);
       setTabBarY(null);
       setScrollY(0);
+      requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+      });
     } catch (caughtError) {
       if (caughtError instanceof ApiError && caughtError.code === "GUEST_LIMIT_REACHED") {
         setRewriteError(
@@ -518,6 +558,7 @@ export default function PracticeFeedbackScreen() {
       >
         <View style={styles.screen}>
           <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
@@ -549,7 +590,7 @@ export default function PracticeFeedbackScreen() {
 
                 {hasCoachMove(coachMove) ? (
                   <View style={styles.coachMoveBody}>
-                    {trimText(coachMove?.focus) ? (
+                    {shouldShowCoachFocus ? (
                       <Text style={styles.coachMoveFocus}>{coachMove?.focus}</Text>
                     ) : null}
 
@@ -591,6 +632,12 @@ export default function PracticeFeedbackScreen() {
                 <View style={styles.coachMoveInstructionBox}>
                   <Text style={styles.coachMoveInstructionLabel}>다시 쓸 때</Text>
                   <Text style={styles.coachMoveInstruction}>{coachInstruction}</Text>
+                  {coachExample ? (
+                    <View style={styles.coachMoveExampleBox}>
+                      <Text style={styles.coachMoveExampleLabel}>예시</Text>
+                      <Text style={styles.coachMoveExample}>{coachExample}</Text>
+                    </View>
+                  ) : null}
                 </View>
 
                 {trimText(coachMove?.successCheck) ? (
@@ -648,7 +695,10 @@ export default function PracticeFeedbackScreen() {
               ) : null}
 
               {shouldShowInlineRewriteWorkspace ? (
-                <View style={styles.inlineRewriteCard}>
+                <View
+                  style={styles.inlineRewriteCard}
+                  onLayout={(event) => setInlineRewriteY(event.nativeEvent.layout.y)}
+                >
                   <Text style={styles.inlineRewriteTitle}>여기서 바로 한 번만 고쳐 써봐요.</Text>
                   <Text style={styles.inlineRewriteHelp}>
                     전체를 완벽하게 바꾸려 하지 말고, 위 코치 포인트 하나만 반영하면 돼요.
@@ -714,8 +764,8 @@ export default function PracticeFeedbackScreen() {
                   </Pressable>
                 ) : null}
 
-                {isLoopReadyToFinish ? (
-                  <Pressable style={styles.secondaryButton} onPress={() => void handleRewrite()}>
+                {isLoopReadyToFinish && !isCompletionRewriteOpen ? (
+                  <Pressable style={styles.secondaryButton} onPress={handleOpenCompletionRewrite}>
                     <Text style={styles.secondaryButtonText}>{rewriteButtonLabel}</Text>
                   </Pressable>
                 ) : null}
@@ -968,6 +1018,25 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     fontWeight: "800",
     color: "#3C342B"
+  },
+  coachMoveExampleBox: {
+    borderTopWidth: 1,
+    borderTopColor: "#F0DEC3",
+    marginTop: 4,
+    paddingTop: 10,
+    gap: 5
+  },
+  coachMoveExampleLabel: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "900",
+    color: "#A46612"
+  },
+  coachMoveExample: {
+    fontSize: 15,
+    lineHeight: 23,
+    fontWeight: "800",
+    color: "#5A4630"
   },
   coachMoveSuccess: {
     fontSize: 14,

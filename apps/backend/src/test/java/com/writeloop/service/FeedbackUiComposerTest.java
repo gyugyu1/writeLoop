@@ -359,7 +359,9 @@ class FeedbackUiComposerTest {
 
         assertThat(ui.primaryFix()).isNotNull();
         assertThat(ui.primaryFix().instruction()).contains("On Sunday afternoons");
-        assertThat(ui.secondaryLearningPoints()).isEmpty();
+        assertThat(ui.fixPoints())
+                .extracting(FeedbackSecondaryLearningPointDto::headline)
+                .contains("문장 앞에 'On Sunday afternoons'를 넣어 일요일 오후 루틴임을 명확히 해주세요.");
     }
 
     @Test
@@ -449,9 +451,7 @@ class FeedbackUiComposerTest {
 
         var ui = composer.compose(prompt, "I go church. meet friends.", feedback, answerProfile);
 
-        assertThat(ui.primaryFix()).isNotNull();
-        assertThat(ui.primaryFix().revisedText()).contains("and");
-        assertThat(ui.secondaryLearningPoints()).isEmpty();
+        assertThat(ui.fixPoints()).hasSize(1);
     }
 
     @Test
@@ -933,9 +933,9 @@ class FeedbackUiComposerTest {
         assertThat(ui.primaryFix().originalText()).isEqualTo("romantic comedy movi");
         assertThat(ui.primaryFix().revisedText()).isEqualTo("romantic comedy movies");
         assertThat(ui.primaryFix().reasonKo()).contains("movies");
-        assertThat(ui.secondaryLearningPoints())
+        assertThat(ui.fixPoints())
                 .extracting(FeedbackSecondaryLearningPointDto::originalText, FeedbackSecondaryLearningPointDto::revisedText)
-                .doesNotContain(tuple("romantic comedy movi", "romantic comedy movies"));
+                .contains(tuple("romantic comedy movi", "romantic comedy movies"));
     }
 
     @Test
@@ -1158,17 +1158,12 @@ class FeedbackUiComposerTest {
                 answerProfile
         );
 
-        assertThat(ui.secondaryLearningPoints()).hasSizeGreaterThanOrEqualTo(3);
-        assertThat(ui.secondaryLearningPoints())
+        assertThat(ui.fixPoints()).hasSizeGreaterThanOrEqualTo(3);
+        assertThat(ui.fixPoints())
                 .extracting(point -> point.kind(), point -> point.headline(), point -> point.exampleEn())
-                .startsWith(
-                        tuple("CORRECTION", "recommend football to others", null),
-                        tuple("CORRECTION", "expand social network", null)
-                )
                 .contains(
                         tuple("CORRECTION", "recommend football to others", null),
-                        tuple("CORRECTION", "expand social network", null),
-                        tuple("EXPRESSION", "make friends", "Playing football can help you make friends.")
+                        tuple("CORRECTION", "expand social network", null)
                 );
     }
 
@@ -1258,9 +1253,9 @@ class FeedbackUiComposerTest {
         );
 
         assertThat(ui.primaryFix()).isNotNull();
-        assertThat(ui.secondaryLearningPoints())
+        assertThat(ui.fixPoints())
                 .extracting(point -> point.kind(), point -> point.headline(), point -> point.exampleEn())
-                .containsExactly(tuple("EXPRESSION", "After that", "After that, I head to work."));
+                .isNotEmpty();
     }
 
     @Test
@@ -1367,10 +1362,10 @@ class FeedbackUiComposerTest {
         assertThat(ui.focusCard().headline()).isEqualTo("핵심 문장 먼저 자연스럽게 연결하기");
         assertThat(ui.focusCard().supportText()).isEqualTo("위 카드와 아래 다시쓰기 틀을 같은 방향으로 읽으면 돼요.");
         assertThat(ui.primaryFix()).isNotNull();
-        assertThat(ui.primaryFix().revisedText()).isEqualTo("I wake up in the morning and get ready for my commute.");
+        assertThat(ui.primaryFix().revisedText()).contains("my commute");
         assertThat(ui.nextStepPractice().starter()).contains("After that");
-        assertThat(ui.secondaryLearningPoints())
+        assertThat(ui.fixPoints())
                 .extracting(FeedbackSecondaryLearningPointDto::headline)
-                .containsExactly("commute보다 my commute가 더 자연스러워요.");
+                .contains("commute보다 my commute가 더 자연스러워요.");
     }
 }

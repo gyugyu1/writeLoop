@@ -157,8 +157,11 @@ class FeedbackResponseContractTest {
         FeedbackResponseDto response = objectMapper.readValue(legacyJson, FeedbackResponseDto.class);
         JsonNode root = objectMapper.readTree(objectMapper.writeValueAsString(response));
 
-        assertThat(response.ui().secondaryLearningPoints()).isEmpty();
-        assertThat(response.ui().modelAnswerVariants()).isEmpty();
+        assertThat(response.ui().fixPoints()).singleElement().satisfies(point -> {
+            assertThat(point.kind()).isEqualTo("GRAMMAR");
+            assertThat(point.originalText()).isEqualTo("I go home");
+            assertThat(point.revisedText()).isEqualTo("I went home");
+        });
         assertThat(root.path("ui").has("fixPoints")).isTrue();
         assertThat(root.path("ui").has("secondaryLearningPoints")).isFalse();
         assertThat(root.path("ui").has("modelAnswerVariants")).isFalse();

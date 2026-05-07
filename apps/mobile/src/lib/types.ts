@@ -377,68 +377,6 @@ export interface FeedbackFixPoint {
   exampleKo?: string | null;
 }
 
-export interface FeedbackNextStepPractice {
-  kind?: FeedbackFixPointKind | null;
-  title?: string | null;
-  headline?: string | null;
-  supportText?: string | null;
-  originalText?: string | null;
-  revisedText?: string | null;
-  meaningKo?: string | null;
-  guidanceKo?: string | null;
-  exampleEn?: string | null;
-  exampleKo?: string | null;
-  ctaLabel?: string | null;
-  optionalTone?: boolean | null;
-}
-
-export interface FeedbackRewriteSuggestion {
-  english: string;
-  meaningKo?: string | null;
-  noteKo?: string | null;
-}
-
-export interface FeedbackMicroTip {
-  title?: string | null;
-  reasonKo?: string | null;
-  originalText?: string | null;
-  revisedText?: string | null;
-}
-
-export type FeedbackCompletionState =
-  | "NEEDS_REVISION"
-  | "CAN_FINISH"
-  | "OPTIONAL_POLISH";
-export type FeedbackSectionDisplayMode = "HIDE" | "SHOW_EXPANDED" | "SHOW_COLLAPSED";
-export type FeedbackRewriteGuideMode =
-  | "FRAGMENT_SCAFFOLD"
-  | "CORRECTED_SKELETON"
-  | "DETAIL_SCAFFOLD"
-  | "OPTIONAL_POLISH"
-  | "TASK_RESET";
-export type FeedbackModelAnswerDisplayMode =
-  | "HIDE"
-  | "SHOW_EXPANDED"
-  | "SHOW_COLLAPSED"
-  | "TASK_RESET_EXAMPLE";
-export type FeedbackRefinementDisplayMode = "HIDE" | "SHOW_EXPANDED" | "SHOW_COLLAPSED";
-
-export interface FeedbackScreenPolicy {
-  completionState: FeedbackCompletionState;
-  sectionOrder: string[];
-  keepWhatWorksDisplayMode: FeedbackSectionDisplayMode;
-  rewriteGuideDisplayMode: FeedbackSectionDisplayMode;
-  rewriteGuideMode: FeedbackRewriteGuideMode;
-  modelAnswerDisplayMode: FeedbackModelAnswerDisplayMode;
-  refinementDisplayMode: FeedbackRefinementDisplayMode;
-  keepWhatWorksMaxItems: number;
-  keepExpressionChipMaxItems: number;
-  refinementMaxCards: number;
-  showFinishCta: boolean;
-  showRewriteCta: boolean;
-  showCancelCta: boolean;
-}
-
 export interface FeedbackLoopStatus {
   badge?: string | null;
   headline: string;
@@ -466,6 +404,7 @@ export interface FeedbackCoachMove {
   before?: string | null;
   after?: string | null;
   instruction?: string | null;
+  exampleEn?: string | null;
   successCheck?: string | null;
 }
 
@@ -491,11 +430,7 @@ export interface FeedbackRevealLater {
 }
 
 export interface FeedbackUi {
-  microTip?: FeedbackMicroTip | null;
   fixPoints?: FeedbackFixPoint[] | null;
-  nextStepPractice?: FeedbackNextStepPractice | null;
-  rewriteSuggestions?: FeedbackRewriteSuggestion[] | null;
-  screenPolicy?: FeedbackScreenPolicy | null;
   loopStatus?: FeedbackLoopStatus | null;
 }
 

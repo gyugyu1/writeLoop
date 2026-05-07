@@ -39,6 +39,7 @@ public record FeedbackCoachMissionDto(
                 hasComparisonPair ? originalText : null,
                 hasComparisonPair ? revisedText : null,
                 instructionKo,
+                exampleEn,
                 successCheckKo
         );
     }

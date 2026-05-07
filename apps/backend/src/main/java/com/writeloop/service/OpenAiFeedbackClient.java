@@ -3,9 +3,7 @@ package com.writeloop.service;
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackCoachMissionDto;
-import com.writeloop.dto.FeedbackModelAnswerVariantDto;
 import com.writeloop.dto.FeedbackResponseDto;
-import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackUiDto;
@@ -606,7 +604,7 @@ public class OpenAiFeedbackClient {
         )
                 : List.of();
         List<FeedbackSecondaryLearningPointDto> rawFixPoints = resolveGeneratedFixPoints(generatedSections);
-        List<FeedbackSecondaryLearningPointDto> normalizedFixPointCandidates = sanitizeSecondaryLearningPoints(rawFixPoints);
+        List<FeedbackSecondaryLearningPointDto> normalizedFixPointCandidates = sanitizeFixPoints(rawFixPoints);
         FeedbackSecondaryLearningPointDto referentFixPoint = firstCorrectionFixPoint(normalizedFixPointCandidates);
         String modelAnswerAnchor = anchorTextForModelAnswer(diagnosis, answerProfile);
         FeedbackSectionValidators.ModelAnswerContent guardedModelAnswer = modelAnswerRequested
@@ -644,22 +642,8 @@ public class OpenAiFeedbackClient {
                 protectedModelAnswerKo = null;
             }
         }
-        List<FeedbackSecondaryLearningPointDto> normalizedSecondaryLearningPoints = sanitizeSecondaryLearningPoints(
-                generatedSections.secondaryLearningPoints()
-        );
-        List<FeedbackSecondaryLearningPointDto> fixPoints = normalizedFixPointCandidates.isEmpty()
-                ? dedupeCorrectionFixPoints(normalizedSecondaryLearningPoints)
-                : List.copyOf(normalizedFixPointCandidates);
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = extractSupplementaryLearningPoints(
-                normalizedSecondaryLearningPoints
-        );
-        FeedbackNextStepPracticeDto nextStepPractice = generatedSections.nextStepPractice() != null
-                ? sanitizeRewritePractice(generatedSections.nextStepPractice(), diagnosis, answerProfile, fixPoints)
-                : null;
-        List<FeedbackRewriteSuggestionDto> rewriteSuggestions = sanitizeRewriteSuggestions(
-                generatedSections.rewriteSuggestions(),
-                nextStepPractice
-        );
+        List<FeedbackSecondaryLearningPointDto> fixPoints = List.copyOf(normalizedFixPointCandidates);
+        List<FeedbackRewriteSuggestionDto> rewriteSuggestions = sanitizeRewriteSuggestions(generatedSections.rewriteSuggestions());
         FeedbackCoachMissionDto coachMission = resolveMissionSourceOfTruth(
                 generatedSections.coachMission(),
                 generatedSections.missionDecision(),
@@ -684,11 +668,11 @@ public class OpenAiFeedbackClient {
                 null,
                 protectedModelAnswer,
                 protectedModelAnswerKo,
-                generatedSections.modelAnswerVariants(),
+                List.of(),
                 usedExpressions,
                 fixPoints,
-                secondaryLearningPoints,
-                nextStepPractice,
+                List.of(),
+                null,
                 rewriteSuggestions,
                 coachMission,
                 generatedSections.missionDecision()
@@ -1911,23 +1895,15 @@ public class OpenAiFeedbackClient {
                 grammarFeedback
         );
         List<FeedbackSecondaryLearningPointDto> fixPoints = resolveGeneratedFixPoints(generatedSections);
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = extractSupplementaryLearningPoints(
-                generatedSections.secondaryLearningPoints()
-        );
-        FeedbackUiDto generatedUi = (!secondaryLearningPoints.isEmpty()
-                || !fixPoints.isEmpty()
-                || generatedSections.nextStepPractice() != null
-                || !generatedSections.rewriteSuggestions().isEmpty()
-                || !generatedSections.modelAnswerVariants().isEmpty())
+        FeedbackUiDto generatedUi = (!fixPoints.isEmpty()
+                || !generatedSections.rewriteSuggestions().isEmpty())
                 ? new FeedbackUiDto(
                 null,
                 null,
                 null,
-                secondaryLearningPoints,
                 fixPoints,
-                generatedSections.nextStepPractice(),
+                null,
                 generatedSections.rewriteSuggestions(),
-                generatedSections.modelAnswerVariants(),
                 null,
                 null
         )
@@ -1967,7 +1943,7 @@ public class OpenAiFeedbackClient {
         if (generatedSections.fixPoints() != null && !generatedSections.fixPoints().isEmpty()) {
             return dedupeCorrectionFixPoints(generatedSections.fixPoints());
         }
-        return dedupeCorrectionFixPoints(generatedSections.secondaryLearningPoints());
+        return List.of();
     }
 
     private List<FeedbackSecondaryLearningPointDto> dedupeCorrectionFixPoints(
@@ -1989,27 +1965,6 @@ public class OpenAiFeedbackClient {
             fixPoints.add(point);
         }
         return List.copyOf(fixPoints);
-    }
-
-    private List<FeedbackSecondaryLearningPointDto> extractSupplementaryLearningPoints(
-            List<FeedbackSecondaryLearningPointDto> candidates
-    ) {
-        if (candidates == null || candidates.isEmpty()) {
-            return List.of();
-        }
-        List<FeedbackSecondaryLearningPointDto> supplementaryPoints = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
-        for (FeedbackSecondaryLearningPointDto point : candidates) {
-            if (point == null || !"EXPRESSION".equals(trimToNull(point.kind()))) {
-                continue;
-            }
-            String key = learningPointKey(point);
-            if (key.isBlank() || !seen.add(key)) {
-                continue;
-            }
-            supplementaryPoints.add(point);
-        }
-        return List.copyOf(supplementaryPoints);
     }
 
     private FeedbackSecondaryLearningPointDto firstCorrectionFixPoint(
@@ -2139,19 +2094,13 @@ public class OpenAiFeedbackClient {
                 null,
                 generatedSections.modelAnswer(),
                 generatedSections.modelAnswerKo(),
-                !generatedSections.modelAnswerVariants().isEmpty()
-                        ? generatedSections.modelAnswerVariants()
-                        : fallbackSections.modelAnswerVariants(),
+                List.of(),
                 generatedSections.usedExpressions(),
                 !resolveGeneratedFixPoints(generatedSections).isEmpty()
                         ? resolveGeneratedFixPoints(generatedSections)
                         : resolveGeneratedFixPoints(fallbackSections),
-                !generatedSections.secondaryLearningPoints().isEmpty()
-                        ? generatedSections.secondaryLearningPoints()
-                        : fallbackSections.secondaryLearningPoints(),
-                generatedSections.nextStepPractice() != null
-                        ? generatedSections.nextStepPractice()
-                        : fallbackSections.nextStepPractice(),
+                List.of(),
+                null,
                 !generatedSections.rewriteSuggestions().isEmpty()
                         ? generatedSections.rewriteSuggestions()
                         : fallbackSections.rewriteSuggestions(),
@@ -3234,19 +3183,6 @@ public class OpenAiFeedbackClient {
                 item.path("exampleEn").isNull() ? null : item.path("exampleEn").asText(null),
                 item.path("exampleKo").isNull() ? null : item.path("exampleKo").asText(null)
         )));
-        List<FeedbackSecondaryLearningPointDto> parsedSecondaryLearningPoints = new ArrayList<>();
-        node.path("secondaryLearningPoints").forEach(item -> parsedSecondaryLearningPoints.add(new FeedbackSecondaryLearningPointDto(
-                item.path("kind").isNull() ? null : item.path("kind").asText(null),
-                item.path("title").isNull() ? null : item.path("title").asText(null),
-                item.path("headline").isNull() ? null : item.path("headline").asText(null),
-                item.path("supportText").isNull() ? null : item.path("supportText").asText(null),
-                item.path("originalText").isNull() ? null : item.path("originalText").asText(null),
-                item.path("revisedText").isNull() ? null : item.path("revisedText").asText(null),
-                item.path("meaningKo").isNull() ? null : item.path("meaningKo").asText(null),
-                item.path("guidanceKo").isNull() ? null : item.path("guidanceKo").asText(null),
-                item.path("exampleEn").isNull() ? null : item.path("exampleEn").asText(null),
-                item.path("exampleKo").isNull() ? null : item.path("exampleKo").asText(null)
-        )));
         List<CoachExpressionUsageDto> usedExpressions = new ArrayList<>();
         node.path("usedExpressions").forEach(item -> usedExpressions.add(new CoachExpressionUsageDto(
                 item.path("expression").asText(""),
@@ -3267,22 +3203,7 @@ public class OpenAiFeedbackClient {
                 item.path("exampleKo").isNull() ? null : item.path("exampleKo").asText(null),
                 item.path("meaningKo").isNull() ? null : item.path("meaningKo").asText(null)
         )));
-        List<FeedbackSecondaryLearningPointDto> normalizedSecondaryLearningPoints = sanitizeSecondaryLearningPoints(
-                parsedSecondaryLearningPoints
-        );
-        List<FeedbackSecondaryLearningPointDto> parsedFixPoints = !fixPoints.isEmpty()
-                ? dedupeCorrectionFixPoints(fixPoints)
-                : dedupeCorrectionFixPoints(normalizedSecondaryLearningPoints);
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints = extractSupplementaryLearningPoints(
-                normalizedSecondaryLearningPoints
-        );
-        List<FeedbackModelAnswerVariantDto> modelAnswerVariants = new ArrayList<>();
-        node.path("modelAnswerVariants").forEach(item -> modelAnswerVariants.add(new FeedbackModelAnswerVariantDto(
-                textOrNull(item.path("kind")),
-                textOrNull(item.path("answer")),
-                textOrNull(item.path("answerKo")),
-                textOrNull(item.path("reasonKo"))
-        )));
+        List<FeedbackSecondaryLearningPointDto> parsedFixPoints = dedupeCorrectionFixPoints(fixPoints);
         return new GeneratedSections(
                 null,
                 strengths,
@@ -3294,10 +3215,10 @@ public class OpenAiFeedbackClient {
                 null,
                 node.path("modelAnswer").isNull() ? null : node.path("modelAnswer").asText(null),
                 node.path("modelAnswerKo").isNull() ? null : node.path("modelAnswerKo").asText(null),
-                modelAnswerVariants,
+                List.of(),
                 usedExpressions,
                 parsedFixPoints,
-                secondaryLearningPoints,
+                List.of(),
                 null,
                 List.of(),
                 parseCoachMission(node.path("coachMission")),
@@ -3511,16 +3432,16 @@ public class OpenAiFeedbackClient {
         return List.copyOf(sanitized);
     }
 
-    private List<FeedbackSecondaryLearningPointDto> sanitizeSecondaryLearningPoints(
-            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints
+    private List<FeedbackSecondaryLearningPointDto> sanitizeFixPoints(
+            List<FeedbackSecondaryLearningPointDto> fixPoints
     ) {
-        if (secondaryLearningPoints == null || secondaryLearningPoints.isEmpty()) {
+        if (fixPoints == null || fixPoints.isEmpty()) {
             return List.of();
         }
         List<FeedbackSecondaryLearningPointDto> sanitized = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
 
-        for (FeedbackSecondaryLearningPointDto point : secondaryLearningPoints) {
+        for (FeedbackSecondaryLearningPointDto point : fixPoints) {
             if (point == null) {
                 continue;
             }
@@ -3561,114 +3482,10 @@ public class OpenAiFeedbackClient {
         return List.copyOf(sanitized);
     }
 
-    private FeedbackNextStepPracticeDto sanitizeRewritePractice(
-            FeedbackNextStepPracticeDto nextStepPractice,
-            FeedbackDiagnosisResult diagnosis,
-            AnswerProfile answerProfile,
-            List<FeedbackSecondaryLearningPointDto> fixPoints
-    ) {
-        if (nextStepPractice == null) {
-            return null;
-        }
-        String headline = sanitizeNextStepHeadline(
-                firstNonBlank(nextStepPractice.headline(), nextStepPractice.revisedText(), nextStepPractice.exampleEn())
-        );
-        String supportText = trimToNull(nextStepPractice.supportText());
-        String originalText = trimToNull(nextStepPractice.originalText());
-        String revisedText = trimToNull(nextStepPractice.revisedText());
-        if ((originalText == null) != (revisedText == null)) {
-            originalText = null;
-            revisedText = null;
-        }
-        String meaningKo = trimToNull(nextStepPractice.meaningKo());
-        String guidanceKo = trimToNull(nextStepPractice.guidanceKo());
-        String exampleEn = trimToNull(nextStepPractice.exampleEn());
-        String exampleKo = trimToNull(nextStepPractice.exampleKo());
-        if (firstNonBlank(headline, supportText, revisedText, meaningKo, guidanceKo, exampleEn) == null) {
-            return null;
-        }
-        FeedbackNextStepPracticeDto sanitized = new FeedbackNextStepPracticeDto(
-                trimToNull(nextStepPractice.kind()),
-                trimToNull(nextStepPractice.title()),
-                headline,
-                supportText,
-                originalText,
-                revisedText,
-                meaningKo,
-                guidanceKo,
-                exampleEn,
-                exampleKo,
-                trimToNull(nextStepPractice.ctaLabel()),
-                nextStepPractice.optionalTone()
-        );
-        return overlapsWithFixPoints(sanitized, fixPoints) ? null : sanitized;
-    }
-
-    private boolean overlapsWithFixPoints(
-            FeedbackNextStepPracticeDto nextStepPractice,
-            List<FeedbackSecondaryLearningPointDto> fixPoints
-    ) {
-        if (nextStepPractice == null || fixPoints == null || fixPoints.isEmpty()) {
-            return false;
-        }
-
-        String practiceOriginal = trimToNull(nextStepPractice.originalText());
-        String practiceRevised = trimToNull(nextStepPractice.revisedText());
-        String practiceAnchor = firstNonBlank(
-                trimToNull(nextStepPractice.revisedText()),
-                trimToNull(nextStepPractice.headline()),
-                trimToNull(nextStepPractice.exampleEn())
-        );
-        String practiceSupport = trimToNull(nextStepPractice.supportText());
-
-        for (FeedbackSecondaryLearningPointDto point : fixPoints) {
-            if (point == null) {
-                continue;
-            }
-
-            String pointOriginal = trimToNull(point.originalText());
-            String pointRevised = trimToNull(point.revisedText());
-            if (practiceOriginal != null
-                    && practiceRevised != null
-                    && pointOriginal != null
-                    && pointRevised != null
-                    && feedbackSectionValidators.isNearDuplicateText(practiceOriginal, pointOriginal)
-                    && feedbackSectionValidators.isNearDuplicateText(practiceRevised, pointRevised)) {
-                return true;
-            }
-
-            String pointAnchor = firstNonBlank(
-                    trimToNull(point.revisedText()),
-                    trimToNull(point.headline()),
-                    trimToNull(point.exampleEn())
-            );
-            if (practiceAnchor != null
-                    && pointAnchor != null
-                    && feedbackSectionValidators.isNearDuplicateText(practiceAnchor, pointAnchor)) {
-                return true;
-            }
-
-            String pointSupport = trimToNull(point.supportText());
-            if (practiceSupport != null
-                    && pointSupport != null
-                    && feedbackSectionValidators.isNearDuplicateText(practiceSupport, pointSupport)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private List<FeedbackRewriteSuggestionDto> sanitizeRewriteSuggestions(
-            List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
-            FeedbackNextStepPracticeDto nextStepPractice
-    ) {
+    private List<FeedbackRewriteSuggestionDto> sanitizeRewriteSuggestions(List<FeedbackRewriteSuggestionDto> rewriteSuggestions) {
         if (rewriteSuggestions == null || rewriteSuggestions.isEmpty()) {
             return List.of();
         }
-        String practiceHeadline = nextStepPractice == null ? null : trimToNull(nextStepPractice.headline());
-        String practiceExample = nextStepPractice == null ? null : trimToNull(nextStepPractice.exampleEn());
-        String practiceRevised = nextStepPractice == null ? null : trimToNull(nextStepPractice.revisedText());
 
         List<FeedbackRewriteSuggestionDto> sanitized = new ArrayList<>();
         LinkedHashSet<String> seen = new LinkedHashSet<>();
@@ -3677,11 +3494,7 @@ public class OpenAiFeedbackClient {
                 continue;
             }
             String english = sanitizeRewriteSuggestionEnglish(suggestion.english());
-            String normalizedEnglish = normalizeForComparison(english);
-            if (english == null
-                    || normalizedEnglish.equals(normalizeForComparison(practiceHeadline))
-                    || normalizedEnglish.equals(normalizeForComparison(practiceExample))
-                    || normalizedEnglish.equals(normalizeForComparison(practiceRevised))) {
+            if (english == null) {
                 continue;
             }
             String key = normalizeForComparison(english);
@@ -3704,18 +3517,6 @@ public class OpenAiFeedbackClient {
         }
         String normalized = trimmed.replaceAll("[.!?]+$", "").trim();
         if (normalized.isBlank() || normalized.contains("[") || normalized.contains("]")) {
-            return null;
-        }
-        return normalized;
-    }
-
-    private String sanitizeNextStepHeadline(String headline) {
-        String trimmed = trimToNull(headline);
-        if (trimmed == null) {
-            return null;
-        }
-        String normalized = trimmed.replaceAll("\\s+", " ").trim();
-        if (normalized.contains("[") || normalized.contains("]")) {
             return null;
         }
         return normalized;

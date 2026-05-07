@@ -742,20 +742,16 @@ public class GeminiFeedbackClient {
         FeedbackPrimaryFixDto primaryFix = generatedSections.primaryFix() != null
                 ? generatedSections.primaryFix()
                 : derivePrimaryFixFromFixPoints(fixPoints);
-        FeedbackUiDto generatedUi = (!secondaryLearningPoints.isEmpty()
-                || !fixPoints.isEmpty()
+        FeedbackUiDto generatedUi = (!fixPoints.isEmpty()
                 || generatedSections.nextStepPractice() != null
-                || !generatedSections.rewriteSuggestions().isEmpty()
-                || !generatedSections.modelAnswerVariants().isEmpty())
+                || !generatedSections.rewriteSuggestions().isEmpty())
                 ? new FeedbackUiDto(
                 null,
                 primaryFix,
                 null,
-                secondaryLearningPoints,
                 fixPoints,
                 generatedSections.nextStepPractice(),
                 generatedSections.rewriteSuggestions(),
-                generatedSections.modelAnswerVariants(),
                 null,
                 null
         )

@@ -10,6 +10,7 @@ public record FeedbackCoachMoveDto(
         String before,
         String after,
         String instruction,
+        String exampleEn,
         String successCheck
 ) {
     public FeedbackCoachMoveDto {
@@ -19,7 +20,20 @@ public record FeedbackCoachMoveDto(
         before = normalize(before);
         after = normalize(after);
         instruction = normalize(instruction);
+        exampleEn = normalize(exampleEn);
         successCheck = normalize(successCheck);
+    }
+
+    public FeedbackCoachMoveDto(
+            String focus,
+            String focusType,
+            String why,
+            String before,
+            String after,
+            String instruction,
+            String successCheck
+    ) {
+        this(focus, focusType, why, before, after, instruction, null, successCheck);
     }
 
     private static String normalize(String value) {

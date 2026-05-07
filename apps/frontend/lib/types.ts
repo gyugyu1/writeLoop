@@ -254,21 +254,6 @@ export interface FeedbackSecondaryLearningPoint {
 
 export type FeedbackFixPoint = FeedbackSecondaryLearningPoint;
 
-export interface FeedbackNextStepPractice {
-  kind?: FeedbackSecondaryLearningPointKind | null;
-  title?: string | null;
-  headline?: string | null;
-  supportText?: string | null;
-  originalText?: string | null;
-  revisedText?: string | null;
-  meaningKo?: string | null;
-  guidanceKo?: string | null;
-  exampleEn?: string | null;
-  exampleKo?: string | null;
-  ctaLabel?: string | null;
-  optionalTone?: boolean | null;
-}
-
 export interface FeedbackRewriteSuggestion {
   english: string;
   meaningKo?: string | null;
@@ -333,6 +318,7 @@ export interface FeedbackCoachMove {
   before?: string | null;
   after?: string | null;
   instruction?: string | null;
+  exampleEn?: string | null;
   successCheck?: string | null;
 }
 
@@ -357,22 +343,10 @@ export interface FeedbackRevealLater {
   modelAnswerLabel?: string | null;
 }
 
-export type FeedbackModelAnswerVariantKind = "NATURAL_POLISH" | "RICHER_DETAIL";
-
-export interface FeedbackModelAnswerVariant {
-  kind?: FeedbackModelAnswerVariantKind | string | null;
-  answer?: string | null;
-  answerKo?: string | null;
-  reasonKo?: string | null;
-}
-
 export interface FeedbackUi {
   microTip?: FeedbackMicroTip | null;
-  secondaryLearningPoints?: FeedbackSecondaryLearningPoint[] | null;
   fixPoints?: FeedbackFixPoint[] | null;
-  nextStepPractice?: FeedbackNextStepPractice | null;
   rewriteSuggestions?: FeedbackRewriteSuggestion[] | null;
-  modelAnswerVariants?: FeedbackModelAnswerVariant[] | null;
   screenPolicy?: FeedbackScreenPolicy | null;
   loopStatus?: FeedbackLoopStatus | null;
 }

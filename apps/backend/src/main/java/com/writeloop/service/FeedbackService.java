@@ -781,6 +781,11 @@ public class FeedbackService {
                 "질문에 대한 답이 더 분명해지면 성공이에요."
         );
 
+        String exampleEn = firstNonBlank(
+                coachDraft.exampleEn(),
+                nextStepPractice == null ? null : nextStepPractice.exampleEn()
+        );
+
         FeedbackCoachMoveDto coachMove = new FeedbackCoachMoveDto(
                 focus,
                 focusType,
@@ -788,6 +793,7 @@ public class FeedbackService {
                 before,
                 after,
                 instruction,
+                exampleEn,
                 successCheck
         );
         boolean canFinish = feedback.loopComplete();
@@ -802,7 +808,7 @@ public class FeedbackService {
                 firstNonBlank(
                         canFinish && loopStatus != null ? loopStatus.finishCtaLabel() : null,
                         !canFinish && loopStatus != null ? loopStatus.rewriteCtaLabel() : null,
-                        canFinish ? "루프 완료하기" : "이것만 고쳐서 다시 쓰기"
+                        canFinish ? "루프 완료하기" : "그래도 더 다듬어서 써보기"
                 ),
                 "자세한 피드백 보기"
         );
@@ -914,6 +920,7 @@ public class FeedbackService {
                 after,
                 coachMove.instruction(),
                 coachMove.successCheck(),
+                coachMove.exampleEn(),
                 rewriteWorkspace == null ? null : rewriteWorkspace.placeholder(),
                 rewriteWorkspace == null ? null : rewriteWorkspace.targetTextHint()
         );
@@ -932,6 +939,7 @@ public class FeedbackService {
                 pair.before(),
                 pair.after(),
                 primaryFix.instruction(),
+                null,
                 null,
                 pair.hasPair() ? pair.after() : null,
                 primaryFix.instruction()
@@ -961,6 +969,7 @@ public class FeedbackService {
                 pair.after(),
                 firstNonBlank(nextStepPractice.guidanceKo(), nextStepPractice.supportText()),
                 null,
+                nextStepPractice.exampleEn(),
                 firstNonBlank(nextStepPractice.revisedText(), nextStepPractice.headline(), nextStepPractice.exampleEn()),
                 firstNonBlank(nextStepPractice.guidanceKo(), nextStepPractice.supportText())
         );
@@ -981,6 +990,7 @@ public class FeedbackService {
                 pair.after(),
                 instruction,
                 null,
+                fixPoint.exampleEn(),
                 firstNonBlank(fixPoint.revisedText(), fixPoint.exampleEn(), fixPoint.headline()),
                 instruction
         );
@@ -999,6 +1009,7 @@ public class FeedbackService {
                 detailMission.example(),
                 detailMission.instruction(),
                 detailMission.successCheck(),
+                detailMission.example(),
                 detailMission.placeholder(),
                 detailMission.targetHint()
         );
@@ -1087,10 +1098,12 @@ public class FeedbackService {
             String after,
             String instruction,
             String successCheck,
+            String exampleEn,
             String placeholder,
             String targetHint
     ) {
         private static final CoachMoveDraft EMPTY = new CoachMoveDraft(
+                null,
                 null,
                 null,
                 null,
@@ -1109,6 +1122,7 @@ public class FeedbackService {
                     || hasText(after)
                     || hasText(instruction)
                     || hasText(successCheck)
+                    || hasText(exampleEn)
                     || hasText(placeholder)
                     || hasText(targetHint);
         }

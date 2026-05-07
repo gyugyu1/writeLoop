@@ -122,11 +122,9 @@ final class FeedbackUiComposer {
                 focusCard,
                 primaryFix,
                 buildMicroTip(learnerAnswer, feedback, screenPolicy.fixFirstMode()),
-                secondaryLearningPoints,
                 fixPoints,
                 nextStepPractice,
                 rewriteSuggestions,
-                llmUi == null ? null : llmUi.modelAnswerVariants(),
                 toDto(screenPolicy),
                 buildLoopStatus(feedback, completionState, screenPolicy)
         );
@@ -1063,7 +1061,7 @@ final class FeedbackUiComposer {
             List<ImprovementCandidate> rankedCandidates
     ) {
         List<FeedbackSecondaryLearningPointDto> llmPoints = sanitizeLlmSecondaryLearningPoints(
-                llmUi == null ? null : llmUi.secondaryLearningPoints(),
+                llmUi == null ? null : llmUi.fixPoints(),
                 primaryFix
         );
         if (!llmPoints.isEmpty()) {

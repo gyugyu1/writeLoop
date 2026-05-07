@@ -4,25 +4,23 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.util.List;
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_EMPTY)
 public record FeedbackUiDto(
         @JsonIgnore FeedbackFocusCardDto focusCard,
         @JsonIgnore FeedbackPrimaryFixDto primaryFix,
         FeedbackMicroTipDto microTip,
-        @JsonIgnore java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-        java.util.List<FeedbackSecondaryLearningPointDto> fixPoints,
-        FeedbackNextStepPracticeDto nextStepPractice,
-        java.util.List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
-        @JsonIgnore java.util.List<FeedbackModelAnswerVariantDto> modelAnswerVariants,
+        List<FeedbackSecondaryLearningPointDto> fixPoints,
+        @JsonIgnore FeedbackNextStepPracticeDto nextStepPractice,
+        List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
         FeedbackScreenPolicyDto screenPolicy,
         FeedbackLoopStatusDto loopStatus
 ) {
     public FeedbackUiDto {
-        secondaryLearningPoints = secondaryLearningPoints == null ? java.util.List.of() : java.util.List.copyOf(secondaryLearningPoints);
-        fixPoints = fixPoints == null ? java.util.List.of() : java.util.List.copyOf(fixPoints);
-        rewriteSuggestions = rewriteSuggestions == null ? java.util.List.of() : java.util.List.copyOf(rewriteSuggestions);
-        modelAnswerVariants = sanitizeModelAnswerVariants(modelAnswerVariants);
+        fixPoints = fixPoints == null ? List.of() : List.copyOf(fixPoints);
+        rewriteSuggestions = rewriteSuggestions == null ? List.of() : List.copyOf(rewriteSuggestions);
     }
 
     public FeedbackUiDto(
@@ -30,16 +28,39 @@ public record FeedbackUiDto(
             FeedbackPrimaryFixDto primaryFix,
             FeedbackNextStepPracticeDto nextStepPractice
     ) {
-        this(focusCard, primaryFix, null, java.util.List.of(), java.util.List.of(), nextStepPractice, java.util.List.of(), null, null, null);
+        this(focusCard, primaryFix, null, List.of(), nextStepPractice, List.of(), null, null);
     }
 
     public FeedbackUiDto(
             FeedbackFocusCardDto focusCard,
             FeedbackPrimaryFixDto primaryFix,
             FeedbackMicroTipDto microTip,
-            java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
+            List<FeedbackSecondaryLearningPointDto> fixPoints,
+            FeedbackNextStepPracticeDto nextStepPractice
+    ) {
+        this(focusCard, primaryFix, microTip, fixPoints, nextStepPractice, List.of(), null, null);
+    }
+
+    public FeedbackUiDto(
+            FeedbackFocusCardDto focusCard,
+            FeedbackPrimaryFixDto primaryFix,
+            FeedbackMicroTipDto microTip,
+            List<FeedbackSecondaryLearningPointDto> fixPoints,
             FeedbackNextStepPracticeDto nextStepPractice,
-            java.util.List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
+            FeedbackScreenPolicyDto screenPolicy,
+            FeedbackLoopStatusDto loopStatus
+    ) {
+        this(focusCard, primaryFix, microTip, fixPoints, nextStepPractice, List.of(), screenPolicy, loopStatus);
+    }
+
+    public FeedbackUiDto(
+            FeedbackFocusCardDto focusCard,
+            FeedbackPrimaryFixDto primaryFix,
+            FeedbackMicroTipDto microTip,
+            List<FeedbackSecondaryLearningPointDto> legacySecondaryLearningPoints,
+            List<FeedbackSecondaryLearningPointDto> fixPoints,
+            FeedbackNextStepPracticeDto nextStepPractice,
+            List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
             FeedbackScreenPolicyDto screenPolicy,
             FeedbackLoopStatusDto loopStatus
     ) {
@@ -47,11 +68,9 @@ public record FeedbackUiDto(
                 focusCard,
                 primaryFix,
                 microTip,
-                secondaryLearningPoints,
-                java.util.List.of(),
+                mergeLegacyFixPoints(fixPoints, legacySecondaryLearningPoints),
                 nextStepPractice,
                 rewriteSuggestions,
-                null,
                 screenPolicy,
                 loopStatus
         );
@@ -61,32 +80,11 @@ public record FeedbackUiDto(
             FeedbackFocusCardDto focusCard,
             FeedbackPrimaryFixDto primaryFix,
             FeedbackMicroTipDto microTip,
-            java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            FeedbackNextStepPracticeDto nextStepPractice
-    ) {
-        this(focusCard, primaryFix, microTip, secondaryLearningPoints, java.util.List.of(), nextStepPractice, java.util.List.of(), null, null, null);
-    }
-
-    public FeedbackUiDto(
-            FeedbackFocusCardDto focusCard,
-            FeedbackPrimaryFixDto primaryFix,
-            FeedbackMicroTipDto microTip,
-            java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
+            List<FeedbackSecondaryLearningPointDto> legacySecondaryLearningPoints,
+            List<FeedbackSecondaryLearningPointDto> fixPoints,
             FeedbackNextStepPracticeDto nextStepPractice,
-            FeedbackScreenPolicyDto screenPolicy,
-            FeedbackLoopStatusDto loopStatus
-    ) {
-        this(focusCard, primaryFix, microTip, secondaryLearningPoints, java.util.List.of(), nextStepPractice, java.util.List.of(), null, screenPolicy, loopStatus);
-    }
-
-    public FeedbackUiDto(
-            FeedbackFocusCardDto focusCard,
-            FeedbackPrimaryFixDto primaryFix,
-            FeedbackMicroTipDto microTip,
-            java.util.List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            java.util.List<FeedbackSecondaryLearningPointDto> fixPoints,
-            FeedbackNextStepPracticeDto nextStepPractice,
-            java.util.List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
+            List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
+            List<FeedbackModelAnswerVariantDto> ignoredModelAnswerVariants,
             FeedbackScreenPolicyDto screenPolicy,
             FeedbackLoopStatusDto loopStatus
     ) {
@@ -94,67 +92,22 @@ public record FeedbackUiDto(
                 focusCard,
                 primaryFix,
                 microTip,
-                secondaryLearningPoints,
-                fixPoints,
+                mergeLegacyFixPoints(fixPoints, legacySecondaryLearningPoints),
                 nextStepPractice,
                 rewriteSuggestions,
-                null,
                 screenPolicy,
                 loopStatus
         );
     }
 
-    private static String normalizeIdeaAnchor(String value) {
-        String normalized = normalize(value);
-        if (normalized == null) {
-            return null;
-        }
-
-        return normalized
-                .replaceAll("[.!?]+$", "")
-                .replaceAll("\\s+", " ")
-                .trim()
-                .toLowerCase(java.util.Locale.ROOT);
-    }
-
-    private static java.util.List<FeedbackModelAnswerVariantDto> sanitizeModelAnswerVariants(
-            java.util.List<FeedbackModelAnswerVariantDto> modelAnswerVariants
+    private static List<FeedbackSecondaryLearningPointDto> mergeLegacyFixPoints(
+            List<FeedbackSecondaryLearningPointDto> fixPoints,
+            List<FeedbackSecondaryLearningPointDto> legacySecondaryLearningPoints
     ) {
-        if (modelAnswerVariants == null || modelAnswerVariants.isEmpty()) {
-            return java.util.List.of();
+        if (fixPoints != null && !fixPoints.isEmpty()) {
+            return fixPoints;
         }
-
-        java.util.LinkedHashMap<String, FeedbackModelAnswerVariantDto> byAnswer = new java.util.LinkedHashMap<>();
-        java.util.LinkedHashSet<String> usedKinds = new java.util.LinkedHashSet<>();
-        for (FeedbackModelAnswerVariantDto variant : modelAnswerVariants) {
-            if (variant == null || normalize(variant.answer()) == null) {
-                continue;
-            }
-
-            String normalizedAnswer = normalizeIdeaAnchor(variant.answer());
-            if (normalizedAnswer == null || byAnswer.containsKey(normalizedAnswer)) {
-                continue;
-            }
-
-            String kind = normalize(variant.kind());
-            if (kind != null && usedKinds.contains(kind)) {
-                continue;
-            }
-
-            byAnswer.put(normalizedAnswer, variant);
-            if (kind != null) {
-                usedKinds.add(kind);
-            }
-        }
-
-        return java.util.List.copyOf(byAnswer.values());
+        return legacySecondaryLearningPoints == null ? List.of() : legacySecondaryLearningPoints;
     }
 
-    private static String normalize(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
-    }
 }

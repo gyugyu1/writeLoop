@@ -10,6 +10,7 @@ import type {
   AdminPromptRecommendationMetrics,
   AdminPromptRequest,
   AdminPromptTopicCatalogEntry,
+  AppVersionStatus,
   AppleLoginRequest,
   AuthNotice,
   AuthUser,
@@ -32,6 +33,9 @@ import type {
   FeedbackRequest,
   HistorySession,
   LoginRequest,
+  MobilePlatform,
+  MobileHomeSnapshot,
+  MonthWritingStatus,
   PendingSocialRegistration,
   PromptHint,
   Prompt,
@@ -66,8 +70,10 @@ const DEFAULT_FETCH_TIMEOUT_MS = 8000;
 const FEEDBACK_FETCH_TIMEOUT_MS = 90000;
 const COACH_FETCH_TIMEOUT_MS = 45000;
 const PROMPTS_CACHE_TTL_MS = 60_000;
+const PROMPT_HINTS_CACHE_TTL_MS = 60_000;
 
 let promptsCache: { expiresAt: number; value: Prompt[] } | null = null;
+const promptHintsCache = new Map<string, { expiresAt: number; value: PromptHint[] }>();
 
 function resolveFetchTimeoutMs(url: string) {
   if (url.includes("/api/feedback")) {
@@ -424,6 +430,25 @@ export class ApiError extends Error {
     this.status = status;
     this.code = code;
   }
+}
+
+export async function getAppVersionStatus(
+  platform: MobilePlatform,
+  currentVersion: string
+): Promise<AppVersionStatus> {
+  const query = new URLSearchParams({
+    platform,
+    currentVersion
+  });
+  const response = await fetchWithRetry(`${apiBaseUrl}/api/app-version?${query.toString()}`, {
+    method: "GET"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "앱 버전 정보를 확인하지 못했어요.");
+  }
+
+  return (await response.json()) as AppVersionStatus;
 }
 
 function createApiError(message: string, status: number, code?: string) {
@@ -1145,6 +1170,30 @@ export async function getDailyPrompts(
   );
 }
 
+export async function getMobileHomeSnapshot(
+  featuredDifficulty: DailyDifficulty,
+  guestId?: string
+): Promise<MobileHomeSnapshot> {
+  const query = new URLSearchParams({ featuredDifficulty });
+  if (guestId) {
+    query.set("guestId", guestId);
+  }
+
+  const response = await apiFetch(`/api/mobile/home?${query.toString()}`);
+
+  if (!response.ok) {
+    throw await parseApiError(response, "홈 화면 정보를 불러오지 못했어요.");
+  }
+
+  const payload = (await response.json()) as MobileHomeSnapshot;
+  return {
+    ...payload,
+    featuredRecommendation: payload.featuredRecommendation
+      ? normalizeFeaturedDailyPromptRecommendationPayload(payload.featuredRecommendation)
+      : null
+  };
+}
+
 export async function getFeaturedDailyPrompt(
   difficulty: DailyDifficulty,
   guestId?: string
@@ -1183,13 +1232,24 @@ export async function trackDailyPromptClick(promptId: string, guestId?: string):
 }
 
 export async function getPromptHints(promptId: string): Promise<PromptHint[]> {
+  const now = Date.now();
+  const cached = promptHintsCache.get(promptId);
+  if (cached && now < cached.expiresAt) {
+    return cached.value;
+  }
+
   const response = await apiFetch(`/api/prompts/${promptId}/hints`);
 
   if (!response.ok) {
     throw await parseApiError(response, "추천 단어와 표현을 불러오지 못했어요.");
   }
 
-  return (await response.json()) as PromptHint[];
+  const hints = (await response.json()) as PromptHint[];
+  promptHintsCache.set(promptId, {
+    expiresAt: Date.now() + PROMPT_HINTS_CACHE_TTL_MS,
+    value: hints
+  });
+  return hints;
 }
 
 export async function getWritingDraft(
@@ -1254,6 +1314,24 @@ export async function getTodayWritingStatus(): Promise<TodayWritingStatus | null
   }
 
   return (await response.json()) as TodayWritingStatus;
+}
+
+export async function getMonthWritingStatus(year: number, month: number): Promise<MonthWritingStatus | null> {
+  const query = new URLSearchParams({
+    year: String(year),
+    month: String(month)
+  });
+  const response = await apiFetch(`/api/history/month-status?${query.toString()}`);
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "달력을 불러오지 못했어요.");
+  }
+
+  return (await response.json()) as MonthWritingStatus;
 }
 
 export async function getAnswerHistory(): Promise<HistorySession[]> {

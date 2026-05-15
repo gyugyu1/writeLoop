@@ -15,7 +15,9 @@
     },
     "production": {
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://api.writeloop.kr"
+        "EXPO_PUBLIC_API_BASE_URL": "https://api.writeloop.kr",
+        "EXPO_PUBLIC_API_BASE_URL_ANDROID": "https://api.writeloop.kr",
+        "EXPO_PUBLIC_API_BASE_URL_IOS": "https://api.writeloop.kr"
       }
     }
   },

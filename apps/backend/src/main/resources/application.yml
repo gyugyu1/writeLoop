@@ -1,5 +1,9 @@
 server:
   port: 8080
+  compression:
+    enabled: ${SERVER_COMPRESSION_ENABLED:true}
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain,text/css,text/javascript,application/javascript
+    min-response-size: 1024
   servlet:
     session:
       timeout: 30m
@@ -119,6 +123,20 @@ app:
     max-text-chars: ${APP_DRAFT_MAX_TEXT_CHARS:4000}
   diary:
     max-content-chars: ${APP_DIARY_MAX_CONTENT_CHARS:4000}
+  version:
+    ios:
+      latest: ${APP_VERSION_IOS_LATEST:1.0.2}
+      minimum-supported: ${APP_VERSION_IOS_MINIMUM_SUPPORTED:1.0.0}
+      store-url: ${APP_VERSION_IOS_STORE_URL:https://apps.apple.com/app/id6763569959}
+    android:
+      latest: ${APP_VERSION_ANDROID_LATEST:1.0.1}
+      minimum-supported: ${APP_VERSION_ANDROID_MINIMUM_SUPPORTED:1.0.0}
+      store-url: ${APP_VERSION_ANDROID_STORE_URL:https://play.google.com/store/apps/details?id=kr.writeloop}
+    optional-title-ko: ${APP_VERSION_OPTIONAL_TITLE_KO:새 버전이 나왔어요}
+    forced-title-ko: ${APP_VERSION_FORCED_TITLE_KO:업데이트가 필요해요}
+    optional-message-ko: ${APP_VERSION_OPTIONAL_MESSAGE_KO:더 안정적인 학습 경험을 위해 최신 버전으로 업데이트해 주세요.}
+    forced-message-ko: ${APP_VERSION_FORCED_MESSAGE_KO:현재 버전에서는 일부 기능이 원활하지 않을 수 있어요. 업데이트 후 이용해 주세요.}
+    release-notes-ko: ${APP_VERSION_RELEASE_NOTES_KO:안정성 개선과 사용성 개선이 포함되어 있어요.}
   coach-evaluation:
     scheduled-enabled: ${APP_COACH_EVALUATION_SCHEDULED_ENABLED:false}
     fixed-delay-ms: ${APP_COACH_EVALUATION_FIXED_DELAY_MS:900000}

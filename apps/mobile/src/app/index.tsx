@@ -16,9 +16,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import {
-  getAnswerHistory,
   getDiaryCalendarSummary,
   getFeaturedDailyPrompt,
+  getMobileHomeSnapshot,
+  getMonthWritingStatus,
   getTodayWritingStatus,
   getWritingDraft,
   trackDailyPromptClick
@@ -34,7 +35,6 @@ import type {
   DailyDifficulty,
   DiaryCalendarSummary,
   FeaturedDailyPromptRecommendation,
-  HistorySession,
   TodayWritingStatus
 } from "@/lib/types";
 
@@ -196,10 +196,6 @@ function isSameMonth(left: Date, right: Date) {
 
 function formatMonthLabel(date: Date) {
   return `${date.getFullYear()}년 ${date.getMonth() + 1}월`;
-}
-
-function getLatestHistoryTimestamp(session: HistorySession) {
-  return session.attempts[session.attempts.length - 1]?.createdAt ?? session.updatedAt ?? session.createdAt;
 }
 
 function buildFallbackCompletedDateKeys(todayStatus: TodayWritingStatus | null) {
@@ -370,6 +366,9 @@ export default function HomeScreen() {
   const [isDiaryCalendarLoading, setIsDiaryCalendarLoading] = useState(false);
   const [diaryCalendarError, setDiaryCalendarError] = useState("");
   const featuredRecommendationRequestIdRef = useRef(0);
+  const homeSnapshotRequestIdRef = useRef(0);
+  const diaryCalendarLoadPromiseRef = useRef<Promise<void> | null>(null);
+  const hasCompletedInitialHomeLoadRef = useRef(false);
   const historyRoute: Href = currentUser ? "/records" : buildLoginHref("/records");
   const diaryOverviewRoute: Href = currentUser ? "/diary" : buildLoginHref("/diary");
   const featuredRecommendationDifficulty = incompleteLoop?.difficulty ?? "I";
@@ -378,6 +377,11 @@ export default function HomeScreen() {
   const featuredDifficultyMeta = getDifficultyMeta(
     featuredRecommendation?.difficulty ?? featuredRecommendationDifficulty
   );
+
+  useEffect(() => {
+    hasCompletedInitialHomeLoadRef.current = false;
+  }, [currentUser?.id]);
+
   const displayedStreakDays = Math.max(todayStatus?.streakDays ?? 0, todayStatus?.completed ? 1 : 0);
   const homeStatusMascot = useMemo(
     () => getStreakMascotStage(displayedStreakDays),
@@ -526,33 +530,34 @@ export default function HomeScreen() {
       return;
     }
 
-    try {
-      setIsDiaryCalendarLoading(true);
-      setDiaryCalendarError("");
-      setDiaryCalendarSummary(await getDiaryCalendarSummary());
-    } catch (caughtError) {
-      setDiaryCalendarError(
-        caughtError instanceof Error ? caughtError.message : "영어일기 달력을 불러오지 못했어요."
-      );
-    } finally {
-      setIsDiaryCalendarLoading(false);
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    if (!currentUser) {
-      setTodayStatus(null);
-      setStatusError("");
-      setFeaturedRecommendation(null);
-      setFeaturedRecommendationError("");
-      setDiaryCalendarSummary(null);
-      setDiaryCalendarError("");
+    if (diaryCalendarLoadPromiseRef.current) {
+      await diaryCalendarLoadPromiseRef.current;
       return;
     }
 
-    void loadTodayStatus();
-    void loadDiaryEntries();
-  }, [currentUser, loadDiaryEntries, loadTodayStatus]);
+    const loadPromise = (async () => {
+      try {
+        setIsDiaryCalendarLoading(true);
+        setDiaryCalendarError("");
+        setDiaryCalendarSummary(await getDiaryCalendarSummary());
+      } catch (caughtError) {
+        setDiaryCalendarError(
+          caughtError instanceof Error ? caughtError.message : "영어일기 달력을 불러오지 못했어요."
+        );
+      } finally {
+        setIsDiaryCalendarLoading(false);
+      }
+    })();
+
+    diaryCalendarLoadPromiseRef.current = loadPromise;
+    try {
+      await loadPromise;
+    } finally {
+      if (diaryCalendarLoadPromiseRef.current === loadPromise) {
+        diaryCalendarLoadPromiseRef.current = null;
+      }
+    }
+  }, [currentUser]);
 
   const loadFeaturedRecommendation = useCallback(
     async (difficulty: DailyDifficulty = featuredRecommendationDifficulty) => {
@@ -595,9 +600,94 @@ export default function HomeScreen() {
     [currentUser, featuredRecommendationDifficulty, isResolvingIncompleteLoop]
   );
 
+  const loadHomeSnapshot = useCallback(
+    async (difficulty: DailyDifficulty = featuredRecommendationDifficulty) => {
+      if (!currentUser) {
+        setTodayStatus(null);
+        setStatusError("");
+        setFeaturedRecommendation(null);
+        setFeaturedRecommendationError("");
+        setDiaryCalendarSummary(null);
+        setDiaryCalendarError("");
+        setIsFeaturedRecommendationLoading(false);
+        setIsDiaryCalendarLoading(false);
+        hasCompletedInitialHomeLoadRef.current = false;
+        return;
+      }
+
+      if (isResolvingIncompleteLoop) {
+        return;
+      }
+
+      const requestId = homeSnapshotRequestIdRef.current + 1;
+      homeSnapshotRequestIdRef.current = requestId;
+
+      try {
+        setStatusError("");
+        setDiaryCalendarError("");
+        setFeaturedRecommendationError("");
+        setIsDiaryCalendarLoading(true);
+        setIsFeaturedRecommendationLoading(true);
+
+        const snapshot = await getMobileHomeSnapshot(difficulty);
+        if (homeSnapshotRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        setTodayStatus(snapshot.todayStatus ?? null);
+        setDiaryCalendarSummary(snapshot.diaryCalendarSummary ?? null);
+        setFeaturedRecommendation(snapshot.featuredRecommendation ?? null);
+      } catch {
+        if (homeSnapshotRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        await Promise.allSettled([
+          loadTodayStatus(),
+          loadDiaryEntries(),
+          loadFeaturedRecommendation(difficulty)
+        ]);
+      } finally {
+        if (homeSnapshotRequestIdRef.current === requestId) {
+          setIsDiaryCalendarLoading(false);
+          setIsFeaturedRecommendationLoading(false);
+          hasCompletedInitialHomeLoadRef.current = true;
+        }
+      }
+    },
+    [
+      currentUser,
+      featuredRecommendationDifficulty,
+      isResolvingIncompleteLoop,
+      loadDiaryEntries,
+      loadFeaturedRecommendation,
+      loadTodayStatus
+    ]
+  );
+
   useEffect(() => {
-    void loadFeaturedRecommendation(featuredRecommendationDifficulty);
-  }, [featuredRecommendationDifficulty, loadFeaturedRecommendation]);
+    if (!currentUser) {
+      hasCompletedInitialHomeLoadRef.current = false;
+      setTodayStatus(null);
+      setStatusError("");
+      setFeaturedRecommendation(null);
+      setFeaturedRecommendationError("");
+      setDiaryCalendarSummary(null);
+      setDiaryCalendarError("");
+      return;
+    }
+
+    if (isResolvingIncompleteLoop) {
+      return;
+    }
+
+    void loadHomeSnapshot(featuredRecommendationDifficulty);
+  }, [
+    currentUser,
+    featuredRecommendationDifficulty,
+    isResolvingIncompleteLoop,
+    loadHomeSnapshot
+  ]);
 
   useEffect(() => {
     setIsFeaturedRecommendationTranslationVisible(false);
@@ -673,6 +763,10 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (!hasCompletedInitialHomeLoadRef.current) {
+        return;
+      }
+
       void loadDiaryEntries();
     }, [loadDiaryEntries])
   );
@@ -681,11 +775,7 @@ export default function HomeScreen() {
     setIsRefreshing(true);
     const user = await refreshSession();
     if (user) {
-      await Promise.all([
-        loadTodayStatus(),
-        loadFeaturedRecommendation(),
-        loadDiaryEntries()
-      ]);
+      await loadHomeSnapshot();
     } else {
       setTodayStatus(null);
       setStatusError("");
@@ -696,9 +786,7 @@ export default function HomeScreen() {
     }
     setIsRefreshing(false);
   }, [
-    loadDiaryEntries,
-    loadFeaturedRecommendation,
-    loadTodayStatus,
+    loadHomeSnapshot,
     refreshSession
   ]);
 
@@ -716,18 +804,21 @@ export default function HomeScreen() {
 
     let cancelled = false;
 
-    const loadCalendarHistory = async () => {
+    const loadCalendarStatus = async () => {
       try {
         setIsCalendarLoading(true);
         setCalendarError("");
-        const history = await getAnswerHistory();
+        const monthStatus = await getMonthWritingStatus(
+          calendarMonthCursor.getFullYear(),
+          calendarMonthCursor.getMonth() + 1
+        );
         if (cancelled) {
           return;
         }
 
-        const nextKeys = Array.from(
-          new Set(history.map((session) => toDateKey(getLatestHistoryTimestamp(session))))
-        );
+        const nextKeys = (monthStatus?.days ?? [])
+          .filter((day) => day.completed)
+          .map((day) => day.date);
         setCalendarCompletedDateKeys(nextKeys);
       } catch (caughtError) {
         if (cancelled) {
@@ -742,12 +833,12 @@ export default function HomeScreen() {
       }
     };
 
-    void loadCalendarHistory();
+    void loadCalendarStatus();
 
     return () => {
       cancelled = true;
     };
-  }, [currentUser, isCalendarOpen]);
+  }, [calendarMonthCursor, currentUser, isCalendarOpen]);
 
   const handleStart = useCallback((difficulty: DailyDifficulty) => {
     router.push({

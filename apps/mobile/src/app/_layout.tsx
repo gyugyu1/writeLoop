@@ -5,6 +5,7 @@ import { StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "@/lib/session";
+import AppUpdateNotice from "@/components/app-update-notice";
 
 void SplashScreen.hideAsync().catch(() => {
   // The native splash can already be gone during fast refresh.
@@ -22,6 +23,7 @@ export default function RootLayout() {
       <View style={styles.root}>
         <SessionProvider>
           <StatusBar style="dark" />
+          <AppUpdateNotice />
           <Stack
             screenOptions={{
               headerShown: false,

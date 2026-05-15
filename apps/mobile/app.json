@@ -2,7 +2,7 @@
   "expo": {
     "name": "라이트루프",
     "slug": "writeloop-mobile",
-    "version": "1.0.1",
+    "version": "1.0.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "writeloop",
@@ -10,7 +10,7 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "kr.writeloop",
-      "buildNumber": "4",
+      "buildNumber": "6",
       "usesAppleSignIn": true,
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false

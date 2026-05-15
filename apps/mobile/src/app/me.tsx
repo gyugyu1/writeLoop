@@ -1,3 +1,4 @@
+import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -18,6 +19,8 @@ import MobileScreenHeader from "@/components/mobile-screen-header";
 import { deleteAccount, updateProfile } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import type { AuthUser } from "@/lib/types";
+
+const APP_VERSION = Constants.expoConfig?.version ?? "0.0.0";
 
 function getLoginMethodLabel(user: AuthUser) {
   switch ((user.socialProvider ?? "").trim().toUpperCase()) {
@@ -442,6 +445,8 @@ export default function MeScreen() {
                 </View>
               </>
             )}
+
+            <Text style={styles.appVersionText}>버전 {APP_VERSION}</Text>
           </ScrollView>
         </KeyboardAvoidingView>
 
@@ -711,5 +716,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     color: "#A3371A"
+  },
+  appVersionText: {
+    alignSelf: "center",
+    marginTop: 2,
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#B09A83"
   }
 });

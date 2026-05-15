@@ -21,6 +21,15 @@ interface FeedbackLlmEngine {
             String previousAnswer
     );
 
+    FeedbackResponseDto review(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptIndex,
+            String previousAnswer,
+            String previousCoachingSummary
+    );
+
     boolean isAuthoritativeFeedback(FeedbackResponseDto feedback);
 
     FeedbackResponseDto clearInternalMetadata(FeedbackResponseDto feedback);

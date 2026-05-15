@@ -140,7 +140,7 @@ class FeedbackUiComposerTest {
 
         var ui = composer.compose(prompt, "My favorite season is spring because I like sunshine.", feedback, answerProfile);
 
-        assertThat(ui.focusCard().title()).isEqualTo("지금 단계에서는 마무리 가능해요");
+        assertThat(ui.focusCard().title()).isEqualTo("이미 좋아요");
         assertThat(ui.focusCard().supportText()).isNotBlank();
         assertThat(ui.screenPolicy().completionState()).isEqualTo("CAN_FINISH");
         assertThat(ui.screenPolicy().modelAnswerDisplayMode()).isEqualTo("SHOW_EXPANDED");

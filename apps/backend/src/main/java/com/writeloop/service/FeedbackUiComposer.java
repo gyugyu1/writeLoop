@@ -187,15 +187,15 @@ final class FeedbackUiComposer {
             return new FeedbackFocusCardDto(
                     "지금도 충분히 좋아요",
                     optionalPolishHeadline(prompt, primaryIssueCode),
-                    "이미 질문에는 잘 답했어요. 지금은 선택적으로 흐름이나 연결 표현만 가볍게 다듬으면 충분해요."
+                    "이미 좋아요. 원하면 위 제안만 가볍게 반영해 보세요."
             );
         }
 
         if (completionState == CompletionState.CAN_FINISH) {
             return new FeedbackFocusCardDto(
-                    "지금 단계에서는 마무리 가능해요",
+                    "이미 좋아요",
                     canFinishHeadline(prompt, primaryIssueCode, answerBand),
-                    "지금 답으로도 충분하지만, 원하면 한 가지 디테일이나 이유를 더 보태며 연습해 볼 수 있어요."
+                    "원하면 위 제안만 가볍게 반영해 보세요."
             );
         }
 
@@ -1694,7 +1694,7 @@ final class FeedbackUiComposer {
             );
             case CAN_FINISH -> new FeedbackLoopStatusDto(
                     null,
-                    sanitizeLoopStatusHeadline(completionMessage, "지금 단계에서는 마무리 가능해요."),
+                    sanitizeLoopStatusHeadline(completionMessage, "이미 좋아요. 원하면 위 제안만 가볍게 반영해 보세요."),
                     null,
                     "다시 써보기",
                     screenPolicy.showFinishCta() ? "오늘 루프 완료하고 도장 받기" : null,

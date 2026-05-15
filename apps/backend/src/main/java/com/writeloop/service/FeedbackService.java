@@ -13,6 +13,7 @@ import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackRevealLaterDto;
 import com.writeloop.dto.FeedbackRewriteWorkspaceDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
+import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.FeedbackUiDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
@@ -115,6 +116,9 @@ public class FeedbackService {
     private static final int MAX_REFINEMENT_EXPRESSION_COUNT = 12;
     private static final int MAX_FEEDBACK_ANSWER_CHARS = 4_000;
     private static final int MAX_SURFACE_FORM_DISTANCE_TOKEN_CHARS = 64;
+    private static final int MAX_PREVIOUS_COACHING_ATTEMPTS = 4;
+    private static final int MAX_PREVIOUS_COACHING_TEXT_CHARS = 220;
+    private static final int MAX_PREVIOUS_COACHING_SUMMARY_CHARS = 2_200;
 
     private final PromptService promptService;
     private final LlmFeedbackClient llmFeedbackClient;
@@ -144,6 +148,7 @@ public class FeedbackService {
         AnswerSessionEntity session = resolveSession(request, prompt.id(), currentUserId);
         int attemptNo = answerAttemptRepository.countBySessionId(session.getId()) + 1;
         String previousAnswer = findPreviousAnswer(session.getId(), attemptNo);
+        String previousCoachingSummary = buildPreviousCoachingSummary(session.getId(), attemptNo);
         AttemptType attemptType = resolveAttemptType(request);
         boolean llmConfigured = llmFeedbackClient.isConfigured();
         List<PromptHintDto> hints = promptService.findHintsByPromptId(prompt.id());
@@ -154,7 +159,7 @@ public class FeedbackService {
 
         phaseStartedAtNanos = System.nanoTime();
         FeedbackResponseDto feedback = llmConfigured
-                ? fetchLlmFeedback(prompt, answer, hints, attemptNo, previousAnswer)
+                ? fetchLlmFeedback(prompt, answer, hints, attemptNo, previousAnswer, previousCoachingSummary)
                 : buildLocalFeedback(prompt, answer);
         logFeedbackTiming(llmConfigured ? "llm_feedback" : "local_feedback", prompt.id(), session.getId(), attemptNo, phaseStartedAtNanos);
 
@@ -288,9 +293,10 @@ public class FeedbackService {
             String answer,
             List<PromptHintDto> hints,
             int attemptNo,
-            String previousAnswer
+            String previousAnswer,
+            String previousCoachingSummary
     ) {
-        return llmFeedbackClient.review(prompt, answer, hints, attemptNo, previousAnswer);
+        return llmFeedbackClient.review(prompt, answer, hints, attemptNo, previousAnswer, previousCoachingSummary);
     }
 
     private String findPreviousAnswer(String sessionId, int attemptNo) {
@@ -300,6 +306,157 @@ public class FeedbackService {
         return answerAttemptRepository.findBySessionIdAndAttemptNo(sessionId, attemptNo - 1)
                 .map(AnswerAttemptEntity::getAnswerText)
                 .orElse(null);
+    }
+
+    private String buildPreviousCoachingSummary(String sessionId, int attemptNo) {
+        if (attemptNo <= 1) {
+            return null;
+        }
+        List<AnswerAttemptEntity> attempts = answerAttemptRepository.findBySessionIdOrderByAttemptNoAsc(sessionId);
+        if (attempts == null || attempts.isEmpty()) {
+            return null;
+        }
+
+        List<AnswerAttemptEntity> previousAttempts = new ArrayList<>();
+        int expressionPolishMissionCount = 0;
+        for (AnswerAttemptEntity attempt : attempts) {
+            if (attempt == null || attempt.getAttemptNo() == null || attempt.getAttemptNo() >= attemptNo) {
+                continue;
+            }
+            previousAttempts.add(attempt);
+            FeedbackResponseDto feedback = readAttemptFeedbackPayload(attempt);
+            if (isExpressionPolishMission(feedback)) {
+                expressionPolishMissionCount++;
+            }
+        }
+        if (previousAttempts.isEmpty()) {
+            return null;
+        }
+
+        int startIndex = Math.max(0, previousAttempts.size() - MAX_PREVIOUS_COACHING_ATTEMPTS);
+        StringBuilder summary = new StringBuilder("Previous coaching summary for this same question loop:\n");
+        for (int index = startIndex; index < previousAttempts.size(); index++) {
+            AnswerAttemptEntity attempt = previousAttempts.get(index);
+            FeedbackResponseDto feedback = readAttemptFeedbackPayload(attempt);
+            FeedbackCoachMoveDto coachMove = feedback == null ? null : feedback.coachMove();
+            String missionType = firstNonBlank(
+                    coachMove == null ? null : coachMove.focusType(),
+                    inferMissionType(feedback),
+                    "UNKNOWN"
+            );
+            String mission = firstNonBlank(
+                    coachMove == null ? null : coachMove.focus(),
+                    coachMove == null ? null : coachMove.instruction(),
+                    feedback == null ? null : feedback.rewriteChallenge(),
+                    attempt.getFeedbackSummary()
+            );
+
+            summary.append("- Attempt ")
+                    .append(attempt.getAttemptNo())
+                    .append(" (")
+                    .append(attempt.getAttemptType() == null ? "UNKNOWN" : attempt.getAttemptType().name())
+                    .append("): missionType=")
+                    .append(missionType)
+                    .append(" | mission=")
+                    .append(promptSafe(mission));
+
+            String before = coachMove == null ? null : compactForPrompt(coachMove.before());
+            String after = coachMove == null ? null : compactForPrompt(coachMove.after());
+            if (before != null || after != null) {
+                summary.append(" | changed=")
+                        .append(promptSafe(before))
+                        .append(" -> ")
+                        .append(promptSafe(after));
+            }
+
+            String instruction = coachMove == null ? null : compactForPrompt(coachMove.instruction());
+            if (instruction != null) {
+                summary.append(" | instruction=").append(promptSafe(instruction));
+            }
+
+            String answer = compactForPrompt(attempt.getAnswerText());
+            if (answer != null) {
+                summary.append(" | answer=").append(promptSafe(answer));
+            }
+
+            if (feedback != null) {
+                summary.append(" | loopComplete=").append(feedback.loopComplete());
+            }
+            summary.append("\n");
+        }
+
+        summary.append("- expressionPolishMissionCount=").append(expressionPolishMissionCount).append("\n");
+        if (expressionPolishMissionCount > 0) {
+            summary.append("- equivalentExpressionSwapRisk=true\n");
+        }
+        summary.append("- Coaching constraint: acknowledge applied missions, avoid repeating prior issues, and do not keep swapping acceptable expressions. If required prompt slots are present, prefer completion or a genuinely new high-value issue such as spelling, blocking grammar, missing required content, or concrete personal detail.\n");
+
+        return limitNullable(summary.toString(), MAX_PREVIOUS_COACHING_SUMMARY_CHARS);
+    }
+
+    private FeedbackResponseDto readAttemptFeedbackPayload(AnswerAttemptEntity attempt) {
+        String payload = attempt == null ? null : normalizeNullable(attempt.getFeedbackPayloadJson());
+        if (payload == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(payload, FeedbackResponseDto.class);
+        } catch (Exception exception) {
+            LOGGER.debug(
+                    "Failed to parse previous feedback payload for session={} attemptNo={}",
+                    attempt.getSessionId(),
+                    attempt.getAttemptNo(),
+                    exception
+            );
+            return null;
+        }
+    }
+
+    private boolean isExpressionPolishMission(FeedbackResponseDto feedback) {
+        if (feedback == null || feedback.coachMove() == null) {
+            return false;
+        }
+        FeedbackCoachMoveDto coachMove = feedback.coachMove();
+        String focusType = normalizeNullable(coachMove.focusType());
+        if (focusType != null) {
+            String normalizedFocusType = focusType.toUpperCase(Locale.ROOT);
+            if (normalizedFocusType.contains("EXPRESSION") || normalizedFocusType.contains("POLISH")) {
+                return true;
+            }
+        }
+        String focus = normalizeNullable(coachMove.focus());
+        if (focus == null) {
+            return false;
+        }
+        String normalizedFocus = focus.toLowerCase(Locale.ROOT);
+        return normalizedFocus.contains("expression")
+                || normalizedFocus.contains("naturalness")
+                || normalizedFocus.contains("\uD45C\uD604");
+    }
+
+    private String inferMissionType(FeedbackResponseDto feedback) {
+        if (feedback == null) {
+            return null;
+        }
+        FeedbackUiDto ui = feedback.ui();
+        FeedbackSecondaryLearningPointDto firstFixPoint = firstFixPoint(ui);
+        return firstFixPoint == null ? null : firstFixPoint.kind();
+    }
+
+    private String compactForPrompt(String value) {
+        String normalized = normalizeNullable(value);
+        if (normalized == null) {
+            return null;
+        }
+        return limitNullable(normalized.replaceAll("\\s+", " "), MAX_PREVIOUS_COACHING_TEXT_CHARS);
+    }
+
+    private String promptSafe(String value) {
+        String compact = compactForPrompt(value);
+        if (compact == null) {
+            return "null";
+        }
+        return "\"" + compact.replace("\"", "'") + "\"";
     }
 
     private AnswerProfile buildAnswerProfile(
@@ -755,60 +912,47 @@ public class FeedbackService {
                 nextStepPractice,
                 firstFixPoint
         );
-        String focus = firstNonBlank(
-                coachDraft.focus(),
-                feedback.loopComplete() ? "오늘 답변 마무리" : "오늘의 한 가지 적용"
-        );
         String before = coachDraft.before();
         String after = coachDraft.after();
-        String why = firstNonBlank(
-                coachDraft.why(),
-                feedback.summary()
-        );
-        String instruction = firstNonBlank(
-                coachDraft.instruction(),
-                feedback.rewriteChallenge(),
-                after == null ? null : "'" + after + "' 느낌만 반영해서 다시 써보세요.",
-                "오늘은 한 가지만 고쳐서 다시 써보세요."
-        );
-        String focusType = firstNonBlank(
-                coachDraft.focusType(),
-                before == null || after == null ? "REWRITE" : "MICRO_FIX"
-        );
-        String successCheck = firstNonBlank(
-                coachDraft.successCheck(),
-                after == null ? null : "'" + after + "'처럼 바뀌면 오늘의 적용은 성공이에요.",
-                "질문에 대한 답이 더 분명해지면 성공이에요."
-        );
-
-        String exampleEn = firstNonBlank(
-                coachDraft.exampleEn(),
-                nextStepPractice == null ? null : nextStepPractice.exampleEn()
-        );
-
-        FeedbackCoachMoveDto coachMove = new FeedbackCoachMoveDto(
-                focus,
-                focusType,
-                why,
-                before,
-                after,
-                instruction,
-                exampleEn,
-                successCheck
-        );
+        FeedbackCoachMoveDto coachMove = null;
         boolean canFinish = feedback.loopComplete();
+        if (!canFinish && coachDraft.isUsable()) {
+            String focusType = firstNonBlank(
+                    coachDraft.focusType(),
+                    before == null || after == null ? "REWRITE" : "MICRO_FIX"
+            );
+            boolean grammarCorrectionCoachMove = isGrammarCorrectionFocusType(focusType);
+            String exampleEn = grammarCorrectionCoachMove ? null : coachDraft.exampleEn();
+            String skeletonEn = grammarCorrectionCoachMove ? null : coachDraft.skeletonEn();
+            String skeletonKo = grammarCorrectionCoachMove ? null : coachDraft.skeletonKo();
+            List<FeedbackSuggestedPhraseDto> suggestedPhrases = grammarCorrectionCoachMove ? List.of() : coachDraft.suggestedPhrases();
+
+            coachMove = new FeedbackCoachMoveDto(
+                    coachDraft.focus(),
+                    focusType,
+                    coachDraft.why(),
+                    before,
+                    after,
+                    coachDraft.instruction(),
+                    exampleEn,
+                    skeletonEn,
+                    skeletonKo,
+                    suggestedPhrases,
+                    null
+            );
+        }
         FeedbackLoopDto loop = new FeedbackLoopDto(
                 canFinish ? "COMPLETE" : "NEEDS_REWRITE",
                 firstNonBlank(
                         loopStatus == null ? null : loopStatus.headline(),
                         canFinish ? feedback.completionMessage() : null,
-                        canFinish ? "좋아요. 오늘 루프는 마무리해도 충분해요." : "오늘은 이것 하나만 적용해 다시 써볼게요."
+                        canFinish ? "이미 좋아요. 원하면 위 제안만 가볍게 반영해 보세요." : "오늘은 이것 하나만 적용해 다시 써볼게요."
                 ),
                 canFinish ? "finish" : "rewrite",
                 firstNonBlank(
                         canFinish && loopStatus != null ? loopStatus.finishCtaLabel() : null,
                         !canFinish && loopStatus != null ? loopStatus.rewriteCtaLabel() : null,
-                        canFinish ? "루프 완료하기" : "그래도 더 다듬어서 써보기"
+                        canFinish ? "루프 완료하기" : "다시 피드백 받아보기"
                 ),
                 "자세한 피드백 보기"
         );
@@ -822,7 +966,7 @@ public class FeedbackService {
                 ),
                 firstNonBlank(
                         coachDraft.targetHint(),
-                        instruction,
+                        coachDraft.instruction(),
                         "의미는 유지하고 오늘의 한 가지 코치만 반영해 보세요."
                 ),
                 true
@@ -830,7 +974,7 @@ public class FeedbackService {
         FeedbackCompletionDto completion = canFinish
                 ? new FeedbackCompletionDto(
                 firstNonBlank(feedback.completionMessage(), loop.headline()),
-                firstNonBlank(successCheck, "오늘 답변의 흐름이 한 단계 더 자연스러워졌어요."),
+                firstNonBlank(coachDraft.successCheck(), "오늘 답변의 흐름이 한 단계 더 자연스러워졌어요."),
                 "완벽하지 않아도 괜찮아요. 오늘 루프는 충분히 쌓였어요.",
                 "다음에는 이유나 예시를 한 문장 더 붙여 보세요."
         )
@@ -860,31 +1004,7 @@ public class FeedbackService {
             return existingDraft;
         }
 
-        CoachMoveDraft primaryDraft = draftFromPrimaryFix(primaryFix);
-        if (primaryDraft.isUsable()) {
-            return primaryDraft;
-        }
-
-        CoachMoveDraft practiceDraft = draftFromNextStepPractice(nextStepPractice);
-        if (practiceDraft.isUsable()) {
-            return practiceDraft;
-        }
-
-        CoachMoveDraft fixPointDraft = draftFromFixPoint(firstFixPoint);
-        if (fixPointDraft.isUsable()) {
-            return fixPointDraft;
-        }
-
-        DetailMission detailMission = resolveDetailMission(
-                prompt,
-                learnerAnswer,
-                null,
-                feedback == null ? null : feedback.rewriteChallenge(),
-                feedback == null ? null : feedback.summary(),
-                null,
-                null
-        );
-        return draftFromDetailMission(detailMission);
+        return CoachMoveDraft.EMPTY;
     }
 
     private CoachMoveDraft draftFromExistingCoachMove(
@@ -895,22 +1015,8 @@ public class FeedbackService {
             return CoachMoveDraft.EMPTY;
         }
 
-        boolean usesComparison = isComparisonCoachMove(coachMove);
         String before = normalizeNullable(coachMove.before());
         String after = normalizeNullable(coachMove.after());
-        if (usesComparison) {
-            CoachComparisonPair pair = pairOrEmpty(before, after);
-            if (pair.hasPair() && isFocusedCoachComparisonPair(pair)) {
-                before = pair.before();
-                after = pair.after();
-            } else {
-                before = null;
-                after = null;
-            }
-        } else {
-            before = null;
-            after = null;
-        }
 
         return new CoachMoveDraft(
                 coachMove.focus(),
@@ -921,6 +1027,9 @@ public class FeedbackService {
                 coachMove.instruction(),
                 coachMove.successCheck(),
                 coachMove.exampleEn(),
+                coachMove.skeletonEn(),
+                coachMove.skeletonKo(),
+                coachMove.suggestedPhrases(),
                 rewriteWorkspace == null ? null : rewriteWorkspace.placeholder(),
                 rewriteWorkspace == null ? null : rewriteWorkspace.targetTextHint()
         );
@@ -969,7 +1078,7 @@ public class FeedbackService {
                 pair.after(),
                 firstNonBlank(nextStepPractice.guidanceKo(), nextStepPractice.supportText()),
                 null,
-                nextStepPractice.exampleEn(),
+                null,
                 firstNonBlank(nextStepPractice.revisedText(), nextStepPractice.headline(), nextStepPractice.exampleEn()),
                 firstNonBlank(nextStepPractice.guidanceKo(), nextStepPractice.supportText())
         );
@@ -990,7 +1099,7 @@ public class FeedbackService {
                 pair.after(),
                 instruction,
                 null,
-                fixPoint.exampleEn(),
+                null,
                 firstNonBlank(fixPoint.revisedText(), fixPoint.exampleEn(), fixPoint.headline()),
                 instruction
         );
@@ -1009,7 +1118,7 @@ public class FeedbackService {
                 detailMission.example(),
                 detailMission.instruction(),
                 detailMission.successCheck(),
-                detailMission.example(),
+                null,
                 detailMission.placeholder(),
                 detailMission.targetHint()
         );
@@ -1020,9 +1129,16 @@ public class FeedbackService {
             return false;
         }
         return normalizeNullable(coachMove.focus()) != null
-                && (normalizeNullable(coachMove.instruction()) != null
+                || normalizeNullable(coachMove.focusType()) != null
+                || normalizeNullable(coachMove.why()) != null
+                || normalizeNullable(coachMove.before()) != null
                 || normalizeNullable(coachMove.after()) != null
-                || normalizeNullable(coachMove.why()) != null);
+                || normalizeNullable(coachMove.instruction()) != null
+                || normalizeNullable(coachMove.successCheck()) != null
+                || normalizeNullable(coachMove.exampleEn()) != null
+                || normalizeNullable(coachMove.skeletonEn()) != null
+                || (coachMove.suggestedPhrases() != null
+                && coachMove.suggestedPhrases().stream().anyMatch(phrase -> phrase != null && normalizeNullable(phrase.phrase()) != null));
     }
 
     private boolean isComparisonCoachMove(FeedbackCoachMoveDto coachMove) {
@@ -1036,6 +1152,26 @@ public class FeedbackService {
         }
 
         return switch (focusType.toUpperCase(Locale.ROOT)) {
+            case "MICRO_FIX",
+                    "GRAMMAR",
+                    "GRAMMAR_FIX",
+                    "LOCAL_GRAMMAR",
+                    "FIX_LOCAL_GRAMMAR",
+                    "BLOCKING_GRAMMAR",
+                    "FIX_BLOCKING_GRAMMAR",
+                    "EXPRESSION",
+                    "EXPRESSION_POLISH" -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isGrammarCorrectionFocusType(String focusType) {
+        String normalized = normalizeNullable(focusType);
+        if (normalized == null) {
+            return false;
+        }
+
+        return switch (normalized.toUpperCase(Locale.ROOT)) {
             case "MICRO_FIX",
                     "GRAMMAR",
                     "GRAMMAR_FIX",
@@ -1099,9 +1235,31 @@ public class FeedbackService {
             String instruction,
             String successCheck,
             String exampleEn,
+            String skeletonEn,
+            String skeletonKo,
+            List<FeedbackSuggestedPhraseDto> suggestedPhrases,
             String placeholder,
             String targetHint
     ) {
+        private CoachMoveDraft(
+                String focus,
+                String focusType,
+                String why,
+                String before,
+                String after,
+                String instruction,
+                String successCheck,
+                String exampleEn,
+                String placeholder,
+                String targetHint
+        ) {
+            this(focus, focusType, why, before, after, instruction, successCheck, exampleEn, null, null, List.of(), placeholder, targetHint);
+        }
+
+        private CoachMoveDraft {
+            suggestedPhrases = suggestedPhrases == null ? List.of() : List.copyOf(suggestedPhrases);
+        }
+
         private static final CoachMoveDraft EMPTY = new CoachMoveDraft(
                 null,
                 null,
@@ -1111,6 +1269,9 @@ public class FeedbackService {
                 null,
                 null,
                 null,
+                null,
+                null,
+                List.of(),
                 null,
                 null
         );
@@ -1123,6 +1284,9 @@ public class FeedbackService {
                     || hasText(instruction)
                     || hasText(successCheck)
                     || hasText(exampleEn)
+                    || hasText(skeletonEn)
+                    || hasText(skeletonKo)
+                    || !suggestedPhrases.isEmpty()
                     || hasText(placeholder)
                     || hasText(targetHint);
         }

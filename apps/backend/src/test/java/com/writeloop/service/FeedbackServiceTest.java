@@ -3,6 +3,7 @@ package com.writeloop.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.CoachExpressionUsageDto;
+import com.writeloop.dto.FeedbackCoachMoveDto;
 import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackNextStepPracticeDto;
@@ -94,6 +95,7 @@ class FeedbackServiceTest {
         lenient().when(answerSessionRepository.countByGuestId(any())).thenReturn(0L);
         lenient().when(answerAttemptRepository.countBySessionId(any())).thenReturn(0);
         lenient().when(answerAttemptRepository.findBySessionIdAndAttemptNo(anyString(), any())).thenReturn(java.util.Optional.empty());
+        lenient().when(answerAttemptRepository.findBySessionIdOrderByAttemptNoAsc(anyString())).thenReturn(List.of());
         lenient().when(answerAttemptRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(feedbackDiagnosisLogRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(promptService.findHintsByPromptId(anyString())).thenReturn(List.of());
@@ -114,7 +116,7 @@ class FeedbackServiceTest {
 
     private void stubOpenAiReview(FeedbackResponseDto feedback) {
         doReturn(feedback).when(openAiFeedbackClient)
-                .review(any(PromptDto.class), anyString(), anyList(), anyInt(), nullable(String.class));
+                .review(any(PromptDto.class), anyString(), anyList(), anyInt(), nullable(String.class), nullable(String.class));
     }
 
     @Test
@@ -1401,7 +1403,124 @@ class FeedbackServiceTest {
 
         assertThat(response.promptId()).isEqualTo(prompt.id());
         verify(promptService).findHintsByPromptId(prompt.id());
-        verify(openAiFeedbackClient).review(prompt, answer, hints, 1, null);
+        verify(openAiFeedbackClient).review(prompt, answer, hints, 1, null, null);
+    }
+
+    @Test
+    void review_forwards_previous_coaching_summary_to_openai_feedback() throws Exception {
+        PromptDto prompt = new PromptDto(
+                "prompt-history-1",
+                "Breakfast",
+                "A",
+                "What makes breakfast easy to eat on a busy morning?",
+                "바쁜 아침에 먹기 쉬운 아침 식사는 무엇인가요?",
+                "Give a short answer with a reason."
+        );
+        AnswerSessionEntity session = new AnswerSessionEntity(
+                "session-history-1",
+                prompt.id(),
+                null,
+                7L,
+                SessionStatus.IN_PROGRESS
+        );
+        String previousAnswer = "I'd say cereal with milk because I can eat it quickly.";
+        FeedbackResponseDto previousFeedback = new FeedbackResponseDto(
+                prompt.id(),
+                session.getId(),
+                1,
+                82,
+                true,
+                null,
+                "좋아요. 이유가 들어갔어요.",
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                previousAnswer,
+                List.of(),
+                previousAnswer,
+                null,
+                null,
+                List.of(),
+                null,
+                null,
+                new FeedbackCoachMoveDto(
+                        "표현 더 자연스럽게 고치기",
+                        "EXPRESSION_POLISH",
+                        "아침 식사 표현을 더 자연스럽게 다듬었어요.",
+                        "I'd say cereal with milk",
+                        "go for cereal with milk",
+                        "이미 이유를 붙였으니 표현만 가볍게 다듬어 보세요.",
+                        null,
+                        null,
+                        List.of(),
+                        "go for cereal with milk처럼 바뀌면 성공이에요."
+                ),
+                null,
+                null,
+                null
+        );
+        AnswerAttemptEntity previousAttempt = new AnswerAttemptEntity(
+                session.getId(),
+                1,
+                AttemptType.REWRITE,
+                previousAnswer,
+                82,
+                "표현 더 자연스럽게 고치기",
+                "[]",
+                "[]",
+                previousAnswer,
+                "go for cereal with milk로 바꿔 보세요.",
+                new ObjectMapper().writeValueAsString(previousFeedback)
+        );
+        String currentAnswer = "I usually go for cereal with milk because I can eat it quickly.";
+        FeedbackResponseDto currentFeedback = new FeedbackResponseDto(
+                prompt.id(),
+                null,
+                0,
+                90,
+                true,
+                null,
+                "이미 충분해요.",
+                List.of(),
+                List.of(),
+                List.of(new InlineFeedbackSegmentDto("KEEP", currentAnswer, currentAnswer)),
+                currentAnswer,
+                List.of(),
+                currentAnswer,
+                "이미 좋아요."
+        );
+
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(answerSessionRepository.findById(session.getId())).thenReturn(java.util.Optional.of(session));
+        when(answerAttemptRepository.countBySessionId(session.getId())).thenReturn(1);
+        when(answerAttemptRepository.findBySessionIdAndAttemptNo(session.getId(), 1))
+                .thenReturn(java.util.Optional.of(previousAttempt));
+        when(answerAttemptRepository.findBySessionIdOrderByAttemptNoAsc(session.getId()))
+                .thenReturn(List.of(previousAttempt));
+        when(openAiFeedbackClient.isConfigured()).thenReturn(true);
+        stubOpenAiReview(currentFeedback);
+
+        feedbackService.review(
+                new FeedbackRequestDto(prompt.id(), currentAnswer, session.getId(), "REWRITE", null),
+                7L
+        );
+
+        ArgumentCaptor<String> summaryCaptor = ArgumentCaptor.forClass(String.class);
+        verify(openAiFeedbackClient).review(
+                eq(prompt),
+                eq(currentAnswer),
+                anyList(),
+                eq(2),
+                eq(previousAnswer),
+                summaryCaptor.capture()
+        );
+        assertThat(summaryCaptor.getValue())
+                .contains("Previous coaching summary")
+                .contains("EXPRESSION_POLISH")
+                .contains("equivalentExpressionSwapRisk=true")
+                .contains("go for cereal with milk")
+                .contains("do not keep swapping acceptable expressions");
     }
 
     @Test

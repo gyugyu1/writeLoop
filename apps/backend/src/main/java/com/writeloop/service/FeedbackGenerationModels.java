@@ -564,6 +564,9 @@ record GeneratedSections(
                 coachMission.whyKo(),
                 coachMission.instructionKo(),
                 coachMission.exampleEn(),
+                coachMission.skeletonEn(),
+                coachMission.skeletonKo(),
+                coachMission.suggestedPhrases(),
                 coachMission.placeholderEn(),
                 coachMission.targetHintKo(),
                 coachMission.successCheckKo()

@@ -9,6 +9,7 @@ import com.writeloop.dto.FeedbackNextStepPracticeDto;
 import com.writeloop.dto.FeedbackModelAnswerVariantDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
+import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.FeedbackUiDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
@@ -215,6 +216,17 @@ public class GeminiFeedbackClient {
             }
             throw new IllegalStateException("Gemini API request failed", exception);
         }
+    }
+
+    public FeedbackResponseDto review(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptIndex,
+            String previousAnswer,
+            String previousCoachingSummary
+    ) {
+        return review(prompt, answer, hints, attemptIndex, previousAnswer);
     }
 
     boolean isAuthoritativeFeedback(FeedbackResponseDto feedback) {
@@ -1435,17 +1447,29 @@ public class GeminiFeedbackClient {
                         Map.entry("coachMission", Map.of(
                                 "type", List.of("object", "null"),
                                 "additionalProperties", false,
-                                "properties", Map.of(
-                                        "missionType", Map.of("type", List.of("string", "null")),
-                                        "title", Map.of("type", List.of("string", "null")),
-                                        "originalText", Map.of("type", List.of("string", "null")),
-                                        "revisedText", Map.of("type", List.of("string", "null")),
-                                        "whyKo", Map.of("type", List.of("string", "null")),
-                                        "instructionKo", Map.of("type", List.of("string", "null")),
-                                        "exampleEn", Map.of("type", List.of("string", "null")),
-                                        "placeholderEn", Map.of("type", List.of("string", "null")),
-                                        "targetHintKo", Map.of("type", List.of("string", "null")),
-                                        "successCheckKo", Map.of("type", List.of("string", "null"))
+                                "properties", Map.ofEntries(
+                                        Map.entry("missionType", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("title", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("originalText", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("revisedText", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("whyKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("instructionKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("exampleEn", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("skeletonEn", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("skeletonKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("suggestedPhrases", Map.of(
+                                                "type", "array",
+                                                "items", Map.of(
+                                                        "type", "object",
+                                                        "properties", Map.of(
+                                                                "phrase", Map.of("type", "string"),
+                                                                "meaningKo", Map.of("type", "string")
+                                                        )
+                                                )
+                                        )),
+                                        Map.entry("placeholderEn", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("targetHintKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("successCheckKo", Map.of("type", List.of("string", "null")))
                                 ),
                                 "required", List.of(
                                         "missionType",
@@ -1455,6 +1479,9 @@ public class GeminiFeedbackClient {
                                         "whyKo",
                                         "instructionKo",
                                         "exampleEn",
+                                        "skeletonEn",
+                                        "skeletonKo",
+                                        "suggestedPhrases",
                                         "placeholderEn",
                                         "targetHintKo",
                                         "successCheckKo"
@@ -1527,6 +1554,8 @@ public class GeminiFeedbackClient {
                 - score is optional metadata only. If you include it, use a broad coarse estimate. Never let score override answerBand, finishable, or rewriteTarget decisions.
                 - finishable should be true only when the learner answer already reads like an acceptable final submission, not merely a correct idea sketch.
                 - Do not keep finishable false only because the answer could be longer, more polished, or could support another optional one-step-up model answer.
+                - If finishable=true, do not turn optional polish into the visible coachMission. Put smoother wording, shorter alternatives, and extra detail ideas into refinementExpressions instead.
+                - If the answer already has the required prompt parts and only contains verbose but understandable wording, keep finishable=true and offer shorter alternatives in refinementExpressions, not as EXPRESSION_POLISH.
                 - For routine or daily-life prompts, one or two clear activities with a natural time flow can already be finishable if the clauses themselves are natural enough to submit.
                 - If a required reason, detail, or activity clause still needs more than one small local repair, keep finishable=false.
                 - Do not set finishable=true when a required clause still has missing be-verbs, missing infinitive markers, broken complement structure, or other clearly incomplete sentence framing.
@@ -1542,9 +1571,16 @@ public class GeminiFeedbackClient {
                 - Prefer GRAMMAR_BLOCKING only when grammar seriously blocks meaning or sentence structure.
                 - If attemptIndex >= 2, use previousAnswer only to detect progress and remaining issues. Do not repeat already-resolved grammar corrections as the primary issue.
 
+                Current answer boundary:
+                - The CURRENT LEARNER ANSWER at the bottom of this prompt is the only submission you may diagnose, quote, correct, or use for grammarIssues.span, minimalCorrection, correctedAnswer, modelAnswer, or rewriteWorkspace.
+                - previousAnswer is history-only context. Use it only to notice progress and avoid repeating a resolved issue.
+                - Never quote, correct, or criticize wording that appears only in previousAnswer.
+                - If previousAnswer contains an old phrase and the CURRENT LEARNER ANSWER contains the learner's revised phrase, treat the old phrase as already fixed.
+                - Any correction must be anchored in exact text from the CURRENT LEARNER ANSWER. If the old phrase is absent from the current answer, it is not a current issue.
+
                 Attempt context:
                 - attemptIndex: %s
-                - previousAnswer: %s
+                - history.previousAnswerOnlyDoNotEvaluateAsCurrent: %s
 
                 Prompt topic: %s
                 Difficulty: %s
@@ -1558,8 +1594,10 @@ public class GeminiFeedbackClient {
                 Prompt hints:
                 %s
 
-                Learner answer:
+                CURRENT LEARNER ANSWER - evaluate this text only:
+                <current_answer>
                 %s
+                </current_answer>
                 """.formatted(
                 attemptIndex,
                 previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
@@ -1625,7 +1663,7 @@ public class GeminiFeedbackClient {
                 - regressionSensitiveFacts: %s
                 - requestedSections: %s
                 - attemptIndex: %s
-                - previousAnswer: %s
+                - history.previousAnswerOnlyDoNotEvaluateAsCurrent: %s
                 - progress.improvedAreas: %s
                 - progress.remainingAreas: %s
                 - Return all distinct, high-value items that genuinely help the learner, and avoid overlap or filler.
@@ -1635,6 +1673,14 @@ public class GeminiFeedbackClient {
                 - Do not reuse a broken learner phrase in strengths, refinementExpressions, or modelAnswer.
                 - If requestedSections does not include a section, return [] for arrays or null for strings.
                 - Keep Korean fields natural and concise.
+
+                Current answer boundary:
+                - The CURRENT LEARNER ANSWER at the bottom of this prompt is the only submission you may quote, correct, or put into coachMission.originalText, fixPoints.originalText, grammarIssues.span, minimalCorrection, correctedAnswer, modelAnswer, or rewriteWorkspace.
+                - previousAnswer is history-only context. Use it only to notice progress and avoid repeating a resolved issue.
+                - Never quote, correct, or criticize wording that appears only in previousAnswer.
+                - If previousAnswer contains an old phrase and the CURRENT LEARNER ANSWER contains the learner's revised phrase, treat the old phrase as already fixed.
+                - Any before/after correction pair must be anchored in exact text from the CURRENT LEARNER ANSWER. If the old phrase is absent from the current answer, it is not a current issue.
+
                 Strengths and usedExpressions rules:
                 - strengths must be semantic praise only. Never quote the full raw learner answer unless it is already clean and necessary.
                 - strengths should usually be one short Korean line that tells the learner what to keep.
@@ -1668,6 +1714,10 @@ public class GeminiFeedbackClient {
                 refinementExpressions rules:
                 - refinementExpressions are the single source for the optional "표현 더하기" area.
                 - Use refinementExpressions for reusable expressions, sentence starters, short add-on phrases, and prompt-fit optional improvements beyond fixPoints.
+                - When finishable=true, return 3 to 5 refinementExpressions. The completion screen uses these as the learner's useful "continue polishing or finish" choice, so do not leave them empty.
+                - For finishable=true, each refinementExpression must be an optional, learner-usable expression that can make the current answer one small step richer without implying the current answer is wrong.
+                - Finishable refinementExpressions should include practical add-ons such as a smoother connector, a more precise feeling/result phrase, a shorter natural alternative, or a reusable detail phrase that fits the prompt and the learner's existing meaning.
+                - Example: if the learner writes an understandable phrase like "a huge place with a lot of dogs and a lot of people", do not make it the visible coachMission just because it could be shorter. If useful, offer alternatives such as "a busy park" or "a spacious park with many people" in refinementExpressions.
                 - Return only genuinely useful, distinct refinementExpressions, and keep expression, meaningKo, guidanceKo, exampleEn, and exampleKo separate.
                 - exampleEn must not be identical to expression.
 
@@ -1675,21 +1725,39 @@ public class GeminiFeedbackClient {
                 - Always return coachMission as the single visible action for the top feedback card.
                 - coachMission.title must be a concrete Korean mission name the learner can do immediately, not a vague label such as "디테일 추가" or "한 가지 더 추가".
                 - Choose missionType from REASON, SITUATION, EXAMPLE, FEELING, RESULT, GRAMMAR_FIX, TASK_RESET, or EXPRESSION_POLISH.
+                - A prompt can already supply the situation/context. If the question itself says before/after/when/where/with whom something happens, do not ask the learner to add that same situation again.
+                - SITUATION is forbidden when the prompt itself already supplies the relevant time/place/context and the learner gives an on-topic action or reason. In that case treat SITUATION as already present.
+                - For "What do you usually do before/after/when..." routine questions, never choose SITUATION if the answer contains any prompt-relevant action.
+                - For prompt-provided context cases, never make a SITUATION mission with a generic skeleton like "When I ____, I ____." That asks the learner to restate context the question already gave.
+                - HARD BAN: If questionEn starts with or clearly means "What do you usually do before/after/when ...?" and the learner answer contains a prompt-relevant verb/action, coachMission.missionType=SITUATION is invalid. Choose EXPRESSION_POLISH, FEELING, RESULT, DETAIL, EXAMPLE, or completion instead.
+                - coachMission.exampleEn is a legacy field. Prefer null.
+                - For add-on missions (REASON, SITUATION, EXAMPLE, FEELING, RESULT, TASK_RESET), coachMission.skeletonEn is mandatory. It must be a short reusable English sentence frame with one or more blanks or slots, not a complete model answer.
+                - For add-on missions, coachMission.skeletonKo is mandatory. It must be a natural Korean meaning of skeletonEn and keep the blank position understandable, for example "After that, it becomes easier to ____." -> "그 후에는 ____하기가 더 쉬워져요."
+                - For add-on missions, coachMission.suggestedPhrases is mandatory. Return 3 to 5 objects with phrase and meaningKo. phrase must be a short English phrase that can fit into skeletonEn or directly support the mission. meaningKo must be a concise Korean meaning.
                 - For GRAMMAR_FIX or EXPRESSION_POLISH, set coachMission.originalText to the exact learner span that should change and coachMission.revisedText to the directly corrected span. Keep both short, aligned, and replaceable.
+                - For GRAMMAR_FIX or EXPRESSION_POLISH, originalText and revisedText must use the same text scope. If originalText is a phrase, revisedText must be only the replacement phrase, not the whole corrected sentence.
+                - Bad scope pair: originalText="it makes me feel happy", revisedText="I like sweet food because it makes me happy." Good scope pair: originalText="it makes me feel happy", revisedText="it makes me happy".
+                - Do not include surrounding unchanged words in revisedText unless those same surrounding words are also included in originalText.
+                - For GRAMMAR_FIX or EXPRESSION_POLISH, set coachMission.skeletonEn=null, coachMission.skeletonKo=null, and coachMission.suggestedPhrases=[]. Do not add a sentence frame or phrase options for correction missions; the before/after comparison is the learner action.
                 - The originalText/revisedText pair must match instructionKo exactly. If instructionKo says to remove or replace one connector such as "for that", originalText should be that connector or the smallest phrase around it, not a whole sentence that drops other ideas.
                 - For REASON, SITUATION, EXAMPLE, FEELING, RESULT, or TASK_RESET, set coachMission.originalText and coachMission.revisedText to null.
-                - Do not put an optional add-on example into revisedText. exampleEn is only an imitation example or starter, not the green comparison sentence.
+                - Do not put an optional add-on example into revisedText. skeletonEn is the sentence frame; skeletonKo is its Korean meaning; suggestedPhrases are the learner's choice bank.
+                - For REASON, SITUATION, EXAMPLE, FEELING, or RESULT, coachMission.skeletonEn must be a sentence pattern the learner can complete, not a finished sentence to copy.
+                - For TASK_RESET, coachMission.skeletonEn must be a prompt-specific starter frame with blanks, not a complete answer to copy.
                 - Prefer GRAMMAR_FIX or EXPRESSION_POLISH when the learner's main answer contains a clear local grammar or naturalness problem. Choose add-on missions only when the base answer is already usable.
                 - This correction-first priority overrides CONTENT_THIN: if the answer has an obvious wrong word form, missing preposition, unnatural collocation, or Korean-to-English transfer in the main idea, choose GRAMMAR_FIX or EXPRESSION_POLISH before asking for more detail.
                 - For comparison missions, placeholderEn must still be a full rewrite frame or sentence starter, not just the revisedText fragment.
                 - For CONTENT_THIN or SHORT_BUT_VALID answers, prefer a specific add-on mission such as "이유 한 문장 더하기", "상황 한 문장 더하기", "예시 한 문장 더하기", "감정 한 문장 더하기", or "결과 한 문장 더하기".
-                - For GRAMMAR_BLOCKING answers, make the mission about the one most important repair and include the corrected phrase as exampleEn when possible.
+                - For GRAMMAR_BLOCKING answers, make the mission about the one most important repair and use originalText/revisedText to show the corrected phrase.
                 - whyKo should explain why this one mission helps the current answer in one short Korean sentence.
                 - instructionKo should tell the learner exactly what to add or fix in one actionable Korean sentence.
-                - exampleEn must be one short English sentence or phrase the learner can imitate.
-                - placeholderEn must be a short starter with blanks or a reusable frame, for example "I like it because ____.".
+                - For add-on missions, skeletonEn must be one non-empty English sentence frame the learner can complete.
+                - For add-on missions, skeletonKo must be one concise Korean translation/meaning of skeletonEn.
+                - For add-on missions, suggestedPhrases[].phrase must be short, distinct, and usable inside or near skeletonEn. Do not return full completed answers as suggestedPhrases.
+                - For add-on missions, suggestedPhrases[].meaningKo must translate the phrase naturally in Korean.
+                - placeholderEn should usually match skeletonEn or be a slightly simpler rewrite starter, for example "I like it because ____.".
                 - targetHintKo must say where to put the mission in the rewrite.
-                - successCheckKo must define a simple success condition for the rewrite.
+                - successCheckKo is deprecated for the visible mission card. Return null.
 
                 modelAnswer rules:
                 - modelAnswer is a one-step-up reference, not another optional-add-on card.
@@ -1720,8 +1788,10 @@ public class GeminiFeedbackClient {
                 Prompt hints:
                 %s
 
-                Learner answer:
+                CURRENT LEARNER ANSWER - evaluate this text only:
+                <current_answer>
                 %s
+                </current_answer>
                 """.formatted(
                 diagnosis.answerBand().name(),
                 diagnosis.taskCompletion().name(),
@@ -1852,6 +1922,47 @@ public class GeminiFeedbackClient {
         return trimToNull(node.asText(null));
     }
 
+    private List<String> textArray(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull() || !node.isArray()) {
+            return List.of();
+        }
+        List<String> values = new ArrayList<>();
+        node.forEach(item -> {
+            String value = textOrNull(item);
+            if (value != null) {
+                values.add(value);
+            }
+        });
+        return List.copyOf(values);
+    }
+
+    private List<FeedbackSuggestedPhraseDto> suggestedPhraseArray(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull() || !node.isArray()) {
+            return List.of();
+        }
+        List<FeedbackSuggestedPhraseDto> values = new ArrayList<>();
+        node.forEach(item -> {
+            if (item == null || item.isNull()) {
+                return;
+            }
+            if (item.isObject()) {
+                FeedbackSuggestedPhraseDto phrase = new FeedbackSuggestedPhraseDto(
+                        textOrNull(item.path("phrase")),
+                        textOrNull(item.path("meaningKo"))
+                );
+                if (phrase.phrase() != null) {
+                    values.add(phrase);
+                }
+                return;
+            }
+            String value = textOrNull(item);
+            if (value != null) {
+                values.add(new FeedbackSuggestedPhraseDto(value));
+            }
+        });
+        return List.copyOf(values);
+    }
+
     private FeedbackCoachMissionDto parseCoachMission(JsonNode node) {
         if (node == null || node.isMissingNode() || node.isNull()) {
             return null;
@@ -1864,9 +1975,12 @@ public class GeminiFeedbackClient {
                 textOrNull(node.path("whyKo")),
                 textOrNull(node.path("instructionKo")),
                 textOrNull(node.path("exampleEn")),
+                textOrNull(node.path("skeletonEn")),
+                textOrNull(node.path("skeletonKo")),
+                suggestedPhraseArray(node.path("suggestedPhrases")),
                 textOrNull(node.path("placeholderEn")),
                 textOrNull(node.path("targetHintKo")),
-                textOrNull(node.path("successCheckKo"))
+                null
         );
     }
 
@@ -3728,12 +3842,12 @@ public class GeminiFeedbackClient {
             List<GrammarFeedbackItemDto> grammarFeedback
     ) {
         if (isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
-            return "좋아요. 이 답안은 질문에 맞게 핵심과 이유가 잘 보이기 때문에, 지금 단계에서 루프를 마무리해도 충분해요.";
+            return "이미 좋아요. 원하면 위 제안만 가볍게 반영해 보세요.";
         }
         if (!isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
             return null;
         }
-        return "좋아요. 필요한 핵심은 이미 들어 있어서, 조금만 더 다듬어도 되고 지금 마무리해도 충분해요.";
+        return "이미 좋아요. 원하면 위 제안만 가볍게 반영해 보세요.";
     }
 
 }

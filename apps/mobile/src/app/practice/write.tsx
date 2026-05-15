@@ -17,7 +17,7 @@ import {
   TextInput,
   View
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { PracticeFeedbackContent } from "@/components/practice-feedback-content";
 import FeedbackLoadingOverlay from "@/components/feedback-loading-overlay";
 import {
@@ -337,6 +337,8 @@ export default function PracticeWriteScreen() {
     practiceExpressions?: string;
   }>();
   const navigation = useNavigation();
+  const safeAreaInsets = useSafeAreaInsets();
+  const coachModalHeaderTopPadding = Math.max(safeAreaInsets.top + 12, 24);
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
   const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "I";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
@@ -392,6 +394,7 @@ export default function PracticeWriteScreen() {
   const [promptHints, setPromptHints] = useState<PromptHint[]>([]);
   const [isLoadingPromptHints, setIsLoadingPromptHints] = useState(false);
   const [rewriteSeedAnswer, setRewriteSeedAnswer] = useState("");
+  const [initialAnswer, setInitialAnswer] = useState("");
   const [latestFeedbackAnswer, setLatestFeedbackAnswer] = useState("");
   const [draftStatusMessage, setDraftStatusMessage] = useState("");
   const [isDraftPersistencePaused, setIsDraftPersistencePaused] = useState(false);
@@ -516,10 +519,11 @@ export default function PracticeWriteScreen() {
     return {
       difficulty: requestedDifficulty,
       prompt: selectedPrompt,
+      initialAnswer: pickFirstNonEmpty(initialAnswer, rewriteSeedAnswer),
       answer: rewriteSeedAnswer,
       feedback
     };
-  }, [feedback, requestedDifficulty, rewriteSeedAnswer, selectedPrompt]);
+  }, [feedback, initialAnswer, requestedDifficulty, rewriteSeedAnswer, selectedPrompt]);
   const normalizedCurrentAnswer = useMemo(() => answer.trim(), [answer]);
   const normalizedLatestFeedbackAnswer = useMemo(() => latestFeedbackAnswer.trim(), [latestFeedbackAnswer]);
   const canViewLatestFeedback = useMemo(
@@ -654,6 +658,7 @@ export default function PracticeWriteScreen() {
       latestSelectedPromptRef.current = nextPrompt;
       setRecommendation(normalizedRecommendation);
       setFeedback(isRewriteMode ? savedFeedbackState?.feedback ?? null : null);
+      setInitialAnswer(savedFeedbackState?.initialAnswer ?? savedFeedbackState?.answer ?? "");
       setRewriteSeedAnswer(savedFeedbackState?.answer ?? "");
       setLatestFeedbackAnswer("");
       setAnswer(restoredAnswer);
@@ -759,6 +764,7 @@ export default function PracticeWriteScreen() {
       savePracticeFeedbackState({
         difficulty: requestedDifficulty,
         prompt: selectedPrompt,
+        initialAnswer: feedback ? pickFirstNonEmpty(initialAnswer, rewriteSeedAnswer, trimmedAnswer) : trimmedAnswer,
         answer: trimmedAnswer,
         feedback: nextFeedback
       });
@@ -767,6 +773,7 @@ export default function PracticeWriteScreen() {
       await clearPersistedDraft(selectedPrompt.id, activeDraftType);
       setDraftStatusMessage("");
       setFeedback(nextFeedback);
+      setInitialAnswer(feedback ? pickFirstNonEmpty(initialAnswer, rewriteSeedAnswer, trimmedAnswer) : trimmedAnswer);
       setRewriteSeedAnswer(trimmedAnswer);
       setLatestFeedbackAnswer(trimmedAnswer);
       await saveIncompleteLoopSnapshot("feedback", selectedPrompt, new Date().toISOString(), {
@@ -954,6 +961,52 @@ export default function PracticeWriteScreen() {
       draftAutosaveTimeoutRef.current = null;
     }
   }, []);
+
+  async function cancelCurrentWriting() {
+    if (!selectedPrompt) {
+      handleBackToQuestions();
+      return;
+    }
+
+    setIsDraftPersistencePaused(true);
+    cancelDraftAutosave();
+    Keyboard.dismiss();
+
+    try {
+      await clearPersistedDraft(selectedPrompt.id, activeDraftType);
+      await clearIncompleteLoopForPrompt(selectedPrompt.id);
+    } finally {
+      latestAnswerRef.current = "";
+      setAnswer("");
+      setDraftStatusMessage("");
+      handleBackToQuestions();
+    }
+  }
+
+  function handleCancelWriting() {
+    if (!selectedPrompt) {
+      handleBackToQuestions();
+      return;
+    }
+
+    if (!answer.trim() && !draftStatusMessage && !feedback) {
+      void cancelCurrentWriting();
+      return;
+    }
+
+    Alert.alert(
+      "작문을 취소할까요?",
+      "작성 중인 내용과 임시저장이 삭제되고 질문 목록으로 돌아가요.",
+      [
+        { text: "계속 쓰기", style: "cancel" },
+        {
+          text: "작문 취소",
+          style: "destructive",
+          onPress: () => void cancelCurrentWriting()
+        }
+      ]
+    );
+  }
 
   const buildDraftPayload = useCallback(
     (currentText: string): SaveWritingDraftRequest => ({
@@ -1524,6 +1577,17 @@ export default function PracticeWriteScreen() {
                       <Text style={styles.submitButtonText}>{primaryActionLabel}</Text>
                     )}
                   </Pressable>
+                  {!isAnswerLocked ? (
+                    <Pressable
+                      style={[styles.cancelWritingButton, isSubmitting && styles.disabledButton]}
+                      onPress={handleCancelWriting}
+                      disabled={isSubmitting}
+                      accessibilityRole="button"
+                      accessibilityLabel="작문 취소"
+                    >
+                      <Text style={styles.cancelWritingButtonText}>작문 취소</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
               </View>
             </>
@@ -1679,13 +1743,13 @@ export default function PracticeWriteScreen() {
         animationType="slide"
         onRequestClose={() => setIsCoachOpen(false)}
       >
-        <SafeAreaView style={styles.coachModalRoot} edges={["top", "bottom"]}>
+        <SafeAreaView style={styles.coachModalRoot} edges={["bottom"]}>
           <KeyboardAvoidingView
             style={styles.coachModalKeyboardFrame}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
           >
-            <View style={styles.coachModalHeader}>
+            <View style={[styles.coachModalHeader, { paddingTop: coachModalHeaderTopPadding }]}>
               <View style={styles.coachModalHeaderText}>
                 <Text style={styles.coachModalTitle}>표현 추천 받기</Text>
               </View>
@@ -2618,6 +2682,20 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     color: "#2E2416"
+  },
+  cancelWritingButton: {
+    borderRadius: 22,
+    backgroundColor: "#FFFCF7",
+    borderWidth: 1,
+    borderColor: "#E4CDB4",
+    paddingVertical: 15,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  cancelWritingButtonText: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#8F5D35"
   },
   disabledButton: {
     opacity: 0.7

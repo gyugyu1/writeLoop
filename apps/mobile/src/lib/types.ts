@@ -1,5 +1,6 @@
 export type DailyDifficulty = "I" | "A" | "B" | "C";
 export type PromptDifficulty = "I" | "A" | "B" | "C";
+export type MobilePlatform = "ios" | "android";
 export type SocialProvider = "naver" | "google" | "kakao";
 export type AttemptType = "INITIAL" | "REWRITE";
 export type InlineFeedbackType = "KEEP" | "REPLACE" | "ADD" | "REMOVE";
@@ -58,6 +59,12 @@ export interface FeaturedDailyPromptRecommendation {
   featured?: PromptRecommendationItem | null;
 }
 
+export interface MobileHomeSnapshot {
+  todayStatus?: TodayWritingStatus | null;
+  diaryCalendarSummary?: DiaryCalendarSummary | null;
+  featuredRecommendation?: FeaturedDailyPromptRecommendation | null;
+}
+
 export interface PromptHintItem {
   id: string;
   hintId: string;
@@ -111,6 +118,22 @@ export interface TodayWritingStatus {
   streakDays: number;
   totalAnswerSessions: number;
   totalWrittenSentences: number;
+}
+
+export interface MonthWritingStatusDay {
+  date: string;
+  started: boolean;
+  completed: boolean;
+  startedSessions: number;
+  completedSessions: number;
+  isToday: boolean;
+}
+
+export interface MonthWritingStatus {
+  year: number;
+  month: number;
+  streakDays: number;
+  days: MonthWritingStatusDay[];
 }
 
 export interface AuthUser {
@@ -269,6 +292,19 @@ export interface DeleteAccountRequest {
   currentPassword?: string;
 }
 
+export interface AppVersionStatus {
+  platform: MobilePlatform | string;
+  currentVersion?: string | null;
+  latestVersion: string;
+  minimumSupportedVersion: string;
+  updateAvailable: boolean;
+  forceUpdate: boolean;
+  titleKo: string;
+  messageKo: string;
+  releaseNotesKo?: string | null;
+  storeUrl?: string | null;
+}
+
 export interface SaveExpressionRequest {
   expression: string;
   meaningKo?: string;
@@ -397,6 +433,13 @@ export interface FeedbackLoop {
   detailToggleLabel?: string | null;
 }
 
+export type FeedbackSuggestedPhrase =
+  | string
+  | {
+      phrase?: string | null;
+      meaningKo?: string | null;
+    };
+
 export interface FeedbackCoachMove {
   focus?: string | null;
   focusType?: string | null;
@@ -405,6 +448,9 @@ export interface FeedbackCoachMove {
   after?: string | null;
   instruction?: string | null;
   exampleEn?: string | null;
+  skeletonEn?: string | null;
+  skeletonKo?: string | null;
+  suggestedPhrases?: FeedbackSuggestedPhrase[] | null;
   successCheck?: string | null;
 }
 

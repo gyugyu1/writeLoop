@@ -6,6 +6,7 @@ import com.writeloop.dto.FeedbackCoachMissionDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
+import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.FeedbackUiDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
@@ -240,9 +241,20 @@ public class OpenAiFeedbackClient {
             int attemptIndex,
             String previousAnswer
     ) {
+        return review(prompt, answer, hints, attemptIndex, previousAnswer, null);
+    }
+
+    public FeedbackResponseDto review(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptIndex,
+            String previousAnswer,
+            String previousCoachingSummary
+    ) {
         latestAnalysisSnapshot.remove();
         try {
-            return reviewHybrid(prompt, answer, hints, attemptIndex, previousAnswer);
+            return reviewHybrid(prompt, answer, hints, attemptIndex, previousAnswer, previousCoachingSummary);
         } catch (IOException | InterruptedException exception) {
             logOpenAiFailure("review", prompt == null ? null : prompt.id(), attemptIndex, exception);
             if (exception instanceof InterruptedException) {
@@ -298,7 +310,8 @@ public class OpenAiFeedbackClient {
             String answer,
             List<PromptHintDto> hints,
             int attemptIndex,
-            String previousAnswer
+            String previousAnswer,
+            String previousCoachingSummary
     )
             throws IOException, InterruptedException {
         try {
@@ -316,6 +329,7 @@ public class OpenAiFeedbackClient {
                     null,
                     attemptIndex,
                     previousAnswer,
+                    previousCoachingSummary,
                     initialRequestedSections,
                     List.of(),
                     null
@@ -332,13 +346,6 @@ public class OpenAiFeedbackClient {
                     null,
                     null
             );
-            GeneratedSections fallbackSections = buildDeterministicFallbackSections(
-                    prompt,
-                    answer,
-                    diagnosis,
-                    diagnosedProfile,
-                    sectionPolicy
-            );
             ValidationResult validation = validateGeneratedSections(
                     answer,
                     diagnosis,
@@ -350,7 +357,7 @@ public class OpenAiFeedbackClient {
             boolean retryAttempted = false;
             if (validation.shouldRetry()) {
                 LOGGER.info(
-                        "Feedback regeneration skipped provider=openai promptId={} attemptIndex={} failureCount={} fallback=deterministic",
+                        "Feedback regeneration skipped provider=openai promptId={} attemptIndex={} failureCount={} passThrough=true",
                         prompt.id(),
                         attemptIndex,
                         validation.failures().size()
@@ -362,20 +369,6 @@ public class OpenAiFeedbackClient {
                     );
                 }
             }
-            ValidationResult completed = validateGeneratedSections(
-                    answer,
-                    diagnosis,
-                    diagnosedProfile,
-                    sectionPolicy,
-                    mergeWithMinimalFallback(
-                            validation.sanitizedSections(),
-                            fallbackSections,
-                            diagnosis,
-                            diagnosedProfile,
-                            sectionPolicy
-                    ),
-                    generationRequestedSections
-            );
             latestAnalysisSnapshot.set(new FeedbackAnalysisSnapshot(
                     "OPENAI",
                     model,
@@ -388,12 +381,12 @@ public class OpenAiFeedbackClient {
                     diagnosis,
                     diagnosedProfile,
                     sectionPolicy,
-                    completed.sanitizedSections(),
+                    validation.sanitizedSections(),
                     false,
                     false,
                     retryAttempted
             ));
-            return assembleHybridResponse(prompt.id(), answer, diagnosis, diagnosedProfile, completed.sanitizedSections());
+            return assembleHybridResponse(prompt.id(), answer, diagnosis, diagnosedProfile, validation.sanitizedSections());
         } catch (OpenAiApiHttpException apiException) {
             logOpenAiFailure("generation-http", prompt.id(), attemptIndex, apiException);
             throw feedbackGenerationUnavailable();
@@ -405,51 +398,9 @@ public class OpenAiFeedbackClient {
             Thread.currentThread().interrupt();
             throw feedbackGenerationUnavailable();
         } catch (RuntimeException runtimeException) {
-            logOpenAiFailure("generation-runtime-fallback", prompt.id(), attemptIndex, runtimeException);
-            // If generation fails, prefer deterministic fallback over the removed separate diagnosis pass.
+            logOpenAiFailure("generation-runtime", prompt.id(), attemptIndex, runtimeException);
+            throw feedbackGenerationUnavailable();
         }
-        FeedbackDiagnosisResult diagnosis = buildDeterministicDiagnosis(prompt, answer, hints, attemptIndex, previousAnswer);
-        AnswerProfile diagnosedProfile = buildDiagnosedProfile(prompt, answer, hints, diagnosis, attemptIndex, previousAnswer);
-        SectionPolicy sectionPolicy = llmPassThroughSectionPolicy();
-        List<SectionKey> generationRequestedSections = requestedSections(
-                diagnosedProfile,
-                sectionPolicy,
-                null,
-                null
-        );
-        GeneratedSections fallbackSections = buildDeterministicFallbackSections(
-                prompt,
-                answer,
-                diagnosis,
-                diagnosedProfile,
-                sectionPolicy
-        );
-        ValidationResult fallbackValidation = validateGeneratedSections(
-                answer,
-                diagnosis,
-                diagnosedProfile,
-                sectionPolicy,
-                fallbackSections,
-                generationRequestedSections
-        );
-        latestAnalysisSnapshot.set(new FeedbackAnalysisSnapshot(
-                "OPENAI",
-                model,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null,
-                diagnosis,
-                diagnosedProfile,
-                sectionPolicy,
-                fallbackValidation.sanitizedSections(),
-                true,
-                true,
-                false
-        ));
-        return assembleHybridResponse(prompt.id(), answer, diagnosis, diagnosedProfile, fallbackValidation.sanitizedSections());
     }
 
     private GenerationCallResult generateSections(
@@ -461,6 +412,7 @@ public class OpenAiFeedbackClient {
             SectionPolicy sectionPolicy,
             int attemptIndex,
             String previousAnswer,
+            String previousCoachingSummary,
             List<SectionKey> requestedSections,
             List<ValidationFailureCode> failureCodes,
             GeneratedSections previousSections
@@ -478,6 +430,7 @@ public class OpenAiFeedbackClient {
                     sectionPolicy,
                     attemptIndex,
                     previousAnswer,
+                    previousCoachingSummary,
                     requestedSections,
                     failureCodes,
                     previousSections
@@ -645,18 +598,7 @@ public class OpenAiFeedbackClient {
         }
         List<FeedbackSecondaryLearningPointDto> fixPoints = List.copyOf(normalizedFixPointCandidates);
         List<FeedbackRewriteSuggestionDto> rewriteSuggestions = sanitizeRewriteSuggestions(generatedSections.rewriteSuggestions());
-        FeedbackCoachMissionDto coachMission = resolveMissionSourceOfTruth(
-                generatedSections.coachMission(),
-                generatedSections.missionDecision(),
-                diagnosis,
-                answerProfile,
-                learnerAnswer,
-                fixPoints,
-                refinementExpressions,
-                protectedModelAnswer
-        );
-        fixPoints = alignFixPointsWithMission(coachMission, fixPoints);
-        refinementExpressions = alignRefinementsWithMission(coachMission, refinementExpressions);
+        FeedbackCoachMissionDto coachMission = generatedSections.coachMission();
         failures.addAll(validateFixPointExplanationCoverage(fixPoints));
         GeneratedSections sanitized = new GeneratedSections(
                 null,
@@ -815,11 +757,6 @@ public class OpenAiFeedbackClient {
             FeedbackDiagnosisResult diagnosis,
             String modelAnswer
     ) {
-        String example = firstNonBlank(
-                modelAnswer,
-                diagnosis == null || diagnosis.rewriteTarget() == null ? null : diagnosis.rewriteTarget().skeleton(),
-                "I usually ____ because ____."
-        );
         return new FeedbackCoachMissionDto(
                 "TASK_RESET",
                 "질문에 맞는 영어 문장으로 다시 쓰기",
@@ -827,7 +764,7 @@ public class OpenAiFeedbackClient {
                 null,
                 "지금 답변은 영어 문장으로 보기 어렵거나 질문과 연결되는 정보가 부족해요.",
                 "질문에서 묻는 핵심을 영어 한 문장으로 다시 써 보세요.",
-                example,
+                null,
                 "I usually ____ because ____.",
                 "첫 문장에 질문의 주제와 이유나 상황을 함께 넣어 보세요.",
                 "영어 문장 안에 질문의 핵심 주제와 이유나 상황이 들어가면 성공이에요."
@@ -842,13 +779,15 @@ public class OpenAiFeedbackClient {
             return null;
         }
         String missionType = normalizeMissionType(mission.missionType(), diagnosis);
-        String title = trimToNull(mission.title());
         String whyKo = trimToNull(mission.whyKo());
         String instructionKo = trimToNull(mission.instructionKo());
         String exampleEn = trimToNull(mission.exampleEn());
+        String skeletonEn = trimToNull(mission.skeletonEn());
+        String skeletonKo = trimToNull(mission.skeletonKo());
+        List<FeedbackSuggestedPhraseDto> suggestedPhrases = mission.suggestedPhrases();
         String placeholderEn = trimToNull(mission.placeholderEn());
         String targetHintKo = trimToNull(mission.targetHintKo());
-        String successCheckKo = trimToNull(mission.successCheckKo());
+        String successCheckKo = null;
         String originalText = trimToNull(mission.originalText());
         String revisedText = trimToNull(mission.revisedText());
         boolean comparisonMission = isComparisonMissionType(missionType);
@@ -860,6 +799,13 @@ public class OpenAiFeedbackClient {
             originalText = null;
             revisedText = null;
         }
+        if (comparisonMission) {
+            exampleEn = null;
+            skeletonEn = null;
+            skeletonKo = null;
+            suggestedPhrases = List.of();
+        }
+        String title = trimToNull(mission.title());
         return new FeedbackCoachMissionDto(
                 missionType,
                 title,
@@ -868,6 +814,9 @@ public class OpenAiFeedbackClient {
                 whyKo,
                 instructionKo,
                 exampleEn,
+                skeletonEn,
+                skeletonKo,
+                suggestedPhrases,
                 placeholderEn,
                 targetHintKo,
                 successCheckKo
@@ -1216,7 +1165,7 @@ public class OpenAiFeedbackClient {
                     firstFixPoint.revisedText(),
                     reason,
                     "위에 표시된 한 부분만 고쳐서 다시 써 보세요.",
-                    firstFixPoint.revisedText(),
+                    null,
                     firstFixPoint.revisedText(),
                     "원래 문장에서 같은 위치에 넣어 보세요.",
                     "표시된 부분이 수정문처럼 바뀌면 성공이에요."
@@ -1246,7 +1195,7 @@ public class OpenAiFeedbackClient {
                         revised,
                         defaults.whyKo(),
                         defaults.instructionKo(),
-                        revised,
+                        null,
                         revised,
                         defaults.targetHintKo(),
                         defaults.successCheckKo()
@@ -1259,11 +1208,6 @@ public class OpenAiFeedbackClient {
                     null
             ));
         }
-        String example = firstNonBlank(
-                refinementExpressions == null || refinementExpressions.isEmpty() ? null : refinementExpressions.get(0).exampleEn(),
-                modelAnswer,
-                defaults.exampleEn()
-        );
         return new FeedbackCoachMissionDto(
                 defaults.type(),
                 defaults.titleKo(),
@@ -1271,7 +1215,7 @@ public class OpenAiFeedbackClient {
                 null,
                 defaults.whyKo(),
                 defaults.instructionKo(),
-                example,
+                null,
                 defaults.exampleEn(),
                 defaults.targetHintKo(),
                 defaults.successCheckKo()
@@ -1317,7 +1261,7 @@ public class OpenAiFeedbackClient {
                 revised,
                 "단어 뜻은 보이지만 문장 골격이 흔들려서, 내용을 더 붙이기 전에 한 번 자연스러운 문장으로 세우는 게 좋아요.",
                 "새 내용을 더하기 전에, 같은 뜻을 주어와 동사가 분명한 한 문장으로 먼저 고쳐 보세요.",
-                revised,
+                null,
                 revised,
                 "원래 말하려던 뜻은 유지하고 문장 골격만 먼저 바로잡아 보세요.",
                 "같은 뜻이 자연스러운 영어 문장으로 바뀌면 성공입니다."
@@ -1338,12 +1282,7 @@ public class OpenAiFeedbackClient {
                 learnerAnswer,
                 missionDecision
         ));
-        String example = firstNonBlank(
-                missionDecision == null ? null : missionDecision.addOnExampleEn(),
-                refinementExpressions == null || refinementExpressions.isEmpty() ? null : refinementExpressions.get(0).exampleEn(),
-                modelAnswer,
-                defaults.exampleEn()
-        );
+        String example = missionDecision == null ? null : missionDecision.addOnExampleEn();
         return new FeedbackCoachMissionDto(
                 defaults.type(),
                 defaults.titleKo(),
@@ -2682,6 +2621,36 @@ public class OpenAiFeedbackClient {
             List<ValidationFailureCode> failureCodes,
             GeneratedSections previousSections
     ) throws IOException {
+        return buildGenerationRequestBody(
+                prompt,
+                answer,
+                hints,
+                diagnosis,
+                answerProfile,
+                sectionPolicy,
+                attemptIndex,
+                previousAnswer,
+                null,
+                requestedSections,
+                failureCodes,
+                previousSections
+        );
+    }
+
+    private String buildGenerationRequestBody(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            FeedbackDiagnosisResult diagnosis,
+            AnswerProfile answerProfile,
+            SectionPolicy sectionPolicy,
+            int attemptIndex,
+            String previousAnswer,
+            String previousCoachingSummary,
+            List<SectionKey> requestedSections,
+            List<ValidationFailureCode> failureCodes,
+            GeneratedSections previousSections
+    ) throws IOException {
         Map<String, Object> expressionTagsSchema = ExpressionTagSupport.jsonSchema();
         List<String> missionSlotEnum = List.of(
                 "ACTION",
@@ -2907,17 +2876,31 @@ public class OpenAiFeedbackClient {
                         Map.entry("coachMission", Map.of(
                                 "type", "object",
                                 "additionalProperties", false,
-                                "properties", Map.of(
-                                        "missionType", Map.of("type", "string"),
-                                        "title", Map.of("type", "string"),
-                                        "originalText", Map.of("type", List.of("string", "null")),
-                                        "revisedText", Map.of("type", List.of("string", "null")),
-                                        "whyKo", Map.of("type", "string"),
-                                        "instructionKo", Map.of("type", "string"),
-                                        "exampleEn", Map.of("type", "string"),
-                                        "placeholderEn", Map.of("type", "string"),
-                                        "targetHintKo", Map.of("type", "string"),
-                                        "successCheckKo", Map.of("type", "string")
+                                "properties", Map.ofEntries(
+                                        Map.entry("missionType", Map.of("type", "string")),
+                                        Map.entry("title", Map.of("type", "string")),
+                                        Map.entry("originalText", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("revisedText", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("whyKo", Map.of("type", "string")),
+                                        Map.entry("instructionKo", Map.of("type", "string")),
+                                        Map.entry("exampleEn", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("skeletonEn", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("skeletonKo", Map.of("type", List.of("string", "null"))),
+                                        Map.entry("suggestedPhrases", Map.of(
+                                                "type", "array",
+                                                "items", Map.of(
+                                                        "type", "object",
+                                                        "additionalProperties", false,
+                                                        "properties", Map.of(
+                                                                "phrase", Map.of("type", "string"),
+                                                                "meaningKo", Map.of("type", "string")
+                                                        ),
+                                                        "required", List.of("phrase", "meaningKo")
+                                                )
+                                        )),
+                                        Map.entry("placeholderEn", Map.of("type", "string")),
+                                        Map.entry("targetHintKo", Map.of("type", "string")),
+                                        Map.entry("successCheckKo", Map.of("type", List.of("string", "null")))
                                 ),
                                 "required", List.of(
                                         "missionType",
@@ -2927,6 +2910,9 @@ public class OpenAiFeedbackClient {
                                         "whyKo",
                                         "instructionKo",
                                         "exampleEn",
+                                        "skeletonEn",
+                                        "skeletonKo",
+                                        "suggestedPhrases",
                                         "placeholderEn",
                                         "targetHintKo",
                                         "successCheckKo"
@@ -2974,6 +2960,7 @@ public class OpenAiFeedbackClient {
                         sectionPolicy,
                         attemptIndex,
                         previousAnswer,
+                        previousCoachingSummary,
                         requestedSections,
                         failureCodes,
                         previousSections
@@ -3003,6 +2990,7 @@ public class OpenAiFeedbackClient {
             SectionPolicy sectionPolicy,
             int attemptIndex,
             String previousAnswer,
+            String previousCoachingSummary,
             List<SectionKey> requestedSections,
             List<ValidationFailureCode> failureCodes,
             GeneratedSections previousSections
@@ -3044,6 +3032,9 @@ public class OpenAiFeedbackClient {
         String improvedAreas = progressDelta == null ? "[]" : progressDelta.improvedAreas().toString();
         String remainingAreas = progressDelta == null ? "[]" : progressDelta.remainingAreas().toString();
         String allowedExpressionTags = ExpressionTagSupport.formatAllowedTagsForPrompt();
+        String previousCoachingSummaryText = previousCoachingSummary == null || previousCoachingSummary.isBlank()
+                ? "none"
+                : previousCoachingSummary.trim();
         String analysisContext = diagnosis == null
                 ? """
                 First-pass diagnosis:
@@ -3051,13 +3042,16 @@ public class OpenAiFeedbackClient {
                 - Fill missionDecision immediately after diagnosis, then build coachMission from that decision.
                 - Keep diagnosis, missionDecision, coachMission, fixPoints, refinementExpressions, and modelAnswer aligned with each other.
                 - attemptIndex: %s
-                - previousAnswer: %s
+                - history.previousAnswerOnlyDoNotEvaluateAsCurrent: %s
+                - previousCoachingSummary:
+                %s
                 - progress.improvedAreas: %s
                 - progress.remainingAreas: %s
                 - Return all distinct, high-value teaching points that genuinely help the learner, and avoid overlap or filler.
                 """.formatted(
                 attemptIndex,
                 previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
+                previousCoachingSummaryText,
                 improvedAreas,
                 remainingAreas
         )
@@ -3068,7 +3062,9 @@ public class OpenAiFeedbackClient {
                 - onTopic: %s
                 - finishable: %s
                 - attemptIndex: %s
-                - previousAnswer: %s
+                - history.previousAnswerOnlyDoNotEvaluateAsCurrent: %s
+                - previousCoachingSummary:
+                %s
                 - progress.improvedAreas: %s
                 - progress.remainingAreas: %s
                 - Keep the regenerated sections aligned with this diagnosis.
@@ -3079,6 +3075,7 @@ public class OpenAiFeedbackClient {
                 diagnosis.finishable(),
                 attemptIndex,
                 previousAnswer == null || previousAnswer.isBlank() ? "null" : previousAnswer,
+                previousCoachingSummaryText,
                 improvedAreas,
                 remainingAreas
         );
@@ -3089,6 +3086,29 @@ public class OpenAiFeedbackClient {
 
                 %s
 
+                Core quality contract:
+                - Decide one learner action first. missionDecision.chosenType, coachMission.missionType, the first fixPoint, and rewrite guide must all support that same action. For add-on missions only, skeletonEn, skeletonKo, and suggestedPhrases must also support it.
+                - Do not make modelAnswer the teaching plan. It is only a quiet reference after the mission is chosen.
+                - Do not depend on backend fallback. If a field is visible to the learner, write it specifically for this answer.
+                - For add-on missions, coachMission.skeletonEn, coachMission.skeletonKo, and coachMission.suggestedPhrases replace the old complete example sentence: give a reusable sentence frame, a Korean meaning for that frame, plus phrase options the learner can choose from. Each suggested phrase must include phrase and meaningKo.
+                - For correction missions (GRAMMAR_FIX or EXPRESSION_POLISH), do not return a learner scaffold. Set coachMission.skeletonEn=null, coachMission.skeletonKo=null, and coachMission.suggestedPhrases=[] because the before/after comparison already shows the exact edit.
+                - Before returning JSON, run the final self-check near the end of this prompt and revise any mismatch inside the JSON.
+
+                Current answer boundary:
+                - The CURRENT LEARNER ANSWER at the bottom of this prompt is the only submission you may diagnose, quote, correct, or put into coachMission.originalText, fixPoints.originalText, grammarIssues.span, minimalCorrection, correctedAnswer, modelAnswer, or rewriteWorkspace.
+                - previousAnswer and previousCoachingSummary are history-only context. Use them only to notice progress and avoid repeating a resolved mission.
+                - Never quote, correct, or criticize wording that appears only in previousAnswer or previousCoachingSummary.
+                - If previousAnswer contains an old phrase and the CURRENT LEARNER ANSWER contains the learner's revised phrase, treat the old phrase as already fixed.
+                - Any before/after correction pair must be anchored in exact text from the CURRENT LEARNER ANSWER. If the old phrase is absent from the current answer, it is not a current issue.
+
+                Coaching history rules:
+                - Treat previousCoachingSummary as high-priority memory for this same question loop.
+                - If the learner already applied a previous mission, do not present that same issue as the new top mission.
+                - If previousCoachingSummary shows one or more EXPRESSION_POLISH missions, do not choose EXPRESSION_POLISH again for an equivalent style swap unless the current wording clearly blocks meaning or is objectively awkward.
+                - Banned equivalent-expression loops include: "it would be like" -> "I'd say" -> "go for" -> "have", "choose" -> "pick" -> "go for", and "like" -> "prefer" when the meaning is already clear.
+                - Do not replace one acceptable expression with another solely because it is slightly smoother. Put optional alternatives in refinementExpressions instead.
+                - If the required prompt slots are now present, prefer finishable=true only when no high-value local repair remains. A clear but objectively awkward core phrase, verb pattern, connector, or time expression should still become the next mission.
+
                 Response rules:
                 - Fill both the diagnosis fields and the feedback section fields in the same JSON object.
                 - Work in this order:
@@ -3096,13 +3116,14 @@ public class OpenAiFeedbackClient {
                   2) Fill missionDecision.presentSlots and missionDecision.missingSlots before choosing the mission.
                   3) Fill missionDecision by comparing the best missing-slot add-on mission against the best grammar/polish mission.
                   4) Build exactly one coachMission from missionDecision.chosenType.
-                  5) Build fixPoints so the first fixPoint explains the same issue/action as missionDecision and coachMission.
+                  5) Build fixPoints so the first fixPoint supports the same issue/action as missionDecision and coachMission without merely repeating the top-card wording.
                   6) Add refinementExpressions only when they support the same next rewrite without repeating fixPoints.
                   7) Write modelAnswer only as a quiet reference. It must not introduce changes that conflict with coachMission.
                 - Never output placeholders such as [verb], [noun], [reason], or unresolved templates.
                 - Do not reuse a broken learner phrase in strengths, refinementExpressions, coachMission, or modelAnswer.
-                - The top-card mission, detailed feedback, rewrite guide, and successCheck must all point to the same one action.
-                - Do not rely on a generic backend fallback. The mission text, example, and success condition must be specific enough to show the learner exactly what to do next.
+                - For add-on missions, never set coachMission.skeletonEn or coachMission.skeletonKo to null, empty string, whitespace, or a generic unrelated placeholder.
+                - The top-card mission, detailed feedback, and rewrite guide must all point to the same one action.
+                - Do not rely on a generic backend fallback. The mission text must be specific enough to show the learner exactly what to do next.
                 - Keep Korean fields natural and concise.
                 Diagnosis rules:
                 - Choose exactly one answerBand from: TOO_SHORT_FRAGMENT, SHORT_BUT_VALID, GRAMMAR_BLOCKING, CONTENT_THIN, NATURAL_BUT_BASIC, OFF_TOPIC.
@@ -3112,10 +3133,21 @@ public class OpenAiFeedbackClient {
                 - grammarImpact is about whether grammar should control the top mission: BLOCKING means meaning/task is blocked, LOCAL means a real repair is useful but the answer is still understandable, POLISH means a small cosmetic cleanup, NONE means no meaningful grammar issue.
                 - contentOpportunity is the best expansion opportunity if the answer is understandable: REASON, DETAIL, EXAMPLE, SITUATION, FEELING, RESULT, or NONE.
                 - Before selecting contentOpportunity, fill missionDecision.presentSlots with content slots already present in the learner answer: ACTION, SITUATION, REASON, DETAIL, EXAMPLE, FEELING, RESULT.
+                - presentSlots must include SITUATION when the prompt itself provides a concrete context using before/after/when/where/with whom, even if the learner answer does not repeat those words.
+                - presentSlots must include REASON when the learner clearly attempts a reason using because, so, need, want, don't want, helps, or makes, even if that reason sentence has grammar errors.
+                - A malformed causal sentence is REASON present, not REASON missing. Example: "Because family go outside, so I need ready" already contains the reason intent; fix or polish that sentence instead of asking for another reason.
                 - Fill missionDecision.missingSlots with useful slots that are not yet present and would improve this exact answer. If no add-on slot is useful, return an empty array.
+                - For "What do you usually do before/after/when..." routine questions, never put SITUATION in missingSlots if the answer contains any prompt-relevant action.
+                - HARD BAN: If questionEn starts with or clearly means "What do you usually do before/after/when ...?" and the learner answer contains a prompt-relevant verb/action, chosenType=SITUATION is invalid.
+                - In the HARD BAN case, do not output Korean titles/instructions like "상황 한 문장 더하기" or "언제, 어디서, 어떤 상황인지...". Choose EXPRESSION_POLISH for local wording, FEELING/RESULT for personal depth, DETAIL for a concrete non-context detail, or NONE/finishable if the answer is already enough.
                 - For content missions, missionDecision.chosenSlot must be one value from missionDecision.missingSlots and must match missionDecision.chosenType/contentNeed.
                 - For GRAMMAR_FIX, EXPRESSION_POLISH, or TASK_RESET, missionDecision.chosenSlot must be NONE.
                 - contentOpportunity must target the most useful missing slot. Do not choose a mission that asks for a content slot already present in the learner answer.
+                - A prompt can already supply the situation/context. If the question itself says before/after/when/where/with whom something happens, that context is not a missing learner slot.
+                - Do not choose SITUATION just because the learner did not repeat context already given by the prompt. Example: for "What do you usually do before you join a video call?", an answer like "I check my appearance and charge my phone because I want to look ready" already fits the given situation.
+                - More examples that already have prompt-provided SITUATION: "What do you usually do when you feel stressed?" + "I listen to calm music and drink water because it helps me slow down."; "What do you usually do before an online class starts?" + "I open the class link and prepare my notes because I want to follow the lesson."; "What do you usually do before you study English?" + "I open my notebook and check yesterday's words because it helps me remember."
+                - For prompt-provided context cases, never make a SITUATION mission with a generic skeleton like "When I ____, I ____." That asks the learner to restate context the question already gave.
+                - Choose SITUATION only when time/place/context is missing from both the prompt and the learner answer, or when the prompt explicitly asks the learner to provide their own when/where/context.
                 - If the answer already contains action/what + place-or-situation + reason/why, do not choose DETAIL or SITUATION only because the answer is short. Prefer FEELING or RESULT if it still feels flat, or NONE/finishable if it is already acceptable.
                 - selectedMissionReason must briefly explain why the top mission deserves priority over other possible fixes.
                 - grammarSeverity must describe grammar/naturalness damage in the learner answer: NONE, MINOR, MODERATE, or MAJOR.
@@ -3126,18 +3158,26 @@ public class OpenAiFeedbackClient {
                 - expansionBudget: NONE when no expansion is needed, ONE_DETAIL for one phrase/detail, ONE_SUPPORT_SENTENCE for one extra sentence.
                 - regressionSensitiveFacts should list facts that must not be changed in rewrite, such as people, places, times, preferences, or actions.
                 - answerBand must reflect what the learner most needs next, not what sounds harshest.
-                - finishable=true only when the current answer already reads like an acceptable final submission.
+                - finishable=true only when the current answer already reads like an acceptable final submission: it answers the required prompt parts, meaningClarity is CLEAR or PARTLY_CLEAR, and grammarImpact is NONE or POLISH.
                 - Do not set finishable=true for SHORT_BUT_VALID answers.
                 - Do not keep finishable=false only because the answer could be longer, more polished, or could support one optional upgrade.
+                - If finishable=true, do not turn optional polish into the visible coachMission. Put smoother wording, shorter alternatives, and extra detail ideas into refinementExpressions instead.
+                - If the answer already has the required prompt parts and only contains verbose but acceptable wording, keep finishable=true and offer shorter alternatives in refinementExpressions, not as EXPRESSION_POLISH.
+                - If a required action, reason, result, or solution clause still contains an objectively awkward verb pattern, time expression, connector, or collocation that should be fixed before submission, set grammarImpact=LOCAL, finishable=false, and choose EXPRESSION_POLISH or GRAMMAR_FIX.
+                - Do not mark finishable=true when the answer has two or more non-cosmetic local repairs, even if each repair is small by itself.
+                - Example: "To handle this problem I postpone my work tomorrow" is not finishable. The core solution phrase should be repaired to "I put off some work until tomorrow" or "I leave some work for tomorrow."
+                - Example: "I face endless work" may be understandable, but if it is part of the main answer and there are other local issues, keep finishable=false and teach a natural phrase such as "I have too much work."
                 - A short single-clause answer that only states the main answer, place, activity, preference, or plan without one supporting reason, detail, example, or time flow is usually not finishable.
                 - For routine, preference, opinion, and plan prompts, one clean base sentence is usually still too thin to mark as finishable.
                 - If a required reason, detail, or activity clause is still malformed or needs more than one small local repair, keep finishable=false.
                 - If attemptIndex >= 2, use previousAnswer only to detect progress and remaining issues. Do not repeat already-fixed issues as if they were still the main problem.
+                - If attemptIndex >= 2, also use previousCoachingSummary to avoid repeating prior coach missions. A learner should feel the next feedback notices what they already fixed.
+                - If previousCoachingSummary says expressionPolishMissionCount is 1 or higher, raise the bar for another EXPRESSION_POLISH mission: only use it for a visibly wrong or confusing phrase, not for a preference among acceptable phrases.
                 - NATURAL_BUT_BASIC is appropriate when the answer is already clear, on-topic, complete enough for the loop to end, and needs at most one very small local cleanup.
                 - Do not use NATURAL_BUT_BASIC for a minimal one-sentence answer that still feels underdeveloped even if the grammar is clean.
                 - Prefer CONTENT_THIN or SHORT_BUT_VALID over GRAMMAR_BLOCKING unless grammar truly blocks meaning or sentence structure.
                 - If you are unsure between SHORT_BUT_VALID and NATURAL_BUT_BASIC for a short answer, prefer SHORT_BUT_VALID.
-                - If meaningClarity is CLEAR or PARTLY_CLEAR and grammarImpact is NONE, POLISH, or LOCAL, do not let small grammar polish control the top mission.
+                - If meaningClarity is CLEAR or PARTLY_CLEAR and grammarImpact is NONE or POLISH, do not let small grammar polish control the top mission.
                 - If the answer is understandable but thin, choose CONTENT_THIN or SHORT_BUT_VALID and make coachMission an add-on mission even when small local errors exist.
                 - Small issues such as capitalization, contraction, article preference, a plural ending, or one nicer word choice belong in fixPoints/refinementExpressions, not the top mission.
                 - Use GRAMMAR_FIX as the top mission only when grammarImpact is BLOCKING, grammarSeverity is MAJOR/MODERATE, or the local error prevents the learner from answering the prompt clearly.
@@ -3148,7 +3188,7 @@ public class OpenAiFeedbackClient {
                 - Romanized Korean without a real English sentence frame is not an English answer. Examples: "beoseu tago hakgyo gayo", "geunyang joayo", "molla". Treat it as OFF_TOPIC/TASK_RESET, not a grammar repair.
                 - Treat word-order fragments without normal subject-verb structure as GRAMMAR_BLOCKING when they need a full sentence frame, for example "home go", "dinner eat", "breakfast eat", "school go", "I want make habit", "every day do it", or a sequence of noun/verb fragments.
                 - Treat repeated Korean-learner frame errors as GRAMMAR_BLOCKING when the core sentence needs repair before expansion: missing `to` after want/need/try/plan, missing object/preposition after listen/look/go, or patterns like "it make me exciting", "go company", "wash face", "listen music".
-                - If the learner already answers the required slots with a clear action/preference/plan plus a reason or fitting moment when the prompt asks for it, do not force another optional detail. Mark finishable=true unless a blocking grammar issue remains.
+                - If the learner already answers the required slots with a clear action/preference/plan plus a reason or fitting moment when the prompt asks for it, do not force another optional detail. Mark finishable=true only when any remaining wording issue is cosmetic rather than a high-value local repair.
                 - Generic adjective reasons such as "it is delicious", "it is good", "it is fun", "it is exciting", or "it makes me happy" are weak reasons, not completion proof. If the prompt asks why, choose REASON, DETAIL, EXAMPLE, FEELING, or RESULT before EXPRESSION_POLISH.
 
                 Mission selection ladder:
@@ -3157,14 +3197,17 @@ public class OpenAiFeedbackClient {
                 2) If the learner names any relevant food, movie, place, season, music, routine, goal, action, time, or reason from the question, TASK_RESET is forbidden.
                 3) If grammarImpact is BLOCKING, choose GRAMMAR_FIX.
                 4) If the prompt asks "why" and the reason is missing, generic, or could be personal, choose REASON.
-                4a) Do not ask for an already-present slot again. If the learner already says what they do, where/when/context, and why, DETAIL and SITUATION are usually wrong; choose FEELING, RESULT, or NONE instead.
+                4a) If the learner already wrote a causal reason sentence, even a grammatically rough one, do not choose REASON just to ask for another reason. Choose GRAMMAR_FIX/EXPRESSION_POLISH when the reason sentence needs repair, or FEELING/RESULT/NONE when the answer is otherwise acceptable.
+                4b) Do not ask for an already-present slot again. If the learner already says what they do, where/when/context, and why, DETAIL and SITUATION are usually wrong; choose FEELING, RESULT, or NONE instead.
                 5) If the answer needs one concrete action, object, scene, or descriptive fact, choose DETAIL.
                 6) If the missing slot is specifically time/place/context, choose SITUATION.
+                6a) SITUATION is forbidden when the prompt itself already supplies the relevant time/place/context and the learner gives an on-topic action or reason. In that case treat SITUATION as already present.
+                6b) For routine questions shaped like "What do you usually do before/after/when ...?", skip SITUATION entirely once the answer has an on-topic action. The next useful mission must be expression polish, feeling/result, detail, example, or completion.
                 7) If the answer needs proof, a concrete instance, or "for example" support, choose EXAMPLE.
                 8) If the answer would feel more personal with emotion or outcome, choose FEELING or RESULT.
                 9) If grammarImpact is LOCAL and the local error is more important than any expansion opportunity, choose GRAMMAR_FIX.
-                10) If the answer is already acceptable, mark finishable=true or choose a tiny EXPRESSION_POLISH mission only if it has real value.
-                11) If the answer is finishable and the only issue is collocation/natural wording, choose EXPRESSION_POLISH rather than GRAMMAR_FIX.
+                10) If the answer is already acceptable and has no high-value local expression issue, mark finishable=true.
+                11) If the answer is otherwise complete but the remaining issue is a clearly awkward collocation, verb pattern, connector, or time expression in a required clause, keep finishable=false and choose EXPRESSION_POLISH rather than treating it as optional refinement.
 
                 Strengths and usedExpressions rules:
                 - strengths should usually be one short Korean keep-signal based on meaning, not a full raw quote unless it is already clean and necessary.
@@ -3185,7 +3228,7 @@ public class OpenAiFeedbackClient {
                 - Do not assign `time_expression` to generic actions like `take a walk`, `read a book`, or `watch videos` just because the learner sentence places them after dinner or at night.
 
                 fixPoints rules:
-                - fixPoints are the detailed feedback area. The first item must explain the same one action as coachMission.
+                - fixPoints are the detailed feedback area. The first item must support the same one action as coachMission without merely repeating the top-card wording.
                 - fixPoints should explain the important visible changes needed for the next rewrite, not every possible polish.
                 - If coachMission is GRAMMAR_FIX or EXPRESSION_POLISH, the first fixPoints originalText/revisedText must match coachMission.originalText/revisedText.
                 - If coachMission is REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, or TASK_RESET, the first fixPoints item should be an anchored instruction card with no forced originalText/revisedText pair.
@@ -3219,6 +3262,10 @@ public class OpenAiFeedbackClient {
                 - Use refinementExpressions for reusable expressions, sentence starters, short add-on phrases, and prompt-fit optional improvements beyond fixPoints.
                 - Return only genuinely useful, distinct items, and keep expression, meaningKo, guidanceKo, exampleEn, and exampleKo separate.
                 - Do not use refinementExpressions to restate a repaired phrase already taught in fixPoints.
+                - When finishable=true, return 3 to 5 refinementExpressions. The completion screen uses these as the learner's useful "continue polishing or finish" choice, so do not leave them empty.
+                - For finishable=true, each refinementExpression must be an optional, learner-usable expression that can make the current answer one small step richer without implying the current answer is wrong.
+                - Finishable refinementExpressions should include practical add-ons such as a smoother connector, a more precise feeling/result phrase, a shorter natural alternative, or a reusable detail phrase that fits the prompt and the learner's existing meaning.
+                - Example: if the learner writes an understandable phrase like "a huge place with a lot of dogs and a lot of people", do not make it the visible coachMission just because it could be shorter. If useful, offer alternatives such as "a busy park" or "a spacious park with many people" in refinementExpressions.
                 - If a refinement expression or its example sentence substantially overlaps with a fixPoints repair or simply repeats the modelAnswer-level rewrite, omit it.
                 - exampleEn must not be identical to expression.
 
@@ -3228,8 +3275,13 @@ public class OpenAiFeedbackClient {
                 - missionDecision.presentSlots is the learner answer's content inventory. Use only these slot names: ACTION, SITUATION, REASON, DETAIL, EXAMPLE, FEELING, RESULT.
                 - missionDecision.missingSlots is the improvement inventory. Include only useful slots not already present. Do not list a slot in both presentSlots and missingSlots.
                 - missionDecision.chosenSlot is the exact content slot the learner should add next. For content missions it must equal chosenType/contentNeed and must appear in missingSlots. For GRAMMAR_FIX, EXPRESSION_POLISH, or TASK_RESET it must be NONE.
+                - If the learner has a rough but understandable reason clause such as "Because family go outside, so I need ready", put REASON in presentSlots and do not put REASON in missingSlots.
                 - If ACTION, SITUATION, and REASON are all in presentSlots, then DETAIL and SITUATION are not valid chosenSlot values unless the answer truly lacks a distinct concrete example. Prefer FEELING or RESULT for flat but understandable answers.
                 - If the learner already says where/when/context, do not choose SITUATION. If the learner already says why, do not choose REASON. If the learner already says what they do, do not choose DETAIL only to ask "what".
+                - If the prompt already says where/when/context, do not choose SITUATION merely because the learner did not repeat those words. Treat prompt-provided context as sufficient unless the learner's answer is ambiguous without it.
+                - If the prompt is a routine question shaped like "What do you usually do before/after/when X?", and the answer gives an on-topic action, missionDecision.presentSlots must include SITUATION and missionDecision.missingSlots must not include SITUATION.
+                - A SITUATION coachMission must not use a generic "When I ____, I ____." skeleton when the prompt already contains before/after/when/where context.
+                - Invalid pair: prompt says "before/after/when X" + answer gives an action + coachMission.missionType=SITUATION. Never produce this pair.
                 - grammarPriority means whether grammar should win the top mission:
                   * BLOCKING: grammar prevents the learner from answering the question clearly.
                   * HIGH_VALUE_LOCAL: one local repair is more important than any content add-on.
@@ -3242,10 +3294,11 @@ public class OpenAiFeedbackClient {
                 - Before choosing TASK_RESET, ask: does the answer contain any prompt-relevant anchor? If yes, chosenType must be the missing-slot mission instead.
                 - If the answer contains no prompt-relevant anchor, chosenType must be TASK_RESET. Do not choose SITUATION, REASON, DETAIL, EXAMPLE, FEELING, or RESULT for a completely unrelated answer.
                 - If taskCompletion is PARTIAL, chosenType should normally be the missing required slot: REASON for missing/generic why, EXAMPLE for missing proof, DETAIL for missing concrete action/detail, SITUATION for missing time/place/context, FEELING or RESULT for missing personal reaction/outcome.
-                - SITUATION means adding when/where/context. Do not use it as a generic "make richer" bucket for missing reasons or examples.
+                - SITUATION means adding genuinely missing when/where/context. Do not use it as a generic "make richer" bucket, and do not use it to restate context already present in the prompt.
                 - If the answer is made of broken word-order fragments and needs a sentence frame before any content can be added, choose GRAMMAR_FIX even if a reason/detail is also missing.
                 - If the answer has two or more sentence-frame errors such as missing `to`, missing possessive object, wrong verb pattern, missing preposition after listen/look/go, or wrong emotional adjective after make me, set grammarPriority=BLOCKING and choose GRAMMAR_FIX before adding content.
-                - For already complete answers with clear required slots, set finishable=true and choose no add-on mission just to make the answer longer. A good action plus reason should be allowed to finish.
+                - For already complete answers with clear required slots, set finishable=true only when no high-value local expression or grammar repair remains. A good action plus reason should be allowed to finish, but not if the core action/reason/result wording is objectively awkward.
+                - For already complete answers, optional improvements belong in refinementExpressions. Do not use coachMission for "could be more natural" unless the current wording is visibly confusing, wrong, or uses an unnatural verb pattern/collocation in a required clause.
                 - If meaningClarity is CLEAR or PARTLY_CLEAR, contentNeed is not NONE, and grammarPriority is NONE or LOW_VALUE_POLISH, chosenType must be the contentNeed value, not GRAMMAR_FIX or EXPRESSION_POLISH.
                 - If the answer is understandable but thin, pick the most useful add-on mission even if there are small grammar issues. Put those small issues in missionDecision.minorFixes and later fixPoints.
                 - Treat flat/generic endings or generic reasons as contentNeed, not polish: examples include "That is all", "I feel good", "It is fun", "because I am tired", "give me energy", and vague future/job reasons.
@@ -3260,34 +3313,60 @@ public class OpenAiFeedbackClient {
                 - EXPRESSION_POLISH is a last-resort mission for an answer that is already personal and sufficiently developed. Do not use it as a shortcut for a visible correction pair when a stronger GRAMMAR_FIX or content add-on mission exists.
                 - If an answer is only one plain sentence with no reason, feeling, result, example, or concrete support, do not choose EXPRESSION_POLISH. Choose the missing content slot instead.
                 - When several local fixes exist, do not pick the tiniest polish. Either choose the highest-value local repair that affects the core action, or choose a content add-on if the answer is understandable but flat.
-                - If chosenType is REASON, DETAIL, SITUATION, EXAMPLE, FEELING, or RESULT, addOnExampleEn must be a complete, natural, learner-specific sentence that can be added to the current answer. It must reuse concrete nouns/actions from the learner answer and may add one plausible detail.
+                - If chosenType is REASON, DETAIL, SITUATION, EXAMPLE, FEELING, or RESULT, prepare a sentence skeleton and phrase options rather than one complete sentence to copy.
+                - missionDecision.addOnExampleEn is legacy context only. It may be null and must not be the source of the visible top-card guidance.
+                - For add-on missions, the visible guidance must come from coachMission.skeletonEn, coachMission.skeletonKo, and coachMission.suggestedPhrases.
+                - For REASON, skeletonEn should contain a causal slot such as "I do this because ____." and suggestedPhrases should include reason phrases.
+                - For FEELING, skeletonEn should contain a feeling slot such as "It makes me feel ____." and suggestedPhrases should include feeling words or short reaction phrases.
+                - For RESULT, skeletonEn should contain an outcome slot such as "After that, I can ____." and suggestedPhrases should include result/outcome phrases.
+                - For SITUATION, skeletonEn should contain a time/place/context slot such as "When I ____, I ____." and suggestedPhrases should include time/place/context phrases.
+                - Do not return a situation skeleton for a FEELING mission, a feeling skeleton for a REASON mission, or phrase options that only repeat the current answer without supporting the requested slot.
                 - For add-on missions, addOnPlacementKo must explain exactly where the new sentence belongs, such as after the main answer, after the action, before the reason, or at the end.
                 - whyChosenKo must explain why this mission is the most useful next action for this answer.
                 - whyNotGrammarFirstKo must explain why grammar is not first when grammarPriority is LOW_VALUE_POLISH. Use null only when grammar is chosen or there is no visible grammar issue.
                 - minorFixes should contain only small grammar/naturalness edits that should not steal the top mission.
-                - Do not create a generic add-on mission. If chosenType is content-based, the learner should be able to copy the idea in addOnExampleEn and know what to add.
+                - Do not create a generic add-on mission. If chosenType is content-based, the learner should be able to use skeletonEn plus suggestedPhrases to know what to add without copying a full answer.
 
                 coachMission rules:
                 - Always return coachMission as the single visible action for the top feedback card.
                 - coachMission must be built from missionDecision. Every visible section should support this one mission.
                 - coachMission.title must be a concrete Korean mission name the learner can do immediately, not a vague label such as "디테일 추가" or "한 가지 더 추가".
+                - Choose coachMission.title from these recommended titles only. REASON: "이유 한 문장 더하기"; DETAIL: "구체적인 정보 더하기"; SITUATION: "상황 한 문장 더하기"; EXAMPLE: "예시 한 문장 더하기"; FEELING: "느낌 한 문장 더하기"; RESULT: "결과 한 문장 더하기"; TASK_RESET: "질문에 맞게 다시 쓰기"; EXPRESSION_POLISH: "표현 더 자연스럽게 고치기"; GRAMMAR_FIX: choose one of "문장 구조 바로잡기", "동사 형태 맞추기", "주어와 동사 맞추기", "관사 바로잡기", "전치사 바로잡기", "단수와 복수 맞추기", "문장부호 바로잡기".
                 - Choose missionType from REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, GRAMMAR_FIX, TASK_RESET, or EXPRESSION_POLISH.
                 - coachMission.missionType must exactly equal missionDecision.chosenType.
+                - coachMission.exampleEn is a legacy field. Prefer null.
+                - For add-on missions (REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, TASK_RESET), coachMission.skeletonEn is mandatory. It must be a short reusable English sentence frame with one or more blanks or slots, not a complete model answer.
+                - For add-on missions, coachMission.skeletonKo is mandatory. It must be a natural Korean meaning of the sentence frame, preserving blanks, for example skeletonEn="After that, it becomes easier to ____." skeletonKo="그 후에는 ____하기가 더 쉬워져요."
+                - For add-on missions, coachMission.suggestedPhrases is mandatory. Return 3 to 5 objects with phrase and meaningKo. phrase must be a short English phrase that can fit into skeletonEn or directly support the mission. meaningKo must be a concise Korean meaning, not a usage note.
                 - For GRAMMAR_FIX or EXPRESSION_POLISH, set coachMission.originalText to the exact learner span that should change and coachMission.revisedText to the directly corrected span. Keep both short, aligned, and replaceable.
+                - For GRAMMAR_FIX or EXPRESSION_POLISH, originalText and revisedText must use the same text scope. If originalText is a phrase, revisedText must be only the replacement phrase, not the whole corrected sentence.
+                - Bad scope pair: originalText="it makes me feel happy", revisedText="I like sweet food because it makes me happy." Good scope pair: originalText="it makes me feel happy", revisedText="it makes me happy".
+                - Do not include surrounding unchanged words in revisedText unless those same surrounding words are also included in originalText.
+                - For GRAMMAR_FIX or EXPRESSION_POLISH, set coachMission.skeletonEn=null, coachMission.skeletonKo=null, and coachMission.suggestedPhrases=[]. Do not add a sentence frame or phrase options for correction missions; the before/after comparison is the learner action.
                 - Never return the same text for coachMission.originalText and coachMission.revisedText. If there is no concrete before/after change, do not choose GRAMMAR_FIX or EXPRESSION_POLISH.
                 - The originalText/revisedText pair must match instructionKo exactly. If instructionKo says to remove or replace one connector such as "for that", originalText should be that connector or the smallest phrase around it, not a whole sentence that drops other ideas.
+                - For GRAMMAR_FIX or EXPRESSION_POLISH, instructionKo must describe the exact edit the learner should make, not a vague goal. Name the visible change: punctuation, connector, word order, subject, verb, article, tense, plural, preposition, or repeated word.
+                - For GRAMMAR_FIX, whyKo must explain why the edit improves the sentence in learner-friendly Korean: meaning clarity, natural word order, article choice, tense, subject-verb agreement, or punctuation. Do not only say "it sounds more natural."
+                - For GRAMMAR_FIX, whyKo must name the exact learner words or structure being fixed and the concrete rule. Do not use generic phrasing like "이 부분만 고치면" or "문장 구조가 좋아져요" by itself.
+                - Good GRAMMAR_FIX whyKo example: "`Because`절에는 주어와 동사가 필요해서 `family go`를 `my family is going`으로 고치고, `so` 없이 `I need to get ready`로 이어야 해요."
+                - successCheckKo is deprecated for the visible mission card. Return null.
+                - Bad instructionKo: "같은 뜻을 자연스러운 영어 문장으로 고쳐 보세요."
+                - Good instructionKo: "마침표를 쉼표로 바꾸고, When절 뒤에 주어와 동사가 이어지게 한 문장으로 써 보세요."
                 - For REASON, DETAIL, SITUATION, EXAMPLE, FEELING, RESULT, or TASK_RESET, set coachMission.originalText and coachMission.revisedText to null.
-                - Do not put an optional add-on example into revisedText. exampleEn is only an imitation example or starter, not the green comparison sentence.
+                - Do not put an optional add-on example into revisedText. For add-on missions, skeletonEn is the sentence frame, skeletonKo is its Korean meaning, and suggestedPhrases are the learner's choice bank.
+                - For TASK_RESET, coachMission.skeletonEn must be a prompt-specific starter frame with blanks, not a complete answer to copy.
                 - If the prompt asks for multiple parts, choose a mission that fills the most important missing part rather than a vague "make it richer" instruction.
                 - Do not make coachMission ask for a slot the learner already answered. If action, place/context, and reason are present, coachMission should ask for feeling/result only when more support is still useful.
                 - If the learner answered at least one prompt-relevant part, do not use TASK_RESET. Give a concrete missing-slot mission instead.
-                - If coachMission is TASK_RESET, title, instructionKo, and successCheckKo must explicitly name the current prompt topic and the part the learner must answer from scratch.
+                - If coachMission is TASK_RESET, title and instructionKo must explicitly name the current prompt topic and the part the learner must answer from scratch.
                 - If the answer has no prompt-relevant anchor, coachMission.missionType must be TASK_RESET and the instruction must tell the learner to answer the actual question from scratch.
                 - If the answer is a broken fragment sequence such as "home go. dinner eat", coachMission.missionType should normally be GRAMMAR_FIX with a short originalText/revisedText comparison pair.
                 - If the learner already answered the basic question but sounds thin, choose one concrete add-on mission: a reason, situation, example, feeling, or result.
                 - For add-on missions, instructionKo must name exactly what kind of sentence to add and where to add it.
-                - For add-on missions, coachMission.exampleEn should match missionDecision.addOnExampleEn or be a very close adaptation of it.
-                - successCheckKo must be a simple condition the learner can verify after rewriting.
+                - For add-on missions, coachMission.skeletonEn must be a sentence pattern the learner can complete, not a finished sentence to copy.
+                - For add-on missions, coachMission.skeletonKo must translate the sentence pattern naturally in Korean and keep the blank position understandable.
+                - For add-on missions, coachMission.skeletonEn, skeletonKo, and suggestedPhrases must match coachMission.missionType in content, not only in wording. For FEELING, include feeling slots and words such as relaxed, happy, worried, tired, proud, comfortable, or similar. For REASON, include a because/since/so slot and causal phrases. For RESULT, include after that/then/so/helped/made/could style outcome phrases. For SITUATION, include when/after/before/at/in/on/during/while style context phrases.
+                - If coachMission.missionType is REASON, skeletonEn must ask for a reason and suggestedPhrases must include reason-like options. A plain routine phrase such as "every day" is not enough by itself.
                 - Do not use a correction-first priority. If the learner's meaning is understandable and the answer is thin, choose an add-on mission first even when there are small local grammar or naturalness issues.
                 - Use EXPRESSION_POLISH as the top mission only when the answer already has enough personal support and contentOpportunity is NONE.
                 - Do not use EXPRESSION_POLISH to repair a flat closing phrase such as "That is all"; turn that into a meaningful RESULT, FEELING, DETAIL, or REASON mission instead.
@@ -3298,13 +3377,29 @@ public class OpenAiFeedbackClient {
                 - A single small collocation, article, plural, or subject-verb agreement fix is usually not enough reason to choose GRAMMAR_FIX if the answer needs one more personal detail, feeling, result, or example.
                 - For comparison missions, placeholderEn must still be a full rewrite frame or sentence starter, not just the revisedText fragment.
                 - For CONTENT_THIN or SHORT_BUT_VALID answers, prefer a specific add-on mission such as reason, detail, situation, example, feeling, or result.
-                - For GRAMMAR_BLOCKING answers, make the mission about the one most important repair and include the corrected phrase as exampleEn when possible.
+                - For GRAMMAR_BLOCKING answers, make the mission about the one most important repair and use originalText/revisedText to show the corrected phrase.
                 - whyKo should explain why this one mission helps the current answer in one short Korean sentence.
                 - instructionKo should tell the learner exactly what to add or fix in one actionable Korean sentence.
-                - exampleEn must be one short English sentence or phrase the learner can imitate.
-                - placeholderEn must be a short starter with blanks or a reusable frame, for example "I like it because ____.".
+                - For add-on missions, skeletonEn must be one non-empty English sentence frame the learner can complete.
+                - For add-on missions, skeletonKo must be one concise Korean translation/meaning of skeletonEn and should keep the blank position understandable.
+                - For add-on missions, suggestedPhrases[].phrase must be short, distinct, and usable inside or near skeletonEn. Do not return full completed answers as suggestedPhrases.
+                - For add-on missions, suggestedPhrases[].meaningKo must translate the phrase naturally in Korean, for example {"phrase":"check the forecast first","meaningKo":"먼저 일기예보를 확인하다"}.
+                - For add-on missions, if skeletonEn, skeletonKo, or suggestedPhrases do not directly satisfy the missionType, rewrite them before returning JSON.
+                - For add-on missions, do not copy modelAnswer into skeletonEn, and do not use an example from refinementExpressions or another section as a substitute.
+                - placeholderEn should usually match skeletonEn or be a slightly simpler rewrite starter, for example "I like it because ____.".
                 - targetHintKo must say where to put the mission in the rewrite.
-                - successCheckKo must define a simple success condition for the rewrite.
+                - successCheckKo must be null.
+
+                Final self-check before JSON:
+                - Does missionDecision.chosenType exactly match coachMission.missionType?
+                - Do instructionKo, targetHintKo, and the first fixPoint describe the same concrete action?
+                - For add-on missions, are coachMission.skeletonEn and coachMission.skeletonKo non-empty, learner-usable, and do they prove the missionType instead of repeating the current answer or modelAnswer?
+                - For add-on missions, do coachMission.suggestedPhrases give 3-5 phrase options with Korean meanings that fit the skeleton and support the same missionType?
+                - For GRAMMAR_FIX or EXPRESSION_POLISH, are coachMission.skeletonEn=null, coachMission.skeletonKo=null, and coachMission.suggestedPhrases=[]?
+                - For every correction, are coachMission.originalText, fixPoints.originalText, grammarIssues.span, and minimalCorrection based on wording present in the CURRENT LEARNER ANSWER, not only in history.previousAnswerOnlyDoNotEvaluateAsCurrent?
+                - If finishable=true, are the required prompt parts answered and no high-value local expression or grammar repair remains?
+                - Did you avoid repeating previousCoachingSummary or swapping between equivalent acceptable expressions again?
+                - If any answer is no, revise the JSON before returning it.
 
                 modelAnswer rules:
                 - modelAnswer should read like a natural reference rewrite, not the main feedback.
@@ -3330,8 +3425,10 @@ public class OpenAiFeedbackClient {
                 Prompt hints:
                 %s
 
-                Learner answer:
+                CURRENT LEARNER ANSWER - evaluate this text only:
+                <current_answer>
                 %s
+                </current_answer>
                 """.formatted(
                 analysisContext,
                 allowedExpressionTags,
@@ -3462,6 +3559,33 @@ public class OpenAiFeedbackClient {
         return List.copyOf(values);
     }
 
+    private List<FeedbackSuggestedPhraseDto> suggestedPhraseArray(JsonNode node) {
+        if (node == null || node.isMissingNode() || node.isNull() || !node.isArray()) {
+            return List.of();
+        }
+        List<FeedbackSuggestedPhraseDto> values = new ArrayList<>();
+        node.forEach(item -> {
+            if (item == null || item.isNull()) {
+                return;
+            }
+            if (item.isObject()) {
+                FeedbackSuggestedPhraseDto phrase = new FeedbackSuggestedPhraseDto(
+                        textOrNull(item.path("phrase")),
+                        textOrNull(item.path("meaningKo"))
+                );
+                if (phrase.phrase() != null) {
+                    values.add(phrase);
+                }
+                return;
+            }
+            String value = textOrNull(item);
+            if (value != null) {
+                values.add(new FeedbackSuggestedPhraseDto(value));
+            }
+        });
+        return List.copyOf(values);
+    }
+
     private FeedbackCoachMissionDto parseCoachMission(JsonNode node) {
         if (node == null || node.isMissingNode() || node.isNull()) {
             return null;
@@ -3474,6 +3598,9 @@ public class OpenAiFeedbackClient {
                 textOrNull(node.path("whyKo")),
                 textOrNull(node.path("instructionKo")),
                 textOrNull(node.path("exampleEn")),
+                textOrNull(node.path("skeletonEn")),
+                textOrNull(node.path("skeletonKo")),
+                suggestedPhraseArray(node.path("suggestedPhrases")),
                 textOrNull(node.path("placeholderEn")),
                 textOrNull(node.path("targetHintKo")),
                 textOrNull(node.path("successCheckKo"))
@@ -4462,8 +4589,10 @@ public class OpenAiFeedbackClient {
                     - When the answer supports it, prefer several useful refinementExpressions instead of stopping after one.
                     """;
             case NATURAL_BUT_BASIC -> """
-                    - Prioritize optional polish and naturalness over major correction.
-                    - Prefer fixPoints that teach one small naturalness or phrasing upgrade.
+                    - Prioritize loop completion and learner confidence over another optional style swap.
+                    - Prefer finishable=true when the prompt is answered and no meaningful local expression or grammar repair remains.
+                    - If the answer is clear but still has an awkward core collocation, verb pattern, connector, or time expression that would look weak in a final submission, keep finishable=false and teach that one repair.
+                    - Only teach one small naturalness or phrasing upgrade if it is genuinely new and not an equivalent-expression swap from previousCoachingSummary.
                     - Keep modelAnswer short, close to learner meaning, and low-pressure.
                     - Put optional polish, smoother wording, and extra detail into refinementExpressions instead of overloading modelAnswer.
                     """;
@@ -5010,17 +5139,22 @@ public class OpenAiFeedbackClient {
         if (taskCompletion != TaskCompletion.FULL && !hasConcreteGoalCompletionCue(learnerAnswer)) {
             return false;
         }
-        if (!isSubmissionReadyForCompletion(learnerAnswer, answerProfile, grammarFeedback)) {
+        if (!isSubmissionReadyForCompletion(learnerAnswer, diagnosis, answerProfile, grammarFeedback)) {
             return false;
         }
-        return finishable || shouldAutoComplete(answerBand, learnerAnswer, answerProfile);
+        return finishable || shouldAutoComplete(answerBand, learnerAnswer, answerProfile, diagnosis, grammarFeedback);
     }
 
     private boolean shouldAutoComplete(
             AnswerBand answerBand,
             String learnerAnswer,
-            AnswerProfile answerProfile
+            AnswerProfile answerProfile,
+            FeedbackDiagnosisResult diagnosis,
+            List<GrammarFeedbackItemDto> grammarFeedback
     ) {
+        if (!canAutoCompleteWithLocalQuality(diagnosis, grammarFeedback)) {
+            return false;
+        }
         if (answerBand != AnswerBand.NATURAL_BUT_BASIC) {
             return answerBand == AnswerBand.CONTENT_THIN
                     && countWords(learnerAnswer) >= 12
@@ -5031,6 +5165,26 @@ public class OpenAiFeedbackClient {
         return hasRequiredSupportClause(answerProfile)
                 && !hasGenericAdjectiveReason(learnerAnswer)
                 && !hasFlatClosing(learnerAnswer);
+    }
+
+    private boolean canAutoCompleteWithLocalQuality(
+            FeedbackDiagnosisResult diagnosis,
+            List<GrammarFeedbackItemDto> grammarFeedback
+    ) {
+        if (diagnosis != null) {
+            if (diagnosis.grammarImpact() == GrammarImpact.LOCAL
+                    || diagnosis.grammarImpact() == GrammarImpact.BLOCKING) {
+                return false;
+            }
+            if (diagnosis.grammarSeverity().ordinal() >= GrammarSeverity.MODERATE.ordinal()) {
+                return false;
+            }
+            if (countMeaningfulDiagnosedGrammarIssues(diagnosis) >= 2) {
+                return false;
+            }
+        }
+
+        return countMeaningfulGrammarFixes(grammarFeedback) == 0;
     }
 
     private boolean hasStrongCompletionSignals(AnswerProfile answerProfile) {
@@ -5056,9 +5210,22 @@ public class OpenAiFeedbackClient {
 
     private boolean isSubmissionReadyForCompletion(
             String learnerAnswer,
+            FeedbackDiagnosisResult diagnosis,
             AnswerProfile answerProfile,
             List<GrammarFeedbackItemDto> grammarFeedback
     ) {
+        if (diagnosis != null) {
+            if (diagnosis.grammarImpact() == GrammarImpact.LOCAL
+                    || diagnosis.grammarImpact() == GrammarImpact.BLOCKING) {
+                return false;
+            }
+            if (diagnosis.grammarSeverity().ordinal() >= GrammarSeverity.MODERATE.ordinal()) {
+                return false;
+            }
+            if (countMeaningfulDiagnosedGrammarIssues(diagnosis) >= 2) {
+                return false;
+            }
+        }
         if (answerProfile == null || answerProfile.grammar() == null) {
             return true;
         }
@@ -5066,7 +5233,28 @@ public class OpenAiFeedbackClient {
         if (grammar.severity().ordinal() > GrammarSeverity.MINOR.ordinal()) {
             return false;
         }
-        return true;
+        return countMeaningfulGrammarFixes(grammarFeedback) < 2;
+    }
+
+    private int countMeaningfulDiagnosedGrammarIssues(FeedbackDiagnosisResult diagnosis) {
+        if (diagnosis == null || diagnosis.grammarIssues() == null || diagnosis.grammarIssues().isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        for (DiagnosedGrammarIssue issue : diagnosis.grammarIssues()) {
+            if (issue == null) {
+                continue;
+            }
+            String span = issue.span() == null ? "" : issue.span();
+            String correction = issue.correction() == null ? "" : issue.correction();
+            if (!span.isBlank()
+                    && !correction.isBlank()
+                    && !isCosmeticOnlyChange(span, correction)
+                    && issue.severity().ordinal() >= GrammarSeverity.MINOR.ordinal()) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private boolean hasRequiredSupportClause(AnswerProfile answerProfile) {
@@ -5131,12 +5319,12 @@ public class OpenAiFeedbackClient {
             List<GrammarFeedbackItemDto> grammarFeedback
     ) {
         if (isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
-            return "좋아요. 이 답안은 질문에 맞게 핵심과 이유가 잘 보이기 때문에, 지금 단계에서 루프를 마무리해도 충분해요.";
+            return "이미 좋아요. 원하면 위 제안만 가볍게 반영해 보세요.";
         }
         if (!isLoopComplete(learnerAnswer, diagnosis, answerProfile, corrections, grammarFeedback)) {
             return null;
         }
-        return "좋아요. 필요한 핵심은 이미 들어 있어서, 조금만 더 다듬어도 되고 지금 마무리해도 충분해요.";
+        return "이미 좋아요. 원하면 위 제안만 가볍게 반영해 보세요.";
     }
 
 }

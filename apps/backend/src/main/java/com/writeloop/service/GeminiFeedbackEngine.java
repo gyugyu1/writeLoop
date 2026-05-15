@@ -39,6 +39,18 @@ class GeminiFeedbackEngine implements FeedbackLlmEngine {
     }
 
     @Override
+    public FeedbackResponseDto review(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptIndex,
+            String previousAnswer,
+            String previousCoachingSummary
+    ) {
+        return delegate.review(prompt, answer, hints, attemptIndex, previousAnswer, previousCoachingSummary);
+    }
+
+    @Override
     public boolean isAuthoritativeFeedback(FeedbackResponseDto feedback) {
         return delegate.isAuthoritativeFeedback(feedback);
     }

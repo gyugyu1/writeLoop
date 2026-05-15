@@ -115,10 +115,14 @@ class OpenAiFeedbackClientTest {
                 .contains("TASK_RESET is a last-resort reset")
                 .contains("If the answer contains no prompt-relevant anchor, chosenType must be TASK_RESET")
                 .contains("If taskCompletion is PARTIAL")
-                .contains("SITUATION means adding when/where/context")
+                .contains("SITUATION means adding genuinely missing when/where/context")
+                .contains("A malformed causal sentence is REASON present, not REASON missing")
+                .contains("Because family go outside, so I need ready")
                 .contains("fill missionDecision.presentSlots with content slots already present")
                 .contains("Do not choose a mission that asks for a content slot already present")
                 .contains("If the learner already says what they do, where/when/context, and why")
+                .contains("A prompt can already supply the situation/context")
+                .contains("SITUATION is forbidden when the prompt itself already supplies the relevant time/place/context")
                 .contains("commute, routine, or free-time answers that already include action + place/context + reason")
                 .contains("broken word-order fragments")
                 .contains("Never set EXPRESSION_POLISH for")
@@ -126,7 +130,15 @@ class OpenAiFeedbackClientTest {
                 .contains("it is delicious")
                 .contains("Never return the same text for coachMission.originalText")
                 .contains("If meaningClarity is CLEAR or PARTLY_CLEAR, contentNeed is not NONE")
-                .contains("For add-on missions, coachMission.exampleEn should match missionDecision.addOnExampleEn")
+                .contains("whyKo must name the exact learner words or structure being fixed")
+                .contains("family go")
+                .contains("I need to get ready")
+                .contains("Choose coachMission.title from these recommended titles only")
+                .contains("GRAMMAR_FIX: choose one of")
+                .contains("For add-on missions, coachMission.skeletonEn, coachMission.skeletonKo, and coachMission.suggestedPhrases")
+                .contains("For GRAMMAR_FIX or EXPRESSION_POLISH, set coachMission.skeletonEn=null")
+                .contains("coachMission.skeletonKo=null")
+                .contains("For add-on missions, the visible guidance must come from coachMission.skeletonEn, coachMission.skeletonKo, and coachMission.suggestedPhrases")
                 .contains("Do not rely on a generic backend fallback");
     }
 
@@ -169,12 +181,16 @@ class OpenAiFeedbackClientTest {
                 .path("refinementExpressions")
                 .path("items")
                 .path("properties");
+        JsonNode coachMissionProperties = schemaProperties.path("coachMission").path("properties");
         String promptText = request.path("input").get(0).path("content").get(0).path("text").asText("");
 
         assertThat(usedExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
         assertThat(usedExpressionProperties.path("tags").isMissingNode()).isFalse();
         assertThat(refinementExpressionProperties.path("exampleEn").isMissingNode()).isFalse();
         assertThat(refinementExpressionProperties.path("guidanceKo").isMissingNode()).isFalse();
+        assertThat(coachMissionProperties.path("skeletonEn").isMissingNode()).isFalse();
+        assertThat(coachMissionProperties.path("skeletonKo").isMissingNode()).isFalse();
+        assertThat(coachMissionProperties.path("suggestedPhrases").isMissingNode()).isFalse();
         assertThat(schemaProperties.has("modelAnswerVariants")).isFalse();
         assertThat(promptText)
                 .contains("Prefer phrase-level reusable chunks such as verb phrases, habit frames, time-flow frames, or reason connectors")
@@ -183,6 +199,8 @@ class OpenAiFeedbackClientTest {
                 .contains("usedExpressions.tags must contain 2 to 6 tags")
                 .contains("Tag the reusable expression itself, not the surrounding example sentence or answer context.")
                 .contains("refinementExpressions are the single source")
+                .contains("When finishable=true, return 3 to 5 refinementExpressions")
+                .contains("The completion screen uses these as the learner's useful \"continue polishing or finish\" choice")
                 .contains("exampleEn must not be identical to expression")
                 .doesNotContain("modelAnswerVariants rules");
     }
@@ -810,6 +828,33 @@ class OpenAiFeedbackClientTest {
     }
 
     @Test
+    void sanitizeCoachMissionKeepsGeneratedTitle() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
+                "GRAMMAR_FIX",
+                "첫 문장 표현 다듬기",
+                "I thought success means get a good job, make much money, and be a little famous.",
+                "I thought success meant getting a good job, making a lot of money, and being somewhat famous.",
+                "과거 생각을 설명하는 문장이라 동사 형태를 맞추면 더 자연스럽습니다.",
+                "I thought 뒤의 동사 형태를 과거와 -ing 형태로 맞춰 보세요.",
+                "I thought success meant getting a good job.",
+                "I thought success meant ____, ____, and ____.",
+                "동사 형태를 맞춰 보세요.",
+                "getting / making / being 형태가 보이면 성공입니다."
+        );
+
+        FeedbackCoachMissionDto sanitized = ReflectionTestUtils.invokeMethod(
+                client,
+                "sanitizeCoachMission",
+                generatedMission,
+                sampleDiagnosis()
+        );
+
+        assertThat(sanitized).isNotNull();
+        assertThat(sanitized.title()).isEqualTo("첫 문장 표현 다듬기");
+    }
+
+    @Test
     void resolveMissionSourceOfTruthDowngradesReadyAnswerGrammarFixToExpressionPolish() {
         OpenAiFeedbackClient client = newClient();
         FeedbackCoachMissionDto generatedMission = new FeedbackCoachMissionDto(
@@ -897,6 +942,49 @@ class OpenAiFeedbackClientTest {
         );
 
         assertThat(complete).isTrue();
+    }
+
+    @Test
+    void isLoopCompleteRejectsFinishableWhenLocalCoreRepairRemains() {
+        OpenAiFeedbackClient client = newClient();
+        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
+                86,
+                AnswerBand.NATURAL_BUT_BASIC,
+                TaskCompletion.FULL,
+                true,
+                true,
+                MeaningClarity.CLEAR,
+                GrammarImpact.LOCAL,
+                ContentOpportunity.NONE,
+                "The answer is understandable, but the core solution phrase still needs one local repair.",
+                GrammarSeverity.MINOR,
+                List.of(new DiagnosedGrammarIssue(
+                        "COLLOCATION",
+                        "postpone my work tomorrow",
+                        "put off some work until tomorrow",
+                        "The time expression and verb pattern need to be natural before completion.",
+                        false,
+                        GrammarSeverity.MINOR
+                )),
+                "When I try to balance work and rest, I often have too much work. To handle this problem, I put off some work until tomorrow.",
+                "IMPROVE_NATURALNESS",
+                null,
+                new RewriteTarget("IMPROVE_NATURALNESS", null, 0),
+                ExpansionBudget.NONE,
+                List.of()
+        );
+
+        Boolean complete = ReflectionTestUtils.invokeMethod(
+                client,
+                "isLoopComplete",
+                "When I'm trying to balance work and rest, I often face endless work. To handle this problem I postpone my work tomorrow.",
+                diagnosis,
+                supportedCompleteProfile(),
+                List.of(),
+                List.of()
+        );
+
+        assertThat(complete).isFalse();
     }
 
     @Test

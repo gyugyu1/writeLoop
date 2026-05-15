@@ -93,6 +93,36 @@ function pickFirstNonEmpty(...values: (string | null | undefined)[]) {
   return "";
 }
 
+function countComparableWords(text: string) {
+  return text.match(/[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?/g)?.length ?? 0;
+}
+
+function isDiffScopeAligned(original: string, revised: string) {
+  const originalWords = countComparableWords(original);
+  const revisedWords = countComparableWords(revised);
+  if (!originalWords || !revisedWords) {
+    return true;
+  }
+
+  const shorter = Math.min(originalWords, revisedWords);
+  const longer = Math.max(originalWords, revisedWords);
+  const wordDelta = longer - shorter;
+
+  return wordDelta <= 3 || longer / shorter <= 1.45;
+}
+
+function shouldShowFixComparison(original: string, revised: string) {
+  if (!original && !revised) {
+    return false;
+  }
+
+  if (!original || !revised || original === revised) {
+    return true;
+  }
+
+  return isDiffScopeAligned(original, revised);
+}
+
 function normalizeExpressionTags(tags?: (string | null | undefined)[] | null) {
   if (!Array.isArray(tags)) {
     return [];
@@ -704,7 +734,7 @@ function renderDiffSegment(
 }
 
 function renderFixDiffText(original: string, revised: string, mode: "original" | "revised") {
-  if (original && revised && original !== revised) {
+  if (original && revised && original !== revised && shouldShowFixComparison(original, revised)) {
     const segments = buildInlineFeedbackSegments(original, revised, null);
     if (segments.length > 0) {
       return segments.map((segment, index) => renderDiffSegment(segment, mode, index, "fix"));
@@ -991,32 +1021,36 @@ export function PracticeFeedbackContent({
             <View style={styles.feedbackCard}>
               <Text style={[styles.sectionHeading, styles.sectionHeadingFix]}>고쳐볼 점</Text>
               <View style={styles.fixStack}>
-                {fixItems.map((item, index) => (
-                  <View
-                    key={item.key}
-                    style={[styles.fixItem, index > 0 && styles.fixItemDivider]}
-                  >
-                    {item.reasonLines.map((line) => (
-                      <Text key={`${item.key}-${line}`} style={styles.fixReasonLine}>
-                        {`\u2022 ${line}`}
-                      </Text>
-                    ))}
-                    {item.original ? (
-                      <View style={[styles.fixSentenceCard, styles.fixSentenceCardOriginal]}>
-                        <Text style={[styles.fixSentenceText, styles.fixSentenceTextOriginal]}>
-                          {renderFixDiffText(item.original, item.revised, "original")}
+                {fixItems.map((item, index) => {
+                  const showComparison = shouldShowFixComparison(item.original, item.revised);
+
+                  return (
+                    <View
+                      key={item.key}
+                      style={[styles.fixItem, index > 0 && styles.fixItemDivider]}
+                    >
+                      {item.reasonLines.map((line) => (
+                        <Text key={`${item.key}-${line}`} style={styles.fixReasonLine}>
+                          {`\u2022 ${line}`}
                         </Text>
-                      </View>
-                    ) : null}
-                    {item.revised ? (
-                      <View style={[styles.fixSentenceCard, styles.fixSentenceCardRevised]}>
-                        <Text style={[styles.fixSentenceText, styles.fixSentenceTextRevised]}>
-                          {renderFixDiffText(item.original, item.revised, "revised")}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                ))}
+                      ))}
+                      {showComparison && item.original ? (
+                        <View style={[styles.fixSentenceCard, styles.fixSentenceCardOriginal]}>
+                          <Text style={[styles.fixSentenceText, styles.fixSentenceTextOriginal]}>
+                            {renderFixDiffText(item.original, item.revised, "original")}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {showComparison && item.revised ? (
+                        <View style={[styles.fixSentenceCard, styles.fixSentenceCardRevised]}>
+                          <Text style={[styles.fixSentenceText, styles.fixSentenceTextRevised]}>
+                            {renderFixDiffText(item.original, item.revised, "revised")}
+                          </Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
               </View>
             </View>
           ) : null}

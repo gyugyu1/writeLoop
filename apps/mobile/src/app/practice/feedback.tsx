@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -28,7 +29,6 @@ import {
   submitFeedback
 } from "@/lib/api";
 import { getOrCreateGuestId } from "@/lib/guest-id";
-import { buildIncompleteLoopPromptSnapshot, saveIncompleteLoop } from "@/lib/incomplete-loop";
 import {
   buildInlineFeedbackSegments,
   type RenderedInlineFeedbackSegment
@@ -41,14 +41,100 @@ import {
 } from "@/lib/practice-feedback-state";
 import { isDailyDifficulty } from "@/lib/practice";
 import { useSession } from "@/lib/session";
-import type { DailyDifficulty, FeedbackCoachMove, SavedExpressionSourceType } from "@/lib/types";
+import type {
+  DailyDifficulty,
+  FeedbackCoachMove,
+  RefinementExpression,
+  SavedExpressionSourceType
+} from "@/lib/types";
 
 const completionMascotImage = require("@/assets/images/feedback-completion-mascot.png");
 const COACH_MOVE_DIFF_MAX_CHARS = 700;
 const COACH_MOVE_DIFF_MAX_TOKENS = 140;
+const REWRITE_FEEDBACK_BUTTON_LABEL = "다시 피드백 받아보기";
+const REWRITE_OPEN_BUTTON_LABEL = "다시 다듬어 보기";
+const COMPLETION_READY_HEADLINE = "좋아요! 원하면 표현 하나만 더해 보세요.";
 
 function trimText(value?: string | null) {
   return value?.trim() ?? "";
+}
+
+function normalizeSuggestedPhrase(value: unknown) {
+  if (typeof value === "string") {
+    const phrase = trimText(value);
+    return phrase ? { phrase, meaningKo: "" } : null;
+  }
+  if (value && typeof value === "object") {
+    const candidate = value as { phrase?: unknown; meaningKo?: unknown };
+    const phrase = typeof candidate.phrase === "string" ? trimText(candidate.phrase) : "";
+    const meaningKo = typeof candidate.meaningKo === "string" ? trimText(candidate.meaningKo) : "";
+    return phrase ? { phrase, meaningKo } : null;
+  }
+  return null;
+}
+
+function normalizeCompletionRefinementPhrase(value?: RefinementExpression | null) {
+  if (!value || value.displayable === false) {
+    return null;
+  }
+
+  const phrase = trimText(value.expression);
+  if (!phrase) {
+    return null;
+  }
+
+  return {
+    phrase,
+    meaningKo: pickFirstNonEmpty(value.meaningKo, value.exampleKo),
+    guidanceKo: trimText(value.guidanceKo),
+    exampleEn: trimText(value.exampleEn)
+  };
+}
+
+function buildCompletionRefinementPhrases(expressions?: RefinementExpression[] | null) {
+  if (!Array.isArray(expressions)) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const phrases: NonNullable<ReturnType<typeof normalizeCompletionRefinementPhrase>>[] = [];
+
+  for (const expression of expressions) {
+    const phrase = normalizeCompletionRefinementPhrase(expression);
+    if (!phrase) {
+      continue;
+    }
+
+    const key = normalizeExpressionKey(phrase.phrase);
+    if (!key || seen.has(key)) {
+      continue;
+    }
+
+    seen.add(key);
+    phrases.push(phrase);
+  }
+
+  return phrases.slice(0, 4);
+}
+
+function renderFeedbackExpressionSaveIcon(saved: boolean, saving: boolean) {
+  if (saving) {
+    return <ActivityIndicator color="#8A5A1E" size="small" />;
+  }
+
+  return (
+    <SymbolView
+      name={{
+        ios: saved ? "bookmark.fill" : "bookmark",
+        android: saved ? "bookmark" : "bookmark_border",
+        web: saved ? "bookmark" : "bookmark_border"
+      }}
+      size={16}
+      weight="semibold"
+      tintColor={saved ? "#2F7A46" : "#8A5A1E"}
+      type="hierarchical"
+    />
+  );
 }
 
 function pickFirstNonEmpty(...values: (string | null | undefined)[]) {
@@ -74,7 +160,9 @@ function hasCoachMove(coachMove?: FeedbackCoachMove | null) {
       trimText(coachMove?.after) ||
       trimText(coachMove?.instruction) ||
       trimText(coachMove?.exampleEn) ||
-      trimText(coachMove?.successCheck)
+      trimText(coachMove?.skeletonEn) ||
+      (Array.isArray(coachMove?.suggestedPhrases) &&
+        coachMove.suggestedPhrases.some((phrase) => normalizeSuggestedPhrase(phrase)))
   );
 }
 
@@ -103,14 +191,49 @@ function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
   ].includes(focusType);
 }
 
+function isGrammarCoachMove(coachMove?: FeedbackCoachMove | null) {
+  const focusType = trimText(coachMove?.focusType).toUpperCase();
+  return [
+    "MICRO_FIX",
+    "GRAMMAR",
+    "GRAMMAR_FIX",
+    "LOCAL_GRAMMAR",
+    "FIX_LOCAL_GRAMMAR",
+    "BLOCKING_GRAMMAR",
+    "FIX_BLOCKING_GRAMMAR",
+    "EXPRESSION",
+    "EXPRESSION_POLISH"
+  ].includes(focusType);
+}
+
 function countDiffTokens(text: string) {
   return text.match(/[A-Za-z0-9']+|[^\sA-Za-z0-9']+|\s+/g)?.length ?? 0;
+}
+
+function countComparableWords(text: string) {
+  return text.match(/[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?/g)?.length ?? 0;
+}
+
+function isCoachMoveDiffScopeAligned(original: string, revised: string) {
+  const originalWords = countComparableWords(original);
+  const revisedWords = countComparableWords(revised);
+  if (!originalWords || !revisedWords) {
+    return true;
+  }
+
+  const shorter = Math.min(originalWords, revisedWords);
+  const longer = Math.max(originalWords, revisedWords);
+  const wordDelta = longer - shorter;
+
+  // Phrase-vs-sentence comparisons create misleading highlights.
+  return wordDelta <= 3 || longer / shorter <= 1.45;
 }
 
 function canBuildCoachMoveDiff(original: string, revised: string) {
   return (
     original.length + revised.length <= COACH_MOVE_DIFF_MAX_CHARS &&
-    countDiffTokens(original) + countDiffTokens(revised) <= COACH_MOVE_DIFF_MAX_TOKENS
+    countDiffTokens(original) + countDiffTokens(revised) <= COACH_MOVE_DIFF_MAX_TOKENS &&
+    isCoachMoveDiffScopeAligned(original, revised)
   );
 }
 
@@ -206,18 +329,21 @@ export default function PracticeFeedbackScreen() {
   const loopStatus = feedback?.ui?.loopStatus ?? null;
   const loopExperience = feedback?.loop ?? null;
   const coachMove = feedback?.coachMove ?? null;
-  const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
   const rewriteWorkspace = feedback?.rewriteWorkspace ?? null;
   const completion = feedback?.completion ?? null;
   const isLoopReadyToFinish =
     feedback?.loopComplete || loopExperience?.nextAction === "finish" || loopExperience?.status === "COMPLETE";
+  const shouldShowCoachMoveCard = !isLoopReadyToFinish && hasCoachMove(coachMove);
+  const completionRefinementPhrases = isLoopReadyToFinish
+    ? buildCompletionRefinementPhrases(feedback?.refinementExpressions)
+    : [];
+  const shouldShowCompletionRewriteChoice =
+    isLoopReadyToFinish && completionRefinementPhrases.length > 0;
+  const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
+  const shouldShowGrammarReasonLabel = isGrammarCoachMove(coachMove);
   const shouldShowInlineRewriteWorkspace =
     Boolean(feedbackState) && (!isLoopReadyToFinish || isCompletionRewriteOpen);
-  const rewriteButtonLabel = pickFirstNonEmpty(
-    loopExperience?.nextAction === "rewrite" ? loopExperience?.nextActionLabel : null,
-    loopStatus?.rewriteCtaLabel,
-    "그래도 더 다듬어서 써보기"
-  );
+  const rewriteButtonLabel = REWRITE_OPEN_BUTTON_LABEL;
   const finishButtonLabel = pickFirstNonEmpty(
     loopExperience?.nextAction === "finish" ? loopExperience?.nextActionLabel : null,
     loopStatus?.finishCtaLabel,
@@ -225,14 +351,18 @@ export default function PracticeFeedbackScreen() {
   );
   const shouldShowFinishButton = Boolean(finishButtonLabel);
   const shouldShowCompletionFooter = shouldShowFinishButton;
-  const completionHeadline = pickFirstNonEmpty(
-    completion?.headline,
-    loopExperience?.headline,
-    loopStatus?.headline,
-    feedback?.completionMessage,
-    feedback?.summary,
-    "좋아요. 지금 단계에서 마무리해도 충분해요."
-  );
+  const completionHeadline = isLoopReadyToFinish
+    ? completionRefinementPhrases.length > 0
+      ? COMPLETION_READY_HEADLINE
+      : "좋아요! 지금 단계에서 마무리해도 충분해요."
+    : pickFirstNonEmpty(
+        completion?.headline,
+        loopExperience?.headline,
+        loopStatus?.headline,
+        feedback?.completionMessage,
+        feedback?.summary,
+        COMPLETION_READY_HEADLINE
+      );
   const coachHeadline = pickFirstNonEmpty(
     coachMove?.focus,
     loopExperience?.headline,
@@ -247,19 +377,20 @@ export default function PracticeFeedbackScreen() {
     feedback?.rewriteChallenge,
     "의미는 유지하고 오늘의 한 가지 코치만 반영해 다시 써보세요."
   );
-  const coachExample = pickFirstNonEmpty(coachMove?.exampleEn);
+  const coachSkeleton = shouldShowGrammarReasonLabel ? "" : pickFirstNonEmpty(coachMove?.skeletonEn);
+  const coachSkeletonKo = shouldShowGrammarReasonLabel ? "" : pickFirstNonEmpty(coachMove?.skeletonKo);
+  const coachSuggestedPhrases = !shouldShowGrammarReasonLabel && Array.isArray(coachMove?.suggestedPhrases)
+    ? coachMove.suggestedPhrases.map(normalizeSuggestedPhrase).filter((phrase) => phrase !== null).slice(0, 6)
+    : [];
   const detailToggleLabel = showDetailedFeedback
     ? "자세한 피드백 접기"
     : pickFirstNonEmpty(loopExperience?.detailToggleLabel, "자세한 피드백 보기");
   const inlineRewriteSubmitLabel = isSubmittingRewrite
     ? "피드백 받는 중..."
-    : pickFirstNonEmpty(
-        !isLoopReadyToFinish && loopExperience?.nextAction === "rewrite"
-          ? loopExperience?.nextActionLabel
-          : null,
-        !isLoopReadyToFinish ? loopStatus?.rewriteCtaLabel : null,
-        isLoopReadyToFinish ? "다듬은 답변으로 피드백 받기" : "코치 반영해서 제출하기"
-      );
+    : REWRITE_FEEDBACK_BUTTON_LABEL;
+  const inlineRewriteHelpText = isLoopReadyToFinish
+    ? "이미 충분히 좋아요. 원하면 표현 하나만 가볍게 다듬어 보세요."
+    : "전체를 완벽하게 바꾸려 하지 말고, 위 코치 포인트 하나만 반영하면 돼요.";
 
   useEffect(() => {
     const inMemoryState = getPracticeFeedbackState(requestedDifficulty, requestedPromptId);
@@ -441,32 +572,6 @@ export default function PracticeFeedbackScreen() {
     handleBackToQuestions();
   }
 
-  async function handleRewrite() {
-    if (!feedbackState) {
-      handleBackToQuestions();
-      return;
-    }
-
-    await saveIncompleteLoop({
-      promptId: feedbackState.prompt.id,
-      difficulty: requestedDifficulty,
-      step: "rewrite",
-      draftType: "REWRITE",
-      sessionId: feedbackState.feedback.sessionId,
-      updatedAt: new Date().toISOString(),
-      promptSnapshot: buildIncompleteLoopPromptSnapshot(feedbackState.prompt)
-    });
-
-    router.push({
-      pathname: "/practice/write",
-      params: {
-        difficulty: requestedDifficulty,
-        promptId: feedbackState.prompt.id,
-        mode: "rewrite"
-      }
-    });
-  }
-
   function handleOpenCompletionRewrite() {
     setInlineRewriteY(null);
     setIsCompletionRewriteOpen(true);
@@ -501,6 +606,7 @@ export default function PracticeFeedbackScreen() {
       const nextState: PracticeFeedbackState = {
         difficulty: requestedDifficulty,
         prompt: feedbackState.prompt,
+        initialAnswer: feedbackState.initialAnswer ?? feedbackState.answer,
         answer: trimmedAnswer,
         feedback: nextFeedback
       };
@@ -585,6 +691,7 @@ export default function PracticeFeedbackScreen() {
             </View>
           ) : feedbackState ? (
             <>
+              {shouldShowCoachMoveCard ? (
               <View style={styles.coachMoveCard}>
                 <Text style={styles.coachMoveHeadline}>{coachHeadline}</Text>
 
@@ -624,12 +731,17 @@ export default function PracticeFeedbackScreen() {
                     ) : null}
 
                     {trimText(coachMove?.why) ? (
-                      <Text style={styles.coachMoveWhy}>{coachMove?.why}</Text>
+                      <View style={styles.coachMoveWhyBox}>
+                        {shouldShowGrammarReasonLabel ? (
+                          <Text style={styles.coachMoveWhyLabel}>왜 고치나요</Text>
+                        ) : null}
+                        <Text style={styles.coachMoveWhy}>{coachMove?.why}</Text>
+                      </View>
                     ) : null}
                   </View>
                 ) : null}
 
-                {trimText(coachMove?.successCheck) ? (
+                {false && trimText(coachMove?.successCheck) ? (
                   <View style={styles.coachMoveSuccessBox}>
                     <Text style={styles.coachMoveSuccessLabel}>성공 기준</Text>
                     <Text style={styles.coachMoveSuccess}>{coachMove?.successCheck}</Text>
@@ -639,13 +751,68 @@ export default function PracticeFeedbackScreen() {
                 <View style={styles.coachMoveInstructionBox}>
                   <Text style={styles.coachMoveInstructionLabel}>다시 쓸 때</Text>
                   <Text style={styles.coachMoveInstruction}>{coachInstruction}</Text>
-                  {coachExample ? (
-                    <View style={styles.coachMoveExampleBox}>
-                      <Text style={styles.coachMoveExample}>{coachExample}</Text>
+                  {coachSkeleton ? (
+                    <View style={styles.coachMoveSkeletonBox}>
+                      <Text style={styles.coachMoveSkeletonLabel}>문장 틀</Text>
+                      <Text style={styles.coachMoveSkeleton}>{coachSkeleton}</Text>
+                      {coachSkeletonKo ? (
+                        <Text style={styles.coachMoveSkeletonMeaning}>{coachSkeletonKo}</Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+                  {coachSuggestedPhrases.length > 0 ? (
+                    <View style={styles.coachMovePhraseBox}>
+                      <Text style={styles.coachMovePhraseLabel}>넣어볼 표현</Text>
+                      <View style={styles.coachMovePhraseList}>
+                        {coachSuggestedPhrases.map((phrase, index) => {
+                          const normalizedPhraseKey = normalizeExpressionKey(phrase.phrase);
+                          const isPhraseSaved = Boolean(savedExpressionIdsByKey[normalizedPhraseKey]);
+                          const isPhraseSaving = savingExpressionKeys.includes(normalizedPhraseKey);
+
+                          return (
+                            <Pressable
+                              key={`${phrase.phrase}-${index}`}
+                              style={[
+                                styles.coachMovePhraseChip,
+                                isPhraseSaved && styles.coachMovePhraseChipSaved
+                              ]}
+                              onPress={() =>
+                                handleToggleFeedbackExpression(
+                                  phrase.phrase,
+                                  "COACH_RECOMMENDATION",
+                                  phrase.meaningKo || undefined,
+                                  undefined,
+                                  "문장틀에 넣어볼 수 있는 표현이에요.",
+                                  ["넣어볼 표현"]
+                                )
+                              }
+                              disabled={isPhraseSaving}
+                              accessibilityRole="button"
+                              accessibilityLabel={isPhraseSaved ? "표현 저장 취소" : "표현 저장"}
+                            >
+                              <View style={styles.coachMovePhraseContent}>
+                                <Text style={styles.coachMovePhraseText}>{phrase.phrase}</Text>
+                                {phrase.meaningKo ? (
+                                  <Text style={styles.coachMovePhraseMeaning}>{phrase.meaningKo}</Text>
+                                ) : null}
+                              </View>
+                              <View
+                                style={[
+                                  styles.coachMovePhraseSaveButton,
+                                  isPhraseSaved && styles.coachMovePhraseSaveButtonSaved
+                                ]}
+                              >
+                                {renderFeedbackExpressionSaveIcon(isPhraseSaved, isPhraseSaving)}
+                              </View>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
                     </View>
                   ) : null}
                 </View>
               </View>
+              ) : null}
 
               <Pressable
                 style={styles.detailToggleButton}
@@ -701,10 +868,7 @@ export default function PracticeFeedbackScreen() {
                   style={styles.inlineRewriteCard}
                   onLayout={(event) => setInlineRewriteY(event.nativeEvent.layout.y)}
                 >
-                  <Text style={styles.inlineRewriteTitle}>여기서 바로 한 번만 고쳐 써봐요.</Text>
-                  <Text style={styles.inlineRewriteHelp}>
-                    전체를 완벽하게 바꾸려 하지 말고, 위 코치 포인트 하나만 반영하면 돼요.
-                  </Text>
+                  <Text style={styles.inlineRewriteHelp}>{inlineRewriteHelpText}</Text>
                   <TextInput
                     style={styles.inlineRewriteInput}
                     value={rewriteDraft}
@@ -735,9 +899,6 @@ export default function PracticeFeedbackScreen() {
                   >
                     <Text style={styles.primaryButtonText}>{inlineRewriteSubmitLabel}</Text>
                   </Pressable>
-                  <Pressable style={styles.secondaryButton} onPress={() => void handleRewrite()}>
-                    <Text style={styles.secondaryButtonText}>큰 작문 화면에서 쓰기</Text>
-                  </Pressable>
                 </View>
               ) : null}
 
@@ -758,19 +919,73 @@ export default function PracticeFeedbackScreen() {
                   </View>
                 ) : null}
 
+                {isLoopReadyToFinish && completionRefinementPhrases.length > 0 ? (
+                  <View style={styles.completionSuggestionBox}>
+                    <Text style={styles.completionSuggestionLabel}>가볍게 넣어볼 표현</Text>
+                    <View style={styles.completionSuggestionList}>
+                      {completionRefinementPhrases.map((phrase, index) => {
+                        const normalizedPhraseKey = normalizeExpressionKey(phrase.phrase);
+                        const isPhraseSaved = Boolean(savedExpressionIdsByKey[normalizedPhraseKey]);
+                        const isPhraseSaving = savingExpressionKeys.includes(normalizedPhraseKey);
+
+                        return (
+                          <Pressable
+                            key={`${phrase.phrase}-${index}`}
+                            style={[
+                              styles.completionSuggestionChip,
+                              isPhraseSaved && styles.coachMovePhraseChipSaved
+                            ]}
+                            onPress={() =>
+                              handleToggleFeedbackExpression(
+                                phrase.phrase,
+                                "REFINEMENT_EXPRESSION",
+                                phrase.meaningKo || undefined,
+                                phrase.exampleEn || undefined,
+                                phrase.guidanceKo || undefined,
+                                ["표현 더하기"]
+                              )
+                            }
+                            disabled={isPhraseSaving}
+                            accessibilityRole="button"
+                            accessibilityLabel={isPhraseSaved ? "표현 저장 취소" : "표현 저장"}
+                          >
+                            <View style={styles.coachMovePhraseContent}>
+                              <Text style={styles.coachMovePhraseText}>{phrase.phrase}</Text>
+                              {phrase.meaningKo ? (
+                                <Text style={styles.coachMovePhraseMeaning}>{phrase.meaningKo}</Text>
+                              ) : null}
+                            </View>
+                            <View
+                              style={[
+                                styles.coachMovePhraseSaveButton,
+                                isPhraseSaved && styles.coachMovePhraseSaveButtonSaved
+                              ]}
+                            >
+                              {renderFeedbackExpressionSaveIcon(isPhraseSaved, isPhraseSaving)}
+                            </View>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ) : null}
+
                 {isLoopReadyToFinish ? (
+                  <>
+                    {shouldShowCompletionRewriteChoice && !isCompletionRewriteOpen ? (
+                      <Pressable style={styles.secondaryButton} onPress={handleOpenCompletionRewrite}>
+                        <Text style={styles.secondaryButtonText}>{rewriteButtonLabel}</Text>
+                      </Pressable>
+                    ) : null}
+
                   <Pressable style={styles.primaryButton} onPress={handleFinishLoop}>
                     <Text style={styles.primaryButtonText}>
                       {pickFirstNonEmpty(finishButtonLabel, "루프 완료하기")}
                     </Text>
                   </Pressable>
+                  </>
                 ) : null}
 
-                {isLoopReadyToFinish && !isCompletionRewriteOpen ? (
-                  <Pressable style={styles.secondaryButton} onPress={handleOpenCompletionRewrite}>
-                    <Text style={styles.secondaryButtonText}>{rewriteButtonLabel}</Text>
-                  </Pressable>
-                ) : null}
               </View>
             </>
           ) : (
@@ -995,6 +1210,15 @@ const styles = StyleSheet.create({
     color: "#145F2A",
     fontWeight: "900"
   },
+  coachMoveWhyBox: {
+    gap: 6
+  },
+  coachMoveWhyLabel: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#A46612"
+  },
   coachMoveWhy: {
     fontSize: 15,
     lineHeight: 24,
@@ -1016,14 +1240,97 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#3C342B"
   },
-  coachMoveExampleBox: {
-    marginTop: 2
+  coachMoveSkeletonBox: {
+    marginTop: 2,
+    gap: 4
   },
-  coachMoveExample: {
+  coachMoveSkeletonLabel: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#A46612"
+  },
+  coachMoveSkeleton: {
     fontSize: 15,
     lineHeight: 23,
     fontWeight: "800",
     color: "#5A4630"
+  },
+  coachMoveSkeletonMeaning: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "700",
+    color: "#8B7358"
+  },
+  coachMovePhraseBox: {
+    marginTop: 6,
+    gap: 8
+  },
+  coachMovePhraseLabel: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#A46612"
+  },
+  coachMovePhraseList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  coachMovePhraseChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E7CDAA",
+    backgroundColor: "#FFF9EF",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9
+  },
+  coachMovePhraseChipSaved: {
+    backgroundColor: "#EAF7ED",
+    borderColor: "#AFD2B7"
+  },
+  coachMovePhraseContent: {
+    gap: 2,
+    flexShrink: 1
+  },
+  coachMovePhraseText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: "#6B5138"
+  },
+  coachMovePhraseMeaning: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "700",
+    color: "#9A8066"
+  },
+  coachMovePhraseSaveText: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "900",
+    color: "#A76518"
+  },
+  coachMovePhraseSaveTextSaved: {
+    color: "#2F7A46"
+  },
+  coachMovePhraseSaveButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E3C39B",
+    backgroundColor: "#FFFBF4",
+    alignItems: "center",
+    justifyContent: "center",
+    flexShrink: 0
+  },
+  coachMovePhraseSaveButtonSaved: {
+    backgroundColor: "#EAF7ED",
+    borderColor: "#AFD2B7"
   },
   coachMoveSuccessBox: {
     gap: 6
@@ -1062,13 +1369,6 @@ const styles = StyleSheet.create({
     paddingVertical: 22,
     gap: 13
   },
-  inlineRewriteTitle: {
-    fontSize: 24,
-    lineHeight: 31,
-    fontWeight: "900",
-    letterSpacing: -1,
-    color: "#232128"
-  },
   inlineRewriteHelp: {
     fontSize: 15,
     lineHeight: 23,
@@ -1098,6 +1398,36 @@ const styles = StyleSheet.create({
   },
   completionCard: {
     paddingTop: 4
+  },
+  completionSuggestionBox: {
+    backgroundColor: "#FFFEFC",
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#E8DACB",
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    gap: 10
+  },
+  completionSuggestionLabel: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "900",
+    color: "#A46612"
+  },
+  completionSuggestionList: {
+    gap: 8
+  },
+  completionSuggestionChip: {
+    paddingHorizontal: 13,
+    paddingVertical: 10,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E7CDAA",
+    backgroundColor: "#FFF9EF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10
   },
   completionSpeechRow: {
     flexDirection: "row",

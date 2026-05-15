@@ -164,6 +164,89 @@ function pickFirstNonEmpty(...values: (string | null | undefined)[]) {
   return "";
 }
 
+type AnswerDiffSegment = {
+  text: string;
+  changed: boolean;
+};
+
+type AnswerComparison = {
+  initialSegments: AnswerDiffSegment[];
+  finalSegments: AnswerDiffSegment[];
+};
+
+function normalizeAnswerForComparison(value?: string | null) {
+  return trimText(value).replace(/\s+/g, " ");
+}
+
+function splitAnswerTokens(value: string) {
+  return normalizeAnswerForComparison(value).split(/\s+/).filter(Boolean);
+}
+
+function buildDiffSegments(
+  initialTokens: string[],
+  finalTokens: string[]
+): AnswerComparison {
+  const lcsTable = Array.from({ length: initialTokens.length + 1 }, () =>
+    Array(finalTokens.length + 1).fill(0) as number[]
+  );
+
+  for (let initialIndex = initialTokens.length - 1; initialIndex >= 0; initialIndex -= 1) {
+    for (let finalIndex = finalTokens.length - 1; finalIndex >= 0; finalIndex -= 1) {
+      lcsTable[initialIndex][finalIndex] =
+        initialTokens[initialIndex] === finalTokens[finalIndex]
+          ? lcsTable[initialIndex + 1][finalIndex + 1] + 1
+          : Math.max(lcsTable[initialIndex + 1][finalIndex], lcsTable[initialIndex][finalIndex + 1]);
+    }
+  }
+
+  const initialSegments: AnswerDiffSegment[] = [];
+  const finalSegments: AnswerDiffSegment[] = [];
+  let initialIndex = 0;
+  let finalIndex = 0;
+
+  while (initialIndex < initialTokens.length || finalIndex < finalTokens.length) {
+    if (
+      initialIndex < initialTokens.length &&
+      finalIndex < finalTokens.length &&
+      initialTokens[initialIndex] === finalTokens[finalIndex]
+    ) {
+      initialSegments.push({ text: initialTokens[initialIndex], changed: false });
+      finalSegments.push({ text: finalTokens[finalIndex], changed: false });
+      initialIndex += 1;
+      finalIndex += 1;
+      continue;
+    }
+
+    if (
+      initialIndex < initialTokens.length &&
+      (finalIndex >= finalTokens.length ||
+        lcsTable[initialIndex + 1][finalIndex] >= lcsTable[initialIndex][finalIndex + 1])
+    ) {
+      initialSegments.push({ text: initialTokens[initialIndex], changed: true });
+      initialIndex += 1;
+      continue;
+    }
+
+    if (finalIndex < finalTokens.length) {
+      finalSegments.push({ text: finalTokens[finalIndex], changed: true });
+      finalIndex += 1;
+    }
+  }
+
+  return { initialSegments, finalSegments };
+}
+
+function buildAnswerComparison(initialAnswer?: string | null, finalAnswer?: string | null) {
+  const normalizedInitial = normalizeAnswerForComparison(initialAnswer);
+  const normalizedFinal = normalizeAnswerForComparison(finalAnswer);
+
+  if (!normalizedInitial || !normalizedFinal || normalizedInitial === normalizedFinal) {
+    return null;
+  }
+
+  return buildDiffSegments(splitAnswerTokens(normalizedInitial), splitAnswerTokens(normalizedFinal));
+}
+
 function getFeedbackLevelInfo(score: number, loopComplete?: boolean | null): FeedbackLevelInfo {
   if (score >= 90) {
     return {
@@ -394,6 +477,10 @@ export default function PracticeCompleteScreen() {
     [feedbackState]
   );
   const streakCalendar = useMemo(() => buildStreakWeek(todayStatus), [todayStatus]);
+  const answerComparison = useMemo(
+    () => buildAnswerComparison(feedbackState?.initialAnswer, feedbackState?.answer),
+    [feedbackState?.answer, feedbackState?.initialAnswer]
+  );
 
   useEffect(() => {
     const inMemoryState = getPracticeFeedbackState(requestedDifficulty, requestedPromptId);
@@ -598,6 +685,42 @@ export default function PracticeCompleteScreen() {
             <Text style={styles.storyBody}>{completionSubcopy}</Text>
           </View>
 
+          {answerComparison ? (
+            <View style={styles.answerComparisonCard}>
+              <View style={styles.answerComparisonBlock}>
+                <Text style={styles.answerComparisonLabel}>최초 답안</Text>
+                <Text style={styles.answerComparisonText}>
+                  {answerComparison.initialSegments.map((segment, index) => (
+                    <Text
+                      key={`${segment.text}-${index}-initial`}
+                      style={segment.changed ? styles.answerComparisonRemovedText : undefined}
+                    >
+                      {segment.text}
+                      {index < answerComparison.initialSegments.length - 1 ? " " : ""}
+                    </Text>
+                  ))}
+                </Text>
+              </View>
+
+              <View style={[styles.answerComparisonBlock, styles.answerComparisonFinalBlock]}>
+                <Text style={[styles.answerComparisonLabel, styles.answerComparisonFinalLabel]}>
+                  최종 답안
+                </Text>
+                <Text style={[styles.answerComparisonText, styles.answerComparisonFinalText]}>
+                  {answerComparison.finalSegments.map((segment, index) => (
+                    <Text
+                      key={`${segment.text}-${index}-final`}
+                      style={segment.changed ? styles.answerComparisonAddedText : undefined}
+                    >
+                      {segment.text}
+                      {index < answerComparison.finalSegments.length - 1 ? " " : ""}
+                    </Text>
+                  ))}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           <View style={styles.streakPanel}>
             <Text style={styles.streakValue}>{streakLabel}</Text>
             <Text style={styles.streakMonthLabel}>{streakCalendar.monthLabel}</Text>
@@ -788,6 +911,59 @@ const styles = StyleSheet.create({
     lineHeight: 25,
     color: "#695845",
     textAlign: "center"
+  },
+  answerComparisonCard: {
+    borderRadius: 28,
+    backgroundColor: "#FFFEFC",
+    borderWidth: 1,
+    borderColor: "#E8DACB",
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    gap: 12,
+    shadowColor: "#D8A86E",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: {
+      width: 0,
+      height: 6
+    },
+    elevation: 2
+  },
+  answerComparisonBlock: {
+    borderRadius: 22,
+    backgroundColor: "#FFF0ED",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 7
+  },
+  answerComparisonFinalBlock: {
+    backgroundColor: "#ECF7EA"
+  },
+  answerComparisonLabel: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "900",
+    color: "#9A4A39"
+  },
+  answerComparisonFinalLabel: {
+    color: "#2F6D3D"
+  },
+  answerComparisonText: {
+    fontSize: 17,
+    lineHeight: 27,
+    fontWeight: "800",
+    color: "#72493E"
+  },
+  answerComparisonFinalText: {
+    color: "#265B33"
+  },
+  answerComparisonRemovedText: {
+    color: "#A73A2A",
+    backgroundColor: "#F7CFC8"
+  },
+  answerComparisonAddedText: {
+    color: "#1F6A38",
+    backgroundColor: "#CFEFD3"
   },
   streakPanel: {
     borderRadius: 28,

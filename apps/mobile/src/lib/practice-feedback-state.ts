@@ -5,6 +5,7 @@ import type { DailyDifficulty, Feedback, Prompt } from "./types";
 export type PracticeFeedbackState = {
   difficulty: DailyDifficulty;
   prompt: Prompt;
+  initialAnswer?: string;
   answer: string;
   feedback: Feedback;
 };

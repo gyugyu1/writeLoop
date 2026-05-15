@@ -641,6 +641,7 @@ function HistorySessionDetailModal({
           </View>
           <Pressable
             style={styles.modalCloseButton}
+            hitSlop={10}
             onPress={isFeedbackView ? onReturnToHistory : onClose}
           >
             <Text style={styles.modalCloseText}>{isFeedbackView ? "목록으로" : "닫기"}</Text>
@@ -1430,11 +1431,8 @@ const detailStyles = StyleSheet.create({
   },
   modalCloseButton: {
     borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E0D1BD",
-    backgroundColor: "#FFFEFC",
-    paddingHorizontal: 14,
-    paddingVertical: 10
+    paddingHorizontal: 4,
+    paddingVertical: 6
   },
   modalCloseText: { fontSize: 14, fontWeight: "800", color: "#7B6752" },
   modalContent: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 48 },

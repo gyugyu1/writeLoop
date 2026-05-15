@@ -4573,6 +4573,193 @@
   line-height: 1.65;
 }
 
+.coachMoveCard {
+  display: grid;
+  gap: 22px;
+  padding: clamp(28px, 4vw, 42px);
+  border-radius: 30px;
+  border: 1px solid rgba(221, 196, 165, 0.78);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 34px -28px rgba(127, 82, 0, 0.28);
+}
+
+.coachMoveHeadline {
+  margin: 0;
+  color: #23222a;
+  font-family: var(--font-primary);
+  font-size: clamp(2rem, 5.6vw, 3.8rem);
+  font-weight: 900;
+  line-height: 1.18;
+  letter-spacing: -0.07em;
+}
+
+.coachMoveBody,
+.coachMoveInstructionBox,
+.coachMoveWhyBox,
+.coachMoveSuccessBox {
+  display: grid;
+  gap: 10px;
+}
+
+.coachMoveFocus {
+  margin: 0;
+  color: #2f2b27;
+  font-size: clamp(1.3rem, 2.4vw, 2rem);
+  font-weight: 900;
+  line-height: 1.32;
+  letter-spacing: -0.04em;
+}
+
+.coachMoveSwap {
+  display: grid;
+  gap: 12px;
+}
+
+.coachMoveSwapRow {
+  display: grid;
+  gap: 8px;
+  padding: 18px 20px;
+  border-radius: 22px;
+}
+
+.coachMoveBeforeRow {
+  background: #fdecea;
+}
+
+.coachMoveAfterRow {
+  background: #eaf7ec;
+}
+
+.coachMoveSwapLabel,
+.coachMoveWhyLabel,
+.coachMoveSuccessLabel,
+.coachMoveInstructionLabel,
+.coachMoveSkeletonLabel,
+.coachMovePhraseLabel {
+  color: #9a611c;
+  font-size: 0.88rem;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.coachMoveBefore,
+.coachMoveAfter {
+  margin: 0;
+  font-size: clamp(1.08rem, 2.1vw, 1.5rem);
+  font-weight: 900;
+  line-height: 1.58;
+  overflow-wrap: anywhere;
+}
+
+.coachMoveBefore {
+  color: #aa3e2c;
+}
+
+.coachMoveAfter {
+  color: #207742;
+}
+
+.coachMoveBeforeHighlight {
+  background: rgba(250, 113, 80, 0.22);
+  border-radius: 0.35em;
+  padding: 0 0.08em;
+}
+
+.coachMoveAfterHighlight {
+  background: rgba(74, 190, 102, 0.18);
+  border-radius: 0.35em;
+  padding: 0 0.08em;
+}
+
+.coachMoveWhy,
+.coachMoveSuccess,
+.coachMoveInstruction {
+  margin: 0;
+  color: #756554;
+  font-size: clamp(1rem, 1.8vw, 1.24rem);
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+.coachMoveInstruction {
+  color: #3b342d;
+  font-weight: 900;
+}
+
+.coachMoveSkeletonBox,
+.coachMovePhraseBox {
+  display: grid;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.coachMoveSkeleton {
+  margin: 0;
+  color: #6a4b1d;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.6;
+}
+
+.coachMoveSkeletonMeaning {
+  margin: -4px 0 0;
+  color: #856b4a;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.coachMovePhraseList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.coachMovePhraseChip {
+  display: inline-grid;
+  gap: 2px;
+  max-width: 100%;
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: #fff3dc;
+  color: #8f5c16;
+  border: 1px solid rgba(226, 165, 84, 0.22);
+}
+
+.coachMovePhraseChip strong {
+  font-size: 0.9rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.coachMovePhraseChip small {
+  color: #856b4a;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.detailToggleButton {
+  width: 100%;
+  min-height: 60px;
+  border: 1px solid rgba(226, 145, 40, 0.72);
+  border-radius: 999px;
+  background: rgba(255, 252, 247, 0.92);
+  color: #7a4d12;
+  font-family: var(--font-primary);
+  font-size: 1.05rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease;
+}
+
+.detailToggleButton:hover {
+  background: #fff6e8;
+  transform: translateY(-1px);
+}
+
 .feedbackChipSection {
   display: grid;
   gap: 10px;

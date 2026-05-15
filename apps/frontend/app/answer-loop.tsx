@@ -61,6 +61,7 @@ import type {
   CoachHelpResponse,
   CoachUsageCheckResponse,
   Feedback,
+  FeedbackCoachMove,
   FeedbackInlineSegment,
   FeedbackLoopStatus,
   FeedbackSecondaryLearningPoint,
@@ -353,6 +354,9 @@ const feedbackTabEmptyStateTextStyle: CSSProperties = {
   lineHeight: 1.6
 };
 
+const COACH_MOVE_DIFF_MAX_CHARS = 700;
+const COACH_MOVE_DIFF_MAX_TOKENS = 140;
+
 function trimNullable(value?: string | null) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : null;
@@ -366,6 +370,119 @@ function pickFirstNonEmpty(...values: Array<string | null | undefined>) {
     }
   }
   return null;
+}
+
+function normalizeSuggestedPhrase(value: unknown) {
+  if (typeof value === "string") {
+    const phrase = trimNullable(value);
+    return phrase ? { phrase, meaningKo: "" } : null;
+  }
+
+  if (value && typeof value === "object") {
+    const candidate = value as { phrase?: unknown; meaningKo?: unknown };
+    const phrase = typeof candidate.phrase === "string" ? trimNullable(candidate.phrase) : null;
+    const meaningKo = typeof candidate.meaningKo === "string" ? trimNullable(candidate.meaningKo) : "";
+    return phrase ? { phrase, meaningKo } : null;
+  }
+
+  return null;
+}
+
+function hasCoachMove(coachMove?: FeedbackCoachMove | null) {
+  return Boolean(
+    trimNullable(coachMove?.focus) ||
+      trimNullable(coachMove?.why) ||
+      trimNullable(coachMove?.before) ||
+      trimNullable(coachMove?.after) ||
+      trimNullable(coachMove?.instruction) ||
+      trimNullable(coachMove?.exampleEn) ||
+      trimNullable(coachMove?.skeletonEn) ||
+      (Array.isArray(coachMove?.suggestedPhrases) &&
+        coachMove.suggestedPhrases.some((phrase) => normalizeSuggestedPhrase(phrase)))
+  );
+}
+
+function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
+  const before = trimNullable(coachMove?.before);
+  const after = trimNullable(coachMove?.after);
+  if (!before || !after) {
+    return false;
+  }
+
+  const focusType = trimNullable(coachMove?.focusType)?.toUpperCase();
+  if (!focusType) {
+    return true;
+  }
+
+  return [
+    "MICRO_FIX",
+    "GRAMMAR",
+    "GRAMMAR_FIX",
+    "LOCAL_GRAMMAR",
+    "FIX_LOCAL_GRAMMAR",
+    "BLOCKING_GRAMMAR",
+    "FIX_BLOCKING_GRAMMAR",
+    "EXPRESSION",
+    "EXPRESSION_POLISH"
+  ].includes(focusType);
+}
+
+function isGrammarCoachMove(coachMove?: FeedbackCoachMove | null) {
+  const focusType = trimNullable(coachMove?.focusType)?.toUpperCase();
+  return [
+    "MICRO_FIX",
+    "GRAMMAR",
+    "GRAMMAR_FIX",
+    "LOCAL_GRAMMAR",
+    "FIX_LOCAL_GRAMMAR",
+    "BLOCKING_GRAMMAR",
+    "FIX_BLOCKING_GRAMMAR",
+    "EXPRESSION",
+    "EXPRESSION_POLISH"
+  ].includes(focusType ?? "");
+}
+
+function countDiffTokens(text: string) {
+  return text.match(/[A-Za-z0-9']+|[^\sA-Za-z0-9']+|\s+/g)?.length ?? 0;
+}
+
+function countComparableWords(text: string) {
+  return text.match(/[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?/g)?.length ?? 0;
+}
+
+function isCoachMoveDiffScopeAligned(original: string, revised: string) {
+  const originalWords = countComparableWords(original);
+  const revisedWords = countComparableWords(revised);
+  if (!originalWords || !revisedWords) {
+    return true;
+  }
+
+  const shorter = Math.min(originalWords, revisedWords);
+  const longer = Math.max(originalWords, revisedWords);
+  const wordDelta = longer - shorter;
+
+  // Phrase-vs-sentence comparisons create misleading highlights.
+  return wordDelta <= 3 || longer / shorter <= 1.45;
+}
+
+function canBuildCoachMoveDiff(original: string, revised: string) {
+  return (
+    original.length + revised.length <= COACH_MOVE_DIFF_MAX_CHARS &&
+    countDiffTokens(original) + countDiffTokens(revised) <= COACH_MOVE_DIFF_MAX_TOKENS &&
+    isCoachMoveDiffScopeAligned(original, revised)
+  );
+}
+
+function shouldShowFixComparison(original: string, revised: string) {
+  if (!original && !revised) {
+    return false;
+  }
+
+  if (!original || !revised || original === revised) {
+    return true;
+  }
+
+  return isCoachMoveDiffScopeAligned(original, revised);
 }
 
 function normalizeSavedExpressionKey(value?: string | null) {
@@ -1536,6 +1653,7 @@ export function AnswerLoop() {
   const [questionRefreshHistory, setQuestionRefreshHistory] = useState<string[]>([]);
   const [isRefreshingQuestion, setIsRefreshingQuestion] = useState(false);
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
+  const [showDetailedFeedback, setShowDetailedFeedback] = useState(false);
   const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mobileComposerBarRef = useRef<HTMLDivElement | null>(null);
   const coachPromptInputRef = useRef<HTMLTextAreaElement | null>(null);
@@ -1554,6 +1672,12 @@ export function AnswerLoop() {
   useEffect(() => {
     if (step === "feedback" || step === "rewrite") {
       setFeedbackPanelTab("feedback");
+    }
+  }, [feedback?.attemptNo, step]);
+
+  useEffect(() => {
+    if (step === "feedback") {
+      setShowDetailedFeedback(false);
     }
   }, [feedback?.attemptNo, step]);
   const isCurrentMonthView = isSameMonthView(activeMonthView, currentMonthView);
@@ -2300,6 +2424,40 @@ export function AnswerLoop() {
   const isGuestCycleComplete = Boolean(feedback && guestSessionId && feedback.attemptNo >= 2);
   const shouldSuggestFinish = Boolean(feedback?.ui?.screenPolicy?.showFinishCta ?? feedback?.loopComplete);
   const feedbackLevel = feedback ? getFeedbackLevelInfo(feedback.score, feedback.loopComplete) : null;
+  const loopExperience = feedback?.loop ?? null;
+  const coachMove = feedback?.coachMove ?? null;
+  const rewriteWorkspace = feedback?.rewriteWorkspace ?? null;
+  const isLoopReadyToFinish =
+    Boolean(feedback?.loopComplete) || loopExperience?.nextAction === "finish" || loopExperience?.status === "COMPLETE";
+  const shouldShowCoachMoveCard = !isLoopReadyToFinish && hasCoachMove(coachMove);
+  const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
+  const shouldShowGrammarReasonLabel = isGrammarCoachMove(coachMove);
+  const coachHeadline = pickFirstNonEmpty(
+    coachMove?.focus,
+    loopExperience?.headline,
+    isLoopReadyToFinish
+      ? "좋아요. 지금 단계에서 마무리해도 충분해요."
+      : "지금은 한 가지만 먼저 고쳐서 다시 써 보세요."
+  );
+  const shouldShowCoachFocus =
+    Boolean(trimNullable(coachMove?.focus)) && trimNullable(coachMove?.focus) !== trimNullable(coachHeadline);
+  const coachInstruction = pickFirstNonEmpty(
+    coachMove?.instruction,
+    rewriteWorkspace?.targetTextHint,
+    feedback?.rewriteChallenge,
+    isLoopReadyToFinish
+      ? "이미 충분히 좋아요. 원하면 표현 하나만 가볍게 다듬어 보세요."
+      : "전체를 완벽하게 바꾸려 하지 말고, 위 코치 포인트 하나만 반영해 다시 써 보세요."
+  );
+  const coachSkeleton = shouldShowGrammarReasonLabel ? null : pickFirstNonEmpty(coachMove?.skeletonEn);
+  const coachSkeletonKo = shouldShowGrammarReasonLabel ? null : pickFirstNonEmpty(coachMove?.skeletonKo);
+  const coachSuggestedPhrases =
+    !shouldShowGrammarReasonLabel && Array.isArray(coachMove?.suggestedPhrases)
+      ? coachMove.suggestedPhrases.map(normalizeSuggestedPhrase).filter((phrase) => phrase !== null).slice(0, 6)
+      : [];
+  const detailToggleLabel = showDetailedFeedback
+    ? "자세한 피드백 접기"
+    : pickFirstNonEmpty(loopExperience?.detailToggleLabel, "자세한 피드백 보기");
   const streakDays = todayStatus?.streakDays ?? 0;
   useEffect(() => {
     if (step !== "complete") {
@@ -3987,7 +4145,7 @@ export function AnswerLoop() {
         supportText: feedback.loopComplete
           ? "원하면 한 번 더 다듬어 볼 수 있어요."
           : "위 starter를 바탕으로 바로 다시 써 볼 수 있어요.",
-        rewriteCtaLabel: feedback.loopComplete ? "다시 써보기" : "다시 써보기",
+        rewriteCtaLabel: feedback.loopComplete ? "그래도 더 다듬어서 써보기" : "다시 써보기",
         finishCtaLabel: feedback.loopComplete ? "오늘 루프 완료하고 도장 받기" : null,
         cancelCtaLabel: "답변 취소"
       }
@@ -4310,7 +4468,7 @@ export function AnswerLoop() {
     const originalText = originalTextValue?.trim() ?? "";
     const revisedText = revisedTextValue?.trim() ?? "";
 
-    if (originalText && revisedText && originalText !== revisedText) {
+    if (originalText && revisedText && originalText !== revisedText && shouldShowFixComparison(originalText, revisedText)) {
       const segments = buildInlineFeedbackSegments(
         originalText,
         revisedText,
@@ -4358,6 +4516,131 @@ export function AnswerLoop() {
       default:
         return null;
     }
+  }
+
+  function renderCoachMoveDiffSegment(
+    segment: RenderedInlineFeedbackSegment,
+    mode: "original" | "revised",
+    index: number
+  ) {
+    switch (segment.kind) {
+      case "equal":
+        return <span key={`${mode}-equal-${index}`}>{segment.text}</span>;
+      case "replace":
+        return mode === "original" ? (
+          <span key={`${mode}-replace-${index}`} className={styles.coachMoveBeforeHighlight}>
+            {segment.removed}
+          </span>
+        ) : (
+          <span key={`${mode}-replace-${index}`} className={styles.coachMoveAfterHighlight}>
+            {segment.added}
+          </span>
+        );
+      case "remove":
+        return mode === "original" ? (
+          <span key={`${mode}-remove-${index}`} className={styles.coachMoveBeforeHighlight}>
+            {segment.text}
+          </span>
+        ) : null;
+      case "add":
+        return mode === "revised" ? (
+          <span key={`${mode}-add-${index}`} className={styles.coachMoveAfterHighlight}>
+            {segment.text}
+          </span>
+        ) : null;
+      default:
+        return null;
+    }
+  }
+
+  function renderCoachMoveDiffText(original: string, revised: string, mode: "original" | "revised") {
+    if (original && revised && original !== revised && canBuildCoachMoveDiff(original, revised)) {
+      const segments = buildInlineFeedbackSegments(original, revised, null);
+      if (segments.some((segment) => segment.kind !== "equal")) {
+        return segments.map((segment, index) => renderCoachMoveDiffSegment(segment, mode, index));
+      }
+    }
+
+    return mode === "original" ? original : revised;
+  }
+
+  function renderCoachMoveSection() {
+    if (!shouldShowCoachMoveCard) {
+      return null;
+    }
+
+    const before = trimNullable(coachMove?.before);
+    const after = trimNullable(coachMove?.after);
+
+    return (
+      <section className={styles.coachMoveCard}>
+        <h2 className={styles.coachMoveHeadline}>{coachHeadline}</h2>
+
+        {hasCoachMove(coachMove) ? (
+          <div className={styles.coachMoveBody}>
+            {shouldShowCoachFocus ? <p className={styles.coachMoveFocus}>{coachMove?.focus}</p> : null}
+
+            {shouldShowCoachMoveComparison ? (
+              <div className={styles.coachMoveSwap}>
+                {before ? (
+                  <div className={`${styles.coachMoveSwapRow} ${styles.coachMoveBeforeRow}`}>
+                    <span className={styles.coachMoveSwapLabel}>지금</span>
+                    <p className={styles.coachMoveBefore}>{renderCoachMoveDiffText(before, after ?? "", "original")}</p>
+                  </div>
+                ) : null}
+                {after ? (
+                  <div className={`${styles.coachMoveSwapRow} ${styles.coachMoveAfterRow}`}>
+                    <span className={styles.coachMoveSwapLabel}>적용</span>
+                    <p className={styles.coachMoveAfter}>{renderCoachMoveDiffText(before ?? "", after, "revised")}</p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {trimNullable(coachMove?.why) ? (
+              <div className={styles.coachMoveWhyBox}>
+                {shouldShowGrammarReasonLabel ? (
+                  <span className={styles.coachMoveWhyLabel}>왜 고치나요</span>
+                ) : null}
+                <p className={styles.coachMoveWhy}>{coachMove?.why}</p>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {false && trimNullable(coachMove?.successCheck) ? (
+          <div className={styles.coachMoveSuccessBox}>
+            <span className={styles.coachMoveSuccessLabel}>성공 기준</span>
+            <p className={styles.coachMoveSuccess}>{coachMove?.successCheck}</p>
+          </div>
+        ) : null}
+
+        <div className={styles.coachMoveInstructionBox}>
+          <span className={styles.coachMoveInstructionLabel}>다시 쓸 때</span>
+          <p className={styles.coachMoveInstruction}>{coachInstruction}</p>
+          {coachSkeleton ? (
+            <div className={styles.coachMoveSkeletonBox}>
+              <span className={styles.coachMoveSkeletonLabel}>문장 틀</span>
+              <p className={styles.coachMoveSkeleton}>{coachSkeleton}</p>
+              {coachSkeletonKo ? <p className={styles.coachMoveSkeletonMeaning}>{coachSkeletonKo}</p> : null}
+            </div>
+          ) : null}
+          {coachSuggestedPhrases.length > 0 ? (
+            <div className={styles.coachMovePhraseBox}>
+              <span className={styles.coachMovePhraseLabel}>넣어볼 표현</span>
+              <div className={styles.coachMovePhraseList}>
+                {coachSuggestedPhrases.map((phrase, index) => (
+                  <span key={`${phrase.phrase}-${index}`} className={styles.coachMovePhraseChip}>
+                    <strong>{phrase.phrase}</strong>
+                    {phrase.meaningKo ? <small>{phrase.meaningKo}</small> : null}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
+    );
   }
 
   function renderRewritePracticeSection() {
@@ -4487,38 +4770,42 @@ export function AnswerLoop() {
           고쳐볼 점
         </h3>
         <div style={feedbackFixStackStyle}>
-          {fixItems.map((item, index) => (
-            <article
-              key={item.key}
-              style={index > 0 ? { ...feedbackFixItemStyle, ...feedbackFixItemDividerStyle } : feedbackFixItemStyle}
-            >
-              {item.reasonLines.map((line) => (
-                <p key={`${item.key}-${line}`} style={feedbackFixReasonStyle}>
-                  {`\u2022 ${line}`}
-                </p>
-              ))}
-              {item.original ? (
-                <div style={feedbackSwapSentenceStyle}>
-                  <span style={{ ...feedbackSwapBadgeStyle, ...feedbackSwapBadgeOriginalStyle }}>
-                    원문
-                  </span>
-                  <p style={{ ...feedbackSwapTextStyle, ...feedbackSwapTextOriginalStyle }}>
-                    {renderPrimaryFixDiff(item.original, item.revised, "original")}
+          {fixItems.map((item, index) => {
+            const showComparison = shouldShowFixComparison(item.original, item.revised);
+
+            return (
+              <article
+                key={item.key}
+                style={index > 0 ? { ...feedbackFixItemStyle, ...feedbackFixItemDividerStyle } : feedbackFixItemStyle}
+              >
+                {item.reasonLines.map((line) => (
+                  <p key={`${item.key}-${line}`} style={feedbackFixReasonStyle}>
+                    {`\u2022 ${line}`}
                   </p>
-                </div>
-              ) : null}
-              {item.revised ? (
-                <div style={feedbackSwapSentenceStyle}>
-                  <span style={{ ...feedbackSwapBadgeStyle, ...feedbackSwapBadgeRevisedStyle }}>
-                    수정문
-                  </span>
-                  <p style={{ ...feedbackSwapTextStyle, ...feedbackSwapTextRevisedStyle }}>
-                    {renderPrimaryFixDiff(item.original, item.revised, "revised")}
-                  </p>
-                </div>
-              ) : null}
-            </article>
-          ))}
+                ))}
+                {showComparison && item.original ? (
+                  <div style={feedbackSwapSentenceStyle}>
+                    <span style={{ ...feedbackSwapBadgeStyle, ...feedbackSwapBadgeOriginalStyle }}>
+                      원문
+                    </span>
+                    <p style={{ ...feedbackSwapTextStyle, ...feedbackSwapTextOriginalStyle }}>
+                      {renderPrimaryFixDiff(item.original, item.revised, "original")}
+                    </p>
+                  </div>
+                ) : null}
+                {showComparison && item.revised ? (
+                  <div style={feedbackSwapSentenceStyle}>
+                    <span style={{ ...feedbackSwapBadgeStyle, ...feedbackSwapBadgeRevisedStyle }}>
+                      수정문
+                    </span>
+                    <p style={{ ...feedbackSwapTextStyle, ...feedbackSwapTextRevisedStyle }}>
+                      {renderPrimaryFixDiff(item.original, item.revised, "revised")}
+                    </p>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
         </div>
       </section>
     );
@@ -4794,11 +5081,11 @@ export function AnswerLoop() {
 
   function renderFeedbackStep() {
     const screenPolicy = resolveScreenPolicy();
-    const loopStatus = resolveLoopStatus();
+    const resolvedLoopStatus = resolveLoopStatus();
     const showRewriteCta = screenPolicy?.showRewriteCta ?? Boolean(feedback);
     const showFinishCta = screenPolicy?.showFinishCta ?? shouldSuggestFinish;
     const completionHeadline =
-      loopStatus?.headline ??
+      resolvedLoopStatus?.headline ??
       feedback?.completionMessage ??
       feedbackLevel?.summary ??
       "좋아요. 지금 단계에서 마무리해도 충분해요.";
@@ -4810,7 +5097,17 @@ export function AnswerLoop() {
             <div className={styles.feedbackAttemptMetaRow}>
               <span className={styles.feedbackAttemptMetaOnly}>{`${feedback.attemptNo}번째 시도`}</span>
             </div>
-            {renderFeedbackCoreSections()}
+            {renderCoachMoveSection()}
+            {shouldShowCoachMoveCard ? (
+              <button
+                type="button"
+                className={styles.detailToggleButton}
+                onClick={() => setShowDetailedFeedback((current) => !current)}
+              >
+                {detailToggleLabel}
+              </button>
+            ) : null}
+            {showDetailedFeedback || !shouldShowCoachMoveCard ? renderFeedbackCoreSections() : null}
           </div>
         ) : (
           <p className={styles.placeholderText}>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
@@ -4835,24 +5132,28 @@ export function AnswerLoop() {
                 </div>
               </div>
             ) : null}
-            {showRewriteCta ? (
-              <button
-                type="button"
-                className={styles.footerButtonRewrite}
-                onClick={handleRewriteFromCurrentAnswer}
-                disabled={!feedback}
-              >
-                <span className="materialSymbols">edit_note</span>
-                {loopStatus?.rewriteCtaLabel ?? "다시 써보기"}
-              </button>
-            ) : null}
             {showFinishCta ? (
               <button
                 type="button"
-                className={`${styles.footerButtonSecondary} ${styles.footerButtonOutline}`}
+                className={styles.footerButtonRewrite}
                 onClick={handleFinishLoop}
               >
-                {loopStatus?.finishCtaLabel ?? "루프 완료하기"}
+                {resolvedLoopStatus?.finishCtaLabel ?? "루프 완료하기"}
+              </button>
+            ) : null}
+            {showRewriteCta ? (
+              <button
+                type="button"
+                className={
+                  showFinishCta
+                    ? `${styles.footerButtonSecondary} ${styles.footerButtonOutline}`
+                    : styles.footerButtonRewrite
+                }
+                onClick={handleRewriteFromCurrentAnswer}
+                disabled={!feedback}
+              >
+                {resolvedLoopStatus?.rewriteCtaLabel ??
+                  (showFinishCta ? "그래도 더 다듬어서 써보기" : "다시 써보기")}
               </button>
             ) : null}
           </div>

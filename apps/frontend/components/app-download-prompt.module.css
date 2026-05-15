@@ -1,0 +1,137 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 174, 74, 0.24), transparent 34%),
+    rgba(34, 28, 20, 0.38);
+  backdrop-filter: blur(10px);
+}
+
+.dialog {
+  position: relative;
+  display: grid;
+  gap: 20px;
+  width: min(100%, 440px);
+  padding: 34px 28px 28px;
+  border: 1px solid rgba(226, 196, 157, 0.88);
+  border-radius: 32px;
+  background: #fffaf3;
+  box-shadow: 0 28px 80px -42px rgba(74, 45, 7, 0.54);
+}
+
+.closeButton {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(168, 121, 58, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.8);
+  color: #8a5b1e;
+  font-size: 1.45rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.mascotFrame {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 112px;
+  height: 112px;
+  margin: 0 auto;
+  border-radius: 30px;
+  background: #fff;
+  border: 1px solid rgba(226, 196, 157, 0.72);
+  box-shadow: 0 18px 34px -28px rgba(99, 61, 14, 0.45);
+}
+
+.mascot {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+}
+
+.copy {
+  display: grid;
+  text-align: center;
+}
+
+.copy h2 {
+  margin: 0;
+  color: #24212a;
+  font-size: clamp(1.75rem, 7vw, 2.45rem);
+  font-weight: 900;
+  line-height: 1.16;
+  letter-spacing: -0.06em;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
+.storePair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.primaryLink,
+.secondaryStoreLink,
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 58px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primaryLink {
+  border: 0;
+  background: #f2992f;
+  color: #20150a;
+  box-shadow: 0 14px 24px -18px rgba(135, 78, 0, 0.55);
+}
+
+.secondaryStoreLink {
+  border: 1px solid rgba(226, 145, 40, 0.58);
+  background: rgba(255, 255, 255, 0.8);
+  color: #7a4d12;
+}
+
+.secondaryButton {
+  border: 1px solid rgba(226, 145, 40, 0.58);
+  background: rgba(255, 255, 255, 0.72);
+  color: #7a4d12;
+}
+
+@media (max-width: 520px) {
+  .overlay {
+    align-items: end;
+    padding: 18px;
+  }
+
+  .dialog {
+    border-radius: 30px;
+    padding: 30px 22px 22px;
+  }
+
+  .storePair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

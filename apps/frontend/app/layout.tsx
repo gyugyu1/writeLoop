@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { AppDownloadPrompt } from "../components/app-download-prompt";
 import { TopNavigation } from "../components/top-navigation";
 import "./globals.css";
 
@@ -97,6 +98,7 @@ export default function RootLayout({
       <body className={`${plusJakartaSans.variable} ${beVietnamPro.variable}`}>
         <TopNavigation />
         {children}
+        <AppDownloadPrompt />
       </body>
     </html>
   );

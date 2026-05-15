@@ -319,6 +319,9 @@ export interface FeedbackCoachMove {
   after?: string | null;
   instruction?: string | null;
   exampleEn?: string | null;
+  skeletonEn?: string | null;
+  skeletonKo?: string | null;
+  suggestedPhrases?: (string | { phrase?: string | null; meaningKo?: string | null })[] | null;
   successCheck?: string | null;
 }
 

@@ -20,7 +20,10 @@ import { requestCoachHelp } from "@/lib/api";
 import {
   disableNowInEnglishReminders,
   enableNowInEnglishReminders,
+  formatNowInEnglishDateLabel,
   formatNowInEnglishTime,
+  getNowInEnglishDateKey,
+  getNowInEnglishRelativeDateKey,
   getNowInEnglishSummary,
   type NowInEnglishEntry,
   type NowInEnglishIntervalHours,
@@ -30,6 +33,29 @@ import type { CoachExpression, CoachHelpResponse } from "@/lib/types";
 
 const NOW_IN_ENGLISH_COACH_PROMPT_ID = "diary-free-writing";
 const coachMascotImage = require("@/assets/images/coach-mascote-face.png");
+const HISTORY_FILTERS = [
+  { key: "today", label: "오늘" },
+  { key: "yesterday", label: "어제" },
+  { key: "all", label: "전체" }
+] as const;
+
+const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+
+type NowInEnglishHistoryFilter = (typeof HISTORY_FILTERS)[number]["key"] | "selected";
+type NowInEnglishEntryGroup = {
+  dateKey: string;
+  label: string;
+  entries: NowInEnglishEntry[];
+};
+type NowInEnglishCalendarCell = {
+  key: string;
+  day: number;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  isSelected: boolean;
+  hasEntries: boolean;
+  entryCount: number;
+};
 
 function getReminderLabel(enabled: boolean, intervalHours: NowInEnglishIntervalHours) {
   if (!enabled) {
@@ -39,22 +65,118 @@ function getReminderLabel(enabled: boolean, intervalHours: NowInEnglishIntervalH
   return `${intervalHours}시간마다 알려드릴게요`;
 }
 
-function TodayEntryList({ entries }: { entries: NowInEnglishEntry[] }) {
-  if (entries.length === 0) {
+function parseNowInEnglishDateKey(dateKey: string) {
+  const [year, month, day] = dateKey.split("-").map((value) => Number(value));
+  return new Date(year, month - 1, day, 12);
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date);
+  nextDate.setDate(nextDate.getDate() + days);
+  return nextDate;
+}
+
+function getCalendarMonthStart(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), 1, 12);
+}
+
+function isSameCalendarMonth(left: Date, right: Date) {
+  return left.getFullYear() === right.getFullYear() && left.getMonth() === right.getMonth();
+}
+
+function formatCalendarMonthLabel(date: Date) {
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long"
+  }).format(date);
+}
+
+function buildNowInEnglishMonthCalendar(
+  visibleMonth: Date,
+  entryCountsByDate: Map<string, number>,
+  selectedDateKey: string | null,
+  todayKey: string
+): NowInEnglishCalendarCell[] {
+  const monthStart = getCalendarMonthStart(visibleMonth);
+  const monthEnd = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 0, 12);
+  const calendarStart = addDays(monthStart, -monthStart.getDay());
+  const calendarEnd = addDays(monthEnd, 6 - monthEnd.getDay());
+  const cells: NowInEnglishCalendarCell[] = [];
+
+  for (
+    let currentDate = new Date(calendarStart);
+    currentDate <= calendarEnd;
+    currentDate = addDays(currentDate, 1)
+  ) {
+    const dateKey = getNowInEnglishDateKey(currentDate);
+    const entryCount = entryCountsByDate.get(dateKey) ?? 0;
+    cells.push({
+      key: dateKey,
+      day: currentDate.getDate(),
+      isCurrentMonth: isSameCalendarMonth(currentDate, visibleMonth),
+      isToday: dateKey === todayKey,
+      isSelected: dateKey === selectedDateKey,
+      hasEntries: entryCount > 0,
+      entryCount
+    });
+  }
+
+  return cells;
+}
+
+function buildEntryGroups(entries: NowInEnglishEntry[]): NowInEnglishEntryGroup[] {
+  const groups = new Map<string, NowInEnglishEntry[]>();
+  entries.forEach((entry) => {
+    const groupedEntries = groups.get(entry.dateKey) ?? [];
+    groupedEntries.push(entry);
+    groups.set(entry.dateKey, groupedEntries);
+  });
+
+  return Array.from(groups.entries())
+    .sort(([leftDateKey], [rightDateKey]) => rightDateKey.localeCompare(leftDateKey))
+    .map(([dateKey, groupedEntries]) => ({
+      dateKey,
+      label: formatNowInEnglishDateLabel(dateKey),
+      entries: groupedEntries
+        .slice()
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+    }));
+}
+
+function EntryTimeline({
+  groups,
+  emptyTitle,
+  emptyBody
+}: {
+  groups: NowInEnglishEntryGroup[];
+  emptyTitle: string;
+  emptyBody: string;
+}) {
+  if (groups.length === 0) {
     return (
       <View style={styles.emptyListCard}>
-        <Text style={styles.emptyListTitle}>오늘의 첫 영어 조각을 남겨보세요.</Text>
-        <Text style={styles.emptyListBody}>완벽한 문장일 필요 없어요. 지금 순간을 영어로 꺼내는 게 먼저예요.</Text>
+        <Text style={styles.emptyListTitle}>{emptyTitle}</Text>
+        <Text style={styles.emptyListBody}>{emptyBody}</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.entryList}>
-      {entries.map((entry) => (
-        <View key={entry.id} style={styles.entryCard}>
-          <Text style={styles.entryTime}>{formatNowInEnglishTime(entry.createdAt)}</Text>
-          <Text style={styles.entryText}>{entry.text}</Text>
+    <View style={styles.timelineList}>
+      {groups.map((group) => (
+        <View key={group.dateKey} style={styles.timelineGroup}>
+          <View style={styles.timelineGroupHeader}>
+            <Text style={styles.timelineDateLabel}>{group.label}</Text>
+            <Text style={styles.timelineCount}>{group.entries.length}개 남겼어요</Text>
+          </View>
+          <View style={styles.entryList}>
+            {group.entries.map((entry) => (
+              <View key={entry.id} style={styles.entryCard}>
+                <Text style={styles.entryTime}>{formatNowInEnglishTime(entry.createdAt)}</Text>
+                <Text style={styles.entryText}>{entry.text}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       ))}
     </View>
@@ -64,7 +186,6 @@ function TodayEntryList({ entries }: { entries: NowInEnglishEntry[] }) {
 export default function NowInEnglishScreen() {
   const [text, setText] = useState("");
   const [entries, setEntries] = useState<NowInEnglishEntry[]>([]);
-  const [todayCount, setTodayCount] = useState(0);
   const [remindersEnabled, setRemindersEnabled] = useState(false);
   const [intervalHours, setIntervalHours] = useState<NowInEnglishIntervalHours>(2);
   const [isLoading, setIsLoading] = useState(true);
@@ -76,11 +197,83 @@ export default function NowInEnglishScreen() {
   const [coachHelp, setCoachHelp] = useState<CoachHelpResponse | null>(null);
   const [coachHelpError, setCoachHelpError] = useState("");
   const [isLoadingCoachHelp, setIsLoadingCoachHelp] = useState(false);
+  const [historyFilter, setHistoryFilter] = useState<NowInEnglishHistoryFilter>("today");
+  const [selectedDateKey, setSelectedDateKey] = useState<string | null>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [calendarMonthCursor, setCalendarMonthCursor] = useState(() => getCalendarMonthStart(new Date()));
 
-  const sortedTodayEntries = useMemo(
-    () => entries.slice().sort((left, right) => right.createdAt.localeCompare(left.createdAt)),
-    [entries]
+  const todayKey = getNowInEnglishDateKey();
+  const yesterdayKey = getNowInEnglishRelativeDateKey(-1);
+  const entryCountsByDate = useMemo(() => {
+    const counts = new Map<string, number>();
+    entries.forEach((entry) => {
+      counts.set(entry.dateKey, (counts.get(entry.dateKey) ?? 0) + 1);
+    });
+    return counts;
+  }, [entries]);
+  const calendarCells = useMemo(
+    () => buildNowInEnglishMonthCalendar(calendarMonthCursor, entryCountsByDate, selectedDateKey, todayKey),
+    [calendarMonthCursor, entryCountsByDate, selectedDateKey, todayKey]
   );
+  const filteredEntries = useMemo(() => {
+    if (historyFilter === "today") {
+      return entries.filter((entry) => entry.dateKey === todayKey);
+    }
+    if (historyFilter === "yesterday") {
+      return entries.filter((entry) => entry.dateKey === yesterdayKey);
+    }
+    if (historyFilter === "selected" && selectedDateKey) {
+      return entries.filter((entry) => entry.dateKey === selectedDateKey);
+    }
+
+    return entries;
+  }, [entries, historyFilter, selectedDateKey, todayKey, yesterdayKey]);
+  const entryGroups = useMemo(() => buildEntryGroups(filteredEntries), [filteredEntries]);
+  const historyMeta = useMemo(() => {
+    if (historyFilter === "all") {
+      return `총 ${entries.length}개의 영어 조각`;
+    }
+
+    return `${filteredEntries.length}개를 남겼어요`;
+  }, [entries.length, filteredEntries.length, historyFilter]);
+  const historyTitle = useMemo(() => {
+    if (historyFilter === "yesterday") {
+      return "어제 남긴 문장";
+    }
+    if (historyFilter === "selected" && selectedDateKey) {
+      return formatNowInEnglishDateLabel(selectedDateKey);
+    }
+    if (historyFilter === "all") {
+      return "영어 조각 기록";
+    }
+
+    return "오늘 남긴 문장";
+  }, [historyFilter, selectedDateKey]);
+  const emptyTimelineCopy = useMemo(() => {
+    if (historyFilter === "yesterday") {
+      return {
+        title: "어제 남긴 문장이 없어요.",
+        body: "괜찮아요. 오늘 지금 떠오른 생각부터 다시 한 줄로 꺼내 보면 돼요."
+      };
+    }
+    if (historyFilter === "selected") {
+      return {
+        title: "이 날짜에는 남긴 문장이 없어요.",
+        body: "달력에서 다른 날짜를 골라보거나, 오늘의 한 줄을 새로 남겨보세요."
+      };
+    }
+    if (historyFilter === "all") {
+      return {
+        title: "아직 쌓인 영어 조각이 없어요.",
+        body: "완벽한 문장일 필요 없어요. 지금 순간을 영어로 꺼내는 게 먼저예요."
+      };
+    }
+
+    return {
+      title: "오늘의 첫 영어 조각을 남겨보세요.",
+      body: "완벽한 문장일 필요 없어요. 지금 순간을 영어로 꺼내는 게 먼저예요."
+    };
+  }, [historyFilter]);
 
   const reminderLabel = useMemo(
     () => getReminderLabel(remindersEnabled, intervalHours),
@@ -96,10 +289,26 @@ export default function NowInEnglishScreen() {
     []
   );
 
+  function handleSelectHistoryFilter(nextFilter: (typeof HISTORY_FILTERS)[number]["key"]) {
+    setHistoryFilter(nextFilter);
+    setSelectedDateKey(null);
+  }
+
+  function handleOpenCalendar() {
+    const baseDate = selectedDateKey ? parseNowInEnglishDateKey(selectedDateKey) : new Date();
+    setCalendarMonthCursor(getCalendarMonthStart(baseDate));
+    setIsCalendarOpen(true);
+  }
+
+  function handleSelectCalendarDate(dateKey: string) {
+    setSelectedDateKey(dateKey);
+    setHistoryFilter("selected");
+    setIsCalendarOpen(false);
+  }
+
   const loadSummary = useCallback(async () => {
     const summary = await getNowInEnglishSummary();
-    setEntries(summary.todayEntries);
-    setTodayCount(summary.todayCount);
+    setEntries(summary.entries);
     setRemindersEnabled(summary.settings.enabled);
     setIntervalHours(summary.settings.intervalHours);
   }, []);
@@ -114,8 +323,7 @@ export default function NowInEnglishScreen() {
         if (cancelled) {
           return;
         }
-        setEntries(summary.todayEntries);
-        setTodayCount(summary.todayCount);
+        setEntries(summary.entries);
         setRemindersEnabled(summary.settings.enabled);
         setIntervalHours(summary.settings.intervalHours);
       } finally {
@@ -353,11 +561,36 @@ export default function NowInEnglishScreen() {
           </View>
 
           <View style={styles.listSection}>
-            <View style={styles.listHeader}>
-              <Text style={styles.sectionTitle}>오늘 남긴 문장</Text>
-              <Text style={styles.listMeta}>{todayCount}개를 남겼어요</Text>
+            <View style={styles.listHeaderRow}>
+              <View style={styles.listHeaderCopy}>
+                <Text style={styles.sectionTitle}>{historyTitle}</Text>
+                <Text style={styles.listMeta}>{historyMeta}</Text>
+              </View>
+              <Pressable style={styles.calendarOpenButton} onPress={handleOpenCalendar}>
+                <Text style={styles.calendarOpenButtonText}>달력</Text>
+              </Pressable>
             </View>
-            <TodayEntryList entries={sortedTodayEntries} />
+            <View style={styles.historyTabs}>
+              {HISTORY_FILTERS.map((filter) => {
+                const isActive = historyFilter === filter.key;
+                return (
+                  <Pressable
+                    key={filter.key}
+                    style={[styles.historyTab, isActive && styles.historyTabActive]}
+                    onPress={() => handleSelectHistoryFilter(filter.key)}
+                  >
+                    <Text style={[styles.historyTabText, isActive && styles.historyTabTextActive]}>
+                      {filter.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <EntryTimeline
+              groups={entryGroups}
+              emptyTitle={emptyTimelineCopy.title}
+              emptyBody={emptyTimelineCopy.body}
+            />
           </View>
         </ScrollView>
         <MobileNavBar activeTab="home" />
@@ -464,6 +697,87 @@ export default function NowInEnglishScreen() {
             </View>
           </KeyboardAvoidingView>
         </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={isCalendarOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsCalendarOpen(false)}
+      >
+        <View style={styles.calendarModalOverlay}>
+          <Pressable style={styles.calendarModalBackdrop} onPress={() => setIsCalendarOpen(false)} />
+          <SafeAreaView style={styles.calendarModalFrame} edges={["top", "bottom"]}>
+            <View style={styles.calendarModalCard}>
+              <View style={styles.calendarModalHeader}>
+                <Pressable
+                  style={styles.monthButton}
+                  onPress={() =>
+                    setCalendarMonthCursor((current) =>
+                      getCalendarMonthStart(new Date(current.getFullYear(), current.getMonth() - 1, 1, 12))
+                    )
+                  }
+                >
+                  <Text style={styles.monthButtonText}>{"<"}</Text>
+                </Pressable>
+                <Text style={styles.monthTitle}>{formatCalendarMonthLabel(calendarMonthCursor)}</Text>
+                <Pressable
+                  style={styles.monthButton}
+                  onPress={() =>
+                    setCalendarMonthCursor((current) =>
+                      getCalendarMonthStart(new Date(current.getFullYear(), current.getMonth() + 1, 1, 12))
+                    )
+                  }
+                >
+                  <Text style={styles.monthButtonText}>{">"}</Text>
+                </Pressable>
+              </View>
+
+              <View style={styles.calendarWeekHeader}>
+                {WEEK_LABELS.map((label) => (
+                  <Text key={label} style={styles.calendarWeekLabel}>
+                    {label}
+                  </Text>
+                ))}
+              </View>
+
+              <View style={styles.calendarGrid}>
+                {calendarCells.map((cell) => (
+                  <View key={cell.key} style={styles.calendarCellWrap}>
+                    <Pressable
+                      style={[
+                        styles.calendarCell,
+                        cell.hasEntries && styles.calendarCellHasEntries,
+                        cell.isToday && styles.calendarCellToday,
+                        cell.isSelected && styles.calendarCellSelected,
+                        !cell.isCurrentMonth && styles.calendarCellOutside
+                      ]}
+                      onPress={() => handleSelectCalendarDate(cell.key)}
+                    >
+                      <Text
+                        style={[
+                          styles.calendarCellText,
+                          cell.hasEntries && styles.calendarCellTextHasEntries,
+                          cell.isToday && styles.calendarCellTextToday,
+                          cell.isSelected && styles.calendarCellTextSelected,
+                          !cell.isCurrentMonth && styles.calendarCellTextOutside
+                        ]}
+                      >
+                        {cell.day}
+                      </Text>
+                      {cell.hasEntries ? <View style={styles.calendarDot} /> : null}
+                    </Pressable>
+                  </View>
+                ))}
+              </View>
+
+              <Text style={styles.calendarFooterMeta}>날짜를 누르면 그날 남긴 영어 조각을 바로 볼 수 있어요.</Text>
+              <Pressable style={styles.calendarCloseButton} onPress={() => setIsCalendarOpen(false)}>
+                <Text style={styles.calendarCloseButtonText}>닫기</Text>
+              </Pressable>
+            </View>
+          </SafeAreaView>
+        </View>
       </Modal>
     </SafeAreaView>
   );
@@ -744,9 +1058,16 @@ const styles = StyleSheet.create({
     color: "#805D37"
   },
   listSection: {
+    gap: 14
+  },
+  listHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 12
   },
-  listHeader: {
+  listHeaderCopy: {
+    flex: 1,
     gap: 4
   },
   sectionTitle: {
@@ -760,6 +1081,74 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     fontWeight: "800",
     color: "#8A6F52"
+  },
+  calendarOpenButton: {
+    minHeight: 40,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E2C5A6",
+    backgroundColor: "#FFFEFC",
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  calendarOpenButtonText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "900",
+    color: "#8A5A1E"
+  },
+  historyTabs: {
+    flexDirection: "row",
+    borderRadius: 999,
+    backgroundColor: "#EFE4D6",
+    padding: 4,
+    gap: 4
+  },
+  historyTab: {
+    flex: 1,
+    minHeight: 42,
+    borderRadius: 999,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  historyTabActive: {
+    backgroundColor: "#EA920D"
+  },
+  historyTabText: {
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "900",
+    color: "#7B6348"
+  },
+  historyTabTextActive: {
+    color: "#24180B"
+  },
+  timelineList: {
+    gap: 18
+  },
+  timelineGroup: {
+    gap: 10
+  },
+  timelineGroupHeader: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 10,
+    paddingHorizontal: 2
+  },
+  timelineDateLabel: {
+    flex: 1,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "900",
+    color: "#2B2620"
+  },
+  timelineCount: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: "#9A7140"
   },
   entryList: {
     gap: 10
@@ -995,5 +1384,141 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900",
     color: "#8A5A19"
+  },
+  calendarModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(36, 26, 15, 0.36)"
+  },
+  calendarModalBackdrop: {
+    ...StyleSheet.absoluteFillObject
+  },
+  calendarModalFrame: {
+    flex: 1,
+    justifyContent: "center",
+    paddingHorizontal: 20
+  },
+  calendarModalCard: {
+    borderRadius: 30,
+    backgroundColor: "#FFFEFC",
+    borderWidth: 1,
+    borderColor: "#EADCCB",
+    padding: 18,
+    gap: 14,
+    shadowColor: "#2A1A0A",
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 8
+  },
+  calendarModalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  monthButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    borderWidth: 1,
+    borderColor: "#E4D0B8",
+    backgroundColor: "#FFF9F2",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  monthButtonText: {
+    fontSize: 22,
+    lineHeight: 22,
+    fontWeight: "900",
+    color: "#8A6431"
+  },
+  monthTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: "900",
+    color: "#2A2521"
+  },
+  calendarWeekHeader: {
+    flexDirection: "row"
+  },
+  calendarWeekLabel: {
+    flex: 1,
+    textAlign: "center",
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#A28D78"
+  },
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    rowGap: 8
+  },
+  calendarCellWrap: {
+    width: "14.285%",
+    alignItems: "center"
+  },
+  calendarCell: {
+    width: 38,
+    height: 42,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2
+  },
+  calendarCellOutside: {
+    opacity: 0.45
+  },
+  calendarCellHasEntries: {
+    backgroundColor: "#FFF0D7"
+  },
+  calendarCellToday: {
+    borderWidth: 1,
+    borderColor: "#F2A14A"
+  },
+  calendarCellSelected: {
+    backgroundColor: "#F2A14A"
+  },
+  calendarCellText: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: "#5E5247"
+  },
+  calendarCellTextOutside: {
+    color: "#B4A392"
+  },
+  calendarCellTextHasEntries: {
+    color: "#8A5A1E"
+  },
+  calendarCellTextToday: {
+    color: "#2E2416"
+  },
+  calendarCellTextSelected: {
+    color: "#21160A"
+  },
+  calendarDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#EA920D"
+  },
+  calendarFooterMeta: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "800",
+    color: "#8A6F52"
+  },
+  calendarCloseButton: {
+    minHeight: 46,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E2C5A6",
+    backgroundColor: "#FFF9F2",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  calendarCloseButtonText: {
+    fontSize: 15,
+    lineHeight: 20,
+    fontWeight: "900",
+    color: "#8A5A1E"
   }
 });

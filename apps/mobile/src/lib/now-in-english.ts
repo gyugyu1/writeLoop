@@ -61,6 +61,38 @@ function toDateKey(value: Date) {
   return `${lookup.year}-${lookup.month}-${lookup.day}`;
 }
 
+export function getNowInEnglishDateKey(value = new Date()) {
+  return toDateKey(value);
+}
+
+export function getNowInEnglishRelativeDateKey(offsetDays: number) {
+  return toDateKey(new Date(Date.now() + offsetDays * 24 * 60 * 60 * 1000));
+}
+
+export function formatNowInEnglishDateLabel(dateKey: string) {
+  const todayKey = getNowInEnglishDateKey();
+  const yesterdayKey = getNowInEnglishRelativeDateKey(-1);
+  if (dateKey === todayKey) {
+    return "오늘";
+  }
+  if (dateKey === yesterdayKey) {
+    return "어제";
+  }
+
+  const date = new Date(`${dateKey}T00:00:00+09:00`);
+  if (Number.isNaN(date.getTime())) {
+    return dateKey;
+  }
+
+  return new Intl.DateTimeFormat("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "long",
+    timeZone: "Asia/Seoul"
+  }).format(date);
+}
+
 function createEntryId() {
   return `now-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }

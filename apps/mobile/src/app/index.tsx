@@ -31,6 +31,11 @@ import { useSession } from "@/lib/session";
 import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { getStreakMascotStage } from "@/lib/streak-mascot";
 import { getLocalWritingDraft } from "@/lib/writing-drafts";
+import {
+  getNowInEnglishSummary,
+  NOW_IN_ENGLISH_NOTIFICATION_BODY,
+  type NowInEnglishSummary
+} from "@/lib/now-in-english";
 import type {
   DailyDifficulty,
   DiaryCalendarSummary,
@@ -365,6 +370,7 @@ export default function HomeScreen() {
   const [diaryMonthCursor, setDiaryMonthCursor] = useState(() => getMonthStart(new Date()));
   const [isDiaryCalendarLoading, setIsDiaryCalendarLoading] = useState(false);
   const [diaryCalendarError, setDiaryCalendarError] = useState("");
+  const [nowInEnglishSummary, setNowInEnglishSummary] = useState<NowInEnglishSummary | null>(null);
   const featuredRecommendationRequestIdRef = useRef(0);
   const homeSnapshotRequestIdRef = useRef(0);
   const diaryCalendarLoadPromiseRef = useRef<Promise<void> | null>(null);
@@ -440,6 +446,8 @@ export default function HomeScreen() {
     diaryStreakDays > 0 ? `일기 ${diaryStreakDays}일 연속` : "일기 대기 중";
   const statusMetaLabel = `총 ${answerHistoryCount.toLocaleString("ko-KR")}문항 작성 · 총 ${(diaryCalendarSummary?.totalEntries ?? 0).toLocaleString("ko-KR")}개의 일기 작성`;
   const todayDiaryEntry = diaryDaysByDate.get(diaryTodayKey) ?? null;
+  const nowInEnglishTodayCount = nowInEnglishSummary?.todayCount ?? 0;
+  const nowInEnglishReminderEnabled = nowInEnglishSummary?.settings.enabled ?? false;
   const homeDiaryCalendar = useMemo(
     () => buildHomeDiaryMonthCalendar(diaryMonthCursor, diaryEntryDateKeys, diaryTodayKey),
     [diaryEntryDateKeys, diaryMonthCursor, diaryTodayKey]
@@ -558,6 +566,10 @@ export default function HomeScreen() {
       }
     }
   }, [currentUser]);
+
+  const loadNowInEnglishSummary = useCallback(async () => {
+    setNowInEnglishSummary(await getNowInEnglishSummary());
+  }, []);
 
   const loadFeaturedRecommendation = useCallback(
     async (difficulty: DailyDifficulty = featuredRecommendationDifficulty) => {
@@ -693,6 +705,10 @@ export default function HomeScreen() {
     setIsFeaturedRecommendationTranslationVisible(false);
   }, [featuredRecommendationPrompt?.id]);
 
+  useEffect(() => {
+    void loadNowInEnglishSummary();
+  }, [loadNowInEnglishSummary]);
+
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
@@ -768,12 +784,14 @@ export default function HomeScreen() {
       }
 
       void loadDiaryEntries();
-    }, [loadDiaryEntries])
+      void loadNowInEnglishSummary();
+    }, [loadDiaryEntries, loadNowInEnglishSummary])
   );
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     const user = await refreshSession();
+    await loadNowInEnglishSummary();
     if (user) {
       await loadHomeSnapshot();
     } else {
@@ -786,6 +804,7 @@ export default function HomeScreen() {
     }
     setIsRefreshing(false);
   }, [
+    loadNowInEnglishSummary,
     loadHomeSnapshot,
     refreshSession
   ]);
@@ -847,6 +866,10 @@ export default function HomeScreen() {
         difficulty
       }
     });
+  }, []);
+
+  const handleOpenNowInEnglish = useCallback(() => {
+    router.push("/now" as Href);
   }, []);
 
   const handleOpenCalendar = useCallback(() => {
@@ -1000,6 +1023,33 @@ export default function HomeScreen() {
               </Pressable>
             }
           />
+        </View>
+
+        <View style={styles.nowEnglishSection}>
+          <View style={styles.nowEnglishHero}>
+            <Text style={styles.nowEnglishTitle}>지금 영어로</Text>
+            <Text style={styles.nowEnglishBody}>{NOW_IN_ENGLISH_NOTIFICATION_BODY}</Text>
+            <View style={styles.nowEnglishStatsRow}>
+              <View style={styles.nowEnglishStatPill}>
+                <Text style={styles.nowEnglishStatNumber}>{nowInEnglishTodayCount}</Text>
+                <Text style={styles.nowEnglishStatLabel}>오늘 남긴 조각</Text>
+              </View>
+              <View style={styles.nowEnglishStatPill}>
+                <Text style={styles.nowEnglishStatNumber}>{nowInEnglishReminderEnabled ? "ON" : "OFF"}</Text>
+                <Text style={styles.nowEnglishStatLabel}>루프 알림</Text>
+              </View>
+            </View>
+            <View style={styles.nowEnglishActionRow}>
+              <Pressable style={styles.nowEnglishPrimaryButton} onPress={handleOpenNowInEnglish}>
+                <Text style={styles.nowEnglishPrimaryButtonText}>지금 쓰기</Text>
+              </Pressable>
+              <Pressable style={styles.nowEnglishSecondaryButton} onPress={handleOpenNowInEnglish}>
+                <Text style={styles.nowEnglishSecondaryButtonText}>
+                  {nowInEnglishReminderEnabled ? "알림 설정" : "알림 켜기"}
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
 
         <View style={styles.statusPanel}>
@@ -1457,6 +1507,96 @@ const styles = StyleSheet.create({
   },
   difficultySectionHeader: {
     gap: 10
+  },
+  nowEnglishSection: {
+    gap: 12
+  },
+  nowEnglishHero: {
+    borderRadius: 36,
+    backgroundColor: "#FDFDFB",
+    paddingHorizontal: 24,
+    paddingVertical: 26,
+    gap: 16,
+    shadowColor: "#D18634",
+    shadowOpacity: 0.13,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    borderWidth: 1,
+    borderColor: "#EBDCCB",
+    elevation: 3
+  },
+  nowEnglishTitle: {
+    fontSize: 39,
+    lineHeight: 45,
+    fontWeight: "900",
+    letterSpacing: -1.5,
+    color: "#25211D"
+  },
+  nowEnglishBody: {
+    fontSize: 17,
+    lineHeight: 26,
+    fontWeight: "700",
+    color: "#756552"
+  },
+  nowEnglishStatsRow: {
+    flexDirection: "row",
+    gap: 10
+  },
+  nowEnglishStatPill: {
+    flex: 1,
+    borderRadius: 24,
+    backgroundColor: "#FFF3E2",
+    borderWidth: 1,
+    borderColor: "#EED8BF",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 4
+  },
+  nowEnglishStatNumber: {
+    fontSize: 24,
+    lineHeight: 29,
+    fontWeight: "900",
+    color: "#E38B12"
+  },
+  nowEnglishStatLabel: {
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "800",
+    color: "#8B6B49"
+  },
+  nowEnglishActionRow: {
+    flexDirection: "row",
+    gap: 10
+  },
+  nowEnglishPrimaryButton: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 999,
+    backgroundColor: "#EA920D",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  nowEnglishPrimaryButtonText: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: "900",
+    color: "#251809"
+  },
+  nowEnglishSecondaryButton: {
+    flex: 1,
+    minHeight: 56,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#D9AE7A",
+    backgroundColor: "#FFFEFC",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  nowEnglishSecondaryButtonText: {
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: "900",
+    color: "#8A5A1E"
   },
   headerTitleBlock: {
     alignSelf: "flex-start",

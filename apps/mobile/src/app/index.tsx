@@ -435,6 +435,10 @@ export default function HomeScreen() {
     return grouped;
   }, [diaryCalendarSummary?.days]);
   const diaryEntryDateKeys = useMemo(() => new Set(diaryDaysByDate.keys()), [diaryDaysByDate]);
+  const nowInEnglishDateKeys = useMemo(
+    () => new Set((nowInEnglishSummary?.entries ?? []).map((entry) => entry.dateKey)),
+    [nowInEnglishSummary?.entries]
+  );
   const diaryStreakDays = useMemo(
     () => calculateDiaryStreakDays(diaryEntryDateKeys, diaryTodayKey),
     [diaryEntryDateKeys, diaryTodayKey]
@@ -444,7 +448,10 @@ export default function HomeScreen() {
     displayedStreakDays > 0 ? `작문 ${displayedStreakDays}일 연속` : "작문 대기 중";
   const diaryStreakBadgeLabel =
     diaryStreakDays > 0 ? `일기 ${diaryStreakDays}일 연속` : "일기 대기 중";
-  const statusMetaLabel = `총 ${answerHistoryCount.toLocaleString("ko-KR")}문항 작성 · 총 ${(diaryCalendarSummary?.totalEntries ?? 0).toLocaleString("ko-KR")}개의 일기 작성`;
+  const statusMetaLines = [
+    `총 ${answerHistoryCount.toLocaleString("ko-KR")}문항 작성 · 총 ${(diaryCalendarSummary?.totalEntries ?? 0).toLocaleString("ko-KR")}개의 일기 작성`,
+    `총 ${(nowInEnglishSummary?.entries.length ?? 0).toLocaleString("ko-KR")}개의 영어조각`
+  ];
   const todayDiaryEntry = diaryDaysByDate.get(diaryTodayKey) ?? null;
   const nowInEnglishTodayCount = nowInEnglishSummary?.todayCount ?? 0;
   const nowInEnglishReminderEnabled = nowInEnglishSummary?.settings.enabled ?? false;
@@ -872,6 +879,13 @@ export default function HomeScreen() {
     router.push("/now" as Href);
   }, []);
 
+  const handleOpenNowInEnglishRecords = useCallback(() => {
+    router.push({
+      pathname: "/records",
+      params: { tab: "now" }
+    } as Href);
+  }, []);
+
   const handleOpenCalendar = useCallback(() => {
     setCalendarMonthCursor(calendarReferenceMonth);
     setIsCalendarOpen(true);
@@ -886,9 +900,9 @@ export default function HomeScreen() {
   }, []);
 
   const handleOpenCalendarDate = useCallback(
-    (dateKey: string, hasWritingActivity: boolean, hasDiaryActivity: boolean) => {
+    (dateKey: string, hasWritingActivity: boolean, hasDiaryActivity: boolean, hasNowInEnglishActivity: boolean) => {
       setIsCalendarOpen(false);
-      if (currentUser && hasDiaryActivity && !hasWritingActivity) {
+      if (currentUser && hasDiaryActivity && !hasWritingActivity && !hasNowInEnglishActivity) {
         const diaryDay = diaryDaysByDate.get(dateKey);
         if (diaryDay) {
           router.push({
@@ -897,6 +911,14 @@ export default function HomeScreen() {
           } as Href);
           return;
         }
+      }
+
+      if (hasNowInEnglishActivity && !hasWritingActivity) {
+        router.push({
+          pathname: "/records",
+          params: { tab: "now" }
+        } as Href);
+        return;
       }
 
       const nextHref: Href = currentUser
@@ -1014,44 +1036,6 @@ export default function HomeScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />}
       >
-        <View style={styles.heroSection}>
-          <MobileScreenHeader
-            title="난이도 선택"
-            rightAccessory={
-              <Pressable style={styles.guideButton} onPress={() => setIsGuideOpen(true)}>
-                <Text style={styles.guideButtonText}>가이드 보기</Text>
-              </Pressable>
-            }
-          />
-        </View>
-
-        <View style={styles.nowEnglishSection}>
-          <View style={styles.nowEnglishHero}>
-            <Text style={styles.nowEnglishTitle}>지금 영어로</Text>
-            <Text style={styles.nowEnglishBody}>{NOW_IN_ENGLISH_NOTIFICATION_BODY}</Text>
-            <View style={styles.nowEnglishStatsRow}>
-              <View style={styles.nowEnglishStatPill}>
-                <Text style={styles.nowEnglishStatNumber}>{nowInEnglishTodayCount}</Text>
-                <Text style={styles.nowEnglishStatLabel}>오늘 남긴 조각</Text>
-              </View>
-              <View style={styles.nowEnglishStatPill}>
-                <Text style={styles.nowEnglishStatNumber}>{nowInEnglishReminderEnabled ? "ON" : "OFF"}</Text>
-                <Text style={styles.nowEnglishStatLabel}>루프 알림</Text>
-              </View>
-            </View>
-            <View style={styles.nowEnglishActionRow}>
-              <Pressable style={styles.nowEnglishPrimaryButton} onPress={handleOpenNowInEnglish}>
-                <Text style={styles.nowEnglishPrimaryButtonText}>지금 쓰기</Text>
-              </Pressable>
-              <Pressable style={styles.nowEnglishSecondaryButton} onPress={handleOpenNowInEnglish}>
-                <Text style={styles.nowEnglishSecondaryButtonText}>
-                  {nowInEnglishReminderEnabled ? "알림 설정" : "알림 켜기"}
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-
         <View style={styles.statusPanel}>
           <Pressable style={styles.statusPanelMain} onPress={() => router.push(historyRoute)}>
           <View style={styles.statusLead}>
@@ -1070,7 +1054,13 @@ export default function HomeScreen() {
                   <Text style={styles.statusBadgeText}>{diaryStreakBadgeLabel}</Text>
                 </View>
               </View>
-              <Text style={styles.statusMeta}>{statusMetaLabel}</Text>
+              <View style={styles.statusMetaGroup}>
+                {statusMetaLines.map((line) => (
+                  <Text key={line} style={styles.statusMeta}>
+                    {line}
+                  </Text>
+                ))}
+              </View>
               {statusError ? <Text style={styles.statusError}>{statusError}</Text> : null}
             </View>
           </View>
@@ -1108,6 +1098,42 @@ export default function HomeScreen() {
             <Text style={styles.resumeMeta}>{incompleteLoopInlineNote}</Text>
           </Pressable>
         ) : null}
+        </View>
+
+        <View style={styles.nowEnglishSection}>
+          <MobileScreenHeader title="지금 영어로" />
+          <View style={styles.nowEnglishHero}>
+            <Text style={styles.nowEnglishBody}>{NOW_IN_ENGLISH_NOTIFICATION_BODY}</Text>
+            <View style={styles.nowEnglishStatsRow}>
+              <View style={styles.nowEnglishStatPill}>
+                <Text style={styles.nowEnglishStatNumber}>{nowInEnglishTodayCount}</Text>
+                <Text style={styles.nowEnglishStatLabel}>오늘 남긴 조각</Text>
+              </View>
+              <View style={styles.nowEnglishStatPill}>
+                <Text style={styles.nowEnglishStatNumber}>{nowInEnglishReminderEnabled ? "ON" : "OFF"}</Text>
+                <Text style={styles.nowEnglishStatLabel}>루프 알림</Text>
+              </View>
+            </View>
+            <View style={styles.nowEnglishActionRow}>
+              <Pressable style={styles.nowEnglishPrimaryButton} onPress={handleOpenNowInEnglish}>
+                <Text style={styles.nowEnglishPrimaryButtonText}>지금 쓰기</Text>
+              </Pressable>
+              <Pressable style={styles.nowEnglishSecondaryButton} onPress={handleOpenNowInEnglishRecords}>
+                <Text style={styles.nowEnglishSecondaryButtonText}>기록 보기</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
+        <View style={styles.difficultySectionHeader}>
+          <MobileScreenHeader
+            title="난이도 선택"
+            rightAccessory={
+              <Pressable style={styles.guideButton} onPress={() => setIsGuideOpen(true)}>
+                <Text style={styles.guideButtonText}>가이드 보기</Text>
+              </Pressable>
+            }
+          />
         </View>
 
         <View style={styles.featuredRecommendationSection}>
@@ -1178,17 +1204,6 @@ export default function HomeScreen() {
               </Text>
             </View>
           )}
-        </View>
-
-        <View style={styles.difficultySectionHeader}>
-          <MobileScreenHeader
-            title="난이도 선택"
-            rightAccessory={
-              <Pressable style={styles.guideButton} onPress={() => setIsGuideOpen(true)}>
-                <Text style={styles.guideButtonText}>가이드 보기</Text>
-              </Pressable>
-            }
-          />
         </View>
 
         <View style={styles.stageSection}>
@@ -1366,10 +1381,14 @@ export default function HomeScreen() {
                 {monthCalendar.cells.map((cell) => {
                   const hasWritingActivity = cell.isCompleted;
                   const hasDiaryActivity = diaryEntryDateKeys.has(cell.key);
+                  const hasNowInEnglishActivity = nowInEnglishDateKeys.has(cell.key);
                   const activityLabel = [
                     hasWritingActivity ? "작문 완료" : null,
                     hasDiaryActivity ? "일기 작성" : null
                   ]
+                    .filter(Boolean)
+                    .join(", ");
+                  const completeActivityLabel = [activityLabel, hasNowInEnglishActivity ? "영어조각 작성" : null]
                     .filter(Boolean)
                     .join(", ");
 
@@ -1377,8 +1396,15 @@ export default function HomeScreen() {
                     <View key={cell.key} style={styles.calendarCellWrap}>
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel={`${cell.dayNumber}일${activityLabel ? `, ${activityLabel}` : ""}`}
-                        onPress={() => handleOpenCalendarDate(cell.key, hasWritingActivity, hasDiaryActivity)}
+                        accessibilityLabel={`${cell.dayNumber}일${completeActivityLabel ? `, ${completeActivityLabel}` : ""}`}
+                        onPress={() =>
+                          handleOpenCalendarDate(
+                            cell.key,
+                            hasWritingActivity,
+                            hasDiaryActivity,
+                            hasNowInEnglishActivity
+                          )
+                        }
                         style={[
                           styles.calendarCell,
                           hasDiaryActivity && !hasWritingActivity && styles.calendarCellDiaryOnly,
@@ -1398,7 +1424,7 @@ export default function HomeScreen() {
                         >
                           {cell.dayNumber}
                         </Text>
-                        {hasWritingActivity || hasDiaryActivity ? (
+                        {hasWritingActivity || hasDiaryActivity || hasNowInEnglishActivity ? (
                           <View style={styles.calendarActivityMarkers} pointerEvents="none">
                             <View style={styles.calendarActivityDotSlot}>
                               {hasWritingActivity ? (
@@ -1408,6 +1434,11 @@ export default function HomeScreen() {
                             <View style={styles.calendarActivityDotSlot}>
                               {hasDiaryActivity ? (
                                 <View style={[styles.calendarActivityDot, styles.calendarActivityDotDiary]} />
+                              ) : null}
+                            </View>
+                            <View style={styles.calendarActivityDotSlot}>
+                              {hasNowInEnglishActivity ? (
+                                <View style={[styles.calendarActivityDot, styles.calendarActivityDotNow]} />
                               ) : null}
                             </View>
                           </View>
@@ -1426,6 +1457,10 @@ export default function HomeScreen() {
                 <View style={styles.calendarActivityLegendItem}>
                   <View style={[styles.calendarActivityDot, styles.calendarActivityDotDiary]} />
                   <Text style={styles.calendarActivityLegendText}>일기</Text>
+                </View>
+                <View style={styles.calendarActivityLegendItem}>
+                  <View style={[styles.calendarActivityDot, styles.calendarActivityDotNow]} />
+                  <Text style={styles.calendarActivityLegendText}>영어조각</Text>
                 </View>
               </View>
 
@@ -1524,13 +1559,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#EBDCCB",
     elevation: 3
-  },
-  nowEnglishTitle: {
-    fontSize: 39,
-    lineHeight: 45,
-    fontWeight: "900",
-    letterSpacing: -1.5,
-    color: "#25211D"
   },
   nowEnglishBody: {
     fontSize: 17,
@@ -1719,6 +1747,9 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     fontWeight: "900",
     color: "#8A5A1E"
+  },
+  statusMetaGroup: {
+    gap: 2
   },
   statusMeta: {
     fontSize: 12,
@@ -2265,8 +2296,12 @@ const styles = StyleSheet.create({
   calendarActivityDotDiary: {
     backgroundColor: "#32835B"
   },
+  calendarActivityDotNow: {
+    backgroundColor: "#2F74C0"
+  },
   calendarActivityLegend: {
     flexDirection: "row",
+    flexWrap: "wrap",
     alignItems: "center",
     justifyContent: "center",
     gap: 14,

@@ -36,6 +36,8 @@ import type {
   MobilePlatform,
   MobileHomeSnapshot,
   MonthWritingStatus,
+  NowInEnglishReflectionRequest,
+  NowInEnglishReflectionResponse,
   PendingSocialRegistration,
   PromptHint,
   Prompt,
@@ -85,6 +87,10 @@ function resolveFetchTimeoutMs(url: string) {
   }
 
   if (url.includes("/api/coach/help")) {
+    return COACH_FETCH_TIMEOUT_MS;
+  }
+
+  if (url.includes("/api/now-in-english/reflection")) {
     return COACH_FETCH_TIMEOUT_MS;
   }
 
@@ -151,6 +157,43 @@ function normalizeCoachHelpResponse(
     coachReply: payload.coachReply ?? "이 질문에 맞는 표현을 골라 답안에 자연스럽게 넣어 보세요.",
     expressions,
     interactionId: payload.interactionId
+  };
+}
+
+function normalizeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean);
+}
+
+function normalizeNowInEnglishReflectionResponse(
+  payload: Partial<NowInEnglishReflectionResponse>,
+  fallbackDateKey: string,
+  fallbackEntryCount: number
+): NowInEnglishReflectionResponse {
+  return {
+    dateKey: payload.dateKey || fallbackDateKey,
+    entryCount: typeof payload.entryCount === "number" ? payload.entryCount : fallbackEntryCount,
+    headlineKo: payload.headlineKo || "어제의 영어 조각",
+    summaryKo: payload.summaryKo || "어제 남긴 짧은 문장들을 다시 살펴봤어요.",
+    highlightsKo: normalizeStringList(payload.highlightsKo),
+    patternKo: payload.patternKo || "",
+    gentleCorrectionKo: payload.gentleCorrectionKo || "",
+    nextActionKo: payload.nextActionKo || "오늘도 지금 순간을 한 줄로 남겨보세요.",
+    nextActionExampleEn: payload.nextActionExampleEn || "",
+    expressions: (payload.expressions ?? [])
+      .filter((expression) => Boolean(expression?.expression))
+      .map((expression) => ({
+        expression: expression.expression ?? "",
+        meaningKo: expression.meaningKo ?? "",
+        usageTip: expression.usageTip ?? "",
+        example: expression.example ?? ""
+      })),
+    closingKo: payload.closingKo || ""
   };
 }
 
@@ -1397,6 +1440,28 @@ export async function requestCoachHelp(request: CoachHelpRequest): Promise<Coach
   };
 
   return normalizeCoachHelpResponse(payload, request.promptId, request.question);
+}
+
+export async function requestNowInEnglishReflection(
+  request: NowInEnglishReflectionRequest
+): Promise<NowInEnglishReflectionResponse> {
+  const response = await apiFetch("/api/now-in-english/reflection", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어 조각 회고를 불러오지 못했어요.");
+  }
+
+  return normalizeNowInEnglishReflectionResponse(
+    (await response.json()) as Partial<NowInEnglishReflectionResponse>,
+    request.dateKey,
+    request.entries.length
+  );
 }
 
 export async function submitFeedback(request: FeedbackRequest): Promise<Feedback> {

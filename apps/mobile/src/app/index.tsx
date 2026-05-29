@@ -879,6 +879,13 @@ export default function HomeScreen() {
     router.push("/now" as Href);
   }, []);
 
+  const handleOpenNowInEnglishReminder = useCallback(() => {
+    router.push({
+      pathname: "/now",
+      params: { reminder: "open" }
+    } as Href);
+  }, []);
+
   const handleOpenNowInEnglishRecords = useCallback(() => {
     router.push({
       pathname: "/records",
@@ -1109,10 +1116,15 @@ export default function HomeScreen() {
                 <Text style={styles.nowEnglishStatNumber}>{nowInEnglishTodayCount}</Text>
                 <Text style={styles.nowEnglishStatLabel}>오늘 남긴 조각</Text>
               </View>
-              <View style={styles.nowEnglishStatPill}>
+              <Pressable
+                style={styles.nowEnglishStatPill}
+                accessibilityRole="button"
+                accessibilityLabel="루프 알림 설정 열기"
+                onPress={handleOpenNowInEnglishReminder}
+              >
                 <Text style={styles.nowEnglishStatNumber}>{nowInEnglishReminderEnabled ? "ON" : "OFF"}</Text>
                 <Text style={styles.nowEnglishStatLabel}>루프 알림</Text>
-              </View>
+              </Pressable>
             </View>
             <View style={styles.nowEnglishActionRow}>
               <Pressable style={styles.nowEnglishPrimaryButton} onPress={handleOpenNowInEnglish}>

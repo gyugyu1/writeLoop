@@ -369,6 +369,37 @@ export interface CoachHelpResponse {
   interactionId?: string;
 }
 
+export interface NowInEnglishReflectionEntryRequest {
+  text: string;
+  createdAt?: string;
+}
+
+export interface NowInEnglishReflectionRequest {
+  dateKey: string;
+  entries: NowInEnglishReflectionEntryRequest[];
+}
+
+export interface NowInEnglishReflectionExpression {
+  expression: string;
+  meaningKo: string;
+  usageTip: string;
+  example: string;
+}
+
+export interface NowInEnglishReflectionResponse {
+  dateKey: string;
+  entryCount: number;
+  headlineKo: string;
+  summaryKo: string;
+  highlightsKo: string[];
+  patternKo: string;
+  gentleCorrectionKo: string;
+  nextActionKo: string;
+  nextActionExampleEn: string;
+  expressions: NowInEnglishReflectionExpression[];
+  closingKo: string;
+}
+
 export interface CommonMistake {
   issue: string;
   displayLabel: string;

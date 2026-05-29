@@ -46,6 +46,8 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
             @Value("${app.security.rate-limit.feedback-max-requests:6}") int feedbackMaxRequests,
             @Value("${app.security.rate-limit.coach-help-window-seconds:60}") long coachHelpWindowSeconds,
             @Value("${app.security.rate-limit.coach-help-max-requests:20}") int coachHelpMaxRequests,
+            @Value("${app.security.rate-limit.now-reflection-window-seconds:${app.security.rate-limit.coach-help-window-seconds:60}}") long nowReflectionWindowSeconds,
+            @Value("${app.security.rate-limit.now-reflection-max-requests:8}") int nowReflectionMaxRequests,
             @Value("${app.security.rate-limit.coach-usage-window-seconds:60}") long coachUsageWindowSeconds,
             @Value("${app.security.rate-limit.coach-usage-max-requests:60}") int coachUsageMaxRequests,
             @Value("${app.security.rate-limit.draft-save-window-seconds:60}") long draftSaveWindowSeconds,
@@ -122,6 +124,16 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
                         KeyMode.USER_OR_IP,
                         false,
                         "AI 코치 요청이 너무 빨라요. 잠시 후 다시 시도해 주세요."
+                ),
+                new RateLimitPolicy(
+                        "now-in-english-reflection",
+                        "POST",
+                        Set.of("/api/now-in-english/reflection"),
+                        nowReflectionMaxRequests,
+                        Duration.ofSeconds(Math.max(nowReflectionWindowSeconds, 1)),
+                        KeyMode.USER_OR_IP,
+                        false,
+                        "영어 조각 회고 요청이 너무 빨라요. 잠시 후 다시 시도해 주세요."
                 ),
                 new RateLimitPolicy(
                         "coach-usage",

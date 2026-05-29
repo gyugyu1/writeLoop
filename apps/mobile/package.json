@@ -8,6 +8,7 @@
     "start:localhost": "expo start --dev-client --localhost --clear",
     "start:android-studio": "node scripts/start-with-api-env.js local",
     "start:android-studio:nginx": "node scripts/start-with-api-env.js local-nginx",
+    "start:android-device:nginx": "node scripts/start-with-api-env.js device-nginx",
     "start:android-studio:prod": "node scripts/start-with-api-env.js prod",
     "android": "expo run:android",
     "android:emulator": "expo start --android --localhost --clear",

@@ -127,7 +127,7 @@ app:
     ios:
       latest: ${APP_VERSION_IOS_LATEST:1.0.2}
       minimum-supported: ${APP_VERSION_IOS_MINIMUM_SUPPORTED:1.0.0}
-      store-url: ${APP_VERSION_IOS_STORE_URL:https://apps.apple.com/app/id6763569959}
+      store-url: ${APP_VERSION_IOS_STORE_URL:https://apps.apple.com/kr/app/%EB%9D%BC%EC%9D%B4%ED%8A%B8%EB%A3%A8%ED%94%84/id6763569959}
     android:
       latest: ${APP_VERSION_ANDROID_LATEST:1.0.1}
       minimum-supported: ${APP_VERSION_ANDROID_MINIMUM_SUPPORTED:1.0.0}

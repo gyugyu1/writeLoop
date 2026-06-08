@@ -48,6 +48,8 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
             @Value("${app.security.rate-limit.coach-help-max-requests:20}") int coachHelpMaxRequests,
             @Value("${app.security.rate-limit.now-reflection-window-seconds:${app.security.rate-limit.coach-help-window-seconds:60}}") long nowReflectionWindowSeconds,
             @Value("${app.security.rate-limit.now-reflection-max-requests:8}") int nowReflectionMaxRequests,
+            @Value("${app.security.rate-limit.now-coach-feedback-window-seconds:${app.security.rate-limit.coach-help-window-seconds:60}}") long nowCoachFeedbackWindowSeconds,
+            @Value("${app.security.rate-limit.now-coach-feedback-max-requests:12}") int nowCoachFeedbackMaxRequests,
             @Value("${app.security.rate-limit.coach-usage-window-seconds:60}") long coachUsageWindowSeconds,
             @Value("${app.security.rate-limit.coach-usage-max-requests:60}") int coachUsageMaxRequests,
             @Value("${app.security.rate-limit.draft-save-window-seconds:60}") long draftSaveWindowSeconds,
@@ -136,6 +138,16 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
                         "영어 조각 회고 요청이 너무 빨라요. 잠시 후 다시 시도해 주세요."
                 ),
                 new RateLimitPolicy(
+                        "now-in-english-coach-feedback",
+                        "POST",
+                        Set.of("/api/now-in-english/coach-feedback"),
+                        nowCoachFeedbackMaxRequests,
+                        Duration.ofSeconds(Math.max(nowCoachFeedbackWindowSeconds, 1)),
+                        KeyMode.USER_OR_IP,
+                        false,
+                        "영어 조각 AI 코치 요청이 너무 빨라요. 잠시 후 다시 시도해 주세요."
+                ),
+                new RateLimitPolicy(
                         "coach-usage",
                         "POST",
                         Set.of("/api/coach/usage-check"),
@@ -144,6 +156,16 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
                         KeyMode.USER_OR_IP,
                         false,
                         "AI 코치 요청이 너무 빨라요. 잠시 후 다시 시도해 주세요."
+                ),
+                new RateLimitPolicy(
+                        "now-in-english-entry-save",
+                        "POST",
+                        Set.of("/api/now-in-english/entries", "/api/now-in-english/entries/sync"),
+                        draftSaveMaxRequests,
+                        Duration.ofSeconds(Math.max(draftSaveWindowSeconds, 1)),
+                        KeyMode.USER_OR_IP,
+                        false,
+                        "Now in English save requests are too frequent. Please try again soon."
                 ),
                 new RateLimitPolicy(
                         "draft-save",

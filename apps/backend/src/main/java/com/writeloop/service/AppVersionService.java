@@ -27,7 +27,7 @@ public class AppVersionService {
             AppVersionSettingRepository appVersionSettingRepository,
             @Value("${app.version.ios.latest:1.0.2}") String iosLatestVersion,
             @Value("${app.version.ios.minimum-supported:1.0.0}") String iosMinimumSupportedVersion,
-            @Value("${app.version.ios.store-url:https://apps.apple.com/app/id6763569959}") String iosStoreUrl,
+            @Value("${app.version.ios.store-url:https://apps.apple.com/kr/app/%EB%9D%BC%EC%9D%B4%ED%8A%B8%EB%A3%A8%ED%94%84/id6763569959}") String iosStoreUrl,
             @Value("${app.version.android.latest:1.0.1}") String androidLatestVersion,
             @Value("${app.version.android.minimum-supported:1.0.0}") String androidMinimumSupportedVersion,
             @Value("${app.version.android.store-url:https://play.google.com/store/apps/details?id=kr.writeloop}") String androidStoreUrl,

@@ -16,7 +16,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
-import { requestCoachHelp, requestNowInEnglishReflection } from "@/lib/api";
+import {
+  deleteSavedExpression,
+  getSavedExpressions,
+  requestCoachHelp,
+  requestNowInEnglishCoachFeedback,
+  requestNowInEnglishReflection,
+  saveExpression
+} from "@/lib/api";
 import {
   disableNowInEnglishReminders,
   enableNowInEnglishReminders,
@@ -31,6 +38,7 @@ import {
   getNowInEnglishSummary,
   saveNowInEnglishAiReflection,
   type NowInEnglishAiReflection,
+  type NowInEnglishAiReflectionExpression,
   type NowInEnglishEntry,
   type NowInEnglishIntervalHours,
   type NowInEnglishQuietHours,
@@ -40,7 +48,8 @@ import {
   updateNowInEnglishQuietHours,
   saveNowInEnglishEntry
 } from "@/lib/now-in-english";
-import type { CoachExpression, CoachHelpResponse } from "@/lib/types";
+import { useSession } from "@/lib/session";
+import type { CoachExpression, CoachHelpResponse, NowInEnglishCoachFeedbackResponse } from "@/lib/types";
 
 const NOW_IN_ENGLISH_COACH_PROMPT_ID = "diary-free-writing";
 const coachMascotImage = require("@/assets/images/coach-mascote-face.png");
@@ -56,6 +65,7 @@ const HISTORY_FILTERS = [
 ] as const;
 
 const WEEK_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
+const NOW_IN_ENGLISH_TEXT_LIMIT = 500;
 
 type NowInEnglishHistoryFilter = (typeof HISTORY_FILTERS)[number]["key"] | "selected";
 type NowInEnglishEntryGroup = {
@@ -72,6 +82,50 @@ type NowInEnglishCalendarCell = {
   hasEntries: boolean;
   entryCount: number;
 };
+type PendingPolishSource = {
+  entryId: string;
+  text: string;
+  createdAt: string;
+  dateKey: string;
+};
+
+function normalizeExpressionKey(expression: string) {
+  return expression.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+function normalizeCoachSuggestionComparison(value: string) {
+  return value
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?]+$/g, "")
+    .trim();
+}
+
+function hasUsefulCoachSuggestion(originalText: string, suggestionEn: string) {
+  const normalizedSuggestion = normalizeCoachSuggestionComparison(suggestionEn);
+  if (!normalizedSuggestion) {
+    return false;
+  }
+
+  return normalizedSuggestion !== normalizeCoachSuggestionComparison(originalText);
+}
+
+function buildSavedExpressionIdMap(expressions: { id: number; expression: string }[]) {
+  return expressions.reduce<Record<string, number>>((map, expression) => {
+    const normalizedKey = normalizeExpressionKey(expression.expression);
+    if (normalizedKey) {
+      map[normalizedKey] = expression.id;
+    }
+    return map;
+  }, {});
+}
+
+function mergeSavedNowInEnglishEntry(entries: NowInEnglishEntry[], savedEntry: NowInEnglishEntry) {
+  return [savedEntry, ...entries.filter((entry) => entry.id !== savedEntry.id)].sort((left, right) =>
+    right.createdAt.localeCompare(left.createdAt)
+  );
+}
 
 function clampReminderIntervalHours(value: number) {
   return Math.min(12, Math.max(1, Math.trunc(value)));
@@ -212,7 +266,21 @@ function EntryTimeline({
             {group.entries.map((entry) => (
               <View key={entry.id} style={styles.entryCard}>
                 <Text style={styles.entryTime}>{formatNowInEnglishTime(entry.createdAt)}</Text>
-                <Text style={styles.entryText}>{entry.text}</Text>
+                {entry.polishedFromText ? (
+                  <View style={styles.polishedComparison}>
+                    <Text style={styles.polishedKicker}>다듬은 문장</Text>
+                    <View style={styles.polishedRow}>
+                      <Text style={styles.polishedLabel}>수정 전</Text>
+                      <Text style={styles.polishedBeforeText}>{entry.polishedFromText}</Text>
+                    </View>
+                    <View style={[styles.polishedRow, styles.polishedAfterRow]}>
+                      <Text style={styles.polishedLabel}>수정 후</Text>
+                      <Text style={styles.polishedAfterText}>{entry.text}</Text>
+                    </View>
+                  </View>
+                ) : (
+                  <Text style={styles.entryText}>{entry.text}</Text>
+                )}
               </View>
             ))}
           </View>
@@ -224,45 +292,64 @@ function EntryTimeline({
 
 function YesterdayReflectionCard({
   entries,
-  representativeEntry,
+  dateLabel,
   aiReflection,
   isLoadingAiReflection,
   aiReflectionError,
-  onRefreshAiReflection,
-  onWriteToday
+  onWriteToday,
+  onToggleExpression,
+  isExpressionSaved,
+  isSavingExpression
 }: {
   entries: NowInEnglishEntry[];
-  representativeEntry: NowInEnglishEntry;
+  dateLabel: string;
   aiReflection: NowInEnglishAiReflection | null;
   isLoadingAiReflection: boolean;
   aiReflectionError: string;
-  onRefreshAiReflection: () => void;
   onWriteToday: () => void;
+  onToggleExpression: (expression: NowInEnglishAiReflectionExpression) => void;
+  isExpressionSaved: (expression: string) => boolean;
+  isSavingExpression: (expression: string) => boolean;
 }) {
   const hasReflectionExpressions = (aiReflection?.expressions.length ?? 0) > 0;
 
   return (
-    <View style={styles.reflectionCard}>
-      <Text style={styles.reflectionKicker}>어제의 영어 조각</Text>
-      <Text style={styles.reflectionTitle}>어제 {entries.length}개의 순간을 영어로 남겼어요.</Text>
-      <Text style={styles.reflectionBody}>하루가 지나도 어제의 생각이 이렇게 남아 있어요.</Text>
+    <View style={styles.reflectionStack}>
+      <View style={styles.reflectionCard}>
+        <Text style={styles.reflectionKicker}>{dateLabel}의 영어 조각</Text>
+        <Text style={styles.reflectionTitle}>{dateLabel} {entries.length}개의 순간을 영어로 남겼어요.</Text>
+        <Text style={styles.reflectionBody}>그날의 생각이 이렇게 남아 있어요.</Text>
 
-      <View style={styles.reflectionHighlight}>
-        <Text style={styles.reflectionHighlightLabel}>대표 문장</Text>
-        <Text style={styles.reflectionHighlightText}>{representativeEntry.text}</Text>
+        <View style={styles.reflectionHighlight}>
+          <Text style={styles.reflectionHighlightLabel}>남긴 문장</Text>
+          <View style={styles.reflectionSentenceList}>
+            {entries.map((entry, index) => (
+              <View
+                key={entry.id}
+                style={[styles.reflectionSentenceItem, index > 0 && styles.reflectionSentenceItemWithBorder]}
+              >
+                <Text style={styles.reflectionTime}>{formatNowInEnglishTime(entry.createdAt)}</Text>
+                <Text style={styles.reflectionEntryText}>{entry.text}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
       </View>
 
       <View style={styles.reflectionAiCard}>
         <View style={styles.reflectionAiHeader}>
-          <Text style={styles.reflectionAiTitle}>{aiReflection?.headlineKo ?? "AI 회고"}</Text>
+          <Text style={styles.reflectionAiKicker}>AI 회고</Text>
           {isLoadingAiReflection ? <ActivityIndicator size="small" color="#EA920D" /> : null}
         </View>
 
         {aiReflection ? (
           <>
+            <Text style={styles.reflectionAiTitle}>{aiReflection.headlineKo}</Text>
             <Text style={styles.reflectionAiBody}>{aiReflection.summaryKo}</Text>
+
             {aiReflection.highlightsKo.length > 0 ? (
-              <View style={styles.reflectionHighlightList}>
+              <View style={styles.reflectionFeedbackBox}>
+                <Text style={styles.reflectionInsightLabel}>잘 남긴 점</Text>
                 {aiReflection.highlightsKo.map((highlight, index) => (
                   <View key={`${highlight}-${index}`} style={styles.reflectionHighlightItem}>
                     <Text style={styles.reflectionHighlightBullet}>{index + 1}</Text>
@@ -271,33 +358,70 @@ function YesterdayReflectionCard({
                 ))}
               </View>
             ) : null}
+
             {aiReflection.patternKo ? (
-              <View style={styles.reflectionInsightCard}>
-                <Text style={styles.reflectionInsightLabel}>보이는 흐름</Text>
+              <View style={styles.reflectionPlainSection}>
+                <Text style={styles.reflectionInsightLabel}>오늘의 흐름</Text>
                 <Text style={styles.reflectionInsightText}>{aiReflection.patternKo}</Text>
               </View>
             ) : null}
+
             {aiReflection.gentleCorrectionKo ? (
-              <View style={styles.reflectionInsightCard}>
+              <View style={styles.reflectionPlainSection}>
                 <Text style={styles.reflectionInsightLabel}>가볍게 다듬기</Text>
                 <Text style={styles.reflectionInsightText}>{aiReflection.gentleCorrectionKo}</Text>
               </View>
             ) : null}
+
             {aiReflection.nextActionKo ? (
-              <View style={styles.reflectionNextActionCard}>
-                <Text style={styles.reflectionInsightLabel}>오늘 이어 쓰기</Text>
+              <View style={styles.reflectionPlainSection}>
+                <Text style={styles.reflectionInsightLabel}>다음에 살 붙여보기</Text>
                 <Text style={styles.reflectionInsightText}>{aiReflection.nextActionKo}</Text>
                 {aiReflection.nextActionExampleEn ? (
                   <Text style={styles.reflectionNextActionExample}>{aiReflection.nextActionExampleEn}</Text>
                 ) : null}
               </View>
             ) : null}
+
             {hasReflectionExpressions ? (
               <View style={styles.reflectionExpressionList}>
-                <Text style={styles.reflectionExpressionTitle}>오늘 이어 써볼 표현</Text>
+                <Text style={styles.reflectionExpressionTitle}>다음에 써먹을 표현</Text>
                 {aiReflection.expressions.map((expression, index) => (
-                  <View key={`${expression.expression}-${index}`} style={styles.reflectionExpressionCard}>
-                    <Text style={styles.reflectionExpressionText}>{expression.expression}</Text>
+                  <View
+                    key={`${expression.expression}-${index}`}
+                    style={[
+                      styles.reflectionExpressionCard,
+                      index > 0 && styles.reflectionExpressionItemWithBorder
+                    ]}
+                  >
+                    <View style={styles.reflectionExpressionHeader}>
+                      <Text style={styles.reflectionExpressionText}>{expression.expression}</Text>
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={
+                          isExpressionSaved(expression.expression) ? "저장한 표현 취소" : "표현 저장"
+                        }
+                        style={[
+                          styles.reflectionExpressionSaveButton,
+                          isExpressionSaved(expression.expression) && styles.reflectionExpressionSaveButtonSaved
+                        ]}
+                        onPress={() => onToggleExpression(expression)}
+                        disabled={isSavingExpression(expression.expression)}
+                      >
+                        <Text
+                          style={[
+                            styles.reflectionExpressionSaveText,
+                            isExpressionSaved(expression.expression) && styles.reflectionExpressionSaveTextSaved
+                          ]}
+                        >
+                          {isSavingExpression(expression.expression)
+                            ? "저장 중"
+                            : isExpressionSaved(expression.expression)
+                              ? "저장됨"
+                              : "저장"}
+                        </Text>
+                      </Pressable>
+                    </View>
                     {expression.meaningKo ? (
                       <Text style={styles.reflectionExpressionMeaning}>{expression.meaningKo}</Text>
                     ) : null}
@@ -308,6 +432,7 @@ function YesterdayReflectionCard({
                 ))}
               </View>
             ) : null}
+
             {aiReflection.closingKo ? (
               <Text style={styles.reflectionAiClosing}>{aiReflection.closingKo}</Text>
             ) : null}
@@ -315,33 +440,118 @@ function YesterdayReflectionCard({
         ) : (
           <Text style={styles.reflectionAiBody}>
             {isLoadingAiReflection
-              ? "어제 남긴 문장들을 살펴보고 있어요."
-              : "어제 기록을 AI가 짧게 돌아봐 줄 수 있어요."}
+              ? "남긴 문장들을 살펴보고 있어요."
+              : "이 날의 기록을 AI가 짧게 돌아봐 줄 수 있어요."}
           </Text>
         )}
 
         {aiReflectionError ? <Text style={styles.reflectionAiError}>{aiReflectionError}</Text> : null}
-        {!isLoadingAiReflection ? (
-          <Pressable style={styles.reflectionAiRefreshButton} onPress={onRefreshAiReflection}>
-            <Text style={styles.reflectionAiRefreshText}>
-              {aiReflection ? "AI 회고 다시 받기" : "AI 회고 받기"}
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
-
-      <View style={styles.reflectionTimeline}>
-        {entries.map((entry) => (
-          <View key={entry.id} style={styles.reflectionTimelineItem}>
-            <Text style={styles.reflectionTime}>{formatNowInEnglishTime(entry.createdAt)}</Text>
-            <Text style={styles.reflectionEntryText}>{entry.text}</Text>
-          </View>
-        ))}
       </View>
 
       <Pressable style={styles.reflectionButton} onPress={onWriteToday}>
         <Text style={styles.reflectionButtonText}>오늘도 한 줄 남기기</Text>
       </Pressable>
+    </View>
+  );
+}
+
+function InstantCoachFeedbackCard({
+  entry,
+  feedback,
+  isLoading,
+  error,
+  onAskCoach,
+  onRevise,
+  onKeep,
+  onRetry
+}: {
+  entry: NowInEnglishEntry;
+  feedback: NowInEnglishCoachFeedbackResponse | null;
+  isLoading: boolean;
+  error: string;
+  onAskCoach: () => void;
+  onRevise: () => void;
+  onKeep: () => void;
+  onRetry: () => void;
+}) {
+  const hasUsefulSuggestion = feedback ? hasUsefulCoachSuggestion(entry.text, feedback.suggestionEn) : false;
+
+  return (
+    <View style={styles.instantCoachCard}>
+      <View style={styles.instantCoachHeader}>
+        <Text style={styles.instantCoachKicker}>방금 문장 AI 코치</Text>
+        {isLoading ? <ActivityIndicator size="small" color="#EA920D" /> : null}
+      </View>
+
+      <Text style={styles.instantCoachOriginal}>{entry.text}</Text>
+
+      {feedback ? (
+        <>
+          <Text style={styles.instantCoachTitle}>{feedback.headlineKo}</Text>
+          <Text style={styles.instantCoachBody}>{feedback.praiseKo}</Text>
+
+          {hasUsefulSuggestion ? (
+            <View style={styles.instantCoachSuggestionBox}>
+              <Text style={styles.instantCoachLabel}>이렇게도 말해요</Text>
+              <Text style={styles.instantCoachSuggestion}>{feedback.suggestionEn}</Text>
+              {feedback.suggestionTranslationKo ? (
+                <Text style={styles.instantCoachSuggestionTranslation}>{feedback.suggestionTranslationKo}</Text>
+              ) : null}
+            </View>
+          ) : null}
+
+          {hasUsefulSuggestion && feedback.suggestionKo ? (
+            <View style={styles.instantCoachSection}>
+              <Text style={styles.instantCoachSectionLabel}>왜 이렇게 말하나요</Text>
+              <Text style={styles.instantCoachSectionBody}>{feedback.suggestionKo}</Text>
+            </View>
+          ) : null}
+
+          {feedback.nextQuestionKo ? (
+            <View style={styles.instantCoachSection}>
+              <Text style={styles.instantCoachSectionLabel}>살 더 붙여보기</Text>
+              <Text style={styles.instantCoachInstruction}>{feedback.nextQuestionKo}</Text>
+            </View>
+          ) : null}
+
+          {feedback.expression ? (
+            <View style={styles.instantCoachExpression}>
+              <Text style={styles.instantCoachExpressionText}>{feedback.expression}</Text>
+              {feedback.expressionMeaningKo ? (
+                <Text style={styles.instantCoachExpressionMeaning}>{feedback.expressionMeaningKo}</Text>
+              ) : null}
+              {feedback.expressionExampleEn ? (
+                <Text style={styles.instantCoachExpressionExample}>{feedback.expressionExampleEn}</Text>
+              ) : null}
+            </View>
+          ) : null}
+        </>
+      ) : (
+        <Text style={styles.instantCoachBody}>
+          {isLoading ? "저장은 끝났고, AI가 문장을 짧게 살펴보고 있어요." : "저장은 완료됐어요."}
+        </Text>
+      )}
+
+      {error ? <Text style={styles.instantCoachError}>{error}</Text> : null}
+
+      {!isLoading ? (
+        <View style={styles.instantCoachActions}>
+          {error ? (
+            <Pressable style={styles.instantCoachRetryButton} onPress={onRetry}>
+              <Text style={styles.instantCoachRetryButtonText}>AI 코치 다시 시도</Text>
+            </Pressable>
+          ) : null}
+          <Pressable style={styles.instantCoachReviseButton} onPress={onRevise}>
+            <Text style={styles.instantCoachReviseButtonText}>수정해보기</Text>
+          </Pressable>
+          <Pressable style={styles.instantCoachKeepButton} onPress={onKeep}>
+            <Text style={styles.instantCoachKeepButtonText}>이대로 남기기</Text>
+          </Pressable>
+          <Pressable style={styles.instantCoachAskButton} onPress={onAskCoach}>
+            <Text style={styles.instantCoachAskButtonText}>AI 코치에게 더 물어보기</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -420,8 +630,11 @@ function ReminderIntervalStepper({
 
 export default function NowInEnglishScreen() {
   const params = useLocalSearchParams<{ reminder?: string }>();
+  const { currentUser } = useSession();
   const shouldOpenReminderSettings = params.reminder === "open";
   const didOpenReminderSettingsFromParamRef = useRef(false);
+  const scrollViewRef = useRef<ScrollView | null>(null);
+  const writeSectionYRef = useRef(0);
   const inputRef = useRef<TextInput>(null);
   const [text, setText] = useState("");
   const [entries, setEntries] = useState<NowInEnglishEntry[]>([]);
@@ -441,6 +654,13 @@ export default function NowInEnglishScreen() {
   const [coachHelp, setCoachHelp] = useState<CoachHelpResponse | null>(null);
   const [coachHelpError, setCoachHelpError] = useState("");
   const [isLoadingCoachHelp, setIsLoadingCoachHelp] = useState(false);
+  const [savedExpressionIdsByKey, setSavedExpressionIdsByKey] = useState<Record<string, number>>({});
+  const [savingExpressionKeys, setSavingExpressionKeys] = useState<string[]>([]);
+  const [instantCoachEntry, setInstantCoachEntry] = useState<NowInEnglishEntry | null>(null);
+  const [instantCoachFeedback, setInstantCoachFeedback] = useState<NowInEnglishCoachFeedbackResponse | null>(null);
+  const [instantCoachFeedbackError, setInstantCoachFeedbackError] = useState("");
+  const [isLoadingInstantCoachFeedback, setIsLoadingInstantCoachFeedback] = useState(false);
+  const [pendingPolishSource, setPendingPolishSource] = useState<PendingPolishSource | null>(null);
   const [yesterdayAiReflection, setYesterdayAiReflection] = useState<NowInEnglishAiReflection | null>(null);
   const [yesterdayAiReflectionError, setYesterdayAiReflectionError] = useState("");
   const [isLoadingYesterdayAiReflection, setIsLoadingYesterdayAiReflection] = useState(false);
@@ -449,6 +669,7 @@ export default function NowInEnglishScreen() {
   const [isReminderSettingsOpen, setIsReminderSettingsOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [calendarMonthCursor, setCalendarMonthCursor] = useState(() => getCalendarMonthStart(new Date()));
+  const instantCoachRequestIdRef = useRef(0);
   const applyReminderSettings = useCallback((settings: NowInEnglishReminderSettings) => {
     setRemindersEnabled(settings.enabled);
     setIntervalHours(settings.intervalHours);
@@ -460,6 +681,21 @@ export default function NowInEnglishScreen() {
 
   const todayKey = getNowInEnglishDateKey();
   const yesterdayKey = getNowInEnglishRelativeDateKey(-1);
+  const reflectionDateKey =
+    historyFilter === "today"
+      ? todayKey
+      : historyFilter === "yesterday"
+        ? yesterdayKey
+        : historyFilter === "selected" && selectedDateKey
+          ? selectedDateKey
+          : null;
+  const reflectionDateLabel = reflectionDateKey
+    ? reflectionDateKey === todayKey
+      ? "오늘"
+      : reflectionDateKey === yesterdayKey
+        ? "어제"
+        : formatNowInEnglishDateLabel(reflectionDateKey)
+    : "";
   const entryCountsByDate = useMemo(() => {
     const counts = new Map<string, number>();
     entries.forEach((entry) => {
@@ -473,18 +709,12 @@ export default function NowInEnglishScreen() {
   );
   const yesterdayEntries = useMemo(
     () =>
-      entries
-        .filter((entry) => entry.dateKey === yesterdayKey)
-        .sort((left, right) => left.createdAt.localeCompare(right.createdAt)),
-    [entries, yesterdayKey]
-  );
-  const yesterdayRepresentativeEntry = useMemo(
-    () =>
-      yesterdayEntries
-        .slice()
-        .sort((left, right) => right.text.length - left.text.length || left.createdAt.localeCompare(right.createdAt))[0] ??
-      null,
-    [yesterdayEntries]
+      reflectionDateKey
+        ? entries
+            .filter((entry) => entry.dateKey === reflectionDateKey)
+            .sort((left, right) => left.createdAt.localeCompare(right.createdAt))
+        : [],
+    [entries, reflectionDateKey]
   );
   const yesterdayEntrySignature = useMemo(
     () => buildNowInEnglishEntrySignature(yesterdayEntries),
@@ -605,7 +835,7 @@ export default function NowInEnglishScreen() {
 
   const loadOrCreateYesterdayAiReflection = useCallback(
     async (forceRefresh = false) => {
-      if (yesterdayEntries.length === 0 || !yesterdayEntrySignature) {
+      if (!reflectionDateKey || yesterdayEntries.length === 0 || !yesterdayEntrySignature) {
         setYesterdayAiReflection(null);
         setYesterdayAiReflectionError("");
         return;
@@ -616,7 +846,7 @@ export default function NowInEnglishScreen() {
         setYesterdayAiReflectionError("");
 
         if (!forceRefresh) {
-          const cachedReflection = await getNowInEnglishAiReflection(yesterdayKey);
+          const cachedReflection = await getNowInEnglishAiReflection(reflectionDateKey);
           if (cachedReflection?.entrySignature === yesterdayEntrySignature) {
             setYesterdayAiReflection(cachedReflection);
             return;
@@ -624,7 +854,8 @@ export default function NowInEnglishScreen() {
         }
 
         const response = await requestNowInEnglishReflection({
-          dateKey: yesterdayKey,
+          dateKey: reflectionDateKey,
+          forceRefresh,
           entries: yesterdayEntries.map((entry) => ({
             text: entry.text,
             createdAt: entry.createdAt
@@ -639,7 +870,7 @@ export default function NowInEnglishScreen() {
         await saveNowInEnglishAiReflection(nextReflection);
         setYesterdayAiReflection(nextReflection);
       } catch (error) {
-        const cachedReflection = await getNowInEnglishAiReflection(yesterdayKey);
+        const cachedReflection = await getNowInEnglishAiReflection(reflectionDateKey);
         if (cachedReflection?.entrySignature === yesterdayEntrySignature) {
           setYesterdayAiReflection(cachedReflection);
         }
@@ -648,7 +879,7 @@ export default function NowInEnglishScreen() {
         setIsLoadingYesterdayAiReflection(false);
       }
     },
-    [yesterdayEntries, yesterdayEntrySignature, yesterdayKey]
+    [yesterdayEntries, yesterdayEntrySignature, reflectionDateKey]
   );
 
   const loadSummary = useCallback(async () => {
@@ -669,6 +900,10 @@ export default function NowInEnglishScreen() {
         }
         setEntries(summary.entries);
         applyReminderSettings(summary.settings);
+      } catch {
+        if (!cancelled) {
+          setStatusMessage("기록을 불러오지 못했어요. 잠시 후 다시 열어 확인해 주세요.");
+        }
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -682,6 +917,36 @@ export default function NowInEnglishScreen() {
       cancelled = true;
     };
   }, [applyReminderSettings]);
+
+  useEffect(() => {
+    if (!currentUser) {
+      setSavedExpressionIdsByKey({});
+      setSavingExpressionKeys([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    void getSavedExpressions()
+      .then((savedExpressions) => {
+        if (cancelled) {
+          return;
+        }
+
+        setSavedExpressionIdsByKey(buildSavedExpressionIdMap(savedExpressions));
+      })
+      .catch(() => {
+        if (cancelled) {
+          return;
+        }
+
+        setSavedExpressionIdsByKey({});
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser]);
 
   useEffect(() => {
     if (!shouldOpenReminderSettings || didOpenReminderSettingsFromParamRef.current || isLoading) {
@@ -718,6 +983,94 @@ export default function NowInEnglishScreen() {
     return () => clearInterval(timerId);
   }, [remindersEnabled]);
 
+  const loadInstantCoachFeedback = useCallback(async (entry: NowInEnglishEntry) => {
+    const requestId = instantCoachRequestIdRef.current + 1;
+    instantCoachRequestIdRef.current = requestId;
+    setInstantCoachEntry(entry);
+    setInstantCoachFeedback(null);
+    setInstantCoachFeedbackError("");
+    setIsLoadingInstantCoachFeedback(true);
+
+    try {
+      const feedback = await requestNowInEnglishCoachFeedback({
+        text: entry.text,
+        createdAt: entry.createdAt
+      });
+      if (instantCoachRequestIdRef.current !== requestId) {
+        return;
+      }
+      setInstantCoachFeedback(feedback);
+    } catch (error) {
+      if (instantCoachRequestIdRef.current !== requestId) {
+        return;
+      }
+      setInstantCoachFeedbackError(
+        error instanceof Error
+          ? error.message
+          : "저장은 완료됐어요. AI 코치는 잠시 후 다시 시도해 주세요."
+      );
+    } finally {
+      if (instantCoachRequestIdRef.current === requestId) {
+        setIsLoadingInstantCoachFeedback(false);
+      }
+    }
+  }, []);
+
+  async function handleToggleReflectionExpression(expression: NowInEnglishAiReflectionExpression) {
+    const normalizedKey = normalizeExpressionKey(expression.expression);
+    if (!normalizedKey) {
+      return;
+    }
+
+    if (!currentUser) {
+      Alert.alert("로그인이 필요해요", "표현 저장은 로그인 후 사용할 수 있어요.", [
+        { text: "취소", style: "cancel" },
+        {
+          text: "로그인하기",
+          onPress: () => router.push("/login")
+        }
+      ]);
+      return;
+    }
+
+    if (savingExpressionKeys.includes(normalizedKey)) {
+      return;
+    }
+
+    const savedExpressionId = savedExpressionIdsByKey[normalizedKey];
+    setSavingExpressionKeys((current) =>
+      current.includes(normalizedKey) ? current : [...current, normalizedKey]
+    );
+
+    try {
+      if (savedExpressionId) {
+        await deleteSavedExpression(savedExpressionId);
+        setSavedExpressionIdsByKey((current) => {
+          const next = { ...current };
+          delete next[normalizedKey];
+          return next;
+        });
+        return;
+      }
+
+      const savedExpression = await saveExpression({
+        expression: expression.expression,
+        meaningKo: expression.meaningKo || undefined,
+        usageTipKo: expression.usageTip || undefined,
+        exampleEn: expression.example || undefined,
+        sourceType: "COACH_RECOMMENDATION"
+      });
+      setSavedExpressionIdsByKey((current) => ({
+        ...current,
+        [normalizedKey]: savedExpression.id
+      }));
+    } catch (error) {
+      Alert.alert("표현 저장에 실패했어요", error instanceof Error ? error.message : "잠시 후 다시 시도해 주세요.");
+    } finally {
+      setSavingExpressionKeys((current) => current.filter((key) => key !== normalizedKey));
+    }
+  }
+
   async function handleSave() {
     const trimmed = text.trim();
     if (!trimmed) {
@@ -727,12 +1080,31 @@ export default function NowInEnglishScreen() {
 
     try {
       setIsSaving(true);
-      await saveNowInEnglishEntry(trimmed);
+      const polishSource = pendingPolishSource;
+      let savedEntry: NowInEnglishEntry;
+      try {
+        savedEntry = await saveNowInEnglishEntry(trimmed, {
+          entryId: polishSource?.entryId ?? undefined,
+          createdAt: polishSource?.createdAt ?? undefined,
+          dateKey: polishSource?.dateKey ?? undefined,
+          polishedFromEntryId: polishSource?.entryId ?? null,
+          polishedFromText: polishSource?.text ?? null
+        });
+      } catch (error) {
+        Alert.alert("저장하지 못했어요", error instanceof Error ? error.message : "잠시 후 다시 시도해 주세요.");
+        return;
+      }
+
       setText("");
-      setStatusMessage("좋아요. 오늘의 영어 조각이 하나 쌓였어요.");
-      await loadSummary();
-    } catch (error) {
-      Alert.alert("저장하지 못했어요", error instanceof Error ? error.message : "잠시 후 다시 시도해 주세요.");
+      setPendingPolishSource(null);
+      setEntries((current) => mergeSavedNowInEnglishEntry(current, savedEntry));
+      setStatusMessage(polishSource ? "좋아요. 다듬은 문장의 전후를 기록했어요." : "좋아요. 오늘의 영어 조각이 하나 쌓였어요.");
+      void loadInstantCoachFeedback(savedEntry);
+      try {
+        await loadSummary();
+      } catch {
+        setStatusMessage("저장은 됐어요. 기록 목록은 잠시 후 다시 갱신해 주세요.");
+      }
     } finally {
       setIsSaving(false);
     }
@@ -840,7 +1212,7 @@ export default function NowInEnglishScreen() {
     setStatusMessage("코치 표현을 한 줄 기록에 넣었어요.");
   }
 
-  async function handleRequestCoachHelp(questionOverride?: string) {
+  async function handleRequestCoachHelp(questionOverride?: string, answerOverride?: string) {
     const nextQuestion = (questionOverride ?? coachQuestion).trim();
     if (!nextQuestion) {
       setCoachHelpError("코치에게 물어볼 내용을 먼저 적어 주세요.");
@@ -856,7 +1228,7 @@ export default function NowInEnglishScreen() {
       const nextCoachHelp = await requestCoachHelp({
         promptId: NOW_IN_ENGLISH_COACH_PROMPT_ID,
         question: nextQuestion,
-        answer: text.trim() || undefined,
+        answer: (answerOverride ?? text).trim() || undefined,
         attemptType: "INITIAL"
       });
       setCoachQuestion(nextQuestion);
@@ -868,6 +1240,70 @@ export default function NowInEnglishScreen() {
     }
   }
 
+  function handleAskCoachAboutInstantEntry() {
+    setCoachQuestion("");
+    setCoachHelp(null);
+    setCoachHelpError("");
+    setIsCoachOpen(true);
+  }
+
+  function handleReviseInstantEntry() {
+    if (!instantCoachEntry) {
+      return;
+    }
+
+    setText(instantCoachEntry.text);
+    setPendingPolishSource({
+      entryId: instantCoachEntry.id,
+      text: instantCoachEntry.text,
+      createdAt: instantCoachEntry.createdAt,
+      dateKey: instantCoachEntry.dateKey
+    });
+    setIsCoachOpen(false);
+    setStatusMessage("AI 제안을 참고해서 직접 다듬어 보세요.");
+    scrollViewRef.current?.scrollTo({
+      y: Math.max(writeSectionYRef.current - 8, 0),
+      animated: true
+    });
+    requestAnimationFrame(() => {
+      inputRef.current?.focus();
+    });
+  }
+
+  function handleCancelPolish() {
+    setText("");
+    setPendingPolishSource(null);
+    setStatusMessage("수정을 취소했어요. 새 영어 조각을 남겨볼까요?");
+  }
+
+  function handleRetryInstantCoachFeedback() {
+    if (!instantCoachEntry) {
+      return;
+    }
+
+    void loadInstantCoachFeedback(instantCoachEntry);
+  }
+
+  function handleKeepInstantEntry() {
+    instantCoachRequestIdRef.current += 1;
+    setInstantCoachEntry(null);
+    setInstantCoachFeedback(null);
+    setInstantCoachFeedbackError("");
+    setIsLoadingInstantCoachFeedback(false);
+    setPendingPolishSource(null);
+    setStatusMessage("좋아요. 이 문장은 그대로 남겨둘게요.");
+  }
+
+  const isPolishingEntry = pendingPolishSource !== null;
+  const isSaveDisabled = isSaving || isLoading;
+  const saveButtonLabel = isSaving
+    ? isPolishingEntry
+      ? "수정 저장 중..."
+      : "저장 중..."
+    : isPolishingEntry
+      ? "수정 저장하기"
+      : "저장하기";
+
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <KeyboardAvoidingView
@@ -876,6 +1312,7 @@ export default function NowInEnglishScreen() {
         keyboardVerticalOffset={Platform.OS === "ios" ? 12 : 0}
       >
         <ScrollView
+          ref={scrollViewRef}
           keyboardShouldPersistTaps="handled"
           contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
@@ -888,7 +1325,12 @@ export default function NowInEnglishScreen() {
             <View style={styles.headerSpacer} />
           </View>
 
-          <View style={styles.writeSection}>
+          <View
+            style={styles.writeSection}
+            onLayout={(event) => {
+              writeSectionYRef.current = event.nativeEvent.layout.y;
+            }}
+          >
             {isLoading ? (
               <View style={styles.writeHeader}>
                 <ActivityIndicator color="#EA920D" />
@@ -896,17 +1338,29 @@ export default function NowInEnglishScreen() {
             ) : null}
 
             <View style={styles.composerCard}>
-              <Text style={styles.heroTitle}>지금 뭐하고 있나요, 무슨 생각하고 있나요?</Text>
+              <Text style={styles.heroTitle}>지금 뭐하고 있나요?, 무슨 생각하고 있나요?</Text>
               <View style={styles.composerDivider} />
+              {isPolishingEntry ? (
+                <View style={styles.polishModeBanner}>
+                  <View style={styles.polishModeCopy}>
+                    <Text style={styles.polishModeLabel}>기존 기록 수정 중</Text>
+                    <Text style={styles.polishModeBody}>저장하면 방금 남긴 문장이 수정되고 전후 비교가 남아요.</Text>
+                  </View>
+                  <Pressable style={styles.polishCancelButton} onPress={handleCancelPolish}>
+                    <Text style={styles.polishCancelButtonText}>취소</Text>
+                  </Pressable>
+                </View>
+              ) : null}
               <TextInput
                 ref={inputRef}
                 value={text}
                 onChangeText={setText}
+                maxLength={NOW_IN_ENGLISH_TEXT_LIMIT}
                 multiline
                 textAlignVertical="top"
                 autoCapitalize="sentences"
                 autoCorrect
-                placeholder="I’m drinking coffee and thinking about dinner."
+                placeholder="I’m doing something small right now."
                 placeholderTextColor="#B7A693"
                 style={styles.input}
               />
@@ -931,117 +1385,50 @@ export default function NowInEnglishScreen() {
                   </View>
                 </Pressable>
               ) : null}
+              <Text style={styles.inputCounter}>{text.length}/{NOW_IN_ENGLISH_TEXT_LIMIT}</Text>
             </View>
 
             {statusMessage ? <Text style={styles.statusText}>{statusMessage}</Text> : null}
 
             <Pressable
-              style={[styles.primaryButton, isSaving && styles.buttonDisabled]}
+              style={[styles.primaryButton, isSaveDisabled && styles.buttonDisabled]}
               onPress={() => void handleSave()}
-              disabled={isSaving}
+              disabled={isSaveDisabled}
             >
-              <Text style={styles.primaryButtonText}>{isSaving ? "저장 중..." : "저장하기"}</Text>
+              <Text style={styles.primaryButtonText}>{saveButtonLabel}</Text>
             </Pressable>
-          </View>
 
-          {yesterdayRepresentativeEntry ? (
-            <YesterdayReflectionCard
-              entries={yesterdayEntries}
-              representativeEntry={yesterdayRepresentativeEntry}
-              aiReflection={yesterdayAiReflection}
-              isLoadingAiReflection={isLoadingYesterdayAiReflection}
-              aiReflectionError={yesterdayAiReflectionError}
-              onRefreshAiReflection={() => void loadOrCreateYesterdayAiReflection(true)}
-              onWriteToday={handleWriteTodayFromReflection}
-            />
-          ) : null}
-
-          <View style={styles.reminderCard}>
-            <View style={styles.reminderHeader}>
-              <View style={styles.reminderHeaderCopy}>
-                <Text style={styles.reminderTitle}>원하는 주기로 영어 생각 꺼내기</Text>
-              </View>
-              <View style={[styles.reminderBadge, remindersEnabled && styles.reminderBadgeOn]}>
-                <Text style={[styles.reminderBadgeText, remindersEnabled && styles.reminderBadgeTextOn]}>
-                  {remindersEnabled ? "ON" : "OFF"}
-                </Text>
-              </View>
-            </View>
-            <Text style={styles.reminderMeta}>{reminderLabel}</Text>
-
-            <View style={styles.reminderActions}>
-              <ReminderIntervalStepper
-                intervalHours={intervalHours}
-                onDecrease={() => shiftReminderInterval(-1)}
-                onIncrease={() => shiftReminderInterval(1)}
-                disabled={isScheduling}
+            {instantCoachEntry ? (
+              <InstantCoachFeedbackCard
+                entry={instantCoachEntry}
+                feedback={instantCoachFeedback}
+                isLoading={isLoadingInstantCoachFeedback}
+                error={instantCoachFeedbackError}
+                onAskCoach={handleAskCoachAboutInstantEntry}
+                onRevise={handleReviseInstantEntry}
+                onKeep={handleKeepInstantEntry}
+                onRetry={handleRetryInstantCoachFeedback}
               />
-              <Pressable
-                style={[
-                  styles.reminderPowerButton,
-                  !remindersEnabled && styles.reminderPowerButtonOn,
-                  isScheduling && styles.buttonDisabled
-                ]}
-                onPress={() => void (remindersEnabled ? handleDisableReminder() : handleEnableReminder(intervalHours))}
-                disabled={isScheduling}
-              >
-                <Text
-                  style={[
-                    styles.reminderPowerButtonText,
-                    !remindersEnabled && styles.reminderPowerButtonTextOn
-                  ]}
-                >
-                  {remindersEnabled ? "알림 끄기" : "알림 켜기"}
-                </Text>
-              </Pressable>
-            </View>
-
-            <View style={styles.quietHoursCard}>
-              <View style={styles.quietHoursHeader}>
-                <View style={styles.quietHoursCopy}>
-                  <Text style={styles.quietHoursTitle}>방해금지 시간</Text>
-                  <Text style={styles.quietHoursBody}>
-                    {quietHours.enabled
-                      ? `${formatNowInEnglishQuietHours(quietHours)}에는 알림을 쉬어요.`
-                      : "밤에도 알림을 받을 수 있어요."}
-                  </Text>
-                </View>
-                <Pressable
-                  style={[styles.quietHoursToggle, quietHours.enabled && styles.quietHoursToggleActive]}
-                  onPress={() => void handleUpdateQuietHours({ ...quietHours, enabled: !quietHours.enabled })}
-                  disabled={isScheduling}
-                >
-                  <Text
-                    style={[
-                      styles.quietHoursToggleText,
-                      quietHours.enabled && styles.quietHoursToggleTextActive
-                    ]}
-                  >
-                    {quietHours.enabled ? "ON" : "OFF"}
-                  </Text>
-                </Pressable>
-              </View>
-
-              {quietHours.enabled ? (
-                <View style={styles.quietHourStepperRow}>
-                  <QuietHourStepper
-                    label="시작"
-                    hour={quietHours.startHour}
-                    onDecrease={() => shiftQuietHour("start", -1)}
-                    onIncrease={() => shiftQuietHour("start", 1)}
-                    disabled={isScheduling}
-                  />
-                  <QuietHourStepper
-                    label="종료"
-                    hour={quietHours.endHour}
-                    onDecrease={() => shiftQuietHour("end", -1)}
-                    onIncrease={() => shiftQuietHour("end", 1)}
-                    disabled={isScheduling}
-                  />
-                </View>
-              ) : null}
-            </View>
+            ) : null}
           </View>
+
+          <Pressable
+            style={[styles.reminderSummaryButton, (isScheduling || isLoading) && styles.buttonDisabled]}
+            accessibilityRole="button"
+            accessibilityLabel="알림 설정 열기"
+            onPress={() => setIsReminderSettingsOpen(true)}
+            disabled={isScheduling || isLoading}
+          >
+            <View style={styles.reminderSummaryCopy}>
+              <Text style={styles.reminderSummaryTitle}>알림 설정</Text>
+              <Text style={styles.reminderSummaryMeta}>{reminderLabel}</Text>
+            </View>
+            <View style={[styles.reminderBadge, remindersEnabled && styles.reminderBadgeOn]}>
+              <Text style={[styles.reminderBadgeText, remindersEnabled && styles.reminderBadgeTextOn]}>
+                {remindersEnabled ? "ON" : "OFF"}
+              </Text>
+            </View>
+          </Pressable>
 
           <View style={styles.listSection}>
             <View style={styles.listHeaderRow}>
@@ -1069,6 +1456,19 @@ export default function NowInEnglishScreen() {
                 );
               })}
             </View>
+            {reflectionDateKey && yesterdayEntries.length > 0 ? (
+              <YesterdayReflectionCard
+                entries={yesterdayEntries}
+                dateLabel={reflectionDateLabel}
+                aiReflection={yesterdayAiReflection}
+                isLoadingAiReflection={isLoadingYesterdayAiReflection}
+                aiReflectionError={yesterdayAiReflectionError}
+                onWriteToday={handleWriteTodayFromReflection}
+                onToggleExpression={(expression) => void handleToggleReflectionExpression(expression)}
+                isExpressionSaved={(expression) => Boolean(savedExpressionIdsByKey[normalizeExpressionKey(expression)])}
+                isSavingExpression={(expression) => savingExpressionKeys.includes(normalizeExpressionKey(expression))}
+              />
+            ) : null}
             <EntryTimeline
               groups={entryGroups}
               emptyTitle={emptyTimelineCopy.title}
@@ -1136,7 +1536,6 @@ export default function NowInEnglishScreen() {
               <View style={styles.scheduleModeCard}>
                 <View style={styles.scheduleModeHeader}>
                   <View style={styles.scheduleModeCopy}>
-                    <Text style={styles.scheduleModeKicker}>고급 설정</Text>
                     <Text style={styles.scheduleModeTitle}>알림 기준</Text>
                     <Text style={styles.scheduleModeBody}>{getScheduleModeBody(scheduleMode)}</Text>
                   </View>
@@ -1487,6 +1886,48 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: "#EAD8C2"
   },
+  polishModeBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#F0C993",
+    backgroundColor: "#FFF4DF",
+    paddingHorizontal: 14,
+    paddingVertical: 12
+  },
+  polishModeCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 4
+  },
+  polishModeLabel: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "900",
+    color: "#A46412"
+  },
+  polishModeBody: {
+    fontSize: 12,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: "#6A5945"
+  },
+  polishCancelButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E1B173",
+    backgroundColor: "#FFFDF8",
+    paddingHorizontal: 12,
+    paddingVertical: 8
+  },
+  polishCancelButtonText: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#8A5A1E"
+  },
   writeSection: {
     gap: 14
   },
@@ -1602,6 +2043,200 @@ const styles = StyleSheet.create({
   buttonDisabled: {
     opacity: 0.55
   },
+  instantCoachCard: {
+    borderRadius: 26,
+    borderWidth: 1,
+    borderColor: "#EAD8C2",
+    backgroundColor: "#FFFDF8",
+    paddingHorizontal: 18,
+    paddingVertical: 17,
+    gap: 11,
+    shadowColor: "#D18634",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2
+  },
+  instantCoachHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10
+  },
+  instantCoachKicker: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "900",
+    color: "#C8750D"
+  },
+  instantCoachOriginal: {
+    borderRadius: 18,
+    backgroundColor: "#F7EFE5",
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "800",
+    color: "#6A5945"
+  },
+  instantCoachTitle: {
+    fontSize: 20,
+    lineHeight: 26,
+    letterSpacing: -0.2,
+    fontWeight: "900",
+    color: "#25211D"
+  },
+  instantCoachBody: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "800",
+    color: "#6A5945"
+  },
+  instantCoachSuggestionBox: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#F0C993",
+    backgroundColor: "#FFF4DF",
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    gap: 7
+  },
+  instantCoachLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#A46412"
+  },
+  instantCoachSuggestion: {
+    fontSize: 17,
+    lineHeight: 25,
+    fontWeight: "900",
+    color: "#2B2620"
+  },
+  instantCoachSuggestionTranslation: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "800",
+    color: "#7A6650"
+  },
+  instantCoachSection: {
+    gap: 6
+  },
+  instantCoachSectionLabel: {
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#A46612"
+  },
+  instantCoachSectionBody: {
+    fontSize: 15,
+    lineHeight: 24,
+    color: "#6D6050"
+  },
+  instantCoachInstruction: {
+    fontSize: 16,
+    lineHeight: 25,
+    fontWeight: "800",
+    color: "#3C342B"
+  },
+  instantCoachExpression: {
+    borderRadius: 18,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#ECD9C1",
+    paddingHorizontal: 13,
+    paddingVertical: 11,
+    gap: 4
+  },
+  instantCoachExpressionText: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: "900",
+    color: "#2B2620"
+  },
+  instantCoachExpressionMeaning: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: "#8A5A1E"
+  },
+  instantCoachExpressionExample: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontStyle: "italic",
+    fontWeight: "700",
+    color: "#756554"
+  },
+  instantCoachError: {
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "800",
+    color: "#B84836"
+  },
+  instantCoachActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8
+  },
+  instantCoachRetryButton: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E1B173",
+    backgroundColor: "#FFFDF8",
+    paddingHorizontal: 13,
+    paddingVertical: 8
+  },
+  instantCoachRetryButtonText: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "900",
+    color: "#8A5A1E"
+  },
+  instantCoachReviseButton: {
+    borderRadius: 999,
+    backgroundColor: "#EA920D",
+    paddingHorizontal: 15,
+    paddingVertical: 9
+  },
+  instantCoachReviseButtonText: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "900",
+    color: "#24180B"
+  },
+  instantCoachKeepButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E1B173",
+    backgroundColor: "#FFF7E9",
+    paddingHorizontal: 13,
+    paddingVertical: 8
+  },
+  instantCoachKeepButtonText: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "900",
+    color: "#8A5A1E"
+  },
+  instantCoachAskButton: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E1B173",
+    backgroundColor: "#FFFDF8",
+    paddingHorizontal: 13,
+    paddingVertical: 8
+  },
+  instantCoachAskButtonText: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "900",
+    color: "#8A5A1E"
+  },
+  reflectionStack: {
+    gap: 14
+  },
   reflectionCard: {
     borderRadius: 30,
     backgroundColor: "#FFFDF8",
@@ -1650,20 +2285,30 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#A46412"
   },
-  reflectionHighlightText: {
-    fontSize: 18,
-    lineHeight: 26,
-    fontWeight: "900",
-    color: "#2B2620"
+  reflectionSentenceList: {
+    gap: 10
+  },
+  reflectionSentenceItem: {
+    gap: 4
+  },
+  reflectionSentenceItemWithBorder: {
+    borderTopWidth: 1,
+    borderTopColor: "#F0D5AF",
+    paddingTop: 10
   },
   reflectionAiCard: {
-    borderRadius: 24,
-    backgroundColor: "#FDF8EF",
+    borderRadius: 30,
+    backgroundColor: "#FFFDF8",
     borderWidth: 1,
-    borderColor: "#EFD8BB",
-    paddingHorizontal: 16,
-    paddingVertical: 15,
-    gap: 10
+    borderColor: "#EAD8C2",
+    paddingHorizontal: 20,
+    paddingVertical: 22,
+    gap: 14,
+    shadowColor: "#D18634",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 2
   },
   reflectionAiHeader: {
     flexDirection: "row",
@@ -1671,20 +2316,30 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 10
   },
-  reflectionAiTitle: {
+  reflectionAiKicker: {
     fontSize: 14,
     lineHeight: 18,
     fontWeight: "900",
     color: "#C8750D"
   },
+  reflectionAiTitle: {
+    fontSize: 22,
+    lineHeight: 29,
+    letterSpacing: -0.35,
+    fontWeight: "900",
+    color: "#25211D"
+  },
   reflectionAiBody: {
     fontSize: 15,
-    lineHeight: 22,
+    lineHeight: 24,
     fontWeight: "800",
-    color: "#65533F"
+    color: "#6D6050"
   },
-  reflectionHighlightList: {
-    gap: 8
+  reflectionFeedbackBox: {
+    borderTopWidth: 1,
+    borderTopColor: "#EBD7BF",
+    paddingTop: 13,
+    gap: 9
   },
   reflectionHighlightItem: {
     flexDirection: "row",
@@ -1710,35 +2365,23 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#4F4031"
   },
-  reflectionInsightCard: {
-    borderRadius: 18,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#ECD9C1",
-    paddingHorizontal: 13,
-    paddingVertical: 11,
-    gap: 5
+  reflectionPlainSection: {
+    borderTopWidth: 1,
+    borderTopColor: "#EBD7BF",
+    paddingTop: 13,
+    gap: 6
   },
   reflectionInsightLabel: {
     fontSize: 13,
-    lineHeight: 17,
+    lineHeight: 16,
     fontWeight: "900",
-    color: "#C8750D"
+    color: "#A46612"
   },
   reflectionInsightText: {
-    fontSize: 14,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 24,
     fontWeight: "800",
     color: "#4F4031"
-  },
-  reflectionNextActionCard: {
-    borderRadius: 20,
-    backgroundColor: "#FFF7E9",
-    borderWidth: 1,
-    borderColor: "#F0C993",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    gap: 7
   },
   reflectionNextActionExample: {
     fontSize: 15,
@@ -1749,9 +2392,9 @@ const styles = StyleSheet.create({
   },
   reflectionAiClosing: {
     fontSize: 14,
-    lineHeight: 21,
+    lineHeight: 22,
     fontWeight: "900",
-    color: "#8A5A1E"
+    color: "#756554"
   },
   reflectionAiError: {
     fontSize: 13,
@@ -1759,23 +2402,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: "#B84836"
   },
-  reflectionAiRefreshButton: {
-    alignSelf: "flex-start",
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E1B173",
-    backgroundColor: "#FFFDF8",
-    paddingHorizontal: 13,
-    paddingVertical: 8
-  },
-  reflectionAiRefreshText: {
-    fontSize: 13,
-    lineHeight: 17,
-    fontWeight: "900",
-    color: "#8A5A1E"
-  },
   reflectionExpressionList: {
-    gap: 8
+    borderTopWidth: 1,
+    borderTopColor: "#EBD7BF",
+    paddingTop: 13,
+    gap: 9
   },
   reflectionExpressionTitle: {
     fontSize: 13,
@@ -1792,11 +2423,42 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     gap: 4
   },
+  reflectionExpressionItemWithBorder: {
+    marginTop: 2
+  },
+  reflectionExpressionHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 10
+  },
   reflectionExpressionText: {
+    flex: 1,
     fontSize: 16,
     lineHeight: 22,
     fontWeight: "900",
     color: "#2B2620"
+  },
+  reflectionExpressionSaveButton: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E1B173",
+    backgroundColor: "#FFFDF8",
+    paddingHorizontal: 10,
+    paddingVertical: 6
+  },
+  reflectionExpressionSaveButtonSaved: {
+    backgroundColor: "#EA920D",
+    borderColor: "#EA920D"
+  },
+  reflectionExpressionSaveText: {
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "900",
+    color: "#8A5A1E"
+  },
+  reflectionExpressionSaveTextSaved: {
+    color: "#24180B"
   },
   reflectionExpressionMeaning: {
     fontSize: 13,
@@ -1810,15 +2472,6 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     fontWeight: "700",
     color: "#756554"
-  },
-  reflectionTimeline: {
-    gap: 10
-  },
-  reflectionTimelineItem: {
-    borderLeftWidth: 4,
-    borderLeftColor: "#F3A342",
-    paddingLeft: 12,
-    gap: 4
   },
   reflectionTime: {
     fontSize: 12,
@@ -1846,29 +2499,35 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#24180B"
   },
-  reminderCard: {
-    borderRadius: 30,
-    backgroundColor: "#FFF4DF",
+  reminderSummaryButton: {
+    minHeight: 70,
+    borderRadius: 24,
+    backgroundColor: "#FFFDF8",
     borderWidth: 1,
-    borderColor: "#F0C993",
-    padding: 20,
+    borderColor: "#EAD8C2",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
     gap: 14
   },
-  reminderHeader: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: 12
-  },
-  reminderHeaderCopy: {
+  reminderSummaryCopy: {
     flex: 1,
-    minWidth: 0
+    minWidth: 0,
+    gap: 3
   },
-  reminderTitle: {
-    fontSize: 22,
-    lineHeight: 28,
+  reminderSummaryTitle: {
+    fontSize: 17,
+    lineHeight: 22,
     fontWeight: "900",
     color: "#2B241D"
+  },
+  reminderSummaryMeta: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "800",
+    color: "#8A7560"
   },
   reminderBadge: {
     alignItems: "center",
@@ -1898,9 +2557,6 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     fontWeight: "900",
     color: "#8A5A1E"
-  },
-  reminderActions: {
-    gap: 10
   },
   intervalStepper: {
     gap: 8
@@ -1964,12 +2620,6 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     gap: 4
-  },
-  scheduleModeKicker: {
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: "900",
-    color: "#C77606"
   },
   scheduleModeTitle: {
     fontSize: 15,
@@ -2321,8 +2971,8 @@ const styles = StyleSheet.create({
     gap: 8
   },
   entryTime: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 22,
+    lineHeight: 27,
     fontWeight: "900",
     color: "#A26A25"
   },
@@ -2331,6 +2981,50 @@ const styles = StyleSheet.create({
     lineHeight: 27,
     fontWeight: "800",
     color: "#2B2620"
+  },
+  inputCounter: {
+    position: "absolute",
+    left: 22,
+    bottom: 18,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "800",
+    color: "#A89785"
+  },
+  polishedComparison: {
+    gap: 9
+  },
+  polishedKicker: {
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "900",
+    color: "#C8750D"
+  },
+  polishedRow: {
+    gap: 4
+  },
+  polishedAfterRow: {
+    borderTopWidth: 1,
+    borderTopColor: "#EBD7BF",
+    paddingTop: 9
+  },
+  polishedLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#8B6A45"
+  },
+  polishedBeforeText: {
+    fontSize: 16,
+    lineHeight: 24,
+    fontWeight: "800",
+    color: "#8F3D30"
+  },
+  polishedAfterText: {
+    fontSize: 18,
+    lineHeight: 27,
+    fontWeight: "900",
+    color: "#1F6B35"
   },
   emptyListCard: {
     borderRadius: 24,

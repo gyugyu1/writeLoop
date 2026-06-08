@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,26 @@ final class OpenAiStructuredOutputSupport {
             Map<String, Object> schema,
             String reasoningEffort
     ) throws IOException {
+        return buildResponsesRequestBody(
+                objectMapper,
+                model,
+                promptText,
+                null,
+                schemaName,
+                schema,
+                reasoningEffort
+        );
+    }
+
+    static String buildResponsesRequestBody(
+            ObjectMapper objectMapper,
+            String model,
+            String developerPromptText,
+            String userPromptText,
+            String schemaName,
+            Map<String, Object> schema,
+            String reasoningEffort
+    ) throws IOException {
         Map<String, Object> normalizedSchema = normalizeSchema(schema);
         Map<String, Object> format = new LinkedHashMap<>();
         format.put("type", "json_schema");
@@ -33,19 +54,15 @@ final class OpenAiStructuredOutputSupport {
         format.put("schema", normalizedSchema);
         format.put("strict", true);
 
+        List<Map<String, Object>> input = new ArrayList<>();
+        input.add(message("developer", developerPromptText));
+        if (userPromptText != null && !userPromptText.isBlank()) {
+            input.add(message("user", userPromptText));
+        }
+
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", model);
-        payload.put("input", List.of(
-                Map.of(
-                        "role", "developer",
-                        "content", List.of(
-                                Map.of(
-                                        "type", "input_text",
-                                        "text", promptText
-                                )
-                        )
-                )
-        ));
+        payload.put("input", input);
         payload.put("text", Map.of("format", format));
 
         if (reasoningEffort != null && !reasoningEffort.isBlank()) {
@@ -53,6 +70,18 @@ final class OpenAiStructuredOutputSupport {
         }
 
         return objectMapper.writeValueAsString(payload);
+    }
+
+    private static Map<String, Object> message(String role, String text) {
+        return Map.of(
+                "role", role,
+                "content", List.of(
+                        Map.of(
+                                "type", "input_text",
+                                "text", text == null ? "" : text
+                        )
+                )
+        );
     }
 
     static HttpRequest buildResponsesRequest(

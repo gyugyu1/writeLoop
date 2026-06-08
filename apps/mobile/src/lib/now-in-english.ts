@@ -1,17 +1,26 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
+import {
+  createNowInEnglishEntry,
+  getCurrentUser,
+  getNowInEnglishEntries,
+  syncNowInEnglishEntries
+} from "./api";
 
 export const NOW_IN_ENGLISH_TITLE = "지금 영어로";
 export const NOW_IN_ENGLISH_NOTIFICATION_BODY =
-  "지금 하고 있는 일이나 떠오른 생각을 영어로 짧게 남겨보세요.";
+  "지금 뭐하고 있나요?, 무슨 생각하고 있나요?";
 
 const ENTRIES_KEY = "writeloop:now-in-english:entries:v1";
+const ENTRIES_OWNER_KEY = "writeloop:now-in-english:entries-owner:v1";
+const PENDING_SYNC_ENTRY_IDS_KEY = "writeloop:now-in-english:pending-sync-entry-ids:v1";
 const SETTINGS_KEY = "writeloop:now-in-english:settings:v1";
 const AI_REFLECTIONS_KEY = "writeloop:now-in-english:ai-reflections:v1";
-const NOTIFICATION_CHANNEL_ID = "now-in-english";
+const NOTIFICATION_CHANNEL_ID = "now-in-english-exact-v2";
 const NOTIFICATION_FEATURE_KEY = "now-in-english";
 const REMINDER_TIME_ZONE = "Asia/Seoul";
+const REMINDER_SCHEDULE_VERSION = 2;
 const MAX_STORED_ENTRIES = 120;
 const MAX_STORED_AI_REFLECTIONS = 30;
 const MAX_ENTRY_LENGTH = 500;
@@ -37,6 +46,8 @@ export type NowInEnglishQuietHours = {
 export type NowInEnglishEntry = {
   id: string;
   text: string;
+  polishedFromEntryId?: string | null;
+  polishedFromText?: string | null;
   createdAt: string;
   dateKey: string;
 };
@@ -68,6 +79,7 @@ export type NowInEnglishReminderSettings = {
   enabled: boolean;
   intervalHours: NowInEnglishIntervalHours;
   scheduleMode: NowInEnglishScheduleMode;
+  scheduleVersion?: number;
   scheduleTimeZone?: string;
   notificationIds: string[];
   scheduledReminderAts: string[];
@@ -87,6 +99,7 @@ const DEFAULT_SETTINGS: NowInEnglishReminderSettings = {
   enabled: false,
   intervalHours: 2,
   scheduleMode: "HOURLY_ANCHOR",
+  scheduleVersion: REMINDER_SCHEDULE_VERSION,
   scheduleTimeZone: REMINDER_TIME_ZONE,
   notificationIds: [],
   scheduledReminderAts: [],
@@ -280,6 +293,10 @@ function normalizeSettings(value: unknown): NowInEnglishReminderSettings {
     enabled: settings.enabled === true,
     intervalHours: normalizeIntervalHours(settings.intervalHours),
     scheduleMode: normalizeScheduleMode(settings.scheduleMode),
+    scheduleVersion:
+      typeof settings.scheduleVersion === "number" && Number.isFinite(settings.scheduleVersion)
+        ? Math.trunc(settings.scheduleVersion)
+        : 1,
     scheduleTimeZone: typeof settings.scheduleTimeZone === "string" ? settings.scheduleTimeZone : undefined,
     notificationIds: Array.isArray(settings.notificationIds)
       ? settings.notificationIds.filter((item): item is string => typeof item === "string")
@@ -342,6 +359,111 @@ async function writeEntries(entries: NowInEnglishEntry[]) {
   return nextEntries;
 }
 
+async function getCurrentEntryOwnerId() {
+  try {
+    const user = await getCurrentUser();
+    return user ? String(user.id) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function readEntriesForOwner(ownerId: string | null) {
+  const cachedOwnerId = await AsyncStorage.getItem(ENTRIES_OWNER_KEY);
+  if (ownerId) {
+    if (cachedOwnerId && cachedOwnerId !== ownerId) {
+      return [];
+    }
+    return readEntries();
+  }
+
+  if (cachedOwnerId) {
+    return [];
+  }
+
+  return readEntries();
+}
+
+async function writeEntriesForOwner(entries: NowInEnglishEntry[], ownerId: string | null) {
+  const nextEntries = await writeEntries(entries);
+  if (ownerId) {
+    await AsyncStorage.setItem(ENTRIES_OWNER_KEY, ownerId);
+  } else {
+    await AsyncStorage.removeItem(ENTRIES_OWNER_KEY);
+  }
+  return nextEntries;
+}
+
+async function readPendingSyncEntryIds() {
+  const raw = await AsyncStorage.getItem(PENDING_SYNC_ENTRY_IDS_KEY);
+  if (!raw) {
+    return new Set<string>();
+  }
+
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      return new Set<string>();
+    }
+    return new Set(parsed.filter((item): item is string => typeof item === "string"));
+  } catch {
+    return new Set<string>();
+  }
+}
+
+async function writePendingSyncEntryIds(entryIds: Set<string>) {
+  await AsyncStorage.setItem(PENDING_SYNC_ENTRY_IDS_KEY, JSON.stringify(Array.from(entryIds)));
+}
+
+async function addPendingSyncEntryId(entryId: string) {
+  const pendingEntryIds = await readPendingSyncEntryIds();
+  pendingEntryIds.add(entryId);
+  await writePendingSyncEntryIds(pendingEntryIds);
+}
+
+async function clearPendingSyncEntryIds() {
+  await AsyncStorage.removeItem(PENDING_SYNC_ENTRY_IDS_KEY);
+}
+
+function mergeEntries(...entryLists: NowInEnglishEntry[][]) {
+  const entriesById = new Map<string, NowInEnglishEntry>();
+
+  entryLists.flat().forEach((entry) => {
+    if (isNowInEnglishEntry(entry) && !entriesById.has(entry.id)) {
+      entriesById.set(entry.id, entry);
+    }
+  });
+
+  return Array.from(entriesById.values())
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+    .slice(0, MAX_STORED_ENTRIES);
+}
+
+async function readEntriesWithServerSync() {
+  const ownerId = await getCurrentEntryOwnerId();
+  const cachedOwnerId = await AsyncStorage.getItem(ENTRIES_OWNER_KEY);
+  const localEntries = await readEntriesForOwner(ownerId);
+  if (!ownerId) {
+    return localEntries;
+  }
+
+  try {
+    const serverEntries = await getNowInEnglishEntries();
+    const pendingEntryIds = await readPendingSyncEntryIds();
+    const entriesToSync = cachedOwnerId
+      ? localEntries.filter((entry) => pendingEntryIds.has(entry.id))
+      : localEntries;
+    const syncedEntries = entriesToSync.length > 0 ? await syncNowInEnglishEntries(entriesToSync) : [];
+    if (entriesToSync.length > 0) {
+      await clearPendingSyncEntryIds();
+    }
+    const mergedEntries = mergeEntries(syncedEntries, serverEntries, localEntries);
+    return writeEntriesForOwner(mergedEntries, ownerId);
+  } catch {
+    return localEntries;
+  }
+}
+
 async function readAiReflections() {
   const raw = await AsyncStorage.getItem(AI_REFLECTIONS_KEY);
   if (!raw) {
@@ -388,7 +510,7 @@ async function saveNowInEnglishSettings(settings: NowInEnglishReminderSettings) 
 }
 
 export async function getNowInEnglishSummary(): Promise<NowInEnglishSummary> {
-  const [entries, settings] = await Promise.all([readEntries(), getNowInEnglishSettings()]);
+  const [entries, settings] = await Promise.all([readEntriesWithServerSync(), getNowInEnglishSettings()]);
   const currentSettings = await migrateReminderScheduleIfNeeded(settings);
   if (currentSettings.enabled) {
     await cancelOrphanedReminderNotifications(currentSettings.notificationIds);
@@ -404,21 +526,51 @@ export async function getNowInEnglishSummary(): Promise<NowInEnglishSummary> {
   };
 }
 
-export async function saveNowInEnglishEntry(text: string) {
+export async function saveNowInEnglishEntry(
+  text: string,
+  options: {
+    entryId?: string;
+    createdAt?: string;
+    dateKey?: string;
+    polishedFromEntryId?: string | null;
+    polishedFromText?: string | null;
+  } = {}
+) {
   const normalizedText = normalizeEntryText(text);
   if (!normalizedText) {
     throw new Error("영어 한 줄을 입력해 주세요.");
   }
 
+  const polishedFromText = options.polishedFromText ? normalizeEntryText(options.polishedFromText) : "";
   const now = new Date();
-  const entries = await readEntries();
+  const ownerId = await getCurrentEntryOwnerId();
+  const entries = await readEntriesForOwner(ownerId);
+  const createdAt = options.createdAt || now.toISOString();
   const entry: NowInEnglishEntry = {
-    id: createEntryId(),
+    id: options.entryId || createEntryId(),
     text: normalizedText,
-    createdAt: now.toISOString(),
-    dateKey: toDateKey(now)
+    polishedFromEntryId: options.polishedFromEntryId || null,
+    polishedFromText: polishedFromText || null,
+    createdAt,
+    dateKey: options.dateKey || toDateKey(new Date(createdAt))
   };
-  await writeEntries([entry, ...entries]);
+
+  if (ownerId) {
+    try {
+      const savedEntry = await createNowInEnglishEntry(entry);
+      if (savedEntry) {
+        const serverEntries = await getNowInEnglishEntries();
+        await writeEntriesForOwner(mergeEntries([savedEntry], serverEntries, entries), ownerId);
+        return savedEntry;
+      }
+      await addPendingSyncEntryId(entry.id);
+    } catch {
+      // Keep a local copy and sync it when the API is reachable again.
+      await addPendingSyncEntryId(entry.id);
+    }
+  }
+
+  await writeEntriesForOwner(mergeEntries([entry], entries), ownerId);
   return entry;
 }
 
@@ -589,6 +741,15 @@ function buildReminderScheduleDates(
   return dates;
 }
 
+function formatNowInEnglishNotificationTime(date: Date) {
+  const parts = getSeoulDateParts(date);
+  return `${parts.hour.toString().padStart(2, "0")}:${parts.minute.toString().padStart(2, "0")}`;
+}
+
+function buildNowInEnglishNotificationTitle(date: Date) {
+  return `${formatNowInEnglishNotificationTime(date)} 영어 기록을 남길 시간이에요`;
+}
+
 async function scheduleReminderNotifications(
   intervalHours: NowInEnglishIntervalHours,
   quietHours: NowInEnglishQuietHours,
@@ -599,7 +760,7 @@ async function scheduleReminderNotifications(
     scheduleDates.map((date) =>
       Notifications.scheduleNotificationAsync({
         content: {
-          title: NOW_IN_ENGLISH_TITLE,
+          title: buildNowInEnglishNotificationTitle(date),
           body: NOW_IN_ENGLISH_NOTIFICATION_BODY,
           data: {
             route: "/now",
@@ -622,8 +783,19 @@ async function scheduleReminderNotifications(
 }
 
 async function migrateReminderScheduleIfNeeded(settings: NowInEnglishReminderSettings) {
-  if (!settings.enabled || settings.scheduleTimeZone === REMINDER_TIME_ZONE) {
+  const needsMigration =
+    settings.scheduleTimeZone !== REMINDER_TIME_ZONE || settings.scheduleVersion !== REMINDER_SCHEDULE_VERSION;
+
+  if (!needsMigration) {
     return settings;
+  }
+
+  if (!settings.enabled) {
+    return saveNowInEnglishSettings({
+      ...settings,
+      scheduleVersion: REMINDER_SCHEDULE_VERSION,
+      scheduleTimeZone: REMINDER_TIME_ZONE
+    });
   }
 
   try {
@@ -633,6 +805,7 @@ async function migrateReminderScheduleIfNeeded(settings: NowInEnglishReminderSet
 
     return saveNowInEnglishSettings({
       ...settings,
+      scheduleVersion: REMINDER_SCHEDULE_VERSION,
       scheduleTimeZone: REMINDER_TIME_ZONE,
       notificationIds: schedule.notificationIds,
       scheduledReminderAts: schedule.scheduledReminderAts,
@@ -641,6 +814,7 @@ async function migrateReminderScheduleIfNeeded(settings: NowInEnglishReminderSet
   } catch {
     return {
       ...settings,
+      scheduleVersion: REMINDER_SCHEDULE_VERSION,
       scheduleTimeZone: REMINDER_TIME_ZONE,
       scheduledReminderAts: []
     };
@@ -688,8 +862,10 @@ async function ensureAndroidNotificationChannel() {
   await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
     name: "지금 영어로",
     description: "하루 중 짧은 영어 기록을 남기도록 알려줘요.",
-    importance: Notifications.AndroidImportance.DEFAULT,
+    importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 180, 120, 180],
+    enableVibrate: true,
+    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
     lightColor: "#EA920D"
   });
 }
@@ -722,6 +898,7 @@ export async function enableNowInEnglishReminders(
       enabled: false,
       intervalHours,
       scheduleMode,
+      scheduleVersion: REMINDER_SCHEDULE_VERSION,
       scheduleTimeZone: REMINDER_TIME_ZONE,
       notificationIds: [],
       scheduledReminderAts: [],
@@ -741,6 +918,7 @@ export async function enableNowInEnglishReminders(
     enabled: true,
     intervalHours,
     scheduleMode,
+    scheduleVersion: REMINDER_SCHEDULE_VERSION,
     scheduleTimeZone: REMINDER_TIME_ZONE,
     notificationIds: schedule.notificationIds,
     scheduledReminderAts: schedule.scheduledReminderAts,
@@ -763,6 +941,7 @@ export async function updateNowInEnglishQuietHours(quietHours: NowInEnglishQuiet
     return saveNowInEnglishSettings({
       ...currentSettings,
       quietHours: nextQuietHours,
+      scheduleVersion: REMINDER_SCHEDULE_VERSION,
       scheduleTimeZone: REMINDER_TIME_ZONE,
       updatedAt
     });
@@ -778,6 +957,7 @@ export async function updateNowInEnglishQuietHours(quietHours: NowInEnglishQuiet
 
   return saveNowInEnglishSettings({
     ...currentSettings,
+    scheduleVersion: REMINDER_SCHEDULE_VERSION,
     scheduleTimeZone: REMINDER_TIME_ZONE,
     notificationIds: schedule.notificationIds,
     scheduledReminderAts: schedule.scheduledReminderAts,
@@ -799,6 +979,7 @@ export async function updateNowInEnglishScheduleMode(scheduleMode: NowInEnglishS
     return saveNowInEnglishSettings({
       ...currentSettings,
       scheduleMode: nextScheduleMode,
+      scheduleVersion: REMINDER_SCHEDULE_VERSION,
       scheduleTimeZone: REMINDER_TIME_ZONE,
       updatedAt
     });
@@ -815,6 +996,7 @@ export async function updateNowInEnglishScheduleMode(scheduleMode: NowInEnglishS
   return saveNowInEnglishSettings({
     ...currentSettings,
     scheduleMode: nextScheduleMode,
+    scheduleVersion: REMINDER_SCHEDULE_VERSION,
     scheduleTimeZone: REMINDER_TIME_ZONE,
     notificationIds: schedule.notificationIds,
     scheduledReminderAts: schedule.scheduledReminderAts,
@@ -829,6 +1011,7 @@ export async function disableNowInEnglishReminders() {
   return saveNowInEnglishSettings({
     ...currentSettings,
     enabled: false,
+    scheduleVersion: REMINDER_SCHEDULE_VERSION,
     scheduleTimeZone: REMINDER_TIME_ZONE,
     notificationIds: [],
     scheduledReminderAts: [],

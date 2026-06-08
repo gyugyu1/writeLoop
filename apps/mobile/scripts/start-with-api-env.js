@@ -7,6 +7,11 @@ const mode = process.argv[2] ?? "local";
 const modes = {
   local: {
     label: "local Spring Boot backend",
+    preferIpv4Localhost: true,
+    adbReversePorts: [
+      [8081, 8081]
+    ],
+    expoArgs: ["expo", "start", "--dev-client", "--localhost", "--clear"],
     env: {
       EXPO_PUBLIC_API_BASE_URL: "http://localhost:8080",
       EXPO_PUBLIC_API_BASE_URL_ANDROID: "http://10.0.2.2:8080",
@@ -15,6 +20,11 @@ const modes = {
   },
   "local-nginx": {
     label: "local Docker/Nginx backend",
+    preferIpv4Localhost: true,
+    adbReversePorts: [
+      [8081, 8081]
+    ],
+    expoArgs: ["expo", "start", "--dev-client", "--localhost", "--clear"],
     env: {
       EXPO_PUBLIC_API_BASE_URL: "http://localhost",
       EXPO_PUBLIC_API_BASE_URL_ANDROID: "http://10.0.2.2",
@@ -37,6 +47,11 @@ const modes = {
   },
   prod: {
     label: "production backend",
+    preferIpv4Localhost: true,
+    adbReversePorts: [
+      [8081, 8081]
+    ],
+    expoArgs: ["expo", "start", "--dev-client", "--localhost", "--clear"],
     env: {
       EXPO_PUBLIC_API_BASE_URL: "https://api.writeloop.kr",
       EXPO_PUBLIC_API_BASE_URL_ANDROID: "https://api.writeloop.kr",

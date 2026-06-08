@@ -18,6 +18,9 @@
     },
     "android": {
       "package": "kr.writeloop",
+      "permissions": [
+        "android.permission.SCHEDULE_EXACT_ALARM"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

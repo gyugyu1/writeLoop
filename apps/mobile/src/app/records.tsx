@@ -1338,8 +1338,8 @@ const listStyles = StyleSheet.create({
     gap: 8
   },
   nowRecordTime: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 22,
+    lineHeight: 27,
     fontWeight: "900",
     color: "#A26A25"
   },

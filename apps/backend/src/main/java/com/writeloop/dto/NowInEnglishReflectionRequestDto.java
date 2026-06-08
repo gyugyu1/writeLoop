@@ -4,6 +4,7 @@ import java.util.List;
 
 public record NowInEnglishReflectionRequestDto(
         String dateKey,
-        List<NowInEnglishReflectionEntryDto> entries
+        List<NowInEnglishReflectionEntryDto> entries,
+        Boolean forceRefresh
 ) {
 }

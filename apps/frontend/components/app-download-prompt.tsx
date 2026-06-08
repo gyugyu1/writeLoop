@@ -7,7 +7,7 @@ import styles from "./app-download-prompt.module.css";
 const DISMISSED_STORAGE_KEY = "writeloop_app_download_prompt_dismissed_at";
 const DISMISS_DURATION_MS = 24 * 60 * 60 * 1000;
 const ANDROID_STORE_URL = "https://play.google.com/store/apps/details?id=kr.writeloop";
-const IOS_STORE_URL = "https://apps.apple.com/app/id6763569959";
+const IOS_STORE_URL = "https://apps.apple.com/kr/app/%EB%9D%BC%EC%9D%B4%ED%8A%B8%EB%A3%A8%ED%94%84/id6763569959";
 
 const TEXT = {
   closeLabel: "\uC571 \uB2E4\uC6B4\uB85C\uB4DC \uC548\uB0B4 \uB2EB\uAE30",

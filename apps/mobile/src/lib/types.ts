@@ -374,9 +374,50 @@ export interface NowInEnglishReflectionEntryRequest {
   createdAt?: string;
 }
 
+export interface NowInEnglishEntryPayload {
+  id: string;
+  text: string;
+  polishedFromEntryId?: string | null;
+  polishedFromText?: string | null;
+  createdAt: string;
+  dateKey: string;
+}
+
+export interface NowInEnglishEntryRequest {
+  id?: string;
+  text: string;
+  polishedFromEntryId?: string | null;
+  polishedFromText?: string | null;
+  createdAt?: string;
+  dateKey?: string;
+}
+
+export interface NowInEnglishEntrySyncRequest {
+  entries: NowInEnglishEntryRequest[];
+}
+
+export interface NowInEnglishCoachFeedbackRequest {
+  text: string;
+  createdAt?: string;
+}
+
+export interface NowInEnglishCoachFeedbackResponse {
+  originalText: string;
+  headlineKo: string;
+  praiseKo: string;
+  suggestionEn: string;
+  suggestionTranslationKo: string;
+  suggestionKo: string;
+  nextQuestionKo: string;
+  expression: string;
+  expressionMeaningKo: string;
+  expressionExampleEn: string;
+}
+
 export interface NowInEnglishReflectionRequest {
   dateKey: string;
   entries: NowInEnglishReflectionEntryRequest[];
+  forceRefresh?: boolean;
 }
 
 export interface NowInEnglishReflectionExpression {

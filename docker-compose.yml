@@ -50,7 +50,7 @@ services:
       APP_DRAFT_TTL_DAYS: ${APP_DRAFT_TTL_DAYS:-7}
       APP_VERSION_IOS_LATEST: ${APP_VERSION_IOS_LATEST:-1.0.2}
       APP_VERSION_IOS_MINIMUM_SUPPORTED: ${APP_VERSION_IOS_MINIMUM_SUPPORTED:-1.0.0}
-      APP_VERSION_IOS_STORE_URL: ${APP_VERSION_IOS_STORE_URL:-https://apps.apple.com/app/id6763569959}
+      APP_VERSION_IOS_STORE_URL: ${APP_VERSION_IOS_STORE_URL:-https://apps.apple.com/kr/app/%EB%9D%BC%EC%9D%B4%ED%8A%B8%EB%A3%A8%ED%94%84/id6763569959}
       APP_VERSION_ANDROID_LATEST: ${APP_VERSION_ANDROID_LATEST:-1.0.1}
       APP_VERSION_ANDROID_MINIMUM_SUPPORTED: ${APP_VERSION_ANDROID_MINIMUM_SUPPORTED:-1.0.0}
       APP_VERSION_ANDROID_STORE_URL: ${APP_VERSION_ANDROID_STORE_URL:-https://play.google.com/store/apps/details?id=kr.writeloop}
@@ -86,6 +86,14 @@ services:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://api.localtest.me}
     container_name: writeLoop-frontend
     restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /app/.next/cache:size=128m,mode=1777
     depends_on:
       - writeloop-backend
     environment:

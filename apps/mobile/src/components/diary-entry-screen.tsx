@@ -17,6 +17,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import FeedbackLoadingOverlay from "@/components/feedback-loading-overlay";
+import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import {
   createDiaryEntry,
   deleteDiaryEntry,
@@ -1311,7 +1312,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
         animationType="slide"
         onRequestClose={() => setIsCoachOpen(false)}
       >
-        <SafeAreaView style={styles.coachModalRoot} edges={["top", "bottom"]}>
+        <ModalSafeAreaView style={styles.coachModalRoot}>
           <KeyboardAvoidingView
             style={styles.coachModalKeyboardFrame}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -1432,7 +1433,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
               </View>
             </ScrollView>
           </KeyboardAvoidingView>
-        </SafeAreaView>
+        </ModalSafeAreaView>
       </Modal>
     </SafeAreaView>
   );

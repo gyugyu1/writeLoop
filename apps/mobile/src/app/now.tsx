@@ -15,6 +15,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import {
   deleteSavedExpression,
@@ -1487,7 +1488,7 @@ export default function NowInEnglishScreen() {
       >
         <View style={styles.reminderSettingsOverlay}>
           <Pressable style={styles.reminderSettingsBackdrop} onPress={() => setIsReminderSettingsOpen(false)} />
-          <SafeAreaView style={styles.reminderSettingsFrame} edges={["top", "bottom"]}>
+          <ModalSafeAreaView style={styles.reminderSettingsFrame}>
             <View style={styles.reminderSettingsCard}>
               <View style={styles.reminderSettingsHeader}>
                 <View style={styles.reminderSettingsHeaderCopy}>
@@ -1624,12 +1625,12 @@ export default function NowInEnglishScreen() {
                 ) : null}
               </View>
             </View>
-          </SafeAreaView>
+          </ModalSafeAreaView>
         </View>
       </Modal>
 
       <Modal visible={isCoachOpen} animationType="slide" onRequestClose={() => setIsCoachOpen(false)}>
-        <SafeAreaView style={styles.coachModalRoot} edges={["top", "bottom"]}>
+        <ModalSafeAreaView style={styles.coachModalRoot}>
           <KeyboardAvoidingView
             style={styles.coachModalKeyboardFrame}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -1728,7 +1729,7 @@ export default function NowInEnglishScreen() {
               </ScrollView>
             </View>
           </KeyboardAvoidingView>
-        </SafeAreaView>
+        </ModalSafeAreaView>
       </Modal>
 
       <Modal
@@ -1739,7 +1740,7 @@ export default function NowInEnglishScreen() {
       >
         <View style={styles.calendarModalOverlay}>
           <Pressable style={styles.calendarModalBackdrop} onPress={() => setIsCalendarOpen(false)} />
-          <SafeAreaView style={styles.calendarModalFrame} edges={["top", "bottom"]}>
+          <ModalSafeAreaView style={styles.calendarModalFrame}>
             <View style={styles.calendarModalCard}>
               <View style={styles.calendarModalHeader}>
                 <Pressable
@@ -1808,7 +1809,7 @@ export default function NowInEnglishScreen() {
                 <Text style={styles.calendarCloseButtonText}>닫기</Text>
               </Pressable>
             </View>
-          </SafeAreaView>
+          </ModalSafeAreaView>
         </View>
       </Modal>
     </SafeAreaView>

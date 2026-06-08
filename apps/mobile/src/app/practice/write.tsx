@@ -17,7 +17,8 @@ import {
   TextInput,
   View
 } from "react-native";
-import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
+import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import { PracticeFeedbackContent } from "@/components/practice-feedback-content";
 import FeedbackLoadingOverlay from "@/components/feedback-loading-overlay";
 import {
@@ -337,8 +338,6 @@ export default function PracticeWriteScreen() {
     practiceExpressions?: string;
   }>();
   const navigation = useNavigation();
-  const safeAreaInsets = useSafeAreaInsets();
-  const coachModalHeaderTopPadding = Math.max(safeAreaInsets.top + 12, 24);
   const rawDifficulty = typeof params.difficulty === "string" ? params.difficulty : "";
   const requestedDifficulty: DailyDifficulty = isDailyDifficulty(rawDifficulty) ? rawDifficulty : "I";
   const requestedPromptId = typeof params.promptId === "string" ? params.promptId : "";
@@ -1619,7 +1618,7 @@ export default function PracticeWriteScreen() {
         animationType="slide"
         onRequestClose={() => setIsPreviousFeedbackOpen(false)}
       >
-        <SafeAreaView style={styles.feedbackModalRoot} edges={["top", "bottom"]}>
+        <ModalSafeAreaView style={styles.feedbackModalRoot}>
           <View style={styles.feedbackModalHeader}>
             <View style={styles.feedbackModalHeaderText}>
               <Text style={styles.feedbackModalTitle}>{feedbackReferenceLabel}</Text>
@@ -1650,7 +1649,7 @@ export default function PracticeWriteScreen() {
               )}
             </ScrollView>
           </View>
-        </SafeAreaView>
+        </ModalSafeAreaView>
       </Modal>
 
       <Modal
@@ -1658,7 +1657,7 @@ export default function PracticeWriteScreen() {
         animationType="slide"
         onRequestClose={() => setIsGuideOpen(false)}
       >
-        <SafeAreaView style={styles.guideModalRoot} edges={["top", "bottom"]}>
+        <ModalSafeAreaView style={styles.guideModalRoot}>
           <View style={styles.guideModalHeader}>
             <View style={styles.guideModalHeaderText}>
               <Text style={styles.guideModalTitle}>작성 가이드</Text>
@@ -1735,7 +1734,7 @@ export default function PracticeWriteScreen() {
 
 
           </ScrollView>
-        </SafeAreaView>
+        </ModalSafeAreaView>
       </Modal>
 
       <Modal
@@ -1743,13 +1742,13 @@ export default function PracticeWriteScreen() {
         animationType="slide"
         onRequestClose={() => setIsCoachOpen(false)}
       >
-        <SafeAreaView style={styles.coachModalRoot} edges={["bottom"]}>
+        <ModalSafeAreaView style={styles.coachModalRoot}>
           <KeyboardAvoidingView
             style={styles.coachModalKeyboardFrame}
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={Platform.OS === "ios" ? 8 : 0}
           >
-            <View style={[styles.coachModalHeader, { paddingTop: coachModalHeaderTopPadding }]}>
+            <View style={styles.coachModalHeader}>
               <View style={styles.coachModalHeaderText}>
                 <Text style={styles.coachModalTitle}>표현 추천 받기</Text>
               </View>
@@ -1883,7 +1882,7 @@ export default function PracticeWriteScreen() {
               </ScrollView>
             </View>
           </KeyboardAvoidingView>
-        </SafeAreaView>
+        </ModalSafeAreaView>
       </Modal>
     </SafeAreaView>
   );

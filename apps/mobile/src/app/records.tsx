@@ -14,6 +14,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import { SymbolView } from "expo-symbols";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
@@ -670,7 +671,7 @@ function HistorySessionDetailModal({
       animationType="slide"
       onRequestClose={isFeedbackView ? onReturnToHistory : onClose}
     >
-      <SafeAreaView style={styles.modalSafeArea} edges={["top", "left", "right", "bottom"]}>
+      <ModalSafeAreaView style={styles.modalSafeArea}>
         <View style={styles.modalHeader}>
           <View style={styles.modalHeaderCopy}>
             <Text style={styles.modalTitle}>{isFeedbackView ? "피드백 보기" : "질문 기록"}</Text>
@@ -827,7 +828,7 @@ function HistorySessionDetailModal({
             </View>
           )}
         </ScrollView>
-      </SafeAreaView>
+      </ModalSafeAreaView>
     </Modal>
   );
 }
@@ -2952,7 +2953,7 @@ export default function RecordsScreen() {
       <Modal visible={isCalendarOpen} transparent animationType="fade" onRequestClose={handleCloseCalendar}>
         <View style={styles.calendarModalOverlay}>
           <Pressable style={styles.calendarModalBackdrop} onPress={handleCloseCalendar} />
-          <SafeAreaView style={styles.calendarModalFrame} edges={["top", "bottom"]}>
+          <ModalSafeAreaView style={styles.calendarModalFrame}>
             <View style={styles.calendarModalCard}>
               <View style={styles.calendarModalHeader}>
                 <View style={styles.calendarMonthNavRow}>
@@ -3043,7 +3044,7 @@ export default function RecordsScreen() {
 
               <Text style={styles.calendarFooterMeta}>기록이 있는 날짜만 바로 이동할 수 있어요.</Text>
             </View>
-          </SafeAreaView>
+          </ModalSafeAreaView>
         </View>
       </Modal>
     </>

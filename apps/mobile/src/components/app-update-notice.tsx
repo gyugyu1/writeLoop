@@ -3,6 +3,7 @@ import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import { useEffect, useState } from "react";
 import { InteractionManager, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import { getAppVersionStatus } from "@/lib/api";
 import type { AppVersionStatus, MobilePlatform } from "@/lib/types";
 
@@ -122,7 +123,7 @@ export default function AppUpdateNotice() {
       transparent
       visible={visible}
     >
-      <View style={styles.backdrop}>
+      <ModalSafeAreaView style={styles.backdrop} minimumBottomInset={24} minimumTopInset={24}>
         <View style={styles.card}>
           <Text style={styles.title}>{versionStatus.titleKo}</Text>
           <Text style={styles.message}>{versionStatus.messageKo}</Text>
@@ -152,7 +153,7 @@ export default function AppUpdateNotice() {
             </Pressable>
           </View>
         </View>
-      </View>
+      </ModalSafeAreaView>
     </Modal>
   );
 }

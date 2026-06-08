@@ -13,6 +13,7 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import {
@@ -1337,7 +1338,11 @@ export default function HomeScreen() {
       >
         <View style={styles.calendarModalOverlay}>
           <Pressable style={styles.calendarModalBackdrop} onPress={handleCloseCalendar} />
-          <SafeAreaView style={styles.calendarModalFrame} edges={["top", "bottom"]}>
+          <ModalSafeAreaView
+            style={styles.calendarModalFrame}
+            minimumBottomInset={24}
+            minimumTopInset={24}
+          >
             <View style={styles.calendarModalCard}>
               <View style={styles.calendarModalHeader}>
                 <View style={styles.calendarModalHeaderCopy}>
@@ -1478,12 +1483,12 @@ export default function HomeScreen() {
 
               <Text style={styles.calendarFooterMeta}>{calendarFooterLabel}</Text>
             </View>
-          </SafeAreaView>
+          </ModalSafeAreaView>
         </View>
       </Modal>
 
       <Modal visible={isGuideOpen} animationType="slide" onRequestClose={() => setIsGuideOpen(false)}>
-        <SafeAreaView style={styles.guideModalRoot} edges={["top", "bottom"]}>
+        <ModalSafeAreaView style={styles.guideModalRoot}>
           <View style={styles.guideModalHeader}>
             <View style={styles.guideModalHeaderText}>
               <Text style={styles.guideModalTitle}>바로 보는 학습 가이드</Text>
@@ -1521,7 +1526,7 @@ export default function HomeScreen() {
               </Text>
             </View>
           </ScrollView>
-        </SafeAreaView>
+        </ModalSafeAreaView>
       </Modal>
     </SafeAreaView>
   );

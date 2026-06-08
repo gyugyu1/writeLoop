@@ -5,10 +5,13 @@ const productionApiBaseUrl = "https://api.writeloop.kr";
 const androidEmulatorHosts = new Set(["10.0.2.2", "10.0.3.2"]);
 const loopbackHosts = new Set(["localhost", "127.0.0.1"]);
 const localProxyHosts = new Set(["api.localtest.me", "writeloop.localtest.me"]);
+const isPhysicalAndroidDevice = Platform.OS === "android" && Device.isDevice;
 const isPhysicalIosDevice = Platform.OS === "ios" && Device.isDevice;
 const localApiBaseUrl =
   Platform.OS === "android"
-    ? "http://10.0.2.2"
+    ? isPhysicalAndroidDevice
+      ? "http://localhost:8080"
+      : "http://10.0.2.2"
     : isPhysicalIosDevice
       ? productionApiBaseUrl
       : "http://localhost";
@@ -32,7 +35,7 @@ function remapConfiguredApiBaseUrlForPlatform(value: string) {
       return normalizeApiBaseUrl(parsed.toString());
     }
 
-    if (Platform.OS === "android" && loopbackHosts.has(hostname)) {
+    if (Platform.OS === "android" && !Device.isDevice && loopbackHosts.has(hostname)) {
       parsed.hostname = "10.0.2.2";
       return normalizeApiBaseUrl(parsed.toString());
     }

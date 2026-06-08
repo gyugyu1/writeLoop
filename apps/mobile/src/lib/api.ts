@@ -36,6 +36,13 @@ import type {
   MobilePlatform,
   MobileHomeSnapshot,
   MonthWritingStatus,
+  NowInEnglishCoachFeedbackRequest,
+  NowInEnglishCoachFeedbackResponse,
+  NowInEnglishEntryPayload,
+  NowInEnglishEntryRequest,
+  NowInEnglishEntrySyncRequest,
+  NowInEnglishReflectionRequest,
+  NowInEnglishReflectionResponse,
   PendingSocialRegistration,
   PromptHint,
   Prompt,
@@ -85,6 +92,10 @@ function resolveFetchTimeoutMs(url: string) {
   }
 
   if (url.includes("/api/coach/help")) {
+    return COACH_FETCH_TIMEOUT_MS;
+  }
+
+  if (url.includes("/api/now-in-english/reflection") || url.includes("/api/now-in-english/coach-feedback")) {
     return COACH_FETCH_TIMEOUT_MS;
   }
 
@@ -152,6 +163,104 @@ function normalizeCoachHelpResponse(
     expressions,
     interactionId: payload.interactionId
   };
+}
+
+function normalizeStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => (typeof item === "string" ? item.trim() : ""))
+    .filter(Boolean);
+}
+
+function normalizeNowInEnglishReflectionResponse(
+  payload: Partial<NowInEnglishReflectionResponse>,
+  fallbackDateKey: string,
+  fallbackEntryCount: number
+): NowInEnglishReflectionResponse {
+  return {
+    dateKey: payload.dateKey || fallbackDateKey,
+    entryCount: typeof payload.entryCount === "number" ? payload.entryCount : fallbackEntryCount,
+    headlineKo: payload.headlineKo || "어제의 영어 조각",
+    summaryKo: payload.summaryKo || "어제 남긴 짧은 문장들을 다시 살펴봤어요.",
+    highlightsKo: normalizeStringList(payload.highlightsKo),
+    patternKo: payload.patternKo || "",
+    gentleCorrectionKo: payload.gentleCorrectionKo || "",
+    nextActionKo: payload.nextActionKo || "오늘도 지금 순간을 한 줄로 남겨보세요.",
+    nextActionExampleEn: payload.nextActionExampleEn || "",
+    expressions: (payload.expressions ?? [])
+      .filter((expression) => Boolean(expression?.expression))
+      .map((expression) => ({
+        expression: expression.expression ?? "",
+        meaningKo: expression.meaningKo ?? "",
+        usageTip: expression.usageTip ?? "",
+        example: expression.example ?? ""
+      })),
+    closingKo: payload.closingKo || ""
+  };
+}
+
+function normalizeNowInEnglishEntryPayload(
+  payload: Partial<NowInEnglishEntryPayload>
+): NowInEnglishEntryPayload | null {
+  if (
+    typeof payload.id !== "string" ||
+    typeof payload.text !== "string" ||
+    typeof payload.createdAt !== "string" ||
+    typeof payload.dateKey !== "string"
+  ) {
+    return null;
+  }
+
+  return {
+    id: payload.id,
+    text: payload.text,
+    polishedFromEntryId: payload.polishedFromEntryId ?? null,
+    polishedFromText: payload.polishedFromText ?? null,
+    createdAt: payload.createdAt,
+    dateKey: payload.dateKey
+  };
+}
+
+function normalizeNowInEnglishCoachFeedbackResponse(
+  payload: Partial<NowInEnglishCoachFeedbackResponse>,
+  fallbackText: string
+): NowInEnglishCoachFeedbackResponse {
+  const suggestionEn = (payload.suggestionEn || "").trim();
+  const hasDistinctSuggestion = hasDistinctNowInEnglishSuggestion(fallbackText, suggestionEn);
+
+  return {
+    originalText: payload.originalText || fallbackText,
+    headlineKo: payload.headlineKo || "좋아요, 한 줄이 남았어요.",
+    praiseKo: payload.praiseKo || "지금 떠오른 생각을 영어로 바로 남긴 점이 좋아요.",
+    suggestionEn: hasDistinctSuggestion ? suggestionEn : "",
+    suggestionTranslationKo: hasDistinctSuggestion ? (payload.suggestionTranslationKo || "").trim() : "",
+    suggestionKo: hasDistinctSuggestion ? (payload.suggestionKo || "").trim() : "",
+    nextQuestionKo: payload.nextQuestionKo || "어디에서, 왜 그런지 하나만 더 붙여볼까요?",
+    expression: payload.expression || "right now",
+    expressionMeaningKo: payload.expressionMeaningKo || "바로 지금",
+    expressionExampleEn: payload.expressionExampleEn || "I am writing this right now."
+  };
+}
+
+function normalizeNowInEnglishSuggestionComparison(value: string) {
+  return value
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase()
+    .replace(/[.!?]+$/g, "")
+    .trim();
+}
+
+function hasDistinctNowInEnglishSuggestion(originalText: string, suggestionEn: string) {
+  const normalizedSuggestion = normalizeNowInEnglishSuggestionComparison(suggestionEn);
+  if (!normalizedSuggestion) {
+    return false;
+  }
+
+  return normalizedSuggestion !== normalizeNowInEnglishSuggestionComparison(originalText);
 }
 
 function normalizePromptItem(prompt: Prompt): Prompt {
@@ -1397,6 +1506,150 @@ export async function requestCoachHelp(request: CoachHelpRequest): Promise<Coach
   };
 
   return normalizeCoachHelpResponse(payload, request.promptId, request.question);
+}
+
+export async function getNowInEnglishEntries(): Promise<NowInEnglishEntryPayload[]> {
+  const response = await apiFetch("/api/now-in-english/entries");
+
+  if (response.status === 401) {
+    return [];
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어 조각 기록을 불러오지 못했어요.");
+  }
+
+  const payload = (await response.json()) as Partial<NowInEnglishEntryPayload>[];
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+
+  return payload
+    .map((entry) => normalizeNowInEnglishEntryPayload(entry))
+    .filter((entry): entry is NowInEnglishEntryPayload => Boolean(entry));
+}
+
+export async function createNowInEnglishEntry(
+  request: NowInEnglishEntryRequest
+): Promise<NowInEnglishEntryPayload | null> {
+  const response = await apiFetch("/api/now-in-english/entries", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어 조각을 저장하지 못했어요.");
+  }
+
+  const entry = normalizeNowInEnglishEntryPayload((await response.json()) as Partial<NowInEnglishEntryPayload>);
+  if (!entry) {
+    throw createApiError("영어 조각 저장 응답이 올바르지 않아요.", 500, "NOW_ENTRY_RESPONSE_INVALID");
+  }
+
+  return entry;
+}
+
+export async function syncNowInEnglishEntries(
+  entries: NowInEnglishEntrySyncRequest["entries"]
+): Promise<NowInEnglishEntryPayload[]> {
+  if (entries.length === 0) {
+    return [];
+  }
+
+  const response = await apiFetch("/api/now-in-english/entries/sync", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ entries })
+  });
+
+  if (response.status === 401) {
+    return [];
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어 조각 기록을 동기화하지 못했어요.");
+  }
+
+  const payload = (await response.json()) as Partial<NowInEnglishEntryPayload>[];
+  if (!Array.isArray(payload)) {
+    return [];
+  }
+
+  return payload
+    .map((entry) => normalizeNowInEnglishEntryPayload(entry))
+    .filter((entry): entry is NowInEnglishEntryPayload => Boolean(entry));
+}
+
+export async function requestNowInEnglishCoachFeedback(
+  request: NowInEnglishCoachFeedbackRequest
+): Promise<NowInEnglishCoachFeedbackResponse> {
+  const response = await apiFetch("/api/now-in-english/coach-feedback", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어 조각 AI 코치를 불러오지 못했어요.");
+  }
+
+  return normalizeNowInEnglishCoachFeedbackResponse(
+    (await response.json()) as Partial<NowInEnglishCoachFeedbackResponse>,
+    request.text
+  );
+}
+
+export async function requestNowInEnglishReflection(
+  request: NowInEnglishReflectionRequest
+): Promise<NowInEnglishReflectionResponse> {
+  const response = await apiFetch("/api/now-in-english/reflection", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어 조각 회고를 불러오지 못했어요.");
+  }
+
+  return normalizeNowInEnglishReflectionResponse(
+    (await response.json()) as Partial<NowInEnglishReflectionResponse>,
+    request.dateKey,
+    request.entries.length
+  );
+}
+
+export async function getSavedNowInEnglishReflection(
+  dateKey: string
+): Promise<NowInEnglishReflectionResponse | null> {
+  const response = await apiFetch(`/api/now-in-english/reflection/${encodeURIComponent(dateKey)}`);
+
+  if (response.status === 401 || response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw await parseApiError(response, "영어 조각 회고를 불러오지 못했어요.");
+  }
+
+  return normalizeNowInEnglishReflectionResponse(
+    (await response.json()) as Partial<NowInEnglishReflectionResponse>,
+    dateKey,
+    0
+  );
 }
 
 export async function submitFeedback(request: FeedbackRequest): Promise<Feedback> {

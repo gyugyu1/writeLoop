@@ -33,6 +33,12 @@ import { buildLoginHref } from "@/lib/login-redirect";
 import { isDailyDifficulty, normalizeDailyDifficulty } from "@/lib/practice";
 import type { PracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { useSession } from "@/lib/session";
+import {
+  formatNowInEnglishDateLabel,
+  formatNowInEnglishTime,
+  getNowInEnglishSummary,
+  type NowInEnglishEntry
+} from "@/lib/now-in-english";
 import type {
   Feedback,
   HistoryAttempt,
@@ -69,7 +75,12 @@ type RecordsMonthCalendarData = {
   cells: RecordsMonthCalendarCell[];
 };
 
-type RecordsContentTab = "history" | "expressions";
+type RecordsContentTab = "history" | "diary" | "now" | "expressions";
+type NowEnglishRecordGroup = {
+  dateKey: string;
+  label: string;
+  entries: NowInEnglishEntry[];
+};
 
 const INITIAL_VISIBLE_DATE_GROUPS = 5;
 const TAG_PRACTICE_EXPRESSION_LIMIT = 5;
@@ -172,6 +183,31 @@ function buildRecordsMonthCalendar(
     monthLabel: formatCalendarMonthLabel(visibleMonth),
     cells
   };
+}
+
+function normalizeRecordsContentTab(value: unknown): RecordsContentTab {
+  if (value === "diary" || value === "now" || value === "expressions") {
+    return value;
+  }
+
+  return "history";
+}
+
+function buildNowEnglishRecordGroups(entries: NowInEnglishEntry[]): NowEnglishRecordGroup[] {
+  const grouped = new Map<string, NowInEnglishEntry[]>();
+  entries.forEach((entry) => {
+    grouped.set(entry.dateKey, [...(grouped.get(entry.dateKey) ?? []), entry]);
+  });
+
+  return Array.from(grouped.entries())
+    .sort(([leftDateKey], [rightDateKey]) => rightDateKey.localeCompare(leftDateKey))
+    .map(([dateKey, groupedEntries]) => ({
+      dateKey,
+      label: formatNowInEnglishDateLabel(dateKey),
+      entries: groupedEntries
+        .slice()
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
+    }));
 }
 
 function getHistoryWordCount(text: string) {
@@ -891,23 +927,42 @@ const baseStyles = StyleSheet.create({
     alignSelf: "flex-start"
   },
   primaryButtonText: { fontSize: 16, fontWeight: "900", color: "#232128" },
+  outlineButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 22,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    borderWidth: 1,
+    borderColor: "#E2C5A6",
+    backgroundColor: "#FFFEFC",
+    alignSelf: "flex-start"
+  },
+  outlineButtonText: { fontSize: 16, fontWeight: "900", color: "#8A5A1E" },
+  recordActionRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10
+  },
   errorText: { fontSize: 14, lineHeight: 20, color: "#B34A2B" }
 });
 const listStyles = StyleSheet.create({
   contentTabRow: {
     flexDirection: "row",
-    gap: 10
+    flexWrap: "wrap",
+    gap: 8
   },
   contentTabButton: {
-    flex: 1,
+    flexGrow: 1,
+    flexBasis: "22%",
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 18,
     borderWidth: 1,
     borderColor: "#E3D3BF",
     backgroundColor: "#FFF9F2",
-    paddingVertical: 12,
-    paddingHorizontal: 14
+    paddingVertical: 11,
+    paddingHorizontal: 10
   },
   contentTabButtonActive: {
     backgroundColor: "#F5A33B",
@@ -1276,6 +1331,24 @@ const listStyles = StyleSheet.create({
   neutralChipText: { fontSize: 12, fontWeight: "800", color: "#7C6B57" },
   questionEn: { fontSize: 21, lineHeight: 29, fontWeight: "800", color: "#2A2520" },
   questionKo: { fontSize: 15, lineHeight: 22, color: "#756757" },
+  nowRecordCard: {
+    backgroundColor: "transparent",
+    paddingHorizontal: 0,
+    paddingVertical: 16,
+    gap: 8
+  },
+  nowRecordTime: {
+    fontSize: 22,
+    lineHeight: 27,
+    fontWeight: "900",
+    color: "#A26A25"
+  },
+  nowRecordText: {
+    fontSize: 19,
+    lineHeight: 28,
+    fontWeight: "800",
+    color: "#2A2520"
+  },
   calendarModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(35, 33, 40, 0.18)"
@@ -1572,7 +1645,7 @@ const styles = {
 export default function RecordsScreen() {
   const params = useLocalSearchParams<{ date?: string; tab?: string }>();
   const requestedDateKey = typeof params.date === "string" ? params.date : "";
-  const requestedTab: RecordsContentTab = params.tab === "expressions" ? "expressions" : "history";
+  const requestedTab = normalizeRecordsContentTab(params.tab);
   const highlightedDateKey = /^\d{4}-\d{2}-\d{2}$/.test(requestedDateKey) ? requestedDateKey : "";
   const { currentUser, isHydrating, refreshSession } = useSession();
   const scrollViewRef = useRef<ScrollView | null>(null);
@@ -1584,6 +1657,9 @@ export default function RecordsScreen() {
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [savedExpressions, setSavedExpressions] = useState<SavedExpression[]>([]);
   const [isSavedExpressionsLoading, setIsSavedExpressionsLoading] = useState(false);
+  const [nowEnglishEntries, setNowEnglishEntries] = useState<NowInEnglishEntry[]>([]);
+  const [isNowEnglishLoading, setIsNowEnglishLoading] = useState(true);
+  const [nowEnglishError, setNowEnglishError] = useState("");
   const [savedExpressionError, setSavedExpressionError] = useState("");
   const [deletingSavedExpressionId, setDeletingSavedExpressionId] = useState<number | null>(null);
   const [savedExpressionSearchQuery, setSavedExpressionSearchQuery] = useState("");
@@ -1765,6 +1841,10 @@ export default function RecordsScreen() {
     selectedSavedExpressionTag,
     visibleSavedExpressions.length
   ]);
+  const nowEnglishRecordGroups = useMemo(
+    () => buildNowEnglishRecordGroups(nowEnglishEntries),
+    [nowEnglishEntries]
+  );
 
   const loadHistory = useCallback(async () => {
     try {
@@ -1799,6 +1879,25 @@ export default function RecordsScreen() {
       setIsSavedExpressionsLoading(false);
     }
   }, []);
+
+  const loadNowEnglishRecords = useCallback(async () => {
+    try {
+      setIsNowEnglishLoading(true);
+      setNowEnglishError("");
+      const summary = await getNowInEnglishSummary();
+      setNowEnglishEntries(summary.entries);
+    } catch (caughtError) {
+      setNowEnglishError(
+        caughtError instanceof Error ? caughtError.message : "영어조각 기록을 불러오지 못했어요."
+      );
+    } finally {
+      setIsNowEnglishLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadNowEnglishRecords();
+  }, [loadNowEnglishRecords]);
 
   useEffect(() => {
     if (!currentUser) {
@@ -1899,14 +1998,14 @@ export default function RecordsScreen() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    const user = await refreshSession();
+    const [user] = await Promise.all([refreshSession(), loadNowEnglishRecords()]);
     if (user) {
       await Promise.all([loadHistory(), loadSavedExpressions()]);
     } else {
       setSavedExpressions([]);
     }
     setIsRefreshing(false);
-  }, [loadHistory, loadSavedExpressions, refreshSession]);
+  }, [loadHistory, loadNowEnglishRecords, loadSavedExpressions, refreshSession]);
 
   function handleOpenSession(session: HistorySession) {
     setSelectedSession(session);
@@ -2199,7 +2298,7 @@ export default function RecordsScreen() {
           <View style={styles.loadingState}>
             <ActivityIndicator color="#E38B12" />
           </View>
-          <MobileNavBar activeTab={activeTab === "expressions" ? "expressions" : "records"} />
+          <MobileNavBar activeTab="records" />
         </View>
       </SafeAreaView>
     );
@@ -2216,13 +2315,13 @@ export default function RecordsScreen() {
               <RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />
             }
           >
-            <MobileScreenHeader title="작문 기록" />
+            <MobileScreenHeader title="기록" />
 
-            {!currentUser ? (
+            {!currentUser && activeTab !== "now" ? (
               <View style={styles.emptyCard}>
                 <Text style={styles.emptyTitle}>로그인이 필요해요</Text>
                 <Text style={styles.emptyBody}>
-                  작문 기록은 로그인한 뒤 날짜별로 모아볼 수 있어요.
+                  작문과 일기 기록은 로그인한 뒤 날짜별로 모아볼 수 있어요.
                 </Text>
                 <Pressable
                   style={styles.primaryButton}
@@ -2233,31 +2332,33 @@ export default function RecordsScreen() {
               </View>
             ) : (
               <>
-                <View style={styles.profileCard}>
-                  <Text style={styles.name}>{currentUser.displayName}</Text>
-                  <Text style={styles.email}>{currentUser.email}</Text>
-                  <View style={styles.metricRow}>
-                    <View style={styles.metricCard}>
-                      <Text style={styles.metricValue}>{todayStatus?.streakDays ?? 0}</Text>
-                      <Text style={styles.metricLabel}>연속 루프</Text>
+                {currentUser ? (
+                  <View style={styles.profileCard}>
+                    <Text style={styles.name}>{currentUser.displayName}</Text>
+                    <Text style={styles.email}>{currentUser.email}</Text>
+                    <View style={styles.metricRow}>
+                      <View style={styles.metricCard}>
+                        <Text style={styles.metricValue}>{todayStatus?.streakDays ?? 0}</Text>
+                        <Text style={styles.metricLabel}>연속 루프</Text>
+                      </View>
+                      <View style={styles.metricCard}>
+                        <Text style={styles.metricValue}>{history.length}</Text>
+                        <Text style={styles.metricLabel}>질문 기록</Text>
+                      </View>
+                      <View style={styles.metricCard}>
+                        <Text style={styles.metricValue}>
+                          {(todayStatus?.totalWrittenSentences ?? 0).toLocaleString("ko-KR")}
+                        </Text>
+                        <Text style={styles.metricLabel}>총 문장</Text>
+                      </View>
                     </View>
-                    <View style={styles.metricCard}>
-                      <Text style={styles.metricValue}>{history.length}</Text>
-                      <Text style={styles.metricLabel}>질문 기록</Text>
-                    </View>
-                    <View style={styles.metricCard}>
-                      <Text style={styles.metricValue}>
-                        {(todayStatus?.totalWrittenSentences ?? 0).toLocaleString("ko-KR")}
-                      </Text>
-                      <Text style={styles.metricLabel}>총 문장</Text>
-                    </View>
-                  </View>
 
-                  <Pressable style={styles.diaryShortcutButton} onPress={() => router.push("/diary" as never)}>
-                    <Text style={styles.diaryShortcutButtonText}>오늘 일기 쓰기</Text>
-                    <Text style={styles.diaryShortcutButtonArrow}>{">"}</Text>
-                  </Pressable>
-                </View>
+                    <Pressable style={styles.diaryShortcutButton} onPress={() => router.push("/diary" as never)}>
+                      <Text style={styles.diaryShortcutButtonText}>오늘 일기 쓰기</Text>
+                      <Text style={styles.diaryShortcutButtonArrow}>{">"}</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
 
                 <View style={styles.contentTabRow}>
                   <Pressable
@@ -2273,7 +2374,39 @@ export default function RecordsScreen() {
                         activeTab === "history" && styles.contentTabButtonTextActive
                       ]}
                     >
-                      기록
+                      영어 답변
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.contentTabButton,
+                      activeTab === "now" && styles.contentTabButtonActive
+                    ]}
+                    onPress={() => setActiveTab("now")}
+                  >
+                    <Text
+                      style={[
+                        styles.contentTabButtonText,
+                        activeTab === "now" && styles.contentTabButtonTextActive
+                      ]}
+                    >
+                      영어조각
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={[
+                      styles.contentTabButton,
+                      activeTab === "diary" && styles.contentTabButtonActive
+                    ]}
+                    onPress={() => setActiveTab("diary")}
+                  >
+                    <Text
+                      style={[
+                        styles.contentTabButtonText,
+                        activeTab === "diary" && styles.contentTabButtonTextActive
+                      ]}
+                    >
+                      일기
                     </Text>
                   </Pressable>
                   <Pressable
@@ -2414,6 +2547,101 @@ export default function RecordsScreen() {
                     </Pressable>
                   ) : null}
                 </View>
+                ) : activeTab === "diary" ? (
+                  <View style={styles.historyBoard}>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionHeaderCopy}>
+                        <Text style={styles.sectionTitle}>영어일기 기록</Text>
+                        <Text style={styles.sectionMeta}>일기는 날짜별 달력에서 이어서 볼 수 있어요.</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.emptyCard}>
+                      <Text style={styles.emptyTitle}>일기 기록은 일기 달력에 모아둘게요</Text>
+                      <Text style={styles.emptyBody}>
+                        긴 글은 일기 화면에서 종이 노트처럼 읽고, 날짜별로 다시 열어볼 수 있어요.
+                      </Text>
+                      <View style={styles.recordActionRow}>
+                        <Pressable
+                          style={styles.primaryButton}
+                          onPress={() => router.push("/diary" as never)}
+                        >
+                          <Text style={styles.primaryButtonText}>일기 기록 보기</Text>
+                        </Pressable>
+                        <Pressable
+                          style={styles.outlineButton}
+                          onPress={() => router.push("/diary/write" as never)}
+                        >
+                          <Text style={styles.outlineButtonText}>오늘 일기 쓰기</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  </View>
+                ) : activeTab === "now" ? (
+                  <View style={styles.historyBoard}>
+                    <View style={styles.sectionHeader}>
+                      <View style={styles.sectionHeaderRow}>
+                        <View style={styles.sectionHeaderCopy}>
+                          <Text style={styles.sectionTitle}>영어조각 기록</Text>
+                          <Text style={styles.sectionMeta}>{nowEnglishEntries.length}개의 한 줄</Text>
+                        </View>
+                        <Pressable style={styles.calendarOpenButton} onPress={() => router.push("/now" as never)}>
+                          <Text style={styles.calendarOpenButtonText}>지금 쓰기</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+
+                    {isNowEnglishLoading ? (
+                      <View style={styles.emptyCard}>
+                        <Text style={styles.emptyTitle}>영어조각 기록을 불러오고 있어요</Text>
+                        <Text style={styles.emptyBody}>잠시만 기다려 주세요.</Text>
+                      </View>
+                    ) : nowEnglishRecordGroups.length === 0 ? (
+                      <View style={styles.emptyCard}>
+                        <Text style={styles.emptyTitle}>아직 남긴 영어조각이 없어요</Text>
+                        <Text style={styles.emptyBody}>
+                          지금 하고 있는 일이나 떠오른 생각을 한 줄로 먼저 남겨보세요.
+                        </Text>
+                        <Pressable style={styles.primaryButton} onPress={() => router.push("/now" as never)}>
+                          <Text style={styles.primaryButtonText}>지금 쓰기</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <View style={styles.dateFeed}>
+                        {nowEnglishRecordGroups.map((group, groupIndex) => (
+                          <View
+                            key={group.dateKey}
+                            style={[
+                              styles.dateGroup,
+                              groupIndex > 0 && styles.dateGroupSeparated
+                            ]}
+                          >
+                            <View style={styles.dateHeading}>
+                              <View style={styles.dateHeadingCopy}>
+                                <Text style={styles.dateTitle}>{group.label}</Text>
+                                <Text style={styles.dateMeta}>{`${group.entries.length}개 한 줄`}</Text>
+                              </View>
+                            </View>
+
+                            <View style={styles.questionStack}>
+                              {group.entries.map((entry, entryIndex) => (
+                                <View
+                                  key={entry.id}
+                                  style={[
+                                    styles.nowRecordCard,
+                                    entryIndex > 0 && styles.questionCardSeparated
+                                  ]}
+                                >
+                                  <Text style={styles.nowRecordTime}>{formatNowInEnglishTime(entry.createdAt)}</Text>
+                                  <Text style={styles.nowRecordText}>{entry.text}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          </View>
+                        ))}
+                      </View>
+                    )}
+                  </View>
                 ) : (
                   <View style={styles.historyBoard}>
                     <View style={styles.sectionHeader}>
@@ -2702,11 +2930,14 @@ export default function RecordsScreen() {
                 {activeTab === "expressions" && savedExpressionError ? (
                   <Text style={styles.errorText}>{savedExpressionError}</Text>
                 ) : null}
+                {activeTab === "now" && nowEnglishError ? (
+                  <Text style={styles.errorText}>{nowEnglishError}</Text>
+                ) : null}
               </>
             )}
           </ScrollView>
 
-          <MobileNavBar activeTab={activeTab === "expressions" ? "expressions" : "records"} />
+          <MobileNavBar activeTab="records" />
         </View>
       </SafeAreaView>
 

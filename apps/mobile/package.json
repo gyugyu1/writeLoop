@@ -8,6 +8,7 @@
     "start:localhost": "expo start --dev-client --localhost --clear",
     "start:android-studio": "node scripts/start-with-api-env.js local",
     "start:android-studio:nginx": "node scripts/start-with-api-env.js local-nginx",
+    "start:android-device:nginx": "node scripts/start-with-api-env.js device-nginx",
     "start:android-studio:prod": "node scripts/start-with-api-env.js prod",
     "android": "expo run:android",
     "android:emulator": "expo start --android --localhost --clear",
@@ -20,6 +21,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-navigation/bottom-tabs": "^7.15.5",
     "@react-navigation/elements": "^2.9.10",
     "@react-navigation/native": "^7.1.33",
@@ -32,6 +34,7 @@
     "expo-glass-effect": "~55.0.10",
     "expo-image": "~55.0.9",
     "expo-linking": "~55.0.14",
+    "expo-notifications": "~55.0.23",
     "expo-router": "~55.0.13",
     "expo-secure-store": "~55.0.13",
     "expo-splash-screen": "~55.0.19",

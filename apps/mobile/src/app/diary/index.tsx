@@ -422,7 +422,7 @@ export default function DiaryListScreen() {
             </Text>
           </Pressable>
         </View>
-        <MobileNavBar activeTab="diary" />
+        <MobileNavBar activeTab="records" />
       </View>
     </SafeAreaView>
   );

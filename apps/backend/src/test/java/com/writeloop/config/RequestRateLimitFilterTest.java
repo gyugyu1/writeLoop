@@ -204,6 +204,8 @@ class RequestRateLimitFilterTest {
                 60, promptRecommendationMaxRequests,
                 60, feedbackMaxRequests,
                 60, coachHelpMaxRequests,
+                60, 8,
+                60, 12,
                 60, coachUsageMaxRequests,
                 60, draftSaveMaxRequests
         );

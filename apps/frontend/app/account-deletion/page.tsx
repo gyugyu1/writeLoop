@@ -9,13 +9,13 @@ const deleteStartHref = "/login?returnTo=%2Fme%3Ftab%3Daccount%23account-delete-
 const accountPageHref = "/me?tab=account#account-delete-section";
 
 export const metadata: Metadata = {
-  title: "계정 삭제 안내",
+  title: "라이트루프(WriteLoop) 계정 삭제 안내",
   description: ACCOUNT_DELETION_DOCUMENT.subtitle,
   alternates: {
     canonical: "/account-deletion"
   },
   openGraph: {
-    title: "writeLoop 계정 삭제 안내",
+    title: "라이트루프(WriteLoop) 계정 삭제 안내",
     description: ACCOUNT_DELETION_DOCUMENT.subtitle,
     url: "https://writeloop.kr/account-deletion",
     type: "article"
@@ -27,7 +27,7 @@ export default function AccountDeletionPage() {
     <main className={styles.page}>
       <div className={styles.shell}>
         <section className={styles.hero}>
-          <p className={styles.eyebrow}>WriteLoop Support</p>
+          <p className={styles.eyebrow}>라이트루프 계정 지원</p>
           <h1 className={styles.title}>{ACCOUNT_DELETION_DOCUMENT.title}</h1>
           <p className={styles.subtitle}>{ACCOUNT_DELETION_DOCUMENT.subtitle}</p>
           <div className={styles.metaRow}>
@@ -42,7 +42,7 @@ export default function AccountDeletionPage() {
           <div className={styles.actionCopy}>
             <h2 className={styles.actionTitle}>Play 제출용 계정 삭제 경로</h2>
             <p className={styles.actionDescription}>
-              아래 버튼으로 로그인 후 계정 설정의 회원탈퇴 영역으로 바로 이동할 수 있습니다.
+              라이트루프 계정 삭제는 아래 버튼으로 시작할 수 있습니다. 로그인 후 계정 설정의 회원탈퇴 영역으로 이동합니다.
             </p>
           </div>
           <div className={styles.actionButtons}>

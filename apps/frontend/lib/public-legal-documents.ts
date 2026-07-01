@@ -117,14 +117,22 @@ export const PRIVACY_POLICY_DOCUMENT: PublicLegalDocument = {
 };
 
 export const ACCOUNT_DELETION_DOCUMENT: PublicLegalDocument = {
-  title: "계정 삭제 안내",
-  subtitle: "WriteLoop 계정과 학습 데이터를 웹에서 삭제하는 방법을 안내합니다.",
+  title: "라이트루프(WriteLoop) 계정 삭제 안내",
+  subtitle: "라이트루프 계정과 학습 데이터를 앱 또는 웹에서 삭제하는 방법을 안내합니다.",
   effectiveDate: "2026.04.13",
   sections: [
     {
+      title: "0. 적용 대상 및 개발자 정보",
+      paragraphs: [
+        "이 페이지는 Google Play에 등록된 영어 작문 학습 앱 라이트루프(WriteLoop, 패키지명 kr.writeloop)의 계정 삭제 요청을 위한 안내 페이지입니다.",
+        "라이트루프(WriteLoop)는 개발자 박규원(Gyuwon Park)이 제공하고 운영합니다.",
+        "계정 삭제 관련 문의 이메일: lwd33021@naver.com"
+      ]
+    },
+    {
       title: "1. 삭제할 수 있는 정보",
       bullets: [
-        "WriteLoop 계정 정보",
+        "라이트루프(WriteLoop) 계정 정보",
         "작성한 영어 문장과 다시쓰기 답변",
         "AI 피드백 및 AI 코치 대화 기록",
         "학습 기록, 임시저장 초안, 프로필 정보"
@@ -139,14 +147,22 @@ export const ACCOUNT_DELETION_DOCUMENT: PublicLegalDocument = {
       ]
     },
     {
-      title: "3. 삭제 요청 후 처리",
+      title: "3. 앱에서 계정 삭제를 시작하는 방법",
+      bullets: [
+        "라이트루프 앱을 실행한 뒤 하단 메뉴에서 '내정보'로 이동합니다.",
+        "계정 설정 화면의 '계정 삭제' 또는 '회원탈퇴' 영역에서 계정 삭제를 시작합니다.",
+        "확인 문구로 '탈퇴'를 입력하고, 이메일 로그인 계정은 현재 비밀번호를 함께 입력합니다."
+      ]
+    },
+    {
+      title: "4. 삭제 요청 후 처리",
       paragraphs: [
         "계정 삭제 요청이 완료되면 계정 정보와 학습 데이터는 서비스에서 더 이상 사용할 수 없도록 처리됩니다.",
         "다만, 관련 법령 또는 보안·부정 이용 방지 목적상 일정 기간 보관이 필요한 정보가 있는 경우 해당 범위 내에서만 보관될 수 있습니다."
       ]
     },
     {
-      title: "4. 로그인할 수 없는 경우",
+      title: "5. 로그인할 수 없는 경우",
       paragraphs: [
         "로그인이 어려운 경우 아래 문의 이메일로 계정 삭제 요청을 보낼 수 있습니다.",
         "본인 확인을 위해 가입 이메일 또는 사용한 소셜 로그인 정보를 함께 알려주세요."

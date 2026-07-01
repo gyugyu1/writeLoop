@@ -1138,9 +1138,11 @@ export default function HomeScreen() {
           </View>
         </View>
 
+        <View style={styles.sectionDivider} />
+
         <View style={styles.difficultySectionHeader}>
           <MobileScreenHeader
-            title="난이도 선택"
+            title="질문 답하기"
             rightAccessory={
               <Pressable style={styles.guideButton} onPress={() => setIsGuideOpen(true)}>
                 <Text style={styles.guideButtonText}>가이드 보기</Text>

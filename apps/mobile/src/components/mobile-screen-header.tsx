@@ -25,7 +25,7 @@ export default function MobileScreenHeader({
         <View style={styles.leadingGroup}>
           {leftAccessory ? <View style={styles.leftAccessory}>{leftAccessory}</View> : null}
           <View style={styles.titleBlock}>
-            <Text onLayout={handleTitleLayout} style={styles.title}>
+            <Text onLayout={handleTitleLayout} style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
               {title}
             </Text>
             <View style={[styles.underline, titleWidth ? { width: titleWidth } : null]} />

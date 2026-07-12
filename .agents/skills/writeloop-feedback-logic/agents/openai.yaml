@@ -1,0 +1,4 @@
+interface:
+  display_name: "WriteLoop 피드백 로직"
+  short_description: "WriteLoop의 미션 중심 피드백 스키마와 품질 검증 워크플로"
+  default_prompt: "WriteLoop 질문 답변 피드백 로직을 미션 중심 구조에 맞춰 수정하고 검증해줘."

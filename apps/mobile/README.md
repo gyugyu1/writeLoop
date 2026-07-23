@@ -87,7 +87,13 @@ cd C:\WriteLoop\apps\mobile
 npm run start:android-studio
 ```
 
-This script starts Metro in `--lan` mode so the Android emulator can attach through `10.0.2.2`.
+This script starts the dev-client Metro server and points the Android emulator at the local Docker/Nginx API on `http://10.0.2.2`.
+
+If Spring Boot is running directly on the host at port `8080` instead of through Docker/Nginx, use:
+
+```bash
+npm run start:android-studio:backend
+```
 
 ## Run in Android Studio
 

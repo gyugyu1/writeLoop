@@ -548,7 +548,6 @@ function buildHistoryFeedback(session: HistorySession, attempt: HistoryAttempt):
     promptId: session.promptId,
     sessionId: session.sessionId,
     attemptNo: attempt.attemptNo,
-    score: attempt.score,
     loopComplete: attempt.feedback.loopComplete,
     completionMessage: attempt.feedback.completionMessage,
     summary: attempt.feedback.summary ?? attempt.feedbackSummary ?? "",

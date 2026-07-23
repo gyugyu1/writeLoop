@@ -524,6 +524,7 @@ export interface FeedbackCoachMove {
   skeletonKo?: string | null;
   suggestedPhrases?: FeedbackSuggestedPhrase[] | null;
   successCheck?: string | null;
+  targetSlot?: string | null;
 }
 
 export interface FeedbackRewriteWorkspace {
@@ -541,9 +542,7 @@ export interface FeedbackCompletion {
 }
 
 export interface FeedbackRevealLater {
-  score?: number | null;
   detailLabel?: string | null;
-  scoreLabel?: string | null;
   modelAnswerLabel?: string | null;
 }
 
@@ -583,7 +582,6 @@ export interface Feedback {
   promptId: string;
   sessionId: string;
   attemptNo: number;
-  score: number;
   loopComplete: boolean;
   completionMessage: string | null;
   summary: string;
@@ -723,7 +721,6 @@ export interface DiaryCalendarSummary {
 }
 
 export interface HistoryFeedback {
-  score: number;
   loopComplete: boolean;
   completionMessage: string | null;
   summary: string;
@@ -741,7 +738,6 @@ export interface HistoryAttempt {
   attemptNo: number;
   attemptType: AttemptType;
   answerText: string;
-  score: number;
   feedbackSummary: string;
   feedback: HistoryFeedback;
   usedExpressions: HistoryUsedExpression[];

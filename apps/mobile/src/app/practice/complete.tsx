@@ -247,15 +247,8 @@ function buildAnswerComparison(initialAnswer?: string | null, finalAnswer?: stri
   return buildDiffSegments(splitAnswerTokens(normalizedInitial), splitAnswerTokens(normalizedFinal));
 }
 
-function getFeedbackLevelInfo(score: number, loopComplete?: boolean | null): FeedbackLevelInfo {
-  if (score >= 90) {
-    return {
-      label: "매우 자연스러움",
-      loopSummary: "오늘 루프를 아주 자연스럽게 마무리했어요."
-    };
-  }
-
-  if (loopComplete || score >= 75) {
+function getFeedbackLevelInfo(loopComplete?: boolean | null): FeedbackLevelInfo {
+  if (loopComplete) {
     return {
       label: "충분히 좋음",
       loopSummary: "오늘 루프를 충분히 좋은 흐름으로 마무리했어요."
@@ -472,7 +465,7 @@ export default function PracticeCompleteScreen() {
   const feedbackLevel = useMemo(
     () =>
       feedbackState
-        ? getFeedbackLevelInfo(feedbackState.feedback.score, feedbackState.feedback.loopComplete)
+        ? getFeedbackLevelInfo(feedbackState.feedback.loopComplete)
         : null,
     [feedbackState]
   );

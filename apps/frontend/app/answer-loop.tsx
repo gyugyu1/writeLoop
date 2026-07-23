@@ -50,6 +50,7 @@ import { buildCoachQuickQuestions } from "../lib/coach-quick-questions";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getDifficultyLabel, resolvePracticeDifficulty } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
+import { getFeedbackSlotUiCopy } from "../lib/feedback-slot-ui";
 import { getOrCreateGuestId } from "../lib/guest-id";
 import { buildInlineFeedbackSegments, type RenderedInlineFeedbackSegment } from "../lib/inline-feedback";
 import { buildLocalCoachHelp, buildLocalCoachUsage } from "../lib/coach";
@@ -416,6 +417,7 @@ function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
 
   return [
     "MICRO_FIX",
+    "STRUCTURE_FIX",
     "GRAMMAR",
     "GRAMMAR_FIX",
     "LOCAL_GRAMMAR",
@@ -427,10 +429,11 @@ function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
   ].includes(focusType);
 }
 
-function isGrammarCoachMove(coachMove?: FeedbackCoachMove | null) {
+function isDirectCorrectionCoachMove(coachMove?: FeedbackCoachMove | null) {
   const focusType = trimNullable(coachMove?.focusType)?.toUpperCase();
   return [
     "MICRO_FIX",
+    "STRUCTURE_FIX",
     "GRAMMAR",
     "GRAMMAR_FIX",
     "LOCAL_GRAMMAR",
@@ -2423,7 +2426,7 @@ export function AnswerLoop() {
     step === "answer" ? "ANSWER" : step === "rewrite" ? "REWRITE" : null;
   const isGuestCycleComplete = Boolean(feedback && guestSessionId && feedback.attemptNo >= 2);
   const shouldSuggestFinish = Boolean(feedback?.ui?.screenPolicy?.showFinishCta ?? feedback?.loopComplete);
-  const feedbackLevel = feedback ? getFeedbackLevelInfo(feedback.score, feedback.loopComplete) : null;
+  const feedbackLevel = feedback ? getFeedbackLevelInfo(feedback.loopComplete) : null;
   const loopExperience = feedback?.loop ?? null;
   const coachMove = feedback?.coachMove ?? null;
   const rewriteWorkspace = feedback?.rewriteWorkspace ?? null;
@@ -2431,28 +2434,38 @@ export function AnswerLoop() {
     Boolean(feedback?.loopComplete) || loopExperience?.nextAction === "finish" || loopExperience?.status === "COMPLETE";
   const shouldShowCoachMoveCard = !isLoopReadyToFinish && hasCoachMove(coachMove);
   const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
-  const shouldShowGrammarReasonLabel = isGrammarCoachMove(coachMove);
+  const shouldShowCorrectionReasonLabel = isDirectCorrectionCoachMove(coachMove);
+  const coachSlotUiCopy = getFeedbackSlotUiCopy(coachMove?.targetSlot);
   const coachHeadline = pickFirstNonEmpty(
+    coachSlotUiCopy?.title,
     coachMove?.focus,
     loopExperience?.headline,
     isLoopReadyToFinish
       ? "좋아요. 지금 단계에서 마무리해도 충분해요."
       : "지금은 한 가지만 먼저 고쳐서 다시 써 보세요."
   );
-  const shouldShowCoachFocus =
-    Boolean(trimNullable(coachMove?.focus)) && trimNullable(coachMove?.focus) !== trimNullable(coachHeadline);
   const coachInstruction = pickFirstNonEmpty(
     coachMove?.instruction,
     rewriteWorkspace?.targetTextHint,
     feedback?.rewriteChallenge,
+    coachSlotUiCopy?.description,
     isLoopReadyToFinish
       ? "이미 충분히 좋아요. 원하면 표현 하나만 가볍게 다듬어 보세요."
       : "전체를 완벽하게 바꾸려 하지 말고, 위 코치 포인트 하나만 반영해 다시 써 보세요."
   );
-  const coachSkeleton = shouldShowGrammarReasonLabel ? null : pickFirstNonEmpty(coachMove?.skeletonEn);
-  const coachSkeletonKo = shouldShowGrammarReasonLabel ? null : pickFirstNonEmpty(coachMove?.skeletonKo);
+  const coachSupportingText = pickFirstNonEmpty(coachSlotUiCopy?.description, coachMove?.focus);
+  const shouldShowCoachFocus =
+    Boolean(trimNullable(coachSupportingText)) &&
+    trimNullable(coachSupportingText) !== trimNullable(coachHeadline) &&
+    trimNullable(coachSupportingText) !== trimNullable(coachInstruction);
+  const coachSkeleton = shouldShowCorrectionReasonLabel
+    ? null
+    : pickFirstNonEmpty(coachMove?.skeletonEn, coachSlotUiCopy?.skeletonEn);
+  const coachSkeletonKo = shouldShowCorrectionReasonLabel
+    ? null
+    : pickFirstNonEmpty(coachMove?.skeletonKo, coachSlotUiCopy?.skeletonKo);
   const coachSuggestedPhrases =
-    !shouldShowGrammarReasonLabel && Array.isArray(coachMove?.suggestedPhrases)
+    !shouldShowCorrectionReasonLabel && Array.isArray(coachMove?.suggestedPhrases)
       ? coachMove.suggestedPhrases.map(normalizeSuggestedPhrase).filter((phrase) => phrase !== null).slice(0, 6)
       : [];
   const detailToggleLabel = showDetailedFeedback
@@ -4578,7 +4591,7 @@ export function AnswerLoop() {
 
         {hasCoachMove(coachMove) ? (
           <div className={styles.coachMoveBody}>
-            {shouldShowCoachFocus ? <p className={styles.coachMoveFocus}>{coachMove?.focus}</p> : null}
+            {shouldShowCoachFocus ? <p className={styles.coachMoveFocus}>{coachSupportingText}</p> : null}
 
             {shouldShowCoachMoveComparison ? (
               <div className={styles.coachMoveSwap}>
@@ -4599,7 +4612,7 @@ export function AnswerLoop() {
 
             {trimNullable(coachMove?.why) ? (
               <div className={styles.coachMoveWhyBox}>
-                {shouldShowGrammarReasonLabel ? (
+                {shouldShowCorrectionReasonLabel ? (
                   <span className={styles.coachMoveWhyLabel}>왜 고치나요</span>
                 ) : null}
                 <p className={styles.coachMoveWhy}>{coachMove?.why}</p>

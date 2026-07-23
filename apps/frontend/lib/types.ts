@@ -323,6 +323,7 @@ export interface FeedbackCoachMove {
   skeletonKo?: string | null;
   suggestedPhrases?: (string | { phrase?: string | null; meaningKo?: string | null })[] | null;
   successCheck?: string | null;
+  targetSlot?: string | null;
 }
 
 export interface FeedbackRewriteWorkspace {
@@ -340,9 +341,7 @@ export interface FeedbackCompletion {
 }
 
 export interface FeedbackRevealLater {
-  score?: number | null;
   detailLabel?: string | null;
-  scoreLabel?: string | null;
   modelAnswerLabel?: string | null;
 }
 
@@ -385,7 +384,6 @@ export interface Feedback {
   promptId: string;
   sessionId: string;
   attemptNo: number;
-  score: number;
   loopComplete: boolean;
   completionMessage: string | null;
   /** Legacy persistence/history field. The main feedback screen no longer renders this directly. */
@@ -544,7 +542,6 @@ export interface WritingDraft extends HomeDraftSnapshot {
 }
 
 export interface StoredFeedback {
-  score: number;
   loopComplete: boolean;
   completionMessage: string | null;
   /** Legacy persistence/history field. The main feedback screen no longer renders this directly. */
@@ -732,7 +729,6 @@ export interface HistoryAttempt {
   attemptNo: number;
   attemptType: "INITIAL" | "REWRITE";
   answerText: string;
-  score: number;
   feedbackSummary: string;
   feedback: StoredFeedback;
   usedExpressions: HistoryUsedExpression[];

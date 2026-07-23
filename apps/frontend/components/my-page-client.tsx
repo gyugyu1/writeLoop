@@ -1257,7 +1257,7 @@ function renderWritingHistoryAttemptTimeline(session: HistorySession) {
               </strong>
               <span>
                 {attempt.attemptType === "INITIAL" ? "초안" : "다시쓰기"} ·{" "}
-                {getFeedbackLevelInfo(attempt.score, attempt.feedback.loopComplete).label} ·{" "}
+                {getFeedbackLevelInfo(attempt.feedback.loopComplete).label} ·{" "}
                 {formatHistoryTime(attempt.createdAt)}
               </span>
             </div>

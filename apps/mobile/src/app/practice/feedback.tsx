@@ -33,6 +33,7 @@ import {
   buildInlineFeedbackSegments,
   type RenderedInlineFeedbackSegment
 } from "@/lib/inline-feedback";
+import { getFeedbackSlotUiCopy } from "@/lib/feedback-slot-ui";
 import {
   getPracticeFeedbackState,
   hydratePracticeFeedbackState,
@@ -180,6 +181,7 @@ function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
 
   return [
     "MICRO_FIX",
+    "STRUCTURE_FIX",
     "GRAMMAR",
     "GRAMMAR_FIX",
     "LOCAL_GRAMMAR",
@@ -191,10 +193,11 @@ function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
   ].includes(focusType);
 }
 
-function isGrammarCoachMove(coachMove?: FeedbackCoachMove | null) {
+function isDirectCorrectionCoachMove(coachMove?: FeedbackCoachMove | null) {
   const focusType = trimText(coachMove?.focusType).toUpperCase();
   return [
     "MICRO_FIX",
+    "STRUCTURE_FIX",
     "GRAMMAR",
     "GRAMMAR_FIX",
     "LOCAL_GRAMMAR",
@@ -340,7 +343,7 @@ export default function PracticeFeedbackScreen() {
   const shouldShowCompletionRewriteChoice =
     isLoopReadyToFinish && completionRefinementPhrases.length > 0;
   const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
-  const shouldShowGrammarReasonLabel = isGrammarCoachMove(coachMove);
+  const shouldShowCorrectionReasonLabel = isDirectCorrectionCoachMove(coachMove);
   const shouldShowInlineRewriteWorkspace =
     Boolean(feedbackState) && (!isLoopReadyToFinish || isCompletionRewriteOpen);
   const rewriteButtonLabel = REWRITE_OPEN_BUTTON_LABEL;
@@ -363,23 +366,35 @@ export default function PracticeFeedbackScreen() {
         feedback?.summary,
         COMPLETION_READY_HEADLINE
       );
+  const coachSlotUiCopy = getFeedbackSlotUiCopy(coachMove?.targetSlot);
   const coachHeadline = pickFirstNonEmpty(
+    coachSlotUiCopy?.title,
     coachMove?.focus,
     loopExperience?.headline,
     "오늘은 이것 하나만 적용해 볼게요."
   );
-  const shouldShowCoachFocus =
-    Boolean(trimText(coachMove?.focus)) &&
-    trimText(coachMove?.focus) !== trimText(coachHeadline);
   const coachInstruction = pickFirstNonEmpty(
     coachMove?.instruction,
     rewriteWorkspace?.targetTextHint,
     feedback?.rewriteChallenge,
+    coachSlotUiCopy?.description,
     "의미는 유지하고 오늘의 한 가지 코치만 반영해 다시 써보세요."
   );
-  const coachSkeleton = shouldShowGrammarReasonLabel ? "" : pickFirstNonEmpty(coachMove?.skeletonEn);
-  const coachSkeletonKo = shouldShowGrammarReasonLabel ? "" : pickFirstNonEmpty(coachMove?.skeletonKo);
-  const coachSuggestedPhrases = !shouldShowGrammarReasonLabel && Array.isArray(coachMove?.suggestedPhrases)
+  const coachSupportingText = pickFirstNonEmpty(
+    coachSlotUiCopy?.description,
+    coachMove?.focus
+  );
+  const shouldShowCoachFocus =
+    Boolean(trimText(coachSupportingText)) &&
+    trimText(coachSupportingText) !== trimText(coachHeadline) &&
+    trimText(coachSupportingText) !== trimText(coachInstruction);
+  const coachSkeleton = shouldShowCorrectionReasonLabel
+    ? ""
+    : pickFirstNonEmpty(coachMove?.skeletonEn, coachSlotUiCopy?.skeletonEn);
+  const coachSkeletonKo = shouldShowCorrectionReasonLabel
+    ? ""
+    : pickFirstNonEmpty(coachMove?.skeletonKo, coachSlotUiCopy?.skeletonKo);
+  const coachSuggestedPhrases = !shouldShowCorrectionReasonLabel && Array.isArray(coachMove?.suggestedPhrases)
     ? coachMove.suggestedPhrases.map(normalizeSuggestedPhrase).filter((phrase) => phrase !== null).slice(0, 6)
     : [];
   const detailToggleLabel = showDetailedFeedback
@@ -698,7 +713,7 @@ export default function PracticeFeedbackScreen() {
                 {hasCoachMove(coachMove) ? (
                   <View style={styles.coachMoveBody}>
                     {shouldShowCoachFocus ? (
-                      <Text style={styles.coachMoveFocus}>{coachMove?.focus}</Text>
+                      <Text style={styles.coachMoveFocus}>{coachSupportingText}</Text>
                     ) : null}
 
                     {shouldShowCoachMoveComparison ? (
@@ -732,7 +747,7 @@ export default function PracticeFeedbackScreen() {
 
                     {trimText(coachMove?.why) ? (
                       <View style={styles.coachMoveWhyBox}>
-                        {shouldShowGrammarReasonLabel ? (
+                        {shouldShowCorrectionReasonLabel ? (
                           <Text style={styles.coachMoveWhyLabel}>왜 고치나요</Text>
                         ) : null}
                         <Text style={styles.coachMoveWhy}>{coachMove?.why}</Text>

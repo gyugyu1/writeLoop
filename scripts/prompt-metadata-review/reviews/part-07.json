@@ -1,0 +1,962 @@
+[
+  {
+    "promptId": "prompt-preference-05",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "EXAMPLE", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name a favorite kind of food and explain the personal quality that makes it special; those two obligations already provide adequate depth."
+  },
+  {
+    "promptId": "prompt-preference-06",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["FEELING", "EXAMPLE", "DETAIL", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The word 'usually' makes this a repeated movie-selection action, and the learner must also explain how that habitual choice suits their mood."
+  },
+  {
+    "promptId": "prompt-preference-07",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "A favorite movie genre and the reason for its appeal are both directly requested, so no additional depth slot is necessary."
+  },
+  {
+    "promptId": "prompt-preference-08",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify the favorite movie genre and supply two distinct reasons for enjoying it; the explicit reasons make the answer sufficiently developed."
+  },
+  {
+    "promptId": "prompt-preference-09",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "EXAMPLE", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner selects the aspect liked most about the favorite genre and explains why that aspect stands out."
+  },
+  {
+    "promptId": "prompt-preference-10",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "EXAMPLE", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "Introducing the favorite genre requires naming the choice, while explaining what makes it special requires a personal reason."
+  },
+  {
+    "promptId": "prompt-preference-11",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["PLACE", "REASON"],
+    "optionalSlots": ["ACTION", "DETAIL", "FEELING", "SPECIFIC_TIME", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "This focused place question requires the location used for a break and the source of comfort there; both clauses are independently required."
+  },
+  {
+    "promptId": "prompt-preference-1101",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "SPECIFIC_TIME", "RESULT", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "This asks what the learner habitually eats on a busy morning and why that breakfast is used, yielding a routine action plus its reason."
+  },
+  {
+    "promptId": "prompt-preference-1102",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The hot-day fruit is a selected preference, and the final clause directly requires the reason for choosing it."
+  },
+  {
+    "promptId": "prompt-preference-1103",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["FEELING", "DETAIL", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must name a preferred rainy-day drink and explain why it suits that situation."
+  },
+  {
+    "promptId": "prompt-preference-1104",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": ["OPINION", "REASON"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "RESULT", "CHOICE"],
+    "minimumDepthSlots": 0,
+    "rationale": "Asking what matters most calls for a judgment about the key phone-case criterion, followed by the required justification for that judgment."
+  },
+  {
+    "promptId": "prompt-preference-1105",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["EXAMPLE", "SPECIFIC_TIME", "DETAIL", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes habitual notebook writing and explains the purpose or motivation for writing that content."
+  },
+  {
+    "promptId": "prompt-preference-1106",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["PLACE", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "SPECIFIC_TIME", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must provide the focused reading location and explain why that place feels comfortable."
+  },
+  {
+    "promptId": "prompt-preference-1107",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response needs a chosen soup for a warm-food craving and a reason that explains the preference."
+  },
+  {
+    "promptId": "prompt-preference-1108",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "RESULT", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The everyday-bag wording asks about a repeated carrying habit and why the named contents are carried."
+  },
+  {
+    "promptId": "prompt-preference-1109",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["SPECIFIC_TIME", "REASON"],
+    "optionalSlots": ["PLACE", "FEELING", "DETAIL", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The board-game activity is already supplied, so the learner writes only the focused occasion and why that timing works."
+  },
+  {
+    "promptId": "prompt-preference-1110",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME", "ACTION"],
+    "optionalSlots": ["RESULT", "REASON", "DETAIL", "EXAMPLE", "PLACE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question separately requests the timing of vocabulary study and the study method used to support memory."
+  },
+  {
+    "promptId": "prompt-preference-1111",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL", "REASON"],
+    "optionalSlots": ["FEELING", "RESULT", "EXAMPLE", "PLACE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the scent that creates comfort in the room and explains why it has that effect; no preference claim is required."
+  },
+  {
+    "promptId": "prompt-preference-1112",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["PLACE", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "This focused place task asks where the learner sits on a bus and why that location works for them."
+  },
+  {
+    "promptId": "prompt-preference-1113",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["SPECIFIC_TIME", "DETAIL"],
+    "optionalSlots": ["REASON", "FEELING", "RESULT", "PLACE", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must give the focused walking time and describe the weather condition that improves the experience."
+  },
+  {
+    "promptId": "prompt-preference-1114",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "RESULT", "FEELING", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "A quick-meal sandwich choice and the reason for liking it are both directly requested."
+  },
+  {
+    "promptId": "prompt-preference-1115",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "RESULT", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "Frequent use makes this a routine task: the learner names what tool is used and explains why it is used often."
+  },
+  {
+    "promptId": "prompt-preference-1116",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["SPECIFIC_TIME", "DETAIL"],
+    "optionalSlots": ["REASON", "RESULT", "FEELING", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must provide the focused occasion for joining an exercise class and describe the class type that supports persistence."
+  },
+  {
+    "promptId": "prompt-preference-1117",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "RESULT", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what type of online creator the learner watches as a regular activity and why that content is watched."
+  },
+  {
+    "promptId": "prompt-preference-1118",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "RESULT", "FEELING", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner selects a break-time snack and explains the reason it is preferred during study or work."
+  },
+  {
+    "promptId": "prompt-preference-1119",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL", "REASON"],
+    "optionalSlots": ["FEELING", "RESULT", "EXAMPLE", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must describe the kind of pen that feels comfortable for writing and explain what makes it comfortable; no preference statement is required."
+  },
+  {
+    "promptId": "prompt-preference-1120",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "EXAMPLE", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The bakery item is a personal selection, and the learner must also explain the reason for buying it."
+  },
+  {
+    "promptId": "prompt-preference-1121",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly asks for a movie snack preference and the reason it suits movie watching."
+  },
+  {
+    "promptId": "prompt-preference-1122",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "A preferred travel souvenir and the motivation for bringing it home are the required parts of the answer."
+  },
+  {
+    "promptId": "prompt-preference-1123",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME", "REASON"],
+    "optionalSlots": ["FEELING", "RESULT", "DETAIL", "PLACE"],
+    "minimumDepthSlots": 0,
+    "rationale": "Because using a candle is given, the learner needs to state the occasion for using it and the reason for doing so."
+  },
+  {
+    "promptId": "prompt-preference-1124",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["DETAIL", "EXAMPLE", "REASON", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must describe the photo-organization method and state the practical benefit that makes the method helpful."
+  },
+  {
+    "promptId": "prompt-preference-1125",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME", "REASON"],
+    "optionalSlots": ["PLACE", "FEELING", "RESULT", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked for the usual occasion for drinking tea and the reason behind that habit."
+  },
+  {
+    "promptId": "prompt-preference-1126",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME", "REASON"],
+    "optionalSlots": ["PLACE", "DETAIL", "RESULT", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires a situation or time when a light jacket is brought and an explanation for bringing it."
+  },
+  {
+    "promptId": "prompt-preference-12",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["PLACE", "REASON"],
+    "optionalSlots": ["ACTION", "DETAIL", "FEELING", "SPECIFIC_TIME", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name the favorite place used for relaxation and explain its personal appeal."
+  },
+  {
+    "promptId": "prompt-preference-13",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["PLACE", "REASON"],
+    "optionalSlots": ["ACTION", "DETAIL", "FEELING", "SPECIFIC_TIME", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The favorite relaxation place is required along with two distinct reasons for enjoying it, which already creates a developed answer."
+  },
+  {
+    "promptId": "prompt-preference-14",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "ACTION", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "Rather than asking only for the place, this wording asks the learner to select what is liked most about it and justify that selection."
+  },
+  {
+    "promptId": "prompt-preference-15",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["PLACE", "REASON"],
+    "optionalSlots": ["DETAIL", "ACTION", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer introduces a favorite relaxation place and explains the personal feature or meaning that makes it special."
+  },
+  {
+    "promptId": "prompt-preference-16",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["CHOICE", "FEELING", "DETAIL", "SPECIFIC_TIME", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe an activity done during the most-liked season and explain why that season feels good."
+  },
+  {
+    "promptId": "prompt-preference-17",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["ACTION", "DETAIL", "FEELING", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly requests a favorite season and the reason that season appeals to the learner."
+  },
+  {
+    "promptId": "prompt-preference-18",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["ACTION", "DETAIL", "FEELING", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify the favorite season and give two reasons for enjoying it; those reasons fulfill the needed depth."
+  },
+  {
+    "promptId": "prompt-preference-19",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "ACTION", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner selects the best-liked aspect of the favorite season and explains why that aspect matters."
+  },
+  {
+    "promptId": "prompt-preference-20",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["ACTION", "DETAIL", "FEELING", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "Naming the favorite season supplies the choice, and explaining what makes it special supplies the required personal reason."
+  },
+  {
+    "promptId": "prompt-preference-21",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["SPECIFIC_TIME", "DETAIL"],
+    "optionalSlots": ["REASON", "FEELING", "PLACE", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must state the focused listening occasion and describe the kind of music that fits that moment; no broader preference is required."
+  },
+  {
+    "promptId": "prompt-preference-22",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "A favorite type of music and an explanation of its appeal are both explicit, making extra mandatory support unnecessary."
+  },
+  {
+    "promptId": "prompt-preference-2201",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["REASON"],
+    "optionalSlots": ["DETAIL", "EXAMPLE", "RESULT", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for the factor that makes breakfast easy to eat on a busy morning; one clear causal explanation is adequate at this level."
+  },
+  {
+    "promptId": "prompt-preference-2202",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["CHOICE", "DETAIL", "REASON", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only needs to describe the preferred way of adding protein or energy to breakfast, a narrow beginner-level action."
+  },
+  {
+    "promptId": "prompt-preference-2203",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must name a morning fruit preference and explain why that fruit is liked."
+  },
+  {
+    "promptId": "prompt-preference-2204",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["DETAIL", "REASON", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "This narrow task asks what the learner adds to breakfast to improve it; naming the addition as part of the action answers the question."
+  },
+  {
+    "promptId": "prompt-preference-2205",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["RESULT", "REASON", "ACTION", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the kind of quick breakfast that supports the start of the day; no preference statement or separate explanation is required."
+  },
+  {
+    "promptId": "prompt-preference-2206",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["REASON", "FEELING", "EXAMPLE", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks only for the flavor that improves a simple breakfast, so one specific descriptive detail completes the narrow task."
+  },
+  {
+    "promptId": "prompt-preference-2207",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["DETAIL", "RESULT", "REASON", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The required content is the learner's method for making toast or another simple breakfast more complete."
+  },
+  {
+    "promptId": "prompt-preference-2208",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["REASON", "RESULT", "EXAMPLE", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner names the simple meal that works in the supplied time-limited situation; no preference or separate explanation is requested."
+  },
+  {
+    "promptId": "prompt-preference-2209",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "RESULT", "EXAMPLE", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "A preferred lunchbox side dish and the reason for packing it are both required by the wording."
+  },
+  {
+    "promptId": "prompt-preference-2210",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "SPECIFIC_TIME"],
+    "optionalSlots": ["REASON", "DETAIL", "RESULT", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify a simple meal the learner likes to make and state the occasion when it is made."
+  },
+  {
+    "promptId": "prompt-preference-2211",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner selects a snack eaten with milk and explains why that pairing is liked."
+  },
+  {
+    "promptId": "prompt-preference-2212",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "RESULT", "EXAMPLE", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks about the food-eating action used when hurried and the reason that food is chosen in that situation."
+  },
+  {
+    "promptId": "prompt-preference-2213",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["DETAIL", "RESULT", "REASON", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes what is put on rice or another simple meal to make it satisfying; that concrete action fulfills the prompt."
+  },
+  {
+    "promptId": "prompt-preference-2214",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["REASON", "FEELING", "DETAIL", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "This hypothetical asks what the learner would eat in the supplied quiet-morning situation, so the required structure is a single action rather than a preference claim."
+  },
+  {
+    "promptId": "prompt-preference-2215",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["RESULT", "REASON", "ACTION", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response names the quick meal that helps after the supplied late start; one concrete meal detail is adequate for this narrow beginner question."
+  },
+  {
+    "promptId": "prompt-preference-2216",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["REASON", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The task is to name the small snack that feels appropriate for the supplied short break, with no second clause requiring support."
+  },
+  {
+    "promptId": "prompt-preference-2217",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["REASON", "DETAIL", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The phrase 'reach for' asks for the learner's typical snack-taking action during a quick break; the break situation itself need not be restated."
+  },
+  {
+    "promptId": "prompt-preference-2218",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["CHOICE"],
+    "optionalSlots": ["REASON", "FEELING", "RESULT", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The hypothetical wording asks which cold treat the learner would choose in the supplied circumstances, not for a broader preference or goal."
+  },
+  {
+    "promptId": "prompt-preference-2219",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["FEELING", "DETAIL", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer needs both an after-study snack preference and an explanation for liking that snack."
+  },
+  {
+    "promptId": "prompt-preference-2220",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["CHOICE"],
+    "optionalSlots": ["RESULT", "REASON", "DETAIL", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The hypothetical asks which small sweet the learner would choose; the desired energy effect is supplied by the situation and need not be restated."
+  },
+  {
+    "promptId": "prompt-preference-2221",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["CHOICE"],
+    "optionalSlots": ["REASON", "RESULT", "DETAIL", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "This hypothetical asks what the learner would pick at a convenience store; the busy-day situation is already supplied, leaving one concrete choice."
+  },
+  {
+    "promptId": "prompt-preference-2222",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["REASON", "RESULT", "FEELING", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner names a simple snack that is easy to share or eat while relaxing; no preference claim or explicit reason clause is present."
+  },
+  {
+    "promptId": "prompt-preference-2223",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["CHOICE"],
+    "optionalSlots": ["REASON", "DETAIL", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The hypothetical asks which snack the learner would choose while watching a movie or show, so one situational choice completes the task."
+  },
+  {
+    "promptId": "prompt-preference-2224",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner identifies a sweet bread liked for eating on the go and explains the reason for that preference."
+  },
+  {
+    "promptId": "prompt-preference-2225",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["FEELING", "REASON", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "Despite the compact 'drink snack' wording, the task asks for the item that feels refreshing during the day and contains no preference or explanation request."
+  },
+  {
+    "promptId": "prompt-preference-2226",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["FEELING", "EXAMPLE", "REASON", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner supplies the sweet fruit flavor associated with a good break; naming that flavor completes the simple descriptive association."
+  },
+  {
+    "promptId": "prompt-preference-2227",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["REASON", "FEELING", "DETAIL", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "This hypothetical asks what the learner would eat late at night; the supplied desire for something small does not need to be restated."
+  },
+  {
+    "promptId": "prompt-preference-2228",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL", "REASON"],
+    "optionalSlots": ["FEELING", "RESULT", "EXAMPLE", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name the salty snack that fits a casual break and explain why it fits; the structure is descriptive rather than preferential."
+  },
+  {
+    "promptId": "prompt-preference-2229",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["FEELING", "REASON", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response names the soft snack that would feel comforting after the supplied long day; no preference claim or separate explanation is required."
+  },
+  {
+    "promptId": "prompt-preference-2230",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["FEELING", "RESULT", "REASON", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The hypothetical asks for the small treat that would help end the day positively, and one concrete detail is adequate at the beginner level."
+  },
+  {
+    "promptId": "prompt-preference-2231",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "REASON"],
+    "optionalSlots": ["DETAIL", "RESULT", "EXAMPLE", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must select a liked writing tool for studying and explain why it is preferred."
+  },
+  {
+    "promptId": "prompt-preference-2232",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME", "RESULT"],
+    "optionalSlots": ["ACTION", "EXAMPLE", "DETAIL", "REASON"],
+    "minimumDepthSlots": 0,
+    "rationale": "The eraser's use is given, while the learner must state when it is used during study and the benefit it provides."
+  },
+  {
+    "promptId": "prompt-preference-2233",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["REASON", "RESULT", "DETAIL", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "This narrow beginner prompt asks only for the method of using a highlighter during study."
+  },
+  {
+    "promptId": "prompt-preference-2234",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["EXAMPLE", "REASON", "RESULT", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the content habitually written on sticky notes for study or work; one concrete action is sufficient."
+  },
+  {
+    "promptId": "prompt-preference-2235",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "REASON", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The direct obligation is to explain the way a planner is used for study or work, a focused routine description."
+  },
+  {
+    "promptId": "prompt-preference-2236",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME"],
+    "optionalSlots": ["REASON", "RESULT", "DETAIL", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "Because bookmark use is already specified, the learner only needs to give the reading or study occasion when it is used."
+  },
+  {
+    "promptId": "prompt-preference-2237",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["DETAIL", "ADDITIONAL_ACTION", "RESULT", "REASON"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response describes the desk-organizing action performed before study or work; optional steps can elaborate but are not required."
+  },
+  {
+    "promptId": "prompt-preference-2238",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME"],
+    "optionalSlots": ["ACTION", "EXAMPLE", "REASON", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question supplies the ruler activity and asks for the school or work occasion when the learner uses it."
+  },
+  {
+    "promptId": "prompt-preference-2239",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["DETAIL", "ADDITIONAL_ACTION", "RESULT", "REASON"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state the method used to organize school or work papers; the prompt does not separately request a reason."
+  },
+  {
+    "promptId": "prompt-preference-2240",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "REASON", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "This asks what the learner routinely keeps in a school or work pouch, which can be answered with one concrete carrying action."
+  },
+  {
+    "promptId": "prompt-preference-2241",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["REASON", "RESULT", "EXAMPLE", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the keyboard setup that supports comfortable typing; the comfort condition does not require a separate preference or why-clause."
+  },
+  {
+    "promptId": "prompt-preference-2242",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL"],
+    "optionalSlots": ["REASON", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The task asks for the mouse that feels comfortable during study or work, so one specific descriptive detail completes the beginner response."
+  },
+  {
+    "promptId": "prompt-preference-2243",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["RESULT", "REASON", "EXAMPLE", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The required answer is the learner's method of using a timer during study or work."
+  },
+  {
+    "promptId": "prompt-preference-2244",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["DETAIL", "ADDITIONAL_ACTION", "RESULT", "REASON"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes how school or work papers are kept organized; a clear organizing action is sufficient for this focused prompt."
+  },
+  {
+    "promptId": "prompt-preference-2245",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["DETAIL", "EXAMPLE", "REASON", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must say which study-tool keeping action is routine near the notebook and explain the practical benefit of that tool."
+  },
+  {
+    "promptId": "prompt-preference-2246",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the T-shirt normally worn and explains why it is chosen for an ordinary day."
+  },
+  {
+    "promptId": "prompt-preference-2247",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["SPECIFIC_TIME", "REASON"],
+    "optionalSlots": ["FEELING", "DETAIL", "RESULT", "PLACE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The hoodie itself is supplied, so this focused time task requires only the wearing occasion and why that occasion suits a hoodie."
+  },
+  {
+    "promptId": "prompt-preference-2248",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL", "REASON"],
+    "optionalSlots": ["FEELING", "RESULT", "EXAMPLE", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe the socks that feel comfortable for a long day and explain what makes them suitable; no preference statement is requested."
+  },
+  {
+    "promptId": "prompt-preference-2249",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "RESULT", "FEELING", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "This asks which sneakers are habitually worn for daily walking and why the learner wears them."
+  },
+  {
+    "promptId": "prompt-preference-2250",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME"],
+    "optionalSlots": ["REASON", "PLACE", "RESULT", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "Hat use on a sunny day is given, and the learner only needs to specify the occasion when the hat is worn."
+  },
+  {
+    "promptId": "prompt-preference-2251",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME", "RESULT"],
+    "optionalSlots": ["DETAIL", "REASON", "PLACE", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must state when a scarf is worn in winter and describe how wearing it helps."
+  },
+  {
+    "promptId": "prompt-preference-2252",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner identifies an accessory worn often as a habitual action and explains why it is worn."
+  },
+  {
+    "promptId": "prompt-preference-2253",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME", "REASON"],
+    "optionalSlots": ["FEELING", "RESULT", "DETAIL", "PLACE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for the occasion when slippers are worn at home and the reason for wearing them then."
+  },
+  {
+    "promptId": "prompt-preference-2254",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["SPECIFIC_TIME", "RESULT"],
+    "optionalSlots": ["PLACE", "DETAIL", "REASON", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The hypothetical wording asks for a situation in which a raincoat would be worn and the benefit it would provide, not a future goal."
+  },
+  {
+    "promptId": "prompt-preference-2255",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response describes what the learner wears to bed and explains why that clothing supports comfortable sleep."
+  },
+  {
+    "promptId": "prompt-preference-2256",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME", "DETAIL"],
+    "optionalSlots": ["ACTION", "REASON", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state when hair is tied and describe the aid or condition that keeps it comfortable."
+  },
+  {
+    "promptId": "prompt-preference-2257",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "RESULT", "FEELING", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the umbrella normally used on a rainy day and explains why it is used, making this a routine action."
+  },
+  {
+    "promptId": "prompt-preference-2258",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the jacket ordinarily worn outside and gives the reason for wearing that jacket."
+  },
+  {
+    "promptId": "prompt-preference-2259",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "SPECIFIC_TIME"],
+    "optionalSlots": ["REASON", "FEELING", "DETAIL", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must choose a liked ring or bracelet and state when that accessory is worn."
+  },
+  {
+    "promptId": "prompt-preference-2260",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes what is worn in the supplied relaxation situation and explains why that clothing creates comfort."
+  },
+  {
+    "promptId": "prompt-preference-2261",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL", "SPECIFIC_TIME"],
+    "optionalSlots": ["REASON", "FEELING", "RESULT", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires a description of the blanket that provides comfort and the occasion when the learner uses it."
+  },
+  {
+    "promptId": "prompt-preference-2262",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL", "REASON"],
+    "optionalSlots": ["FEELING", "RESULT", "EXAMPLE", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the pillow that improves rest and explains why it helps; the wording does not ask for a favorite or choice."
+  },
+  {
+    "promptId": "prompt-preference-2263",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "SPECIFIC_TIME"],
+    "optionalSlots": ["REASON", "DETAIL", "FEELING", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must choose a mug liked for home use and state the occasion when it is used."
+  },
+  {
+    "promptId": "prompt-preference-2264",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": ["CHOICE", "ACTION"],
+    "optionalSlots": ["DETAIL", "REASON", "SPECIFIC_TIME", "EXAMPLE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner selects a preferred bowl and separately describes what is put into it."
+  },
+  {
+    "promptId": "prompt-preference-2265",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL", "REASON"],
+    "optionalSlots": ["FEELING", "RESULT", "EXAMPLE", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the lamp or light that makes the room comfortable and explains why it has that effect."
+  },
+  {
+    "promptId": "prompt-preference-2266",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["PLACE", "RESULT"],
+    "optionalSlots": ["REASON", "DETAIL", "SPECIFIC_TIME", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify where the water bottle is kept at home and describe the benefit of keeping it there."
+  },
+  {
+    "promptId": "prompt-preference-2267",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["RESULT"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "ACTION", "REASON"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks specifically for the way a desk mat benefits home study or work, so a clear helpful effect is sufficient."
+  },
+  {
+    "promptId": "prompt-preference-2268",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["REASON"],
+    "optionalSlots": ["CHOICE", "ACTION", "DETAIL", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner identifies the factor that causes a chair to feel more comfortable during prolonged sitting."
+  },
+  {
+    "promptId": "prompt-preference-2269",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["DETAIL", "EXAMPLE", "REASON", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must explain how the wall calendar is used and state the benefit that makes it helpful."
+  },
+  {
+    "promptId": "prompt-preference-2270",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME", "RESULT"],
+    "optionalSlots": ["DETAIL", "REASON", "FEELING", "PLACE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must give the occasion for using a small fan and describe how it helps in that situation."
+  },
+  {
+    "promptId": "prompt-preference-2271",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["SPECIFIC_TIME"],
+    "optionalSlots": ["ACTION", "REASON", "DETAIL", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "Mirror use while getting ready is supplied, leaving the specific point or occasion of use as the sole direct request."
+  },
+  {
+    "promptId": "prompt-preference-2272",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "RESULT", "PLACE"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes what is kept in a home storage basket and explains why those items are stored there."
+  },
+  {
+    "promptId": "prompt-preference-2273",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["DETAIL", "RESULT", "EXAMPLE", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response identifies the plate habitually used for a quick meal and gives the reason for using it."
+  },
+  {
+    "promptId": "prompt-preference-2274",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["DETAIL", "REASON"],
+    "optionalSlots": ["FEELING", "RESULT", "EXAMPLE", "ACTION"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner describes the small room item associated with relaxation and explains why it has that effect; no preference claim is required."
+  },
+  {
+    "promptId": "prompt-preference-2275",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["EXAMPLE", "DETAIL", "REASON", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must state what the learner keeps near the bed and describe the practical benefit of keeping it there."
+  },
+  {
+    "promptId": "prompt-preference-2276",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": ["REASON"],
+    "optionalSlots": ["ACTION", "CHOICE", "DETAIL", "RESULT"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for the product, habit, or other cause that makes the learner's hands feel cared for during the day."
+  }
+]

@@ -1,0 +1,1999 @@
+[
+  {
+    "promptId": "prompt-preference-24",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular quality or aspect the learner likes most about their favorite type of music.",
+        "satisfiedWhenEn": "The answer identifies a specific musical or experiential aspect as the learner's favorite part of that music type; merely saying the music is good or naming a genre without the liked aspect is insufficient.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음악 종류에서 특히 가장 좋아하는 특성이나 요소.",
+        "satisfiedWhenKo": "구체적인 음악적 특성이나 감상 요소를 그 음악 종류에서 가장 좋아하는 부분으로 밝혀야 충족한다. 음악이 좋다고만 하거나 좋아하는 요소 없이 장르만 말하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified aspect is what the learner likes most about that music.",
+        "satisfiedWhenEn": "The answer gives a concrete musical effect, personal connection, listening benefit, or experience that explains why the learner values that aspect most.",
+        "semanticRoleKo": "학습자가 제시한 요소를 그 음악에서 가장 좋아하는 이유.",
+        "satisfiedWhenKo": "그 요소를 가장 높이 평가하는 까닭을 구체적인 음악적 효과, 개인적 연관성, 감상상의 장점이나 경험으로 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete characteristic that further describes the aspect the learner likes most.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as the rhythm, vocal style, instrumentation, lyrical theme, tempo, or sound of the identified aspect.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 한 음악 요소를 더 구체화하는 특성.",
+        "satisfiedWhenKo": "제시한 요소의 리듬, 보컬 방식, 악기 구성, 가사 주제, 빠르기나 소리처럼 분명한 특성을 덧붙이면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific piece of music that demonstrates the aspect the learner likes most.",
+        "satisfiedWhenEn": "The answer names a particular song, artist, album, or performance and makes clear how it exemplifies the liked aspect.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음악 요소를 보여 주는 구체적인 음악 사례.",
+        "satisfiedWhenKo": "특정 노래, 가수, 앨범이나 공연을 들고 그것이 좋아하는 요소를 어떻게 보여 주는지 분명히 연결하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to the aspect they like most in that music.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling such as excitement, calm, comfort, nostalgia, or motivation and ties it to hearing the identified aspect.",
+        "semanticRoleKo": "그 음악에서 가장 좋아하는 요소를 들을 때 생기는 학습자의 감정.",
+        "satisfiedWhenKo": "제시한 요소를 들을 때 느끼는 신남, 차분함, 위안, 향수나 동기 같은 뚜렷한 감정을 연결해 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-25",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The learner's favorite type of music.",
+        "satisfiedWhenEn": "The answer identifies a recognizable genre, style, or clearly described category of music as the learner's favorite; a vague label such as \"good music\" is insufficient.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음악의 종류.",
+        "satisfiedWhenKo": "알아볼 수 있는 장르, 스타일이나 분명히 설명된 음악 범주를 가장 좋아한다고 밝혀야 충족한다. '좋은 음악' 같은 막연한 표현은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What makes that music type personally special to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete personal meaning, memory, musical quality, use, or emotional effect that makes the identified music type special to the learner.",
+        "semanticRoleKo": "그 음악 종류가 학습자에게 특별한 이유.",
+        "satisfiedWhenKo": "제시한 음악 종류를 특별하게 만드는 구체적인 개인적 의미, 기억, 음악적 특성, 쓰임이나 감정적 효과를 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific musical characteristic of the learner's favorite type.",
+        "satisfiedWhenEn": "The answer describes a definite feature such as rhythm, melody, instrumentation, vocals, lyrics, tempo, or production style.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음악 종류의 구체적인 음악적 특성.",
+        "satisfiedWhenKo": "리듬, 선율, 악기 구성, 보컬, 가사, 빠르기나 제작 방식처럼 분명한 특성을 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular song, artist, album, or performance that represents the favorite music type.",
+        "satisfiedWhenEn": "The answer names a concrete musical example that clearly belongs to or illustrates the identified type.",
+        "semanticRoleKo": "가장 좋아하는 음악 종류를 대표하는 특정 노래, 가수, 앨범이나 공연.",
+        "satisfiedWhenKo": "제시한 음악 종류에 속하거나 그 특징을 분명히 보여 주는 구체적인 음악 사례를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The emotional response the learner has while listening to their favorite type of music.",
+        "satisfiedWhenEn": "The answer conveys a distinct mood or emotion caused by listening to that music, rather than merely repeating that the learner likes it.",
+        "semanticRoleKo": "가장 좋아하는 음악 종류를 들을 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "좋아한다고 되풀이하는 데 그치지 않고 그 음악을 들을 때 생기는 구체적인 기분이나 감정을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2501",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular water bottle the learner carries during the day.",
+        "satisfiedWhenEn": "The answer identifies a recognizable bottle type, model, material, size, or personally identifiable bottle and conveys that the learner carries it during the day.",
+        "semanticRoleKo": "학습자가 낮 동안 가지고 다니는 특정 물병.",
+        "satisfiedWhenKo": "종류, 제품, 재질, 크기나 개인적으로 식별 가능한 특징이 있는 물병을 밝히고 낮 동안 휴대한다는 관계를 드러내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical way carrying that water bottle helps the learner during the day.",
+        "satisfiedWhenEn": "The answer describes a concrete benefit or outcome of having the bottle available, such as drinking regularly, keeping water cold, avoiding purchases, or preventing spills.",
+        "semanticRoleKo": "그 물병을 휴대하는 것이 낮 동안 학습자에게 실제로 도움이 되는 방식.",
+        "satisfiedWhenKo": "규칙적으로 물을 마심, 물을 차갑게 유지함, 음료 구매를 줄임이나 새지 않게 함처럼 물병을 가지고 다녀서 생기는 구체적인 도움이나 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of the water bottle the learner carries.",
+        "satisfiedWhenEn": "The answer adds a definite property such as capacity, material, lid style, insulation, weight, shape, or ease of cleaning.",
+        "semanticRoleKo": "학습자가 휴대하는 물병의 구체적인 특징.",
+        "satisfiedWhenKo": "용량, 재질, 뚜껑 방식, 보온·보냉 기능, 무게, 모양이나 세척 편의처럼 분명한 특징을 덧붙이면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses to carry that particular water bottle.",
+        "satisfiedWhenEn": "The answer gives a concrete preference, daily need, past experience, or practical consideration that explains choosing that bottle rather than merely stating its effect.",
+        "semanticRoleKo": "학습자가 그 물병을 골라서 휴대하는 이유.",
+        "satisfiedWhenKo": "효과만 나열하지 않고 그 물병을 선택한 까닭을 구체적인 선호, 일상적 필요, 경험이나 실용적 고려로 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A particular time, activity, or recurring situation during the day when the learner carries or uses the bottle.",
+        "satisfiedWhenEn": "The answer gives a meaningful context such as commuting, working, exercising, attending class, or going out in the afternoon; an exact clock time is not required.",
+        "semanticRoleKo": "낮 동안 학습자가 그 물병을 휴대하거나 사용하는 구체적인 때나 상황.",
+        "satisfiedWhenKo": "출퇴근, 근무, 운동, 수업이나 오후 외출처럼 의미 있는 때나 활동을 말하면 충족한다. 정확한 시각까지 말할 필요는 없다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2502",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time or daytime trigger when the learner refills their tumbler.",
+        "satisfiedWhenEn": "The answer gives a recognizable time, routine point, or condition that determines when the learner refills it, such as after lunch or when it becomes empty; \"sometime during the day\" is too vague.",
+        "semanticRoleKo": "학습자가 낮 동안 텀블러를 다시 채우는 시점이나 계기.",
+        "satisfiedWhenKo": "점심 뒤나 텀블러가 비었을 때처럼 다시 채우는 때를 정하는 분명한 시간, 일과상의 지점이나 조건을 말하면 충족한다. '낮 중 어느 때'는 너무 막연하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner refills the tumbler at that time or under that condition.",
+        "satisfiedWhenEn": "The answer gives a concrete need or purpose tied to the stated refill timing, such as preparing for an afternoon class or staying hydrated after exercise.",
+        "semanticRoleKo": "학습자가 제시한 시점이나 조건에 텀블러를 다시 채우는 이유.",
+        "satisfiedWhenKo": "오후 수업을 준비하거나 운동 뒤 수분을 보충하는 것처럼 말한 시점과 연결되는 구체적인 필요나 목적을 설명하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "The concrete refill routine the learner follows when the tumbler needs more water.",
+        "satisfiedWhenEn": "The answer describes a specific step or method, such as rinsing it first, filling it at a fountain, adding ice, or topping it up before leaving.",
+        "semanticRoleKo": "텀블러에 물을 더 채울 때 학습자가 따르는 구체적인 행동 방식.",
+        "satisfiedWhenKo": "먼저 헹구기, 정수대에서 채우기, 얼음을 넣기나 떠나기 전에 보충하기처럼 구체적인 단계나 방법을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of refilling the tumbler at the stated time.",
+        "satisfiedWhenEn": "The answer describes a concrete effect such as having enough water for the next activity, drinking more regularly, or avoiding thirst later.",
+        "semanticRoleKo": "제시한 때에 텀블러를 다시 채워서 생기는 결과.",
+        "satisfiedWhenKo": "다음 활동에 필요한 물을 확보함, 더 규칙적으로 마심이나 나중의 갈증을 피함처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2503",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The sparkling-water flavor the learner likes.",
+        "satisfiedWhenEn": "The answer identifies a recognizable flavor or flavor combination as the learner's preference; saying only \"a refreshing flavor\" leaves the choice unidentified.",
+        "semanticRoleKo": "학습자가 좋아하는 탄산수 맛.",
+        "satisfiedWhenKo": "알아볼 수 있는 한 가지 맛이나 맛의 조합을 선호한다고 밝혀야 충족한다. '상쾌한 맛'이라고만 하면 선택한 맛이 무엇인지 알 수 없다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or in what recurring situation the learner drinks that sparkling-water flavor.",
+        "satisfiedWhenEn": "The answer gives a meaningful time, activity, meal, or condition connected to drinking it, such as with dinner, after exercise, or on hot afternoons.",
+        "semanticRoleKo": "학습자가 그 맛의 탄산수를 마시는 때나 반복되는 상황.",
+        "satisfiedWhenKo": "저녁 식사와 함께, 운동 뒤나 더운 오후처럼 그 탄산수를 마시는 것과 연결된 의미 있는 시간, 활동, 식사나 조건을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes that particular sparkling-water flavor.",
+        "satisfiedWhenEn": "The answer gives a concrete taste preference, food pairing, refreshment benefit, memory, or other personal reason that explains the flavor choice.",
+        "semanticRoleKo": "학습자가 그 탄산수 맛을 좋아하는 이유.",
+        "satisfiedWhenKo": "그 맛을 고른 까닭을 구체적인 맛 선호, 음식과의 조화, 상쾌함, 기억이나 다른 개인적 이유로 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's sensory or emotional response when drinking that flavored sparkling water.",
+        "satisfiedWhenEn": "The answer conveys a distinct response such as feeling refreshed, awake, satisfied, or pleasantly stimulated and ties it to drinking the chosen flavor.",
+        "semanticRoleKo": "선택한 맛의 탄산수를 마실 때 학습자가 느끼는 감각이나 감정.",
+        "satisfiedWhenKo": "그 맛을 마실 때 느끼는 상쾌함, 또렷함, 만족감이나 기분 좋은 자극 같은 뚜렷한 반응을 연결해 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific taste or serving characteristic of the sparkling water the learner likes.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as tartness, sweetness, strength of fruit flavor, carbonation level, temperature, or garnish.",
+        "semanticRoleKo": "학습자가 좋아하는 탄산수의 구체적인 맛이나 마시는 방식의 특징.",
+        "satisfiedWhenKo": "신맛, 단맛, 과일 향의 강도, 탄산 세기, 온도나 곁들이는 재료처럼 분명한 특징을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2504",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The drink the learner prefers to carry while taking a walk.",
+        "satisfiedWhenEn": "The answer identifies a specific drink or clearly defined drink type and presents it as the learner's choice for walks; \"something cold\" is insufficient.",
+        "semanticRoleKo": "학습자가 산책할 때 가지고 다니기를 좋아하는 음료.",
+        "satisfiedWhenKo": "구체적인 음료나 분명히 구분되는 음료 종류를 산책용 선택으로 밝혀야 충족한다. '차가운 것'만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers carrying that drink on a walk.",
+        "satisfiedWhenEn": "The answer gives a concrete walking-related need, taste preference, convenience, weather consideration, or personal habit that explains the choice.",
+        "semanticRoleKo": "학습자가 산책할 때 그 음료를 휴대하기를 좋아하는 이유.",
+        "satisfiedWhenKo": "산책 중의 필요, 맛 선호, 휴대 편의, 날씨나 개인 습관처럼 그 선택을 설명하는 구체적인 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect the carried drink has during or after the walk.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome such as preventing thirst, replacing fluids, cooling the learner down, or helping them walk longer.",
+        "semanticRoleKo": "휴대한 음료가 산책 중이나 산책 뒤에 주는 실제 효과.",
+        "satisfiedWhenKo": "갈증을 막음, 수분을 보충함, 몸을 식힘이나 더 오래 걷게 도움처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's bodily or emotional response to having or drinking that beverage on a walk.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling such as refreshment, comfort, energy, or relaxation and connects it to the drink during the walk.",
+        "semanticRoleKo": "산책 중 그 음료를 가지고 있거나 마실 때 학습자가 느끼는 신체적·감정적 반응.",
+        "satisfiedWhenKo": "음료와 연결된 상쾌함, 안도감, 활력이나 여유 같은 뚜렷한 느낌을 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature or preparation detail of the drink the learner carries on walks.",
+        "satisfiedWhenEn": "The answer specifies a feature such as flavor, temperature, amount, sweetness, ingredients, container, or preparation method.",
+        "semanticRoleKo": "학습자가 산책할 때 휴대하는 음료의 구체적인 특성이나 준비 방식.",
+        "satisfiedWhenKo": "맛, 온도, 양, 당도, 재료, 용기나 준비 방법처럼 분명한 특징을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2505",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The juice the learner prefers to drink with lunch.",
+        "satisfiedWhenEn": "The answer identifies a specific juice or clearly defined juice blend and presents it as the learner's lunch choice; \"fruit juice\" alone may be too broad if no type is identifiable.",
+        "semanticRoleKo": "학습자가 점심과 함께 마시기를 좋아하는 주스.",
+        "satisfiedWhenKo": "구체적인 주스나 분명히 구분되는 혼합 주스를 점심 음료로 밝혀야 충족한다. 종류를 알 수 없는 '과일 주스'만으로는 부족할 수 있다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes that juice with lunch.",
+        "satisfiedWhenEn": "The answer gives a concrete flavor pairing, refreshment benefit, dietary consideration, habit, or personal association that explains choosing it for lunch.",
+        "semanticRoleKo": "학습자가 점심에 그 주스를 좋아하는 이유.",
+        "satisfiedWhenKo": "점심에 고르는 까닭을 구체적인 맛의 조화, 상쾌함, 식단상의 고려, 습관이나 개인적 연관성으로 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's sensory or emotional response when drinking that juice with lunch.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling such as refreshment, satisfaction, comfort, or increased appetite and ties it to the lunch juice.",
+        "semanticRoleKo": "점심과 그 주스를 함께 마실 때 학습자가 느끼는 감각이나 감정.",
+        "satisfiedWhenKo": "그 주스로 생기는 상쾌함, 만족감, 편안함이나 식욕 같은 뚜렷한 반응을 점심 상황과 연결하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect of drinking the chosen juice with lunch.",
+        "satisfiedWhenEn": "The answer describes an outcome such as balancing a salty meal, adding fruit intake, quenching thirst, or providing energy for the afternoon.",
+        "semanticRoleKo": "선택한 주스를 점심에 마셔서 생기는 구체적인 효과.",
+        "satisfiedWhenKo": "짠 음식의 맛을 조절함, 과일 섭취를 더함, 갈증을 해소함이나 오후에 필요한 에너지를 얻음처럼 실제 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the juice or the way the learner serves it at lunch.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as fruit variety, pulp, sweetness, temperature, portion, freshness, or whether it is mixed with anything.",
+        "semanticRoleKo": "점심에 마시는 주스의 구체적인 특성이나 제공 방식.",
+        "satisfiedWhenKo": "과일 종류, 과육, 당도, 온도, 양, 신선도나 다른 재료와 섞는지처럼 분명한 특징을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2506",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The fruit the learner prefers to add to water.",
+        "satisfiedWhenEn": "The answer identifies a specific fruit or recognizable fruit combination and presents it as what the learner adds to water; \"some fruit\" is insufficient.",
+        "semanticRoleKo": "학습자가 물에 넣기를 좋아하는 과일.",
+        "satisfiedWhenKo": "구체적인 과일이나 알아볼 수 있는 과일 조합을 물에 넣는 선택으로 밝혀야 충족한다. '어떤 과일'은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes adding that fruit to water.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, aroma, refreshment, dietary, visual, or personal reason that explains the fruit choice.",
+        "semanticRoleKo": "학습자가 그 과일을 물에 넣기를 좋아하는 이유.",
+        "satisfiedWhenKo": "그 과일을 고르는 까닭을 구체적인 맛, 향, 상쾌함, 식단, 보기 좋은 점이나 개인적 이유로 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific preparation or flavor detail of adding the chosen fruit to water.",
+        "satisfiedWhenEn": "The answer specifies a definite element such as slices, amount, peel, crushing, steeping time, water temperature, or combination with herbs or other fruit.",
+        "semanticRoleKo": "선택한 과일을 물에 넣는 구체적인 준비 방식이나 맛의 세부 특성.",
+        "satisfiedWhenKo": "과일 조각, 양, 껍질 사용, 으깨기, 우려내는 시간, 물 온도나 허브·다른 과일과의 조합처럼 분명한 요소를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect adding that fruit has on the water or the learner's drinking habit.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome such as adding a recognizable flavor or aroma, making water easier to drink, or helping the learner drink more.",
+        "semanticRoleKo": "그 과일을 넣었을 때 물이나 학습자의 물 마시는 습관에 생기는 효과.",
+        "satisfiedWhenKo": "분명한 맛이나 향이 더해짐, 물을 더 쉽게 마시게 됨이나 물 섭취량이 늘어남처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's sensory or emotional response to drinking water with that fruit.",
+        "satisfiedWhenEn": "The answer conveys a distinct response such as feeling refreshed, satisfied, energized, or pleasantly reminded of something and ties it to the fruit-infused water.",
+        "semanticRoleKo": "그 과일을 넣은 물을 마실 때 학습자가 느끼는 감각이나 감정.",
+        "satisfiedWhenKo": "과일물과 연결된 상쾌함, 만족감, 활력이나 기분 좋은 연상 같은 뚜렷한 반응을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2507",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular bottle the learner likes to carry around.",
+        "satisfiedWhenEn": "The answer identifies a recognizable bottle type, material, size, design, or personally identifiable bottle and presents it as the learner's preferred one to carry.",
+        "semanticRoleKo": "학습자가 가지고 다니기를 좋아하는 특정 병이나 물병.",
+        "satisfiedWhenKo": "종류, 재질, 크기, 디자인이나 개인적으로 식별 가능한 특징이 있는 병을 휴대용 선호 대상으로 밝혀야 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes carrying that particular bottle.",
+        "satisfiedWhenEn": "The answer gives a concrete convenience, design preference, daily need, durability concern, or personal attachment that explains the choice.",
+        "semanticRoleKo": "학습자가 그 병을 가지고 다니기를 좋아하는 이유.",
+        "satisfiedWhenKo": "그 선택을 설명하는 구체적인 편의성, 디자인 선호, 일상적 필요, 내구성 고려나 개인적 애착을 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the bottle the learner likes to carry.",
+        "satisfiedWhenEn": "The answer adds a definite property such as capacity, weight, shape, material, lid, handle, insulation, color, or leak resistance.",
+        "semanticRoleKo": "학습자가 휴대하기 좋아하는 병의 구체적인 특징.",
+        "satisfiedWhenKo": "용량, 무게, 모양, 재질, 뚜껑, 손잡이, 보온·보냉, 색상이나 누수 방지처럼 분명한 특징을 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A practical effect of carrying the chosen bottle.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome such as drinking more often, avoiding spills, keeping a drink at the desired temperature, or carrying it without strain.",
+        "semanticRoleKo": "선택한 병을 가지고 다녀서 생기는 실제 효과.",
+        "satisfiedWhenKo": "더 자주 마심, 새는 것을 막음, 원하는 온도를 유지함이나 부담 없이 휴대함처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or in what recurring situation the learner carries that bottle.",
+        "satisfiedWhenEn": "The answer gives a meaningful time or context such as commuting, going to class, exercising, traveling, or leaving home for the day.",
+        "semanticRoleKo": "학습자가 그 병을 가지고 다니는 때나 반복되는 상황.",
+        "satisfiedWhenKo": "출퇴근, 등교, 운동, 여행이나 하루 외출처럼 병을 휴대하는 것과 연결된 의미 있는 때나 상황을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2508",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The cold drink the learner prefers on a hot day.",
+        "satisfiedWhenEn": "The answer identifies a specific beverage or clearly defined drink type as the learner's hot-day preference; \"something cold\" is insufficient.",
+        "semanticRoleKo": "학습자가 더운 날 좋아하는 차가운 음료.",
+        "satisfiedWhenKo": "구체적인 음료나 분명히 구분되는 음료 종류를 더운 날의 선호로 밝혀야 충족한다. '차가운 것'만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers that cold drink on a hot day.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, cooling quality, hydration need, convenience, memory, or other personal reason tied to hot weather.",
+        "semanticRoleKo": "학습자가 더운 날 그 차가운 음료를 좋아하는 이유.",
+        "satisfiedWhenKo": "더운 날씨와 연결되는 구체적인 맛, 시원함, 수분 보충 필요, 편의, 기억이나 개인적 이유를 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's bodily or emotional response when drinking the chosen beverage on a hot day.",
+        "satisfiedWhenEn": "The answer conveys a distinct response such as feeling cooler, refreshed, relieved, energized, or satisfied and connects it to drinking the beverage.",
+        "semanticRoleKo": "더운 날 선택한 음료를 마실 때 학습자가 느끼는 신체적·감정적 반응.",
+        "satisfiedWhenKo": "그 음료를 마셔 느끼는 시원함, 상쾌함, 안도감, 활력이나 만족감 같은 뚜렷한 반응을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the chosen cold drink has on the learner in hot weather.",
+        "satisfiedWhenEn": "The answer describes an outcome such as lowering perceived heat, quenching thirst, replacing fluids, or helping the learner continue an activity.",
+        "semanticRoleKo": "선택한 차가운 음료가 더운 날 학습자에게 주는 구체적인 효과.",
+        "satisfiedWhenKo": "더위를 덜 느끼게 함, 갈증을 해소함, 수분을 보충함이나 활동을 계속하도록 도움처럼 실제 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific serving or flavor characteristic of the cold drink.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as temperature, ice, sweetness, flavor, carbonation, ingredients, size, or preparation.",
+        "semanticRoleKo": "차가운 음료의 구체적인 제공 방식이나 맛의 특징.",
+        "satisfiedWhenKo": "온도, 얼음, 당도, 맛, 탄산, 재료, 양이나 준비 방법처럼 분명한 특징을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2509",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The drink the learner likes to keep chilled during summer.",
+        "satisfiedWhenEn": "The answer identifies a specific beverage or clearly defined drink type that the learner deliberately keeps cold in summer; a generic \"cold drink\" is insufficient.",
+        "semanticRoleKo": "학습자가 여름에 차갑게 보관하기 좋아하는 음료.",
+        "satisfiedWhenKo": "여름에 일부러 차갑게 보관하는 구체적인 음료나 분명한 음료 종류를 밝혀야 충족한다. 막연한 '차가운 음료'는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes keeping that drink cold in summer.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, temperature, convenience, refreshment, storage, or personal reason that explains both the drink choice and keeping it chilled.",
+        "semanticRoleKo": "학습자가 여름에 그 음료를 차갑게 보관하기 좋아하는 이유.",
+        "satisfiedWhenKo": "음료 선택과 차갑게 보관하는 행동을 함께 설명하는 구체적인 맛, 온도, 편의, 상쾌함, 보관상의 이유나 개인적 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of having the chosen drink kept cold and ready in summer.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome such as immediate cooling, easier hydration, relief after coming indoors, or avoiding a warm, less enjoyable drink.",
+        "semanticRoleKo": "여름에 선택한 음료를 차갑게 준비해 두어서 생기는 효과.",
+        "satisfiedWhenKo": "바로 몸을 식힘, 수분을 쉽게 보충함, 실내에 들어온 뒤 더위를 덜어 줌이나 미지근한 음료를 피함처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific way the learner chills, stores, or serves the summer drink.",
+        "satisfiedWhenEn": "The answer adds a definite element such as refrigeration, ice, an insulated bottle, chilling time, serving temperature, flavor, or portion.",
+        "semanticRoleKo": "학습자가 여름 음료를 차갑게 하거나 보관하고 마시는 구체적인 방식.",
+        "satisfiedWhenKo": "냉장 보관, 얼음, 보냉병, 냉각 시간, 마시는 온도, 맛이나 양처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's bodily or emotional response to drinking the chilled beverage in summer.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling such as refreshment, relief, comfort, alertness, or satisfaction and ties it to the cold drink.",
+        "semanticRoleKo": "여름에 차갑게 해 둔 음료를 마실 때 학습자가 느끼는 신체적·감정적 반응.",
+        "satisfiedWhenKo": "차가운 음료와 연결된 상쾌함, 안도감, 편안함, 또렷함이나 만족감 같은 뚜렷한 느낌을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2510",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The drink the learner typically sips while studying.",
+        "satisfiedWhenEn": "The answer identifies a specific beverage or clearly defined drink type and connects it to the learner's study routine; \"a drink\" is insufficient.",
+        "semanticRoleKo": "학습자가 공부하면서 보통 조금씩 마시는 음료.",
+        "satisfiedWhenKo": "구체적인 음료나 분명히 구분되는 음료 종류를 밝히고 학습자의 공부 습관과 연결하면 충족한다. 단순히 '음료'라고 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner drinks that beverage while studying.",
+        "satisfiedWhenEn": "The answer gives a concrete study-related purpose, taste preference, comfort, energy need, hydration need, or habit that explains the choice.",
+        "semanticRoleKo": "학습자가 공부할 때 그 음료를 마시는 이유.",
+        "satisfiedWhenKo": "공부와 관련된 구체적인 목적, 맛 선호, 편안함, 에너지나 수분 보충 필요, 습관으로 선택 이유를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the drink has on the learner's studying.",
+        "satisfiedWhenEn": "The answer describes an outcome such as staying alert, maintaining focus, avoiding thirst, taking calmer breaks, or continuing to study comfortably.",
+        "semanticRoleKo": "그 음료가 학습자의 공부에 주는 구체적인 효과.",
+        "satisfiedWhenKo": "잠을 깨게 함, 집중을 유지함, 갈증을 막음, 차분히 쉬게 함이나 편하게 공부를 이어 가게 함처럼 실제 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or preparation detail of the learner's study drink.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as temperature, caffeine level, sweetness, flavor, ingredients, amount, or how it is prepared.",
+        "semanticRoleKo": "학습자가 공부할 때 마시는 음료의 구체적인 특성이나 준비 방식.",
+        "satisfiedWhenKo": "온도, 카페인 양, 당도, 맛, 재료, 양이나 준비 방법처럼 분명한 특징을 덧붙이면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's bodily or emotional response to sipping that drink while studying.",
+        "satisfiedWhenEn": "The answer conveys a distinct state such as calm, alert, refreshed, comforted, or less stressed and ties it to the study drink.",
+        "semanticRoleKo": "공부하면서 그 음료를 조금씩 마실 때 학습자가 느끼는 신체적·감정적 반응.",
+        "satisfiedWhenKo": "그 음료와 연결된 차분함, 또렷함, 상쾌함, 위안이나 스트레스 감소 같은 뚜렷한 상태를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2511",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time or outside situation when the learner uses a reusable cup.",
+        "satisfiedWhenEn": "The answer gives a meaningful occasion, activity, or trigger for using the cup away from home, such as buying coffee, going to work, or visiting a cafe; \"when I go outside\" merely repeats the setting and is insufficient.",
+        "semanticRoleKo": "학습자가 집 밖에서 재사용 컵을 쓰는 때나 상황.",
+        "satisfiedWhenKo": "커피를 살 때, 출근할 때나 카페에 갈 때처럼 집 밖에서 컵을 사용하는 의미 있는 계기나 활동을 말하면 충족한다. '밖에 나갈 때'만으로는 주어진 상황을 되풀이하므로 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses a reusable cup in the stated outside situation.",
+        "satisfiedWhenEn": "The answer gives a concrete environmental, financial, practical, hygiene, temperature-control, or personal reason for using the cup then.",
+        "semanticRoleKo": "학습자가 제시한 외부 상황에서 재사용 컵을 쓰는 이유.",
+        "satisfiedWhenKo": "그때 컵을 쓰는 까닭을 구체적인 환경, 비용, 실용성, 위생, 온도 유지나 개인적 이유로 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome of using the reusable cup outside.",
+        "satisfiedWhenEn": "The answer describes an effect such as reducing disposable waste, receiving a discount, preventing spills, or keeping the drink at the desired temperature.",
+        "semanticRoleKo": "집 밖에서 재사용 컵을 사용해 생기는 구체적인 결과.",
+        "satisfiedWhenKo": "일회용 쓰레기를 줄임, 할인을 받음, 흘림을 막음이나 음료 온도를 유지함처럼 실제 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular outside occasion that illustrates the learner's reusable-cup use.",
+        "satisfiedWhenEn": "The answer gives one concrete instance, such as bringing the cup to a named type of shop, on a commute, or during a particular outing, and shows that the cup is used then.",
+        "semanticRoleKo": "학습자의 재사용 컵 사용을 보여 주는 구체적인 외부 사례.",
+        "satisfiedWhenKo": "특정 종류의 가게, 출퇴근길이나 구체적인 외출 상황 한 가지를 들고 그때 컵을 사용한다는 점을 보여 주면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of the reusable cup or how the learner carries and uses it outside.",
+        "satisfiedWhenEn": "The answer adds a definite element such as material, size, lid, insulation, folding design, cleaning routine, or where it is carried.",
+        "semanticRoleKo": "재사용 컵 자체나 학습자가 밖에서 휴대하고 사용하는 방식의 구체적인 특징.",
+        "satisfiedWhenKo": "재질, 크기, 뚜껑, 보온·보냉, 접이식 구조, 세척 방식이나 휴대 위치처럼 분명한 요소를 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2512",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The drink the learner has after light exercise.",
+        "satisfiedWhenEn": "The answer identifies a specific beverage or clearly defined drink type and connects it to the period after the learner's light exercise.",
+        "semanticRoleKo": "학습자가 가벼운 운동 뒤에 마시는 음료.",
+        "satisfiedWhenKo": "구체적인 음료나 분명히 구분되는 음료 종류를 밝히고 가벼운 운동을 마친 뒤 마신다는 관계를 드러내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "How that drink helps the learner after light exercise.",
+        "satisfiedWhenEn": "The answer describes a concrete post-exercise benefit or outcome, such as replacing fluids, easing thirst, cooling down, restoring energy, or supporting recovery.",
+        "semanticRoleKo": "그 음료가 가벼운 운동 뒤 학습자에게 도움이 되는 방식.",
+        "satisfiedWhenKo": "수분 보충, 갈증 해소, 체온 완화, 에너지 회복이나 몸의 회복 지원처럼 운동 뒤의 구체적인 도움이나 결과를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that particular drink after light exercise.",
+        "satisfiedWhenEn": "The answer gives a concrete taste preference, bodily need, ingredient consideration, convenience, or past experience that explains the choice.",
+        "semanticRoleKo": "학습자가 가벼운 운동 뒤 그 음료를 선택하는 이유.",
+        "satisfiedWhenKo": "그 선택을 설명하는 구체적인 맛 선호, 신체적 필요, 성분 고려, 편의성이나 과거 경험을 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's bodily or emotional response after drinking it following exercise.",
+        "satisfiedWhenEn": "The answer conveys a distinct response such as feeling refreshed, less tired, calmer, cooler, or satisfied and ties it to the drink.",
+        "semanticRoleKo": "운동 뒤 그 음료를 마신 후 학습자가 느끼는 신체적·감정적 반응.",
+        "satisfiedWhenKo": "음료와 연결된 상쾌함, 피로 감소, 차분함, 시원함이나 만족감 같은 뚜렷한 반응을 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or serving detail of the learner's post-exercise drink.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as temperature, amount, ingredients, electrolytes, sweetness, flavor, or preparation.",
+        "semanticRoleKo": "학습자가 운동 뒤 마시는 음료의 구체적인 특성이나 제공 방식.",
+        "satisfiedWhenKo": "온도, 양, 재료, 전해질, 당도, 맛이나 준비 방법처럼 분명한 특징을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2513",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The cold drink the learner chooses on a hot day.",
+        "satisfiedWhenEn": "The answer identifies a specific beverage or clearly defined drink type as the learner's choice in hot weather; \"anything cold\" leaves the choice unresolved.",
+        "semanticRoleKo": "학습자가 더운 날 선택하는 차가운 음료.",
+        "satisfiedWhenKo": "구체적인 음료나 분명히 구분되는 음료 종류를 더운 날의 선택으로 밝혀야 충족한다. '차가운 것이면 무엇이든'은 선택 대상을 알 수 없어 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that drink in hot weather.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, cooling effect, hydration need, availability, health consideration, or personal reason tied to the hot-day choice.",
+        "semanticRoleKo": "학습자가 더운 날 그 음료를 선택하는 이유.",
+        "satisfiedWhenKo": "더운 날의 선택과 연결된 구체적인 맛, 시원한 효과, 수분 필요, 구하기 쉬운 점, 건강 고려나 개인적 이유를 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's bodily or emotional response when drinking the chosen cold beverage on a hot day.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling such as coolness, refreshment, relief, comfort, or renewed energy and connects it to the drink.",
+        "semanticRoleKo": "더운 날 선택한 차가운 음료를 마실 때 학습자가 느끼는 신체적·감정적 반응.",
+        "satisfiedWhenKo": "그 음료와 연결된 시원함, 상쾌함, 안도감, 편안함이나 되찾은 활력 같은 뚜렷한 느낌을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the chosen drink has on the learner in the heat.",
+        "satisfiedWhenEn": "The answer describes an outcome such as quenching thirst, replacing fluids, cooling the body, or making an outdoor activity easier to continue.",
+        "semanticRoleKo": "선택한 음료가 더위 속 학습자에게 주는 구체적인 효과.",
+        "satisfiedWhenKo": "갈증 해소, 수분 보충, 몸을 식힘이나 야외 활동을 더 쉽게 이어 가게 함처럼 실제 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific flavor, ingredient, temperature, or serving detail of the chosen cold drink.",
+        "satisfiedWhenEn": "The answer adds a definite characteristic such as ice level, sweetness, carbonation, fruit flavor, portion, or preparation method.",
+        "semanticRoleKo": "선택한 차가운 음료의 구체적인 맛, 재료, 온도나 제공 방식.",
+        "satisfiedWhenKo": "얼음 양, 당도, 탄산, 과일 맛, 분량이나 준비 방법처럼 분명한 특징을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2514",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular bottle that feels easy for the learner to hold.",
+        "satisfiedWhenEn": "The answer identifies a recognizable bottle type, design, size, or personally identifiable bottle and makes clear that the learner finds it easy to hold.",
+        "semanticRoleKo": "학습자가 잡기 쉽다고 느끼는 특정 병이나 물병.",
+        "satisfiedWhenKo": "알아볼 수 있는 종류, 디자인, 크기나 개인적으로 식별 가능한 병을 밝히고 학습자가 잡기 쉽다는 관계를 드러내면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or in what recurring situation the learner uses that easy-to-hold bottle.",
+        "satisfiedWhenEn": "The answer gives a meaningful time, activity, or condition such as commuting, exercising, walking, working, or traveling; an exact clock time is not required.",
+        "semanticRoleKo": "학습자가 잡기 쉬운 그 병을 사용하는 때나 반복되는 상황.",
+        "satisfiedWhenKo": "출퇴근, 운동, 산책, 근무나 여행처럼 의미 있는 시간, 활동이나 조건을 말하면 충족한다. 정확한 시각까지 말할 필요는 없다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific physical feature that makes the bottle easy for the learner to hold.",
+        "satisfiedWhenEn": "The answer identifies a definite grip-related property such as a narrow body, handle, textured surface, light weight, shape, or suitable size and connects it to easier holding.",
+        "semanticRoleKo": "그 병을 학습자가 쉽게 잡을 수 있게 하는 구체적인 물리적 특징.",
+        "satisfiedWhenKo": "좁은 몸통, 손잡이, 미끄럼 방지 표면, 가벼운 무게, 모양이나 알맞은 크기처럼 잡기와 직접 연결되는 특징을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that bottle's shape or handling suits the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete hand-size, strength, mobility, one-handed-use, activity, or comfort need that makes the bottle suitable.",
+        "semanticRoleKo": "그 병의 모양이나 잡는 방식이 학습자에게 잘 맞는 이유.",
+        "satisfiedWhenKo": "손 크기, 힘, 움직임의 제약, 한 손 사용, 활동 상황이나 편안함의 필요처럼 병이 잘 맞는 구체적인 이유를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A practical outcome of the bottle being easy for the learner to hold.",
+        "satisfiedWhenEn": "The answer describes an effect such as fewer drops, easier one-handed drinking, safer carrying, or less hand strain during use.",
+        "semanticRoleKo": "그 병을 쉽게 잡을 수 있어서 생기는 실제 결과.",
+        "satisfiedWhenKo": "떨어뜨리는 일이 줄어듦, 한 손으로 더 쉽게 마심, 안전하게 휴대함이나 손의 부담이 줄어듦처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2515",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The drink the learner usually chooses after getting home on a warm day.",
+        "satisfiedWhenEn": "The answer identifies a specific beverage or clearly defined drink type and connects it to arriving home in warm weather; \"something cold\" is insufficient.",
+        "semanticRoleKo": "학습자가 따뜻하거나 더운 날 집에 돌아온 뒤 보통 선택하는 음료.",
+        "satisfiedWhenKo": "구체적인 음료나 분명히 구분되는 음료 종류를 밝히고 따뜻한 날 집에 도착한 상황과 연결하면 충족한다. '차가운 것'만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that drink after arriving home on a warm day.",
+        "satisfiedWhenEn": "The answer gives a concrete need, taste preference, cooling benefit, convenience, home routine, or personal reason tied to that situation.",
+        "semanticRoleKo": "학습자가 따뜻한 날 귀가한 뒤 그 음료를 선택하는 이유.",
+        "satisfiedWhenKo": "그 상황과 연결된 구체적인 필요, 맛 선호, 시원한 효과, 편의, 귀가 습관이나 개인적 이유를 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's bodily or emotional response to drinking it after coming home in warm weather.",
+        "satisfiedWhenEn": "The answer conveys a distinct response such as feeling cooler, refreshed, relieved, relaxed, or settled at home and ties it to the drink.",
+        "semanticRoleKo": "따뜻한 날 집에 돌아와 그 음료를 마실 때 학습자가 느끼는 신체적·감정적 반응.",
+        "satisfiedWhenKo": "음료와 연결된 시원함, 상쾌함, 안도감, 긴장 완화나 집에 돌아온 안정감 같은 뚜렷한 반응을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the chosen drink has after the learner gets home.",
+        "satisfiedWhenEn": "The answer describes an outcome such as quenching thirst, replacing fluids, cooling down, restoring energy, or helping the learner transition into rest.",
+        "semanticRoleKo": "학습자가 귀가한 뒤 선택한 음료가 주는 구체적인 효과.",
+        "satisfiedWhenKo": "갈증 해소, 수분 보충, 체온 완화, 에너지 회복이나 휴식으로 전환하는 데 도움처럼 실제 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or serving detail of the learner's after-home drink.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as temperature, ice, flavor, ingredients, sweetness, amount, or how it is prepared at home.",
+        "semanticRoleKo": "학습자가 귀가 후 마시는 음료의 구체적인 특성이나 제공 방식.",
+        "satisfiedWhenKo": "온도, 얼음, 맛, 재료, 당도, 양이나 집에서 준비하는 방법처럼 분명한 특징을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2516",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The method the learner uses to set up their backpack for a busy day.",
+        "satisfiedWhenEn": "The answer describes at least one concrete packing or organizing action that the learner performs to prepare the backpack; merely saying \"I get it ready\" is insufficient.",
+        "semanticRoleKo": "학습자가 바쁜 하루를 위해 배낭을 준비하는 방법.",
+        "satisfiedWhenKo": "배낭을 준비하기 위해 실제로 하는 구체적인 짐 싸기나 정리 행동을 하나 이상 설명해야 충족한다. '가방을 준비한다'만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "An additional specific item, compartment arrangement, order, or packing rule beyond the packing or organizing action already used as the learner's main backpack-setup method.",
+        "satisfiedWhenEn": "The answer adds a distinct backpack content or arrangement fact beyond the action already used for ACTION, such as another item's compartment, a separate grouping rule, or an additional packing-order decision; repeating the same item placement is insufficient.",
+        "semanticRoleKo": "배낭 준비의 주된 방법으로 이미 제시한 짐 싸기나 정리 행동을 넘어서는 추가 물건, 칸 배치, 순서 또는 포장 원칙.",
+        "satisfiedWhenKo": "답변이 ACTION에 이미 사용한 행동과 구별되는 다른 물건의 수납칸, 별도의 묶음 원칙 또는 추가 포장 순서처럼 새로운 내용물이나 배치 사실을 덧붙이면 충족된다. 같은 물건 배치를 되풀이하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that backpack setup for a busy day.",
+        "satisfiedWhenEn": "The answer gives a concrete schedule need, access need, safety concern, comfort consideration, or past problem that explains the setup.",
+        "semanticRoleKo": "학습자가 바쁜 날 그 방식으로 배낭을 준비하는 이유.",
+        "satisfiedWhenKo": "바쁜 일정, 물건을 꺼낼 필요, 안전, 휴대 편안함이나 과거의 문제처럼 그 준비 방식을 설명하는 구체적인 이유를 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner prepares or checks the backpack for the busy day.",
+        "satisfiedWhenEn": "The answer gives a meaningful preparation time or trigger, such as the night before, before leaving home, after checking the schedule, or between activities.",
+        "semanticRoleKo": "학습자가 바쁜 하루를 위해 배낭을 준비하거나 점검하는 때.",
+        "satisfiedWhenKo": "전날 밤, 집을 나서기 전, 일정을 확인한 뒤나 활동 사이처럼 의미 있는 준비 시점이나 계기를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of the learner's backpack setup during the busy day.",
+        "satisfiedWhenEn": "The answer describes a concrete effect such as finding items quickly, carrying everything needed, protecting equipment, reducing shoulder strain, or avoiding forgotten items.",
+        "semanticRoleKo": "학습자의 배낭 준비 방식이 바쁜 하루 동안 만드는 실제 결과.",
+        "satisfiedWhenKo": "물건을 빨리 찾음, 필요한 것을 모두 챙김, 장비를 보호함, 어깨 부담을 줄임이나 빠뜨린 물건을 막음처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2517",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The kind of short trip or recurring circumstance when the learner uses a tote bag.",
+        "satisfiedWhenEn": "The answer gives a concrete occasion or trigger, such as a quick grocery run, a library visit, or an outing that needs only a few items; merely repeating \"on a short trip\" is insufficient.",
+        "semanticRoleKo": "학습자가 토트백을 사용하는 짧은 외출의 종류나 반복되는 상황.",
+        "satisfiedWhenKo": "간단한 장보기, 도서관 방문이나 물건을 몇 개만 챙기는 외출처럼 구체적인 경우나 계기를 말해야 충족한다. '짧은 외출 때'라고 되풀이하는 것은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses a tote bag in that short-trip situation.",
+        "satisfiedWhenEn": "The answer gives a concrete capacity, convenience, access, comfort, environmental, or style reason tied to the stated outing.",
+        "semanticRoleKo": "학습자가 제시한 짧은 외출 상황에서 토트백을 쓰는 이유.",
+        "satisfiedWhenKo": "그 외출과 연결된 구체적인 수납량, 편의, 접근성, 편안함, 환경적 고려나 스타일상의 이유를 말하면 충족한다."
+      },
+      "CHOICE": {
+        "semanticRoleEn": "The particular tote bag the learner chooses for short trips.",
+        "satisfiedWhenEn": "The answer identifies a recognizable tote by material, size, design, source, or another distinguishing feature and connects it to short-trip use.",
+        "semanticRoleKo": "학습자가 짧은 외출에 선택하는 특정 토트백.",
+        "satisfiedWhenKo": "재질, 크기, 디자인, 구입처나 다른 구별 가능한 특징으로 토트백을 밝히고 짧은 외출에 쓴다는 관계를 드러내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature, content, or carrying detail of the tote bag used for short trips.",
+        "satisfiedWhenEn": "The answer adds a definite element such as a zipper, pocket, strap length, fabric, foldability, size, or what is packed in it.",
+        "semanticRoleKo": "짧은 외출용 토트백의 구체적인 특징, 내용물이나 휴대 방식.",
+        "satisfiedWhenKo": "지퍼, 주머니, 끈 길이, 천 재질, 접이성, 크기나 안에 넣는 물건처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect of using the tote bag on the short trip.",
+        "satisfiedWhenEn": "The answer describes an outcome such as carrying essentials without bulk, reaching items quickly, avoiding a disposable bag, or folding the tote away afterward.",
+        "semanticRoleKo": "짧은 외출에서 토트백을 사용해 생기는 실제 효과.",
+        "satisfiedWhenKo": "부피 부담 없이 필수품을 휴대함, 물건을 빨리 꺼냄, 일회용 봉투를 쓰지 않음이나 사용 뒤 접어 넣음처럼 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2518",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific item or items the learner keeps in a small pouch inside their bag.",
+        "satisfiedWhenEn": "The answer names one or more recognizable contents and makes clear that they are kept in the small bag pouch; \"small things\" is insufficient.",
+        "semanticRoleKo": "학습자가 가방 속 작은 파우치에 보관하는 구체적인 물건.",
+        "satisfiedWhenKo": "알아볼 수 있는 물건을 하나 이상 말하고 그 물건을 가방 속 작은 파우치에 보관한다는 관계를 드러내야 충족한다. '작은 것들'은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps the identified item in that pouch.",
+        "satisfiedWhenEn": "The answer gives a concrete need, protection, grouping, privacy, cleanliness, or ease-of-access reason tied to the item and pouch.",
+        "semanticRoleKo": "학습자가 제시한 물건을 그 파우치에 넣어 두는 이유.",
+        "satisfiedWhenKo": "그 물건과 파우치의 관계를 설명하는 구체적인 필요, 보호, 분류, 사생활, 청결이나 접근 편의의 이유를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion when an item from the small pouch is used.",
+        "satisfiedWhenEn": "The answer describes one concrete situation in which the learner takes out and uses an identified pouch item, rather than merely listing another item.",
+        "semanticRoleKo": "작은 파우치 안의 물건을 실제로 사용하는 구체적인 상황.",
+        "satisfiedWhenKo": "물건을 하나 더 나열하는 데 그치지 않고, 제시한 파우치 물건을 꺼내 쓰는 구체적인 경우 한 가지를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of keeping those items together in the small pouch.",
+        "satisfiedWhenEn": "The answer describes an effect such as finding items quickly, preventing loss or damage, keeping the bag tidy, or moving the group between bags easily.",
+        "semanticRoleKo": "그 물건들을 작은 파우치에 함께 보관해 생기는 실제 결과.",
+        "satisfiedWhenKo": "물건을 빨리 찾음, 분실이나 손상을 막음, 가방을 깔끔하게 유지함이나 다른 가방으로 한꺼번에 옮김처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2519",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific item or items the learner keeps in their wallet for everyday use.",
+        "satisfiedWhenEn": "The answer names one or more recognizable wallet contents used in daily life, such as a payment card, identification, cash, or transit card; \"important things\" is insufficient.",
+        "semanticRoleKo": "학습자가 일상적으로 쓰기 위해 지갑에 넣어 두는 구체적인 물건.",
+        "satisfiedWhenKo": "결제 카드, 신분증, 현금이나 교통카드처럼 일상에 쓰는 알아볼 수 있는 지갑 내용물을 하나 이상 말해야 충족한다. '중요한 것들'은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps the identified item in the wallet for daily use.",
+        "satisfiedWhenEn": "The answer gives a concrete payment, identification, travel, emergency, access, or convenience need that explains carrying the item.",
+        "semanticRoleKo": "학습자가 제시한 물건을 매일 쓰려고 지갑에 넣어 두는 이유.",
+        "satisfiedWhenKo": "그 물건을 휴대하는 까닭을 구체적인 결제, 신원 확인, 이동, 비상 상황, 출입이나 편의상의 필요로 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular everyday situation in which the learner uses one of the wallet items.",
+        "satisfiedWhenEn": "The answer gives a concrete instance such as paying at a store, boarding transit, entering a building, or showing identification and connects it to an identified item.",
+        "semanticRoleKo": "학습자가 지갑 속 물건 하나를 사용하는 구체적인 일상 상황.",
+        "satisfiedWhenKo": "가게에서 결제하기, 대중교통 타기, 건물 출입이나 신분 확인처럼 구체적인 경우를 제시한 물건과 연결하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect of carrying those daily-use items in the wallet.",
+        "satisfiedWhenEn": "The answer describes an outcome such as completing payments, proving identity, traveling without delay, or keeping essential cards together and protected.",
+        "semanticRoleKo": "일상용 물건을 지갑에 넣어 다녀서 생기는 실제 효과.",
+        "satisfiedWhenKo": "결제를 완료함, 신원을 증명함, 지체 없이 이동함이나 필수 카드를 함께 보호함처럼 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2520",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular keychain the learner uses every day.",
+        "satisfiedWhenEn": "The answer identifies a recognizable keychain by object, character, material, design, source, or personal connection and conveys daily use.",
+        "semanticRoleKo": "학습자가 매일 사용하는 특정 열쇠고리.",
+        "satisfiedWhenKo": "모양, 캐릭터, 재질, 디자인, 얻은 곳이나 개인적 연관성으로 알아볼 수 있는 열쇠고리를 밝히고 매일 쓴다는 점을 드러내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that keychain every day.",
+        "satisfiedWhenEn": "The answer gives a concrete practical purpose, design preference, habit, memory, gift connection, or personal meaning that explains the daily use.",
+        "semanticRoleKo": "학습자가 그 열쇠고리를 매일 사용하는 이유.",
+        "satisfiedWhenKo": "매일 쓰는 까닭을 구체적인 실용 목적, 디자인 선호, 습관, 기억, 선물과의 연관이나 개인적 의미로 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific physical or personal characteristic of the everyday keychain.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as shape, color, material, size, attachment, inscription, sound, or where it came from.",
+        "semanticRoleKo": "매일 쓰는 열쇠고리의 구체적인 외형적·개인적 특징.",
+        "satisfiedWhenKo": "모양, 색, 재질, 크기, 장식, 새긴 글자, 소리나 얻은 곳처럼 분명한 특징을 덧붙이면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to seeing or using that keychain.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling such as affection, comfort, amusement, confidence, or nostalgia and connects it to the keychain.",
+        "semanticRoleKo": "그 열쇠고리를 보거나 사용할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "열쇠고리와 연결된 애정, 위안, 즐거움, 자신감이나 향수 같은 뚜렷한 감정을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A practical effect of using that keychain every day.",
+        "satisfiedWhenEn": "The answer describes an outcome such as finding keys faster, distinguishing them, holding them together, attaching them securely, or avoiding loss.",
+        "semanticRoleKo": "그 열쇠고리를 매일 사용해 생기는 실제 효과.",
+        "satisfiedWhenKo": "열쇠를 빨리 찾음, 서로 구별함, 한데 모음, 안전하게 걸어 둠이나 분실을 막음처럼 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2521",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The specific position or compartment inside the learner's bag where the water bottle is kept.",
+        "satisfiedWhenEn": "The answer states a definite location within or on the bag, such as a side pocket or upright in the main compartment, and connects that position to the bottle; \"somewhere in my bag\" is insufficient.",
+        "semanticRoleKo": "학습자가 가방 안이나 가방에 물병을 두는 구체적인 위치나 수납칸.",
+        "satisfiedWhenKo": "옆 주머니나 본칸 안쪽에 세워 두는 것처럼 가방의 분명한 위치를 물병과 연결해 말해야 충족한다. '가방 어딘가'는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps the water bottle in that part of the bag.",
+        "satisfiedWhenEn": "The answer gives a concrete access, balance, leak prevention, space, protection, or habit reason tied to the stated placement.",
+        "semanticRoleKo": "학습자가 물병을 가방의 그 위치에 두는 이유.",
+        "satisfiedWhenKo": "제시한 위치와 연결된 구체적인 접근 편의, 무게 균형, 누수 방지, 공간 활용, 보호나 습관상의 이유를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific arrangement feature surrounding the bottle's place in the bag.",
+        "satisfiedWhenEn": "The answer adds a definite detail such as keeping it upright, securing it with an elastic strap, separating it from electronics, or using a fitted pocket.",
+        "semanticRoleKo": "가방 속 물병 위치와 관련된 구체적인 배치 특징.",
+        "satisfiedWhenKo": "세워 두기, 고무 밴드로 고정하기, 전자기기와 분리하기나 꼭 맞는 주머니 사용처럼 분명한 배치 방식을 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of storing the bottle in that location.",
+        "satisfiedWhenEn": "The answer describes an effect such as reaching it quickly, preventing leaks onto other items, keeping the bag balanced, or saving main-compartment space.",
+        "semanticRoleKo": "물병을 그 위치에 보관해서 생기는 실제 결과.",
+        "satisfiedWhenKo": "빨리 꺼냄, 다른 물건에 새는 것을 막음, 가방 균형을 유지함이나 본칸 공간을 아낌처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2522",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The organizing method the learner uses so their bag opens and closes easily.",
+        "satisfiedWhenEn": "The answer describes a concrete arranging, limiting, fastening, or packing action that prevents the bag's opening from being obstructed; merely saying \"I organize it\" is insufficient.",
+        "semanticRoleKo": "가방을 쉽게 열고 닫기 위해 학습자가 사용하는 정리 방법.",
+        "satisfiedWhenKo": "가방 입구가 막히지 않도록 하는 구체적인 배치, 물건 수 줄이기, 고정이나 짐 싸기 행동을 설명해야 충족한다. '정리한다'만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "An additional arrangement near the zipper, flap, opening, or top of the bag beyond the organizing action already used as the learner's main method.",
+        "satisfiedWhenEn": "The answer adds a distinct placement rule or feature beyond the action already used for ACTION, such as a separate rule for bulky items, loose straps, or small contents; repeating the same arrangement is insufficient.",
+        "semanticRoleKo": "가방의 주된 정리 방법으로 이미 제시한 행동을 넘어 지퍼, 덮개, 입구 또는 윗부분 주변에 더하는 별도의 배치 방식.",
+        "satisfiedWhenKo": "답변이 ACTION에 이미 사용한 배치를 되풀이하지 않고 큰 물건, 느슨한 끈 또는 작은 내용물에 관한 별도의 위치 원칙이나 특징을 덧붙이면 충족된다. 같은 배치의 반복은 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A specific consequence of the organization beyond the question's general goal of making the bag easy to open and close.",
+        "satisfiedWhenEn": "The answer states a concrete effect such as the zipper no longer catching, the flap closing fully, contents staying inside, or access taking less time; merely repeating that the bag is easy to open or close is insufficient.",
+        "semanticRoleKo": "가방을 쉽게 열고 닫는다는 질문의 일반 목표를 넘어 정리 방식이 만드는 구체적인 결과.",
+        "satisfiedWhenKo": "답변이 지퍼가 걸리지 않음, 덮개가 완전히 닫힘, 내용물이 쏟아지지 않음 또는 여닫는 시간이 줄어듦 같은 구체적인 효과를 제시하면 충족된다. 가방을 쉽게 열고 닫는다고만 되풀이하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that organization method for the bag.",
+        "satisfiedWhenEn": "The answer gives a concrete recurring problem, bag design constraint, safety need, time pressure, or convenience concern that explains the method.",
+        "semanticRoleKo": "학습자가 가방에 그 정리 방식을 사용하는 이유.",
+        "satisfiedWhenKo": "반복되는 문제, 가방 구조의 제약, 안전 필요, 시간 부족이나 편의상의 고려처럼 그 방식을 설명하는 구체적인 이유를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2523",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time, activity, or recurring situation when the learner uses a cardholder.",
+        "satisfiedWhenEn": "The answer gives a meaningful use occasion such as commuting, paying in stores, entering work, or going out with only essential cards; \"when I need it\" is too vague.",
+        "semanticRoleKo": "학습자가 카드홀더를 사용하는 시간, 활동이나 반복되는 상황.",
+        "satisfiedWhenKo": "출퇴근, 매장 결제, 직장 출입이나 필수 카드만 들고 외출할 때처럼 의미 있는 사용 상황을 말하면 충족한다. '필요할 때'는 너무 막연하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses a cardholder in the stated situation.",
+        "satisfiedWhenEn": "The answer gives a concrete access, size, weight, organization, protection, security, or convenience reason connected to that use.",
+        "semanticRoleKo": "학습자가 제시한 상황에서 카드홀더를 사용하는 이유.",
+        "satisfiedWhenKo": "그 사용과 연결되는 구체적인 접근성, 크기, 무게, 정리, 보호, 보안이나 편의상의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of using the cardholder.",
+        "satisfiedWhenEn": "The answer describes a concrete effect such as reaching a transit card quickly, carrying less bulk, preventing cards from bending, or keeping key cards together.",
+        "semanticRoleKo": "카드홀더를 사용해 생기는 실제 결과.",
+        "satisfiedWhenKo": "교통카드를 빨리 꺼냄, 부피를 줄임, 카드가 휘는 것을 막음이나 주요 카드를 함께 보관함처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion that demonstrates the learner's cardholder use.",
+        "satisfiedWhenEn": "The answer gives one concrete instance in which the learner takes out or presents a card from the holder for a specific payment, trip, entry, or identification task.",
+        "semanticRoleKo": "학습자의 카드홀더 사용을 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "특정 결제, 이동, 출입이나 신원 확인을 위해 홀더에서 카드를 꺼내거나 제시하는 구체적인 경우 한 가지를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or content of the cardholder the learner uses.",
+        "satisfiedWhenEn": "The answer adds a definite element such as the number of slots, material, closure, clear window, strap, RFID protection, or the particular cards stored in it.",
+        "semanticRoleKo": "학습자가 사용하는 카드홀더의 구체적인 특징이나 내용물.",
+        "satisfiedWhenKo": "카드 칸 수, 재질, 잠금 방식, 투명 창, 끈, 전자파 차단 기능이나 넣어 둔 카드처럼 분명한 요소를 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2524",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific feature, packing choice, adjustment, carrying practice, or condition that makes a bag comfortable for the learner to carry for a long time.",
+        "satisfiedWhenEn": "The answer identifies a concrete comfort factor such as padded straps, low weight, balanced packing, an adjusted strap length, breathable material, or taking pressure off one area and connects it to long carrying; \"a comfortable design\" is insufficient.",
+        "semanticRoleKo": "가방을 오랫동안 메도 학습자가 편안하도록 만드는 구체적인 특징, 짐 싸기 선택, 조절, 휴대 방식이나 조건.",
+        "satisfiedWhenKo": "푹신한 끈, 가벼운 무게, 균형 잡힌 짐 배치, 조절한 끈 길이, 통기성 재질이나 한 부위의 압력을 줄이는 방식처럼 구체적인 편안함 요인을 장시간 휴대와 연결해야 충족한다. '편한 디자인'은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified comfort factor works for this learner over a long period.",
+        "satisfiedWhenEn": "The answer explains a concrete body fit, load distribution, heat, movement, posture, sensitivity, or activity need that makes the factor helpful.",
+        "semanticRoleKo": "제시한 편안함 요인이 이 학습자에게 장시간 효과가 있는 이유.",
+        "satisfiedWhenKo": "신체에 맞는 정도, 무게 분산, 열, 움직임, 자세, 민감함이나 활동상의 필요처럼 그 요인이 도움이 되는 까닭을 구체적으로 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The concrete effect of the comfort factor during long carrying.",
+        "satisfiedWhenEn": "The answer describes an outcome such as less shoulder pain, reduced sweating, better balance, fewer pressure points, or being able to carry the bag longer.",
+        "semanticRoleKo": "편안함을 주는 요인이 장시간 휴대 중 만드는 구체적인 효과.",
+        "satisfiedWhenKo": "어깨 통증 감소, 땀 감소, 균형 향상, 눌리는 부분 감소나 더 오래 가방을 멜 수 있음처럼 실제 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific long-carry situation that demonstrates how the comfort factor works.",
+        "satisfiedWhenEn": "The answer gives a concrete occasion such as a commute, day trip, school day, hike, or airport journey and shows how the factor helps during that period.",
+        "semanticRoleKo": "편안함 요인이 실제로 작용하는 모습을 보여 주는 구체적인 장시간 휴대 상황.",
+        "satisfiedWhenKo": "출퇴근, 당일 여행, 등교일, 하이킹이나 공항 이동처럼 구체적인 상황을 들고 그 시간 동안 요인이 어떻게 도움이 되는지 보여 주면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2525",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular everyday bag the learner uses most often.",
+        "satisfiedWhenEn": "The answer identifies a recognizable bag type or a personally distinguishable bag and conveys that it is the learner's most-used daily bag.",
+        "semanticRoleKo": "학습자가 일상에서 가장 자주 사용하는 특정 가방.",
+        "satisfiedWhenKo": "알아볼 수 있는 가방 종류나 개인적으로 구별 가능한 가방을 밝히고 일상에서 가장 많이 쓴다는 점을 드러내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that everyday bag more than their other bags.",
+        "satisfiedWhenEn": "The answer gives a concrete capacity, comfort, access, versatility, durability, style, or routine need that explains its frequent use.",
+        "semanticRoleKo": "학습자가 다른 가방보다 그 일상 가방을 더 많이 사용하는 이유.",
+        "satisfiedWhenKo": "자주 쓰는 까닭을 구체적인 수납량, 편안함, 접근성, 활용도, 내구성, 스타일이나 일상적 필요로 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or usual content of the learner's most-used everyday bag.",
+        "satisfiedWhenEn": "The answer adds a definite element such as size, material, strap, pockets, closure, color, weight, or a regular item carried inside.",
+        "semanticRoleKo": "학습자가 가장 많이 쓰는 일상 가방의 구체적인 특징이나 평소 내용물.",
+        "satisfiedWhenKo": "크기, 재질, 끈, 주머니, 잠금 방식, 색, 무게나 늘 넣어 다니는 물건처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect of using that bag in daily life.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome such as fitting daily essentials, keeping items organized, freeing the learner's hands, or moving comfortably between activities.",
+        "semanticRoleKo": "그 가방을 일상에서 사용해 생기는 실제 효과.",
+        "satisfiedWhenKo": "매일 필요한 물건이 들어감, 물건을 정리해 둠, 두 손을 자유롭게 함이나 활동 사이를 편하게 이동함처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A recurring time or daily situation when the learner uses that bag.",
+        "satisfiedWhenEn": "The answer gives a meaningful context such as commuting, going to school, shopping after work, or weekend errands and connects it to the bag's use.",
+        "semanticRoleKo": "학습자가 그 가방을 사용하는 반복적인 시간이나 일상 상황.",
+        "satisfiedWhenKo": "출퇴근, 등교, 퇴근 뒤 장보기나 주말 볼일처럼 의미 있는 상황을 가방 사용과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2526",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The shopping occasion or recurring situation when the learner uses a foldable shopping bag.",
+        "satisfiedWhenEn": "The answer gives a concrete trigger or context such as planned groceries, an unexpected purchase, a market visit, or needing an extra bag; \"when shopping\" alone is too broad.",
+        "semanticRoleKo": "학습자가 접이식 장바구니를 사용하는 장보기 상황이나 반복되는 경우.",
+        "satisfiedWhenKo": "계획한 식료품 장보기, 예상하지 못한 구매, 시장 방문이나 여분 가방이 필요할 때처럼 구체적인 계기나 상황을 말하면 충족한다. '쇼핑할 때'만으로는 너무 넓다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses a foldable shopping bag in that situation.",
+        "satisfiedWhenEn": "The answer gives a concrete portability, environmental, cost, capacity, strength, preparedness, or convenience reason tied to the stated use.",
+        "semanticRoleKo": "학습자가 제시한 상황에서 접이식 장바구니를 사용하는 이유.",
+        "satisfiedWhenKo": "그 사용과 연결된 구체적인 휴대성, 환경, 비용, 수납량, 튼튼함, 대비나 편의상의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of using the foldable shopping bag.",
+        "satisfiedWhenEn": "The answer describes an effect such as avoiding disposable bags, carrying purchases securely, saving space before use, or having an extra bag available unexpectedly.",
+        "semanticRoleKo": "접이식 장바구니를 사용해 생기는 실제 결과.",
+        "satisfiedWhenKo": "일회용 봉투를 피함, 산 물건을 안전하게 운반함, 사용 전 공간을 아낌이나 갑자기 필요할 때 여분 가방을 확보함처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular shopping trip that illustrates the learner's use of the foldable bag.",
+        "satisfiedWhenEn": "The answer gives one concrete instance, including what kind of trip or purchase led the learner to unfold and use the bag.",
+        "semanticRoleKo": "학습자가 접이식 장바구니를 쓰는 모습을 보여 주는 구체적인 장보기 사례.",
+        "satisfiedWhenKo": "어떤 외출이나 구매 때문에 가방을 펼쳐 사용했는지 드러나는 구체적인 경우 한 가지를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2527",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time, outing, or battery-related condition when the learner carries a portable charger.",
+        "satisfiedWhenEn": "The answer gives a meaningful trigger or context such as a long day out, travel, heavy phone use, or leaving with a low battery; \"when I need power\" is too vague.",
+        "semanticRoleKo": "학습자가 보조배터리를 휴대하는 시간, 외출이나 배터리 관련 조건.",
+        "satisfiedWhenKo": "긴 외출, 여행, 휴대전화 사용이 많은 날이나 배터리가 부족한 채 나설 때처럼 의미 있는 계기나 상황을 말하면 충족한다. '전원이 필요할 때'는 너무 막연하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner carries the portable charger in the stated situation.",
+        "satisfiedWhenEn": "The answer gives a concrete communication, navigation, work, safety, entertainment, or access need that explains why continued battery power matters.",
+        "semanticRoleKo": "학습자가 제시한 상황에서 보조배터리를 휴대하는 이유.",
+        "satisfiedWhenKo": "배터리가 계속 필요한 까닭을 구체적인 연락, 길 찾기, 업무, 안전, 오락이나 접근 필요로 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of carrying and using the portable charger.",
+        "satisfiedWhenEn": "The answer describes an effect such as recharging away from an outlet, keeping the phone available, completing a trip, or avoiding shutdown during an important task.",
+        "semanticRoleKo": "보조배터리를 휴대하고 사용해 생기는 실제 결과.",
+        "satisfiedWhenKo": "콘센트 없이 충전함, 휴대전화를 계속 사용함, 이동을 마침이나 중요한 작업 중 전원이 꺼지는 것을 막음처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion that demonstrates why the learner carried or used the portable charger.",
+        "satisfiedWhenEn": "The answer gives one concrete trip, event, workday, or low-battery incident in which the charger was or would be used.",
+        "semanticRoleKo": "학습자가 보조배터리를 휴대하거나 사용한 이유를 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "보조배터리를 사용했거나 사용할 특정 여행, 행사, 근무일이나 배터리 부족 상황 한 가지를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or carrying setup of the learner's portable charger.",
+        "satisfiedWhenEn": "The answer adds a definite element such as capacity, size, weight, cable type, number of ports, charging speed, battery display, or where it is packed.",
+        "semanticRoleKo": "학습자가 쓰는 보조배터리나 그 휴대 방식의 구체적인 특징.",
+        "satisfiedWhenKo": "용량, 크기, 무게, 케이블 종류, 포트 수, 충전 속도, 잔량 표시나 넣어 다니는 위치처럼 분명한 요소를 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2528",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific pen, cable, or related item the learner keeps in the pouch.",
+        "satisfiedWhenEn": "The answer names one or more recognizable writing or cable-related contents and makes clear that they are kept in the pouch; \"some supplies\" is insufficient.",
+        "semanticRoleKo": "학습자가 파우치에 보관하는 구체적인 펜, 케이블이나 관련 물건.",
+        "satisfiedWhenKo": "알아볼 수 있는 필기구나 케이블 관련 물건을 하나 이상 말하고 파우치에 보관한다는 관계를 드러내야 충족한다. '몇 가지 용품'은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps those pens or cables in the pouch.",
+        "satisfiedWhenEn": "The answer gives a concrete grouping, protection, tangle prevention, access, transfer, or cleanliness reason tied to the identified items.",
+        "semanticRoleKo": "학습자가 제시한 펜이나 케이블을 파우치에 보관하는 이유.",
+        "satisfiedWhenKo": "제시한 물건과 연결된 구체적인 분류, 보호, 엉킴 방지, 접근성, 이동 편의나 청결상의 이유를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific task or occasion when the learner uses an item from the pen-or-cable pouch.",
+        "satisfiedWhenEn": "The answer describes one concrete situation in which an identified pouch item is taken out for writing, charging, connecting a device, or another definite task.",
+        "semanticRoleKo": "펜·케이블 파우치 속 물건을 사용하는 구체적인 작업이나 상황.",
+        "satisfiedWhenKo": "제시한 파우치 물건을 꺼내 필기, 충전, 기기 연결이나 다른 분명한 작업에 쓰는 구체적인 경우 한 가지를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of storing the pens or cables in that pouch.",
+        "satisfiedWhenEn": "The answer describes an effect such as finding the correct item quickly, preventing damage or tangles, keeping ink away from other contents, or moving the set between bags.",
+        "semanticRoleKo": "펜이나 케이블을 그 파우치에 보관해 생기는 실제 결과.",
+        "satisfiedWhenKo": "맞는 물건을 빨리 찾음, 손상이나 엉킴을 막음, 잉크가 다른 물건에 묻지 않게 함이나 가방 사이로 한꺼번에 옮김처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2529",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular bag the learner uses on rainy days.",
+        "satisfiedWhenEn": "The answer identifies a recognizable bag type or personally distinguishable bag and connects it to the learner's rainy-day use.",
+        "semanticRoleKo": "학습자가 비 오는 날 사용하는 특정 가방.",
+        "satisfiedWhenKo": "알아볼 수 있는 가방 종류나 개인적으로 구별 가능한 가방을 밝히고 비 오는 날 사용한다는 관계를 드러내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that bag on rainy days.",
+        "satisfiedWhenEn": "The answer gives a concrete weather-related or practical reason such as water resistance, a secure closure, easy cleaning, protected contents, or compatibility with an umbrella.",
+        "semanticRoleKo": "학습자가 비 오는 날 그 가방을 사용하는 이유.",
+        "satisfiedWhenKo": "방수성, 단단히 닫히는 구조, 쉬운 세척, 내용물 보호나 우산과 함께 들기 편한 점처럼 날씨와 관련된 구체적인 이유를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific rainy-day feature or setup of the learner's bag.",
+        "satisfiedWhenEn": "The answer adds a definite element such as waterproof fabric, coated zippers, a flap, sealed pockets, a rain cover, dark color, or where wet items are placed.",
+        "semanticRoleKo": "학습자 가방의 구체적인 비 오는 날용 특징이나 준비 방식.",
+        "satisfiedWhenKo": "방수 천, 코팅 지퍼, 덮개, 밀폐 주머니, 레인 커버, 어두운 색이나 젖은 물건을 두는 위치처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect of using that bag in rainy weather.",
+        "satisfiedWhenEn": "The answer describes an outcome such as keeping electronics dry, preventing water from entering, separating wet items, or cleaning the bag easily afterward.",
+        "semanticRoleKo": "비 오는 날 그 가방을 사용해 생기는 실제 효과.",
+        "satisfiedWhenKo": "전자기기를 마른 상태로 보호함, 빗물이 들어오는 것을 막음, 젖은 물건을 분리함이나 사용 뒤 쉽게 닦음처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to using that bag in the rain.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling such as reassurance, reduced worry, comfort, confidence, or annoyance and clearly ties it to the rainy-day bag.",
+        "semanticRoleKo": "비 오는 날 그 가방을 사용할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "비 오는 날 가방과 연결된 안심, 걱정 감소, 편안함, 자신감이나 불편함 같은 뚜렷한 감정을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2530",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular small bag the learner uses for a quick outing.",
+        "satisfiedWhenEn": "The answer identifies a recognizable small-bag type or a personally distinguishable bag and connects it to short, quick trips outside; \"a small one\" is insufficient.",
+        "semanticRoleKo": "학습자가 잠깐 외출할 때 사용하는 특정 작은 가방.",
+        "satisfiedWhenKo": "알아볼 수 있는 작은 가방 종류나 개인적으로 구별 가능한 가방을 밝히고 짧은 외출에 쓴다는 관계를 드러내야 충족한다. '작은 것'만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that small bag for quick outings.",
+        "satisfiedWhenEn": "The answer gives a concrete capacity, lightness, access, security, hands-free, style, or convenience reason suited to a brief trip.",
+        "semanticRoleKo": "학습자가 잠깐 외출할 때 그 작은 가방을 사용하는 이유.",
+        "satisfiedWhenKo": "짧은 외출에 맞는 구체적인 수납량, 가벼움, 접근성, 안전성, 두 손의 자유, 스타일이나 편의상의 이유를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or usual content of the small outing bag.",
+        "satisfiedWhenEn": "The answer adds a definite element such as size, strap, pocket, closure, material, weight, color, or the few essentials carried inside.",
+        "semanticRoleKo": "잠깐 외출용 작은 가방의 구체적인 특징이나 평소 내용물.",
+        "satisfiedWhenKo": "크기, 끈, 주머니, 잠금 방식, 재질, 무게, 색이나 안에 넣는 몇 가지 필수품처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of using the small bag on a quick outing.",
+        "satisfiedWhenEn": "The answer describes an effect such as carrying only essentials, moving without bulky luggage, reaching a phone or wallet quickly, or keeping valuables secure.",
+        "semanticRoleKo": "잠깐 외출할 때 작은 가방을 사용해 생기는 실제 결과.",
+        "satisfiedWhenKo": "필수품만 휴대함, 큰 짐 없이 움직임, 휴대전화나 지갑을 빨리 꺼냄이나 귀중품을 안전하게 보관함처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2531",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific item or category of items the learner keeps in a storage box at home.",
+        "satisfiedWhenEn": "The answer names recognizable contents and makes clear that they are stored in a home storage box; \"miscellaneous things\" is insufficient.",
+        "semanticRoleKo": "학습자가 집의 수납 상자에 보관하는 구체적인 물건이나 물건 범주.",
+        "satisfiedWhenKo": "알아볼 수 있는 내용물을 말하고 집의 수납 상자에 보관한다는 관계를 드러내야 충족한다. '잡동사니'처럼 무엇인지 알 수 없는 표현은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps the identified contents in that storage box.",
+        "satisfiedWhenEn": "The answer gives a concrete organization, protection, space-saving, seasonal, access, or preservation reason tied to the items and box.",
+        "semanticRoleKo": "학습자가 제시한 물건을 그 수납 상자에 보관하는 이유.",
+        "satisfiedWhenKo": "물건과 상자의 관계를 설명하는 구체적인 정리, 보호, 공간 절약, 계절성, 접근성이나 보존상의 이유를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion when the learner takes out or uses an item from the storage box.",
+        "satisfiedWhenEn": "The answer gives one concrete situation in which an identified stored item is retrieved for a specific use, rather than merely adding another broad category.",
+        "semanticRoleKo": "학습자가 수납 상자에서 물건을 꺼내거나 사용하는 구체적인 상황.",
+        "satisfiedWhenKo": "넓은 물건 범주를 하나 더 나열하는 데 그치지 않고, 제시한 물건을 특정 용도로 꺼내는 구체적인 경우 한 가지를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of keeping those contents in the storage box.",
+        "satisfiedWhenEn": "The answer describes an effect such as freeing visible space, preventing loss or dust, grouping related items, or finding them when needed.",
+        "semanticRoleKo": "그 물건들을 수납 상자에 보관해 생기는 실제 결과.",
+        "satisfiedWhenKo": "보이는 공간을 비움, 분실이나 먼지를 막음, 관련 물건을 모아 둠이나 필요할 때 찾음처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2532",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The method the learner uses to hang clothes worn in daily life at home.",
+        "satisfiedWhenEn": "The answer describes a concrete hanging action or system, such as putting clothes on hangers, draping them over a rack, or using separate hooks; merely saying \"I hang them up\" is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 일상복을 걸어 두는 방법.",
+        "satisfiedWhenKo": "옷걸이에 걸기, 행거에 펼쳐 걸기나 별도 고리를 쓰기처럼 구체적인 행동이나 방식을 설명해야 충족한다. '옷을 건다'만으로는 부족하다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The specific location at home where the learner hangs the daily clothes.",
+        "satisfiedWhenEn": "The answer identifies a definite home location or fixture, such as a bedroom rack, closet door, entryway hook, or balcony rail, and connects it to the clothes.",
+        "semanticRoleKo": "학습자가 집에서 일상복을 걸어 두는 구체적인 위치.",
+        "satisfiedWhenKo": "침실 행거, 옷장 문, 현관 고리나 발코니 난간처럼 분명한 집 안 위치나 설비를 옷과 연결해 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific sorting, spacing, hanger, or garment detail in the learner's hanging routine.",
+        "satisfiedWhenEn": "The answer adds a definite arrangement such as separating clean and worn clothes, using padded hangers, leaving space to air garments, or hanging shirts by type.",
+        "semanticRoleKo": "학습자의 옷 걸기 방식에 포함되는 구체적인 분류, 간격, 옷걸이나 의류 관련 세부 사항.",
+        "satisfiedWhenKo": "깨끗한 옷과 입은 옷을 나누기, 푹신한 옷걸이 사용, 통풍 간격 두기나 셔츠 종류별로 걸기처럼 분명한 배치를 덧붙이면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner hangs daily clothes in that way.",
+        "satisfiedWhenEn": "The answer gives a concrete wrinkle, ventilation, reuse, access, cleanliness, space, or garment-care reason that explains the method.",
+        "semanticRoleKo": "학습자가 일상복을 그 방식으로 걸어 두는 이유.",
+        "satisfiedWhenKo": "구김, 통풍, 다시 입기, 접근성, 청결, 공간이나 옷 관리처럼 그 방법을 설명하는 구체적인 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of the learner's clothes-hanging method.",
+        "satisfiedWhenEn": "The answer describes an effect such as reducing wrinkles, airing worn clothes, finding an outfit quickly, keeping clothes off furniture, or preserving their shape.",
+        "semanticRoleKo": "학습자의 옷 걸기 방식으로 생기는 실제 결과.",
+        "satisfiedWhenKo": "구김을 줄임, 입은 옷을 통풍시킴, 옷을 빨리 찾음, 가구 위에 쌓이지 않게 함이나 형태를 유지함처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2533",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The organizing method the learner uses to make a drawer easy to use.",
+        "satisfiedWhenEn": "The answer describes a concrete sorting, folding, dividing, labeling, or placement action applied to the drawer; merely saying \"I keep it organized\" is insufficient.",
+        "semanticRoleKo": "서랍을 쓰기 쉽게 만들기 위해 학습자가 사용하는 정리 방법.",
+        "satisfiedWhenKo": "서랍에 적용하는 구체적인 분류, 접기, 칸 나누기, 표시하기나 배치 행동을 설명해야 충족한다. '정리해 둔다'만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "An additional category, divider, layout, order, or placement rule beyond the organizing action already used as the learner's main drawer method.",
+        "satisfiedWhenEn": "The answer adds a distinct drawer-arrangement fact beyond the action already used for ACTION, such as a separate item category, another placement rule, or an additional divider or layout choice; repeating the same organization step is insufficient.",
+        "semanticRoleKo": "서랍의 주된 정리 방법으로 이미 제시한 행동을 넘어서는 추가 물건 범주, 칸막이, 배치, 순서 또는 위치 원칙.",
+        "satisfiedWhenKo": "답변이 ACTION에 이미 사용한 정리 단계를 되풀이하지 않고 별도의 물건 범주, 다른 위치 원칙 또는 추가 칸막이·배치 선택을 덧붙이면 충족된다. 같은 정리 행동의 반복은 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The concrete effect the organization has on using the drawer.",
+        "satisfiedWhenEn": "The answer describes an outcome such as finding items quickly, seeing all contents, opening the drawer without catching, returning items consistently, or avoiding clutter.",
+        "semanticRoleKo": "그 정리 방식이 서랍 사용에 주는 구체적인 효과.",
+        "satisfiedWhenKo": "물건을 빨리 찾음, 내용물이 한눈에 보임, 걸리지 않고 열림, 늘 같은 자리에 돌려놓음이나 어지러움을 막음처럼 실제 결과를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that particular drawer-organization method.",
+        "satisfiedWhenEn": "The answer gives a concrete access need, limited-space constraint, recurring mess, item-protection need, or personal routine that explains the method.",
+        "semanticRoleKo": "학습자가 그 서랍 정리 방식을 사용하는 이유.",
+        "satisfiedWhenKo": "접근 필요, 좁은 공간, 반복되는 어지러움, 물건 보호나 개인 습관처럼 그 방식을 설명하는 구체적인 이유를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2534",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The specific location at home where the learner uses the wall hook.",
+        "satisfiedWhenEn": "The answer identifies a definite room, wall, or position such as beside the front door, behind a bedroom door, or in the bathroom and connects it to the hook; \"somewhere at home\" is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 벽걸이 고리를 사용하는 구체적인 위치.",
+        "satisfiedWhenKo": "현관문 옆, 침실 문 뒤나 욕실처럼 분명한 방, 벽이나 위치를 고리와 연결해 말해야 충족한다. '집 어딘가'는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific object the learner hangs on the wall hook.",
+        "satisfiedWhenEn": "The answer names a recognizable item or clearly defined category of items and makes clear that it is hung on that hook; \"things\" is insufficient.",
+        "semanticRoleKo": "학습자가 벽걸이 고리에 거는 구체적인 물건.",
+        "satisfiedWhenKo": "알아볼 수 있는 물건이나 분명히 구분되는 물건 범주를 말하고 그 고리에 건다는 관계를 드러내야 충족한다. '물건들'은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that wall-hook location for the identified object.",
+        "satisfiedWhenEn": "The answer gives a concrete access, drying, visibility, space-saving, routine, safety, or organization reason that connects the object with the stated location.",
+        "semanticRoleKo": "학습자가 제시한 물건을 그 위치의 벽걸이 고리에 거는 이유.",
+        "satisfiedWhenKo": "물건과 위치를 연결하는 구체적인 접근성, 건조, 눈에 잘 띄는 점, 공간 절약, 습관, 안전이나 정리상의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of hanging that object on the wall hook.",
+        "satisfiedWhenEn": "The answer describes an effect such as keeping the object off the floor, finding it before leaving, allowing it to dry, freeing a surface, or preventing loss.",
+        "semanticRoleKo": "그 물건을 벽걸이 고리에 걸어 생기는 실제 결과.",
+        "satisfiedWhenKo": "바닥에 두지 않음, 외출 전에 빨리 찾음, 말릴 수 있음, 다른 공간을 비움이나 분실을 막음처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2535",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific small item or category of small items the learner keeps in a box at home.",
+        "satisfiedWhenEn": "The answer names recognizable small contents and makes clear that they are stored in a home box; \"little things\" is insufficient.",
+        "semanticRoleKo": "학습자가 집의 상자에 보관하는 구체적인 작은 물건이나 물건 범주.",
+        "satisfiedWhenKo": "알아볼 수 있는 작은 물건을 말하고 집의 상자에 보관한다는 관계를 드러내야 충족한다. '작은 것들'은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps those small items in the box.",
+        "satisfiedWhenEn": "The answer gives a concrete grouping, loss-prevention, protection, access, sorting, safety, or space reason tied to the identified items.",
+        "semanticRoleKo": "학습자가 제시한 작은 물건을 상자에 보관하는 이유.",
+        "satisfiedWhenKo": "그 물건과 연결된 구체적인 분류, 분실 방지, 보호, 접근성, 정돈, 안전이나 공간상의 이유를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion when the learner retrieves or uses one of the small stored items.",
+        "satisfiedWhenEn": "The answer gives one concrete situation in which an identified item is taken from the box for a specific task, rather than merely naming another item.",
+        "semanticRoleKo": "학습자가 보관한 작은 물건 하나를 꺼내거나 사용하는 구체적인 상황.",
+        "satisfiedWhenKo": "물건을 하나 더 나열하는 데 그치지 않고, 제시한 물건을 특정 작업에 쓰려고 상자에서 꺼내는 구체적인 경우를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of storing the small items in the box.",
+        "satisfiedWhenEn": "The answer describes an effect such as preventing loss, keeping a surface clear, finding related items together, protecting sharp pieces, or reducing visual clutter.",
+        "semanticRoleKo": "작은 물건을 상자에 보관해 생기는 실제 결과.",
+        "satisfiedWhenKo": "분실을 막음, 표면을 비워 둠, 관련 물건을 한꺼번에 찾음, 날카로운 부품을 안전하게 둠이나 눈에 보이는 어지러움을 줄임처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2536",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular item, tool, or cleaning product the learner uses on the desk before studying.",
+        "satisfiedWhenEn": "The answer identifies a recognizable cleaning item or product and connects it to cleaning the learner's desk before study; \"cleaning stuff\" is insufficient.",
+        "semanticRoleKo": "학습자가 공부 전에 책상을 청소할 때 사용하는 특정 물건, 도구나 세정 제품.",
+        "satisfiedWhenKo": "알아볼 수 있는 청소 도구나 제품을 밝히고 공부 전 책상 청소에 쓴다는 관계를 드러내야 충족한다. '청소용품'만으로는 부족하다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "The way the learner uses the chosen item to clean the desk before studying.",
+        "satisfiedWhenEn": "The answer describes a concrete cleaning action such as wiping the surface, sweeping crumbs, dusting equipment, or spraying and drying a marked area.",
+        "semanticRoleKo": "학습자가 선택한 물건으로 공부 전 책상을 청소하는 방식.",
+        "satisfiedWhenKo": "표면 닦기, 부스러기 쓸기, 기기 먼지 털기나 얼룩 난 곳에 뿌리고 말리기처럼 구체적인 청소 행동을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that item or cleans the desk before studying.",
+        "satisfiedWhenEn": "The answer gives a concrete suitability, hygiene, speed, surface-care, concentration, or study-preparation reason tied to the chosen item or routine.",
+        "semanticRoleKo": "학습자가 그 물건을 사용하거나 공부 전에 책상을 청소하는 이유.",
+        "satisfiedWhenKo": "선택한 물건이나 습관과 연결된 구체적인 적합성, 위생, 속도, 표면 보호, 집중이나 공부 준비상의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect of cleaning the desk with that item before studying.",
+        "satisfiedWhenEn": "The answer describes an outcome such as removing dust or crumbs, creating usable space, protecting materials, reducing distraction, or making the study area hygienic.",
+        "semanticRoleKo": "공부 전에 그 물건으로 책상을 청소해 생기는 실제 효과.",
+        "satisfiedWhenKo": "먼지나 부스러기를 없앰, 쓸 공간을 만듦, 학습 도구를 보호함, 산만함을 줄임이나 공부 공간을 위생적으로 만듦처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of the cleaning item or a precise part of the desk-cleaning setup.",
+        "satisfiedWhenEn": "The answer adds a definite element such as microfiber material, brush size, unscented spray, disposable sheet, dampness, or the desk area cleaned first.",
+        "semanticRoleKo": "청소 물건의 구체적인 특징이나 책상 청소 준비의 세부 요소.",
+        "satisfiedWhenKo": "극세사 재질, 솔 크기, 무향 스프레이, 일회용 시트, 젖은 정도나 먼저 닦는 책상 부분처럼 분명한 요소를 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2537",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment about which specific small cleaning job at home is easiest for them to begin.",
+        "satisfiedWhenEn": "The answer identifies a concrete cleaning task and clearly presents it as the easiest one for the learner to start; saying only \"a quick job\" leaves the judgment unresolved.",
+        "semanticRoleKo": "집안의 작은 청소 일 가운데 무엇을 시작하기 가장 쉽다고 보는지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "구체적인 청소 작업을 밝히고 그것이 학습자에게 시작하기 가장 쉬운 일이라고 분명히 판단해야 충족한다. '빨리 끝나는 일'만으로는 대상이 불분명하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that cleaning job is easiest for the learner to start.",
+        "satisfiedWhenEn": "The answer gives a concrete factor such as short duration, visible scope, ready tools, low effort, familiar steps, or an immediate need that explains the ease of starting.",
+        "semanticRoleKo": "그 청소 일을 학습자가 시작하기 가장 쉬워하는 이유.",
+        "satisfiedWhenKo": "짧은 시간, 눈에 보이는 범위, 준비된 도구, 적은 노력, 익숙한 단계나 즉각적인 필요처럼 시작하기 쉬운 까닭을 구체적으로 설명하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "The concrete steps the learner takes when doing the identified small cleaning job.",
+        "satisfiedWhenEn": "The answer describes a specific cleaning action or brief sequence that actually performs the named job, rather than merely repeating its label.",
+        "semanticRoleKo": "학습자가 제시한 작은 청소 일을 할 때 수행하는 구체적인 행동.",
+        "satisfiedWhenKo": "작업 이름만 되풀이하지 않고 실제로 그 청소를 수행하는 구체적인 행동이나 짧은 순서를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The visible or practical outcome of completing that small cleaning job.",
+        "satisfiedWhenEn": "The answer describes a concrete result such as a cleared surface, removed dust, an emptied bin, a cleaner sink, or easier use of the area.",
+        "semanticRoleKo": "그 작은 청소 일을 마쳤을 때 나타나는 눈에 보이거나 실용적인 결과.",
+        "satisfiedWhenKo": "표면이 비워짐, 먼지가 없어짐, 쓰레기통이 비워짐, 싱크대가 깨끗해짐이나 공간을 더 쉽게 씀처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response before, during, or after starting that easy cleaning job.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling such as low resistance, relief, satisfaction, motivation, or calm and ties it to the identified task.",
+        "semanticRoleKo": "시작하기 쉬운 그 청소 일을 시작하기 전, 하는 중이나 마친 뒤의 학습자 감정.",
+        "satisfiedWhenKo": "그 작업과 연결된 부담 없음, 안도감, 만족감, 동기나 차분함 같은 뚜렷한 감정을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2538",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular sponge or other tool the learner uses for cleaning in the kitchen.",
+        "satisfiedWhenEn": "The answer identifies a recognizable cleaning tool or sponge type and connects it to the learner's kitchen cleaning; \"a cleaning tool\" is insufficient.",
+        "semanticRoleKo": "학습자가 주방 청소에 사용하는 특정 스펀지나 다른 도구.",
+        "satisfiedWhenKo": "알아볼 수 있는 청소 도구나 스펀지 종류를 밝히고 학습자의 주방 청소에 쓴다는 관계를 드러내야 충족한다. '청소 도구'만으로는 부족하다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "The specific kitchen-cleaning action the learner performs with that sponge or tool.",
+        "satisfiedWhenEn": "The answer describes how the tool is used on a definite kitchen surface or object, such as scrubbing a pan, wiping a counter, or cleaning around the sink.",
+        "semanticRoleKo": "학습자가 그 스펀지나 도구로 수행하는 구체적인 주방 청소 행동.",
+        "satisfiedWhenKo": "팬 문지르기, 조리대 닦기나 싱크대 주변 청소처럼 분명한 주방 표면이나 물건에 도구를 어떻게 쓰는지 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that particular sponge or tool for kitchen cleaning.",
+        "satisfiedWhenEn": "The answer gives a concrete cleaning-power, surface-safety, hygiene, grip, durability, size, or convenience reason that explains the choice.",
+        "semanticRoleKo": "학습자가 주방 청소에 그 스펀지나 도구를 사용하는 이유.",
+        "satisfiedWhenKo": "선택을 설명하는 구체적인 세척력, 표면 보호, 위생, 잡기 쉬움, 내구성, 크기나 편의상의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The concrete cleaning outcome produced by using that sponge or tool.",
+        "satisfiedWhenEn": "The answer describes an effect such as removing grease or stuck food, reaching corners, avoiding scratches, or leaving a surface clean.",
+        "semanticRoleKo": "그 스펀지나 도구를 사용해 얻는 구체적인 청소 결과.",
+        "satisfiedWhenKo": "기름때나 붙은 음식 제거, 구석 청소, 긁힘 방지나 표면을 깨끗하게 만듦처럼 실제 효과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific physical or use characteristic of the kitchen-cleaning sponge or tool.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as softness, abrasive side, handle, bristle stiffness, shape, material, replaceable head, or separate use for certain surfaces.",
+        "semanticRoleKo": "주방 청소용 스펀지나 도구의 구체적인 물리적·사용상 특징.",
+        "satisfiedWhenKo": "부드러움, 거친 면, 손잡이, 솔의 뻣뻣함, 모양, 재질, 교체형 머리나 특정 표면 전용 사용처럼 분명한 특징을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2539",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular storage space or storage unit that makes the learner's room easier to use.",
+        "satisfiedWhenEn": "The answer identifies a recognizable storage location, furniture piece, container, or built-in area and connects it to improved room use; \"a useful space\" is insufficient.",
+        "semanticRoleKo": "학습자의 방을 쓰기 쉽게 만드는 특정 수납공간이나 수납 설비.",
+        "satisfiedWhenKo": "알아볼 수 있는 수납 위치, 가구, 용기나 붙박이 공간을 밝히고 방 사용이 쉬워진다는 관계를 드러내야 충족한다. '유용한 공간'만으로는 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The specific way that storage space makes the room easier to use.",
+        "satisfiedWhenEn": "The answer describes a concrete improvement such as clearing walking space, keeping supplies within reach, separating activities, finding items faster, or freeing a work surface.",
+        "semanticRoleKo": "그 수납공간이 방을 더 쓰기 쉽게 만드는 구체적인 방식.",
+        "satisfiedWhenKo": "걸어 다닐 공간 확보, 필요한 물건을 손 닿는 곳에 둠, 활동별 분리, 물건을 빨리 찾음이나 작업 면을 비움처럼 구체적인 개선 효과를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that storage space suits the learner's room and needs.",
+        "satisfiedWhenEn": "The answer gives a concrete room-layout, item-size, access, frequency-of-use, space-limit, or personal-routine reason that explains the choice.",
+        "semanticRoleKo": "그 수납공간이 학습자의 방과 필요에 잘 맞는 이유.",
+        "satisfiedWhenKo": "방 배치, 물건 크기, 접근성, 사용 빈도, 공간 제약이나 개인 습관처럼 그 선택을 설명하는 구체적인 이유를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature, location, or content arrangement of the helpful storage space.",
+        "satisfiedWhenEn": "The answer adds a definite element such as drawers, shelves, height, depth, dividers, labels, under-bed placement, or the items stored there.",
+        "semanticRoleKo": "도움이 되는 수납공간의 구체적인 특징, 위치나 내용물 배치.",
+        "satisfiedWhenKo": "서랍, 선반, 높이, 깊이, 칸막이, 라벨, 침대 밑 위치나 보관 물건처럼 분명한 요소를 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2540",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific item, container, shelf, cable, or category the learner labels at home.",
+        "satisfiedWhenEn": "The answer identifies a recognizable object or group that receives a label and makes clear that the learner labels it at home; \"some things\" is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 라벨을 붙이는 구체적인 물건, 용기, 선반, 케이블이나 물건 범주.",
+        "satisfiedWhenKo": "알아볼 수 있는 물건이나 묶음을 밝히고 집에서 라벨을 붙인다는 관계를 드러내야 충족한다. '몇 가지 물건'은 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical way labeling the identified item is useful.",
+        "satisfiedWhenEn": "The answer describes a concrete benefit such as finding the right item, distinguishing similar containers or cables, tracking dates, returning items correctly, or helping household members.",
+        "semanticRoleKo": "제시한 물건에 라벨을 붙이는 것이 실제로 유용한 방식.",
+        "satisfiedWhenKo": "맞는 물건을 찾음, 비슷한 용기나 케이블을 구별함, 날짜를 확인함, 제자리에 돌려놓음이나 가족이 알아보게 함처럼 구체적인 도움을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner decided that the identified item needed a label.",
+        "satisfiedWhenEn": "The answer gives a concrete confusion, memory, safety, sharing, inventory, or organization need that motivated the labeling.",
+        "semanticRoleKo": "학습자가 제시한 물건에 라벨이 필요하다고 판단한 이유.",
+        "satisfiedWhenKo": "라벨을 붙이게 된 구체적인 혼동, 기억, 안전, 공동 사용, 재고 확인이나 정리상의 필요를 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular label or home situation that demonstrates the usefulness of labeling.",
+        "satisfiedWhenEn": "The answer gives a concrete label text, marked item, or occasion when the label guided a specific choice or action.",
+        "semanticRoleKo": "라벨링의 유용함을 보여 주는 구체적인 라벨이나 집 안 상황.",
+        "satisfiedWhenKo": "구체적인 라벨 문구, 표시한 물건이나 라벨 덕분에 특정 선택·행동을 한 경우를 말하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "The method the learner uses to label items at home.",
+        "satisfiedWhenEn": "The answer describes a concrete labeling action such as writing on tape, printing labels, color-coding, adding dates, or attaching tags in a consistent place.",
+        "semanticRoleKo": "학습자가 집의 물건에 라벨을 붙이는 방법.",
+        "satisfiedWhenKo": "테이프에 쓰기, 라벨 출력, 색으로 구분하기, 날짜 적기나 늘 같은 위치에 태그 달기처럼 구체적인 행동을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2541",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The organizing method the learner uses to make a bathroom drawer easy to use.",
+        "satisfiedWhenEn": "The answer describes a concrete sorting, dividing, containing, folding, or placement action applied to the bathroom drawer; merely saying \"I organize it\" is insufficient.",
+        "semanticRoleKo": "욕실 서랍을 쓰기 쉽게 만들기 위해 학습자가 사용하는 정리 방법.",
+        "satisfiedWhenKo": "욕실 서랍에 적용하는 구체적인 분류, 칸 나누기, 용기에 담기, 접기나 배치 행동을 설명해야 충족한다. '정리한다'만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "An additional category, container, divider, order, or placement rule beyond the organizing action already used as the learner's main bathroom-drawer method.",
+        "satisfiedWhenEn": "The answer adds a distinct bathroom-drawer arrangement fact beyond the action already used for ACTION, such as another product category, a separate container rule, or an additional placement decision; repeating the same organization step is insufficient.",
+        "semanticRoleKo": "욕실 서랍의 주된 정리 방법으로 이미 제시한 행동을 넘어서는 추가 물건 범주, 용기, 칸막이, 순서 또는 배치 원칙.",
+        "satisfiedWhenKo": "답변이 ACTION에 이미 사용한 정리 단계를 되풀이하지 않고 다른 제품 범주, 별도의 용기 사용 원칙 또는 추가 배치 결정을 덧붙이면 충족된다. 같은 정리 행동의 반복은 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The concrete effect the organization has on using the bathroom drawer.",
+        "satisfiedWhenEn": "The answer describes an outcome such as finding products quickly, preventing leaks from spreading, keeping items dry, seeing expiration dates, or returning supplies consistently.",
+        "semanticRoleKo": "그 정리 방식이 욕실 서랍 사용에 주는 구체적인 효과.",
+        "satisfiedWhenKo": "제품을 빨리 찾음, 새는 내용물이 번지는 것을 막음, 물건을 건조하게 둠, 사용기한을 확인함이나 늘 제자리에 돌려놓음처럼 실제 결과를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that organization method in the bathroom drawer.",
+        "satisfiedWhenEn": "The answer gives a concrete moisture, hygiene, limited-space, access, product-type, shared-use, or recurring-mess reason that explains the method.",
+        "semanticRoleKo": "학습자가 욕실 서랍에 그 정리 방식을 사용하는 이유.",
+        "satisfiedWhenKo": "습기, 위생, 좁은 공간, 접근성, 제품 종류, 공동 사용이나 반복되는 어지러움처럼 그 방식을 설명하는 구체적인 이유를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2542",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The specific new use the learner gives a shoe box at home.",
+        "satisfiedWhenEn": "The answer describes a concrete repurposing action or function for the shoe box, such as turning it into storage, a drawer divider, or a stand; merely saying \"I reuse it\" is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 신발 상자에 부여하는 구체적인 새 용도.",
+        "satisfiedWhenKo": "신발 상자를 수납함, 서랍 칸막이나 받침대로 바꾸는 것처럼 구체적인 재사용 행동이나 기능을 설명해야 충족한다. '다시 쓴다'만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific modification, content, covering, label, or arrangement involved in reusing the shoe box.",
+        "satisfiedWhenEn": "The answer adds a definite element such as cutting an opening, adding dividers, covering the box, labeling it, reinforcing it, or naming what is stored inside.",
+        "semanticRoleKo": "신발 상자를 재사용할 때의 구체적인 개조, 내용물, 덮개, 라벨이나 배치.",
+        "satisfiedWhenKo": "구멍 내기, 칸막이 추가, 겉면 감싸기, 라벨 붙이기, 보강하기나 안에 보관할 물건 밝히기처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner reuses the shoe box in that way.",
+        "satisfiedWhenEn": "The answer gives a concrete storage need, size or shape advantage, cost-saving, waste-reduction, availability, or creative reason that explains the reuse.",
+        "semanticRoleKo": "학습자가 신발 상자를 그 방식으로 재사용하는 이유.",
+        "satisfiedWhenKo": "수납 필요, 크기나 모양의 장점, 비용 절약, 쓰레기 감소, 쉽게 구할 수 있음이나 창의적 목적처럼 재사용을 설명하는 구체적인 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of repurposing the shoe box.",
+        "satisfiedWhenEn": "The answer describes an effect such as organizing small items, creating a divider, protecting contents, freeing space, or avoiding the purchase of another container.",
+        "semanticRoleKo": "신발 상자를 다른 용도로 바꾸어 생기는 실제 결과.",
+        "satisfiedWhenKo": "작은 물건 정리, 칸 나누기, 내용물 보호, 공간 확보나 다른 용기를 사지 않음처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2543",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The specific location at home where the learner keeps cables.",
+        "satisfiedWhenEn": "The answer identifies a definite room, drawer, box, shelf, hook, or other home position and connects it to cable storage; \"somewhere safe\" is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 케이블을 보관하는 구체적인 위치.",
+        "satisfiedWhenKo": "분명한 방, 서랍, 상자, 선반, 고리나 다른 집 안 위치를 케이블 보관과 연결해 말해야 충족한다. '안전한 곳'만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps cables in that home location.",
+        "satisfiedWhenEn": "The answer gives a concrete access, device proximity, tangle prevention, safety, grouping, protection, or space reason tied to the stated location.",
+        "semanticRoleKo": "학습자가 케이블을 집의 그 위치에 보관하는 이유.",
+        "satisfiedWhenKo": "제시한 위치와 연결된 구체적인 접근성, 기기와의 거리, 엉킴 방지, 안전, 분류, 보호나 공간상의 이유를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific cable type or organization feature at the storage location.",
+        "satisfiedWhenEn": "The answer adds a definite element such as coiling cables, using ties, separating them by connector, adding labels, storing adapters together, or naming the cable types kept there.",
+        "semanticRoleKo": "보관 위치에 있는 구체적인 케이블 종류나 정리 특징.",
+        "satisfiedWhenKo": "케이블 감기, 끈 사용, 단자별 분리, 라벨 붙이기, 어댑터 함께 보관이나 그곳의 케이블 종류처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of storing the cables in that location and arrangement.",
+        "satisfiedWhenEn": "The answer describes an effect such as finding the correct cable quickly, preventing tangles or damage, keeping floors clear, or returning cables consistently.",
+        "semanticRoleKo": "케이블을 그 위치와 방식으로 보관해 생기는 실제 결과.",
+        "satisfiedWhenKo": "맞는 케이블을 빨리 찾음, 엉킴이나 손상을 막음, 바닥을 비워 둠이나 늘 같은 자리에 돌려놓음처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2544",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific towel or towel-related item the learner keeps in the basket.",
+        "satisfiedWhenEn": "The answer names recognizable basket contents, such as clean bath towels, hand towels, washcloths, or rolled spare towels, and makes clear they are kept there; \"towel things\" is insufficient.",
+        "semanticRoleKo": "학습자가 수건 바구니에 보관하는 구체적인 수건이나 수건 관련 물건.",
+        "satisfiedWhenKo": "깨끗한 목욕 수건, 손수건, 세안용 수건이나 말아 둔 여분 수건처럼 알아볼 수 있는 내용물을 말하고 바구니에 둔다는 관계를 드러내야 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The specific location at home where the learner puts the towel basket.",
+        "satisfiedWhenEn": "The answer identifies a definite room or position such as beside the shower, under the bathroom shelf, in a linen closet, or near the sink and connects it to the basket.",
+        "semanticRoleKo": "학습자가 집에서 수건 바구니를 두는 구체적인 위치.",
+        "satisfiedWhenKo": "샤워실 옆, 욕실 선반 아래, 수납장 안이나 세면대 근처처럼 분명한 방이나 위치를 바구니와 연결해 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps those towel items in the basket at that location.",
+        "satisfiedWhenEn": "The answer gives a concrete access, ventilation, cleanliness, sorting, available-space, or routine reason that connects the contents with the placement.",
+        "semanticRoleKo": "학습자가 그 수건들을 바구니에 넣어 그 위치에 두는 이유.",
+        "satisfiedWhenKo": "내용물과 위치를 연결하는 구체적인 접근성, 통풍, 청결, 분류, 남는 공간이나 생활 습관상의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of keeping the towel basket there with those contents.",
+        "satisfiedWhenEn": "The answer describes an effect such as reaching a clean towel after washing, separating towel sizes, keeping shelves tidy, or making replacement towels visible.",
+        "semanticRoleKo": "그 수건들을 바구니에 담아 그곳에 두어서 생기는 실제 결과.",
+        "satisfiedWhenKo": "씻은 뒤 깨끗한 수건을 바로 꺼냄, 크기별로 분리함, 선반을 정돈함이나 여분 수건이 보이게 함처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2545",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The specific spot near the door where the learner keeps bags or keys.",
+        "satisfiedWhenEn": "The answer identifies a definite fixture or position, such as an entryway hook, shelf, tray, cabinet, or basket, and connects it to the bags or keys; \"near the door\" merely repeats the question and is insufficient.",
+        "semanticRoleKo": "학습자가 문 근처에서 가방이나 열쇠를 보관하는 구체적인 자리.",
+        "satisfiedWhenKo": "현관 고리, 선반, 트레이, 수납장이나 바구니처럼 분명한 설비나 위치를 가방·열쇠와 연결해 말해야 충족한다. '문 근처'만으로는 질문을 되풀이하므로 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific bag, key set, holder, label, or arrangement at the near-door storage spot.",
+        "satisfiedWhenEn": "The answer adds a definite element such as separate hooks for each bag, a key bowl, labeled pegs, a lower shelf, or which everyday items are kept there.",
+        "semanticRoleKo": "문 근처 보관 자리에 있는 구체적인 가방, 열쇠 묶음, 거치 도구, 표시나 배치.",
+        "satisfiedWhenKo": "가방별 고리, 열쇠 그릇, 이름표가 있는 걸이, 낮은 선반이나 그곳에 두는 일상용 물건처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps the bags or keys in that particular near-door spot.",
+        "satisfiedWhenEn": "The answer gives a concrete leaving-home, return-home, memory, security, access, shared-household, or space reason tied to the placement.",
+        "semanticRoleKo": "학습자가 가방이나 열쇠를 문 근처의 그 자리에 두는 이유.",
+        "satisfiedWhenKo": "외출·귀가 동선, 기억, 보안, 접근성, 가족 공동 사용이나 공간 활용처럼 그 위치를 설명하는 구체적인 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of storing the bags or keys in that spot.",
+        "satisfiedWhenEn": "The answer describes an effect such as finding keys before leaving, putting bags away immediately, avoiding loss, keeping the walkway clear, or helping household members return items.",
+        "semanticRoleKo": "가방이나 열쇠를 그 자리에 보관해 생기는 실제 결과.",
+        "satisfiedWhenKo": "외출 전 열쇠를 찾음, 귀가하자마자 가방을 정리함, 분실을 막음, 통로를 비워 둠이나 가족이 물건을 제자리에 둠처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2546",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The charging setup or method the learner uses at home so the phone remains easy to use.",
+        "satisfiedWhenEn": "The answer describes a concrete way of connecting, positioning, or charging the phone that preserves convenient access or operation; merely saying \"I charge it\" is insufficient.",
+        "semanticRoleKo": "휴대전화를 쉽게 사용할 수 있도록 학습자가 집에서 쓰는 충전 방식이나 구성.",
+        "satisfiedWhenKo": "휴대전화에 쉽게 접근하거나 조작할 수 있도록 연결하고 놓거나 충전하는 구체적인 방식을 설명해야 충족한다. '충전한다'만으로는 부족하다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The specific home location where the learner charges the phone for convenient use.",
+        "satisfiedWhenEn": "The answer identifies a definite position such as a desk stand, bedside shelf, kitchen counter, or living-room table and connects it to the charging setup.",
+        "semanticRoleKo": "학습자가 휴대전화를 편하게 쓰면서 충전하는 집 안의 구체적인 위치.",
+        "satisfiedWhenKo": "책상 거치대, 침대 옆 선반, 주방 조리대나 거실 탁자처럼 분명한 위치를 충전 방식과 연결해 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific charger, cable, stand, route, or positioning feature in the home setup.",
+        "satisfiedWhenEn": "The answer adds a definite element such as a long cable, angled stand, wireless pad, cable clip, reachable outlet, charging speed, or screen orientation.",
+        "semanticRoleKo": "집의 충전 구성에 포함되는 구체적인 충전기, 케이블, 거치대, 배선이나 놓는 방식.",
+        "satisfiedWhenKo": "긴 케이블, 각도 있는 거치대, 무선 패드, 케이블 고정 도구, 손 닿는 콘센트, 충전 속도나 화면 방향처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The concrete way the charging setup makes the phone easier to use.",
+        "satisfiedWhenEn": "The answer describes an outcome such as seeing the screen hands-free, answering calls while charging, avoiding cable strain, keeping the phone powered, or picking it up easily.",
+        "semanticRoleKo": "그 충전 구성이 휴대전화를 더 쓰기 쉽게 만드는 구체적인 효과.",
+        "satisfiedWhenKo": "손을 쓰지 않고 화면을 봄, 충전 중 통화함, 케이블 당김을 막음, 전원을 유지함이나 쉽게 집어 듦처럼 실제 결과를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that charging setup suits the learner's home use.",
+        "satisfiedWhenEn": "The answer gives a concrete activity, accessibility, outlet-location, safety, device-use, or routine need that explains the setup.",
+        "semanticRoleKo": "그 충전 방식이 학습자의 집 안 사용에 잘 맞는 이유.",
+        "satisfiedWhenKo": "활동, 접근성, 콘센트 위치, 안전, 기기 사용이나 생활 습관상의 필요처럼 그 구성을 설명하는 구체적인 이유를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2547",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific cable arrangement or connection setup that makes the learner's daily devices easier to use.",
+        "satisfiedWhenEn": "The answer describes a concrete cable configuration, routing, connector arrangement, or management feature and connects it to the learner's daily devices; \"a neat setup\" is insufficient.",
+        "semanticRoleKo": "학습자의 일상 기기를 쓰기 쉽게 만드는 구체적인 케이블 배치나 연결 구성.",
+        "satisfiedWhenKo": "구체적인 케이블 구성, 배선, 단자 배치나 정리 장치를 설명하고 일상 기기와 연결해야 충족한다. '깔끔한 구성'만으로는 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The specific way that cable setup makes the learner's daily devices easier to use.",
+        "satisfiedWhenEn": "The answer describes a concrete improvement such as connecting quickly, charging several devices, avoiding tangles, reaching the cable easily, switching devices, or reducing unplugging.",
+        "semanticRoleKo": "그 케이블 구성이 학습자의 일상 기기를 더 쓰기 쉽게 만드는 구체적인 방식.",
+        "satisfiedWhenKo": "빠른 연결, 여러 기기 충전, 엉킴 방지, 케이블에 쉽게 손이 닿음, 기기 전환이나 반복해서 뽑는 일을 줄임처럼 구체적인 개선 효과를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that cable setup for their daily devices.",
+        "satisfiedWhenEn": "The answer gives a concrete device mix, connector need, outlet limit, desk routine, safety concern, space constraint, or prior problem that explains the setup.",
+        "semanticRoleKo": "학습자가 일상 기기에 그 케이블 구성을 사용하는 이유.",
+        "satisfiedWhenKo": "기기 조합, 단자 필요, 콘센트 부족, 책상 습관, 안전, 공간 제약이나 이전 문제처럼 그 구성을 설명하는 구체적인 이유를 말하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The specific location or route where the learner positions the cable setup in relation to the daily devices.",
+        "satisfiedWhenEn": "The answer identifies a definite place such as under the desk, along a wall, beside a charging station, behind a monitor, or through a cable tray and connects it to the devices.",
+        "semanticRoleKo": "학습자가 일상 기기와 관련해 케이블 구성을 놓거나 지나가게 하는 구체적인 위치나 경로.",
+        "satisfiedWhenKo": "책상 아래, 벽을 따라, 충전 구역 옆, 모니터 뒤나 케이블 트레이 안처럼 분명한 장소나 경로를 기기와 연결해 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2548",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time, home activity, or recurring situation when the learner plays background music.",
+        "satisfiedWhenEn": "The answer gives a meaningful context such as cooking dinner, cleaning, working at a desk, relaxing in the evening, or hosting friends; \"when I am at home\" merely repeats the setting and is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 배경 음악을 트는 시간, 활동이나 반복되는 상황.",
+        "satisfiedWhenKo": "저녁 요리, 청소, 책상 업무, 저녁 휴식이나 손님맞이처럼 의미 있는 상황을 말해야 충족한다. '집에 있을 때'만으로는 주어진 배경을 되풀이하므로 부족하다."
+      },
+      "CHOICE": {
+        "semanticRoleEn": "The device, app, service, speaker, playlist, or other identifiable source the learner uses to play background music at home.",
+        "satisfiedWhenEn": "The answer identifies a recognizable playback tool, service, playlist, or music source and makes clear that the learner uses it for background music at home; saying only \"music\" without identifying the means or source is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 배경 음악을 재생하는 데 쓰는 기기, 앱, 서비스, 스피커, 재생목록 또는 그 밖의 식별 가능한 음원.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 재생 도구, 서비스, 재생목록 또는 음원을 밝히고 그것을 집의 배경 음악에 사용한다고 나타내면 충족된다. 재생 수단이나 음원을 특정하지 않고 \"음악\"이라고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner plays background music in the stated home situation or uses that source.",
+        "satisfiedWhenEn": "The answer gives a concrete activity, atmosphere, focus, silence-reduction, convenience, sound-quality, or personal-habit reason tied to the music use.",
+        "semanticRoleKo": "학습자가 제시한 집 안 상황에서 배경 음악을 틀거나 그 재생 수단을 사용하는 이유.",
+        "satisfiedWhenKo": "음악 사용과 연결된 구체적인 활동, 분위기, 집중, 정적 완화, 편의, 음질이나 개인 습관상의 이유를 말하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "The concrete way the learner starts or controls background music at home.",
+        "satisfiedWhenEn": "The answer describes a specific interaction such as opening a playlist, asking a smart speaker, connecting a phone, setting low volume, or scheduling playback.",
+        "semanticRoleKo": "학습자가 집에서 배경 음악을 시작하거나 조절하는 구체적인 방식.",
+        "satisfiedWhenKo": "재생목록 열기, 스마트 스피커에 요청하기, 휴대전화 연결, 작은 음량 설정이나 예약 재생처럼 구체적인 행동을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional or mental response to having background music during the home activity.",
+        "satisfiedWhenEn": "The answer conveys a distinct state such as calm, energy, focus, comfort, enjoyment, or reduced loneliness and ties it to the background music.",
+        "semanticRoleKo": "집 안 활동 중 배경 음악이 있을 때 학습자가 느끼는 감정이나 정신적 상태.",
+        "satisfiedWhenKo": "배경 음악과 연결된 차분함, 활력, 집중, 편안함, 즐거움이나 외로움 감소 같은 뚜렷한 상태를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2549",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time, desk activity, or heat-related condition when the learner uses the desk fan on warm days.",
+        "satisfiedWhenEn": "The answer gives a meaningful trigger or context such as working in the afternoon, studying when the room becomes stuffy, or sitting at the desk after exercise; \"when it is warm\" merely repeats the question and is insufficient.",
+        "semanticRoleKo": "학습자가 따뜻하거나 더운 날 탁상용 선풍기를 쓰는 시간, 책상 활동이나 더위 관련 조건.",
+        "satisfiedWhenKo": "오후 업무, 방이 답답해질 때 공부하기, 운동 뒤 책상에 앉기처럼 의미 있는 계기나 상황을 말해야 충족한다. '따뜻할 때'만으로는 질문을 되풀이하므로 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses the desk fan in that stated situation.",
+        "satisfiedWhenEn": "The answer gives a concrete heat, airflow, concentration, energy-saving, noise, space, or personal-comfort reason tied to the timing.",
+        "semanticRoleKo": "학습자가 제시한 상황에서 탁상용 선풍기를 사용하는 이유.",
+        "satisfiedWhenKo": "그 시점과 연결된 구체적인 더위, 공기 흐름, 집중, 절전, 소음, 공간이나 개인적 편안함의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect of using the desk fan in warm conditions.",
+        "satisfiedWhenEn": "The answer describes an outcome such as cooling the learner's face, improving airflow, reducing sweating, making desk work tolerable, or avoiding stronger whole-room cooling.",
+        "semanticRoleKo": "따뜻한 환경에서 탁상용 선풍기를 사용해 생기는 실제 효과.",
+        "satisfiedWhenKo": "얼굴을 식힘, 공기 흐름을 늘림, 땀을 줄임, 책상 일을 견딜 만하게 함이나 방 전체 냉방을 강하게 하지 않음처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The specific desk or room position where the learner uses the fan.",
+        "satisfiedWhenEn": "The answer identifies a definite placement such as beside the monitor, at the corner of a study desk, near a window, or aimed from a shelf and connects it to the fan's use.",
+        "semanticRoleKo": "학습자가 탁상용 선풍기를 사용하는 책상이나 방의 구체적인 위치.",
+        "satisfiedWhenKo": "모니터 옆, 공부 책상 모서리, 창가나 선반 위에서 바람을 보내는 자리처럼 분명한 위치를 선풍기 사용과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2550",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The method the learner uses to set or respond to alarms or reminders in order to stay on track during the day.",
+        "satisfiedWhenEn": "The answer describes a concrete scheduling, labeling, repeating, checking, snoozing, or task-switching behavior that uses alarms or reminders to guide the day; merely saying \"I use reminders\" is insufficient.",
+        "semanticRoleKo": "학습자가 하루 일정을 지키기 위해 알람이나 알림을 설정하거나 반응하는 방법.",
+        "satisfiedWhenKo": "하루를 이끌도록 알람·알림을 예약하고, 이름 붙이고, 반복하고, 확인하거나 작업을 전환하는 구체적인 행동을 설명해야 충족한다. '알림을 쓴다'만으로는 부족하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The scheduled time, interval, transition, or recurring trigger for one of the learner's alarms or reminders.",
+        "satisfiedWhenEn": "The answer gives a meaningful time or cue such as before a meeting, every hour, at the end of lunch, or shortly before leaving home; an exact clock time is not required.",
+        "semanticRoleKo": "학습자의 알람이나 알림이 울리도록 정한 시간, 간격, 전환점이나 반복되는 계기.",
+        "satisfiedWhenKo": "회의 전, 매시간, 점심이 끝날 때나 외출 직전처럼 의미 있는 시간이나 계기를 말하면 충족한다. 정확한 시각까지 말할 필요는 없다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific setting, message, sound, recurrence rule, priority, or organization feature of the learner's alarms or reminders.",
+        "satisfiedWhenEn": "The answer adds a definite element such as a task label, separate tone, advance notice, repeated interval, color, checklist link, or different alarm for each routine.",
+        "semanticRoleKo": "학습자의 알람이나 알림에 포함되는 구체적인 설정, 문구, 소리, 반복 규칙, 우선순위나 정리 방식.",
+        "satisfiedWhenKo": "작업 이름, 구별되는 소리, 사전 알림, 반복 간격, 색상, 체크리스트 연결이나 일과별 다른 알람처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The concrete way alarms or reminders help the learner stay on track.",
+        "satisfiedWhenEn": "The answer describes an outcome such as beginning or ending tasks on time, remembering appointments, taking breaks, switching activities, or completing daily priorities.",
+        "semanticRoleKo": "알람이나 알림이 학습자의 하루 일정을 지키는 데 주는 구체적인 효과.",
+        "satisfiedWhenKo": "작업을 제때 시작하거나 끝냄, 약속을 기억함, 휴식함, 활동을 전환함이나 하루 우선 과제를 완료함처럼 실제 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular daily task or transition managed by one of the learner's alarms or reminders.",
+        "satisfiedWhenEn": "The answer gives one concrete instance, including what the reminder prompts and what the learner does in response.",
+        "semanticRoleKo": "학습자의 알람이나 알림 하나로 관리하는 구체적인 일상 작업이나 전환.",
+        "satisfiedWhenKo": "알림이 무엇을 하라고 알려 주고 학습자가 그에 따라 무엇을 하는지 포함한 구체적인 사례 한 가지를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2551",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The specific way the learner uses a phone stand on their desk.",
+        "satisfiedWhenEn": "The answer describes a concrete desk activity or positioning action performed with the phone on the stand, such as joining video calls, following instructions, watching a timer, or reading messages hands-free; merely saying \"I put my phone on it\" is insufficient.",
+        "semanticRoleKo": "학습자가 책상에서 휴대전화 거치대를 사용하는 구체적인 방식.",
+        "satisfiedWhenKo": "영상 통화, 안내 따라 하기, 타이머 보기나 손을 쓰지 않고 메시지 읽기처럼 거치대 위 휴대전화로 하는 구체적인 활동이나 배치 행동을 설명해야 충족한다. '휴대전화를 올려 둔다'만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses the phone stand for that desk activity.",
+        "satisfiedWhenEn": "The answer gives a concrete visibility, hands-free, posture, stability, charging, multitasking, or space reason that explains the use.",
+        "semanticRoleKo": "학습자가 그 책상 활동에 휴대전화 거치대를 사용하는 이유.",
+        "satisfiedWhenKo": "가시성, 두 손의 자유, 자세, 안정성, 충전, 여러 작업 병행이나 공간 활용처럼 사용을 설명하는 구체적인 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect of using the phone stand on the desk.",
+        "satisfiedWhenEn": "The answer describes an outcome such as seeing the screen at eye level, freeing both hands, preventing the phone from sliding, making calls steadier, or using less desk space.",
+        "semanticRoleKo": "책상에서 휴대전화 거치대를 사용해 생기는 실제 효과.",
+        "satisfiedWhenKo": "눈높이에서 화면을 봄, 두 손을 자유롭게 씀, 휴대전화가 미끄러지는 것을 막음, 통화 화면을 안정시킴이나 책상 공간을 덜 씀처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or during what recurring desk activity the learner uses the phone stand.",
+        "satisfiedWhenEn": "The answer gives a meaningful context such as working, studying, eating at the desk, making a video call, charging, or following an exercise session.",
+        "semanticRoleKo": "학습자가 휴대전화 거치대를 사용하는 시간이나 반복되는 책상 활동.",
+        "satisfiedWhenKo": "업무, 공부, 책상에서 식사, 영상 통화, 충전이나 운동 영상 따라 하기처럼 의미 있는 사용 상황을 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific adjustment or physical feature in the learner's phone-stand setup.",
+        "satisfiedWhenEn": "The answer adds a definite element such as viewing angle, height, portrait or landscape orientation, charging opening, non-slip base, foldability, or placement beside another device.",
+        "semanticRoleKo": "학습자의 휴대전화 거치대 구성에 포함되는 구체적인 조절 방식이나 물리적 특징.",
+        "satisfiedWhenKo": "화면 각도, 높이, 세로·가로 방향, 충전 구멍, 미끄럼 방지 바닥, 접이성이나 다른 기기 옆 배치처럼 분명한 요소를 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2552",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The kind of light the learner uses for reading at night.",
+        "satisfiedWhenEn": "The answer identifies a recognizable lamp, fixture, bulb type, or lighting mode and connects it to the learner's nighttime reading; \"a good light\" is insufficient.",
+        "semanticRoleKo": "학습자가 밤에 독서할 때 사용하는 조명의 종류.",
+        "satisfiedWhenKo": "알아볼 수 있는 램프, 조명 기구, 전구 종류나 조명 모드를 밝히고 밤 독서와 연결해야 충족한다. '좋은 조명'만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that kind of light for nighttime reading.",
+        "satisfiedWhenEn": "The answer gives a concrete visibility, eye-comfort, focus, sleep, partner, energy, placement, or atmosphere reason tied to reading at night.",
+        "semanticRoleKo": "학습자가 밤 독서에 그 조명을 사용하는 이유.",
+        "satisfiedWhenKo": "밤 독서와 연결된 구체적인 가시성, 눈의 편안함, 집중, 수면, 함께 있는 사람, 절전, 위치나 분위기상의 이유를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific brightness, color, direction, position, shade, or adjustment of the nighttime reading light.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as warm color temperature, dimmed brightness, a focused beam, an adjustable neck, placement beside the bed, or light directed onto the page.",
+        "semanticRoleKo": "밤 독서 조명의 구체적인 밝기, 색, 방향, 위치, 갓이나 조절 방식.",
+        "satisfiedWhenKo": "따뜻한 색온도, 낮춘 밝기, 좁은 빛, 조절식 목, 침대 옆 위치나 책장에 향한 빛처럼 분명한 특징을 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect that light has on the learner's nighttime reading.",
+        "satisfiedWhenEn": "The answer describes an outcome such as seeing text clearly, reducing glare or eye strain, avoiding disturbing another person, maintaining focus, or reading safely in a dark room.",
+        "semanticRoleKo": "그 조명이 학습자의 밤 독서에 주는 구체적인 효과.",
+        "satisfiedWhenKo": "글자를 선명하게 봄, 눈부심이나 눈의 피로를 줄임, 다른 사람을 방해하지 않음, 집중을 유지함이나 어두운 방에서 안전하게 읽음처럼 실제 결과를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional or bodily response while reading under that light at night.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling such as calm, comfort, relaxation, alertness, or reduced eye discomfort and ties it to the lighting.",
+        "semanticRoleKo": "밤에 그 조명 아래에서 읽을 때 학습자가 느끼는 감정이나 신체적 반응.",
+        "satisfiedWhenKo": "조명과 연결된 차분함, 편안함, 긴장 완화, 또렷함이나 눈의 불편 감소 같은 뚜렷한 느낌을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2553",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The particular short task, task stage, or recurring occasion when the learner uses a timer.",
+        "satisfiedWhenEn": "The answer identifies a concrete brief task or meaningful trigger, such as steeping tea, stretching, tidying a desk, or taking a focused break; merely saying \"for short tasks\" repeats the question and is insufficient.",
+        "semanticRoleKo": "학습자가 타이머를 사용하는 구체적인 짧은 작업, 작업 단계나 반복되는 상황.",
+        "satisfiedWhenKo": "차 우리기, 스트레칭, 책상 정리나 집중 휴식처럼 구체적인 짧은 작업이나 의미 있는 계기를 말해야 충족한다. '짧은 작업에 쓴다'는 질문을 되풀이하므로 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses a timer for that short task.",
+        "satisfiedWhenEn": "The answer gives a concrete accuracy, focus, pacing, forgetting, safety, overrun-prevention, or motivation reason tied to the identified task.",
+        "semanticRoleKo": "학습자가 제시한 짧은 작업에 타이머를 사용하는 이유.",
+        "satisfiedWhenKo": "그 작업과 연결된 구체적인 정확성, 집중, 속도 조절, 잊어버림, 안전, 시간 초과 방지나 동기의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of timing the short task.",
+        "satisfiedWhenEn": "The answer describes an effect such as stopping at the intended moment, finishing within a limit, returning to another activity, avoiding overcooking, or taking a complete break.",
+        "semanticRoleKo": "짧은 작업의 시간을 재서 생기는 실제 결과.",
+        "satisfiedWhenKo": "의도한 때에 멈춤, 제한 시간 안에 끝냄, 다른 활동으로 돌아감, 지나치게 익히는 것을 막음이나 정해진 휴식을 마침처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular timed task that demonstrates the learner's timer use.",
+        "satisfiedWhenEn": "The answer gives one concrete instance that includes the task being timed and a definite duration, stopping point, or response when the timer ends.",
+        "semanticRoleKo": "학습자의 타이머 사용을 보여 주는 구체적인 시간 제한 작업 사례.",
+        "satisfiedWhenKo": "시간을 재는 작업과 정해진 길이, 멈추는 지점이나 타이머가 끝났을 때의 반응을 포함한 구체적인 사례 한 가지를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2554",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time, season, room condition, or recurring situation when the learner uses a humidifier at home.",
+        "satisfiedWhenEn": "The answer gives a meaningful trigger or context such as dry winter nights, sleeping with the heater on, waking with a dry throat, or working in an air-conditioned room; \"when the air is dry\" is acceptable only if it clearly identifies the learner's use condition.",
+        "semanticRoleKo": "학습자가 집에서 가습기를 사용하는 시간, 계절, 방 상태나 반복되는 상황.",
+        "satisfiedWhenKo": "건조한 겨울밤, 난방을 켜고 잘 때, 목이 말라서 깰 때나 냉방 중인 방에서 일할 때처럼 의미 있는 계기나 상황을 말하면 충족한다. '공기가 건조할 때'도 학습자의 사용 조건을 분명히 나타내면 인정한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The specific way the humidifier helps the learner or the home environment.",
+        "satisfiedWhenEn": "The answer describes a concrete effect such as increasing room humidity, easing a dry throat or nose, reducing dry skin discomfort, improving sleep comfort, or protecting moisture-sensitive items.",
+        "semanticRoleKo": "가습기가 학습자나 집 안 환경에 도움을 주는 구체적인 방식.",
+        "satisfiedWhenKo": "실내 습도 상승, 마른 목이나 코 완화, 피부 건조 불편 감소, 수면 편안함 향상이나 습기에 민감한 물건 보호처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses to use the humidifier in that situation.",
+        "satisfiedWhenEn": "The answer gives a concrete symptom, heating or cooling effect, seasonal condition, household need, or past experience that explains the decision to run it.",
+        "semanticRoleKo": "학습자가 제시한 상황에서 가습기를 사용하기로 하는 이유.",
+        "satisfiedWhenKo": "구체적인 증상, 난방·냉방의 영향, 계절 조건, 가정 내 필요나 과거 경험으로 가습기를 켜는 결정을 설명하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The specific home location where the learner uses the humidifier.",
+        "satisfiedWhenEn": "The answer identifies a definite room or position such as beside the bed, on a living-room shelf, near a desk, or away from electronics and connects it to humidifier use.",
+        "semanticRoleKo": "학습자가 가습기를 사용하는 집 안의 구체적인 위치.",
+        "satisfiedWhenKo": "침대 옆, 거실 선반, 책상 근처나 전자기기에서 떨어진 자리처럼 분명한 방이나 위치를 가습기 사용과 연결하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific setting, maintenance step, water amount, output direction, or operating feature of the learner's humidifier use.",
+        "satisfiedWhenEn": "The answer adds a definite element such as low mist, a humidity target, timer length, nightly refill, regular cleaning, distilled water, or where the mist is aimed.",
+        "semanticRoleKo": "학습자의 가습기 사용에 포함되는 구체적인 설정, 관리 단계, 물의 양, 분무 방향이나 작동 특징.",
+        "satisfiedWhenKo": "약한 분무, 목표 습도, 타이머 길이, 매일 밤 물 보충, 정기 세척, 정제수 사용이나 분무 방향처럼 분명한 요소를 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2555",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The specific location at home where the learner uses a power strip.",
+        "satisfiedWhenEn": "The answer identifies a definite room, furniture area, or position such as under a desk, beside the television, near the bed, or at a kitchen appliance station and connects it to the power strip; \"where I need outlets\" is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 멀티탭을 사용하는 구체적인 위치.",
+        "satisfiedWhenKo": "책상 아래, 텔레비전 옆, 침대 근처나 주방 기기 구역처럼 분명한 방, 가구 주변이나 위치를 멀티탭과 연결해 말해야 충족한다. '콘센트가 필요한 곳'만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses or places the power strip in that location.",
+        "satisfiedWhenEn": "The answer gives a concrete outlet shortage, device grouping, cable reach, access, charging routine, space, or safety reason tied to the stated place.",
+        "semanticRoleKo": "학습자가 멀티탭을 그 위치에서 사용하거나 그곳에 두는 이유.",
+        "satisfiedWhenKo": "제시한 위치와 연결된 구체적인 콘센트 부족, 기기 묶음, 케이블 길이, 접근성, 충전 습관, 공간이나 안전상의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of using the power strip in that home location.",
+        "satisfiedWhenEn": "The answer describes an effect such as powering several nearby devices, creating an accessible charging point, reducing repeated plug changes, or switching devices off together.",
+        "semanticRoleKo": "집의 그 위치에서 멀티탭을 사용해 생기는 실제 결과.",
+        "satisfiedWhenKo": "가까운 여러 기기에 전원을 공급함, 손 닿는 충전 지점을 만듦, 플러그 교체를 줄임이나 기기 전원을 한꺼번에 끔처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or arrangement of the learner's power-strip setup.",
+        "satisfiedWhenEn": "The answer adds a definite element such as outlet count, USB ports, surge protection, individual switches, cable length, mounting, spacing, or cable management.",
+        "semanticRoleKo": "학습자가 쓰는 멀티탭 구성의 구체적인 특징이나 배치.",
+        "satisfiedWhenKo": "콘센트 수, USB 포트, 과전압 보호, 개별 스위치, 케이블 길이, 고정 방식, 간격이나 선 정리처럼 분명한 요소를 덧붙이면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular group of devices or home activity that demonstrates the power strip's use.",
+        "satisfiedWhenEn": "The answer gives one concrete instance naming the devices powered or the activity supported by the strip in the stated location.",
+        "semanticRoleKo": "멀티탭 사용을 보여 주는 구체적인 기기 묶음이나 집 안 활동.",
+        "satisfiedWhenKo": "제시한 위치에서 멀티탭으로 전원을 공급하는 기기들이나 지원하는 활동을 구체적으로 밝힌 사례 한 가지를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2556",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The light source or kind of lighting the learner uses to help them read at home.",
+        "satisfiedWhenEn": "The answer identifies a recognizable artificial or natural light source, or a meaningful type of lighting such as a desk lamp, ceiling light, bright daylight from a window, or warm task lighting, and connects it to the learner's home reading; unspecified \"some light\" is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 독서하는 데 도움을 받기 위해 사용하는 광원이나 조명의 종류.",
+        "satisfiedWhenKo": "답변이 책상 램프, 천장 조명, 창문으로 들어오는 밝은 자연광 또는 따뜻한 작업 조명처럼 알아볼 수 있는 인공·자연 광원이나 의미 있는 조명 종류를 밝히고 집에서의 독서와 연결하면 충족된다. 무엇인지 특정하지 않은 \"어떤 빛\"은 부족하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or under what recurring home-reading condition the learner uses that light.",
+        "satisfiedWhenEn": "The answer gives a meaningful time or condition such as after sunset, before bed, on cloudy afternoons, or whenever the room's main light is off; an exact clock time is not required.",
+        "semanticRoleKo": "학습자가 집에서 책을 읽으며 그 조명을 사용하는 때나 반복되는 조건.",
+        "satisfiedWhenKo": "해가 진 뒤, 잠들기 전, 흐린 오후나 방의 주 조명이 꺼져 있을 때처럼 의미 있는 시간이나 조건을 말하면 충족한다. 정확한 시각까지 말할 필요는 없다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that light for reading at home.",
+        "satisfiedWhenEn": "The answer gives a concrete visibility, eye-comfort, focus, placement, energy, household, sleep, or atmosphere reason that explains the choice.",
+        "semanticRoleKo": "학습자가 집에서 독서할 때 그 조명을 선택하는 이유.",
+        "satisfiedWhenKo": "선택을 설명하는 구체적인 가시성, 눈의 편안함, 집중, 위치, 절전, 가족 생활, 수면이나 분위기상의 이유를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific brightness, color, direction, position, shade, or adjustment of the learner's reading light.",
+        "satisfiedWhenEn": "The answer adds a definite feature such as warm or cool color, a dimmer level, focused beam, adjustable arm, placement beside a chair, or light directed at the page.",
+        "semanticRoleKo": "학습자의 독서 조명에 관한 구체적인 밝기, 색, 방향, 위치, 갓이나 조절 방식.",
+        "satisfiedWhenKo": "따뜻하거나 차가운 색, 조광 밝기, 좁은 빛, 조절식 팔, 의자 옆 위치나 책장에 향한 빛처럼 분명한 특징을 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The specific way that light helps the learner read at home.",
+        "satisfiedWhenEn": "The answer describes an outcome such as seeing print clearly, reducing glare or eye strain, maintaining focus, avoiding shadows on the page, or reading without lighting the whole room.",
+        "semanticRoleKo": "그 조명이 학습자의 집 독서에 도움을 주는 구체적인 방식.",
+        "satisfiedWhenKo": "글자를 선명하게 봄, 눈부심이나 눈의 피로를 줄임, 집중을 유지함, 책장에 그림자가 생기는 것을 막음이나 방 전체를 밝히지 않고 읽음처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2557",
+    "slotContracts": {
+      "REASON": {
+        "semanticRoleEn": "Why the learner keeps a charger beside the bed.",
+        "satisfiedWhenEn": "The answer gives a concrete nighttime, morning, accessibility, battery, alarm, emergency, or routine need that explains the charger's bedside location; \"because it is convenient\" alone is too vague.",
+        "semanticRoleKo": "학습자가 충전기를 침대 옆에 두는 이유.",
+        "satisfiedWhenKo": "충전기의 침대 옆 위치를 설명하는 구체적인 밤·아침 활동, 접근성, 배터리, 알람, 비상 상황이나 생활 습관상의 필요를 말해야 충족한다. '편해서'만으로는 너무 막연하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical outcome of having the charger beside the bed.",
+        "satisfiedWhenEn": "The answer describes an effect such as waking with a charged phone, connecting it without getting up, keeping an alarm device powered, or having the phone available in an emergency.",
+        "semanticRoleKo": "충전기를 침대 옆에 두어서 생기는 실제 결과.",
+        "satisfiedWhenKo": "충전된 휴대전화로 아침을 맞음, 일어나지 않고 연결함, 알람 기기의 전원을 유지함이나 비상시에 휴대전화를 쓸 수 있음처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or under what recurring condition the learner uses the bedside charger.",
+        "satisfiedWhenEn": "The answer gives a meaningful time or trigger such as before sleeping, overnight, after late-night phone use, on waking with low battery, or during a nighttime emergency.",
+        "semanticRoleKo": "학습자가 침대 옆 충전기를 사용하는 때나 반복되는 조건.",
+        "satisfiedWhenKo": "잠들기 전, 밤새, 늦은 밤 휴대전화 사용 뒤, 낮은 배터리로 깼을 때나 야간 비상 상황처럼 의미 있는 시간이나 계기를 말하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "The concrete way the learner uses or arranges the charger beside the bed.",
+        "satisfiedWhenEn": "The answer describes a specific action such as connecting the phone before sleep, placing it on a wireless pad, securing the cable to the table, or unplugging it in the morning.",
+        "semanticRoleKo": "학습자가 침대 옆 충전기를 사용하거나 배치하는 구체적인 방식.",
+        "satisfiedWhenKo": "잠들기 전 휴대전화 연결, 무선 패드에 올려놓기, 탁자에 케이블 고정이나 아침에 분리하기처럼 구체적인 행동을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2558",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time, activity, weather condition, or recurring situation when the learner uses a portable fan.",
+        "satisfiedWhenEn": "The answer gives a meaningful trigger or context such as waiting outdoors in summer, commuting on a crowded train, exercising, or sitting somewhere without air conditioning; \"when it is hot\" is acceptable only if it clearly identifies the learner's use condition.",
+        "semanticRoleKo": "학습자가 휴대용 선풍기를 사용하는 시간, 활동, 날씨 조건이나 반복되는 상황.",
+        "satisfiedWhenKo": "여름 야외 대기, 붐비는 전철 출퇴근, 운동이나 냉방 없는 곳에 앉아 있을 때처럼 의미 있는 계기나 상황을 말하면 충족한다. '더울 때'도 학습자의 사용 조건을 분명히 나타내면 인정한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses a portable fan in the stated situation.",
+        "satisfiedWhenEn": "The answer gives a concrete heat, airflow, mobility, lack-of-cooling, comfort, health, makeup, or activity-related reason tied to that context.",
+        "semanticRoleKo": "학습자가 제시한 상황에서 휴대용 선풍기를 사용하는 이유.",
+        "satisfiedWhenKo": "그 상황과 연결된 구체적인 더위, 공기 흐름, 이동성, 냉방 부족, 편안함, 건강, 화장이나 활동상의 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect of using the portable fan.",
+        "satisfiedWhenEn": "The answer describes an outcome such as cooling the face, reducing sweating, improving airflow, making a wait or commute tolerable, or cooling down after activity.",
+        "semanticRoleKo": "휴대용 선풍기를 사용해 생기는 실제 효과.",
+        "satisfiedWhenKo": "얼굴을 식힘, 땀을 줄임, 공기 흐름을 늘림, 대기나 출퇴근을 견딜 만하게 함이나 활동 뒤 몸을 식힘처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The specific place or position where the learner uses the portable fan.",
+        "satisfiedWhenEn": "The answer identifies a definite location or use position such as at a bus stop, on public transit, at a desk, in a park, or held near the face and connects it to fan use.",
+        "semanticRoleKo": "학습자가 휴대용 선풍기를 사용하는 구체적인 장소나 위치.",
+        "satisfiedWhenKo": "버스 정류장, 대중교통 안, 책상, 공원이나 얼굴 가까이 들고 있는 위치처럼 분명한 장소나 자세를 선풍기 사용과 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion that demonstrates the learner's portable-fan use.",
+        "satisfiedWhenEn": "The answer gives one concrete outing, commute, event, work period, or heat-related incident in which the learner uses or would use the fan.",
+        "semanticRoleKo": "학습자의 휴대용 선풍기 사용을 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "선풍기를 사용했거나 사용할 특정 외출, 출퇴근, 행사, 업무 시간이나 더위 관련 상황 한 가지를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2559",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The specific way the learner uses a tablet stand at home.",
+        "satisfiedWhenEn": "The answer describes a concrete home activity or positioning action performed with the tablet on the stand, such as following a recipe, watching a lesson, making a video call, reading, drawing, or using it as a second screen; merely saying \"I put my tablet on it\" is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 태블릿 거치대를 사용하는 구체적인 방식.",
+        "satisfiedWhenKo": "요리법 따라 하기, 수업 보기, 영상 통화, 읽기, 그림 그리기나 보조 화면 사용처럼 거치대 위 태블릿으로 하는 구체적인 집 안 활동이나 배치 행동을 설명해야 충족한다. '태블릿을 올려 둔다'만으로는 부족하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or during what recurring home activity the learner uses the tablet stand.",
+        "satisfiedWhenEn": "The answer gives a meaningful time or context such as cooking dinner, studying in the evening, working at a desk, exercising, relaxing in bed, or joining a call.",
+        "semanticRoleKo": "학습자가 태블릿 거치대를 사용하는 시간이나 반복되는 집 안 활동.",
+        "satisfiedWhenKo": "저녁 요리, 저녁 공부, 책상 업무, 운동, 침대에서 쉬기나 통화 참여처럼 의미 있는 사용 상황을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses the tablet stand for that home activity.",
+        "satisfiedWhenEn": "The answer gives a concrete hands-free, visibility, posture, stability, charging, cleanliness, multitasking, or space reason that explains the use.",
+        "semanticRoleKo": "학습자가 그 집 안 활동에 태블릿 거치대를 사용하는 이유.",
+        "satisfiedWhenKo": "두 손의 자유, 가시성, 자세, 안정성, 충전, 청결, 여러 작업 병행이나 공간 활용처럼 사용을 설명하는 구체적인 이유를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical effect of using the tablet stand at home.",
+        "satisfiedWhenEn": "The answer describes an outcome such as seeing the screen at a comfortable angle, freeing both hands, keeping the tablet away from spills, making calls steadier, or reducing neck strain.",
+        "semanticRoleKo": "집에서 태블릿 거치대를 사용해 생기는 실제 효과.",
+        "satisfiedWhenKo": "편한 각도로 화면을 봄, 두 손을 자유롭게 씀, 태블릿을 엎지른 액체로부터 보호함, 통화 화면을 안정시킴이나 목 부담을 줄임처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific adjustment or physical feature in the learner's tablet-stand setup.",
+        "satisfiedWhenEn": "The answer adds a definite element such as height, viewing angle, portrait or landscape orientation, base weight, foldability, charging clearance, rotation, or placement in a room.",
+        "semanticRoleKo": "학습자의 태블릿 거치대 구성에 포함되는 구체적인 조절 방식이나 물리적 특징.",
+        "satisfiedWhenKo": "높이, 화면 각도, 세로·가로 방향, 받침 무게, 접이성, 충전 공간, 회전이나 방 안 배치처럼 분명한 요소를 덧붙이면 충족한다."
+      }
+    }
+  }
+]

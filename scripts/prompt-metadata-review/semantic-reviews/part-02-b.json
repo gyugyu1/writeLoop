@@ -1,0 +1,2821 @@
+[
+  {
+    "promptId": "prompt-goal-1105",
+    "slotContracts": {
+      "PLAN": {
+        "semanticRoleEn": "The learner's concrete approach to speaking more confidently in meetings and sustaining that effort through the year.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to practice or participate more confidently in meetings and conveys how the effort will be maintained.",
+        "semanticRoleKo": "회의에서 더 자신 있게 말하고 그 노력을 연중 지속하기 위한 학습자의 구체적인 접근법.",
+        "satisfiedWhenKo": "답변이 회의에서 더 자신 있게 연습하거나 참여할 실행 가능한 방법을 하나 이상 제시하고 그 노력을 어떻게 유지할지도 전달하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A particular meeting or work setting in which the learner will carry out the confidence-building plan.",
+        "satisfiedWhenEn": "The answer identifies a recognizable setting, such as team updates or client calls, where the learner will practice; merely repeating \"in meetings\" is not enough.",
+        "semanticRoleKo": "학습자가 자신감 향상 계획을 실행할 구체적인 회의 또는 업무 환경.",
+        "satisfiedWhenKo": "답변이 팀 진행 보고나 고객 통화처럼 연습할 수 있는 식별 가능한 환경을 밝히면 충족되며, 단순히 \"회의에서\"라고 반복하는 것만으로는 부족하다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete obstacle that may make confident meeting participation or consistent practice difficult.",
+        "satisfiedWhenEn": "The answer names a specific barrier, such as nervousness, limited preparation, or few chances to speak, that could interfere with the plan.",
+        "semanticRoleKo": "자신 있는 회의 참여나 꾸준한 연습을 어렵게 할 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 긴장, 준비 부족, 발언 기회 부족처럼 계획을 방해할 수 있는 구체적인 어려움을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined schedule, frequency, or milestone for practicing confident meeting speech.",
+        "satisfiedWhenEn": "The answer states a recognizable time or frequency for the practice, rather than only saying it will happen regularly.",
+        "semanticRoleKo": "회의 발언 자신감을 연습하기 위한 명확한 일정, 빈도 또는 시점.",
+        "satisfiedWhenKo": "답변이 단순히 꾸준히 하겠다고만 하지 않고 연습할 식별 가능한 시간이나 빈도를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected sign or consequence of becoming a more confident meeting speaker.",
+        "satisfiedWhenEn": "The answer describes a concrete improvement or effect expected from the plan, such as contributing ideas more often or speaking with less hesitation.",
+        "semanticRoleKo": "회의에서 더 자신 있게 말하게 되었음을 보여 주는 예상 징표나 결과.",
+        "satisfiedWhenKo": "답변이 의견을 더 자주 내거나 덜 망설이며 말하는 것처럼 계획으로 기대하는 구체적인 향상이나 효과를 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's anticipated emotional response to speaking more confidently or making progress in meetings.",
+        "satisfiedWhenEn": "The answer conveys a specific feeling connected to confident meeting participation or progress, not merely a general positive word without that connection.",
+        "semanticRoleKo": "회의에서 더 자신 있게 말하거나 발전했을 때 학습자가 예상하는 감정적 반응.",
+        "satisfiedWhenKo": "답변이 자신 있는 회의 참여나 발전과 연결된 구체적인 감정을 전달하면 충족되며, 그 연결 없이 막연한 긍정 표현만 쓰는 것은 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1106",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific change the learner wants to make to nighttime screen-use habits this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete behavior or outcome the learner wants to change at night, rather than only saying the habit should improve.",
+        "semanticRoleKo": "학습자가 올해 야간 화면 사용 습관에서 이루고 싶은 구체적인 변화.",
+        "satisfiedWhenKo": "답변이 습관을 개선하고 싶다고만 하지 않고 밤에 바꾸고 싶은 구체적인 행동이나 결과를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner intends to take to improve nighttime screen use.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures for making the stated screen-time change.",
+        "semanticRoleKo": "야간 화면 사용을 개선하기 위해 학습자가 실행하려는 단계.",
+        "satisfiedWhenKo": "답변이 제시한 화면 사용 변화를 이루기 위한 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete nightly cutoff, schedule, frequency, or starting point for the screen-time plan.",
+        "satisfiedWhenEn": "The answer specifies when or how often a screen-related limit or replacement behavior will occur.",
+        "semanticRoleKo": "화면 사용 계획에 적용할 구체적인 야간 종료 시각, 일정, 빈도 또는 시작 시점.",
+        "satisfiedWhenKo": "답변이 화면 사용 제한이나 대체 행동을 언제 또는 얼마나 자주 할지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A particular trigger or obstacle that makes healthier nighttime screen use difficult.",
+        "satisfiedWhenEn": "The answer identifies a concrete difficulty, such as automatic scrolling, late messages, or needing the phone nearby, that may hinder the change.",
+        "semanticRoleKo": "더 건강한 야간 화면 사용을 어렵게 하는 특정 유발 요인이나 장애물.",
+        "satisfiedWhenKo": "답변이 무의식적인 스크롤, 늦은 메시지, 휴대전화를 곁에 둬야 하는 상황처럼 변화를 방해할 수 있는 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the learner expects from improving nighttime screen habits.",
+        "satisfiedWhenEn": "The answer states an anticipated consequence, such as sleeping earlier, resting better, or feeling more focused the next day.",
+        "semanticRoleKo": "야간 화면 사용 습관을 개선함으로써 학습자가 기대하는 구체적인 효과.",
+        "satisfiedWhenKo": "답변이 더 일찍 잠들기, 더 잘 쉬기, 다음 날 집중력이 높아지기처럼 예상되는 결과를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for changing nighttime screen use.",
+        "satisfiedWhenEn": "The answer gives a concrete personal reason that explains why the stated screen-time improvement is worthwhile.",
+        "semanticRoleKo": "야간 화면 사용을 바꾸려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 제시한 화면 사용 개선이 왜 가치 있는지 설명하는 구체적인 개인적 이유를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling associated with the current nighttime habit or the desired change.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion linked to nighttime screen use or to following the new habit.",
+        "semanticRoleKo": "현재의 야간 습관이나 바라는 변화와 관련된 감정.",
+        "satisfiedWhenKo": "답변이 야간 화면 사용 또는 새 습관 실천과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1107",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The particular photography ability, habit, or output the learner wants to develop through regular practice this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete photography target beyond the generic wish to practice regularly.",
+        "semanticRoleKo": "학습자가 올해 정기적인 연습을 통해 기르고 싶은 구체적인 사진 능력, 습관 또는 결과물.",
+        "satisfiedWhenKo": "답변이 정기적으로 연습하고 싶다는 막연한 바람을 넘어 구체적인 사진 목표를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for working toward the photography goal.",
+        "satisfiedWhenEn": "The answer states at least one actionable practice or step that could advance the named photography target.",
+        "semanticRoleKo": "사진 목표를 향해 나아가기 위해 학습자가 의도한 방법.",
+        "satisfiedWhenKo": "답변이 밝힌 사진 목표를 발전시킬 수 있는 실행 가능한 연습이나 단계를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined practice schedule, frequency, deadline, or milestone for the photography goal.",
+        "satisfiedWhenEn": "The answer provides a concrete indication of when or how often the learner will practice or review progress.",
+        "semanticRoleKo": "사진 목표를 위한 명확한 연습 일정, 빈도, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 연습하거나 진행 상황을 점검할지 구체적으로 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific location or setting where the learner plans to practice photography.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place or type of setting that will be used for photography practice.",
+        "semanticRoleKo": "학습자가 사진을 연습하려는 구체적인 장소나 환경.",
+        "satisfiedWhenKo": "답변이 사진 연습에 사용할 수 있는 식별 가능한 장소나 환경의 유형을 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that could slow regular photography practice or progress toward the goal.",
+        "satisfiedWhenEn": "The answer names a specific obstacle, such as lack of time, equipment limits, or uncertainty about technique, that could hinder progress.",
+        "semanticRoleKo": "정기적인 사진 연습이나 목표 진전을 늦출 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 시간 부족, 장비의 제약, 기술에 대한 불확실성처럼 진전을 방해할 수 있는 구체적인 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected outcome or visible sign of progress from regular photography practice.",
+        "satisfiedWhenEn": "The answer describes a concrete improvement or product that would show the photography plan is working.",
+        "semanticRoleKo": "정기적인 사진 연습에서 기대하는 결과나 진전을 보여 주는 가시적인 징표.",
+        "satisfiedWhenKo": "답변이 사진 계획이 효과가 있음을 보여 줄 구체적인 향상이나 결과물을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's personal motivation for pursuing this photography goal.",
+        "satisfiedWhenEn": "The answer explains a concrete reason why developing the named photography ability, habit, or output matters to the learner.",
+        "semanticRoleKo": "이 사진 목표를 추구하려는 학습자의 개인적인 동기.",
+        "satisfiedWhenKo": "답변이 밝힌 사진 능력, 습관 또는 결과물을 발전시키는 일이 학습자에게 왜 중요한지 구체적으로 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1108",
+    "slotContracts": {
+      "PLAN": {
+        "semanticRoleEn": "The learner's method for preparing weekly meals ahead of time and continuing the routine consistently this year.",
+        "satisfiedWhenEn": "The answer gives an actionable meal-preparation approach and conveys how the learner will keep following it over time.",
+        "semanticRoleKo": "주간 식사를 미리 준비하고 올해 그 습관을 꾸준히 이어 가기 위한 학습자의 방법.",
+        "satisfiedWhenKo": "답변이 실행 가능한 식사 준비 방식을 제시하고 시간이 지나도 이를 어떻게 계속 실천할지 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete day, time, duration, or more specific recurrence for advance meal preparation beyond the already-stated weekly scope.",
+        "satisfiedWhenEn": "The answer states when within the week, for how long, or at what more specific recurrence the learner will plan, shop, cook, or portion the meals. Merely repeating that preparation will happen every week does not satisfy this depth role.",
+        "semanticRoleKo": "질문에 이미 제시된 주간 범위를 넘어서는 식사 사전 준비의 구체적인 요일, 시각, 지속 시간 또는 더 세부적인 반복 주기",
+        "satisfiedWhenKo": "답변이 한 주 중 언제, 얼마나 오래 또는 어떤 더 세부적인 주기로 식사를 계획하고, 장을 보고, 조리하거나 소분할지 제시하면 충족된다. 매주 준비한다는 말만 반복해서는 이 깊이 역할이 충족되지 않는다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A particular location or storage setting used in the learner's weekly meal-preparation routine.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place where preparation, shopping, cooking, or meal storage will occur.",
+        "semanticRoleKo": "학습자의 주간 식사 준비 습관에 사용되는 구체적인 장소나 보관 환경.",
+        "satisfiedWhenKo": "답변이 준비, 장보기, 조리 또는 식사 보관이 이루어질 식별 가능한 장소를 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete obstacle that could disrupt advance meal preparation or make the routine hard to sustain.",
+        "satisfiedWhenEn": "The answer names a specific barrier, such as an unpredictable schedule, limited storage, or food becoming repetitive, that may interfere with consistency.",
+        "semanticRoleKo": "미리 하는 식사 준비를 방해하거나 습관 유지를 어렵게 할 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 불규칙한 일정, 부족한 보관 공간, 반복되는 메뉴처럼 꾸준한 실천을 방해할 수 있는 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete benefit or outcome expected from preparing weekly meals in advance.",
+        "satisfiedWhenEn": "The answer describes an anticipated effect, such as saving weekday time, eating more regularly, or reducing food spending.",
+        "semanticRoleKo": "주간 식사를 미리 준비함으로써 기대하는 구체적인 이점이나 결과.",
+        "satisfiedWhenKo": "답변이 평일 시간 절약, 규칙적인 식사, 식비 절감처럼 예상되는 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing or maintaining an advance meal-preparation routine.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation that explains why preparing meals ahead is useful or important to the learner.",
+        "semanticRoleKo": "미리 식사를 준비하는 습관을 선택하거나 유지하려는 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 식사를 미리 준비하는 일이 학습자에게 왜 유용하거나 중요한지 설명하는 구체적인 동기를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1109",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific improvement the learner wants to make to the habit of reading one long article each week.",
+        "satisfiedWhenEn": "The answer identifies a concrete change in how the learner chooses, reads, understands, or follows through on the weekly article.",
+        "semanticRoleKo": "매주 긴 글 한 편을 읽는 습관에서 학습자가 이루고 싶은 구체적인 개선.",
+        "satisfiedWhenKo": "답변이 매주 읽을 글을 고르거나 읽고 이해하고 끝까지 실천하는 방식에서 바꾸고 싶은 구체적인 점을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to achieve the stated weekly article-reading improvement.",
+        "satisfiedWhenEn": "The answer provides one or more actionable measures for putting the improved reading habit into practice.",
+        "semanticRoleKo": "제시한 주간 긴 글 읽기 개선을 이루기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 개선된 읽기 습관을 실천에 옮길 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific difficulty that currently weakens or could interrupt the weekly long-article habit.",
+        "satisfiedWhenEn": "The answer names a concrete barrier, such as losing focus, choosing articles that are too difficult, or not finishing them.",
+        "semanticRoleKo": "현재 주간 긴 글 읽기 습관을 약화시키거나 중단시킬 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 집중력 저하, 지나치게 어려운 글 선택, 끝까지 읽지 못함처럼 구체적인 장애물을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete day, time, completion window, or review point within the weekly long-article reading routine.",
+        "satisfiedWhenEn": "The answer specifies when within the week the learner will select, read, finish, or review the long article, or gives another timing detail beyond the supplied weekly frequency. Merely repeating that one article will be read each week does not satisfy the role.",
+        "semanticRoleKo": "주간 긴 글 읽기 습관 안의 구체적인 요일, 시각, 완료 구간 또는 복습 시점",
+        "satisfiedWhenKo": "답변이 한 주 중 언제 긴 글을 고르고, 읽고, 끝내거나 복습할지 또는 질문에 주어진 주간 빈도를 넘어서는 다른 시간 정보를 제시하면 충족된다. 매주 한 편을 읽는다는 말만 반복해서는 충족되지 않는다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected benefit or indicator of improvement from the stronger weekly reading habit.",
+        "satisfiedWhenEn": "The answer describes a concrete effect, such as better comprehension, a broader perspective, or completing articles more reliably.",
+        "semanticRoleKo": "더 나아진 주간 읽기 습관에서 기대하는 이점이나 개선의 지표.",
+        "satisfiedWhenKo": "답변이 이해력 향상, 관점 확장, 더 안정적인 완독처럼 구체적인 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for improving this weekly long-article habit.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why changing the stated part of the reading habit matters to the learner.",
+        "semanticRoleKo": "매주 긴 글을 읽는 이 습관을 개선하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 읽기 습관의 해당 부분을 바꾸는 일이 학습자에게 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular long article, subject, or reading situation that illustrates the intended improvement.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance that concretely shows what the improved weekly reading habit would involve.",
+        "semanticRoleKo": "의도한 개선을 구체적으로 보여 주는 특정 긴 글, 주제 또는 읽기 상황.",
+        "satisfiedWhenKo": "답변이 개선된 주간 읽기 습관에 무엇이 포함될지 구체적으로 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1110",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific stretching habit or improvement the learner wants to establish this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete desired stretching routine, capability, or level of consistency beyond merely wanting a better habit.",
+        "semanticRoleKo": "학습자가 올해 만들고 싶은 구체적인 스트레칭 습관이나 개선점.",
+        "satisfiedWhenKo": "답변이 더 나은 습관을 원한다고만 하지 않고 바라는 구체적인 스트레칭 방식, 능력 또는 꾸준함의 수준을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for building the stated stretching habit.",
+        "satisfiedWhenEn": "The answer gives at least one actionable step that could establish or strengthen the named stretching routine.",
+        "semanticRoleKo": "제시한 스트레칭 습관을 만들기 위해 학습자가 의도한 방법.",
+        "satisfiedWhenKo": "답변이 밝힌 스트레칭 습관을 만들거나 강화할 수 있는 실행 가능한 단계를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, duration, frequency, or starting point for stretching.",
+        "satisfiedWhenEn": "The answer states a recognizable time pattern or duration for carrying out the stretching plan.",
+        "semanticRoleKo": "스트레칭을 위한 구체적인 일정, 지속 시간, 빈도 또는 시작 시점.",
+        "satisfiedWhenKo": "답변이 스트레칭 계획을 실행할 식별 가능한 시간 패턴이나 지속 시간을 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A particular obstacle that may prevent the learner from forming or maintaining the stretching habit.",
+        "satisfiedWhenEn": "The answer identifies a concrete barrier, such as forgetting, soreness, limited time, or uncertainty about safe movements.",
+        "semanticRoleKo": "학습자가 스트레칭 습관을 만들거나 유지하지 못하게 할 수 있는 특정 장애물.",
+        "satisfiedWhenKo": "답변이 잊어버림, 통증, 시간 부족, 안전한 동작에 대한 불확실성처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome the learner expects from the improved stretching habit.",
+        "satisfiedWhenEn": "The answer describes an anticipated effect, such as greater flexibility, less stiffness, or easier movement.",
+        "semanticRoleKo": "개선된 스트레칭 습관에서 학습자가 기대하는 구체적인 결과.",
+        "satisfiedWhenKo": "답변이 유연성 향상, 뻣뻣함 감소, 더 편한 움직임처럼 예상되는 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's personal motivation for building this stretching habit.",
+        "satisfiedWhenEn": "The answer explains a concrete reason why establishing the stated stretching routine matters to the learner.",
+        "semanticRoleKo": "이 스트레칭 습관을 만들려는 학습자의 개인적인 동기.",
+        "satisfiedWhenKo": "답변이 제시한 스트레칭 습관을 만드는 일이 학습자에게 왜 중요한지 구체적인 이유를 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific location or setting where the learner will perform the stretching routine.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place or activity setting in which stretching will occur.",
+        "semanticRoleKo": "학습자가 스트레칭 습관을 실천할 구체적인 장소나 환경.",
+        "satisfiedWhenKo": "답변이 스트레칭을 할 식별 가능한 장소나 활동 환경을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1111",
+    "slotContracts": {
+      "PLAN": {
+        "semanticRoleEn": "The learner's method for improving a note-taking system and using it consistently throughout the year.",
+        "satisfiedWhenEn": "The answer proposes an actionable way to change the note-taking system and conveys how the learner will continue using or reviewing it.",
+        "semanticRoleKo": "필기 체계를 개선하고 일 년 동안 꾸준히 사용하기 위한 학습자의 방법.",
+        "satisfiedWhenKo": "답변이 필기 체계를 바꿀 실행 가능한 방법을 제안하고 이를 계속 사용하거나 점검할 방식도 전달하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature, format, or organizational element of the improved note-taking system.",
+        "satisfiedWhenEn": "The answer describes a specific system element, such as headings, tags, summaries, or a review section, beyond simply saying the notes will be better organized.",
+        "semanticRoleKo": "개선된 필기 체계의 구체적인 기능, 형식 또는 정리 요소.",
+        "satisfiedWhenKo": "답변이 필기를 더 잘 정리하겠다고만 하지 않고 제목, 태그, 요약, 복습 영역처럼 구체적인 체계 요소를 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific weakness in the current note-taking process or an obstacle to using the new system consistently.",
+        "satisfiedWhenEn": "The answer identifies a concrete difficulty, such as scattered notes, excessive detail, or failing to review them, that the plan must address.",
+        "semanticRoleKo": "현재 필기 과정의 구체적인 약점이나 새 체계를 꾸준히 사용하는 데 생길 장애물.",
+        "satisfiedWhenKo": "답변이 흩어진 필기, 지나치게 많은 내용, 복습하지 않음처럼 계획이 해결해야 할 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected effect or sign that the improved note-taking system is useful.",
+        "satisfiedWhenEn": "The answer describes a concrete benefit, such as finding information faster, remembering more, or reviewing material more effectively.",
+        "semanticRoleKo": "개선된 필기 체계가 유용함을 보여 주는 예상 효과나 징표.",
+        "satisfiedWhenKo": "답변이 정보를 더 빨리 찾기, 더 많이 기억하기, 자료를 더 효과적으로 복습하기처럼 구체적인 이점을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for changing and consistently using the note-taking system.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation that explains why this note-taking improvement is important or useful.",
+        "semanticRoleKo": "필기 체계를 바꾸고 꾸준히 사용하려는 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 이 필기 개선이 왜 중요하거나 유용한지 설명하는 구체적인 동기를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular note, subject, or use case that illustrates how the improved system will work.",
+        "satisfiedWhenEn": "The answer supplies a recognizable instance showing how the learner would apply or benefit from the new note-taking approach.",
+        "semanticRoleKo": "개선된 체계가 어떻게 작동할지 보여 주는 특정 필기, 과목 또는 사용 사례.",
+        "satisfiedWhenKo": "답변이 새 필기 방식을 어떻게 적용하거나 활용할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1112",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific aspect of finishing household tasks on time that the learner wants to improve.",
+        "satisfiedWhenEn": "The answer identifies a concrete desired change in starting, organizing, prioritizing, or completing household tasks by their intended time.",
+        "semanticRoleKo": "집안일을 제시간에 끝내는 것과 관련해 학습자가 개선하고 싶은 구체적인 측면.",
+        "satisfiedWhenKo": "답변이 집안일을 예정된 시간까지 시작하고, 정리하고, 우선순위를 정하거나 완료하는 방식에서 바라는 구체적인 변화를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to improve timely completion of household tasks.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures for completing the stated household tasks more reliably on time.",
+        "semanticRoleKo": "집안일을 제시간에 끝내는 능력을 개선하기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 제시한 집안일을 더 안정적으로 제시간에 완료하기 위한 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete deadline, schedule, frequency, or work period for managing household tasks.",
+        "satisfiedWhenEn": "The answer specifies when a household task will be started, handled, checked, or finished.",
+        "semanticRoleKo": "집안일을 관리하기 위한 구체적인 마감 시각, 일정, 빈도 또는 작업 시간대.",
+        "satisfiedWhenKo": "답변이 집안일을 언제 시작하고, 처리하고, 점검하거나 끝낼지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete cause of delay or obstacle to finishing household tasks on time.",
+        "satisfiedWhenEn": "The answer identifies a specific difficulty, such as procrastination, underestimating the work, interruptions, or too many tasks at once.",
+        "semanticRoleKo": "집안일을 제시간에 끝내지 못하게 하는 구체적인 지연 원인이나 장애물.",
+        "satisfiedWhenKo": "답변이 미루기, 작업량 과소평가, 방해, 한꺼번에 너무 많은 일처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected outcome of completing household tasks more reliably on time.",
+        "satisfiedWhenEn": "The answer describes a concrete effect, such as having a tidier home, reducing last-minute stress, or freeing time for other activities.",
+        "semanticRoleKo": "집안일을 더 안정적으로 제시간에 완료함으로써 기대하는 결과.",
+        "satisfiedWhenKo": "답변이 더 정돈된 집, 막판 스트레스 감소, 다른 활동을 위한 시간 확보처럼 구체적인 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for becoming more timely with household tasks.",
+        "satisfiedWhenEn": "The answer gives a concrete personal reason why improving timely task completion matters.",
+        "semanticRoleKo": "집안일을 더 제때 처리하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 집안일을 제시간에 끝내는 능력을 개선하는 일이 왜 중요한지 구체적인 개인적 이유를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific part of the home or other setting where the tasks or the new timing approach will be applied.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location connected to the household task plan, rather than merely repeating that the tasks are at home.",
+        "semanticRoleKo": "집안일이나 새로운 시간 관리 방식을 적용할 집의 특정 공간 또는 다른 환경.",
+        "satisfiedWhenKo": "답변이 집안일은 집에서 한다는 말을 단순히 반복하지 않고 계획과 연결된 식별 가능한 장소를 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1113",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific change the learner wants to make so that mornings become calmer this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete calmer-morning outcome or habit beyond simply repeating the wish for calm mornings.",
+        "semanticRoleKo": "올해 아침을 더 차분하게 만들기 위해 학습자가 이루고 싶은 구체적인 변화.",
+        "satisfiedWhenKo": "답변이 차분한 아침을 원한다는 말을 단순히 반복하지 않고 구체적인 결과나 습관을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for creating and maintaining calmer mornings.",
+        "satisfiedWhenEn": "The answer gives at least one actionable step that could produce the stated calmer-morning change.",
+        "semanticRoleKo": "더 차분한 아침을 만들고 유지하기 위해 학습자가 의도한 방법.",
+        "satisfiedWhenKo": "답변이 제시한 차분한 아침의 변화를 만들어 낼 수 있는 실행 가능한 단계를 하나 이상 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional state during current mornings or the calmer feeling they hope to experience.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling linked to the present morning routine or the desired calmer routine.",
+        "semanticRoleKo": "현재 아침에 느끼는 감정 상태 또는 앞으로 경험하고 싶은 더 차분한 감정.",
+        "satisfiedWhenKo": "답변이 현재 아침 습관이나 바라는 차분한 습관과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined wake-up time, preparation period, frequency, or morning sequence timing for the plan.",
+        "satisfiedWhenEn": "The answer specifies when or how often a calming morning action will happen.",
+        "semanticRoleKo": "계획에 포함된 명확한 기상 시각, 준비 시간, 빈도 또는 아침 순서의 시간 정보.",
+        "satisfiedWhenKo": "답변이 아침을 차분하게 만드는 행동을 언제 또는 얼마나 자주 할지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete source of rush, stress, or disruption that makes the learner's mornings less calm.",
+        "satisfiedWhenEn": "The answer identifies a specific obstacle, such as oversleeping, searching for items, or too many last-minute decisions.",
+        "semanticRoleKo": "학습자의 아침을 덜 차분하게 만드는 구체적인 서두름, 스트레스 또는 방해 요인.",
+        "satisfiedWhenKo": "답변이 늦잠, 물건 찾기, 막판의 너무 많은 결정처럼 구체적인 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete consequence or sign of success from having calmer mornings.",
+        "satisfiedWhenEn": "The answer describes an anticipated effect, such as leaving on time, starting the day focused, or avoiding rushed mistakes.",
+        "semanticRoleKo": "더 차분한 아침을 보낼 때 나타날 구체적인 결과나 성공의 징표.",
+        "satisfiedWhenKo": "답변이 제시간에 출발하기, 집중해서 하루 시작하기, 서두르다 생기는 실수 피하기처럼 예상되는 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's personal reason for wanting calmer mornings.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation that explains why the calmer-morning change matters to the learner.",
+        "semanticRoleKo": "더 차분한 아침을 원하는 학습자의 개인적인 이유.",
+        "satisfiedWhenKo": "답변이 차분한 아침의 변화가 학습자에게 왜 중요한지 설명하는 구체적인 동기를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1114",
+    "slotContracts": {
+      "PLAN": {
+        "semanticRoleEn": "The learner's method for asking clearer questions in class and maintaining that practice consistently this year.",
+        "satisfiedWhenEn": "The answer gives an actionable approach to forming or asking clearer class questions and conveys how the learner will keep using it.",
+        "semanticRoleKo": "수업에서 더 명확한 질문을 하고 올해 그 연습을 꾸준히 유지하기 위한 학습자의 방법.",
+        "satisfiedWhenKo": "답변이 수업 질문을 더 명확하게 만들거나 묻기 위한 실행 가능한 접근법을 제시하고 이를 어떻게 계속 사용할지도 전달하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A particular class, course, or learning setting where the learner will practice asking clearer questions.",
+        "satisfiedWhenEn": "The answer identifies a recognizable learning context more specific than merely repeating \"in class.\"",
+        "semanticRoleKo": "학습자가 더 명확한 질문을 연습할 특정 수업, 과목 또는 학습 환경.",
+        "satisfiedWhenKo": "답변이 단순히 \"수업에서\"라고 반복하는 것보다 구체적인 식별 가능한 학습 맥락을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete question or classroom situation that illustrates the learner's clearer-question approach.",
+        "satisfiedWhenEn": "The answer supplies a recognizable example showing what the learner would ask or when the approach would be used.",
+        "semanticRoleKo": "학습자의 더 명확한 질문 방식을 보여 주는 구체적인 질문이나 교실 상황.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 묻거나 언제 그 방식을 사용할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that currently makes class questions unclear or makes consistent questioning hard.",
+        "satisfiedWhenEn": "The answer names a specific barrier, such as not organizing the question, fear of interrupting, or forgetting what was confusing.",
+        "semanticRoleKo": "현재 수업 질문을 불명확하게 만들거나 꾸준히 질문하기 어렵게 하는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 질문을 정리하지 못함, 방해할까 두려움, 헷갈린 내용을 잊어버림처럼 구체적인 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected effect of asking clearer questions in class.",
+        "satisfiedWhenEn": "The answer describes a concrete benefit or sign of progress, such as receiving more useful answers or understanding lessons sooner.",
+        "semanticRoleKo": "수업에서 더 명확한 질문을 함으로써 기대하는 효과.",
+        "satisfiedWhenKo": "답변이 더 유용한 답을 얻거나 수업 내용을 더 빨리 이해하는 것처럼 구체적인 이점이나 발전의 징표를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for developing a consistent clearer-question habit in class.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why improving the clarity or consistency of class questions matters.",
+        "semanticRoleKo": "수업에서 더 명확하게 질문하는 습관을 꾸준히 기르려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 수업 질문의 명확성이나 꾸준함을 개선하는 일이 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1115",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The particular basic design skill or aspect of design ability the learner wants to improve this year.",
+        "satisfiedWhenEn": "The answer identifies at least one concrete design capability, such as layout, color use, or typography, rather than only saying \"design skills.\"",
+        "semanticRoleKo": "학습자가 올해 개선하고 싶은 특정 기초 디자인 기술 또는 디자인 능력의 측면.",
+        "satisfiedWhenKo": "답변이 단순히 \"디자인 기술\"이라고만 하지 않고 레이아웃, 색상 사용, 타이포그래피처럼 구체적인 디자인 능력을 하나 이상 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner intends to take to improve the named basic design skill.",
+        "satisfiedWhenEn": "The answer gives one or more actionable learning or practice steps directed at the identified design capability.",
+        "semanticRoleKo": "밝힌 기초 디자인 기술을 개선하기 위해 학습자가 실행하려는 단계.",
+        "satisfiedWhenKo": "답변이 확인된 디자인 능력을 향상하기 위한 실행 가능한 학습이나 연습 단계를 하나 이상 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete design task, product, or technique that illustrates the skill the learner wants to improve.",
+        "satisfiedWhenEn": "The answer provides a recognizable instance showing what the learner would design or practice.",
+        "semanticRoleKo": "학습자가 개선하고 싶은 기술을 보여 주는 구체적인 디자인 과제, 결과물 또는 기법.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 디자인하거나 연습할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for improving the selected basic design skill.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why developing that design capability is useful or personally important.",
+        "semanticRoleKo": "선택한 기초 디자인 기술을 향상하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 그 디자인 능력을 기르는 일이 왜 유용하거나 개인적으로 중요한지 구체적인 이유를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific weakness or obstacle that makes improvement in the chosen design skill difficult.",
+        "satisfiedWhenEn": "The answer identifies a concrete difficulty, such as limited software knowledge, weak visual judgment, or lack of practice material.",
+        "semanticRoleKo": "선택한 디자인 기술의 향상을 어렵게 하는 구체적인 약점이나 장애물.",
+        "satisfiedWhenKo": "답변이 부족한 소프트웨어 지식, 약한 시각적 판단력, 연습 자료 부족처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected outcome or visible sign that the learner's basic design skill has improved.",
+        "satisfiedWhenEn": "The answer describes a concrete change in the learner's designs, process, or ability that would demonstrate progress.",
+        "semanticRoleKo": "학습자의 기초 디자인 기술이 향상되었음을 보여 주는 예상 결과나 가시적인 징표.",
+        "satisfiedWhenKo": "답변이 발전을 입증할 수 있는 디자인 결과물, 작업 과정 또는 능력의 구체적인 변화를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined schedule, frequency, deadline, or milestone for design practice.",
+        "satisfiedWhenEn": "The answer states when or how often the learner will study, practice, or check progress in the chosen skill.",
+        "semanticRoleKo": "디자인 연습을 위한 명확한 일정, 빈도, 기한 또는 중간 목표 시점.",
+        "satisfiedWhenKo": "답변이 선택한 기술을 언제 또는 얼마나 자주 공부하고 연습하거나 진전을 점검할지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1116",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific reduction or change in household food waste the learner wants to achieve this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete food-waste target or desired household behavior beyond the general idea of reducing waste.",
+        "semanticRoleKo": "학습자가 올해 가정의 음식물 쓰레기에서 이루고 싶은 구체적인 감축이나 변화.",
+        "satisfiedWhenKo": "답변이 쓰레기를 줄인다는 일반적인 생각을 넘어 구체적인 음식물 쓰레기 목표나 바라는 가정 내 행동을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for working toward the household food-waste goal.",
+        "satisfiedWhenEn": "The answer gives at least one actionable step that could reduce the identified source or amount of food waste at home.",
+        "semanticRoleKo": "가정의 음식물 쓰레기 감축 목표를 향해 나아가기 위해 학습자가 의도한 방법.",
+        "satisfiedWhenKo": "답변이 확인된 음식물 쓰레기의 원인이나 양을 집에서 줄일 수 있는 실행 가능한 단계를 하나 이상 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular food item or household waste situation that illustrates the learner's goal or method.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance of food being wasted or saved that makes the proposed change concrete.",
+        "semanticRoleKo": "학습자의 목표나 방법을 보여 주는 특정 음식 또는 가정 내 낭비 상황.",
+        "satisfiedWhenKo": "답변이 제안한 변화를 구체화하는, 음식이 버려지거나 절약되는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete cause of food waste or obstacle to reducing it at home.",
+        "satisfiedWhenEn": "The answer identifies a specific difficulty, such as overbuying, forgotten leftovers, uncertain portions, or conflicting household habits.",
+        "semanticRoleKo": "집에서 음식물 쓰레기가 생기는 구체적인 원인이나 이를 줄이는 데 생기는 장애물.",
+        "satisfiedWhenKo": "답변이 과도한 구매, 잊힌 남은 음식, 불확실한 양 조절, 가족 간 다른 습관처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome or measure of success from reducing household food waste.",
+        "satisfiedWhenEn": "The answer describes an observable reduction, saving, or other effect that would show progress toward the goal.",
+        "semanticRoleKo": "가정의 음식물 쓰레기를 줄였을 때 나타날 구체적인 결과나 성공의 척도.",
+        "satisfiedWhenKo": "답변이 목표를 향한 발전을 보여 줄 관찰 가능한 감축, 절약 또는 다른 효과를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, deadline, or review point for the food-waste plan.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will shop, check food, use leftovers, or measure waste.",
+        "semanticRoleKo": "음식물 쓰레기 감축 계획을 위한 구체적인 일정, 빈도, 기한 또는 점검 시점.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 장을 보고, 식품을 확인하고, 남은 음식을 사용하거나 쓰레기 양을 측정할지 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's personal reason for reducing food waste at home.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation, such as saving money or reducing environmental impact, that explains why the goal matters.",
+        "semanticRoleKo": "집에서 음식물 쓰레기를 줄이려는 학습자의 개인적인 이유.",
+        "satisfiedWhenKo": "답변이 비용 절약이나 환경 영향 감소처럼 목표가 왜 중요한지 설명하는 구체적인 동기를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1117",
+    "slotContracts": {
+      "PLAN": {
+        "semanticRoleEn": "The learner's method for reviewing each week and making that review a consistent habit this year.",
+        "satisfiedWhenEn": "The answer gives an actionable weekly-review approach and conveys how the learner will keep returning to it over time.",
+        "semanticRoleKo": "매주 한 주를 돌아보고 올해 그 복습을 꾸준한 습관으로 만들기 위한 학습자의 방법.",
+        "satisfiedWhenKo": "답변이 실행 가능한 주간 회고 방식을 제시하고 시간이 지나도 이를 어떻게 계속 반복할지 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined day, time, duration, or consistency checkpoint within the weekly review habit.",
+        "satisfiedWhenEn": "The answer states a recognizable point in the week, length of time, or checkpoint reserved for reviewing the week. Merely repeating that the review will happen weekly does not satisfy this depth role.",
+        "semanticRoleKo": "주간 회고 습관 안의 명확한 요일, 시각, 지속 시간 또는 꾸준함 점검 시점",
+        "satisfiedWhenKo": "답변이 한 주를 돌아보기 위해 정한 식별 가능한 주중 시점, 소요 시간 또는 점검 시점을 제시하면 충족된다. 매주 회고한다는 전제를 그대로 반복하는 것만으로는 이 깊이 역할이 충족되지 않는다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete obstacle that could interrupt the weekly review habit.",
+        "satisfiedWhenEn": "The answer identifies a specific barrier, such as forgetting, weekend fatigue, or not knowing what to reflect on.",
+        "semanticRoleKo": "주간 회고 습관을 중단시킬 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 잊어버림, 주말의 피로, 무엇을 돌아봐야 할지 모름처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected benefit or product of reviewing the week consistently.",
+        "satisfiedWhenEn": "The answer describes a concrete effect, such as noticing patterns, planning the next week better, or recording lessons learned.",
+        "semanticRoleKo": "한 주를 꾸준히 돌아봄으로써 기대하는 이점이나 결과물.",
+        "satisfiedWhenKo": "답변이 반복되는 패턴 발견, 다음 주 계획 개선, 배운 점 기록처럼 구체적인 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for establishing a weekly review habit.",
+        "satisfiedWhenEn": "The answer explains a concrete reason why regularly reflecting on the week is useful or important to the learner.",
+        "semanticRoleKo": "주간 회고 습관을 만들려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 한 주를 정기적으로 돌아보는 일이 학습자에게 왜 유용하거나 중요한지 구체적으로 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A specific feeling the learner associates with reviewing the week or completing the habit.",
+        "satisfiedWhenEn": "The answer names or clearly conveys an emotion connected to doing the weekly review or seeing what it reveals.",
+        "semanticRoleKo": "한 주를 돌아보거나 그 습관을 완료하는 것과 관련해 학습자가 느끼는 구체적인 감정.",
+        "satisfiedWhenKo": "답변이 주간 회고를 하거나 회고에서 알게 된 내용을 보는 것과 연결된 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1118",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific map-reading ability or weakness the learner wants to improve this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete map-reading capability, such as judging direction, following routes, or reading symbols, rather than only saying \"map reading.\"",
+        "semanticRoleKo": "학습자가 올해 개선하고 싶은 구체적인 지도 읽기 능력이나 약점.",
+        "satisfiedWhenKo": "답변이 단순히 \"지도 읽기\"라고만 하지 않고 방향 판단, 경로 따라가기, 기호 읽기처럼 구체적인 능력을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to improve the selected map-reading ability.",
+        "satisfiedWhenEn": "The answer gives one or more actionable practice or learning steps aimed at the named map-reading improvement.",
+        "semanticRoleKo": "선택한 지도 읽기 능력을 개선하기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 밝힌 지도 읽기 개선을 겨냥한 실행 가능한 연습이나 학습 단계를 하나 이상 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete map, route, symbol, or navigation task that illustrates the skill to be improved.",
+        "satisfiedWhenEn": "The answer provides a recognizable instance showing what kind of map-reading task the learner will practice or handle better.",
+        "semanticRoleKo": "개선할 기술을 보여 주는 구체적인 지도, 경로, 기호 또는 길 찾기 과제.",
+        "satisfiedWhenKo": "답변이 학습자가 어떤 지도 읽기 과제를 연습하거나 더 잘 처리할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A particular location or travel setting where the learner wants to apply or practice map reading.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place or type of environment in which the map-reading skill would be used.",
+        "semanticRoleKo": "학습자가 지도 읽기를 적용하거나 연습하고 싶은 특정 장소 또는 이동 환경.",
+        "satisfiedWhenKo": "답변이 지도 읽기 기술을 사용할 식별 가능한 장소나 환경의 유형을 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that currently makes map reading or navigation hard for the learner.",
+        "satisfiedWhenEn": "The answer names a specific obstacle, such as confusing orientation, scale, symbols, or matching the map to the surroundings.",
+        "semanticRoleKo": "현재 학습자에게 지도 읽기나 길 찾기를 어렵게 하는 구체적인 문제.",
+        "satisfiedWhenKo": "답변이 방향 혼동, 축척, 기호, 지도와 주변 환경을 맞추는 어려움처럼 구체적인 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected outcome or sign that the learner's map-reading skill has improved.",
+        "satisfiedWhenEn": "The answer describes a concrete effect, such as choosing routes independently, getting lost less often, or finding landmarks faster.",
+        "semanticRoleKo": "학습자의 지도 읽기 기술이 향상되었음을 보여 주는 예상 결과나 징표.",
+        "satisfiedWhenKo": "답변이 스스로 경로 선택하기, 길을 덜 잃기, 표지물을 더 빨리 찾기처럼 구체적인 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for improving map-reading skills.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why becoming better at the named map-reading ability matters to the learner.",
+        "semanticRoleKo": "지도 읽기 기술을 향상하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 밝힌 지도 읽기 능력을 더 잘하게 되는 일이 학습자에게 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1119",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific weekend reset routine or condition the learner wants to establish this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete routine or desired weekend-reset outcome beyond merely naming a reset routine.",
+        "semanticRoleKo": "학습자가 올해 만들고 싶은 구체적인 주말 재정비 습관이나 상태.",
+        "satisfiedWhenKo": "답변이 재정비 습관이라는 이름만 말하지 않고 구체적인 활동 방식이나 바라는 주말 재정비 결과를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for building and maintaining the weekend reset routine.",
+        "satisfiedWhenEn": "The answer gives at least one actionable step that could establish the named routine or make it recur reliably.",
+        "semanticRoleKo": "주말 재정비 습관을 만들고 유지하기 위해 학습자가 의도한 방법.",
+        "satisfiedWhenKo": "답변이 밝힌 습관을 만들거나 안정적으로 반복하게 할 실행 가능한 단계를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined weekend day, time, duration, frequency, or starting point for the reset routine.",
+        "satisfiedWhenEn": "The answer specifies when or for how long the learner will perform the weekend reset activities.",
+        "semanticRoleKo": "재정비 습관을 위한 명확한 주말의 요일, 시간, 지속 시간, 빈도 또는 시작 시점.",
+        "satisfiedWhenKo": "답변이 주말 재정비 활동을 언제 또는 얼마나 오래 할지 구체적으로 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete component or organizational feature of the learner's weekend reset routine.",
+        "satisfiedWhenEn": "The answer describes a specific element, such as reviewing tasks, preparing clothes, cleaning a space, or setting priorities, that makes the routine identifiable.",
+        "semanticRoleKo": "학습자의 주말 재정비 습관을 이루는 구체적인 구성 요소나 정리 방식.",
+        "satisfiedWhenKo": "답변이 할 일 검토, 옷 준비, 공간 청소, 우선순위 설정처럼 습관을 식별 가능하게 하는 구체적인 요소를 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete obstacle that could prevent the weekend reset routine from happening consistently.",
+        "satisfiedWhenEn": "The answer identifies a specific barrier, such as weekend plans, fatigue, forgetting, or making the routine too long.",
+        "semanticRoleKo": "주말 재정비 습관을 꾸준히 실천하지 못하게 할 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 주말 일정, 피로, 잊어버림, 지나치게 긴 습관처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect expected from completing the weekend reset routine.",
+        "satisfiedWhenEn": "The answer describes an anticipated outcome, such as starting Monday prepared, reducing clutter, or feeling in control of the coming week.",
+        "semanticRoleKo": "주말 재정비 습관을 완료함으로써 기대하는 구체적인 효과.",
+        "satisfiedWhenKo": "답변이 준비된 상태로 월요일 시작하기, 어수선함 줄이기, 다가오는 한 주를 통제하는 느낌처럼 예상되는 결과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for creating a weekend reset routine.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why this recurring weekend preparation or reflection matters.",
+        "semanticRoleKo": "주말 재정비 습관을 만들려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 주말마다 하는 이러한 준비나 회고가 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1120",
+    "slotContracts": {
+      "PLAN": {
+        "semanticRoleEn": "The learner's method for learning simple repair skills and practicing them consistently this year.",
+        "satisfiedWhenEn": "The answer gives an actionable learning or practice approach and conveys how the learner will continue using it over time.",
+        "semanticRoleKo": "간단한 수리 기술을 배우고 올해 꾸준히 연습하기 위한 학습자의 방법.",
+        "satisfiedWhenKo": "답변이 실행 가능한 학습이나 연습 방식을 제시하고 시간이 지나도 이를 어떻게 계속할지 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular simple repair skill, object, or task the learner intends to learn.",
+        "satisfiedWhenEn": "The answer names a recognizable repair, such as sewing on a button or tightening a loose part, rather than referring only to \"repair skills.\"",
+        "semanticRoleKo": "학습자가 배우려는 특정한 간단한 수리 기술, 물건 또는 작업.",
+        "satisfiedWhenKo": "답변이 단순히 \"수리 기술\"이라고만 하지 않고 단추 달기나 헐거운 부품 조이기처럼 식별 가능한 수리를 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that may hinder learning or consistently practicing simple repairs.",
+        "satisfiedWhenEn": "The answer identifies a specific obstacle, such as lacking tools, fearing damage, or not having suitable practice tasks.",
+        "semanticRoleKo": "간단한 수리를 배우거나 꾸준히 연습하는 일을 방해할 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 도구 부족, 물건을 망가뜨릴까 하는 두려움, 적절한 연습 과제 부족처럼 구체적인 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected outcome of becoming able to perform simple repairs.",
+        "satisfiedWhenEn": "The answer describes a concrete effect, such as fixing an item independently, extending its use, or avoiding an unnecessary replacement.",
+        "semanticRoleKo": "간단한 수리를 할 수 있게 되었을 때 기대하는 결과.",
+        "satisfiedWhenKo": "답변이 물건을 스스로 고치기, 사용 기간 늘리기, 불필요한 교체 피하기처럼 구체적인 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for learning simple repair skills.",
+        "satisfiedWhenEn": "The answer gives a concrete personal reason why gaining practical repair ability is useful or important.",
+        "semanticRoleKo": "간단한 수리 기술을 배우려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 실용적인 수리 능력을 갖는 일이 왜 유용하거나 중요한지 구체적인 개인적 이유를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific location or setting where the learner will learn or practice simple repairs.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place, class, workshop, or home area connected to the repair practice.",
+        "semanticRoleKo": "학습자가 간단한 수리를 배우거나 연습할 구체적인 장소나 환경.",
+        "satisfiedWhenKo": "답변이 수리 연습과 연결된 식별 가능한 장소, 수업, 작업실 또는 집 안 공간을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1121",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific improvement the learner wants to make to the habit of keeping the desk clear.",
+        "satisfiedWhenEn": "The answer identifies a concrete desired change in desk condition or clearing behavior, rather than only saying the desk should be clearer.",
+        "semanticRoleKo": "책상을 깔끔하게 유지하는 습관에서 학습자가 이루고 싶은 구체적인 개선.",
+        "satisfiedWhenKo": "답변이 책상을 더 깔끔하게 하고 싶다고만 하지 않고 책상 상태나 정리 행동에서 바라는 구체적인 변화를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to improve and maintain the clear-desk habit.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures for preventing clutter or restoring the desk to the stated condition.",
+        "semanticRoleKo": "깔끔한 책상 습관을 개선하고 유지하기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 어수선함을 막거나 책상을 제시한 상태로 되돌리기 위한 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete source of desk clutter or obstacle to keeping the desk clear.",
+        "satisfiedWhenEn": "The answer identifies a specific difficulty, such as accumulating papers, lacking storage, or failing to put items away.",
+        "semanticRoleKo": "책상을 어지럽히는 구체적인 원인이나 책상을 깔끔하게 유지하는 데 생기는 장애물.",
+        "satisfiedWhenKo": "답변이 쌓이는 종이, 부족한 수납공간, 물건을 제자리에 두지 않음처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, frequency, duration, or trigger for clearing the desk.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will tidy, reset, or check the desk.",
+        "semanticRoleKo": "책상을 정리하기 위한 구체적인 시간, 빈도, 지속 시간 또는 계기.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 책상을 정돈하고, 원래 상태로 돌리거나 점검할지 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect expected from maintaining a clearer desk.",
+        "satisfiedWhenEn": "The answer describes an anticipated benefit, such as finding materials quickly, focusing better, or starting work without clearing space first.",
+        "semanticRoleKo": "더 깔끔한 책상을 유지함으로써 기대하는 구체적인 효과.",
+        "satisfiedWhenKo": "답변이 자료를 빨리 찾기, 집중력 향상, 먼저 공간을 치우지 않고 작업 시작하기처럼 예상되는 이점을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for improving the clear-desk habit.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why keeping the desk in the desired condition matters to the learner.",
+        "semanticRoleKo": "깔끔한 책상 습관을 개선하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 책상을 바라는 상태로 유지하는 일이 학습자에게 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling associated with the current cluttered desk or the desired clear desk.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion linked to the desk's present or improved condition.",
+        "semanticRoleKo": "현재 어수선한 책상이나 바라는 깔끔한 책상과 관련된 감정.",
+        "satisfiedWhenKo": "답변이 책상의 현재 상태나 개선된 상태와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1122",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific improvement in remembering people's names that the learner wants to achieve this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete name-memory outcome or context beyond simply repeating that names should be easier to remember.",
+        "semanticRoleKo": "사람들의 이름을 기억하는 것과 관련해 학습자가 올해 이루고 싶은 구체적인 개선.",
+        "satisfiedWhenKo": "답변이 이름을 더 쉽게 기억하고 싶다는 말을 단순히 반복하지 않고 구체적인 기억 결과나 상황을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for improving name recall.",
+        "satisfiedWhenEn": "The answer gives at least one actionable technique or practice for learning, retaining, or retrieving people's names.",
+        "semanticRoleKo": "이름 회상 능력을 향상하기 위해 학습자가 의도한 방법.",
+        "satisfiedWhenKo": "답변이 사람들의 이름을 익히고, 유지하거나 떠올리기 위한 실행 가능한 기법이나 연습을 하나 이상 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete person-meeting situation or name-learning instance that illustrates the learner's goal or method.",
+        "satisfiedWhenEn": "The answer gives a recognizable example showing when the learner needs to remember a name or how a technique would be applied.",
+        "semanticRoleKo": "학습자의 목표나 방법을 보여 주는 구체적인 만남 상황 또는 이름 학습 사례.",
+        "satisfiedWhenKo": "답변이 언제 이름을 기억해야 하는지 또는 기법을 어떻게 적용할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that causes the learner to forget names or makes recall harder.",
+        "satisfiedWhenEn": "The answer identifies a specific barrier, such as meeting many people at once, not hearing clearly, or failing to connect a name with a person.",
+        "semanticRoleKo": "학습자가 이름을 잊게 하거나 떠올리기 어렵게 만드는 구체적인 문제.",
+        "satisfiedWhenKo": "답변이 한꺼번에 많은 사람을 만남, 이름을 분명히 듣지 못함, 이름과 사람을 연결하지 못함처럼 구체적인 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected outcome or sign that the learner remembers names more easily.",
+        "satisfiedWhenEn": "The answer describes a concrete effect, such as recalling a person's name at the next meeting or avoiding repeated questions.",
+        "semanticRoleKo": "학습자가 이름을 더 쉽게 기억하게 되었음을 보여 주는 예상 결과나 징표.",
+        "satisfiedWhenKo": "답변이 다음 만남에서 이름 떠올리기나 같은 질문을 반복하지 않기처럼 구체적인 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for improving name recall.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why remembering people's names more reliably matters to the learner.",
+        "semanticRoleKo": "이름 회상 능력을 개선하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 사람들의 이름을 더 안정적으로 기억하는 일이 학습자에게 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A particular social, school, or work setting where the learner wants to remember names better.",
+        "satisfiedWhenEn": "The answer identifies a recognizable setting in which name recall will be practiced or used.",
+        "semanticRoleKo": "학습자가 이름을 더 잘 기억하고 싶은 특정 사교, 학교 또는 업무 환경.",
+        "satisfiedWhenKo": "답변이 이름 회상을 연습하거나 사용할 식별 가능한 환경을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1123",
+    "slotContracts": {
+      "PLAN": {
+        "semanticRoleEn": "The learner's method for becoming a more patient listener and practicing that behavior consistently this year.",
+        "satisfiedWhenEn": "The answer gives an actionable listening approach and conveys how the learner will keep applying it over time.",
+        "semanticRoleKo": "더 인내심 있는 듣는 사람이 되고 올해 그 행동을 꾸준히 연습하기 위한 학습자의 방법.",
+        "satisfiedWhenKo": "답변이 실행 가능한 듣기 방식을 제시하고 시간이 지나도 이를 어떻게 계속 적용할지 전달하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete habit, trigger, or situation that makes patient listening difficult for the learner.",
+        "satisfiedWhenEn": "The answer identifies a specific obstacle, such as interrupting, preparing a reply too soon, distraction, or impatience with long explanations.",
+        "semanticRoleKo": "학습자가 인내심 있게 듣기 어렵게 만드는 구체적인 습관, 유발 요인 또는 상황.",
+        "satisfiedWhenKo": "답변이 끼어들기, 너무 일찍 대답 준비하기, 산만함, 긴 설명에 대한 조급함처럼 구체적인 장애물을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular conversation or listening behavior that illustrates the learner's patient-listening plan.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance showing what the learner would do differently while another person is speaking.",
+        "semanticRoleKo": "학습자의 인내심 있는 듣기 계획을 보여 주는 특정 대화나 듣기 행동.",
+        "satisfiedWhenKo": "답변이 다른 사람이 말하는 동안 학습자가 무엇을 다르게 할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected effect or sign of becoming a more patient listener.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome, such as understanding others better, interrupting less, or having calmer conversations.",
+        "semanticRoleKo": "더 인내심 있는 듣는 사람이 되었을 때 기대하는 효과나 징표.",
+        "satisfiedWhenKo": "답변이 다른 사람을 더 잘 이해하기, 끼어들기 줄이기, 더 차분한 대화처럼 구체적인 결과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for developing more patient listening.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why listening more patiently is important in the learner's relationships or communication.",
+        "semanticRoleKo": "더 인내심 있게 듣는 능력을 기르려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 더 인내심 있게 듣는 일이 학습자의 관계나 의사소통에서 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling the learner experiences while listening now or expects from more patient conversations.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion linked to difficult listening moments or improved patient listening.",
+        "semanticRoleKo": "현재 들을 때 경험하거나 더 인내심 있는 대화에서 기대하는 학습자의 감정.",
+        "satisfiedWhenKo": "답변이 듣기 어려운 순간이나 개선된 인내심 있는 듣기와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1124",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific improvement the learner wants to make in caring for plants this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete plant-care behavior, skill, or outcome to improve rather than only saying plant care should get better.",
+        "semanticRoleKo": "학습자가 올해 식물을 돌보는 방식에서 이루고 싶은 구체적인 개선.",
+        "satisfiedWhenKo": "답변이 식물 관리를 더 잘하고 싶다고만 하지 않고 개선할 구체적인 돌봄 행동, 기술 또는 결과를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to improve the stated aspect of plant care.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures directed at the identified plant-care change.",
+        "semanticRoleKo": "제시한 식물 돌봄의 측면을 개선하기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 확인된 식물 관리 변화를 겨냥한 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular plant, care task, or situation that illustrates the intended improvement.",
+        "satisfiedWhenEn": "The answer names a recognizable plant or care instance showing what the learner wants to handle better.",
+        "semanticRoleKo": "의도한 개선을 보여 주는 특정 식물, 돌봄 작업 또는 상황.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 더 잘 돌보고 싶은지 보여 주는 식별 가능한 식물이나 관리 사례를 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, season, or check-in time for plant care.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will perform or review a plant-care task.",
+        "semanticRoleKo": "식물 돌봄을 위한 구체적인 일정, 빈도, 계절 또는 점검 시점.",
+        "satisfiedWhenKo": "답변이 식물 관리 작업을 언제 또는 얼마나 자주 수행하거나 점검할지 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete weakness or obstacle that currently makes plant care difficult.",
+        "satisfiedWhenEn": "The answer identifies a specific difficulty, such as overwatering, forgetting care, poor light, or not recognizing signs of stress.",
+        "semanticRoleKo": "현재 식물 돌보기를 어렵게 하는 구체적인 약점이나 장애물.",
+        "satisfiedWhenKo": "답변이 물을 너무 많이 줌, 돌봄을 잊음, 부족한 빛, 이상 징후를 알아보지 못함처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected outcome or sign that the learner's plant care has improved.",
+        "satisfiedWhenEn": "The answer describes a concrete effect, such as healthier growth, fewer damaged leaves, or keeping a plant alive through a season.",
+        "semanticRoleKo": "학습자의 식물 돌봄이 향상되었음을 보여 주는 예상 결과나 징표.",
+        "satisfiedWhenKo": "답변이 더 건강한 성장, 손상된 잎 감소, 한 계절 동안 식물을 건강하게 유지하기처럼 구체적인 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for improving the way they care for plants.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why becoming better at the stated plant-care behavior matters.",
+        "semanticRoleKo": "식물을 돌보는 방식을 개선하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 제시한 식물 돌봄 행동을 더 잘하게 되는 일이 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1125",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific way the learner wants to use small pockets of available time more effectively this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete use, habit, or outcome for short free periods rather than only saying the time will be used better.",
+        "semanticRoleKo": "학습자가 올해 짧게 비는 시간을 더 효과적으로 활용하고 싶은 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 시간을 더 잘 쓰겠다고만 하지 않고 짧은 여유 시간에 할 구체적인 활용, 습관 또는 결과를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for putting small pockets of time to the stated use.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to notice, prepare for, or use short free periods according to the goal.",
+        "semanticRoleKo": "짧게 비는 시간을 제시한 용도로 활용하기 위해 학습자가 의도한 방법.",
+        "satisfiedWhenKo": "답변이 목표에 맞게 짧은 여유 시간을 알아차리고, 준비하거나 활용할 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular short free period and activity that illustrates the learner's intended use of time.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance, such as a commute wait used for vocabulary review, that shows what the goal looks like in practice.",
+        "semanticRoleKo": "학습자가 의도한 시간 활용을 보여 주는 특정한 짧은 여유 시간과 활동.",
+        "satisfiedWhenKo": "답변이 이동 중 대기 시간을 단어 복습에 쓰는 것처럼 목표가 실제로 어떻게 나타나는지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete recurring moment, duration, frequency, or starting point for using small time pockets.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will use a short free period.",
+        "semanticRoleKo": "짧은 여유 시간을 활용하기 위한 구체적인 반복 시점, 지속 시간, 빈도 또는 시작 시점.",
+        "satisfiedWhenKo": "답변이 짧은 여유 시간을 언제, 얼마나 오래 또는 얼마나 자주 활용할지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete obstacle that currently causes small pockets of time to be wasted or makes the new use difficult.",
+        "satisfiedWhenEn": "The answer identifies a specific barrier, such as automatic phone use, not having materials ready, or free periods being unpredictable.",
+        "semanticRoleKo": "현재 짧은 여유 시간을 낭비하게 하거나 새로운 활용을 어렵게 하는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 무의식적인 휴대전화 사용, 준비된 자료 부족, 예측하기 어려운 여유 시간처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete benefit or sign of progress from using small time pockets more intentionally.",
+        "satisfiedWhenEn": "The answer describes an observable effect, such as completing a small task, practicing more often, or reducing later workload.",
+        "semanticRoleKo": "짧은 여유 시간을 더 의도적으로 활용함으로써 생기는 구체적인 이점이나 발전의 징표.",
+        "satisfiedWhenKo": "답변이 작은 과제 완료, 더 잦은 연습, 이후 업무량 감소처럼 관찰 가능한 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for making better use of short available periods.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why changing the use of these small time pockets matters.",
+        "semanticRoleKo": "짧게 비는 시간을 더 잘 활용하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 이러한 짧은 여유 시간의 사용 방식을 바꾸는 일이 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1126",
+    "slotContracts": {
+      "PLAN": {
+        "semanticRoleEn": "The learner's method for making to-do lists more realistic and following that method consistently this year.",
+        "satisfiedWhenEn": "The answer gives an actionable way to limit, estimate, prioritize, or revise tasks and conveys how the learner will keep using it.",
+        "semanticRoleKo": "더 현실적인 할 일 목록을 만들고 올해 그 방법을 꾸준히 따르기 위한 학습자의 방식.",
+        "satisfiedWhenKo": "답변이 할 일을 제한하고, 소요 시간을 추정하고, 우선순위를 정하거나 수정할 실행 가능한 방법을 제시하고 이를 어떻게 계속 사용할지도 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete task-list item or sample list decision that illustrates a more realistic approach.",
+        "satisfiedWhenEn": "The answer provides a recognizable instance showing how a task would be sized, scheduled, removed, or prioritized differently.",
+        "semanticRoleKo": "더 현실적인 접근법을 보여 주는 구체적인 할 일 항목이나 목록 결정 사례.",
+        "satisfiedWhenKo": "답변이 할 일의 크기, 일정, 삭제 여부 또는 우선순위를 어떻게 다르게 정할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific habit or constraint that currently makes the learner's to-do lists unrealistic.",
+        "satisfiedWhenEn": "The answer identifies a concrete difficulty, such as adding too many tasks, ignoring task duration, or carrying unfinished items forward.",
+        "semanticRoleKo": "현재 학습자의 할 일 목록을 비현실적으로 만드는 구체적인 습관이나 제약.",
+        "satisfiedWhenKo": "답변이 너무 많은 일 추가, 소요 시간 무시, 끝내지 못한 항목의 반복 이월처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected effect or sign that the learner's to-do lists have become more realistic.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome, such as completing most listed tasks, reducing carryover, or feeling less overwhelmed.",
+        "semanticRoleKo": "학습자의 할 일 목록이 더 현실적으로 바뀌었음을 보여 주는 예상 효과나 징표.",
+        "satisfiedWhenKo": "답변이 목록에 적은 일 대부분 완료, 이월 항목 감소, 부담감 완화처럼 구체적인 결과를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined time, frequency, planning window, or review point for creating and checking to-do lists.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will prepare, revise, or assess the list.",
+        "semanticRoleKo": "할 일 목록을 만들고 점검하기 위한 명확한 시간, 빈도, 계획 구간 또는 검토 시점.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 목록을 준비하고, 수정하거나 평가할지 구체적으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for wanting a more realistic and consistent to-do-list practice.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation that explains why changing the way tasks are listed matters.",
+        "semanticRoleKo": "더 현실적이고 꾸준한 할 일 목록 습관을 원하는 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 할 일을 목록화하는 방식을 바꾸는 일이 왜 중요한지 설명하는 구체적인 동기를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1127",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific change the learner wants to make in the ability to rest without feeling guilty.",
+        "satisfiedWhenEn": "The answer identifies a concrete desired rest behavior, boundary, or emotional change rather than only repeating \"rest without guilt.\"",
+        "semanticRoleKo": "죄책감을 느끼지 않고 쉬는 능력에서 학습자가 이루고 싶은 구체적인 변화.",
+        "satisfiedWhenKo": "답변이 \"죄책감 없이 쉬기\"를 단순히 반복하지 않고 바라는 구체적인 휴식 행동, 경계 또는 감정 변화를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to become more able to rest without guilt.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures for protecting rest, changing self-talk, or responding differently to guilt.",
+        "semanticRoleKo": "죄책감 없이 더 잘 쉴 수 있게 되기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 휴식 시간을 지키고, 자기 대화를 바꾸거나 죄책감에 다르게 대응하기 위한 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's current emotional response to resting or the emotional state they hope to have while resting.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling connected to taking rest now or under the improved habit.",
+        "semanticRoleKo": "현재 쉴 때 느끼는 학습자의 감정 반응 또는 앞으로 쉬면서 느끼고 싶은 감정 상태.",
+        "satisfiedWhenKo": "답변이 지금 휴식을 취할 때나 개선된 습관 아래에서 쉬는 것과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete belief, pressure, or circumstance that makes guilt-free rest difficult.",
+        "satisfiedWhenEn": "The answer identifies a specific barrier, such as unfinished work, equating rest with laziness, or pressure to stay productive.",
+        "semanticRoleKo": "죄책감 없이 쉬는 일을 어렵게 하는 구체적인 믿음, 압박 또는 상황.",
+        "satisfiedWhenKo": "답변이 끝나지 않은 일, 휴식을 게으름으로 여김, 계속 생산적이어야 한다는 압박처럼 구체적인 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect expected from resting more freely and without guilt.",
+        "satisfiedWhenEn": "The answer describes an anticipated outcome, such as recovering energy, concentrating better later, or enjoying time off.",
+        "semanticRoleKo": "더 자유롭고 죄책감 없이 쉼으로써 기대하는 구체적인 효과.",
+        "satisfiedWhenKo": "답변이 에너지 회복, 이후 집중력 향상, 쉬는 시간 즐기기처럼 예상되는 결과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for improving the ability to rest without guilt.",
+        "satisfiedWhenEn": "The answer gives a concrete personal reason why changing this relationship with rest matters.",
+        "semanticRoleKo": "죄책감 없이 쉬는 능력을 개선하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 휴식과 맺는 이러한 관계를 바꾸는 일이 왜 중요한지 구체적인 개인적 이유를 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, duration, frequency, or situation in which the learner will practice guilt-free rest.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will deliberately rest or apply the new approach.",
+        "semanticRoleKo": "학습자가 죄책감 없는 휴식을 연습할 구체적인 시간, 지속 시간, 빈도 또는 상황.",
+        "satisfiedWhenKo": "답변이 언제, 얼마나 오래 또는 얼마나 자주 의도적으로 쉬거나 새로운 방식을 적용할지 구체적으로 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-12",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific health outcome or condition the learner wants to reach this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete health target rather than referring vaguely to becoming healthier.",
+        "semanticRoleKo": "학습자가 올해 도달하고 싶은 구체적인 건강 결과나 상태.",
+        "satisfiedWhenKo": "답변이 더 건강해지고 싶다고 막연히 말하지 않고 구체적인 건강 목표를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for reaching the stated health goal.",
+        "satisfiedWhenEn": "The answer explains at least one actionable step or approach directed at the named health outcome.",
+        "semanticRoleKo": "제시한 건강 목표에 도달하기 위해 학습자가 의도한 방법.",
+        "satisfiedWhenKo": "답변이 밝힌 건강 결과를 향한 실행 가능한 단계나 접근법을 하나 이상 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, deadline, or milestone for pursuing the health goal.",
+        "satisfiedWhenEn": "The answer states when or how often a health action will occur or when progress will be checked or reached.",
+        "semanticRoleKo": "건강 목표를 추구하기 위한 구체적인 일정, 빈도, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 건강 행동을 언제 또는 얼마나 자주 할지, 혹은 진전을 언제 점검하거나 달성할지 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that could make the health goal or plan difficult to achieve.",
+        "satisfiedWhenEn": "The answer identifies a concrete barrier, such as limited time, an inconsistent routine, physical discomfort, or loss of motivation.",
+        "semanticRoleKo": "건강 목표나 계획의 달성을 어렵게 할 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 시간 부족, 불규칙한 습관, 신체적 불편, 동기 저하처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete benefit, milestone, or sign of progress associated with the health goal.",
+        "satisfiedWhenEn": "The answer describes an observable change or effect that would indicate progress without merely repeating the goal label.",
+        "semanticRoleKo": "건강 목표와 관련된 구체적인 이점, 중간 성과 또는 발전의 징표.",
+        "satisfiedWhenKo": "답변이 목표의 이름을 단순히 반복하지 않고 발전을 나타낼 관찰 가능한 변화나 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's personal motivation for pursuing the chosen health goal.",
+        "satisfiedWhenEn": "The answer gives a concrete reason why reaching this health outcome matters to the learner.",
+        "semanticRoleKo": "선택한 건강 목표를 추구하려는 학습자의 개인적인 동기.",
+        "satisfiedWhenKo": "답변이 이 건강 결과에 도달하는 일이 학습자에게 왜 중요한지 구체적인 이유를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling associated with the learner's current health situation, planned effort, or hoped-for progress.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to pursuing or reaching the health goal.",
+        "semanticRoleKo": "학습자의 현재 건강 상황, 계획된 노력 또는 바라는 발전과 관련된 감정.",
+        "satisfiedWhenKo": "답변이 건강 목표를 추구하거나 달성하는 것과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-13",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The particular health goal the learner wants to reach during this year.",
+        "satisfiedWhenEn": "The answer states a recognizable health outcome, behavior target, or condition the learner aims to attain.",
+        "semanticRoleKo": "학습자가 올해 안에 도달하고 싶은 특정 건강 목표.",
+        "satisfiedWhenKo": "답변이 학습자가 이루려는 식별 가능한 건강 결과, 행동 목표 또는 상태를 제시하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner expects to make progress toward the chosen health goal.",
+        "satisfiedWhenEn": "The answer gives an actionable means of advancing toward the stated health target.",
+        "semanticRoleKo": "선택한 건강 목표를 향해 학습자가 진전을 이루려는 방식.",
+        "satisfiedWhenKo": "답변이 제시한 건강 목표를 향해 나아갈 수 있는 실행 가능한 수단을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete change or progress indicator the learner expects along the way to the health goal.",
+        "satisfiedWhenEn": "The answer describes an observable milestone, effect, or benefit that would show the health effort is producing progress.",
+        "semanticRoleKo": "건강 목표를 향해 가는 과정에서 학습자가 기대하는 구체적인 변화나 진전 지표.",
+        "satisfiedWhenKo": "답변이 건강을 위한 노력이 진전을 내고 있음을 보여 줄 관찰 가능한 중간 성과, 효과 또는 이점을 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined time frame, schedule, frequency, or checkpoint for making health progress.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will act on the goal or assess progress.",
+        "semanticRoleKo": "건강상의 진전을 이루기 위한 명확한 기간, 일정, 빈도 또는 점검 시점.",
+        "satisfiedWhenKo": "답변이 목표를 위해 언제 또는 얼마나 자주 행동하거나 진전을 평가할지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete challenge that may slow the learner's progress toward the health goal.",
+        "satisfiedWhenEn": "The answer names a specific condition or difficulty that could interfere with the intended health effort.",
+        "semanticRoleKo": "학습자가 건강 목표를 향해 진전하는 속도를 늦출 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 의도한 건강 노력을 방해할 수 있는 특정 상황이나 어려움을 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for selecting and pursuing this health goal.",
+        "satisfiedWhenEn": "The answer explains a concrete personal need or benefit that makes the health goal worth pursuing.",
+        "semanticRoleKo": "이 건강 목표를 선택하고 추구하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 건강 목표를 추구할 가치가 있게 만드는 구체적인 개인적 필요나 이점을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to the health goal or to making progress toward it.",
+        "satisfiedWhenEn": "The answer communicates a specific feeling tied to working on or advancing toward the stated health goal.",
+        "semanticRoleKo": "건강 목표 또는 그 목표를 향한 진전에 대한 학습자의 감정적 반응.",
+        "satisfiedWhenKo": "답변이 제시한 건강 목표를 위해 노력하거나 진전하는 것과 연결된 구체적인 감정을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-14",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The one health target that the learner's proposed steps are meant to achieve this year.",
+        "satisfiedWhenEn": "The answer clearly identifies a concrete health outcome or behavior target so the purpose of the steps is known.",
+        "semanticRoleKo": "학습자가 제안하는 단계로 올해 달성하려는 하나의 건강 목표.",
+        "satisfiedWhenKo": "답변이 단계의 목적을 알 수 있도록 구체적인 건강 결과나 행동 목표를 분명히 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to pursue the identified health goal.",
+        "satisfiedWhenEn": "The answer states one or more actionable measures that plausibly move the learner toward the named health target.",
+        "semanticRoleKo": "확인된 건강 목표를 추구하기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 밝힌 건강 목표를 향해 학습자를 나아가게 할 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete timing detail for carrying out the health-goal steps.",
+        "satisfiedWhenEn": "The answer provides a recognizable schedule, frequency, duration, deadline, or start date for the planned health actions.",
+        "semanticRoleKo": "건강 목표를 위한 단계를 실행할 구체적인 시간 정보.",
+        "satisfiedWhenKo": "답변이 계획된 건강 행동을 위한 식별 가능한 일정, 빈도, 지속 시간, 기한 또는 시작일을 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle the learner expects while following the health-goal steps.",
+        "satisfiedWhenEn": "The answer identifies a concrete barrier that could disrupt or limit the proposed health plan.",
+        "semanticRoleKo": "건강 목표를 위한 단계를 따르면서 학습자가 예상하는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 제안한 건강 계획을 방해하거나 제한할 수 있는 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete intermediate effect or evidence that the health-goal steps are working.",
+        "satisfiedWhenEn": "The answer describes an observable change, milestone, or benefit that would demonstrate progress toward the target.",
+        "semanticRoleKo": "건강 목표를 위한 단계가 효과가 있음을 보여 주는 구체적인 중간 효과나 증거.",
+        "satisfiedWhenKo": "답변이 목표를 향한 진전을 입증할 관찰 가능한 변화, 중간 성과 또는 이점을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing this health goal or these particular steps.",
+        "satisfiedWhenEn": "The answer supplies a concrete motivation that explains the importance of the goal or the choice of approach.",
+        "semanticRoleKo": "이 건강 목표나 특정 단계를 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 목표의 중요성이나 접근법을 선택한 이유를 설명하는 구체적인 동기를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific location or setting where the learner will carry out part of the health plan.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place connected to a planned health action.",
+        "semanticRoleKo": "학습자가 건강 계획의 일부를 실행할 구체적인 장소나 환경.",
+        "satisfiedWhenKo": "답변이 계획된 건강 행동과 연결된 식별 가능한 장소를 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-15",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific health goal the learner wants to reach this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete health outcome, condition, or behavior target rather than a vague wish to be healthier.",
+        "semanticRoleKo": "학습자가 올해 도달하고 싶은 구체적인 건강 목표.",
+        "satisfiedWhenKo": "답변이 더 건강해지고 싶다는 막연한 바람이 아니라 구체적인 건강 결과, 상태 또는 행동 목표를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why reaching the chosen health goal is personally important to the learner.",
+        "satisfiedWhenEn": "The answer gives a concrete personal value, need, or expected benefit that explains why this health goal matters.",
+        "semanticRoleKo": "선택한 건강 목표에 도달하는 일이 학습자에게 개인적으로 중요한 이유.",
+        "satisfiedWhenKo": "답변이 이 건강 목표가 왜 중요한지 설명하는 구체적인 개인적 가치, 필요 또는 기대 이점을 제시하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A method the learner intends to use to pursue the health goal.",
+        "satisfiedWhenEn": "The answer states at least one actionable step connected to reaching the named health target.",
+        "semanticRoleKo": "건강 목표를 추구하기 위해 학습자가 사용하려는 방법.",
+        "satisfiedWhenKo": "답변이 밝힌 건강 목표에 도달하는 것과 연결된 실행 가능한 단계를 하나 이상 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete consequence or progress marker expected from reaching or pursuing the health goal.",
+        "satisfiedWhenEn": "The answer describes an observable effect or milestone distinct from simply restating the chosen goal.",
+        "semanticRoleKo": "건강 목표를 추구하거나 달성할 때 기대하는 구체적인 결과나 진전 지표.",
+        "satisfiedWhenKo": "답변이 선택한 목표를 단순히 다시 말하는 것과 구별되는 관찰 가능한 효과나 중간 성과를 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that could make the health goal hard to reach.",
+        "satisfiedWhenEn": "The answer identifies a specific obstacle or limiting circumstance related to the learner's health effort.",
+        "semanticRoleKo": "건강 목표에 도달하기 어렵게 만들 수 있는 구체적인 문제.",
+        "satisfiedWhenKo": "답변이 학습자의 건강 노력과 관련된 특정 장애물이나 제약 상황을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined time frame, deadline, schedule, or frequency connected to the health goal.",
+        "satisfiedWhenEn": "The answer specifies when the target should be reached or when and how often the learner will work on it.",
+        "semanticRoleKo": "건강 목표와 연결된 명확한 기간, 기한, 일정 또는 빈도.",
+        "satisfiedWhenKo": "답변이 목표를 언제 달성하려는지 또는 언제 얼마나 자주 노력할지 구체적으로 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling that gives the health goal personal significance or is expected from reaching it.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the learner's current health concern or desired outcome.",
+        "semanticRoleKo": "건강 목표에 개인적 의미를 부여하거나 목표 달성에서 기대하는 감정.",
+        "satisfiedWhenKo": "답변이 학습자의 현재 건강 고민이나 바라는 결과와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-16",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific language ability or outcome the learner wants to focus on this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete language target, such as a skill, proficiency change, or communicative ability, rather than only saying \"language improvement.\"",
+        "semanticRoleKo": "학습자가 올해 집중하고 싶은 구체적인 언어 능력이나 결과.",
+        "satisfiedWhenKo": "답변이 단순히 \"언어 향상\"이라고 하지 않고 기술, 숙련도 변화, 의사소통 능력처럼 구체적인 언어 목표를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to work toward the selected language goal.",
+        "satisfiedWhenEn": "The answer gives at least one actionable study, practice, or exposure method directed at the named language target.",
+        "semanticRoleKo": "선택한 언어 목표를 향해 학습자가 노력하려는 방식.",
+        "satisfiedWhenKo": "답변이 밝힌 언어 목표를 겨냥한 실행 가능한 공부, 연습 또는 노출 방법을 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, duration, deadline, or milestone for language work.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will practice or assess the language goal.",
+        "semanticRoleKo": "언어 학습을 위한 구체적인 일정, 빈도, 지속 시간, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 언어 목표를 언제, 얼마나 오래 또는 얼마나 자주 연습하거나 평가할지 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific difficulty that could interfere with focusing on or progressing toward the language goal.",
+        "satisfiedWhenEn": "The answer identifies a concrete language-learning obstacle, such as limited speaking opportunities, confusing grammar, or inconsistent study.",
+        "semanticRoleKo": "언어 목표에 집중하거나 진전하는 일을 방해할 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 부족한 말하기 기회, 헷갈리는 문법, 불규칙한 공부처럼 구체적인 언어 학습 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete sign or benefit of progress toward the selected language goal.",
+        "satisfiedWhenEn": "The answer describes an observable communicative change, milestone, or effect that would show improvement.",
+        "semanticRoleKo": "선택한 언어 목표를 향한 진전의 구체적인 징표나 이점.",
+        "satisfiedWhenKo": "답변이 향상을 보여 줄 관찰 가능한 의사소통 변화, 중간 성과 또는 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for focusing on this language goal.",
+        "satisfiedWhenEn": "The answer gives a concrete personal or practical reason why the named language target matters.",
+        "semanticRoleKo": "이 언어 목표에 집중하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 밝힌 언어 목표가 왜 중요한지 구체적인 개인적 또는 실용적 이유를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular language task, expression, or situation that illustrates the selected goal.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance showing what the learner wants to understand, say, write, or do better.",
+        "semanticRoleKo": "선택한 목표를 보여 주는 특정 언어 과제, 표현 또는 상황.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 더 잘 이해하고, 말하고, 쓰거나 수행하고 싶은지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-17",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The one concrete language goal the learner wants to work on during this year.",
+        "satisfiedWhenEn": "The answer names an identifiable language skill, performance target, or proficiency change the learner wants to develop.",
+        "semanticRoleKo": "학습자가 올해 노력하고 싶은 하나의 구체적인 언어 목표.",
+        "satisfiedWhenKo": "답변이 학습자가 기르고 싶은 식별 가능한 언어 기술, 수행 목표 또는 숙련도 변화를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's plan for developing the stated language goal.",
+        "satisfiedWhenEn": "The answer explains one or more actionable ways the learner will study, practice, receive feedback, or use the target language ability.",
+        "semanticRoleKo": "제시한 언어 목표를 발전시키기 위한 학습자의 계획.",
+        "satisfiedWhenKo": "답변이 목표 언어 능력을 공부하고, 연습하고, 피드백을 받거나 사용할 실행 가능한 방법을 하나 이상 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined schedule, frequency, duration, or target date within the language plan.",
+        "satisfiedWhenEn": "The answer provides a concrete indication of when or how often the planned language work will happen.",
+        "semanticRoleKo": "언어 계획 안의 명확한 일정, 빈도, 지속 시간 또는 목표 날짜.",
+        "satisfiedWhenKo": "답변이 계획한 언어 학습을 언제 또는 얼마나 자주 할지 구체적으로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing this particular language goal.",
+        "satisfiedWhenEn": "The answer explains a concrete need, interest, or intended use that motivates work on the named target.",
+        "semanticRoleKo": "이 특정 언어 목표를 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 밝힌 목표를 공부하게 하는 구체적인 필요, 관심 또는 사용 목적을 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete challenge the learner may encounter while carrying out the language plan.",
+        "satisfiedWhenEn": "The answer names a specific learning difficulty or practical constraint that could slow the planned progress.",
+        "semanticRoleKo": "언어 계획을 실행하면서 학습자가 마주칠 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 계획된 진전을 늦출 수 있는 특정 학습상의 어려움이나 현실적인 제약을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected outcome or observable indicator that the language plan is working.",
+        "satisfiedWhenEn": "The answer describes a concrete improvement in understanding, production, confidence, or task performance tied to the language goal.",
+        "semanticRoleKo": "언어 계획이 효과가 있음을 보여 주는 예상 결과나 관찰 가능한 지표.",
+        "satisfiedWhenKo": "답변이 언어 목표와 연결된 이해, 표현, 자신감 또는 과제 수행의 구체적인 향상을 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete language use case or practice item that demonstrates what the goal involves.",
+        "satisfiedWhenEn": "The answer supplies a recognizable example of the kind of conversation, text, expression, or exercise the learner will work on.",
+        "semanticRoleKo": "목표에 무엇이 포함되는지 보여 주는 구체적인 언어 사용 사례나 연습 항목.",
+        "satisfiedWhenKo": "답변이 학습자가 노력할 대화, 글, 표현 또는 연습의 종류를 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-18",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific language skill or achievement the learner wants to work on this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete language-learning target that makes the intended area of progress clear.",
+        "semanticRoleKo": "학습자가 올해 노력하고 싶은 구체적인 언어 기술이나 성취.",
+        "satisfiedWhenKo": "답변이 어떤 영역에서 진전하려는지 알 수 있도록 구체적인 언어 학습 목표를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner will make progress toward the identified language target.",
+        "satisfiedWhenEn": "The answer states an actionable practice, study strategy, or use of the language that can advance the stated goal.",
+        "semanticRoleKo": "확인된 언어 목표를 향해 학습자가 진전할 방식.",
+        "satisfiedWhenKo": "답변이 제시한 목표를 발전시킬 수 있는 실행 가능한 연습, 학습 전략 또는 언어 사용 방법을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete milestone or effect that would show progress in the selected language ability.",
+        "satisfiedWhenEn": "The answer describes an observable change in what the learner can understand or produce, or another clear progress marker.",
+        "semanticRoleKo": "선택한 언어 능력의 진전을 보여 줄 구체적인 중간 성과나 효과.",
+        "satisfiedWhenKo": "답변이 학습자가 이해하거나 표현할 수 있는 것의 관찰 가능한 변화 또는 다른 분명한 진전 지표를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete timing commitment for making language progress.",
+        "satisfiedWhenEn": "The answer specifies a study or practice time, frequency, duration, deadline, or checkpoint.",
+        "semanticRoleKo": "언어상의 진전을 이루기 위한 구체적인 시간 약속.",
+        "satisfiedWhenKo": "답변이 공부나 연습 시간, 빈도, 지속 시간, 기한 또는 점검 시점을 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that may make progress on the language goal difficult.",
+        "satisfiedWhenEn": "The answer identifies a concrete learning challenge, resource limitation, or habit that could interfere with advancement.",
+        "semanticRoleKo": "언어 목표의 진전을 어렵게 할 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 발전을 방해할 수 있는 구체적인 학습 과제, 자원의 제약 또는 습관을 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for working on this language goal.",
+        "satisfiedWhenEn": "The answer gives a concrete personal, academic, social, or professional reason for pursuing the target.",
+        "semanticRoleKo": "이 언어 목표를 위해 노력하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 목표를 추구하는 구체적인 개인적, 학업적, 사회적 또는 직업적 이유를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular language situation or task that illustrates the progress the learner wants to make.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance showing where the target language ability would be practiced or demonstrated.",
+        "semanticRoleKo": "학습자가 이루고 싶은 진전을 보여 주는 특정 언어 상황이나 과제.",
+        "satisfiedWhenKo": "답변이 목표 언어 능력을 어디에서 연습하거나 보여 줄지 알 수 있는 식별 가능한 사례를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-19",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific language goal that the learner's proposed steps are intended to support this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete language ability or achievement so the purpose of the steps is clear.",
+        "semanticRoleKo": "학습자가 제안하는 단계로 올해 이루려는 구체적인 언어 목표.",
+        "satisfiedWhenKo": "답변이 단계의 목적을 알 수 있도록 구체적인 언어 능력이나 성취를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to work on the identified language goal.",
+        "satisfiedWhenEn": "The answer gives one or more actionable study, practice, feedback, or language-use measures aimed at the named target.",
+        "semanticRoleKo": "확인된 언어 목표를 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 밝힌 목표를 겨냥한 실행 가능한 공부, 연습, 피드백 또는 언어 사용 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, duration, frequency, deadline, or checkpoint for the language-goal steps.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will carry out or review the planned language work.",
+        "semanticRoleKo": "언어 목표를 위한 단계의 구체적인 일정, 지속 시간, 빈도, 기한 또는 점검 시점.",
+        "satisfiedWhenKo": "답변이 계획한 언어 학습을 언제, 얼마나 오래 또는 얼마나 자주 실행하거나 검토할지 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific challenge that could disrupt the learner's planned work on the language goal.",
+        "satisfiedWhenEn": "The answer identifies a concrete learning difficulty or practical barrier that may interfere with the proposed steps.",
+        "semanticRoleKo": "언어 목표를 위한 학습자의 계획된 노력을 방해할 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 제안한 단계를 방해할 수 있는 구체적인 학습상의 어려움이나 현실적인 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete progress indicator or effect expected from following the language-goal steps.",
+        "satisfiedWhenEn": "The answer describes an observable change in language performance or another milestone showing that the plan is working.",
+        "semanticRoleKo": "언어 목표를 위한 단계를 따름으로써 기대하는 구체적인 진전 지표나 효과.",
+        "satisfiedWhenKo": "답변이 계획이 효과가 있음을 보여 주는 관찰 가능한 언어 수행의 변화나 다른 중간 성과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing this language goal or the proposed way of working on it.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation that explains the target's importance or why the selected steps suit the learner.",
+        "semanticRoleKo": "이 언어 목표나 제안한 학습 방식을 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 목표의 중요성이나 선택한 단계가 학습자에게 적합한 이유를 설명하는 구체적인 동기를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific setting where the learner will study, practice, or use the target language ability.",
+        "satisfiedWhenEn": "The answer identifies a recognizable physical, social, academic, or online setting connected to a planned language step.",
+        "semanticRoleKo": "학습자가 목표 언어 능력을 공부하고, 연습하거나 사용할 구체적인 환경.",
+        "satisfiedWhenKo": "답변이 계획된 언어 학습 단계와 연결된 식별 가능한 물리적, 사회적, 학업적 또는 온라인 환경을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-20",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The one concrete language goal the learner wants to work on this year.",
+        "satisfiedWhenEn": "The answer states an identifiable language skill, proficiency outcome, or communicative ability the learner wants to develop.",
+        "semanticRoleKo": "학습자가 올해 중점적으로 노력하려는 하나의 명확한 언어 목표.",
+        "satisfiedWhenKo": "답변이 학습자가 기르고 싶은 식별 가능한 언어 기술, 숙련도 결과 또는 의사소통 능력을 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the selected language goal matters personally to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete personal need, value, opportunity, or intended use that gives the language goal importance.",
+        "semanticRoleKo": "선택한 언어 목표가 학습자에게 개인적으로 중요한 이유.",
+        "satisfiedWhenKo": "답변이 언어 목표에 중요성을 부여하는 구체적인 개인적 필요, 가치, 기회 또는 사용 목적을 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A method the learner intends to use to develop the chosen language ability.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to study, practice, obtain feedback, or use the target ability.",
+        "semanticRoleKo": "선택한 언어 능력을 발전시키기 위해 학습자가 사용하려는 방법.",
+        "satisfiedWhenKo": "답변이 목표 능력을 공부하고, 연습하고, 피드백을 받거나 사용할 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect or milestone expected from progress on the language goal.",
+        "satisfiedWhenEn": "The answer describes an observable change in what the learner can understand, express, or accomplish through the language.",
+        "semanticRoleKo": "언어 목표의 진전에서 기대하는 구체적인 효과나 중간 성과.",
+        "satisfiedWhenKo": "답변이 학습자가 그 언어로 이해하고, 표현하거나 해낼 수 있는 것의 관찰 가능한 변화를 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that could make the language goal difficult to pursue.",
+        "satisfiedWhenEn": "The answer identifies a concrete learning challenge, confidence issue, resource limit, or competing demand related to the goal.",
+        "semanticRoleKo": "언어 목표를 추구하기 어렵게 만들 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 목표와 관련된 구체적인 학습 과제, 자신감 문제, 자원 제약 또는 다른 일정의 부담을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined schedule, frequency, duration, deadline, or milestone associated with the language goal.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will work on the goal or when a target should be reached.",
+        "semanticRoleKo": "언어 목표와 관련된 명확한 일정, 빈도, 지속 시간, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 목표를 위해 언제 또는 얼마나 자주 노력할지, 혹은 목표 시점을 언제로 정했는지 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling that makes the language goal meaningful or is expected from achieving it.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the learner's current language ability or desired progress.",
+        "semanticRoleKo": "언어 목표에 의미를 부여하거나 목표 달성에서 기대하는 감정.",
+        "satisfiedWhenKo": "답변이 학습자의 현재 언어 능력이나 바라는 진전과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-21",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific area or situation in which the learner wants to become more confident this year.",
+        "satisfiedWhenEn": "The answer identifies a recognizable ability, activity, role, or context for confidence growth rather than saying only \"I want more confidence.\"",
+        "semanticRoleKo": "학습자가 올해 더 자신감을 키우고 싶은 구체적인 영역이나 상황.",
+        "satisfiedWhenKo": "답변이 자신감을 더 갖고 싶다고만 하지 않고 자신감을 키울 식별 가능한 능력, 활동, 역할 또는 맥락을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to build confidence in the identified area.",
+        "satisfiedWhenEn": "The answer gives at least one actionable practice, exposure, preparation, or behavior aimed at the stated confidence area.",
+        "semanticRoleKo": "확인된 영역에서 자신감을 키우기 위해 학습자가 의도한 방식.",
+        "satisfiedWhenKo": "답변이 제시한 자신감 영역을 겨냥한 실행 가능한 연습, 경험, 준비 또는 행동을 하나 이상 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete situation or task that illustrates where the learner wants greater confidence.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance showing what the learner wants to do more confidently.",
+        "semanticRoleKo": "학습자가 더 큰 자신감을 원하는 곳을 보여 주는 구체적인 상황이나 과제.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 더 자신 있게 하고 싶은지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific source of low confidence or obstacle to developing it in the chosen area.",
+        "satisfiedWhenEn": "The answer identifies a concrete fear, skill gap, past difficulty, or situational barrier that affects confidence.",
+        "semanticRoleKo": "선택한 영역에서 자신감이 낮은 구체적인 원인이나 이를 기르는 데 생기는 장애물.",
+        "satisfiedWhenKo": "답변이 자신감에 영향을 주는 구체적인 두려움, 기술 격차, 과거의 어려움 또는 상황적 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete sign or effect of becoming more confident in the identified area.",
+        "satisfiedWhenEn": "The answer describes an observable behavior, achievement, or benefit that would indicate greater confidence.",
+        "semanticRoleKo": "확인된 영역에서 자신감이 높아졌음을 보여 주는 구체적인 징표나 효과.",
+        "satisfiedWhenKo": "답변이 더 큰 자신감을 나타낼 관찰 가능한 행동, 성취 또는 이점을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for building confidence in this particular area.",
+        "satisfiedWhenEn": "The answer explains a concrete personal or practical reason why greater confidence there matters.",
+        "semanticRoleKo": "이 특정 영역에서 자신감을 키우려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 그 영역에서 더 큰 자신감을 갖는 일이 왜 중요한지 구체적인 개인적 또는 실용적 이유를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, deadline, or milestone for confidence-building work.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will practice or when progress will be assessed.",
+        "semanticRoleKo": "자신감 향상 노력을 위한 구체적인 일정, 빈도, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 연습하거나 진전을 평가할지 구체적으로 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-22",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The particular part of life, skill, or situation where the learner wants to build more confidence this year.",
+        "satisfiedWhenEn": "The answer clearly describes an identifiable confidence area instead of referring vaguely to being more confident in general.",
+        "semanticRoleKo": "학습자가 올해 더 자신감을 키우고 싶은 삶, 기술 또는 상황의 특정 영역.",
+        "satisfiedWhenKo": "답변이 전반적으로 더 자신감을 갖고 싶다고 막연히 말하지 않고 식별 가능한 자신감 영역을 분명히 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's plan for increasing confidence in the stated area.",
+        "satisfiedWhenEn": "The answer explains one or more actionable ways to practice, prepare, gain experience, or change behavior in that area.",
+        "semanticRoleKo": "제시한 영역에서 자신감을 높이기 위한 학습자의 계획.",
+        "satisfiedWhenKo": "답변이 그 영역에서 연습하고, 준비하고, 경험을 쌓거나 행동을 바꿀 실행 가능한 방법을 하나 이상 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular activity or moment that makes the selected confidence area concrete.",
+        "satisfiedWhenEn": "The answer supplies a recognizable example of a task or situation in which the learner wants to act more confidently.",
+        "semanticRoleKo": "선택한 자신감 영역을 구체화하는 특정 활동이나 순간.",
+        "satisfiedWhenKo": "답변이 학습자가 더 자신 있게 행동하고 싶은 과제나 상황의 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined practice schedule, frequency, target date, or confidence milestone.",
+        "satisfiedWhenEn": "The answer gives a concrete indication of when or how often the learner will follow the plan or check progress.",
+        "semanticRoleKo": "명확한 연습 일정, 빈도, 목표 날짜 또는 자신감 향상의 중간 시점.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 계획을 따르거나 진전을 점검할지 구체적으로 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that currently lowers confidence or could interfere with the plan.",
+        "satisfiedWhenEn": "The answer identifies a specific fear, uncertainty, missing skill, or external condition connected to the chosen area.",
+        "semanticRoleKo": "현재 자신감을 낮추거나 계획을 방해할 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 선택한 영역과 연결된 특정 두려움, 불확실성, 부족한 기술 또는 외부 조건을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected outcome or observable sign of increased confidence.",
+        "satisfiedWhenEn": "The answer describes a concrete behavior or effect that would demonstrate the learner is more confident in the selected area.",
+        "semanticRoleKo": "자신감이 높아졌을 때 기대하는 결과나 관찰 가능한 징표.",
+        "satisfiedWhenKo": "답변이 선택한 영역에서 학습자가 더 자신 있어졌음을 보여 줄 구체적인 행동이나 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for wanting greater confidence in the selected area.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation that explains why this confidence change would be valuable.",
+        "semanticRoleKo": "선택한 영역에서 더 큰 자신감을 원하는 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 이러한 자신감의 변화가 왜 가치 있는지 설명하는 구체적인 동기를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-23",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The identifiable area in which the learner wants to gain confidence this year.",
+        "satisfiedWhenEn": "The answer names a concrete skill, responsibility, activity, or situation where confidence should grow.",
+        "semanticRoleKo": "학습자가 올해 자신감을 높이고 싶은 식별 가능한 영역.",
+        "satisfiedWhenKo": "답변이 자신감을 키울 구체적인 기술, 책임, 활동 또는 상황을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner will make progress in becoming more confident in that area.",
+        "satisfiedWhenEn": "The answer states an actionable practice, preparation method, gradual challenge, or other means of building confidence.",
+        "semanticRoleKo": "그 영역에서 더 자신감 있게 되기 위해 학습자가 진전할 방식.",
+        "satisfiedWhenKo": "답변이 자신감을 키울 수 있는 실행 가능한 연습, 준비 방법, 단계적 도전 또는 다른 수단을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete milestone, behavior, or benefit that would show confidence progress.",
+        "satisfiedWhenEn": "The answer describes an observable change in what the learner does or can handle in the selected area.",
+        "semanticRoleKo": "자신감의 진전을 보여 줄 구체적인 중간 성과, 행동 또는 이점.",
+        "satisfiedWhenKo": "답변이 선택한 영역에서 학습자가 하는 일이나 감당할 수 있는 것의 관찰 가능한 변화를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific instance that illustrates the kind of confidence the learner wants to develop.",
+        "satisfiedWhenEn": "The answer gives a recognizable situation in which the learner currently hesitates or hopes to act more confidently.",
+        "semanticRoleKo": "학습자가 기르고 싶은 자신감의 종류를 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 현재 망설이거나 앞으로 더 자신 있게 행동하고 싶은 식별 가능한 상황을 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A particular barrier that makes confidence progress difficult in the named area.",
+        "satisfiedWhenEn": "The answer identifies a concrete concern, skill deficit, habit, or circumstance that may hold the learner back.",
+        "semanticRoleKo": "밝힌 영역에서 자신감의 진전을 어렵게 하는 특정 장애물.",
+        "satisfiedWhenKo": "답변이 학습자를 주저하게 할 수 있는 구체적인 걱정, 기술 부족, 습관 또는 상황을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete timing commitment or milestone for working on confidence.",
+        "satisfiedWhenEn": "The answer specifies a practice time, recurrence, deadline, or point when progress will be reviewed.",
+        "semanticRoleKo": "자신감을 키우기 위한 구체적인 시간 약속이나 중간 시점.",
+        "satisfiedWhenKo": "답변이 연습 시간, 반복 주기, 기한 또는 진전을 검토할 시점을 구체적으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for making progress in this confidence area.",
+        "satisfiedWhenEn": "The answer explains a concrete personal or practical benefit that makes greater confidence worthwhile.",
+        "semanticRoleKo": "이 자신감 영역에서 진전하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 더 큰 자신감을 가치 있게 만드는 구체적인 개인적 또는 실용적 이점을 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-24",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific area in which the learner's proposed steps are meant to build confidence this year.",
+        "satisfiedWhenEn": "The answer identifies a recognizable skill, situation, or role so the target of the confidence-building steps is clear.",
+        "semanticRoleKo": "학습자가 제안하는 단계로 올해 자신감을 키우려는 구체적인 영역.",
+        "satisfiedWhenKo": "답변이 자신감 향상 단계의 대상을 알 수 있도록 식별 가능한 기술, 상황 또는 역할을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to develop confidence in the identified area.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures that plausibly provide practice, preparation, or experience in that area.",
+        "semanticRoleKo": "확인된 영역에서 자신감을 기르기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 그 영역에서 연습, 준비 또는 경험을 제공할 수 있는 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, deadline, or progression point for the confidence-building steps.",
+        "satisfiedWhenEn": "The answer states when or how often the steps will be taken or when progress will be checked.",
+        "semanticRoleKo": "자신감 향상 단계를 위한 구체적인 일정, 빈도, 기한 또는 진행 시점.",
+        "satisfiedWhenKo": "답변이 단계를 언제 또는 얼마나 자주 실행할지, 혹은 진전을 언제 점검할지 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete task or situation in which the learner will apply a confidence-building step.",
+        "satisfiedWhenEn": "The answer supplies a recognizable instance showing how one of the proposed steps would be used.",
+        "semanticRoleKo": "학습자가 자신감 향상 단계 하나를 적용할 구체적인 과제나 상황.",
+        "satisfiedWhenKo": "답변이 제안한 단계 중 하나를 어떻게 사용할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle the learner expects while trying to build confidence.",
+        "satisfiedWhenEn": "The answer identifies a concrete fear, limitation, or circumstance that could interfere with the proposed steps.",
+        "semanticRoleKo": "자신감을 키우려 할 때 학습자가 예상하는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 제안한 단계를 방해할 수 있는 구체적인 두려움, 제약 또는 상황을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect or evidence that the confidence-building steps are succeeding.",
+        "satisfiedWhenEn": "The answer describes an observable behavior, achievement, or change that would demonstrate increased confidence.",
+        "semanticRoleKo": "자신감 향상 단계가 성공하고 있음을 보여 주는 구체적인 효과나 증거.",
+        "satisfiedWhenKo": "답변이 높아진 자신감을 입증할 관찰 가능한 행동, 성취 또는 변화를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for selecting this confidence area or these particular steps.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation explaining why the area matters or why the chosen approach is suitable.",
+        "semanticRoleKo": "이 자신감 영역이나 특정 단계를 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 그 영역이 중요한 이유나 선택한 접근법이 적합한 이유를 설명하는 구체적인 동기를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-25",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The particular area where the learner wants to become more confident this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete ability, context, activity, or responsibility rather than referring to confidence in general.",
+        "semanticRoleKo": "학습자가 올해 더 자신감 있게 되고 싶은 특정 영역.",
+        "satisfiedWhenKo": "답변이 전반적인 자신감을 말하는 대신 구체적인 능력, 맥락, 활동 또는 책임을 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why greater confidence in the selected area is personally important to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete value, need, opportunity, or expected benefit that makes this confidence goal matter.",
+        "semanticRoleKo": "선택한 영역에서 더 큰 자신감을 갖는 일이 학습자에게 개인적으로 중요한 이유.",
+        "satisfiedWhenKo": "답변이 이 자신감 목표를 중요하게 만드는 구체적인 가치, 필요, 기회 또는 기대 이점을 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A method the learner could use to build confidence in the named area.",
+        "satisfiedWhenEn": "The answer gives at least one actionable practice, preparation step, or experience intended to increase confidence there.",
+        "semanticRoleKo": "밝힌 영역에서 자신감을 키우기 위해 학습자가 사용할 수 있는 방법.",
+        "satisfiedWhenKo": "답변이 그 영역의 자신감을 높이기 위한 실행 가능한 연습, 준비 단계 또는 경험을 하나 이상 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete consequence or sign of having greater confidence in the selected area.",
+        "satisfiedWhenEn": "The answer describes an observable behavior, achievement, or benefit that would follow from the confidence change.",
+        "semanticRoleKo": "선택한 영역에서 더 큰 자신감을 갖게 되었을 때의 구체적인 결과나 징표.",
+        "satisfiedWhenKo": "답변이 자신감의 변화에 따라 나타날 관찰 가능한 행동, 성취 또는 이점을 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular situation that illustrates why or where the learner wants more confidence.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance in which increased confidence would make a meaningful difference.",
+        "semanticRoleKo": "학습자가 왜 또는 어디에서 더 자신감을 원하는지 보여 주는 특정 상황.",
+        "satisfiedWhenKo": "답변이 높아진 자신감이 의미 있는 차이를 만들 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete source of low confidence or barrier to becoming more confident in that area.",
+        "satisfiedWhenEn": "The answer identifies a specific fear, past experience, skill gap, or circumstance that undermines confidence.",
+        "semanticRoleKo": "그 영역에서 자신감이 낮은 구체적인 원인이나 더 자신 있게 되는 데 생기는 장애물.",
+        "satisfiedWhenKo": "답변이 자신감을 약화시키는 특정 두려움, 과거 경험, 기술 격차 또는 상황을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional experience of the current confidence gap or the confidence they hope to feel.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion linked to facing the selected area now or after improvement.",
+        "semanticRoleKo": "현재 자신감 부족에서 경험하거나 향상 후 느끼고 싶은 학습자의 감정.",
+        "satisfiedWhenKo": "답변이 지금 선택한 영역을 마주할 때나 향상된 뒤의 상태와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-26",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific career-related skill the learner wants to build this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete professional capability rather than referring vaguely to career development.",
+        "semanticRoleKo": "학습자가 올해 기르고 싶은 구체적인 직업 관련 기술.",
+        "satisfiedWhenKo": "답변이 막연한 경력 개발을 말하지 않고 구체적인 직무 능력을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to develop the selected career skill.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to learn, practice, apply, or obtain feedback on the named professional skill.",
+        "semanticRoleKo": "선택한 직업 기술을 발전시키기 위해 학습자가 의도한 방식.",
+        "satisfiedWhenKo": "답변이 밝힌 직무 기술을 배우고, 연습하고, 적용하거나 피드백을 받을 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete work task or professional situation that illustrates the career skill.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance showing where or how the learner would use the selected skill.",
+        "semanticRoleKo": "해당 직업 기술을 보여 주는 구체적인 업무 과제나 직업 상황.",
+        "satisfiedWhenKo": "답변이 학습자가 선택한 기술을 어디에서 또는 어떻게 사용할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined schedule, frequency, deadline, or milestone for building the career skill.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will work on the skill or when a development target should be reached.",
+        "semanticRoleKo": "직업 기술을 기르기 위한 명확한 일정, 빈도, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 기술을 위해 언제 또는 얼마나 자주 노력할지, 혹은 발전 목표를 언제 달성할지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific challenge that could make development of the career skill difficult.",
+        "satisfiedWhenEn": "The answer identifies a concrete knowledge gap, lack of opportunity, resource limit, or competing demand related to the skill.",
+        "semanticRoleKo": "직업 기술의 발전을 어렵게 할 수 있는 구체적인 과제.",
+        "satisfiedWhenKo": "답변이 해당 기술과 관련된 구체적인 지식 격차, 기회 부족, 자원 제약 또는 다른 일정의 부담을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome or sign that the learner has developed the career skill.",
+        "satisfiedWhenEn": "The answer describes an observable improvement in work performance, responsibility, opportunity, or confidence tied to the skill.",
+        "semanticRoleKo": "학습자가 직업 기술을 발전시켰음을 보여 주는 구체적인 결과나 징표.",
+        "satisfiedWhenKo": "답변이 해당 기술과 연결된 업무 수행, 책임, 기회 또는 자신감의 관찰 가능한 향상을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for building this particular career skill.",
+        "satisfiedWhenEn": "The answer explains a concrete professional or personal reason why developing the named skill matters.",
+        "semanticRoleKo": "이 특정 직업 기술을 기르려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 밝힌 기술을 발전시키는 일이 왜 중요한지 구체적인 직업적 또는 개인적 이유를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-27",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The one identifiable career skill the learner plans to build during this year.",
+        "satisfiedWhenEn": "The answer clearly describes a professional capability or work-related skill the learner wants to gain or strengthen.",
+        "semanticRoleKo": "학습자가 올해 기르려는 하나의 식별 가능한 직업 기술.",
+        "satisfiedWhenKo": "답변이 학습자가 새로 얻거나 강화하고 싶은 직무 능력이나 업무 관련 기술을 분명히 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's plan for gaining or strengthening the stated career skill.",
+        "satisfiedWhenEn": "The answer explains one or more actionable learning, practice, application, mentoring, or feedback steps.",
+        "semanticRoleKo": "제시한 직업 기술을 얻거나 강화하기 위한 학습자의 계획.",
+        "satisfiedWhenKo": "답변이 실행 가능한 학습, 연습, 적용, 멘토링 또는 피드백 단계를 하나 이상 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time commitment, frequency, deadline, or milestone within the career-skill plan.",
+        "satisfiedWhenEn": "The answer gives a recognizable indication of when or how often the learner will follow the plan or assess progress.",
+        "semanticRoleKo": "직업 기술 계획 안의 구체적인 시간 약속, 빈도, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 계획을 따르거나 진전을 평가할지 식별 가능하게 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular work activity or deliverable that demonstrates the career skill to be built.",
+        "satisfiedWhenEn": "The answer provides a recognizable example of a task, project, or situation where the skill would be practiced or shown.",
+        "semanticRoleKo": "기를 직업 기술을 보여 주는 특정 업무 활동이나 결과물.",
+        "satisfiedWhenKo": "답변이 기술을 연습하거나 보여 줄 과제, 프로젝트 또는 상황의 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete obstacle the learner may face while carrying out the career-skill plan.",
+        "satisfiedWhenEn": "The answer names a specific learning difficulty, access issue, workplace constraint, or habit that could hinder development.",
+        "semanticRoleKo": "직업 기술 계획을 실행하면서 학습자가 마주칠 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 발전을 방해할 수 있는 특정 학습상의 어려움, 접근성 문제, 직장 제약 또는 습관을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected effect or evidence that the career-skill plan is succeeding.",
+        "satisfiedWhenEn": "The answer describes a concrete change in competence, work output, responsibility, or opportunity that would demonstrate progress.",
+        "semanticRoleKo": "직업 기술 계획이 성공하고 있음을 보여 주는 예상 효과나 증거.",
+        "satisfiedWhenKo": "답변이 진전을 입증할 역량, 업무 결과물, 책임 또는 기회의 구체적인 변화를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for selecting this career skill or approach.",
+        "satisfiedWhenEn": "The answer gives a concrete professional need, aspiration, or practical benefit that motivates the choice.",
+        "semanticRoleKo": "이 직업 기술이나 접근법을 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 선택을 이끄는 구체적인 직업적 필요, 포부 또는 실용적 이점을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-28",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific professional skill the learner wants to develop this year.",
+        "satisfiedWhenEn": "The answer identifies a recognizable work-related capability that makes the intended development target clear.",
+        "semanticRoleKo": "학습자가 올해 발전시키고 싶은 구체적인 직무 기술.",
+        "satisfiedWhenKo": "답변이 의도한 발전 목표를 알 수 있도록 식별 가능한 업무 관련 능력을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner will make progress in developing the selected career skill.",
+        "satisfiedWhenEn": "The answer states an actionable way to learn, practice, apply, or receive guidance on the professional capability.",
+        "semanticRoleKo": "선택한 직업 기술을 발전시키며 학습자가 진전할 방식.",
+        "satisfiedWhenKo": "답변이 해당 직무 능력을 배우고, 연습하고, 적용하거나 지도를 받을 실행 가능한 방법을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete progress marker or benefit expected from developing the career skill.",
+        "satisfiedWhenEn": "The answer describes an observable improvement in performance, output, responsibility, or professional opportunity.",
+        "semanticRoleKo": "직업 기술을 발전시키면서 기대하는 구체적인 진전 지표나 이점.",
+        "satisfiedWhenKo": "답변이 업무 수행, 결과물, 책임 또는 직업 기회의 관찰 가능한 향상을 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular work task, project, or situation that illustrates the selected career skill.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance showing what the learner wants to handle better through this skill.",
+        "semanticRoleKo": "선택한 직업 기술을 보여 주는 특정 업무 과제, 프로젝트 또는 상황.",
+        "satisfiedWhenKo": "답변이 학습자가 이 기술을 통해 무엇을 더 잘 처리하고 싶은지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific challenge that may slow the learner's progress in the career skill.",
+        "satisfiedWhenEn": "The answer identifies a concrete knowledge gap, limited practice opportunity, resource issue, or workplace constraint.",
+        "semanticRoleKo": "학습자의 직업 기술 진전을 늦출 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 구체적인 지식 격차, 제한된 연습 기회, 자원 문제 또는 직장 내 제약을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined schedule, frequency, target date, or checkpoint for career-skill progress.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will work on the skill or review development.",
+        "semanticRoleKo": "직업 기술의 진전을 위한 명확한 일정, 빈도, 목표 날짜 또는 점검 시점.",
+        "satisfiedWhenKo": "답변이 기술을 위해 언제 또는 얼마나 자주 노력하거나 발전을 검토할지 구체적으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for making progress in this career skill.",
+        "satisfiedWhenEn": "The answer explains a concrete professional aim, personal interest, or practical need that makes the skill worth developing.",
+        "semanticRoleKo": "이 직업 기술에서 진전하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 해당 기술을 발전시킬 가치가 있게 만드는 구체적인 직업 목표, 개인적 관심 또는 실용적 필요를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-29",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific career skill that the learner's proposed steps are meant to build this year.",
+        "satisfiedWhenEn": "The answer names a concrete professional capability so the target of the steps is identifiable.",
+        "semanticRoleKo": "학습자가 제안하는 단계로 올해 기르려는 구체적인 직업 기술.",
+        "satisfiedWhenKo": "답변이 단계의 대상을 식별할 수 있도록 구체적인 직무 능력을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to develop the identified career skill.",
+        "satisfiedWhenEn": "The answer gives one or more actionable learning, practice, application, mentoring, or feedback measures aimed at the skill.",
+        "semanticRoleKo": "확인된 직업 기술을 발전시키기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 해당 기술을 겨냥한 실행 가능한 학습, 연습, 적용, 멘토링 또는 피드백 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, deadline, or milestone for the career-skill steps.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will carry out the steps or when progress will be reviewed.",
+        "semanticRoleKo": "직업 기술을 위한 단계의 구체적인 일정, 빈도, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 단계를 언제 또는 얼마나 자주 실행할지, 혹은 진전을 언제 검토할지 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete work task or professional situation in which the learner will practice the skill.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance showing how one of the proposed steps will be applied.",
+        "semanticRoleKo": "학습자가 해당 기술을 연습할 구체적인 업무 과제나 직업 상황.",
+        "satisfiedWhenKo": "답변이 제안한 단계 중 하나를 어떻게 적용할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle the learner may encounter while following the career-skill steps.",
+        "satisfiedWhenEn": "The answer identifies a concrete learning difficulty, lack of access, time constraint, or workplace barrier that could disrupt the plan.",
+        "semanticRoleKo": "직업 기술을 위한 단계를 따르면서 학습자가 마주칠 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 계획을 방해할 수 있는 구체적인 학습상의 어려움, 접근 기회 부족, 시간 제약 또는 직장 내 장애물을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect or evidence that the career-skill steps are producing progress.",
+        "satisfiedWhenEn": "The answer describes an observable improvement in competence, work output, responsibility, or opportunity.",
+        "semanticRoleKo": "직업 기술을 위한 단계가 진전을 내고 있음을 보여 주는 구체적인 효과나 증거.",
+        "satisfiedWhenKo": "답변이 역량, 업무 결과물, 책임 또는 기회의 관찰 가능한 향상을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing the career skill or the proposed development steps.",
+        "satisfiedWhenEn": "The answer gives a concrete professional need, aspiration, or practical consideration that explains the choice.",
+        "semanticRoleKo": "해당 직업 기술이나 제안한 발전 단계를 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 그 선택을 설명하는 구체적인 직업적 필요, 포부 또는 실용적 고려를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-30",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The particular career skill the learner wants to build this year.",
+        "satisfiedWhenEn": "The answer identifies a recognizable professional or work-related capability rather than a broad wish for career growth.",
+        "semanticRoleKo": "학습자가 올해 기르고 싶은 특정 직업 기술.",
+        "satisfiedWhenKo": "답변이 폭넓은 경력 성장을 바란다고 하지 않고 식별 가능한 직무 또는 업무 관련 능력을 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why developing the chosen career skill is personally important to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete professional aim, need, value, or opportunity that makes the skill matter.",
+        "semanticRoleKo": "선택한 직업 기술을 발전시키는 일이 학습자에게 개인적으로 중요한 이유.",
+        "satisfiedWhenKo": "답변이 해당 기술을 중요하게 만드는 구체적인 직업 목표, 필요, 가치 또는 기회를 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A method the learner could use to gain or strengthen the career skill.",
+        "satisfiedWhenEn": "The answer states at least one actionable learning, practice, application, mentoring, or feedback step.",
+        "semanticRoleKo": "직업 기술을 얻거나 강화하기 위해 학습자가 사용할 수 있는 방법.",
+        "satisfiedWhenKo": "답변이 실행 가능한 학습, 연습, 적용, 멘토링 또는 피드백 단계를 하나 이상 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete consequence or progress marker expected from developing the career skill.",
+        "satisfiedWhenEn": "The answer describes an observable change in job performance, responsibilities, opportunities, or professional confidence.",
+        "semanticRoleKo": "직업 기술을 발전시키면서 기대하는 구체적인 결과나 진전 지표.",
+        "satisfiedWhenKo": "답변이 직무 수행, 책임, 기회 또는 직업적 자신감의 관찰 가능한 변화를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular work task or situation that shows why the selected career skill matters.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance in which using the skill would make a practical difference.",
+        "semanticRoleKo": "선택한 직업 기술이 왜 중요한지 보여 주는 특정 업무 과제나 상황.",
+        "satisfiedWhenKo": "답변이 해당 기술을 사용하는 것이 실질적인 차이를 만들 식별 가능한 사례를 제시하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete weakness or obstacle related to building the selected career skill.",
+        "satisfiedWhenEn": "The answer identifies a specific knowledge gap, limited opportunity, resource issue, or other condition that makes development difficult.",
+        "semanticRoleKo": "선택한 직업 기술을 기르는 것과 관련된 구체적인 약점이나 장애물.",
+        "satisfiedWhenKo": "답변이 기술 발전을 어렵게 하는 특정 지식 격차, 제한된 기회, 자원 문제 또는 다른 상황을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined schedule, frequency, target date, or milestone associated with developing the career skill.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will work on the skill or when a development target should be met.",
+        "semanticRoleKo": "직업 기술의 발전과 관련된 명확한 일정, 빈도, 목표 날짜 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 해당 역량을 연습할 구체적인 시기나 빈도 또는 발전 목표의 달성 시점을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-31",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific reading habit the learner wants to establish this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete recurring reading behavior or target rather than only saying the learner wants to read more.",
+        "semanticRoleKo": "학습자가 올해 만들고 싶은 구체적인 독서 습관.",
+        "satisfiedWhenKo": "답변이 책을 더 읽고 싶다고만 하지 않고 구체적으로 반복할 독서 행동이나 목표를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to build and maintain the selected reading habit.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to start, support, or repeat the named reading behavior.",
+        "semanticRoleKo": "선택한 독서 습관을 만들고 유지하기 위해 학습자가 의도한 방식.",
+        "satisfiedWhenKo": "답변이 밝힌 독서 행동을 시작하고, 뒷받침하거나 반복할 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete reading schedule, frequency, duration, deadline, or starting point.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will perform the reading habit.",
+        "semanticRoleKo": "구체적인 독서 일정, 빈도, 지속 시간, 기한 또는 시작 시점.",
+        "satisfiedWhenKo": "답변이 독서 습관을 언제, 얼마나 오래 또는 얼마나 자주 실천할지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that could prevent the learner from forming the reading habit.",
+        "satisfiedWhenEn": "The answer identifies a concrete barrier, such as distraction, fatigue, difficulty choosing material, or an inconsistent schedule.",
+        "semanticRoleKo": "학습자가 독서 습관을 만들지 못하게 할 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 산만함, 피로, 읽을 자료 선택의 어려움, 불규칙한 일정처럼 구체적인 문제를 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome or sign that the reading habit has taken hold.",
+        "satisfiedWhenEn": "The answer describes an observable effect, such as finishing books regularly, understanding more, or reaching a reading milestone.",
+        "semanticRoleKo": "독서 습관이 자리 잡았음을 보여 주는 구체적인 결과나 징표.",
+        "satisfiedWhenKo": "답변이 정기적인 완독, 이해력 향상, 독서 중간 목표 달성처럼 관찰 가능한 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for establishing this reading habit.",
+        "satisfiedWhenEn": "The answer gives a concrete personal, academic, or practical reason why the recurring reading behavior matters.",
+        "semanticRoleKo": "이 독서 습관을 만들려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 반복되는 독서 행동이 왜 중요한지 구체적인 개인적, 학업적 또는 실용적 이유를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular book, text type, or reading situation that illustrates the intended habit.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance showing what or under what circumstances the learner plans to read.",
+        "semanticRoleKo": "의도한 습관을 보여 주는 특정 책, 글의 유형 또는 독서 상황.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 또는 어떤 상황에서 읽을 계획인지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-32",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The one concrete reading habit the learner wants to develop during this year.",
+        "satisfiedWhenEn": "The answer clearly describes a recurring reading behavior, amount, or pattern the learner wants to establish.",
+        "semanticRoleKo": "학습자가 올해 기르고 싶은 하나의 구체적인 독서 습관.",
+        "satisfiedWhenKo": "답변이 만들고 싶은 반복적인 독서 행동, 분량 또는 패턴을 분명히 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's plan for creating and sustaining the stated reading habit.",
+        "satisfiedWhenEn": "The answer explains one or more actionable steps for initiating, supporting, or repeating the intended reading behavior.",
+        "semanticRoleKo": "제시한 독서 습관을 만들고 지속하기 위한 학습자의 계획.",
+        "satisfiedWhenKo": "답변이 의도한 독서 행동을 시작하고, 뒷받침하거나 반복하기 위한 실행 가능한 단계를 하나 이상 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined time, frequency, duration, deadline, or checkpoint within the reading plan.",
+        "satisfiedWhenEn": "The answer provides a concrete indication of when, how long, or how often the learner will read or review progress.",
+        "semanticRoleKo": "독서 계획 안의 명확한 시간, 빈도, 지속 시간, 기한 또는 점검 시점.",
+        "satisfiedWhenKo": "답변이 언제, 얼마나 오래 또는 얼마나 자주 읽거나 진전을 검토할지 구체적으로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing this particular reading habit.",
+        "satisfiedWhenEn": "The answer explains a concrete interest, need, value, or expected benefit that motivates the habit.",
+        "semanticRoleKo": "이 특정 독서 습관을 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 습관을 이끄는 구체적인 관심, 필요, 가치 또는 기대 이점을 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete challenge the learner may face while carrying out the reading plan.",
+        "satisfiedWhenEn": "The answer identifies a specific distraction, scheduling issue, material difficulty, or motivation problem that could hinder the habit.",
+        "semanticRoleKo": "독서 계획을 실행하면서 학습자가 마주칠 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 습관을 방해할 수 있는 특정한 산만함, 일정 문제, 자료의 어려움 또는 동기 문제를 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected effect or evidence that the reading plan is working.",
+        "satisfiedWhenEn": "The answer describes a concrete change in reading consistency, volume, comprehension, or enjoyment that would demonstrate progress.",
+        "semanticRoleKo": "독서 계획이 효과가 있음을 보여 주는 예상 효과나 증거.",
+        "satisfiedWhenKo": "답변이 진전을 입증할 독서의 꾸준함, 분량, 이해도 또는 즐거움의 구체적인 변화를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific reading material or occasion that demonstrates how the planned habit will work.",
+        "satisfiedWhenEn": "The answer supplies a recognizable example of what the learner will read or when the routine will be used.",
+        "semanticRoleKo": "계획한 습관이 어떻게 작동할지 보여 주는 특정 읽을거리나 상황.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 읽거나 언제 그 습관을 실천할지 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-33",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The identifiable reading habit the learner wants to build this year.",
+        "satisfiedWhenEn": "The answer names a concrete recurring reading action or target that makes the intended habit clear.",
+        "semanticRoleKo": "학습자가 올해 만들고 싶은 식별 가능한 독서 습관.",
+        "satisfiedWhenKo": "답변이 의도한 습관을 알 수 있도록 구체적으로 반복할 독서 행동이나 목표를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner will make progress in establishing the selected reading habit.",
+        "satisfiedWhenEn": "The answer states an actionable way to begin, repeat, track, or support the intended reading behavior.",
+        "semanticRoleKo": "선택한 독서 습관을 만드는 데 학습자가 진전할 방식.",
+        "satisfiedWhenKo": "답변이 의도한 독서 행동을 시작하고, 반복하고, 기록하거나 뒷받침할 실행 가능한 방법을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete milestone or benefit that would show progress in the reading habit.",
+        "satisfiedWhenEn": "The answer describes an observable change, such as reading on more days, finishing selected material, or retaining more content.",
+        "semanticRoleKo": "독서 습관의 진전을 보여 줄 구체적인 중간 성과나 이점.",
+        "satisfiedWhenKo": "답변이 더 많은 날에 읽기, 선택한 자료 완독, 더 많은 내용 기억하기처럼 관찰 가능한 변화를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete timing commitment for building the reading habit.",
+        "satisfiedWhenEn": "The answer specifies a reading time, frequency, duration, target date, or progress checkpoint.",
+        "semanticRoleKo": "독서 습관을 만들기 위한 구체적인 시간 약속.",
+        "satisfiedWhenKo": "답변이 독서 시간, 빈도, 지속 시간, 목표 날짜 또는 진전 점검 시점을 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that may slow progress in establishing the reading habit.",
+        "satisfiedWhenEn": "The answer identifies a concrete distraction, competing activity, difficulty with material, or lapse in motivation.",
+        "semanticRoleKo": "독서 습관을 만드는 진전을 늦출 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 구체적인 산만함, 다른 경쟁 활동, 자료의 어려움 또는 동기 저하를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for making progress on this reading habit.",
+        "satisfiedWhenEn": "The answer explains a concrete personal, learning, or practical benefit that makes the habit worthwhile.",
+        "semanticRoleKo": "이 독서 습관을 만드는 데 진전하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 습관을 가치 있게 만드는 구체적인 개인적, 학습상 또는 실용적 이점을 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular text or reading situation that illustrates the habit the learner wants to establish.",
+        "satisfiedWhenEn": "The answer gives a recognizable instance showing the material or occasion involved in the intended routine.",
+        "semanticRoleKo": "학습자가 만들고 싶은 습관을 보여 주는 특정 글이나 독서 상황.",
+        "satisfiedWhenKo": "답변이 의도한 습관에 포함된 읽을거리나 상황을 보여 주는 식별 가능한 사례를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-34",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific reading habit that the learner's proposed steps are intended to establish this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete recurring reading behavior or target so the purpose of the steps is known.",
+        "semanticRoleKo": "학습자가 제안하는 단계로 올해 만들려는 구체적인 독서 습관.",
+        "satisfiedWhenKo": "답변이 단계의 목적을 알 수 있도록 구체적으로 반복할 독서 행동이나 목표를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to build and maintain the identified reading habit.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures that can initiate, support, or repeat the named reading behavior.",
+        "semanticRoleKo": "확인된 독서 습관을 만들고 유지하기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 밝힌 독서 행동을 시작하고, 뒷받침하거나 반복할 수 있는 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, duration, deadline, or trigger for the reading-habit steps.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will perform the planned reading actions.",
+        "semanticRoleKo": "독서 습관을 위한 단계의 구체적인 일정, 빈도, 지속 시간, 기한 또는 계기.",
+        "satisfiedWhenKo": "답변이 계획한 독서 행동을 언제, 얼마나 오래 또는 얼마나 자주 수행할지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle the learner expects while trying to establish the reading habit.",
+        "satisfiedWhenEn": "The answer identifies a concrete distraction, time conflict, material problem, or motivation issue that could disrupt the steps.",
+        "semanticRoleKo": "독서 습관을 만들려 할 때 학습자가 예상하는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 단계를 방해할 수 있는 구체적인 산만함, 시간 충돌, 자료 문제 또는 동기 문제를 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect or evidence that the reading-habit steps are succeeding.",
+        "satisfiedWhenEn": "The answer describes an observable improvement in consistency, completed reading, comprehension, or another relevant outcome.",
+        "semanticRoleKo": "독서 습관을 위한 단계가 성공하고 있음을 보여 주는 구체적인 효과나 증거.",
+        "satisfiedWhenKo": "답변이 꾸준함, 완독, 이해도 또는 다른 관련 결과의 관찰 가능한 향상을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing this reading habit or these particular steps.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation explaining why the habit matters or why the chosen approach fits.",
+        "semanticRoleKo": "이 독서 습관이나 특정 단계를 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 습관이 중요한 이유나 선택한 접근법이 적합한 이유를 설명하는 구체적인 동기를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific location or setting where the learner will carry out the reading habit.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place connected to the planned reading activity.",
+        "semanticRoleKo": "학습자가 독서 습관을 실천할 구체적인 장소나 환경.",
+        "satisfiedWhenKo": "답변이 계획된 독서 활동과 연결된 식별 가능한 장소를 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-35",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The particular reading habit the learner wants to build this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete, recurring reading behavior or target rather than a vague intention to read.",
+        "semanticRoleKo": "학습자가 올해 만들고 싶은 특정 독서 습관.",
+        "satisfiedWhenKo": "답변이 막연히 읽겠다는 의도가 아니라 구체적으로 반복할 독서 행동이나 목표를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why establishing the chosen reading habit is personally important to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete interest, value, need, or expected benefit that makes the reading habit matter.",
+        "semanticRoleKo": "선택한 독서 습관을 만드는 일이 학습자에게 개인적으로 중요한 이유.",
+        "satisfiedWhenKo": "답변이 독서 습관을 중요하게 만드는 구체적인 관심, 가치, 필요 또는 기대 이점을 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A method the learner could use to establish and maintain the reading habit.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to begin, repeat, track, or support the named reading behavior.",
+        "semanticRoleKo": "독서 습관을 만들고 유지하기 위해 학습자가 사용할 수 있는 방법.",
+        "satisfiedWhenKo": "답변이 밝힌 독서 행동을 시작하고, 반복하고, 기록하거나 뒷받침할 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete consequence or progress sign expected from establishing the reading habit.",
+        "satisfiedWhenEn": "The answer describes an observable change in reading consistency, volume, comprehension, knowledge, or enjoyment.",
+        "semanticRoleKo": "독서 습관을 만들면서 기대하는 구체적인 결과나 진전의 징표.",
+        "satisfiedWhenKo": "답변이 독서의 꾸준함, 분량, 이해도, 지식 또는 즐거움의 관찰 가능한 변화를 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that could make the reading habit hard to establish.",
+        "satisfiedWhenEn": "The answer identifies a specific distraction, schedule conflict, material challenge, or motivation problem.",
+        "semanticRoleKo": "독서 습관을 만들기 어렵게 할 수 있는 구체적인 문제.",
+        "satisfiedWhenKo": "답변이 특정한 산만함, 일정 충돌, 자료의 어려움 또는 동기 문제를 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined reading time, frequency, duration, deadline, or habit milestone.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will read or when the habit target should be reached.",
+        "semanticRoleKo": "명확한 독서 시간, 빈도, 지속 시간, 기한 또는 습관의 중간 시점.",
+        "satisfiedWhenKo": "답변이 언제, 얼마나 오래 또는 얼마나 자주 읽을지, 혹은 습관 목표를 언제 달성할지 구체적으로 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling that gives the reading habit personal meaning or is expected from sustaining it.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to reading now or under the desired habit.",
+        "semanticRoleKo": "독서 습관에 개인적 의미를 부여하거나 습관 유지에서 기대하는 감정.",
+        "satisfiedWhenKo": "답변이 지금의 독서 또는 바라는 습관 아래에서 읽는 것과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-36",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific savings amount, purpose, or financial target the learner wants to reach this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete savings outcome rather than stating only that the learner wants to save money.",
+        "semanticRoleKo": "학습자가 올해 도달하고 싶은 구체적인 저축 금액, 목적 또는 재정 목표.",
+        "satisfiedWhenKo": "답변이 돈을 모으고 싶다고만 하지 않고 구체적인 저축 결과를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to work toward the selected savings goal.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to set aside money, reduce spending, increase income, or track savings.",
+        "semanticRoleKo": "선택한 저축 목표를 향해 학습자가 노력하려는 방식.",
+        "satisfiedWhenKo": "답변이 돈을 따로 모으고, 지출을 줄이고, 수입을 늘리거나 저축을 기록할 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete contribution schedule, frequency, deadline, or savings checkpoint.",
+        "satisfiedWhenEn": "The answer specifies when or how often money will be saved or when a savings milestone should be reached.",
+        "semanticRoleKo": "구체적인 적립 일정, 빈도, 기한 또는 저축 점검 시점.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 돈을 모을지, 혹은 저축 중간 목표를 언제 달성할지 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that could make the savings goal difficult to reach.",
+        "satisfiedWhenEn": "The answer identifies a concrete spending pressure, income limit, unexpected expense, or saving habit that could interfere.",
+        "semanticRoleKo": "저축 목표에 도달하기 어렵게 할 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 구체적인 지출 압박, 소득 제약, 예상치 못한 비용 또는 저축 습관의 문제를 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete benefit or progress marker associated with reaching the savings goal.",
+        "satisfiedWhenEn": "The answer describes an observable financial effect, milestone, or opportunity that would result from the saving effort.",
+        "semanticRoleKo": "저축 목표 달성과 관련된 구체적인 이점이나 진전 지표.",
+        "satisfiedWhenKo": "답변이 저축 노력에서 생길 관찰 가능한 재정적 효과, 중간 성과 또는 기회를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for pursuing this savings goal.",
+        "satisfiedWhenEn": "The answer gives a concrete personal or practical reason why accumulating the stated savings matters.",
+        "semanticRoleKo": "이 저축 목표를 추구하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 제시한 저축을 모으는 일이 왜 중요한지 구체적인 개인적 또는 실용적 이유를 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete financial specification that adds information beyond the basic savings target or method.",
+        "satisfiedWhenEn": "The answer provides a distinct detail, such as the current amount, periodic contribution, account arrangement, or allocation of the saved money.",
+        "semanticRoleKo": "기본 저축 목표나 방법을 넘어 정보를 더하는 구체적인 재정 세부사항.",
+        "satisfiedWhenKo": "답변이 현재 금액, 정기 적립액, 계좌 구성 또는 모은 돈의 배분처럼 독립적인 세부 정보를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-37",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The one concrete savings target the learner wants to reach during this year.",
+        "satisfiedWhenEn": "The answer clearly describes an identifiable amount, purpose, or financial condition the learner intends to save toward.",
+        "semanticRoleKo": "학습자가 올해 도달하고 싶은 하나의 구체적인 저축 목표.",
+        "satisfiedWhenKo": "답변이 저축하려는 식별 가능한 금액, 목적 또는 재정 상태를 분명히 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's plan for reaching the stated savings target.",
+        "satisfiedWhenEn": "The answer explains one or more actionable measures for setting money aside, controlling spending, earning more, or monitoring progress.",
+        "semanticRoleKo": "제시한 저축 목표에 도달하기 위한 학습자의 계획.",
+        "satisfiedWhenKo": "답변이 돈을 따로 모으고, 지출을 통제하고, 수입을 늘리거나 진전을 확인할 실행 가능한 조치를 하나 이상 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined contribution schedule, savings frequency, target date, or progress checkpoint within the plan.",
+        "satisfiedWhenEn": "The answer gives a concrete indication of when or how often saving actions will occur or when the target should be met.",
+        "semanticRoleKo": "계획 안의 명확한 적립 일정, 저축 빈도, 목표 날짜 또는 진전 점검 시점.",
+        "satisfiedWhenKo": "답변이 저축 행동을 언제 또는 얼마나 자주 할지, 혹은 목표를 언제 달성할지 구체적으로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing this particular savings target.",
+        "satisfiedWhenEn": "The answer explains a concrete need, purchase, future event, security concern, or value that motivates the goal.",
+        "semanticRoleKo": "이 특정 저축 목표를 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 목표를 이끄는 구체적인 필요, 구매, 미래 행사, 안정에 대한 고려 또는 가치를 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete challenge the learner may face while carrying out the savings plan.",
+        "satisfiedWhenEn": "The answer identifies a specific expense, income constraint, temptation, or unexpected event that could reduce saving.",
+        "semanticRoleKo": "저축 계획을 실행하면서 학습자가 마주칠 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 저축을 줄일 수 있는 특정 지출, 소득 제약, 소비 유혹 또는 예상치 못한 일을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected financial effect or evidence that the savings plan is succeeding.",
+        "satisfiedWhenEn": "The answer describes a concrete milestone, increased security, funded purchase, or other outcome demonstrating progress.",
+        "semanticRoleKo": "저축 계획이 성공하고 있음을 보여 주는 예상 재정 효과나 증거.",
+        "satisfiedWhenKo": "답변이 진전을 입증할 구체적인 중간 성과, 높아진 안정성, 마련된 구매 자금 또는 다른 결과를 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific financial detail that further defines the learner's savings situation without duplicating the goal or plan.",
+        "satisfiedWhenEn": "The answer adds a distinct fact, such as a current balance, contribution amount, account type, or division of funds.",
+        "semanticRoleKo": "목표나 계획을 중복하지 않으면서 학습자의 저축 상황을 더 구체화하는 재정 세부사항.",
+        "satisfiedWhenKo": "답변이 현재 잔액, 적립액, 계좌 유형 또는 자금 분배처럼 독립적인 사실을 더하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-38",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The identifiable savings outcome the learner wants to reach this year.",
+        "satisfiedWhenEn": "The answer names a concrete amount, purpose, or desired financial reserve that makes the target clear.",
+        "semanticRoleKo": "학습자가 올해 도달하고 싶은 식별 가능한 저축 결과.",
+        "satisfiedWhenKo": "답변이 목표를 알 수 있도록 구체적인 금액, 목적 또는 바라는 비상 자금을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner will make progress toward the selected savings outcome.",
+        "satisfiedWhenEn": "The answer states an actionable saving, spending-control, income, or tracking strategy that can advance the target.",
+        "semanticRoleKo": "선택한 저축 결과를 향해 학습자가 진전할 방식.",
+        "satisfiedWhenKo": "답변이 목표를 발전시킬 수 있는 실행 가능한 저축, 지출 통제, 수입 또는 기록 전략을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete milestone or benefit that would show progress toward the savings goal.",
+        "satisfiedWhenEn": "The answer describes an observable financial change, funded need, or increase in security produced by the saving effort.",
+        "semanticRoleKo": "저축 목표를 향한 진전을 보여 줄 구체적인 중간 성과나 이점.",
+        "satisfiedWhenKo": "답변이 저축 노력으로 생긴 관찰 가능한 재정 변화, 충당된 필요 또는 높아진 안정성을 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete timing commitment for making savings progress.",
+        "satisfiedWhenEn": "The answer specifies a contribution time, frequency, target date, or point for reviewing the balance.",
+        "semanticRoleKo": "저축의 진전을 이루기 위한 구체적인 시간 약속.",
+        "satisfiedWhenKo": "답변이 적립 시기, 빈도, 목표 날짜 또는 잔액 검토 시점을 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that may slow the learner's savings progress.",
+        "satisfiedWhenEn": "The answer identifies a concrete expense, income issue, spending behavior, or uncertainty that could hinder saving.",
+        "semanticRoleKo": "학습자의 저축 진전을 늦출 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 저축을 방해할 수 있는 구체적인 지출, 소득 문제, 소비 행동 또는 불확실성을 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for making progress on this savings goal.",
+        "satisfiedWhenEn": "The answer explains a concrete personal need, future plan, purchase, or desire for security that makes saving worthwhile.",
+        "semanticRoleKo": "이 저축 목표에서 진전하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 저축을 가치 있게 만드는 구체적인 개인적 필요, 미래 계획, 구매 또는 안정에 대한 바람을 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete specification of the savings situation beyond the core target and method.",
+        "satisfiedWhenEn": "The answer provides a distinct fact, such as a current balance, regular contribution amount, designated account, or spending category to adjust.",
+        "semanticRoleKo": "핵심 목표와 방법을 넘어 저축 상황을 구체화하는 세부사항.",
+        "satisfiedWhenKo": "답변이 현재 잔액, 정기 적립액, 지정 계좌 또는 조정할 지출 항목처럼 독립적인 사실을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-39",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific savings target that the learner's proposed steps are intended to reach this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete amount, purpose, or desired financial reserve so the purpose of the steps is clear.",
+        "semanticRoleKo": "학습자가 제안하는 단계로 올해 도달하려는 구체적인 저축 목표.",
+        "satisfiedWhenKo": "답변이 단계의 목적을 알 수 있도록 구체적인 금액, 목적 또는 바라는 비상 자금을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to reach the identified savings target.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures for setting money aside, changing spending, increasing income, or monitoring savings.",
+        "semanticRoleKo": "확인된 저축 목표에 도달하기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 돈을 따로 모으고, 지출을 바꾸고, 수입을 늘리거나 저축을 확인할 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, deadline, or checkpoint for the savings-goal steps.",
+        "satisfiedWhenEn": "The answer specifies when or how often the planned saving actions will occur or when a milestone should be reached.",
+        "semanticRoleKo": "저축 목표를 위한 단계의 구체적인 일정, 빈도, 기한 또는 점검 시점.",
+        "satisfiedWhenKo": "답변이 계획한 저축 행동을 언제 또는 얼마나 자주 할지, 혹은 중간 목표를 언제 달성할지 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle the learner may encounter while following the savings steps.",
+        "satisfiedWhenEn": "The answer identifies a concrete expense, income limitation, spending temptation, or unexpected event that could disrupt the plan.",
+        "semanticRoleKo": "저축 단계를 따르면서 학습자가 마주칠 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 계획을 방해할 수 있는 구체적인 지출, 소득 제약, 소비 유혹 또는 예상치 못한 일을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect or evidence that the savings steps are working.",
+        "satisfiedWhenEn": "The answer describes an observable financial milestone, funded need, or increase in security that would demonstrate progress.",
+        "semanticRoleKo": "저축 단계가 효과가 있음을 보여 주는 구체적인 효과나 증거.",
+        "satisfiedWhenKo": "답변이 진전을 입증할 관찰 가능한 재정적 중간 성과, 충당된 필요 또는 높아진 안정성을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing this savings goal or these particular steps.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation explaining why the target matters or why the selected saving approach fits.",
+        "semanticRoleKo": "이 저축 목표나 특정 단계를 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 목표가 중요한 이유나 선택한 저축 접근법이 적합한 이유를 설명하는 구체적인 동기를 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete financial specification that adds information beyond the core savings target or steps.",
+        "satisfiedWhenEn": "The answer adds a distinct fact, such as a current balance, contribution amount, account arrangement, or spending category involved.",
+        "semanticRoleKo": "핵심 저축 목표나 단계를 넘어 정보를 더하는 구체적인 재정 세부사항.",
+        "satisfiedWhenKo": "답변이 현재 잔액, 적립액, 계좌 구성 또는 관련 지출 항목처럼 독립적인 사실을 더하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-40",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The particular savings goal the learner wants to reach this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete amount, purpose, or financial condition rather than a vague wish to save more.",
+        "semanticRoleKo": "학습자가 올해 도달하고 싶은 특정 저축 목표.",
+        "satisfiedWhenKo": "답변이 더 많이 저축하고 싶다는 막연한 바람이 아니라 구체적인 금액, 목적 또는 재정 상태를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why reaching the chosen savings goal is personally important to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete need, future plan, value, purchase, or security concern that makes the savings target matter.",
+        "semanticRoleKo": "선택한 저축 목표에 도달하는 일이 학습자에게 개인적으로 중요한 이유.",
+        "satisfiedWhenKo": "답변이 저축 목표를 중요하게 만드는 구체적인 필요, 미래 계획, 가치, 구매 또는 안정에 대한 고려를 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A method the learner could use to work toward the savings goal.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to save, control spending, earn additional money, or track progress.",
+        "semanticRoleKo": "저축 목표를 향해 노력하기 위해 학습자가 사용할 수 있는 방법.",
+        "satisfiedWhenKo": "답변이 저축하고, 지출을 통제하고, 추가 수입을 얻거나 진전을 기록할 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete consequence or progress marker associated with reaching or pursuing the savings goal.",
+        "satisfiedWhenEn": "The answer describes an observable financial effect, milestone, funded purpose, or increase in security.",
+        "semanticRoleKo": "저축 목표를 추구하거나 달성하는 것과 관련된 구체적인 결과나 진전 지표.",
+        "satisfiedWhenKo": "답변이 관찰 가능한 재정적 효과, 중간 성과, 마련된 목적 자금 또는 높아진 안정성을 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that could make the savings goal hard to reach.",
+        "satisfiedWhenEn": "The answer identifies a specific expense, income issue, spending behavior, or uncertainty that may interfere with saving.",
+        "semanticRoleKo": "저축 목표에 도달하기 어렵게 할 수 있는 구체적인 문제.",
+        "satisfiedWhenKo": "답변이 저축을 방해할 수 있는 특정 지출, 소득 문제, 소비 행동 또는 불확실성을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined savings schedule, frequency, deadline, or milestone.",
+        "satisfiedWhenEn": "The answer specifies when or how often money will be set aside or when the goal should be reached.",
+        "semanticRoleKo": "명확한 저축 일정, 빈도, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 돈을 따로 모을지, 혹은 목표를 언제 달성할지 구체적으로 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling that gives the savings goal personal significance or is expected from reaching it.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the learner's current finances or desired savings outcome.",
+        "semanticRoleKo": "저축 목표에 개인적 의미를 부여하거나 목표 달성에서 기대하는 감정.",
+        "satisfiedWhenKo": "답변이 학습자의 현재 재정 상태나 바라는 저축 결과와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-41",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific fitness routine the learner wants to keep doing this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete recurring exercise or fitness practice rather than referring generally to staying fit.",
+        "semanticRoleKo": "학습자가 올해 계속 유지하고 싶은 구체적인 운동 습관.",
+        "satisfiedWhenKo": "답변이 전반적으로 건강을 유지하겠다고 하지 않고 구체적으로 반복할 운동이나 신체 활동을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to maintain the selected fitness routine.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to schedule, support, adapt, or return to the named routine.",
+        "semanticRoleKo": "선택한 운동 습관을 유지하기 위해 학습자가 의도한 방식.",
+        "satisfiedWhenKo": "답변이 밝힌 운동 습관의 일정을 정하고, 뒷받침하고, 조정하거나 다시 시작할 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, duration, season, or starting point for the fitness routine.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will perform the selected routine.",
+        "semanticRoleKo": "운동 습관을 위한 구체적인 일정, 빈도, 지속 시간, 계절 또는 시작 시점.",
+        "satisfiedWhenKo": "답변이 선택한 운동을 언제, 얼마나 오래 또는 얼마나 자주 할지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that could make the fitness routine difficult to maintain.",
+        "satisfiedWhenEn": "The answer identifies a concrete barrier, such as fatigue, schedule changes, weather, discomfort, or lost motivation.",
+        "semanticRoleKo": "운동 습관을 유지하기 어렵게 할 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 피로, 일정 변화, 날씨, 신체적 불편, 동기 저하처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome or sign that the learner is successfully keeping the fitness routine.",
+        "satisfiedWhenEn": "The answer describes an observable consistency marker, fitness improvement, or daily-life benefit produced by the routine.",
+        "semanticRoleKo": "학습자가 운동 습관을 성공적으로 유지하고 있음을 보여 주는 구체적인 결과나 징표.",
+        "satisfiedWhenKo": "답변이 습관에서 생기는 관찰 가능한 꾸준함의 지표, 체력 향상 또는 일상생활의 이점을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for maintaining this particular fitness routine.",
+        "satisfiedWhenEn": "The answer gives a concrete personal, health, performance, or enjoyment reason why keeping the routine matters.",
+        "semanticRoleKo": "이 특정 운동 습관을 유지하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 습관 유지가 왜 중요한지 구체적인 개인적, 건강상, 수행상 또는 즐거움과 관련된 이유를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific location or setting where the learner will carry out the fitness routine.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place or activity environment connected to the selected exercise.",
+        "semanticRoleKo": "학습자가 운동 습관을 실천할 구체적인 장소나 환경.",
+        "satisfiedWhenKo": "답변이 선택한 운동과 연결된 식별 가능한 장소나 활동 환경을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-42",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The one identifiable fitness routine the learner wants to maintain during this year.",
+        "satisfiedWhenEn": "The answer clearly describes a recurring exercise, training session, or physical practice the learner intends to keep.",
+        "semanticRoleKo": "학습자가 올해 유지하고 싶은 하나의 식별 가능한 운동 습관.",
+        "satisfiedWhenKo": "답변이 계속하려는 반복적인 운동, 훈련 세션 또는 신체 활동을 분명히 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's plan for continuing the stated fitness routine.",
+        "satisfiedWhenEn": "The answer explains one or more actionable measures for scheduling, supporting, adjusting, or resuming the routine.",
+        "semanticRoleKo": "제시한 운동 습관을 계속하기 위한 학습자의 계획.",
+        "satisfiedWhenKo": "답변이 습관의 일정을 정하고, 뒷받침하고, 조정하거나 다시 시작할 실행 가능한 조치를 하나 이상 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined workout schedule, frequency, duration, target date, or progress checkpoint within the plan.",
+        "satisfiedWhenEn": "The answer gives a concrete indication of when, how long, or how often the learner will follow the fitness routine.",
+        "semanticRoleKo": "계획 안의 명확한 운동 일정, 빈도, 지속 시간, 목표 날짜 또는 진전 점검 시점.",
+        "satisfiedWhenKo": "답변이 운동 습관을 언제, 얼마나 오래 또는 얼마나 자주 따를지 구체적으로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing to keep this fitness routine.",
+        "satisfiedWhenEn": "The answer explains a concrete health need, personal value, performance aim, or source of enjoyment that motivates maintenance.",
+        "semanticRoleKo": "이 운동 습관을 유지하기로 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 유지를 이끄는 구체적인 건강상 필요, 개인적 가치, 수행 목표 또는 즐거움을 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete challenge the learner may face while carrying out the fitness plan.",
+        "satisfiedWhenEn": "The answer identifies a specific schedule conflict, physical limitation, environmental issue, or motivation problem that could interrupt the routine.",
+        "semanticRoleKo": "운동 계획을 실행하면서 학습자가 마주칠 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 습관을 중단시킬 수 있는 특정 일정 충돌, 신체적 제약, 환경 문제 또는 동기 문제를 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected effect or evidence that the fitness plan is sustaining the routine.",
+        "satisfiedWhenEn": "The answer describes a concrete consistency measure, physical improvement, performance change, or everyday benefit.",
+        "semanticRoleKo": "운동 계획이 습관을 유지하고 있음을 보여 주는 예상 효과나 증거.",
+        "satisfiedWhenKo": "답변이 구체적인 꾸준함의 척도, 신체 향상, 수행 변화 또는 일상의 이점을 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A particular location or exercise setting used in the fitness plan.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place or environment where the learner will perform the routine.",
+        "semanticRoleKo": "운동 계획에 사용되는 특정 장소나 운동 환경.",
+        "satisfiedWhenKo": "답변이 학습자가 습관을 실천할 식별 가능한 장소나 환경을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-43",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific fitness routine the learner wants to continue this year.",
+        "satisfiedWhenEn": "The answer identifies a recognizable recurring exercise or physical practice that makes the maintenance target clear.",
+        "semanticRoleKo": "학습자가 올해 계속하고 싶은 구체적인 운동 습관.",
+        "satisfiedWhenKo": "답변이 유지 목표를 알 수 있도록 식별 가능한 반복 운동이나 신체 활동을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner will make progress in keeping the selected fitness routine.",
+        "satisfiedWhenEn": "The answer states an actionable way to increase consistency, adapt the routine, track participation, or recover after a lapse.",
+        "semanticRoleKo": "선택한 운동 습관을 유지하는 데 학습자가 진전할 방식.",
+        "satisfiedWhenKo": "답변이 꾸준함을 높이고, 습관을 조정하고, 참여를 기록하거나 중단 후 다시 시작할 실행 가능한 방법을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete milestone or benefit that would show progress in maintaining the fitness routine.",
+        "satisfiedWhenEn": "The answer describes an observable consistency pattern, fitness gain, performance improvement, or daily-life effect.",
+        "semanticRoleKo": "운동 습관 유지의 진전을 보여 줄 구체적인 중간 성과나 이점.",
+        "satisfiedWhenKo": "답변이 관찰 가능한 꾸준함의 패턴, 체력 향상, 수행 개선 또는 일상생활의 효과를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete timing commitment for maintaining the fitness routine.",
+        "satisfiedWhenEn": "The answer specifies a workout time, frequency, duration, target date, or review point.",
+        "semanticRoleKo": "운동 습관을 유지하기 위한 구체적인 시간 약속.",
+        "satisfiedWhenKo": "답변이 운동 시간, 빈도, 지속 시간, 목표 날짜 또는 검토 시점을 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that may slow or interrupt the learner's fitness-routine progress.",
+        "satisfiedWhenEn": "The answer identifies a concrete issue such as fatigue, competing commitments, weather, injury concerns, or reduced motivation.",
+        "semanticRoleKo": "학습자의 운동 습관 유지 진전을 늦추거나 중단시킬 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 피로, 다른 일정, 날씨, 부상 우려, 동기 저하처럼 구체적인 문제를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for making progress in maintaining this fitness routine.",
+        "satisfiedWhenEn": "The answer explains a concrete health, performance, emotional, or lifestyle benefit that makes continued exercise worthwhile.",
+        "semanticRoleKo": "이 운동 습관을 유지하는 데 진전하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 운동 지속을 가치 있게 만드는 구체적인 건강상, 수행상, 감정적 또는 생활상의 이점을 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific location or environment where the fitness routine will be maintained.",
+        "satisfiedWhenEn": "The answer identifies a recognizable exercise setting connected to the learner's routine.",
+        "semanticRoleKo": "운동 습관을 유지할 구체적인 장소나 환경.",
+        "satisfiedWhenKo": "답변이 학습자의 습관과 연결된 식별 가능한 운동 환경을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-44",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific fitness routine that the learner's proposed steps are intended to maintain this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete recurring exercise or physical practice so the purpose of the steps is clear.",
+        "semanticRoleKo": "학습자가 제안하는 단계로 올해 유지하려는 구체적인 운동 습관.",
+        "satisfiedWhenKo": "답변이 단계의 목적을 알 수 있도록 구체적으로 반복할 운동이나 신체 활동을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to keep the identified fitness routine.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures for scheduling, supporting, adapting, tracking, or resuming the routine.",
+        "semanticRoleKo": "확인된 운동 습관을 유지하기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 습관의 일정을 정하고, 뒷받침하고, 조정하고, 기록하거나 다시 시작할 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, duration, deadline, or checkpoint for the fitness-routine steps.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will carry out the planned exercise actions.",
+        "semanticRoleKo": "운동 습관을 위한 단계의 구체적인 일정, 빈도, 지속 시간, 기한 또는 점검 시점.",
+        "satisfiedWhenKo": "답변이 계획한 운동 행동을 언제, 얼마나 오래 또는 얼마나 자주 실행할지 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle the learner expects while trying to maintain the fitness routine.",
+        "satisfiedWhenEn": "The answer identifies a concrete schedule issue, physical concern, environmental condition, or motivation problem that could disrupt the steps.",
+        "semanticRoleKo": "운동 습관을 유지하려 할 때 학습자가 예상하는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 단계를 방해할 수 있는 구체적인 일정 문제, 신체적 우려, 환경 조건 또는 동기 문제를 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect or evidence that the fitness-routine steps are succeeding.",
+        "satisfiedWhenEn": "The answer describes an observable consistency measure, physical gain, performance improvement, or benefit from continued exercise.",
+        "semanticRoleKo": "운동 습관을 위한 단계가 성공하고 있음을 보여 주는 구체적인 효과나 증거.",
+        "satisfiedWhenKo": "답변이 관찰 가능한 꾸준함의 척도, 신체 향상, 수행 개선 또는 운동 지속의 이점을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing this fitness routine or these particular maintenance steps.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation explaining why the routine matters or why the selected approach fits.",
+        "semanticRoleKo": "이 운동 습관이나 특정 유지 단계를 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 이 운동을 유지해야 하는 이유 또는 제시한 유지 방식이 자신에게 맞는 이유를 구체적으로 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A specific location or exercise setting where the learner will perform the maintenance steps.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place connected to the planned fitness activity.",
+        "semanticRoleKo": "학습자가 유지 단계를 실행할 구체적인 장소나 운동 환경.",
+        "satisfiedWhenKo": "답변이 계획한 운동 활동과 연결된 식별 가능한 장소를 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-45",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The particular fitness routine the learner wants to keep this year.",
+        "satisfiedWhenEn": "The answer identifies a concrete recurring exercise, training practice, or physical activity rather than a vague fitness intention.",
+        "semanticRoleKo": "학습자가 올해 유지하고 싶은 특정 운동 습관.",
+        "satisfiedWhenKo": "답변이 막연한 운동 의도가 아니라 구체적으로 반복할 운동, 훈련 또는 신체 활동을 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why maintaining the chosen fitness routine is personally important to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete health need, value, performance aim, emotional benefit, or source of enjoyment that makes the routine matter.",
+        "semanticRoleKo": "선택한 운동 습관을 유지하는 일이 학습자에게 개인적으로 중요한 이유.",
+        "satisfiedWhenKo": "답변이 습관을 중요하게 만드는 구체적인 건강상 필요, 가치, 수행 목표, 감정적 이점 또는 즐거움을 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A method the learner could use to maintain the fitness routine.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to schedule, support, adapt, track, or resume the selected exercise.",
+        "semanticRoleKo": "운동 습관을 유지하기 위해 학습자가 사용할 수 있는 방법.",
+        "satisfiedWhenKo": "답변이 선택한 운동의 일정을 정하고, 뒷받침하고, 조정하고, 기록하거나 다시 시작할 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete consequence or progress sign expected from maintaining the fitness routine.",
+        "satisfiedWhenEn": "The answer describes an observable consistency pattern, physical improvement, performance change, or daily-life benefit.",
+        "semanticRoleKo": "운동 습관을 유지하면서 기대하는 구체적인 결과나 진전의 징표.",
+        "satisfiedWhenKo": "답변이 관찰 가능한 꾸준함의 패턴, 신체 향상, 수행 변화 또는 일상생활의 이점을 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete difficulty that could make the fitness routine hard to maintain.",
+        "satisfiedWhenEn": "The answer identifies a specific schedule conflict, physical limitation, environmental issue, or loss of motivation.",
+        "semanticRoleKo": "운동 습관을 유지하기 어렵게 할 수 있는 구체적인 문제.",
+        "satisfiedWhenKo": "답변이 특정 일정 충돌, 신체적 제약, 환경 문제 또는 동기 저하를 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined workout time, frequency, duration, target date, or maintenance milestone.",
+        "satisfiedWhenEn": "The answer specifies when, how long, or how often the learner will exercise or when a consistency target should be met.",
+        "semanticRoleKo": "명확한 운동 시간, 빈도, 지속 시간, 목표 날짜 또는 유지 중간 시점.",
+        "satisfiedWhenKo": "답변이 언제, 얼마나 오래 또는 얼마나 자주 운동할지, 혹은 꾸준함의 목표를 언제 달성할지 구체적으로 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling that gives the fitness routine personal meaning or is expected from maintaining it.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to doing the routine now or continuing it successfully.",
+        "semanticRoleKo": "운동 습관에 개인적 의미를 부여하거나 습관 유지에서 기대하는 감정.",
+        "satisfiedWhenKo": "답변이 지금 습관을 실천하거나 성공적으로 계속하는 것과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-46",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific creative project the learner wants to complete this year.",
+        "satisfiedWhenEn": "The answer identifies a recognizable creative work or project rather than saying only that something creative will be finished.",
+        "semanticRoleKo": "학습자가 올해 완성하고 싶은 구체적인 창작 프로젝트.",
+        "satisfiedWhenKo": "답변이 창의적인 무언가를 끝내겠다고만 하지 않고 식별 가능한 창작물이나 프로젝트를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to work toward completing the selected creative project.",
+        "satisfiedWhenEn": "The answer gives at least one actionable way to create, organize, revise, obtain support for, or finish the named project.",
+        "semanticRoleKo": "선택한 창작 프로젝트의 완성을 향해 학습자가 노력하려는 방식.",
+        "satisfiedWhenKo": "답변이 밝힌 프로젝트를 만들고, 정리하고, 수정하고, 도움을 받거나 끝낼 실행 가능한 방법을 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete work schedule, frequency, deadline, or milestone for the creative project.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will work on the project or when a stage should be completed.",
+        "semanticRoleKo": "창작 프로젝트를 위한 구체적인 작업 일정, 빈도, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 프로젝트를 언제 또는 얼마나 자주 진행할지, 혹은 한 단계를 언제 완료할지 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that could make the creative project difficult to finish.",
+        "satisfiedWhenEn": "The answer identifies a concrete challenge, such as limited time, unclear scope, missing skill, creative block, or lack of materials.",
+        "semanticRoleKo": "창작 프로젝트를 완성하기 어렵게 할 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 시간 부족, 불분명한 범위, 부족한 기술, 창작 막힘, 재료 부족처럼 구체적인 어려움을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete milestone, finished output, or benefit expected from completing the creative project.",
+        "satisfiedWhenEn": "The answer describes an observable stage, completed work, audience response, or personal effect that would show progress or completion.",
+        "semanticRoleKo": "창작 프로젝트 완성에서 기대하는 구체적인 중간 성과, 완성 결과물 또는 이점.",
+        "satisfiedWhenKo": "답변이 진전이나 완성을 보여 줄 관찰 가능한 단계, 완성된 작품, 청중 반응 또는 개인적 효과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for completing this particular creative project.",
+        "satisfiedWhenEn": "The answer gives a concrete personal, expressive, practical, or audience-related reason why finishing the project matters.",
+        "semanticRoleKo": "이 특정 창작 프로젝트를 완성하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 프로젝트 완성이 왜 중요한지 구체적인 개인적, 표현적, 실용적 또는 청중 관련 이유를 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature, scope element, medium, or subject of the creative project beyond merely naming it.",
+        "satisfiedWhenEn": "The answer adds a distinct project specification, such as its format, theme, size, intended audience, or major component.",
+        "semanticRoleKo": "창작 프로젝트의 이름만 밝히는 것을 넘어서는 구체적인 특징, 범위 요소, 매체 또는 주제.",
+        "satisfiedWhenKo": "답변이 형식, 주제, 규모, 대상 청중 또는 주요 구성 요소처럼 독립적인 프로젝트 세부사항을 더하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-47",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The one identifiable creative project the learner plans to finish during this year.",
+        "satisfiedWhenEn": "The answer clearly describes a particular creative work, production, or project with a finishable outcome.",
+        "semanticRoleKo": "학습자가 올해 완성하려는 하나의 식별 가능한 창작 프로젝트.",
+        "satisfiedWhenKo": "답변이 완료 가능한 결과가 있는 특정 창작물, 제작물 또는 프로젝트를 분명히 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's plan for bringing the stated creative project to completion.",
+        "satisfiedWhenEn": "The answer explains one or more actionable steps for producing, organizing, revising, obtaining resources for, or finalizing the work.",
+        "semanticRoleKo": "제시한 창작 프로젝트를 완성하기 위한 학습자의 계획.",
+        "satisfiedWhenKo": "답변이 작품을 제작하고, 정리하고, 수정하고, 자원을 마련하거나 마무리할 실행 가능한 단계를 하나 이상 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined work schedule, frequency, target date, or completion milestone within the project plan.",
+        "satisfiedWhenEn": "The answer gives a concrete indication of when or how often the learner will work or when a project stage should be finished.",
+        "semanticRoleKo": "프로젝트 계획 안의 명확한 작업 일정, 빈도, 목표 날짜 또는 완료 중간 시점.",
+        "satisfiedWhenKo": "답변이 언제 또는 얼마나 자주 작업할지, 혹은 프로젝트의 한 단계를 언제 끝낼지 구체적으로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing and finishing this creative project.",
+        "satisfiedWhenEn": "The answer explains a concrete expressive aim, personal value, practical use, commitment, or audience need that motivates completion.",
+        "semanticRoleKo": "이 창작 프로젝트를 선택하고 완성하려는 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 완성을 이끄는 구체적인 표현 목표, 개인적 가치, 실용적 용도, 약속 또는 청중의 필요를 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A concrete challenge the learner may face while carrying out the creative-project plan.",
+        "satisfiedWhenEn": "The answer identifies a specific time, scope, skill, material, motivation, or creative-direction issue that could hinder completion.",
+        "semanticRoleKo": "창작 프로젝트 계획을 실행하면서 학습자가 마주칠 수 있는 구체적인 어려움.",
+        "satisfiedWhenKo": "답변이 완성을 방해할 수 있는 특정 시간, 범위, 기술, 재료, 동기 또는 창작 방향의 문제를 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An expected effect or evidence that the creative-project plan is succeeding.",
+        "satisfiedWhenEn": "The answer describes a concrete completed stage, finished output, response, or personal benefit that would demonstrate progress.",
+        "semanticRoleKo": "창작 프로젝트 계획이 성공하고 있음을 보여 주는 예상 효과나 증거.",
+        "satisfiedWhenKo": "답변이 진전을 입증할 구체적인 완료 단계, 완성 결과물, 반응 또는 개인적 이점을 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of the creative project's content, form, scale, audience, or materials beyond its basic identity.",
+        "satisfiedWhenEn": "The answer adds a distinct project specification that helps define what will actually be created.",
+        "semanticRoleKo": "창작 프로젝트의 기본 정체성을 넘어서는 내용, 형식, 규모, 청중 또는 재료의 구체적인 특징.",
+        "satisfiedWhenKo": "답변이 실제로 무엇을 만들지 더 분명히 해 주는 독립적인 프로젝트 세부사항을 더하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-48",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The identifiable creative work the learner aims to bring to completion this year.",
+        "satisfiedWhenEn": "The answer identifies a recognizable creative work or production that makes the intended completion target clear.",
+        "semanticRoleKo": "학습자가 올해 완성 단계까지 이끌고 싶은 식별 가능한 창작물.",
+        "satisfiedWhenKo": "답변이 의도한 완료 목표를 알 수 있도록 식별 가능한 창작물이나 제작물을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner will make progress toward finishing the selected creative project.",
+        "satisfiedWhenEn": "The answer states an actionable way to create, organize, revise, solve resource needs, or move the project toward completion.",
+        "semanticRoleKo": "선택한 창작 프로젝트의 완성을 향해 학습자가 진전할 방식.",
+        "satisfiedWhenKo": "답변이 프로젝트를 만들고, 정리하고, 수정하고, 자원 문제를 해결하거나 완성에 가깝게 할 실행 가능한 방법을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete milestone, output, response, or benefit that would show creative-project progress.",
+        "satisfiedWhenEn": "The answer describes an observable completed stage, finished component, audience reaction, or personal effect.",
+        "semanticRoleKo": "창작 프로젝트의 진전을 보여 줄 구체적인 중간 성과, 결과물, 반응 또는 이점.",
+        "satisfiedWhenKo": "답변이 관찰 가능한 완료 단계, 완성된 구성 요소, 청중 반응 또는 개인적 효과를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete timing commitment for making progress on the creative project.",
+        "satisfiedWhenEn": "The answer specifies a work time, frequency, target date, deadline, or point for reviewing progress.",
+        "semanticRoleKo": "창작 프로젝트에서 진전하기 위한 구체적인 시간 약속.",
+        "satisfiedWhenKo": "답변이 작업 시간, 빈도, 목표 날짜, 기한 또는 진전 검토 시점을 구체적으로 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle that may slow or stop progress on the creative project.",
+        "satisfiedWhenEn": "The answer identifies a concrete issue involving time, scope, skill, materials, motivation, feedback, or creative direction.",
+        "semanticRoleKo": "창작 프로젝트의 진전을 늦추거나 멈출 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 시간, 범위, 기술, 재료, 동기, 피드백 또는 창작 방향과 관련된 구체적인 문제를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's motivation for making progress on this creative project.",
+        "satisfiedWhenEn": "The answer explains a concrete personal, expressive, practical, or audience-related reason that makes completion worthwhile.",
+        "semanticRoleKo": "이 창작 프로젝트에서 진전하려는 학습자의 동기.",
+        "satisfiedWhenKo": "답변이 완성을 가치 있게 만드는 구체적인 개인적, 표현적, 실용적 또는 청중 관련 이유를 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete specification of the project's content, medium, scope, audience, or major component.",
+        "satisfiedWhenEn": "The answer provides a distinct fact that further defines the creative work beyond its basic name.",
+        "semanticRoleKo": "프로젝트의 내용, 매체, 범위, 청중 또는 주요 구성 요소에 관한 구체적인 사항.",
+        "satisfiedWhenKo": "답변이 창작물의 기본 이름을 넘어 이를 더 구체화하는 독립적인 사실을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-49",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific creative project that the learner's proposed steps are intended to finish this year.",
+        "satisfiedWhenEn": "The answer identifies a recognizable creative work or production so the purpose of the steps is clear.",
+        "semanticRoleKo": "학습자가 제안하는 단계로 올해 완성하려는 구체적인 창작 프로젝트.",
+        "satisfiedWhenKo": "답변이 단계의 목적을 알 수 있도록 식별 가능한 창작물이나 제작물을 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The steps the learner will take to complete the identified creative project.",
+        "satisfiedWhenEn": "The answer gives one or more actionable measures for producing, organizing, revising, obtaining resources for, or finalizing the work.",
+        "semanticRoleKo": "확인된 창작 프로젝트를 완성하기 위해 학습자가 실행할 단계.",
+        "satisfiedWhenKo": "답변이 작품을 제작하고, 정리하고, 수정하고, 자원을 마련하거나 마무리할 실행 가능한 조치를 하나 이상 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete schedule, frequency, deadline, or milestone for the creative-project steps.",
+        "satisfiedWhenEn": "The answer specifies when or how often the learner will carry out the steps or when a project stage should be completed.",
+        "semanticRoleKo": "창작 프로젝트를 위한 단계의 구체적인 일정, 빈도, 기한 또는 중간 시점.",
+        "satisfiedWhenKo": "답변이 단계를 언제 또는 얼마나 자주 실행할지, 혹은 프로젝트의 한 단계를 언제 완료할지 밝히면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific obstacle the learner may face while following the creative-project steps.",
+        "satisfiedWhenEn": "The answer identifies a concrete time, scope, skill, material, motivation, or creative-direction issue that could disrupt the plan.",
+        "semanticRoleKo": "창작 프로젝트를 위한 단계를 따르면서 학습자가 마주칠 수 있는 구체적인 장애물.",
+        "satisfiedWhenKo": "답변이 계획을 방해할 수 있는 구체적인 시간, 범위, 기술, 재료, 동기 또는 창작 방향의 문제를 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect or evidence that the creative-project steps are working.",
+        "satisfiedWhenEn": "The answer describes an observable completed stage, finished component, response, or benefit that would demonstrate progress.",
+        "semanticRoleKo": "창작 프로젝트를 위한 단계가 효과가 있음을 보여 주는 구체적인 효과나 증거.",
+        "satisfiedWhenKo": "답변이 진전을 입증할 관찰 가능한 완료 단계, 완성된 구성 요소, 반응 또는 이점을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The learner's reason for choosing this creative project or these particular completion steps.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation explaining why the project matters or why the selected approach is appropriate.",
+        "semanticRoleKo": "이 창작 프로젝트나 특정 완료 단계를 선택한 학습자의 이유.",
+        "satisfiedWhenKo": "답변이 프로젝트가 중요한 이유나 선택한 접근법이 적절한 이유를 설명하는 구체적인 동기를 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific project feature, medium, scope element, audience, or major component beyond the project's basic identity.",
+        "satisfiedWhenEn": "The answer adds a distinct specification that makes the intended creative work more concrete.",
+        "semanticRoleKo": "프로젝트의 기본 정체성을 넘어서는 특정 특징, 매체, 범위 요소, 청중 또는 주요 구성 요소.",
+        "satisfiedWhenKo": "답변이 의도한 창작물을 더 구체화하는 독립적인 세부사항을 더하면 충족된다."
+      }
+    }
+  }
+]

@@ -1,0 +1,2281 @@
+[
+  {
+    "promptId": "prompt-opinion-1110",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's view of the role animal shelters should have in modern society.",
+        "satisfiedWhenEn": "The answer proposes a recognizable responsibility or contribution for animal shelters, such as protecting animals, arranging adoption, or supporting responsible ownership; merely saying they should help is too vague.",
+        "semanticRoleKo": "현대 사회에서 동물 보호소가 맡아야 할 역할에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "동물 보호, 입양 주선, 책임 있는 반려동물 양육 지원처럼 동물 보호소가 맡을 알아볼 수 있는 책임이나 기여를 제안하면 충족한다. 단순히 도와야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the proposed role of animal shelters necessary or valuable.",
+        "satisfiedWhenEn": "The answer gives a concrete animal-welfare, public-safety, ethical, or community consideration that explains the recommended role.",
+        "semanticRoleKo": "학습자가 제안한 동물 보호소의 역할이 필요하거나 가치 있다고 보는 이유.",
+        "satisfiedWhenKo": "제안한 역할을 설명하는 구체적인 동물 복지, 공공 안전, 윤리 또는 지역사회 측면의 근거를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the proposed shelter role would produce for animals, adopters, or the wider community.",
+        "satisfiedWhenEn": "The answer states a concrete expected change, such as safer animals, suitable adoptions, fewer strays, or more informed pet owners.",
+        "semanticRoleKo": "제안한 보호소 역할이 동물, 입양자 또는 더 넓은 지역사회에 가져올 결과.",
+        "satisfiedWhenKo": "동물의 안전 향상, 적합한 입양, 유기 동물 감소, 더 책임감 있는 보호자처럼 기대되는 구체적인 변화를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific shelter service, practice, or situation that illustrates the proposed societal role.",
+        "satisfiedWhenEn": "The answer gives a concrete instance of the role in action, such as a vaccination clinic, adoption screening, temporary care, or an owner-education event.",
+        "semanticRoleKo": "제안한 사회적 역할을 보여 주는 구체적인 보호소 서비스, 운영 방식 또는 상황.",
+        "satisfiedWhenKo": "예방 접종 진료, 입양 심사, 임시 보호, 보호자 교육 행사처럼 그 역할이 실제로 이루어지는 구체적인 사례를 들면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The particular animal-welfare or community problem the proposed shelter role should address.",
+        "satisfiedWhenEn": "The answer identifies a definite issue such as abandonment, overcrowding, untreated animals, unsafe strays, or poor adoption matches; unspecified animal problems are insufficient.",
+        "semanticRoleKo": "제안한 보호소 역할이 다루어야 할 특정한 동물 복지 또는 지역사회 문제.",
+        "satisfiedWhenKo": "유기, 과밀 수용, 치료받지 못한 동물, 위험에 놓인 길 잃은 동물, 부적절한 입양 연결처럼 분명한 문제를 밝히면 충족한다. 무엇인지 드러나지 않는 동물 문제는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1111",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment about the responsibilities public broadcasters should have toward their community today.",
+        "satisfiedWhenEn": "The answer names a concrete public-service duty for broadcasters, such as providing accurate information, accessible programming, emergency updates, or representative local content.",
+        "semanticRoleKo": "오늘날 공영 방송이 지역사회에 대해 가져야 할 책임에 관한 학습자의 판단.",
+        "satisfiedWhenKo": "정확한 정보 제공, 접근 가능한 프로그램, 재난 안내, 지역사회를 고르게 반영하는 콘텐츠처럼 방송사가 맡을 구체적인 공공 서비스 의무를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the proposed broadcasting responsibility matters to the community.",
+        "satisfiedWhenEn": "The answer supplies a concrete civic, informational, cultural, or access-related reason for assigning that duty to public broadcasters.",
+        "semanticRoleKo": "제안한 방송 책임이 지역사회에 중요한 이유.",
+        "satisfiedWhenKo": "그 의무를 공영 방송에 맡겨야 하는 구체적인 시민 참여, 정보, 문화 또는 접근성 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular broadcast, policy, or public service that demonstrates the recommended responsibility.",
+        "satisfiedWhenEn": "The answer describes a specific instance, such as multilingual emergency coverage, a local election program, children's education, or captioned news.",
+        "semanticRoleKo": "권고한 책임을 보여 주는 특정 방송, 정책 또는 공공 서비스.",
+        "satisfiedWhenKo": "다국어 재난 방송, 지역 선거 프로그램, 어린이 교육 방송, 자막 뉴스처럼 구체적인 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect fulfilling the proposed responsibility would have on viewers or the community.",
+        "satisfiedWhenEn": "The answer states a recognizable outcome such as better-informed residents, safer emergency responses, broader participation, or stronger cultural understanding.",
+        "semanticRoleKo": "제안한 책임을 이행할 때 시청자나 지역사회에 생길 효과.",
+        "satisfiedWhenKo": "주민의 정보 이해 향상, 더 안전한 재난 대응, 폭넓은 참여, 문화적 이해 증진처럼 알아볼 수 있는 결과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific community or media problem the broadcaster's responsibility is meant to address.",
+        "satisfiedWhenEn": "The answer identifies a concrete issue such as misinformation, unequal access, missing local coverage, cultural exclusion, or unreliable emergency communication.",
+        "semanticRoleKo": "방송사의 책임으로 해결하려는 구체적인 지역사회 또는 미디어 문제.",
+        "satisfiedWhenKo": "허위 정보, 정보 접근 격차, 부족한 지역 보도, 문화적 배제, 신뢰하기 어려운 재난 소통처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1112",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "What the learner thinks community centers should do for people in modern society.",
+        "satisfiedWhenEn": "The answer recommends an identifiable service or contribution community centers should provide, such as classes, gathering space, practical support, or inclusive activities.",
+        "semanticRoleKo": "현대 사회에서 주민 센터가 사람들을 위해 무엇을 해야 하는지에 대한 학습자의 생각.",
+        "satisfiedWhenKo": "수업, 모임 공간, 실생활 지원, 포용적인 활동처럼 주민 센터가 제공해야 할 알아볼 수 있는 서비스나 기여를 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why people need or would benefit from the community-center contribution the learner recommends.",
+        "satisfiedWhenEn": "The answer gives a concrete social, educational, practical, or access-related reason that supports the recommendation.",
+        "semanticRoleKo": "사람들에게 학습자가 권한 주민 센터의 기여가 필요하거나 도움이 되는 이유.",
+        "satisfiedWhenKo": "그 제안을 뒷받침하는 구체적인 사회적, 교육적, 실용적 또는 접근성 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The change the recommended community-center service would create for participants or the neighborhood.",
+        "satisfiedWhenEn": "The answer describes a definite benefit, such as reduced isolation, learned skills, easier access to help, or stronger local relationships.",
+        "semanticRoleKo": "권고한 주민 센터 서비스가 이용자나 동네에 만들어 낼 변화.",
+        "satisfiedWhenKo": "고립감 감소, 기술 습득, 지원 이용의 편리성, 지역 관계 강화처럼 분명한 이점을 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete program or use case showing what a community center could do for people.",
+        "satisfiedWhenEn": "The answer gives a specific example such as a job-search workshop, language exchange, childcare group, meal service, or senior exercise class.",
+        "semanticRoleKo": "주민 센터가 사람들을 위해 할 수 있는 일을 보여 주는 구체적인 프로그램 또는 이용 사례.",
+        "satisfiedWhenKo": "구직 워크숍, 언어 교환, 보육 모임, 식사 지원, 노인 운동 수업처럼 구체적인 예를 들면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of how the recommended community-center service would be provided.",
+        "satisfiedWhenEn": "The answer clarifies a target group, schedule, resource, access condition, staffing approach, or other operational aspect of the proposed service.",
+        "semanticRoleKo": "권고한 주민 센터 서비스를 제공하는 방식의 구체적인 특징.",
+        "satisfiedWhenKo": "대상 집단, 일정, 자원, 이용 조건, 운영 인력 방식 또는 제안한 서비스의 다른 운영 측면을 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1113",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner believes local farmers' markets should play in modern society.",
+        "satisfiedWhenEn": "The answer proposes a clear societal contribution for local farmers' markets, such as connecting residents with local food, supporting growers, or improving fresh-food access.",
+        "semanticRoleKo": "현대 사회에서 지역 농산물 시장이 맡아야 한다고 학습자가 생각하는 역할.",
+        "satisfiedWhenKo": "주민과 지역 먹거리의 연결, 생산자 지원, 신선 식품 접근성 향상처럼 지역 농산물 시장의 분명한 사회적 기여를 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers that role appropriate for local farmers' markets.",
+        "satisfiedWhenEn": "The answer gives a concrete economic, nutritional, environmental, or community-based reason for the proposed market role.",
+        "semanticRoleKo": "학습자가 그 역할을 지역 농산물 시장에 적절하다고 보는 이유.",
+        "satisfiedWhenKo": "제안한 시장 역할을 뒷받침하는 구체적인 경제, 영양, 환경 또는 지역사회 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The expected effect of the proposed farmers' market role on growers, shoppers, or the locality.",
+        "satisfiedWhenEn": "The answer states a concrete outcome such as steadier farm income, healthier purchases, less transport waste, or closer producer-consumer ties.",
+        "semanticRoleKo": "제안한 농산물 시장의 역할이 생산자, 소비자 또는 지역에 미칠 기대 효과.",
+        "satisfiedWhenKo": "안정적인 농가 소득, 더 건강한 구매, 운송 낭비 감소, 생산자와 소비자의 긴밀한 관계처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific farmers' market practice or event that illustrates the suggested role.",
+        "satisfiedWhenEn": "The answer presents a concrete instance such as direct farm sales, a low-cost produce box, seasonal tasting, or a cooking demonstration using local food.",
+        "semanticRoleKo": "제안한 역할을 보여 주는 구체적인 지역 농산물 시장 운영 방식이나 행사.",
+        "satisfiedWhenKo": "농가 직거래, 저렴한 농산물 꾸러미, 제철 식품 시식, 지역 식재료 요리 시연처럼 구체적인 사례를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A definite characteristic of the market's proposed operation or offering.",
+        "satisfiedWhenEn": "The answer specifies what would be sold, who would participate, how often it would operate, how prices or access would work, or another concrete feature.",
+        "semanticRoleKo": "제안한 시장 운영 또는 제공 내용의 분명한 특징.",
+        "satisfiedWhenKo": "판매 품목, 참여자, 운영 빈도, 가격이나 이용 방식 또는 다른 구체적인 특징을 명시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1114",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's view of the responsibilities after-school programs should have toward children and the community.",
+        "satisfiedWhenEn": "The answer proposes a concrete duty for after-school programs, such as safe supervision, learning support, affordable access, or constructive activities.",
+        "semanticRoleKo": "방과 후 프로그램이 아동과 지역사회에 대해 가져야 할 책임에 관한 학습자의 견해.",
+        "satisfiedWhenKo": "안전한 돌봄, 학습 지원, 부담 가능한 이용, 건전한 활동처럼 방과 후 프로그램의 구체적인 의무를 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the proposed after-school responsibility is important for children, families, or the community.",
+        "satisfiedWhenEn": "The answer gives a specific developmental, educational, safety, family, or equity consideration that justifies the duty.",
+        "semanticRoleKo": "제안한 방과 후 프로그램의 책임이 아동, 가족 또는 지역사회에 중요한 이유.",
+        "satisfiedWhenKo": "그 의무를 정당화하는 구체적인 발달, 교육, 안전, 가족 또는 형평성 측면의 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular activity, policy, or support service that demonstrates the after-school responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as supervised homework time, a free arts club, a late pickup option, or trained safeguarding staff.",
+        "semanticRoleKo": "방과 후 프로그램의 책임을 보여 주는 특정 활동, 정책 또는 지원 서비스.",
+        "satisfiedWhenKo": "지도 교사가 있는 숙제 시간, 무료 예술 동아리, 늦은 귀가 지원, 아동 보호 교육을 받은 직원처럼 구체적인 예를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome that meeting the proposed responsibility would have for children or their families.",
+        "satisfiedWhenEn": "The answer identifies a concrete effect such as improved learning, safer afternoons, greater confidence, reduced family stress, or more equal opportunity.",
+        "semanticRoleKo": "제안한 책임을 이행할 때 아동이나 가족에게 생길 결과.",
+        "satisfiedWhenKo": "학습 향상, 더 안전한 방과 후 시간, 자신감 증진, 가족의 부담 감소, 더 공평한 기회처럼 구체적인 효과를 밝히면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific child, family, or community need the after-school duty should address.",
+        "satisfiedWhenEn": "The answer names a definite problem such as unsupervised time, learning gaps, unaffordable care, social isolation, or unsafe program conditions.",
+        "semanticRoleKo": "방과 후 프로그램의 의무가 다루어야 할 구체적인 아동, 가족 또는 지역사회 문제.",
+        "satisfiedWhenKo": "보호자 없는 시간, 학습 격차, 감당하기 어려운 돌봄 비용, 사회적 고립, 안전하지 않은 프로그램 환경처럼 분명한 문제를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1115",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "How the learner believes train stations should serve passengers and their surrounding communities today.",
+        "satisfiedWhenEn": "The answer recommends a recognizable service priority or responsibility for train stations, such as safe travel, accessible transfers, useful local connections, or welcoming public facilities.",
+        "semanticRoleKo": "오늘날 기차역이 승객과 주변 지역사회를 어떻게 섬겨야 하는지에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "안전한 이동, 접근 가능한 환승, 유용한 지역 연결, 편리한 공공 시설처럼 기차역의 알아볼 수 있는 서비스 우선순위나 책임을 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the recommended station service is needed by travelers or the community.",
+        "satisfiedWhenEn": "The answer gives a concrete mobility, safety, accessibility, economic, or public-space reason that supports the proposal.",
+        "semanticRoleKo": "권고한 역 서비스가 여행객이나 지역사회에 필요한 이유.",
+        "satisfiedWhenKo": "그 제안을 뒷받침하는 구체적인 이동성, 안전, 접근성, 경제 또는 공공 공간 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete station feature, policy, or service illustrating how it could serve people and communities.",
+        "satisfiedWhenEn": "The answer describes a specific instance such as step-free platforms, clear transfer signs, a local bus link, secure waiting areas, or space for neighborhood vendors.",
+        "semanticRoleKo": "기차역이 사람과 지역사회를 섬기는 방식을 보여 주는 구체적인 시설, 정책 또는 서비스.",
+        "satisfiedWhenKo": "무단차 승강장, 명확한 환승 표지, 지역 버스 연계, 안전한 대기 공간, 지역 상인을 위한 공간처럼 구체적인 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed station service would have on travel or community life.",
+        "satisfiedWhenEn": "The answer states a definite outcome such as easier journeys, fewer accidents, broader access, more local business, or better connection between neighborhoods.",
+        "semanticRoleKo": "제안한 역 서비스가 이동이나 지역사회 생활에 미칠 효과.",
+        "satisfiedWhenKo": "더 쉬운 이동, 사고 감소, 폭넓은 접근, 지역 상권 활성화, 동네 간 연결 개선처럼 분명한 결과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific transport or community difficulty the proposed station service should solve.",
+        "satisfiedWhenEn": "The answer identifies a concrete issue such as inaccessible platforms, confusing transfers, unsafe waiting, poor last-mile links, or stations isolated from local life.",
+        "semanticRoleKo": "제안한 역 서비스가 해결해야 할 구체적인 교통 또는 지역사회 어려움.",
+        "satisfiedWhenKo": "접근하기 어려운 승강장, 혼란스러운 환승, 안전하지 않은 대기, 부족한 최종 목적지 연결, 지역 생활과 단절된 역처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1116",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner thinks city bike systems should play in modern urban life.",
+        "satisfiedWhenEn": "The answer proposes a clear mobility or public-service role for city bike systems, such as affordable short trips, transit connections, healthier travel, or low-emission transport.",
+        "semanticRoleKo": "현대 도시 생활에서 공공 자전거 시스템이 맡아야 한다고 학습자가 생각하는 역할.",
+        "satisfiedWhenKo": "저렴한 단거리 이동, 대중교통 연계, 건강한 이동, 저탄소 교통처럼 공공 자전거 시스템의 분명한 이동 또는 공공 서비스 역할을 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the proposed role is suitable or necessary for a city bike system.",
+        "satisfiedWhenEn": "The answer gives a concrete transport, health, environmental, affordability, or access-related reason for the recommended role.",
+        "semanticRoleKo": "제안한 역할이 공공 자전거 시스템에 적합하거나 필요한 이유.",
+        "satisfiedWhenKo": "권고한 역할의 근거가 되는 구체적인 교통, 건강, 환경, 비용 부담 또는 접근성 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The expected effect of the city bike system's proposed role on residents or the city.",
+        "satisfiedWhenEn": "The answer describes a specific outcome such as shorter local trips, less congestion, cleaner air, more exercise, or improved access to transit.",
+        "semanticRoleKo": "제안한 공공 자전거 역할이 주민이나 도시에 가져올 기대 효과.",
+        "satisfiedWhenKo": "지역 이동 시간 단축, 교통 혼잡 감소, 대기 질 개선, 운동 증가, 대중교통 접근 향상처럼 구체적인 결과를 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular city-bike feature, program, or trip that demonstrates the suggested role.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as docks near subway exits, reduced fares for low-income riders, protected bike routes, or bikes used for a commute.",
+        "semanticRoleKo": "제안한 역할을 보여 주는 특정 공공 자전거 시설, 프로그램 또는 이용 사례.",
+        "satisfiedWhenKo": "지하철 출구 근처 대여소, 저소득 이용자 할인, 보호 자전거 도로, 출퇴근 자전거 이용처럼 구체적인 예를 들면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The definite urban mobility or environmental problem the city bike role should address.",
+        "satisfiedWhenEn": "The answer identifies a specific issue such as first-and-last-mile gaps, expensive short trips, traffic congestion, air pollution, or unequal transport access.",
+        "semanticRoleKo": "공공 자전거의 역할이 다루어야 할 분명한 도시 이동 또는 환경 문제.",
+        "satisfiedWhenKo": "대중교통 전후 구간의 이동 공백, 비싼 단거리 이동, 교통 혼잡, 대기 오염, 불평등한 교통 접근처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1117",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibilities the learner believes employers should accept when offering internships to the community.",
+        "satisfiedWhenEn": "The answer states an identifiable duty of internship providers, such as meaningful training, fair treatment, safe work, transparent selection, or appropriate compensation.",
+        "semanticRoleKo": "지역사회에 인턴십을 제공하는 고용주가 맡아야 한다고 학습자가 보는 책임.",
+        "satisfiedWhenKo": "실질적인 교육, 공정한 대우, 안전한 업무, 투명한 선발, 적절한 보상처럼 인턴십 제공자의 알아볼 수 있는 의무를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why employers offering internships should have the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete educational, ethical, workforce, access, or power-balance reason that justifies the duty.",
+        "semanticRoleKo": "인턴십을 제공하는 고용주가 제안한 책임을 져야 하는 이유.",
+        "satisfiedWhenKo": "그 의무를 정당화하는 구체적인 교육, 윤리, 인력 양성, 기회 접근 또는 권력 관계 측면의 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific employer practice that illustrates responsible internship provision.",
+        "satisfiedWhenEn": "The answer describes a concrete practice such as assigning a mentor, setting learning goals, paying expenses, giving feedback, or limiting interns to appropriate tasks.",
+        "semanticRoleKo": "책임 있는 인턴십 제공을 보여 주는 구체적인 고용주 운영 방식.",
+        "satisfiedWhenKo": "멘토 배정, 학습 목표 설정, 경비 지급, 피드백 제공, 인턴에게 적절한 업무만 맡기기처럼 구체적인 방식을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome responsible internship practices would create for interns, employers, or the local workforce.",
+        "satisfiedWhenEn": "The answer states a definite effect such as useful skills, fairer career access, stronger hiring pipelines, safer workplaces, or better job readiness.",
+        "semanticRoleKo": "책임 있는 인턴십 운영이 인턴, 고용주 또는 지역 인력에 만들어 낼 결과.",
+        "satisfiedWhenKo": "유용한 기술 습득, 더 공정한 진로 기회, 안정적인 채용 경로, 더 안전한 일터, 취업 준비 향상처럼 분명한 효과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific harm or workforce need the employer responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a concrete issue such as unpaid exploitation, meaningless work, unsafe conditions, biased access, or a gap between education and employment.",
+        "semanticRoleKo": "고용주의 책임이 다루어야 할 구체적인 피해 또는 인력 문제.",
+        "satisfiedWhenKo": "무급 착취, 의미 없는 업무, 위험한 환경, 편향된 기회 접근, 교육과 취업 사이의 격차처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1118",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "What the learner thinks restaurants that reduce food waste should do for people.",
+        "satisfiedWhenEn": "The answer recommends a concrete public-facing contribution for such restaurants, such as sharing safe surplus food, offering lower-cost meals, or teaching waste-conscious eating.",
+        "semanticRoleKo": "음식물 쓰레기를 줄이는 식당이 사람들을 위해 무엇을 해야 하는지에 대한 학습자의 생각.",
+        "satisfiedWhenKo": "안전한 잉여 음식 나눔, 저렴한 식사 제공, 낭비를 줄이는 식생활 교육처럼 해당 식당이 사람들을 위해 할 구체적인 기여를 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the restaurant contribution the learner proposes would be worthwhile for people or society.",
+        "satisfiedWhenEn": "The answer provides a concrete food-access, environmental, economic, or ethical reason supporting the recommendation.",
+        "semanticRoleKo": "학습자가 제안한 식당의 기여가 사람이나 사회에 가치 있는 이유.",
+        "satisfiedWhenKo": "그 제안을 뒷받침하는 구체적인 식품 접근, 환경, 경제 또는 윤리 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed restaurant action would have on diners, people in need, or the environment.",
+        "satisfiedWhenEn": "The answer identifies a tangible outcome such as more affordable food, fewer edible meals discarded, lower disposal impact, or greater public awareness.",
+        "semanticRoleKo": "제안한 식당의 행동이 손님, 도움이 필요한 사람 또는 환경에 미칠 효과.",
+        "satisfiedWhenKo": "더 저렴한 음식, 버려지는 먹을 수 있는 식사 감소, 폐기 영향 감소, 대중 인식 향상처럼 실질적인 결과를 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete restaurant initiative or situation that demonstrates the recommended contribution.",
+        "satisfiedWhenEn": "The answer gives a specific instance such as donating untouched meals, discounting food near closing time, using surplus ingredients in a special menu, or partnering with a food bank.",
+        "semanticRoleKo": "권고한 기여를 보여 주는 구체적인 식당 활동 또는 상황.",
+        "satisfiedWhenKo": "손대지 않은 음식 기부, 마감 전 음식 할인, 남는 식재료를 활용한 특별 메뉴, 푸드뱅크 협력처럼 구체적인 사례를 들면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific operational feature of how the restaurant would reduce waste while helping people.",
+        "satisfiedWhenEn": "The answer clarifies which food is used, how safety is checked, who receives it, when it is offered, or how the waste-reduction process works.",
+        "semanticRoleKo": "식당이 사람을 도우면서 음식물 쓰레기를 줄이는 운영 방식의 구체적인 특징.",
+        "satisfiedWhenKo": "어떤 음식을 활용하는지, 안전을 어떻게 확인하는지, 누가 받는지, 언제 제공하는지 또는 감축 과정이 어떻게 이루어지는지를 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1119",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The societal role the learner believes schools teaching online safety should play.",
+        "satisfiedWhenEn": "The answer proposes a clear educational or protective role, such as teaching privacy, recognizing scams, responding to cyberbullying, or evaluating online information.",
+        "semanticRoleKo": "온라인 안전을 가르치는 학교가 맡아야 한다고 학습자가 보는 사회적 역할.",
+        "satisfiedWhenKo": "개인정보 보호, 사기 판별, 사이버 폭력 대응, 온라인 정보 평가 교육처럼 분명한 교육적 또는 보호적 역할을 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the proposed online-safety role is important for students or society.",
+        "satisfiedWhenEn": "The answer gives a concrete risk, skill need, digital-participation concern, or protective reason that supports the role.",
+        "semanticRoleKo": "제안한 온라인 안전 역할이 학생이나 사회에 중요한 이유.",
+        "satisfiedWhenKo": "그 역할을 뒷받침하는 구체적인 위험, 기술 필요, 디지털 참여 문제 또는 보호상의 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The change that effective school online-safety education would produce.",
+        "satisfiedWhenEn": "The answer states a recognizable outcome such as safer online choices, fewer successful scams, earlier reporting of abuse, or more critical use of information.",
+        "semanticRoleKo": "학교의 효과적인 온라인 안전 교육이 만들어 낼 변화.",
+        "satisfiedWhenKo": "더 안전한 온라인 선택, 사기 피해 감소, 괴롭힘의 빠른 신고, 정보의 비판적 이용 향상처럼 알아볼 수 있는 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular lesson, exercise, or school practice illustrating the proposed online-safety role.",
+        "satisfiedWhenEn": "The answer describes a concrete example such as checking a phishing message, setting privacy controls, rehearsing how to report cyberbullying, or verifying a news source.",
+        "semanticRoleKo": "제안한 온라인 안전 역할을 보여 주는 특정 수업, 연습 또는 학교 활동.",
+        "satisfiedWhenKo": "피싱 메시지 확인, 개인정보 설정, 사이버 폭력 신고 연습, 뉴스 출처 검증처럼 구체적인 예를 설명하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific online danger or knowledge gap the school role should address.",
+        "satisfiedWhenEn": "The answer identifies a definite issue such as privacy leaks, scams, cyberbullying, harmful content, misinformation, or students not knowing where to seek help.",
+        "semanticRoleKo": "학교의 역할이 다루어야 할 구체적인 온라인 위험 또는 지식 격차.",
+        "satisfiedWhenKo": "개인정보 유출, 사기, 사이버 폭력, 유해 콘텐츠, 허위 정보, 도움을 구할 곳을 모르는 문제처럼 분명한 사안을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1120",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibilities the learner thinks local governments should have when operating heat shelters.",
+        "satisfiedWhenEn": "The answer proposes a definite governmental duty, such as keeping shelters safe and accessible, publicizing them, providing basic cooling support, or reaching vulnerable residents.",
+        "semanticRoleKo": "무더위 쉼터를 운영할 때 지방 정부가 가져야 한다고 학습자가 생각하는 책임.",
+        "satisfiedWhenKo": "쉼터의 안전성과 접근성 확보, 적극적인 안내, 기본 냉방 지원, 취약 주민 발굴처럼 지방 정부의 분명한 의무를 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why local government should assume the proposed heat-shelter responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete public-health, equity, emergency-response, or practical reason for assigning that duty to local government.",
+        "semanticRoleKo": "지방 정부가 제안한 무더위 쉼터 책임을 맡아야 하는 이유.",
+        "satisfiedWhenKo": "그 의무를 지방 정부에 맡겨야 하는 구체적인 공중 보건, 형평성, 재난 대응 또는 실무상의 이유를 제시하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The particular heat-related danger or access barrier the shelter responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a specific issue such as heat illness, homes without cooling, distant shelter locations, limited opening hours, or residents not knowing a shelter exists.",
+        "semanticRoleKo": "쉼터 운영 책임이 다루어야 할 특정한 폭염 위험 또는 이용 장벽.",
+        "satisfiedWhenKo": "온열 질환, 냉방이 없는 주거, 먼 쉼터 위치, 제한된 운영 시간, 쉼터 존재를 모르는 주민처럼 구체적인 문제를 밝히면 충족한다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "A concrete measure local government could implement to overcome the stated heat-shelter problem.",
+        "satisfiedWhenEn": "The answer describes an actionable response such as extended hours, free transport, mobile cooling spaces, multilingual alerts, welfare checks, or accessible water stations.",
+        "semanticRoleKo": "명시한 무더위 쉼터 문제를 해결하기 위해 지방 정부가 시행할 수 있는 구체적인 조치.",
+        "satisfiedWhenKo": "운영 시간 연장, 무료 이동 지원, 이동식 냉방 공간, 다국어 안내, 안부 확인, 접근 가능한 식수대처럼 실행 가능한 대응책을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The public outcome expected from carrying out the proposed heat-shelter responsibility.",
+        "satisfiedWhenEn": "The answer states a definite effect such as fewer heat illnesses, greater shelter use, safer vulnerable residents, or faster support during extreme heat.",
+        "semanticRoleKo": "제안한 무더위 쉼터 책임을 이행할 때 기대되는 공공적 결과.",
+        "satisfiedWhenKo": "온열 질환 감소, 쉼터 이용 증가, 취약 주민의 안전 향상, 폭염 시 더 빠른 지원처럼 분명한 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific heat-shelter service or emergency situation that illustrates the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete instance, such as opening a library overnight during a heat wave, driving an older resident to a shelter, or sending a neighborhood heat alert.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 무더위 쉼터 서비스 또는 비상 상황.",
+        "satisfiedWhenKo": "폭염 때 도서관을 야간 쉼터로 개방하기, 노인 주민을 쉼터로 이동시키기, 동네에 폭염 안내를 보내기처럼 구체적인 사례를 들면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1121",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "What the learner believes cultural festivals should contribute to people in modern society.",
+        "satisfiedWhenEn": "The answer recommends a distinct contribution for cultural festivals, such as sharing traditions, creating inclusive encounters, supporting artists, or strengthening local identity.",
+        "semanticRoleKo": "현대 사회에서 문화 축제가 사람들에게 무엇을 기여해야 한다고 학습자가 보는지에 대한 견해.",
+        "satisfiedWhenKo": "전통 공유, 포용적인 만남 조성, 예술가 지원, 지역 정체성 강화처럼 문화 축제의 뚜렷한 기여를 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the proposed contribution from cultural festivals is meaningful for people.",
+        "satisfiedWhenEn": "The answer gives a concrete cultural, educational, social, economic, or inclusion-related reason supporting the recommendation.",
+        "semanticRoleKo": "문화 축제가 제안한 기여를 하는 것이 사람들에게 의미 있는 이유.",
+        "satisfiedWhenKo": "그 제안을 뒷받침하는 구체적인 문화, 교육, 사회, 경제 또는 포용성 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the recommended festival contribution would have on attendees or the community.",
+        "satisfiedWhenEn": "The answer describes a specific outcome such as greater cultural understanding, stronger belonging, more support for local creators, or increased community participation.",
+        "semanticRoleKo": "권고한 축제의 기여가 참가자나 지역사회에 미칠 효과.",
+        "satisfiedWhenKo": "문화 이해 향상, 소속감 강화, 지역 창작자 지원 확대, 지역사회 참여 증가처럼 구체적인 결과를 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete festival activity or situation that demonstrates the proposed contribution.",
+        "satisfiedWhenEn": "The answer gives a particular example such as a traditional dance workshop, a multilingual food event, a local artist market, or a shared storytelling stage.",
+        "semanticRoleKo": "제안한 기여를 보여 주는 구체적인 축제 활동 또는 상황.",
+        "satisfiedWhenKo": "전통 무용 워크숍, 다국어 음식 행사, 지역 예술가 장터, 공동 이야기 무대처럼 구체적인 예를 들면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of the festival's content, access, participants, or organization.",
+        "satisfiedWhenEn": "The answer clarifies which culture or audience is involved, what activity is offered, how access is made inclusive, or another definite design feature.",
+        "semanticRoleKo": "축제의 내용, 접근 방식, 참여자 또는 운영에 관한 구체적인 특징.",
+        "satisfiedWhenKo": "어떤 문화나 대상이 참여하는지, 무엇을 제공하는지, 이용을 어떻게 포용적으로 만드는지 또는 다른 분명한 기획 요소를 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1122",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner believes volunteer matching platforms should play in modern society.",
+        "satisfiedWhenEn": "The answer proposes a clear social function for the platforms, such as connecting suitable volunteers with verified needs, widening access to service, or supporting reliable participation.",
+        "semanticRoleKo": "현대 사회에서 봉사활동 연결 플랫폼이 맡아야 한다고 학습자가 생각하는 역할.",
+        "satisfiedWhenKo": "적합한 봉사자와 확인된 필요의 연결, 봉사 기회 접근 확대, 신뢰할 수 있는 참여 지원처럼 플랫폼의 분명한 사회적 기능을 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why society needs the proposed role from volunteer matching platforms.",
+        "satisfiedWhenEn": "The answer gives a concrete coordination, trust, access, efficiency, or community-service reason that explains the recommendation.",
+        "semanticRoleKo": "사회에 제안한 봉사활동 연결 플랫폼의 역할이 필요한 이유.",
+        "satisfiedWhenKo": "그 제안을 설명하는 구체적인 조정, 신뢰, 접근성, 효율성 또는 지역사회 봉사 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the proposed platform role would create for volunteers or organizations needing help.",
+        "satisfiedWhenEn": "The answer states a definite effect such as more successful matches, steadier volunteer turnout, quicker support, safer participation, or broader community involvement.",
+        "semanticRoleKo": "제안한 플랫폼의 역할이 봉사자나 도움이 필요한 기관에 만들어 낼 결과.",
+        "satisfiedWhenKo": "성공적인 연결 증가, 안정적인 봉사자 참여, 더 빠른 지원, 안전한 참여, 폭넓은 지역사회 동참처럼 분명한 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific platform feature or matching situation that illustrates the suggested role.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as matching a bilingual volunteer with a refugee center, verifying an organization, sending shift reminders, or filtering accessible opportunities.",
+        "semanticRoleKo": "제안한 역할을 보여 주는 구체적인 플랫폼 기능 또는 연결 상황.",
+        "satisfiedWhenKo": "이중 언어 봉사자와 난민 지원 센터 연결, 기관 검증, 활동 일정 알림, 접근 가능한 기회 검색처럼 구체적인 사례를 들면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The particular volunteering or coordination problem the platform role should address.",
+        "satisfiedWhenEn": "The answer identifies a specific difficulty such as volunteers not finding suitable roles, organizations lacking reliable help, unsafe listings, scheduling mismatches, or unequal access.",
+        "semanticRoleKo": "플랫폼의 역할이 다루어야 할 특정한 봉사활동 또는 조정 문제.",
+        "satisfiedWhenKo": "봉사자에게 맞는 활동 부족, 기관의 안정적인 인력 부족, 안전하지 않은 공고, 일정 불일치, 불평등한 기회 접근처럼 구체적인 어려움을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1123",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The community role the learner thinks apartment recycling facilities should fulfill.",
+        "satisfiedWhenEn": "The answer recommends a recognizable responsibility for the facilities, such as making sorting convenient, preventing contamination, educating residents, or handling common recyclables reliably.",
+        "semanticRoleKo": "아파트 재활용 시설이 수행해야 한다고 학습자가 생각하는 지역사회 역할.",
+        "satisfiedWhenKo": "편리한 분리배출, 오염 방지, 주민 교육, 일반 재활용품의 안정적인 처리처럼 시설의 알아볼 수 있는 책임을 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the proposed apartment recycling role matters to residents or the community.",
+        "satisfiedWhenEn": "The answer gives a concrete environmental, convenience, participation, cost, or neighborhood-management reason for the recommendation.",
+        "semanticRoleKo": "제안한 아파트 재활용 역할이 주민이나 지역사회에 중요한 이유.",
+        "satisfiedWhenKo": "그 제안의 근거가 되는 구체적인 환경, 편의, 참여, 비용 또는 공동주택 관리 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The expected effect of fulfilling the proposed recycling-facility role.",
+        "satisfiedWhenEn": "The answer describes a tangible outcome such as more correct sorting, less waste sent to disposal, cleaner shared areas, higher resident participation, or usable recycled material.",
+        "semanticRoleKo": "제안한 재활용 시설의 역할을 수행할 때 기대되는 효과.",
+        "satisfiedWhenKo": "올바른 분리배출 증가, 폐기물 감소, 더 깨끗한 공용 공간, 주민 참여 향상, 재활용 가능한 자원 확보처럼 실질적인 결과를 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete facility feature or resident practice demonstrating the recommended community role.",
+        "satisfiedWhenEn": "The answer presents a specific instance such as labeled bins by material, battery collection, staffed sorting hours, or a notice showing how to rinse containers.",
+        "semanticRoleKo": "권고한 지역사회 역할을 보여 주는 구체적인 시설 요소 또는 주민 실천 사례.",
+        "satisfiedWhenKo": "재질별 표시 수거함, 폐건전지 수거, 관리 인력이 있는 분리배출 시간, 용기 세척 안내문처럼 구체적인 사례를 제시하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific apartment recycling difficulty the proposed role is intended to solve.",
+        "satisfiedWhenEn": "The answer identifies a definite issue such as unclear sorting rules, contaminated bins, inconvenient locations, illegal dumping, odor, or low resident participation.",
+        "semanticRoleKo": "제안한 역할로 해결하려는 구체적인 아파트 재활용 문제.",
+        "satisfiedWhenKo": "불명확한 분리배출 기준, 오염된 수거함, 불편한 위치, 무단 투기, 악취, 낮은 주민 참여처럼 분명한 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1124",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "What the learner thinks community gardens should provide or do for people.",
+        "satisfiedWhenEn": "The answer recommends a specific contribution from community gardens, such as shared growing space, food education, social connection, fresh produce, or contact with nature.",
+        "semanticRoleKo": "공동체 텃밭이 사람들에게 무엇을 제공하거나 해야 하는지에 대한 학습자의 생각.",
+        "satisfiedWhenKo": "공동 재배 공간, 먹거리 교육, 사회적 교류, 신선한 농산물, 자연과의 접촉처럼 공동체 텃밭의 구체적인 기여를 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why people would benefit from the community-garden contribution the learner proposes.",
+        "satisfiedWhenEn": "The answer gives a concrete food, health, environmental, educational, or social reason supporting the proposal.",
+        "semanticRoleKo": "사람들이 학습자가 제안한 공동체 텃밭의 기여로 도움을 받는 이유.",
+        "satisfiedWhenKo": "그 제안을 뒷받침하는 구체적인 먹거리, 건강, 환경, 교육 또는 사회적 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The change the recommended garden contribution would make for participants or the neighborhood.",
+        "satisfiedWhenEn": "The answer states a recognizable outcome such as harvested food, stronger neighbor relationships, gardening skills, improved well-being, or greener shared space.",
+        "semanticRoleKo": "권고한 텃밭의 기여가 참여자나 동네에 만들어 낼 변화.",
+        "satisfiedWhenKo": "농산물 수확, 이웃 관계 강화, 재배 기술 습득, 행복감 향상, 더 푸른 공동 공간처럼 알아볼 수 있는 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular community-garden activity or use that illustrates the proposed contribution.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as family planting days, shared herb beds, beginner gardening classes, donating a harvest, or accessible raised plots.",
+        "semanticRoleKo": "제안한 기여를 보여 주는 특정 공동체 텃밭 활동 또는 이용 방식.",
+        "satisfiedWhenKo": "가족 모종 심기 행사, 공동 허브 밭, 초보 재배 수업, 수확물 기부, 접근 가능한 높임 화단처럼 구체적인 예를 들면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A definite feature of how the community garden would be organized or used.",
+        "satisfiedWhenEn": "The answer clarifies who can participate, what is grown, how plots or harvests are shared, when activities occur, or what support is available.",
+        "semanticRoleKo": "공동체 텃밭을 조직하거나 이용하는 방식의 분명한 특징.",
+        "satisfiedWhenKo": "참여 대상, 재배 작물, 구획이나 수확물의 공유 방식, 활동 시기 또는 제공되는 지원을 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1125",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner believes senior centers should play in modern society.",
+        "satisfiedWhenEn": "The answer proposes a clear responsibility or contribution for senior centers, such as social connection, health support, lifelong learning, practical guidance, or safe daytime activities.",
+        "semanticRoleKo": "현대 사회에서 노인 복지관이 맡아야 한다고 학습자가 생각하는 역할.",
+        "satisfiedWhenKo": "사회적 교류, 건강 지원, 평생 교육, 실생활 안내, 안전한 주간 활동처럼 노인 복지관의 분명한 책임이나 기여를 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the proposed senior-center role is needed or valuable for older adults or society.",
+        "satisfiedWhenEn": "The answer gives a concrete well-being, health, independence, inclusion, caregiving, or demographic reason for the recommendation.",
+        "semanticRoleKo": "제안한 노인 복지관의 역할이 노인이나 사회에 필요하거나 가치 있는 이유.",
+        "satisfiedWhenKo": "그 제안을 뒷받침하는 구체적인 행복, 건강, 자립, 포용, 돌봄 또는 인구 구조 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the recommended senior-center role would create for older adults, families, or the community.",
+        "satisfiedWhenEn": "The answer describes a definite effect such as less isolation, better health management, maintained independence, caregiver relief, or stronger intergenerational ties.",
+        "semanticRoleKo": "권고한 노인 복지관의 역할이 노인, 가족 또는 지역사회에 만들어 낼 결과.",
+        "satisfiedWhenKo": "고립감 감소, 건강 관리 향상, 자립 유지, 돌봄 부담 완화, 세대 간 관계 강화처럼 분명한 효과를 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete senior-center program or service showing the proposed role in practice.",
+        "satisfiedWhenEn": "The answer gives a specific example such as a fall-prevention class, shared lunch, digital-skills help, benefits counseling, or a social club.",
+        "semanticRoleKo": "제안한 역할이 실제로 이루어지는 모습을 보여 주는 구체적인 노인 복지관 프로그램 또는 서비스.",
+        "satisfiedWhenKo": "낙상 예방 수업, 공동 점심, 디지털 기기 교육, 복지 상담, 친목 모임처럼 구체적인 예를 들면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The particular difficulty facing older adults or communities that the senior-center role should address.",
+        "satisfiedWhenEn": "The answer identifies a specific issue such as loneliness, limited mobility, difficulty using services, preventable health risks, digital exclusion, or caregiver strain.",
+        "semanticRoleKo": "노인 복지관의 역할이 다루어야 할 노인 또는 지역사회의 특정한 어려움.",
+        "satisfiedWhenKo": "외로움, 이동 제약, 서비스 이용의 어려움, 예방 가능한 건강 위험, 디지털 소외, 보호자의 부담처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1126",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment about the responsibilities public swimming pools should have toward their communities.",
+        "satisfiedWhenEn": "The answer names a concrete public-pool duty, such as safe supervision, clean facilities, affordable access, swimming education, or inclusive accommodations.",
+        "semanticRoleKo": "공공 수영장이 지역사회에 대해 가져야 할 책임에 관한 학습자의 판단.",
+        "satisfiedWhenKo": "안전한 감독, 깨끗한 시설, 부담 가능한 이용료, 수영 교육, 포용적인 편의 제공처럼 공공 수영장의 구체적인 의무를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the proposed public-pool responsibility matters to community members.",
+        "satisfiedWhenEn": "The answer gives a concrete safety, health, access, recreation, education, or equity reason that justifies the duty.",
+        "semanticRoleKo": "제안한 공공 수영장의 책임이 지역 주민에게 중요한 이유.",
+        "satisfiedWhenKo": "그 의무를 정당화하는 구체적인 안전, 건강, 접근성, 여가, 교육 또는 형평성 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific pool policy, facility feature, or program illustrating the recommended responsibility.",
+        "satisfiedWhenEn": "The answer describes a concrete example such as certified lifeguards, low-cost lessons, wheelchair pool access, regular water testing, or women-only sessions.",
+        "semanticRoleKo": "권고한 책임을 보여 주는 구체적인 수영장 정책, 시설 요소 또는 프로그램.",
+        "satisfiedWhenKo": "자격을 갖춘 안전요원, 저렴한 수영 수업, 휠체어 이용자의 입수 시설, 정기 수질 검사, 여성 전용 시간처럼 구체적인 예를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The community outcome expected when public pools meet the proposed responsibility.",
+        "satisfiedWhenEn": "The answer states a definite effect such as fewer accidents, improved swimming ability, more exercise, broader participation, or greater confidence in the facility.",
+        "semanticRoleKo": "공공 수영장이 제안한 책임을 이행할 때 기대되는 지역사회 결과.",
+        "satisfiedWhenKo": "사고 감소, 수영 능력 향상, 운동 증가, 폭넓은 참여, 시설에 대한 신뢰 향상처럼 분명한 효과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific safety, access, or public-health problem the pool responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a concrete issue such as drowning risk, poor water quality, unaffordable fees, inaccessible changing rooms, limited lesson access, or unsafe behavior.",
+        "semanticRoleKo": "수영장의 책임이 다루어야 할 구체적인 안전, 접근성 또는 공중 보건 문제.",
+        "satisfiedWhenKo": "익수 위험, 나쁜 수질, 비싼 이용료, 접근하기 어려운 탈의실, 부족한 수업 기회, 위험한 행동처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1127",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "What the learner believes neighborhood clinics should do for people in modern society.",
+        "satisfiedWhenEn": "The answer recommends a clear healthcare contribution for neighborhood clinics, such as accessible primary care, prevention, chronic-condition support, timely referrals, or local health guidance.",
+        "semanticRoleKo": "현대 사회에서 동네 의원이 사람들을 위해 무엇을 해야 한다고 학습자가 보는지에 대한 견해.",
+        "satisfiedWhenKo": "접근 가능한 일차 진료, 예방 관리, 만성 질환 지원, 적절한 의뢰, 지역 건강 안내처럼 동네 의원의 분명한 의료 기여를 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why people need or would benefit from the clinic contribution the learner recommends.",
+        "satisfiedWhenEn": "The answer gives a concrete health, access, continuity-of-care, prevention, cost, or trust-related reason supporting the recommendation.",
+        "semanticRoleKo": "사람들에게 학습자가 권한 동네 의원의 기여가 필요하거나 도움이 되는 이유.",
+        "satisfiedWhenKo": "그 제안을 뒷받침하는 구체적인 건강, 접근성, 진료 연속성, 예방, 비용 또는 신뢰 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed neighborhood-clinic service would have on patients or local health.",
+        "satisfiedWhenEn": "The answer describes a definite outcome such as earlier diagnosis, better-managed illness, fewer unnecessary hospital visits, improved prevention, or reduced care gaps.",
+        "semanticRoleKo": "제안한 동네 의원 서비스가 환자나 지역 건강에 미칠 효과.",
+        "satisfiedWhenKo": "빠른 진단, 질환 관리 향상, 불필요한 병원 방문 감소, 예방 개선, 진료 격차 축소처럼 분명한 결과를 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular clinic service or patient situation illustrating the recommended contribution.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as vaccination days, blood-pressure follow-ups, evening appointments, home visits, or referral help for a serious symptom.",
+        "semanticRoleKo": "권고한 기여를 보여 주는 특정 의원 서비스 또는 환자 상황.",
+        "satisfiedWhenKo": "예방 접종일, 혈압 추적 관리, 야간 진료, 방문 진료, 심각한 증상의 상급 병원 의뢰 지원처럼 구체적인 예를 들면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific local healthcare need or barrier the proposed clinic role should address.",
+        "satisfiedWhenEn": "The answer identifies a definite issue such as delayed care, long travel to hospitals, unmanaged chronic illness, lack of preventive services, high costs, or language barriers.",
+        "semanticRoleKo": "제안한 의원의 역할이 다루어야 할 구체적인 지역 의료 필요 또는 장벽.",
+        "satisfiedWhenKo": "진료 지연, 병원까지의 먼 이동, 관리되지 않는 만성 질환, 예방 서비스 부족, 높은 비용, 언어 장벽처럼 분명한 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-12",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "Whether the learner thinks schools teaching financial skills should make a greater contribution to society.",
+        "satisfiedWhenEn": "The answer clearly supports, opposes, or qualifies the idea that financial-skills schools should do more for society; discussing financial education without taking a position is insufficient.",
+        "semanticRoleKo": "금융 기술을 가르치는 학교가 사회에 더 많이 기여해야 하는지에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "금융 교육 학교가 사회를 위해 더 많은 일을 해야 한다는 생각에 찬성, 반대 또는 조건부 입장을 분명히 밝히면 충족한다. 입장 없이 금융 교육만 언급하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner holds that view about a greater social contribution from financial-skills schools.",
+        "satisfiedWhenEn": "The answer gives a concrete financial-literacy, access, institutional-capacity, fairness, or community-need consideration that explains the stated position.",
+        "semanticRoleKo": "금융 교육 학교의 더 큰 사회적 기여에 대해 학습자가 그런 견해를 갖는 이유.",
+        "satisfiedWhenKo": "밝힌 입장을 설명하는 구체적인 금융 이해력, 접근성, 기관 역량, 공정성 또는 지역사회 필요 측면의 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific program or situation that illustrates what doing more for society could mean or why the learner's position is justified.",
+        "satisfiedWhenEn": "The answer gives a concrete instance such as free budgeting classes for adults, debt workshops for families, or a school already lacking resources for its own students.",
+        "semanticRoleKo": "사회를 위해 더 많이 한다는 의미나 학습자의 입장이 타당한 이유를 보여 주는 구체적인 프로그램 또는 상황.",
+        "satisfiedWhenKo": "성인을 위한 무료 예산 수업, 가족 대상 부채 교육, 재학생 교육 자원도 부족한 학교처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The societal consequence the learner expects from the level of contribution they support.",
+        "satisfiedWhenEn": "The answer states a definite effect, such as improved money decisions, reduced financial harm, wider educational access, or strain on schools' core teaching.",
+        "semanticRoleKo": "학습자가 지지하는 기여 수준이 사회에 가져올 것으로 예상하는 결과.",
+        "satisfiedWhenKo": "금전 의사결정 향상, 금융 피해 감소, 교육 접근 확대, 학교 본래 교육의 부담처럼 분명한 효과를 말하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit of financial-skills schools doing more for society.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive effect of expanded outreach, such as reaching underserved adults, preventing costly mistakes, or sharing specialist knowledge.",
+        "semanticRoleKo": "금융 기술 교육 학교가 사회를 위해 더 많이 활동할 때 생기는 별도의 이점.",
+        "satisfiedWhenKo": "교육 기회가 부족한 성인에게 도달하기, 큰 금전 실수 예방, 전문 지식 공유처럼 확대된 사회 활동의 구체적인 긍정 효과를 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct drawback or limitation of expecting financial-skills schools to do more for society.",
+        "satisfiedWhenEn": "The answer identifies a concrete cost, tradeoff, or risk such as limited staff, diverted teaching funds, uneven program quality, or duplicating other public services.",
+        "semanticRoleKo": "금융 기술 교육 학교에 더 큰 사회적 기여를 기대할 때의 별도 단점 또는 한계.",
+        "satisfiedWhenKo": "부족한 인력, 본 교육 예산의 전용, 불균일한 프로그램 품질, 다른 공공 서비스와의 중복처럼 구체적인 비용, 상충 관계 또는 위험을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-13",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The one important societal role the learner assigns to schools that teach financial skills.",
+        "satisfiedWhenEn": "The answer identifies a definite role for those schools, such as preparing people to budget, helping prevent fraud, or making financial knowledge more accessible.",
+        "semanticRoleKo": "금융 기술을 가르치는 학교에 학습자가 부여하는 하나의 중요한 사회적 역할.",
+        "satisfiedWhenKo": "예산 관리 준비, 금융 사기 예방 지원, 금융 지식 접근 확대처럼 해당 학교의 분명한 역할 하나를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the selected role important.",
+        "satisfiedWhenEn": "The answer gives a concrete need, harm to avoid, or personal or community benefit that explains the role's importance.",
+        "semanticRoleKo": "학습자가 선택한 역할을 중요하다고 보는 이유.",
+        "satisfiedWhenKo": "그 역할의 중요성을 설명하는 구체적인 필요, 예방할 피해 또는 개인이나 지역사회의 이점을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular activity or real-life case that demonstrates the selected financial-education role.",
+        "satisfiedWhenEn": "The answer describes a specific instance such as students comparing loan costs, retirees learning scam warning signs, or families building an emergency budget.",
+        "semanticRoleKo": "선택한 금융 교육 역할을 보여 주는 특정 활동 또는 현실 사례.",
+        "satisfiedWhenKo": "학생의 대출 비용 비교, 노인의 사기 경고 신호 학습, 가족의 비상 예산 만들기처럼 구체적인 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect carrying out the selected role would have on learners or society.",
+        "satisfiedWhenEn": "The answer states a recognizable outcome such as wiser borrowing, more savings, fewer fraud losses, or greater confidence with money.",
+        "semanticRoleKo": "선택한 역할을 수행할 때 학습자나 사회에 생길 효과.",
+        "satisfiedWhenKo": "더 현명한 대출, 저축 증가, 사기 피해 감소, 금전 관리 자신감 향상처럼 알아볼 수 있는 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific part of the proposed financial-skills role or how the school would carry it out.",
+        "satisfiedWhenEn": "The answer clarifies a topic, audience, teaching method, resource, frequency, or access arrangement within the proposed role.",
+        "semanticRoleKo": "제안한 금융 교육 역할의 구체적인 부분 또는 학교가 그 역할을 수행하는 방식.",
+        "satisfiedWhenKo": "제안한 역할 안에서 교육 주제, 대상, 수업 방식, 자료, 빈도 또는 이용 방식을 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-14",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The duties the learner believes schools teaching financial skills owe to learners or society.",
+        "satisfiedWhenEn": "The answer proposes at least one identifiable duty, such as teaching practical money decisions accurately, serving vulnerable groups, or keeping advice unbiased.",
+        "semanticRoleKo": "금융 기술을 가르치는 학교가 학습자나 사회에 대해 가진다고 학습자가 보는 의무.",
+        "satisfiedWhenKo": "실용적인 금전 의사결정을 정확히 가르치기, 취약 집단 지원, 편향되지 않은 조언 제공처럼 알아볼 수 있는 의무를 하나 이상 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What makes the proposed financial-education duties important.",
+        "satisfiedWhenEn": "The answer connects the duties to a concrete consequence, need, vulnerability, or public interest that explains their importance.",
+        "semanticRoleKo": "제안한 금융 교육 의무를 중요하게 만드는 이유.",
+        "satisfiedWhenKo": "그 의무를 구체적인 결과, 필요, 취약성 또는 공익과 연결해 중요성을 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific school practice that illustrates one of the proposed duties.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as disclosing financial sponsors, teaching contract reading, offering scholarships, or using realistic household budgets.",
+        "semanticRoleKo": "제안한 의무 가운데 하나를 보여 주는 구체적인 학교 운영 방식.",
+        "satisfiedWhenKo": "금융 후원자 공개, 계약서 읽기 교육, 장학금 제공, 현실적인 가계 예산 활용처럼 구체적인 예를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome expected when financial-skills schools fulfill the proposed duties.",
+        "satisfiedWhenEn": "The answer describes a definite effect such as trustworthy instruction, safer financial choices, broader participation, or reduced money-related inequality.",
+        "semanticRoleKo": "금융 기술 교육 학교가 제안한 의무를 이행할 때 기대되는 결과.",
+        "satisfiedWhenKo": "신뢰할 수 있는 교육, 더 안전한 금융 선택, 폭넓은 참여, 금전 관련 불평등 감소처럼 분명한 효과를 설명하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific financial or educational problem the proposed duties should address.",
+        "satisfiedWhenEn": "The answer identifies a concrete issue such as predatory loans, misleading advice, low financial literacy, unequal access to classes, or learners leaving without practical skills.",
+        "semanticRoleKo": "제안한 의무가 다루어야 할 구체적인 금융 또는 교육 문제.",
+        "satisfiedWhenKo": "약탈적 대출, 오해를 부르는 조언, 낮은 금융 이해력, 불평등한 수업 접근, 실용 기술 없이 교육을 마치는 문제처럼 구체적인 사안을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-15",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The form of social responsibility the learner thinks financial-skills schools should take on.",
+        "satisfiedWhenEn": "The answer recommends a concrete responsibility beyond merely operating as a school, such as free community education, impartial guidance, consumer protection, or outreach to excluded groups.",
+        "semanticRoleKo": "금융 기술 교육 학교가 맡아야 한다고 학습자가 생각하는 사회적 책임의 형태.",
+        "satisfiedWhenKo": "무료 지역사회 교육, 공정한 안내, 소비자 보호, 소외 집단 지원처럼 단순한 학교 운영을 넘어서는 구체적인 책임을 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner believes the school should assume that social responsibility.",
+        "satisfiedWhenEn": "The answer provides a concrete ethical, educational, access, prevention, or public-benefit reason for the proposed responsibility.",
+        "semanticRoleKo": "학교가 그 사회적 책임을 맡아야 한다고 학습자가 믿는 이유.",
+        "satisfiedWhenKo": "제안한 책임의 근거가 되는 구체적인 윤리, 교육, 접근성, 예방 또는 공익 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular initiative that shows the proposed social responsibility in action.",
+        "satisfiedWhenEn": "The answer describes a specific initiative such as a free tax-basics clinic, a scam-prevention seminar, accessible online lessons, or counseling without product sales.",
+        "semanticRoleKo": "제안한 사회적 책임이 실제로 이루어지는 모습을 보여 주는 특정 활동.",
+        "satisfiedWhenKo": "무료 세금 기초 상담, 사기 예방 세미나, 접근 가능한 온라인 수업, 상품 판매 없는 상담처럼 구체적인 활동을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The public benefit or change expected from the proposed social responsibility.",
+        "satisfiedWhenEn": "The answer states a concrete outcome such as better-informed consumers, fewer avoidable debts, wider access to financial knowledge, or increased trust.",
+        "semanticRoleKo": "제안한 사회적 책임에서 기대되는 공공적 이점 또는 변화.",
+        "satisfiedWhenKo": "정보를 잘 아는 소비자 증가, 피할 수 있는 부채 감소, 금융 지식 접근 확대, 신뢰 향상처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The definite social or financial harm the proposed responsibility is meant to reduce.",
+        "satisfiedWhenEn": "The answer names a specific problem such as financial exclusion, debt traps, fraud vulnerability, biased advice, or lack of basic money knowledge.",
+        "semanticRoleKo": "제안한 책임으로 줄이려는 분명한 사회적 또는 금융 피해.",
+        "satisfiedWhenKo": "금융 소외, 부채의 덫, 사기 취약성, 편향된 조언, 기본 금전 지식 부족처럼 구체적인 문제를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-16",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner thinks local volunteering should play in modern society.",
+        "satisfiedWhenEn": "The answer proposes a recognizable social function for local volunteering, such as responding to neighborhood needs, connecting residents, or complementing professional services.",
+        "semanticRoleKo": "현대 사회에서 지역 봉사활동이 맡아야 한다고 학습자가 생각하는 역할.",
+        "satisfiedWhenKo": "동네 필요에 대응하기, 주민 연결, 전문 서비스 보완처럼 지역 봉사활동의 알아볼 수 있는 사회적 기능을 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the proposed role appropriate for local volunteering.",
+        "satisfiedWhenEn": "The answer gives a concrete community need, civic value, resource gap, relationship benefit, or practical reason supporting the role.",
+        "semanticRoleKo": "학습자가 제안한 역할을 지역 봉사활동에 적절하다고 보는 이유.",
+        "satisfiedWhenKo": "그 역할을 뒷받침하는 구체적인 지역사회 필요, 시민적 가치, 자원 공백, 관계상의 이점 또는 실용적 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the proposed volunteering role would create for residents or the neighborhood.",
+        "satisfiedWhenEn": "The answer states a definite effect such as faster local help, reduced isolation, cleaner shared spaces, stronger trust, or greater civic participation.",
+        "semanticRoleKo": "제안한 봉사활동의 역할이 주민이나 동네에 만들어 낼 결과.",
+        "satisfiedWhenKo": "더 빠른 지역 지원, 고립감 감소, 깨끗한 공동 공간, 신뢰 강화, 시민 참여 확대처럼 분명한 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific local volunteer activity or situation that illustrates the proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete instance such as delivering meals to isolated residents, tutoring children, restoring a park, or helping after a neighborhood emergency.",
+        "semanticRoleKo": "제안한 역할을 보여 주는 구체적인 지역 봉사활동 또는 상황.",
+        "satisfiedWhenKo": "고립된 주민에게 식사 배달, 아동 학습 지도, 공원 정비, 동네 재난 후 지원처럼 구체적인 사례를 들면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The particular local need or social problem the proposed volunteering role should address.",
+        "satisfiedWhenEn": "The answer identifies a specific issue such as elderly isolation, unmet tutoring needs, neglected public spaces, emergency support gaps, or weak neighbor connections.",
+        "semanticRoleKo": "제안한 봉사활동의 역할이 다루어야 할 특정한 지역 필요 또는 사회 문제.",
+        "satisfiedWhenKo": "노인 고립, 충족되지 않는 학습 지원, 방치된 공공 공간, 재난 지원 공백, 약한 이웃 관계처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-17",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "Whether the learner believes local volunteering should make a greater contribution to society.",
+        "satisfiedWhenEn": "The answer clearly agrees, disagrees, or gives a qualified view on local volunteering doing more for society; simply praising volunteering does not establish the requested stance.",
+        "semanticRoleKo": "지역 봉사활동이 사회에 더 많이 기여해야 하는지에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "지역 봉사활동이 사회를 위해 더 많은 일을 해야 한다는 데 찬성, 반대 또는 조건부 견해를 분명히 밝히면 충족한다. 봉사활동을 칭찬하기만 하면 요청된 입장이 드러나지 않는다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner holds that position on expanding local volunteering's contribution.",
+        "satisfiedWhenEn": "The answer gives a concrete community need, capacity limit, civic benefit, fairness concern, or service-quality consideration explaining the stance.",
+        "semanticRoleKo": "지역 봉사활동의 기여 확대에 대해 학습자가 그런 입장을 갖는 이유.",
+        "satisfiedWhenKo": "그 입장을 설명하는 구체적인 지역사회 필요, 역량 한계, 시민적 이점, 공정성 문제 또는 서비스 품질 측면의 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular volunteering program or situation that supports the learner's position.",
+        "satisfiedWhenEn": "The answer gives a concrete case, such as volunteers filling a meal-delivery gap or untrained volunteers being asked to handle work that requires professionals.",
+        "semanticRoleKo": "학습자의 입장을 뒷받침하는 특정 봉사 프로그램 또는 상황.",
+        "satisfiedWhenKo": "봉사자가 식사 배달 공백을 메우는 경우나 훈련받지 않은 봉사자에게 전문가가 필요한 업무를 맡기는 경우처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The societal consequence the learner expects if local volunteering contributes at the level they support.",
+        "satisfiedWhenEn": "The answer identifies a definite effect such as wider assistance, stronger community ties, volunteer burnout, inconsistent help, or preserved professional service quality.",
+        "semanticRoleKo": "지역 봉사활동이 학습자가 지지하는 수준으로 기여할 때 예상되는 사회적 결과.",
+        "satisfiedWhenKo": "지원 확대, 지역 관계 강화, 봉사자 소진, 불안정한 도움, 전문 서비스 품질 유지처럼 분명한 효과를 밝히면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A separate benefit of local volunteering doing more for society.",
+        "satisfiedWhenEn": "The answer states a concrete upside such as reaching overlooked residents, mobilizing local knowledge, building empathy, or responding quickly to small needs.",
+        "semanticRoleKo": "지역 봉사활동이 사회를 위해 더 많이 일할 때 생기는 별도의 이점.",
+        "satisfiedWhenKo": "소외된 주민에게 접근하기, 지역 지식 활용, 공감 형성, 작은 필요에 신속히 대응하기처럼 구체적인 장점을 말하면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A separate cost or risk of asking local volunteering to do more.",
+        "satisfiedWhenEn": "The answer states a concrete drawback such as volunteer fatigue, inadequate training, unreliable continuity, safety concerns, or replacing paid work.",
+        "semanticRoleKo": "지역 봉사활동에 더 많은 일을 요구할 때의 별도 비용 또는 위험.",
+        "satisfiedWhenKo": "봉사자 피로, 부족한 교육, 불안정한 지속성, 안전 우려, 유급 일자리 대체처럼 구체적인 단점을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-18",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The one important role the learner assigns to local volunteering.",
+        "satisfiedWhenEn": "The answer identifies one definite community role, such as supporting vulnerable neighbors, improving shared places, or bringing residents together around a need.",
+        "semanticRoleKo": "지역 봉사활동에 학습자가 부여하는 하나의 중요한 역할.",
+        "satisfiedWhenKo": "취약한 이웃 지원, 공동 공간 개선, 지역 필요를 중심으로 주민 연결처럼 분명한 지역사회 역할 하나를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers that local-volunteering role important.",
+        "satisfiedWhenEn": "The answer explains the role's importance with a concrete unmet need, community benefit, relationship value, or practical effect.",
+        "semanticRoleKo": "학습자가 그 지역 봉사활동의 역할을 중요하다고 보는 이유.",
+        "satisfiedWhenKo": "충족되지 않은 필요, 지역사회 이점, 관계적 가치 또는 실질적 효과를 구체적으로 들어 역할의 중요성을 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific volunteer action or project demonstrating the selected role.",
+        "satisfiedWhenEn": "The answer describes a particular instance such as checking on older neighbors during a heat wave, running a reading club, or cleaning a stream.",
+        "semanticRoleKo": "선택한 역할을 보여 주는 구체적인 봉사 행동 또는 사업.",
+        "satisfiedWhenKo": "폭염 때 노인 이웃 안부 확인, 독서 모임 운영, 하천 정화처럼 특정 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The change that effective performance of the selected volunteering role would bring.",
+        "satisfiedWhenEn": "The answer states a recognizable outcome such as safer residents, improved skills, restored public space, reduced loneliness, or stronger mutual trust.",
+        "semanticRoleKo": "선택한 봉사 역할을 효과적으로 수행할 때 생길 변화.",
+        "satisfiedWhenKo": "주민 안전 향상, 기술 향상, 공공 공간 회복, 외로움 감소, 상호 신뢰 강화처럼 알아볼 수 있는 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific aspect of who would volunteer, whom they would help, or how the selected role would operate.",
+        "satisfiedWhenEn": "The answer clarifies the participants, beneficiaries, frequency, location, skills used, coordination, or another concrete feature of the proposed role.",
+        "semanticRoleKo": "누가 봉사하고 누구를 돕거나 선택한 역할이 어떻게 운영되는지에 관한 구체적인 측면.",
+        "satisfiedWhenKo": "참여자, 수혜자, 빈도, 장소, 활용 기술, 조정 방식 또는 제안한 역할의 다른 구체적인 특징을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-19",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The duties the learner thinks local volunteering should uphold in serving the community.",
+        "satisfiedWhenEn": "The answer proposes at least one clear duty for local volunteer activity, such as responding to real needs, protecting beneficiaries, using volunteers responsibly, or cooperating with local services.",
+        "semanticRoleKo": "지역 봉사활동이 지역사회를 섬길 때 지켜야 한다고 학습자가 생각하는 의무.",
+        "satisfiedWhenKo": "실제 필요에 대응하기, 수혜자 보호, 봉사자의 책임 있는 활용, 지역 서비스와의 협력처럼 지역 봉사활동의 분명한 의무를 하나 이상 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What makes the proposed duties of local volunteering important.",
+        "satisfiedWhenEn": "The answer links the duties to a concrete concern about safety, trust, effectiveness, fairness, dignity, or responsible use of community effort.",
+        "semanticRoleKo": "제안한 지역 봉사활동의 의무를 중요하게 만드는 이유.",
+        "satisfiedWhenKo": "그 의무를 안전, 신뢰, 효과성, 공정성, 존엄성 또는 지역 노력의 책임 있는 활용에 관한 구체적인 문제와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular volunteer practice that illustrates one of the proposed duties.",
+        "satisfiedWhenEn": "The answer gives a concrete practice such as background checks for youth mentors, asking residents what help they need, training disaster volunteers, or protecting private information.",
+        "semanticRoleKo": "제안한 의무 가운데 하나를 보여 주는 특정 봉사 운영 방식.",
+        "satisfiedWhenKo": "청소년 멘토 신원 확인, 주민에게 필요한 도움 묻기, 재난 봉사자 교육, 개인정보 보호처럼 구체적인 방식을 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome expected when local volunteering fulfills the proposed duties.",
+        "satisfiedWhenEn": "The answer describes a definite effect such as safer service, help that matches actual needs, stronger public trust, or volunteers who remain engaged.",
+        "semanticRoleKo": "지역 봉사활동이 제안한 의무를 이행할 때 기대되는 결과.",
+        "satisfiedWhenKo": "더 안전한 서비스, 실제 필요에 맞는 도움, 공공 신뢰 강화, 지속적으로 참여하는 봉사자처럼 분명한 효과를 설명하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific weakness or harm the proposed volunteering duties are meant to prevent.",
+        "satisfiedWhenEn": "The answer identifies a definite issue such as unsafe contact, unwanted help, poor coordination, privacy breaches, volunteer misuse, or unequal service.",
+        "semanticRoleKo": "제안한 봉사활동 의무로 예방하려는 구체적인 약점 또는 피해.",
+        "satisfiedWhenKo": "안전하지 않은 접촉, 원하지 않는 도움, 부족한 조정, 개인정보 침해, 봉사자 오용, 불평등한 서비스처럼 분명한 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-20",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The kind of social responsibility the learner believes local volunteering should carry.",
+        "satisfiedWhenEn": "The answer recommends a specific responsibility, such as prioritizing neglected local needs, including diverse residents, protecting those receiving help, or sustaining long-term community support.",
+        "semanticRoleKo": "지역 봉사활동이 져야 한다고 학습자가 믿는 사회적 책임의 종류.",
+        "satisfiedWhenKo": "소외된 지역 필요 우선 지원, 다양한 주민의 참여, 도움받는 사람 보호, 장기적인 지역 지원 유지처럼 구체적인 책임을 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why local volunteering should accept the proposed social responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete ethical, community, inclusion, safety, or sustainability reason for the recommendation.",
+        "semanticRoleKo": "지역 봉사활동이 제안한 사회적 책임을 맡아야 하는 이유.",
+        "satisfiedWhenKo": "그 제안을 뒷받침하는 구체적인 윤리, 지역사회, 포용, 안전 또는 지속 가능성 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete initiative showing the proposed social responsibility in local volunteer work.",
+        "satisfiedWhenEn": "The answer describes a specific initiative such as accessible volunteer events, regular support for isolated households, safeguarding rules, or resident-led project selection.",
+        "semanticRoleKo": "지역 봉사활동에서 제안한 사회적 책임을 보여 주는 구체적인 활동.",
+        "satisfiedWhenKo": "접근 가능한 봉사 행사, 고립 가구 정기 지원, 보호 규정, 주민 주도의 사업 선정처럼 구체적인 활동을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The public or community change expected from the proposed social responsibility.",
+        "satisfiedWhenEn": "The answer states a tangible outcome such as fairer support, safer participation, sustained assistance, increased belonging, or stronger community resilience.",
+        "semanticRoleKo": "제안한 사회적 책임에서 기대되는 공공 또는 지역사회의 변화.",
+        "satisfiedWhenKo": "더 공정한 지원, 안전한 참여, 지속적인 도움, 소속감 증가, 지역 회복력 강화처럼 실질적인 결과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The particular social harm or gap the proposed responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a specific problem such as excluded residents, short-lived support, unsafe volunteer practices, help concentrated in visible areas, or ignored community priorities.",
+        "semanticRoleKo": "제안한 책임이 다루어야 할 특정한 사회적 피해 또는 공백.",
+        "satisfiedWhenKo": "배제된 주민, 단기성 지원, 안전하지 않은 봉사 관행, 눈에 띄는 지역에만 집중된 도움, 무시된 지역 우선순위처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-21",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibilities the learner believes social media platforms should have in modern society.",
+        "satisfiedWhenEn": "The answer proposes at least one definite platform duty, such as protecting users, limiting harmful content, safeguarding data, supporting informed choice, or applying rules fairly.",
+        "semanticRoleKo": "현대 사회에서 소셜 미디어 플랫폼이 가져야 한다고 학습자가 믿는 책임.",
+        "satisfiedWhenKo": "이용자 보호, 유해 콘텐츠 제한, 데이터 보호, 정보에 근거한 선택 지원, 공정한 규정 적용처럼 플랫폼의 분명한 의무를 하나 이상 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner thinks social media platforms should bear the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete reason based on platform influence, user vulnerability, business incentives, public discourse, privacy, or safety.",
+        "semanticRoleKo": "소셜 미디어 플랫폼이 제안한 책임을 져야 한다고 학습자가 생각하는 이유.",
+        "satisfiedWhenKo": "플랫폼의 영향력, 이용자 취약성, 사업상 유인, 공론장, 개인정보 또는 안전에 근거한 구체적인 이유를 제시하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific online harm or platform failure the proposed responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a definite problem such as harassment, misinformation, addictive design, privacy misuse, scams, discriminatory moderation, or unsafe access for children.",
+        "semanticRoleKo": "제안한 책임이 다루어야 할 구체적인 온라인 피해 또는 플랫폼의 실패.",
+        "satisfiedWhenKo": "괴롭힘, 허위 정보, 중독을 유도하는 설계, 개인정보 오용, 사기, 차별적 운영, 아동의 위험한 이용처럼 분명한 문제를 밝히면 충족한다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "A concrete platform measure for addressing the identified social-media problem.",
+        "satisfiedWhenEn": "The answer describes an actionable mechanism such as stronger reporting tools, independent fact checks, privacy-by-default settings, age safeguards, appeal processes, or limits on recommendation systems.",
+        "semanticRoleKo": "확인된 소셜 미디어 문제를 다루기 위한 구체적인 플랫폼 조치.",
+        "satisfiedWhenKo": "강화된 신고 도구, 독립적인 사실 확인, 개인정보 보호 기본 설정, 연령 보호 장치, 이의 제기 절차, 추천 시스템 제한처럼 실행 가능한 방안을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The societal or user outcome expected if platforms fulfill the proposed responsibility.",
+        "satisfiedWhenEn": "The answer states a recognizable effect such as safer participation, less harmful exposure, better privacy control, more trustworthy information, or fairer treatment.",
+        "semanticRoleKo": "플랫폼이 제안한 책임을 이행할 때 기대되는 사회 또는 이용자의 결과.",
+        "satisfiedWhenKo": "더 안전한 참여, 유해 정보 노출 감소, 개인정보 통제 향상, 더 신뢰할 수 있는 정보, 공정한 대우처럼 알아볼 수 있는 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular platform policy or user situation that illustrates the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete instance such as quickly removing a doxxing post, explaining why an account was suspended, blocking targeted ads to children, or warning users about a false claim.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 특정 플랫폼 정책 또는 이용자 상황.",
+        "satisfiedWhenKo": "개인정보 폭로 게시물의 신속한 삭제, 계정 정지 이유 설명, 아동 대상 맞춤 광고 차단, 허위 주장 경고처럼 구체적인 사례를 들면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-22",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "Whether the learner thinks social media platforms should do more for society.",
+        "satisfiedWhenEn": "The answer clearly supports, rejects, or qualifies greater social action by social media platforms; a general comment that social media is influential does not state the requested position.",
+        "semanticRoleKo": "소셜 미디어 플랫폼이 사회를 위해 더 많은 일을 해야 하는지에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "소셜 미디어 플랫폼의 더 큰 사회적 역할에 찬성, 반대 또는 조건부 입장을 분명히 밝히면 충족한다. 소셜 미디어의 영향력이 크다고만 말하면 요청된 입장이 아니다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner holds that view about social media platforms doing more.",
+        "satisfiedWhenEn": "The answer gives a concrete consideration involving platform power, public benefit, free expression, feasibility, business responsibility, or government oversight.",
+        "semanticRoleKo": "소셜 미디어 플랫폼이 더 많은 일을 하는 것에 대해 학습자가 그런 견해를 갖는 이유.",
+        "satisfiedWhenKo": "플랫폼 권한, 공익, 표현의 자유, 실행 가능성, 기업 책임 또는 정부 감독과 관련된 구체적인 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific platform action or situation that supports the learner's position.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as amplifying emergency information, failing to stop coordinated harassment, funding digital literacy, or over-removing lawful speech.",
+        "semanticRoleKo": "학습자의 입장을 뒷받침하는 구체적인 플랫폼 행동 또는 상황.",
+        "satisfiedWhenKo": "재난 정보 확산, 조직적 괴롭힘 방치, 디지털 이해 교육 지원, 합법적 표현의 과도한 삭제처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects from social media platforms taking the level of social action they support.",
+        "satisfiedWhenEn": "The answer identifies a definite effect such as improved user safety, healthier public discussion, excessive private control, higher operating costs, or clearer accountability.",
+        "semanticRoleKo": "소셜 미디어 플랫폼이 학습자가 지지하는 수준의 사회적 행동을 할 때 예상되는 결과.",
+        "satisfiedWhenKo": "이용자 안전 향상, 건강한 공론, 민간 통제의 과도한 확대, 운영 비용 증가, 책임성 강화처럼 분명한 효과를 밝히면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit of social media platforms doing more for society.",
+        "satisfiedWhenEn": "The answer states a concrete upside such as rapidly reaching large audiences, reducing online harm, improving digital literacy, or directing resources to public-interest projects.",
+        "semanticRoleKo": "소셜 미디어 플랫폼이 사회를 위해 더 많이 활동할 때의 별도 이점.",
+        "satisfiedWhenKo": "대규모 이용자에게 빠르게 도달하기, 온라인 피해 줄이기, 디지털 이해력 높이기, 공익 사업에 자원 투입하기처럼 구체적인 장점을 말하면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct drawback or risk of requiring social media platforms to do more for society.",
+        "satisfiedWhenEn": "The answer states a concrete concern such as private censorship power, biased priorities, privacy intrusion, costs passed to users, or duties better handled by public institutions.",
+        "semanticRoleKo": "소셜 미디어 플랫폼에 더 큰 사회적 역할을 요구할 때의 별도 단점 또는 위험.",
+        "satisfiedWhenKo": "민간 검열 권한, 편향된 우선순위, 개인정보 침해, 이용자에게 전가되는 비용, 공공기관이 맡아야 할 의무처럼 구체적인 우려를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-23",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The one important role the learner assigns to social media platforms.",
+        "satisfiedWhenEn": "The answer identifies one clear role, such as enabling safe communication, distributing reliable information, protecting user privacy, or giving communities a voice.",
+        "semanticRoleKo": "소셜 미디어 플랫폼에 학습자가 부여하는 하나의 중요한 역할.",
+        "satisfiedWhenKo": "안전한 소통 지원, 신뢰할 수 있는 정보 유통, 이용자 개인정보 보호, 공동체의 발언 기회 제공처럼 분명한 역할 하나를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the selected social-media role important.",
+        "satisfiedWhenEn": "The answer explains the role's importance with a concrete user need, social effect, platform capability, risk, or public value.",
+        "semanticRoleKo": "학습자가 선택한 소셜 미디어 역할을 중요하다고 보는 이유.",
+        "satisfiedWhenKo": "구체적인 이용자 필요, 사회적 효과, 플랫폼 역량, 위험 또는 공익을 들어 역할의 중요성을 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular feature, policy, or event showing the selected platform role.",
+        "satisfiedWhenEn": "The answer describes a specific instance such as local disaster updates, privacy controls for profile data, a harassment reporting system, or verified public-health information.",
+        "semanticRoleKo": "선택한 플랫폼 역할을 보여 주는 특정 기능, 정책 또는 사건.",
+        "satisfiedWhenKo": "지역 재난 안내, 프로필 데이터 개인정보 설정, 괴롭힘 신고 시스템, 검증된 공중 보건 정보처럼 구체적인 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect successful performance of the selected role would have on users or society.",
+        "satisfiedWhenEn": "The answer states a definite outcome such as informed decisions, safer interaction, greater civic participation, protected personal data, or stronger community connection.",
+        "semanticRoleKo": "선택한 역할을 성공적으로 수행할 때 이용자나 사회에 생길 효과.",
+        "satisfiedWhenKo": "정보에 근거한 판단, 안전한 상호작용, 시민 참여 확대, 개인정보 보호, 지역사회 연결 강화처럼 분명한 결과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific online or societal problem the selected platform role should address.",
+        "satisfiedWhenEn": "The answer identifies a definite issue such as false information, abusive behavior, privacy loss, social isolation, unequal visibility, or weak emergency communication.",
+        "semanticRoleKo": "선택한 플랫폼 역할이 다루어야 할 구체적인 온라인 또는 사회 문제.",
+        "satisfiedWhenKo": "허위 정보, 폭력적 행동, 개인정보 상실, 사회적 고립, 불평등한 노출, 부족한 재난 소통처럼 분명한 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-24",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The duties the learner believes social media platforms owe to users and society.",
+        "satisfiedWhenEn": "The answer proposes one or more recognizable duties, such as transparent rules, consistent moderation, data protection, child safety, or correction of harmful system effects.",
+        "semanticRoleKo": "소셜 미디어 플랫폼이 이용자와 사회에 대해 가진다고 학습자가 보는 의무.",
+        "satisfiedWhenKo": "투명한 규정, 일관된 관리, 데이터 보호, 아동 안전, 시스템의 유해한 영향 시정처럼 알아볼 수 있는 의무를 하나 이상 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What makes the proposed platform duties important.",
+        "satisfiedWhenEn": "The answer connects the duties to a concrete consequence of platform scale, algorithmic influence, user dependence, commercial incentives, or vulnerability to harm.",
+        "semanticRoleKo": "제안한 플랫폼 의무를 중요하게 만드는 이유.",
+        "satisfiedWhenKo": "그 의무를 플랫폼 규모, 알고리즘 영향력, 이용자 의존, 상업적 유인 또는 피해 취약성의 구체적인 결과와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific platform practice that illustrates one of the proposed duties.",
+        "satisfiedWhenEn": "The answer gives a concrete practice such as publishing moderation reports, obtaining consent before data sharing, offering account appeals, or limiting harmful recommendations.",
+        "semanticRoleKo": "제안한 의무 가운데 하나를 보여 주는 구체적인 플랫폼 운영 방식.",
+        "satisfiedWhenKo": "콘텐츠 관리 보고서 공개, 데이터 공유 전 동의 획득, 계정 이의 제기 제공, 유해 추천 제한처럼 구체적인 방식을 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome expected when social media platforms meet the proposed duties.",
+        "satisfiedWhenEn": "The answer describes a tangible effect such as greater trust, fewer user harms, fairer enforcement, better privacy, or more accountable platform decisions.",
+        "semanticRoleKo": "소셜 미디어 플랫폼이 제안한 의무를 이행할 때 기대되는 결과.",
+        "satisfiedWhenKo": "신뢰 향상, 이용자 피해 감소, 공정한 규정 집행, 개인정보 보호 강화, 플랫폼 결정의 책임성 향상처럼 실질적인 효과를 설명하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The particular platform failure or social harm the proposed duties are intended to prevent.",
+        "satisfiedWhenEn": "The answer identifies a concrete issue such as opaque account bans, data exploitation, unchecked abuse, manipulative feeds, dangerous challenges, or unequal rule enforcement.",
+        "semanticRoleKo": "제안한 의무로 예방하려는 특정 플랫폼 실패 또는 사회적 피해.",
+        "satisfiedWhenKo": "불투명한 계정 정지, 데이터 착취, 방치된 폭력, 조작적인 피드, 위험한 유행, 불평등한 규정 집행처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-25",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The type of social responsibility the learner thinks social media platforms should assume.",
+        "satisfiedWhenEn": "The answer recommends a concrete responsibility toward the public, such as reducing systemic harm, supporting trustworthy civic information, protecting vulnerable users, or explaining algorithmic decisions.",
+        "semanticRoleKo": "소셜 미디어 플랫폼이 맡아야 한다고 학습자가 생각하는 사회적 책임의 유형.",
+        "satisfiedWhenKo": "구조적 피해 감소, 신뢰할 수 있는 시민 정보 지원, 취약 이용자 보호, 알고리즘 결정 설명처럼 대중에 대한 구체적인 책임을 권하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner believes platforms should carry that social responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete ethical, civic, safety, privacy, market-power, or societal-impact reason supporting the responsibility.",
+        "semanticRoleKo": "플랫폼이 그 사회적 책임을 져야 한다고 학습자가 믿는 이유.",
+        "satisfiedWhenKo": "그 책임을 뒷받침하는 구체적인 윤리, 시민 사회, 안전, 개인정보, 시장 지배력 또는 사회적 영향 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular initiative that demonstrates the proposed platform responsibility.",
+        "satisfiedWhenEn": "The answer describes a specific initiative such as an election-information center, crisis-support links, algorithm audits, researcher data access, or protective defaults for minors.",
+        "semanticRoleKo": "제안한 플랫폼 책임을 보여 주는 특정 활동.",
+        "satisfiedWhenKo": "선거 정보 센터, 위기 지원 링크, 알고리즘 감사, 연구자 데이터 접근, 미성년자 보호 기본 설정처럼 구체적인 활동을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The societal change expected from the proposed platform responsibility.",
+        "satisfiedWhenEn": "The answer states a recognizable outcome such as healthier public debate, reduced exploitation, safer young users, clearer accountability, or improved access to reliable help.",
+        "semanticRoleKo": "제안한 플랫폼 책임에서 기대되는 사회적 변화.",
+        "satisfiedWhenKo": "건강한 공론, 착취 감소, 청소년 이용자 안전, 명확한 책임성, 신뢰할 수 있는 도움에 대한 접근 향상처럼 알아볼 수 있는 결과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific societal harm the proposed platform responsibility is meant to address.",
+        "satisfiedWhenEn": "The answer names a definite problem such as election misinformation, self-harm content, discriminatory algorithms, commercial surveillance, coordinated harassment, or barriers to crisis support.",
+        "semanticRoleKo": "제안한 플랫폼 책임으로 다루려는 구체적인 사회적 피해.",
+        "satisfiedWhenKo": "선거 허위 정보, 자해 콘텐츠, 차별적 알고리즘, 상업적 감시, 조직적 괴롭힘, 위기 지원 접근 장벽처럼 분명한 문제를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-26",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner believes public libraries should play in modern society.",
+        "satisfiedWhenEn": "The answer proposes a clear modern function for public libraries, such as equal information access, digital support, learning space, cultural participation, or trusted community services.",
+        "semanticRoleKo": "현대 사회에서 공공 도서관이 맡아야 한다고 학습자가 생각하는 역할.",
+        "satisfiedWhenKo": "평등한 정보 접근, 디지털 지원, 학습 공간, 문화 참여, 신뢰할 수 있는 지역 서비스처럼 공공 도서관의 분명한 현대적 기능을 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the proposed role necessary or valuable for public libraries today.",
+        "satisfiedWhenEn": "The answer gives a concrete educational, digital, cultural, economic, access, or community reason supporting the role.",
+        "semanticRoleKo": "오늘날 공공 도서관에 제안한 역할이 필요하거나 가치 있다고 학습자가 보는 이유.",
+        "satisfiedWhenKo": "그 역할을 뒷받침하는 구체적인 교육, 디지털, 문화, 경제, 접근성 또는 지역사회 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed library role would have on users or the community.",
+        "satisfiedWhenEn": "The answer states a definite outcome such as broader knowledge access, improved digital skills, reduced isolation, better study opportunities, or stronger local participation.",
+        "semanticRoleKo": "제안한 도서관 역할이 이용자나 지역사회에 미칠 효과.",
+        "satisfiedWhenKo": "지식 접근 확대, 디지털 기술 향상, 고립감 감소, 학습 기회 개선, 지역 참여 강화처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific public-library service or situation that illustrates the proposed modern role.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as free internet access, job-application help, language classes, a makerspace, local-history archives, or quiet study rooms.",
+        "semanticRoleKo": "제안한 현대적 역할을 보여 주는 구체적인 공공 도서관 서비스 또는 상황.",
+        "satisfiedWhenKo": "무료 인터넷, 구직 지원, 언어 수업, 제작 공간, 지역사 자료, 조용한 학습실처럼 구체적인 예를 들면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A particular feature of the library service, audience, resource, or delivery method within the proposed role.",
+        "satisfiedWhenEn": "The answer clarifies who the service is for, what resource is offered, when or where it is available, or how people can use it.",
+        "semanticRoleKo": "제안한 역할 안에서 도서관 서비스, 대상, 자원 또는 제공 방식의 특정 특징.",
+        "satisfiedWhenKo": "서비스 대상, 제공 자원, 이용 시기나 장소 또는 사람들이 사용하는 방식을 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-27",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "Whether the learner thinks public libraries should receive more financial, policy, or community support.",
+        "satisfiedWhenEn": "The answer clearly favors, opposes, or conditionally supports increasing support for public libraries; stating that libraries are useful without addressing increased support is insufficient.",
+        "semanticRoleKo": "공공 도서관이 재정, 정책 또는 지역사회의 지원을 더 받아야 하는지에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "공공 도서관 지원 확대에 찬성, 반대 또는 조건부 입장을 분명히 밝히면 충족한다. 지원 확대를 다루지 않고 도서관이 유용하다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner holds that position on giving public libraries more support.",
+        "satisfiedWhenEn": "The answer gives a concrete consideration involving public need, current resources, changing library services, competing budgets, usage, or equal access.",
+        "semanticRoleKo": "공공 도서관에 더 많은 지원을 제공하는 것에 대해 학습자가 그런 입장을 갖는 이유.",
+        "satisfiedWhenKo": "공공 필요, 현재 자원, 변화하는 도서관 서비스, 예산 경쟁, 이용률 또는 평등한 접근과 관련된 구체적인 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific library condition, service, or funding case that supports the learner's view.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as long waits for computers, a successful literacy program, an underused branch, or funds needed for accessible facilities.",
+        "semanticRoleKo": "학습자의 견해를 뒷받침하는 구체적인 도서관 상황, 서비스 또는 예산 사례.",
+        "satisfiedWhenKo": "컴퓨터 이용의 긴 대기, 성공적인 문해 교육, 이용이 적은 분관, 접근 가능한 시설에 필요한 예산처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects from providing or withholding the additional library support.",
+        "satisfiedWhenEn": "The answer states a definite effect such as longer opening hours, improved collections, greater access, higher public costs, or consolidation of little-used services.",
+        "semanticRoleKo": "추가 도서관 지원을 제공하거나 제공하지 않을 때 학습자가 예상하는 결과.",
+        "satisfiedWhenKo": "운영 시간 연장, 자료 개선, 접근 확대, 공공 비용 증가, 이용이 적은 서비스 통합처럼 분명한 효과를 말하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit of increasing support for public libraries.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive effect such as updated resources, more trained staff, extended hours, inclusive facilities, or new community programs.",
+        "semanticRoleKo": "공공 도서관 지원을 늘릴 때 생기는 별도의 이점.",
+        "satisfiedWhenKo": "최신 자료, 더 많은 전문 인력, 운영 시간 연장, 포용적인 시설, 새로운 지역 프로그램처럼 구체적인 긍정 효과를 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct cost, tradeoff, or limitation of increasing public-library support.",
+        "satisfiedWhenEn": "The answer identifies a concrete drawback such as higher taxes, reduced funds for another service, investment in underused facilities, or ongoing staffing costs.",
+        "semanticRoleKo": "공공 도서관 지원을 늘릴 때의 별도 비용, 상충 관계 또는 한계.",
+        "satisfiedWhenKo": "세금 증가, 다른 서비스 예산 감소, 이용이 적은 시설에 대한 투자, 지속적인 인건비처럼 구체적인 단점을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-28",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's assessment of how important public libraries are to communities today.",
+        "satisfiedWhenEn": "The answer clearly judges public libraries as important, unimportant, or important only under stated conditions; merely listing library services does not express the requested assessment.",
+        "semanticRoleKo": "오늘날 공공 도서관이 지역사회에 얼마나 중요한지에 대한 학습자의 평가.",
+        "satisfiedWhenKo": "공공 도서관이 중요하다, 중요하지 않다 또는 특정 조건에서 중요하다는 판단을 분명히 밝히면 충족한다. 도서관 서비스만 나열하면 요청된 평가가 아니다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner gives public libraries that level of importance.",
+        "satisfiedWhenEn": "The answer provides a concrete access, educational, digital, social, cultural, usage, or alternative-service consideration explaining the assessment.",
+        "semanticRoleKo": "학습자가 공공 도서관의 중요성을 그 정도로 평가하는 이유.",
+        "satisfiedWhenKo": "그 평가를 설명하는 구체적인 접근성, 교육, 디지털, 사회, 문화, 이용률 또는 대체 서비스 관련 근거를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A community effect of having strong, weak, or absent public-library services that supports the importance assessment.",
+        "satisfiedWhenEn": "The answer states a definite consequence such as equal study access, reduced digital exclusion, fewer public learning spaces, or little impact where alternatives are abundant.",
+        "semanticRoleKo": "공공 도서관 서비스가 충분하거나 부족하거나 없을 때 생겨 중요성 평가를 뒷받침하는 지역사회 효과.",
+        "satisfiedWhenKo": "평등한 학습 접근, 디지털 소외 감소, 공공 학습 공간 부족, 대체 서비스가 많은 곳에서의 작은 영향처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular library service, user, or community situation illustrating the learner's importance judgment.",
+        "satisfiedWhenEn": "The answer gives a specific example such as a job seeker using free internet, children attending reading programs, or a well-connected area where few residents use the branch.",
+        "semanticRoleKo": "학습자의 중요성 판단을 보여 주는 특정 도서관 서비스, 이용자 또는 지역 상황.",
+        "satisfiedWhenKo": "무료 인터넷을 이용하는 구직자, 독서 프로그램에 참여하는 아동, 분관 이용자가 적은 교통이 편리한 지역처럼 구체적인 예를 들면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific library or community characteristic that qualifies the learner's importance assessment.",
+        "satisfiedWhenEn": "The answer clarifies a resource, user group, location, access condition, service level, or local alternative that makes libraries more or less important.",
+        "semanticRoleKo": "학습자의 중요성 평가에 조건을 더하는 구체적인 도서관 또는 지역사회 특징.",
+        "satisfiedWhenKo": "도서관을 더 중요하거나 덜 중요하게 만드는 자원, 이용 집단, 위치, 접근 조건, 서비스 수준 또는 지역 대안을 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-29",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The obligation the learner thinks people or institutions have to support public libraries.",
+        "satisfiedWhenEn": "The answer states a clear type or degree of responsibility toward public libraries and may identify who bears it; merely saying libraries need support does not establish an obligation.",
+        "semanticRoleKo": "개인이나 기관이 공공 도서관을 지원할 의무가 있다고 학습자가 생각하는 내용.",
+        "satisfiedWhenKo": "공공 도서관에 대한 책임의 유형이나 정도를 분명히 밝히고 그 책임의 주체를 제시할 수 있으면 충족한다. 도서관에 지원이 필요하다고만 하면 의무가 드러나지 않는다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete action people or institutions could take to fulfill the stated library-support responsibility.",
+        "satisfiedWhenEn": "The answer names an actionable form of support such as public funding, volunteering, donating books or technology, promoting services, partnering on programs, or using and evaluating the library.",
+        "semanticRoleKo": "개인이나 기관이 밝힌 도서관 지원 책임을 이행하기 위해 할 수 있는 구체적인 행동.",
+        "satisfiedWhenKo": "공공 예산 지원, 자원봉사, 도서나 기술 기부, 서비스 홍보, 프로그램 협력, 도서관 이용과 평가처럼 실행 가능한 지원 행동을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner assigns that library-support responsibility to people or institutions.",
+        "satisfiedWhenEn": "The answer gives a concrete public-benefit, shared-resource, access, civic, educational, or institutional-capacity reason explaining the obligation.",
+        "semanticRoleKo": "학습자가 개인이나 기관에 그런 도서관 지원 책임을 부여하는 이유.",
+        "satisfiedWhenKo": "그 의무를 설명하는 구체적인 공익, 공동 자원, 접근성, 시민적 가치, 교육 또는 기관 역량 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific person, institution, or support initiative illustrating the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as a city funding weekend hours, a company donating computers, a university sharing workshops, or residents joining a library board.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 개인, 기관 또는 지원 활동.",
+        "satisfiedWhenKo": "시의 주말 운영 예산 지원, 기업의 컴퓨터 기부, 대학의 워크숍 공유, 주민의 도서관 운영위원회 참여처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect fulfilling the proposed support responsibility would have on the library or community.",
+        "satisfiedWhenEn": "The answer describes a definite outcome such as sustained services, updated resources, increased access, stronger programs, or greater accountability to local needs.",
+        "semanticRoleKo": "제안한 지원 책임을 이행할 때 도서관이나 지역사회에 생길 효과.",
+        "satisfiedWhenKo": "서비스 유지, 자료 현대화, 접근 확대, 프로그램 강화, 지역 필요에 대한 책임성 향상처럼 분명한 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-30",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's position on expanding public libraries, whether through locations, capacity, services, hours, or resources.",
+        "satisfiedWhenEn": "The answer clearly supports, opposes, or conditionally supports an identifiable form of public-library expansion; general approval of libraries without addressing expansion is insufficient.",
+        "semanticRoleKo": "분관, 수용 규모, 서비스, 운영 시간 또는 자원 측면에서 공공 도서관을 확대하는 것에 대한 학습자의 입장.",
+        "satisfiedWhenKo": "알아볼 수 있는 형태의 공공 도서관 확대에 찬성, 반대 또는 조건부 찬성 입장을 분명히 밝히면 충족한다. 확대를 다루지 않은 일반적인 도서관 호감은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner supports or opposes the proposed library expansion.",
+        "satisfiedWhenEn": "The answer gives a concrete community need, demand, access gap, cost, usage, alternative, or service-quality consideration explaining the stance.",
+        "semanticRoleKo": "학습자가 공공 도서관 확대를 지지하거나 반대하는 이유.",
+        "satisfiedWhenKo": "그 입장을 설명하는 구체적인 지역 필요, 수요, 접근 격차, 비용, 이용률, 대안 또는 서비스 품질 관련 근거를 제시하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit that expanding public libraries could provide.",
+        "satisfiedWhenEn": "The answer identifies a concrete upside such as shorter travel, more study seats, longer access, broader digital services, or programs for additional users.",
+        "semanticRoleKo": "공공 도서관 확대가 제공할 수 있는 별도의 이점.",
+        "satisfiedWhenKo": "이동 거리 단축, 학습 좌석 증가, 이용 시간 확대, 디지털 서비스 확장, 더 많은 이용자 대상 프로그램처럼 구체적인 장점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct drawback, cost, or risk of expanding public libraries.",
+        "satisfiedWhenEn": "The answer identifies a concrete downside such as construction expense, continuing staffing costs, duplicated services, low use, or less funding for existing branches.",
+        "semanticRoleKo": "공공 도서관 확대의 별도 단점, 비용 또는 위험.",
+        "satisfiedWhenKo": "건설 비용, 지속적인 인건비, 서비스 중복, 낮은 이용률, 기존 분관 예산 감소처럼 구체적인 단점을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific expansion proposal or case that illustrates the learner's position.",
+        "satisfiedWhenEn": "The answer describes a concrete instance such as opening a branch in an underserved district, adding mobile libraries, extending evening hours, or enlarging digital collections.",
+        "semanticRoleKo": "학습자의 입장을 보여 주는 구체적인 도서관 확대 제안 또는 사례.",
+        "satisfiedWhenKo": "서비스가 부족한 지역의 분관 개설, 이동 도서관 추가, 야간 운영 연장, 디지털 자료 확대처럼 구체적인 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The community consequence the learner expects if the library expansion is carried out or rejected.",
+        "satisfiedWhenEn": "The answer states a definite effect such as increased use, improved access, financial strain, stronger educational support, or continued service gaps.",
+        "semanticRoleKo": "도서관 확대를 시행하거나 거부할 때 학습자가 예상하는 지역사회 결과.",
+        "satisfiedWhenKo": "이용 증가, 접근 향상, 재정 부담, 교육 지원 강화, 지속되는 서비스 격차처럼 분명한 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-31",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner thinks school uniforms should have in public schools today.",
+        "satisfiedWhenEn": "The answer proposes a clear role or lack of a role for uniforms, such as supporting shared identity, reducing visible clothing differences, setting dress expectations, or remaining optional.",
+        "semanticRoleKo": "오늘날 공립학교에서 교복이 어떤 역할을 해야 하는지에 대한 학습자의 생각.",
+        "satisfiedWhenKo": "공동 정체성 형성, 눈에 보이는 의복 차이 감소, 복장 기준 설정, 선택 사항 유지처럼 교복의 분명한 역할 또는 역할이 없어야 한다는 견해를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner assigns that role or non-role to public-school uniforms.",
+        "satisfiedWhenEn": "The answer gives a concrete consideration involving equality, identity, discipline, comfort, expression, cost, safety, or school climate.",
+        "semanticRoleKo": "학습자가 공립학교 교복에 그런 역할 또는 무역할을 부여하는 이유.",
+        "satisfiedWhenKo": "평등, 정체성, 규율, 편안함, 자기표현, 비용, 안전 또는 학교 분위기와 관련된 구체적인 근거를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed role for uniforms would have on students or the school.",
+        "satisfiedWhenEn": "The answer states a definite outcome such as stronger belonging, less clothing pressure, easier rule enforcement, reduced comfort, or limited self-expression.",
+        "semanticRoleKo": "제안한 교복의 역할이 학생이나 학교에 미칠 효과.",
+        "satisfiedWhenKo": "소속감 강화, 복장 압박 감소, 규칙 집행의 용이성, 편안함 저하, 자기표현 제한처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific uniform policy or school situation that illustrates the learner's proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete instance such as optional uniform days, identical formal dress for events, affordable standard clothing, or students being unable to adapt uniforms for weather.",
+        "semanticRoleKo": "학습자가 제안한 역할을 보여 주는 구체적인 교복 정책 또는 학교 상황.",
+        "satisfiedWhenKo": "선택적 교복 착용일, 행사 때 동일한 정장 복장, 저렴한 표준 의류, 날씨에 맞게 교복을 조절할 수 없는 상황처럼 구체적인 사례를 들면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit of giving uniforms the proposed place in public schools.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive effect such as simple morning choices, visible school identity, reduced fashion competition, or easier recognition of students.",
+        "semanticRoleKo": "공립학교에서 교복에 제안한 위치를 부여할 때의 별도 이점.",
+        "satisfiedWhenKo": "간단한 아침 복장 선택, 눈에 보이는 학교 정체성, 유행 경쟁 감소, 학생 식별의 용이성처럼 구체적인 긍정 효과를 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct drawback of the proposed role for school uniforms.",
+        "satisfiedWhenEn": "The answer identifies a concrete downside such as purchase expense, discomfort, poor fit across climates or bodies, restricted expression, or disciplinary conflict.",
+        "semanticRoleKo": "제안한 교복 역할의 별도 단점.",
+        "satisfiedWhenKo": "구매 비용, 불편함, 기후나 체형에 맞지 않음, 자기표현 제한, 생활지도 갈등처럼 구체적인 단점을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-32",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "Whether the learner thinks school-uniform use or programs in public schools should receive greater support.",
+        "satisfiedWhenEn": "The answer clearly favors, opposes, or conditionally favors more policy, financial, or community support for public-school uniforms.",
+        "semanticRoleKo": "공립학교의 교복 사용 또는 교복 사업이 더 큰 지원을 받아야 하는지에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "공립학교 교복에 대한 정책, 재정 또는 지역사회의 지원 확대에 찬성, 반대 또는 조건부 찬성 입장을 분명히 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner supports or opposes greater support for public-school uniforms.",
+        "satisfiedWhenEn": "The answer gives a concrete consideration involving family cost, school identity, student need, educational priorities, fairness, comfort, or evidence of effectiveness.",
+        "semanticRoleKo": "학습자가 공립학교 교복 지원 확대를 지지하거나 반대하는 이유.",
+        "satisfiedWhenKo": "가정의 비용, 학교 정체성, 학생 필요, 교육 우선순위, 공정성, 편안함 또는 효과에 대한 근거와 관련된 구체적인 이유를 제시하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A separate benefit of increasing support for public-school uniforms.",
+        "satisfiedWhenEn": "The answer identifies a concrete upside such as free uniforms for low-income families, better garment quality, easier replacement, or consistent access for all students.",
+        "semanticRoleKo": "공립학교 교복 지원을 늘릴 때의 별도 이점.",
+        "satisfiedWhenKo": "저소득 가정의 무료 교복, 품질 향상, 쉬운 교체, 모든 학생의 일관된 이용처럼 구체적인 장점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A separate cost or risk of increasing support for public-school uniforms.",
+        "satisfiedWhenEn": "The answer identifies a concrete drawback such as diverting school funds, subsidizing an unnecessary policy, supplier dependence, waste from outgrown clothing, or stricter enforcement.",
+        "semanticRoleKo": "공립학교 교복 지원을 늘릴 때의 별도 비용 또는 위험.",
+        "satisfiedWhenKo": "학교 예산 전용, 불필요한 정책에 대한 보조, 공급업체 의존, 작아진 교복 폐기, 더 엄격한 단속처럼 구체적인 단점을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific support measure or school situation that illustrates the learner's position.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as a uniform voucher, a secondhand exchange, funding weather-appropriate options, or a school spending on uniforms instead of classroom materials.",
+        "semanticRoleKo": "학습자의 입장을 보여 주는 구체적인 지원 조치 또는 학교 상황.",
+        "satisfiedWhenKo": "교복 구매권, 중고 교환, 계절에 맞는 선택지 지원, 교실 자료 대신 교복에 예산을 쓰는 학교처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects from increasing or not increasing support for uniforms.",
+        "satisfiedWhenEn": "The answer states a definite effect such as lower family expenses, more consistent participation, reduced educational funds, continued access gaps, or changes in student comfort.",
+        "semanticRoleKo": "교복 지원을 늘리거나 늘리지 않을 때 학습자가 예상하는 결과.",
+        "satisfiedWhenKo": "가정 부담 감소, 일관된 참여, 교육 예산 감소, 지속되는 접근 격차, 학생 편안함의 변화처럼 분명한 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-33",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's assessment of how important public-school uniforms are to communities today.",
+        "satisfiedWhenEn": "The answer clearly judges uniforms as important, unimportant, or important only in certain community or school conditions; describing a uniform without evaluating importance is insufficient.",
+        "semanticRoleKo": "오늘날 공립학교 교복이 지역사회에 얼마나 중요한지에 대한 학습자의 평가.",
+        "satisfiedWhenKo": "교복이 중요하다, 중요하지 않다 또는 특정 지역이나 학교 조건에서 중요하다는 판단을 분명히 밝히면 충족한다. 교복을 묘사하기만 하면 중요성 평가가 아니다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner gives school uniforms that level of community importance.",
+        "satisfiedWhenEn": "The answer provides a concrete consideration involving shared identity, equality, local tradition, affordability, student preference, safety, or educational relevance.",
+        "semanticRoleKo": "학습자가 교복의 지역사회 중요성을 그 정도로 평가하는 이유.",
+        "satisfiedWhenKo": "공동 정체성, 평등, 지역 전통, 비용 부담, 학생 선호, 안전 또는 교육적 관련성과 연관된 구체적인 근거를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A community or school effect of having or not having uniforms that supports the importance judgment.",
+        "satisfiedWhenEn": "The answer states a definite consequence such as stronger school visibility, reduced clothing differences, family expense, conflict over dress rules, or little change in learning.",
+        "semanticRoleKo": "교복이 있거나 없을 때 생겨 중요성 판단을 뒷받침하는 지역사회 또는 학교의 효과.",
+        "satisfiedWhenKo": "학교 인지도 강화, 복장 차이 감소, 가정 비용, 복장 규정 갈등, 학습에 거의 없는 변화처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular school or community situation illustrating the learner's importance assessment.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as uniforms identifying students on a trip, families struggling with required purchases, or a school where casual dress causes no problem.",
+        "semanticRoleKo": "학습자의 중요성 평가를 보여 주는 특정 학교 또는 지역사회 상황.",
+        "satisfiedWhenKo": "현장학습에서 학생을 식별하는 교복, 의무 구매로 어려움을 겪는 가정, 자유복이 문제가 되지 않는 학교처럼 구체적인 예를 들면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A specific community or school benefit that makes uniforms more important.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive contribution such as belonging, easy student recognition, reduced fashion pressure, or a shared public-school image.",
+        "semanticRoleKo": "교복의 중요성을 높이는 구체적인 지역사회 또는 학교의 이점.",
+        "satisfiedWhenKo": "소속감, 쉬운 학생 식별, 유행 압박 감소, 공립학교의 공동 이미지처럼 구체적인 긍정적 기여를 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A specific drawback that reduces or qualifies the importance of uniforms.",
+        "satisfiedWhenEn": "The answer identifies a concrete negative effect such as financial burden, restricted identity, discomfort, waste, or attention diverted from more important school needs.",
+        "semanticRoleKo": "교복의 중요성을 낮추거나 제한하는 구체적인 단점.",
+        "satisfiedWhenKo": "재정 부담, 정체성 표현 제한, 불편함, 낭비, 더 중요한 학교 필요에서 관심이 분산되는 문제처럼 구체적인 부정적 효과를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-34",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibility the learner thinks people or institutions have to support public-school uniforms.",
+        "satisfiedWhenEn": "The answer states a clear obligation, limited obligation, or lack of obligation regarding uniform policy or access and may identify who should bear it.",
+        "semanticRoleKo": "개인이나 기관이 공립학교 교복을 지원할 책임이 있다고 학습자가 생각하는 내용.",
+        "satisfiedWhenKo": "교복 정책이나 이용 지원에 대한 분명한 의무, 제한된 의무 또는 의무가 없다는 견해를 밝히고 책임 주체를 제시할 수 있으면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete action that would fulfill the stated responsibility toward school uniforms.",
+        "satisfiedWhenEn": "The answer names an actionable step such as subsidizing purchases, operating uniform exchanges, consulting students, setting inclusive rules, donating garments, or declining public funding.",
+        "semanticRoleKo": "교복에 대해 밝힌 책임을 이행할 구체적인 행동.",
+        "satisfiedWhenKo": "구매비 보조, 교복 교환 운영, 학생 의견 수렴, 포용적인 규정 설정, 의류 기부, 공공 지원을 하지 않기처럼 실행 가능한 조치를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner assigns that responsibility, limited responsibility, or lack of responsibility to people or institutions.",
+        "satisfiedWhenEn": "The answer gives a concrete fairness, cost, authority, student-welfare, community, or educational-priority reason explaining the stated obligation or lack of obligation.",
+        "semanticRoleKo": "학습자가 개인이나 기관에 그런 책임이나 제한된 책임을 부여하거나 책임이 없다고 보는 이유",
+        "satisfiedWhenKo": "답변이 밝힌 의무 또는 의무가 없다는 견해를 설명하는 구체적인 공정성, 비용, 권한, 학생 복지, 지역사회 또는 교육 우선순위 관련 이유를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular person, institution, or initiative illustrating the proposed uniform-support responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as a district paying for required uniforms, a parent group running a swap, a supplier capping prices, or students helping revise the dress code.",
+        "semanticRoleKo": "제안한 교복 지원 책임을 보여 주는 특정 개인, 기관 또는 활동.",
+        "satisfiedWhenKo": "교육청의 의무 교복 비용 지급, 학부모회의 교환 행사, 공급업체의 가격 상한, 학생의 복장 규정 개정 참여처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect fulfilling the proposed responsibility would have on students, families, or schools.",
+        "satisfiedWhenEn": "The answer describes a definite outcome such as equal access, lower family cost, better-fitting policy, less waste, improved acceptance, or preserved funds for other needs.",
+        "semanticRoleKo": "제안한 책임을 이행할 때 학생, 가정 또는 학교에 생길 효과.",
+        "satisfiedWhenKo": "평등한 이용, 가정 비용 감소, 더 적절한 정책, 낭비 감소, 수용도 향상, 다른 필요를 위한 예산 보존처럼 분명한 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-35",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's position on expanding the use, availability, or policy scope of uniforms in public schools.",
+        "satisfiedWhenEn": "The answer clearly supports, opposes, or conditionally supports an identifiable expansion of public-school uniforms; merely stating a general view of uniforms is insufficient.",
+        "semanticRoleKo": "공립학교에서 교복의 사용, 이용 가능성 또는 정책 범위를 확대하는 것에 대한 학습자의 입장.",
+        "satisfiedWhenKo": "알아볼 수 있는 형태의 공립학교 교복 확대에 찬성, 반대 또는 조건부 찬성 입장을 분명히 밝히면 충족한다. 교복에 대한 일반적인 견해만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner supports or opposes expanding public-school uniforms.",
+        "satisfiedWhenEn": "The answer gives a concrete equality, identity, cost, comfort, expression, implementation, safety, or educational-priority consideration explaining the stance.",
+        "semanticRoleKo": "학습자가 공립학교 교복 확대를 지지하거나 반대하는 이유.",
+        "satisfiedWhenKo": "그 입장을 설명하는 구체적인 평등, 정체성, 비용, 편안함, 표현, 시행, 안전 또는 교육 우선순위 관련 근거를 제시하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit that broader use or provision of school uniforms could bring.",
+        "satisfiedWhenEn": "The answer identifies a concrete upside such as consistent access, reduced clothing competition, easier student identification, or a stronger common school identity.",
+        "semanticRoleKo": "교복 사용이나 제공 범위를 넓힐 때 생길 수 있는 별도의 이점.",
+        "satisfiedWhenKo": "일관된 이용, 복장 경쟁 감소, 쉬운 학생 식별, 강한 공동 학교 정체성처럼 구체적인 장점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct drawback or implementation risk of expanding school uniforms.",
+        "satisfiedWhenEn": "The answer identifies a concrete downside such as added family or public cost, reduced choice, poor fit, enforcement disputes, supplier monopolies, or clothing waste.",
+        "semanticRoleKo": "교복 확대의 별도 단점 또는 시행 위험.",
+        "satisfiedWhenKo": "가정이나 공공의 추가 비용, 선택권 감소, 맞지 않는 교복, 단속 갈등, 공급업체 독점, 의류 낭비처럼 구체적인 단점을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific form or setting of uniform expansion that illustrates the learner's position.",
+        "satisfiedWhenEn": "The answer describes a concrete case such as introducing uniforms to additional schools, adding subsidized options, extending requirements to more school days, or offering flexible uniform pieces.",
+        "semanticRoleKo": "학습자의 입장을 보여 주는 구체적인 교복 확대 형태 또는 상황.",
+        "satisfiedWhenKo": "추가 학교의 교복 도입, 보조금 지원 선택지 추가, 더 많은 등교일에 의무 착용, 유연한 교복 품목 제공처럼 구체적인 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects if the proposed uniform expansion occurs or does not occur.",
+        "satisfiedWhenEn": "The answer states a definite effect such as broader participation, increased household expense, more consistent dress rules, stronger resistance, or continued differences between schools.",
+        "semanticRoleKo": "제안한 교복 확대가 이루어지거나 이루어지지 않을 때 학습자가 예상하는 결과.",
+        "satisfiedWhenKo": "참여 확대, 가계 비용 증가, 더 일관된 복장 규정, 반발 증가, 학교 간 차이 지속처럼 분명한 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-36",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner believes recycling programs should play in modern society.",
+        "satisfiedWhenEn": "The answer proposes a clear societal function for recycling programs, such as recovering usable materials, reducing disposal, making sorting practical, or building responsible consumption habits.",
+        "semanticRoleKo": "현대 사회에서 재활용 프로그램이 맡아야 한다고 학습자가 생각하는 역할.",
+        "satisfiedWhenKo": "사용 가능한 자원 회수, 폐기 감소, 실용적인 분리배출 지원, 책임 있는 소비 습관 형성처럼 재활용 프로그램의 분명한 사회적 기능을 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the proposed recycling-program role necessary or valuable.",
+        "satisfiedWhenEn": "The answer gives a concrete environmental, resource, economic, behavioral, or public-service reason supporting the role.",
+        "semanticRoleKo": "학습자가 제안한 재활용 프로그램의 역할을 필요하거나 가치 있다고 보는 이유.",
+        "satisfiedWhenKo": "그 역할을 뒷받침하는 구체적인 환경, 자원, 경제, 행동 또는 공공 서비스 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed recycling role would have on waste, resources, residents, or the environment.",
+        "satisfiedWhenEn": "The answer states a definite outcome such as less landfill waste, more recovered material, lower pollution, improved sorting habits, or reduced demand for raw resources.",
+        "semanticRoleKo": "제안한 재활용 역할이 폐기물, 자원, 주민 또는 환경에 미칠 효과.",
+        "satisfiedWhenKo": "매립 폐기물 감소, 자원 회수 증가, 오염 감소, 분리배출 습관 향상, 원자재 수요 감소처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific recycling service, material stream, or community practice that illustrates the proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as curbside sorting, electronics drop-off, bottle deposits, compost collection, or clear labels showing accepted materials.",
+        "semanticRoleKo": "제안한 역할을 보여 주는 구체적인 재활용 서비스, 자원 종류 또는 지역 실천.",
+        "satisfiedWhenKo": "문전 분리수거, 전자제품 수거, 병 보증금, 음식물 퇴비 수거, 수거 가능 품목 안내 표시처럼 구체적인 예를 들면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The particular waste or resource problem the proposed recycling role should address.",
+        "satisfiedWhenEn": "The answer identifies a specific issue such as overflowing landfills, recyclable material being discarded, confusing rules, contaminated collections, litter, or excessive raw-material use.",
+        "semanticRoleKo": "제안한 재활용 역할이 다루어야 할 특정한 폐기물 또는 자원 문제.",
+        "satisfiedWhenKo": "포화된 매립지, 버려지는 재활용 가능 자원, 혼란스러운 기준, 오염된 수거물, 쓰레기 투기, 과도한 원자재 사용처럼 구체적인 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-37",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "Whether the learner thinks recycling programs should receive greater public, financial, or institutional support.",
+        "satisfiedWhenEn": "The answer clearly favors, opposes, or conditionally favors increasing support for recycling programs; saying recycling is good without addressing support is insufficient.",
+        "semanticRoleKo": "재활용 프로그램이 공공, 재정 또는 기관의 지원을 더 받아야 하는지에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "재활용 프로그램 지원 확대에 찬성, 반대 또는 조건부 찬성 입장을 분명히 밝히면 충족한다. 지원을 다루지 않고 재활용이 좋다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner supports or opposes giving recycling programs more support.",
+        "satisfiedWhenEn": "The answer gives a concrete consideration involving environmental need, program performance, public cost, market demand, participation, infrastructure, or alternatives.",
+        "semanticRoleKo": "학습자가 재활용 프로그램에 더 많은 지원을 제공하는 것을 지지하거나 반대하는 이유.",
+        "satisfiedWhenKo": "환경 필요, 프로그램 성과, 공공 비용, 시장 수요, 참여, 기반 시설 또는 대안과 관련된 구체적인 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific recycling condition, investment, or program case that supports the learner's position.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as a city lacking glass collection, a successful deposit scheme, contaminated bins despite high spending, or funding for a sorting facility.",
+        "semanticRoleKo": "학습자의 입장을 뒷받침하는 구체적인 재활용 상황, 투자 또는 프로그램 사례.",
+        "satisfiedWhenKo": "유리 수거가 없는 도시, 성공적인 보증금 제도, 큰 예산에도 오염된 수거함, 선별 시설 투자처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects from increasing or withholding additional recycling support.",
+        "satisfiedWhenEn": "The answer states a definite effect such as higher recovery rates, easier participation, increased public expense, improved material quality, or continued disposal problems.",
+        "semanticRoleKo": "재활용 추가 지원을 늘리거나 보류할 때 학습자가 예상하는 결과.",
+        "satisfiedWhenKo": "자원 회수율 상승, 쉬운 참여, 공공 지출 증가, 재활용 원료 품질 향상, 지속되는 폐기 문제처럼 분명한 효과를 말하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit of increasing support for recycling programs.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive effect such as wider collection, modern sorting equipment, better public guidance, new material markets, or access in underserved areas.",
+        "semanticRoleKo": "재활용 프로그램 지원을 늘릴 때의 별도 이점.",
+        "satisfiedWhenKo": "수거 범위 확대, 현대적 선별 장비, 더 나은 주민 안내, 새로운 재활용 원료 시장, 서비스 부족 지역의 접근처럼 구체적인 긍정 효과를 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct cost, tradeoff, or risk of increasing support for recycling programs.",
+        "satisfiedWhenEn": "The answer identifies a concrete downside such as high processing costs, funds diverted from waste reduction, support for materials with no buyer, transport emissions, or weak results from poorly designed programs.",
+        "semanticRoleKo": "재활용 프로그램 지원을 늘릴 때의 별도 비용, 상충 관계 또는 위험.",
+        "satisfiedWhenKo": "높은 처리 비용, 쓰레기 감량 예산 전용, 구매처 없는 자원 지원, 운송 배출, 잘못 설계된 사업의 낮은 성과처럼 구체적인 단점을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-38",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's assessment of how important recycling programs are for communities today.",
+        "satisfiedWhenEn": "The answer clearly evaluates recycling programs as important, unimportant, or important only in specified conditions; mentioning recycling activities without judging importance is insufficient.",
+        "semanticRoleKo": "오늘날 재활용 프로그램이 지역사회에 얼마나 중요한지에 대한 학습자의 평가.",
+        "satisfiedWhenKo": "재활용 프로그램이 중요하다, 중요하지 않다 또는 특정 조건에서 중요하다는 판단을 분명히 밝히면 충족한다. 재활용 활동만 언급하면 중요성 평가가 아니다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner gives recycling programs that level of importance.",
+        "satisfiedWhenEn": "The answer provides a concrete consideration involving local waste volume, environmental impact, available infrastructure, resident behavior, program effectiveness, or better alternatives.",
+        "semanticRoleKo": "학습자가 재활용 프로그램의 중요성을 그 정도로 평가하는 이유.",
+        "satisfiedWhenKo": "지역 폐기물 양, 환경 영향, 이용 가능한 기반 시설, 주민 행동, 프로그램 효과 또는 더 나은 대안과 관련된 구체적인 근거를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A community effect of effective, ineffective, or absent recycling programs that supports the importance judgment.",
+        "satisfiedWhenEn": "The answer states a definite consequence such as reduced disposal, cleaner neighborhoods, recovered resources, wasted public funds, or little benefit when collections are contaminated.",
+        "semanticRoleKo": "효과적이거나 비효과적이거나 없는 재활용 프로그램이 지역사회에 미쳐 중요성 판단을 뒷받침하는 효과.",
+        "satisfiedWhenKo": "폐기 감소, 깨끗한 동네, 자원 회수, 공공 예산 낭비, 오염된 수거물로 인한 작은 효과처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular recycling service or community situation illustrating the learner's importance assessment.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as apartment food-waste collection, a rural area without pickup, a school bottle-return drive, or recyclables sent to landfill after poor sorting.",
+        "semanticRoleKo": "학습자의 중요성 평가를 보여 주는 특정 재활용 서비스 또는 지역사회 상황.",
+        "satisfiedWhenKo": "아파트 음식물 수거, 수거 서비스가 없는 농촌 지역, 학교의 병 반환 활동, 잘못된 분류 뒤 매립되는 재활용품처럼 구체적인 예를 들면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific community waste problem that demonstrates why recycling programs are or are not important.",
+        "satisfiedWhenEn": "The answer identifies a definite issue such as limited landfill space, litter, high collection contamination, low participation, costly processing, or lack of markets for recovered material.",
+        "semanticRoleKo": "재활용 프로그램이 중요하거나 중요하지 않은 이유를 보여 주는 구체적인 지역 폐기물 문제.",
+        "satisfiedWhenKo": "부족한 매립 공간, 쓰레기 투기, 높은 수거 오염률, 낮은 참여, 비싼 처리 비용, 재활용 원료 시장 부족처럼 분명한 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-39",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The obligation the learner thinks people or institutions have to support recycling programs.",
+        "satisfiedWhenEn": "The answer states a clear type or degree of responsibility for individuals, businesses, schools, governments, or other institutions regarding recycling support.",
+        "semanticRoleKo": "개인이나 기관이 재활용 프로그램을 지원할 의무가 있다고 학습자가 생각하는 내용.",
+        "satisfiedWhenKo": "개인, 기업, 학교, 정부 또는 다른 기관이 재활용 지원에 대해 가져야 할 책임의 유형이나 정도를 분명히 밝히면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete action people or institutions could take to fulfill the proposed recycling-support responsibility.",
+        "satisfiedWhenEn": "The answer names an actionable step such as sorting correctly, funding collection, designing recyclable packaging, providing bins, buying recovered materials, or reporting program results.",
+        "semanticRoleKo": "개인이나 기관이 제안한 재활용 지원 책임을 이행하기 위해 할 수 있는 구체적인 행동.",
+        "satisfiedWhenKo": "올바른 분리배출, 수거 예산 지원, 재활용 가능한 포장 설계, 수거함 제공, 재활용 원료 구매, 사업 성과 공개처럼 실행 가능한 조치를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner assigns that recycling-support responsibility to people or institutions.",
+        "satisfiedWhenEn": "The answer gives a concrete shared-resource, producer-impact, public-cost, environmental, fairness, or collective-action reason explaining the obligation.",
+        "semanticRoleKo": "학습자가 개인이나 기관에 그런 재활용 지원 책임을 부여하는 이유.",
+        "satisfiedWhenKo": "그 의무를 설명하는 구체적인 공동 자원, 생산자 영향, 공공 비용, 환경, 공정성 또는 집단 행동 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular person, institution, or initiative illustrating the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as a supermarket collecting packaging, a city funding curbside pickup, residents separating glass, or a manufacturer using recycled plastic.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 특정 개인, 기관 또는 활동.",
+        "satisfiedWhenKo": "슈퍼마켓의 포장재 수거, 시의 문전 수거 예산 지원, 주민의 유리 분리배출, 제조업체의 재생 플라스틱 사용처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect fulfilling the proposed support responsibility would have on recycling performance or the community.",
+        "satisfiedWhenEn": "The answer describes a definite outcome such as cleaner material streams, stable program funding, higher participation, increased demand for recycled inputs, or lower disposal.",
+        "semanticRoleKo": "제안한 지원 책임을 이행할 때 재활용 성과나 지역사회에 생길 효과.",
+        "satisfiedWhenKo": "더 깨끗한 재활용 자원, 안정적인 사업 예산, 참여 증가, 재생 원료 수요 확대, 폐기 감소처럼 분명한 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-40",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's position on expanding the reach, capacity, accepted materials, or services of recycling programs.",
+        "satisfiedWhenEn": "The answer clearly supports, opposes, or conditionally supports an identifiable expansion of recycling programs; general approval of recycling alone is insufficient.",
+        "semanticRoleKo": "재활용 프로그램의 범위, 처리 역량, 수거 품목 또는 서비스를 확대하는 것에 대한 학습자의 입장.",
+        "satisfiedWhenKo": "알아볼 수 있는 형태의 재활용 프로그램 확대에 찬성, 반대 또는 조건부 찬성 입장을 분명히 밝히면 충족한다. 재활용에 대한 일반적인 찬성만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner supports or opposes expanding recycling programs.",
+        "satisfiedWhenEn": "The answer gives a concrete waste need, environmental benefit, public demand, processing limit, cost, material market, or alternative approach explaining the stance.",
+        "semanticRoleKo": "학습자가 재활용 프로그램 확대를 지지하거나 반대하는 이유.",
+        "satisfiedWhenKo": "그 입장을 설명하는 구체적인 폐기물 문제, 환경 이점, 공공 수요, 처리 한계, 비용, 자원 시장 또는 대안 관련 근거를 제시하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit that broader recycling programs could provide.",
+        "satisfiedWhenEn": "The answer identifies a concrete upside such as serving more neighborhoods, accepting additional materials, diverting more waste, simplifying participation, or creating recovered-resource supply.",
+        "semanticRoleKo": "재활용 프로그램 확대가 제공할 수 있는 별도의 이점.",
+        "satisfiedWhenKo": "더 많은 동네 지원, 추가 품목 수거, 폐기물 전환 증가, 참여 절차 단순화, 재생 자원 공급 확대처럼 구체적인 장점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct drawback, cost, or operational risk of expanding recycling programs.",
+        "satisfiedWhenEn": "The answer identifies a concrete downside such as costly facilities, longer transport, more contamination, collecting unmarketable materials, confusing rule changes, or weak participation.",
+        "semanticRoleKo": "재활용 프로그램 확대의 별도 단점, 비용 또는 운영 위험.",
+        "satisfiedWhenKo": "비싼 시설, 긴 운송 거리, 오염 증가, 시장성 없는 품목 수거, 혼란스러운 기준 변경, 낮은 참여처럼 구체적인 단점을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific form or location of recycling expansion that illustrates the learner's position.",
+        "satisfiedWhenEn": "The answer describes a concrete case such as adding textile collection, extending pickup to rural areas, building a regional sorting center, or introducing apartment composting.",
+        "semanticRoleKo": "학습자의 입장을 보여 주는 구체적인 재활용 확대 형태 또는 지역.",
+        "satisfiedWhenKo": "섬유 수거 추가, 농촌 지역 수거 확대, 광역 선별 센터 건설, 아파트 퇴비화 도입처럼 구체적인 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects if recycling programs are expanded or kept at their current scope.",
+        "satisfiedWhenEn": "The answer states a definite effect such as higher recovery, wider access, increased spending, continued service gaps, improved resource use, or lower program efficiency.",
+        "semanticRoleKo": "재활용 프로그램을 확대하거나 현재 범위로 유지할 때 학습자가 예상하는 결과.",
+        "satisfiedWhenKo": "회수율 상승, 접근 확대, 지출 증가, 서비스 격차 지속, 자원 활용 개선, 사업 효율 저하처럼 분명한 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-41",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner thinks part-time jobs for teenagers should play in modern society.",
+        "satisfiedWhenEn": "The answer proposes a clear role or appropriate limit for teenage part-time work, such as building work skills, providing income, teaching responsibility, exploring careers, or remaining secondary to education.",
+        "semanticRoleKo": "현대 사회에서 청소년 아르바이트가 맡아야 한다고 학습자가 생각하는 역할.",
+        "satisfiedWhenKo": "직업 기술 형성, 소득 제공, 책임감 학습, 진로 탐색, 교육보다 부차적인 위치 유지처럼 청소년 아르바이트의 분명한 역할 또는 적절한 한계를 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner assigns that role or limit to part-time jobs for teenagers.",
+        "satisfiedWhenEn": "The answer gives a concrete consideration involving youth development, financial need, education, safety, independence, career preparation, or labor rights.",
+        "semanticRoleKo": "학습자가 청소년 아르바이트에 그런 역할 또는 한계를 부여하는 이유.",
+        "satisfiedWhenKo": "청소년 발달, 경제적 필요, 교육, 안전, 자립, 진로 준비 또는 노동권과 관련된 구체적인 근거를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed role for part-time work would have on teenagers or society.",
+        "satisfiedWhenEn": "The answer states a definite outcome such as stronger workplace skills, greater independence, improved career awareness, school fatigue, reduced study time, or safer entry into employment.",
+        "semanticRoleKo": "제안한 아르바이트의 역할이 청소년이나 사회에 미칠 효과.",
+        "satisfiedWhenKo": "직장 기술 향상, 자립성 증가, 진로 인식 개선, 학업 피로, 공부 시간 감소, 더 안전한 노동 진입처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific teenage job or work arrangement that illustrates the learner's proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete instance such as a weekend library job teaching customer service, a paid summer internship, or late-night shifts that interfere with school.",
+        "semanticRoleKo": "학습자가 제안한 역할을 보여 주는 구체적인 청소년 일자리 또는 근무 방식.",
+        "satisfiedWhenKo": "고객 응대를 배우는 주말 도서관 업무, 유급 여름 인턴십, 학교생활을 방해하는 심야 근무처럼 구체적인 사례를 들면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit of part-time jobs having the proposed place in teenagers' lives.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive effect such as earned income, time-management practice, communication skills, references, or realistic career experience.",
+        "semanticRoleKo": "청소년 생활에서 아르바이트에 제안한 위치를 부여할 때의 별도 이점.",
+        "satisfiedWhenKo": "소득, 시간 관리 연습, 의사소통 기술, 추천 경력, 현실적인 직업 경험처럼 구체적인 긍정 효과를 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct drawback or risk of teenage part-time work in the proposed role.",
+        "satisfiedWhenEn": "The answer identifies a concrete downside such as fatigue, lower school performance, unsafe duties, exploitation, schedule conflict, or too little rest.",
+        "semanticRoleKo": "제안한 역할에서 청소년 아르바이트가 가질 수 있는 별도 단점 또는 위험.",
+        "satisfiedWhenKo": "피로, 학업 성취 저하, 위험한 업무, 착취, 일정 충돌, 부족한 휴식처럼 구체적인 단점을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-42",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "Whether the learner thinks part-time jobs for teenagers should receive greater public, school, employer, or community support.",
+        "satisfiedWhenEn": "The answer clearly supports, opposes, or conditionally supports increasing support for teenage part-time work opportunities.",
+        "semanticRoleKo": "청소년 아르바이트가 공공, 학교, 고용주 또는 지역사회의 지원을 더 받아야 하는지에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "청소년 아르바이트 기회에 대한 지원 확대에 찬성, 반대 또는 조건부 찬성 입장을 분명히 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner supports or opposes greater support for teenage part-time jobs.",
+        "satisfiedWhenEn": "The answer gives a concrete youth-development, employment, safety, education, equity, demand, or resource consideration explaining the stance.",
+        "semanticRoleKo": "학습자가 청소년 아르바이트 지원 확대를 지지하거나 반대하는 이유.",
+        "satisfiedWhenKo": "그 입장을 설명하는 구체적인 청소년 발달, 고용, 안전, 교육, 형평성, 수요 또는 자원 관련 근거를 제시하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A separate benefit of increasing support for teenage part-time jobs.",
+        "satisfiedWhenEn": "The answer identifies a concrete upside such as safer job matching, workplace training, wider access for low-income youth, mentoring, or protection from unfair employers.",
+        "semanticRoleKo": "청소년 아르바이트 지원을 늘릴 때의 별도 이점.",
+        "satisfiedWhenKo": "안전한 일자리 연결, 직장 교육, 저소득 청소년의 기회 확대, 멘토링, 부당한 고용주로부터의 보호처럼 구체적인 장점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A separate cost, tradeoff, or risk of increasing support for teenage part-time jobs.",
+        "satisfiedWhenEn": "The answer identifies a concrete drawback such as encouraging work over study, program expense, administrative burden, unsuitable placements, or employers relying on low-paid youth labor.",
+        "semanticRoleKo": "청소년 아르바이트 지원을 늘릴 때의 별도 비용, 상충 관계 또는 위험.",
+        "satisfiedWhenKo": "학업보다 노동 장려, 사업 비용, 행정 부담, 부적절한 배치, 고용주의 저임금 청소년 노동 의존처럼 구체적인 단점을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific support program or employment situation that illustrates the learner's position.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as a school-vetted job board, wage-rights training, subsidized summer placements, or a support scheme that places students in excessive hours.",
+        "semanticRoleKo": "학습자의 입장을 보여 주는 구체적인 지원 프로그램 또는 고용 상황.",
+        "satisfiedWhenKo": "학교가 검증한 채용 게시판, 임금 권리 교육, 보조금 지원 여름 일자리, 학생에게 과도한 근무 시간을 배정하는 지원 사업처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects from increasing or withholding support for teenage part-time work.",
+        "satisfiedWhenEn": "The answer states a definite effect such as more safe placements, improved job readiness, increased school-work conflict, continued unequal access, or reduced exploitation.",
+        "semanticRoleKo": "청소년 아르바이트 지원을 늘리거나 보류할 때 학습자가 예상하는 결과.",
+        "satisfiedWhenKo": "안전한 배치 증가, 취업 준비 향상, 학업과 노동의 충돌 증가, 불평등한 기회 지속, 착취 감소처럼 분명한 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-43",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's assessment of how important part-time jobs for teenagers are to communities today.",
+        "satisfiedWhenEn": "The answer clearly evaluates teenage part-time jobs as important, unimportant, or important only under stated conditions; merely describing a teen job does not express importance.",
+        "semanticRoleKo": "오늘날 청소년 아르바이트가 지역사회에 얼마나 중요한지에 대한 학습자의 평가.",
+        "satisfiedWhenKo": "청소년 아르바이트가 중요하다, 중요하지 않다 또는 특정 조건에서 중요하다는 판단을 분명히 밝히면 충족한다. 청소년 일자리를 묘사하기만 하면 중요성 평가가 아니다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner gives teenage part-time work that level of community importance.",
+        "satisfiedWhenEn": "The answer provides a concrete consideration involving youth development, local labor needs, family income, education, safety, opportunity, or available alternatives.",
+        "semanticRoleKo": "학습자가 청소년 아르바이트의 지역사회 중요성을 그 정도로 평가하는 이유.",
+        "satisfiedWhenKo": "청소년 발달, 지역 인력 수요, 가계 소득, 교육, 안전, 기회 또는 이용 가능한 대안과 관련된 구체적인 근거를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A community or youth outcome of accessible or unavailable teenage part-time jobs that supports the importance assessment.",
+        "satisfiedWhenEn": "The answer states a definite consequence such as earlier work readiness, local staffing help, added family income, school strain, youth exploitation, or little impact where other training exists.",
+        "semanticRoleKo": "청소년 아르바이트 기회가 있거나 없을 때 생겨 중요성 평가를 뒷받침하는 지역사회 또는 청소년 결과.",
+        "satisfiedWhenKo": "빠른 취업 준비, 지역 인력 지원, 가계 소득 증가, 학업 부담, 청소년 착취, 다른 교육이 있는 곳에서의 작은 영향처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular teenage worker, employer, or community situation illustrating the learner's importance judgment.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as a student gaining retail skills, a café relying on weekend youth staff, or a teenager whose long shifts damage school performance.",
+        "semanticRoleKo": "학습자의 중요성 판단을 보여 주는 특정 청소년 근로자, 고용주 또는 지역사회 상황.",
+        "satisfiedWhenKo": "소매 기술을 익히는 학생, 주말 청소년 인력에 의존하는 카페, 긴 근무로 학업 성취가 떨어지는 청소년처럼 구체적인 예를 들면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A specific benefit that makes teenage part-time jobs important to a community.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive contribution such as work experience, local business staffing, youth income, stronger responsibility, or career exploration.",
+        "semanticRoleKo": "청소년 아르바이트가 지역사회에 중요하게 되는 구체적인 이점.",
+        "satisfiedWhenKo": "직업 경험, 지역 사업체 인력 지원, 청소년 소득, 책임감 강화, 진로 탐색처럼 구체적인 긍정적 기여를 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A specific drawback that reduces or qualifies the importance of teenage part-time jobs.",
+        "satisfiedWhenEn": "The answer identifies a concrete negative effect such as less study time, unsafe work, low wages, stress, displacement of adult workers, or unequal access to good jobs.",
+        "semanticRoleKo": "청소년 아르바이트의 중요성을 낮추거나 제한하는 구체적인 단점.",
+        "satisfiedWhenKo": "공부 시간 감소, 위험한 업무, 낮은 임금, 스트레스, 성인 근로자 대체, 좋은 일자리의 불평등한 접근처럼 구체적인 부정적 효과를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-44",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibility the learner thinks people or institutions have, or do not have, to support part-time jobs for teenagers.",
+        "satisfiedWhenEn": "The answer states a clear obligation, limited obligation, or lack of obligation concerning support for teenage part-time jobs and may identify whether families, schools, employers, governments, or communities bear it; merely saying the jobs need support does not establish responsibility.",
+        "semanticRoleKo": "개인이나 기관이 청소년 아르바이트를 지원할 책임이 있거나 없다고 학습자가 보는 견해",
+        "satisfiedWhenKo": "답변이 청소년 아르바이트 지원에 대한 분명한 의무, 제한된 의무 또는 의무가 없다는 견해를 밝히면 충족된다. 가족, 학교, 고용주, 정부 또는 지역사회 중 책임 주체를 제시할 수 있으며, 일자리에 지원이 필요하다고만 하면 책임 관계가 드러나지 않는다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete action that would fulfill the proposed responsibility toward teenage part-time work.",
+        "satisfiedWhenEn": "The answer names an actionable step such as vetting jobs, enforcing hour and wage rules, providing training, adjusting school schedules, mentoring youth, or reporting unsafe employers.",
+        "semanticRoleKo": "청소년 아르바이트에 대한 제안한 책임을 이행할 구체적인 행동.",
+        "satisfiedWhenKo": "일자리 검증, 근로 시간과 임금 규정 집행, 교육 제공, 학교 일정 조정, 청소년 멘토링, 위험한 고용주 신고처럼 실행 가능한 조치를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner assigns that support responsibility to people or institutions.",
+        "satisfiedWhenEn": "The answer gives a concrete youth-safety, labor-rights, educational, developmental, fairness, or institutional-authority reason explaining the obligation.",
+        "semanticRoleKo": "학습자가 개인이나 기관에 그런 지원 책임을 부여하는 이유.",
+        "satisfiedWhenKo": "그 의무를 설명하는 구체적인 청소년 안전, 노동권, 교육, 발달, 공정성 또는 기관 권한 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific person, organization, or support practice illustrating the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as a school checking employers, a city enforcing youth-hour limits, a manager assigning a mentor, or parents reviewing a work schedule.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 개인, 조직 또는 지원 방식.",
+        "satisfiedWhenKo": "학교의 고용주 확인, 시의 청소년 근로 시간 제한 집행, 관리자의 멘토 배정, 부모의 근무 일정 검토처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect fulfilling the proposed support responsibility would have on teenage workers or the community.",
+        "satisfiedWhenEn": "The answer describes a definite outcome such as safer work, fair pay, balanced school schedules, useful skill growth, fewer labor violations, or trusted youth employment.",
+        "semanticRoleKo": "제안한 지원 책임을 이행할 때 청소년 근로자나 지역사회에 생길 효과.",
+        "satisfiedWhenKo": "더 안전한 근무, 공정한 임금, 균형 잡힌 학업 일정, 유용한 기술 성장, 노동법 위반 감소, 신뢰할 수 있는 청소년 고용처럼 분명한 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-45",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's position on expanding the availability, variety, or scale of part-time jobs for teenagers.",
+        "satisfiedWhenEn": "The answer clearly supports, opposes, or conditionally supports an identifiable expansion of teenage part-time work opportunities.",
+        "semanticRoleKo": "청소년 아르바이트의 이용 가능성, 종류 또는 규모를 확대하는 것에 대한 학습자의 입장.",
+        "satisfiedWhenKo": "알아볼 수 있는 형태의 청소년 아르바이트 기회 확대에 찬성, 반대 또는 조건부 찬성 입장을 분명히 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner supports or opposes expanding part-time jobs for teenagers.",
+        "satisfiedWhenEn": "The answer gives a concrete youth-opportunity, workforce, income, education, safety, demand, or implementation consideration explaining the stance.",
+        "semanticRoleKo": "학습자가 청소년 아르바이트 확대를 지지하거나 반대하는 이유.",
+        "satisfiedWhenKo": "그 입장을 설명하는 구체적인 청소년 기회, 인력, 소득, 교육, 안전, 수요 또는 시행 관련 근거를 제시하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit that expanding teenage part-time work could provide.",
+        "satisfiedWhenEn": "The answer identifies a concrete upside such as more work experience, broader career exposure, added income, local staffing, or opportunities for youth without other training.",
+        "semanticRoleKo": "청소년 아르바이트 확대가 제공할 수 있는 별도의 이점.",
+        "satisfiedWhenKo": "더 많은 직업 경험, 폭넓은 진로 노출, 추가 소득, 지역 인력 지원, 다른 교육 기회가 없는 청소년의 기회처럼 구체적인 장점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct drawback or risk of expanding part-time jobs for teenagers.",
+        "satisfiedWhenEn": "The answer identifies a concrete downside such as school-work conflict, weak supervision, exploitation, unsafe placements, low-quality jobs, or reduced rest and extracurricular time.",
+        "semanticRoleKo": "청소년 아르바이트 확대의 별도 단점 또는 위험.",
+        "satisfiedWhenKo": "학업과 근무의 충돌, 부족한 감독, 착취, 위험한 배치, 낮은 질의 일자리, 휴식과 비교과 시간 감소처럼 구체적인 단점을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific kind or setting of expanded teenage employment that illustrates the learner's position.",
+        "satisfiedWhenEn": "The answer describes a concrete case such as more paid summer placements, weekend jobs through local businesses, school-based work programs, or expanded late-night retail shifts.",
+        "semanticRoleKo": "학습자의 입장을 보여 주는 구체적인 청소년 고용 확대 유형 또는 상황.",
+        "satisfiedWhenKo": "유급 여름 일자리 확대, 지역 사업체의 주말 일자리, 학교 기반 근로 프로그램, 심야 소매 근무 확대처럼 구체적인 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects if teenage part-time jobs are expanded or remain limited.",
+        "satisfiedWhenEn": "The answer states a definite effect such as more job-ready youth, increased income, greater school strain, continued opportunity gaps, reduced labor shortages, or more youth labor violations.",
+        "semanticRoleKo": "청소년 아르바이트를 확대하거나 제한된 상태로 둘 때 학습자가 예상하는 결과.",
+        "satisfiedWhenKo": "취업 준비된 청소년 증가, 소득 증가, 학업 부담 확대, 기회 격차 지속, 인력 부족 완화, 청소년 노동법 위반 증가처럼 분명한 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-46",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner believes community arts programs should play in modern society.",
+        "satisfiedWhenEn": "The answer proposes a clear social or cultural function for community arts programs, such as widening creative access, supporting local expression, connecting residents, or improving well-being.",
+        "semanticRoleKo": "현대 사회에서 지역 예술 프로그램이 맡아야 한다고 학습자가 생각하는 역할.",
+        "satisfiedWhenKo": "창작 기회 확대, 지역 표현 지원, 주민 연결, 행복 증진처럼 지역 예술 프로그램의 분명한 사회적 또는 문화적 기능을 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the proposed community-arts role necessary or valuable.",
+        "satisfiedWhenEn": "The answer gives a concrete cultural, educational, social, health, inclusion, or local-identity reason supporting the role.",
+        "semanticRoleKo": "학습자가 제안한 지역 예술의 역할을 필요하거나 가치 있다고 보는 이유.",
+        "satisfiedWhenKo": "그 역할을 뒷받침하는 구체적인 문화, 교육, 사회, 건강, 포용 또는 지역 정체성 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed arts-program role would have on participants or the community.",
+        "satisfiedWhenEn": "The answer states a definite outcome such as increased creative confidence, stronger belonging, reduced isolation, visible local stories, or more cultural participation.",
+        "semanticRoleKo": "제안한 예술 프로그램의 역할이 참여자나 지역사회에 미칠 효과.",
+        "satisfiedWhenKo": "창작 자신감 향상, 소속감 강화, 고립감 감소, 지역 이야기의 가시화, 문화 참여 증가처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific community-arts activity or situation that illustrates the proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as a neighborhood mural, free youth theater, senior music sessions, public craft workshops, or an exhibition of immigrant stories.",
+        "semanticRoleKo": "제안한 역할을 보여 주는 구체적인 지역 예술 활동 또는 상황.",
+        "satisfiedWhenKo": "동네 벽화, 무료 청소년 연극, 노인 음악 활동, 공공 공예 워크숍, 이주민 이야기 전시처럼 구체적인 예를 들면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A particular feature of the proposed arts program's participants, art form, access, setting, or organization.",
+        "satisfiedWhenEn": "The answer clarifies who participates, what is created, where or when it happens, how access is provided, or who leads the activity.",
+        "semanticRoleKo": "제안한 예술 프로그램의 참여자, 예술 형식, 접근 방식, 장소 또는 운영에 관한 특정 특징.",
+        "satisfiedWhenKo": "참여 대상, 창작물, 진행 장소나 시간, 접근 제공 방식 또는 활동 진행 주체를 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-47",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "Whether the learner thinks community arts programs should receive greater public, financial, or institutional support.",
+        "satisfiedWhenEn": "The answer clearly favors, opposes, or conditionally favors increasing support for community arts programs; simply saying art is enjoyable does not address support.",
+        "semanticRoleKo": "지역 예술 프로그램이 공공, 재정 또는 기관의 지원을 더 받아야 하는지에 대한 학습자의 견해.",
+        "satisfiedWhenKo": "지역 예술 프로그램 지원 확대에 찬성, 반대 또는 조건부 찬성 입장을 분명히 밝히면 충족한다. 예술이 즐겁다고만 말하면 지원 여부를 다루지 않는다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner supports or opposes giving community arts programs more support.",
+        "satisfiedWhenEn": "The answer gives a concrete consideration involving access, community benefit, cultural value, public priorities, evidence of participation, cost, or alternative funding.",
+        "semanticRoleKo": "학습자가 지역 예술 프로그램에 더 많은 지원을 제공하는 것을 지지하거나 반대하는 이유.",
+        "satisfiedWhenKo": "접근성, 지역사회 이점, 문화적 가치, 공공 우선순위, 참여 근거, 비용 또는 대체 재원과 관련된 구체적인 근거를 제시하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit of increasing support for community arts programs.",
+        "satisfiedWhenEn": "The answer identifies a concrete upside such as affordable participation, stable teaching staff, better materials, programs in underserved areas, or more work for local artists.",
+        "semanticRoleKo": "지역 예술 프로그램 지원을 늘릴 때의 별도 이점.",
+        "satisfiedWhenKo": "부담 가능한 참여, 안정적인 강사 인력, 더 나은 재료, 서비스 부족 지역의 프로그램, 지역 예술가의 일자리처럼 구체적인 장점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct cost, tradeoff, or risk of increasing support for community arts programs.",
+        "satisfiedWhenEn": "The answer identifies a concrete drawback such as reduced funding for essential services, low attendance, favoritism in grant choices, administrative expense, or dependence on subsidies.",
+        "semanticRoleKo": "지역 예술 프로그램 지원을 늘릴 때의 별도 비용, 상충 관계 또는 위험.",
+        "satisfiedWhenKo": "필수 서비스 예산 감소, 낮은 참여율, 지원금 선정의 편향, 행정 비용, 보조금 의존처럼 구체적인 단점을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific funded arts program or community situation that supports the learner's position.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as grants for free dance classes, a fully booked local theater workshop, an empty publicly funded studio, or artist residencies in rural schools.",
+        "semanticRoleKo": "학습자의 입장을 뒷받침하는 구체적인 지원 예술 프로그램 또는 지역사회 상황.",
+        "satisfiedWhenKo": "무료 무용 수업 지원금, 정원이 찬 지역 연극 워크숍, 이용자가 없는 공공 지원 작업실, 농촌 학교 예술가 상주 프로그램처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects from increasing or withholding additional support for community arts.",
+        "satisfiedWhenEn": "The answer states a definite effect such as broader participation, sustained local culture, higher public cost, continued access gaps, stronger creative careers, or closure of weak programs.",
+        "semanticRoleKo": "지역 예술에 대한 추가 지원을 늘리거나 보류할 때 학습자가 예상하는 결과.",
+        "satisfiedWhenKo": "참여 확대, 지역 문화 유지, 공공 비용 증가, 접근 격차 지속, 창작 직업 강화, 성과가 낮은 프로그램의 종료처럼 분명한 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-48",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's assessment of how important community arts programs are for communities today.",
+        "satisfiedWhenEn": "The answer clearly evaluates community arts programs as important, unimportant, or important under particular conditions; listing art activities without judging importance is insufficient.",
+        "semanticRoleKo": "오늘날 지역 예술 프로그램이 지역사회에 얼마나 중요한지에 대한 학습자의 평가.",
+        "satisfiedWhenKo": "지역 예술 프로그램이 중요하다, 중요하지 않다 또는 특정 조건에서 중요하다는 판단을 분명히 밝히면 충족한다. 예술 활동만 나열하면 중요성 평가가 아니다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner gives community arts programs that level of importance.",
+        "satisfiedWhenEn": "The answer provides a concrete consideration involving creative access, identity, social connection, youth development, well-being, participation, cost, or available alternatives.",
+        "semanticRoleKo": "학습자가 지역 예술 프로그램의 중요성을 그 정도로 평가하는 이유.",
+        "satisfiedWhenKo": "창작 기회, 정체성, 사회적 연결, 청소년 발달, 행복, 참여, 비용 또는 이용 가능한 대안과 관련된 구체적인 근거를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A community effect of having strong, weak, or absent arts programs that supports the importance assessment.",
+        "satisfiedWhenEn": "The answer states a definite consequence such as stronger belonging, visible local culture, fewer creative opportunities, reduced isolation, or little impact where other arts access is plentiful.",
+        "semanticRoleKo": "지역 예술 프로그램이 충분하거나 부족하거나 없을 때 생겨 중요성 평가를 뒷받침하는 지역사회 효과.",
+        "satisfiedWhenKo": "소속감 강화, 지역 문화의 가시화, 창작 기회 감소, 고립감 완화, 다른 예술 기회가 많은 곳에서의 작은 영향처럼 분명한 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular program, participant, or neighborhood situation illustrating the learner's importance judgment.",
+        "satisfiedWhenEn": "The answer gives a concrete example such as children gaining confidence in theater, isolated adults joining a choir, or an area with many private arts options and low public-program use.",
+        "semanticRoleKo": "학습자의 중요성 판단을 보여 주는 특정 프로그램, 참여자 또는 동네 상황.",
+        "satisfiedWhenKo": "연극에서 자신감을 얻는 아동, 합창단에 참여하는 고립된 성인, 민간 예술 선택지가 많아 공공 프로그램 이용이 적은 지역처럼 구체적인 예를 들면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific program or community characteristic that qualifies the learner's importance assessment.",
+        "satisfiedWhenEn": "The answer clarifies an art form, audience, neighborhood need, participation level, cost, location, accessibility feature, or alternative opportunity.",
+        "semanticRoleKo": "학습자의 중요성 평가에 조건을 더하는 구체적인 프로그램 또는 지역사회 특징.",
+        "satisfiedWhenKo": "예술 형식, 대상, 동네 필요, 참여 수준, 비용, 위치, 접근성 요소 또는 대체 기회를 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-49",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibility the learner thinks people or institutions have to support community arts programs.",
+        "satisfiedWhenEn": "The answer states a clear obligation, limited obligation, or lack of obligation toward community arts and may identify who should bear it.",
+        "semanticRoleKo": "개인이나 기관이 지역 예술 프로그램을 지원할 책임이 있다고 학습자가 생각하는 내용.",
+        "satisfiedWhenKo": "지역 예술에 대한 분명한 의무, 제한된 의무 또는 의무가 없다는 견해를 밝히고 누가 책임지는지 제시할 수 있으면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete action people or institutions could take to fulfill the proposed arts-support responsibility.",
+        "satisfiedWhenEn": "The answer names an actionable form of support such as funding classes, donating space or materials, volunteering, attending events, commissioning local artists, or evaluating program access.",
+        "semanticRoleKo": "개인이나 기관이 제안한 예술 지원 책임을 이행하기 위해 할 수 있는 구체적인 행동.",
+        "satisfiedWhenKo": "수업 예산 지원, 공간이나 재료 기부, 자원봉사, 행사 참여, 지역 예술가 작품 의뢰, 프로그램 접근성 평가처럼 실행 가능한 지원 행동을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner assigns that community-arts support responsibility to people or institutions.",
+        "satisfiedWhenEn": "The answer gives a concrete cultural, civic, educational, inclusion, shared-benefit, resource, or institutional-capacity reason explaining the obligation.",
+        "semanticRoleKo": "학습자가 개인이나 기관에 그런 지역 예술 지원 책임을 부여하는 이유.",
+        "satisfiedWhenKo": "그 의무를 설명하는 구체적인 문화, 시민 참여, 교육, 포용, 공동 이익, 자원 또는 기관 역량 관련 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular person, institution, or initiative illustrating the proposed support responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete case such as a city funding a youth orchestra, a business lending exhibition space, residents joining a mural project, or a school sharing its auditorium.",
+        "semanticRoleKo": "제안한 지원 책임을 보여 주는 특정 개인, 기관 또는 활동.",
+        "satisfiedWhenKo": "시의 청소년 오케스트라 예산 지원, 기업의 전시 공간 대여, 주민의 벽화 사업 참여, 학교의 강당 공유처럼 구체적인 사례를 들면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect fulfilling the proposed support responsibility would have on arts programs or the community.",
+        "satisfiedWhenEn": "The answer describes a definite outcome such as stable programs, broader access, paid opportunities for artists, stronger local identity, better facilities, or accountability to residents.",
+        "semanticRoleKo": "제안한 지원 책임을 이행할 때 예술 프로그램이나 지역사회에 생길 효과.",
+        "satisfiedWhenKo": "안정적인 프로그램, 접근 확대, 예술가의 유급 기회, 지역 정체성 강화, 시설 개선, 주민에 대한 책임성처럼 분명한 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-50",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's position on expanding the reach, variety, capacity, or frequency of community arts programs.",
+        "satisfiedWhenEn": "The answer clearly supports, opposes, or conditionally supports an identifiable expansion of community arts programs; general appreciation of art is insufficient.",
+        "semanticRoleKo": "지역 예술 프로그램의 범위, 종류, 수용 규모 또는 빈도를 확대하는 것에 대한 학습자의 입장.",
+        "satisfiedWhenKo": "알아볼 수 있는 형태의 지역 예술 프로그램 확대에 찬성, 반대 또는 조건부 찬성 입장을 분명히 밝히면 충족한다. 예술에 대한 일반적인 호감만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner supports or opposes expanding community arts programs.",
+        "satisfiedWhenEn": "The answer gives a concrete participation need, cultural benefit, neighborhood gap, demand, cost, staffing, space, or competing-priority consideration explaining the stance.",
+        "semanticRoleKo": "학습자가 지역 예술 프로그램 확대를 지지하거나 반대하는 이유.",
+        "satisfiedWhenKo": "그 입장을 설명하는 구체적인 참여 필요, 문화적 이점, 지역 격차, 수요, 비용, 인력, 공간 또는 경쟁 우선순위 관련 근거를 제시하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct benefit that broader community arts programs could provide.",
+        "satisfiedWhenEn": "The answer identifies a concrete upside such as reaching more age groups, offering additional art forms, serving underserved neighborhoods, creating artist work, or increasing participation.",
+        "semanticRoleKo": "지역 예술 프로그램 확대가 제공할 수 있는 별도의 이점.",
+        "satisfiedWhenKo": "더 다양한 연령층 지원, 추가 예술 형식 제공, 서비스 부족 지역 지원, 예술가 일자리 창출, 참여 증가처럼 구체적인 장점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct drawback, cost, or implementation risk of expanding community arts programs.",
+        "satisfiedWhenEn": "The answer identifies a concrete downside such as insufficient instructors, underused classes, facility expense, reduced program quality, grant competition, or funds diverted from other needs.",
+        "semanticRoleKo": "지역 예술 프로그램 확대의 별도 단점, 비용 또는 시행 위험.",
+        "satisfiedWhenKo": "강사 부족, 이용이 적은 수업, 시설 비용, 프로그램 품질 저하, 지원금 경쟁, 다른 필요에서 전용되는 예산처럼 구체적인 단점을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific form or location of arts-program expansion that illustrates the learner's position.",
+        "satisfiedWhenEn": "The answer describes a concrete case such as adding weekend pottery classes, taking theater workshops to rural areas, opening rehearsal space, or increasing free summer programs.",
+        "semanticRoleKo": "학습자의 입장을 보여 주는 구체적인 예술 프로그램 확대 형태 또는 지역.",
+        "satisfiedWhenKo": "주말 도예 수업 추가, 농촌 지역 연극 워크숍 제공, 연습 공간 개방, 무료 여름 프로그램 확대처럼 구체적인 사례를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The consequence the learner expects if community arts programs are expanded or remain at their current scale.",
+        "satisfiedWhenEn": "The answer states a definite effect such as wider creative access, stronger participation, higher public cost, continued geographic gaps, improved local culture, or thinner program quality.",
+        "semanticRoleKo": "지역 예술 프로그램을 확대하거나 현재 규모로 유지할 때 학습자가 예상하는 결과.",
+        "satisfiedWhenKo": "창작 기회 확대, 참여 강화, 공공 비용 증가, 지역 격차 지속, 지역 문화 향상, 프로그램 품질 저하처럼 분명한 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-01",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The recognizable kind, category, or cuisine of food the learner identifies as their favorite.",
+        "satisfiedWhenEn": "The answer names or clearly describes a specific food type and conveys that it is the learner's favorite; saying only that the learner likes good food is too vague.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 밝히는 알아볼 수 있는 음식 종류, 범주 또는 요리 계통.",
+        "satisfiedWhenKo": "구체적인 음식 유형을 말하거나 분명히 묘사하고 그것이 학습자가 가장 좋아하는 종류임을 나타내면 충족한다. 단순히 맛있는 음식을 좋아한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes the selected kind of food.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, texture, ingredient, memory, cultural connection, convenience, or other personal appeal that explains the preference.",
+        "semanticRoleKo": "학습자가 선택한 음식 종류를 좋아하는 이유.",
+        "satisfiedWhenKo": "그 선호를 설명하는 구체적인 맛, 식감, 재료, 기억, 문화적 연결, 편의성 또는 다른 개인적 매력을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the learner's favorite kind of food.",
+        "satisfiedWhenEn": "The answer adds a definite flavor, texture, ingredient, preparation method, appearance, serving style, or other feature beyond naming the food type.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식 종류의 구체적인 특징.",
+        "satisfiedWhenKo": "음식 유형의 이름만 말하는 것을 넘어 분명한 풍미, 식감, 재료, 조리법, 모양, 제공 방식 또는 다른 특징을 덧붙이면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular dish or food item that represents the learner's favorite kind.",
+        "satisfiedWhenEn": "The answer names or clearly describes a concrete dish that belongs to the selected food category.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식 종류를 대표하는 특정 요리 또는 음식.",
+        "satisfiedWhenKo": "선택한 음식 범주에 속하는 구체적인 요리를 이름으로 말하거나 분명히 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when eating or thinking about the favorite kind of food.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or bodily sense, such as comfort, excitement, satisfaction, or warmth, connected to that food.",
+        "semanticRoleKo": "가장 좋아하는 음식 종류를 먹거나 생각할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "그 음식과 연결된 편안함, 설렘, 만족감, 따뜻함 같은 알아볼 수 있는 감정이나 신체적 느낌을 표현하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A recognizable place or setting connected to where the learner enjoys or obtains the favorite food.",
+        "satisfiedWhenEn": "The answer identifies a definite location or dining setting, such as home, a named restaurant, a market, or a family gathering, and connects it to eating the preferred food.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식을 즐기거나 구하는 곳과 연결된 알아볼 수 있는 장소 또는 상황.",
+        "satisfiedWhenKo": "집, 특정 식당, 시장, 가족 모임처럼 분명한 장소나 식사 상황을 밝히고 선호 음식의 섭취와 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-02",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The type of food the learner presents as their favorite.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food category, cuisine, or class of dishes and makes clear that the learner prefers it most.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 것으로 제시하는 음식 유형.",
+        "satisfiedWhenKo": "알아볼 수 있는 음식 범주, 요리 계통 또는 요리 종류를 밝히고 학습자가 그것을 가장 선호한다는 점을 분명히 하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What gives the favorite food its appeal for the learner.",
+        "satisfiedWhenEn": "The answer explains the preference through a concrete quality, experience, association, use, or benefit rather than only calling the food good or delicious.",
+        "semanticRoleKo": "가장 좋아하는 음식이 학습자에게 매력적인 이유.",
+        "satisfiedWhenKo": "음식이 좋거나 맛있다고만 하지 않고 구체적인 특성, 경험, 연상, 용도 또는 이점을 통해 선호를 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Descriptive information that makes the learner's favorite food type more specific.",
+        "satisfiedWhenEn": "The answer describes a definite ingredient, seasoning, texture, cooking technique, typical accompaniment, appearance, or variation of the selected food.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식 유형을 더 구체적으로 만드는 묘사 정보.",
+        "satisfiedWhenKo": "선택한 음식의 분명한 재료, 양념, 식감, 조리 기술, 대표 곁들임, 모양 또는 변형을 묘사하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete dish illustrating the favorite food type the learner is describing.",
+        "satisfiedWhenEn": "The answer supplies a particular dish or item that clearly belongs to the preferred category.",
+        "semanticRoleKo": "학습자가 묘사하는 선호 음식 유형을 보여 주는 구체적인 요리.",
+        "satisfiedWhenKo": "선호 범주에 분명히 속하는 특정 요리나 음식 항목을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The emotional or physical response the favorite food creates for the learner.",
+        "satisfiedWhenEn": "The answer conveys a distinct mood, emotion, comfort, appetite response, or sense of satisfaction caused by eating or anticipating the food.",
+        "semanticRoleKo": "가장 좋아하는 음식이 학습자에게 일으키는 감정적 또는 신체적 반응.",
+        "satisfiedWhenKo": "그 음식을 먹거나 기대하면서 생기는 뚜렷한 기분, 감정, 편안함, 식욕 반응 또는 만족감을 나타내면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The location or social setting in which the learner especially associates with the favorite food.",
+        "satisfiedWhenEn": "The answer names a recognizable place or occasion and establishes that the learner eats, buys, prepares, or shares the preferred food there.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식과 특히 연결하는 장소 또는 사회적 상황.",
+        "satisfiedWhenKo": "알아볼 수 있는 장소나 상황을 말하고 그곳에서 선호 음식을 먹거나 사거나 만들거나 나눈다는 관계를 나타내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-03",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The identifiable kind of food the learner chooses as their favorite.",
+        "satisfiedWhenEn": "The answer names or unambiguously describes a particular food category or cuisine and marks it as the learner's favorite.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 것으로 선택한 식별 가능한 음식 종류.",
+        "satisfiedWhenKo": "특정 음식 범주나 요리 계통을 이름으로 말하거나 명확히 설명하고 그것을 학습자의 최애 음식으로 나타내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The requested description of what the learner's favorite kind of food is like.",
+        "satisfiedWhenEn": "The answer gives at least one concrete descriptive feature, such as its flavor, texture, ingredients, preparation, appearance, or usual form, beyond merely naming the category.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식 종류가 어떤지에 대한 요청된 묘사.",
+        "satisfiedWhenKo": "음식 범주의 이름만 말하는 것을 넘어 맛, 식감, 재료, 조리법, 모양 또는 일반적인 형태 같은 구체적인 묘사 특징을 하나 이상 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The two distinct reasons the learner enjoys the selected kind of food.",
+        "satisfiedWhenEn": "The answer gives two separately understandable qualities, experiences, associations, or benefits that explain the learner's enjoyment; one reason repeated in different words does not fulfill the request for two.",
+        "semanticRoleKo": "학습자가 선택한 음식 종류를 즐기는 서로 다른 두 가지 이유.",
+        "satisfiedWhenKo": "학습자의 즐거움을 설명하는 서로 구별되는 두 가지 특성, 경험, 연상 또는 이점을 제시하면 충족한다. 같은 이유를 다른 말로 반복하면 두 가지 이유 요청을 충족하지 못한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular dish that exemplifies the learner's favorite food category.",
+        "satisfiedWhenEn": "The answer names or clearly describes one concrete dish belonging to the chosen kind of food.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식 범주를 예시하는 특정 요리.",
+        "satisfiedWhenKo": "선택한 음식 종류에 속하는 구체적인 요리 하나를 이름으로 말하거나 분명히 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while eating or after eating the favorite food.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion, mood, or bodily state directly connected to eating the selected food.",
+        "semanticRoleKo": "가장 좋아하는 음식을 먹는 동안이나 먹은 뒤 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "선택한 음식을 먹는 것과 직접 연결된 알아볼 수 있는 감정, 기분 또는 신체 상태를 표현하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A definite place or occasion where the learner eats, gets, or shares the favorite food.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location or event and connects it to the learner's experience of the chosen food.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식을 먹거나 구하거나 나누는 분명한 장소 또는 상황.",
+        "satisfiedWhenKo": "알아볼 수 있는 장소나 행사를 밝히고 그것을 선택한 음식에 대한 학습자의 경험과 연결하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the favorite food has on the learner beyond the immediate feeling of liking it.",
+        "satisfiedWhenEn": "The answer states a recognizable consequence such as providing energy, bringing family together, satisfying hunger, recalling a tradition, or influencing what the learner orders.",
+        "semanticRoleKo": "좋아한다는 즉각적인 감정을 넘어 가장 좋아하는 음식이 학습자에게 미치는 구체적인 효과.",
+        "satisfiedWhenKo": "에너지 제공, 가족의 모임, 배고픔 해소, 전통에 대한 기억, 주문 선택에 미치는 영향처럼 알아볼 수 있는 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-04",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular aspect the learner likes most about their favorite kind of food.",
+        "satisfiedWhenEn": "The answer identifies a recognizable feature, such as a flavor, texture, ingredient, preparation style, variety, or eating experience, and presents it as the most liked aspect; naming only the food type is insufficient.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식 종류에서 특히 가장 좋아하는 측면.",
+        "satisfiedWhenKo": "풍미, 식감, 재료, 조리 방식, 종류 또는 식사 경험 같은 알아볼 수 있는 특징을 밝히고 그것을 가장 좋아하는 측면으로 제시하면 충족한다. 음식 종류만 말하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the selected aspect is what the learner likes most about the food.",
+        "satisfiedWhenEn": "The answer gives a concrete personal appeal, experience, comparison, memory, sensory quality, or benefit that explains the top choice.",
+        "semanticRoleKo": "선택한 측면을 학습자가 그 음식에서 가장 좋아하는 이유.",
+        "satisfiedWhenKo": "그 최우선 선택을 설명하는 구체적인 개인적 매력, 경험, 비교, 기억, 감각적 특성 또는 이점을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific description that clarifies the food feature the learner likes most.",
+        "satisfiedWhenEn": "The answer elaborates the chosen aspect with a definite intensity, ingredient, texture, cooking method, combination, appearance, or other distinguishing property.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식 특징을 구체화하는 설명.",
+        "satisfiedWhenKo": "선택한 측면의 분명한 강도, 재료, 식감, 조리법, 조합, 모양 또는 다른 구별되는 특성을 덧붙이면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular dish, bite, or eating situation that demonstrates the most-liked aspect.",
+        "satisfiedWhenEn": "The answer gives a concrete example in which the selected feature can be recognized, rather than merely repeating the feature's name.",
+        "semanticRoleKo": "가장 좋아하는 측면을 보여 주는 특정 요리, 한입 또는 식사 상황.",
+        "satisfiedWhenKo": "선택한 특징의 이름을 반복하는 데 그치지 않고 그 특징을 알아볼 수 있는 구체적인 사례를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The feeling the learner experiences because of the most-liked food feature.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion, mood, comfort, excitement, or bodily enjoyment caused by that particular aspect.",
+        "semanticRoleKo": "가장 좋아하는 음식 특징 때문에 학습자가 경험하는 감정.",
+        "satisfiedWhenKo": "그 특정 측면으로 인해 생기는 알아볼 수 있는 감정, 기분, 편안함, 설렘 또는 신체적 즐거움을 나타내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the most-liked aspect has on the learner's eating preference or experience.",
+        "satisfiedWhenEn": "The answer states a concrete consequence such as making the learner choose the food often, balancing another flavor, making the meal satisfying, or encouraging the learner to share it.",
+        "semanticRoleKo": "가장 좋아하는 측면이 학습자의 음식 선호나 식사 경험에 미치는 효과.",
+        "satisfiedWhenKo": "그 음식을 자주 선택하게 하기, 다른 맛과 균형을 이루기, 식사를 만족스럽게 만들기, 다른 사람과 나누게 하기처럼 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  }
+]

@@ -1,0 +1,2072 @@
+[
+  {
+    "promptId": "prompt-intro-v2-0241",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The app the learner uses as part of their daily routine.",
+        "satisfiedWhenEn": "In the context of the question, the answer identifies a specific app or recognizable app service that the learner uses every day; a broad category such as \"social media\" alone is insufficient.",
+        "semanticRoleKo": "학습자가 일상적으로 매일 사용하는 앱.",
+        "satisfiedWhenKo": "질문의 맥락에서 학습자가 매일 사용하는 특정 앱이나 알아볼 수 있는 앱 서비스를 밝히면 충족한다. \"소셜 미디어\"처럼 넓은 범주만 말하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that app every day.",
+        "satisfiedWhenEn": "The answer gives a concrete need, purpose, or preference that explains the app's place in the learner's daily routine.",
+        "semanticRoleKo": "학습자가 그 앱을 매일 사용하는 이유.",
+        "satisfiedWhenKo": "그 앱이 학습자의 매일 일과에 포함되는 까닭을 설명하는 구체적인 필요, 목적 또는 선호를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific way the learner uses the everyday app.",
+        "satisfiedWhenEn": "The answer names a particular feature, activity, or kind of content the learner uses within the app, beyond merely identifying the app.",
+        "semanticRoleKo": "학습자가 매일 쓰는 앱을 이용하는 구체적인 방식.",
+        "satisfiedWhenKo": "앱의 이름만 밝히는 데서 더 나아가, 그 앱 안에서 이용하는 특정 기능, 활동 또는 콘텐츠 종류를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the learner gets from using the app every day.",
+        "satisfiedWhenEn": "The answer states a recognizable outcome of the daily app use, such as staying connected, saving time, or keeping informed.",
+        "semanticRoleKo": "그 앱을 매일 사용해서 학습자가 얻는 구체적인 효과.",
+        "satisfiedWhenKo": "사람들과 계속 연락하기, 시간 절약하기, 정보를 놓치지 않기처럼 매일 앱을 사용해 생기는 분명한 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0242",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular app the learner considers useful for them.",
+        "satisfiedWhenEn": "The answer identifies a specific app or recognizable app service as useful to the learner; saying only \"a useful app\" leaves the choice unresolved.",
+        "semanticRoleKo": "학습자가 자신에게 유용하다고 여기는 특정 앱.",
+        "satisfiedWhenKo": "학습자에게 유용한 특정 앱이나 알아볼 수 있는 앱 서비스를 밝히면 충족한다. \"유용한 앱\"이라고만 하면 어떤 앱인지 확정되지 않아 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical benefit the useful app provides to the learner.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome the learner gains from the app, such as completing a task more easily, finding information, or saving time.",
+        "semanticRoleKo": "그 유용한 앱이 학습자에게 제공하는 실질적인 이점.",
+        "satisfiedWhenKo": "일을 더 쉽게 처리하기, 정보를 찾기, 시간을 아끼기처럼 학습자가 앱을 통해 얻는 구체적인 결과를 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner regards that app as useful.",
+        "satisfiedWhenEn": "The answer gives a concrete need, circumstance, or valued quality that explains the learner's usefulness judgment rather than merely repeating that the app is useful.",
+        "semanticRoleKo": "학습자가 그 앱을 유용하다고 판단하는 이유.",
+        "satisfiedWhenKo": "앱이 유용하다는 말을 되풀이하는 대신, 그 판단을 설명하는 구체적인 필요, 상황 또는 가치 있는 특성을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or function of the app the learner finds useful.",
+        "satisfiedWhenEn": "The answer identifies a particular tool, capability, or aspect of the app that adds information beyond its name.",
+        "semanticRoleKo": "학습자가 유용하다고 느끼는 앱의 구체적인 기능이나 특징.",
+        "satisfiedWhenKo": "앱 이름 외에 그 앱의 특정 도구, 기능 또는 측면을 밝혀 추가 정보를 주면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0243",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The app the learner personally finds fun to use.",
+        "satisfiedWhenEn": "The answer names a specific app or recognizable app service as one the learner finds fun; an unidentified app category does not settle the choice.",
+        "semanticRoleKo": "학습자가 개인적으로 사용하기 재미있다고 느끼는 앱.",
+        "satisfiedWhenKo": "학습자가 재미있다고 느끼는 특정 앱이나 알아볼 수 있는 앱 서비스를 말하면 충족한다. 어느 앱인지 알 수 없는 범주만으로는 선택이 확정되지 않는다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional experience while using the fun app.",
+        "satisfiedWhenEn": "The answer conveys a recognizable feeling the learner has while or after using the app, such as amusement, excitement, or relaxation.",
+        "semanticRoleKo": "재미있는 앱을 사용할 때 학습자가 겪는 감정.",
+        "satisfiedWhenKo": "앱을 사용하는 동안이나 사용한 뒤 느끼는 즐거움, 신남, 편안함 같은 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What makes the chosen app fun for the learner.",
+        "satisfiedWhenEn": "The answer identifies a concrete activity, quality, or kind of content that explains why the learner enjoys the app.",
+        "semanticRoleKo": "선택한 앱이 학습자에게 재미있는 이유.",
+        "satisfiedWhenKo": "학습자가 그 앱을 즐기는 까닭을 설명하는 구체적인 활동, 특성 또는 콘텐츠 종류를 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular in-app activity, item, or occasion that illustrates the app's fun.",
+        "satisfiedWhenEn": "The answer gives a concrete example of something the learner does, sees, or experiences in the app that demonstrates why it is fun.",
+        "semanticRoleKo": "그 앱의 재미를 보여 주는 구체적인 앱 내 활동, 항목 또는 상황.",
+        "satisfiedWhenKo": "앱이 왜 재미있는지 드러내는 구체적인 행동, 콘텐츠 또는 경험의 사례를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0244",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The kind of content the learner habitually watches on their phone.",
+        "satisfiedWhenEn": "In the question's viewing context, the answer identifies a recognizable type of video, program, channel, or other content the learner usually watches; \"something interesting\" is too vague.",
+        "semanticRoleKo": "학습자가 휴대폰으로 습관적으로 시청하는 콘텐츠의 종류.",
+        "satisfiedWhenKo": "질문의 시청 맥락에서 학습자가 평소 보는 알아볼 수 있는 영상, 프로그램, 채널 또는 다른 콘텐츠 종류를 밝히면 충족한다. \"재미있는 것\"처럼 모호한 답은 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A narrower characteristic of the content the learner watches on their phone.",
+        "satisfiedWhenEn": "The answer adds a specific subject, genre, creator, series, or content feature beyond the basic viewing category.",
+        "semanticRoleKo": "학습자가 휴대폰으로 보는 콘텐츠의 더 구체적인 특징.",
+        "satisfiedWhenKo": "기본적인 시청 범주를 넘어 특정 주제, 장르, 제작자, 시리즈 또는 콘텐츠 특성을 덧붙이면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner watches that content on their phone.",
+        "satisfiedWhenEn": "The answer gives a definite time, recurring occasion, or frequency connected to the learner's phone viewing.",
+        "semanticRoleKo": "학습자가 그 콘텐츠를 휴대폰으로 보는 때나 빈도.",
+        "satisfiedWhenKo": "학습자의 휴대폰 시청과 연결된 구체적인 시간, 반복되는 상황 또는 빈도를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner usually chooses to watch that content on their phone.",
+        "satisfiedWhenEn": "The answer gives a concrete purpose, interest, or situational reason that explains the learner's habitual viewing choice.",
+        "semanticRoleKo": "학습자가 그 콘텐츠를 휴대폰으로 자주 보는 이유.",
+        "satisfiedWhenKo": "학습자의 반복적인 시청 선택을 설명하는 구체적인 목적, 관심 또는 상황상의 이유를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when watching that content on their phone.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or mood that the learner experiences during or after the viewing.",
+        "semanticRoleKo": "학습자가 그 콘텐츠를 휴대폰으로 볼 때 느끼는 감정.",
+        "satisfiedWhenKo": "시청 중이나 시청 후 학습자가 겪는 알아볼 수 있는 감정이나 기분을 표현하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0245",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The topic or type of information the learner habitually chooses to search for online.",
+        "satisfiedWhenEn": "In the search context, the answer identifies a concrete subject, item, question, or recognizable type of information as something the learner usually looks up; vague references such as \"things\" or \"information\" alone are insufficient.",
+        "semanticRoleKo": "학습자가 온라인에서 습관적으로 검색 대상으로 선택하는 주제나 정보 유형.",
+        "satisfiedWhenKo": "검색 맥락에서 학습자가 평소 찾아보는 구체적인 주제, 항목, 질문 또는 알아볼 수 있는 정보 유형을 밝히면 충족한다. \"것들\"이나 \"정보\"라고만 하면 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A more specific aspect of what the learner searches for online.",
+        "satisfiedWhenEn": "The answer supplies a particular example, subtopic, source, or search focus that narrows the learner's usual search activity.",
+        "semanticRoleKo": "학습자가 온라인에서 검색하는 내용의 더 구체적인 측면.",
+        "satisfiedWhenKo": "학습자의 평소 검색 활동을 좁혀 주는 특정 사례, 하위 주제, 출처 또는 검색 초점을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner usually searches for that topic or information.",
+        "satisfiedWhenEn": "The answer states a concrete need, purpose, or interest that motivates the learner to make those online searches.",
+        "semanticRoleKo": "학습자가 그 주제나 정보를 온라인에서 자주 검색하는 이유.",
+        "satisfiedWhenKo": "그 온라인 검색을 하게 만드는 구체적인 필요, 목적 또는 관심을 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner performs that kind of online search.",
+        "satisfiedWhenEn": "The answer gives a definite occasion, time, or frequency associated with the learner's usual searches.",
+        "semanticRoleKo": "학습자가 그런 온라인 검색을 하는 때나 빈도.",
+        "satisfiedWhenKo": "학습자의 평소 검색과 관련된 구체적인 상황, 시간 또는 빈도를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "What happens or what the learner obtains from those online searches.",
+        "satisfiedWhenEn": "The answer describes a concrete search outcome, such as finding needed facts, deciding what to buy, or learning how to do something.",
+        "semanticRoleKo": "그 온라인 검색을 통해 생기는 일이나 학습자가 얻는 결과.",
+        "satisfiedWhenKo": "필요한 사실 찾기, 구매 결정하기, 어떤 방법 익히기처럼 검색으로 얻는 구체적인 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0246",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's personal stance on whether they like taking selfies.",
+        "satisfiedWhenEn": "The answer clearly conveys a positive, negative, or qualified preference about taking selfies rather than only discussing selfies in general.",
+        "semanticRoleKo": "셀카 찍기를 좋아하는지에 대한 학습자의 개인적인 입장.",
+        "satisfiedWhenKo": "셀카를 일반적으로 이야기하는 데 그치지 않고, 셀카 찍기에 대한 긍정적, 부정적 또는 조건부 선호를 분명히 나타내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes or does not like taking selfies.",
+        "satisfiedWhenEn": "The answer gives a concrete experience, concern, or valued aspect that explains the learner's stated preference; simply calling selfies good or bad is insufficient.",
+        "semanticRoleKo": "학습자가 셀카 찍기를 좋아하거나 좋아하지 않는 이유.",
+        "satisfiedWhenKo": "학습자가 밝힌 선호를 설명하는 구체적인 경험, 걱정 또는 가치 있는 측면을 제시하면 충족한다. 셀카가 좋거나 나쁘다고만 하면 부족하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular selfie-taking occasion or experience that illustrates the learner's preference.",
+        "satisfiedWhenEn": "The answer describes a concrete time, situation, or past experience with taking selfies that supports the learner's view.",
+        "semanticRoleKo": "학습자의 선호를 보여 주는 구체적인 셀카 촬영 상황이나 경험.",
+        "satisfiedWhenKo": "학습자의 입장을 뒷받침하는 셀카 촬영의 특정 때, 상황 또는 과거 경험을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while taking or looking at their own selfies.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion connected to taking selfies or seeing the resulting photos.",
+        "semanticRoleKo": "셀카를 찍거나 자신의 셀카를 볼 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "셀카 촬영이나 촬영된 사진을 보는 일과 연결된 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete aspect of the learner's selfie-taking that adds context to the preference.",
+        "satisfiedWhenEn": "The answer adds a specific habit, setting, style, or practical concern about how the learner takes selfies.",
+        "semanticRoleKo": "셀카 선호에 맥락을 더하는 학습자의 구체적인 셀카 촬영 측면.",
+        "satisfiedWhenKo": "학습자가 셀카를 찍는 방식과 관련된 특정 습관, 환경, 스타일 또는 현실적인 고려 사항을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0247",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's personal stance on whether they like using social media.",
+        "satisfiedWhenEn": "The answer clearly states or conveys a positive, negative, or mixed attitude toward personally using social media.",
+        "semanticRoleKo": "소셜 미디어 사용을 좋아하는지에 대한 학습자의 개인적인 입장.",
+        "satisfiedWhenKo": "자신의 소셜 미디어 사용에 대한 긍정적, 부정적 또는 복합적인 태도를 분명히 말하거나 드러내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes or does not like using social media.",
+        "satisfiedWhenEn": "The answer gives a concrete benefit, concern, experience, or need that explains the learner's attitude rather than merely labeling social media good or bad.",
+        "semanticRoleKo": "학습자가 소셜 미디어 사용을 좋아하거나 좋아하지 않는 이유.",
+        "satisfiedWhenKo": "소셜 미디어가 좋거나 나쁘다는 평가만 반복하지 않고, 학습자의 태도를 설명하는 구체적인 이점, 걱정, 경험 또는 필요를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific social-media activity or experience that illustrates the learner's opinion.",
+        "satisfiedWhenEn": "The answer describes a concrete post, interaction, use case, or incident that supports the stated attitude toward social media.",
+        "semanticRoleKo": "학습자의 의견을 보여 주는 구체적인 소셜 미디어 활동이나 경험.",
+        "satisfiedWhenKo": "소셜 미디어에 대한 입장을 뒷받침하는 특정 게시물, 상호작용, 사용 사례 또는 사건을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to using social media.",
+        "satisfiedWhenEn": "The answer conveys a recognizable feeling the learner experiences during or after social-media use.",
+        "semanticRoleKo": "소셜 미디어를 사용할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "소셜 미디어 사용 중이나 사용 후 학습자가 겪는 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect social-media use has on the learner.",
+        "satisfiedWhenEn": "The answer states a recognizable positive or negative outcome of the learner's social-media use, such as maintaining contact, learning news, losing time, or feeling distracted.",
+        "semanticRoleKo": "소셜 미디어 사용이 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "연락 유지, 소식 알기, 시간 낭비, 집중력 저하처럼 학습자의 소셜 미디어 사용에서 생기는 분명한 긍정적 또는 부정적 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0248",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The kind or subject of content the learner habitually chooses to post online.",
+        "satisfiedWhenEn": "In the posting context, the answer identifies a recognizable content type or subject as something the learner usually shares online; vague references such as \"something\" or \"many things\" are insufficient.",
+        "semanticRoleKo": "학습자가 온라인에 습관적으로 게시 대상으로 선택하는 콘텐츠의 종류나 주제.",
+        "satisfiedWhenKo": "게시 맥락에서 학습자가 평소 온라인에 공유하는 알아볼 수 있는 콘텐츠 종류나 주제를 밝히면 충족한다. \"무언가\"나 \"많은 것\"이라고만 하면 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "An additional characteristic of the learner's usual online posts beyond the selected content type.",
+        "satisfiedWhenEn": "The answer adds a specific format, intended audience, platform-specific presentation, narrower subject, or other feature beyond the content type already used as the main choice; repeating the same type or subject is insufficient.",
+        "semanticRoleKo": "선택한 콘텐츠 종류를 넘어 학습자의 평소 온라인 게시물에 관해 더하는 추가 특성.",
+        "satisfiedWhenKo": "주된 선택으로 이미 제시한 콘텐츠 종류를 넘어 구체적인 형식, 대상 독자, 플랫폼별 표현 방식, 더 좁은 주제 또는 다른 특징을 덧붙이면 충족한다. 같은 종류나 주제를 되풀이하면 부족하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner posts that content online.",
+        "satisfiedWhenEn": "The answer gives a definite time, recurring occasion, or frequency for the learner's online posting.",
+        "semanticRoleKo": "학습자가 그 콘텐츠를 온라인에 올리는 때나 빈도.",
+        "satisfiedWhenKo": "학습자의 온라인 게시와 관련된 구체적인 시간, 반복되는 상황 또는 빈도를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner usually posts that kind of content online.",
+        "satisfiedWhenEn": "The answer provides a concrete purpose, motivation, or audience-related reason for sharing the content.",
+        "semanticRoleKo": "학습자가 그런 콘텐츠를 온라인에 자주 올리는 이유.",
+        "satisfiedWhenKo": "그 콘텐츠를 공유하는 구체적인 목적, 동기 또는 보는 사람과 관련된 이유를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about posting that content online.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion associated with preparing, sharing, or receiving responses to the posts.",
+        "semanticRoleKo": "그 콘텐츠를 온라인에 올리는 일에 대해 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "게시물을 준비하거나 공유하거나 반응을 받을 때와 관련된 알아볼 수 있는 감정을 표현하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0249",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The recognizable type, subject, or style of photos the learner takes.",
+        "satisfiedWhenEn": "The answer identifies a concrete photo category, recurring subject, or photographic style and presents it as a kind of photo the learner takes; merely mentioning or describing a photo type without connecting it to the learner's own photo-taking is insufficient.",
+        "semanticRoleKo": "학습자가 찍는 사진의 알아볼 수 있는 종류, 피사체 또는 스타일.",
+        "satisfiedWhenKo": "구체적인 사진 범주, 반복해서 찍는 피사체 또는 촬영 스타일을 밝히고 그것을 학습자가 찍는 사진 종류로 나타내면 충족한다. 사진 종류를 학습자 자신의 촬영과 연결하지 않고 단순히 언급하거나 묘사하면 부족하다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The location where the learner takes that kind of photo.",
+        "satisfiedWhenEn": "The answer names or clearly identifies a place and connects it to the learner's photo-taking.",
+        "semanticRoleKo": "학습자가 그런 종류의 사진을 찍는 장소.",
+        "satisfiedWhenKo": "장소를 구체적으로 밝히고 그곳을 학습자의 사진 촬영과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner takes that kind of photo.",
+        "satisfiedWhenEn": "The answer gives a definite time, occasion, or frequency associated with taking the described photos.",
+        "semanticRoleKo": "학습자가 그런 종류의 사진을 찍는 때나 빈도.",
+        "satisfiedWhenKo": "설명한 사진을 찍는 일과 관련된 구체적인 시간, 상황 또는 빈도를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses to take that kind of photo.",
+        "satisfiedWhenEn": "The answer gives a concrete interest, purpose, or personal value that explains the learner's choice of photo subject or style.",
+        "semanticRoleKo": "학습자가 그런 종류의 사진을 찍기로 하는 이유.",
+        "satisfiedWhenKo": "해당 피사체나 촬영 스타일을 선택하는 까닭을 설명하는 구체적인 관심, 목적 또는 개인적 가치를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while taking or viewing that kind of photo.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion connected to taking or later looking at the described photos.",
+        "semanticRoleKo": "그런 종류의 사진을 찍거나 볼 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "설명한 사진을 찍거나 나중에 바라보는 일과 연결된 알아볼 수 있는 감정을 표현하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0250",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular photo on the learner's phone that is their favorite.",
+        "satisfiedWhenEn": "The answer distinguishes a specific phone photo through its subject, people, event, or another recognizable identifier and presents it as the learner's favorite; \"a nice photo\" is too vague.",
+        "semanticRoleKo": "학습자의 휴대폰에 있는 사진 중 가장 좋아하는 특정 사진.",
+        "satisfiedWhenKo": "피사체, 인물, 사건 또는 다른 알아볼 수 있는 단서로 휴대폰 속 특정 사진을 구별하고 그 사진을 가장 좋아한다고 나타내면 충족한다. \"멋진 사진\"이라고만 하면 너무 모호하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature of what appears in the favorite phone photo.",
+        "satisfiedWhenEn": "The answer describes a specific person, object, scene, action, or visual quality in the photo beyond merely identifying it.",
+        "semanticRoleKo": "가장 좋아하는 휴대폰 사진에 담긴 구체적인 특징.",
+        "satisfiedWhenKo": "사진을 식별하는 데서 더 나아가 사진 속 특정 인물, 사물, 장면, 행동 또는 시각적 특성을 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that phone photo is the learner's favorite.",
+        "satisfiedWhenEn": "The answer gives a concrete memory, relationship, quality, or personal significance that explains the learner's preference for the photo.",
+        "semanticRoleKo": "그 휴대폰 사진이 학습자가 가장 좋아하는 사진인 이유.",
+        "satisfiedWhenKo": "그 사진을 선호하는 까닭을 설명하는 구체적인 추억, 관계, 특성 또는 개인적 의미를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The feeling the favorite photo evokes in the learner.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion the learner experiences when viewing or remembering the photo.",
+        "semanticRoleKo": "가장 좋아하는 사진이 학습자에게 불러일으키는 감정.",
+        "satisfiedWhenKo": "그 사진을 보거나 사진의 순간을 떠올릴 때 학습자가 겪는 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the favorite phone photo was taken.",
+        "satisfiedWhenEn": "The answer gives a definite date, period, occasion, or relative time that locates when the photo was taken.",
+        "semanticRoleKo": "가장 좋아하는 휴대폰 사진을 찍은 때.",
+        "satisfiedWhenKo": "사진을 찍은 시점을 알 수 있는 구체적인 날짜, 시기, 행사 또는 상대적 시간을 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the favorite phone photo was taken.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to the taking of that particular photo.",
+        "semanticRoleKo": "가장 좋아하는 휴대폰 사진을 찍은 장소.",
+        "satisfiedWhenKo": "알아볼 수 있는 장소를 밝히고 그곳을 해당 사진의 촬영과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0251",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The primary action the learner takes to handle a low phone battery.",
+        "satisfiedWhenEn": "The answer states a concrete response intended to charge the phone, preserve the remaining power, or otherwise manage the low-battery situation.",
+        "semanticRoleKo": "휴대폰 배터리가 부족할 때 학습자가 문제를 처리하기 위해 취하는 주된 행동.",
+        "satisfiedWhenKo": "휴대폰을 충전하거나 남은 전력을 아끼거나 그 밖의 방식으로 배터리 부족 상황을 다루기 위한 구체적인 대응을 말하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate supporting step the learner takes in addition to the main low-battery response.",
+        "satisfiedWhenEn": "The answer gives another concrete action that complements, follows, or serves as a backup to the primary response rather than restating it.",
+        "semanticRoleKo": "배터리 부족에 대한 주된 대응 외에 학습자가 취하는 별도의 보조 조치.",
+        "satisfiedWhenKo": "주된 대응을 되풀이하지 않고 이를 보완하거나 뒤따르거나 대안이 되는 또 하나의 구체적인 행동을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that response when the phone battery is low.",
+        "satisfiedWhenEn": "The answer gives a concrete practical concern, need, or circumstance that explains the chosen low-battery action.",
+        "semanticRoleKo": "휴대폰 배터리가 부족할 때 학습자가 그 대응을 선택하는 이유.",
+        "satisfiedWhenKo": "선택한 배터리 부족 대응을 설명하는 구체적인 현실적 고려, 필요 또는 상황을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of the learner's low-battery response.",
+        "satisfiedWhenEn": "The answer describes a concrete effect of the action on the battery, the phone's availability, or the learner's ability to keep using it.",
+        "semanticRoleKo": "학습자가 배터리 부족에 대응한 뒤 생기는 결과.",
+        "satisfiedWhenKo": "그 행동이 배터리 상태, 휴대폰 사용 가능 여부 또는 계속 사용할 수 있는 능력에 미치는 구체적인 효과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0252",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The learner's total or approximate duration of phone use on a typical day.",
+        "satisfiedWhenEn": "The answer gives a measurable amount, clear range, or otherwise definite daily duration of phone use; \"a long time\" without a clearer amount is insufficient.",
+        "semanticRoleKo": "학습자가 보통 하루 동안 휴대폰을 사용하는 총시간 또는 대략적인 시간.",
+        "satisfiedWhenKo": "측정 가능한 시간, 분명한 범위 또는 그 밖의 구체적인 하루 휴대폰 사용 시간을 제시하면 충족한다. 더 명확한 양 없이 \"오랫동안\"이라고만 하면 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete breakdown or characteristic of the learner's daily phone-use time.",
+        "satisfiedWhenEn": "The answer adds specific information about how the daily duration is divided among activities, sessions, or parts of the day.",
+        "semanticRoleKo": "학습자의 하루 휴대폰 사용 시간을 구체적으로 나눈 내용이나 그 특징.",
+        "satisfiedWhenKo": "하루 사용 시간이 활동, 사용 회차 또는 시간대별로 어떻게 나뉘는지 구체적인 정보를 덧붙이면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner spends that amount of time using their phone each day.",
+        "satisfiedWhenEn": "The answer gives a concrete obligation, habit, need, or attraction that explains the stated daily use duration.",
+        "semanticRoleKo": "학습자가 매일 그만큼의 시간을 휴대폰 사용에 쓰는 이유.",
+        "satisfiedWhenKo": "밝힌 하루 사용 시간을 설명하는 구체적인 의무, 습관, 필요 또는 끌리는 요소를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about their amount of daily phone use.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotional or personal reaction to the stated duration, such as satisfaction, concern, guilt, or comfort.",
+        "semanticRoleKo": "자신의 하루 휴대폰 사용 시간에 대해 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "밝힌 사용 시간에 대해 만족, 걱정, 죄책감, 편안함 같은 알아볼 수 있는 감정적 또는 개인적 반응을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect of using the phone for that amount of time each day.",
+        "satisfiedWhenEn": "The answer states a recognizable consequence the daily duration has for the learner's tasks, health, relationships, or free time.",
+        "semanticRoleKo": "매일 그만큼 휴대폰을 사용해서 생기는 구체적인 영향.",
+        "satisfiedWhenKo": "그 하루 사용 시간이 학습자의 일, 건강, 관계 또는 여가에 미치는 분명한 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0253",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific activity or purpose for which the learner wants to use their phone less.",
+        "satisfiedWhenEn": "The answer identifies a recognizable phone activity, content category, or use that the learner intends to reduce; merely saying \"use my phone less\" does not answer what it is used for.",
+        "semanticRoleKo": "학습자가 휴대폰 사용을 줄이고 싶은 구체적인 활동이나 용도.",
+        "satisfiedWhenKo": "학습자가 줄이려는 알아볼 수 있는 휴대폰 활동, 콘텐츠 범주 또는 용도를 밝히면 충족한다. \"휴대폰을 덜 쓰고 싶다\"라고만 하면 어떤 용도인지 답하지 못한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to reduce that kind of phone use.",
+        "satisfiedWhenEn": "The answer gives a concrete problem, priority, or desired change that explains the reduction goal.",
+        "semanticRoleKo": "학습자가 그 종류의 휴대폰 사용을 줄이고 싶은 이유.",
+        "satisfiedWhenKo": "사용 감소 목표를 설명하는 구체적인 문제, 우선순위 또는 원하는 변화를 제시하면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to reduce that phone activity.",
+        "satisfiedWhenEn": "The answer states a feasible step, rule, or routine the learner plans to use to make the identified phone use less frequent or shorter.",
+        "semanticRoleKo": "학습자가 해당 휴대폰 활동을 줄이려는 방법.",
+        "satisfiedWhenKo": "밝힌 휴대폰 사용의 빈도나 시간을 줄이기 위해 실행하려는 구체적인 단계, 규칙 또는 습관을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The benefit or change the learner expects from reducing that phone use.",
+        "satisfiedWhenEn": "The answer describes a concrete intended outcome of the reduction, such as gaining time, sleeping better, or improving concentration.",
+        "semanticRoleKo": "그 휴대폰 사용을 줄여서 학습자가 기대하는 이점이나 변화.",
+        "satisfiedWhenKo": "시간 확보, 수면 개선, 집중력 향상처럼 사용 감소를 통해 기대하는 구체적인 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0254",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific activity or purpose for which the learner wants to use their phone more.",
+        "satisfiedWhenEn": "The answer identifies a recognizable phone activity, function, or purpose the learner intends to increase; \"use it for better things\" is too vague.",
+        "semanticRoleKo": "학습자가 휴대폰을 더 많이 활용하고 싶은 구체적인 활동이나 용도.",
+        "satisfiedWhenKo": "학습자가 늘리려는 알아볼 수 있는 휴대폰 활동, 기능 또는 목적을 밝히면 충족한다. \"더 좋은 일에 쓰기\"처럼 모호한 표현은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to increase that kind of phone use.",
+        "satisfiedWhenEn": "The answer gives a concrete need, value, or opportunity that explains the increase goal.",
+        "semanticRoleKo": "학습자가 그 종류의 휴대폰 사용을 늘리고 싶은 이유.",
+        "satisfiedWhenKo": "사용 증가 목표를 설명하는 구체적인 필요, 가치 또는 기회를 제시하면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to use the phone more for that purpose.",
+        "satisfiedWhenEn": "The answer states a practical step, schedule, or routine for increasing the identified kind of phone use.",
+        "semanticRoleKo": "학습자가 그 목적에 휴대폰을 더 많이 사용하려는 방법.",
+        "satisfiedWhenKo": "밝힌 종류의 휴대폰 사용을 늘리기 위한 현실적인 단계, 일정 또는 습관을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from increasing that phone use.",
+        "satisfiedWhenEn": "The answer describes a concrete intended effect, such as learning more, staying organized, or communicating more regularly.",
+        "semanticRoleKo": "그 휴대폰 사용을 늘려서 학습자가 기대하는 결과.",
+        "satisfiedWhenKo": "더 많이 배우기, 생활을 체계적으로 관리하기, 더 꾸준히 소통하기처럼 기대하는 구체적인 효과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0255",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "Whether the learner prefers texting or calling as a way to communicate.",
+        "satisfiedWhenEn": "The answer selects texting, calling, or a clear conditional preference between them; discussing both without indicating a preference is insufficient.",
+        "semanticRoleKo": "의사소통 방식으로 문자와 전화 중 학습자가 더 선호하는 것.",
+        "satisfiedWhenKo": "문자, 전화 또는 두 방식 사이의 분명한 조건부 선호를 선택하면 충족한다. 선호를 밝히지 않은 채 둘 다 이야기하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers texting or calling.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, need, or communication circumstance that explains the selected preference.",
+        "semanticRoleKo": "학습자가 문자나 전화를 선호하는 이유.",
+        "satisfiedWhenKo": "선택한 선호를 설명하는 구체적인 특성, 필요 또는 의사소통 상황을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular communication situation or experience that demonstrates the learner's preference.",
+        "satisfiedWhenEn": "The answer gives a concrete occasion, conversation, or past experience in which texting or calling was the learner's preferred option.",
+        "semanticRoleKo": "학습자의 문자 또는 전화 선호를 보여 주는 구체적인 의사소통 상황이나 경험.",
+        "satisfiedWhenKo": "문자나 전화가 학습자에게 더 알맞았던 특정 상황, 대화 또는 과거 경험을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when communicating through the preferred method.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or comfort level connected specifically to texting or calling.",
+        "semanticRoleKo": "선호하는 방식으로 소통할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "문자나 전화와 구체적으로 연결된 알아볼 수 있는 감정 또는 편안함의 정도를 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A practical outcome the learner gets from using the preferred communication method.",
+        "satisfiedWhenEn": "The answer describes a concrete effect of texting or calling, such as responding faster, avoiding misunderstanding, or keeping a record.",
+        "semanticRoleKo": "선호하는 의사소통 방식을 사용해서 학습자가 얻는 실질적인 결과.",
+        "satisfiedWhenKo": "더 빠른 응답, 오해 방지, 기록 보존처럼 문자나 전화를 사용해서 생기는 구체적인 효과를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner especially chooses texting or calling.",
+        "satisfiedWhenEn": "The answer identifies a definite time, recurring occasion, or type of situation in which the stated preference applies.",
+        "semanticRoleKo": "학습자가 특히 문자나 전화를 선택하는 때.",
+        "satisfiedWhenKo": "밝힌 선호가 적용되는 구체적인 시간, 반복되는 상황 또는 상황 유형을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0256",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular emoji the learner uses frequently.",
+        "satisfiedWhenEn": "The answer identifies an emoji by showing it, naming it, or describing it clearly and conveys, explicitly or through the direct response context, that it is one the learner uses often; merely mentioning another identifiable emoji is insufficient.",
+        "semanticRoleKo": "학습자가 자주 사용하는 특정 이모지.",
+        "satisfiedWhenKo": "이모지를 직접 보여 주거나 이름을 말하거나 분명히 묘사하고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 학습자가 자주 쓰는 이모지임을 나타내면 충족한다. 다른 이모지를 식별 가능하게 언급하는 것만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that emoji often.",
+        "satisfiedWhenEn": "The answer gives a concrete communicative purpose, personal preference, or recurring situation that explains the frequent use.",
+        "semanticRoleKo": "학습자가 그 이모지를 자주 사용하는 이유.",
+        "satisfiedWhenKo": "자주 사용하는 까닭을 설명하는 구체적인 의사소통 목적, 개인적 선호 또는 반복되는 상황을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific message or conversation situation in which the learner uses the emoji.",
+        "satisfiedWhenEn": "The answer provides a concrete example of what the learner is communicating or responding to when using that emoji.",
+        "semanticRoleKo": "학습자가 그 이모지를 사용하는 구체적인 메시지나 대화 상황.",
+        "satisfiedWhenKo": "그 이모지를 쓸 때 학습자가 무엇을 전달하거나 어떤 말에 반응하는지 구체적인 사례를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The feeling or attitude the learner conveys with the frequently used emoji.",
+        "satisfiedWhenEn": "The answer identifies a recognizable emotion or interpersonal tone that the emoji communicates on the learner's behalf.",
+        "semanticRoleKo": "자주 쓰는 이모지로 학습자가 전달하는 감정이나 태도.",
+        "satisfiedWhenKo": "그 이모지가 학습자를 대신해 전달하는 알아볼 수 있는 감정이나 대인 관계상의 어조를 밝히면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific nuance in how the learner uses the chosen emoji.",
+        "satisfiedWhenEn": "The answer adds concrete information about the emoji's intended meaning, placement, combination with text, or the people with whom the learner uses it.",
+        "semanticRoleKo": "학습자가 선택한 이모지를 사용하는 방식의 구체적인 뉘앙스.",
+        "satisfiedWhenKo": "이모지의 의도한 의미, 메시지 속 위치, 글과 조합하는 방식 또는 주로 누구에게 쓰는지에 관한 구체적인 정보를 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0257",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular recent video that made the learner laugh.",
+        "satisfiedWhenEn": "The answer distinguishes a recognizable video through its subject, title, creator, scene, or another identifier and conveys, explicitly or through the direct response context, that the video recently made the learner laugh; merely identifying an unrelated recent video is insufficient.",
+        "semanticRoleKo": "최근에 학습자를 웃게 만든 특정 영상.",
+        "satisfiedWhenKo": "주제, 제목, 제작자, 장면 또는 다른 단서로 알아볼 수 있는 영상을 구별하고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 그 영상이 최근 학습자를 웃게 했음을 나타내면 충족한다. 웃음과 무관한 최근 영상을 식별하는 것만으로는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What about the video caused the learner to laugh.",
+        "satisfiedWhenEn": "The answer identifies a concrete joke, action, surprise, mistake, or other humorous element that explains the laughter.",
+        "semanticRoleKo": "그 영상의 어떤 점이 학습자를 웃게 했는지에 대한 이유.",
+        "satisfiedWhenKo": "웃음의 까닭을 설명하는 구체적인 농담, 행동, 반전, 실수 또는 다른 재미 요소를 밝히면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete description of the people, action, or scene in the recent video.",
+        "satisfiedWhenEn": "The answer adds a specific visual, spoken, or situational detail from the video beyond merely identifying it.",
+        "semanticRoleKo": "최근 영상에 나온 사람, 행동 또는 장면에 대한 구체적인 설명.",
+        "satisfiedWhenKo": "영상을 식별하는 데서 더 나아가 영상 속 특정 시각적 요소, 대사 또는 상황의 세부 내용을 덧붙이면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner watched the video that made them laugh.",
+        "satisfiedWhenEn": "The answer gives a definite day, period, occasion, or relative time that locates the recent viewing.",
+        "semanticRoleKo": "학습자가 자신을 웃게 한 영상을 본 때.",
+        "satisfiedWhenKo": "최근 시청 시점을 알 수 있는 구체적인 날, 시기, 상황 또는 상대적 시간을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The broader emotional effect the funny video had on the learner.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotional response beyond identifying the video, such as feeling cheered up, delighted, or less stressed.",
+        "semanticRoleKo": "그 웃긴 영상이 학습자에게 준 더 넓은 감정적 영향.",
+        "satisfiedWhenKo": "영상을 식별하는 데서 더 나아가 기분이 나아짐, 즐거움, 스트레스 감소처럼 알아볼 수 있는 감정적 반응을 표현하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0258",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular online shop the learner uses frequently.",
+        "satisfiedWhenEn": "The answer names or otherwise clearly identifies a specific online store, marketplace, or shopping service the learner often uses.",
+        "semanticRoleKo": "학습자가 자주 이용하는 특정 온라인 쇼핑몰.",
+        "satisfiedWhenKo": "학습자가 자주 이용하는 특정 온라인 상점, 마켓플레이스 또는 쇼핑 서비스를 이름이나 다른 분명한 방식으로 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner often uses that online shop.",
+        "satisfiedWhenEn": "The answer gives a concrete advantage, need, product availability, or service quality that explains the repeated use.",
+        "semanticRoleKo": "학습자가 그 온라인 쇼핑몰을 자주 이용하는 이유.",
+        "satisfiedWhenKo": "반복 이용을 설명하는 구체적인 장점, 필요, 상품 구비 여부 또는 서비스 품질을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of the online shop or the learner's use of it.",
+        "satisfiedWhenEn": "The answer adds a concrete product category, service feature, ordering method, or other characteristic beyond the shop's identity.",
+        "semanticRoleKo": "그 온라인 쇼핑몰이나 학습자의 이용 방식에 관한 구체적인 특징.",
+        "satisfiedWhenKo": "쇼핑몰 이름 외에 구체적인 상품 범주, 서비스 기능, 주문 방식 또는 다른 특성을 덧붙이면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner uses that online shop.",
+        "satisfiedWhenEn": "The answer gives a definite frequency, recurring occasion, or time associated with shopping through the service.",
+        "semanticRoleKo": "학습자가 그 온라인 쇼핑몰을 이용하는 때나 빈도.",
+        "satisfiedWhenKo": "해당 서비스를 통한 쇼핑과 관련된 구체적인 빈도, 반복되는 상황 또는 시간을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A practical outcome the learner gets from using that online shop.",
+        "satisfiedWhenEn": "The answer describes a concrete effect of using the shop, such as obtaining needed items, paying less, or receiving products conveniently.",
+        "semanticRoleKo": "그 온라인 쇼핑몰을 이용해서 학습자가 얻는 실질적인 결과.",
+        "satisfiedWhenKo": "필요한 물건 구하기, 비용 절약하기, 편리하게 배송받기처럼 쇼핑몰 이용으로 생기는 구체적인 효과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0259",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "One concrete positive aspect or benefit of the internet.",
+        "satisfiedWhenEn": "The answer identifies a recognizable capability or benefit the internet provides; merely saying that it is good, useful, or convenient without specifying how is insufficient.",
+        "semanticRoleKo": "인터넷의 구체적인 긍정적 측면이나 이점 한 가지.",
+        "satisfiedWhenKo": "인터넷이 제공하는 알아볼 수 있는 기능이나 이점을 밝히면 충족한다. 어떤 면에서 그런지 밝히지 않고 좋다, 유용하다, 편리하다고만 하면 부족하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific situation or use case that illustrates the internet advantage.",
+        "satisfiedWhenEn": "The answer gives a concrete activity, occasion, or experience in which the stated positive aspect is demonstrated.",
+        "semanticRoleKo": "인터넷의 이점을 보여 주는 구체적인 상황이나 사용 사례.",
+        "satisfiedWhenKo": "밝힌 긍정적 측면이 드러나는 구체적인 활동, 상황 또는 경험을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the stated internet advantage is valuable.",
+        "satisfiedWhenEn": "The answer explains a concrete need or circumstance that makes the positive aspect important rather than simply repeating the benefit.",
+        "semanticRoleKo": "밝힌 인터넷의 이점이 가치 있는 이유.",
+        "satisfiedWhenKo": "이점을 그대로 되풀이하지 않고 그 긍정적 측면을 중요하게 만드는 구체적인 필요나 상황을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A positive outcome produced by the stated internet advantage.",
+        "satisfiedWhenEn": "The answer describes a concrete beneficial effect on the learner or other people that follows from the internet capability.",
+        "semanticRoleKo": "밝힌 인터넷의 이점으로 인해 생기는 긍정적인 결과.",
+        "satisfiedWhenKo": "그 인터넷 기능으로 인해 학습자나 다른 사람에게 생기는 구체적이고 유익한 효과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0260",
+    "slotContracts": {
+      "DISADVANTAGE": {
+        "semanticRoleEn": "One concrete negative effect or drawback of excessive phone use.",
+        "satisfiedWhenEn": "The answer identifies a recognizable harm, difficulty, or loss caused by using a phone too much; saying only that it is bad or unhealthy is insufficient.",
+        "semanticRoleKo": "휴대폰을 지나치게 사용할 때 생기는 구체적인 부정적 영향이나 단점 한 가지.",
+        "satisfiedWhenKo": "과도한 휴대폰 사용 때문에 생기는 알아볼 수 있는 피해, 어려움 또는 손실을 밝히면 충족한다. 나쁘다거나 건강에 좋지 않다고만 하면 부족하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific incident or behavior that illustrates the drawback of too much phone use.",
+        "satisfiedWhenEn": "The answer gives a concrete situation in which excessive phone use caused or displayed the stated negative effect.",
+        "semanticRoleKo": "과도한 휴대폰 사용의 단점을 보여 주는 구체적인 사건이나 행동.",
+        "satisfiedWhenKo": "지나친 휴대폰 사용이 밝힌 부정적 영향을 일으키거나 드러낸 구체적인 상황을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why excessive phone use leads to the stated drawback.",
+        "satisfiedWhenEn": "The answer explains a concrete mechanism or contributing factor connecting heavy phone use to the negative effect.",
+        "semanticRoleKo": "과도한 휴대폰 사용이 밝힌 단점으로 이어지는 이유.",
+        "satisfiedWhenKo": "많은 휴대폰 사용과 부정적 영향을 연결하는 구체적인 작용 방식이나 원인을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete characteristic of the excessive use or its negative effect.",
+        "satisfiedWhenEn": "The answer adds a specific activity, circumstance, severity, or affected area that makes the drawback more precise.",
+        "semanticRoleKo": "과도한 휴대폰 사용이나 그 부정적 영향의 구체적인 특징.",
+        "satisfiedWhenKo": "단점을 더 분명하게 만드는 특정 활동, 상황, 심각도 또는 영향을 받는 영역을 덧붙이면 충족한다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "An action that could prevent or reduce the stated problem from excessive phone use.",
+        "satisfiedWhenEn": "The answer proposes a concrete, relevant step for limiting the overuse or lessening its identified negative effect.",
+        "semanticRoleKo": "과도한 휴대폰 사용으로 생기는 문제를 예방하거나 줄일 수 있는 행동.",
+        "satisfiedWhenKo": "지나친 사용을 제한하거나 밝힌 부정적 영향을 완화하기 위한 구체적이고 관련 있는 조치를 제안하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0261",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The item or product category the learner personally likes to buy.",
+        "satisfiedWhenEn": "The answer identifies a concrete kind of product or recognizable item as something the learner enjoys buying; \"things I like\" is too vague.",
+        "semanticRoleKo": "학습자가 개인적으로 사기를 좋아하는 물건이나 상품 범주.",
+        "satisfiedWhenKo": "학습자가 즐겨 사는 구체적인 상품 종류나 알아볼 수 있는 물건을 밝히면 충족한다. \"내가 좋아하는 것들\"처럼 모호한 답은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes buying that item or product category.",
+        "satisfiedWhenEn": "The answer gives a concrete preference, need, experience, or valued quality that explains the learner's enjoyment of the purchase.",
+        "semanticRoleKo": "학습자가 그 물건이나 상품 범주를 사기 좋아하는 이유.",
+        "satisfiedWhenKo": "그 구매를 즐기는 까닭을 설명하는 구체적인 선호, 필요, 경험 또는 가치 있는 특성을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate specific product or purchase that illustrates the broader item or category the learner likes to buy.",
+        "satisfiedWhenEn": "The answer names a concrete model, style, variety, or recent purchase that adds information beyond the item or product category already used as the learner's main choice; repeating the same item at the same level of specificity is insufficient.",
+        "semanticRoleKo": "학습자가 사기 좋아하는 더 넓은 품목이나 범주를 보여 주는 별도의 구체적인 상품 또는 구매 사례.",
+        "satisfiedWhenKo": "학습자의 주된 선택으로 이미 사용한 물건이나 상품 범주를 넘어 구체적인 모델, 스타일, 종류 또는 최근 구매품을 덧붙이면 충족한다. 같은 구체성의 동일 품목을 되풀이하면 부족하다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner likes to buy the identified products.",
+        "satisfiedWhenEn": "The answer identifies a recognizable store, website, market, or other purchasing location and connects it to buying those products.",
+        "semanticRoleKo": "학습자가 밝힌 상품을 사기 좋아하는 곳.",
+        "satisfiedWhenKo": "알아볼 수 있는 상점, 웹사이트, 시장 또는 다른 구매 장소를 밝히고 그 상품의 구매와 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner buys the products they like.",
+        "satisfiedWhenEn": "The answer gives a definite occasion, time, season, or frequency associated with those purchases.",
+        "semanticRoleKo": "학습자가 좋아하는 상품을 사는 때나 빈도.",
+        "satisfiedWhenKo": "그 구매와 관련된 구체적인 상황, 시간, 계절 또는 빈도를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0262",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The item or product category the learner buys repeatedly.",
+        "satisfiedWhenEn": "The answer identifies a concrete kind of product or recognizable item as a frequent purchase; \"many things\" does not establish what is bought.",
+        "semanticRoleKo": "학습자가 반복해서 자주 사는 물건이나 상품 범주.",
+        "satisfiedWhenKo": "자주 구매하는 구체적인 상품 종류나 알아볼 수 있는 물건을 밝히면 충족한다. \"많은 것들\"이라고만 하면 무엇을 사는지 확정되지 않는다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "How often or on what recurring occasion the learner buys that product.",
+        "satisfiedWhenEn": "The answer provides a definite frequency, interval, or repeated occasion for purchasing the identified item.",
+        "semanticRoleKo": "학습자가 그 상품을 사는 빈도나 반복되는 상황.",
+        "satisfiedWhenKo": "밝힌 물건을 구매하는 구체적인 빈도, 간격 또는 반복되는 상황을 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner usually makes that recurring purchase.",
+        "satisfiedWhenEn": "The answer identifies a recognizable physical or online purchasing location and connects it to the frequently bought item.",
+        "semanticRoleKo": "학습자가 그 반복 구매를 주로 하는 곳.",
+        "satisfiedWhenKo": "알아볼 수 있는 오프라인 또는 온라인 구매 장소를 밝히고 자주 사는 물건과 연결하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner buys that item frequently.",
+        "satisfiedWhenEn": "The answer gives a concrete recurring need, rate of use, preference, or practical circumstance that explains the repeated purchases.",
+        "semanticRoleKo": "학습자가 그 물건을 자주 사는 이유.",
+        "satisfiedWhenKo": "반복 구매를 설명하는 구체적인 지속적 필요, 사용 속도, 선호 또는 현실적 상황을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate recent or typical purchase that adds an instance beyond the learner's recurring item or product category.",
+        "satisfiedWhenEn": "The answer gives a concrete purchase occasion, variety, brand, quantity, or item that adds information beyond what was already used to identify the frequent purchase; repeating the same item at the same level of specificity is insufficient.",
+        "semanticRoleKo": "학습자가 자주 사는 품목이나 상품 범주를 넘어 별도 사례를 더하는 최근 또는 전형적인 구매.",
+        "satisfiedWhenKo": "자주 사는 대상을 식별할 때 이미 사용한 정보보다 더 구체적인 구매 상황, 종류, 브랜드, 수량 또는 품목을 덧붙이면 충족한다. 같은 구체성의 동일 품목을 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0263",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular item or product category the learner currently wants to buy.",
+        "satisfiedWhenEn": "The answer identifies a concrete product or recognizable category as the learner's current purchase choice; an unspecified reference such as \"something new\" is insufficient.",
+        "semanticRoleKo": "학습자가 요즘 구매 대상으로 선택하고 싶은 특정 물건이나 상품 범주.",
+        "satisfiedWhenKo": "학습자가 현재 사고 싶은 구체적인 상품이나 알아볼 수 있는 범주를 밝히면 충족한다. 무엇인지 알 수 없는 \"새로운 것\"은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to buy that item now.",
+        "satisfiedWhenEn": "The answer gives a concrete need, interest, replacement reason, or intended use that explains the current desire.",
+        "semanticRoleKo": "학습자가 요즘 그 물건을 사고 싶은 이유.",
+        "satisfiedWhenKo": "현재의 구매 욕구를 설명하는 구체적인 필요, 관심, 교체 사유 또는 사용 목적을 제시하면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to obtain the desired item.",
+        "satisfiedWhenEn": "The answer states a practical purchasing step, saving approach, place to buy, or timing decision that advances the intended purchase.",
+        "semanticRoleKo": "학습자가 원하는 물건을 마련하려는 방법.",
+        "satisfiedWhenKo": "구매를 실제로 진전시키는 구체적인 구매 단계, 저축 방법, 구매 장소 또는 시기 결정을 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete characteristic the learner wants in the desired item.",
+        "satisfiedWhenEn": "The answer specifies a feature, size, style, model, color, price range, or other attribute of the item beyond its basic category.",
+        "semanticRoleKo": "학습자가 사고 싶은 물건에서 원하는 구체적인 특성.",
+        "satisfiedWhenKo": "기본 상품 범주 외에 원하는 기능, 크기, 스타일, 모델, 색상, 가격대 또는 다른 속성을 구체적으로 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0264",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The item or order the learner most recently purchased online.",
+        "satisfiedWhenEn": "The answer identifies a concrete product, meal, service, or recognizable set of items as the learner's latest online order.",
+        "semanticRoleKo": "학습자가 온라인에서 가장 최근에 주문한 물건이나 주문 내용.",
+        "satisfiedWhenKo": "학습자의 가장 최근 온라인 주문으로 구체적인 상품, 음식, 서비스 또는 알아볼 수 있는 물품 묶음을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner placed or received the latest online order.",
+        "satisfiedWhenEn": "The answer gives a definite date, day, period, or relative time connected to ordering or receiving that item.",
+        "semanticRoleKo": "학습자가 가장 최근 온라인 주문을 했거나 받은 때.",
+        "satisfiedWhenKo": "그 물건을 주문하거나 받은 시점을 알 수 있는 구체적인 날짜, 요일, 시기 또는 상대적 시간을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete characteristic of the learner's latest online order.",
+        "satisfiedWhenEn": "The answer adds a specific quantity, model, size, seller, included item, or other order detail beyond the basic product identity.",
+        "semanticRoleKo": "학습자의 가장 최근 온라인 주문에 관한 구체적인 특징.",
+        "satisfiedWhenKo": "기본 상품 식별 정보 외에 구체적인 수량, 모델, 크기, 판매자, 포함 물품 또는 다른 주문 세부 사항을 덧붙이면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner made that online order.",
+        "satisfiedWhenEn": "The answer gives a concrete need, occasion, preference, or online-shopping advantage that explains the purchase.",
+        "semanticRoleKo": "학습자가 그 온라인 주문을 한 이유.",
+        "satisfiedWhenKo": "그 구매를 설명하는 구체적인 필요, 상황, 선호 또는 온라인 쇼핑의 장점을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "What happened after the learner made the latest online order.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome such as delivery, use, satisfaction, a problem, or another consequence of the order.",
+        "semanticRoleKo": "학습자가 가장 최근 온라인 주문을 한 뒤 생긴 일.",
+        "satisfiedWhenKo": "배송, 사용, 만족, 문제 또는 주문으로 인한 다른 결과를 구체적으로 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0265",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "Whether the learner prefers shopping online or shopping in physical stores.",
+        "satisfiedWhenEn": "The answer selects online shopping, offline shopping, or a clear condition-dependent preference between them; merely describing both does not establish a choice.",
+        "semanticRoleKo": "학습자가 온라인 쇼핑과 오프라인 매장 쇼핑 중 더 선호하는 방식.",
+        "satisfiedWhenKo": "온라인 쇼핑, 오프라인 쇼핑 또는 두 방식 사이의 분명한 조건부 선호를 선택하면 충족한다. 둘을 설명하기만 하고 선호를 밝히지 않으면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers that shopping channel.",
+        "satisfiedWhenEn": "The answer gives a concrete convenience, sensory need, price consideration, trust factor, or other basis for the preference.",
+        "semanticRoleKo": "학습자가 그 쇼핑 방식을 선호하는 이유.",
+        "satisfiedWhenKo": "그 선호의 근거가 되는 구체적인 편의성, 직접 확인할 필요, 가격 고려, 신뢰 요소 또는 다른 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific purchase or shopping experience that illustrates the channel preference.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion when online or offline shopping suited the learner better.",
+        "semanticRoleKo": "쇼핑 방식에 대한 선호를 보여 주는 구체적인 구매나 쇼핑 경험.",
+        "satisfiedWhenKo": "온라인이나 오프라인 쇼핑이 학습자에게 더 잘 맞았던 구체적인 상황을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A practical outcome the learner gets from using the preferred shopping channel.",
+        "satisfiedWhenEn": "The answer states a concrete effect such as saving time, avoiding a poor fit, paying less, or receiving the item immediately.",
+        "semanticRoleKo": "선호하는 쇼핑 방식을 이용해서 학습자가 얻는 실질적인 결과.",
+        "satisfiedWhenKo": "시간 절약, 맞지 않는 상품 피하기, 비용 절감, 즉시 물건 받기처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while using the preferred shopping channel.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or comfort level tied specifically to shopping online or in a physical store.",
+        "semanticRoleKo": "선호하는 방식으로 쇼핑할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "온라인 또는 오프라인 쇼핑과 구체적으로 연결된 알아볼 수 있는 감정이나 편안함의 정도를 표현하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete aspect of how the learner shops through the preferred channel.",
+        "satisfiedWhenEn": "The answer adds a specific browsing, comparison, payment, delivery, inspection, or service detail beyond naming the channel.",
+        "semanticRoleKo": "학습자가 선호하는 방식으로 쇼핑하는 방법의 구체적인 측면.",
+        "satisfiedWhenKo": "쇼핑 방식을 밝히는 데서 더 나아가 상품 탐색, 비교, 결제, 배송, 직접 확인 또는 서비스에 관한 구체적인 내용을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0266",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular store the learner visits frequently.",
+        "satisfiedWhenEn": "The answer names or clearly identifies a specific store, branch, or recognizable type of store as one the learner often visits.",
+        "semanticRoleKo": "학습자가 자주 방문하는 특정 상점.",
+        "satisfiedWhenKo": "학습자가 자주 가는 특정 상점, 지점 또는 알아볼 수 있는 상점 유형을 이름이나 다른 분명한 방식으로 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner visits that store often.",
+        "satisfiedWhenEn": "The answer gives a concrete recurring need, product, service quality, convenience, or preference that explains the frequent visits.",
+        "semanticRoleKo": "학습자가 그 상점을 자주 방문하는 이유.",
+        "satisfiedWhenKo": "잦은 방문을 설명하는 구체적인 반복적 필요, 상품, 서비스 품질, 편의성 또는 선호를 제시하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner visits that store.",
+        "satisfiedWhenEn": "The answer gives a definite frequency, regular day or time, or recurring occasion for going to the store.",
+        "semanticRoleKo": "학습자가 그 상점을 방문하는 때나 빈도.",
+        "satisfiedWhenKo": "상점에 가는 구체적인 빈도, 정해진 요일이나 시간 또는 반복되는 상황을 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The recognizable location of the store the learner visits often.",
+        "satisfiedWhenEn": "The answer identifies where the store is situated, such as a neighborhood, nearby landmark, building, or route location.",
+        "semanticRoleKo": "학습자가 자주 가는 상점이 있는 알아볼 수 있는 장소.",
+        "satisfiedWhenKo": "동네, 주변 표지물, 건물 또는 이동 경로상의 위치처럼 그 상점이 어디에 있는지 밝히면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature of the store or what the learner does there.",
+        "satisfiedWhenEn": "The answer adds a specific product, section, service, atmosphere, or visit activity beyond identifying the store.",
+        "semanticRoleKo": "그 상점의 구체적인 특징이나 학습자가 그곳에서 하는 일.",
+        "satisfiedWhenKo": "상점을 식별하는 데서 더 나아가 특정 상품, 매장 구역, 서비스, 분위기 또는 방문 활동을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0267",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The item or product category the learner usually buys at a supermarket.",
+        "satisfiedWhenEn": "The answer identifies a concrete product or recognizable category as a usual supermarket purchase; \"groceries\" alone is too broad to show what the learner buys.",
+        "semanticRoleKo": "학습자가 슈퍼마켓에서 보통 사는 물건이나 상품 범주.",
+        "satisfiedWhenKo": "평소 슈퍼마켓에서 사는 구체적인 상품이나 알아볼 수 있는 범주를 밝히면 충족한다. \"식료품\"이라고만 하면 무엇을 사는지 보여 주기에 너무 넓다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete characteristic of the learner's usual supermarket purchase.",
+        "satisfiedWhenEn": "The answer specifies a variety, brand, quantity, freshness preference, package size, or other feature of the identified product.",
+        "semanticRoleKo": "학습자가 슈퍼마켓에서 주로 사는 상품의 구체적인 특징.",
+        "satisfiedWhenKo": "밝힌 상품의 특정 종류, 브랜드, 수량, 신선도 선호, 포장 크기 또는 다른 특성을 구체적으로 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner usually buys that item at a supermarket.",
+        "satisfiedWhenEn": "The answer gives a concrete household need, consumption habit, price reason, or supermarket advantage that explains the recurring purchase.",
+        "semanticRoleKo": "학습자가 그 물건을 슈퍼마켓에서 주로 사는 이유.",
+        "satisfiedWhenKo": "반복 구매를 설명하는 구체적인 가정 내 필요, 소비 습관, 가격 이유 또는 슈퍼마켓의 장점을 제시하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner buys that item at a supermarket.",
+        "satisfiedWhenEn": "The answer gives a definite frequency, regular shopping time, or recurring occasion connected to the supermarket purchase.",
+        "semanticRoleKo": "학습자가 그 물건을 슈퍼마켓에서 사는 때나 빈도.",
+        "satisfiedWhenKo": "슈퍼마켓 구매와 연결된 구체적인 빈도, 정기적인 장보기 시간 또는 반복되는 상황을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular supermarket purchase that illustrates what the learner usually buys.",
+        "satisfiedWhenEn": "The answer gives a concrete recent or typical item, variety, or shopping-basket example within the usual purchase category.",
+        "semanticRoleKo": "학습자가 슈퍼마켓에서 주로 사는 것을 보여 주는 구체적인 구매 사례.",
+        "satisfiedWhenKo": "평소 구매 범주 안에서 구체적인 최근 또는 전형적인 물건, 종류 또는 장바구니 사례를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0268",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The item or product category the learner usually buys at a convenience store.",
+        "satisfiedWhenEn": "The answer identifies a concrete product or recognizable category as a usual convenience-store purchase; an unspecified \"something to eat\" is insufficient.",
+        "semanticRoleKo": "학습자가 편의점에서 보통 사는 물건이나 상품 범주.",
+        "satisfiedWhenKo": "평소 편의점에서 사는 구체적인 상품이나 알아볼 수 있는 범주를 밝히면 충족한다. 무엇인지 알 수 없는 \"먹을 것\"은 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete characteristic of the learner's usual convenience-store purchase.",
+        "satisfiedWhenEn": "The answer specifies a flavor, brand, size, combination, temperature, or other feature of the identified item.",
+        "semanticRoleKo": "학습자가 편의점에서 주로 사는 상품의 구체적인 특징.",
+        "satisfiedWhenKo": "밝힌 물건의 맛, 브랜드, 크기, 조합, 온도 또는 다른 특성을 구체적으로 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner usually buys that item at a convenience store.",
+        "satisfiedWhenEn": "The answer gives a concrete need, preference, convenience, price, or availability reason for the recurring purchase.",
+        "semanticRoleKo": "학습자가 그 물건을 편의점에서 주로 사는 이유.",
+        "satisfiedWhenKo": "반복 구매를 설명하는 구체적인 필요, 선호, 편의성, 가격 또는 구비 여부의 이유를 제시하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner makes that convenience-store purchase.",
+        "satisfiedWhenEn": "The answer gives a definite frequency, time of day, or recurring situation connected to buying the item.",
+        "semanticRoleKo": "학습자가 그 편의점 구매를 하는 때나 빈도.",
+        "satisfiedWhenKo": "그 물건을 사는 일과 관련된 구체적인 빈도, 하루 중 시간대 또는 반복되는 상황을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific recent or typical convenience-store purchase within the stated category.",
+        "satisfiedWhenEn": "The answer gives a concrete item, product combination, or actual purchase occasion that exemplifies the learner's usual choice.",
+        "semanticRoleKo": "밝힌 범주 안에서 최근 또는 전형적으로 한 구체적인 편의점 구매.",
+        "satisfiedWhenKo": "학습자의 평소 선택을 보여 주는 구체적인 상품, 상품 조합 또는 실제 구매 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0269",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "A particular low-cost item the learner regards as useful.",
+        "satisfiedWhenEn": "The answer identifies a concrete object, tool, or product category as the cheap but useful item; \"something small\" or \"a useful thing\" leaves it unidentified.",
+        "semanticRoleKo": "학습자가 유용하다고 여기는 특정한 저렴한 물건.",
+        "satisfiedWhenKo": "저렴하지만 유용한 물건으로 구체적인 물체, 도구 또는 상품 범주를 밝히면 충족한다. \"작은 것\"이나 \"유용한 물건\"이라고만 하면 무엇인지 알 수 없다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical benefit the inexpensive item provides.",
+        "satisfiedWhenEn": "The answer describes a concrete task it helps with, problem it prevents, resource it saves, or other useful outcome.",
+        "semanticRoleKo": "그 저렴한 물건이 제공하는 실질적인 이점.",
+        "satisfiedWhenKo": "도움을 주는 구체적인 일, 막아 주는 문제, 절약하는 자원 또는 다른 유용한 결과를 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the low-cost item useful despite its small price.",
+        "satisfiedWhenEn": "The answer gives a concrete need, frequency of use, reliability, or value-for-money consideration that supports the usefulness judgment.",
+        "semanticRoleKo": "가격이 낮은데도 학습자가 그 물건을 유용하다고 여기는 이유.",
+        "satisfiedWhenKo": "유용하다는 판단을 뒷받침하는 구체적인 필요, 사용 빈도, 신뢰성 또는 가격 대비 가치의 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific situation in which the cheap item proves useful.",
+        "satisfiedWhenEn": "The answer gives a concrete occasion or task where the identified item was or would be practically helpful.",
+        "semanticRoleKo": "그 저렴한 물건이 유용함을 보여 주는 구체적인 상황.",
+        "satisfiedWhenKo": "밝힌 물건이 실제로 도움이 되었거나 도움이 될 구체적인 상황이나 일을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature or cost detail of the cheap but useful item.",
+        "satisfiedWhenEn": "The answer adds a specific price, material, size, design feature, durability point, or other characteristic beyond naming the item.",
+        "semanticRoleKo": "저렴하지만 유용한 물건의 구체적인 특징이나 가격 정보.",
+        "satisfiedWhenKo": "물건의 이름 외에 구체적인 가격, 재료, 크기, 디자인 기능, 내구성 또는 다른 특성을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0270",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "A particular high-cost item the learner judges to be worth its price.",
+        "satisfiedWhenEn": "The answer identifies a concrete object, service, or product category as expensive but worthwhile; an unspecified \"something high quality\" is insufficient.",
+        "semanticRoleKo": "학습자가 가격만큼 가치가 있다고 판단하는 특정한 비싼 물건.",
+        "satisfiedWhenKo": "비싸지만 살 가치가 있는 것으로 구체적인 물건, 서비스 또는 상품 범주를 밝히면 충족한다. 무엇인지 알 수 없는 \"품질 좋은 것\"은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the expensive item is worth its price to the learner.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, need, frequency of use, longevity, or value comparison that justifies paying the high cost.",
+        "semanticRoleKo": "그 비싼 물건이 학습자에게 가격만큼 가치가 있는 이유.",
+        "satisfiedWhenKo": "높은 비용을 지불할 근거가 되는 구체적인 품질, 필요, 사용 빈도, 수명 또는 가치 비교를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The valuable outcome the learner gets from the expensive item.",
+        "satisfiedWhenEn": "The answer describes a concrete long-term benefit, performance gain, avoided problem, or meaningful experience produced by the item.",
+        "semanticRoleKo": "그 비싼 물건을 통해 학습자가 얻는 가치 있는 결과.",
+        "satisfiedWhenKo": "그 물건이 만들어 내는 구체적인 장기적 이점, 성능 향상, 문제 방지 또는 의미 있는 경험을 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific use or experience that demonstrates why the expensive item is worthwhile.",
+        "satisfiedWhenEn": "The answer gives a concrete occasion, task, or past experience in which the identified item delivered its claimed value.",
+        "semanticRoleKo": "그 비싼 물건이 가치 있음을 보여 주는 구체적인 사용 사례나 경험.",
+        "satisfiedWhenKo": "밝힌 물건이 주장한 가치를 실제로 제공한 구체적인 상황, 일 또는 과거 경험을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete price, feature, or quality characteristic of the expensive item.",
+        "satisfiedWhenEn": "The answer adds a specific cost, model, material, capability, build-quality point, or other attribute beyond identifying the item.",
+        "semanticRoleKo": "그 비싼 물건의 구체적인 가격, 기능 또는 품질 특성.",
+        "satisfiedWhenKo": "물건을 식별하는 데서 더 나아가 구체적인 비용, 모델, 재료, 성능, 제작 품질 또는 다른 속성을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0271",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The item, service, activity, or spending category on which the learner believes they spend too much money.",
+        "satisfiedWhenEn": "The answer identifies a concrete purchase or recognizable spending category as the learner's area of excessive spending; \"unnecessary things\" is too vague.",
+        "semanticRoleKo": "학습자가 돈을 너무 많이 쓴다고 생각하는 물건, 서비스, 활동 또는 지출 범주.",
+        "satisfiedWhenKo": "학습자가 과도하게 지출하는 구체적인 구매 대상이나 알아볼 수 있는 지출 범주를 밝히면 충족한다. \"불필요한 것들\"처럼 모호한 답은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner spends excessively on that category.",
+        "satisfiedWhenEn": "The answer gives a concrete habit, attraction, recurring need, social influence, or other cause that explains the spending pattern.",
+        "semanticRoleKo": "학습자가 그 범주에 돈을 지나치게 많이 쓰는 이유.",
+        "satisfiedWhenKo": "그 지출 습관을 설명하는 구체적인 버릇, 매력 요소, 반복적 필요, 사회적 영향 또는 다른 원인을 제시하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner makes the purchases that add up to excessive spending.",
+        "satisfiedWhenEn": "The answer gives a definite frequency, time period, or recurring occasion associated with spending on the identified category.",
+        "semanticRoleKo": "학습자가 과도한 지출로 이어지는 구매를 하는 때나 빈도.",
+        "satisfiedWhenKo": "밝힌 범주에 돈을 쓰는 일과 관련된 구체적인 빈도, 기간 또는 반복되는 상황을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete consequence of the learner's excessive spending in that category.",
+        "satisfiedWhenEn": "The answer describes a recognizable effect on the learner's budget, savings, available choices, or daily life.",
+        "semanticRoleKo": "학습자가 그 범주에 지나치게 지출해서 생기는 구체적인 결과.",
+        "satisfiedWhenKo": "그 지출이 학습자의 예산, 저축, 가능한 선택 또는 일상에 미치는 분명한 영향을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about spending too much money on that category.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotional response to the spending pattern, such as regret, worry, pleasure, or conflict.",
+        "semanticRoleKo": "그 범주에 돈을 너무 많이 쓰는 것에 대해 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "그 지출 습관에 대한 후회, 걱정, 즐거움, 갈등 같은 알아볼 수 있는 감정적 반응을 표현하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0272",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The purchase, experience, need, or future purpose for which the learner wants to save money.",
+        "satisfiedWhenEn": "The answer identifies a concrete savings target or recognizable intended use for the money; \"for the future\" alone is too broad unless the future purpose is made clear.",
+        "semanticRoleKo": "학습자가 돈을 모으려는 구매, 경험, 필요 또는 미래의 목적.",
+        "satisfiedWhenKo": "구체적인 저축 목표나 돈을 쓸 알아볼 수 있는 목적을 밝히면 충족한다. 미래의 용도를 분명히 하지 않은 채 \"미래를 위해\"라고만 하면 너무 넓다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that savings goal matters to the learner.",
+        "satisfiedWhenEn": "The answer gives a concrete need, value, aspiration, or circumstance that explains why the learner wants to fund the goal.",
+        "semanticRoleKo": "그 저축 목표가 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "학습자가 그 목표를 위해 돈을 마련하려는 까닭을 설명하는 구체적인 필요, 가치, 바람 또는 상황을 제시하면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to save money for the stated goal.",
+        "satisfiedWhenEn": "The answer states a feasible saving action, budget rule, income step, or spending reduction directed toward the target.",
+        "semanticRoleKo": "학습자가 밝힌 목표를 위해 돈을 모으려는 방법.",
+        "satisfiedWhenKo": "그 목표를 향한 실행 가능한 저축 행동, 예산 규칙, 수입 마련 단계 또는 지출 감소 방법을 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The timeframe or deadline for reaching the learner's savings goal.",
+        "satisfiedWhenEn": "The answer provides a definite date, period, duration, or recurring saving schedule connected to the target.",
+        "semanticRoleKo": "학습자가 저축 목표를 달성하려는 기간이나 기한.",
+        "satisfiedWhenKo": "목표와 연결된 구체적인 날짜, 시기, 소요 기간 또는 반복적인 저축 일정을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "What achieving the savings goal would allow or change for the learner.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome that would follow from having enough money for the stated purpose.",
+        "semanticRoleKo": "저축 목표를 달성하면 학습자에게 가능해지거나 달라지는 일.",
+        "satisfiedWhenKo": "밝힌 목적에 필요한 돈을 충분히 모은 뒤 생길 구체적인 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0273",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's recommendation of a suitable gift that can be bought for under 10,000 won.",
+        "satisfiedWhenEn": "The answer identifies a concrete gift or recognizable gift category and presents it as an appropriate option within the 10,000-won limit; \"something small\" is insufficient.",
+        "semanticRoleKo": "1만 원 미만으로 살 수 있는 적절한 선물에 대한 학습자의 추천.",
+        "satisfiedWhenKo": "구체적인 선물이나 알아볼 수 있는 선물 범주를 밝히고 1만 원 예산 안의 알맞은 선택으로 제시하면 충족한다. \"작은 것\"이라고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the recommended low-budget item would make a good gift.",
+        "satisfiedWhenEn": "The answer gives a concrete usefulness, appeal, recipient fit, or value consideration that supports the recommendation.",
+        "semanticRoleKo": "추천한 저예산 물건이 좋은 선물이 되는 이유.",
+        "satisfiedWhenKo": "그 추천을 뒷받침하는 구체적인 유용성, 매력, 받는 사람과의 적합성 또는 가격 대비 가치를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete price or feature of the recommended gift under 10,000 won.",
+        "satisfiedWhenEn": "The answer adds a specific cost, size, style, flavor, design, contents, or other characteristic that makes the gift clearer.",
+        "semanticRoleKo": "추천한 1만 원 미만 선물의 구체적인 가격이나 특징.",
+        "satisfiedWhenKo": "선물을 더 분명하게 하는 구체적인 가격, 크기, 스타일, 맛, 디자인, 구성 또는 다른 특성을 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The positive effect the recommended gift could have on its recipient.",
+        "satisfiedWhenEn": "The answer describes a concrete benefit, use, or likely response the recipient would get from the gift.",
+        "semanticRoleKo": "추천한 선물이 받는 사람에게 줄 수 있는 긍정적인 효과.",
+        "satisfiedWhenKo": "그 선물을 통해 받는 사람이 얻을 구체적인 이점, 용도 또는 예상 반응을 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific recipient or occasion for which the under-10,000-won gift would be suitable.",
+        "satisfiedWhenEn": "The answer gives a concrete person, relationship, event, or gift-giving situation that demonstrates the recommendation's fit.",
+        "semanticRoleKo": "1만 원 미만의 선물이 잘 맞을 구체적인 받는 사람이나 상황.",
+        "satisfiedWhenKo": "그 추천이 알맞음을 보여 주는 구체적인 사람, 관계, 행사 또는 선물 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0274",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's recommendation of a worthwhile gift available for under 50,000 won.",
+        "satisfiedWhenEn": "The answer identifies a concrete gift or recognizable gift category and recommends it as suitable within the 50,000-won budget; a vague \"nice present\" does not identify the recommendation.",
+        "semanticRoleKo": "5만 원 미만으로 살 수 있는 가치 있는 선물에 대한 학습자의 추천.",
+        "satisfiedWhenKo": "구체적인 선물이나 알아볼 수 있는 선물 범주를 밝히고 5만 원 예산 안의 적절한 선택으로 추천하면 충족한다. \"좋은 선물\"이라고만 하면 무엇을 추천하는지 알 수 없다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the recommended item is a good gift within the 50,000-won budget.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, usefulness, recipient preference, durability, or value-for-money reason supporting the recommendation.",
+        "semanticRoleKo": "추천한 물건이 5만 원 예산 안에서 좋은 선물인 이유.",
+        "satisfiedWhenKo": "그 추천을 뒷받침하는 구체적인 품질, 유용성, 받는 사람의 선호, 내구성 또는 가격 대비 가치의 이유를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific price, feature, or version of the recommended gift under 50,000 won.",
+        "satisfiedWhenEn": "The answer adds a concrete cost, model, material, size, design, included component, or other attribute that clarifies the gift.",
+        "semanticRoleKo": "추천한 5만 원 미만 선물의 구체적인 가격, 기능 또는 종류.",
+        "satisfiedWhenKo": "선물을 더 분명하게 하는 구체적인 가격, 모델, 재료, 크기, 디자인, 구성품 또는 다른 속성을 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The benefit or response the recommended gift is expected to produce for the recipient.",
+        "satisfiedWhenEn": "The answer describes a concrete way the recipient could use, enjoy, or benefit from the gift.",
+        "semanticRoleKo": "추천한 선물이 받는 사람에게 만들어 줄 것으로 기대되는 이점이나 반응.",
+        "satisfiedWhenKo": "받는 사람이 그 선물을 구체적으로 사용하거나 즐기거나 도움을 받을 방식을 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular recipient or gift occasion that illustrates when the recommendation would work well.",
+        "satisfiedWhenEn": "The answer names a concrete type of recipient, relationship, celebration, or situation suited to the proposed gift.",
+        "semanticRoleKo": "그 추천이 잘 맞는 때를 보여 주는 특정한 받는 사람이나 선물 상황.",
+        "satisfiedWhenKo": "제안한 선물에 알맞은 구체적인 받는 사람 유형, 관계, 기념일 또는 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0275",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's personal stance on whether they like window shopping.",
+        "satisfiedWhenEn": "The answer clearly conveys a positive, negative, or qualified attitude toward looking at products without necessarily buying them.",
+        "semanticRoleKo": "아이쇼핑을 좋아하는지에 대한 학습자의 개인적인 입장.",
+        "satisfiedWhenKo": "꼭 구매하지 않고 상품을 구경하는 일에 대한 긍정적, 부정적 또는 조건부 태도를 분명히 나타내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes or does not like window shopping.",
+        "satisfiedWhenEn": "The answer gives a concrete enjoyment, frustration, purpose, temptation, or other experience that explains the stated attitude.",
+        "semanticRoleKo": "학습자가 아이쇼핑을 좋아하거나 좋아하지 않는 이유.",
+        "satisfiedWhenKo": "밝힌 태도를 설명하는 구체적인 즐거움, 불편함, 목적, 유혹 또는 다른 경험을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular window-shopping trip or situation that illustrates the learner's opinion.",
+        "satisfiedWhenEn": "The answer describes a concrete store visit, browsing occasion, or past experience that supports the learner's stance.",
+        "semanticRoleKo": "학습자의 의견을 보여 주는 구체적인 아이쇼핑 경험이나 상황.",
+        "satisfiedWhenKo": "학습자의 입장을 뒷받침하는 특정 매장 방문, 상품 구경 상황 또는 과거 경험을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while or after window shopping.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion connected to browsing products without making a purchase.",
+        "semanticRoleKo": "아이쇼핑을 하는 동안이나 한 뒤 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "구매하지 않고 상품을 둘러보는 일과 연결된 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect window shopping has on the learner.",
+        "satisfiedWhenEn": "The answer states an outcome such as discovering ideas, comparing products, making an impulse purchase, or becoming tired.",
+        "semanticRoleKo": "아이쇼핑이 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "아이디어 발견, 상품 비교, 충동구매, 피로처럼 아이쇼핑으로 생기는 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0276",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The primary information, condition, or quality the learner examines before buying something.",
+        "satisfiedWhenEn": "In the pre-purchase context, the answer identifies a concrete check such as price, quality, size, reviews, ingredients, or return terms; \"everything\" is too vague.",
+        "semanticRoleKo": "학습자가 물건을 사기 전에 주로 확인하는 정보, 상태 또는 품질.",
+        "satisfiedWhenKo": "구매 전 맥락에서 가격, 품질, 크기, 후기, 성분, 반품 조건 같은 구체적인 확인 항목을 밝히면 충족한다. \"모든 것\"이라고만 하면 너무 모호하다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second check the learner makes before purchasing.",
+        "satisfiedWhenEn": "The answer identifies another concrete comparison, inspection, verification, or trial that is distinct from the primary check.",
+        "semanticRoleKo": "학습자가 구매 전에 별도로 하는 두 번째 확인.",
+        "satisfiedWhenKo": "주된 확인과 구별되는 또 하나의 구체적인 비교, 검사, 검증 또는 시험을 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner checks that information before buying.",
+        "satisfiedWhenEn": "The answer gives a concrete risk, need, preference, or past experience that explains the pre-purchase check.",
+        "semanticRoleKo": "학습자가 구매 전에 그 정보를 확인하는 이유.",
+        "satisfiedWhenKo": "구매 전 확인을 설명하는 구체적인 위험, 필요, 선호 또는 과거 경험을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner seeks or gets from checking before a purchase.",
+        "satisfiedWhenEn": "The answer describes a concrete effect such as choosing a suitable item, avoiding waste, paying a fair price, or preventing a return.",
+        "semanticRoleKo": "구매 전에 확인함으로써 학습자가 얻으려 하거나 실제로 얻는 결과.",
+        "satisfiedWhenKo": "알맞은 물건 선택, 낭비 방지, 적정 가격 지불, 반품 예방처럼 구체적인 효과를 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete aspect of how the learner performs the primary pre-purchase check.",
+        "satisfiedWhenEn": "The answer adds a specific source, standard, comparison method, threshold, or feature the learner uses when evaluating the item.",
+        "semanticRoleKo": "학습자가 주된 구매 전 확인을 수행하는 방식의 구체적인 측면.",
+        "satisfiedWhenKo": "물건을 평가할 때 사용하는 특정 정보 출처, 기준, 비교 방법, 허용 범위 또는 기능을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0277",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular recent purchase the learner considers a good one.",
+        "satisfiedWhenEn": "The answer identifies a concrete item, service, or recognizable purchase and presents it as a positive recent buy; \"something useful\" is too vague.",
+        "semanticRoleKo": "학습자가 잘 샀다고 생각하는 구체적인 최근 구매품.",
+        "satisfiedWhenKo": "구체적인 물건, 서비스 또는 알아볼 수 있는 구매 대상을 밝히고 최근의 긍정적인 구매로 제시하면 충족한다. \"유용한 것\"이라고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner judges the recent purchase to be good.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, value, fit, usefulness, or experience that supports the positive judgment.",
+        "semanticRoleKo": "학습자가 그 최근 구매를 좋은 구매라고 판단하는 이유.",
+        "satisfiedWhenKo": "긍정적인 판단을 뒷받침하는 구체적인 품질, 가치, 적합성, 유용성 또는 경험을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A beneficial outcome the learner got from the good recent purchase.",
+        "satisfiedWhenEn": "The answer describes a concrete way the purchase improved a task, solved a need, saved resources, or added enjoyment.",
+        "semanticRoleKo": "잘 산 최근 구매품을 통해 학습자가 얻은 유익한 결과.",
+        "satisfiedWhenKo": "그 구매가 일을 개선하거나 필요를 해결하거나 자원을 절약하거나 즐거움을 더한 구체적인 방식을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the good recent purchase.",
+        "satisfiedWhenEn": "The answer adds a concrete model, price, feature, size, material, appearance, or other attribute beyond identifying the purchase.",
+        "semanticRoleKo": "잘 산 최근 구매품의 구체적인 특징.",
+        "satisfiedWhenKo": "구매품을 식별하는 데서 더 나아가 구체적인 모델, 가격, 기능, 크기, 재료, 외형 또는 다른 속성을 덧붙이면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner made the good recent purchase.",
+        "satisfiedWhenEn": "The answer gives a definite date, day, period, occasion, or relative time that locates the purchase.",
+        "semanticRoleKo": "학습자가 잘 샀다고 생각하는 최근 구매를 한 때.",
+        "satisfiedWhenKo": "그 구매 시점을 알 수 있는 구체적인 날짜, 요일, 시기, 상황 또는 상대적 시간을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0278",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular recent purchase the learner considers a bad one.",
+        "satisfiedWhenEn": "The answer identifies a concrete item, service, or recognizable purchase and presents it as a negative recent buy; \"something bad\" leaves the purchase unidentified.",
+        "semanticRoleKo": "학습자가 잘못 샀다고 생각하는 구체적인 최근 구매품.",
+        "satisfiedWhenKo": "구체적인 물건, 서비스 또는 알아볼 수 있는 구매 대상을 밝히고 최근의 부정적인 구매로 제시하면 충족한다. \"나쁜 것\"이라고만 하면 무엇을 샀는지 알 수 없다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner judges the recent purchase to be bad.",
+        "satisfiedWhenEn": "The answer gives a concrete defect, mismatch, poor value, disappointment, or purchasing mistake that supports the negative judgment.",
+        "semanticRoleKo": "학습자가 그 최근 구매를 나쁜 구매라고 판단하는 이유.",
+        "satisfiedWhenKo": "부정적인 판단을 뒷받침하는 구체적인 결함, 부적합, 낮은 가치, 실망 또는 구매 실수를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A negative consequence the learner experienced from the bad purchase.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome such as wasted money, inability to use the item, inconvenience, return, or replacement.",
+        "semanticRoleKo": "잘못 산 최근 구매품 때문에 학습자가 겪은 부정적인 결과.",
+        "satisfiedWhenKo": "돈 낭비, 사용 불가, 불편, 반품, 교체처럼 구체적인 결과를 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the bad recent purchase.",
+        "satisfiedWhenEn": "The answer adds a concrete model, price, material, size, faulty feature, seller detail, or other attribute beyond identifying the purchase.",
+        "semanticRoleKo": "잘못 산 최근 구매품의 구체적인 특징.",
+        "satisfiedWhenKo": "구매품을 식별하는 데서 더 나아가 구체적인 모델, 가격, 재료, 크기, 고장 난 기능, 판매자 정보 또는 다른 속성을 덧붙이면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner made the bad recent purchase.",
+        "satisfiedWhenEn": "The answer gives a definite date, day, shopping occasion, or relative period that identifies when the disappointing purchase was made.",
+        "semanticRoleKo": "학습자가 잘못 샀다고 생각하는 최근 구매를 한 때.",
+        "satisfiedWhenKo": "실망스러운 구매가 언제 이루어졌는지 알 수 있는 구체적인 날짜, 요일, 쇼핑 상황 또는 상대적 시기를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0279",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular item the learner would choose to buy for their room.",
+        "satisfiedWhenEn": "The answer identifies a concrete object, furnishing, decoration, or recognizable product category intended for the learner's room; \"something nice\" is insufficient.",
+        "semanticRoleKo": "학습자가 자신의 방을 위해 사기로 선택할 구체적인 물건.",
+        "satisfiedWhenKo": "학습자의 방에 둘 구체적인 물체, 가구, 장식품 또는 알아볼 수 있는 상품 범주를 밝히면 충족한다. \"멋진 것\"이라고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would choose that item for the room.",
+        "satisfiedWhenEn": "The answer gives a concrete need, preference, room problem, or desired atmosphere that explains the hypothetical purchase.",
+        "semanticRoleKo": "학습자가 그 물건을 방을 위해 선택할 이유.",
+        "satisfiedWhenKo": "가상의 구매를 설명하는 구체적인 필요, 선호, 방의 문제 또는 원하는 분위기를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The change or benefit the chosen item would bring to the learner's room.",
+        "satisfiedWhenEn": "The answer describes a concrete expected effect on the room's use, comfort, organization, appearance, or atmosphere.",
+        "semanticRoleKo": "선택한 물건이 학습자의 방에 가져올 변화나 이점.",
+        "satisfiedWhenKo": "방의 활용, 편안함, 정리 상태, 외관 또는 분위기에 생길 구체적인 기대 효과를 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic the learner would want in the room item.",
+        "satisfiedWhenEn": "The answer specifies a size, color, material, style, function, price range, or other desired feature.",
+        "semanticRoleKo": "학습자가 방에 둘 물건에서 원하는 구체적인 특성.",
+        "satisfiedWhenKo": "원하는 크기, 색상, 재료, 스타일, 기능, 가격대 또는 다른 특징을 구체적으로 밝히면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The intended position for the chosen item within the learner's room.",
+        "satisfiedWhenEn": "The answer identifies a specific area or relation to existing furniture where the learner would put or use the item.",
+        "semanticRoleKo": "학습자가 선택한 물건을 방 안에 둘 위치.",
+        "satisfiedWhenKo": "그 물건을 두거나 사용할 방 안의 특정 구역 또는 기존 가구와의 위치 관계를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0280",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular gift the learner would buy for someone they love.",
+        "satisfiedWhenEn": "The answer identifies a concrete item, experience, or recognizable gift category intended for a loved person; \"something special\" leaves the gift unresolved.",
+        "semanticRoleKo": "학습자가 사랑하는 사람을 위해 사 줄 구체적인 선물.",
+        "satisfiedWhenKo": "사랑하는 사람에게 줄 구체적인 물건, 경험 또는 알아볼 수 있는 선물 범주를 밝히면 충족한다. \"특별한 것\"이라고만 하면 선물이 확정되지 않는다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would choose that gift for the loved person.",
+        "satisfiedWhenEn": "The answer gives a concrete recipient preference, need, shared meaning, occasion, or personal intention that explains the choice.",
+        "semanticRoleKo": "학습자가 사랑하는 사람을 위해 그 선물을 선택할 이유.",
+        "satisfiedWhenKo": "그 선택을 설명하는 받는 사람의 구체적인 선호나 필요, 함께 나눈 의미, 상황 또는 개인적 의도를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the gift the learner would buy.",
+        "satisfiedWhenEn": "The answer adds a concrete style, model, color, size, personalization, contents, or other feature beyond naming the gift.",
+        "semanticRoleKo": "학습자가 사 줄 선물의 구체적인 특징.",
+        "satisfiedWhenKo": "선물의 이름 외에 구체적인 스타일, 모델, 색상, 크기, 맞춤 요소, 구성 또는 다른 특성을 덧붙이면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel about choosing or giving the gift.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion the learner expects to experience while selecting, presenting, or thinking about the gift.",
+        "semanticRoleKo": "그 선물을 고르거나 줄 때 학습자가 느낄 감정.",
+        "satisfiedWhenKo": "선물을 선택하거나 건네거나 생각할 때 학습자가 느낄 것으로 예상되는 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The response or benefit the learner hopes the gift will create for the loved person.",
+        "satisfiedWhenEn": "The answer describes a concrete intended outcome, such as meeting a need, creating enjoyment, conveying care, or making a shared memory.",
+        "semanticRoleKo": "그 선물이 사랑하는 사람에게 만들어 주기를 학습자가 바라는 반응이나 이점.",
+        "satisfiedWhenKo": "필요 충족, 즐거움, 애정 전달, 함께할 추억 만들기처럼 구체적인 의도된 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0281",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The primary habit or action the learner performs to maintain their health.",
+        "satisfiedWhenEn": "The answer states a concrete behavior the learner personally does for health, such as exercising, managing food, sleeping adequately, or attending preventive care; \"I do healthy things\" is too vague.",
+        "semanticRoleKo": "학습자가 건강을 유지하기 위해 실천하는 주된 습관이나 행동.",
+        "satisfiedWhenKo": "운동, 식사 관리, 충분한 수면, 예방적 진료처럼 학습자가 건강을 위해 직접 하는 구체적인 행동을 말하면 충족한다. \"건강한 일을 한다\"라고만 하면 너무 모호하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner performs the health-maintaining action.",
+        "satisfiedWhenEn": "The answer gives a definite schedule, frequency, duration, or recurring occasion connected to the health habit.",
+        "semanticRoleKo": "학습자가 건강 유지 행동을 하는 때나 빈도.",
+        "satisfiedWhenKo": "그 건강 습관과 연결된 구체적인 일정, 빈도, 지속 시간 또는 반복되는 상황을 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second behavior the learner uses to support their health.",
+        "satisfiedWhenEn": "The answer identifies another concrete health practice that is distinct from, and adds to, the primary action.",
+        "semanticRoleKo": "학습자가 건강을 돕기 위해 추가로 실천하는 별도의 두 번째 행동.",
+        "satisfiedWhenKo": "주된 행동과 구별되며 건강 관리에 더해지는 또 하나의 구체적인 실천을 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner follows the stated health practice.",
+        "satisfiedWhenEn": "The answer gives a concrete health concern, personal priority, professional advice, or experienced benefit that explains the behavior.",
+        "semanticRoleKo": "학습자가 밝힌 건강 습관을 실천하는 이유.",
+        "satisfiedWhenKo": "그 행동을 설명하는 구체적인 건강상의 걱정, 개인적 우선순위, 전문가의 조언 또는 경험한 이점을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete health-related effect the learner gets from the practice.",
+        "satisfiedWhenEn": "The answer describes a recognizable outcome such as improved energy, fitness, sleep, mood, weight management, or fewer symptoms.",
+        "semanticRoleKo": "그 습관을 통해 학습자가 얻는 구체적인 건강 관련 효과.",
+        "satisfiedWhenKo": "에너지, 체력, 수면, 기분, 체중 관리의 개선이나 증상 감소처럼 알아볼 수 있는 결과를 설명하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner performs the health-maintaining action.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to carrying out the stated health practice.",
+        "semanticRoleKo": "학습자가 건강 유지 행동을 실천하는 장소.",
+        "satisfiedWhenKo": "알아볼 수 있는 장소를 밝히고 그곳을 제시한 건강 습관의 실천과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0282",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular healthy food the learner likes.",
+        "satisfiedWhenEn": "The answer identifies a concrete food, ingredient, dish, or recognizable food category that the learner regards as healthy and enjoys eating.",
+        "semanticRoleKo": "학습자가 좋아하는 특정한 건강식.",
+        "satisfiedWhenKo": "학습자가 건강에 좋다고 여기며 즐겨 먹는 구체적인 음식, 재료, 요리 또는 알아볼 수 있는 음식 범주를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes that healthy food.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, texture, health value, convenience, memory, or other quality that explains the preference.",
+        "semanticRoleKo": "학습자가 그 건강식을 좋아하는 이유.",
+        "satisfiedWhenKo": "그 선호를 설명하는 구체적인 맛, 식감, 건강상 가치, 편의성, 추억 또는 다른 특성을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or preparation of the healthy food.",
+        "satisfiedWhenEn": "The answer adds a concrete variety, ingredient, cooking method, serving style, flavor, or nutritional feature beyond naming the food.",
+        "semanticRoleKo": "그 건강식의 구체적인 특징이나 조리 방식.",
+        "satisfiedWhenKo": "음식 이름 외에 구체적인 종류, 재료, 조리법, 제공 방식, 맛 또는 영양 특성을 덧붙이면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when eating or thinking about the liked healthy food.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or bodily sense of well-being connected to eating the food.",
+        "semanticRoleKo": "좋아하는 건강식을 먹거나 생각할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "그 음식을 먹는 일과 연결된 알아볼 수 있는 감정이나 몸이 좋아지는 느낌을 표현하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific meal or dish that exemplifies how the learner eats the healthy food.",
+        "satisfiedWhenEn": "The answer gives a concrete recipe, meal combination, restaurant dish, or eating occasion involving the chosen food.",
+        "semanticRoleKo": "학습자가 그 건강식을 먹는 방식을 보여 주는 구체적인 식사나 요리.",
+        "satisfiedWhenKo": "선택한 음식이 들어가는 구체적인 조리법, 식사 조합, 식당 메뉴 또는 먹는 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0283",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular food the learner likes despite regarding it as unhealthy.",
+        "satisfiedWhenEn": "The answer identifies a concrete food, dish, snack, drink, or recognizable category that the learner enjoys and treats as unhealthy.",
+        "semanticRoleKo": "학습자가 건강에 좋지 않다고 여기면서도 좋아하는 특정 음식.",
+        "satisfiedWhenKo": "학습자가 즐기지만 건강에 좋지 않은 것으로 보는 구체적인 음식, 요리, 간식, 음료 또는 알아볼 수 있는 범주를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes the unhealthy food.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, texture, craving, convenience, memory, or social reason that explains the preference.",
+        "semanticRoleKo": "학습자가 그 건강에 좋지 않은 음식을 좋아하는 이유.",
+        "satisfiedWhenKo": "그 선호를 설명하는 구체적인 맛, 식감, 먹고 싶은 욕구, 편의성, 추억 또는 사회적 이유를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or version of the unhealthy food the learner likes.",
+        "satisfiedWhenEn": "The answer adds a concrete flavor, brand, topping, cooking style, portion, ingredient, or other feature beyond naming the food.",
+        "semanticRoleKo": "학습자가 좋아하는 건강에 좋지 않은 음식의 구체적인 특징이나 종류.",
+        "satisfiedWhenKo": "음식 이름 외에 구체적인 맛, 브랜드, 토핑, 조리 방식, 양, 재료 또는 다른 특징을 덧붙이면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when eating or wanting the unhealthy food.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion connected to the food, such as pleasure, comfort, temptation, guilt, or regret.",
+        "semanticRoleKo": "건강에 좋지 않은 음식을 먹거나 먹고 싶을 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "즐거움, 위안, 유혹, 죄책감, 후회처럼 그 음식과 연결된 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular eating occasion or item that illustrates the learner's preference for the unhealthy food.",
+        "satisfiedWhenEn": "The answer gives a concrete meal, snack choice, restaurant order, or recent situation involving the selected food.",
+        "semanticRoleKo": "학습자가 그 건강에 좋지 않은 음식을 좋아함을 보여 주는 구체적인 섭취 상황이나 품목.",
+        "satisfiedWhenKo": "선택한 음식과 관련된 구체적인 식사, 간식 선택, 식당 주문 또는 최근 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0284",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's personal stance on whether they like walking.",
+        "satisfiedWhenEn": "The answer clearly conveys a positive, negative, or qualified preference about walking as an activity.",
+        "semanticRoleKo": "걷기를 좋아하는지에 대한 학습자의 개인적인 입장.",
+        "satisfiedWhenKo": "활동으로서의 걷기에 대한 긍정적, 부정적 또는 조건부 선호를 분명히 나타내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes or does not like walking.",
+        "satisfiedWhenEn": "The answer gives a concrete physical experience, practical purpose, environment, benefit, or difficulty that explains the stated preference.",
+        "semanticRoleKo": "학습자가 걷기를 좋아하거나 좋아하지 않는 이유.",
+        "satisfiedWhenKo": "밝힌 선호를 설명하는 구체적인 신체 경험, 실용적 목적, 환경, 이점 또는 어려움을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular walk or walking situation that illustrates the learner's opinion.",
+        "satisfiedWhenEn": "The answer describes a concrete route, trip, errand, exercise session, or past experience that supports the learner's stance.",
+        "semanticRoleKo": "학습자의 의견을 보여 주는 구체적인 걷기 경험이나 상황.",
+        "satisfiedWhenKo": "학습자의 입장을 뒷받침하는 특정 경로, 이동, 심부름, 운동 시간 또는 과거 경험을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while walking or after a walk.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotional or physical feeling connected to walking.",
+        "semanticRoleKo": "걷는 동안이나 걸은 뒤 학습자가 느끼는 감정 또는 신체 감각.",
+        "satisfiedWhenKo": "걷기와 연결된 알아볼 수 있는 감정이나 신체적 느낌을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect walking has on the learner.",
+        "satisfiedWhenEn": "The answer describes a recognizable outcome such as improved fitness, relaxation, transportation, pain, or fatigue.",
+        "semanticRoleKo": "걷기가 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "체력 향상, 긴장 완화, 이동, 통증, 피로처럼 걷기로 생기는 알아볼 수 있는 결과를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner walks.",
+        "satisfiedWhenEn": "The answer gives a definite time, duration, frequency, or recurring occasion for walking.",
+        "semanticRoleKo": "학습자가 걷는 때나 빈도.",
+        "satisfiedWhenKo": "걷기와 관련된 구체적인 시간, 지속 시간, 빈도 또는 반복되는 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0285",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's personal stance on whether they like running.",
+        "satisfiedWhenEn": "The answer clearly states or conveys a positive, negative, or conditional preference about running.",
+        "semanticRoleKo": "달리기를 좋아하는지에 대한 학습자의 개인적인 입장.",
+        "satisfiedWhenKo": "달리기에 대한 긍정적, 부정적 또는 조건부 선호를 분명히 말하거나 드러내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes or does not like running.",
+        "satisfiedWhenEn": "The answer gives a concrete bodily experience, challenge, goal, benefit, setting, or other factor that explains the learner's stance.",
+        "semanticRoleKo": "학습자가 달리기를 좋아하거나 좋아하지 않는 이유.",
+        "satisfiedWhenKo": "학습자의 입장을 설명하는 구체적인 신체 경험, 어려움, 목표, 이점, 환경 또는 다른 요소를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific run or running experience that demonstrates the learner's opinion.",
+        "satisfiedWhenEn": "The answer describes a concrete route, workout, race, attempt, or past occasion that supports the stated preference.",
+        "semanticRoleKo": "학습자의 의견을 보여 주는 구체적인 달리기 경험.",
+        "satisfiedWhenKo": "밝힌 선호를 뒷받침하는 특정 경로, 운동, 대회, 시도 또는 과거 상황을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels during or after running.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or bodily sensation specifically connected to running.",
+        "semanticRoleKo": "달리는 동안이나 달린 뒤 학습자가 느끼는 감정 또는 신체 감각.",
+        "satisfiedWhenKo": "달리기와 구체적으로 연결된 알아볼 수 있는 감정이나 신체적 느낌을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect running has on the learner.",
+        "satisfiedWhenEn": "The answer states a recognizable outcome such as greater endurance, stress relief, soreness, breathlessness, or improved health.",
+        "semanticRoleKo": "달리기가 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "지구력 향상, 스트레스 해소, 근육통, 숨참, 건강 개선처럼 달리기로 생기는 알아볼 수 있는 결과를 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner runs.",
+        "satisfiedWhenEn": "The answer gives a definite time, duration, frequency, or recurring situation for running.",
+        "semanticRoleKo": "학습자가 달리는 때나 빈도.",
+        "satisfiedWhenKo": "달리기와 관련된 구체적인 시간, 지속 시간, 빈도 또는 반복되는 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0286",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular exercise or physical activity the learner chooses as something they want to try.",
+        "satisfiedWhenEn": "The answer identifies a concrete exercise, sport, class, or recognizable physical activity as the learner's intended choice for a future attempt; an unspecified reference such as \"something new\" is insufficient.",
+        "semanticRoleKo": "학습자가 앞으로 해 볼 대상으로 선택하는 특정 운동이나 신체 활동.",
+        "satisfiedWhenKo": "학습자가 앞으로 시도할 대상으로 구체적인 운동, 스포츠, 수업 또는 알아볼 수 있는 신체 활동을 밝히면 충족한다. \"새로운 것\"이라고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to try that exercise.",
+        "satisfiedWhenEn": "The answer gives a concrete interest, health aim, challenge, social opportunity, or expected enjoyment that motivates the choice.",
+        "semanticRoleKo": "학습자가 그 운동을 해 보고 싶은 이유.",
+        "satisfiedWhenKo": "그 선택의 동기가 되는 구체적인 관심, 건강 목표, 도전, 함께할 기회 또는 기대되는 즐거움을 제시하면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to begin trying the exercise.",
+        "satisfiedWhenEn": "The answer states a practical first step, schedule, lesson, equipment arrangement, or person to join that would enable the attempt.",
+        "semanticRoleKo": "학습자가 그 운동을 처음 시도하려는 방법.",
+        "satisfiedWhenKo": "시도를 가능하게 하는 현실적인 첫 단계, 일정, 수업, 장비 준비 또는 함께할 사람을 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about the prospect of trying the exercise.",
+        "satisfiedWhenEn": "The answer expresses a recognizable anticipated emotion such as excitement, curiosity, confidence, or nervousness.",
+        "semanticRoleKo": "그 운동을 시도할 생각에 대해 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "신남, 호기심, 자신감, 긴장처럼 앞으로의 시도에 대한 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner hopes to gain by trying the exercise.",
+        "satisfiedWhenEn": "The answer describes a concrete expected benefit, skill, experience, fitness change, or social result from doing the activity.",
+        "semanticRoleKo": "그 운동을 시도해서 학습자가 얻고 싶은 결과.",
+        "satisfiedWhenKo": "그 활동을 통해 기대하는 구체적인 이점, 기술, 경험, 체력 변화 또는 사회적 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0287",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular exercise the learner personally finds easy.",
+        "satisfiedWhenEn": "The answer identifies a concrete exercise, sport, movement, or recognizable physical activity as easy for the learner; \"light exercise\" alone may be too broad unless clarified.",
+        "semanticRoleKo": "학습자가 개인적으로 쉽다고 느끼는 특정 운동.",
+        "satisfiedWhenKo": "학습자에게 쉬운 구체적인 운동, 스포츠, 동작 또는 알아볼 수 있는 신체 활동을 밝히면 충족한다. \"가벼운 운동\"만으로는 구체화되지 않으면 너무 넓을 수 있다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that exercise is easy for the learner.",
+        "satisfiedWhenEn": "The answer gives a concrete ability, fitness level, familiarity, low physical demand, simple technique, or accessible setting that explains the ease.",
+        "semanticRoleKo": "그 운동이 학습자에게 쉬운 이유.",
+        "satisfiedWhenKo": "쉬움을 설명하는 구체적인 능력, 체력 수준, 익숙함, 낮은 신체 부담, 간단한 기술 또는 접근하기 좋은 환경을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific form or characteristic of the exercise the learner finds easy.",
+        "satisfiedWhenEn": "The answer adds a concrete movement, intensity, distance, duration, equipment choice, or variation beyond naming the exercise.",
+        "semanticRoleKo": "학습자가 쉽다고 느끼는 운동의 구체적인 형태나 특징.",
+        "satisfiedWhenKo": "운동 이름 외에 구체적인 동작, 강도, 거리, 시간, 장비 선택 또는 변형을 덧붙이면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion or performance that demonstrates the exercise is easy for the learner.",
+        "satisfiedWhenEn": "The answer gives a concrete workout, class, task, or past experience in which the learner completed the exercise without much difficulty.",
+        "semanticRoleKo": "그 운동이 학습자에게 쉽다는 것을 보여 주는 구체적인 상황이나 수행 경험.",
+        "satisfiedWhenKo": "학습자가 큰 어려움 없이 그 운동을 해낸 구체적인 운동 시간, 수업, 과제 또는 과거 경험을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while doing or after completing the easy exercise.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or physical sensation connected to doing the exercise with relative ease.",
+        "semanticRoleKo": "쉬운 운동을 하는 동안이나 마친 뒤 학습자가 느끼는 감정 또는 신체 감각.",
+        "satisfiedWhenKo": "그 운동을 비교적 쉽게 하는 일과 연결된 알아볼 수 있는 감정이나 신체적 느낌을 표현하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0288",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular exercise the learner personally finds difficult.",
+        "satisfiedWhenEn": "The answer identifies a concrete exercise, sport, movement, or recognizable physical activity as hard for the learner; \"hard exercise\" does not identify which one.",
+        "semanticRoleKo": "학습자가 개인적으로 어렵다고 느끼는 특정 운동.",
+        "satisfiedWhenKo": "학습자에게 어려운 구체적인 운동, 스포츠, 동작 또는 알아볼 수 있는 신체 활동을 밝히면 충족한다. \"어려운 운동\"이라고만 하면 어떤 운동인지 알 수 없다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that exercise is difficult for the learner.",
+        "satisfiedWhenEn": "The answer gives a concrete physical limitation, skill demand, unfamiliar technique, intensity, fear, or access issue that explains the difficulty.",
+        "semanticRoleKo": "그 운동이 학습자에게 어려운 이유.",
+        "satisfiedWhenKo": "어려움을 설명하는 구체적인 신체적 한계, 필요한 기술, 익숙하지 않은 동작, 강도, 두려움 또는 접근 문제를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific part or characteristic of the exercise the learner finds hard.",
+        "satisfiedWhenEn": "The answer identifies a concrete movement, distance, pace, weight, rule, technique, or condition that creates difficulty.",
+        "semanticRoleKo": "학습자가 어렵다고 느끼는 운동의 구체적인 부분이나 특징.",
+        "satisfiedWhenKo": "어려움을 만드는 구체적인 동작, 거리, 속도, 무게, 규칙, 기술 또는 조건을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular attempt or experience that demonstrates the exercise's difficulty for the learner.",
+        "satisfiedWhenEn": "The answer describes a concrete workout, class, competition, or past occasion in which the learner struggled with the activity.",
+        "semanticRoleKo": "그 운동이 학습자에게 어렵다는 것을 보여 주는 구체적인 시도나 경험.",
+        "satisfiedWhenKo": "학습자가 그 활동에 어려움을 겪었던 구체적인 운동 시간, 수업, 경기 또는 과거 상황을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while attempting or after doing the difficult exercise.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotional or physical response tied to struggling with the exercise.",
+        "semanticRoleKo": "어려운 운동을 시도하는 동안이나 한 뒤 학습자가 느끼는 감정 또는 신체 반응.",
+        "satisfiedWhenKo": "그 운동에 애를 쓰는 일과 연결된 알아볼 수 있는 감정이나 신체적 반응을 표현하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0289",
+    "slotContracts": {
+      "FEELING": {
+        "semanticRoleEn": "The learner's physical sensation or emotional state after exercising.",
+        "satisfiedWhenEn": "The answer states a recognizable post-exercise feeling or bodily condition, such as tired, refreshed, proud, relaxed, sore, or energized; \"I feel something\" is insufficient.",
+        "semanticRoleKo": "운동 후 학습자가 느끼는 신체 감각이나 감정 상태.",
+        "satisfiedWhenKo": "피곤함, 상쾌함, 뿌듯함, 편안함, 근육통, 활력처럼 알아볼 수 있는 운동 후 느낌이나 몸 상태를 말하면 충족한다. \"뭔가 느낀다\"라고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What causes the learner's stated feeling after exercise.",
+        "satisfiedWhenEn": "The answer gives a concrete aspect of the workout, the learner's condition, or the exercise outcome that explains the post-exercise state.",
+        "semanticRoleKo": "운동 후 학습자가 밝힌 느낌이 생기는 이유.",
+        "satisfiedWhenKo": "운동 후 상태를 설명하는 구체적인 운동 특성, 학습자의 몸 상태 또는 운동 결과를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A more precise description of the learner's post-exercise feeling.",
+        "satisfiedWhenEn": "The answer adds a concrete intensity, body area, combination of sensations, duration, or contrast that makes the feeling more specific.",
+        "semanticRoleKo": "학습자의 운동 후 느낌을 더 구체적으로 나타내는 설명.",
+        "satisfiedWhenKo": "느낌을 더 분명하게 하는 구체적인 강도, 신체 부위, 감각의 조합, 지속 시간 또는 대비를 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A subsequent effect of exercise beyond the learner's immediate post-workout feeling.",
+        "satisfiedWhenEn": "The answer describes a concrete later outcome such as sleeping better, concentrating more easily, recovering slowly, or changing the next activity.",
+        "semanticRoleKo": "운동 직후의 느낌을 넘어 이후에 생기는 운동의 영향.",
+        "satisfiedWhenKo": "수면 개선, 집중 향상, 느린 회복, 다음 활동의 변화처럼 나중에 나타나는 구체적인 결과를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The exercise occasion or duration for which the stated post-exercise feeling occurs.",
+        "satisfiedWhenEn": "The answer identifies a definite workout time, type of session, frequency, or length of time the feeling lasts.",
+        "semanticRoleKo": "밝힌 운동 후 느낌이 생기는 운동 상황이나 지속 시간.",
+        "satisfiedWhenKo": "그 느낌과 연결된 구체적인 운동 시점, 운동 종류, 빈도 또는 느낌이 이어지는 시간을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0290",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The primary action the learner takes to care for themselves when they have a cold.",
+        "satisfiedWhenEn": "The answer states a concrete remedy, rest behavior, treatment step, or help-seeking action used in response to having a cold.",
+        "semanticRoleKo": "감기에 걸렸을 때 학습자가 자신을 돌보기 위해 취하는 주된 행동.",
+        "satisfiedWhenKo": "감기에 대응해 하는 구체적인 치료법, 휴식 행동, 처치 단계 또는 도움을 구하는 행동을 말하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate additional step the learner takes while dealing with a cold.",
+        "satisfiedWhenEn": "The answer gives another concrete care or treatment action that complements the primary cold response rather than repeating it.",
+        "semanticRoleKo": "학습자가 감기에 대처하면서 추가로 취하는 별도의 조치.",
+        "satisfiedWhenKo": "주된 감기 대응을 되풀이하지 않고 이를 보완하는 또 하나의 구체적인 관리나 치료 행동을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that response when they have a cold.",
+        "satisfiedWhenEn": "The answer gives a concrete symptom, expected benefit, past experience, or professional advice that explains the chosen action.",
+        "semanticRoleKo": "학습자가 감기에 걸렸을 때 그 대응을 하는 이유.",
+        "satisfiedWhenKo": "선택한 행동을 설명하는 구체적인 증상, 기대 효과, 과거 경험 또는 전문가의 조언을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the learner gets from the cold-care action.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome such as symptom relief, better rest, quicker recovery, or a need for further treatment.",
+        "semanticRoleKo": "학습자가 감기 관리 행동을 통해 얻는 효과.",
+        "satisfiedWhenKo": "증상 완화, 더 나은 휴식, 빠른 회복, 추가 치료 필요처럼 구체적인 결과를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When, how often, or for how long the learner performs the cold-care action.",
+        "satisfiedWhenEn": "The answer gives a definite time, frequency, duration, or symptom-related occasion for the stated response.",
+        "semanticRoleKo": "학습자가 감기 관리 행동을 하는 때, 빈도 또는 기간.",
+        "satisfiedWhenKo": "밝힌 대응과 관련된 구체적인 시간, 빈도, 지속 기간 또는 증상 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0291",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The primary action the learner takes when they have a headache.",
+        "satisfiedWhenEn": "The answer states a concrete rest, self-care, treatment, prevention, or help-seeking response used to manage head pain.",
+        "semanticRoleKo": "머리가 아플 때 학습자가 취하는 주된 행동.",
+        "satisfiedWhenKo": "두통을 다루기 위해 하는 구체적인 휴식, 자기 관리, 치료, 예방 또는 도움 요청 행동을 말하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second step the learner takes to manage a headache.",
+        "satisfiedWhenEn": "The answer gives another concrete action that complements the primary headache response rather than rephrasing the same step.",
+        "semanticRoleKo": "학습자가 두통을 다루기 위해 추가로 취하는 별도의 두 번째 조치.",
+        "satisfiedWhenKo": "주된 두통 대응을 다른 말로 반복하지 않고 이를 보완하는 또 하나의 구체적인 행동을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses the stated response for a headache.",
+        "satisfiedWhenEn": "The answer gives a concrete symptom pattern, expected benefit, past experience, concern, or professional advice that explains the action.",
+        "semanticRoleKo": "학습자가 두통에 대해 밝힌 대응을 하는 이유.",
+        "satisfiedWhenKo": "그 행동을 설명하는 구체적인 증상 양상, 기대 효과, 과거 경험, 걱정 또는 전문가의 조언을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the learner experiences after using the headache response.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome such as reduced pain, relaxation, continued symptoms, ability to resume an activity, or need for medical care.",
+        "semanticRoleKo": "학습자가 두통 대응을 한 뒤 겪는 효과.",
+        "satisfiedWhenKo": "통증 감소, 긴장 완화, 증상 지속, 활동 재개, 진료 필요처럼 구체적인 결과를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When, how often, or for how long the learner uses the headache response.",
+        "satisfiedWhenEn": "The answer gives a definite time, symptom threshold, frequency, or duration connected to the stated action.",
+        "semanticRoleKo": "학습자가 두통 대응을 하는 때, 빈도 또는 기간.",
+        "satisfiedWhenKo": "밝힌 행동과 연결된 구체적인 시간, 증상 기준, 빈도 또는 지속 시간을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0292",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The primary action the learner takes when their body feels tired.",
+        "satisfiedWhenEn": "The answer states a concrete rest, recovery, nourishment, movement, or help-seeking response used to manage bodily tiredness.",
+        "semanticRoleKo": "몸이 피곤할 때 학습자가 취하는 주된 행동.",
+        "satisfiedWhenKo": "신체적 피로를 다루기 위해 하는 구체적인 휴식, 회복, 영양 섭취, 움직임 또는 도움 요청 행동을 말하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate additional step the learner takes to recover from bodily tiredness.",
+        "satisfiedWhenEn": "The answer identifies another concrete recovery action that adds to the primary response instead of repeating it.",
+        "semanticRoleKo": "학습자가 신체적 피로에서 회복하기 위해 추가로 취하는 별도의 조치.",
+        "satisfiedWhenKo": "주된 대응을 반복하지 않고 회복에 더해지는 또 하나의 구체적인 행동을 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that response when their body feels tired.",
+        "satisfiedWhenEn": "The answer gives a concrete physical need, expected benefit, schedule constraint, past experience, or health concern that explains the action.",
+        "semanticRoleKo": "몸이 피곤할 때 학습자가 그 대응을 선택하는 이유.",
+        "satisfiedWhenKo": "그 행동을 설명하는 구체적인 신체적 필요, 기대 효과, 일정상의 제약, 과거 경험 또는 건강상의 걱정을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The recovery outcome the learner gets from the tiredness response.",
+        "satisfiedWhenEn": "The answer describes a concrete effect such as restored energy, reduced soreness, better concentration, continued fatigue, or improved sleep.",
+        "semanticRoleKo": "학습자가 피로 대응을 통해 얻는 회복 결과.",
+        "satisfiedWhenKo": "에너지 회복, 통증 감소, 집중력 향상, 피로 지속, 수면 개선처럼 구체적인 효과를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When, how often, or for how long the learner performs the tiredness response.",
+        "satisfiedWhenEn": "The answer provides a definite time, recurring situation, frequency, or duration associated with the recovery action.",
+        "semanticRoleKo": "학습자가 피로 대응을 하는 때, 빈도 또는 기간.",
+        "satisfiedWhenKo": "회복 행동과 관련된 구체적인 시간, 반복되는 상황, 빈도 또는 지속 기간을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0293",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific habit, object, condition, environment, or other factor that helps the learner sleep well.",
+        "satisfiedWhenEn": "The answer identifies a concrete sleep-supporting factor and connects it to the learner's ability to sleep well; \"something relaxing\" or \"a good environment\" without clarification is insufficient.",
+        "semanticRoleKo": "학습자의 숙면에 도움이 되는 구체적인 습관, 물건, 조건, 환경 또는 다른 요인.",
+        "satisfiedWhenKo": "구체적인 수면 도움 요인을 밝히고 그것을 학습자가 잘 자는 것과 연결하면 충족한다. 구체화하지 않은 \"편안한 것\"이나 \"좋은 환경\"은 부족하다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete behavior the learner performs to create, use, or accompany the helpful sleep factor.",
+        "satisfiedWhenEn": "The answer describes something the learner personally does in connection with sleeping well, beyond merely naming an object or condition.",
+        "semanticRoleKo": "숙면에 도움이 되는 요인을 만들거나 이용하거나 함께 활용하기 위해 학습자가 하는 구체적인 행동.",
+        "satisfiedWhenKo": "물건이나 조건의 이름만 말하는 데서 더 나아가, 잘 자기 위해 학습자가 직접 하는 일을 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner uses or experiences the factor that helps sleep.",
+        "satisfiedWhenEn": "The answer gives a definite bedtime stage, clock time, frequency, duration, or recurring occasion connected to the sleep-supporting factor.",
+        "semanticRoleKo": "학습자가 숙면 도움 요인을 이용하거나 경험하는 때나 빈도.",
+        "satisfiedWhenKo": "그 수면 도움 요인과 연결된 구체적인 취침 단계, 시각, 빈도, 지속 시간 또는 반복되는 상황을 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the helpful sleep condition exists or the sleep-supporting activity occurs.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to the factor or behavior that helps the learner sleep.",
+        "semanticRoleKo": "숙면에 도움이 되는 조건이 있거나 수면 도움 활동이 이루어지는 장소.",
+        "satisfiedWhenKo": "알아볼 수 있는 장소를 밝히고 그곳을 학습자의 수면에 도움이 되는 요인이나 행동과 연결하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified factor helps the learner sleep well.",
+        "satisfiedWhenEn": "The answer explains a concrete mechanism, personal response, need, or past experience that makes the factor effective for the learner.",
+        "semanticRoleKo": "밝힌 요인이 학습자의 숙면에 도움이 되는 이유.",
+        "satisfiedWhenKo": "그 요인이 학습자에게 효과적인 까닭을 설명하는 구체적인 작용 방식, 개인적 반응, 필요 또는 과거 경험을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The concrete sleep outcome produced by the helpful factor.",
+        "satisfiedWhenEn": "The answer describes a recognizable effect such as falling asleep faster, waking less often, sleeping longer, or feeling more rested.",
+        "semanticRoleKo": "숙면 도움 요인으로 인해 생기는 구체적인 수면 결과.",
+        "satisfiedWhenKo": "더 빨리 잠들기, 덜 깨기, 더 오래 자기, 더 개운하게 느끼기처럼 알아볼 수 있는 효과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0294",
+    "slotContracts": {
+      "PROBLEM": {
+        "semanticRoleEn": "The specific factor that prevents the learner from sleeping well.",
+        "satisfiedWhenEn": "The answer identifies a concrete behavior, symptom, thought, noise, schedule issue, environmental condition, or other obstacle to the learner's sleep; \"some problem\" is insufficient.",
+        "semanticRoleKo": "학습자가 잘 자지 못하게 막는 구체적인 요인.",
+        "satisfiedWhenKo": "학습자의 수면을 방해하는 구체적인 행동, 증상, 생각, 소음, 일정 문제, 환경 조건 또는 다른 장애물을 밝히면 충족한다. \"어떤 문제\"라고만 하면 부족하다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "An action the learner takes or could take to reduce the identified sleep obstacle.",
+        "satisfiedWhenEn": "The answer proposes a concrete, relevant response that removes, avoids, manages, or lessens the stated barrier to sleep.",
+        "semanticRoleKo": "밝힌 수면 방해 요인을 줄이기 위해 학습자가 하거나 할 수 있는 행동.",
+        "satisfiedWhenKo": "제시한 수면 장애물을 없애거나 피하거나 관리하거나 완화하는 구체적이고 관련 있는 대응을 제안하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified factor interferes with the learner's sleep.",
+        "satisfiedWhenEn": "The answer explains a concrete mechanism or personal response connecting the obstacle to difficulty falling asleep, staying asleep, or resting well.",
+        "semanticRoleKo": "밝힌 요인이 학습자의 수면을 방해하는 이유.",
+        "satisfiedWhenKo": "그 장애물을 잠들기 어려움, 수면 유지의 어려움 또는 충분히 쉬지 못하는 상태와 연결하는 구체적인 작용 방식이나 개인적 반응을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the learner's disrupted sleep.",
+        "satisfiedWhenEn": "The answer describes a concrete effect such as delayed sleep, repeated waking, too little sleep, next-day tiredness, or poor concentration.",
+        "semanticRoleKo": "학습자의 수면이 방해받아 생기는 결과.",
+        "satisfiedWhenKo": "늦게 잠듦, 반복해서 깸, 수면 부족, 다음 날 피로, 집중력 저하처럼 구체적인 영향을 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the sleep obstacle affects the learner.",
+        "satisfiedWhenEn": "The answer gives a definite time, bedtime stage, frequency, duration, or recurring situation connected to the sleep problem.",
+        "semanticRoleKo": "수면 방해 요인이 학습자에게 영향을 미치는 때나 빈도.",
+        "satisfiedWhenKo": "그 수면 문제와 연결된 구체적인 시간, 취침 단계, 빈도, 지속 시간 또는 반복되는 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0295",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The clock time or clear time window when the learner wants to go to bed.",
+        "satisfiedWhenEn": "The answer gives a definite bedtime, approximate clock time, or clearly bounded period; saying only \"earlier\" without a reference point leaves the desired time unresolved.",
+        "semanticRoleKo": "학습자가 잠자리에 들고 싶은 시각이나 분명한 시간대.",
+        "satisfiedWhenKo": "구체적인 취침 시각, 대략적인 시계 시간 또는 경계가 분명한 시간대를 제시하면 충족한다. 기준 없이 \"더 일찍\"이라고만 하면 원하는 시간이 확정되지 않는다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to go to bed at that time.",
+        "satisfiedWhenEn": "The answer gives a concrete sleep need, next-day schedule, health aim, household circumstance, or personal preference that explains the desired bedtime.",
+        "semanticRoleKo": "학습자가 그 시간에 잠자리에 들고 싶은 이유.",
+        "satisfiedWhenKo": "원하는 취침 시간을 설명하는 구체적인 수면 필요, 다음 날 일정, 건강 목표, 가정 상황 또는 개인적 선호를 제시하면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to make the desired bedtime achievable.",
+        "satisfiedWhenEn": "The answer states a practical evening routine change, reminder, preparation step, or limit that would help the learner get into bed at the stated time.",
+        "semanticRoleKo": "학습자가 원하는 취침 시간을 실현하려는 방법.",
+        "satisfiedWhenKo": "밝힌 시간에 잠자리에 들도록 도와줄 현실적인 저녁 습관 변화, 알림, 준비 단계 또는 제한을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from going to bed at the desired time.",
+        "satisfiedWhenEn": "The answer describes a concrete anticipated effect such as getting enough sleep, waking more easily, feeling rested, or functioning better the next day.",
+        "semanticRoleKo": "원하는 시간에 잠자리에 들어서 학습자가 기대하는 결과.",
+        "satisfiedWhenKo": "충분한 수면, 더 쉬운 기상, 개운한 느낌, 다음 날 활동 개선처럼 구체적인 기대 효과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0296",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The clock time or clear time window when the learner wants to wake up.",
+        "satisfiedWhenEn": "The answer gives a definite wake-up time, approximate clock time, or clearly bounded period; \"not too late\" without a clearer reference is insufficient.",
+        "semanticRoleKo": "학습자가 일어나고 싶은 시각이나 분명한 시간대.",
+        "satisfiedWhenKo": "구체적인 기상 시각, 대략적인 시계 시간 또는 경계가 분명한 시간대를 제시하면 충족한다. 더 명확한 기준 없이 \"너무 늦지 않게\"라고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to wake up at that time.",
+        "satisfiedWhenEn": "The answer gives a concrete schedule, responsibility, desired activity, sleep consideration, or personal value that explains the chosen wake-up time.",
+        "semanticRoleKo": "학습자가 그 시간에 일어나고 싶은 이유.",
+        "satisfiedWhenKo": "선택한 기상 시간을 설명하는 구체적인 일정, 책임, 하고 싶은 활동, 수면 고려 또는 개인적 가치를 제시하면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to wake up at the desired time.",
+        "satisfiedWhenEn": "The answer states a practical alarm, bedtime adjustment, morning arrangement, accountability step, or other method for achieving the stated wake-up time.",
+        "semanticRoleKo": "학습자가 원하는 시간에 일어나려는 방법.",
+        "satisfiedWhenKo": "밝힌 기상 시간을 지키기 위한 현실적인 알람, 취침 시간 조정, 아침 준비, 다른 사람과의 약속 또는 다른 방법을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from waking at the desired time.",
+        "satisfiedWhenEn": "The answer describes a concrete anticipated effect such as having more preparation time, avoiding lateness, exercising, or beginning the day calmly.",
+        "semanticRoleKo": "원하는 시간에 일어나서 학습자가 기대하는 결과.",
+        "satisfiedWhenKo": "준비 시간 확보, 지각 방지, 운동, 여유로운 하루 시작처럼 구체적인 기대 효과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0297",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "One specific behavior the learner judges to be a good habit for health.",
+        "satisfiedWhenEn": "The answer identifies a concrete repeatable behavior and presents it as beneficial for health; broad ideas such as \"being healthy\" or \"living well\" do not identify a habit.",
+        "semanticRoleKo": "학습자가 건강에 좋은 습관이라고 판단하는 구체적인 행동 한 가지.",
+        "satisfiedWhenKo": "반복할 수 있는 구체적인 행동을 밝히고 건강에 이로운 습관으로 제시하면 충족한다. \"건강하게 살기\"나 \"잘 살기\"처럼 넓은 생각만으로는 습관이 확정되지 않는다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete health benefit produced by the good habit.",
+        "satisfiedWhenEn": "The answer describes a recognizable positive effect on physical health, mental well-being, energy, sleep, fitness, or disease risk.",
+        "semanticRoleKo": "그 좋은 습관으로 인해 생기는 구체적인 건강상 이점.",
+        "satisfiedWhenKo": "신체 건강, 정신적 안녕, 에너지, 수면, 체력 또는 질병 위험에 미치는 알아볼 수 있는 긍정적 효과를 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the habit good for health.",
+        "satisfiedWhenEn": "The answer gives a concrete need, mechanism, value, experience, or evidence that supports the learner's judgment.",
+        "semanticRoleKo": "학습자가 그 습관을 건강에 좋다고 여기는 이유.",
+        "satisfiedWhenKo": "학습자의 판단을 뒷받침하는 구체적인 필요, 작용 방식, 가치, 경험 또는 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate instance or practical form that illustrates the good health habit beyond the behavior already named as the habit.",
+        "satisfiedWhenEn": "The answer gives a specific occasion, routine variation, personal experience, or implementation detail that adds information beyond the behavior already used to identify the good health habit; restating the same behavior is insufficient.",
+        "semanticRoleKo": "좋은 건강 습관으로 이미 밝힌 행동을 넘어 그 습관을 보여 주는 별도의 사례나 구체적인 실천 형태.",
+        "satisfiedWhenKo": "좋은 건강 습관을 식별할 때 이미 사용한 행동을 넘어 구체적인 상황, 습관의 변형, 개인적 경험 또는 실행 세부 정보를 덧붙이면 충족한다. 같은 행동을 되풀이하면 부족하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the good health habit should be practiced.",
+        "satisfiedWhenEn": "The answer gives a definite time, frequency, duration, or recurring occasion for carrying out the habit.",
+        "semanticRoleKo": "그 좋은 건강 습관을 실천하는 때나 빈도.",
+        "satisfiedWhenKo": "그 습관을 수행하는 구체적인 시간, 빈도, 지속 시간 또는 반복되는 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0298",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "One specific behavior the learner judges to be a bad habit for health.",
+        "satisfiedWhenEn": "The answer identifies a concrete repeatable behavior and presents it as harmful to health; saying only \"an unhealthy lifestyle\" is too broad.",
+        "semanticRoleKo": "학습자가 건강에 나쁜 습관이라고 판단하는 구체적인 행동 한 가지.",
+        "satisfiedWhenKo": "반복할 수 있는 구체적인 행동을 밝히고 건강에 해로운 습관으로 제시하면 충족한다. \"건강하지 않은 생활 방식\"이라고만 하면 너무 넓다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete negative health effect caused by the bad habit.",
+        "satisfiedWhenEn": "The answer describes a recognizable consequence for physical health, mental well-being, sleep, energy, fitness, or disease risk.",
+        "semanticRoleKo": "그 나쁜 습관 때문에 생기는 구체적인 건강상 악영향.",
+        "satisfiedWhenKo": "신체 건강, 정신적 안녕, 수면, 에너지, 체력 또는 질병 위험에 미치는 알아볼 수 있는 부정적 결과를 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the habit harmful to health.",
+        "satisfiedWhenEn": "The answer explains a concrete mechanism, risk, experience, or medical consideration that supports the negative judgment.",
+        "semanticRoleKo": "학습자가 그 습관을 건강에 해롭다고 여기는 이유.",
+        "satisfiedWhenKo": "부정적인 판단을 뒷받침하는 구체적인 작용 방식, 위험, 경험 또는 의학적 고려를 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate instance or situation that illustrates the bad health habit beyond the behavior already named as the habit.",
+        "satisfiedWhenEn": "The answer gives a specific occasion, trigger, routine pattern, personal experience, or context that adds information beyond the behavior already used to identify the bad health habit; restating the same behavior is insufficient.",
+        "semanticRoleKo": "나쁜 건강 습관으로 이미 밝힌 행동을 넘어 그 습관을 보여 주는 별도의 사례나 상황.",
+        "satisfiedWhenKo": "나쁜 건강 습관을 식별할 때 이미 사용한 행동을 넘어 구체적인 상황, 계기, 반복 양상, 개인적 경험 또는 맥락을 덧붙이면 충족한다. 같은 행동을 되풀이하면 부족하다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "A practical action for reducing, replacing, or stopping the bad health habit.",
+        "satisfiedWhenEn": "The answer proposes a concrete, relevant step that could make the harmful behavior less frequent, less severe, or no longer necessary.",
+        "semanticRoleKo": "그 나쁜 건강 습관을 줄이거나 바꾸거나 멈추기 위한 실질적인 행동.",
+        "satisfiedWhenKo": "해로운 행동의 빈도나 심각도를 낮추거나 그 행동이 더 이상 필요하지 않게 할 구체적이고 관련 있는 조치를 제안하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0299",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific food, drink, ingredient, or dietary category the learner wants to consume less of.",
+        "satisfiedWhenEn": "The answer identifies a concrete item or recognizable dietary category as something the learner intends to reduce; \"unhealthy things\" is too vague.",
+        "semanticRoleKo": "학습자가 섭취를 줄이고 싶은 구체적인 음식, 음료, 재료 또는 식품 범주.",
+        "satisfiedWhenKo": "학습자가 줄이려는 구체적인 품목이나 알아볼 수 있는 식품 범주를 밝히면 충족한다. \"건강에 나쁜 것들\"처럼 모호한 답은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to eat or drink less of the identified item.",
+        "satisfiedWhenEn": "The answer gives a concrete health concern, symptom, dietary aim, cost, habit problem, or other motivation for reducing it.",
+        "semanticRoleKo": "학습자가 밝힌 품목을 덜 먹거나 마시고 싶은 이유.",
+        "satisfiedWhenKo": "그 섭취를 줄이려는 구체적인 건강상의 걱정, 증상, 식단 목표, 비용, 습관 문제 또는 다른 동기를 제시하면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to reduce consumption of the identified food or drink.",
+        "satisfiedWhenEn": "The answer states a feasible limit, substitution, shopping choice, meal rule, or routine change directed at eating or drinking less of it.",
+        "semanticRoleKo": "학습자가 밝힌 음식이나 음료의 섭취를 줄이려는 방법.",
+        "satisfiedWhenKo": "그 품목을 덜 먹거나 마시기 위한 실행 가능한 제한, 대체품, 구매 선택, 식사 규칙 또는 습관 변화를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The change or benefit the learner expects from consuming less of the item.",
+        "satisfiedWhenEn": "The answer describes a concrete intended outcome such as improved health, fewer symptoms, better weight management, lower spending, or more balanced eating.",
+        "semanticRoleKo": "그 품목을 덜 섭취해서 학습자가 기대하는 변화나 이점.",
+        "satisfiedWhenKo": "건강 개선, 증상 감소, 체중 관리 향상, 지출 감소, 더 균형 잡힌 식사처럼 구체적인 의도된 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0300",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific food, drink, ingredient, or dietary category the learner wants to consume more of.",
+        "satisfiedWhenEn": "The answer identifies a concrete item or recognizable dietary category as something the learner intends to increase; \"healthy food\" alone is too broad unless clarified.",
+        "semanticRoleKo": "학습자가 섭취를 늘리고 싶은 구체적인 음식, 음료, 재료 또는 식품 범주.",
+        "satisfiedWhenKo": "학습자가 늘리려는 구체적인 품목이나 알아볼 수 있는 식품 범주를 밝히면 충족한다. 구체화하지 않은 \"건강식\"은 너무 넓다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to eat or drink more of the identified item.",
+        "satisfiedWhenEn": "The answer gives a concrete nutritional need, health aim, symptom, preference, convenience, or other motivation for increasing it.",
+        "semanticRoleKo": "학습자가 밝힌 품목을 더 먹거나 마시고 싶은 이유.",
+        "satisfiedWhenKo": "그 섭취를 늘리려는 구체적인 영양상 필요, 건강 목표, 증상, 선호, 편의성 또는 다른 동기를 제시하면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner intends to increase consumption of the identified food or drink.",
+        "satisfiedWhenEn": "The answer states a practical meal change, shopping choice, preparation method, substitution, reminder, or schedule for consuming more of it.",
+        "semanticRoleKo": "학습자가 밝힌 음식이나 음료의 섭취를 늘리려는 방법.",
+        "satisfiedWhenKo": "그 품목을 더 섭취하기 위한 현실적인 식사 변화, 구매 선택, 준비 방법, 대체 방식, 알림 또는 일정을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The change or benefit the learner expects from consuming more of the item.",
+        "satisfiedWhenEn": "The answer describes a concrete intended outcome such as improved nutrition, more energy, better digestion, greater hydration, or a more balanced diet.",
+        "semanticRoleKo": "그 품목을 더 섭취해서 학습자가 기대하는 변화나 이점.",
+        "satisfiedWhenKo": "영양 개선, 에너지 증가, 소화 향상, 수분 보충, 더 균형 잡힌 식단처럼 구체적인 의도된 결과를 설명하면 충족한다."
+      }
+    }
+  }
+]

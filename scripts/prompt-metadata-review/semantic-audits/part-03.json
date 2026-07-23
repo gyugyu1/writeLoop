@@ -1,0 +1,778 @@
+[
+  {
+    "promptId": "prompt-goal-50",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 완성할 창작 프로젝트와 그 개인적 중요성을 필수 관계로 정확히 나누고, 계획·내용·결과·감정도 서로 독립적으로 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0001",
+    "verdict": "PASS",
+    "auditReasonKo": "이름 자체와 이름에서 좋아하는 구체적 측면을 각각 요구하며, 이유·감정·사례 계약도 그 이름 선호 관계를 정확히 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0002",
+    "verdict": "PASS",
+    "auditReasonKo": "PLACE가 학습자의 현재 거주지라는 관계를 직접 요구하므로, 거주와 무관한 단순 장소 언급과 실제 답변을 구분할 수 있다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0003",
+    "verdict": "PASS",
+    "auditReasonKo": "자기 도시에서 좋아하는 특징·장소·경험을 선택 관계로 입증하게 하며, 이유나 묘사 같은 깊이 슬롯도 별도 정보를 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0004",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 색과 그 선호의 구체적 근거를 각각 필수로 잡아, 색 이름이나 막연한 긍정 평가만으로 이유가 충족되지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0005",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 계절과 그 이유를 필수로 정확히 포착하고, 계절 특징·활동·감정·경험은 각각 독립적인 선택 보강으로 정의되어 있다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0006",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 잘하는 구체적 능력이나 과업을 식별하게 하며, 사례·활용·결과·감정은 그 강점을 별도로 입증하거나 확장한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0007",
+    "verdict": "PASS",
+    "auditReasonKo": "배우고 싶은 대상을 알아볼 수 있는 학습 목표로 요구하고, 이유·방법·기대 결과·시점도 자연스러운 의역을 허용하며 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0008",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 질문에 이미 주어진 '아침' 시간대 자체도 허용해 ACTION과 같은 전제를 깊이 슬롯으로 다시 셀 수 있으므로, 아침보다 구체적인 추가 시간이나 순서만 인정해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing or sequence information for one of the learner's usual morning actions.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, a more specific part of the morning, a duration, or a sequence point for a stated activity; merely repeating that it happens in the morning is insufficient.",
+        "semanticRoleKo": "학습자의 평소 아침 행동 중 하나에 관한 추가 시간 또는 순서 정보",
+        "satisfiedWhenKo": "답변이 말한 활동의 알아볼 수 있는 시각, 더 구체적인 아침 시간대, 지속 시간 또는 순서상 시점을 제시하면 충족된다. 단지 아침에 한다는 질문의 조건을 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0009",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME의 현재 조건은 질문에 이미 있는 '밤'이라는 시간대도 충족시킬 수 있어 독립적인 깊이 정보가 되지 않으므로, 밤보다 구체적인 시각·구간·순서를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing or sequence information for one of the learner's usual nighttime actions.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, a more specific part of the night, a duration, or a sequence point for a stated activity; merely repeating that it happens at night is insufficient.",
+        "semanticRoleKo": "학습자의 평소 밤 행동 중 하나에 관한 추가 시간 또는 순서 정보",
+        "satisfiedWhenKo": "답변이 말한 활동의 알아볼 수 있는 시각, 더 구체적인 밤 시간대, 지속 시간 또는 순서상 시점을 제시하면 충족된다. 단지 밤에 한다는 질문의 조건을 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0010",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자를 행복하게 만드는 사람·활동·사건·대상·상황을 원인으로 연결하며, 원인을 밝히지 않은 행복 관련 언급과 구분할 수 있다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0011",
+    "verdict": "PASS",
+    "auditReasonKo": "평온함을 실제로 일으키는 구체적 대상이나 조건을 필수 원인으로 잡고, 사례·행동·특징·상태·효과도 각각 그 관계를 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0012",
+    "verdict": "CHANGE",
+    "auditReasonKo": "슬롯 계약은 맞지만 메타데이터 근거의 'weekday/평일'은 원문의 'day of the week'를 주말이 제외된 범위로 잘못 좁히므로, 모든 요일을 허용하도록 근거를 바로잡아야 한다.",
+    "reviewOverride": {
+      "answerMode": "PREFERENCE",
+      "requiredSlots": [
+        "CHOICE",
+        "REASON"
+      ],
+      "optionalSlots": [
+        "ACTION",
+        "DETAIL",
+        "FEELING",
+        "EXAMPLE"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "The question explicitly asks for the learner's favorite day of the week, including any weekday or weekend day, and the reason for that preference; those two required ideas form a complete answer.",
+      "rationaleKo": "질문은 평일과 주말을 포함한 일주일의 요일 중 학습자가 가장 좋아하는 날과 그 이유를 명시적으로 요구하므로, 이 두 가지 필수 내용으로 완전한 답변이 된다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0013",
+    "verdict": "PASS",
+    "auditReasonKo": "자기 성격의 알아볼 수 있는 특성을 필수로 요구하고, 사례·평소 행동·정서 경향·자기 평가는 단순 형용사와 다른 독립 정보를 제공한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0014",
+    "verdict": "PASS",
+    "auditReasonKo": "현재 품고 있는 작고 구체적인 목표를 직접 식별하게 하며, 계획·이유·기대 결과·시간 범위는 목표와 구별되는 자연스러운 보강이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0015",
+    "verdict": "PASS",
+    "auditReasonKo": "다른 사람 없이 혼자 하기를 좋아하는 활동이라는 선호 관계를 요구하고, 이유·시점·장소·감정·결과도 그 혼자 하는 맥락에 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0016",
+    "verdict": "PASS",
+    "auditReasonKo": "다른 사람과 함께 하기를 좋아하는 구체적 활동을 필수로 잡고, 사회적 이유·장소·때·감정·결과를 별도 의미 단위로 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0017",
+    "verdict": "PASS",
+    "auditReasonKo": "늘 가지고 다니는 알아볼 수 있는 물건과 학습자의 휴대 습관을 함께 요구하며, 필요 시점이나 효과도 단순 물건 이름과 분리된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0018",
+    "verdict": "PASS",
+    "auditReasonKo": "집 근처의 알아볼 수 있는 장소를 학습자가 가장 좋아하는 동네 장소로 제시하게 하며, 이유·특징·활동·감정·방문 시점도 적절하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0019",
+    "verdict": "PASS",
+    "auditReasonKo": "다른 사람들에게 널리 알려지지 않은 구체적 개인 사실을 요구하므로, 막연한 비밀 언급과 실제 성향·경험·능력·습관을 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0020",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 더 잘하고 싶은 능력·과업·행동을 향상 목표로 식별하며, 계획·동기·기대 결과·현재 노력·일정도 목표와 맞게 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0021",
+    "verdict": "PASS",
+    "auditReasonKo": "평소 기상 시각이나 좁은 시간 범위를 직접 요구하고, 평일·휴일 차이와 이유·상태·하루 효과는 기상 시각과 별개로 구체화한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0022",
+    "verdict": "PASS",
+    "auditReasonKo": "잠에서 깬 뒤 가장 먼저 하는 행동이라는 순서 관계를 필수로 요구하고, 두 번째 행동·시간 간격·장소·이유·즉각적 결과도 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0023",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 질문에 이미 주어진 아침 식사 시간 자체를 추가 정보로 인정할 수 있으므로, 단순히 '아침 식사 때'라는 반복보다 구체적인 시각이나 일정 조건을 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing information about when the learner eats the stated breakfast food.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, a more specific breakfast period, or a schedule condition for eating the food; merely repeating that it is eaten for breakfast is insufficient.",
+        "semanticRoleKo": "학습자가 말한 아침 음식을 먹는 때에 관한 추가 시간 정보",
+        "satisfiedWhenKo": "답변이 그 음식을 먹는 알아볼 수 있는 시각, 더 구체적인 아침 식사 시간대 또는 일정 조건을 제시하면 충족된다. 단지 아침 식사로 먹는다는 질문의 내용을 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0024",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 1을 요구하는 문항인데 SPECIFIC_TIME이 '바쁜 날에'라는 주어진 조건을 시간 정보로 다시 셀 여지가 있으므로, 그 조건을 넘어선 시각·순서·기간·빈도만 인정해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing, order, duration, or frequency information for a stated busy-day action.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, time of day, sequence point, duration, or frequency for one stated action beyond the supplied busy-day condition; merely saying that it happens on a busy day is insufficient.",
+        "semanticRoleKo": "말한 바쁜 날 행동에 관한 추가 시각, 순서, 지속 시간 또는 빈도 정보",
+        "satisfiedWhenKo": "답변이 질문에 주어진 바쁜 날이라는 조건을 넘어, 말한 행동의 알아볼 수 있는 시각, 하루 중 시간대, 순서상 시점, 지속 시간 또는 빈도를 제시하면 충족된다. 단지 바쁜 날에 한다고 말하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0025",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME의 현재 조건은 '쉬는 날에'라는 질문 전제를 독립 깊이로 오인할 수 있으므로, 쉬는 날 자체보다 구체적인 시간·순서·기간·빈도를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing, order, duration, or frequency information for a stated free-day activity.",
+        "satisfiedWhenEn": "The answer gives a recognizable time of day, sequence point, duration, or frequency for one stated activity beyond the supplied free-day condition; merely saying that it happens on a free day is insufficient.",
+        "semanticRoleKo": "말한 쉬는 날 활동에 관한 추가 시간, 순서, 지속 시간 또는 빈도 정보",
+        "satisfiedWhenKo": "답변이 질문에 주어진 쉬는 날이라는 조건을 넘어, 말한 활동의 알아볼 수 있는 하루 중 시간대, 순서상 시점, 지속 시간 또는 빈도를 제시하면 충족된다. 단지 쉬는 날에 한다고 말하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0026",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 하루 중 시간대와 그 선호 이유를 각각 필수로 요구하며, 활동·분위기·감정·효과는 시간대 선호를 독립적으로 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0027",
+    "verdict": "PASS",
+    "auditReasonKo": "매일 하는 구체적 활동과 일일 반복 관계를 정확히 요구하고, 선택 시간 슬롯은 단순 빈도 반복이 아닌 시각·시간대·순서 정보를 받는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0028",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 잊는 대상이 물건·할 일·정보일 수 있음을 DETAIL로 포괄하며, 결과·원인·반복 상황·대처·감정도 망각 관계에 맞게 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0029",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 피곤함 자체를 '반복 조건'으로 받아들이면 질문 전제를 선택 슬롯으로 다시 세게 되므로, 피곤하다는 조건 외의 추가 시점이나 빈도만 인정해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing or recurring-condition information, beyond feeling tired, about when the learner uses the stated response.",
+        "satisfiedWhenEn": "The answer gives a recognizable time of day, duration, frequency, or additional recurring situation for the action; merely repeating that the learner does it when tired is insufficient.",
+        "semanticRoleKo": "피곤함 자체를 넘어 학습자가 말한 대응을 하는 때에 관한 추가 시간 또는 반복 조건 정보",
+        "satisfiedWhenKo": "답변이 그 행동의 알아볼 수 있는 하루 중 시간대, 지속 시간, 빈도 또는 추가 반복 상황을 제시하면 충족된다. 단지 피곤할 때 한다는 질문의 조건을 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0030",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 슬롯인 SPECIFIC_TIME이 '자유 시간이 있을 때'라는 질문의 조건만으로도 충족될 수 있어, 자유 시간 자체보다 구체적인 시각·요일·빈도·기간을 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing information about when the learner does a stated free-time activity.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, day, recurring schedule, frequency, or duration for the activity beyond the supplied free-time condition; merely saying that it happens when the learner has free time is insufficient.",
+        "semanticRoleKo": "학습자가 말한 자유 시간 활동을 하는 때에 관한 추가 시간 정보",
+        "satisfiedWhenKo": "답변이 질문에 주어진 자유 시간 조건을 넘어 활동의 알아볼 수 있는 시각, 요일, 반복 일정, 빈도 또는 지속 시간을 제시하면 충족된다. 단지 자유 시간이 있을 때 한다고 말하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0031",
+    "verdict": "PASS",
+    "auditReasonKo": "아침 루틴의 주된 습관 행동과 별도 단계를 구분하고, 시간 슬롯도 아침 자체가 아닌 시각·지속 시간·순서를 요구해 깊이가 독립적이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0032",
+    "verdict": "PASS",
+    "auditReasonKo": "밤 루틴의 주 행동과 두 번째 행동을 명확히 나누며, 시각·기간·순서·장소·이유·결과도 밤이라는 전제를 단순 반복하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0033",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 '일이나 학교 후'라는 이미 주어진 시점을 추가 깊이로 다시 인정할 여지가 있으므로, 그 이후의 구체적 시각·간격·기간·빈도를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing information about when the learner begins or performs a stated after-work or after-school action.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, amount of delay, duration, or frequency beyond the supplied after-work or after-school period; merely repeating that the action happens after work or school is insufficient.",
+        "semanticRoleKo": "학습자가 말한 일이나 학교 후 행동을 시작하거나 하는 때에 관한 추가 시간 정보",
+        "satisfiedWhenKo": "답변이 질문에 주어진 일이나 학교 후라는 시점보다 구체적인 시각, 시간 간격, 지속 시간 또는 빈도를 제시하면 충족된다. 단지 일이나 학교가 끝난 뒤 한다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0034",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 '주말에'라는 질문의 시간 조건 자체를 주말 빈도로 다시 셀 수 있어 깊이 1의 독립성을 해치므로, 특정 요일·시각·기간 또는 더 정밀한 빈도가 필요하다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing information for the learner's preferred weekend activity beyond the general weekend setting.",
+        "satisfiedWhenEn": "The answer gives a specific weekend day, recognizable time, duration, or frequency more precise than the supplied phrase \"on weekends\"; merely repeating that the activity happens on weekends is insufficient.",
+        "semanticRoleKo": "주말이라는 일반 조건을 넘어 학습자가 선호하는 주말 활동에 관한 추가 시간 정보",
+        "satisfiedWhenKo": "답변이 특정 주말 요일, 알아볼 수 있는 시각, 지속 시간 또는 '주말에'보다 구체적인 빈도를 제시하면 충족된다. 단지 주말에 그 활동을 한다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0035",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 원문에 이미 있는 '매일'을 반복 일정으로 받아들이면 싫어하는 행동 외의 깊이가 생기지 않으므로, 일일 반복보다 구체적인 시간 정보를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing or schedule information for the disliked daily action beyond the fact that it occurs every day.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, time of day, duration, sequence point, or more specific schedule for the task; merely repeating that it happens every day is insufficient.",
+        "semanticRoleKo": "매일 일어난다는 사실을 넘어 싫어하는 일상 행동에 관한 추가 시간 또는 일정 정보",
+        "satisfiedWhenKo": "답변이 그 과업의 알아볼 수 있는 시각, 하루 중 시간대, 지속 시간, 순서상 시점 또는 더 구체적인 일정을 제시하면 충족된다. 단지 매일 한다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0036",
+    "verdict": "PASS",
+    "auditReasonKo": "하루를 실제로 더 좋게 만드는 구체적 사물·사건·상황과 그 개선 관계를 요구하며, 이유·사례·감정·결과·행동도 구체적으로 정의된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0037",
+    "verdict": "PASS",
+    "auditReasonKo": "일상에서 바꾸고 싶은 루틴·습관·상태를 구체적 변화 목표로 잡고, 계획·동기·예상 결과·관련 행동·시점도 목표에 맞게 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0038",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 해결책을 쓰는 '조건'으로 잠들 수 없다는 전제 자체를 허용하면 선택 슬롯이 새 정보를 더하지 않으므로, 불면 외의 구체적 시간·기간·빈도·추가 상황을 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing, duration, or recurring-circumstance information for the learner's sleeplessness or chosen response.",
+        "satisfiedWhenEn": "The answer gives a recognizable time of night, length of wakefulness, frequency, or additional recurring circumstance beyond the supplied inability to sleep; merely saying that the solution is used when the learner cannot sleep is insufficient.",
+        "semanticRoleKo": "잠들 수 없다는 전제를 넘어 학습자의 불면이나 선택한 대응에 관한 추가 시간, 지속 시간 또는 반복 상황 정보",
+        "satisfiedWhenKo": "답변이 질문에 주어진 불면 상태를 넘어 알아볼 수 있는 밤 시간대, 깨어 있는 기간, 빈도 또는 추가 반복 상황을 제시하면 충족된다. 단지 잠들 수 없을 때 해결책을 쓴다고 말하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0039",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 원문의 일반 빈도인 'usually'를 그대로 구매 빈도로 인정할 수 있으므로, 보통 산다는 사실보다 구체적인 시각·요일·주기·상황을 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing or frequency information about when the learner makes the convenience-store purchase.",
+        "satisfiedWhenEn": "The answer gives a recognizable time, day, quantified or otherwise specific frequency, or recurring situation beyond the general fact that the purchase is usual; merely saying that the learner usually buys it is insufficient.",
+        "semanticRoleKo": "학습자가 편의점에서 말한 물건을 사는 때에 관한 추가 시간 또는 빈도 정보",
+        "satisfiedWhenKo": "답변이 보통 구매한다는 일반 사실을 넘어 알아볼 수 있는 시각, 요일, 수치화되거나 그 밖에 구체적인 빈도 또는 반복 상황을 제시하면 충족된다. 단지 보통 산다고 말하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0040",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 필수 CHOICE에 이미 포함된 '매일'을 정기적 계기로 다시 인정할 수 있으므로, 매일이라는 반복 외의 구체적 시각·기간·순서를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing information about when the learner experiences the chosen daily enjoyment.",
+        "satisfiedWhenEn": "The answer gives a recognizable time of day, duration, sequence point, or recurring occasion more specific than the supplied daily frequency; merely repeating that the learner enjoys it every day is insufficient.",
+        "semanticRoleKo": "학습자가 선택한 일상의 즐거움을 경험하는 때에 관한 추가 시간 정보",
+        "satisfiedWhenKo": "답변이 질문에 주어진 매일이라는 빈도보다 구체적인 하루 중 시간대, 지속 시간, 순서상 시점 또는 반복 계기를 제시하면 충족된다. 단지 매일 즐긴다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0041",
+    "verdict": "CHANGE",
+    "auditReasonKo": "PLACE의 역할은 좋아하는 음식을 먹거나 구하거나 즐기는 장소인데 현재 조건은 음식과 막연히 연결된 장소도 통과할 수 있어, 해당 음식 경험과의 구체적 장소 관계를 입증해야 한다.",
+    "replacementSlotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "A place where the learner eats, obtains, or especially enjoys the favorite food.",
+        "satisfiedWhenEn": "The answer identifies a recognizable home, restaurant, region, or other setting and clearly connects it to eating, obtaining, or especially enjoying the chosen food; merely mentioning a place associated with the food is insufficient.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식을 먹거나 구하거나 특히 즐기는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 집, 식당, 지역 또는 다른 환경을 밝히고 그곳을 선택한 음식을 먹거나 구하거나 특히 즐기는 장소로 분명히 연결하면 충족된다. 음식과 관련된 장소를 단순히 언급하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0042",
+    "verdict": "PASS",
+    "auditReasonKo": "앞선 맥락에서 정해진 음식을 좋아하는 구체적 이유만 필수로 요구하며, 맛·식감 등의 특징과 감정·경험·효과는 이유와 구별되는 보강이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0043",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 원문에 이미 있는 'often'을 빈도 증거로 다시 받을 수 있으므로, 자주 먹는다는 사실보다 구체적인 끼니·시각·요일·주기를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing or frequency information about when the learner eats the stated food.",
+        "satisfiedWhenEn": "The answer gives a recognizable meal, time, day, interval, or frequency more specific than the supplied fact that the food is eaten often; merely repeating that the learner eats it often is insufficient.",
+        "semanticRoleKo": "학습자가 말한 음식을 먹는 때에 관한 추가 시간 또는 빈도 정보",
+        "satisfiedWhenKo": "답변이 그 음식을 자주 먹는다는 질문의 사실보다 구체적인 끼니, 시각, 요일, 간격 또는 빈도를 제시하면 충족된다. 단지 자주 먹는다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0044",
+    "verdict": "PASS",
+    "auditReasonKo": "먹어 보고 싶은 알아볼 수 있는 음식을 선택 의도와 함께 요구하고, 이유·장소·시점·실행 계획·예상 감정도 그 시도 관계를 정확히 확장한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0045",
+    "verdict": "PASS",
+    "auditReasonKo": "싫어하는 구체적 음식과 부정적 선호 관계를 직접 요구하며, 맛·식감 등의 이유와 특징·반응·경험도 자연스럽게 구분된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0046",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 질문에 이미 주어진 '보통 아침에'를 아침 시간대나 빈도로 다시 셀 수 있으므로, 더 구체적인 아침 시각·구간·순서·빈도를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing information about when in the morning the learner drinks the stated beverage.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, a more specific part of the morning, a sequence point, or a frequency more precise than the supplied usual-morning context; merely repeating that the drink is usually consumed in the morning is insufficient.",
+        "semanticRoleKo": "학습자가 아침 중 언제 말한 음료를 마시는지에 관한 추가 시간 정보",
+        "satisfiedWhenKo": "답변이 질문에 주어진 평소 아침이라는 맥락보다 구체적인 시각, 아침 시간대, 순서상 시점 또는 빈도를 제시하면 충족된다. 단지 보통 아침에 마신다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0047",
+    "verdict": "PASS",
+    "auditReasonKo": "커피와 차 사이의 실제 선호를 조건부·둘 다·둘 다 아님까지 자연스럽게 허용하고, 구체적 맛·효과·습관·경험으로 이유를 입증한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0048",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 간식을 알아볼 수 있게 선택하도록 하고, 맛·식감·형태·감정·먹는 때는 간식 이름과 독립적인 선택 정보로 정의되어 있다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0049",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 과일이나 품종을 선호 대상으로 정확히 식별하며, 이유·구체적 형태·감각 반응·경험도 과일 선호와 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0050",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 한국 음식이라는 음식 범주와 선호 관계를 모두 요구하고, 이유·조리 특징·감정·구체적 경험도 해당 요리에 맞게 한정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0051",
+    "verdict": "PASS",
+    "auditReasonKo": "구체적 음식이 집이나 고향을 떠올리게 한다는 연상 관계를 필수로 요구하며, 가족 연결·기억·감정·과거 상황·장소도 서로 구별된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0052",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME의 '반복 계기'가 질문에 이미 있는 피곤한 상태 자체를 다시 셀 수 있으므로, 피곤함 외의 구체적 시간대·상황·빈도·기간만 인정해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing or recurring-occasion information, beyond feeling tired, about when the learner eats the chosen food.",
+        "satisfiedWhenEn": "The answer gives a recognizable time of day, additional recurring occasion, frequency, or duration for the eating habit; merely repeating that the learner eats the food when tired is insufficient.",
+        "semanticRoleKo": "피곤함 자체를 넘어 학습자가 선택한 음식을 먹는 때에 관한 추가 시간 또는 반복 계기 정보",
+        "satisfiedWhenKo": "답변이 그 식습관의 알아볼 수 있는 하루 중 시간대, 추가 반복 계기, 빈도 또는 지속 시간을 제시하면 충족된다. 단지 피곤할 때 그 음식을 먹는다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0053",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 '행복할 때'라는 질문 전제를 반복 상황으로 인정할 수 있으므로, 행복 자체를 넘어선 축하 행사·사건·시각·빈도 같은 식별 가능한 계기가 필요하다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "An identifiable happy occasion or additional time when the learner eats the chosen food, beyond being happy itself.",
+        "satisfiedWhenEn": "The answer gives a recognizable celebration, event, time of day, frequency, or recurring situation more specific than the supplied happy condition; merely saying that the food is eaten when the learner is happy is insufficient.",
+        "semanticRoleKo": "행복하다는 상태 자체를 넘어 학습자가 선택한 음식을 먹는 식별 가능한 행복한 계기나 추가 시점",
+        "satisfiedWhenKo": "답변이 질문에 주어진 행복한 상태보다 구체적인 축하 행사, 사건, 하루 중 시간대, 빈도 또는 반복 상황을 제시하면 충족된다. 단지 행복할 때 그 음식을 먹는다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0054",
+    "verdict": "PASS",
+    "auditReasonKo": "매운 음식에 대한 긍정·부정·조건부 견해와 구체적 맛 선호·신체 반응·경험 등의 근거를 필수로 분리해 순환적 이유를 막는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0055",
+    "verdict": "PASS",
+    "auditReasonKo": "단 음식에 대한 호불호나 조건부 견해와 건강·맛·신체 반응·기억 등의 구체적 이유를 필수로 요구해 의견과 근거가 명확하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0056",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날에 적합하다고 추천하는 구체적 식사를 의견으로 잡고, 날씨 관련 이유·구성·감정·효과·장소를 독립 보강으로 정의한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0057",
+    "verdict": "PASS",
+    "auditReasonKo": "친구들과 함께 먹기를 좋아하는 음식이라는 사회적 선호 관계를 필수로 요구하고, 이유·감정·장소·때·결과도 함께 먹는 맥락에 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0058",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 능숙하게 만들 수 있는 구체적 요리를 선택하게 하며, 조리 기술·성공 사례·능력의 원천·결과·감정도 요리 실력과 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0059",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME의 '더 넓은 미래 시간 범위'가 원문에 이미 있는 'someday'를 그대로 받을 수 있으므로, 언젠가보다 식별 가능한 미래 시점을 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A time for cooking the chosen dish that is more specific than the supplied word \"someday.\"",
+        "satisfiedWhenEn": "The answer gives a recognizable date, season, life event, trip, occasion, or bounded future period for making the dish; merely repeating that the learner will cook it someday is insufficient.",
+        "semanticRoleKo": "질문에 주어진 '언젠가'보다 구체적으로 선택한 요리를 만들 때",
+        "satisfiedWhenKo": "답변이 그 요리를 만들 알아볼 수 있는 날짜, 계절, 인생 사건, 여행, 계기 또는 범위가 있는 미래 기간을 제시하면 충족된다. 단지 언젠가 만들겠다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0060",
+    "verdict": "CHANGE",
+    "auditReasonKo": "REASON이 현재 'clear preference'만으로도 충족되어 '그냥 좋아해서' 같은 선택의 반복을 통과시킬 수 있으므로, 오늘 다른 모든 음식보다 고르는 구체적 근거를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "REASON": {
+        "semanticRoleEn": "A concrete basis for choosing that food over all other options today.",
+        "satisfiedWhenEn": "The answer gives a specific taste, craving, dietary need, availability, practical consideration, or expected effect that explains the choice; merely restating that the learner likes the food or that it is good is insufficient.",
+        "semanticRoleKo": "오늘 다른 모든 선택지보다 그 음식을 고르는 구체적인 근거",
+        "satisfiedWhenKo": "답변이 선택을 설명하는 구체적인 맛, 당김, 식이 필요, 이용 가능성, 실용적 고려 또는 기대 효과를 제시하면 충족된다. 단지 그 음식을 좋아한다거나 좋다고 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0061",
+    "verdict": "PASS",
+    "auditReasonKo": "다른 취미보다 가장 좋아하는 특정 취미를 선택하게 하며, 이유·참여 방식·감정·구체적 시간은 취미 이름과 구별되는 정보를 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0062",
+    "verdict": "PASS",
+    "auditReasonKo": "앞서 정해진 취미를 좋아하는 구체적 즐거움·경험·이점을 필수 이유로 요구하고, 세부 활동·사례·감정·효과도 자연스럽게 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0063",
+    "verdict": "PASS",
+    "auditReasonKo": "새로 시도하고 싶은 특정 취미를 막연한 '새 취미'와 구분하며, 매력 요인·시작 방법·시점·예상 감정·결과도 시도 의도에 맞는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0064",
+    "verdict": "PASS",
+    "auditReasonKo": "원문이 즐거움을 위해 무엇을 '하는지' 직접 물으므로 필수 ACTION이 적절하며, 구체적 활동이 아닌 '재미있는 것' 같은 표현도 명시적으로 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0065",
+    "verdict": "PASS",
+    "auditReasonKo": "지루할 때 실제로 취하는 대응 행동을 필수로 잡고, 시간 슬롯은 지루함 자체를 제외한다고 명시해 선택 정보의 독립성도 지킨다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0066",
+    "verdict": "PASS",
+    "auditReasonKo": "영화 감상에 대한 긍정·부정·조건부 입장과 구체적 경험·특징·효과에 근거한 이유를 필수로 구분하며 선택 슬롯도 적절하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0067",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 영화 종류나 장르를 선택 관계로 식별하고, 이유·특정 영화·감정·장르 내 특징이 장르 이름 이상의 독립 깊이를 제공한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0068",
+    "verdict": "PASS",
+    "auditReasonKo": "음악 듣기에 대한 호불호와 구체적 음악 경험·특징·효과를 이유로 각각 요구하며, 노래 사례·감정·결과도 입장과 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0069",
+    "verdict": "PASS",
+    "auditReasonKo": "선호하는 음악 종류나 스타일을 알아볼 수 있게 요구하고, 음악적 이유·노래나 가수 사례·감정·구체적 특징이 장르명과 구별된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0070",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 듣는 특정 노래와 반복 청취 관계를 요구하며, 시간 슬롯도 'often'을 넘어선 시점이나 빈도만 받도록 명시되어 있다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0071",
+    "verdict": "PASS",
+    "auditReasonKo": "독서에 대한 긍정·부정·조건부 견해와 구체적 경험·특징·어려움·이점에 근거한 이유를 필수로 나누어 자연스러운 답을 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0072",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인에서 습관적으로 보는 영상 유형을 선택 관계로 잡고, 이유·시점·감정·효과·구체적 채널이나 영상은 독립적인 깊이를 제공한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0073",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아해서 하는 특정 게임을 정확히 선택하게 하며, 이유·플레이 시점·감정·효과·게임 방식도 게임 이름을 넘어 구체화한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0074",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 운동 종목과 선호 관계를 직접 요구하고, 직접 하기·시청하기 등의 참여 방식과 이유·감정·사례·효과도 폭넓게 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0075",
+    "verdict": "PASS",
+    "auditReasonKo": "사진 찍기에 대한 호불호와 구체적 경험·목적·어려움·이점에 근거한 이유를 필수로 구분하고, 사례·촬영 방식·감정·결과도 맞는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0076",
+    "verdict": "PASS",
+    "auditReasonKo": "원문이 집에서 좋아해 '하는' 활동을 묻기 때문에 필수 ACTION이 적절하며, 이유·시점·감정·효과·두 번째 활동은 별도 깊이를 준다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0077",
+    "verdict": "PASS",
+    "auditReasonKo": "밖에서 하기를 좋아하는 구체적 활동을 요구하고, PLACE는 단순히 '밖'보다 구체적인 야외 장소만 인정해 질문 전제 반복을 막는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0078",
+    "verdict": "PASS",
+    "auditReasonKo": "원문이 가능한 요인을 취미로 한정하므로 필수 CHOICE가 적절하고, 특정 취미가 실제로 긴장 완화에 도움이 된다는 관계를 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0079",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 시절 즐겨 했던 구체적 활동과 과거의 즐거움 관계를 필수로 잡고, BEFORE_STATE도 활동 반복이 아닌 별도 과거 상황만 받는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0080",
+    "verdict": "PASS",
+    "auditReasonKo": "원문이 가능한 요인을 '새 취미'로 한정하므로 특정 취미를 CHOICE로 요구하는 것이 적절하며, 실제 목표나 행동을 필수로 잘못 가정하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0081",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 친한 친구로 여기는 알아볼 수 있는 사람의 신원을 필수로 요구하고, 이유·유대 사례·감정·공동 활동은 관계를 별도로 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0082",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 친한 친구에게서 좋아하는 구체적 특성·능력·관계 방식을 요구하며, 이유·사례·감정·친구 행동은 단순 특성어 이상의 깊이를 준다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0083",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 대화하는 알아볼 수 있는 사람과 잦은 대화 관계를 요구하고, 시간 슬롯은 'often'을 넘어선 시점이나 빈도만 받도록 명시한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0084",
+    "verdict": "PASS",
+    "auditReasonKo": "웃게 만드는 요인이 사람으로 한정된 질문이므로 그 사람의 신원을 DETAIL로 요구하는 것이 맞고, 웃기는 행동은 선택 슬롯으로만 남겨 두었다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0085",
+    "verdict": "PASS",
+    "auditReasonKo": "문제가 있을 때 도움을 주는 사람의 신원을 필수 DETAIL로 잡아 ACTION으로 좁히지 않았으며, 문제·도움 행동·사례·감정은 선택 보강이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0086",
+    "verdict": "PASS",
+    "auditReasonKo": "오늘 감사하고 싶은 구체적 사람을 감사의 수신자로 선택하게 하며, 시간 슬롯도 'today'보다 구체적인 시점만 인정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0087",
+    "verdict": "PASS",
+    "auditReasonKo": "원문이 친구들과 무엇을 '하는지' 묻기 때문에 공동 ACTION이 적절하고, 이유·장소·때·감정·관계 효과도 활동과 독립적으로 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0088",
+    "verdict": "PASS",
+    "auditReasonKo": "좋은 친구를 규정하는 답이 특성이나 행동일 수 있도록 필수 OPINION을 열어 두었으며, 구체적 행동은 필수가 아닌 선택 보강으로 처리했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0089",
+    "verdict": "PASS",
+    "auditReasonKo": "친구들과 평소 나누는 알아볼 수 있는 대화 주제를 DETAIL로 요구해 '여러 가지' 같은 모호한 표현을 거부하고, 사례·이유·때·감정·장소도 분리한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0090",
+    "verdict": "PASS",
+    "auditReasonKo": "새로운 사람을 만나는 일에 대한 긍정·부정·혼합·조건부 입장과 구체적 사회 경험·우려·기회·성격 요인의 이유를 필수로 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0091",
+    "verdict": "PASS",
+    "auditReasonKo": "조용함과 말이 많음 사이의 평소 의사소통 성향을 조건부 답변까지 허용해 분류하며, 이유·사례·조건·감정도 정확히 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0092",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 사람 유형을 구체적 성격이나 행동 양상으로 요구해 '좋은 사람' 같은 막연한 답을 거부하고, 이유·사례·감정·세부 행동도 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0093",
+    "verdict": "PASS",
+    "auditReasonKo": "슬픈 친구를 돕는 구체적 대응을 SOLUTION으로 요구해 막연한 도움 언급을 거부하며, 시간 슬롯도 슬픔 조건을 반복하지 않는 시점만 받는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0094",
+    "verdict": "PASS",
+    "auditReasonKo": "친구에게 적합하다고 추천하는 구체적 선물을 OPINION으로 잡고, 친구의 관심·필요·관계·상황에 근거한 이유와 세부 정보도 독립적이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0095",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 존경하는 알아볼 수 있는 사람과 존경 관계를 필수로 요구하고, 이유·행동 사례·감정은 사람 이름만으로 대체되지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0096",
+    "verdict": "PASS",
+    "auditReasonKo": "앞서 정해진 사람을 존경하는 구체적 성품·성취·선택·기여를 필수 이유로 요구하며, 막연히 훌륭하다는 평가는 DETAIL에서도 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0097",
+    "verdict": "PASS",
+    "auditReasonKo": "효과적인 사과 방식이나 원칙을 알아볼 수 있게 추천하도록 하고, ACTION은 핵심 추천을 반복하지 않는 추가 실행 단계만 인정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0098",
+    "verdict": "PASS",
+    "auditReasonKo": "감사를 표현하는 구체적 방법이나 원칙을 추천하게 하며, 행동·이유·전달 조건·효과·예시는 주된 추천을 되풀이하지 않도록 정의되어 있다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0099",
+    "verdict": "PASS",
+    "auditReasonKo": "이번 달 가족과 함께 하려는 구체적 공동 활동을 필수 ACTION으로 정확히 잡고, 시간 슬롯도 'this month'보다 구체적인 때만 인정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0100",
+    "verdict": "PASS",
+    "auditReasonKo": "삶에서 중요한 알아볼 수 있는 사람과 중요성 관계를 필수 DETAIL로 요구하며, 이유·사례·행동·감정·영향은 신원과 별개로 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0101",
+    "verdict": "PASS",
+    "auditReasonKo": "학교에서 좋아했던 알아볼 수 있는 과목과 과거 선호 관계를 요구하고, 이유·수업 사례·과목 내 세부·감정은 불필요한 과거 상태 반복 없이 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0102",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자에게 어려웠던 구체적 과목과 어려움 관계를 PROBLEM으로 잡고, 원인·과제 사례·감정·해결·별도 과거 상태도 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0103",
+    "verdict": "PASS",
+    "auditReasonKo": "배우기를 좋아하는 구체적 주제·기술·지식 유형을 선호 대상으로 요구해 '새로운 것' 같은 모호한 답을 거부하고, 보강 슬롯도 독립적이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0104",
+    "verdict": "PASS",
+    "auditReasonKo": "영어를 배우는 구체적 필요·관심·책임·사용 목적을 필수 동기로 요구하며, 영어가 좋거나 중요하다는 순환적 이유를 명시적으로 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0105",
+    "verdict": "PASS",
+    "auditReasonKo": "영어 학습에서 쉬운 요인은 기술·과업·특징·상황일 수 있도록 필수 DETAIL을 사용해 ACTION으로 좁히지 않았고, 구체성 기준도 충분하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0106",
+    "verdict": "PASS",
+    "auditReasonKo": "영어 학습의 구체적 어려움을 PROBLEM으로 열어 두어 기술·과업·특징·상황을 모두 받고, 원인·사례·감정·해결·결과도 적절하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0107",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 특정 영어 단어와 선호 관계를 직접 요구하고, 의미·소리·철자·기억·쓰임의 이유와 문맥 예시·감정도 정확히 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0108",
+    "verdict": "PASS",
+    "auditReasonKo": "영어로 더 잘 표현하고 싶은 메시지·주제·상황을 구체적 의사소통 목표로 잡아 '영어를 잘하고 싶다'는 막연한 목표를 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0109",
+    "verdict": "PASS",
+    "auditReasonKo": "효과적인 공부 방법이나 원칙을 알아볼 수 있게 추천하도록 하고, ACTION은 추천을 반복하지 않는 추가 실행 단계만 인정해 깊이를 지킨다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0110",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 효과적으로 공부하는 구체적 시간이나 명확한 시기 조건과 최선의 수행 관계를 요구하며, 이유·행동·장소·결과·감정도 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0111",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 잘 공부되는 알아볼 수 있는 장소와 최선의 수행 관계를 요구하고, 식별 가능한 환경 없이 '조용한 곳'이라고만 하는 답을 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0112",
+    "verdict": "PASS",
+    "auditReasonKo": "혼자 공부와 함께 공부 중 선호 방식을 조건부 답변까지 허용해 정확히 선택하게 하며, 이유·효과·감정·사례·장소도 그 방식에 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0113",
+    "verdict": "PASS",
+    "auditReasonKo": "집중을 돕는 답이 행동 외에도 환경·도구·상태일 수 있도록 필수 DETAIL을 사용하며, ACTION은 그 조건을 만들거나 활용하는 선택 보강으로만 둔다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0114",
+    "verdict": "PASS",
+    "auditReasonKo": "집중을 잃게 하는 요인을 행동으로 좁히지 않고 방해 요소·신체 상태·생각·상황을 포괄하는 필수 REASON으로 정의해 열린 답을 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0115",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 일의 분야·역할·과업 유형·근무 방식을 구체적으로 요구해 '좋은 일'을 거부하며, 이유와 업무 특징도 독립 깊이를 제공한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0116",
+    "verdict": "PASS",
+    "auditReasonKo": "직업에서 중요하게 여기는 특성·조건·가치를 분명한 기준으로 요구하고, 이유·사례·구체화·효과·감정은 그 우선순위를 별도로 뒷받침한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0117",
+    "verdict": "PASS",
+    "auditReasonKo": "직장이나 학교에서 향상하고 싶은 구체적 과업·기술·성과를 목표로 요구해 '더 잘하고 싶다'는 막연한 답을 거부하고, 계획·이유·결과도 맞는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0118",
+    "verdict": "PASS",
+    "auditReasonKo": "갖고 싶은 알아볼 수 있는 기술을 구체적 목표로 요구해 '유용한 기술' 같은 표현을 거부하며, 계획·동기·효과·시점·사용 사례도 정확하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0119",
+    "verdict": "PASS",
+    "auditReasonKo": "최근 배운 구체적 사실·개념·방법·기술과 최근성 관계를 요구해 '새로운 것'을 거부하며, 시간 슬롯도 'recently'보다 구체적인 때만 받는다."
+  }
+]

@@ -1,0 +1,582 @@
+[
+  {
+    "promptId": "prompt-balance-26",
+    "decision": "ACCEPTED",
+    "reasonKo": "종합 견해의 이유는 단순한 좋고 나쁨의 반복이 아니라 현금 없는 결제의 구체적인 특성과 견해를 연결해야 하므로 제안을 반영했다."
+  },
+  {
+    "promptId": "prompt-general-09",
+    "decision": "ACCEPTED",
+    "reasonKo": "장소를 개인 경험과 연결하는 것만으로는 좋아하고 기억하는 장소라는 질문의 관계를 입증하지 못하므로 제안을 반영했다."
+  },
+  {
+    "promptId": "prompt-general-1101",
+    "decision": "ACCEPTED",
+    "reasonKo": "축제와 관련된 장소가 아니라 축제가 실제로 열리는 장소라는 관계가 필요하므로 PLACE 충족 기준을 수정했다."
+  },
+  {
+    "promptId": "prompt-general-1106",
+    "decision": "ACCEPTED",
+    "reasonKo": "임의의 통행 경험이 아니라 학습자가 건너기를 좋아하는 다리나 산책로라는 관계를 증명해야 하므로 제안을 반영했다."
+  },
+  {
+    "promptId": "prompt-general-1114",
+    "decision": "ACCEPTED",
+    "reasonKo": "행사와 연관된 장소 언급만으로는 부족하고 봉사 행사가 열렸거나 학습자가 참여한 장소여야 하므로 기준을 수정했다."
+  },
+  {
+    "promptId": "prompt-general-1117",
+    "decision": "ACCEPTED",
+    "reasonKo": "가판대를 방문한 사실뿐 아니라 학습자가 방문하기를 좋아한다는 선택 관계도 드러나야 하므로 제안을 반영했다."
+  },
+  {
+    "promptId": "prompt-general-1120",
+    "decision": "ACCEPTED",
+    "reasonKo": "수업과 관련된 기관이나 장소가 아니라 실제 수업이 열렸거나 학습자가 참여한 환경이어야 하므로 기준을 수정했다."
+  },
+  {
+    "promptId": "prompt-general-1121",
+    "decision": "ACCEPTED",
+    "reasonKo": "질문은 돌봄 행위의 중요성이 아니라 식물 자체가 학습자에게 중요한 이유를 요구하므로 주체 관계를 바로잡았다."
+  },
+  {
+    "promptId": "prompt-general-1124",
+    "decision": "ACCEPTED",
+    "reasonKo": "요리법과 관련된 행동에는 조리와 상차림뿐 아니라 가르침, 전수, 나눔도 자연스럽게 포함되므로 범위를 보완했다."
+  },
+  {
+    "promptId": "prompt-general-12",
+    "decision": "ACCEPTED",
+    "reasonKo": "선택 깊이 슬롯은 필수 DETAIL에서 이미 인정한 행동이나 사건을 반복하지 않고 별도의 정보를 더해야 하므로 제안을 반영했다."
+  },
+  {
+    "promptId": "prompt-general-13",
+    "decision": "ACCEPTED",
+    "reasonKo": "CHOICE는 배운 교훈이 아니라 영향을 준 교사나 멘토의 정체성을 맡아야 하므로 질문의 직접 관계에 맞게 수정했다."
+  },
+  {
+    "promptId": "prompt-general-38",
+    "decision": "ACCEPTED",
+    "reasonKo": "가장 좋아하는 전통 활동을 ACTION에서 그대로 다시 세면 깊이가 중복되므로 별도의 행동 정보만 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-goal-1101",
+    "decision": "ACCEPTED",
+    "reasonKo": "수면 일정의 시간 정보는 시계 시각뿐 아니라 시간대와 일과 기준 시점도 유효하며 올해라는 반복은 깊이가 아니므로 반영했다."
+  },
+  {
+    "promptId": "prompt-goal-1102",
+    "decision": "ACCEPTED",
+    "reasonKo": "질문이 이미 매일 쓰기를 제시하므로 같은 빈도를 반복하지 않고 하루 중 시점이나 지속 시간 같은 추가 정보만 깊이로 인정한다."
+  },
+  {
+    "promptId": "prompt-goal-1108",
+    "decision": "ACCEPTED",
+    "reasonKo": "주간 식사 준비라는 전제를 그대로 반복하지 않고 주중 시점이나 지속 시간처럼 독립적인 시간 정보를 요구하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-goal-1109",
+    "decision": "ACCEPTED",
+    "reasonKo": "매주 한 편이라는 질문의 빈도와 별개로 주중 선택·읽기·완료·복습 시점을 제시해야 깊이가 생기므로 반영했다."
+  },
+  {
+    "promptId": "prompt-goal-1117",
+    "decision": "ACCEPTED",
+    "reasonKo": "주간 회고라는 전제와 다른 요일, 시각, 지속 시간 또는 점검 시점만 독립 시간 깊이로 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0008",
+    "decision": "REJECTED",
+    "reasonKo": "학습자가 답변에서 아침이라는 시간 관계를 실제로 표현하면 유효한 시간 정보로 인정한다는 제품 기준에 따라 더 구체적인 시각을 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0009",
+    "decision": "REJECTED",
+    "reasonKo": "밤이라는 넓은 시간대도 학습자가 행동과 연결해 답변 안에 표현하면 유효하므로 밤보다 세부적인 시각만 허용하는 제안은 과도하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0012",
+    "decision": "ACCEPTED",
+    "reasonKo": "day of the week는 평일뿐 아니라 토요일과 일요일도 포함하므로 기존 근거의 weekday 범위 오류를 바로잡았다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0023",
+    "decision": "REJECTED",
+    "reasonKo": "아침 식사라는 시간 맥락을 답변에서 음식과 명시적으로 연결하는 것도 초급 학습자의 유효한 시간 표현으로 인정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0024",
+    "decision": "REJECTED",
+    "reasonKo": "바쁜 날이라는 반복 조건을 학습자가 행동과 연결해 직접 표현하면 시간·상황 정보로 인정하며 추가 시각을 필수로 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0025",
+    "decision": "REJECTED",
+    "reasonKo": "쉬는 날이라는 시간 조건도 답변 안에서 구체적인 행동과 연결되면 유효하므로 별도의 시각이나 기간만 인정하는 제안은 기각했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0029",
+    "decision": "REJECTED",
+    "reasonKo": "피곤할 때라는 반복 상황을 답변에서 행동과 연결해 표현하는 것 자체도 의미 있는 시간 조건이므로 추가 시점을 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0030",
+    "decision": "REJECTED",
+    "reasonKo": "자유 시간이 있을 때라는 조건도 답변에서 활동과 명시적으로 연결되면 유효한 시간 맥락이므로 더 세부적인 시각만 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0033",
+    "decision": "REJECTED",
+    "reasonKo": "일이나 학교가 끝난 뒤라는 순서 시점은 그 자체로 구체적인 시간 관계이므로 추가 시각이나 간격을 반드시 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0034",
+    "decision": "REJECTED",
+    "reasonKo": "주말이라는 넓은 시간 범주도 학습자가 선호 활동과 연결해 사용하면 유효하므로 특정 요일이나 시각만 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0035",
+    "decision": "REJECTED",
+    "reasonKo": "매일이라는 빈도 표현을 학습자가 싫어하는 행동과 연결해 답변에 사용하면 유효한 반복 정보로 인정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0038",
+    "decision": "REJECTED",
+    "reasonKo": "잠들 수 없을 때라는 조건을 해결 행동과 연결해 표현하는 것도 의미 있는 반복 상황이므로 별도의 시간 정보만 허용하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0039",
+    "decision": "REJECTED",
+    "reasonKo": "보통 구매한다는 빈도를 답변에서 물건과 연결해 표현하면 초급 수준의 유효한 빈도 정보가 될 수 있으므로 더 구체적인 주기를 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0040",
+    "decision": "REJECTED",
+    "reasonKo": "매일 즐긴다는 반복 관계를 학습자가 선택한 활동과 함께 표현하면 의미 있는 시간 정보로 인정하며 별도 시각을 필수로 두지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0041",
+    "decision": "ACCEPTED",
+    "reasonKo": "장소 이름만 음식과 연관되는 것으로는 부족하고 실제로 먹거나 구하거나 즐기는 장소 관계가 드러나야 하므로 제안을 반영했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0043",
+    "decision": "REJECTED",
+    "reasonKo": "자주 먹는다는 빈도를 학습자가 음식과 연결해 답변 안에 명시하면 유효한 반복 정보이므로 추가 끼니나 시각을 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0046",
+    "decision": "REJECTED",
+    "reasonKo": "아침이라는 시간대를 음료와 연결해 직접 표현하는 것도 유효한 시간 정보라는 기존 제품 결정을 유지한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0052",
+    "decision": "REJECTED",
+    "reasonKo": "피곤할 때라는 반복 상황을 음식 선택과 연결해 표현하면 의미 있는 조건 정보가 되므로 추가 시간대를 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0053",
+    "decision": "REJECTED",
+    "reasonKo": "행복할 때라는 감정 조건도 음식 선택과 연결된 반복 상황으로 유효하며 축하 행사나 시각을 별도로 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0059",
+    "decision": "REJECTED",
+    "reasonKo": "언젠가라는 미래 시간 범위를 학습자가 요리 목표와 연결해 답변에 사용하면 초급 수준의 유효한 미래 시점으로 인정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0060",
+    "decision": "ACCEPTED",
+    "reasonKo": "그냥 좋아한다는 선택의 반복은 이유로 충분하지 않으므로 오늘 그 음식을 고르는 구체적인 맛, 필요 또는 효과를 요구하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0133",
+    "decision": "ACCEPTED",
+    "reasonKo": "필수 선호 측면을 그대로 사례로 반복해 깊이를 채우지 못하도록 EXAMPLE이 별도의 구체적 장소나 경험을 추가하게 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0146",
+    "decision": "ACCEPTED",
+    "reasonKo": "원문이 여행에서 맛볼 음식을 묻기 때문에 음료만으로는 CHOICE를 충족하지 않도록 음식 범위를 정확히 반영했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0154",
+    "decision": "ACCEPTED",
+    "reasonKo": "여행에서 재미있는 것은 행동 외에도 장소, 음식, 사람, 특징일 수 있어 포괄적인 DETAIL 필수 슬롯으로 변경했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0179",
+    "decision": "ACCEPTED",
+    "reasonKo": "중요한 우선순위 자체가 목표나 활동일 때 같은 내용을 반복해 깊이를 채우지 못하도록 GOAL과 ACTION의 독립성을 명시했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0180",
+    "decision": "ACCEPTED",
+    "reasonKo": "좋다거나 착하다는 막연한 칭찬이 아니라 오늘 감사하는 구체적인 도움, 이점 또는 개인적 의미를 요구하도록 강화했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0185",
+    "decision": "ACCEPTED",
+    "reasonKo": "되고 싶은 사람의 핵심 자질을 그대로 반복하지 않고 별도의 자질이나 그 정체성을 보여 주는 행동을 더하게 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0196",
+    "decision": "ACCEPTED",
+    "reasonKo": "곧 시도할 새로운 것은 행동뿐 아니라 음식, 제품, 기술, 방법도 될 수 있어 포괄적인 DETAIL 필수 슬롯으로 변경했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0199",
+    "decision": "ACCEPTED",
+    "reasonKo": "완벽한 하루의 핵심 요소가 이미 활동일 수 있으므로 ACTION은 그 내용을 반복하지 않는 별도의 활동만 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0212",
+    "decision": "ACCEPTED",
+    "reasonKo": "자주 먹는다는 사실만으로 질리지 않는 관계가 성립하지 않으므로 지속적으로 즐길 수 있다는 질문 관계를 명확히 요구했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0213",
+    "decision": "ACCEPTED",
+    "reasonKo": "자주 마신다는 사실만으로 질리지 않는 관계가 성립하지 않으므로 지속적으로 즐길 수 있다는 질문 관계를 명확히 요구했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0220",
+    "decision": "ACCEPTED",
+    "reasonKo": "원문은 식당에서 먼저 고르는 대상을 메뉴로 한정하지 않으므로 좌석, 테이블, 음료 등 자연스러운 선택도 허용하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0227",
+    "decision": "ACCEPTED",
+    "reasonKo": "좋아했던 학교 측면을 DETAIL이나 EXAMPLE로 그대로 반복해 깊이를 채우지 못하도록 별도의 특징과 사례를 요구했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0228",
+    "decision": "ACCEPTED",
+    "reasonKo": "싫어했던 학교 경험 자체를 사례라고 다시 부르는 중복을 막고 별도의 구체적인 사건이나 반복 상황만 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0232",
+    "decision": "ACCEPTED",
+    "reasonKo": "어릴 때 들었다는 사실과 지금 어린 시절을 떠올리게 한다는 관계를 구분하도록 노래의 회상 관계를 명시했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0233",
+    "decision": "ACCEPTED",
+    "reasonKo": "어릴 때 맡았다는 사실과 지금 어린 시절을 떠올리게 한다는 관계를 구분하도록 냄새의 회상 관계를 명시했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0245",
+    "decision": "ACCEPTED",
+    "reasonKo": "검색 행동은 질문에 이미 제시되므로 학습자가 평소 선택해 찾는 구체적인 주제나 정보 유형을 CHOICE로 받도록 변경했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0248",
+    "decision": "ACCEPTED",
+    "reasonKo": "게시 행동 자체가 아니라 평소 선택해 공유하는 콘텐츠 종류가 직접 답이므로 CHOICE로 바꾸고 DETAIL의 중복도 막았다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0249",
+    "decision": "ACCEPTED",
+    "reasonKo": "사진 종류의 단순 언급이 아니라 학습자가 실제로 찍는 사진 유형이라는 관계까지 답변에 드러나도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0256",
+    "decision": "ACCEPTED",
+    "reasonKo": "이모지를 식별하는 것뿐 아니라 학습자가 자주 사용한다는 질문의 빈도 관계가 직접 응답 맥락에서 드러나게 했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0257",
+    "decision": "ACCEPTED",
+    "reasonKo": "최근 영상을 식별하는 것과 그 영상이 실제로 학습자를 웃게 했다는 인과 관계를 함께 요구하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0261",
+    "decision": "ACCEPTED",
+    "reasonKo": "좋아하는 구매 품목을 그대로 사례로 반복하지 않고 더 구체적인 상품이나 실제 구매 정보를 추가하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0262",
+    "decision": "ACCEPTED",
+    "reasonKo": "자주 사는 품목과 같은 내용을 반복해 깊이를 채우지 못하도록 별도의 구매 상황, 종류, 브랜드 또는 수량을 요구했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0263",
+    "decision": "ACCEPTED",
+    "reasonKo": "사고 싶은 의도는 질문에 이미 있으므로 물건 자체를 목표가 아닌 현재 구매 대상으로 선택한 CHOICE로 변경했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0271",
+    "decision": "ACCEPTED",
+    "reasonKo": "원문이 이유를 직접 묻는다는 잘못된 한국어 검토 사유를 고쳐 이유가 선택 깊이 정보라는 영어 기준과 일치시켰다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0286",
+    "decision": "ACCEPTED",
+    "reasonKo": "운동을 시도할 의도는 질문에 주어지므로 운동 대상 자체를 목표가 아니라 앞으로 선택할 CHOICE로 변경했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0290",
+    "decision": "REJECTED",
+    "reasonKo": "감기에 걸렸을 때라는 상태를 학습자가 행동과 연결해 직접 표현하면 의미 있는 상황 정보이므로 더 세밀한 시점을 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0292",
+    "decision": "REJECTED",
+    "reasonKo": "몸이 피곤할 때라는 조건을 학습자가 행동과 연결해 답변에 표현하면 유효하므로 추가 시각이나 빈도를 필수로 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0297",
+    "decision": "ACCEPTED",
+    "reasonKo": "좋은 건강 습관으로 이미 밝힌 행동을 반복하지 않고 별도의 실천 상황이나 실행 세부 정보만 사례로 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0298",
+    "decision": "ACCEPTED",
+    "reasonKo": "나쁜 건강 습관 행동을 그대로 반복해 깊이를 채우지 못하도록 별도의 발생 상황, 계기 또는 반복 양상을 요구했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0301",
+    "decision": "ACCEPTED",
+    "reasonKo": "다시 보고 싶은 의도는 질문에 이미 있으므로 영화 자체를 목표가 아니라 재관람 대상으로 선택한 CHOICE로 변경했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0306",
+    "decision": "ACCEPTED",
+    "reasonKo": "선호 이야기 종류를 식별할 때 쓴 장르나 주제를 DETAIL로 그대로 반복하지 않고 별도의 특징만 추가하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0311",
+    "decision": "ACCEPTED",
+    "reasonKo": "행복할 때 듣는 주된 음악 선택을 반복하지 않고 그보다 더 구체적인 별도의 노래나 음악 사례만 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0312",
+    "decision": "ACCEPTED",
+    "reasonKo": "슬플 때 듣는 주된 음악 선택을 반복하지 않고 그보다 더 구체적인 별도의 노래나 음악 사례만 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0313",
+    "decision": "ACCEPTED",
+    "reasonKo": "공부할 때 듣는 주된 음악 선택을 반복하지 않고 별도의 구체적인 노래, 음악가, 채널 또는 재생 목록을 요구했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0316",
+    "decision": "ACCEPTED",
+    "reasonKo": "읽고 싶은 의도는 질문에 이미 있으므로 책 자체를 목표가 아니라 읽을 대상으로 선택한 CHOICE로 변경했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0317",
+    "decision": "REJECTED",
+    "reasonKo": "어린 시절이라는 생애 기간도 학습자가 이야기와 연결해 직접 표현하면 유효한 시간 정보이므로 더 구체적인 나이를 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0318",
+    "decision": "ACCEPTED",
+    "reasonKo": "만나고 싶은 의도는 질문에 이미 있으므로 등장인물 자체를 목표가 아니라 만날 대상으로 선택한 CHOICE로 변경했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0320",
+    "decision": "REJECTED",
+    "reasonKo": "쉬고 싶을 때라는 조건을 학습자가 시청 행동과 연결해 답변에 표현하면 유효한 상황 정보이므로 추가 시간대를 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0349",
+    "decision": "ACCEPTED",
+    "reasonKo": "오늘 목표의 완료 자체를 RESULT로 반복하지 않고 완료 뒤 하루, 책임, 진척 또는 다음 활동에 생기는 효과만 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0350",
+    "decision": "ACCEPTED",
+    "reasonKo": "이번 주 목표의 완료 자체를 RESULT로 반복하지 않고 완료 이후 일정, 진척, 안녕 또는 다음 단계의 효과만 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0351",
+    "decision": "ACCEPTED",
+    "reasonKo": "습관 유지에 도움이 되는 것은 사람이나 환경 조건도 될 수 있어 포괄적인 DETAIL을 필수로 두고 행동은 선택으로 남겼다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0363",
+    "decision": "ACCEPTED",
+    "reasonKo": "질문의 초급 도움 요청 맥락에서는 'I need help'도 실제로 사용할 수 있는 완전한 도움 요청 표현이므로 직접 요청만 허용하던 과도한 제한을 완화했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0367",
+    "decision": "ACCEPTED",
+    "reasonKo": "선물을 받았을 때의 주된 반응은 준 사람에게 하는 말뿐 아니라 선물을 열거나 살펴보는 행동도 자연스럽게 포함하므로 질문 범위에 맞게 넓혔다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0384",
+    "decision": "ACCEPTED",
+    "reasonKo": "살고 싶은 대상은 영화 또는 영화와 식별 가능하게 연결된 세계여야 하므로 일반 허구 세계만 언급하는 답은 배제하도록 관계를 분명히 했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0387",
+    "decision": "ACCEPTED",
+    "reasonKo": "질문은 실제 새 이름을 요구하므로 이름의 분위기나 범주가 아니라 구체적으로 식별 가능한 이름 또는 별명을 제시해야 한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0389",
+    "decision": "ACCEPTED",
+    "reasonKo": "작은 가게가 판매하는 것은 상품뿐 아니라 서비스일 수도 있으므로 모든 관련 슬롯과 검토 근거에서 상품과 서비스를 일관되게 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0391",
+    "decision": "ACCEPTED",
+    "reasonKo": "무료 표는 여행권으로 한정되지 않으므로 목적지뿐 아니라 공연장과 유료 행사도 허용하고, 선택 슬롯도 같은 범위에 맞춰 정렬했다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0397",
+    "decision": "ACCEPTED",
+    "reasonKo": "질문은 아침 식사로 무엇을 먹을지 묻기 때문에 음료만으로 필수 선택을 충족하지 않고 식별 가능한 음식이나 요리를 요구하도록 바로잡았다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0399",
+    "decision": "ACCEPTED",
+    "reasonKo": "질문에 이미 주어진 매일이라는 빈도를 그대로 반복하는 것은 독립적인 깊이 정보가 아니며, 아침처럼 넓지만 의미 있는 추가 시간 정보는 계속 인정하도록 기준을 구체화했다."
+  },
+  {
+    "promptId": "prompt-opinion-1106",
+    "decision": "ACCEPTED",
+    "reasonKo": "편의점의 사회적 역할에는 필수품을 접근 가능한 시간과 가격에 판매하는 구체적인 소매 관행도 포함될 수 있어 상품 판매를 일괄 배제하던 제한을 제거했다."
+  },
+  {
+    "promptId": "prompt-opinion-34",
+    "decision": "ACCEPTED",
+    "reasonKo": "lack of responsibility는 무책임이 아니라 책임이 없다는 입장이므로 영어 권위값과 같은 의미가 되도록 한국어 계약을 바로잡았다."
+  },
+  {
+    "promptId": "prompt-opinion-44",
+    "decision": "ACCEPTED",
+    "reasonKo": "원 질문은 청소년 아르바이트 지원 책임에 대한 찬반과 제한적 책임을 열어 두므로 안전하고 유익한 일자리라는 결론을 미리 강제하지 않도록 중립화했다."
+  },
+  {
+    "promptId": "prompt-preference-2224",
+    "decision": "ACCEPTED",
+    "reasonKo": "on the go는 장소 사이의 이동에만 한정되지 않고 바쁜 외출이나 이동 중의 간편한 선택도 포함하므로 자연스러운 사용 범위를 보존했다."
+  },
+  {
+    "promptId": "prompt-preference-2225",
+    "decision": "ACCEPTED",
+    "reasonKo": "현재 원 질문은 상쾌하게 해 주는 음료 또는 간식을 묻기 때문에 마실 수 있는 간식으로만 좁히지 않고 두 범주를 모두 인정하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-preference-2280",
+    "decision": "ACCEPTED",
+    "reasonKo": "샤워 후의 상쾌함은 샤워 중 찬물이나 제품 사용으로도 생길 수 있으므로 도움 요인의 사용 시점을 샤워 후로만 제한하지 않았다."
+  },
+  {
+    "promptId": "prompt-preference-2288",
+    "decision": "ACCEPTED",
+    "reasonKo": "세정 후 모발 상태는 컨디셔너처럼 세정 중 사용하는 제품과 행동으로도 만들어지므로 세정 중과 세정 후를 모두 인정했다."
+  },
+  {
+    "promptId": "prompt-preference-2296",
+    "decision": "ACCEPTED",
+    "reasonKo": "필수 ACTION에 사용한 음악 선택 기준을 DETAIL로 그대로 반복해 깊이를 중복 충족하지 못하도록 독립적인 추가 기준을 요구했다."
+  },
+  {
+    "promptId": "prompt-preference-2516",
+    "decision": "ACCEPTED",
+    "reasonKo": "배낭 준비 행동과 같은 물건 배치를 DETAIL로 재사용하지 않고 별도의 내용물·배치·순서 정보만 깊이로 인정하도록 분리했다."
+  },
+  {
+    "promptId": "prompt-preference-2522",
+    "decision": "ACCEPTED",
+    "reasonKo": "가방 정리 행동의 반복과 질문에 이미 제시된 여닫기 편리함의 반복을 깊이로 세지 않도록 DETAIL과 RESULT의 독립 조건을 명시했다."
+  },
+  {
+    "promptId": "prompt-preference-2533",
+    "decision": "ACCEPTED",
+    "reasonKo": "서랍 정리의 필수 행동과 같은 배치를 DETAIL로 다시 세지 않고 별도의 범주·칸막이·배치 원칙을 추가해야 하도록 수정했다."
+  },
+  {
+    "promptId": "prompt-preference-2541",
+    "decision": "ACCEPTED",
+    "reasonKo": "욕실 서랍의 필수 정리 행동과 선택 세부 슬롯이 같은 사실로 동시에 충족되지 않도록 추가 배치 정보의 독립성을 요구했다."
+  },
+  {
+    "promptId": "prompt-preference-2548",
+    "decision": "ACCEPTED",
+    "reasonKo": "배경 음악에 사용하는 대상은 기기나 앱뿐 아니라 식별 가능한 재생목록과 음원도 될 수 있어 원 질문의 열린 범위를 보존했다."
+  },
+  {
+    "promptId": "prompt-preference-2556",
+    "decision": "ACCEPTED",
+    "reasonKo": "집에서 독서를 돕는 빛에는 램프뿐 아니라 창문 자연광과 의미 있는 조명 유형도 포함되므로 인공 조명 기구로 한정하지 않았다."
+  },
+  {
+    "promptId": "prompt-preference-2566",
+    "decision": "ACCEPTED",
+    "reasonKo": "지저분함을 줄이는 핵심 요인은 도구 외에도 습관·배치·환경·조건일 수 있으므로 EXAMPLE과 RESULT도 같은 열린 범위를 따르게 했다."
+  },
+  {
+    "promptId": "prompt-preference-2572",
+    "decision": "ACCEPTED",
+    "reasonKo": "소스나 간식의 깔끔한 휴대·보관 결과는 용기뿐 아니라 습관·정리 도구·보관 배치·조건에서도 생길 수 있어 RESULT의 주체를 넓혔다."
+  },
+  {
+    "promptId": "prompt-preference-2574",
+    "decision": "ACCEPTED",
+    "reasonKo": "외출할 때마다라는 표현은 보온병을 가져가는 명확한 반복 상황이므로 유효하게 인정하고, 가끔처럼 대상 없는 빈도 부사만 배제했다."
+  },
+  {
+    "promptId": "prompt-problem-1109",
+    "decision": "ACCEPTED",
+    "reasonKo": "매일과 주말마다는 탭 정리의 의미 있는 반복 시점이므로 인정하고, 자주·가끔처럼 구체적 계기가 없는 빈도만 불충분하게 처리했다."
+  },
+  {
+    "promptId": "prompt-routine-1103",
+    "decision": "ACCEPTED",
+    "reasonKo": "식료품 쇼핑 뒤의 행동은 귀가 후 정리에 한정되지 않으므로 쇼핑 완료와 시간적으로 연결된 모든 구체적인 평소 행동을 허용하도록 전 슬롯을 정렬했다."
+  },
+  {
+    "promptId": "prompt-routine-1118",
+    "decision": "ACCEPTED",
+    "reasonKo": "일반 쇼핑 뒤의 행동은 구매품 확인·정리뿐 아니라 이동·식사·휴식도 가능하므로 원 질문보다 좁았던 전 슬롯 계약을 복원했다."
+  },
+  {
+    "promptId": "prompt-routine-2017",
+    "decision": "ACCEPTED",
+    "reasonKo": "질문은 이동 중의 아무 습관이 아니라 이동에 도움이 되는 습관을 묻기 때문에 ACTION 증거에 실제 도움 관계를 포함하도록 강화했다."
+  },
+  {
+    "promptId": "prompt-routine-2033",
+    "decision": "ACCEPTED",
+    "reasonKo": "짧은 휴식 중 반복하는 행동만으로는 부족하고 그 행동이 휴식·회복·복귀에 도움이 된다는 질문 관계까지 드러나야 한다."
+  },
+  {
+    "promptId": "prompt-routine-2049",
+    "decision": "ACCEPTED",
+    "reasonKo": "점심이나 간식 때의 반복 행동이 실제 식사 과정이나 경험에 도움을 준다는 관계까지 나타내야 질문의 ACTION을 충족한다."
+  },
+  {
+    "promptId": "prompt-routine-2122",
+    "decision": "ACCEPTED",
+    "reasonKo": "질문이 도움이 되는 습관을 요구하므로 행동 자체나 설명에서 실제 도움 관계가 드러나야 한다. 별도의 이유 문장을 강제하지는 않으므로 제안을 수용한다."
+  },
+  {
+    "promptId": "prompt-routine-2402",
+    "decision": "ACCEPTED",
+    "reasonKo": "단순한 날씨 관련 반복 행동이 아니라 변화한 날씨에 대처하는 데 실제로 도움이 되는 행동이어야 질문 의도와 일치하므로 제안을 수용한다."
+  },
+  {
+    "promptId": "prompt-routine-2417",
+    "decision": "ACCEPTED",
+    "reasonKo": "가게 방문이나 짧은 심부름 중 아무 습관이 아니라 해당 일을 실제로 돕는 습관을 요구하는 질문이므로 도움 관계를 명시한 기준이 필요하다."
+  },
+  {
+    "promptId": "prompt-routine-2432",
+    "decision": "ACCEPTED",
+    "reasonKo": "카페나 빵집 방문 중의 단순 반복 행동이 아니라 방문을 실제로 돕는 습관을 묻고 있으므로 도움 관계를 포함한 기준이 더 정확하다."
+  },
+  {
+    "promptId": "prompt-routine-46",
+    "decision": "ACCEPTED",
+    "reasonKo": "원문은 기상 직후에 하는 행동을 묻지만 가장 첫 행동이라고 제한하지 않는다. 불필요한 순서 조건을 제거하는 것이 질문 의미에 맞다."
+  },
+  {
+    "promptId": "prompt-routine-49",
+    "decision": "ACCEPTED",
+    "reasonKo": "원문은 기상 직후 하는 행동 하나와 이유를 요구할 뿐 그 행동이 첫 순서라고 요구하지 않으므로 관련 슬롯의 과도한 순서 제약을 제거한다."
+  }
+]

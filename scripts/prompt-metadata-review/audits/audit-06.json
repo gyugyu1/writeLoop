@@ -1,0 +1,594 @@
+{
+  "auditedParts": ["11", "12"],
+  "auditedCount": 241,
+  "issues": [
+    {
+      "promptId": "prompt-routine-2122",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "SPECIFIC_TIME", "REASON", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "This focused difficulty-I prompt asks for one small helpful phone habit, so the habit action itself is an adequate answer without a mandatory optional detail."
+    },
+    {
+      "promptId": "prompt-routine-2123",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["DETAIL", "SPECIFIC_TIME", "REASON", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Opening the calendar app supplies a narrow situation, and one usual app action fully answers this difficulty-I question."
+    },
+    {
+      "promptId": "prompt-routine-2125",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PROBLEM_SOLUTION",
+        "requiredSlots": ["SOLUTION"],
+        "optionalSlots": ["REASON", "RESULT", "SPECIFIC_TIME", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Rushed phone time is supplied by the question, and one concrete way to stay focused adequately answers this focused difficulty-I task."
+    },
+    {
+      "promptId": "prompt-routine-2126",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["PLACE", "DETAIL", "REASON", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Checking a map app is a tightly scoped situation, so one usual action is sufficient at difficulty I."
+    },
+    {
+      "promptId": "prompt-routine-2129",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PROBLEM_SOLUTION",
+        "requiredSlots": ["SOLUTION"],
+        "optionalSlots": ["REASON", "RESULT", "SPECIFIC_TIME", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The low battery is already the stated problem, and one usual response is a complete beginner-level solution."
+    },
+    {
+      "promptId": "prompt-routine-2131",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "SPECIFIC_TIME", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question directly asks for one helpful phone habit, and naming that habit adequately completes the focused difficulty-I task."
+    },
+    {
+      "promptId": "prompt-routine-2132",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["DETAIL", "SPECIFIC_TIME", "REASON", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Reviewing simple notes provides a narrow context, and one usual review action is sufficient for this difficulty-I prompt."
+    },
+    {
+      "promptId": "prompt-routine-2133",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["EXAMPLE"],
+        "optionalSlots": ["RESULT", "SPECIFIC_TIME", "ACTION", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "The learner is asked to tell about a recent occasion, so one action, result, feeling, time, or detail is needed beyond merely identifying an instance."
+    },
+    {
+      "promptId": "prompt-routine-2135",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["DETAIL", "SPECIFIC_TIME", "REASON", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The desired memory outcome is supplied, and one usual action for remembering words fully answers this focused difficulty-I question."
+    },
+    {
+      "promptId": "prompt-routine-2402",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "SPECIFIC_TIME", "REASON", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "One small habit for changing weather is the complete requested content, so this focused difficulty-I prompt should not require extra support."
+    },
+    {
+      "promptId": "prompt-routine-2404",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PROBLEM_SOLUTION",
+        "requiredSlots": ["SOLUTION"],
+        "optionalSlots": ["REASON", "RESULT", "DETAIL", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Rain before departure is the supplied complication, and one usual response adequately solves the narrow difficulty-I task."
+    },
+    {
+      "promptId": "prompt-routine-2405",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PROBLEM_SOLUTION",
+        "requiredSlots": ["SOLUTION"],
+        "optionalSlots": ["REASON", "RESULT", "FEELING", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The sudden weather change and calming goal are supplied, so one concrete calming response is sufficient at difficulty I."
+    },
+    {
+      "promptId": "prompt-routine-2409",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "DETAIL", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question asks for one comfort action in a specific weather setting, which is a complete difficulty-I answer without another required detail."
+    },
+    {
+      "promptId": "prompt-routine-2410",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PROBLEM_SOLUTION",
+        "requiredSlots": ["SOLUTION"],
+        "optionalSlots": ["REASON", "RESULT", "DETAIL", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "A sudden weather change is the supplied problem, and one usual response is sufficient for this focused beginner question."
+    },
+    {
+      "promptId": "prompt-routine-2411",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["EXAMPLE"],
+        "optionalSlots": ["RESULT", "SPECIFIC_TIME", "ACTION", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Telling about a recent rainy or cold day requires one independent event detail beyond simply identifying the occasion."
+    },
+    {
+      "promptId": "prompt-routine-2412",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "optionalSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["CHOICE", "REASON"],
+        "optionalSlots": ["DETAIL", "RESULT", "SPECIFIC_TIME", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The learner must name the item brought and explain why; the item is a selected thing, not an action, and result is more useful than timing as the next optional support."
+    },
+    {
+      "promptId": "prompt-routine-2414",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "One end-of-day action that creates the supplied settled feeling fully answers this narrow difficulty-I prompt."
+    },
+    {
+      "promptId": "prompt-routine-2417",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "EXAMPLE", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The task asks for one small helpful errand habit, so that action alone is adequate at difficulty I."
+    },
+    {
+      "promptId": "prompt-routine-2418",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "DETAIL", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The faster-errand outcome is supplied by the question, and one action used to achieve it is a complete beginner response."
+    },
+    {
+      "promptId": "prompt-routine-2419",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PROBLEM_SOLUTION",
+        "requiredSlots": ["SOLUTION"],
+        "optionalSlots": ["REASON", "RESULT", "DETAIL", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The rushed errand is already supplied, and the first response to it is sufficient for this focused difficulty-I solution prompt."
+    },
+    {
+      "promptId": "prompt-routine-2421",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["DETAIL", "REASON", "RESULT", "PLACE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Needing only one or two things is a narrow supplied condition, so one usual action adequately answers this difficulty-I question."
+    },
+    {
+      "promptId": "prompt-routine-2424",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "optionalSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["DETAIL"],
+        "optionalSlots": ["ACTION", "REASON", "RESULT", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The wording asks for whatever factor helps, which may be an aid, list, or other feature rather than an action; that concrete factor belongs in DETAIL."
+    },
+    {
+      "promptId": "prompt-routine-2425",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["EXAMPLE"],
+        "optionalSlots": ["RESULT", "SPECIFIC_TIME", "ACTION", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "The instruction to tell about a recent errand calls for one independent action, result, time, feeling, or detail beyond identifying an example."
+    },
+    {
+      "promptId": "prompt-routine-2427",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["DETAIL", "REASON", "RESULT", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "A store stop on the way home is a specific setting, and one usual action completes the difficulty-I task."
+    },
+    {
+      "promptId": "prompt-routine-2429",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["ADDITIONAL_ACTION", "REASON", "RESULT", "DETAIL"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The prompt asks for one action in a narrowly defined transition after an errand, so extra support should remain optional at difficulty I."
+    },
+    {
+      "promptId": "prompt-routine-2430",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["DETAIL", "REASON", "RESULT", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Making a short shopping list supplies a focused context, and one usual list-making action is enough for a beginner answer."
+    },
+    {
+      "promptId": "prompt-routine-2432",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "EXAMPLE", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "One small helpful cafe or bakery habit is the full requested content, so this difficulty-I item should not force another detail."
+    },
+    {
+      "promptId": "prompt-routine-2434",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PROBLEM_SOLUTION",
+        "requiredSlots": ["SOLUTION"],
+        "optionalSlots": ["REASON", "RESULT", "DETAIL", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The busy venue is the supplied challenge, and one first response adequately answers this focused difficulty-I problem-solution question."
+    },
+    {
+      "promptId": "prompt-routine-2436",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["CHOICE", "DETAIL", "REASON", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "An afternoon bakery stop is a specific context, and one usual action is an adequate difficulty-I response."
+    },
+    {
+      "promptId": "prompt-routine-2440",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["EXAMPLE"],
+        "optionalSlots": ["RESULT", "SPECIFIC_TIME", "ACTION", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "A response that tells about a recent cafe or bakery visit needs one independent descriptive unit beyond merely naming the occasion."
+    },
+    {
+      "promptId": "prompt-routine-2443",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["CHOICE", "REASON", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The after-work-or-class bakery stop is narrowly specified, so one usual action sufficiently answers the beginner question."
+    },
+    {
+      "promptId": "prompt-routine-2444",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["ADDITIONAL_ACTION", "REASON", "RESULT", "DETAIL"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "One action before leaving the venue directly and adequately answers this narrow difficulty-I prompt."
+    },
+    {
+      "promptId": "prompt-routine-2447",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "EXAMPLE", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The learner is asked for one small helpful walking or exercise habit, which is sufficient by itself at difficulty I."
+    },
+    {
+      "promptId": "prompt-routine-2449",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PROBLEM_SOLUTION",
+        "requiredSlots": ["SOLUTION"],
+        "optionalSlots": ["REASON", "RESULT", "FEELING", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Feeling rushed is supplied as the problem, and one way to slow down is a complete solution for this difficulty-I task."
+    },
+    {
+      "promptId": "prompt-routine-2451",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["DETAIL", "SPECIFIC_TIME", "REASON", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Wanting to stretch after sitting is a focused condition, and one usual stretching action fully answers the difficulty-I question."
+    },
+    {
+      "promptId": "prompt-routine-2455",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["EXAMPLE"],
+        "optionalSlots": ["RESULT", "SPECIFIC_TIME", "ACTION", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Telling about a recent walk or exercise occasion requires one independent descriptive detail beyond identifying the example."
+    },
+    {
+      "promptId": "prompt-routine-2456",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["PLACE", "DETAIL", "REASON", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "A short walk in a park is narrowly scoped, so one usual action is sufficient for this difficulty-I answer."
+    },
+    {
+      "promptId": "prompt-routine-2459",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["DETAIL", "REASON", "RESULT", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The ten-minute limit makes the task specific, and one exercise action adequately answers the beginner prompt."
+    },
+    {
+      "promptId": "prompt-routine-2460",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "DETAIL", "REASON", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question directly requests one post-exercise cool-down action, which is sufficient at difficulty I."
+    },
+    {
+      "promptId": "prompt-routine-2461",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "SPECIFIC_TIME", "ADDITIONAL_ACTION"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The easier night routine is the supplied purpose, and one before-bed action fully answers this focused difficulty-I task."
+    },
+    {
+      "promptId": "prompt-routine-2462",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "SPECIFIC_TIME", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "One small helpful bedtime habit is exactly what the difficulty-I prompt asks for, so another detail should not be mandatory."
+    },
+    {
+      "promptId": "prompt-routine-2464",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PROBLEM_SOLUTION",
+        "requiredSlots": ["SOLUTION"],
+        "optionalSlots": ["REASON", "RESULT", "FEELING", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "A rushed bedtime is the supplied problem, and one calming response is an adequate solution at difficulty I."
+    },
+    {
+      "promptId": "prompt-routine-2465",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "REASON", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Washing up and the readiness goal are supplied, so one following action completes this narrow difficulty-I question."
+    },
+    {
+      "promptId": "prompt-routine-2469",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "optionalSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["DETAIL"],
+        "optionalSlots": ["ACTION", "REASON", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "What helps may be an aid, condition, or other factor rather than an action, so the required content is a concrete DETAIL and action should remain optional."
+    },
+    {
+      "promptId": "prompt-routine-2470",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["EXAMPLE"],
+        "optionalSlots": ["RESULT", "SPECIFIC_TIME", "ACTION", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "The learner must tell about the recent bedtime-preparation occasion, so one independent descriptive unit is needed beyond identifying it."
+    },
+    {
+      "promptId": "prompt-routine-2471",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["DETAIL", "REASON", "RESULT", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The desired clean feeling and before-bed setting are supplied, and one usual action is enough for this focused beginner prompt."
+    },
+    {
+      "promptId": "prompt-routine-2474",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "optionalSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["DETAIL", "REASON"],
+        "optionalSlots": ["ACTION", "RESULT", "FEELING", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question asks for the factor that helps after a shower and why; the factor can be an aid or condition, so DETAIL is required rather than ACTION."
+    },
+    {
+      "promptId": "prompt-routine-26",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["SPECIFIC_TIME", "ADDITIONAL_ACTION", "REASON", "RESULT", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "This simple difficulty-I question asks only for one usual action before bed, so that action is adequate without mandatory support."
+    },
+    {
+      "promptId": "prompt-routine-46",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "PLACE", "REASON", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Right after waking is a tightly bounded time, and one usual first action fully answers this simple difficulty-I prompt."
+    }
+  ]
+}

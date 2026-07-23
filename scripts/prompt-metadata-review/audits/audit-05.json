@@ -1,0 +1,18 @@
+{
+  "auditedParts": ["09", "10"],
+  "auditedCount": 241,
+  "issues": [
+    {
+      "promptId": "prompt-preference-46",
+      "severity": "ERROR",
+      "fields": ["answerMode", "requiredSlots", "rationale"],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": ["SPECIFIC_TIME", "PLACE", "REASON"],
+        "optionalSlots": ["DETAIL", "EXAMPLE", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The opening 'When do you need to focus' directly requires a timing condition; it is not context supplied by the prompt. The learner also states a liked study place, so the response structure is a preference, and the three explicit slots need no additional depth."
+    }
+  ]
+}

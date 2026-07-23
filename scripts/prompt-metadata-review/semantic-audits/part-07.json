@@ -1,0 +1,618 @@
+[
+  {
+    "promptId": "prompt-preference-05",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 음식의 종류와 학습자에게 특별한 이유를 각각 요구하며, 선택 보강 슬롯도 음식 경험에 맞게 구분되어 있다."
+  },
+  {
+    "promptId": "prompt-preference-06",
+    "verdict": "PASS",
+    "auditReasonKo": "영화를 볼 때 평소 고르는 이야기 유형과 그 선택이 기분에 맞는 관계를 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-07",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 영화 장르와 그 장르의 구체적인 매력이라는 두 의무가 원문 질문에 충실하다."
+  },
+  {
+    "promptId": "prompt-preference-08",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 영화 장르를 밝히고 서로 다른 이유 두 가지를 제시해야 한다는 조건이 질문의 수량 요구까지 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-preference-09",
+    "verdict": "PASS",
+    "auditReasonKo": "장르 이름이 아니라 그 안에서 가장 좋아하는 요소와 그 요소가 돋보이는 이유를 요구해 질문의 초점을 잘 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-10",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 영화 장르의 식별과 개인적으로 특별하게 만드는 특성·경험·연관성을 모두 정확히 다룬다."
+  },
+  {
+    "promptId": "prompt-preference-11",
+    "verdict": "PASS",
+    "auditReasonKo": "휴식이 필요할 때 쉬는 장소라는 관계와 그 장소가 편안한 이유를 분명히 요구하며 단순 장소 언급을 허용하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-1101",
+    "verdict": "PASS",
+    "auditReasonKo": "바쁜 아침에 실제로 먹는 아침 식사와 그 상황에서의 이유를 묻고, 추가 시점도 일반 맥락을 되풀이하지 않게 한다."
+  },
+  {
+    "promptId": "prompt-preference-1102",
+    "verdict": "PASS",
+    "auditReasonKo": "더운 날 선택하는 과일과 그 과일이 더운 날에 맞는 구체적인 이유를 자연스러운 표현 범위에서 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-1103",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날의 음료 선택과 그 날씨에서의 매력·효과 관계가 질문에 맞게 구체화되어 있다."
+  },
+  {
+    "promptId": "prompt-preference-1104",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대폰 케이스를 고를 때 최우선인 기준과 그 기준을 다른 요소보다 우선하는 근거를 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-1105",
+    "verdict": "PASS",
+    "auditReasonKo": "노트에 평소 기록하는 구체적인 내용과 그 기록 습관의 목적을 요구해 단순히 쓴다는 답을 걸러낸다."
+  },
+  {
+    "promptId": "prompt-preference-1106",
+    "verdict": "PASS",
+    "auditReasonKo": "독서 장소를 실제 읽기 행동과 연결하고 그곳에서 편안하게 읽을 수 있는 조건을 별도로 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-1107",
+    "verdict": "PASS",
+    "auditReasonKo": "따뜻한 것이 먹고 싶을 때 고르는 수프와 그 선택이 욕구에 맞는 이유를 구체적으로 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-1108",
+    "verdict": "PASS",
+    "auditReasonKo": "평소 가방에 넣어 다니는 구체적인 물건과 휴대 목적을 요구하며 가방 자체의 단순 언급과 구별된다."
+  },
+  {
+    "promptId": "prompt-preference-1109",
+    "verdict": "PASS",
+    "auditReasonKo": "보드게임을 즐기는 의미 있는 시간·행사·사람들과의 상황을 모두 인정하고 정확한 시각을 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-1110",
+    "verdict": "PASS",
+    "auditReasonKo": "어휘를 공부하는 시점과 단어 기억을 돕는 구체적인 학습 방법을 서로 독립된 필수 관계로 다룬다."
+  },
+  {
+    "promptId": "prompt-preference-1111",
+    "verdict": "PASS",
+    "auditReasonKo": "방을 편안하게 하는 식별 가능한 향과 그 향이 편안함을 만드는 감각·기억상의 이유를 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-1112",
+    "verdict": "PASS",
+    "auditReasonKo": "버스 안의 선호 좌석 위치를 식별하고 그 위치를 고르는 실용적·감각적 이유와 연결하도록 한다."
+  },
+  {
+    "promptId": "prompt-preference-1113",
+    "verdict": "PASS",
+    "auditReasonKo": "야외 산책을 선호하는 때와 산책을 더 좋게 만드는 날씨 조건을 각각 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-1114",
+    "verdict": "PASS",
+    "auditReasonKo": "간단한 식사로 고르는 샌드위치와 그 상황에서의 실용적 또는 개인적 이유를 질문 범위 안에서 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-1115",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 사용하는 주방 도구를 반복 사용 관계와 연결하고 빈도를 설명하는 구체적인 이유를 별도로 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-1116",
+    "verdict": "PASS",
+    "auditReasonKo": "운동 수업에 참여하는 의미 있는 시점과 꾸준한 참여를 돕는 수업 유형·특징을 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-1117",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 보는 온라인 크리에이터의 범주나 주제와 그 시청 습관의 이유를 구체적으로 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-1118",
+    "verdict": "PASS",
+    "auditReasonKo": "공부나 업무 휴식에 고르는 간식과 그 상황에서 간식이 매력적인 이유를 분명히 연결한다."
+  },
+  {
+    "promptId": "prompt-preference-1119",
+    "verdict": "PASS",
+    "auditReasonKo": "편안한 필기와 연결된 펜 종류·특징 및 그 편안함을 만드는 물리적·기능적 이유를 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-1120",
+    "verdict": "PASS",
+    "auditReasonKo": "빵집에서 선호해 구매하는 품목과 그 구매 선호를 설명하는 맛·용도·기억 등의 이유가 질문에 맞는다."
+  },
+  {
+    "promptId": "prompt-preference-1121",
+    "verdict": "PASS",
+    "auditReasonKo": "영화 관람 중 선호하는 간식과 영화 경험에 그 간식이 잘 맞는 이유를 구체적으로 다룬다."
+  },
+  {
+    "promptId": "prompt-preference-1122",
+    "verdict": "PASS",
+    "auditReasonKo": "여행에서 가져오기 좋아하는 기념품과 그 선택의 기억·용도·선물 목적을 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-preference-1123",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 양초를 사용하는 의미 있는 때나 활동과 그때 양초를 쓰는 목적을 시계 시각 없이도 충족할 수 있다."
+  },
+  {
+    "promptId": "prompt-preference-1124",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대폰 사진을 정리하는 구체적인 방법과 그 방법이 주는 실제 도움을 직접적인 두 의무로 잘 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-1125",
+    "verdict": "PASS",
+    "auditReasonKo": "차를 마시는 일과상의 시점·상황을 폭넓게 인정하면서 그때 마시는 구체적인 이유를 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-1126",
+    "verdict": "PASS",
+    "auditReasonKo": "얇은 재킷을 챙기는 날씨·때·상황과 예상되는 필요를 정확히 연결하며 시각 정밀도를 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-12",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 휴식 장소라는 관계와 그 장소의 개인적 매력을 각각 분명하게 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-13",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 휴식 장소를 식별하고 서로 다른 즐거움의 이유 두 가지를 요구해 원문의 수량 조건을 보존한다."
+  },
+  {
+    "promptId": "prompt-preference-14",
+    "verdict": "PASS",
+    "auditReasonKo": "장소 이름이 아니라 좋아하는 휴식 장소에서 가장 선호하는 요소와 그 이유를 정확히 겨냥한다."
+  },
+  {
+    "promptId": "prompt-preference-15",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 휴식 장소와 그곳을 개인적으로 특별하게 만드는 특징·기억·관계를 구체적으로 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-16",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 계절에 하는 활동과 그 계절 자체가 기분 좋게 느껴지는 이유를 혼동 없이 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-17",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 계절의 식별과 그 계절에 끌리는 구체적인 특성·경험을 충실하게 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-18",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 계절과 서로 다른 두 가지 이유를 요구하며 같은 이유의 표현만 바꾼 반복을 적절히 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-19",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 계절 안에서 가장 선호하는 특징이나 경험과 그것이 돋보이는 이유를 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-20",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 계절과 그 계절을 특별하게 만드는 개인적 특징·경험·기억의 관계가 명확하다."
+  },
+  {
+    "promptId": "prompt-preference-21",
+    "verdict": "PASS",
+    "auditReasonKo": "음악을 듣기 좋아하는 때와 그 순간에 맞는 음악 종류를 연결하며 넓지만 의미 있는 시간 표현을 허용한다."
+  },
+  {
+    "promptId": "prompt-preference-22",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 음악 종류와 그 음악의 구체적인 매력 또는 개인적 연관성을 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2201",
+    "verdict": "PASS",
+    "auditReasonKo": "바쁜 아침에 식사를 먹기 쉽게 만드는 특성이나 상황을 열린 요인으로 판정해 특정 음식이나 행동만 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2202",
+    "verdict": "PASS",
+    "auditReasonKo": "아침에 단백질이나 에너지를 더하는 선호 방식이 필수이고, 원천·세부 방식·이유·효과는 선택 보강으로 적절히 구분된다."
+  },
+  {
+    "promptId": "prompt-preference-2203",
+    "verdict": "PASS",
+    "auditReasonKo": "아침에 선호하는 과일과 그 아침 선택을 설명하는 구체적인 특성·편리함·습관을 정확히 다룬다."
+  },
+  {
+    "promptId": "prompt-preference-2204",
+    "verdict": "PASS",
+    "auditReasonKo": "간단한 아침을 더 즐겁게 하려고 넣거나 곁들이는 구체적인 품목을 직접 답하도록 하는 계약이다."
+  },
+  {
+    "promptId": "prompt-preference-2205",
+    "verdict": "PASS",
+    "auditReasonKo": "하루 시작에 도움이 되는 구체적인 간편 아침 식사를 요구하고 도움의 효과는 독립적인 선택 정보로 남긴다."
+  },
+  {
+    "promptId": "prompt-preference-2206",
+    "verdict": "PASS",
+    "auditReasonKo": "간단한 아침 식사를 더 좋게 만드는 식별 가능한 맛과 그 개선 관계를 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2207",
+    "verdict": "PASS",
+    "auditReasonKo": "토스트나 간단한 아침을 더 완전하게 만드는 추가·조합·준비 방법을 구체적인 행동으로 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-2208",
+    "verdict": "PASS",
+    "auditReasonKo": "시간이 부족한 상황에 맞는 구체적인 간단한 식사를 요구하며 별도 이유를 필수로 늘리지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2209",
+    "verdict": "PASS",
+    "auditReasonKo": "도시락에 넣기 좋아하는 반찬과 그 선택의 맛·편리함·보관상 이유를 원문대로 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2210",
+    "verdict": "PASS",
+    "auditReasonKo": "자신을 위해 만들기 좋아하는 간단한 식사와 그것을 만드는 의미 있는 때나 상황을 각각 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-2211",
+    "verdict": "PASS",
+    "auditReasonKo": "우유와 곁들이는 간식 선택 및 그 조합을 좋아하는 구체적인 이유가 질문 관계에 맞게 설정되어 있다."
+  },
+  {
+    "promptId": "prompt-preference-2212",
+    "verdict": "PASS",
+    "auditReasonKo": "서두를 때 실제로 먹는 음식과 시간 압박 속에서 그 음식을 고르는 이유를 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-preference-2213",
+    "verdict": "PASS",
+    "auditReasonKo": "밥이나 간단한 식사를 만족스럽게 하려고 올리거나 곁들이는 구체적인 음식을 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2214",
+    "verdict": "PASS",
+    "auditReasonKo": "조용한 아침에 부담 없는 것을 원한다는 가정 상황에서 먹을 구체적인 음식만 필수로 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2215",
+    "verdict": "PASS",
+    "auditReasonKo": "늦게 시작한 아침에 도움이 되는 구체적인 간편 식사를 식별하게 하되 도움의 설명을 추가 의무로 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2216",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 휴식에 맞는 실제 소량 간식을 요구하고 단순히 간식이나 좋은 것이라는 일반 표현을 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2217",
+    "verdict": "PASS",
+    "auditReasonKo": "잠깐 쉴 때 평소 손이 가는 식별 가능한 바삭한 간식을 요구해 '바삭한 것' 같은 미확정 답을 걸러낸다."
+  },
+  {
+    "promptId": "prompt-preference-2218",
+    "verdict": "PASS",
+    "auditReasonKo": "따뜻하거나 피곤한 날 중 적어도 한 조건에서 고를 차가운 간식을 인정해 원문의 선택 접속 관계를 보존한다."
+  },
+  {
+    "promptId": "prompt-preference-2219",
+    "verdict": "PASS",
+    "auditReasonKo": "공부 후 좋아하는 간식과 그 상황에서의 구체적인 선호 이유를 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-preference-2220",
+    "verdict": "PASS",
+    "auditReasonKo": "약간의 활력이 필요할 때 고를 식별 가능한 작은 단 간식을 요구하며 막연한 '단것'은 충분하지 않게 한다."
+  },
+  {
+    "promptId": "prompt-preference-2221",
+    "verdict": "PASS",
+    "auditReasonKo": "바쁜 날 편의점에서 고를 구체적인 상품을 요구하고 빠른 것 같은 속성만으로 대상을 대신하지 못하게 한다."
+  },
+  {
+    "promptId": "prompt-preference-2222",
+    "verdict": "PASS",
+    "auditReasonKo": "나누어 먹기와 편히 먹기 중 하나에 알맞은 간식이면 충족하도록 하여 원문의 'or'를 과도하게 강화하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2223",
+    "verdict": "PASS",
+    "auditReasonKo": "영화나 프로그램을 보는 상황에서 고를 구체적인 간식이라는 선택 관계가 정확하다."
+  },
+  {
+    "promptId": "prompt-preference-2224",
+    "verdict": "CHANGE",
+    "auditReasonKo": "'on the go'를 장소 사이를 이동하며 사 먹는 상황으로 좁혀, 미리 챙긴 빵이나 바쁜 외출 중의 자연스러운 답을 배제할 수 있다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The sweet bread the learner likes to grab on the go.",
+        "satisfiedWhenEn": "The answer identifies a recognizable kind of sweet bread and presents it as the learner's preferred option in a busy, mobile, or otherwise on-the-go situation.",
+        "semanticRoleKo": "학습자가 바쁘게 움직이거나 이동하는 중에 간편하게 집어 들기 좋아하는 단 빵.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 단 빵의 종류를 밝히고 그것을 바쁘게 움직이거나 이동하는 상황에서 학습자가 선호하는 선택으로 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2225",
+    "verdict": "CHANGE",
+    "auditReasonKo": "어색한 원문의 'drink snack'은 음료나 간식을 넓게 가리키는데, 1차 계약은 마실 수 있는 간식으로 한정해 고형 간식을 부당하게 배제한다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The drink or snack the learner associates with feeling refreshed during the day.",
+        "satisfiedWhenEn": "The answer identifies a recognizable drink or snack and connects it, explicitly or clearly by context, to daytime refreshment; an unspecified refreshing item is insufficient.",
+        "semanticRoleKo": "학습자가 낮 동안 상쾌함과 연결하는 음료나 간식.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음료나 간식을 밝히고 그것을 명시적으로 또는 문맥상 낮 동안 상쾌해지는 것과 연결하면 충족하며, '상쾌한 것'처럼 대상을 특정하지 않은 표현은 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2226",
+    "verdict": "PASS",
+    "auditReasonKo": "식별 가능한 달콤한 과일 맛을 좋은 휴식과 명시적 또는 문맥상 연결하도록 해 단순한 단맛 언급을 걸러낸다."
+  },
+  {
+    "promptId": "prompt-preference-2227",
+    "verdict": "PASS",
+    "auditReasonKo": "늦은 밤 조금 먹고 싶다는 상황에서 고를 구체적인 음식이나 간식을 요구해 질문의 가정 관계를 보존한다."
+  },
+  {
+    "promptId": "prompt-preference-2228",
+    "verdict": "PASS",
+    "auditReasonKo": "가벼운 휴식에 맞는 짭짤한 간식과 그 적합성을 설명하는 구체적인 이유를 모두 직접 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-2229",
+    "verdict": "PASS",
+    "auditReasonKo": "긴 하루 뒤 위안을 줄 부드러운 간식을 식별하게 하며 별도 이유를 원문보다 엄격하게 필수화하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2230",
+    "verdict": "PASS",
+    "auditReasonKo": "하루를 좋은 기분으로 마치도록 돕는 식별 가능한 작은 간식을 요구하고 효과 설명은 선택 정보로 남긴다."
+  },
+  {
+    "promptId": "prompt-preference-2231",
+    "verdict": "PASS",
+    "auditReasonKo": "공부할 때 선호하는 필기 도구와 그 도구를 좋아하는 사용감·실용상의 이유를 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2232",
+    "verdict": "PASS",
+    "auditReasonKo": "공부 중 지우개를 쓰는 실수 발견·수정 상황과 그 도움이 되는 효과를 요구하며 정확한 시각은 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2233",
+    "verdict": "PASS",
+    "auditReasonKo": "공부 자료의 무엇을 어떤 방식으로 강조하는지 요구해 단순히 형광펜을 쓴다는 답과 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2234",
+    "verdict": "PASS",
+    "auditReasonKo": "공부나 업무용 포스트잇에 평소 적는 식별 가능한 정보가 핵심이고 사례·배치 방식은 독립 보강으로 설정되어 있다."
+  },
+  {
+    "promptId": "prompt-preference-2235",
+    "verdict": "PASS",
+    "auditReasonKo": "플래너에 할 일을 적거나 일정을 잡는 등 실제 사용 방법을 요구하며 막연한 사용 언급을 충분하게 보지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2236",
+    "verdict": "PASS",
+    "auditReasonKo": "읽기나 공부 중 멈추거나 다시 볼 부분을 표시하는 시점을 인정해 책갈피 사용에 불필요한 시계 시각을 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2237",
+    "verdict": "PASS",
+    "auditReasonKo": "공부나 일 전 책상을 정리하는 주 행동과 이를 되풀이하지 않는 별도 준비 단계를 구체적으로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2238",
+    "verdict": "PASS",
+    "auditReasonKo": "학교나 업무에서 자를 쓰는 과제·상황을 시간 슬롯으로 인정하고 정확한 시각을 요구하지 않아 질문 범위에 맞는다."
+  },
+  {
+    "promptId": "prompt-preference-2239",
+    "verdict": "PASS",
+    "auditReasonKo": "서류의 분류·라벨·보관 방법과 그 주된 방법을 보완하는 별도 유지 행동을 명확히 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2240",
+    "verdict": "PASS",
+    "auditReasonKo": "학교나 업무용 파우치에 실제 보관하는 물건 또는 분명한 물건 범주를 요구해 질문의 소지 관계를 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-2241",
+    "verdict": "PASS",
+    "auditReasonKo": "편안한 타이핑을 돕는 키보드의 높이·각도·배치 같은 구체적인 설정을 요구해 단순한 좋은 키보드 언급을 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2242",
+    "verdict": "PASS",
+    "auditReasonKo": "공부나 업무 중 편안한 마우스 종류·특징을 식별하게 하고 편하다는 평가만으로는 충분하지 않게 한다."
+  },
+  {
+    "promptId": "prompt-preference-2243",
+    "verdict": "PASS",
+    "auditReasonKo": "공부나 업무에서 타이머를 설정하고 휴식과 집중 구간을 운영하는 구체적인 사용 방법을 정확히 다룬다."
+  },
+  {
+    "promptId": "prompt-preference-2244",
+    "verdict": "PASS",
+    "auditReasonKo": "학교나 업무 서류를 계속 정돈하는 체계와 별도의 후속 유지 습관이 반복되지 않도록 분리되어 있다."
+  },
+  {
+    "promptId": "prompt-preference-2245",
+    "verdict": "PASS",
+    "auditReasonKo": "공책 가까이에 두는 구체적인 공부 도구와 그 도구가 가까이 있어 생기는 실제 도움을 각각 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2246",
+    "verdict": "PASS",
+    "auditReasonKo": "평범한 날 보통 입는 티셔츠를 일상 착용 관계와 연결하고 그 선택의 구체적인 이유를 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-2247",
+    "verdict": "PASS",
+    "auditReasonKo": "후드티를 입는 쌀쌀한 아침·이동 중·편한 저녁 같은 넓고 의미 있는 상황을 모두 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2248",
+    "verdict": "PASS",
+    "auditReasonKo": "긴 하루 동안 편안한 양말의 식별 가능한 종류·특징과 오래 편한 구체적인 이유를 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2249",
+    "verdict": "PASS",
+    "auditReasonKo": "매일 걸을 때 습관적으로 신는 운동화와 그 운동화가 보행 필요에 맞는 이유를 분명히 연결한다."
+  },
+  {
+    "promptId": "prompt-preference-2250",
+    "verdict": "PASS",
+    "auditReasonKo": "맑은 날이라는 제시 맥락을 되풀이하지 않고 외출·한낮 산책·야외 활동 같은 실제 착용 상황을 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2251",
+    "verdict": "PASS",
+    "auditReasonKo": "겨울에 목도리를 두르는 추운 출퇴근·바람 부는 산책 같은 상황과 그때 얻는 도움을 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2252",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 착용하는 시계나 액세서리를 빈도 관계와 연결하고 실용적·미적·정서적 이유를 폭넓게 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2253",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 슬리퍼를 신는 의미 있는 때와 그때 신는 이유를 요구하며 정확한 시각을 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2254",
+    "verdict": "PASS",
+    "auditReasonKo": "우비를 입을 날씨·활동 상황과 그 상황에서 우비가 주는 구체적인 도움을 가정형 관계로 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-2255",
+    "verdict": "PASS",
+    "auditReasonKo": "편안한 수면을 위해 잠자리에 입는 구체적인 옷과 그 옷이 수면을 돕는 이유가 명확하다."
+  },
+  {
+    "promptId": "prompt-preference-2256",
+    "verdict": "PASS",
+    "auditReasonKo": "머리를 묶는 활동·상황과 묶은 머리를 편안하게 하는 끈·모양·위치 등의 조건을 각각 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2257",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날 보통 사용하는 우산의 종류와 그 우산을 고르는 비 오는 날의 구체적인 필요를 연결한다."
+  },
+  {
+    "promptId": "prompt-preference-2258",
+    "verdict": "PASS",
+    "auditReasonKo": "평범한 야외 일상에서 보통 입는 재킷과 그 선택의 날씨·편안함·활용상 이유를 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-2259",
+    "verdict": "PASS",
+    "auditReasonKo": "착용하기 좋아하는 반지나 팔찌와 일할 때·주말·외출 때 같은 의미 있는 착용 상황을 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2260",
+    "verdict": "PASS",
+    "auditReasonKo": "편안한 기분을 원할 때 입는 구체적인 옷과 그 옷이 이완을 돕는 특성의 관계가 정확하다."
+  },
+  {
+    "promptId": "prompt-preference-2261",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 편안함을 주는 담요의 식별 가능한 특징과 저녁 독서·휴식·수면 같은 사용 상황을 모두 정확히 다룬다."
+  },
+  {
+    "promptId": "prompt-preference-2262",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 더 잘 쉬게 하는 베개나 지지 특징과 그 베개가 휴식을 돕는 구체적인 이유를 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2263",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 사용하기 좋아하는 머그잔과 아침·공부 중·저녁·주말 같은 의미 있는 사용 때를 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-2264",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 선호하는 그릇과 그 안에 담는 식별 가능한 음식이나 내용물을 각각 필수로 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2265",
+    "verdict": "PASS",
+    "auditReasonKo": "방을 편안하게 하는 식별 가능한 조명 설정과 밝기·색온도·방향상의 구체적인 이유를 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-preference-2266",
+    "verdict": "PASS",
+    "auditReasonKo": "물병을 보관하는 구체적인 집 안 위치와 그곳에 두어서 생기는 접근성·습관상의 도움을 분명히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2267",
+    "verdict": "PASS",
+    "auditReasonKo": "데스크 매트가 집에서의 공부나 업무에 주는 구체적인 도움을 핵심으로 삼고 특징·사용법은 독립 보강으로 둔다."
+  },
+  {
+    "promptId": "prompt-preference-2268",
+    "verdict": "PASS",
+    "auditReasonKo": "오래 앉을 때 의자를 편안하게 하는 제품·조절·습관을 모두 포괄하는 요인 계약이라 특정 행동만 부당하게 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2269",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 벽걸이 달력을 사용하는 구체적인 방법과 그 사용이 주는 실제 도움을 직접적인 두 의무로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2270",
+    "verdict": "PASS",
+    "auditReasonKo": "방에서 작은 선풍기를 쓰는 더운 때·활동·공기 상태와 그때 선풍기가 주는 도움을 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-preference-2271",
+    "verdict": "PASS",
+    "auditReasonKo": "외출 준비라는 일반 맥락을 되풀이하지 않고 옷을 입은 뒤·머리 손질 중·나가기 전 같은 실제 단계를 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2272",
+    "verdict": "PASS",
+    "auditReasonKo": "집의 수납 바구니에 넣어 두는 구체적인 물건이나 범주와 그 보관 이유를 명확히 연결한다."
+  },
+  {
+    "promptId": "prompt-preference-2273",
+    "verdict": "PASS",
+    "auditReasonKo": "간단한 식사에 보통 사용하는 접시와 크기·세척·음식 적합성 등의 선택 이유를 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2274",
+    "verdict": "PASS",
+    "auditReasonKo": "방을 더 편안하게 만드는 식별 가능한 작은 물건과 그 물건의 빛·향·기억 등의 이완 이유를 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2275",
+    "verdict": "PASS",
+    "auditReasonKo": "침대 가까이에 실제 두는 물건과 그 배치가 밤이나 기상 때 주는 구체적인 도움을 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2276",
+    "verdict": "PASS",
+    "auditReasonKo": "낮 동안 손을 관리받는 느낌이 들게 하는 제품·습관·보호 조건을 포괄해 특정 제품이나 행동만 요구하지 않는다."
+  }
+]

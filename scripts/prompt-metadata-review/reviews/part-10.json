@@ -1,0 +1,970 @@
+[
+  {
+    "promptId": "prompt-reflection-03",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question explicitly asks for the earlier and current ideas of success and for the cause of the change; those three required units already provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-reflection-04",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must name the former belief about success and explain what caused them to change it; one current belief or other independent support is needed because the new belief is not directly requested."
+  },
+  {
+    "promptId": "prompt-reflection-05",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording asks how the idea of success differs across time, so both earlier and current views are required; one cause, example, or effect gives this advanced reflection adequate support."
+  },
+  {
+    "promptId": "prompt-reflection-06",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must contrast past and present study habits and explain why they changed, creating three independent required elements that are already sufficiently developed."
+  },
+  {
+    "promptId": "prompt-reflection-07",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question directly requests the former belief about study habits and what changed the learner's mind; one current belief or other independent support is needed to complete the reflection."
+  },
+  {
+    "promptId": "prompt-reflection-08",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly asks how study habits changed and what caused the change, requiring the earlier habits, current habits, and cause without an additional depth requirement."
+  },
+  {
+    "promptId": "prompt-reflection-09",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording asks the learner to identify the former belief about study habits and explain the cause of changing it; one current state or comparable support gives the advanced response adequate depth."
+  },
+  {
+    "promptId": "prompt-reflection-10",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "Explaining the way study habits changed over time requires a past-to-present contrast, and one cause, example, or consequence keeps the advanced response from stopping at that contrast."
+  },
+  {
+    "promptId": "prompt-reflection-11",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for the former and current views of social media and explicitly asks why the shift occurred, so all three change components are required and sufficient."
+  },
+  {
+    "promptId": "prompt-reflection-1101",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must compare an earlier and present view of competition and explain why it changed; the three explicit obligations already form a complete advanced response."
+  },
+  {
+    "promptId": "prompt-reflection-1102",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording requires an earlier understanding of taking breaks, the understanding developed while growing, and the influence behind that development, which supplies enough depth without another slot."
+  },
+  {
+    "promptId": "prompt-reflection-1103",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "Changing an opinion of living alone requires the previous and present opinions, and the explicit request to explain why adds the cause; these three units meet the expected depth."
+  },
+  {
+    "promptId": "prompt-reflection-1104",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question calls for a past and current view of networking plus the reason for the shift, so its three explicit semantic units need no mandatory optional support."
+  },
+  {
+    "promptId": "prompt-reflection-1105",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to trace an earlier and later understanding of small talk and identify what influenced it, making the two states and cause required and adequately substantial."
+  },
+  {
+    "promptId": "prompt-reflection-1106",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt explicitly requests how the opinion of asking for help moved from an earlier to a current position and why, so the three required slots are sufficient."
+  },
+  {
+    "promptId": "prompt-reflection-1107",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "A complete answer must state the old and current views of productivity and explain why the change happened; those explicit pieces already provide adequate analytical depth."
+  },
+  {
+    "promptId": "prompt-reflection-1108",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires a comparison between earlier and mature understandings of boredom together with the influence that produced the shift, so no extra depth slot is needed."
+  },
+  {
+    "promptId": "prompt-reflection-1109",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain both the former and present opinions of fashion and why the opinion changed, satisfying depth through three directly requested units."
+  },
+  {
+    "promptId": "prompt-reflection-1110",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks how the view of time spent alone differs from the past and why, requiring earlier and current states plus the cause and no additional minimum support."
+  },
+  {
+    "promptId": "prompt-reflection-1111",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for an earlier understanding of exercise, the understanding after growing, and the influence behind the change; these three required ideas are sufficient."
+  },
+  {
+    "promptId": "prompt-reflection-1112",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "How the opinion of online classes changed requires old and current positions, and explaining why directly requires a cause; their combination already meets the advanced depth expectation."
+  },
+  {
+    "promptId": "prompt-reflection-1113",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must contrast past and present views of keeping a diary and give the reason for the change, so all explicit change components are required and enough."
+  },
+  {
+    "promptId": "prompt-reflection-1114",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requests the learner's earlier and later understanding of neighborhood life and the influence on that development, yielding three adequate required units."
+  },
+  {
+    "promptId": "prompt-reflection-1115",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The task asks how an opinion of routines moved from an earlier to a current view and why, so the two states and cause are directly required and sufficiently detailed."
+  },
+  {
+    "promptId": "prompt-reflection-1116",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt explicitly asks for the old and current views of mistakes and why the transition occurred, making three required units enough for the response."
+  },
+  {
+    "promptId": "prompt-reflection-1117",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "A response must compare earlier and developed understandings of receiving feedback and identify the influence on that change, so no optional slot is mandatory."
+  },
+  {
+    "promptId": "prompt-reflection-1118",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires the previous and current opinions of spending weekends and an explanation for the change; those three independent obligations already create adequate depth."
+  },
+  {
+    "promptId": "prompt-reflection-1119",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to show how the view of owning fewer things changed and why, requiring a before state, now state, and cause that are sufficient together."
+  },
+  {
+    "promptId": "prompt-reflection-1120",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording calls for earlier and later understandings of punctuality and what influenced the shift, so its three explicit elements need no additional depth slot."
+  },
+  {
+    "promptId": "prompt-reflection-1121",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "Changing an opinion of teamwork entails stating the earlier and current opinions, while the request to explain why requires the cause; these units are already adequate."
+  },
+  {
+    "promptId": "prompt-reflection-1122",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for a past-to-present change in the view of privacy and why it happened, so both states and the cause are required and sufficient."
+  },
+  {
+    "promptId": "prompt-reflection-1123",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must compare earlier and grown understandings of living close to work or school and name the influence on the change, giving enough required depth."
+  },
+  {
+    "promptId": "prompt-reflection-1124",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks how the opinion of cooking at home changed over time and why, requiring the old opinion, current opinion, and cause with no further mandatory support."
+  },
+  {
+    "promptId": "prompt-reflection-1125",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "A complete response must contrast past and current views of public speaking and explain the reason for the shift; those explicit pieces already satisfy depth."
+  },
+  {
+    "promptId": "prompt-reflection-1126",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires the earlier and developed understandings of part-time jobs plus what influenced that development, so the three required units are enough."
+  },
+  {
+    "promptId": "prompt-reflection-1127",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state how the opinion of planning ahead differs from before and explain why, making both states and the change cause required and sufficient."
+  },
+  {
+    "promptId": "prompt-reflection-12",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording directly requests the former belief about social media and what changed the learner's mind; one current view or comparable support is needed to make the advanced reflection complete."
+  },
+  {
+    "promptId": "prompt-reflection-13",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks how the view of social media changed and what caused it, so the earlier view, current view, and cause are all explicit and provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-reflection-14",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner is directly asked for the former belief about social media and the reason it was changed, while one current view or other independent support is needed for sufficient depth."
+  },
+  {
+    "promptId": "prompt-reflection-15",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The requested change in the view of social media must identify both the earlier and current views; one cause, example, or effect adds suitable depth to the comparison."
+  },
+  {
+    "promptId": "prompt-reflection-16",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The task explicitly asks for the past and present opinions about money and an explanation of why they differ, so three required units already create a developed response."
+  },
+  {
+    "promptId": "prompt-reflection-17",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner is directly asked for the old belief about money and the trigger that changed it; one current stance or other independent support is appropriate at this advanced level."
+  },
+  {
+    "promptId": "prompt-reflection-18",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires how the opinion about money moved from an earlier to a current state and what caused that move, so no additional depth slot is needed."
+  },
+  {
+    "promptId": "prompt-reflection-19",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt requires the former belief about money and the reason the learner changed it; one current belief or another independent detail is appropriate because the new position is not explicitly requested."
+  },
+  {
+    "promptId": "prompt-reflection-20",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for the way the money opinion changed across time, making both old and current states required; one independent explanation or illustration prevents a thin contrast."
+  },
+  {
+    "promptId": "prompt-reflection-21",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe earlier and current understandings of leadership and explain why the understanding changed, so all three explicit parts are required and adequate."
+  },
+  {
+    "promptId": "prompt-reflection-22",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question directly asks what the learner formerly believed about leadership and what changed that belief; one current understanding or similar support is needed for a complete reflection."
+  },
+  {
+    "promptId": "prompt-reflection-23",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "How leadership understanding changed requires the earlier and present understandings, and the second clause directly requires the cause, giving enough depth without optional material."
+  },
+  {
+    "promptId": "prompt-reflection-24",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks the learner to name the former leadership belief and explain why it changed, so the current understanding remains optional and one independent support is needed for depth."
+  },
+  {
+    "promptId": "prompt-reflection-25",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks how leadership understanding differs over time, so both earlier and current states are necessary; one cause, example, or consequence should deepen the advanced comparison."
+  },
+  {
+    "promptId": "prompt-reflection-26",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "Describing how the view of friendship changed requires both its past and present forms; because no explanation is explicitly requested, one cause or illustration supplies appropriate advanced depth."
+  },
+  {
+    "promptId": "prompt-reflection-27",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "One change in thinking about friendship entails the earlier and current positions, and the question separately asks for its cause, so those three units are sufficient."
+  },
+  {
+    "promptId": "prompt-reflection-28",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must state an old opinion about friendship and how it became different, requiring old and current states; one supporting cause or example keeps the account developed."
+  },
+  {
+    "promptId": "prompt-reflection-29",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["NOW_STATE", "BEFORE_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording foregrounds the current view of friendship and explicitly compares it with the past, so both states are required; one explanation or illustration adds needed depth."
+  },
+  {
+    "promptId": "prompt-reflection-30",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "BEFORE_STATE", "DETAIL", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "The direct request is for the experience that caused a change in thinking about friendship; one account of the resulting or former view is needed to show what that experience changed."
+  },
+  {
+    "promptId": "prompt-reflection-31",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The change in the view of healthy eating must be expressed through earlier and current states; one cause, example, or outcome gives the advanced response sufficient development."
+  },
+  {
+    "promptId": "prompt-reflection-32",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The requested change in thinking about healthy eating needs a before and now position, and the cause is separately requested, producing enough required depth on its own."
+  },
+  {
+    "promptId": "prompt-reflection-33",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "An opinion formerly held about healthy eating and how it changed requires both the old and present opinions; one independent cause or example completes the reflection at this level."
+  },
+  {
+    "promptId": "prompt-reflection-34",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["NOW_STATE", "BEFORE_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt explicitly asks how the current view of healthy eating differs from the past, requiring both sides of the contrast; one supporting detail adds appropriate depth."
+  },
+  {
+    "promptId": "prompt-reflection-35",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "BEFORE_STATE", "DETAIL", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question directly seeks the experience behind changed thinking about healthy eating; one resulting or earlier view is needed alongside that experience to clarify the change."
+  },
+  {
+    "promptId": "prompt-reflection-36",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "Describing the changing view of news consumption requires its former and current forms; one cause, example, or effect prevents the advanced answer from being only a contrast."
+  },
+  {
+    "promptId": "prompt-reflection-37",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "One change in thinking about news consumption requires the prior and present views, while the second clause requires the cause; those three elements are sufficiently rich."
+  },
+  {
+    "promptId": "prompt-reflection-38",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must identify an earlier opinion of news consumption and explain its new form, so both states are required; one cause or illustration supplies suitable support."
+  },
+  {
+    "promptId": "prompt-reflection-39",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["NOW_STATE", "BEFORE_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question directly contrasts the current view of news consumption with the past view, and one reason, example, or consequence is needed to develop that comparison."
+  },
+  {
+    "promptId": "prompt-reflection-40",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "BEFORE_STATE", "DETAIL", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "The explicit target is the experience that altered the learner's thinking about news consumption; one description of the old or resulting view shows the significance of that experience."
+  },
+  {
+    "promptId": "prompt-reflection-41",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The request to describe a changing view of travel requires past and current perspectives; one cause, example, or result is appropriate to deepen this advanced reflection."
+  },
+  {
+    "promptId": "prompt-reflection-42",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question separately asks for one shift in travel thinking and its cause, requiring the earlier view, current view, and trigger with no extra minimum support."
+  },
+  {
+    "promptId": "prompt-reflection-43",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner is asked for an old travel opinion and how it became different, so both before and now states are obligatory; one independent support gives adequate depth."
+  },
+  {
+    "promptId": "prompt-reflection-44",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["NOW_STATE", "BEFORE_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording asks how the learner's current view of travel differs from the past, directly requiring both views; one explanation or example keeps the contrast substantive."
+  },
+  {
+    "promptId": "prompt-reflection-45",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "BEFORE_STATE", "DETAIL", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "The direct answer is an experience that changed the learner's thinking about travel; one account of the resulting or previous perspective is needed to make the change clear."
+  },
+  {
+    "promptId": "prompt-reflection-46",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "Describing how the view of failure changed over time requires earlier and current states; one cause, example, or impact provides the additional depth expected of the prompt."
+  },
+  {
+    "promptId": "prompt-reflection-47",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE"],
+    "optionalSlots": ["EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The requested change in thinking about failure consists of the old and new positions, and the prompt also asks what caused it, making those three required parts sufficient."
+  },
+  {
+    "promptId": "prompt-reflection-48",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["BEFORE_STATE", "NOW_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "An opinion once held about failure and how it changed directly calls for both old and current views; one reason or concrete illustration should support the contrast."
+  },
+  {
+    "promptId": "prompt-reflection-49",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["NOW_STATE", "BEFORE_STATE"],
+    "optionalSlots": ["CHANGE_CAUSE", "EXAMPLE", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question explicitly compares the current understanding of failure with the past one, requiring both states; one cause, example, or result adds suitable analytical depth."
+  },
+  {
+    "promptId": "prompt-reflection-50",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": ["CHANGE_CAUSE"],
+    "optionalSlots": ["NOW_STATE", "BEFORE_STATE", "DETAIL", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt directly asks for the experience that changed the learner's thinking about failure; one description of the resulting or former view is needed to reveal the actual change."
+  },
+  {
+    "promptId": "prompt-routine-01",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "FEELING", "RESULT"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for a usual weekday-morning activity; at the introductory level, one additional action, concrete timing detail, or other support keeps the answer from being a bare activity."
+  },
+  {
+    "promptId": "prompt-routine-02",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must state what they usually do during weekday mornings, and one independent step, time, or explanation is appropriate for a developed intermediate answer."
+  },
+  {
+    "promptId": "prompt-routine-03",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "Describing a weekday-morning routine requires at least one habitual action, while a second step or concrete timing detail is needed so the routine is more than a single label."
+  },
+  {
+    "promptId": "prompt-routine-04",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording directly requests an often-repeated weekday-morning action; one further action, time detail, or reason gives the response adequate intermediate depth."
+  },
+  {
+    "promptId": "prompt-routine-05",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "RESULT", "REASON", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "How weekday mornings are typically used calls for a habitual action, and one separate step, timing detail, or outcome prevents the answer from being only one short clause."
+  },
+  {
+    "promptId": "prompt-routine-06",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "PLACE", "REASON", "FEELING", "RESULT"],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks for a usual activity after work or class in the evening; one additional action, timing, place, or explanation is needed for a sufficiently developed response."
+  },
+  {
+    "promptId": "prompt-routine-07",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "PLACE", "SPECIFIC_TIME", "REASON", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "The direct obligation is an action usually performed during evenings after work or class, with one independent step or contextual detail needed to avoid a minimal answer."
+  },
+  {
+    "promptId": "prompt-routine-08",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "PLACE", "RESULT", "REASON", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "A routine for evenings after work or class must include a habitual action; a second action or concrete context is needed to make the described routine adequately informative."
+  },
+  {
+    "promptId": "prompt-routine-09",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "PLACE", "SPECIFIC_TIME", "REASON", "FEELING", "RESULT"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks what is often done after work or class in the evening, so an action is required and one separate contextual or explanatory detail supplies suitable depth."
+  },
+  {
+    "promptId": "prompt-routine-10",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "PLACE", "RESULT", "REASON", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "Explaining how those evenings are typically used requires a habitual action, while one further action, time, place, or benefit keeps the response from being too thin."
+  },
+  {
+    "promptId": "prompt-routine-11",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "PLACE", "SPECIFIC_TIME", "REASON", "FEELING", "RESULT"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question directly asks how Sunday afternoons are usually spent; one independent activity or context detail is needed even at the introductory level to avoid a bare action."
+  },
+  {
+    "promptId": "prompt-routine-1101",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "CHOICE"],
+    "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "REASON", "DETAIL", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe what they do on laundry day and select the part of that routine that helps most; those two explicit answers are adequate, while the benefit can be elaborated optionally."
+  },
+  {
+    "promptId": "prompt-routine-1102",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "DETAIL", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for the routine before an early appointment and why it works well, so the habitual action and its helpful effect are both required and already provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-routine-1103",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "RESULT", "SPECIFIC_TIME", "PLACE", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must say what they usually do after grocery shopping and directly explain why, making an action and reason sufficient without another mandatory detail."
+  },
+  {
+    "promptId": "prompt-routine-1104",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "CHOICE"],
+    "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "DETAIL", "REASON", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires an activity while waiting for class and a selection of the routine part that helps most; these two requested units form an adequate answer."
+  },
+  {
+    "promptId": "prompt-routine-1105",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "DETAIL", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what happens during the first work hour and why that routine works well, requiring the habitual action and its beneficial outcome with no extra depth slot."
+  },
+  {
+    "promptId": "prompt-routine-1106",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "FEELING", "RESULT", "PLACE", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is explicitly asked for a usual action on a quiet Sunday evening and the reason for it, so the two required clauses already meet the intermediate depth expectation."
+  },
+  {
+    "promptId": "prompt-routine-1107",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "CHOICE"],
+    "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "REASON", "SPECIFIC_TIME", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must describe preparation before meeting friends for dinner and identify which part helps most; those separate obligations are sufficient, with the benefit available as optional elaboration."
+  },
+  {
+    "promptId": "prompt-routine-1108",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for the usual post-workout action and why the routine works well, so both the action and its helpful effect are required and provide enough content."
+  },
+  {
+    "promptId": "prompt-routine-1109",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "RESULT", "FEELING", "DETAIL", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state what they usually do during a long train ride and why they do it; those two explicit clauses are adequate without mandatory optional support."
+  },
+  {
+    "promptId": "prompt-routine-1110",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "CHOICE"],
+    "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "REASON", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requests the indoor-day routine and a choice of which part is most helpful, so an action and selected step satisfy both obligations and already create sufficient depth."
+  },
+  {
+    "promptId": "prompt-routine-1111",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "DETAIL", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe a usual exam-preparation action and explain how that routine works well, making the action and beneficial result required and adequate."
+  },
+  {
+    "promptId": "prompt-routine-1112",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "RESULT", "FEELING", "SPECIFIC_TIME", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording directly asks what is usually done after a late lunch and why, so the action and its reason are both required and sufficient for this intermediate task."
+  },
+  {
+    "promptId": "prompt-routine-1113",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "CHOICE"],
+    "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "REASON", "DETAIL", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for the room-cleaning routine and which part helps most, directly requiring a habitual action and selection of a helpful step; no extra slot is mandatory."
+  },
+  {
+    "promptId": "prompt-routine-1114",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "REASON", "FEELING", "DETAIL", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must say what they usually do at home on Friday night and why that routine works well, requiring the action and its positive effect with sufficient depth."
+  },
+  {
+    "promptId": "prompt-routine-1115",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "RESULT", "SPECIFIC_TIME", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for the usual preparation before a family outing and a reason for that behavior, so its two explicit obligations are adequate on their own."
+  },
+  {
+    "promptId": "prompt-routine-1116",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "CHOICE"],
+    "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "REASON", "PLACE", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must describe a weekend-evening activity and select the part of that routine that helps most; these two required units already avoid a minimal answer."
+  },
+  {
+    "promptId": "prompt-routine-1117",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "REASON", "FEELING", "DETAIL", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked what they do after arriving too early and why that routine works well, so the habitual response and its beneficial result are directly required and sufficient."
+  },
+  {
+    "promptId": "prompt-routine-1118",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "RESULT", "SPECIFIC_TIME", "PLACE", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly requests the usual action after a shopping trip and why it is done; an action and reason answer both clauses and need no required addition."
+  },
+  {
+    "promptId": "prompt-routine-1119",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "CHOICE"],
+    "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for what happens before leaving for school and which part helps most, requiring both a habitual action and a selected useful step; those are sufficiently substantial."
+  },
+  {
+    "promptId": "prompt-routine-1120",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "REASON", "FEELING", "DETAIL", "SPECIFIC_TIME"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe a usual activity while riding the subway alone and explain why the routine works well, making the action and helpful effect required and adequate."
+  },
+  {
+    "promptId": "prompt-routine-1121",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "RESULT", "FEELING", "SPECIFIC_TIME", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks what is usually done after household chores and why, so a habitual action and its reason directly fulfill the task without another depth requirement."
+  },
+  {
+    "promptId": "prompt-routine-1122",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "CHOICE"],
+    "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "FEELING", "REASON", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires an indoor activity on a rainy morning and identification of the routine part that helps most; these two explicit units provide enough intermediate depth."
+  },
+  {
+    "promptId": "prompt-routine-1123",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "REASON", "SPECIFIC_TIME", "DETAIL", "FEELING"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for the routine before starting a side project and why it works well, so the preparatory action and its beneficial result are required and already sufficient."
+  },
+  {
+    "promptId": "prompt-routine-1124",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "RESULT", "FEELING", "SPECIFIC_TIME", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state what they usually do while waiting at the airport and explain why, making the activity and reason sufficient responses to both clauses."
+  },
+  {
+    "promptId": "prompt-routine-1125",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "CHOICE"],
+    "optionalSlots": ["RESULT", "ADDITIONAL_ACTION", "REASON", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must describe what usually happens after a short nap and select the part that helps most, so its action and choice requirements already supply adequate depth."
+  },
+  {
+    "promptId": "prompt-routine-1126",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "RESULT"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "REASON", "PLACE", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a usual campus-break activity and why that routine works well, requiring the action and its helpful outcome with no additional mandatory support."
+  },
+  {
+    "promptId": "prompt-routine-1127",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION", "REASON"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "RESULT", "SPECIFIC_TIME", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly requests the usual preparation before recording a video and the reason for it, so those two clauses form a complete intermediate answer."
+  },
+  {
+    "promptId": "prompt-routine-12",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "PLACE", "SPECIFIC_TIME", "REASON", "FEELING", "RESULT"],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must identify a usual Sunday-afternoon activity, and one additional action or contextual detail is needed so the intermediate response is not just a bare action."
+  },
+  {
+    "promptId": "prompt-routine-13",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "PLACE", "REASON", "RESULT", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "Describing a Sunday-afternoon routine requires a habitual action, while a second step, concrete timing, or other independent context makes it a developed routine description."
+  },
+  {
+    "promptId": "prompt-routine-14",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "PLACE", "SPECIFIC_TIME", "REASON", "FEELING", "RESULT"],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for an activity often done on Sunday afternoons; one further activity, place, time, or explanation is appropriate to avoid a one-clause answer."
+  },
+  {
+    "promptId": "prompt-routine-15",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "PLACE", "RESULT", "REASON", "FEELING"],
+    "minimumDepthSlots": 1,
+    "rationale": "How Sunday afternoons are typically used directly calls for a habitual action, and one additional step or context detail provides the minimum useful depth."
+  },
+  {
+    "promptId": "prompt-routine-16",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "FEELING", "RESULT", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks how free time at home is usually spent, requiring an activity; one additional action or concrete support keeps the introductory response from being a bare label."
+  },
+  {
+    "promptId": "prompt-routine-17",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must state what they usually do during free time at home, and one further activity, timing detail, or explanation gives the intermediate answer adequate depth."
+  },
+  {
+    "promptId": "prompt-routine-18",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "RESULT", "FEELING", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "A home free-time routine must contain at least one habitual action; a second action or independent detail is needed for the requested description to be more than minimal."
+  },
+  {
+    "promptId": "prompt-routine-19",
+    "answerMode": "ROUTINE",
+    "requiredSlots": ["ACTION"],
+    "optionalSlots": ["ADDITIONAL_ACTION", "SPECIFIC_TIME", "REASON", "FEELING", "RESULT", "DETAIL"],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording asks for an often-repeated free-time activity at home, and one separate action, timing detail, or reason is needed to produce a sufficiently developed response."
+  }
+]

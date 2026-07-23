@@ -1,0 +1,2144 @@
+[
+  {
+    "promptId": "prompt-intro-v2-0361",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The greeting or words the learner says on first meeting someone.",
+        "satisfiedWhenEn": "The answer gives a recognizable greeting, introduction, or opening remark directed to a newly met person; merely saying that the learner talks is too vague.",
+        "semanticRoleKo": "처음 만난 사람에게 학습자가 하는 인사나 말.",
+        "satisfiedWhenKo": "처음 만난 사람에게 건네는 알아볼 수 있는 인사, 자기소개 또는 첫마디를 제시하면 충족한다. 단순히 이야기한다고만 하면 너무 모호하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific introductory information or a follow-up included with the learner's greeting.",
+        "satisfiedWhenEn": "The answer adds concrete content beyond the basic greeting, such as the learner's name, a personal fact, or a question for the new person.",
+        "semanticRoleKo": "학습자의 인사에 덧붙이는 구체적인 소개 정보나 후속 말.",
+        "satisfiedWhenKo": "기본 인사를 넘어 자신의 이름, 개인 정보 또는 새로 만난 사람에게 할 질문처럼 구체적인 내용을 덧붙이면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when meeting someone new.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or mood the learner experiences during the first meeting.",
+        "semanticRoleKo": "새로운 사람을 만날 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "첫 만남 중 학습자가 경험하는 알아볼 수 있는 감정이나 기분을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the learner's greeting has or is intended to have on the new interaction.",
+        "satisfiedWhenEn": "The answer states a concrete interpersonal outcome of the greeting, such as making the other person comfortable or beginning a conversation.",
+        "semanticRoleKo": "학습자의 인사가 새로운 만남에 가져오거나 의도하는 효과.",
+        "satisfiedWhenKo": "상대방을 편안하게 하거나 대화를 시작하는 것처럼 인사가 만드는 구체적인 대인 관계상의 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0362",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The words the learner says to someone affected by the learner's lateness.",
+        "satisfiedWhenEn": "The answer gives a specific apology, notice, or other relevant message the learner would say because they are late; saying only that they speak is insufficient.",
+        "semanticRoleKo": "학습자의 지각으로 영향을 받는 사람에게 학습자가 하는 말.",
+        "satisfiedWhenKo": "늦었기 때문에 하는 구체적인 사과, 알림 또는 그 상황에 맞는 말을 제시하면 충족한다. 단순히 말한다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The cause of the learner's lateness.",
+        "satisfiedWhenEn": "The answer identifies a concrete event or circumstance that explains why the learner arrived late.",
+        "semanticRoleKo": "학습자가 늦은 원인.",
+        "satisfiedWhenKo": "학습자가 왜 늦게 도착했는지 설명하는 구체적인 사건이나 상황을 밝히면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner's apology or explanation produces or seeks after being late.",
+        "satisfiedWhenEn": "The answer describes a concrete consequence of what the learner says, such as receiving understanding, repairing inconvenience, or continuing the appointment.",
+        "semanticRoleKo": "늦은 뒤 학습자의 사과나 설명이 만들거나 의도하는 결과.",
+        "satisfiedWhenKo": "이해를 얻거나 불편을 수습하거나 약속을 이어 가는 것처럼 학습자가 한 말의 구체적인 결과를 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about being late.",
+        "satisfiedWhenEn": "The answer conveys a recognizable personal emotion caused by the learner's lateness, such as embarrassment, worry, or regret.",
+        "semanticRoleKo": "늦은 것에 대해 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "당황함, 걱정 또는 미안함처럼 지각 때문에 생긴 학습자의 알아볼 수 있는 감정을 나타내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete circumstance that makes the learner's lateness situation more specific.",
+        "satisfiedWhenEn": "The answer identifies how late the learner is, what event they are late for, or another definite fact about the situation beyond the message itself.",
+        "semanticRoleKo": "학습자의 지각 상황을 더 구체적으로 만드는 사실.",
+        "satisfiedWhenKo": "얼마나 늦었는지, 어떤 일정에 늦었는지 또는 말 자체를 넘어 상황을 특정하는 다른 사실을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0363",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The help-seeking words or request the learner says when assistance is needed.",
+        "satisfiedWhenEn": "The answer gives or clearly presents a recognizable request for assistance, including a direct statement such as 'I need help'; merely describing a difficult situation without expressing help-seeking words is insufficient.",
+        "semanticRoleKo": "도움이 필요할 때 학습자가 말하는 도움 요청 표현",
+        "satisfiedWhenKo": "답변이 '도와줄 수 있나요?'나 '도움이 필요해요'처럼 알아볼 수 있는 도움 요청 표현을 제시하거나 분명히 전달하면 충족된다. 어려운 상황만 묘사하고 도움을 구하는 말을 나타내지 않으면 부족하다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific difficulty or task for which the learner needs help.",
+        "satisfiedWhenEn": "The answer identifies a concrete problem, obstacle, or task that the requested assistance would address; an unspecified problem is insufficient.",
+        "semanticRoleKo": "학습자가 도움을 필요로 하는 구체적인 어려움이나 과제.",
+        "satisfiedWhenKo": "요청한 도움으로 해결하려는 구체적인 문제, 장애물 또는 과제를 밝히면 충족한다. 무엇인지 알 수 없는 문제는 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner hopes to achieve by asking for help.",
+        "satisfiedWhenEn": "The answer states a concrete result that the requested assistance would enable, such as understanding instructions or completing a task.",
+        "semanticRoleKo": "학습자가 도움을 요청해 이루고자 하는 결과.",
+        "satisfiedWhenKo": "지시를 이해하거나 과제를 끝내는 것처럼 요청한 도움으로 가능해지는 구체적인 결과를 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner cannot handle the situation without assistance.",
+        "satisfiedWhenEn": "The answer gives a concrete cause or limitation that explains the learner's need to ask someone for help.",
+        "semanticRoleKo": "학습자가 도움 없이 그 상황을 처리하기 어려운 이유.",
+        "satisfiedWhenKo": "학습자가 다른 사람에게 도움을 요청해야 하는 까닭을 설명하는 구체적인 원인이나 한계를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when needing or requesting help.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion the learner experiences in the help-seeking situation.",
+        "semanticRoleKo": "도움이 필요하거나 도움을 요청할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "도움을 구하는 상황에서 학습자가 경험하는 알아볼 수 있는 감정을 표현하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0364",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The words the learner uses to express thanks to another person.",
+        "satisfiedWhenEn": "The answer gives a recognizable expression of gratitude or appreciative message directed to the person being thanked.",
+        "semanticRoleKo": "다른 사람에게 감사를 표현할 때 학습자가 사용하는 말.",
+        "satisfiedWhenKo": "감사를 받는 사람에게 건네는 알아볼 수 있는 감사 표현이나 고마움을 담은 말을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The act, gift, or support that prompts the learner's thanks.",
+        "satisfiedWhenEn": "The answer identifies a concrete thing the other person did or provided that explains why the learner is grateful.",
+        "semanticRoleKo": "학습자가 감사하게 된 상대방의 행동, 선물 또는 도움.",
+        "satisfiedWhenKo": "학습자가 왜 고마워하는지 설명하는 상대방의 구체적인 행동이나 제공한 것을 밝히면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to what the other person did.",
+        "satisfiedWhenEn": "The answer conveys a recognizable feeling of gratitude, relief, happiness, or another emotion connected to the kind act.",
+        "semanticRoleKo": "상대방이 해 준 일에 대한 학습자의 감정적 반응.",
+        "satisfiedWhenKo": "그 친절한 행동과 연결된 고마움, 안도감, 기쁨 또는 다른 알아볼 수 있는 감정을 나타내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The interpersonal effect of the learner's expression of thanks.",
+        "satisfiedWhenEn": "The answer states a concrete outcome of showing gratitude, such as making the other person feel appreciated or strengthening the relationship.",
+        "semanticRoleKo": "학습자의 감사 표현이 만드는 대인 관계상의 효과.",
+        "satisfiedWhenKo": "상대방이 인정받는다고 느끼게 하거나 관계를 더 가깝게 하는 것처럼 감사를 표현한 구체적인 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific aspect of the other person's help or kindness that the learner appreciates.",
+        "satisfiedWhenEn": "The answer adds what was especially helpful, thoughtful, or valuable rather than only giving a general thank-you.",
+        "semanticRoleKo": "학습자가 특히 고맙게 여기는 상대방의 도움이나 친절의 구체적인 측면.",
+        "satisfiedWhenKo": "일반적인 감사 인사만 하는 것을 넘어 무엇이 특히 도움이 되었거나 세심했거나 가치 있었는지 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0365",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The words the learner says after realizing they made a mistake.",
+        "satisfiedWhenEn": "The answer gives a specific acknowledgment, apology, or relevant response the learner would say because of their mistake.",
+        "semanticRoleKo": "실수했다는 것을 안 뒤 학습자가 하는 말.",
+        "satisfiedWhenKo": "자신의 실수 때문에 하는 구체적인 인정, 사과 또는 상황에 맞는 말을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular mistake the learner made.",
+        "satisfiedWhenEn": "The answer identifies a concrete error or action that went wrong; referring only to an unspecified mistake is insufficient.",
+        "semanticRoleKo": "학습자가 저지른 구체적인 실수.",
+        "satisfiedWhenKo": "무엇인지 알 수 없는 실수라고만 하지 않고 잘못된 구체적인 행동이나 오류를 밝히면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels after making the mistake.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotional reaction to the mistake, such as regret, embarrassment, or concern.",
+        "semanticRoleKo": "실수한 뒤 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "후회, 당황 또는 걱정처럼 실수에 대한 알아볼 수 있는 감정적 반응을 표현하면 충족한다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "What the learner does or offers to do to correct the mistake.",
+        "satisfiedWhenEn": "The answer states a concrete repair, correction, or next step that addresses the error rather than only apologizing for it.",
+        "semanticRoleKo": "실수를 바로잡기 위해 학습자가 하거나 하겠다고 제안하는 일.",
+        "satisfiedWhenKo": "사과만 하는 데 그치지 않고 오류를 처리하는 구체적인 수습, 수정 또는 다음 행동을 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of acknowledging or correcting the learner's mistake.",
+        "satisfiedWhenEn": "The answer describes a concrete consequence, such as fixing the damage, restoring trust, or preventing the error from recurring.",
+        "semanticRoleKo": "학습자가 실수를 인정하거나 바로잡은 결과.",
+        "satisfiedWhenKo": "손해를 복구하거나 신뢰를 되찾거나 같은 오류의 재발을 막는 것처럼 구체적인 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0366",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The learner's usual main action when meeting a new friend.",
+        "satisfiedWhenEn": "The answer states a concrete action the learner typically takes during an initial meeting with a new friend.",
+        "semanticRoleKo": "새 친구를 만날 때 학습자가 보통 하는 주된 행동.",
+        "satisfiedWhenKo": "새 친구와 처음 만나는 동안 학습자가 일반적으로 하는 구체적인 행동을 말하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second action the learner takes when meeting a new friend.",
+        "satisfiedWhenEn": "The answer adds another distinct action in the encounter beyond the main response, not merely a more detailed wording of the same action.",
+        "semanticRoleKo": "새 친구를 만날 때 학습자가 추가로 하는 별도의 두 번째 행동.",
+        "satisfiedWhenKo": "주된 행동을 더 자세히 표현하는 데 그치지 않고 그 만남에서 하는 또 하나의 구별되는 행동을 덧붙이면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The recognizable setting where the learner meets the new friend.",
+        "satisfiedWhenEn": "The answer identifies a definite place or setting connected to the first meeting; an unidentified nice place is too vague.",
+        "semanticRoleKo": "학습자가 새 친구를 만나는 알아볼 수 있는 장소나 환경.",
+        "satisfiedWhenKo": "첫 만남과 연결된 분명한 장소나 환경을 밝히면 충족한다. 어디인지 알 수 없는 좋은 장소라는 표현은 너무 모호하다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while meeting a new friend.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion or mood the learner has during the encounter.",
+        "semanticRoleKo": "새 친구를 만나는 동안 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "그 만남 중 학습자가 느끼는 알아볼 수 있는 감정이나 기분을 나타내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The social outcome of what the learner does in the new friendship.",
+        "satisfiedWhenEn": "The answer states a concrete effect of the learner's behavior, such as learning about the friend, feeling comfortable, or becoming closer.",
+        "semanticRoleKo": "새로운 친구 관계에서 학습자의 행동이 만드는 사회적 결과.",
+        "satisfiedWhenKo": "친구에 대해 알게 되거나 편안해지거나 더 가까워지는 것처럼 학습자 행동의 구체적인 효과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete detail about how the learner carries out the main action with the new friend.",
+        "satisfiedWhenEn": "The answer specifies the content, manner, or focus of the main interaction beyond naming the action alone.",
+        "semanticRoleKo": "새 친구와 주된 행동을 어떻게 하는지 보여 주는 구체적인 세부 사항.",
+        "satisfiedWhenKo": "행동 이름만 말하는 것을 넘어 주된 상호작용의 내용, 방식 또는 초점을 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0367",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The learner's usual main response after someone gives them a gift.",
+        "satisfiedWhenEn": "The answer states a concrete action or utterance the learner typically makes after receiving a gift, such as thanking the giver, opening or looking at the gift, or showing appreciation; the response need not be directed at the giver.",
+        "semanticRoleKo": "누군가 선물을 주었을 때 학습자가 보통 하는 주된 반응",
+        "satisfiedWhenKo": "답변이 선물을 받은 뒤 보통 하는 구체적인 행동이나 말을 제시하면 충족된다. 준 사람에게 감사하거나 고마움을 표현하는 것뿐 아니라 선물을 열거나 살펴보는 행동도 인정되며, 반응이 반드시 준 사람을 향할 필요는 없다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels upon receiving the gift.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotional reaction tied to being given the gift.",
+        "semanticRoleKo": "선물을 받았을 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "선물을 받은 일과 연결된 학습자의 알아볼 수 있는 감정적 반응을 표현하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate action the learner takes in addition to the main gift response.",
+        "satisfiedWhenEn": "The answer names another distinct behavior after receiving the gift, such as opening it later or contacting the giver again.",
+        "semanticRoleKo": "선물에 대한 주된 반응 외에 학습자가 추가로 하는 별도의 행동.",
+        "satisfiedWhenKo": "나중에 선물을 열어 보거나 준 사람에게 다시 연락하는 것처럼 선물을 받은 뒤 하는 또 하나의 구별되는 행동을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner responds that way or why the gift matters to them.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation or personal significance that explains the learner's response to the gift.",
+        "semanticRoleKo": "학습자가 그렇게 반응하거나 그 선물이 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "선물에 대한 학습자의 반응을 설명하는 구체적인 동기나 개인적 의미를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the learner's response on the giver or their relationship.",
+        "satisfiedWhenEn": "The answer states a concrete interpersonal outcome, such as making the giver happy or showing that the gift is valued.",
+        "semanticRoleKo": "학습자의 반응이 선물을 준 사람이나 두 사람의 관계에 미치는 효과.",
+        "satisfiedWhenKo": "준 사람을 기쁘게 하거나 선물을 소중히 여긴다는 것을 보여 주는 것처럼 구체적인 대인 관계상의 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0368",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The learner's usual response when another person is angry.",
+        "satisfiedWhenEn": "The answer states a concrete action or utterance the learner typically uses in response to an angry person.",
+        "semanticRoleKo": "다른 사람이 화가 났을 때 학습자가 보통 보이는 대응.",
+        "satisfiedWhenKo": "화난 사람에게 대응하여 학습자가 일반적으로 하는 구체적인 행동이나 말을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that response to an angry person.",
+        "satisfiedWhenEn": "The answer gives a concrete purpose, concern, or belief that explains the learner's chosen behavior in the tense situation.",
+        "semanticRoleKo": "학습자가 화난 사람에게 그런 방식으로 대응하는 이유.",
+        "satisfiedWhenKo": "긴장된 상황에서 그 행동을 선택한 까닭을 설명하는 구체적인 목적, 우려 또는 생각을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's own emotional reaction when facing an angry person.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion the learner experiences in response to the other person's anger.",
+        "semanticRoleKo": "화난 사람을 마주했을 때 학습자 자신이 느끼는 감정.",
+        "satisfiedWhenKo": "상대방의 화에 반응하여 학습자가 경험하는 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of the learner's response to the angry person.",
+        "satisfiedWhenEn": "The answer describes a concrete consequence, such as calming the person, avoiding escalation, or resolving the disagreement.",
+        "semanticRoleKo": "화난 사람에 대한 학습자의 대응이 만든 결과.",
+        "satisfiedWhenKo": "상대방을 진정시키거나 갈등 확대를 피하거나 의견 충돌을 해결하는 것처럼 구체적인 결과를 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific way the learner carries out the response to the angry person.",
+        "satisfiedWhenEn": "The answer adds concrete words, tone, or behavior that clarifies how the learner performs the main response.",
+        "semanticRoleKo": "학습자가 화난 사람에게 대응하는 구체적인 방식.",
+        "satisfiedWhenKo": "주된 대응을 어떻게 하는지 분명하게 보여 주는 구체적인 말, 어조 또는 행동을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0369",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The learner's usual main reaction when someone treats them kindly.",
+        "satisfiedWhenEn": "The answer states a concrete action or utterance the learner typically makes in response to another person's kindness.",
+        "semanticRoleKo": "누군가 친절하게 대해 줄 때 학습자가 보통 보이는 주된 반응.",
+        "satisfiedWhenKo": "다른 사람의 친절에 응하여 학습자가 일반적으로 하는 구체적인 행동이나 말을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when receiving kindness.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion directly connected to being treated kindly.",
+        "semanticRoleKo": "친절한 대우를 받을 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "친절한 대우를 받은 것과 직접 연결된 알아볼 수 있는 감정을 나타내면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second behavior the learner shows after the kind act.",
+        "satisfiedWhenEn": "The answer adds another distinct response beyond the main reaction, such as returning the kindness later.",
+        "semanticRoleKo": "친절한 행동을 받은 뒤 학습자가 추가로 보이는 별도의 두 번째 행동.",
+        "satisfiedWhenKo": "나중에 친절을 되돌려 주는 것처럼 주된 반응과 구별되는 또 하나의 대응을 덧붙이면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner responds in that way to the kindness.",
+        "satisfiedWhenEn": "The answer gives a concrete value, intention, or personal significance that explains the learner's reaction.",
+        "semanticRoleKo": "학습자가 그 친절에 그런 방식으로 반응하는 이유.",
+        "satisfiedWhenKo": "학습자의 반응을 설명하는 구체적인 가치관, 의도 또는 개인적 의미를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The interpersonal outcome of the learner's reaction to kindness.",
+        "satisfiedWhenEn": "The answer states a concrete effect, such as encouraging more kindness, improving trust, or bringing the people closer.",
+        "semanticRoleKo": "친절에 대한 학습자의 반응이 만드는 대인 관계상의 결과.",
+        "satisfiedWhenKo": "친절을 북돋우거나 신뢰를 높이거나 사람들을 더 가깝게 하는 것처럼 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0370",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The learner's usual behavior when they feel shy.",
+        "satisfiedWhenEn": "The answer states a concrete action or response the learner typically makes while experiencing shyness.",
+        "semanticRoleKo": "부끄러움을 느낄 때 학습자가 보통 하는 행동.",
+        "satisfiedWhenKo": "부끄러움을 느끼는 동안 학습자가 일반적으로 보이는 구체적인 행동이나 반응을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner behaves that way when feeling shy.",
+        "satisfiedWhenEn": "The answer gives a concrete purpose, concern, or personal tendency that explains the shy-time behavior.",
+        "semanticRoleKo": "부끄러울 때 학습자가 그렇게 행동하는 이유.",
+        "satisfiedWhenKo": "부끄러운 상황에서 그 행동을 하는 까닭을 설명하는 구체적인 목적, 걱정 또는 개인적 성향을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "What happens because of the learner's behavior when shy.",
+        "satisfiedWhenEn": "The answer describes a concrete consequence of the behavior, such as becoming calmer, avoiding attention, or missing a chance to speak.",
+        "semanticRoleKo": "부끄러울 때 하는 학습자의 행동 때문에 생기는 결과.",
+        "satisfiedWhenKo": "마음이 차분해지거나 관심을 피하거나 말할 기회를 놓치는 것처럼 그 행동의 구체적인 결과를 설명하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another distinct action the learner takes while managing shyness.",
+        "satisfiedWhenEn": "The answer adds a second separate behavior beyond the main action rather than restating the same coping response.",
+        "semanticRoleKo": "부끄러움을 다루면서 학습자가 추가로 하는 별도의 행동.",
+        "satisfiedWhenKo": "같은 대응을 다시 표현하는 것이 아니라 주된 행동 외의 두 번째 구별되는 행동을 덧붙이면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete detail about how the learner's shy behavior appears.",
+        "satisfiedWhenEn": "The answer specifies the words, body language, manner, or immediate circumstance of the main behavior.",
+        "semanticRoleKo": "학습자의 부끄러운 행동이 어떻게 나타나는지 보여 주는 구체적인 세부 사항.",
+        "satisfiedWhenKo": "주된 행동의 말, 몸짓, 방식 또는 바로 그 상황을 구체적으로 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0371",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The learner's usual main preparation before meeting friends.",
+        "satisfiedWhenEn": "The answer states a concrete action the learner typically performs in advance of seeing friends.",
+        "semanticRoleKo": "친구들을 만나기 전에 학습자가 보통 하는 주된 준비 행동.",
+        "satisfiedWhenKo": "친구들을 보기 전에 학습자가 일반적으로 미리 하는 구체적인 행동을 말하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second preparation the learner makes before meeting friends.",
+        "satisfiedWhenEn": "The answer adds another distinct pre-meeting action beyond the main preparation.",
+        "semanticRoleKo": "친구들을 만나기 전에 학습자가 추가로 하는 별도의 두 번째 준비.",
+        "satisfiedWhenKo": "주된 준비 외에 만남 전에 하는 또 하나의 구별되는 행동을 덧붙이면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner performs the preparation relative to meeting friends.",
+        "satisfiedWhenEn": "The answer gives a meaningful time, interval, or recurring occasion for the preparation, such as in the afternoon or shortly before leaving; a clock time is not required.",
+        "semanticRoleKo": "친구들을 만나는 시점과 관련해 학습자가 준비하는 때.",
+        "satisfiedWhenKo": "오후나 출발 직전처럼 준비와 연결된 의미 있는 시간, 간격 또는 반복되는 때를 말하면 충족한다. 시계상의 정확한 시각은 필요하지 않다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A recognizable place connected to the learner's pre-meeting preparation.",
+        "satisfiedWhenEn": "The answer identifies where the learner gets ready or completes the stated preparation before seeing friends.",
+        "semanticRoleKo": "학습자가 친구들을 만나기 전에 준비하는 것과 연결된 알아볼 수 있는 장소.",
+        "satisfiedWhenKo": "친구들을 보기 전에 어디에서 준비하거나 말한 준비 행동을 마치는지 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner makes that preparation before meeting friends.",
+        "satisfiedWhenEn": "The answer gives a concrete purpose or concern that explains the pre-meeting action.",
+        "semanticRoleKo": "학습자가 친구들을 만나기 전에 그 준비를 하는 이유.",
+        "satisfiedWhenKo": "만남 전 행동의 까닭을 설명하는 구체적인 목적이나 고려 사항을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while getting ready to meet friends.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or mood tied to the preparation or upcoming meeting.",
+        "semanticRoleKo": "친구들을 만날 준비를 하면서 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "준비 과정이나 다가오는 만남과 연결된 알아볼 수 있는 감정이나 기분을 표현하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0372",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The learner's usual main action after spending time with friends.",
+        "satisfiedWhenEn": "The answer states a concrete action the learner typically takes once the meeting with friends has ended.",
+        "semanticRoleKo": "친구들과 시간을 보낸 뒤 학습자가 보통 하는 주된 행동.",
+        "satisfiedWhenKo": "친구들과의 만남이 끝난 뒤 학습자가 일반적으로 하는 구체적인 행동을 말하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second action in the learner's post-meeting routine.",
+        "satisfiedWhenEn": "The answer adds another distinct thing the learner does after meeting friends, beyond the main action.",
+        "semanticRoleKo": "친구들을 만난 뒤 학습자의 일과에 포함되는 별도의 두 번째 행동.",
+        "satisfiedWhenKo": "주된 행동 외에 친구들을 만난 뒤 하는 또 하나의 구별되는 행동을 덧붙이면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner performs the post-meeting action.",
+        "satisfiedWhenEn": "The answer gives a meaningful time or interval connected to the action, such as immediately afterward, that evening, or the next morning; an exact clock time is unnecessary.",
+        "semanticRoleKo": "학습자가 친구들을 만난 뒤의 행동을 하는 때.",
+        "satisfiedWhenKo": "바로 뒤, 그날 저녁 또는 다음 날 아침처럼 행동과 연결된 의미 있는 시간이나 간격을 말하면 충족한다. 정확한 시각은 필요하지 않다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of the meeting or the learner's post-meeting action.",
+        "satisfiedWhenEn": "The answer states a concrete consequence, such as feeling rested, keeping in touch, or remembering what happened.",
+        "semanticRoleKo": "친구들과의 만남이나 만난 뒤 학습자의 행동에서 생기는 결과.",
+        "satisfiedWhenKo": "쉬게 되거나 연락을 이어 가거나 있었던 일을 기억하는 것처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels after meeting friends.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion or mood experienced after the social time ends.",
+        "semanticRoleKo": "친구들을 만난 뒤 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "함께한 시간이 끝난 뒤 경험하는 알아볼 수 있는 감정이나 기분을 나타내면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner carries out the action after meeting friends.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location where the stated post-meeting action occurs.",
+        "semanticRoleKo": "친구들을 만난 뒤 학습자가 그 행동을 하는 장소.",
+        "satisfiedWhenKo": "말한 만남 후 행동이 일어나는 알아볼 수 있는 장소를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0373",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The subject the learner usually discusses with people they have just met.",
+        "satisfiedWhenEn": "The answer identifies a recognizable conversation topic tied to talking with new people; saying only that they discuss things is too vague.",
+        "semanticRoleKo": "학습자가 새로 만난 사람들과 보통 이야기하는 주제.",
+        "satisfiedWhenKo": "새로운 사람들과의 대화에 연결된 알아볼 수 있는 주제를 밝히면 충족한다. 단순히 여러 가지를 이야기한다고 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that topic with new people.",
+        "satisfiedWhenEn": "The answer gives a concrete purpose or quality that explains why the topic suits an early conversation.",
+        "semanticRoleKo": "학습자가 새로운 사람들과 그 주제를 선택해 이야기하는 이유.",
+        "satisfiedWhenKo": "그 주제가 첫 대화에 알맞은 까닭을 설명하는 구체적인 목적이나 특성을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific question or conversational instance that illustrates the learner's usual topic.",
+        "satisfiedWhenEn": "The answer gives a concrete example of what the learner asks or says within the named topic, beyond only labeling the subject.",
+        "semanticRoleKo": "학습자가 보통 다루는 주제를 보여 주는 구체적인 질문이나 대화 사례.",
+        "satisfiedWhenKo": "주제 이름만 말하는 것을 넘어 그 주제 안에서 실제로 묻거나 말하는 구체적인 예를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while discussing that topic with new people.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or level of comfort connected to that conversation.",
+        "semanticRoleKo": "새로운 사람들과 그 주제를 이야기할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "그 대화와 연결된 알아볼 수 있는 감정이나 편안함의 정도를 표현하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A narrower aspect of the usual topic that the learner discusses.",
+        "satisfiedWhenEn": "The answer specifies a subtopic, type of information, or focus within the broader conversation subject.",
+        "semanticRoleKo": "학습자가 이야기하는 보통의 주제 안에서 더 좁은 측면.",
+        "satisfiedWhenKo": "넓은 대화 주제 안의 하위 주제, 정보 종류 또는 구체적인 초점을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0374",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular topic the learner finds easy to discuss.",
+        "satisfiedWhenEn": "The answer identifies a recognizable subject and connects it to being easy for the learner to talk about; an unidentified easy topic is insufficient.",
+        "semanticRoleKo": "학습자가 이야기하기 쉽다고 느끼는 특정 주제.",
+        "satisfiedWhenKo": "알아볼 수 있는 주제를 밝히고 그것이 학습자에게 이야기하기 쉽다는 관계를 나타내면 충족한다. 무엇인지 알 수 없는 쉬운 주제는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that topic is easy for the learner to discuss.",
+        "satisfiedWhenEn": "The answer gives a concrete source of knowledge, experience, interest, or comfort that explains the ease.",
+        "semanticRoleKo": "그 주제가 학습자에게 이야기하기 쉬운 이유.",
+        "satisfiedWhenKo": "쉬움을 설명하는 구체적인 지식, 경험, 관심 또는 편안함의 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific thing the learner can readily say about the easy topic.",
+        "satisfiedWhenEn": "The answer provides a concrete example, fact, story, or question from within the topic that demonstrates what the learner can discuss.",
+        "semanticRoleKo": "쉬운 주제에 관해 학습자가 쉽게 말할 수 있는 구체적인 내용.",
+        "satisfiedWhenKo": "학습자가 무엇을 이야기할 수 있는지 보여 주는 그 주제 안의 구체적인 예, 사실, 이야기 또는 질문을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when talking about the easy topic.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion or sense of confidence experienced during that discussion.",
+        "semanticRoleKo": "쉬운 주제를 이야기할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "그 주제를 이야기하면서 경험하는 알아볼 수 있는 감정이나 자신감을 나타내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific aspect of the topic that is especially easy for the learner to discuss.",
+        "satisfiedWhenEn": "The answer narrows the chosen topic to a definite subtopic or feature rather than merely repeating the broad subject.",
+        "semanticRoleKo": "선택한 주제 중 학습자가 특히 이야기하기 쉬운 구체적인 측면.",
+        "satisfiedWhenKo": "넓은 주제를 반복하는 대신 분명한 하위 주제나 특징으로 좁혀 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0375",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular topic the learner finds hard to discuss.",
+        "satisfiedWhenEn": "The answer identifies a recognizable subject and makes clear that discussing it is difficult for the learner; saying only that some topics are hard is insufficient.",
+        "semanticRoleKo": "학습자가 이야기하기 어렵다고 느끼는 특정 주제.",
+        "satisfiedWhenKo": "알아볼 수 있는 주제를 밝히고 그것을 이야기하는 일이 학습자에게 어렵다는 점을 나타내면 충족한다. 어떤 주제는 어렵다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner has difficulty talking about that topic.",
+        "satisfiedWhenEn": "The answer gives a concrete limitation, sensitivity, lack of knowledge, or other cause that explains the difficulty.",
+        "semanticRoleKo": "학습자가 그 주제를 이야기하기 어려운 이유.",
+        "satisfiedWhenKo": "어려움을 설명하는 구체적인 한계, 민감성, 지식 부족 또는 다른 원인을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific part or occasion that illustrates the difficulty with the topic.",
+        "satisfiedWhenEn": "The answer gives a concrete question, subtopic, or conversation situation in which the learner struggles.",
+        "semanticRoleKo": "그 주제의 어려움을 보여 주는 구체적인 부분이나 상황.",
+        "satisfiedWhenKo": "학습자가 힘들어하는 구체적인 질문, 하위 주제 또는 대화 상황을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when trying to discuss the difficult topic.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or discomfort connected to speaking about that subject.",
+        "semanticRoleKo": "어려운 주제를 이야기하려 할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "그 주제를 말하는 것과 연결된 알아볼 수 있는 감정이나 불편함을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the topic difficulty has on the learner's conversation.",
+        "satisfiedWhenEn": "The answer states a concrete consequence, such as becoming quiet, changing the subject, or being unable to explain an idea clearly.",
+        "semanticRoleKo": "그 주제의 어려움이 학습자의 대화에 미치는 영향.",
+        "satisfiedWhenKo": "말수가 줄거나 주제를 바꾸거나 생각을 분명히 설명하지 못하는 것처럼 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0376",
+    "slotContracts": {
+      "REASON": {
+        "semanticRoleEn": "The concrete quality or circumstance that makes a conversation fun.",
+        "satisfiedWhenEn": "The answer identifies a specific feature, behavior, or situation that explains why a conversation becomes enjoyable; merely calling it fun is circular.",
+        "semanticRoleKo": "대화를 재미있게 만드는 구체적인 특성이나 상황.",
+        "satisfiedWhenKo": "대화가 즐거워지는 이유를 설명하는 구체적인 특징, 행동 또는 상황을 밝히면 충족한다. 재미있기 때문이라는 반복은 부족하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular conversational moment that illustrates what makes a conversation fun.",
+        "satisfiedWhenEn": "The answer gives a concrete instance of a topic, exchange, or behavior showing the stated source of enjoyment.",
+        "semanticRoleKo": "무엇이 대화를 재미있게 만드는지 보여 주는 구체적인 대화 장면.",
+        "satisfiedWhenKo": "말한 즐거움의 원인을 보여 주는 구체적인 주제, 대화 주고받기 또는 행동의 사례를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of an enjoyable conversation.",
+        "satisfiedWhenEn": "The answer adds a concrete modifier or fact about the people, topic, tone, or interaction that makes the fun factor more precise.",
+        "semanticRoleKo": "즐거운 대화가 지닌 구체적인 특징.",
+        "satisfiedWhenKo": "즐거움의 요인을 더 분명하게 만드는 사람, 주제, 분위기 또는 상호작용에 관한 구체적인 사실을 덧붙이면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The emotion a fun conversation creates for the learner or participants.",
+        "satisfiedWhenEn": "The answer expresses a recognizable feeling experienced during or after the enjoyable conversation.",
+        "semanticRoleKo": "재미있는 대화가 학습자나 참여자에게 만드는 감정.",
+        "satisfiedWhenKo": "즐거운 대화 중이나 뒤에 경험하는 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome of having a fun conversation.",
+        "satisfiedWhenEn": "The answer states an effect beyond enjoyment itself, such as building rapport, continuing to talk, or learning something about the other person.",
+        "semanticRoleKo": "재미있는 대화를 나눈 구체적인 결과.",
+        "satisfiedWhenKo": "즐거움 자체를 넘어 친밀감이 생기거나 대화를 계속하거나 상대방을 알게 되는 것처럼 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0377",
+    "slotContracts": {
+      "REASON": {
+        "semanticRoleEn": "The concrete factor that makes a conversation difficult.",
+        "satisfiedWhenEn": "The answer identifies a specific behavior, topic, communication barrier, or circumstance that causes conversational difficulty; saying only that it is hard is insufficient.",
+        "semanticRoleKo": "대화를 어렵게 만드는 구체적인 요인.",
+        "satisfiedWhenKo": "대화의 어려움을 일으키는 구체적인 행동, 주제, 의사소통 장벽 또는 상황을 밝히면 충족한다. 어렵다고만 하면 부족하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific conversational instance that demonstrates the stated difficulty.",
+        "satisfiedWhenEn": "The answer gives a concrete exchange, topic, or situation in which the difficulty appears.",
+        "semanticRoleKo": "말한 어려움이 나타나는 구체적인 대화 사례.",
+        "satisfiedWhenKo": "그 어려움이 드러나는 구체적인 대화 주고받기, 주제 또는 상황을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A precise characteristic of the difficult conversation or barrier.",
+        "satisfiedWhenEn": "The answer adds a concrete fact about who is involved, what is unclear, or how the interaction breaks down.",
+        "semanticRoleKo": "어려운 대화나 장벽의 구체적인 특징.",
+        "satisfiedWhenKo": "누가 관련되는지, 무엇이 불분명한지 또는 상호작용이 어떻게 어긋나는지에 관한 구체적인 사실을 덧붙이면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the conversational difficulty makes the learner feel.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotional response to the difficult interaction.",
+        "semanticRoleKo": "대화의 어려움 때문에 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "어려운 상호작용에 대한 알아볼 수 있는 감정적 반응을 나타내면 충족한다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "A way to make the difficult conversation easier or more successful.",
+        "satisfiedWhenEn": "The answer proposes a concrete action or communication strategy that directly addresses the stated source of difficulty.",
+        "semanticRoleKo": "어려운 대화를 더 쉽거나 원활하게 만드는 방법.",
+        "satisfiedWhenKo": "말한 어려움의 원인을 직접 다루는 구체적인 행동이나 의사소통 전략을 제안하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0378",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The question the learner recommends asking a new friend.",
+        "satisfiedWhenEn": "The answer proposes a recognizable question or clearly defined question topic suitable for a newly formed friendship; saying only to ask something friendly is too vague.",
+        "semanticRoleKo": "학습자가 새 친구에게 묻기를 추천하는 질문.",
+        "satisfiedWhenKo": "새로 맺은 친구 관계에 알맞은 알아볼 수 있는 질문이나 분명히 정해진 질문 주제를 제안하면 충족한다. 친절한 것을 물으라고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the recommended question is good for a new friend.",
+        "satisfiedWhenEn": "The answer gives a concrete quality or purpose that explains the question's suitability for an early friendship.",
+        "semanticRoleKo": "추천한 질문이 새 친구에게 좋은 이유.",
+        "satisfiedWhenKo": "그 질문이 초기 친구 관계에 알맞은 까닭을 설명하는 구체적인 특성이나 목적을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete answer or follow-up exchange that illustrates how the recommended question could work.",
+        "satisfiedWhenEn": "The answer provides a specific possible response or follow-up connected to the proposed question, rather than merely repeating the question itself.",
+        "semanticRoleKo": "추천한 질문이 어떻게 이어질 수 있는지 보여 주는 구체적인 답변이나 후속 대화.",
+        "satisfiedWhenKo": "질문 자체를 반복하지 않고 제안한 질문과 연결되는 구체적인 예상 답변이나 후속 대화를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The social outcome expected from asking the recommended question.",
+        "satisfiedWhenEn": "The answer states a concrete effect, such as learning about the new friend, finding common ground, or keeping the conversation going.",
+        "semanticRoleKo": "추천한 질문을 물었을 때 기대하는 사회적 결과.",
+        "satisfiedWhenKo": "새 친구를 알게 되거나 공통점을 찾거나 대화를 이어 가는 것처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific context or focus that makes the recommended question more precise.",
+        "satisfiedWhenEn": "The answer clarifies what aspect of the new friend's life the question concerns or when it would be appropriate to ask.",
+        "semanticRoleKo": "추천한 질문을 더 분명하게 만드는 구체적인 맥락이나 초점.",
+        "satisfiedWhenKo": "그 질문이 새 친구의 삶 중 어떤 측면을 다루는지 또는 언제 묻기 적절한지 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0379",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The method the learner recommends for beginning a chat.",
+        "satisfiedWhenEn": "The answer proposes a recognizable opening action or type of opening remark that could start a conversation; saying only to start nicely is too vague.",
+        "semanticRoleKo": "학습자가 대화를 시작하는 데 좋다고 추천하는 방법.",
+        "satisfiedWhenKo": "대화를 열 수 있는 알아볼 수 있는 첫 행동이나 첫마디의 유형을 제안하면 충족한다. 그저 좋게 시작하라고 하면 너무 모호하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete opening line or exchange that illustrates the recommended method.",
+        "satisfiedWhenEn": "The answer supplies a specific greeting, question, or first sentence that demonstrates the stated way of starting the chat.",
+        "semanticRoleKo": "추천한 방법을 보여 주는 구체적인 첫마디나 대화 사례.",
+        "satisfiedWhenKo": "말한 대화 시작 방법을 실제로 보여 주는 구체적인 인사, 질문 또는 첫 문장을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the recommended opening is a good way to start a chat.",
+        "satisfiedWhenEn": "The answer gives a concrete interpersonal or practical reason that explains why the opening works.",
+        "semanticRoleKo": "추천한 첫마디가 대화를 시작하는 좋은 방법인 이유.",
+        "satisfiedWhenKo": "그 시작 방식이 효과적인 까닭을 설명하는 구체적인 대인 관계상 또는 실용상의 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the recommended opening has on the conversation.",
+        "satisfiedWhenEn": "The answer states a concrete outcome, such as making the other person comfortable, creating a topic, or encouraging a reply.",
+        "semanticRoleKo": "추천한 대화 시작 방식이 대화에 미치는 효과.",
+        "satisfiedWhenKo": "상대방을 편안하게 하거나 주제를 만들거나 답변을 이끌어 내는 것처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific manner or situation for using the recommended chat opening.",
+        "satisfiedWhenEn": "The answer clarifies the tone, audience, setting, or timing that makes the opening appropriate.",
+        "semanticRoleKo": "추천한 대화 시작 방식을 사용하는 구체적인 태도나 상황.",
+        "satisfiedWhenKo": "그 시작 방식이 적절해지는 어조, 상대, 환경 또는 때를 구체적으로 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0380",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The method the learner recommends for bringing a chat to a close.",
+        "satisfiedWhenEn": "The answer proposes a recognizable closing action or type of closing remark that appropriately ends a conversation; saying only to end politely is too vague.",
+        "semanticRoleKo": "학습자가 대화를 마무리하는 데 좋다고 추천하는 방법.",
+        "satisfiedWhenKo": "대화를 적절히 끝내는 알아볼 수 있는 마무리 행동이나 끝인사의 유형을 제안하면 충족한다. 예의 있게 끝내라고만 하면 너무 모호하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete closing line or exchange that illustrates the recommended method.",
+        "satisfiedWhenEn": "The answer supplies a specific final sentence, farewell, or brief exchange that demonstrates how to close the chat.",
+        "semanticRoleKo": "추천한 방법을 보여 주는 구체적인 끝인사나 마무리 대화.",
+        "satisfiedWhenKo": "대화를 어떻게 마치는지 보여 주는 구체적인 마지막 문장, 작별 인사 또는 짧은 대화 주고받기를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the recommended closing is a good way to end a chat.",
+        "satisfiedWhenEn": "The answer gives a concrete social or practical reason that explains the closing's suitability.",
+        "semanticRoleKo": "추천한 마무리가 대화를 끝내는 좋은 방법인 이유.",
+        "satisfiedWhenKo": "그 마무리 방식이 알맞은 까닭을 설명하는 구체적인 사회적 또는 실용적 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the recommended closing creates for the conversation or relationship.",
+        "satisfiedWhenEn": "The answer states a concrete effect, such as ending without awkwardness, showing respect, or leaving open a future conversation.",
+        "semanticRoleKo": "추천한 마무리가 대화나 관계에 만드는 결과.",
+        "satisfiedWhenKo": "어색하지 않게 끝내거나 존중을 보이거나 다음 대화의 가능성을 남기는 것처럼 구체적인 효과를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the recommended ending makes the learner or the other person feel.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion or sense of comfort directly connected to closing the chat that way.",
+        "semanticRoleKo": "추천한 방식으로 대화를 끝낼 때 학습자나 상대방이 느끼는 감정.",
+        "satisfiedWhenKo": "그 방식의 대화 마무리와 직접 연결된 알아볼 수 있는 감정이나 편안함을 나타내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0381",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The destination the learner would reach by flying.",
+        "satisfiedWhenEn": "The answer identifies a recognizable destination and connects it to where the learner would go if able to fly; an unspecified somewhere is insufficient.",
+        "semanticRoleKo": "학습자가 날아서 가고 싶은 목적지.",
+        "satisfiedWhenKo": "날 수 있다면 어디로 갈지와 연결된 알아볼 수 있는 목적지를 밝히면 충족한다. 특정되지 않은 어딘가는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would fly to that destination.",
+        "satisfiedWhenEn": "The answer gives a concrete attraction, purpose, or personal connection that explains the destination.",
+        "semanticRoleKo": "학습자가 그 목적지로 날아가려는 이유.",
+        "satisfiedWhenKo": "그 목적지를 택한 까닭을 설명하는 구체적인 매력, 목적 또는 개인적 연관성을 제시하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner would do during the flight or at the chosen destination.",
+        "satisfiedWhenEn": "The answer states a concrete imagined activity connected to traveling by flight or arriving at the named place.",
+        "semanticRoleKo": "학습자가 비행 중이나 선택한 목적지에서 할 일.",
+        "satisfiedWhenKo": "날아서 이동하거나 말한 장소에 도착하는 것과 연결된 구체적인 상상 속 행동을 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner imagines feeling while flying to or visiting that place.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion tied to the imagined flight or destination.",
+        "semanticRoleKo": "그 장소로 날아가거나 방문하면서 학습자가 느낄 것이라 상상하는 감정.",
+        "satisfiedWhenKo": "상상한 비행이나 목적지와 연결된 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of the destination or imagined flight there.",
+        "satisfiedWhenEn": "The answer adds a concrete characteristic of the place, route, view, or journey beyond merely naming the destination.",
+        "semanticRoleKo": "목적지나 그곳까지의 상상 속 비행에 관한 구체적인 특징.",
+        "satisfiedWhenKo": "목적지 이름만 말하는 것을 넘어 장소, 경로, 풍경 또는 여정의 구체적인 특징을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0382",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The main thing the learner would do if they were invisible.",
+        "satisfiedWhenEn": "The answer states a concrete action that depends on or meaningfully uses the imagined ability to be invisible.",
+        "semanticRoleKo": "학습자가 보이지 않게 될 수 있다면 할 주된 일.",
+        "satisfiedWhenKo": "보이지 않는다는 상상 속 능력에 의존하거나 그 능력을 의미 있게 활용하는 구체적인 행동을 말하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would choose that action while invisible.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation, curiosity, or purpose that explains the imagined action.",
+        "semanticRoleKo": "학습자가 보이지 않는 상태에서 그 행동을 선택할 이유.",
+        "satisfiedWhenKo": "상상한 행동을 설명하는 구체적인 동기, 호기심 또는 목적을 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner would carry out the invisible action.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location connected to the proposed action; an unspecified place is insufficient.",
+        "semanticRoleKo": "학습자가 보이지 않는 상태로 그 행동을 할 장소.",
+        "satisfiedWhenKo": "제안한 행동과 연결된 알아볼 수 있는 장소를 밝히면 충족한다. 특정되지 않은 장소는 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from acting while invisible.",
+        "satisfiedWhenEn": "The answer states a concrete consequence or benefit the invisible action would produce.",
+        "semanticRoleKo": "학습자가 보이지 않는 상태로 행동해 기대하는 결과.",
+        "satisfiedWhenKo": "보이지 않는 상태에서 한 행동이 만들 구체적인 결과나 이점을 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner imagines feeling while being invisible.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion or reaction directly tied to the invisible experience.",
+        "semanticRoleKo": "보이지 않는 상태에서 학습자가 느낄 것이라 상상하는 감정.",
+        "satisfiedWhenKo": "보이지 않는 경험과 직접 연결된 알아볼 수 있는 감정이나 반응을 나타내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0383",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The animal the learner would choose to meet.",
+        "satisfiedWhenEn": "The answer identifies a recognizable animal or clearly defined kind of animal as the learner's imagined encounter choice.",
+        "semanticRoleKo": "학습자가 만나기로 선택할 동물.",
+        "satisfiedWhenKo": "상상 속 만남의 대상으로 알아볼 수 있는 동물이나 분명히 정해진 동물 종류를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to meet that animal.",
+        "satisfiedWhenEn": "The answer gives a concrete interest, quality, memory, or purpose that explains the animal choice.",
+        "semanticRoleKo": "학습자가 그 동물을 만나고 싶은 이유.",
+        "satisfiedWhenKo": "동물 선택을 설명하는 구체적인 관심, 특성, 기억 또는 목적을 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The setting where the learner imagines meeting the animal.",
+        "satisfiedWhenEn": "The answer identifies a recognizable habitat, facility, or other location for the encounter.",
+        "semanticRoleKo": "학습자가 그 동물을 만난다고 상상하는 장소.",
+        "satisfiedWhenKo": "그 만남이 일어날 알아볼 수 있는 서식지, 시설 또는 다른 장소를 밝히면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel when meeting the chosen animal.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion linked to the imagined animal encounter.",
+        "semanticRoleKo": "선택한 동물을 만날 때 학습자가 느낄 감정.",
+        "satisfiedWhenKo": "상상한 동물과의 만남에 연결된 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner would do with or around the chosen animal.",
+        "satisfiedWhenEn": "The answer states a concrete interaction, observation, or activity involving the animal.",
+        "semanticRoleKo": "학습자가 선택한 동물과 함께하거나 그 주변에서 할 일.",
+        "satisfiedWhenKo": "그 동물과 관련된 구체적인 상호작용, 관찰 또는 활동을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0384",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The movie or movie-based fictional world the learner would choose to live in.",
+        "satisfiedWhenEn": "The answer identifies a recognizable movie, or a fictional world clearly connected to a movie, as the learner's chosen place to live; a world with no identifiable movie connection is insufficient.",
+        "semanticRoleKo": "학습자가 살기로 선택할 영화 또는 영화에 기반한 허구 세계",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 영화나 영화와 분명히 연결되는 허구 세계를 살고 싶은 곳으로 제시하면 충족된다. 어떤 영화와도 식별 가능하게 연결되지 않는 세계는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would want to live in that movie world.",
+        "satisfiedWhenEn": "The answer gives a concrete attraction, opportunity, or personal value that explains the movie choice.",
+        "semanticRoleKo": "학습자가 그 영화 속 세계에서 살고 싶은 이유.",
+        "satisfiedWhenKo": "영화 선택을 설명하는 구체적인 매력, 기회 또는 개인적 가치를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of the chosen movie world that shapes the imagined life there.",
+        "satisfiedWhenEn": "The answer adds a concrete setting, character, rule, technology, or other feature beyond naming the movie.",
+        "semanticRoleKo": "선택한 영화 속 삶을 구체화하는 그 세계의 특징.",
+        "satisfiedWhenKo": "영화 제목만 말하는 것을 넘어 구체적인 배경, 인물, 규칙, 기술 또는 다른 특징을 덧붙이면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner would do while living in the chosen movie world.",
+        "satisfiedWhenEn": "The answer states a concrete activity or role tied to life in that fictional setting.",
+        "semanticRoleKo": "학습자가 선택한 영화 속 세계에 살면서 할 일.",
+        "satisfiedWhenKo": "그 허구의 배경에서 사는 것과 연결된 구체적인 활동이나 역할을 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner imagines feeling while living in that movie world.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion caused by the imagined experience of that world.",
+        "semanticRoleKo": "그 영화 속 세계에 살면서 학습자가 느낄 것이라 상상하는 감정.",
+        "satisfiedWhenKo": "그 세계를 경험한다는 상상에서 생기는 알아볼 수 있는 감정을 나타내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0385",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The person the learner would choose as a dinner companion.",
+        "satisfiedWhenEn": "The answer identifies a recognizable person or a clearly defined personal relation as the learner's chosen dinner guest.",
+        "semanticRoleKo": "학습자가 저녁 식사를 함께할 사람으로 선택하는 대상.",
+        "satisfiedWhenKo": "함께 저녁을 먹을 대상으로 알아볼 수 있는 사람이나 분명한 개인적 관계의 사람을 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to have dinner with that person.",
+        "satisfiedWhenEn": "The answer gives a concrete admiration, relationship, curiosity, or purpose that explains the companion choice.",
+        "semanticRoleKo": "학습자가 그 사람과 저녁을 먹고 싶은 이유.",
+        "satisfiedWhenKo": "동반자 선택을 설명하는 구체적인 존경, 관계, 호기심 또는 목적을 제시하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner would talk about or do with the chosen person at dinner.",
+        "satisfiedWhenEn": "The answer states a concrete conversation topic or shared activity for the imagined dinner.",
+        "semanticRoleKo": "학습자가 선택한 사람과 저녁 식사에서 이야기하거나 할 일.",
+        "satisfiedWhenKo": "상상한 저녁 식사에서 나눌 구체적인 대화 주제나 함께할 활동을 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel during dinner with the chosen person.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion tied to sharing the imagined meal with that person.",
+        "semanticRoleKo": "선택한 사람과 저녁을 먹는 동안 학습자가 느낄 감정.",
+        "satisfiedWhenKo": "그 사람과 상상 속 식사를 함께하는 것과 연결된 알아볼 수 있는 감정을 표현하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature of the imagined dinner with the chosen person.",
+        "satisfiedWhenEn": "The answer adds a specific meal, setting, occasion, or other fact about the dinner beyond identifying the companion.",
+        "semanticRoleKo": "선택한 사람과의 상상 속 저녁 식사에 관한 구체적인 특징.",
+        "satisfiedWhenKo": "동반자를 밝히는 것을 넘어 구체적인 음식, 장소, 계기 또는 식사에 관한 다른 사실을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0386",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The one superpower the learner would choose to have.",
+        "satisfiedWhenEn": "The answer identifies a recognizable ability as the learner's single imagined superpower; an unspecified special power is insufficient.",
+        "semanticRoleKo": "학습자가 가지기로 선택할 하나의 초능력.",
+        "satisfiedWhenKo": "하나의 상상 속 초능력으로 알아볼 수 있는 능력을 밝히면 충족한다. 무엇인지 알 수 없는 특별한 힘은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would choose that superpower.",
+        "satisfiedWhenEn": "The answer gives a concrete desire, problem, value, or opportunity that explains the power's appeal.",
+        "semanticRoleKo": "학습자가 그 초능력을 선택할 이유.",
+        "satisfiedWhenKo": "그 능력의 매력을 설명하는 구체적인 바람, 문제, 가치 또는 기회를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The benefit or consequence the chosen superpower would create.",
+        "satisfiedWhenEn": "The answer states a concrete outcome of having or using the power rather than only calling it useful.",
+        "semanticRoleKo": "선택한 초능력이 만들어 낼 이점이나 결과.",
+        "satisfiedWhenKo": "그 능력이 유용하다고만 하지 않고 능력을 가지거나 사용해서 생길 구체적인 결과를 말하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific way the learner would use the chosen superpower.",
+        "satisfiedWhenEn": "The answer describes a concrete action the learner would perform with the power.",
+        "semanticRoleKo": "학습자가 선택한 초능력을 사용할 구체적인 방식.",
+        "satisfiedWhenKo": "그 능력으로 학습자가 할 구체적인 행동을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A defining feature or limit of the learner's imagined superpower.",
+        "satisfiedWhenEn": "The answer clarifies how the power works, what it affects, or a condition on its use beyond merely naming it.",
+        "semanticRoleKo": "학습자가 상상한 초능력의 구체적인 특징이나 한계.",
+        "satisfiedWhenKo": "능력 이름만 말하는 것을 넘어 어떻게 작동하는지, 무엇에 영향을 주는지 또는 사용 조건을 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0387",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific new name the learner would choose for themselves.",
+        "satisfiedWhenEn": "The answer states a definite name, including a clearly specified nickname, as the learner's replacement name; naming only a broad style or category of names leaves the choice unidentified.",
+        "semanticRoleKo": "학습자가 자신을 위해 선택할 구체적인 새 이름",
+        "satisfiedWhenKo": "답변이 자신이 사용할 분명한 이름이나 구체적으로 정한 별명을 새 이름으로 제시하면 충족된다. 이름의 넓은 스타일이나 범주만 말하면 어떤 이름인지 식별되지 않는다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would choose that new name.",
+        "satisfiedWhenEn": "The answer gives a concrete meaning, association, sound, or personal motive that explains the name choice.",
+        "semanticRoleKo": "학습자가 그 새 이름을 선택할 이유.",
+        "satisfiedWhenKo": "이름 선택을 설명하는 구체적인 의미, 연상, 소리 또는 개인적 동기를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel about having the chosen name.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or sense of identity connected to using the new name.",
+        "semanticRoleKo": "선택한 이름을 갖는 것에 대해 학습자가 느낄 감정.",
+        "satisfiedWhenKo": "새 이름을 사용하는 것과 연결된 알아볼 수 있는 감정이나 정체성의 느낌을 표현하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic, origin, or meaning of the chosen name.",
+        "satisfiedWhenEn": "The answer adds a concrete fact about the name itself beyond simply stating it.",
+        "semanticRoleKo": "선택한 이름의 구체적인 특징, 유래 또는 의미.",
+        "satisfiedWhenKo": "이름을 말하는 데 그치지 않고 이름 자체에 관한 구체적인 사실을 덧붙이면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A change the learner expects from using the new name.",
+        "satisfiedWhenEn": "The answer states a concrete effect on the learner's identity, confidence, or interactions with other people.",
+        "semanticRoleKo": "새 이름을 사용하면서 학습자가 기대하는 변화.",
+        "satisfiedWhenKo": "학습자의 정체성, 자신감 또는 다른 사람과의 상호작용에 생길 구체적인 효과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0388",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The visual or physical features that define the learner's dream room.",
+        "satisfiedWhenEn": "The answer describes at least one concrete design feature, furnishing, color, layout, or other visible characteristic of the imagined room; a vague nice room is insufficient.",
+        "semanticRoleKo": "학습자의 꿈의 방을 이루는 시각적 또는 물리적 특징.",
+        "satisfiedWhenKo": "상상한 방의 구체적인 디자인 요소, 가구, 색, 배치 또는 다른 눈에 보이는 특징을 하나 이상 설명하면 충족한다. 막연히 좋은 방이라고 하면 부족하다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner would do in the dream room.",
+        "satisfiedWhenEn": "The answer states a concrete activity or use connected to the room's design.",
+        "semanticRoleKo": "학습자가 꿈의 방에서 할 일.",
+        "satisfiedWhenKo": "그 방의 디자인과 연결된 구체적인 활동이나 용도를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner wants to feel in the dream room.",
+        "satisfiedWhenEn": "The answer expresses a recognizable mood or emotion the room would create for the learner.",
+        "semanticRoleKo": "학습자가 꿈의 방에서 느끼고 싶은 감정.",
+        "satisfiedWhenKo": "그 방이 학습자에게 만들어 줄 알아볼 수 있는 기분이나 감정을 표현하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would include a stated feature in the room.",
+        "satisfiedWhenEn": "The answer gives a concrete preference, need, or purpose that explains a design decision.",
+        "semanticRoleKo": "학습자가 말한 특징을 방에 넣으려는 이유.",
+        "satisfiedWhenKo": "디자인 결정을 설명하는 구체적인 선호, 필요 또는 목적을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical or personal effect of the dream-room design.",
+        "satisfiedWhenEn": "The answer states a concrete outcome the design would enable, such as better rest, easier study, or more storage.",
+        "semanticRoleKo": "꿈의 방 디자인이 만드는 실용적 또는 개인적 효과.",
+        "satisfiedWhenKo": "더 잘 쉬거나 공부하기 쉬워지거나 수납이 늘어나는 것처럼 디자인이 가능하게 할 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0389",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The product, service, or kind of offering the learner's imagined small shop would sell or provide.",
+        "satisfiedWhenEn": "The answer identifies recognizable merchandise, a clearly defined product category, or a specific service as what the imagined shop would sell or provide; saying only good things is too vague.",
+        "semanticRoleKo": "학습자가 상상한 작은 가게에서 팔거나 제공할 상품, 서비스 또는 제공 항목의 종류",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 상품, 분명히 정해진 상품 범주 또는 구체적인 서비스를 상상한 가게에서 팔거나 제공할 것으로 밝히면 충족된다. 좋은 것들이라고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would choose to sell or provide that product or service.",
+        "satisfiedWhenEn": "The answer gives a concrete interest, demand, skill, experience, or business purpose that explains the chosen offering.",
+        "semanticRoleKo": "학습자가 그 상품이나 서비스를 팔거나 제공하기로 선택한 이유",
+        "satisfiedWhenKo": "답변이 선택한 제공 항목을 설명하는 구체적인 관심, 수요, 기술, 경험 또는 사업 목적을 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or variety of the product or service the shop would offer.",
+        "satisfiedWhenEn": "The answer adds a concrete type, style, ingredient, format, feature, price range, or other fact that makes the chosen product or service more precise.",
+        "semanticRoleKo": "가게에서 제공할 상품이나 서비스의 구체적인 특징 또는 종류",
+        "satisfiedWhenKo": "답변이 선택한 상품이나 서비스를 더 분명하게 만드는 구체적인 유형, 스타일, 재료, 형식, 기능, 가격대 또는 다른 사실을 덧붙이면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner hopes the shop or its chosen product or service will create.",
+        "satisfiedWhenEn": "The answer states a concrete business, customer, or community effect of selling or providing the chosen offering.",
+        "semanticRoleKo": "학습자가 그 가게나 선택한 상품 또는 서비스를 통해 만들고 싶은 결과",
+        "satisfiedWhenKo": "답변이 선택한 상품이나 서비스를 팔거나 제공해 생길 구체적인 사업상, 고객상 또는 지역사회상의 효과를 말하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The location or setting where the learner would open the small shop.",
+        "satisfiedWhenEn": "The answer identifies a recognizable area, neighborhood, building, or sales setting for the imagined shop.",
+        "semanticRoleKo": "학습자가 작은 가게를 열 장소나 환경.",
+        "satisfiedWhenKo": "상상한 가게가 들어설 알아볼 수 있는 지역, 동네, 건물 또는 판매 환경을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0390",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The defining theme, purpose, or identity of the learner's invented holiday.",
+        "satisfiedWhenEn": "The answer explains what the holiday celebrates, honors, or is about with a concrete idea; merely calling it a new holiday is insufficient.",
+        "semanticRoleKo": "학습자가 만든 새 기념일의 핵심 주제, 목적 또는 정체성.",
+        "satisfiedWhenKo": "그 기념일이 무엇을 축하하거나 기리거나 다루는지 구체적인 생각으로 설명하면 충족한다. 새 기념일이라고만 하면 부족하다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What people would do to observe the invented holiday.",
+        "satisfiedWhenEn": "The answer states a concrete custom, event, or activity associated with celebrating the new holiday.",
+        "semanticRoleKo": "사람들이 새 기념일을 보내기 위해 할 일.",
+        "satisfiedWhenKo": "새 기념일을 축하하는 것과 연결된 구체적인 관습, 행사 또는 활동을 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the invented holiday would be observed.",
+        "satisfiedWhenEn": "The answer gives a meaningful date, season, day, interval, or recurring timing for the holiday; it need not specify a clock time.",
+        "semanticRoleKo": "새 기념일을 지키는 때.",
+        "satisfiedWhenKo": "기념일과 연결된 의미 있는 날짜, 계절, 요일, 기간 또는 반복 시기를 말하면 충족한다. 시계상의 시각은 말할 필요가 없다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants this new holiday to exist.",
+        "satisfiedWhenEn": "The answer gives a concrete social, personal, or cultural motivation for creating the holiday.",
+        "semanticRoleKo": "학습자가 이 새 기념일을 만들고 싶은 이유.",
+        "satisfiedWhenKo": "기념일을 만드는 구체적인 사회적, 개인적 또는 문화적 동기를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the learner expects the invented holiday to have.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for people or the community, such as rest, awareness, celebration, or stronger relationships.",
+        "semanticRoleKo": "학습자가 새 기념일에서 기대하는 효과.",
+        "satisfiedWhenKo": "휴식, 인식 향상, 축하 또는 관계 강화처럼 사람이나 지역 사회에 생길 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0391",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The destination, venue, or ticketed event the learner would use the free ticket to visit or attend.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place, venue, attraction, or ticketed event and connects it to where the learner would go with the free ticket; an unspecified nice destination is insufficient.",
+        "semanticRoleKo": "학습자가 무료 표를 사용해 방문하거나 참석할 목적지, 장소 또는 유료 행사",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소, 공연장, 명소 또는 유료 행사를 밝히고 무료 표로 그곳에 간다는 관계를 나타내면 충족된다. 특정되지 않은 좋은 목적지는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would use the free ticket for the chosen destination, venue, or event.",
+        "satisfiedWhenEn": "The answer gives a concrete attraction, person, performance, activity, occasion, or personal goal that explains where the learner would go.",
+        "semanticRoleKo": "학습자가 선택한 목적지, 장소 또는 행사에 무료 표를 사용하려는 이유",
+        "satisfiedWhenKo": "답변이 어디로 갈지 선택한 까닭을 설명하는 구체적인 매력, 사람, 공연, 활동, 계기 또는 개인적 목표를 제시하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner would do or experience at the free-ticket destination, venue, or event.",
+        "satisfiedWhenEn": "The answer states a concrete activity or experience connected to visiting or attending the chosen place or event.",
+        "semanticRoleKo": "학습자가 무료 표로 선택한 목적지, 장소 또는 행사에서 하거나 경험할 일",
+        "satisfiedWhenKo": "답변이 선택한 장소를 방문하거나 행사에 참석하는 것과 연결된 구체적인 활동이나 경험을 말하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel about receiving or using the free ticket or going to the chosen place or event.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion tied to receiving the ticket, using it, or visiting or attending the chosen destination or event.",
+        "semanticRoleKo": "무료 표를 받거나 사용하거나 선택한 장소 또는 행사에 가면서 학습자가 느낄 감정",
+        "satisfiedWhenKo": "답변이 표를 받거나 사용하는 일 또는 선택한 목적지나 행사에 가는 일과 연결된 알아볼 수 있는 감정을 표현하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or plan associated with the chosen destination, venue, or event.",
+        "satisfiedWhenEn": "The answer adds a concrete attraction, performer, seat, date, route, duration, or other plan or feature beyond merely naming where the learner would go.",
+        "semanticRoleKo": "선택한 목적지, 장소 또는 행사와 관련된 구체적인 특징이나 계획",
+        "satisfiedWhenKo": "답변이 갈 곳의 이름만 말하는 것을 넘어 구체적인 명소, 출연자, 좌석, 날짜, 경로, 기간 또는 다른 계획이나 특징을 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0392",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The skill the learner would choose to acquire in one day.",
+        "satisfiedWhenEn": "The answer identifies a recognizable ability or clearly defined skill as the learner's one-day learning choice.",
+        "semanticRoleKo": "학습자가 하루 만에 익히기로 선택할 기술.",
+        "satisfiedWhenKo": "하루 만에 배울 대상으로 알아볼 수 있는 능력이나 분명히 정해진 기술을 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to acquire that skill instantly.",
+        "satisfiedWhenEn": "The answer gives a concrete need, interest, aspiration, or opportunity that explains the skill choice.",
+        "semanticRoleKo": "학습자가 그 기술을 즉시 익히고 싶은 이유.",
+        "satisfiedWhenKo": "기술 선택을 설명하는 구체적인 필요, 관심, 포부 또는 기회를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The benefit or change the learner expects from having the skill.",
+        "satisfiedWhenEn": "The answer states a concrete outcome enabled by mastering the skill rather than only saying it would be useful.",
+        "semanticRoleKo": "그 기술을 익혀 학습자가 기대하는 이점이나 변화.",
+        "satisfiedWhenKo": "유용할 것이라고만 하지 않고 그 기술을 숙달해 가능해질 구체적인 결과를 말하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific way the learner would use the newly acquired skill.",
+        "satisfiedWhenEn": "The answer describes a concrete task or activity the learner would perform with the skill.",
+        "semanticRoleKo": "학습자가 새로 익힌 기술을 사용할 구체적인 방식.",
+        "satisfiedWhenKo": "그 기술로 학습자가 수행할 구체적인 과제나 활동을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A narrower aspect or level of the skill the learner wants to learn.",
+        "satisfiedWhenEn": "The answer specifies a technique, component, application, or proficiency target within the chosen skill.",
+        "semanticRoleKo": "학습자가 배우고 싶은 기술의 더 좁은 측면이나 수준.",
+        "satisfiedWhenKo": "선택한 기술 안의 구체적인 기법, 구성 요소, 활용 분야 또는 숙련 목표를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0393",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The additional language the learner would choose to speak.",
+        "satisfiedWhenEn": "The answer identifies a recognizable language as the learner's one additional language choice.",
+        "semanticRoleKo": "학습자가 추가로 말하기 위해 선택할 언어.",
+        "satisfiedWhenKo": "추가로 구사할 하나의 언어로 알아볼 수 있는 언어를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to speak that language.",
+        "satisfiedWhenEn": "The answer gives a concrete personal, cultural, educational, or practical motivation for the language choice.",
+        "semanticRoleKo": "학습자가 그 언어를 말하고 싶은 이유.",
+        "satisfiedWhenKo": "언어 선택에 대한 구체적인 개인적, 문화적, 교육적 또는 실용적 동기를 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A place or region where the learner would use the chosen language.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to speaking or needing that language.",
+        "semanticRoleKo": "학습자가 선택한 언어를 사용할 장소나 지역.",
+        "satisfiedWhenKo": "알아볼 수 있는 장소를 밝히고 그곳에서 그 언어를 말하거나 필요로 한다는 관계를 나타내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The benefit the learner expects from speaking the additional language.",
+        "satisfiedWhenEn": "The answer states a concrete outcome, such as communicating with particular people, accessing information, or gaining an opportunity.",
+        "semanticRoleKo": "추가 언어를 말할 수 있어 학습자가 기대하는 이점.",
+        "satisfiedWhenKo": "특정 사람들과 소통하거나 정보에 접근하거나 기회를 얻는 것처럼 구체적인 결과를 말하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific activity for which the learner would use the chosen language.",
+        "satisfiedWhenEn": "The answer describes a concrete communication, travel, study, work, or media activity performed in that language.",
+        "semanticRoleKo": "학습자가 선택한 언어를 사용할 구체적인 활동.",
+        "satisfiedWhenKo": "그 언어로 할 구체적인 의사소통, 여행, 학업, 업무 또는 미디어 활동을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0394",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The weather condition the learner would choose for today.",
+        "satisfiedWhenEn": "The answer identifies a recognizable kind of weather and presents it as the learner's desired replacement for today's weather.",
+        "semanticRoleKo": "학습자가 오늘의 날씨로 선택할 기상 상태.",
+        "satisfiedWhenKo": "알아볼 수 있는 날씨 종류를 밝히고 그것이 오늘 바라는 날씨라는 관계를 나타내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants that weather today.",
+        "satisfiedWhenEn": "The answer gives a concrete plan, comfort preference, need, or circumstance that explains the desired weather.",
+        "semanticRoleKo": "학습자가 오늘 그 날씨를 원하는 이유.",
+        "satisfiedWhenKo": "원하는 날씨를 설명하는 구체적인 계획, 편안함에 대한 선호, 필요 또는 상황을 제시하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner would do in the chosen weather today.",
+        "satisfiedWhenEn": "The answer states a concrete activity that the desired weather would allow or suit.",
+        "semanticRoleKo": "학습자가 오늘 선택한 날씨에 할 일.",
+        "satisfiedWhenKo": "원하는 날씨가 가능하게 하거나 잘 어울리는 구체적인 활동을 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the chosen weather would make the learner feel today.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or physical sense of comfort caused by that weather.",
+        "semanticRoleKo": "선택한 날씨가 오늘 학습자에게 만들 감정.",
+        "satisfiedWhenKo": "그 날씨 때문에 생길 알아볼 수 있는 감정이나 신체적 편안함을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the chosen weather would have on the learner's day.",
+        "satisfiedWhenEn": "The answer states a concrete consequence for the learner's schedule, activity, mood, or surroundings.",
+        "semanticRoleKo": "선택한 날씨가 학습자의 오늘 하루에 미칠 효과.",
+        "satisfiedWhenKo": "학습자의 일정, 활동, 기분 또는 주변 환경에 생길 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0395",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The animal the learner would choose as any possible pet.",
+        "satisfiedWhenEn": "The answer identifies a recognizable animal or clearly defined type of animal as the learner's pet choice.",
+        "semanticRoleKo": "학습자가 어떤 동물이든 반려동물로 선택할 대상.",
+        "satisfiedWhenKo": "자신의 반려동물로 알아볼 수 있는 동물이나 분명히 정해진 동물 종류를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would choose that animal as a pet.",
+        "satisfiedWhenEn": "The answer gives a concrete trait, need, experience, or personal preference that explains the pet choice.",
+        "semanticRoleKo": "학습자가 그 동물을 반려동물로 선택할 이유.",
+        "satisfiedWhenKo": "반려동물 선택을 설명하는 구체적인 특성, 필요, 경험 또는 개인적 선호를 제시하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner would do with or for the chosen pet.",
+        "satisfiedWhenEn": "The answer states a concrete shared activity or care task involving the imagined pet.",
+        "semanticRoleKo": "학습자가 선택한 반려동물과 함께하거나 그 동물을 위해 할 일.",
+        "satisfiedWhenKo": "상상한 반려동물과 관련된 구체적인 공동 활동이나 돌봄 행동을 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel about living with the chosen pet.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion connected to owning or spending time with that animal.",
+        "semanticRoleKo": "선택한 반려동물과 사는 것에 대해 학습자가 느낄 감정.",
+        "satisfiedWhenKo": "그 동물을 기르거나 함께 시간을 보내는 것과 연결된 알아볼 수 있는 감정을 나타내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the learner's imagined pet.",
+        "satisfiedWhenEn": "The answer adds a concrete breed, size, age, appearance, temperament, or other trait beyond naming the animal.",
+        "semanticRoleKo": "학습자가 상상한 반려동물의 구체적인 특징.",
+        "satisfiedWhenKo": "동물 이름만 말하는 것을 넘어 구체적인 품종, 크기, 나이, 생김새, 성격 또는 다른 특성을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0396",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The main function the learner's invented app would perform.",
+        "satisfiedWhenEn": "The answer states a concrete task, service, or operation the new app would carry out; saying only that it helps people is too vague.",
+        "semanticRoleKo": "학습자가 만든 새 앱이 수행할 주된 기능.",
+        "satisfiedWhenKo": "새 앱이 할 구체적인 과제, 서비스 또는 작동을 말하면 충족한다. 사람들을 돕는다고만 하면 너무 모호하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome users would gain from the invented app's function.",
+        "satisfiedWhenEn": "The answer describes a concrete benefit or change produced for users by the app.",
+        "semanticRoleKo": "새 앱의 기능을 통해 사용자가 얻게 될 결과.",
+        "satisfiedWhenKo": "그 앱이 사용자에게 만들어 줄 구체적인 이점이나 변화를 설명하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific user difficulty the invented app would address.",
+        "satisfiedWhenEn": "The answer identifies a concrete need, inconvenience, or obstacle that the app is designed to solve; unspecified problems are insufficient.",
+        "semanticRoleKo": "학습자가 만든 앱이 다룰 구체적인 사용자 어려움.",
+        "satisfiedWhenKo": "앱이 해결하도록 설계된 구체적인 필요, 불편 또는 장애물을 밝히면 충족한다. 무엇인지 알 수 없는 문제는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or operating detail of the invented app.",
+        "satisfiedWhenEn": "The answer adds a concrete tool, input, screen, content type, or process showing how the app performs its function.",
+        "semanticRoleKo": "학습자가 만든 앱의 구체적인 기능 요소나 작동 세부 사항.",
+        "satisfiedWhenKo": "앱이 기능을 어떻게 수행하는지 보여 주는 구체적인 도구, 입력, 화면, 콘텐츠 종류 또는 과정을 덧붙이면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would create an app with that function.",
+        "satisfiedWhenEn": "The answer gives a concrete personal motivation, observed need, or value that explains the app idea.",
+        "semanticRoleKo": "학습자가 그런 기능의 앱을 만들려는 이유.",
+        "satisfiedWhenKo": "앱 아이디어를 설명하는 구체적인 개인적 동기, 발견한 필요 또는 가치를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0397",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The food or foods the learner would eat for a perfect breakfast.",
+        "satisfiedWhenEn": "The answer identifies at least one recognizable edible food or dish as part of the learner's ideal breakfast; a beverage alone does not satisfy what the learner would eat, though drinks may accompany the food.",
+      "semanticRoleKo": "학습자가 완벽한 아침 식사로 먹을 음식이나 요리",
+        "satisfiedWhenKo": "답변이 이상적인 아침 식사에 포함할 알아볼 수 있는 음식이나 요리를 하나 이상 밝히면 충족된다. 음료를 음식과 함께 말할 수는 있지만 음료만으로는 무엇을 먹을지 묻는 역할을 충족하지 않는다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific ingredient, preparation, portion, or accompaniment in the ideal breakfast.",
+        "satisfiedWhenEn": "The answer adds a concrete characteristic of the chosen meal beyond naming its main food.",
+        "semanticRoleKo": "이상적인 아침 식사의 구체적인 재료, 조리법, 양 또는 곁들임.",
+        "satisfiedWhenKo": "주된 음식 이름만 말하는 것을 넘어 선택한 식사의 구체적인 특징을 덧붙이면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the chosen food belongs in the learner's perfect breakfast.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, health, memory, convenience, or other preference that explains the food choice.",
+        "semanticRoleKo": "선택한 음식이 학습자의 완벽한 아침 식사에 어울리는 이유.",
+        "satisfiedWhenKo": "음식 선택을 설명하는 구체적인 맛, 건강상 이유, 기억, 편의성 또는 다른 선호를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel while or after eating the perfect breakfast.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or physical state caused by the imagined meal.",
+        "semanticRoleKo": "완벽한 아침 식사를 먹는 중이나 뒤에 학습자가 느낄 감정.",
+        "satisfiedWhenKo": "상상한 식사 때문에 생길 알아볼 수 있는 감정이나 신체 상태를 표현하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The setting where the learner imagines eating the perfect breakfast.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location or dining setting connected to the ideal meal.",
+        "semanticRoleKo": "학습자가 완벽한 아침 식사를 먹는다고 상상하는 장소.",
+        "satisfiedWhenKo": "이상적인 식사와 연결된 알아볼 수 있는 장소나 식사 환경을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0398",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The learner's main imagined daily activity while living near the sea.",
+        "satisfiedWhenEn": "The answer states a concrete action the learner would repeatedly do in a seaside living routine.",
+        "semanticRoleKo": "학습자가 바다 근처에 살며 매일 할 것으로 상상하는 주된 활동.",
+        "satisfiedWhenKo": "바닷가 생활의 일과로 학습자가 반복해서 할 구체적인 행동을 말하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second activity in the learner's daily seaside routine.",
+        "satisfiedWhenEn": "The answer adds another distinct daily action beyond the main seaside activity.",
+        "semanticRoleKo": "학습자의 매일 바닷가 일과에 포함되는 별도의 두 번째 활동.",
+        "satisfiedWhenKo": "주된 바닷가 활동 외에 매일 할 또 하나의 구별되는 행동을 덧붙이면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner would do the seaside activity within the day.",
+        "satisfiedWhenEn": "The answer gives a meaningful part of the day, sequence, duration, or recurring occasion connected to the activity; the question's every-day premise alone does not add this timing detail.",
+        "semanticRoleKo": "학습자가 하루 중 바닷가 활동을 할 때.",
+        "satisfiedWhenKo": "그 활동과 연결된 의미 있는 하루의 때, 순서, 기간 또는 반복 상황을 말하면 충족한다. 질문에 이미 나온 매일이라는 조건만 되풀이해서는 이 시간 정보가 추가되지 않는다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would choose that daily activity near the sea.",
+        "satisfiedWhenEn": "The answer gives a concrete interest, benefit, or purpose that explains the imagined routine.",
+        "semanticRoleKo": "학습자가 바다 근처에서 그 활동을 매일 하려는 이유.",
+        "satisfiedWhenKo": "상상한 일과를 설명하는 구체적인 관심, 이점 또는 목적을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel during the daily seaside activity.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion or physical sensation connected to the routine by the sea.",
+        "semanticRoleKo": "매일 바닷가 활동을 하면서 학습자가 느낄 감정.",
+        "satisfiedWhenKo": "바다에서의 일과와 연결된 알아볼 수 있는 감정이나 신체 감각을 나타내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the daily seaside routine would have on the learner.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for the learner's health, mood, relationships, skills, or lifestyle.",
+        "semanticRoleKo": "매일 하는 바닷가 일과가 학습자에게 미칠 효과.",
+        "satisfiedWhenKo": "학습자의 건강, 기분, 관계, 기술 또는 생활 방식에 생길 구체적인 결과를 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0399",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The learner's main imagined daily activity while living near a mountain.",
+        "satisfiedWhenEn": "The answer states a concrete action the learner would make part of everyday life in a mountain-area home.",
+        "semanticRoleKo": "학습자가 산 근처에 살며 매일 할 것으로 상상하는 주된 활동.",
+        "satisfiedWhenKo": "산 주변의 집에서 사는 일상에 학습자가 포함할 구체적인 행동을 말하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another distinct activity in the learner's daily mountain routine.",
+        "satisfiedWhenEn": "The answer names a second separate action beyond the main mountain-area activity.",
+        "semanticRoleKo": "학습자의 매일 산 주변 일과에 포함되는 또 하나의 구별되는 활동.",
+        "satisfiedWhenKo": "주된 산 주변 활동 외에 하는 두 번째 별도의 행동을 말하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When within the day, or under what additional timing condition, the learner would perform the mountain activity beyond the already-given daily frequency.",
+        "satisfiedWhenEn": "The answer gives a meaningful part of the day, sequence, duration, or additional recurring occasion or condition, such as in the morning, after breakfast, or on weekends; an exact clock time is unnecessary, and merely repeating every day from the question does not add timing support.",
+        "semanticRoleKo": "질문에 이미 주어진 매일이라는 빈도를 넘어 학습자가 산 주변 활동을 할 하루 중 시점이나 추가 시간 조건",
+        "satisfiedWhenKo": "답변이 아침, 아침 식사 후, 주말처럼 의미 있는 하루의 때, 순서, 기간 또는 추가 반복 상황이나 조건을 제시하면 충족된다. 정확한 시각은 필요하지 않으며, 질문의 매일을 그대로 반복하는 것만으로는 시간 정보가 추가되지 않는다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would make that activity part of mountain life.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation, benefit, or connection to the mountain environment.",
+        "semanticRoleKo": "학습자가 산 주변 생활에 그 활동을 넣으려는 이유.",
+        "satisfiedWhenKo": "산 환경과 연결된 구체적인 동기, 이점 또는 관련성을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel while doing the daily mountain activity.",
+        "satisfiedWhenEn": "The answer expresses a recognizable emotion or bodily response associated with the imagined routine.",
+        "semanticRoleKo": "매일 산 주변 활동을 하면서 학습자가 느낄 감정.",
+        "satisfiedWhenKo": "상상한 일과와 관련된 알아볼 수 있는 감정이나 신체적 반응을 표현하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from the daily mountain routine.",
+        "satisfiedWhenEn": "The answer describes a concrete effect on fitness, calm, knowledge of nature, social life, or another part of daily living.",
+        "semanticRoleKo": "매일 하는 산 주변 일과에서 학습자가 기대하는 결과.",
+        "satisfiedWhenKo": "체력, 평온함, 자연에 대한 지식, 사회생활 또는 일상의 다른 부분에 생길 구체적인 효과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0400",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The one gift the learner would choose to give themselves.",
+        "satisfiedWhenEn": "The answer identifies a recognizable item, experience, or clearly defined benefit as the learner's self-gift; an unspecified present is insufficient.",
+        "semanticRoleKo": "학습자가 자신에게 주기로 선택할 하나의 선물.",
+        "satisfiedWhenKo": "자신을 위한 선물로 알아볼 수 있는 물건, 경험 또는 분명히 정해진 혜택을 밝히면 충족한다. 무엇인지 알 수 없는 선물은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would choose that gift for themselves.",
+        "satisfiedWhenEn": "The answer gives a concrete need, achievement, desire, or personal meaning that explains the gift choice.",
+        "semanticRoleKo": "학습자가 자신을 위해 그 선물을 선택할 이유.",
+        "satisfiedWhenKo": "선물 선택을 설명하는 구체적인 필요, 성취, 바람 또는 개인적 의미를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The benefit or change the self-gift would provide to the learner.",
+        "satisfiedWhenEn": "The answer states a concrete outcome the learner expects from receiving or using the gift.",
+        "semanticRoleKo": "자신에게 주는 선물이 학습자에게 제공할 이점이나 변화.",
+        "satisfiedWhenKo": "그 선물을 받거나 사용해서 학습자가 기대하는 구체적인 결과를 말하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner would feel upon giving themselves the chosen gift.",
+        "satisfiedWhenEn": "The answer conveys a recognizable emotion connected to receiving that particular self-gift.",
+        "semanticRoleKo": "선택한 선물을 자신에게 줄 때 학습자가 느낄 감정.",
+        "satisfiedWhenKo": "그 특별한 자기 선물을 받는 것과 연결된 알아볼 수 있는 감정을 나타내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the chosen self-gift.",
+        "satisfiedWhenEn": "The answer adds a concrete model, form, destination, duration, feature, or other fact beyond naming the gift category.",
+        "semanticRoleKo": "학습자가 선택한 자기 선물의 구체적인 특징.",
+        "satisfiedWhenKo": "선물 종류를 말하는 것을 넘어 구체적인 모델, 형태, 목적지, 기간, 기능 또는 다른 사실을 덧붙이면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-01",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The social duties the learner believes successful companies should have today.",
+        "satisfiedWhenEn": "The answer proposes at least one concrete responsibility that successful companies should accept toward society; saying only that they should be responsible or helpful is too vague.",
+        "semanticRoleKo": "성공한 기업이 오늘날 가져야 한다고 학습자가 판단하는 사회적 의무.",
+        "satisfiedWhenKo": "성공한 기업이 사회를 위해 맡아야 할 구체적인 책임을 하나 이상 제안하면 충족한다. 책임감 있게 행동하거나 도움을 줘야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why successful companies should carry the proposed social responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete ethical, economic, or social justification linking the companies' success or influence to the proposed duty.",
+        "semanticRoleKo": "성공한 기업이 제안한 사회적 책임을 져야 하는 이유.",
+        "satisfiedWhenKo": "기업의 성공이나 영향력과 제안한 의무를 연결하는 구체적인 윤리적, 경제적 또는 사회적 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific company practice or initiative that illustrates the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete program, policy, donation, employment practice, or other company action showing how the responsibility could be carried out.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 기업 관행이나 활동.",
+        "satisfiedWhenKo": "그 책임을 어떻게 실행할 수 있는지 보여 주는 구체적인 프로그램, 정책, 기부, 고용 관행 또는 다른 기업 행동을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The societal outcome expected from successful companies fulfilling the proposed duties.",
+        "satisfiedWhenEn": "The answer states a concrete effect on workers, customers, communities, the environment, or society at large.",
+        "semanticRoleKo": "성공한 기업이 제안한 의무를 이행할 때 기대되는 사회적 결과.",
+        "satisfiedWhenKo": "근로자, 고객, 지역 사회, 환경 또는 사회 전체에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The social need or harm the proposed corporate responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a concrete societal problem connected to successful companies' resources, operations, or influence; unspecified social issues are insufficient.",
+        "semanticRoleKo": "제안한 기업의 책임이 다뤄야 할 사회적 필요나 피해.",
+        "satisfiedWhenKo": "성공한 기업의 자원, 운영 또는 영향력과 연결된 구체적인 사회 문제를 밝히면 충족한다. 무엇인지 알 수 없는 사회 문제는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-02",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's position on whether successful companies should contribute more to society.",
+        "satisfiedWhenEn": "The answer clearly supports, opposes, or qualifies the idea that successful companies should do more for society; discussing companies without taking a position is insufficient.",
+        "semanticRoleKo": "성공한 기업이 사회를 위해 더 많이 기여해야 하는지에 대한 학습자의 입장.",
+        "satisfiedWhenKo": "성공한 기업이 사회를 위해 더 해야 한다는 생각을 분명히 찬성하거나 반대하거나 조건부로 판단하면 충족한다. 입장 없이 기업만 논하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner holds that position on greater corporate contribution.",
+        "satisfiedWhenEn": "The answer gives a concrete principle, consequence, resource consideration, or social need that supports the stated stance.",
+        "semanticRoleKo": "기업의 더 큰 사회 기여에 대해 학습자가 그런 입장을 가진 이유.",
+        "satisfiedWhenKo": "밝힌 입장을 뒷받침하는 구체적인 원칙, 결과, 자원에 대한 고려 또는 사회적 필요를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific corporate action or situation that illustrates the learner's position.",
+        "satisfiedWhenEn": "The answer gives a concrete example of what a successful company could do, is already doing, or should not be expected to do for society.",
+        "semanticRoleKo": "학습자의 입장을 보여 주는 구체적인 기업 행동이나 상황.",
+        "satisfiedWhenKo": "성공한 기업이 사회를 위해 할 수 있는 일, 이미 하는 일 또는 요구받지 않아야 할 일의 구체적인 예를 제시하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A positive side of successful companies doing more for society.",
+        "satisfiedWhenEn": "The answer identifies a concrete benefit of increased corporate contribution for a stakeholder group or society.",
+        "semanticRoleKo": "성공한 기업이 사회를 위해 더 많이 기여할 때의 긍정적인 측면.",
+        "satisfiedWhenKo": "기업의 기여 확대가 특정 이해관계자 집단이나 사회에 주는 구체적인 이점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A drawback or limit of expecting successful companies to do more for society.",
+        "satisfiedWhenEn": "The answer states a concrete cost, tradeoff, risk, or boundary associated with greater corporate obligations.",
+        "semanticRoleKo": "성공한 기업에 더 큰 사회 기여를 요구할 때의 단점이나 한계.",
+        "satisfiedWhenKo": "기업 의무 확대와 관련된 구체적인 비용, 상충 관계, 위험 또는 경계를 말하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The concrete societal change the learner expects if their position is followed.",
+        "satisfiedWhenEn": "The answer describes an observable outcome that would result from increasing, limiting, or structuring successful companies' social contribution as proposed.",
+        "semanticRoleKo": "학습자의 입장을 따를 경우 기대되는 구체적인 사회 변화.",
+        "satisfiedWhenKo": "제안대로 성공한 기업의 사회 기여를 늘리거나 제한하거나 설계했을 때 생길 관찰 가능한 결과를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-03",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The one important societal role the learner assigns to successful companies.",
+        "satisfiedWhenEn": "The answer identifies a concrete role successful companies should play, rather than merely saying that companies are important.",
+        "semanticRoleKo": "학습자가 성공한 기업에 부여하는 하나의 중요한 사회적 역할.",
+        "satisfiedWhenKo": "기업이 중요하다고만 하지 않고 성공한 기업이 맡아야 할 구체적인 역할을 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the selected company role is important.",
+        "satisfiedWhenEn": "The answer gives a concrete need, principle, or expected effect that explains the role's importance.",
+        "semanticRoleKo": "선택한 기업 역할이 중요한 이유.",
+        "satisfiedWhenKo": "그 역할의 중요성을 설명하는 구체적인 필요, 원칙 또는 기대 효과를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific company action that demonstrates the selected role.",
+        "satisfiedWhenEn": "The answer gives a concrete practice, project, or decision through which a successful company could perform the role.",
+        "semanticRoleKo": "선택한 역할을 보여 주는 구체적인 기업 행동.",
+        "satisfiedWhenKo": "성공한 기업이 그 역할을 수행할 수 있는 구체적인 관행, 사업 또는 결정을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome expected when successful companies perform the selected role.",
+        "satisfiedWhenEn": "The answer states a concrete effect on a defined group, public condition, or social system.",
+        "semanticRoleKo": "성공한 기업이 선택한 역할을 수행할 때 기대되는 결과.",
+        "satisfiedWhenKo": "분명한 집단, 공공의 상황 또는 사회 체계에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific scope or implementation feature of the selected company role.",
+        "satisfiedWhenEn": "The answer clarifies who the role serves, what area it covers, or how companies should carry it out beyond naming the role.",
+        "semanticRoleKo": "선택한 기업 역할의 구체적인 범위나 실행 특징.",
+        "satisfiedWhenKo": "역할 이름만 말하는 것을 넘어 누구를 위한 역할인지, 어떤 영역을 다루는지 또는 어떻게 수행해야 하는지 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-04",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The duty or duties the learner believes successful companies have.",
+        "satisfiedWhenEn": "The answer states at least one definite obligation successful companies owe to people, communities, or society; a general call to be good is insufficient.",
+        "semanticRoleKo": "성공한 기업이 가진다고 학습자가 보는 의무.",
+        "satisfiedWhenKo": "성공한 기업이 사람, 지역 사회 또는 사회에 져야 할 분명한 의무를 하나 이상 말하면 충족한다. 착하게 행동해야 한다는 일반론은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What makes the stated company duty important.",
+        "satisfiedWhenEn": "The answer explains the duty's importance with a concrete social need, company capability, moral basis, or likely consequence.",
+        "semanticRoleKo": "말한 기업 의무를 중요하게 만드는 근거.",
+        "satisfiedWhenKo": "구체적인 사회적 필요, 기업의 역량, 도덕적 근거 또는 예상 결과로 그 의무의 중요성을 설명하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular way a successful company could fulfill the stated duty.",
+        "satisfiedWhenEn": "The answer presents a concrete policy, service, investment, or behavior that illustrates duty fulfillment.",
+        "semanticRoleKo": "성공한 기업이 말한 의무를 이행할 수 있는 구체적인 방식.",
+        "satisfiedWhenKo": "의무 이행을 보여 주는 구체적인 정책, 서비스, 투자 또는 행동을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of successful companies fulfilling the stated duty.",
+        "satisfiedWhenEn": "The answer identifies a concrete change for employees, consumers, a community, the environment, or another affected group.",
+        "semanticRoleKo": "성공한 기업이 말한 의무를 이행한 효과.",
+        "satisfiedWhenKo": "직원, 소비자, 지역 사회, 환경 또는 다른 영향을 받는 집단에 생길 구체적인 변화를 밝히면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific condition, beneficiary, or standard attached to the proposed company duty.",
+        "satisfiedWhenEn": "The answer narrows the duty by stating who benefits, what conduct is required, or what level of commitment is expected.",
+        "semanticRoleKo": "제안한 기업 의무에 붙는 구체적인 조건, 수혜자 또는 기준.",
+        "satisfiedWhenKo": "누가 혜택을 받는지, 어떤 행동이 필요한지 또는 어느 정도의 노력을 기대하는지 밝혀 의무를 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-05",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The form of social responsibility the learner recommends for successful companies.",
+        "satisfiedWhenEn": "The answer proposes a concrete kind of social responsibility for successful companies; saying only that they should give back is too broad unless what they should do is identified.",
+        "semanticRoleKo": "학습자가 성공한 기업에 추천하는 사회적 책임의 형태.",
+        "satisfiedWhenKo": "성공한 기업을 위한 구체적인 사회적 책임의 종류를 제안하면 충족한다. 무엇을 해야 하는지 밝히지 않은 채 사회에 돌려줘야 한다고만 하면 너무 넓다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why successful companies should have that form of social responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete justification tied to the companies' impact, resources, beneficiaries, or obligations.",
+        "semanticRoleKo": "성공한 기업이 그런 형태의 사회적 책임을 가져야 하는 이유.",
+        "satisfiedWhenKo": "기업의 영향, 자원, 수혜자 또는 의무와 연결된 구체적인 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific initiative that illustrates the recommended corporate responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete action or program a successful company could implement under the proposed responsibility.",
+        "semanticRoleKo": "추천한 기업의 책임을 보여 주는 구체적인 활동.",
+        "satisfiedWhenKo": "성공한 기업이 제안한 책임 아래 실행할 수 있는 구체적인 행동이나 프로그램을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The social effect expected from the recommended corporate responsibility.",
+        "satisfiedWhenEn": "The answer states a concrete improvement or consequence for the people, environment, or institutions affected.",
+        "semanticRoleKo": "추천한 기업의 사회적 책임에서 기대되는 사회적 효과.",
+        "satisfiedWhenKo": "영향을 받는 사람, 환경 또는 기관에 생길 구체적인 개선이나 결과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific social issue the recommended responsibility is meant to address.",
+        "satisfiedWhenEn": "The answer identifies a concrete need or harm that successful companies could realistically help reduce.",
+        "semanticRoleKo": "추천한 책임이 다루려는 구체적인 사회 문제.",
+        "satisfiedWhenKo": "성공한 기업이 현실적으로 줄이는 데 도움을 줄 수 있는 구체적인 필요나 피해를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-06",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The public responsibilities the learner assigns to big-city transportation systems.",
+        "satisfiedWhenEn": "The answer proposes at least one concrete service or social duty urban public transportation should fulfill; saying only that it should serve society is too vague.",
+        "semanticRoleKo": "학습자가 대도시 대중교통 체계에 부여하는 공공의 책임.",
+        "satisfiedWhenKo": "도시 대중교통이 이행해야 할 구체적인 서비스상 또는 사회적 의무를 하나 이상 제안하면 충족한다. 사회에 봉사해야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why big-city public transportation should have the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete mobility, equity, safety, environmental, or public-service justification.",
+        "semanticRoleKo": "대도시 대중교통이 제안한 책임을 가져야 하는 이유.",
+        "satisfiedWhenKo": "구체적인 이동성, 형평성, 안전, 환경 또는 공공 서비스상의 근거를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific transit policy or service that illustrates the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete route, fare, accessibility, safety, frequency, or other operational measure showing the duty in practice.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 대중교통 정책이나 서비스.",
+        "satisfiedWhenKo": "그 의무의 실제 모습을 보여 주는 구체적인 노선, 요금, 접근성, 안전, 운행 빈도 또는 다른 운영 조치를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The urban outcome expected from public transportation fulfilling the proposed responsibility.",
+        "satisfiedWhenEn": "The answer states a concrete effect on residents' mobility, safety, cost of living, pollution, or access to opportunities.",
+        "semanticRoleKo": "대중교통이 제안한 책임을 이행할 때 기대되는 도시의 결과.",
+        "satisfiedWhenKo": "주민의 이동, 안전, 생활비, 오염 또는 기회 접근성에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The big-city transportation problem the proposed responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a concrete urban mobility difficulty, service gap, inequity, safety risk, or environmental harm.",
+        "semanticRoleKo": "제안한 책임이 다뤄야 할 대도시 교통 문제.",
+        "satisfiedWhenKo": "구체적인 도시 이동의 어려움, 서비스 공백, 불평등, 안전 위험 또는 환경 피해를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-07",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's stance on whether big-city public transportation should do more for society.",
+        "satisfiedWhenEn": "The answer clearly supports, rejects, or limits the claim that urban transit should expand its social contribution.",
+        "semanticRoleKo": "대도시 대중교통이 사회를 위해 더 해야 하는지에 대한 학습자의 입장.",
+        "satisfiedWhenKo": "도시 대중교통이 사회적 기여를 확대해야 한다는 주장에 대해 분명히 찬성하거나 반대하거나 범위를 제한하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner takes that position on urban transit's social contribution.",
+        "satisfiedWhenEn": "The answer gives a concrete public need, system constraint, principle, or likely consequence supporting the stance.",
+        "semanticRoleKo": "도시 대중교통의 사회 기여에 대해 학습자가 그런 입장을 취한 이유.",
+        "satisfiedWhenKo": "그 입장을 뒷받침하는 구체적인 공공의 필요, 체계상의 제약, 원칙 또는 예상 결과를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific transit action or situation that illustrates the learner's stance.",
+        "satisfiedWhenEn": "The answer gives a concrete service improvement, current shortcoming, or reasonable limit showing what doing more would mean.",
+        "semanticRoleKo": "학습자의 입장을 보여 주는 구체적인 대중교통 행동이나 상황.",
+        "satisfiedWhenKo": "더 한다는 의미를 보여 주는 구체적인 서비스 개선, 현재의 부족함 또는 합리적인 한계를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The societal change expected if urban transit follows the learner's position.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome for city residents or the urban environment from expanding or limiting transit's role as proposed.",
+        "semanticRoleKo": "도시 대중교통이 학습자의 입장을 따를 때 기대되는 사회 변화.",
+        "satisfiedWhenKo": "제안대로 대중교통의 역할을 확대하거나 제한했을 때 도시 주민이나 도시 환경에 생길 구체적인 결과를 설명하면 충족한다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A positive side of big-city public transportation doing more for society.",
+        "satisfiedWhenEn": "The answer identifies a concrete benefit of broader transit responsibilities for riders, neighborhoods, or the city.",
+        "semanticRoleKo": "대도시 대중교통이 사회를 위해 더 할 때의 긍정적인 측면.",
+        "satisfiedWhenKo": "대중교통의 책임 확대가 승객, 동네 또는 도시에 주는 구체적인 이점을 밝히면 충족한다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A drawback or practical limit of asking urban transit to do more.",
+        "satisfiedWhenEn": "The answer states a concrete cost, capacity problem, tradeoff, or risk associated with expanding the system's social duties.",
+        "semanticRoleKo": "도시 대중교통에 더 많은 역할을 요구할 때의 단점이나 현실적 한계.",
+        "satisfiedWhenKo": "체계의 사회적 의무 확대와 관련된 구체적인 비용, 수용 능력 문제, 상충 관계 또는 위험을 말하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-08",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The one important role the learner believes big-city public transportation should play.",
+        "satisfiedWhenEn": "The answer identifies a concrete urban function or public duty for transportation rather than only calling transit important.",
+        "semanticRoleKo": "대도시 대중교통이 맡아야 한다고 학습자가 보는 하나의 중요한 역할.",
+        "satisfiedWhenKo": "대중교통이 중요하다고만 하지 않고 구체적인 도시 기능이나 공공의 의무를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the selected public-transport role is important.",
+        "satisfiedWhenEn": "The answer gives a concrete need, principle, or urban effect that explains the role's importance.",
+        "semanticRoleKo": "선택한 대중교통 역할이 중요한 이유.",
+        "satisfiedWhenKo": "그 역할의 중요성을 설명하는 구체적인 필요, 원칙 또는 도시 효과를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific transit measure that demonstrates the selected role.",
+        "satisfiedWhenEn": "The answer gives a concrete route design, service rule, facility, fare policy, or operational practice illustrating the role.",
+        "semanticRoleKo": "선택한 역할을 보여 주는 구체적인 대중교통 조치.",
+        "satisfiedWhenKo": "그 역할을 보여 주는 구체적인 노선 설계, 서비스 규칙, 시설, 요금 정책 또는 운영 관행을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of urban public transportation performing the selected role.",
+        "satisfiedWhenEn": "The answer states a concrete change in access, travel reliability, safety, affordability, congestion, or the environment.",
+        "semanticRoleKo": "도시 대중교통이 선택한 역할을 수행한 효과.",
+        "satisfiedWhenKo": "접근성, 이동 신뢰성, 안전, 비용 부담, 혼잡 또는 환경에 생길 구체적인 변화를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific beneficiary, service condition, or standard within the selected transit role.",
+        "satisfiedWhenEn": "The answer clarifies who should be served, where the duty applies, or what level of service the role requires.",
+        "semanticRoleKo": "선택한 대중교통 역할 안의 구체적인 수혜자, 서비스 조건 또는 기준.",
+        "satisfiedWhenKo": "누구에게 서비스를 제공해야 하는지, 어디에 의무가 적용되는지 또는 어떤 서비스 수준이 필요한지 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-09",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The duty the learner assigns to public transportation in big cities.",
+        "satisfiedWhenEn": "The answer states a definite obligation urban public transportation has toward riders or the city; a generic duty to be better is insufficient.",
+        "semanticRoleKo": "학습자가 대도시 대중교통에 부여하는 의무.",
+        "satisfiedWhenKo": "도시 대중교통이 승객이나 도시에 져야 할 분명한 의무를 말하면 충족한다. 더 좋아져야 한다는 막연한 의무는 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What makes the proposed public-transport duty important.",
+        "satisfiedWhenEn": "The answer gives a concrete public-service need, affected group, risk, or urban consequence that explains the duty's importance.",
+        "semanticRoleKo": "제안한 대중교통 의무를 중요하게 만드는 근거.",
+        "satisfiedWhenKo": "의무의 중요성을 설명하는 구체적인 공공 서비스상의 필요, 영향을 받는 집단, 위험 또는 도시 결과를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular transit action that fulfills the proposed duty.",
+        "satisfiedWhenEn": "The answer describes a concrete service, policy, facility, or operating decision showing how the duty would be met.",
+        "semanticRoleKo": "제안한 의무를 이행하는 구체적인 대중교통 행동.",
+        "satisfiedWhenKo": "그 의무를 어떻게 이행하는지 보여 주는 구체적인 서비스, 정책, 시설 또는 운영 결정을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of public transportation meeting the proposed duty.",
+        "satisfiedWhenEn": "The answer states a concrete effect on riders' daily travel, inclusion, safety, expenses, or city conditions.",
+        "semanticRoleKo": "대중교통이 제안한 의무를 이행한 결과.",
+        "satisfiedWhenKo": "승객의 일상 이동, 포용성, 안전, 비용 또는 도시 상황에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The transit or city problem that makes the proposed duty necessary.",
+        "satisfiedWhenEn": "The answer identifies a concrete service failure, access barrier, safety concern, congestion issue, or environmental harm.",
+        "semanticRoleKo": "제안한 의무를 필요하게 만드는 교통 또는 도시 문제.",
+        "satisfiedWhenKo": "구체적인 서비스 실패, 접근 장벽, 안전 우려, 혼잡 문제 또는 환경 피해를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-10",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The kind of social responsibility the learner recommends for big-city public transportation.",
+        "satisfiedWhenEn": "The answer proposes a concrete responsibility connecting urban transit service to a social obligation; saying only to help everyone is too vague.",
+        "semanticRoleKo": "학습자가 대도시 대중교통에 추천하는 사회적 책임의 종류.",
+        "satisfiedWhenKo": "도시 교통 서비스와 사회적 의무를 연결하는 구체적인 책임을 제안하면 충족한다. 모두를 도와야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why urban public transportation should carry that social responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete reason tied to essential mobility, public funding, equal access, safety, or environmental impact.",
+        "semanticRoleKo": "도시 대중교통이 그런 사회적 책임을 져야 하는 이유.",
+        "satisfiedWhenKo": "필수 이동, 공공 재원, 동등한 접근, 안전 또는 환경 영향과 연결된 구체적인 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific program or policy illustrating the recommended transit responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete example of service design, pricing, accessibility, outreach, or another action that implements the responsibility.",
+        "semanticRoleKo": "추천한 대중교통 책임을 보여 주는 구체적인 프로그램이나 정책.",
+        "satisfiedWhenKo": "그 책임을 실행하는 구체적인 서비스 설계, 요금 책정, 접근성, 지원 활동 또는 다른 행동의 예를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The community effect expected from the recommended transit responsibility.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for residents' opportunity, mobility, affordability, health, or the urban environment.",
+        "semanticRoleKo": "추천한 대중교통 책임에서 기대되는 지역 사회의 효과.",
+        "satisfiedWhenKo": "주민의 기회, 이동성, 비용 부담, 건강 또는 도시 환경에 생길 구체적인 결과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The social or mobility issue the recommended transit responsibility should solve.",
+        "satisfiedWhenEn": "The answer identifies a concrete unmet need, exclusion, hazard, or harmful urban condition that transit can address.",
+        "semanticRoleKo": "추천한 대중교통 책임이 해결해야 할 사회적 또는 이동상의 문제.",
+        "satisfiedWhenKo": "대중교통이 다룰 수 있는 구체적인 충족되지 않은 필요, 배제, 위험 또는 해로운 도시 상황을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-11",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The societal responsibilities the learner believes financial-skills schools should have.",
+        "satisfiedWhenEn": "The answer proposes at least one concrete duty for schools that teach financial skills toward learners or society; saying only that they should teach well is too vague.",
+        "semanticRoleKo": "금융 기술을 가르치는 학교가 가져야 한다고 학습자가 보는 사회적 책임.",
+        "satisfiedWhenKo": "금융 기술 교육 학교가 학습자나 사회에 져야 할 구체적인 의무를 하나 이상 제안하면 충족한다. 잘 가르쳐야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why financial-skills schools should carry the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete educational, economic, consumer-protection, or equity reason for the duty.",
+        "semanticRoleKo": "금융 기술 교육 학교가 제안한 책임을 져야 하는 이유.",
+        "satisfiedWhenKo": "그 의무에 대한 구체적인 교육적, 경제적, 소비자 보호상 또는 형평성상의 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific lesson, service, or school practice that illustrates the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete curriculum topic, counseling service, access program, or other action through which the school could fulfill its duty.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 수업, 서비스 또는 학교 관행.",
+        "satisfiedWhenKo": "학교가 의무를 이행할 수 있는 구체적인 교육 내용, 상담 서비스, 접근 지원 프로그램 또는 다른 행동을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome expected from financial-skills schools fulfilling the proposed responsibility.",
+        "satisfiedWhenEn": "The answer states a concrete effect on people's financial decisions, security, debt, opportunity, or confidence.",
+        "semanticRoleKo": "금융 기술 교육 학교가 제안한 책임을 이행할 때 기대되는 결과.",
+        "satisfiedWhenKo": "사람들의 금융 의사 결정, 안정, 부채, 기회 또는 자신감에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The financial or educational problem the proposed school responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a concrete knowledge gap, harmful financial behavior, access barrier, or economic vulnerability.",
+        "semanticRoleKo": "제안한 학교 책임이 다뤄야 할 금융 또는 교육 문제.",
+        "satisfiedWhenKo": "구체적인 지식 격차, 해로운 금융 행동, 접근 장벽 또는 경제적 취약성을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1101",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The modern community role the learner recommends for neighborhood parks.",
+        "satisfiedWhenEn": "The answer identifies a concrete function neighborhood parks should serve for local people today; saying only that parks should be useful is too vague.",
+        "semanticRoleKo": "학습자가 동네 공원에 추천하는 현대 지역 사회의 역할.",
+        "satisfiedWhenKo": "오늘날 동네 공원이 지역 주민을 위해 해야 할 구체적인 기능을 밝히면 충족한다. 공원이 유용해야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why neighborhood parks should play the proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete local need, public-space value, health consideration, or social reason supporting the role.",
+        "semanticRoleKo": "동네 공원이 제안한 역할을 해야 하는 이유.",
+        "satisfiedWhenKo": "그 역할을 뒷받침하는 구체적인 지역의 필요, 공공 공간의 가치, 건강상 고려 또는 사회적 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The community outcome expected from neighborhood parks performing the proposed role.",
+        "satisfiedWhenEn": "The answer states a concrete effect on residents' health, recreation, safety, social connection, or local environment.",
+        "semanticRoleKo": "동네 공원이 제안한 역할을 수행할 때 기대되는 지역 사회의 결과.",
+        "satisfiedWhenKo": "주민의 건강, 여가, 안전, 사회적 유대 또는 지역 환경에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific park activity, facility, or policy that illustrates the proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete example of how a neighborhood park could serve local residents under that role.",
+        "semanticRoleKo": "제안한 역할을 보여 주는 구체적인 공원 활동, 시설 또는 정책.",
+        "satisfiedWhenKo": "동네 공원이 그 역할 아래 지역 주민에게 어떻게 도움을 줄 수 있는지 구체적인 예를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific group, space, schedule, or service feature within the recommended park role.",
+        "satisfiedWhenEn": "The answer clarifies who the park should support, what area it needs, when it should be available, or how the service should operate.",
+        "semanticRoleKo": "추천한 공원 역할 안의 구체적인 대상 집단, 공간, 일정 또는 서비스 특징.",
+        "satisfiedWhenKo": "공원이 누구를 지원해야 하는지, 어떤 공간이 필요한지, 언제 이용 가능해야 하는지 또는 서비스를 어떻게 운영할지 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1102",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibilities the learner assigns to public museums in today's community.",
+        "satisfiedWhenEn": "The answer states at least one concrete duty public museums should fulfill for their community; merely saying museums should help people is insufficient.",
+        "semanticRoleKo": "오늘날 지역 사회에서 공공 박물관에 학습자가 부여하는 책임.",
+        "satisfiedWhenKo": "공공 박물관이 지역 사회를 위해 이행해야 할 구체적인 의무를 하나 이상 말하면 충족한다. 박물관이 사람들을 도와야 한다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why public museums should have the proposed community responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete cultural, educational, access, preservation, or civic reason for the duty.",
+        "semanticRoleKo": "공공 박물관이 제안한 지역 사회의 책임을 가져야 하는 이유.",
+        "satisfiedWhenKo": "그 의무에 대한 구체적인 문화적, 교육적, 접근성, 보존 또는 시민 사회상의 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific museum program or practice that illustrates the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete exhibition, class, access policy, preservation project, or outreach activity showing the duty in practice.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 박물관 프로그램이나 관행.",
+        "satisfiedWhenKo": "그 의무의 실제 모습을 보여 주는 구체적인 전시, 수업, 접근 정책, 보존 사업 또는 지역 연계 활동을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The community effect expected from public museums fulfilling the proposed responsibility.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for public knowledge, cultural memory, participation, inclusion, or local identity.",
+        "semanticRoleKo": "공공 박물관이 제안한 책임을 이행할 때 기대되는 지역 사회의 효과.",
+        "satisfiedWhenKo": "대중의 지식, 문화적 기억, 참여, 포용 또는 지역 정체성에 생길 구체적인 결과를 말하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific audience, collection, access condition, or service standard within the museum responsibility.",
+        "satisfiedWhenEn": "The answer narrows the duty by identifying whom the museum serves, what material it covers, or how its public service should work.",
+        "semanticRoleKo": "박물관 책임 안의 구체적인 이용자, 소장 자료, 접근 조건 또는 서비스 기준.",
+        "satisfiedWhenKo": "박물관이 누구에게 봉사하는지, 어떤 자료를 다루는지 또는 공공 서비스를 어떻게 운영해야 하는지 밝혀 의무를 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1103",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "What the learner believes local bookstores should do for people today.",
+        "satisfiedWhenEn": "The answer recommends a concrete service, contribution, or action local bookstores should provide to people in modern society.",
+        "semanticRoleKo": "오늘날 지역 서점이 사람들을 위해 해야 한다고 학습자가 보는 일.",
+        "satisfiedWhenKo": "현대 사회에서 지역 서점이 사람들에게 제공해야 할 구체적인 서비스, 기여 또는 행동을 추천하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why local bookstores should make the proposed contribution.",
+        "satisfiedWhenEn": "The answer gives a concrete reading, cultural, educational, economic, or community reason supporting the recommendation.",
+        "semanticRoleKo": "지역 서점이 제안한 기여를 해야 하는 이유.",
+        "satisfiedWhenKo": "추천을 뒷받침하는 구체적인 독서, 문화, 교육, 경제 또는 지역 공동체상의 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The benefit for people or the community if bookstores do what is proposed.",
+        "satisfiedWhenEn": "The answer states a concrete effect on access to books, reading habits, local connection, learning, or neighborhood life.",
+        "semanticRoleKo": "서점이 제안한 일을 했을 때 사람이나 지역 사회가 얻는 이점.",
+        "satisfiedWhenKo": "책 접근성, 독서 습관, 지역 유대, 학습 또는 동네 생활에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific bookstore service or event that illustrates the recommendation.",
+        "satisfiedWhenEn": "The answer gives a concrete program, collection choice, gathering, discount, or support activity a local bookstore could offer.",
+        "semanticRoleKo": "추천을 보여 주는 구체적인 서점 서비스나 행사.",
+        "satisfiedWhenKo": "지역 서점이 제공할 수 있는 구체적인 프로그램, 도서 구성, 모임, 할인 또는 지원 활동을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific audience, topic, format, or operating feature of the proposed bookstore contribution.",
+        "satisfiedWhenEn": "The answer clarifies who would receive the service, what content it involves, or how and when the bookstore would provide it.",
+        "semanticRoleKo": "제안한 서점 기여의 구체적인 대상, 주제, 형식 또는 운영 특징.",
+        "satisfiedWhenKo": "누가 서비스를 받는지, 어떤 내용을 다루는지 또는 서점이 언제 어떻게 제공할지 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1104",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The role the learner believes universities should play in modern society.",
+        "satisfiedWhenEn": "The answer proposes a concrete educational, research, civic, economic, or social role for universities; saying only that they should be important is insufficient.",
+        "semanticRoleKo": "현대 사회에서 대학이 맡아야 한다고 학습자가 보는 역할.",
+        "satisfiedWhenKo": "대학을 위한 구체적인 교육, 연구, 시민 사회, 경제 또는 사회적 역할을 제안하면 충족한다. 중요해야 한다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why universities should perform the proposed modern role.",
+        "satisfiedWhenEn": "The answer gives a concrete societal need, institutional capability, principle, or likely impact supporting the role.",
+        "semanticRoleKo": "대학이 제안한 현대적 역할을 수행해야 하는 이유.",
+        "satisfiedWhenKo": "그 역할을 뒷받침하는 구체적인 사회적 필요, 기관 역량, 원칙 또는 예상 영향을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific university activity that illustrates the proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete course, research project, public partnership, student service, or institutional policy showing how the role could be performed.",
+        "semanticRoleKo": "제안한 역할을 보여 주는 구체적인 대학 활동.",
+        "satisfiedWhenKo": "그 역할을 어떻게 수행할 수 있는지 보여 주는 구체적인 수업, 연구 사업, 공공 협력, 학생 서비스 또는 기관 정책을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The societal outcome expected from universities carrying out the proposed role.",
+        "satisfiedWhenEn": "The answer states a concrete effect on students, knowledge, innovation, communities, opportunity, or public decision-making.",
+        "semanticRoleKo": "대학이 제안한 역할을 수행할 때 기대되는 사회적 결과.",
+        "satisfiedWhenKo": "학생, 지식, 혁신, 지역 사회, 기회 또는 공공 의사 결정에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The social, educational, or research problem the university role should address.",
+        "satisfiedWhenEn": "The answer identifies a concrete knowledge gap, skills need, inequality, public challenge, or other issue universities can meaningfully tackle.",
+        "semanticRoleKo": "대학의 역할이 다뤄야 할 사회, 교육 또는 연구 문제.",
+        "satisfiedWhenKo": "대학이 의미 있게 다룰 수 있는 구체적인 지식 격차, 기술 수요, 불평등, 공공 과제 또는 다른 문제를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1105",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibilities the learner believes local news outlets owe their community today.",
+        "satisfiedWhenEn": "The answer states at least one concrete journalistic or civic duty local news outlets should fulfill; saying only that they should report well is too vague.",
+        "semanticRoleKo": "오늘날 지역 언론이 지역 사회에 져야 한다고 학습자가 보는 책임.",
+        "satisfiedWhenKo": "지역 언론이 이행해야 할 구체적인 언론상 또는 시민 사회상의 의무를 하나 이상 말하면 충족한다. 보도를 잘해야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why local news outlets should carry the proposed community responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete information, accountability, safety, representation, or democratic reason for the duty.",
+        "semanticRoleKo": "지역 언론이 제안한 지역 사회의 책임을 져야 하는 이유.",
+        "satisfiedWhenKo": "그 의무에 대한 구체적인 정보, 책임 추궁, 안전, 대표성 또는 민주주의상의 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific reporting practice or news service that illustrates the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete investigation, fact-check, emergency update, local forum, coverage choice, or other newsroom action.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 보도 관행이나 뉴스 서비스.",
+        "satisfiedWhenKo": "구체적인 탐사 보도, 사실 확인, 긴급 알림, 지역 토론, 취재 선택 또는 다른 편집국 행동을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The community effect expected from local news outlets fulfilling the proposed responsibility.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for residents' knowledge, safety, participation, trust, or oversight of local institutions.",
+        "semanticRoleKo": "지역 언론이 제안한 책임을 이행할 때 기대되는 지역 사회의 효과.",
+        "satisfiedWhenKo": "주민의 지식, 안전, 참여, 신뢰 또는 지역 기관 감시에 생길 구체적인 결과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The local information or community problem the proposed news responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a concrete misinformation risk, coverage gap, lack of accountability, overlooked group, or urgent public need.",
+        "semanticRoleKo": "제안한 언론 책임이 다뤄야 할 지역 정보 또는 공동체 문제.",
+        "satisfiedWhenKo": "구체적인 허위 정보 위험, 보도 공백, 책임성 부족, 소외된 집단 또는 긴급한 공공의 필요를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1106",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "What the learner believes convenience stores should provide or do for people in modern society.",
+        "satisfiedWhenEn": "The answer recommends a concrete service, retail practice, or community contribution, such as providing essential goods at accessible hours or prices, improving safety, or offering practical support; merely saying convenience stores should help people is too vague.",
+        "semanticRoleKo": "현대 사회에서 편의점이 사람들을 위해 제공하거나 해야 한다고 학습자가 보는 일",
+        "satisfiedWhenKo": "답변이 필수품을 이용하기 편한 시간이나 가격에 제공하기, 안전을 높이기, 실용적 지원을 제공하기처럼 구체적인 서비스, 소매 관행 또는 지역사회 기여를 권하면 충족된다. 편의점이 사람들을 도와야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why convenience stores should provide the proposed service or contribution.",
+        "satisfiedWhenEn": "The answer gives a concrete community need, accessibility factor, customer circumstance, safety concern, or practical reason.",
+        "semanticRoleKo": "편의점이 제안한 서비스나 기여를 제공해야 하는 이유.",
+        "satisfiedWhenKo": "구체적인 지역의 필요, 접근성 요인, 고객 상황, 안전 우려 또는 실용적인 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed convenience-store action would have on people.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for daily access, safety, time, affordability, inclusion, or neighborhood support.",
+        "semanticRoleKo": "제안한 편의점 행동이 사람들에게 미칠 효과.",
+        "satisfiedWhenKo": "일상 접근성, 안전, 시간, 비용 부담, 포용 또는 동네 지원에 생길 구체적인 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific convenience-store service or practice that illustrates the recommendation.",
+        "satisfiedWhenEn": "The answer gives a concrete offering, facility, policy, emergency function, or staff practice showing what the store could do.",
+        "semanticRoleKo": "추천을 보여 주는 구체적인 편의점 서비스나 관행.",
+        "satisfiedWhenKo": "편의점이 할 수 있는 일을 보여 주는 구체적인 제공 항목, 시설, 정책, 긴급 기능 또는 직원 관행을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific user group, time, product area, or operating condition for the proposed convenience-store role.",
+        "satisfiedWhenEn": "The answer clarifies whom the service supports, when it is available, what it covers, or how it should operate.",
+        "semanticRoleKo": "제안한 편의점 역할의 구체적인 이용자 집단, 시간, 상품 영역 또는 운영 조건.",
+        "satisfiedWhenKo": "서비스가 누구를 지원하는지, 언제 이용 가능한지, 무엇을 다루는지 또는 어떻게 운영해야 하는지 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1107",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The modern social role the learner recommends for sports clubs serving teenagers.",
+        "satisfiedWhenEn": "The answer identifies a concrete developmental or community function teenage sports clubs should provide; saying only that they should support teenagers is too vague.",
+        "semanticRoleKo": "학습자가 청소년 스포츠 클럽에 추천하는 현대적 사회 역할.",
+        "satisfiedWhenKo": "청소년 스포츠 클럽이 제공해야 할 구체적인 성장 지원 또는 지역 사회 기능을 밝히면 충족한다. 청소년을 지원해야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why sports clubs for teenagers should play the proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete physical, emotional, social, educational, or safety reason supporting the role.",
+        "semanticRoleKo": "청소년 스포츠 클럽이 제안한 역할을 해야 하는 이유.",
+        "satisfiedWhenKo": "그 역할을 뒷받침하는 구체적인 신체적, 정서적, 사회적, 교육적 또는 안전상의 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome expected for teenagers or the community from the proposed club role.",
+        "satisfiedWhenEn": "The answer states a concrete effect on young people's health, skills, confidence, relationships, behavior, or opportunities.",
+        "semanticRoleKo": "제안한 클럽 역할에서 청소년이나 지역 사회에 기대되는 결과.",
+        "satisfiedWhenKo": "청소년의 건강, 기술, 자신감, 관계, 행동 또는 기회에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific club activity or support program that illustrates the proposed role.",
+        "satisfiedWhenEn": "The answer gives a concrete training practice, mentoring activity, access program, competition, workshop, or other club action.",
+        "semanticRoleKo": "제안한 역할을 보여 주는 구체적인 클럽 활동이나 지원 프로그램.",
+        "satisfiedWhenKo": "구체적인 훈련 관행, 멘토링 활동, 접근 지원 프로그램, 대회, 워크숍 또는 다른 클럽 행동을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific age group, need, sport, schedule, or participation condition within the recommended club role.",
+        "satisfiedWhenEn": "The answer clarifies which teenagers are served, what support they receive, or how participation should be organized.",
+        "semanticRoleKo": "추천한 클럽 역할 안의 구체적인 연령대, 필요, 종목, 일정 또는 참여 조건.",
+        "satisfiedWhenKo": "어떤 청소년을 대상으로 하는지, 어떤 지원을 받는지 또는 참여를 어떻게 조직해야 하는지 구체화하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1108",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibilities the learner assigns to public health campaigns in today's community.",
+        "satisfiedWhenEn": "The answer states at least one concrete duty public health campaigns should fulfill for community members; a generic call to improve health is insufficient.",
+        "semanticRoleKo": "오늘날 지역 사회에서 공중 보건 캠페인에 학습자가 부여하는 책임.",
+        "satisfiedWhenKo": "공중 보건 캠페인이 지역 주민을 위해 이행해야 할 구체적인 의무를 하나 이상 말하면 충족한다. 건강을 개선해야 한다는 일반론은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why public health campaigns should carry the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete prevention, information, access, trust, equity, or community-safety reason for the duty.",
+        "semanticRoleKo": "공중 보건 캠페인이 제안한 책임을 져야 하는 이유.",
+        "satisfiedWhenKo": "그 의무에 대한 구체적인 예방, 정보, 접근성, 신뢰, 형평성 또는 지역 안전상의 이유를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific campaign message, service, or outreach activity that illustrates the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete screening effort, educational message, vaccination activity, local partnership, or other public-health action.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 캠페인 메시지, 서비스 또는 홍보 활동.",
+        "satisfiedWhenKo": "구체적인 검진 활동, 교육 메시지, 예방 접종 활동, 지역 협력 또는 다른 공중 보건 행동을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The community health outcome expected from fulfilling the proposed campaign responsibility.",
+        "satisfiedWhenEn": "The answer states a concrete effect on awareness, preventive behavior, service use, disease risk, or health disparities.",
+        "semanticRoleKo": "제안한 캠페인 책임을 이행할 때 기대되는 지역 사회의 건강 결과.",
+        "satisfiedWhenKo": "인식, 예방 행동, 서비스 이용, 질병 위험 또는 건강 격차에 생길 구체적인 효과를 말하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The health need or communication barrier the proposed campaign responsibility should address.",
+        "satisfiedWhenEn": "The answer identifies a concrete disease risk, misinformation issue, low service access, harmful behavior, or underserved group.",
+        "semanticRoleKo": "제안한 캠페인 책임이 다뤄야 할 건강상 필요나 의사소통 장벽.",
+        "satisfiedWhenKo": "구체적인 질병 위험, 허위 정보 문제, 낮은 서비스 접근성, 해로운 행동 또는 충분히 지원받지 못하는 집단을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-opinion-1109",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The responsibility or guiding action the learner believes AI-using companies should take for people.",
+        "satisfiedWhenEn": "The answer proposes a concrete obligation or principle for companies that use AI in modern society; saying only that they should use AI well is too vague.",
+        "semanticRoleKo": "AI를 사용하는 기업이 사람들을 위해 가져야 한다고 학습자가 보는 책임이나 지도 원칙.",
+        "satisfiedWhenKo": "현대 사회에서 AI를 사용하는 기업을 위한 구체적인 의무나 원칙을 제안하면 충족한다. AI를 잘 사용해야 한다고만 하면 너무 모호하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why AI-using companies should follow the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete ethical, safety, privacy, fairness, accountability, labor, or social-impact justification.",
+        "semanticRoleKo": "AI 사용 기업이 제안한 책임을 따라야 하는 이유.",
+        "satisfiedWhenKo": "구체적인 윤리, 안전, 개인정보 보호, 공정성, 책임성, 노동 또는 사회적 영향상의 근거를 제시하면 충족한다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "The specific risk or harm from company AI use that needs attention.",
+        "satisfiedWhenEn": "The answer identifies a concrete AI-related problem affecting people, such as biased decisions, privacy loss, unsafe output, deception, or job disruption; unspecified risks are insufficient.",
+        "semanticRoleKo": "기업의 AI 사용에서 주의가 필요한 구체적인 위험이나 피해.",
+        "satisfiedWhenKo": "편향된 결정, 개인정보 침해, 안전하지 않은 결과, 기만 또는 일자리 혼란처럼 사람들에게 영향을 주는 구체적인 AI 관련 문제를 밝히면 충족한다. 무엇인지 알 수 없는 위험은 부족하다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "A concrete measure AI-using companies should take to address the identified risk or fulfill the proposed duty.",
+        "satisfiedWhenEn": "The answer proposes an actionable safeguard, policy, review process, disclosure, support measure, or other response directly connected to responsible AI use.",
+        "semanticRoleKo": "AI 사용 기업이 확인한 위험을 다루거나 제안한 의무를 이행하기 위해 취해야 할 구체적인 조치.",
+        "satisfiedWhenKo": "책임 있는 AI 사용과 직접 연결된 실행 가능한 안전장치, 정책, 검토 절차, 공개, 지원 조치 또는 다른 대응을 제안하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect the proposed company behavior would have on people or society.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for safety, trust, fairness, privacy, employment, access, or accountability.",
+        "semanticRoleKo": "제안한 기업 행동이 사람이나 사회에 미칠 효과.",
+        "satisfiedWhenKo": "안전, 신뢰, 공정성, 개인정보 보호, 고용, 접근성 또는 책임성에 생길 구체적인 결과를 말하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific AI use case or company practice that illustrates the proposed responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete scenario, product decision, audit, user notice, worker program, or other practice showing how the broader obligation applies.",
+        "semanticRoleKo": "제안한 책임을 보여 주는 구체적인 AI 활용 사례나 기업 관행.",
+        "satisfiedWhenKo": "더 넓은 의무가 어떻게 적용되는지 보여 주는 구체적인 상황, 제품 결정, 감사, 사용자 알림, 근로자 프로그램 또는 다른 관행을 제시하면 충족한다."
+      }
+    }
+  }
+]

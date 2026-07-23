@@ -1,0 +1,2354 @@
+[
+  {
+    "promptId": "prompt-goal-50",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The creative project the learner intends to complete within this year.",
+        "satisfiedWhenEn": "The answer identifies a specific creative work or project the learner wants to finish this year.",
+        "semanticRoleKo": "학습자가 올해 안에 완성하려는 창작 프로젝트",
+        "satisfiedWhenKo": "답변이 학습자가 올해 완성하고 싶은 구체적인 창작물이나 프로젝트를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The personal significance of completing the chosen creative project.",
+        "satisfiedWhenEn": "The answer explains a concrete value, motivation, or personal connection that makes the project matter to the learner.",
+        "semanticRoleKo": "선택한 창작 프로젝트를 완성하는 일이 학습자에게 갖는 개인적 의미",
+        "satisfiedWhenKo": "답변이 그 프로젝트가 학습자에게 중요한 구체적인 가치, 동기 또는 개인적 연관성을 설명하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended approach to finishing the creative project.",
+        "satisfiedWhenEn": "The answer describes at least one actionable step or working method the learner plans to use to complete the project.",
+        "semanticRoleKo": "창작 프로젝트를 끝내기 위해 학습자가 생각한 실행 방식",
+        "satisfiedWhenKo": "답변이 프로젝트 완성을 위해 학습자가 실행하려는 단계나 작업 방법을 하나 이상 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature that clarifies the content or scope of the creative project.",
+        "satisfiedWhenEn": "The answer gives specific information about what the project will contain, produce, or involve.",
+        "semanticRoleKo": "창작 프로젝트의 내용이나 범위를 분명하게 하는 구체적 특징",
+        "satisfiedWhenKo": "답변이 프로젝트에 무엇이 포함되거나 어떤 결과물을 만들며 어떤 작업이 필요한지 구체적으로 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An outcome the learner expects from completing the creative project.",
+        "satisfiedWhenEn": "The answer states a recognizable change, benefit, or product expected once the project is finished.",
+        "semanticRoleKo": "창작 프로젝트를 완성했을 때 학습자가 기대하는 결과",
+        "satisfiedWhenKo": "답변이 프로젝트 완성 후 기대되는 분명한 변화, 이점 또는 결과물을 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to pursuing or completing the creative project.",
+        "satisfiedWhenEn": "The answer conveys a specific feeling the learner has about working on or eventually finishing the project.",
+        "semanticRoleKo": "창작 프로젝트를 진행하거나 완성하는 일에 대한 학습자의 감정",
+        "satisfiedWhenKo": "답변이 프로젝트를 작업하거나 마침내 완성하는 일에 대해 학습자가 느끼는 구체적인 감정을 나타내면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0001",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The learner's name.",
+        "satisfiedWhenEn": "The answer states the name or form of the name by which the learner identifies themself.",
+        "semanticRoleKo": "학습자의 이름",
+        "satisfiedWhenKo": "답변이 학습자가 자신을 소개할 때 쓰는 이름이나 그 이름의 형태를 밝히면 충족된다."
+      },
+      "CHOICE": {
+        "semanticRoleEn": "The particular aspect of the learner's name that the learner likes.",
+        "satisfiedWhenEn": "The answer identifies a recognizable feature of the name, such as its sound, meaning, spelling, or association, as the liked aspect.",
+        "semanticRoleKo": "학습자가 자기 이름에서 좋아하는 구체적인 측면",
+        "satisfiedWhenKo": "답변이 이름의 소리, 의미, 철자, 연상 등 알아볼 수 있는 특징을 좋아하는 측면으로 지목하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified aspect of the learner's name is appealing to them.",
+        "satisfiedWhenEn": "The answer gives a concrete explanation for why the learner values or enjoys that feature of the name.",
+        "semanticRoleKo": "학습자가 자기 이름의 해당 측면을 마음에 들어 하는 이유",
+        "satisfiedWhenKo": "답변이 이름의 그 특징을 학습자가 소중히 여기거나 좋아하는 구체적인 이유를 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A feeling the learner associates with their name.",
+        "satisfiedWhenEn": "The answer expresses a distinct emotion or sense of identity that the learner experiences in relation to the name.",
+        "semanticRoleKo": "학습자가 자기 이름과 연관해 느끼는 감정",
+        "satisfiedWhenKo": "답변이 자기 이름과 관련하여 학습자가 경험하는 뚜렷한 감정이나 정체성의 느낌을 표현하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete experience or association illustrating what the learner likes about their name.",
+        "satisfiedWhenEn": "The answer provides a specific use, memory, nickname, or association that demonstrates the liked quality of the name.",
+        "semanticRoleKo": "학습자가 자기 이름에서 좋아하는 점을 보여 주는 구체적인 경험이나 연관",
+        "satisfiedWhenKo": "답변이 이름의 마음에 드는 특성을 보여 주는 구체적인 사용 사례, 기억, 별명 또는 연관성을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0002",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The learner's current place of residence.",
+        "satisfiedWhenEn": "The answer explicitly states or clearly conveys a recognizable location where the learner currently lives.",
+        "semanticRoleKo": "학습자의 현재 거주지",
+        "satisfiedWhenKo": "답변이 학습자가 현재 살고 있는 알아볼 수 있는 장소를 명시하거나 분명히 전달하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete characteristic of the learner's place of residence.",
+        "satisfiedWhenEn": "The answer describes a specific feature of the stated home area, dwelling, or local surroundings.",
+        "semanticRoleKo": "학습자가 사는 곳의 구체적인 특징",
+        "satisfiedWhenKo": "답변이 언급한 거주 지역, 주거 공간 또는 주변 환경의 구체적인 특징을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about living in that place.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a distinct emotion or level of comfort associated with residing there.",
+        "semanticRoleKo": "그곳에 사는 것에 대한 학습자의 감정",
+        "satisfiedWhenKo": "답변이 그곳에 거주하면서 느끼는 뚜렷한 감정이나 편안함의 정도를 나타내면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A reason the learner lives in or values that place.",
+        "satisfiedWhenEn": "The answer explains a concrete circumstance, need, or benefit connected to the learner's residence there.",
+        "semanticRoleKo": "학습자가 그곳에 살거나 그 거주지를 가치 있게 여기는 이유",
+        "satisfiedWhenKo": "답변이 그곳에 거주하는 것과 연결된 구체적인 사정, 필요 또는 이점을 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0003",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular aspect of the learner's city that they like.",
+        "satisfiedWhenEn": "The answer identifies a concrete city feature, place, quality, or experience as something the learner likes.",
+        "semanticRoleKo": "학습자가 자기 도시에서 좋아하는 구체적인 측면",
+        "satisfiedWhenKo": "답변이 도시의 구체적인 특징, 장소, 성격 또는 경험을 학습자가 좋아하는 것으로 지목하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the selected aspect of the city appeals to the learner.",
+        "satisfiedWhenEn": "The answer explains a specific benefit, quality, or personal relevance that makes the city aspect likable.",
+        "semanticRoleKo": "선택한 도시의 측면을 학습자가 좋아하는 이유",
+        "satisfiedWhenKo": "답변이 그 도시의 측면을 좋아하게 만드는 구체적인 이점, 특성 또는 개인적 관련성을 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete description of the liked city feature.",
+        "satisfiedWhenEn": "The answer adds a specific characteristic that helps the reader understand what the liked part of the city is like.",
+        "semanticRoleKo": "좋아하는 도시 특징에 대한 구체적인 묘사",
+        "satisfiedWhenKo": "답변이 도시에서 좋아하는 부분이 어떤지 이해할 수 있도록 구체적인 특성을 덧붙이면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific place or experience that demonstrates the liked quality of the city.",
+        "satisfiedWhenEn": "The answer gives a concrete local example or personal occasion that illustrates what the learner likes about the city.",
+        "semanticRoleKo": "도시에서 좋아하는 특성을 보여 주는 구체적인 장소나 경험",
+        "satisfiedWhenKo": "답변이 그 도시를 좋아하는 점을 보여 주는 구체적인 지역 사례나 개인적 경험을 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The feeling the liked part of the city gives the learner.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional response the learner has when experiencing that aspect of the city.",
+        "semanticRoleKo": "좋아하는 도시의 측면이 학습자에게 주는 감정",
+        "satisfiedWhenKo": "답변이 도시의 그 측면을 경험할 때 학습자가 느끼는 뚜렷한 감정을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0004",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The color the learner considers their favorite.",
+        "satisfiedWhenEn": "The answer identifies a recognizable color or color shade as the learner's favorite.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 선택한 색",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 색이나 색조를 학습자가 가장 좋아하는 색으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers that color.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, association, effect, or experience that explains the color preference.",
+        "semanticRoleKo": "학습자가 그 색을 선호하는 이유",
+        "satisfiedWhenKo": "답변이 그 색을 선호하는 까닭이 되는 구체적인 특성, 연상, 효과 또는 경험을 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or use of the favorite color.",
+        "satisfiedWhenEn": "The answer describes a particular shade, visual quality, or way the learner uses or encounters the chosen color.",
+        "semanticRoleKo": "가장 좋아하는 색의 구체적인 특성이나 쓰임",
+        "satisfiedWhenKo": "답변이 선택한 색의 특정 색조, 시각적 특성 또는 그 색을 사용하거나 접하는 방식을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The emotional effect the favorite color has on the learner.",
+        "satisfiedWhenEn": "The answer states or clearly conveys a particular feeling produced when the learner sees or uses that color.",
+        "semanticRoleKo": "가장 좋아하는 색이 학습자에게 주는 정서적 효과",
+        "satisfiedWhenKo": "답변이 그 색을 보거나 사용할 때 생기는 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete object or situation illustrating the learner's preference for the color.",
+        "satisfiedWhenEn": "The answer names a specific item, setting, or occasion where the learner especially likes or chooses that color.",
+        "semanticRoleKo": "그 색에 대한 학습자의 선호를 보여 주는 구체적인 사물이나 상황",
+        "satisfiedWhenKo": "답변이 학습자가 그 색을 특히 좋아하거나 선택하는 구체적인 물건, 환경 또는 때를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0005",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The season the learner considers their favorite.",
+        "satisfiedWhenEn": "The answer clearly identifies one season as the learner's preferred season.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 선택한 계절",
+        "satisfiedWhenKo": "답변이 한 계절을 학습자가 선호하는 계절로 분명히 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner favors the chosen season.",
+        "satisfiedWhenEn": "The answer explains a concrete seasonal quality, activity, memory, or benefit that accounts for the preference.",
+        "semanticRoleKo": "학습자가 선택한 계절을 좋아하는 이유",
+        "satisfiedWhenKo": "답변이 그 계절을 선호하는 까닭이 되는 구체적인 계절 특성, 활동, 기억 또는 이점을 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the learner's favorite season.",
+        "satisfiedWhenEn": "The answer describes a recognizable feature of the weather, atmosphere, scenery, or daily life in that season.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 계절의 구체적인 특징",
+        "satisfiedWhenKo": "답변이 그 계절의 날씨, 분위기, 풍경 또는 일상생활에서 알아볼 수 있는 특징을 묘사하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "An activity the learner does or enjoys during the favorite season.",
+        "satisfiedWhenEn": "The answer states a concrete action the learner performs in that season and connects it to the seasonal preference.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 계절에 하거나 즐기는 활동",
+        "satisfiedWhenKo": "답변이 그 계절에 학습자가 하는 구체적인 행동을 밝히고 계절 선호와 연결하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels during or about the favorite season.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion the learner experiences in relation to that season.",
+        "semanticRoleKo": "가장 좋아하는 계절을 보내거나 생각할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 그 계절과 관련하여 학습자가 경험하는 뚜렷한 감정을 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific seasonal occasion or memory that illustrates the preference.",
+        "satisfiedWhenEn": "The answer provides a concrete event, outing, tradition, or past experience showing why the season is a favorite.",
+        "semanticRoleKo": "계절 선호를 보여 주는 구체적인 계절 행사나 기억",
+        "satisfiedWhenKo": "답변이 그 계절을 가장 좋아하는 이유를 보여 주는 구체적인 행사, 외출, 전통 또는 과거 경험을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0006",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "A specific ability or strength the learner has.",
+        "satisfiedWhenEn": "The answer identifies a recognizable skill, task, or capability at which the learner says they are good.",
+        "semanticRoleKo": "학습자가 지닌 구체적인 능력이나 강점",
+        "satisfiedWhenKo": "답변이 학습자가 잘한다고 말하는 알아볼 수 있는 기술, 과업 또는 능력을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete instance demonstrating the learner's stated ability.",
+        "satisfiedWhenEn": "The answer describes a specific occasion or piece of work that shows the learner performing the skill well.",
+        "semanticRoleKo": "학습자가 말한 능력을 보여 주는 구체적인 사례",
+        "satisfiedWhenKo": "답변이 학습자가 그 기술을 잘 발휘한 구체적인 상황이나 결과물을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "How the learner uses or practices the stated strength.",
+        "satisfiedWhenEn": "The answer names a concrete activity through which the learner applies or develops that ability.",
+        "semanticRoleKo": "학습자가 말한 강점을 활용하거나 연습하는 방식",
+        "satisfiedWhenKo": "답변이 학습자가 그 능력을 적용하거나 발전시키는 구체적인 활동을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An outcome produced by the learner's ability.",
+        "satisfiedWhenEn": "The answer states a specific achievement, benefit, or completed result that follows from being good at the skill.",
+        "semanticRoleKo": "학습자의 능력으로 생긴 결과",
+        "satisfiedWhenKo": "답변이 그 기술을 잘함으로써 얻은 구체적인 성취, 이점 또는 완성된 결과를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about having or using that ability.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion, such as confidence or enjoyment, connected to the stated strength.",
+        "semanticRoleKo": "그 능력을 지니거나 사용할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 말한 강점과 연결된 자신감, 즐거움 등의 뚜렷한 감정을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0007",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific subject, skill, or activity the learner wants to learn.",
+        "satisfiedWhenEn": "The answer identifies a recognizable learning target rather than only expressing a general wish to learn.",
+        "semanticRoleKo": "학습자가 배우고 싶은 구체적인 주제, 기술 또는 활동",
+        "satisfiedWhenKo": "답변이 단순히 배우고 싶다는 일반적인 바람을 넘어 알아볼 수 있는 학습 대상을 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to learn the identified skill or subject.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation, need, interest, or intended benefit for pursuing that learning target.",
+        "semanticRoleKo": "학습자가 해당 기술이나 주제를 배우고 싶은 이유",
+        "satisfiedWhenKo": "답변이 그 학습 대상을 추구하는 구체적인 동기, 필요, 관심 또는 기대 이점을 제시하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for learning the chosen subject or skill.",
+        "satisfiedWhenEn": "The answer describes at least one actionable way the learner plans to study, practice, or receive instruction.",
+        "semanticRoleKo": "선택한 주제나 기술을 배우기 위한 학습자의 방법",
+        "satisfiedWhenKo": "답변이 공부, 연습 또는 교육을 위해 학습자가 실행하려는 방법을 하나 이상 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "What the learner expects to be able to do or gain after learning it.",
+        "satisfiedWhenEn": "The answer states a concrete ability, opportunity, or benefit expected from achieving the learning goal.",
+        "semanticRoleKo": "그것을 배운 뒤 학습자가 할 수 있거나 얻게 되기를 기대하는 것",
+        "satisfiedWhenKo": "답변이 학습 목표 달성으로 기대하는 구체적인 능력, 기회 또는 이점을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A time frame for starting, practicing, or achieving the learning goal.",
+        "satisfiedWhenEn": "The answer provides a recognizable date, period, frequency, or deadline tied to learning the chosen subject or skill.",
+        "semanticRoleKo": "학습 목표를 시작하거나 연습하거나 달성할 시간 범위",
+        "satisfiedWhenKo": "답변이 선택한 주제나 기술의 학습과 연결된 알아볼 수 있는 날짜, 기간, 빈도 또는 기한을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0008",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A habitual action the learner performs in the morning.",
+        "satisfiedWhenEn": "The answer states a concrete activity and conveys that it is part of the learner's usual morning behavior.",
+        "semanticRoleKo": "학습자가 아침에 습관적으로 하는 행동",
+        "satisfiedWhenKo": "답변이 구체적인 활동을 밝히고 그것이 학습자의 평소 아침 행동임을 전달하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another distinct action in the learner's usual morning.",
+        "satisfiedWhenEn": "The answer mentions a second concrete morning activity that is meaningfully separate from the main action.",
+        "semanticRoleKo": "학습자의 평소 아침에 하는 또 다른 별개의 행동",
+        "satisfiedWhenKo": "답변이 주된 행동과 의미 있게 구분되는 두 번째 구체적인 아침 활동을 언급하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When a usual morning action occurs.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, sequence point, or morning period for one of the stated activities.",
+        "semanticRoleKo": "평소 아침 행동이 일어나는 때",
+        "satisfiedWhenKo": "답변이 말한 활동 중 하나의 알아볼 수 있는 시각, 순서상 시점 또는 아침 시간대를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner performs a usual morning action.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to one of the learner's morning activities.",
+        "semanticRoleKo": "학습자가 평소 아침 행동을 하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 그것을 학습자의 아침 활동 중 하나와 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner performs a stated morning action.",
+        "satisfiedWhenEn": "The answer gives a concrete purpose, need, or motivation for one of the morning activities.",
+        "semanticRoleKo": "학습자가 말한 아침 행동을 하는 이유",
+        "satisfiedWhenKo": "답변이 아침 활동 중 하나를 하는 구체적인 목적, 필요 또는 동기를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect of the learner's morning routine.",
+        "satisfiedWhenEn": "The answer describes a specific physical, emotional, or practical outcome caused by a stated morning action.",
+        "semanticRoleKo": "학습자의 아침 루틴이 낳는 효과",
+        "satisfiedWhenKo": "답변이 말한 아침 행동으로 생기는 구체적인 신체적, 정서적 또는 실용적 결과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0009",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A habitual action the learner performs at night.",
+        "satisfiedWhenEn": "The answer states a concrete activity and makes clear that it belongs to the learner's usual nighttime behavior.",
+        "semanticRoleKo": "학습자가 밤에 습관적으로 하는 행동",
+        "satisfiedWhenKo": "답변이 구체적인 활동을 밝히고 그것이 학습자의 평소 밤 행동임을 분명히 하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A second distinct activity in the learner's usual nighttime behavior.",
+        "satisfiedWhenEn": "The answer provides another concrete nighttime action rather than merely rephrasing the main activity.",
+        "semanticRoleKo": "학습자의 평소 밤 행동에 포함되는 두 번째 별도 활동",
+        "satisfiedWhenKo": "답변이 주된 활동을 바꿔 말하는 데 그치지 않고 또 하나의 구체적인 밤 행동을 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner performs a stated nighttime activity.",
+        "satisfiedWhenEn": "The answer supplies a recognizable hour, nighttime period, or sequence point associated with one of the actions.",
+        "semanticRoleKo": "학습자가 말한 밤 활동을 하는 때",
+        "satisfiedWhenKo": "답변이 행동 중 하나와 연결된 알아볼 수 있는 시각, 밤 시간대 또는 순서상 시점을 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where a usual nighttime activity takes place.",
+        "satisfiedWhenEn": "The answer names a recognizable setting and relates it to an activity the learner usually does at night.",
+        "semanticRoleKo": "평소 밤 활동이 이루어지는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 학습자가 밤에 주로 하는 활동과 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The purpose or motivation for a stated nighttime action.",
+        "satisfiedWhenEn": "The answer explains a concrete reason the learner carries out one of the nighttime activities.",
+        "semanticRoleKo": "학습자가 말한 밤 행동의 목적이나 동기",
+        "satisfiedWhenKo": "답변이 학습자가 밤 활동 중 하나를 하는 구체적인 이유를 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the learner's nighttime behavior.",
+        "satisfiedWhenEn": "The answer states a specific effect that follows from one of the learner's usual night activities.",
+        "semanticRoleKo": "학습자의 밤 행동으로 생기는 결과",
+        "satisfiedWhenKo": "답변이 학습자의 평소 밤 활동 중 하나에서 비롯되는 구체적인 효과를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0010",
+    "slotContracts": {
+      "REASON": {
+        "semanticRoleEn": "A concrete source or cause of the learner's happiness.",
+        "satisfiedWhenEn": "The answer identifies a recognizable person, activity, event, object, or circumstance that genuinely makes the learner happy.",
+        "semanticRoleKo": "학습자의 행복을 일으키는 구체적인 원인이나 대상",
+        "satisfiedWhenKo": "답변이 학습자를 실제로 행복하게 하는 알아볼 수 있는 사람, 활동, 사건, 사물 또는 상황을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion showing the identified source making the learner happy.",
+        "satisfiedWhenEn": "The answer recounts a concrete moment or situation in which the stated source produced happiness for the learner.",
+        "semanticRoleKo": "밝힌 원인이 학습자를 행복하게 한 구체적인 사례",
+        "satisfiedWhenKo": "답변이 말한 대상이나 상황으로 학습자가 행복해졌던 구체적인 순간이나 사례를 제시하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "An action by the learner or someone else that creates happiness for the learner.",
+        "satisfiedWhenEn": "The answer describes a concrete behavior and connects that behavior to the learner becoming happy.",
+        "semanticRoleKo": "학습자에게 행복을 주는 본인 또는 다른 사람의 행동",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 설명하고 그 행동이 학습자를 행복하게 하는 것과 연결되면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or circumstance that clarifies what makes the learner happy.",
+        "satisfiedWhenEn": "The answer adds concrete information about the identified source so its happiness-producing quality is understandable.",
+        "semanticRoleKo": "무엇이 학습자를 행복하게 하는지 분명하게 하는 구체적인 특성이나 상황",
+        "satisfiedWhenKo": "답변이 밝힌 원인에 관한 구체적인 정보를 더해 그것이 왜 행복을 주는지 이해할 수 있게 하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A more specific emotional experience associated with the learner's happiness.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling, such as excitement, gratitude, or belonging, that accompanies the stated source of happiness.",
+        "semanticRoleKo": "학습자의 행복과 함께 나타나는 더 구체적인 정서 경험",
+        "satisfiedWhenKo": "답변이 말한 행복의 원인과 함께 느끼는 설렘, 감사, 소속감 등의 뚜렷한 감정을 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A positive effect the source of happiness has on the learner.",
+        "satisfiedWhenEn": "The answer states a concrete change or benefit, beyond merely naming happiness, that follows from the identified source.",
+        "semanticRoleKo": "행복의 원인이 학습자에게 주는 긍정적인 효과",
+        "satisfiedWhenKo": "답변이 단순히 행복하다고 말하는 것을 넘어 밝힌 원인으로 생기는 구체적인 변화나 이점을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0011",
+    "slotContracts": {
+      "REASON": {
+        "semanticRoleEn": "A concrete source or condition that makes the learner feel calm.",
+        "satisfiedWhenEn": "The answer identifies a recognizable activity, person, place, object, or situation that causes calmness for the learner.",
+        "semanticRoleKo": "학습자에게 평온함을 주는 구체적인 원인이나 조건",
+        "satisfiedWhenKo": "답변이 학습자를 차분하게 만드는 알아볼 수 있는 활동, 사람, 장소, 사물 또는 상황을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular moment when the identified source helped the learner feel calm.",
+        "satisfiedWhenEn": "The answer describes a specific experience in which the stated source reduced tension or brought the learner peace.",
+        "semanticRoleKo": "밝힌 원인이 학습자를 차분하게 해 준 특정 순간",
+        "satisfiedWhenKo": "답변이 말한 원인이 긴장을 낮추거나 마음의 평온을 준 구체적인 경험을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete action that brings about calmness for the learner.",
+        "satisfiedWhenEn": "The answer states something the learner or another person does and clearly relates it to the learner feeling calm.",
+        "semanticRoleKo": "학습자에게 평온함을 가져오는 구체적인 행동",
+        "satisfiedWhenKo": "답변이 학습자나 다른 사람이 하는 행동을 밝히고 그것을 학습자가 차분해지는 것과 분명히 연결하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific quality of the calming source or setting.",
+        "satisfiedWhenEn": "The answer describes a concrete feature that clarifies what about the identified source is calming.",
+        "semanticRoleKo": "평온함을 주는 대상이나 환경의 구체적인 특성",
+        "satisfiedWhenKo": "답변이 밝힌 대상의 어떤 점이 차분함을 주는지 분명하게 하는 구체적인 특징을 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "A distinct emotional or bodily state that accompanies the learner's calmness.",
+        "satisfiedWhenEn": "The answer conveys a specific sense of relief, safety, ease, or relaxation linked to the calming source.",
+        "semanticRoleKo": "학습자의 평온함에 동반되는 뚜렷한 정서적 또는 신체적 상태",
+        "satisfiedWhenKo": "답변이 평온함을 주는 원인과 연결된 안도감, 안전감, 편안함 또는 이완감을 구체적으로 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A practical or personal effect of becoming calm.",
+        "satisfiedWhenEn": "The answer explains a concrete outcome, such as clearer thinking or easier rest, that follows from the learner feeling calm.",
+        "semanticRoleKo": "차분해진 뒤 생기는 실용적 또는 개인적 효과",
+        "satisfiedWhenKo": "답변이 마음이 차분해진 결과로 생기는 더 맑은 사고나 편한 휴식 등의 구체적인 결과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0012",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The day of the week the learner considers their favorite.",
+        "satisfiedWhenEn": "The answer names a recognizable weekday and presents it as the learner's preferred day.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 선택한 요일",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 요일을 밝히고 학습자가 선호하는 날로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers the chosen day of the week.",
+        "satisfiedWhenEn": "The answer gives a concrete event, routine, freedom, or quality that explains why that weekday is the favorite.",
+        "semanticRoleKo": "학습자가 선택한 요일을 좋아하는 이유",
+        "satisfiedWhenKo": "답변이 그 요일을 가장 좋아하는 이유가 되는 구체적인 일정, 일상, 여유 또는 특성을 제시하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "An activity the learner does on their favorite weekday.",
+        "satisfiedWhenEn": "The answer identifies a concrete action performed on that day and connects it to the learner's preference.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 요일에 하는 활동",
+        "satisfiedWhenKo": "답변이 그날 하는 구체적인 행동을 밝히고 학습자의 요일 선호와 연결하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of how the learner's favorite weekday typically unfolds.",
+        "satisfiedWhenEn": "The answer adds concrete information about the schedule, atmosphere, or circumstances of the chosen day.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 요일이 보통 어떻게 흘러가는지 보여 주는 구체적인 특징",
+        "satisfiedWhenKo": "답변이 선택한 날의 일정, 분위기 또는 상황에 관한 구체적인 정보를 더하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels on or in anticipation of the favorite weekday.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion the learner experiences during that day or while looking forward to it.",
+        "semanticRoleKo": "가장 좋아하는 요일을 보내거나 기다릴 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 그날을 보내거나 기다리면서 학습자가 경험하는 뚜렷한 감정을 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete occasion illustrating why the chosen weekday is the learner's favorite.",
+        "satisfiedWhenEn": "The answer describes a specific recent or typical experience on that day that demonstrates the preference.",
+        "semanticRoleKo": "선택한 요일을 가장 좋아하는 이유를 보여 주는 구체적인 사례",
+        "satisfiedWhenKo": "답변이 그날의 선호를 보여 주는 구체적인 최근 경험이나 대표적인 경험을 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0013",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "A specific personality trait or disposition the learner uses to describe themself.",
+        "satisfiedWhenEn": "The answer identifies a recognizable personal quality rather than giving only a vague positive or negative label.",
+        "semanticRoleKo": "학습자가 자신을 설명할 때 제시하는 구체적인 성격 특성이나 성향",
+        "satisfiedWhenKo": "답변이 막연히 좋거나 나쁘다고만 하지 않고 알아볼 수 있는 개인적 특성을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular experience that demonstrates the learner's stated personality trait.",
+        "satisfiedWhenEn": "The answer recounts a concrete situation in which the learner behaved in a way that shows the claimed trait.",
+        "semanticRoleKo": "학습자가 말한 성격 특성을 보여 주는 특정 경험",
+        "satisfiedWhenKo": "답변이 주장한 성향을 보여 주는 방식으로 학습자가 행동했던 구체적인 상황을 이야기하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A typical behavior through which the learner's personality is expressed.",
+        "satisfiedWhenEn": "The answer describes a recurring or characteristic action that meaningfully supports the stated self-description.",
+        "semanticRoleKo": "학습자의 성격이 드러나는 평소 행동",
+        "satisfiedWhenKo": "답변이 말한 자기 묘사를 의미 있게 뒷받침하는 반복적이거나 특징적인 행동을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "An emotional tendency that forms part of the learner's personality.",
+        "satisfiedWhenEn": "The answer describes a specific way the learner commonly feels or reacts emotionally across relevant situations.",
+        "semanticRoleKo": "학습자의 성격을 이루는 정서적 경향",
+        "satisfiedWhenKo": "답변이 관련 상황에서 학습자가 흔히 느끼거나 정서적으로 반응하는 구체적인 방식을 설명하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's evaluation of their own personality.",
+        "satisfiedWhenEn": "The answer gives a clear judgment about a strength, weakness, or overall value of the personality trait and relates it to the learner.",
+        "semanticRoleKo": "자기 성격에 대한 학습자의 평가",
+        "satisfiedWhenKo": "답변이 성격 특성의 장점, 단점 또는 전반적 가치에 관해 분명히 판단하고 그것을 자신과 연결하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0014",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "A specific small outcome the learner currently wants to achieve.",
+        "satisfiedWhenEn": "The answer identifies a concrete, presently held aim rather than only saying that the learner wants to improve.",
+        "semanticRoleKo": "학습자가 현재 이루고 싶은 구체적이고 작은 결과",
+        "satisfiedWhenKo": "답변이 단순히 발전하고 싶다고만 하지 않고 현재 품고 있는 구체적인 목표를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The next action or method the learner intends to use for the small goal.",
+        "satisfiedWhenEn": "The answer states at least one practical step the learner plans to take toward the identified goal.",
+        "semanticRoleKo": "작은 목표를 위해 학습자가 실행하려는 다음 행동이나 방법",
+        "satisfiedWhenKo": "답변이 밝힌 목표를 향해 학습자가 취하려는 실질적인 단계를 하나 이상 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the current small goal matters to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete need, motivation, or personal value behind wanting to achieve the goal.",
+        "semanticRoleKo": "현재의 작은 목표가 학습자에게 중요한 이유",
+        "satisfiedWhenKo": "답변이 그 목표를 이루려는 구체적인 필요, 동기 또는 개인적 가치를 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The change or benefit expected when the small goal is achieved.",
+        "satisfiedWhenEn": "The answer describes a recognizable outcome that would follow from completing the stated goal.",
+        "semanticRoleKo": "작은 목표를 달성했을 때 기대되는 변화나 이점",
+        "satisfiedWhenKo": "답변이 말한 목표를 달성한 뒤 생길 알아볼 수 있는 결과를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time frame for working on or completing the small goal.",
+        "satisfiedWhenEn": "The answer ties the goal to a recognizable start time, schedule, period, or deadline.",
+        "semanticRoleKo": "작은 목표를 실행하거나 완료할 구체적인 시간 범위",
+        "satisfiedWhenKo": "답변이 목표를 알아볼 수 있는 시작 시점, 일정, 기간 또는 기한과 연결하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0015",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "An activity the learner enjoys doing alone.",
+        "satisfiedWhenEn": "The answer identifies a concrete action and clearly presents it as something the learner likes to do without other people.",
+        "semanticRoleKo": "학습자가 혼자 하기를 좋아하는 활동",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 밝히고 다른 사람 없이 혼자 하기를 좋아하는 일로 분명히 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers or enjoys doing that activity alone.",
+        "satisfiedWhenEn": "The answer gives a concrete benefit, need, or quality of solitude that explains the preference.",
+        "semanticRoleKo": "학습자가 그 활동을 혼자 하는 것을 좋아하는 이유",
+        "satisfiedWhenKo": "답변이 혼자 하는 것을 선호하게 만드는 구체적인 이점, 필요 또는 혼자만의 특성을 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner usually chooses to do the activity alone.",
+        "satisfiedWhenEn": "The answer supplies a recognizable time, day, frequency, or situation associated with the solitary activity.",
+        "semanticRoleKo": "학습자가 그 활동을 혼자 하기로 보통 선택하는 때",
+        "satisfiedWhenKo": "답변이 혼자 하는 활동과 연결된 알아볼 수 있는 시각, 요일, 빈도 또는 상황을 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner likes to do the activity alone.",
+        "satisfiedWhenEn": "The answer identifies a recognizable setting and connects it to performing the chosen activity alone.",
+        "semanticRoleKo": "학습자가 그 활동을 혼자 하기를 좋아하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 선택한 활동을 혼자 하는 것과 연결하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while doing the chosen activity alone.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion or mental state experienced during the solitary activity.",
+        "semanticRoleKo": "선택한 활동을 혼자 하는 동안 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 혼자 그 활동을 할 때 경험하는 뚜렷한 감정이나 마음 상태를 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A benefit or outcome the learner gets from doing the activity alone.",
+        "satisfiedWhenEn": "The answer describes a concrete effect of the solitary activity on the learner's rest, focus, enjoyment, or daily life.",
+        "semanticRoleKo": "그 활동을 혼자 함으로써 학습자가 얻는 이점이나 결과",
+        "satisfiedWhenKo": "답변이 혼자 하는 활동이 학습자의 휴식, 집중, 즐거움 또는 일상에 주는 구체적인 효과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0016",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "An activity the learner enjoys doing with other people.",
+        "satisfiedWhenEn": "The answer names a concrete action and makes clear that the learner likes doing it together with others.",
+        "semanticRoleKo": "학습자가 다른 사람들과 함께 하기를 좋아하는 활동",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 밝히고 다른 사람들과 함께 하기를 좋아하는 일임을 분명히 하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why sharing the chosen activity with other people appeals to the learner.",
+        "satisfiedWhenEn": "The answer explains a specific social, practical, or emotional benefit that makes doing the activity together enjoyable.",
+        "semanticRoleKo": "선택한 활동을 다른 사람과 함께 하는 것이 학습자에게 좋은 이유",
+        "satisfiedWhenKo": "답변이 그 활동을 함께할 때 즐거운 구체적인 사회적, 실용적 또는 정서적 이점을 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner likes to do the social activity.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location used for the stated activity with other people.",
+        "semanticRoleKo": "학습자가 다른 사람들과 그 활동을 하기를 좋아하는 장소",
+        "satisfiedWhenKo": "답변이 다른 사람들과 말한 활동을 하는 알아볼 수 있는 장소를 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner typically does the chosen activity with others.",
+        "satisfiedWhenEn": "The answer gives a recognizable time, occasion, or frequency for participating in the social activity.",
+        "semanticRoleKo": "학습자가 보통 다른 사람들과 선택한 활동을 하는 때",
+        "satisfiedWhenKo": "답변이 함께하는 활동에 참여하는 알아볼 수 있는 시각, 계기 또는 빈도를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while sharing the activity with other people.",
+        "satisfiedWhenEn": "The answer expresses a distinct emotional response connected specifically to doing the activity together.",
+        "semanticRoleKo": "다른 사람들과 그 활동을 함께할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 그 활동을 함께 하는 것과 구체적으로 연결된 뚜렷한 감정을 표현하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An outcome of doing the chosen activity with other people.",
+        "satisfiedWhenEn": "The answer describes a concrete effect, such as closer relationships or improved performance, that comes from doing it together.",
+        "semanticRoleKo": "선택한 활동을 다른 사람들과 함께해서 생기는 결과",
+        "satisfiedWhenKo": "답변이 함께 활동함으로써 생기는 더 가까운 관계나 향상된 성과 등의 구체적인 효과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0017",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "A specific item the learner consistently carries with them.",
+        "satisfiedWhenEn": "The answer identifies a recognizable object and conveys that the learner normally keeps it with them.",
+        "semanticRoleKo": "학습자가 늘 가지고 다니는 구체적인 물건",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 물건을 밝히고 학습자가 보통 그것을 지니고 다닌다는 점을 전달하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner always carries the identified item.",
+        "satisfiedWhenEn": "The answer explains a concrete need, use, habit, or personal significance that motivates carrying the item.",
+        "semanticRoleKo": "학습자가 밝힌 물건을 항상 가지고 다니는 이유",
+        "satisfiedWhenKo": "답변이 그 물건을 지니게 하는 구체적인 필요, 쓰임, 습관 또는 개인적 의미를 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A practical or personal effect of having the item available.",
+        "satisfiedWhenEn": "The answer states a concrete benefit or outcome that occurs because the learner carries the item.",
+        "semanticRoleKo": "그 물건을 가지고 있어서 생기는 실용적 또는 개인적 효과",
+        "satisfiedWhenKo": "답변이 학습자가 그 물건을 지니기 때문에 얻는 구체적인 이점이나 결과를 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A particular time or situation when the carried item is especially used or needed.",
+        "satisfiedWhenEn": "The answer identifies a recognizable occasion, time, or condition in which the learner relies on the item.",
+        "semanticRoleKo": "가지고 다니는 물건을 특히 사용하거나 필요로 하는 때",
+        "satisfiedWhenKo": "답변이 학습자가 그 물건에 의지하는 알아볼 수 있는 계기, 시점 또는 조건을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How carrying the item makes the learner feel.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion, such as security, readiness, or attachment, associated with having the item.",
+        "semanticRoleKo": "그 물건을 가지고 다닐 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 그 물건을 지닐 때 느끼는 안도감, 준비된 느낌, 애착 등의 뚜렷한 감정을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0018",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The place near the learner's home that they consider their favorite.",
+        "satisfiedWhenEn": "The answer identifies a recognizable nearby place and presents it as the learner's preferred local place.",
+        "semanticRoleKo": "학습자가 집 근처에서 가장 좋아하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 근처 장소를 밝히고 학습자가 선호하는 동네 장소로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the nearby place is the learner's favorite.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, convenience, activity, or personal association that explains the preference.",
+        "semanticRoleKo": "그 집 근처 장소가 학습자에게 가장 좋은 이유",
+        "satisfiedWhenKo": "답변이 선호를 설명하는 구체적인 특성, 편의, 활동 또는 개인적 연관성을 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the favorite nearby place.",
+        "satisfiedWhenEn": "The answer describes a concrete feature of the place's appearance, atmosphere, facilities, or surroundings.",
+        "semanticRoleKo": "가장 좋아하는 집 근처 장소의 구체적인 특징",
+        "satisfiedWhenKo": "답변이 그 장소의 외관, 분위기, 시설 또는 주변 환경의 구체적인 특성을 묘사하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "An activity the learner does at the favorite nearby place.",
+        "satisfiedWhenEn": "The answer states a concrete action the learner performs there and connects it to that place.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 집 근처 장소에서 하는 활동",
+        "satisfiedWhenKo": "답변이 그곳에서 학습자가 하는 구체적인 행동을 밝히고 해당 장소와 연결하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when visiting or using the nearby place.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion or mental state experienced at the chosen place.",
+        "semanticRoleKo": "그 집 근처 장소를 방문하거나 이용할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 선택한 장소에서 경험하는 뚜렷한 감정이나 마음 상태를 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner typically visits or enjoys the favorite nearby place.",
+        "satisfiedWhenEn": "The answer provides a recognizable time, day, season, or frequency connected to going there.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 집 근처 장소를 보통 방문하거나 즐기는 때",
+        "satisfiedWhenKo": "답변이 그곳에 가는 것과 연결된 알아볼 수 있는 시각, 요일, 계절 또는 빈도를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0019",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "A specific personal fact about the learner that other people generally do not know.",
+        "satisfiedWhenEn": "The answer reveals a concrete trait, experience, ability, habit, or preference presented as not commonly known by others.",
+        "semanticRoleKo": "다른 사람들이 대체로 모르는 학습자의 구체적인 개인적 사실",
+        "satisfiedWhenKo": "답변이 다른 사람들에게 널리 알려지지 않은 것으로 제시된 구체적인 성향, 경험, 능력, 습관 또는 선호를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why other people do not know the stated personal fact.",
+        "satisfiedWhenEn": "The answer explains a concrete circumstance, choice, or social reason that has kept the fact unknown.",
+        "semanticRoleKo": "다른 사람들이 말한 개인적 사실을 모르는 이유",
+        "satisfiedWhenKo": "답변이 그 사실이 알려지지 않게 된 구체적인 상황, 선택 또는 사회적 이유를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete experience demonstrating the little-known fact about the learner.",
+        "satisfiedWhenEn": "The answer gives a specific occasion or behavior that provides evidence for the revealed personal fact.",
+        "semanticRoleKo": "학습자에 관한 잘 알려지지 않은 사실을 보여 주는 구체적인 경험",
+        "satisfiedWhenKo": "답변이 밝힌 개인적 사실을 뒷받침하는 구체적인 상황이나 행동을 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about the fact being unknown or being revealed.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion associated with keeping, sharing, or being recognized for that personal fact.",
+        "semanticRoleKo": "그 사실이 알려지지 않았거나 드러나는 것에 대한 학습자의 감정",
+        "satisfiedWhenKo": "답변이 그 개인적 사실을 숨기거나 공유하거나 인정받는 것과 관련된 뚜렷한 감정을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0020",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "A specific ability, task, or behavior the learner wants to improve this year.",
+        "satisfiedWhenEn": "The answer identifies what the learner wants to do better and frames the improvement as an aim for this year.",
+        "semanticRoleKo": "학습자가 올해 더 잘하고 싶은 구체적인 능력, 과업 또는 행동",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 더 잘하고 싶은지 밝히고 그 향상을 올해의 목표로 제시하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended strategy for making the desired improvement this year.",
+        "satisfiedWhenEn": "The answer describes at least one practical step or method the learner plans to use to get better.",
+        "semanticRoleKo": "올해 원하는 향상을 이루기 위한 학습자의 실행 전략",
+        "satisfiedWhenKo": "답변이 더 잘하기 위해 학습자가 사용할 실질적인 단계나 방법을 하나 이상 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why improving the identified ability or behavior matters to the learner.",
+        "satisfiedWhenEn": "The answer gives a concrete need, motivation, or personal value that explains the improvement goal.",
+        "semanticRoleKo": "밝힌 능력이나 행동을 향상하는 일이 학습자에게 중요한 이유",
+        "satisfiedWhenKo": "답변이 향상 목표를 설명하는 구체적인 필요, 동기 또는 개인적 가치를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from doing the identified thing better.",
+        "satisfiedWhenEn": "The answer states a recognizable benefit, achievement, or changed ability expected after the improvement.",
+        "semanticRoleKo": "밝힌 일을 더 잘하게 되었을 때 학습자가 기대하는 결과",
+        "satisfiedWhenKo": "답변이 향상 후 기대되는 알아볼 수 있는 이점, 성취 또는 능력의 변화를 제시하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A current or recurring action through which the learner works on the improvement.",
+        "satisfiedWhenEn": "The answer names a concrete behavior the learner already performs or repeats to develop the targeted ability.",
+        "semanticRoleKo": "학습자가 향상을 위해 현재 하거나 반복하는 행동",
+        "satisfiedWhenKo": "답변이 목표 능력을 발전시키기 위해 학습자가 이미 하거나 반복하는 구체적인 행동을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A schedule or deadline for pursuing the improvement this year.",
+        "satisfiedWhenEn": "The answer gives a recognizable date, period, frequency, or milestone tied to working on or reaching the goal.",
+        "semanticRoleKo": "올해 향상 목표를 추진하기 위한 일정이나 기한",
+        "satisfiedWhenKo": "답변이 목표를 실행하거나 달성하는 것과 연결된 알아볼 수 있는 날짜, 기간, 빈도 또는 이정표를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0021",
+    "slotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The clock time or regular time range when the learner usually wakes up.",
+        "satisfiedWhenEn": "The answer provides a recognizable waking time or narrow time range and conveys that it is usual for the learner.",
+        "semanticRoleKo": "학습자가 보통 일어나는 시각이나 일정한 시간대",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 기상 시각이나 좁은 시간 범위를 제시하고 그것이 학습자의 평소 시간임을 전달하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete pattern or condition that qualifies the learner's usual waking time.",
+        "satisfiedWhenEn": "The answer explains a specific variation or circumstance, such as different waking times on workdays and days off.",
+        "semanticRoleKo": "학습자의 평소 기상 시간을 구체화하는 패턴이나 조건",
+        "satisfiedWhenKo": "답변이 평일과 쉬는 날의 차이처럼 기상 시각의 구체적인 변화나 조건을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner usually wakes up at that time.",
+        "satisfiedWhenEn": "The answer gives a concrete obligation, habit, schedule, or need that accounts for the stated waking time.",
+        "semanticRoleKo": "학습자가 보통 그 시각에 일어나는 이유",
+        "satisfiedWhenKo": "답변이 말한 기상 시각을 설명하는 구체적인 의무, 습관, 일정 또는 필요를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner typically feels upon waking at that time.",
+        "satisfiedWhenEn": "The answer conveys a distinct physical or emotional state the learner experiences when waking then.",
+        "semanticRoleKo": "그 시각에 일어날 때 학습자가 보통 느끼는 상태",
+        "satisfiedWhenKo": "답변이 그때 일어나면서 학습자가 경험하는 뚜렷한 신체적 또는 정서적 상태를 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect of waking at the stated time on the learner's day.",
+        "satisfiedWhenEn": "The answer describes a concrete consequence that the usual waking time has for the learner's readiness, schedule, or well-being.",
+        "semanticRoleKo": "말한 시각에 일어나는 것이 학습자의 하루에 미치는 효과",
+        "satisfiedWhenKo": "답변이 평소 기상 시간이 학습자의 준비, 일정 또는 컨디션에 주는 구체적인 결과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0022",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The first action the learner performs after waking up.",
+        "satisfiedWhenEn": "The answer states a concrete activity and clearly presents it as the learner's initial action after waking.",
+        "semanticRoleKo": "학습자가 잠에서 깬 뒤 가장 먼저 하는 행동",
+        "satisfiedWhenKo": "답변이 구체적인 활동을 밝히고 학습자가 기상 후 처음 하는 행동으로 분명히 제시하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A distinct action that follows the learner's first post-waking action.",
+        "satisfiedWhenEn": "The answer mentions a second concrete activity in the waking routine and distinguishes it from the first action.",
+        "semanticRoleKo": "학습자가 기상 후 첫 행동에 이어 하는 별개의 행동",
+        "satisfiedWhenKo": "답변이 기상 루틴의 두 번째 구체적인 활동을 언급하고 첫 행동과 구분하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time or delay associated with the learner's first action after waking.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time or amount of time between waking and performing the first action.",
+        "semanticRoleKo": "학습자가 기상 후 첫 행동을 하는 시각이나 지연 시간",
+        "satisfiedWhenKo": "답변이 잠에서 깬 시점과 첫 행동 사이의 알아볼 수 있는 시각이나 시간 간격을 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner performs the first action after waking.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to the stated first action.",
+        "semanticRoleKo": "학습자가 기상 후 첫 행동을 하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 말한 첫 행동과 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner begins the day with that action.",
+        "satisfiedWhenEn": "The answer explains a concrete purpose, need, or habit that accounts for doing the stated action first.",
+        "semanticRoleKo": "학습자가 그 행동으로 하루를 시작하는 이유",
+        "satisfiedWhenKo": "답변이 말한 행동을 가장 먼저 하는 구체적인 목적, 필요 또는 습관을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An immediate effect of the learner's first post-waking action.",
+        "satisfiedWhenEn": "The answer describes a specific physical, emotional, or practical outcome produced by that first action.",
+        "semanticRoleKo": "학습자의 기상 후 첫 행동이 주는 즉각적인 효과",
+        "satisfiedWhenKo": "답변이 그 첫 행동으로 생기는 구체적인 신체적, 정서적 또는 실용적 결과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0023",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The food the learner habitually eats for breakfast.",
+        "satisfiedWhenEn": "The answer identifies at least one recognizable food or breakfast item as something the learner normally eats in the morning meal.",
+        "semanticRoleKo": "학습자가 아침 식사로 습관적으로 먹는 음식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식이나 아침 메뉴를 하나 이상 밝히고 학습자가 보통 아침에 먹는 것으로 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner usually eats the stated breakfast food.",
+        "satisfiedWhenEn": "The answer provides a recognizable breakfast time, time range, or schedule condition connected to eating the food.",
+        "semanticRoleKo": "학습자가 말한 아침 음식을 보통 먹는 때",
+        "satisfiedWhenKo": "답변이 그 음식을 먹는 것과 연결된 알아볼 수 있는 아침 시각, 시간대 또는 일정 조건을 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner usually eats breakfast.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and relates it to eating the stated breakfast food.",
+        "semanticRoleKo": "학습자가 보통 아침 식사를 하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 말한 아침 음식을 먹는 것과 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that food for breakfast.",
+        "satisfiedWhenEn": "The answer gives a concrete preference, health need, convenience, or other motivation for the breakfast choice.",
+        "semanticRoleKo": "학습자가 그 음식을 아침 식사로 선택하는 이유",
+        "satisfiedWhenKo": "답변이 아침 메뉴 선택의 구체적인 선호, 건강상 필요, 편의 또는 다른 동기를 제시하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another action the learner performs as part of breakfast.",
+        "satisfiedWhenEn": "The answer states a distinct breakfast-related activity, such as preparing a drink or packing food, in addition to eating the chosen item.",
+        "semanticRoleKo": "학습자가 아침 식사의 일부로 하는 또 다른 행동",
+        "satisfiedWhenKo": "답변이 선택한 음식을 먹는 것 외에 음료 준비나 음식 포장처럼 별개의 아침 식사 관련 활동을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect the usual breakfast has on the learner.",
+        "satisfiedWhenEn": "The answer describes a concrete physical, emotional, or practical outcome of eating the stated breakfast food.",
+        "semanticRoleKo": "평소 아침 식사가 학습자에게 미치는 효과",
+        "satisfiedWhenKo": "답변이 말한 아침 음식을 먹어서 생기는 구체적인 신체적, 정서적 또는 실용적 결과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0024",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A typical action the learner takes on a busy day.",
+        "satisfiedWhenEn": "The answer identifies a concrete behavior and relates it to how the learner handles or spends a busy day.",
+        "semanticRoleKo": "학습자가 바쁜 날에 보통 하는 행동",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 밝히고 학습자가 바쁜 날을 보내거나 대처하는 방식과 연결하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another distinct step or activity in the learner's busy-day routine.",
+        "satisfiedWhenEn": "The answer supplies a second concrete action that adds a separate part of what the learner does when busy.",
+        "semanticRoleKo": "학습자의 바쁜 날 루틴에 포함되는 또 다른 별개의 단계나 활동",
+        "satisfiedWhenKo": "답변이 바쁠 때 하는 일의 별도 부분을 더하는 두 번째 구체적인 행동을 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When a stated busy-day action occurs.",
+        "satisfiedWhenEn": "The answer gives a recognizable time, order, duration, or frequency for one of the activities performed on busy days.",
+        "semanticRoleKo": "말한 바쁜 날 행동이 일어나는 때",
+        "satisfiedWhenKo": "답변이 바쁜 날 활동 중 하나의 알아볼 수 있는 시각, 순서, 지속 시간 또는 빈도를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner performs a stated action when the day is busy.",
+        "satisfiedWhenEn": "The answer explains a concrete purpose, pressure, or need behind one of the busy-day behaviors.",
+        "semanticRoleKo": "학습자가 바쁜 날에 말한 행동을 하는 이유",
+        "satisfiedWhenKo": "답변이 바쁜 날 행동 중 하나의 구체적인 목적, 부담 또는 필요를 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the learner's busy-day behavior.",
+        "satisfiedWhenEn": "The answer states a specific outcome for workload, time, energy, or task completion caused by a stated action.",
+        "semanticRoleKo": "학습자의 바쁜 날 행동으로 생기는 결과",
+        "satisfiedWhenKo": "답변이 말한 행동으로 업무량, 시간, 에너지 또는 과업 완료에 생기는 구체적인 결과를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while following their busy-day routine.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional or physical state associated with what the learner does on a busy day.",
+        "semanticRoleKo": "바쁜 날의 루틴을 수행하면서 학습자가 느끼는 상태",
+        "satisfiedWhenKo": "답변이 바쁜 날에 하는 행동과 관련된 뚜렷한 정서적 또는 신체적 상태를 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0025",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A typical activity the learner does on a free day.",
+        "satisfiedWhenEn": "The answer names a concrete action and clearly presents it as part of how the learner spends a day without usual obligations.",
+        "semanticRoleKo": "학습자가 쉬는 날에 보통 하는 활동",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 밝히고 평소 의무가 없는 날을 보내는 방식의 일부로 분명히 제시하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A second distinct activity the learner does on a free day.",
+        "satisfiedWhenEn": "The answer mentions another concrete free-day action that is meaningfully separate from the main activity.",
+        "semanticRoleKo": "학습자가 쉬는 날에 하는 두 번째 별도 활동",
+        "satisfiedWhenKo": "답변이 주된 활동과 의미 있게 구분되는 또 하나의 구체적인 쉬는 날 행동을 언급하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner spends time or performs a stated activity on a free day.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to the learner's free-day behavior.",
+        "semanticRoleKo": "학습자가 쉬는 날 시간을 보내거나 말한 활동을 하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 학습자의 쉬는 날 행동과 연결하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When a stated free-day activity usually takes place.",
+        "satisfiedWhenEn": "The answer supplies a recognizable time of day, duration, order, or frequency for one of the activities.",
+        "semanticRoleKo": "말한 쉬는 날 활동이 보통 이루어지는 때",
+        "satisfiedWhenKo": "답변이 활동 중 하나의 알아볼 수 있는 하루 중 시각, 지속 시간, 순서 또는 빈도를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses a stated activity on a free day.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation, need, or benefit behind spending free time that way.",
+        "semanticRoleKo": "학습자가 쉬는 날에 말한 활동을 선택하는 이유",
+        "satisfiedWhenKo": "답변이 자유 시간을 그런 방식으로 보내는 구체적인 동기, 필요 또는 이점을 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels during or after their free-day activity.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion or mental state connected to a stated way of spending the free day.",
+        "semanticRoleKo": "쉬는 날 활동을 하는 동안이나 한 뒤 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 말한 쉬는 날의 활동 방식과 연결된 뚜렷한 감정이나 마음 상태를 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0026",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The part of the day the learner considers their favorite.",
+        "satisfiedWhenEn": "The answer identifies a recognizable time of day, such as morning or late evening, as the learner's preferred period.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 선택한 하루 중 시간대",
+        "satisfiedWhenKo": "답변이 아침이나 늦은 저녁처럼 알아볼 수 있는 하루의 시간대를 학습자가 선호하는 때로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers that time of day.",
+        "satisfiedWhenEn": "The answer explains a concrete feature, activity, freedom, or personal effect that makes the selected period appealing.",
+        "semanticRoleKo": "학습자가 그 시간대를 선호하는 이유",
+        "satisfiedWhenKo": "답변이 선택한 시간대를 좋아하게 만드는 구체적인 특성, 활동, 여유 또는 개인적 효과를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "An activity the learner does during the favorite time of day.",
+        "satisfiedWhenEn": "The answer states a concrete action occurring in that period and connects it to the learner's preference.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 시간대에 하는 활동",
+        "satisfiedWhenKo": "답변이 그 시간대에 하는 구체적인 행동을 밝히고 학습자의 선호와 연결하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the learner's favorite time of day.",
+        "satisfiedWhenEn": "The answer describes a concrete quality of the light, pace, atmosphere, schedule, or surroundings during that period.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 시간대의 구체적인 특징",
+        "satisfiedWhenKo": "답변이 그 시간대의 빛, 속도감, 분위기, 일정 또는 주변 환경의 구체적인 특성을 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels during the favorite time of day.",
+        "satisfiedWhenEn": "The answer expresses a distinct emotion or state of mind associated with being in the selected period.",
+        "semanticRoleKo": "가장 좋아하는 시간대에 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 선택한 시간대를 보낼 때의 뚜렷한 감정이나 마음 상태를 표현하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A beneficial effect the favorite time of day has on the learner.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for the learner's energy, focus, rest, or daily experience during that period.",
+        "semanticRoleKo": "가장 좋아하는 시간대가 학습자에게 주는 유익한 효과",
+        "satisfiedWhenKo": "답변이 그 시간대에 학습자의 에너지, 집중, 휴식 또는 하루 경험에 생기는 구체적인 결과를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0027",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "One concrete action the learner performs every day.",
+        "satisfiedWhenEn": "The answer identifies a specific activity and clearly conveys that the learner does it daily.",
+        "semanticRoleKo": "학습자가 매일 하는 한 가지 구체적인 행동",
+        "satisfiedWhenKo": "답변이 특정 활동을 밝히고 학습자가 그것을 매일 한다는 점을 분명히 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner performs the daily action.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, time of day, duration, or sequence point for the stated activity.",
+        "semanticRoleKo": "학습자가 매일의 행동을 하는 때",
+        "satisfiedWhenKo": "답변이 말한 활동의 알아볼 수 있는 시각, 하루 중 시간대, 지속 시간 또는 순서상 시점을 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner does the stated action every day.",
+        "satisfiedWhenEn": "The answer explains a concrete need, purpose, habit, or motivation behind repeating the action daily.",
+        "semanticRoleKo": "학습자가 말한 행동을 매일 하는 이유",
+        "satisfiedWhenKo": "답변이 그 행동을 날마다 반복하는 구체적인 필요, 목적, 습관 또는 동기를 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner normally performs the daily action.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to the repeated activity.",
+        "semanticRoleKo": "학습자가 매일의 행동을 보통 하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 반복하는 활동과 연결하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect of performing the action every day.",
+        "satisfiedWhenEn": "The answer describes a specific physical, emotional, or practical outcome produced by the daily activity.",
+        "semanticRoleKo": "그 행동을 매일 해서 생기는 효과",
+        "satisfiedWhenKo": "답변이 매일의 활동으로 생기는 구체적인 신체적, 정서적 또는 실용적 결과를 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about or while doing the daily action.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional response associated with performing the stated activity each day.",
+        "semanticRoleKo": "매일의 행동을 하거나 생각할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 말한 활동을 날마다 하는 것과 관련된 뚜렷한 감정을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0028",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "A specific item, task, or piece of information the learner often forgets.",
+        "satisfiedWhenEn": "The answer identifies a recognizable thing to carry, do, or remember and conveys that the learner forgets it repeatedly.",
+        "semanticRoleKo": "학습자가 자주 잊는 구체적인 물건, 할 일 또는 정보",
+        "satisfiedWhenKo": "답변이 챙기거나 하거나 기억해야 하는 알아볼 수 있는 대상을 밝히고 학습자가 그것을 반복해서 잊는다고 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the learner forgetting the identified thing.",
+        "satisfiedWhenEn": "The answer describes a concrete problem, delay, loss, or other outcome that occurs when the learner forgets it.",
+        "semanticRoleKo": "학습자가 밝힌 것을 잊어서 생기는 결과",
+        "satisfiedWhenKo": "답변이 그것을 잊었을 때 생기는 구체적인 문제, 지연, 손실 또는 다른 결과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner tends to forget the identified thing.",
+        "satisfiedWhenEn": "The answer explains a concrete cause or circumstance that contributes to the repeated forgetting.",
+        "semanticRoleKo": "학습자가 밝힌 것을 자주 잊는 이유",
+        "satisfiedWhenKo": "답변이 반복적인 망각에 영향을 주는 구체적인 원인이나 상황을 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or under what recurring condition the learner often forgets it.",
+        "satisfiedWhenEn": "The answer identifies a recognizable time, occasion, or repeated situation in which the forgetting tends to happen.",
+        "semanticRoleKo": "학습자가 그것을 자주 잊는 때나 반복 조건",
+        "satisfiedWhenKo": "답변이 망각이 주로 일어나는 알아볼 수 있는 시점, 계기 또는 반복 상황을 밝히면 충족된다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "A way the learner prevents or handles forgetting the identified thing.",
+        "satisfiedWhenEn": "The answer states a concrete reminder, preparation, recovery step, or other method used to reduce or address the forgetting.",
+        "semanticRoleKo": "학습자가 밝힌 것을 잊지 않거나 잊은 뒤 대처하는 방법",
+        "satisfiedWhenKo": "답변이 망각을 줄이거나 해결하기 위해 사용하는 구체적인 알림, 준비, 복구 단계 또는 다른 방법을 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when they forget the identified thing.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion or mental response caused by an instance of forgetting it.",
+        "semanticRoleKo": "밝힌 것을 잊었을 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 그것을 잊은 상황 때문에 생기는 뚜렷한 감정이나 심리적 반응을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0029",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The action the learner takes in response to feeling tired.",
+        "satisfiedWhenEn": "The answer states a concrete behavior and clearly links it to times when the learner is tired.",
+        "semanticRoleKo": "학습자가 피곤함에 대응해 하는 행동",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 밝히고 학습자가 피곤할 때 하는 일과 분명히 연결하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the learner's tiredness-response action.",
+        "satisfiedWhenEn": "The answer describes a specific change in energy, comfort, alertness, or functioning after the stated action.",
+        "semanticRoleKo": "피곤할 때 하는 행동이 학습자에게 미치는 효과",
+        "satisfiedWhenKo": "답변이 말한 행동 뒤 에너지, 편안함, 각성도 또는 기능에 생기는 구체적인 변화를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that action when tired.",
+        "satisfiedWhenEn": "The answer gives a concrete purpose, expected benefit, or personal preference that explains the response.",
+        "semanticRoleKo": "학습자가 피곤할 때 그 행동을 선택하는 이유",
+        "satisfiedWhenKo": "답변이 그 대응을 설명하는 구체적인 목적, 기대 이점 또는 개인적 선호를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner performs the stated action when tired.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and relates it to the tiredness-response behavior.",
+        "semanticRoleKo": "학습자가 피곤할 때 말한 행동을 하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 피곤함에 대응하는 행동과 연결하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner tends to use the stated response to tiredness.",
+        "satisfiedWhenEn": "The answer provides a recognizable time, duration, or recurring condition for doing the action.",
+        "semanticRoleKo": "학습자가 피곤함에 대한 대응 행동을 주로 하는 때",
+        "satisfiedWhenKo": "답변이 그 행동을 하는 알아볼 수 있는 시각, 지속 시간 또는 반복 조건을 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while or after responding to tiredness.",
+        "satisfiedWhenEn": "The answer conveys a distinct physical or emotional state associated with performing the chosen action.",
+        "semanticRoleKo": "피곤함에 대응하는 동안이나 그 뒤 학습자가 느끼는 상태",
+        "satisfiedWhenKo": "답변이 선택한 행동을 하는 것과 관련된 뚜렷한 신체적 또는 정서적 상태를 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0030",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A typical activity the learner does when they have free time.",
+        "satisfiedWhenEn": "The answer identifies a concrete action and connects it to periods when the learner has time available.",
+        "semanticRoleKo": "학습자가 자유 시간이 있을 때 보통 하는 활동",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 밝히고 학습자에게 시간이 남는 때와 연결하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another distinct way the learner spends free time.",
+        "satisfiedWhenEn": "The answer provides a second concrete free-time activity that is meaningfully different from the main action.",
+        "semanticRoleKo": "학습자가 자유 시간을 보내는 또 다른 별개의 방식",
+        "satisfiedWhenKo": "답변이 주된 행동과 의미 있게 다른 두 번째 구체적인 자유 시간 활동을 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner usually has or uses free time for a stated activity.",
+        "satisfiedWhenEn": "The answer gives a recognizable time, day, frequency, or duration associated with the free-time activity.",
+        "semanticRoleKo": "학습자가 말한 활동에 자유 시간을 보통 쓰는 때",
+        "satisfiedWhenKo": "답변이 자유 시간 활동과 연결된 알아볼 수 있는 시각, 요일, 빈도 또는 지속 시간을 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner performs a stated free-time activity.",
+        "satisfiedWhenEn": "The answer identifies a recognizable setting and relates it to how the learner spends free time.",
+        "semanticRoleKo": "학습자가 말한 자유 시간 활동을 하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 학습자가 자유 시간을 보내는 방식과 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses the stated activity in their free time.",
+        "satisfiedWhenEn": "The answer explains a concrete interest, need, benefit, or preference behind the free-time choice.",
+        "semanticRoleKo": "학습자가 자유 시간에 말한 활동을 선택하는 이유",
+        "satisfiedWhenKo": "답변이 자유 시간 선택의 구체적인 관심, 필요, 이점 또는 선호를 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while or after doing the free-time activity.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion or state of mind linked to the stated use of free time.",
+        "semanticRoleKo": "자유 시간 활동을 하는 동안이나 한 뒤 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 말한 자유 시간 활용과 연결된 뚜렷한 감정이나 마음 상태를 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0031",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A main habitual action in the learner's morning routine.",
+        "satisfiedWhenEn": "The answer states a concrete activity and conveys that the learner regularly performs it as part of the morning routine.",
+        "semanticRoleKo": "학습자의 아침 루틴에 포함되는 주된 습관적 행동",
+        "satisfiedWhenKo": "답변이 구체적인 활동을 밝히고 학습자가 아침 루틴의 일부로 정기적으로 한다는 점을 전달하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate additional step in the learner's morning routine.",
+        "satisfiedWhenEn": "The answer describes another concrete morning action that adds a distinct step beyond the main activity.",
+        "semanticRoleKo": "학습자의 아침 루틴에 더해지는 별도의 추가 단계",
+        "satisfiedWhenKo": "답변이 주된 활동 외에 별개의 단계를 더하는 또 하나의 구체적인 아침 행동을 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The timing or order of an action in the learner's morning routine.",
+        "satisfiedWhenEn": "The answer supplies a recognizable clock time, duration, or sequence point for one of the morning steps.",
+        "semanticRoleKo": "학습자의 아침 루틴 행동이 이루어지는 시간이나 순서",
+        "satisfiedWhenKo": "답변이 아침 단계 중 하나의 알아볼 수 있는 시각, 지속 시간 또는 순서상 위치를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The setting where a stated part of the morning routine occurs.",
+        "satisfiedWhenEn": "The answer names a recognizable location and connects it to one of the learner's regular morning actions.",
+        "semanticRoleKo": "말한 아침 루틴의 일부가 이루어지는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 학습자의 정기적인 아침 행동 중 하나와 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The purpose behind a stated step in the learner's morning routine.",
+        "satisfiedWhenEn": "The answer gives a concrete need, goal, or motivation for performing one of the morning actions.",
+        "semanticRoleKo": "학습자의 아침 루틴에서 말한 단계의 목적",
+        "satisfiedWhenKo": "답변이 아침 행동 중 하나를 하는 구체적인 필요, 목표 또는 동기를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect of the learner's morning routine on the rest of the day.",
+        "satisfiedWhenEn": "The answer describes a specific outcome for the learner's energy, readiness, mood, or schedule after a morning action.",
+        "semanticRoleKo": "학습자의 아침 루틴이 이후 하루에 미치는 효과",
+        "satisfiedWhenKo": "답변이 아침 행동 뒤 학습자의 에너지, 준비 상태, 기분 또는 일정에 생기는 구체적인 결과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0032",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A main habitual action in the learner's night routine.",
+        "satisfiedWhenEn": "The answer identifies a concrete activity and makes clear that it regularly belongs to the learner's routine at night.",
+        "semanticRoleKo": "학습자의 밤 루틴에 포함되는 주된 습관적 행동",
+        "satisfiedWhenKo": "답변이 구체적인 활동을 밝히고 학습자의 밤 루틴에 정기적으로 포함된다는 점을 분명히 하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another distinct step in the learner's night routine.",
+        "satisfiedWhenEn": "The answer states a second concrete nighttime action rather than restating the main routine activity.",
+        "semanticRoleKo": "학습자의 밤 루틴에 포함되는 또 다른 별도 단계",
+        "satisfiedWhenKo": "답변이 주된 루틴 활동을 다시 말하는 대신 두 번째 구체적인 밤 행동을 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or in what order a night-routine action takes place.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, duration, or sequence for one of the stated nighttime steps.",
+        "semanticRoleKo": "밤 루틴 행동이 일어나는 시각이나 순서",
+        "satisfiedWhenKo": "답변이 말한 밤 단계 중 하나의 알아볼 수 있는 시각, 지속 시간 또는 순서를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where a stated night-routine action takes place.",
+        "satisfiedWhenEn": "The answer identifies a recognizable setting and relates it to one of the learner's regular nighttime activities.",
+        "semanticRoleKo": "말한 밤 루틴 행동이 이루어지는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 학습자의 정기적인 밤 활동 중 하나와 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner includes a stated action in the night routine.",
+        "satisfiedWhenEn": "The answer explains a concrete purpose, need, or habit behind one of the nighttime steps.",
+        "semanticRoleKo": "학습자가 말한 행동을 밤 루틴에 포함하는 이유",
+        "satisfiedWhenKo": "답변이 밤 단계 중 하나의 구체적인 목적, 필요 또는 습관을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect of the learner's night routine.",
+        "satisfiedWhenEn": "The answer describes a specific outcome for sleep, relaxation, preparation, or the following day caused by a night action.",
+        "semanticRoleKo": "학습자의 밤 루틴이 주는 효과",
+        "satisfiedWhenKo": "답변이 밤 행동으로 수면, 이완, 준비 또는 다음 날에 생기는 구체적인 결과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0033",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A habitual action the learner performs after work or school.",
+        "satisfiedWhenEn": "The answer states a concrete activity and connects it to the period following the learner's workday or school day.",
+        "semanticRoleKo": "학습자가 일이나 학교를 마친 뒤 습관적으로 하는 행동",
+        "satisfiedWhenKo": "답변이 구체적인 활동을 밝히고 학습자의 근무나 수업이 끝난 뒤의 시간과 연결하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner begins or performs the stated after-work or after-school action.",
+        "satisfiedWhenEn": "The answer provides a recognizable clock time, delay, duration, or frequency associated with the activity.",
+        "semanticRoleKo": "학습자가 일이나 학교 후 행동을 시작하거나 하는 때",
+        "satisfiedWhenKo": "답변이 그 활동과 연결된 알아볼 수 있는 시각, 시간 간격, 지속 시간 또는 빈도를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner goes or performs the stated activity after work or school.",
+        "satisfiedWhenEn": "The answer identifies a recognizable destination or setting and links it to the post-work or post-school behavior.",
+        "semanticRoleKo": "학습자가 일이나 학교 후 가거나 말한 활동을 하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 목적지나 장소를 밝히고 일이나 학교 후 행동과 연결하면 충족된다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A second distinct action in the learner's usual after-work or after-school routine.",
+        "satisfiedWhenEn": "The answer adds another concrete activity that is separate from the main action after work or school.",
+        "semanticRoleKo": "학습자의 평소 일이나 학교 후 루틴에 포함되는 두 번째 별도 행동",
+        "satisfiedWhenKo": "답변이 일이나 학교 후의 주된 행동과 구분되는 또 하나의 구체적인 활동을 더하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses a stated action after work or school.",
+        "satisfiedWhenEn": "The answer gives a concrete need, responsibility, preference, or benefit behind the post-work or post-school activity.",
+        "semanticRoleKo": "학습자가 일이나 학교 후에 말한 행동을 선택하는 이유",
+        "satisfiedWhenKo": "답변이 일이나 학교 후 활동의 구체적인 필요, 책임, 선호 또는 이점을 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels during or after the stated post-work or post-school activity.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional or physical state linked to that part of the learner's day.",
+        "semanticRoleKo": "일이나 학교 후 활동을 하는 동안이나 한 뒤 학습자가 느끼는 상태",
+        "satisfiedWhenKo": "답변이 학습자의 하루 중 그 활동과 연결된 뚜렷한 정서적 또는 신체적 상태를 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0034",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "An activity the learner likes to do on weekends.",
+        "satisfiedWhenEn": "The answer identifies a concrete action and presents it as something the learner enjoys during weekends.",
+        "semanticRoleKo": "학습자가 주말에 하기를 좋아하는 활동",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 밝히고 학습자가 주말에 즐기는 일로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner enjoys the chosen weekend activity.",
+        "satisfiedWhenEn": "The answer explains a concrete motivation, quality, or benefit that makes the activity appealing on weekends.",
+        "semanticRoleKo": "학습자가 선택한 주말 활동을 좋아하는 이유",
+        "satisfiedWhenKo": "답변이 그 활동을 주말에 즐겁게 만드는 구체적인 동기, 특성 또는 이점을 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner likes to do the weekend activity.",
+        "satisfiedWhenEn": "The answer names a recognizable location and relates it to performing the stated activity on weekends.",
+        "semanticRoleKo": "학습자가 주말 활동을 하기를 좋아하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 주말에 말한 활동을 하는 것과 연결하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner usually does the preferred weekend activity.",
+        "satisfiedWhenEn": "The answer supplies a recognizable weekend day, time, frequency, or duration for the activity.",
+        "semanticRoleKo": "학습자가 선호하는 주말 활동을 보통 하는 때",
+        "satisfiedWhenKo": "답변이 그 활동의 알아볼 수 있는 주말 요일, 시각, 빈도 또는 지속 시간을 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while doing the preferred weekend activity.",
+        "satisfiedWhenEn": "The answer expresses a distinct emotion or mental state experienced during the chosen activity.",
+        "semanticRoleKo": "선호하는 주말 활동을 하는 동안 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 선택한 활동을 하는 동안 경험하는 뚜렷한 감정이나 마음 상태를 표현하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A benefit or outcome the learner gets from the weekend activity.",
+        "satisfiedWhenEn": "The answer describes a concrete effect on the learner's rest, relationships, health, or readiness for the next week.",
+        "semanticRoleKo": "주말 활동으로 학습자가 얻는 이점이나 결과",
+        "satisfiedWhenKo": "답변이 그 활동이 학습자의 휴식, 관계, 건강 또는 다음 주 준비에 주는 구체적인 효과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0035",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A recurring daily task or action the learner dislikes doing.",
+        "satisfiedWhenEn": "The answer identifies a concrete activity, conveys that it occurs every day or routinely, and presents it as disliked by the learner.",
+        "semanticRoleKo": "학습자가 매일 반복하며 하기를 싫어하는 과업이나 행동",
+        "satisfiedWhenKo": "답변이 구체적인 활동을 밝히고 매일 또는 일상적으로 일어나며 학습자가 싫어하는 일로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner dislikes the stated daily action.",
+        "satisfiedWhenEn": "The answer gives a concrete difficulty, cost, quality, or personal reaction that explains the dislike.",
+        "semanticRoleKo": "학습자가 말한 매일의 행동을 싫어하는 이유",
+        "satisfiedWhenKo": "답변이 싫어하는 마음을 설명하는 구체적인 어려움, 부담, 특성 또는 개인적 반응을 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response while anticipating or doing the disliked daily action.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion associated with facing or carrying out the recurring task.",
+        "semanticRoleKo": "싫어하는 매일의 행동을 앞두거나 하는 동안 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 반복 과업을 마주하거나 수행하는 것과 관련된 뚜렷한 감정을 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A negative or practical consequence of the disliked daily action.",
+        "satisfiedWhenEn": "The answer describes a specific effect the task has on the learner's time, energy, mood, or other responsibilities.",
+        "semanticRoleKo": "싫어하는 매일의 행동이 낳는 부정적 또는 실용적 결과",
+        "satisfiedWhenKo": "답변이 그 과업이 학습자의 시간, 에너지, 기분 또는 다른 책임에 주는 구체적인 영향을 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner usually has to do the disliked daily action.",
+        "satisfiedWhenEn": "The answer gives a recognizable clock time, time of day, duration, or recurring schedule for the task.",
+        "semanticRoleKo": "학습자가 싫어하는 행동을 보통 해야 하는 때",
+        "satisfiedWhenKo": "답변이 그 과업의 알아볼 수 있는 시각, 하루 중 시간대, 지속 시간 또는 반복 일정을 제시하면 충족된다."
+      },
+      "SOLUTION": {
+        "semanticRoleEn": "A way the learner reduces, avoids, or copes with the disliked daily action.",
+        "satisfiedWhenEn": "The answer states a concrete alternative, adjustment, or coping method used to make the recurring task easier or less unpleasant.",
+        "semanticRoleKo": "학습자가 싫어하는 매일의 행동을 줄이거나 피하거나 견디는 방법",
+        "satisfiedWhenKo": "답변이 반복 과업을 더 쉽거나 덜 불쾌하게 만드는 구체적인 대안, 조정 또는 대처법을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0036",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "A specific thing, event, or circumstance that improves the learner's day.",
+        "satisfiedWhenEn": "The answer identifies a recognizable positive element and clearly connects it to making the learner's day better.",
+        "semanticRoleKo": "학습자의 하루를 더 좋게 만드는 구체적인 사물, 사건 또는 상황",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 긍정적 요소를 밝히고 학습자의 하루를 개선하는 것과 분명히 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified thing improves the learner's day.",
+        "satisfiedWhenEn": "The answer explains a concrete need, quality, or personal meaning through which the stated thing makes the day better.",
+        "semanticRoleKo": "밝힌 것이 학습자의 하루를 더 좋게 만드는 이유",
+        "satisfiedWhenKo": "답변이 말한 것이 하루를 개선하는 구체적인 필요, 특성 또는 개인적 의미를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion when the identified thing made the learner's day better.",
+        "satisfiedWhenEn": "The answer describes a specific experience in which the stated positive element improved the learner's day.",
+        "semanticRoleKo": "밝힌 것이 학습자의 하루를 더 좋게 만든 특정 사례",
+        "satisfiedWhenKo": "답변이 말한 긍정적 요소가 학습자의 하루를 개선했던 구체적인 경험을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to the thing that improves the day.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling the learner experiences because of the identified positive element.",
+        "semanticRoleKo": "하루를 개선하는 것에 대한 학습자의 정서적 반응",
+        "satisfiedWhenKo": "답변이 밝힌 긍정적 요소 때문에 학습자가 경험하는 뚜렷한 감정을 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete positive change in the learner's day caused by the identified thing.",
+        "satisfiedWhenEn": "The answer states a specific improvement in energy, mood, productivity, comfort, or relationships that follows from it.",
+        "semanticRoleKo": "밝힌 것으로 인해 학습자의 하루에 생기는 구체적인 긍정적 변화",
+        "satisfiedWhenKo": "답변이 그 결과로 에너지, 기분, 생산성, 편안함 또는 관계에 생기는 구체적인 향상을 제시하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete action by the learner or another person that makes the learner's day better.",
+        "satisfiedWhenEn": "The answer describes a specific behavior and connects that behavior to improving the learner's day.",
+        "semanticRoleKo": "학습자의 하루를 더 좋게 만드는 본인 또는 다른 사람의 구체적인 행동",
+        "satisfiedWhenKo": "답변이 특정 행동을 설명하고 그 행동을 학습자의 하루 개선과 연결하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0037",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "A specific aspect of the learner's daily life that they want to change.",
+        "satisfiedWhenEn": "The answer identifies a concrete desired change to a routine, habit, condition, or recurring part of the learner's life.",
+        "semanticRoleKo": "학습자가 바꾸고 싶은 일상의 구체적인 측면",
+        "satisfiedWhenKo": "답변이 학습자의 루틴, 습관, 상태 또는 반복되는 생활 부분에 원하는 구체적인 변화를 밝히면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended approach to making the daily-life change.",
+        "satisfiedWhenEn": "The answer describes at least one actionable step or method the learner plans to use to create the change.",
+        "semanticRoleKo": "일상의 변화를 만들기 위해 학습자가 생각한 실행 방식",
+        "satisfiedWhenKo": "답변이 변화를 만들기 위해 학습자가 사용할 실행 가능한 단계나 방법을 하나 이상 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to change that part of daily life.",
+        "satisfiedWhenEn": "The answer gives a concrete problem, need, motivation, or value that explains the desired change.",
+        "semanticRoleKo": "학습자가 일상의 그 부분을 바꾸고 싶은 이유",
+        "satisfiedWhenKo": "답변이 원하는 변화를 설명하는 구체적인 문제, 필요, 동기 또는 가치를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from changing that part of daily life.",
+        "satisfiedWhenEn": "The answer states a recognizable benefit or improved condition expected after the change is made.",
+        "semanticRoleKo": "일상의 그 부분을 바꾼 뒤 학습자가 기대하는 결과",
+        "satisfiedWhenKo": "답변이 변화를 만든 뒤 기대되는 알아볼 수 있는 이점이나 개선된 상태를 제시하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A current or replacement behavior directly involved in the desired daily-life change.",
+        "satisfiedWhenEn": "The answer names a concrete action the learner currently does, wants to stop, or wants to adopt as part of the change.",
+        "semanticRoleKo": "원하는 일상 변화에 직접 관련된 현재 행동이나 대체 행동",
+        "satisfiedWhenKo": "답변이 변화의 일부로 현재 하거나 그만두거나 새로 시작하려는 구체적인 행동을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner intends to begin, practice, or complete the daily-life change.",
+        "satisfiedWhenEn": "The answer ties the change to a recognizable start time, daily schedule, frequency, period, or deadline.",
+        "semanticRoleKo": "학습자가 일상 변화를 시작하거나 실천하거나 완료할 때",
+        "satisfiedWhenKo": "답변이 변화를 알아볼 수 있는 시작 시점, 일일 일정, 빈도, 기간 또는 기한과 연결하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0038",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "A concrete method the learner uses when unable to sleep.",
+        "satisfiedWhenEn": "The answer states an action or strategy and clearly presents it as the learner's response to not being able to fall asleep.",
+        "semanticRoleKo": "학습자가 잠들지 못할 때 사용하는 구체적인 방법",
+        "satisfiedWhenKo": "답변이 행동이나 전략을 밝히고 잠들 수 없을 때 학습자가 쓰는 대응으로 분명히 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the learner's sleep solution.",
+        "satisfiedWhenEn": "The answer describes a specific outcome, including whether or how the method changes alertness, relaxation, or ability to sleep.",
+        "semanticRoleKo": "학습자가 사용하는 불면 대응 방법의 효과",
+        "satisfiedWhenKo": "답변이 그 방법이 각성도, 이완 또는 잠드는 능력을 바꾸는지와 그 방식을 포함한 구체적인 결과를 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses the stated method when unable to sleep.",
+        "satisfiedWhenEn": "The answer gives a concrete belief, benefit, experience, or practical consideration that explains using the solution.",
+        "semanticRoleKo": "학습자가 잠들지 못할 때 말한 방법을 선택하는 이유",
+        "satisfiedWhenKo": "답변이 그 해결책을 사용하는 이유가 되는 구체적인 믿음, 이점, 경험 또는 실용적 고려를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion when the learner used the stated sleep solution.",
+        "satisfiedWhenEn": "The answer recounts a concrete sleepless episode and shows the learner applying the identified method.",
+        "semanticRoleKo": "학습자가 말한 불면 대응 방법을 사용한 구체적인 사례",
+        "satisfiedWhenKo": "답변이 잠들지 못했던 구체적인 상황을 이야기하고 학습자가 밝힌 방법을 적용한 모습을 보여 주면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while unable to sleep or after using the solution.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional or physical state tied to the sleeplessness or the chosen response.",
+        "semanticRoleKo": "잠들지 못하는 동안이나 해결책을 쓴 뒤 학습자가 느끼는 상태",
+        "satisfiedWhenKo": "답변이 불면 상태나 선택한 대응과 연결된 뚜렷한 정서적 또는 신체적 상태를 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The timing, duration, or recurring situation of the learner's sleeplessness or response.",
+        "satisfiedWhenEn": "The answer provides a recognizable time of night, length of wakefulness, frequency, or condition for using the solution.",
+        "semanticRoleKo": "학습자의 불면이나 대응이 일어나는 시간, 지속 시간 또는 반복 상황",
+        "satisfiedWhenKo": "답변이 해결책을 쓰는 알아볼 수 있는 밤 시간대, 깨어 있는 기간, 빈도 또는 조건을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0039",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The item or items the learner habitually buys at a convenience store.",
+        "satisfiedWhenEn": "The answer identifies at least one recognizable product and conveys that it is a usual convenience-store purchase for the learner.",
+        "semanticRoleKo": "학습자가 편의점에서 습관적으로 사는 물건",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 상품을 하나 이상 밝히고 학습자가 편의점에서 보통 사는 것으로 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner usually makes the convenience-store purchase.",
+        "satisfiedWhenEn": "The answer gives a recognizable time, day, frequency, or recurring situation associated with buying the stated item.",
+        "semanticRoleKo": "학습자가 편의점에서 말한 물건을 보통 사는 때",
+        "satisfiedWhenKo": "답변이 그 물건을 사는 것과 연결된 알아볼 수 있는 시각, 요일, 빈도 또는 반복 상황을 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner usually buys the identified item at a convenience store.",
+        "satisfiedWhenEn": "The answer explains a concrete need, preference, convenience, price, or other motivation for the recurring purchase.",
+        "semanticRoleKo": "학습자가 편의점에서 밝힌 물건을 보통 사는 이유",
+        "satisfiedWhenKo": "답변이 반복 구매의 구체적인 필요, 선호, 편의, 가격 또는 다른 동기를 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the learner's usual convenience-store purchase.",
+        "satisfiedWhenEn": "The answer clarifies the selected product with a concrete type, flavor, brand, quantity, or other distinguishing feature.",
+        "semanticRoleKo": "학습자가 편의점에서 보통 사는 물건의 구체적인 특징",
+        "satisfiedWhenKo": "답변이 선택한 상품의 구체적인 종류, 맛, 브랜드, 수량 또는 다른 구별되는 특징을 밝혀 주면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The use or effect of the item the learner buys.",
+        "satisfiedWhenEn": "The answer describes a concrete purpose, benefit, or outcome that follows from purchasing or using the stated product.",
+        "semanticRoleKo": "학습자가 사는 물건의 쓰임이나 효과",
+        "satisfiedWhenKo": "답변이 말한 상품을 사거나 사용해서 생기는 구체적인 목적, 이점 또는 결과를 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about buying or using the usual convenience-store item.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional response connected to the recurring purchase or its use.",
+        "semanticRoleKo": "편의점에서 보통 사는 물건을 구매하거나 사용할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 반복 구매나 그 물건의 사용과 연결된 뚜렷한 감정을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0040",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "A simple thing, activity, or moment the learner enjoys every day.",
+        "satisfiedWhenEn": "The answer identifies a recognizable daily pleasure and conveys that the learner regularly enjoys it.",
+        "semanticRoleKo": "학습자가 매일 즐기는 소소한 사물, 활동 또는 순간",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 일상의 즐거움을 밝히고 학습자가 그것을 정기적으로 즐긴다는 점을 전달하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the simple daily enjoyment appeals to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete quality, need, association, or benefit that makes the chosen thing enjoyable.",
+        "semanticRoleKo": "그 소소한 일상의 즐거움이 학습자에게 좋은 이유",
+        "satisfiedWhenKo": "답변이 선택한 것을 즐겁게 만드는 구체적인 특성, 필요, 연관성 또는 이점을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while experiencing the simple daily enjoyment.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion or state of mind produced by the chosen daily pleasure.",
+        "semanticRoleKo": "소소한 일상의 즐거움을 경험할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 선택한 일상의 즐거움으로 생기는 뚜렷한 감정이나 마음 상태를 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A positive effect the simple daily enjoyment has on the learner.",
+        "satisfiedWhenEn": "The answer describes a concrete benefit or change in the learner's mood, energy, routine, or well-being.",
+        "semanticRoleKo": "소소한 일상의 즐거움이 학습자에게 주는 긍정적인 효과",
+        "satisfiedWhenKo": "답변이 학습자의 기분, 에너지, 일상 또는 안녕에 생기는 구체적인 이점이나 변화를 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner experiences the chosen daily enjoyment.",
+        "satisfiedWhenEn": "The answer provides a recognizable time of day, duration, order, or regular occasion for enjoying it.",
+        "semanticRoleKo": "학습자가 선택한 일상의 즐거움을 경험하는 때",
+        "satisfiedWhenKo": "답변이 그것을 즐기는 알아볼 수 있는 하루 중 시간대, 지속 시간, 순서 또는 정기적인 계기를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner experiences the simple daily enjoyment.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location or setting and connects it to the chosen daily pleasure.",
+        "semanticRoleKo": "학습자가 소소한 일상의 즐거움을 경험하는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소나 환경을 밝히고 선택한 일상의 즐거움과 연결하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0041",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The food the learner considers their favorite.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food, dish, or cuisine as the learner's favorite.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 선택한 음식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식, 요리 또는 음식 종류를 학습자가 가장 좋아하는 것으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers the chosen food.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, texture, memory, meaning, or benefit that explains the food preference.",
+        "semanticRoleKo": "학습자가 선택한 음식을 선호하는 이유",
+        "satisfiedWhenKo": "답변이 음식 선호를 설명하는 구체적인 맛, 식감, 기억, 의미 또는 이점을 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the learner's favorite food.",
+        "satisfiedWhenEn": "The answer describes a concrete flavor, texture, ingredient, preparation style, or other distinguishing feature of the food.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식의 구체적인 특징",
+        "satisfiedWhenKo": "답변이 그 음식의 구체적인 맛, 식감, 재료, 조리 방식 또는 다른 구별되는 특징을 묘사하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific version, meal, or occasion illustrating the learner's favorite-food preference.",
+        "satisfiedWhenEn": "The answer gives a concrete example of eating, ordering, making, or sharing the chosen food that demonstrates the preference.",
+        "semanticRoleKo": "학습자가 그 음식을 가장 좋아한다는 점을 보여 주는 구체적인 종류, 식사 또는 상황",
+        "satisfiedWhenKo": "답변이 선택한 음식을 먹거나 주문하거나 만들거나 나눈 구체적인 사례로 그 선호를 보여 주면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when eating or thinking about the favorite food.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional response associated with the chosen food.",
+        "semanticRoleKo": "가장 좋아하는 음식을 먹거나 생각할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 선택한 음식과 관련된 뚜렷한 정서적 반응을 전달하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A place where the learner eats, obtains, or especially enjoys the favorite food.",
+        "satisfiedWhenEn": "The answer identifies a recognizable home, restaurant, region, or other setting and clearly connects it to eating, obtaining, or especially enjoying the chosen food; merely mentioning a place associated with the food is insufficient.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 음식을 먹거나 구하거나 특히 즐기는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 집, 식당, 지역 또는 다른 환경을 밝히고 그곳을 선택한 음식을 먹거나 구하거나 특히 즐기는 장소로 분명히 연결하면 충족된다. 음식과 관련된 장소를 단순히 언급하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0042",
+    "slotContracts": {
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes the food already established in the conversation.",
+        "satisfiedWhenEn": "The answer provides a concrete quality, association, experience, or benefit that explains the learner's existing preference for that food.",
+        "semanticRoleKo": "대화에서 이미 정해진 음식을 학습자가 좋아하는 이유",
+        "satisfiedWhenKo": "답변이 그 음식에 대한 기존 선호를 설명하는 구체적인 특성, 연상, 경험 또는 이점을 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature of that food that contributes to the learner's preference.",
+        "satisfiedWhenEn": "The answer describes a concrete taste, texture, ingredient, smell, appearance, or preparation quality of the food.",
+        "semanticRoleKo": "그 음식에 대한 학습자의 선호에 기여하는 구체적인 특징",
+        "satisfiedWhenKo": "답변이 그 음식의 구체적인 맛, 식감, 재료, 향, 모양 또는 조리 특성을 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The emotional response that food evokes in the learner.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling the learner experiences while eating, anticipating, or remembering that food.",
+        "semanticRoleKo": "그 음식이 학습자에게 불러일으키는 정서적 반응",
+        "satisfiedWhenKo": "답변이 그 음식을 먹거나 기대하거나 떠올릴 때 학습자가 경험하는 뚜렷한 감정을 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete experience illustrating why the learner likes that food.",
+        "satisfiedWhenEn": "The answer describes a specific meal, occasion, or memory in which the food's appealing quality was evident.",
+        "semanticRoleKo": "학습자가 그 음식을 좋아하는 이유를 보여 주는 구체적인 경험",
+        "satisfiedWhenKo": "답변이 그 음식의 매력적인 특성이 드러난 구체적인 식사, 상황 또는 기억을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A beneficial effect the food has on the learner.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for satisfaction, energy, comfort, health, or connection that comes from eating it.",
+        "semanticRoleKo": "그 음식이 학습자에게 주는 유익한 효과",
+        "satisfiedWhenKo": "답변이 그 음식을 먹어서 만족감, 에너지, 편안함, 건강 또는 유대감에 생기는 구체적인 결과를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0043",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The food the learner eats regularly or frequently.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food or dish and conveys that the learner eats it often.",
+        "semanticRoleKo": "학습자가 정기적으로 또는 자주 먹는 음식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식이나 요리를 밝히고 학습자가 그것을 자주 먹는다는 점을 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how frequently the learner eats the stated food.",
+        "satisfiedWhenEn": "The answer provides a recognizable meal, time, day, interval, or frequency tied to eating the food.",
+        "semanticRoleKo": "학습자가 말한 음식을 먹는 때나 빈도",
+        "satisfiedWhenKo": "답변이 그 음식을 먹는 것과 연결된 알아볼 수 있는 끼니, 시각, 요일, 간격 또는 빈도를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner eats the identified food often.",
+        "satisfiedWhenEn": "The answer explains a concrete preference, convenience, need, availability, cost, or benefit behind the repeated choice.",
+        "semanticRoleKo": "학습자가 밝힌 음식을 자주 먹는 이유",
+        "satisfiedWhenKo": "답변이 반복 선택의 구체적인 선호, 편의, 필요, 접근성, 비용 또는 이점을 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner usually eats the frequently chosen food.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to regularly eating the stated food.",
+        "semanticRoleKo": "학습자가 자주 선택하는 음식을 보통 먹는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 말한 음식을 정기적으로 먹는 것과 연결하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect of regularly eating the identified food.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome for hunger, energy, health, convenience, or daily routine caused by eating it often.",
+        "semanticRoleKo": "밝힌 음식을 자주 먹어서 생기는 효과",
+        "satisfiedWhenKo": "답변이 그 음식을 자주 먹어 허기, 에너지, 건강, 편의 또는 일상에 생기는 구체적인 결과를 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific form or characteristic of the food the learner eats often.",
+        "satisfiedWhenEn": "The answer clarifies the food with a concrete variety, ingredient, preparation, portion, or flavor.",
+        "semanticRoleKo": "학습자가 자주 먹는 음식의 구체적인 형태나 특징",
+        "satisfiedWhenKo": "답변이 그 음식의 구체적인 종류, 재료, 조리법, 양 또는 맛을 밝혀 주면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0044",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific food or dish the learner wants to try.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food as something the learner has not yet tried or wants to experience eating.",
+        "semanticRoleKo": "학습자가 먹어 보고 싶은 구체적인 음식이나 요리",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식을 학습자가 아직 먹어 보지 않았거나 먹는 경험을 해 보고 싶은 것으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to try the selected food.",
+        "satisfiedWhenEn": "The answer gives a concrete curiosity, recommendation, quality, cultural interest, or other motivation for trying it.",
+        "semanticRoleKo": "학습자가 선택한 음식을 먹어 보고 싶은 이유",
+        "satisfiedWhenKo": "답변이 그 음식을 시도하려는 구체적인 호기심, 추천, 특성, 문화적 관심 또는 다른 동기를 제시하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner wants or expects to try the chosen food.",
+        "satisfiedWhenEn": "The answer identifies a recognizable restaurant, home, city, country, or other setting for trying the food.",
+        "semanticRoleKo": "학습자가 선택한 음식을 먹어 보고 싶거나 먹을 것으로 예상하는 장소",
+        "satisfiedWhenKo": "답변이 그 음식을 시도할 알아볼 수 있는 식당, 집, 도시, 국가 또는 다른 장소를 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner wants or expects to try the food.",
+        "satisfiedWhenEn": "The answer provides a recognizable date, period, trip, occasion, or time frame for trying it.",
+        "semanticRoleKo": "학습자가 그 음식을 먹어 보고 싶거나 먹을 것으로 예상하는 때",
+        "satisfiedWhenKo": "답변이 그 음식을 시도할 알아볼 수 있는 날짜, 기간, 여행, 계기 또는 시간 범위를 제시하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended way of getting and trying the selected food.",
+        "satisfiedWhenEn": "The answer describes a concrete step, such as visiting a place, ordering it, finding a recipe, or asking someone to make it.",
+        "semanticRoleKo": "학습자가 선택한 음식을 구해 먹어 보기 위한 계획",
+        "satisfiedWhenKo": "답변이 장소 방문, 주문, 조리법 찾기 또는 다른 사람에게 부탁하기 같은 구체적인 단계를 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about the prospect of trying that food.",
+        "satisfiedWhenEn": "The answer conveys a distinct anticipated emotion, such as excitement, curiosity, or nervousness, tied to trying it.",
+        "semanticRoleKo": "그 음식을 먹어 볼 생각에 대해 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 그 음식을 시도하는 것과 연결된 기대감, 호기심, 긴장 등의 뚜렷한 예상 감정을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0045",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific food the learner dislikes.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food, dish, or food category and clearly presents it as something the learner does not like.",
+        "semanticRoleKo": "학습자가 싫어하는 구체적인 음식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식, 요리 또는 음식 범주를 밝히고 학습자가 좋아하지 않는 것으로 분명히 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner dislikes the identified food.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, texture, smell, experience, reaction, or other basis for the dislike.",
+        "semanticRoleKo": "학습자가 밝힌 음식을 싫어하는 이유",
+        "satisfiedWhenKo": "답변이 싫어하는 이유가 되는 구체적인 맛, 식감, 냄새, 경험, 반응 또는 다른 근거를 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic of the disliked food.",
+        "satisfiedWhenEn": "The answer describes a concrete ingredient, flavor, texture, appearance, preparation, or other feature of that food.",
+        "semanticRoleKo": "싫어하는 음식의 구체적인 특징",
+        "satisfiedWhenKo": "답변이 그 음식의 구체적인 재료, 맛, 식감, 모양, 조리법 또는 다른 특징을 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional or physical response to the disliked food.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling or bodily reaction experienced when seeing, smelling, tasting, or eating it.",
+        "semanticRoleKo": "싫어하는 음식에 대한 학습자의 정서적 또는 신체적 반응",
+        "satisfiedWhenKo": "답변이 그 음식을 보거나 냄새 맡거나 맛보거나 먹을 때의 뚜렷한 감정이나 신체 반응을 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete experience illustrating the learner's dislike of the food.",
+        "satisfiedWhenEn": "The answer describes a specific meal or occasion in which the learner encountered the food and the dislike was evident.",
+        "semanticRoleKo": "그 음식에 대한 학습자의 싫어함을 보여 주는 구체적인 경험",
+        "satisfiedWhenKo": "답변이 그 음식을 접했고 싫어하는 마음이 드러났던 구체적인 식사나 상황을 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0046",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The beverage the learner habitually drinks in the morning.",
+        "satisfiedWhenEn": "The answer identifies a recognizable drink and conveys that it is the learner's usual morning beverage.",
+        "semanticRoleKo": "학습자가 아침에 습관적으로 마시는 음료",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음료를 밝히고 학습자의 평소 아침 음료임을 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When in the morning the learner usually drinks the stated beverage.",
+        "satisfiedWhenEn": "The answer provides a recognizable clock time, morning period, sequence point, or frequency for drinking it.",
+        "semanticRoleKo": "학습자가 아침에 말한 음료를 보통 마시는 때",
+        "satisfiedWhenKo": "답변이 그 음료를 마시는 알아볼 수 있는 시각, 아침 시간대, 순서상 시점 또는 빈도를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that drink in the morning.",
+        "satisfiedWhenEn": "The answer explains a concrete preference, habit, health need, practical reason, or desired effect behind the choice.",
+        "semanticRoleKo": "학습자가 아침에 그 음료를 선택하는 이유",
+        "satisfiedWhenKo": "답변이 선택의 구체적인 선호, 습관, 건강상 필요, 실용적 이유 또는 기대 효과를 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner usually has the morning drink.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to drinking the stated beverage in the morning.",
+        "semanticRoleKo": "학습자가 아침 음료를 보통 마시는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 아침에 말한 음료를 마시는 것과 연결하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect the morning drink has on the learner.",
+        "satisfiedWhenEn": "The answer describes a concrete change in alertness, energy, comfort, hydration, or routine after drinking it.",
+        "semanticRoleKo": "아침 음료가 학습자에게 미치는 효과",
+        "satisfiedWhenKo": "답변이 그 음료를 마신 뒤 각성도, 에너지, 편안함, 수분 상태 또는 루틴에 생기는 구체적인 변화를 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific form or preparation of the learner's usual morning drink.",
+        "satisfiedWhenEn": "The answer clarifies the beverage with a concrete type, temperature, ingredient, size, strength, or preparation method.",
+        "semanticRoleKo": "학습자가 보통 마시는 아침 음료의 구체적인 형태나 조리 방식",
+        "satisfiedWhenKo": "답변이 음료의 구체적인 종류, 온도, 재료, 크기, 농도 또는 준비 방법을 밝혀 주면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0047",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The learner's preference between coffee and tea.",
+        "satisfiedWhenEn": "The answer clearly selects coffee, tea, both under stated conditions, or neither as the learner's actual preference.",
+        "semanticRoleKo": "커피와 차 사이에서 학습자가 갖는 선호",
+        "satisfiedWhenKo": "답변이 커피, 차, 특정 조건에서 둘 다, 또는 둘 다 아님 중 학습자의 실제 선호를 분명히 선택하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner holds that coffee-or-tea preference.",
+        "satisfiedWhenEn": "The answer gives a concrete taste, effect, habit, experience, or other consideration that explains the selection.",
+        "semanticRoleKo": "학습자가 커피나 차에 대해 그런 선호를 갖는 이유",
+        "satisfiedWhenKo": "답변이 선택을 설명하는 구체적인 맛, 효과, 습관, 경험 또는 다른 고려 사항을 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or preparation of the learner's preferred beverage.",
+        "satisfiedWhenEn": "The answer describes a concrete variety, flavor, ingredient, temperature, strength, or serving style of the selected drink.",
+        "semanticRoleKo": "학습자가 선호하는 음료의 구체적인 특징이나 마시는 방식",
+        "satisfiedWhenKo": "답변이 선택한 음료의 구체적인 종류, 맛, 재료, 온도, 농도 또는 제공 방식을 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How drinking the preferred beverage makes the learner feel.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional or physical state associated with coffee or tea as chosen.",
+        "semanticRoleKo": "선호하는 음료를 마실 때 학습자가 느끼는 상태",
+        "satisfiedWhenKo": "답변이 선택한 커피나 차와 관련된 뚜렷한 정서적 또는 신체적 상태를 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion illustrating the learner's coffee-or-tea preference.",
+        "satisfiedWhenEn": "The answer describes a concrete time, setting, or experience in which the learner chooses or enjoys the preferred drink.",
+        "semanticRoleKo": "학습자의 커피나 차 선호를 보여 주는 구체적인 상황",
+        "satisfiedWhenKo": "답변이 학습자가 선호 음료를 선택하거나 즐기는 구체적인 때, 장소 또는 경험을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect the preferred beverage has on the learner.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for alertness, relaxation, comfort, health, or routine after drinking it.",
+        "semanticRoleKo": "선호하는 음료가 학습자에게 미치는 효과",
+        "satisfiedWhenKo": "답변이 그 음료를 마신 뒤 각성도, 이완, 편안함, 건강 또는 루틴에 생기는 구체적인 결과를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0048",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The snack the learner considers their favorite.",
+        "satisfiedWhenEn": "The answer identifies a recognizable snack or snack food as the learner's favorite.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 선택한 간식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 간식이나 간식 음식을 학습자가 가장 좋아하는 것으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers the chosen snack.",
+        "satisfiedWhenEn": "The answer explains a concrete taste, texture, convenience, memory, or benefit that makes the snack appealing.",
+        "semanticRoleKo": "학습자가 선택한 간식을 선호하는 이유",
+        "satisfiedWhenKo": "답변이 그 간식을 좋아하게 만드는 구체적인 맛, 식감, 편의, 기억 또는 이점을 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or version of the learner's favorite snack.",
+        "satisfiedWhenEn": "The answer describes a concrete flavor, ingredient, texture, brand, size, or preparation of the snack.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 간식의 구체적인 특징이나 종류",
+        "satisfiedWhenKo": "답변이 그 간식의 구체적인 맛, 재료, 식감, 브랜드, 크기 또는 조리 형태를 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when eating the favorite snack.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion or sense of comfort associated with eating the chosen snack.",
+        "semanticRoleKo": "가장 좋아하는 간식을 먹을 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 선택한 간식을 먹는 것과 관련된 뚜렷한 감정이나 편안함을 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner usually eats or especially enjoys the favorite snack.",
+        "satisfiedWhenEn": "The answer gives a recognizable time, interval between meals, occasion, or frequency connected to eating it.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 간식을 보통 먹거나 특히 즐기는 때",
+        "satisfiedWhenKo": "답변이 그 간식을 먹는 것과 연결된 알아볼 수 있는 시각, 식사 사이 시간, 계기 또는 빈도를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0049",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The fruit the learner considers their favorite.",
+        "satisfiedWhenEn": "The answer identifies a recognizable fruit or fruit variety as the learner's favorite.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 선택한 과일",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 과일이나 과일 품종을 학습자가 가장 좋아하는 것으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers the selected fruit.",
+        "satisfiedWhenEn": "The answer gives a concrete flavor, texture, convenience, memory, health benefit, or other basis for the preference.",
+        "semanticRoleKo": "학습자가 선택한 과일을 선호하는 이유",
+        "satisfiedWhenKo": "답변이 선호의 근거가 되는 구체적인 맛, 식감, 편의, 기억, 건강상 이점 또는 다른 이유를 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or form of the learner's favorite fruit.",
+        "satisfiedWhenEn": "The answer describes a concrete variety, ripeness, flavor, texture, color, or way of serving the fruit.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 과일의 구체적인 특징이나 형태",
+        "satisfiedWhenKo": "답변이 그 과일의 구체적인 품종, 익은 정도, 맛, 식감, 색 또는 먹는 방식을 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when eating or anticipating the favorite fruit.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional or sensory response associated with the chosen fruit.",
+        "semanticRoleKo": "가장 좋아하는 과일을 먹거나 기대할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 선택한 과일과 관련된 뚜렷한 정서적 또는 감각적 반응을 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete occasion illustrating the learner's preference for the fruit.",
+        "satisfiedWhenEn": "The answer describes a specific meal, season, purchase, recipe, or memory in which the learner enjoyed the chosen fruit.",
+        "semanticRoleKo": "그 과일에 대한 학습자의 선호를 보여 주는 구체적인 상황",
+        "satisfiedWhenKo": "답변이 선택한 과일을 즐긴 구체적인 식사, 계절, 구매, 조리법 또는 기억을 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0050",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The Korean food or dish the learner considers their favorite.",
+        "satisfiedWhenEn": "The answer identifies a recognizable Korean food, dish, or preparation as the learner's favorite.",
+        "semanticRoleKo": "학습자가 가장 좋아한다고 선택한 한국 음식이나 요리",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 한국 음식, 요리 또는 조리 형태를 학습자가 가장 좋아하는 것으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prefers the chosen Korean food.",
+        "satisfiedWhenEn": "The answer explains a concrete taste, texture, memory, cultural meaning, availability, or other basis for the preference.",
+        "semanticRoleKo": "학습자가 선택한 한국 음식을 선호하는 이유",
+        "satisfiedWhenKo": "답변이 선호의 근거가 되는 구체적인 맛, 식감, 기억, 문화적 의미, 접근성 또는 다른 이유를 설명하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or preparation of the learner's favorite Korean food.",
+        "satisfiedWhenEn": "The answer describes a concrete ingredient, flavor, texture, regional style, side dish, or cooking method associated with it.",
+        "semanticRoleKo": "학습자가 가장 좋아하는 한국 음식의 구체적인 특징이나 조리 형태",
+        "satisfiedWhenKo": "답변이 그 음식과 관련된 구체적인 재료, 맛, 식감, 지역식, 곁들임 또는 조리법을 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when eating or thinking about the favorite Korean food.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional or sensory response connected to the chosen Korean dish.",
+        "semanticRoleKo": "가장 좋아하는 한국 음식을 먹거나 생각할 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 선택한 한국 음식과 연결된 뚜렷한 정서적 또는 감각적 반응을 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete experience illustrating the learner's preference for that Korean food.",
+        "satisfiedWhenEn": "The answer describes a specific meal, restaurant visit, family occasion, preparation, or memory involving the chosen dish.",
+        "semanticRoleKo": "그 한국 음식에 대한 학습자의 선호를 보여 주는 구체적인 경험",
+        "satisfiedWhenKo": "답변이 선택한 요리와 관련된 구체적인 식사, 식당 방문, 가족 행사, 조리 경험 또는 기억을 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0051",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "A specific food the learner associates with home.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food or dish and clearly conveys that it brings the learner's home to mind.",
+        "semanticRoleKo": "학습자가 집과 연관 짓는 구체적인 음식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식이나 요리를 밝히고 학습자에게 집을 떠올리게 한다는 점을 분명히 전달하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified food reminds the learner of home.",
+        "satisfiedWhenEn": "The answer explains a concrete family connection, tradition, sensory cue, routine, or personal association linking the food to home.",
+        "semanticRoleKo": "밝힌 음식이 학습자에게 집을 떠올리게 하는 이유",
+        "satisfiedWhenKo": "답변이 그 음식과 집을 잇는 구체적인 가족 관계, 전통, 감각적 단서, 일상 또는 개인적 연관성을 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular home-related meal or memory involving the identified food.",
+        "satisfiedWhenEn": "The answer recounts a specific occasion when the learner ate, prepared, or shared the food in connection with home.",
+        "semanticRoleKo": "밝힌 음식과 관련된 특정한 집에서의 식사나 기억",
+        "satisfiedWhenKo": "답변이 학습자가 집과 관련하여 그 음식을 먹거나 만들거나 나누었던 구체적인 상황을 이야기하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The emotion the home-associated food evokes in the learner.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling, such as comfort, longing, warmth, or nostalgia, brought about by the food.",
+        "semanticRoleKo": "집과 연관된 음식이 학습자에게 불러일으키는 감정",
+        "satisfiedWhenKo": "답변이 그 음식으로 생기는 편안함, 그리움, 따뜻함, 향수 등의 뚜렷한 감정을 전달하면 충족된다."
+      },
+      "BEFORE_STATE": {
+        "semanticRoleEn": "An earlier home-life period or circumstance with which the learner associates the food.",
+        "satisfiedWhenEn": "The answer describes a recognizable past situation or stage of life when the food was part of the learner's experience at home.",
+        "semanticRoleKo": "학습자가 그 음식과 연관 짓는 이전의 가정생활 시기나 상황",
+        "satisfiedWhenKo": "답변이 그 음식이 학습자의 집에서의 경험 일부였던 알아볼 수 있는 과거 상황이나 삶의 시기를 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The particular home, hometown, region, or family setting evoked by the food.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place connected to the home memories that the food brings back.",
+        "semanticRoleKo": "그 음식이 떠올리게 하는 특정한 집, 고향, 지역 또는 가족 공간",
+        "satisfiedWhenKo": "답변이 그 음식이 되살리는 집의 기억과 연결된 알아볼 수 있는 장소를 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0052",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The food the learner habitually chooses when feeling tired.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food or dish and connects eating it to times when the learner is tired.",
+        "semanticRoleKo": "학습자가 피곤할 때 습관적으로 선택해 먹는 음식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식이나 요리를 밝히고 학습자가 피곤한 때에 먹는 것과 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that food when tired.",
+        "satisfiedWhenEn": "The answer explains a concrete need, convenience, craving, expected effect, or other motivation behind the tired-time food choice.",
+        "semanticRoleKo": "학습자가 피곤할 때 그 음식을 선택하는 이유",
+        "satisfiedWhenKo": "답변이 피곤할 때의 음식 선택을 설명하는 구체적인 필요, 편의, 당김, 기대 효과 또는 다른 동기를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of eating the chosen food when tired.",
+        "satisfiedWhenEn": "The answer describes a specific change in energy, hunger, alertness, comfort, or functioning after eating it.",
+        "semanticRoleKo": "피곤할 때 선택한 음식을 먹어서 생기는 효과",
+        "satisfiedWhenKo": "답변이 그 음식을 먹은 뒤 에너지, 허기, 각성도, 편안함 또는 기능에 생기는 구체적인 변화를 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while or after eating the chosen food when tired.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotional or physical state associated with eating that food in a tired condition.",
+        "semanticRoleKo": "피곤할 때 선택한 음식을 먹는 동안이나 먹은 뒤 학습자가 느끼는 상태",
+        "satisfiedWhenKo": "답변이 피곤한 상태에서 그 음식을 먹는 것과 관련된 뚜렷한 정서적 또는 신체적 상태를 전달하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner usually gets or eats the chosen food when tired.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and connects it to eating the stated food during tired moments.",
+        "semanticRoleKo": "학습자가 피곤할 때 선택한 음식을 보통 구하거나 먹는 장소",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 장소를 밝히고 피곤한 때에 말한 음식을 먹는 것과 연결하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner tends to eat the chosen food in response to tiredness.",
+        "satisfiedWhenEn": "The answer gives a recognizable time of day, recurring occasion, frequency, or duration associated with this eating habit.",
+        "semanticRoleKo": "학습자가 피곤함에 대응해 선택한 음식을 먹는 때",
+        "satisfiedWhenKo": "답변이 이 식습관과 연결된 알아볼 수 있는 하루 중 시간대, 반복 계기, 빈도 또는 지속 시간을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0053",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The food the learner tends to eat when feeling happy.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food or dish and connects it to occasions when the learner is happy.",
+        "semanticRoleKo": "학습자가 행복할 때 주로 먹는 음식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식이나 요리를 밝히고 학습자가 행복한 때에 먹는 것과 연결하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that food in happy moments.",
+        "satisfiedWhenEn": "The answer gives a concrete celebratory association, preference, habit, social reason, or other motivation for the choice.",
+        "semanticRoleKo": "학습자가 행복한 순간에 그 음식을 선택하는 이유",
+        "satisfiedWhenKo": "답변이 그 선택의 구체적인 축하 연관성, 선호, 습관, 사회적 이유 또는 다른 동기를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The emotional experience that accompanies eating the chosen food while happy.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling beyond the supplied happiness, such as excitement, gratitude, comfort, or connection.",
+        "semanticRoleKo": "행복할 때 선택한 음식을 먹으며 함께 느끼는 정서 경험",
+        "satisfiedWhenKo": "답변이 이미 주어진 행복을 넘어 설렘, 감사, 편안함, 유대감 등의 뚜렷한 감정을 전달하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner usually eats the chosen food in happy situations.",
+        "satisfiedWhenEn": "The answer identifies a recognizable home, restaurant, event setting, or other location tied to eating that food while happy.",
+        "semanticRoleKo": "학습자가 행복한 상황에서 선택한 음식을 보통 먹는 장소",
+        "satisfiedWhenKo": "답변이 행복할 때 그 음식을 먹는 것과 연결된 알아볼 수 있는 집, 식당, 행사 공간 또는 다른 장소를 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The happy occasion or time when the learner eats the chosen food.",
+        "satisfiedWhenEn": "The answer provides a recognizable celebration, event, time of day, frequency, or recurring situation for eating it.",
+        "semanticRoleKo": "학습자가 선택한 음식을 먹는 행복한 계기나 때",
+        "satisfiedWhenKo": "답변이 그 음식을 먹는 알아볼 수 있는 축하 행사, 사건, 하루 중 시간대, 빈도 또는 반복 상황을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An effect of eating the chosen food during happy moments.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome for celebration, enjoyment, energy, memory, or social connection after eating it.",
+        "semanticRoleKo": "행복한 순간에 선택한 음식을 먹어서 생기는 효과",
+        "satisfiedWhenKo": "답변이 그 음식을 먹은 뒤 축하, 즐거움, 에너지, 기억 또는 사회적 유대에 생기는 구체적인 결과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0054",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's positive, negative, or qualified view of spicy food.",
+        "satisfiedWhenEn": "The answer clearly states whether and under what conditions the learner likes or dislikes spicy food.",
+        "semanticRoleKo": "매운 음식에 대한 학습자의 긍정적, 부정적 또는 조건부 견해",
+        "satisfiedWhenKo": "답변이 학습자가 매운 음식을 좋아하는지 싫어하는지 또는 어떤 조건에서 그런지를 분명히 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner holds that view of spicy food.",
+        "satisfiedWhenEn": "The answer provides a concrete taste preference, bodily response, experience, cultural habit, or other basis for the opinion.",
+        "semanticRoleKo": "학습자가 매운 음식에 대해 그런 견해를 갖는 이유",
+        "satisfiedWhenKo": "답변이 그 견해의 근거가 되는 구체적인 맛 선호, 신체 반응, 경험, 문화적 습관 또는 다른 이유를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific spicy food or eating experience that illustrates the learner's opinion.",
+        "satisfiedWhenEn": "The answer names a concrete dish or recounts an occasion that demonstrates how the learner responds to spicy food.",
+        "semanticRoleKo": "학습자의 견해를 보여 주는 구체적인 매운 음식이나 식사 경험",
+        "satisfiedWhenKo": "답변이 구체적인 요리를 밝히거나 학습자가 매운 음식에 어떻게 반응하는지 보여 주는 상황을 이야기하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific aspect of spicy food relevant to the learner's view.",
+        "satisfiedWhenEn": "The answer describes a concrete heat level, flavor, ingredient, preparation, or sensory quality that shapes the opinion.",
+        "semanticRoleKo": "학습자의 견해와 관련된 매운 음식의 구체적인 측면",
+        "satisfiedWhenKo": "답변이 견해에 영향을 주는 구체적인 매운 정도, 맛, 재료, 조리법 또는 감각적 특성을 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional or sensory reaction while eating spicy food.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling or bodily sensation associated with eating food at the relevant spice level.",
+        "semanticRoleKo": "매운 음식을 먹을 때 학습자가 느끼는 정서적 또는 감각적 반응",
+        "satisfiedWhenKo": "답변이 해당 매운 정도의 음식을 먹는 것과 관련된 뚜렷한 감정이나 신체 감각을 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence spicy food has for the learner.",
+        "satisfiedWhenEn": "The answer states a concrete physical, emotional, or practical outcome that follows when the learner eats spicy food.",
+        "semanticRoleKo": "매운 음식이 학습자에게 가져오는 결과",
+        "satisfiedWhenKo": "답변이 학습자가 매운 음식을 먹은 뒤 생기는 구체적인 신체적, 정서적 또는 실용적 결과를 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0055",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The learner's positive, negative, or conditional view of sweet food.",
+        "satisfiedWhenEn": "The answer clearly indicates whether and in what circumstances the learner likes or dislikes sweet food.",
+        "semanticRoleKo": "단 음식에 대한 학습자의 긍정적, 부정적 또는 조건부 견해",
+        "satisfiedWhenKo": "답변이 학습자가 단 음식을 좋아하는지 싫어하는지 또는 어떤 상황에서 그런지를 분명히 나타내면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner holds that view of sweet food.",
+        "satisfiedWhenEn": "The answer gives a concrete taste preference, health concern, bodily response, memory, habit, or other basis for the opinion.",
+        "semanticRoleKo": "학습자가 단 음식에 대해 그런 견해를 갖는 이유",
+        "satisfiedWhenKo": "답변이 그 견해의 근거가 되는 구체적인 맛 선호, 건강 우려, 신체 반응, 기억, 습관 또는 다른 이유를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific sweet food or eating occasion that illustrates the learner's view.",
+        "satisfiedWhenEn": "The answer identifies a concrete dessert, snack, or experience that demonstrates the learner's response to sweet food.",
+        "semanticRoleKo": "학습자의 견해를 보여 주는 구체적인 단 음식이나 식사 상황",
+        "satisfiedWhenKo": "답변이 단 음식에 대한 학습자의 반응을 보여 주는 구체적인 디저트, 간식 또는 경험을 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific aspect of sweet food that shapes the learner's opinion.",
+        "satisfiedWhenEn": "The answer describes a concrete sweetness level, flavor, ingredient, texture, portion, or preparation relevant to the view.",
+        "semanticRoleKo": "학습자의 견해를 형성하는 단 음식의 구체적인 측면",
+        "satisfiedWhenKo": "답변이 견해와 관련된 구체적인 단맛 정도, 풍미, 재료, 식감, 양 또는 조리법을 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional or sensory reaction while eating sweet food.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling or bodily sensation associated with eating food at the relevant sweetness level.",
+        "semanticRoleKo": "단 음식을 먹을 때 학습자가 느끼는 정서적 또는 감각적 반응",
+        "satisfiedWhenKo": "답변이 해당 단맛 정도의 음식을 먹는 것과 관련된 뚜렷한 감정이나 신체 감각을 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence sweet food has for the learner.",
+        "satisfiedWhenEn": "The answer describes a concrete physical, emotional, health, or practical outcome that follows from eating sweet food.",
+        "semanticRoleKo": "단 음식이 학습자에게 가져오는 결과",
+        "satisfiedWhenKo": "답변이 단 음식을 먹은 뒤 생기는 구체적인 신체적, 정서적, 건강상 또는 실용적 결과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0056",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "A specific meal the learner judges or recommends as suitable for a rainy day.",
+        "satisfiedWhenEn": "The answer identifies a recognizable meal or dish and clearly presents it as a good choice for rainy weather.",
+        "semanticRoleKo": "학습자가 비 오는 날에 어울린다고 판단하거나 추천하는 구체적인 식사",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 식사나 요리를 밝히고 비 오는 날에 좋은 선택으로 분명히 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the proposed meal good for a rainy day.",
+        "satisfiedWhenEn": "The answer gives a concrete weather-related quality, comfort, memory, practicality, or other basis for the recommendation.",
+        "semanticRoleKo": "학습자가 제안한 식사를 비 오는 날에 좋다고 보는 이유",
+        "satisfiedWhenKo": "답변이 추천의 근거가 되는 구체적인 날씨 관련 특성, 편안함, 기억, 실용성 또는 다른 이유를 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific characteristic or composition of the proposed rainy-day meal.",
+        "satisfiedWhenEn": "The answer describes a concrete ingredient, temperature, flavor, texture, serving style, or component of the meal.",
+        "semanticRoleKo": "제안한 비 오는 날 식사의 구체적인 특징이나 구성",
+        "satisfiedWhenKo": "답변이 그 식사의 구체적인 재료, 온도, 맛, 식감, 제공 방식 또는 구성 요소를 묘사하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How eating the proposed meal on a rainy day makes the learner feel.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion or sense of comfort associated with having that meal in rainy weather.",
+        "semanticRoleKo": "비 오는 날 제안한 식사를 먹을 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 비 오는 날 그 식사를 하는 것과 관련된 뚜렷한 감정이나 편안함을 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A beneficial effect of the proposed meal on a rainy day.",
+        "satisfiedWhenEn": "The answer describes a concrete outcome for warmth, energy, mood, satisfaction, or convenience after eating the meal.",
+        "semanticRoleKo": "비 오는 날 제안한 식사가 주는 유익한 효과",
+        "satisfiedWhenKo": "답변이 그 식사를 먹은 뒤 따뜻함, 에너지, 기분, 만족감 또는 편의에 생기는 구체적인 결과를 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner would prepare, obtain, or enjoy the proposed rainy-day meal.",
+        "satisfiedWhenEn": "The answer identifies a recognizable home, restaurant, neighborhood, or other setting connected to having the meal in rainy weather.",
+        "semanticRoleKo": "학습자가 제안한 비 오는 날 식사를 만들거나 구하거나 즐길 장소",
+        "satisfiedWhenKo": "답변이 비 오는 날 그 식사를 하는 것과 연결된 알아볼 수 있는 집, 식당, 동네 또는 다른 장소를 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0057",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The food the learner likes to eat when sharing a meal with friends.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food or dish and presents it as something the learner enjoys eating with friends.",
+        "semanticRoleKo": "학습자가 친구들과 식사할 때 즐겨 먹는 음식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식이나 요리를 밝히고 학습자가 친구들과 함께 먹기를 좋아하는 것으로 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the chosen food is appealing to the learner in the context of eating with friends.",
+        "satisfiedWhenEn": "The answer explains a concrete shared quality, convenience, tradition, taste, or social benefit that supports the choice.",
+        "semanticRoleKo": "친구들과 먹는 상황에서 선택한 음식이 학습자에게 좋은 이유",
+        "satisfiedWhenKo": "답변이 그 선택을 뒷받침하는 구체적인 나눠 먹기 좋은 특성, 편의, 전통, 맛 또는 사회적 이점을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while eating the chosen food with friends.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion associated specifically with sharing that food in the company of friends.",
+        "semanticRoleKo": "친구들과 선택한 음식을 먹을 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 친구들과 그 음식을 나누는 것에 구체적으로 연결된 뚜렷한 감정을 전달하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner likes to eat the chosen food with friends.",
+        "satisfiedWhenEn": "The answer identifies a recognizable restaurant, home, outdoor spot, or other setting for sharing the food.",
+        "semanticRoleKo": "학습자가 친구들과 선택한 음식을 먹기를 좋아하는 장소",
+        "satisfiedWhenKo": "답변이 그 음식을 함께 먹는 알아볼 수 있는 식당, 집, 야외 장소 또는 다른 환경을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner typically eats the chosen food with friends.",
+        "satisfiedWhenEn": "The answer provides a recognizable meal time, day, event, frequency, or recurring occasion for sharing it.",
+        "semanticRoleKo": "학습자가 친구들과 선택한 음식을 보통 먹는 때",
+        "satisfiedWhenKo": "답변이 그 음식을 함께 먹는 알아볼 수 있는 식사 시각, 요일, 행사, 빈도 또는 반복 계기를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An outcome of eating the chosen food with friends.",
+        "satisfiedWhenEn": "The answer describes a concrete effect on enjoyment, conversation, closeness, celebration, or convenience from sharing the meal.",
+        "semanticRoleKo": "친구들과 선택한 음식을 먹어서 생기는 결과",
+        "satisfiedWhenKo": "답변이 식사를 함께해서 즐거움, 대화, 친밀감, 축하 또는 편의에 생기는 구체적인 효과를 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0058",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The dish or food the learner can cook well.",
+        "satisfiedWhenEn": "The answer identifies a recognizable dish or preparation and clearly presents it as something the learner cooks skillfully.",
+        "semanticRoleKo": "학습자가 잘 요리할 수 있는 음식이나 요리",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식이나 조리 형태를 밝히고 학습자가 능숙하게 만들 수 있는 것으로 분명히 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific aspect of how the learner prepares the dish well.",
+        "satisfiedWhenEn": "The answer describes a concrete ingredient, technique, timing, flavor, presentation, or difficult step handled successfully.",
+        "semanticRoleKo": "학습자가 그 요리를 잘 만드는 방식의 구체적인 측면",
+        "satisfiedWhenKo": "답변이 능숙하게 다루는 구체적인 재료, 기술, 시간 조절, 맛, 담음새 또는 어려운 단계를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion demonstrating the learner's ability to cook the dish well.",
+        "satisfiedWhenEn": "The answer recounts a specific time the learner made the dish and includes evidence of a successful result or response.",
+        "semanticRoleKo": "학습자가 그 요리를 잘한다는 점을 보여 주는 특정 상황",
+        "satisfiedWhenKo": "답변이 학습자가 그 요리를 만들었던 구체적인 때를 이야기하고 성공적인 결과나 반응의 근거를 포함하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner is able to cook the identified dish well.",
+        "satisfiedWhenEn": "The answer explains a concrete source of skill, such as repeated practice, instruction, familiarity, or careful technique.",
+        "semanticRoleKo": "학습자가 밝힌 요리를 잘할 수 있는 이유",
+        "satisfiedWhenKo": "답변이 반복 연습, 교육, 익숙함 또는 세심한 기술처럼 능력의 구체적인 원천을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner produces when cooking the dish well.",
+        "satisfiedWhenEn": "The answer describes a concrete quality of the finished food or a recognizable response from people who eat it.",
+        "semanticRoleKo": "학습자가 그 요리를 잘 만들었을 때 나오는 결과",
+        "satisfiedWhenKo": "답변이 완성된 음식의 구체적인 품질이나 그것을 먹은 사람들의 알아볼 수 있는 반응을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels when cooking or serving the dish they make well.",
+        "satisfiedWhenEn": "The answer conveys a distinct emotion, such as confidence, pride, enjoyment, or care, associated with preparing it.",
+        "semanticRoleKo": "잘 만드는 요리를 조리하거나 내놓을 때 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 그 요리를 준비하는 것과 관련된 자신감, 자부심, 즐거움, 정성 등의 뚜렷한 감정을 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0059",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific dish or food the learner wants to cook someday.",
+        "satisfiedWhenEn": "The answer identifies a recognizable dish or preparation as something the learner intends or hopes to cook in the future.",
+        "semanticRoleKo": "학습자가 언젠가 요리하고 싶은 구체적인 음식이나 요리",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식이나 조리 형태를 학습자가 미래에 만들 의향이나 바람이 있는 것으로 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to cook the selected dish someday.",
+        "satisfiedWhenEn": "The answer gives a concrete curiosity, challenge, personal meaning, intended occasion, or other motivation for making it.",
+        "semanticRoleKo": "학습자가 선택한 요리를 언젠가 만들고 싶은 이유",
+        "satisfiedWhenKo": "답변이 그 요리를 만들려는 구체적인 호기심, 도전, 개인적 의미, 예정된 계기 또는 다른 동기를 제시하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "The learner's intended method for learning or preparing the chosen dish.",
+        "satisfiedWhenEn": "The answer describes at least one actionable step, such as finding a recipe, taking a class, practicing a technique, or getting ingredients.",
+        "semanticRoleKo": "선택한 요리를 배우거나 준비하기 위한 학습자의 계획",
+        "satisfiedWhenKo": "답변이 조리법 찾기, 수업 듣기, 기술 연습 또는 재료 구하기 같은 실행 가능한 단계를 하나 이상 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner hopes or plans to cook the chosen dish.",
+        "satisfiedWhenEn": "The answer provides a recognizable date, season, life event, trip, occasion, or broader future time frame for making it.",
+        "semanticRoleKo": "학습자가 선택한 요리를 만들기를 바라거나 계획하는 때",
+        "satisfiedWhenKo": "답변이 그 요리를 만들 알아볼 수 있는 날짜, 계절, 인생 사건, 여행, 계기 또는 더 넓은 미래 시간 범위를 제시하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels about the prospect of cooking the chosen dish.",
+        "satisfiedWhenEn": "The answer conveys a distinct anticipated emotion, such as excitement, curiosity, pride, or nervousness, tied to making it.",
+        "semanticRoleKo": "선택한 요리를 만들 생각에 대해 학습자가 느끼는 감정",
+        "satisfiedWhenKo": "답변이 그 요리를 만드는 것과 연결된 기대감, 호기심, 자부심, 긴장 등의 뚜렷한 예상 감정을 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner hopes to achieve by cooking the chosen dish.",
+        "satisfiedWhenEn": "The answer states a concrete desired result, such as mastering the dish, enjoying it, sharing it, or marking a special occasion.",
+        "semanticRoleKo": "선택한 요리를 만들어 학습자가 이루고 싶은 결과",
+        "satisfiedWhenKo": "답변이 그 요리를 익히거나 즐기거나 나누거나 특별한 날을 기념하는 등의 구체적인 바라는 결과를 제시하면 충족된다."
+      }
+    }
+  }
+]

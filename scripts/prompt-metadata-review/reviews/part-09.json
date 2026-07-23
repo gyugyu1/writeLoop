@@ -1,0 +1,1988 @@
+[
+  {
+    "promptId": "prompt-preference-2560",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "SPECIFIC_TIME"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The lamp use is supplied by the question and the learner writes only a concrete time or timing condition, so this is a focused I-level description rather than a routine action response."
+  },
+  {
+    "promptId": "prompt-preference-2561",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "REASON",
+      "SPECIFIC_TIME",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for the learner's usual method of storing leftovers, making the storage action the only required part of this straightforward personal question."
+  },
+  {
+    "promptId": "prompt-preference-2562",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify a food container and state what food goes inside it; those two requested pieces already give this I-level answer enough substance."
+  },
+  {
+    "promptId": "prompt-preference-2563",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "PLACE",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks the learner to select the lunch container used away from home and explain the source of its comfort, so both the choice and reason are mandatory."
+  },
+  {
+    "promptId": "prompt-preference-2564",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is directly asked which spoon they use for soup and why they use it, and those two explicit obligations are sufficient at difficulty I."
+  },
+  {
+    "promptId": "prompt-preference-2565",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Answering requires a choice of home chopsticks and an explanation for that choice; no additional slot is needed beyond the two stated clauses."
+  },
+  {
+    "promptId": "prompt-preference-2566",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The open wording allows a habit, tool, setup, environment, or condition to be the factor that reduces mess, so inclusive DETAIL is required instead of CHOICE or ACTION; the explicit why clause requires REASON, and those two parts are sufficient at difficulty I."
+  },
+  {
+    "promptId": "prompt-preference-2567",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "ACTION",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name the cutting board used while cooking and explain why it is used, which forms a complete two-part I-level response."
+  },
+  {
+    "promptId": "prompt-preference-2568",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "SPECIFIC_TIME",
+      "RESULT"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "PLACE",
+      "REASON",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Using a kitchen towel is already supplied; the learner must provide only the timing condition and resulting benefit, which form a factual description rather than a routine action sequence."
+  },
+  {
+    "promptId": "prompt-preference-2569",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must say when the kettle is used and identify the drink or food made with it; the requested product is inclusive DETAIL rather than an action, while an actual preparation step remains optional ACTION."
+  },
+  {
+    "promptId": "prompt-preference-2570",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "SPECIFIC_TIME"
+    ],
+    "optionalSlots": [
+      "CHOICE",
+      "REASON",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The thermos and warm-drink context are already given, and the learner writes only when it is used, so a focused general description with timing is adequate at difficulty I."
+  },
+  {
+    "promptId": "prompt-preference-2571",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "ACTION",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the container chosen for fruit and explain that selection, giving two explicit and sufficient answer components."
+  },
+  {
+    "promptId": "prompt-preference-2572",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The open question permits a container, packing habit, organizer, storage setup, or condition to be what helps, so inclusive DETAIL is required rather than CHOICE or ACTION; one concrete factor is enough for this narrow difficulty-I task."
+  },
+  {
+    "promptId": "prompt-preference-2573",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The busy-day condition frames the selection, while the learner is explicitly asked for a lunch box and a reason for using it."
+  },
+  {
+    "promptId": "prompt-preference-2574",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Taking a thermos is supplied by the wording; the learner describes the occasion and its contents, so the required timing and concrete detail form a general description."
+  },
+  {
+    "promptId": "prompt-preference-2575",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "ACTION",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only needs to identify the small container used for sauces or snacks, making a single concrete choice sufficient for this simple question."
+  },
+  {
+    "promptId": "prompt-preference-26",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "SPECIFIC_TIME",
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for a preferred ordering moment and the cafe drink that suits that moment, so both timing and drink choice must appear."
+  },
+  {
+    "promptId": "prompt-preference-27",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name a favorite cafe drink and explain its appeal; those two direct A-level obligations already provide an adequate answer."
+  },
+  {
+    "promptId": "prompt-preference-28",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires identification of a favorite cafe drink plus two reasons for enjoying it, with the requested pair of reasons represented within the required REASON slot."
+  },
+  {
+    "promptId": "prompt-preference-29",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to select the aspect liked most about the favorite cafe drink and explain why that aspect stands out."
+  },
+  {
+    "promptId": "prompt-preference-30",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Introducing the favorite cafe drink requires identifying it, and explaining what makes it personally special supplies the required reason."
+  },
+  {
+    "promptId": "prompt-preference-31",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The reading-for-fun condition is supplied, while the learner must choose a usual kind of book and explain that choice."
+  },
+  {
+    "promptId": "prompt-preference-32",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly requests a favorite book genre and an explanation of its appeal, making choice and reason sufficient at level A."
+  },
+  {
+    "promptId": "prompt-preference-33",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A complete response identifies the favorite book genre and gives the explicitly requested two reasons for enjoying it; the reason slot carries both reasons."
+  },
+  {
+    "promptId": "prompt-preference-34",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must select what they like most about their favorite book genre and explain why, so both the preferred aspect and reason are required."
+  },
+  {
+    "promptId": "prompt-preference-35",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks the learner to identify a favorite book genre and explain its personal specialness, which is fully covered by a choice and reason."
+  },
+  {
+    "promptId": "prompt-preference-36",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "SPECIFIC_TIME",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "CHOICE",
+      "PLACE",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner gives a focused desired dessert time and explains what makes that moment special; the time and reason are explicit, but no broader preference choice is required."
+  },
+  {
+    "promptId": "prompt-preference-37",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question calls for a favorite dessert and the reason it appeals to the learner, providing enough required content for an A-level response."
+  },
+  {
+    "promptId": "prompt-preference-38",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe the selected favorite dessert and provide two reasons for enjoying it, both of which belong in the required reason component."
+  },
+  {
+    "promptId": "prompt-preference-39",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for the most-liked aspect of the learner's favorite dessert and an explanation, requiring a selected aspect and its reason."
+  },
+  {
+    "promptId": "prompt-preference-40",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Introducing the favorite dessert entails naming the choice, while what makes it special is the directly requested personal reason."
+  },
+  {
+    "promptId": "prompt-preference-41",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "SPECIFIC_TIME",
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must give a preferred exercise time and select the kind of exercise that feels good, so the two requested preference details are required."
+  },
+  {
+    "promptId": "prompt-preference-42",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt explicitly asks for a favorite way to exercise and why it appeals, making the activity choice and reason a complete A-level core."
+  },
+  {
+    "promptId": "prompt-preference-43",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A response must identify the learner's favorite exercise method and give the requested two reasons for enjoying it; no extra slot is needed beyond those obligations."
+  },
+  {
+    "promptId": "prompt-preference-44",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires selecting the best-liked aspect of the favorite exercise method and explaining why that aspect is valued."
+  },
+  {
+    "promptId": "prompt-preference-45",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner has to identify a favorite way to exercise and explain what makes it personally special, directly requiring choice and reason."
+  },
+  {
+    "promptId": "prompt-preference-46",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The opening 'When do you need to focus' directly requires a timing condition; it is not context supplied by the prompt. The learner also states a liked study place, so the response structure is a preference, and the three explicit slots need no additional depth."
+  },
+  {
+    "promptId": "prompt-preference-47",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "PLACE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt calls for the learner's favorite study location and an explanation of its appeal, giving two sufficient A-level obligations."
+  },
+  {
+    "promptId": "prompt-preference-48",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "PLACE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the favorite study spot and provide the explicitly requested two reasons for enjoying that location."
+  },
+  {
+    "promptId": "prompt-preference-49",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks the learner to select what they like most about the favorite study spot and explain why, rather than directly asking for a new location."
+  },
+  {
+    "promptId": "prompt-preference-50",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "PLACE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Introducing the favorite study spot requires identifying the location, and explaining what makes it special supplies the second required reason component."
+  },
+  {
+    "promptId": "prompt-problem-01",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a recurring time-management challenge and how the learner handles it; the problem and response are two substantial B-level requirements."
+  },
+  {
+    "promptId": "prompt-problem-02",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Both a personal time-management problem and the way the learner deals with it are explicitly requested, so those two slots already form an adequate response."
+  },
+  {
+    "promptId": "prompt-problem-03",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe a difficulty connected to managing time and state what they do about it, directly requiring a problem and solution."
+  },
+  {
+    "promptId": "prompt-problem-04",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question separately asks what makes time management challenging and how the learner responds, so the two required semantic units provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-problem-05",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A common time-management problem and the learner's attempted solution are both literal obligations, creating a complete B-level problem-solution answer."
+  },
+  {
+    "promptId": "prompt-problem-06",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to identify a frequent motivation challenge and explain how it is handled, so both problem and solution are necessary and sufficient."
+  },
+  {
+    "promptId": "prompt-problem-07",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly requests a problem with staying motivated and the learner's way of dealing with it, giving two independent required parts."
+  },
+  {
+    "promptId": "prompt-problem-08",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A motivation-related difficulty and what the learner does about it are separately requested, so no extra depth slot is needed beyond that pair."
+  },
+  {
+    "promptId": "prompt-problem-09",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what is challenging about maintaining motivation and how the learner responds, requiring both the difficulty and response."
+  },
+  {
+    "promptId": "prompt-problem-10",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain a common motivation problem and an attempted way to solve it; these explicit B-level clauses already establish adequate depth."
+  },
+  {
+    "promptId": "prompt-problem-11",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires one recurring public-speaking challenge and the learner's way of handling it, so problem and solution are both mandatory."
+  },
+  {
+    "promptId": "prompt-problem-1101",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to name a challenge encountered in noisy places and explain how it is handled, yielding two sufficient required components."
+  },
+  {
+    "promptId": "prompt-problem-1102",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording explicitly requests an inbox-control problem and what the learner does about it, so the required problem-solution pair is already adequate at level B."
+  },
+  {
+    "promptId": "prompt-problem-1103",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Difficulty asking questions while confused is supplied by the prompt, and the learner produces only a usual coping action; one independent support keeps this B-level routine response from being bare."
+  },
+  {
+    "promptId": "prompt-problem-1104",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify a recurring obstacle to recovering after a bad day and explain how they handle it, providing both required sides of the task."
+  },
+  {
+    "promptId": "prompt-problem-1105",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a prioritization problem and the learner's response to it, so problem and solution are separately required and together provide enough depth."
+  },
+  {
+    "promptId": "prompt-problem-1106",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt already establishes difficulty starting small tasks promptly and asks only for the learner's usual handling action, so that B-level routine needs one supporting detail."
+  },
+  {
+    "promptId": "prompt-problem-1107",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state a challenge with speaking in nerve-inducing situations and explain how it is handled, satisfying the B-level task with two required units."
+  },
+  {
+    "promptId": "prompt-problem-1108",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A problem caused by commuting delays and the action taken in response are both directly requested, so no additional depth slot is mandatory."
+  },
+  {
+    "promptId": "prompt-problem-1109",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Having too many open tabs is the given difficulty, while the learner produces only the usual management action; one explanation, example, outcome, or detail is appropriate at difficulty B."
+  },
+  {
+    "promptId": "prompt-problem-1110",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for a recurring challenge in remembering people's names and how the learner handles it, making both problem and solution required."
+  },
+  {
+    "promptId": "prompt-problem-1111",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe a problem with remaining calm during conflict and state what they do about it, which already supplies two substantial B-level parts."
+  },
+  {
+    "promptId": "prompt-problem-1112",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Minor technical issues are presented as the difficulty, and the learner writes only the usual handling action; one independent support develops that single required B-level response."
+  },
+  {
+    "promptId": "prompt-problem-1113",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requests a challenge involved in sharing unfinished work early and the learner's handling strategy, so both semantic components are mandatory."
+  },
+  {
+    "promptId": "prompt-problem-1114",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A problem experienced during a sleepy morning and the response to it are separately requested, giving the answer sufficient required depth."
+  },
+  {
+    "promptId": "prompt-problem-1115",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Overplanning the weekend is already identified as the problem, so the learner produces only the usual action that keeps plans manageable; one further support is needed at level B."
+  },
+  {
+    "promptId": "prompt-problem-1116",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to identify a challenge that occurs when progress feels slow and explain how it is handled, requiring both problem and solution."
+  },
+  {
+    "promptId": "prompt-problem-1117",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question explicitly asks for a problem caused by self-comparison and what the learner does about it, so the two required slots complete the task."
+  },
+  {
+    "promptId": "prompt-problem-1118",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLAN",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Difficulty balancing hobbies and chores is supplied, leaving only the learner's usual coping action to write; one extra support develops this B-level routine response."
+  },
+  {
+    "promptId": "prompt-problem-1119",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name a challenge encountered when saying no politely and explain how it is handled, yielding two explicit and sufficient B-level obligations."
+  },
+  {
+    "promptId": "prompt-problem-1120",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a problem with restarting after a missed routine and the learner's response, so both the obstacle and solution are required."
+  },
+  {
+    "promptId": "prompt-problem-1121",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Losing focus while reading long articles is the stated difficulty, and the learner writes only a usual coping action; one supporting unit prevents an underdeveloped B-level routine answer."
+  },
+  {
+    "promptId": "prompt-problem-1122",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A recurring desk-organization challenge and the method used to handle it are both directly requested, creating enough required depth for level B."
+  },
+  {
+    "promptId": "prompt-problem-1123",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner has to describe a problem experienced in crowded spaces and explain what they do about it, making the problem-solution pair sufficient."
+  },
+  {
+    "promptId": "prompt-problem-1124",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Distracting messages are already framed as the problem, while the learner provides only the usual handling action; one independent support is appropriate for this B-level routine."
+  },
+  {
+    "promptId": "prompt-problem-1125",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requests a challenge in summarizing ideas clearly and the learner's handling strategy, so both the communication problem and solution are mandatory."
+  },
+  {
+    "promptId": "prompt-problem-1126",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe a problem with following instructions on the first attempt and explain the response to it, satisfying both required sides of the task."
+  },
+  {
+    "promptId": "prompt-problem-1127",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Impatience in long lines is the supplied difficulty, so the learner produces only the usual coping action; a feeling, reason, example, result, or detail adds suitable B-level depth."
+  },
+  {
+    "promptId": "prompt-problem-12",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for a public-speaking problem and an explanation of how the learner deals with it, directly requiring both problem and solution."
+  },
+  {
+    "promptId": "prompt-problem-13",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A difficulty related to speaking before people and the action taken about it are separately requested, giving the response enough required B-level content."
+  },
+  {
+    "promptId": "prompt-problem-14",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires what is personally challenging about public speaking and how the learner responds, so both semantic units are mandatory."
+  },
+  {
+    "promptId": "prompt-problem-15",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain a common public-speaking problem and an attempted solution, which already forms a complete two-part B-level answer."
+  },
+  {
+    "promptId": "prompt-problem-16",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a recurring challenge in balancing work and rest and how it is handled, making both problem and solution necessary."
+  },
+  {
+    "promptId": "prompt-problem-17",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Both a personal work-rest balance problem and the way the learner deals with it are explicitly requested, so the two required slots are sufficient."
+  },
+  {
+    "promptId": "prompt-problem-18",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify a difficulty connected to balancing work and rest and state what is done about it, requiring a problem and solution."
+  },
+  {
+    "promptId": "prompt-problem-19",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt separately asks what is challenging about balancing work with rest and how the learner responds, producing an adequate two-part core."
+  },
+  {
+    "promptId": "prompt-problem-20",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A common work-rest balance problem and the learner's attempted solution are both literal obligations, so additional mandatory depth is unnecessary."
+  },
+  {
+    "promptId": "prompt-problem-21",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to name a recurring teamwork challenge and explain how it is handled, so both problem and solution are directly required."
+  },
+  {
+    "promptId": "prompt-problem-22",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording requests a problem the learner has while working in a team and the way it is addressed, giving two sufficient B-level requirements."
+  },
+  {
+    "promptId": "prompt-problem-23",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A teamwork-related difficulty and what the learner does about it are separately requested, so the problem-solution pair completes the core response."
+  },
+  {
+    "promptId": "prompt-problem-24",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what is challenging about team participation and how the learner responds, requiring both the personal problem and handling method."
+  },
+  {
+    "promptId": "prompt-problem-25",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain a common problem faced in teamwork and how they try to solve it, which supplies two independent and adequate answer units."
+  },
+  {
+    "promptId": "prompt-problem-26",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a recurring challenge when making quick decisions and how the learner handles it, so problem and solution are both required."
+  },
+  {
+    "promptId": "prompt-problem-27",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A problem encountered during rapid decision-making and the learner's way of dealing with it are explicitly requested, making the pair sufficient."
+  },
+  {
+    "promptId": "prompt-problem-28",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state a difficulty related to making decisions quickly and what is done about it, directly requiring both problem and solution."
+  },
+  {
+    "promptId": "prompt-problem-29",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question separately asks what is challenging about quick decisions and how the learner responds, so its two required components already provide depth."
+  },
+  {
+    "promptId": "prompt-problem-30",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A common rapid-decision problem and the learner's attempted solution are both demanded by the wording, yielding a complete B-level response."
+  },
+  {
+    "promptId": "prompt-problem-31",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a recurring challenge in group projects and how the learner handles it, so the problem and handling strategy are required."
+  },
+  {
+    "promptId": "prompt-problem-32",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe a problem encountered in group-project work and explain how it is addressed, forming a sufficient two-part answer."
+  },
+  {
+    "promptId": "prompt-problem-33",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A group-project difficulty and what the learner does about it are separately requested, making both problem and solution mandatory."
+  },
+  {
+    "promptId": "prompt-problem-34",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires the learner's challenge in working on group projects and their response, so its two explicit obligations provide adequate B-level depth."
+  },
+  {
+    "promptId": "prompt-problem-35",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to explain a common group-project problem and how they try to solve it, directly requiring the problem-solution pair."
+  },
+  {
+    "promptId": "prompt-problem-36",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requests a recurring challenge in staying focused and the learner's handling method, so both problem and solution are necessary."
+  },
+  {
+    "promptId": "prompt-problem-37",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A problem experienced while trying to stay focused and the way the learner deals with it are both explicitly requested, completing the core task."
+  },
+  {
+    "promptId": "prompt-problem-38",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify a focus-related difficulty and say what they do about it, so two independent required slots already provide adequate depth."
+  },
+  {
+    "promptId": "prompt-problem-39",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what is challenging about maintaining focus and how the learner responds, directly requiring a problem and solution."
+  },
+  {
+    "promptId": "prompt-problem-40",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A common focus problem and the learner's attempt to solve it are separately demanded, making the two-part B-level response sufficient."
+  },
+  {
+    "promptId": "prompt-problem-41",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state a recurring challenge caused by unexpected changes and explain how it is handled, so both problem and solution are required."
+  },
+  {
+    "promptId": "prompt-problem-42",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt explicitly requests a problem with unexpected changes and the way the learner deals with it, giving enough depth through those two parts."
+  },
+  {
+    "promptId": "prompt-problem-43",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "FEELING",
+      "REASON",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A difficulty related to unexpected changes and what the learner does about it are both literal obligations, requiring problem and solution."
+  },
+  {
+    "promptId": "prompt-problem-44",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what is personally challenging about unexpected changes and how the learner responds, so the two required units complete the task."
+  },
+  {
+    "promptId": "prompt-problem-45",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain a common problem caused by unexpected changes and an attempted solution, producing a sufficient B-level problem-solution core."
+  },
+  {
+    "promptId": "prompt-problem-46",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a recurring challenge related to overthinking small mistakes and how the learner handles it, requiring both problem and solution."
+  },
+  {
+    "promptId": "prompt-problem-47",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A problem the learner has when dwelling on small mistakes and the way it is addressed are explicitly requested, so both slots are mandatory."
+  },
+  {
+    "promptId": "prompt-problem-48",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "FEELING",
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe a difficulty connected to overthinking minor mistakes and state what is done about it, giving two sufficient required components."
+  },
+  {
+    "promptId": "prompt-problem-49",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question separately requests what is challenging about overthinking small mistakes and how the learner responds, requiring the problem-solution pair."
+  },
+  {
+    "promptId": "prompt-problem-50",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A common problem involving overthought mistakes and the learner's attempted way to solve it are both directly required, creating adequate B-level depth."
+  },
+  {
+    "promptId": "prompt-reflection-01",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "CHANGE_CAUSE"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Explaining how the idea of success changed over time requires the earlier view, current view, and the reason for the change; those three units provide sufficient C-level depth."
+  },
+  {
+    "promptId": "prompt-reflection-02",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "CHANGE_CAUSE"
+    ],
+    "optionalSlots": [
+      "NOW_STATE",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question directly asks for the learner's former belief about success and what changed their mind; one independent addition, especially the current belief, is appropriate for this C-level reflection."
+  }
+]

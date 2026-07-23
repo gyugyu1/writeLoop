@@ -1,0 +1,1848 @@
+[
+  {
+    "promptId": "prompt-intro-v2-0361",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for the words or greeting used on first meeting someone; giving that communicative action fully answers this simple introductory task."
+  },
+  {
+    "promptId": "prompt-intro-v2-0362",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only has to state what they say after arriving late; an apology or other utterance is adequate, while the cause of the delay is optional."
+  },
+  {
+    "promptId": "prompt-intro-v2-0363",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The direct obligation is the phrase used to ask for help, and this beginner question does not require describing the underlying problem."
+  },
+  {
+    "promptId": "prompt-intro-v2-0364",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what the learner says to express thanks; naming the utterance is sufficient, with what prompted the thanks available as extra context."
+  },
+  {
+    "promptId": "prompt-intro-v2-0365",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "FEELING",
+      "SOLUTION",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The required response is what the learner says after making a mistake; describing the mistake or how it is corrected would extend but is not needed for the basic answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0366",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "FEELING",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "This asks for the learner's typical action when meeting a new friend; one clear action answers the narrowly defined social situation."
+  },
+  {
+    "promptId": "prompt-intro-v2-0367",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requests the learner's usual response to receiving a gift, so a single action such as thanking the giver is a complete beginner answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0368",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks what the learner typically does around an angry person; the response action is required, while its reasoning or effect is optional."
+  },
+  {
+    "promptId": "prompt-intro-v2-0369",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The task is to state a usual reaction when someone behaves kindly; one concrete reaction meets the simple situational prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0370",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "ADDITIONAL_ACTION",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name what they generally do while feeling shy; the condition is already supplied, so no additional detail is mandatory."
+  },
+  {
+    "promptId": "prompt-intro-v2-0371",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "This asks for a regular preparation action before seeing friends; one action is enough at this level, though timing or another preparation can add context."
+  },
+  {
+    "promptId": "prompt-intro-v2-0372",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly requests the usual action after meeting friends; a single post-meeting action completes this focused beginner task."
+  },
+  {
+    "promptId": "prompt-intro-v2-0373",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks about a typical conversation topic with new people; one independent reason or example keeps the broad routine from ending as a bare topic label."
+  },
+  {
+    "promptId": "prompt-intro-v2-0374",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only needs to identify a topic that feels easy to discuss; this is a simple personal fact, so explaining the ease is optional."
+  },
+  {
+    "promptId": "prompt-intro-v2-0375",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The direct request is to name a topic that is difficult for the learner to discuss; the cause or an example may enrich but is not required."
+  },
+  {
+    "promptId": "prompt-intro-v2-0376",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner supplies only a cause of conversational enjoyment and does not have to state a separate judgment or position. A cause-only response belongs in GENERAL_DESCRIPTION."
+  },
+  {
+    "promptId": "prompt-intro-v2-0377",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING",
+      "SOLUTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks only what causes conversational difficulty; it does not require an opinion or stance in addition to that cause. The response shape is GENERAL_DESCRIPTION with REASON."
+  },
+  {
+    "promptId": "prompt-intro-v2-0378",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to recommend a good question for a new friend; stating that recommended question is sufficient without a forced justification."
+  },
+  {
+    "promptId": "prompt-intro-v2-0379",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "This is a recommendation about how to begin a chat, and one suitable opening method fully addresses the simple question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0380",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a good way to close a chat, so the recommended closing is required and already forms an adequate beginner response."
+  },
+  {
+    "promptId": "prompt-intro-v2-0381",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The ability to fly is a supplied hypothetical premise, and the learner only gives the destination. This is not an expressed preference, and the literal where obligation requires PLACE rather than CHOICE."
+  },
+  {
+    "promptId": "prompt-intro-v2-0382",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner describes a hypothetical action while invisible; the question does not ask for a preference or selection between options."
+  },
+  {
+    "promptId": "prompt-intro-v2-0383",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "FEELING",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question requires selecting any animal to meet; a reason or imagined interaction prevents the response from being only an animal name."
+  },
+  {
+    "promptId": "prompt-intro-v2-0384",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "ACTION",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must choose a movie world to live in; one supporting reason or detail is appropriate because the hypothetical invites more than a title."
+  },
+  {
+    "promptId": "prompt-intro-v2-0385",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The dinner companion is the required choice, and one reason or proposed conversation adds an independent idea to the otherwise bare name."
+  },
+  {
+    "promptId": "prompt-intro-v2-0386",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "ACTION",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks the learner to select one superpower; explaining its appeal or intended use supplies the single extra depth expected from this broad choice."
+  },
+  {
+    "promptId": "prompt-intro-v2-0387",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "DETAIL",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "A new name is the direct choice, while one reason or feeling makes the personal hypothetical more meaningful than simply stating a name."
+  },
+  {
+    "promptId": "prompt-intro-v2-0388",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "FEELING",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The dream room must be visually described, and one independent use, feeling, or design motive keeps that broad description from being a single adjective."
+  },
+  {
+    "promptId": "prompt-intro-v2-0389",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The required choice is the product or service the imagined shop would sell or provide; one independent reason, offering detail, intended result, or location gives the business idea useful depth."
+  },
+  {
+    "promptId": "prompt-intro-v2-0390",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "SPECIFIC_TIME",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must explain what a newly invented holiday would be, and one activity, date, purpose, or effect is needed to develop the concept beyond a label."
+  },
+  {
+    "promptId": "prompt-intro-v2-0391",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The free ticket is the hypothetical premise, while the learner supplies a destination, venue, attraction, or ticketed event in response to where; PLACE captures that destination relation, and one independent support detail gives the hypothetical adequate depth."
+  },
+  {
+    "promptId": "prompt-intro-v2-0392",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "ACTION",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner selects a skill to acquire instantly; its usefulness or intended application supplies the extra support appropriate for this imagined choice."
+  },
+  {
+    "promptId": "prompt-intro-v2-0393",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "RESULT",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The additional language is the required selection, and one motive, use, or relevant place keeps the answer from stopping at the language name."
+  },
+  {
+    "promptId": "prompt-intro-v2-0394",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question narrowly asks for the learner's preferred weather for today; naming the weather condition is a complete simple answer, with reasons left optional."
+  },
+  {
+    "promptId": "prompt-intro-v2-0395",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner chooses any possible pet, and one reason or imagined activity is useful to develop the broad preference beyond an animal name."
+  },
+  {
+    "promptId": "prompt-intro-v2-0396",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "PROBLEM",
+      "DETAIL",
+      "REASON"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks for the function of an invented app; one problem it addresses, feature detail, or result is needed to make the proposed function concrete."
+  },
+  {
+    "promptId": "prompt-intro-v2-0397",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "REASON",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner chooses what to eat in a perfect breakfast; one independent detail or reason turns the answer into more than a single food item."
+  },
+  {
+    "promptId": "prompt-intro-v2-0398",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question imagines an everyday routine beside the sea; one additional action, timing detail, or effect gives the repeated activity enough context."
+  },
+  {
+    "promptId": "prompt-intro-v2-0399",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must state a daily activity imagined near a mountain; one separate timing, motive, feeling, or second action keeps the routine from being bare."
+  },
+  {
+    "promptId": "prompt-intro-v2-0400",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "This unrestricted hypothetical gift preference is broad enough that a bare gift noun is underdeveloped. One independent reason, benefit, feeling, or detail is appropriate even at the introductory level."
+  },
+  {
+    "promptId": "prompt-opinion-01",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks the learner to propose successful companies' social responsibilities without explicitly requesting several supporting points; one concrete reason, example, result, or problem is sufficient to ground the opinion."
+  },
+  {
+    "promptId": "prompt-opinion-02",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must decide whether successful companies should contribute more to society and explicitly explain why or why not; those two required units already provide adequate depth."
+  },
+  {
+    "promptId": "prompt-opinion-03",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording requires one important company role and a reason for its importance, so the required position and justification sufficiently develop the response."
+  },
+  {
+    "promptId": "prompt-opinion-04",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks which duties successful companies have and what makes those duties important; the judgment plus explanation already creates independent depth."
+  },
+  {
+    "promptId": "prompt-opinion-05",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A recommended form of corporate social responsibility and the reason for it are both literal obligations, making extra optional evidence beneficial but unnecessary."
+  },
+  {
+    "promptId": "prompt-opinion-06",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks what responsibilities big-city public transportation should have but does not request multiple supporting clauses; one concrete reason, example, result, or problem sufficiently develops the opinion."
+  },
+  {
+    "promptId": "prompt-opinion-07",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must judge whether big-city public transportation should do more for society and give a reason; the explicit stance and justification are sufficient."
+  },
+  {
+    "promptId": "prompt-opinion-08",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "One important role for urban public transportation and the reason for choosing it are both requested, so no further depth slot must be forced."
+  },
+  {
+    "promptId": "prompt-opinion-09",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The task explicitly combines a proposed public-transport duty with an explanation of its importance; those required semantic units adequately develop the answer."
+  },
+  {
+    "promptId": "prompt-opinion-10",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify a social responsibility for big-city transit and explain why it matters, leaving examples or consequences as optional enrichment."
+  },
+  {
+    "promptId": "prompt-opinion-11",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks what responsibilities financial-skills schools should have without requiring several forms of support; one concrete reason, example, result, or problem is sufficient to explain the proposed duties."
+  },
+  {
+    "promptId": "prompt-opinion-1101",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner recommends a modern social role for neighborhood parks; one reason, community effect, or concrete example is needed to support that role."
+  },
+  {
+    "promptId": "prompt-opinion-1102",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for a judgment about public museums' community responsibilities but does not require separate supporting clauses; one concrete reason, example, result, or detail is sufficient to develop the answer."
+  },
+  {
+    "promptId": "prompt-opinion-1103",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks what local bookstores should do for people, so a recommendation is required and one reason or concrete community benefit should support it."
+  },
+  {
+    "promptId": "prompt-opinion-1104",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks what role universities should play but does not separately require discussion of education, research, and public life; one concrete reason, example, result, or problem sufficiently supports the opinion."
+  },
+  {
+    "promptId": "prompt-opinion-1105",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must state local news outlets' responsibilities to the community, while the wording does not ask for multiple supports; one concrete reason, example, result, or problem is sufficient to ground those duties."
+  },
+  {
+    "promptId": "prompt-opinion-1106",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for a recommendation about how convenience stores should serve people; one justification, example, or public benefit gives that proposal adequate depth."
+  },
+  {
+    "promptId": "prompt-opinion-1107",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "A social role for teenage sports clubs is the required judgment, and one reason or youth outcome is enough to substantiate the focused proposal."
+  },
+  {
+    "promptId": "prompt-opinion-1108",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks what responsibilities public health campaigns should have without explicitly requesting several supporting points; one concrete reason, example, result, or problem sufficiently explains the recommendation."
+  },
+  {
+    "promptId": "prompt-opinion-1109",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PROBLEM",
+      "SOLUTION",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for an opinion about what companies using AI should do, but it does not require both a problem and a solution; one concrete reason, problem, solution, result, or example sufficiently develops the position."
+  },
+  {
+    "promptId": "prompt-opinion-1110",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question requests a modern role for animal shelters; one reason, outcome, or concrete example is needed to support the learner's recommended role."
+  },
+  {
+    "promptId": "prompt-opinion-1111",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for public broadcasters' community responsibilities but does not explicitly request multiple supporting clauses; one concrete reason, example, result, or problem is sufficient to explain the duties."
+  },
+  {
+    "promptId": "prompt-opinion-1112",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must recommend what community centers should do for people; one reason or concrete effect gives the recommendation enough development."
+  },
+  {
+    "promptId": "prompt-opinion-1113",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The task asks for the social role of local farmers' markets, and one supporting reason, community benefit, or example should accompany the proposed role."
+  },
+  {
+    "promptId": "prompt-opinion-1114",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording asks for after-school programs' community responsibilities without requiring several independent supports; one concrete reason, example, result, or problem sufficiently connects the duties to children's needs."
+  },
+  {
+    "promptId": "prompt-opinion-1115",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks how train stations should serve people and communities, but the paired audience does not create two separately requested clauses; one concrete reason, example, result, or problem sufficiently supports the proposal."
+  },
+  {
+    "promptId": "prompt-opinion-1116",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "A recommended modern role for city bike systems is required; one reason, mobility outcome, or concrete example sufficiently supports the focused position."
+  },
+  {
+    "promptId": "prompt-opinion-1117",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks what responsibilities internship providers should have without requiring separate standards and effects; one concrete reason, example, result, or problem is sufficient to support the proposed duties."
+  },
+  {
+    "promptId": "prompt-opinion-1118",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner recommends what food-waste-reducing restaurants should do for people; one rationale, public benefit, or concrete example develops that recommendation."
+  },
+  {
+    "promptId": "prompt-opinion-1119",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The task asks for a societal role for schools teaching online safety; one reason or safety outcome is needed to support the proposed educational role."
+  },
+  {
+    "promptId": "prompt-opinion-1120",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PROBLEM",
+      "SOLUTION",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks what responsibilities local governments should have when running heat shelters but does not require multiple supporting categories; one concrete reason, problem, solution, result, or example sufficiently develops the opinion."
+  },
+  {
+    "promptId": "prompt-opinion-1121",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks what cultural festivals should do for people, so the recommended contribution needs one reason, effect, or example to become a developed opinion."
+  },
+  {
+    "promptId": "prompt-opinion-1122",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner proposes a social role for volunteer matching platforms; one reason, result, or concrete use case is sufficient to support that role."
+  },
+  {
+    "promptId": "prompt-opinion-1123",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for the community role of apartment recycling facilities; one justification, environmental result, or example gives the recommendation adequate depth."
+  },
+  {
+    "promptId": "prompt-opinion-1124",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The required judgment is what community gardens should provide for people, and one reason or community outcome should support the proposal."
+  },
+  {
+    "promptId": "prompt-opinion-1125",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must identify a modern role for senior centers; one reason, benefit, or concrete example substantiates the focused societal recommendation."
+  },
+  {
+    "promptId": "prompt-opinion-1126",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for public swimming pools' community responsibilities without separately requiring access, safety, and service; one concrete reason, example, result, or problem is sufficient to ground the judgment."
+  },
+  {
+    "promptId": "prompt-opinion-1127",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt seeks a recommendation about what neighborhood clinics should do for people; one reason or health-related outcome adequately develops the proposal."
+  },
+  {
+    "promptId": "prompt-opinion-12",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must decide whether financial-skills schools should do more for society and explain why or why not; the required stance and reason provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-opinion-13",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "One important role for schools teaching financial skills and the reason for its importance are explicitly requested, so additional evidence remains optional."
+  },
+  {
+    "promptId": "prompt-opinion-14",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires proposed duties for financial-skills schools and an explanation of what makes them important; those independent obligations already create an adequate response."
+  },
+  {
+    "promptId": "prompt-opinion-15",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A social responsibility for schools teaching financial skills and the reason behind it are both directly required, leaving examples and effects optional."
+  },
+  {
+    "promptId": "prompt-opinion-16",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must propose a modern social role for local volunteering; one reason, community result, or example is needed to support the position."
+  },
+  {
+    "promptId": "prompt-opinion-17",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for a judgment on whether local volunteering should do more and a reason for that judgment, so no additional depth is mandatory."
+  },
+  {
+    "promptId": "prompt-opinion-18",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify one important role for local volunteering and explain why it matters; those two required units sufficiently answer the task."
+  },
+  {
+    "promptId": "prompt-opinion-19",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is directly asked for local volunteering's duties and what makes them important, making the opinion and explanation jointly sufficient."
+  },
+  {
+    "promptId": "prompt-opinion-20",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt explicitly requires a form of social responsibility for local volunteering and a reason, so examples or outcomes can remain optional."
+  },
+  {
+    "promptId": "prompt-opinion-21",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PROBLEM",
+      "SOLUTION",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for an opinion on social media platforms' responsibilities but does not require multiple supporting categories; one concrete reason, problem, solution, result, or example sufficiently develops the proposed duties."
+  },
+  {
+    "promptId": "prompt-opinion-22",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must take a position on whether social media platforms should do more for society and explain why or why not, which already supplies two independent units."
+  },
+  {
+    "promptId": "prompt-opinion-23",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requests one important social-media role and the reason it is important; the required recommendation and justification provide adequate depth."
+  },
+  {
+    "promptId": "prompt-opinion-24",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Duties for social media platforms and an explanation of their importance are both literal obligations, so further examples or effects are optional."
+  },
+  {
+    "promptId": "prompt-opinion-25",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must propose a social responsibility for social media platforms and explain why; those required elements already form a developed advanced answer."
+  },
+  {
+    "promptId": "prompt-opinion-26",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks for the modern role of public libraries; one reason, community benefit, or example is needed to substantiate the recommended role."
+  },
+  {
+    "promptId": "prompt-opinion-27",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Whether public libraries should receive more support is a required judgment, and the explicit why-or-why-not clause requires its justification, making extra depth unnecessary."
+  },
+  {
+    "promptId": "prompt-opinion-28",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks the learner to judge public libraries' importance without separately requesting justification and impact; one concrete reason, result, example, or detail is sufficient to support the judgment."
+  },
+  {
+    "promptId": "prompt-opinion-29",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The task asks what obligation people or institutions have toward public libraries; one concrete support action, reason, or effect should develop the stated responsibility."
+  },
+  {
+    "promptId": "prompt-opinion-30",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state a position on expanding public libraries and give a reason; these direct obligations already make a sufficiently developed response."
+  },
+  {
+    "promptId": "prompt-opinion-31",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question seeks a judgment about the role of uniforms in public schools today; one reason, effect, or example is needed to support that position."
+  },
+  {
+    "promptId": "prompt-opinion-32",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must decide whether public-school uniforms deserve more support and explain why or why not; the stance and required reason supply enough depth."
+  },
+  {
+    "promptId": "prompt-opinion-33",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for a judgment about school uniforms' importance but does not explicitly request multiple supporting angles; one concrete reason, result, example, advantage, or disadvantage sufficiently develops the opinion."
+  },
+  {
+    "promptId": "prompt-opinion-34",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks what responsibility people or institutions have to support school uniforms; one concrete action or justification should accompany the stated obligation."
+  },
+  {
+    "promptId": "prompt-opinion-35",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A position on expanding school uniforms and its reason are both explicitly requested, so optional benefits, drawbacks, or examples need not be mandatory."
+  },
+  {
+    "promptId": "prompt-opinion-36",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must recommend a role for recycling programs in modern society; one environmental reason, result, or example gives the proposal adequate support."
+  },
+  {
+    "promptId": "prompt-opinion-37",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording requires a judgment on increasing support for recycling programs and an explanation, so the position and reason already create sufficient depth."
+  },
+  {
+    "promptId": "prompt-opinion-38",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks how important recycling programs are without separately requiring justification and effects; one concrete reason, result, example, or problem is sufficient to support the assessment."
+  },
+  {
+    "promptId": "prompt-opinion-39",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must state the responsibility of people or institutions to support recycling programs; one implementation action or reason should develop that obligation."
+  },
+  {
+    "promptId": "prompt-opinion-40",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly asks for an opinion on expanding recycling programs and the reason behind it; those two required units are adequate without forced extras."
+  },
+  {
+    "promptId": "prompt-opinion-41",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks what role teenage part-time jobs should have in society; one reason, youth outcome, or example is needed to support the recommended role."
+  },
+  {
+    "promptId": "prompt-opinion-42",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must decide whether teenage part-time jobs should receive more support and explain why or why not; the required stance and reason are sufficient."
+  },
+  {
+    "promptId": "prompt-opinion-43",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for a judgment about teenage part-time jobs' importance but does not require several supporting angles; one concrete reason, result, example, advantage, or disadvantage sufficiently develops the opinion."
+  },
+  {
+    "promptId": "prompt-opinion-44",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The task asks what obligation people or institutions have to support teenage part-time jobs; one concrete action or justification should accompany the stated responsibility."
+  },
+  {
+    "promptId": "prompt-opinion-45",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "An opinion on expanding part-time jobs for teenagers and a reason are both explicitly required, so further benefits, drawbacks, or examples are optional."
+  },
+  {
+    "promptId": "prompt-opinion-46",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner proposes a modern social role for community arts programs; one reason, community effect, or example is needed to substantiate that role."
+  },
+  {
+    "promptId": "prompt-opinion-47",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly requires a position on greater support for community arts programs and a why-or-why-not explanation, providing sufficient depth."
+  },
+  {
+    "promptId": "prompt-opinion-48",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks the learner to judge community arts programs' importance without separately requiring justification and impact; one concrete reason, result, example, or detail is sufficient to support the judgment."
+  },
+  {
+    "promptId": "prompt-opinion-49",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must state what responsibility people or institutions have to support community arts programs; one concrete action or reason should develop the obligation."
+  },
+  {
+    "promptId": "prompt-opinion-50",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for a position on expanding community arts programs and an explanation, so the required opinion and reason already form an adequate response."
+  },
+  {
+    "promptId": "prompt-preference-01",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name a favorite kind of food and explain why they like it; the required choice and reason already provide sufficient depth for this intermediate prompt."
+  },
+  {
+    "promptId": "prompt-preference-02",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording directly requests the favorite food category and an explanation of its appeal, so those two required semantic units adequately complete the task."
+  },
+  {
+    "promptId": "prompt-preference-03",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "FEELING",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify and describe the favorite food and provide the requested two reasons; the schema's required reason slot represents that explicit reason obligation, and no extra depth is needed."
+  },
+  {
+    "promptId": "prompt-preference-04",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks the learner to select the aspect they like most about the favorite food and explain why, so the required choice and reason are sufficient."
+  }
+]

@@ -1,0 +1,2960 @@
+[
+  {
+    "promptId": "prompt-balance-25",
+    "slotContracts": {
+      "BEFORE_STATE": {
+        "semanticRoleEn": "How people lived or kept in touch before daily smartphone use reshaped those habits.",
+        "satisfiedWhenEn": "The answer conveys an earlier way of living or connecting that can be contrasted with smartphone-era behavior.",
+        "semanticRoleKo": "일상적인 스마트폰 사용이 생활이나 소통 습관을 바꾸기 전 사람들의 모습.",
+        "satisfiedWhenKo": "답변이 스마트폰 사용 이후의 모습과 대비할 수 있는 과거의 생활 방식이나 소통 방식을 나타내면 충족된다."
+      },
+      "NOW_STATE": {
+        "semanticRoleEn": "How people currently live or connect as a result of using smartphones every day.",
+        "satisfiedWhenEn": "The answer identifies a present-day living or communication pattern associated with daily smartphone use.",
+        "semanticRoleKo": "매일 스마트폰을 사용하게 된 결과로 나타난 현재의 생활 방식이나 소통 방식.",
+        "satisfiedWhenKo": "답변이 일상적인 스마트폰 사용과 관련된 현재의 생활 또는 소통 양상을 구체적으로 밝히면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall judgment of the smartphone-driven change in living or connecting.",
+        "satisfiedWhenEn": "The answer clearly evaluates the change overall, whether positively, negatively, or in a qualified way.",
+        "semanticRoleKo": "스마트폰이 생활이나 소통에 가져온 변화에 대한 학습자의 종합적인 판단.",
+        "satisfiedWhenKo": "답변이 그 변화를 전반적으로 긍정적, 부정적 또는 조건부로 분명히 평가하면 충족된다."
+      },
+      "CHANGE_CAUSE": {
+        "semanticRoleEn": "A smartphone capability or usage pattern that explains how the change occurred.",
+        "satisfiedWhenEn": "The answer names a concrete mechanism, such as constant access or instant communication, that produced a stated change.",
+        "semanticRoleKo": "해당 변화가 일어난 방식을 설명하는 스마트폰 기능이나 사용 양상.",
+        "satisfiedWhenKo": "답변이 상시 접속이나 즉각적인 소통처럼 언급한 변화를 일으킨 구체적인 메커니즘을 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific everyday instance showing smartphones changing how people live or connect.",
+        "satisfiedWhenEn": "The answer gives a concrete situation or behavior that illustrates the claimed before-and-now difference.",
+        "semanticRoleKo": "스마트폰이 사람들의 생활이나 소통을 바꾼 모습을 보여 주는 구체적인 일상 사례.",
+        "satisfiedWhenKo": "답변이 주장한 과거와 현재의 차이를 보여 주는 구체적인 상황이나 행동을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the smartphone-related change for people or their relationships.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that follows from the changed way of living or connecting.",
+        "semanticRoleKo": "스마트폰 관련 변화가 사람이나 인간관계에 가져온 결과.",
+        "satisfiedWhenKo": "답변이 달라진 생활 또는 소통 방식에서 비롯된 구체적인 결과를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for the learner's overall evaluation of the smartphone-driven change.",
+        "satisfiedWhenEn": "The answer explains why the learner holds the stated opinion by linking it to a meaningful effect or value.",
+        "semanticRoleKo": "스마트폰으로 인한 변화에 대해 학습자가 내린 종합 평가의 근거.",
+        "satisfiedWhenKo": "답변이 의미 있는 영향이나 가치와 연결하여 왜 그런 의견을 갖는지 설명하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A beneficial side of smartphones changing daily life or human connection.",
+        "satisfiedWhenEn": "The answer identifies a concrete way the change makes living or connecting better or easier.",
+        "semanticRoleKo": "스마트폰이 일상생활이나 인간적 연결을 바꾼 데서 생긴 긍정적인 측면.",
+        "satisfiedWhenKo": "답변이 그 변화로 생활이나 소통이 더 좋아지거나 쉬워진 구체적인 점을 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A harmful or limiting side of smartphones changing daily life or human connection.",
+        "satisfiedWhenEn": "The answer identifies a concrete way the change creates a problem, loss, or limitation.",
+        "semanticRoleKo": "스마트폰이 일상생활이나 인간적 연결을 바꾼 데서 생긴 해롭거나 제한적인 측면.",
+        "satisfiedWhenKo": "답변이 스마트폰으로 인한 변화에서 생긴 구체적인 문제, 손실 또는 제약을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-26",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete benefit of paying without cash.",
+        "satisfiedWhenEn": "The answer states a specific way cashless payments help users or improve a payment situation; merely calling them convenient is too vague.",
+        "semanticRoleKo": "현금 없이 결제할 때 얻는 구체적인 이점.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제가 사용자에게 도움이 되거나 결제 상황을 개선하는 구체적인 방식을 밝히면 충족되며, 단순히 편리하다고만 하면 부족하다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete drawback or risk of cashless payments.",
+        "satisfiedWhenEn": "The answer identifies a specific problem, cost, exclusion, or risk associated with relying on cashless payment.",
+        "semanticRoleKo": "현금 없는 결제가 지닌 구체적인 단점이나 위험.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제에 의존할 때 생기는 구체적인 문제, 비용, 소외 또는 위험을 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall view of cashless payments after considering both sides.",
+        "satisfiedWhenEn": "The answer expresses a clear overall evaluation of cashless payments rather than listing pros and cons without a conclusion.",
+        "semanticRoleKo": "장단점을 고려한 뒤 내리는 현금 없는 결제에 대한 학습자의 종합 견해.",
+        "satisfiedWhenKo": "답변이 장단점만 나열하지 않고 현금 없는 결제를 전반적으로 어떻게 평가하는지 분명히 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A concrete basis for the learner's overall view of cashless payments.",
+        "satisfiedWhenEn": "The answer gives a specific payment-related consideration, such as convenience, access, security, cost, or reliability, that explains why the learner favors, opposes, or conditionally accepts cashless payments; merely restating that they are good or bad is insufficient.",
+        "semanticRoleKo": "현금 없는 결제에 대한 학습자의 종합 견해를 뒷받침하는 구체적인 근거.",
+        "satisfiedWhenKo": "답변이 편의성, 접근성, 보안, 비용 또는 신뢰성처럼 현금 없는 결제를 찬성하거나 반대하거나 조건부로 받아들이는 이유가 되는 구체적인 결제 관련 고려 사항을 제시하면 충족되며, 단지 좋거나 나쁘다는 판단을 되풀이하는 것만으로는 부족하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular payment situation illustrating a stated benefit, drawback, or view.",
+        "satisfiedWhenEn": "The answer describes a recognizable occasion in which cashless payment produces the claimed effect.",
+        "semanticRoleKo": "언급한 이점, 단점 또는 견해를 보여 주는 구체적인 결제 상황.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제로 주장한 효과가 나타나는 알아볼 수 있는 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A further consequence of using cashless payments for people, businesses, or daily transactions.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that develops how one of the evaluated sides plays out in practice.",
+        "semanticRoleKo": "현금 없는 결제 사용이 사람, 사업체 또는 일상 거래에 가져오는 추가적인 결과.",
+        "satisfiedWhenKo": "답변이 평가한 측면 중 하나가 실제로 어떤 결과로 이어지는지 구체적으로 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature or circumstance of cashless payment use that sharpens the evaluation.",
+        "satisfiedWhenEn": "The answer adds specific information about how, where, or under what conditions cashless payment is used.",
+        "semanticRoleKo": "현금 없는 결제에 대한 평가를 더 분명하게 만드는 구체적인 기능이나 사용 조건.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제를 어떻게, 어디서 또는 어떤 조건에서 사용하는지 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-27",
+    "slotContracts": {
+      "BEFORE_STATE": {
+        "semanticRoleEn": "What an aspect of daily payment or purchasing was like before cashless payments changed it.",
+        "satisfiedWhenEn": "The answer conveys a recognizable earlier practice or condition that can be contrasted with cashless daily life.",
+        "semanticRoleKo": "현금 없는 결제가 바꾸기 전 일상적인 결제나 구매의 한 측면.",
+        "satisfiedWhenKo": "답변이 현금 없는 일상과 대비할 수 있는 알아볼 만한 과거의 관행이나 상태를 나타내면 충족된다."
+      },
+      "NOW_STATE": {
+        "semanticRoleEn": "What daily life is now like because cashless payments are available or common.",
+        "satisfiedWhenEn": "The answer describes a present-day routine, condition, or behavior that is meaningfully connected to cashless payment.",
+        "semanticRoleKo": "현금 없는 결제가 가능하거나 보편화된 결과로 나타난 현재의 일상 모습.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제와 의미 있게 연결된 현재의 습관, 상태 또는 행동을 설명하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the cashless-payment change is mostly positive.",
+        "satisfiedWhenEn": "The answer clearly states whether the described change is mainly positive, mainly negative, or mixed with an overall leaning.",
+        "semanticRoleKo": "현금 없는 결제가 가져온 변화가 대체로 긍정적인지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 설명한 변화를 주로 긍정적, 주로 부정적 또는 어느 한쪽으로 기운 복합적인 변화로 분명히 판단하면 충족된다."
+      },
+      "CHANGE_CAUSE": {
+        "semanticRoleEn": "A feature or adoption pattern of cashless payment that brought about the daily-life change.",
+        "satisfiedWhenEn": "The answer explains a concrete mechanism, beyond merely naming cashless payments, that led to the stated difference.",
+        "semanticRoleKo": "일상 변화를 일으킨 현금 없는 결제의 기능이나 보급 양상.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제를 단순히 언급하는 데 그치지 않고, 제시한 차이를 만든 구체적인 작동 방식을 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific daily-life situation that demonstrates the change caused by cashless payments.",
+        "satisfiedWhenEn": "The answer gives a concrete transaction or routine in which the earlier and current conditions differ.",
+        "semanticRoleKo": "현금 없는 결제로 생긴 변화를 보여 주는 구체적인 일상 상황.",
+        "satisfiedWhenKo": "답변이 과거와 현재의 상태가 달라진 구체적인 거래나 일상 장면을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence for people or daily activity that follows from the shift to cashless payment.",
+        "satisfiedWhenEn": "The answer identifies a concrete outcome produced by the changed payment practice.",
+        "semanticRoleKo": "현금 없는 결제로의 전환이 사람이나 일상 활동에 가져온 결과.",
+        "satisfiedWhenKo": "답변이 달라진 결제 관행으로 인해 생긴 구체적인 결과를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The reason the learner judges the cashless-payment change as positive, negative, or mixed.",
+        "satisfiedWhenEn": "The answer connects the overall judgment to a specific consideration or consequence.",
+        "semanticRoleKo": "현금 없는 결제의 변화를 긍정적, 부정적 또는 복합적으로 판단하는 이유.",
+        "satisfiedWhenKo": "답변이 종합 판단을 구체적인 고려 사항이나 결과와 연결하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A positive aspect of the way cashless payments have changed daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete improvement attributable to the change in payment practice.",
+        "semanticRoleKo": "현금 없는 결제가 일상을 바꾼 방식의 긍정적인 측면.",
+        "satisfiedWhenKo": "답변이 결제 관행의 변화로 생긴 구체적인 개선점을 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A negative aspect of the way cashless payments have changed daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete difficulty or loss attributable to the changed payment practice.",
+        "semanticRoleKo": "현금 없는 결제가 일상을 바꾼 방식의 부정적인 측면.",
+        "satisfiedWhenKo": "답변이 달라진 결제 관행으로 생긴 구체적인 어려움이나 손실을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-28",
+    "slotContracts": {
+      "RESULT": {
+        "semanticRoleEn": "A specific way cashless payments have affected people.",
+        "satisfiedWhenEn": "The answer identifies at least one concrete change in people's behavior, access, finances, convenience, or risk caused by cashless payments; saying only that people were affected is insufficient.",
+        "semanticRoleKo": "현금 없는 결제가 사람들에게 미친 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제로 달라진 사람들의 행동, 접근성, 재정, 편의 또는 위험 중 적어도 하나를 구체적으로 밝히면 충족되며, 단지 영향을 받았다고만 하면 부족하다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the overall effect on people is mostly good.",
+        "satisfiedWhenEn": "The answer takes a clear position on the overall value of the identified effects.",
+        "semanticRoleKo": "사람들에게 미친 전반적인 영향이 대체로 좋은지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 제시한 영향의 전반적인 가치에 대해 분명한 입장을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete person or situation illustrating an effect of cashless payments.",
+        "satisfiedWhenEn": "The answer supplies a specific real or plausible case in which a stated effect can be seen.",
+        "semanticRoleKo": "현금 없는 결제의 영향을 보여 주는 구체적인 사람이나 상황의 사례.",
+        "satisfiedWhenKo": "답변이 언급한 영향을 확인할 수 있는 구체적인 실제 또는 가능한 사례를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for judging the effects of cashless payments as mostly good or otherwise.",
+        "satisfiedWhenEn": "The answer explains why the identified effects support the learner's overall judgment.",
+        "semanticRoleKo": "현금 없는 결제의 영향을 대체로 좋거나 그렇지 않다고 판단하는 근거.",
+        "satisfiedWhenKo": "답변이 제시한 영향이 왜 학습자의 종합 판단을 뒷받침하는지 설명하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A beneficial effect of cashless payments on people beyond the main effect already described.",
+        "satisfiedWhenEn": "The answer adds a distinct, concrete way cashless payments improve people's experience or opportunities.",
+        "semanticRoleKo": "이미 설명한 주된 영향과 구별되는, 현금 없는 결제가 사람들에게 주는 이점.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제가 사람들의 경험이나 기회를 개선하는 별도의 구체적인 방식을 덧붙이면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A harmful effect of cashless payments on people beyond the main effect already described.",
+        "satisfiedWhenEn": "The answer adds a distinct, concrete problem or risk that cashless payments create for people.",
+        "semanticRoleKo": "이미 설명한 주된 영향과 구별되는, 현금 없는 결제가 사람들에게 주는 해로운 영향.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제가 사람들에게 만드는 별도의 구체적인 문제나 위험을 덧붙이면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific context clarifying who is affected by cashless payments or how the effect occurs.",
+        "satisfiedWhenEn": "The answer adds concrete information about the people, setting, or process involved in a stated effect.",
+        "semanticRoleKo": "현금 없는 결제가 누구에게 또는 어떤 방식으로 영향을 미치는지 분명하게 하는 구체적인 맥락.",
+        "satisfiedWhenKo": "답변이 언급한 영향에 관련된 사람, 상황 또는 과정에 관한 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-29",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete way cashless payments help people.",
+        "satisfiedWhenEn": "The answer identifies a specific benefit people receive from using or having access to cashless payments.",
+        "semanticRoleKo": "현금 없는 결제가 사람들에게 도움이 되는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제를 사용하거나 이용할 수 있어서 사람들이 얻는 구체적인 이점을 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete way cashless payments harm or disadvantage people.",
+        "satisfiedWhenEn": "The answer identifies a specific negative consequence or group-level difficulty caused by cashless payment.",
+        "semanticRoleKo": "현금 없는 결제가 사람들에게 해를 주거나 불리하게 작용하는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제로 생기는 구체적인 부정적 결과나 특정 집단의 어려움을 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's comparative judgment about whether the help from cashless payments outweighs the harm.",
+        "satisfiedWhenEn": "The answer clearly states which side is greater overall, or gives a genuinely conditional comparison.",
+        "semanticRoleKo": "현금 없는 결제가 주는 도움과 해악 중 어느 쪽이 더 큰지에 대한 학습자의 비교 판단.",
+        "satisfiedWhenKo": "답변이 전반적으로 어느 쪽이 더 큰지 분명히 밝히거나 실질적인 조건부 비교를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner believes one side of cashless payments outweighs the other.",
+        "satisfiedWhenEn": "The answer explains the comparative judgment by weighing the importance, reach, or severity of the identified effects.",
+        "semanticRoleKo": "현금 없는 결제의 한쪽 영향이 다른 쪽보다 크다고 보는 이유.",
+        "satisfiedWhenKo": "답변이 제시한 영향의 중요성, 범위 또는 심각성을 따져 비교 판단을 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific case showing cashless payments helping or harming someone.",
+        "satisfiedWhenEn": "The answer describes a concrete transaction, person, or setting that demonstrates one side of the comparison.",
+        "semanticRoleKo": "현금 없는 결제가 누군가에게 도움이나 해를 주는 모습을 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 비교의 한쪽 측면을 보여 주는 구체적인 거래, 사람 또는 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A broader outcome that follows from the help or harm caused by cashless payments.",
+        "satisfiedWhenEn": "The answer states a concrete subsequent consequence for behavior, access, business, or society.",
+        "semanticRoleKo": "현금 없는 결제가 주는 도움이나 해악에서 이어지는 더 넓은 결과.",
+        "satisfiedWhenKo": "답변이 행동, 접근성, 사업 또는 사회에 뒤따르는 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete condition that qualifies the comparison between help and harm.",
+        "satisfiedWhenEn": "The answer specifies who, where, or under what circumstances one side of cashless payments is stronger.",
+        "semanticRoleKo": "현금 없는 결제의 도움과 해악 비교에 조건을 더하는 구체적인 정보.",
+        "satisfiedWhenKo": "답변이 누구에게, 어디에서 또는 어떤 상황에서 한쪽 영향이 더 큰지 구체적으로 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-30",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "An advantage of cashless payments that informs the overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive feature or effect of cashless payment rather than offering generic praise.",
+        "semanticRoleKo": "현금 없는 결제에 대한 종합 의견을 형성하는 장점.",
+        "satisfiedWhenKo": "답변이 막연한 칭찬이 아니라 현금 없는 결제의 구체적인 긍정적 기능이나 효과를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A disadvantage of cashless payments that informs the overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete negative feature, limitation, or effect of cashless payment.",
+        "semanticRoleKo": "현금 없는 결제에 대한 종합 의견을 형성하는 단점.",
+        "satisfiedWhenKo": "답변이 현금 없는 결제의 구체적인 부정적 기능, 제약 또는 효과를 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall assessment of cashless payments after considering their advantages and disadvantages.",
+        "satisfiedWhenEn": "The answer reaches a clear overall view that is responsive to both sides rather than leaving the evaluation unresolved.",
+        "semanticRoleKo": "현금 없는 결제의 장단점을 고려한 뒤 내리는 학습자의 종합 평가.",
+        "satisfiedWhenKo": "답변이 양쪽 측면을 고려하여 미결 상태로 두지 않고 분명한 종합 견해를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A consideration explaining the learner's final assessment of cashless payments.",
+        "satisfiedWhenEn": "The answer explains why the stated advantage, disadvantage, or tradeoff leads to the overall opinion.",
+        "semanticRoleKo": "현금 없는 결제에 대한 학습자의 최종 평가를 설명하는 고려 사항.",
+        "satisfiedWhenKo": "답변이 언급한 장점, 단점 또는 상충 관계가 왜 종합 의견으로 이어지는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete cashless-payment experience that supports one part of the evaluation.",
+        "satisfiedWhenEn": "The answer describes a particular situation in which a claimed advantage or disadvantage is observable.",
+        "semanticRoleKo": "평가의 한 측면을 뒷받침하는 구체적인 현금 없는 결제 경험.",
+        "satisfiedWhenKo": "답변이 주장한 장점이나 단점을 확인할 수 있는 특정 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of cashless payment that extends the stated evaluation.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for users, transactions, or society that follows from a discussed feature.",
+        "semanticRoleKo": "제시한 평가를 확장하는 현금 없는 결제의 결과.",
+        "satisfiedWhenKo": "답변이 논의한 기능에서 이어지는 사용자, 거래 또는 사회의 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific information about cashless-payment use that makes the balanced assessment more precise.",
+        "satisfiedWhenEn": "The answer adds a concrete feature, user group, or condition relevant to weighing the two sides.",
+        "semanticRoleKo": "균형 잡힌 평가를 더 정밀하게 만드는 현금 없는 결제 사용에 관한 구체적인 정보.",
+        "satisfiedWhenKo": "답변이 양쪽을 비교하는 데 관련된 구체적인 기능, 사용자 집단 또는 조건을 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-31",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete benefit of watching or creating short-form videos.",
+        "satisfiedWhenEn": "The answer identifies a specific positive effect or useful quality of short-form videos; simply saying they are good or fun is not enough.",
+        "semanticRoleKo": "숏폼 영상을 시청하거나 제작할 때 얻는 구체적인 이점.",
+        "satisfiedWhenKo": "답변이 숏폼 영상의 구체적인 긍정 효과나 유용한 특성을 제시하면 충족되며, 단지 좋거나 재미있다고만 하면 부족하다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete drawback of watching or creating short-form videos.",
+        "satisfiedWhenEn": "The answer identifies a specific harm, limitation, or undesirable effect associated with short-form videos.",
+        "semanticRoleKo": "숏폼 영상을 시청하거나 제작할 때 생기는 구체적인 단점.",
+        "satisfiedWhenKo": "답변이 숏폼 영상과 관련된 구체적인 해악, 제약 또는 바람직하지 않은 효과를 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall view of short-form videos after considering benefits and drawbacks.",
+        "satisfiedWhenEn": "The answer gives a clear overall assessment of short-form videos in addition to discussing both sides.",
+        "semanticRoleKo": "장단점을 고려한 뒤 내리는 숏폼 영상에 대한 학습자의 종합 견해.",
+        "satisfiedWhenKo": "답변이 양쪽 측면을 논의하는 것에 더해 숏폼 영상을 전반적으로 어떻게 평가하는지 분명히 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A reason supporting the learner's overall view of short-form videos.",
+        "satisfiedWhenEn": "The answer explains why a stated effect or tradeoff leads the learner to that view.",
+        "semanticRoleKo": "숏폼 영상에 대한 학습자의 종합 견해를 뒷받침하는 이유.",
+        "satisfiedWhenKo": "답변이 언급한 영향이나 상충 관계가 왜 그러한 견해로 이어지는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular viewing, learning, or social situation illustrating a benefit or drawback.",
+        "satisfiedWhenEn": "The answer supplies a concrete instance in which short-form videos have the claimed positive or negative effect.",
+        "semanticRoleKo": "숏폼 영상의 장점이나 단점을 보여 주는 구체적인 시청, 학습 또는 사회적 상황.",
+        "satisfiedWhenKo": "답변이 숏폼 영상으로 주장한 긍정적 또는 부정적 효과가 나타나는 구체적인 사례를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A further consequence of short-form video use for attention, behavior, knowledge, or relationships.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that follows from one of the discussed qualities of short-form videos.",
+        "semanticRoleKo": "숏폼 영상 사용이 주의력, 행동, 지식 또는 관계에 가져오는 추가적인 결과.",
+        "satisfiedWhenKo": "답변이 논의한 숏폼 영상의 특성 중 하나에서 이어지는 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or use pattern of short-form videos relevant to the evaluation.",
+        "satisfiedWhenEn": "The answer adds concrete information about the content, format, audience, or way short-form videos are consumed.",
+        "semanticRoleKo": "평가와 관련된 숏폼 영상의 구체적인 특성이나 이용 양상.",
+        "satisfiedWhenKo": "답변이 숏폼 영상의 콘텐츠, 형식, 이용자 또는 소비 방식에 관한 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-32",
+    "slotContracts": {
+      "BEFORE_STATE": {
+        "semanticRoleEn": "What an aspect of daily media use or attention was like before short-form videos became influential.",
+        "satisfiedWhenEn": "The answer conveys an earlier habit or condition that can be meaningfully contrasted with life shaped by short-form videos.",
+        "semanticRoleKo": "숏폼 영상이 큰 영향을 미치기 전 일상적인 미디어 이용이나 주의 집중의 모습.",
+        "satisfiedWhenKo": "답변이 숏폼 영상의 영향을 받은 생활과 의미 있게 대비되는 과거의 습관이나 상태를 나타내면 충족된다."
+      },
+      "NOW_STATE": {
+        "semanticRoleEn": "A present-day daily-life pattern shaped by short-form videos.",
+        "satisfiedWhenEn": "The answer describes a current behavior, expectation, or condition that is specifically connected to short-form video use.",
+        "semanticRoleKo": "숏폼 영상의 영향을 받아 형성된 현재의 일상생활 양상.",
+        "satisfiedWhenKo": "답변이 숏폼 영상 이용과 구체적으로 연결된 현재의 행동, 기대 또는 상태를 설명하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the short-form-video change is mostly positive.",
+        "satisfiedWhenEn": "The answer clearly evaluates the described daily-life change as mainly positive, mainly negative, or mixed with an overall leaning.",
+        "semanticRoleKo": "숏폼 영상으로 인한 변화가 대체로 긍정적인지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 설명한 일상 변화를 주로 긍정적, 주로 부정적 또는 어느 한쪽으로 기운 복합적인 변화로 분명히 평가하면 충족된다."
+      },
+      "CHANGE_CAUSE": {
+        "semanticRoleEn": "A feature of short-form videos or their consumption that explains the daily-life change.",
+        "satisfiedWhenEn": "The answer identifies a concrete mechanism, such as brevity, endless feeds, or easy sharing, that produced the stated difference.",
+        "semanticRoleKo": "일상의 변화를 설명하는 숏폼 영상이나 그 소비 방식의 특성.",
+        "satisfiedWhenKo": "답변이 짧은 길이, 끝없이 이어지는 피드, 쉬운 공유처럼 제시한 차이를 만든 구체적인 메커니즘을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific everyday instance demonstrating a change linked to short-form videos.",
+        "satisfiedWhenEn": "The answer gives a concrete situation in which the earlier and current media habits or behaviors differ.",
+        "semanticRoleKo": "숏폼 영상과 관련된 변화를 보여 주는 구체적인 일상 사례.",
+        "satisfiedWhenKo": "답변이 과거와 현재의 미디어 습관이나 행동이 달라진 구체적인 상황을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the short-form-video shift for people's time, attention, learning, or relationships.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that follows from the changed daily pattern.",
+        "semanticRoleKo": "숏폼 영상으로의 변화가 사람들의 시간, 주의력, 학습 또는 관계에 가져온 결과.",
+        "satisfiedWhenKo": "답변이 달라진 일상 양상에서 비롯된 구체적인 결과를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for the learner's evaluation of the change caused by short-form videos.",
+        "satisfiedWhenEn": "The answer explains why a specific consequence makes the overall change positive, negative, or mixed.",
+        "semanticRoleKo": "숏폼 영상이 일으킨 변화에 대한 학습자의 평가 근거.",
+        "satisfiedWhenKo": "답변이 특정 결과로 인해 전체 변화가 왜 긍정적, 부정적 또는 복합적인지 설명하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A positive side of short-form videos changing daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete improvement or opportunity created by the change.",
+        "semanticRoleKo": "숏폼 영상이 일상을 바꾼 방식의 긍정적인 측면.",
+        "satisfiedWhenKo": "답변이 숏폼 영상으로 인한 변화에서 생긴 구체적인 개선점이나 기회를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A negative side of short-form videos changing daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete problem, loss, or limitation created by the change.",
+        "semanticRoleKo": "숏폼 영상이 일상을 바꾼 방식의 부정적인 측면.",
+        "satisfiedWhenKo": "답변이 숏폼 영상으로 인한 변화에서 생긴 구체적인 문제, 손실 또는 제약을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-33",
+    "slotContracts": {
+      "RESULT": {
+        "semanticRoleEn": "A specific way short-form videos have affected people.",
+        "satisfiedWhenEn": "The answer identifies a concrete effect on people's attention, habits, knowledge, emotions, or relationships; saying only that short videos changed people is insufficient.",
+        "semanticRoleKo": "숏폼 영상이 사람들에게 미친 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 사람들의 주의력, 습관, 지식, 감정 또는 관계에 미친 구체적인 영향을 밝히면 충족되며, 단지 사람들을 바꾸었다고만 하면 부족하다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the effects of short-form videos are mostly good.",
+        "satisfiedWhenEn": "The answer takes a clear overall position on the value of the effects it describes.",
+        "semanticRoleKo": "숏폼 영상의 영향이 대체로 좋은지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 자신이 설명한 영향의 가치에 대해 분명한 종합 입장을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete person, behavior, or situation illustrating an effect of short-form videos.",
+        "satisfiedWhenEn": "The answer presents a specific case in which the claimed effect can be observed.",
+        "semanticRoleKo": "숏폼 영상의 영향을 보여 주는 구체적인 사람, 행동 또는 상황의 사례.",
+        "satisfiedWhenKo": "답변이 주장한 영향을 확인할 수 있는 구체적인 사례를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for judging the effects of short-form videos as mostly good or otherwise.",
+        "satisfiedWhenEn": "The answer explains why the identified effects justify the learner's overall evaluation.",
+        "semanticRoleKo": "숏폼 영상의 영향을 대체로 좋거나 그렇지 않다고 판단하는 근거.",
+        "satisfiedWhenKo": "답변이 제시한 영향이 왜 학습자의 종합 평가를 정당화하는지 설명하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct beneficial effect of short-form videos on people.",
+        "satisfiedWhenEn": "The answer adds a concrete positive effect that is independent of the main effect already identified.",
+        "semanticRoleKo": "숏폼 영상이 사람들에게 주는 별도의 긍정적인 영향.",
+        "satisfiedWhenKo": "답변이 이미 밝힌 주된 영향과 독립된 구체적인 긍정 효과를 덧붙이면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct harmful effect of short-form videos on people.",
+        "satisfiedWhenEn": "The answer adds a concrete negative effect that is independent of the main effect already identified.",
+        "semanticRoleKo": "숏폼 영상이 사람들에게 주는 별도의 부정적인 영향.",
+        "satisfiedWhenKo": "답변이 이미 밝힌 주된 영향과 독립된 구체적인 부정 효과를 덧붙이면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific context clarifying how or for whom short-form videos produce a stated effect.",
+        "satisfiedWhenEn": "The answer adds concrete information about the viewing pattern, content, audience, or setting involved.",
+        "semanticRoleKo": "숏폼 영상이 누구에게 또는 어떤 방식으로 언급한 영향을 주는지 분명하게 하는 구체적인 맥락.",
+        "satisfiedWhenKo": "답변이 관련된 시청 양상, 콘텐츠, 이용자 또는 상황에 관한 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-34",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete way short-form videos help people.",
+        "satisfiedWhenEn": "The answer identifies a specific benefit people gain from short-form videos, not merely that the videos are enjoyable.",
+        "semanticRoleKo": "숏폼 영상이 사람들에게 도움이 되는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 숏폼 영상이 단지 재미있다는 말이 아니라 사람들이 얻는 구체적인 이점을 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete way short-form videos harm people.",
+        "satisfiedWhenEn": "The answer identifies a specific negative effect or risk for people who consume or create short-form videos.",
+        "semanticRoleKo": "숏폼 영상이 사람들에게 해를 주는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 숏폼 영상을 소비하거나 제작하는 사람들에게 생기는 구체적인 부정적 영향이나 위험을 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's comparative judgment about whether short-form videos help people more than they harm them.",
+        "satisfiedWhenEn": "The answer clearly indicates which side outweighs the other overall, including a genuinely conditional conclusion if appropriate.",
+        "semanticRoleKo": "숏폼 영상이 사람들에게 주는 도움과 해악 중 어느 쪽이 더 큰지에 대한 학습자의 비교 판단.",
+        "satisfiedWhenKo": "답변이 전반적으로 어느 쪽이 더 큰지 분명히 밝히며, 필요한 경우 실질적인 조건부 결론을 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner believes the benefits or harms of short-form videos are greater.",
+        "satisfiedWhenEn": "The answer explains the comparative judgment by weighing the significance or prevalence of the stated effects.",
+        "semanticRoleKo": "숏폼 영상의 이점이나 해악 중 한쪽이 더 크다고 보는 이유.",
+        "satisfiedWhenKo": "답변이 언급한 영향의 중요성이나 널리 나타나는 정도를 따져 비교 판단을 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific case showing short-form videos helping or harming a person.",
+        "satisfiedWhenEn": "The answer describes a concrete viewing, learning, work, or social situation that demonstrates one side.",
+        "semanticRoleKo": "숏폼 영상이 사람에게 도움이나 해를 주는 모습을 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 한쪽 측면을 보여 주는 구체적인 시청, 학습, 업무 또는 사회적 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A broader consequence that develops the identified help or harm from short-form videos.",
+        "satisfiedWhenEn": "The answer states a concrete later outcome for behavior, attention, learning, or relationships.",
+        "semanticRoleKo": "숏폼 영상에서 확인한 도움이나 해악을 더 발전시켜 보여 주는 넓은 결과.",
+        "satisfiedWhenKo": "답변이 행동, 주의력, 학습 또는 관계에 뒤따르는 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete condition that qualifies when or for whom short-form videos help or harm.",
+        "satisfiedWhenEn": "The answer specifies an audience, content type, usage pattern, or circumstance that affects the comparison.",
+        "semanticRoleKo": "숏폼 영상이 언제 또는 누구에게 도움이나 해를 주는지 한정하는 구체적인 조건.",
+        "satisfiedWhenKo": "답변이 비교에 영향을 주는 이용자, 콘텐츠 유형, 사용 양상 또는 상황을 구체적으로 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-35",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "An advantage of short-form videos that should inform the learner's overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive quality or effect of short-form videos rather than giving undetailed approval.",
+        "semanticRoleKo": "숏폼 영상에 대한 학습자의 종합 의견에 반영되어야 하는 장점.",
+        "satisfiedWhenKo": "답변이 구체적인 내용 없이 찬성만 하는 것이 아니라 숏폼 영상의 긍정적인 특성이나 효과를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A disadvantage of short-form videos that should inform the learner's overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete negative quality, limitation, or effect of short-form videos.",
+        "semanticRoleKo": "숏폼 영상에 대한 학습자의 종합 의견에 반영되어야 하는 단점.",
+        "satisfiedWhenKo": "답변이 숏폼 영상의 구체적인 부정적 특성, 제약 또는 효과를 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall assessment of short-form videos after considering both advantages and disadvantages.",
+        "satisfiedWhenEn": "The answer gives a clear final view that responds to both sides instead of stopping after a list of them.",
+        "semanticRoleKo": "숏폼 영상의 장단점을 모두 고려한 뒤 내리는 학습자의 종합 평가.",
+        "satisfiedWhenKo": "답변이 양쪽 측면을 나열하는 데서 멈추지 않고 이를 반영한 분명한 최종 견해를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A reason the learner arrives at the stated overall assessment of short-form videos.",
+        "satisfiedWhenEn": "The answer explains why the discussed benefits, harms, or tradeoff support the final view.",
+        "semanticRoleKo": "학습자가 숏폼 영상에 대해 제시한 종합 평가에 이르게 된 이유.",
+        "satisfiedWhenKo": "답변이 논의한 이점, 해악 또는 상충 관계가 왜 최종 견해를 뒷받침하는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete short-form-video experience supporting an advantage or disadvantage.",
+        "satisfiedWhenEn": "The answer describes a particular case in which one of the evaluated qualities is evident.",
+        "semanticRoleKo": "숏폼 영상의 장점이나 단점을 뒷받침하는 구체적인 경험.",
+        "satisfiedWhenKo": "답변이 평가한 특성 중 하나가 분명히 드러나는 특정 사례를 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of short-form video use that extends the balanced assessment.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for viewers, creators, or society that follows from a discussed quality.",
+        "semanticRoleKo": "균형 잡힌 평가를 확장하는 숏폼 영상 이용의 결과.",
+        "satisfiedWhenKo": "답변이 논의한 특성에서 이어지는 시청자, 제작자 또는 사회의 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific information about short-form-video content or use that makes the evaluation more precise.",
+        "satisfiedWhenEn": "The answer adds a concrete content type, platform behavior, audience, or usage condition relevant to weighing both sides.",
+        "semanticRoleKo": "숏폼 영상에 대한 평가를 더 정밀하게 만드는 콘텐츠나 이용 방식의 구체적인 정보.",
+        "satisfiedWhenKo": "답변이 양쪽을 비교하는 데 관련된 구체적인 콘텐츠 유형, 플랫폼 행동, 이용자 또는 사용 조건을 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-36",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete benefit of using food delivery apps.",
+        "satisfiedWhenEn": "The answer states a specific way a food delivery app helps customers, restaurants, or another affected group; merely saying it is convenient is too generic.",
+        "semanticRoleKo": "음식 배달 앱을 사용할 때 얻는 구체적인 이점.",
+        "satisfiedWhenKo": "답변이 음식 배달 앱이 고객, 음식점 또는 다른 관련 집단에 도움이 되는 구체적인 방식을 밝히면 충족되며, 단순히 편리하다고만 하면 너무 막연하다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete drawback of using food delivery apps.",
+        "satisfiedWhenEn": "The answer identifies a specific cost, risk, limitation, or harmful effect associated with food delivery apps.",
+        "semanticRoleKo": "음식 배달 앱을 사용할 때 생기는 구체적인 단점.",
+        "satisfiedWhenKo": "답변이 음식 배달 앱과 관련된 구체적인 비용, 위험, 제약 또는 해로운 영향을 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall view of food delivery apps after considering their benefits and drawbacks.",
+        "satisfiedWhenEn": "The answer expresses a clear overall evaluation in addition to identifying both a positive and a negative side.",
+        "semanticRoleKo": "음식 배달 앱의 장단점을 고려한 뒤 내리는 학습자의 종합 견해.",
+        "satisfiedWhenKo": "답변이 긍정적 측면과 부정적 측면을 모두 밝히는 데 더해 분명한 종합 평가를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A reason supporting the learner's overall view of food delivery apps.",
+        "satisfiedWhenEn": "The answer explains why the discussed effects lead to approval, criticism, or a qualified view.",
+        "semanticRoleKo": "음식 배달 앱에 대한 학습자의 종합 견해를 뒷받침하는 이유.",
+        "satisfiedWhenKo": "답변이 논의한 영향 때문에 왜 찬성, 비판 또는 조건부 견해를 갖는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular ordering or delivery situation illustrating a benefit or drawback.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion in which a claimed effect of a food delivery app occurs.",
+        "semanticRoleKo": "음식 배달 앱의 장점이나 단점을 보여 주는 구체적인 주문 또는 배달 상황.",
+        "satisfiedWhenKo": "답변이 음식 배달 앱의 주장한 효과가 나타나는 구체적인 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A further consequence of food delivery app use for eating habits, restaurants, workers, or communities.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that develops one of the evaluated sides beyond its initial claim.",
+        "semanticRoleKo": "음식 배달 앱 사용이 식습관, 음식점, 노동자 또는 지역사회에 가져오는 추가적인 결과.",
+        "satisfiedWhenKo": "답변이 평가한 측면 중 하나가 최초 주장 이후 어떤 구체적인 결과로 이어지는지 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or usage condition of food delivery apps relevant to the evaluation.",
+        "satisfiedWhenEn": "The answer adds concrete information about ordering, fees, selection, delivery, or who is affected.",
+        "semanticRoleKo": "평가와 관련된 음식 배달 앱의 구체적인 기능이나 사용 조건.",
+        "satisfiedWhenKo": "답변이 주문, 수수료, 선택 범위, 배달 또는 영향을 받는 사람에 관한 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-37",
+    "slotContracts": {
+      "BEFORE_STATE": {
+        "semanticRoleEn": "What an aspect of obtaining meals or organizing daily life was like before food delivery apps changed it.",
+        "satisfiedWhenEn": "The answer conveys an earlier meal-related practice or condition that can be contrasted with app-based delivery today.",
+        "semanticRoleKo": "음식 배달 앱이 바꾸기 전 식사를 구하거나 일상을 운영하던 방식의 한 측면.",
+        "satisfiedWhenKo": "답변이 오늘날의 앱 기반 배달과 대비할 수 있는 과거의 식사 관련 관행이나 상태를 나타내면 충족된다."
+      },
+      "NOW_STATE": {
+        "semanticRoleEn": "A current daily-life pattern that exists because food delivery apps are widely used.",
+        "satisfiedWhenEn": "The answer describes a present behavior, option, or condition specifically linked to food delivery apps.",
+        "semanticRoleKo": "음식 배달 앱이 널리 사용되면서 생긴 현재의 일상생활 양상.",
+        "satisfiedWhenKo": "답변이 음식 배달 앱과 구체적으로 연결된 현재의 행동, 선택지 또는 상태를 설명하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the food-delivery-app change is mostly positive.",
+        "satisfiedWhenEn": "The answer clearly evaluates the described daily-life change overall, including a qualified position if it has a definite leaning.",
+        "semanticRoleKo": "음식 배달 앱이 가져온 변화가 대체로 긍정적인지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 설명한 일상 변화를 전반적으로 분명히 평가하며, 뚜렷한 방향이 있다면 조건부 입장도 인정된다."
+      },
+      "CHANGE_CAUSE": {
+        "semanticRoleEn": "An app feature or delivery-system practice that explains how daily life changed.",
+        "satisfiedWhenEn": "The answer identifies a concrete mechanism, beyond simply naming delivery apps, that produced the stated difference.",
+        "semanticRoleKo": "일상이 어떻게 달라졌는지 설명하는 앱 기능이나 배달 시스템의 운영 방식.",
+        "satisfiedWhenKo": "답변이 배달 앱을 단순히 언급하는 데 그치지 않고 제시한 차이를 만든 구체적인 메커니즘을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific daily situation demonstrating a change caused by food delivery apps.",
+        "satisfiedWhenEn": "The answer gives a concrete meal, schedule, or ordering situation in which past and present conditions differ.",
+        "semanticRoleKo": "음식 배달 앱으로 생긴 변화를 보여 주는 구체적인 일상 상황.",
+        "satisfiedWhenKo": "답변이 과거와 현재의 상태가 달라진 구체적인 식사, 일정 또는 주문 상황을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the shift toward food delivery apps for people or local food businesses.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that follows from the changed way meals are obtained.",
+        "semanticRoleKo": "음식 배달 앱 중심으로의 변화가 사람이나 지역 음식 사업체에 가져온 결과.",
+        "satisfiedWhenKo": "답변이 식사를 구하는 방식의 변화에서 이어진 구체적인 결과를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for the learner's evaluation of the change created by food delivery apps.",
+        "satisfiedWhenEn": "The answer connects the overall judgment to a specific effect on convenience, cost, health, work, or community.",
+        "semanticRoleKo": "음식 배달 앱이 만든 변화에 대한 학습자의 평가 근거.",
+        "satisfiedWhenKo": "답변이 종합 판단을 편의, 비용, 건강, 노동 또는 지역사회에 미친 구체적인 영향과 연결하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A positive side of food delivery apps changing daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete improvement or opportunity produced by the change.",
+        "semanticRoleKo": "음식 배달 앱이 일상을 바꾼 방식의 긍정적인 측면.",
+        "satisfiedWhenKo": "답변이 음식 배달 앱으로 인한 변화에서 생긴 구체적인 개선점이나 기회를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A negative side of food delivery apps changing daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete problem, burden, or loss produced by the change.",
+        "semanticRoleKo": "음식 배달 앱이 일상을 바꾼 방식의 부정적인 측면.",
+        "satisfiedWhenKo": "답변이 그 변화로 생긴 구체적인 문제, 부담 또는 손실을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-38",
+    "slotContracts": {
+      "RESULT": {
+        "semanticRoleEn": "A specific way food delivery apps have affected people.",
+        "satisfiedWhenEn": "The answer identifies a concrete effect on people's eating, spending, time, work, health, or access; saying only that the apps changed life is insufficient.",
+        "semanticRoleKo": "음식 배달 앱이 사람들에게 미친 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 사람들의 식사, 지출, 시간, 노동, 건강 또는 접근성에 미친 구체적인 영향을 밝히면 충족되며, 단지 생활을 바꾸었다고만 하면 부족하다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the effects of food delivery apps are mostly good.",
+        "satisfiedWhenEn": "The answer gives a clear overall evaluation of the effects it identifies.",
+        "semanticRoleKo": "음식 배달 앱의 영향이 대체로 좋은지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 자신이 밝힌 영향에 대해 분명한 종합 평가를 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete person or ordering situation illustrating an effect of food delivery apps.",
+        "satisfiedWhenEn": "The answer gives a specific real or plausible case in which the claimed effect appears.",
+        "semanticRoleKo": "음식 배달 앱의 영향을 보여 주는 구체적인 사람이나 주문 상황의 사례.",
+        "satisfiedWhenKo": "답변이 주장한 영향이 나타나는 구체적인 실제 또는 가능한 사례를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for judging the effects of food delivery apps as mostly good or otherwise.",
+        "satisfiedWhenEn": "The answer explains why the identified effects of food delivery apps support the learner's overall judgment.",
+        "semanticRoleKo": "음식 배달 앱의 영향을 대체로 좋거나 그렇지 않다고 판단하는 근거.",
+        "satisfiedWhenKo": "답변이 제시된 음식 배달 앱의 영향이 왜 학습자의 종합 판단을 뒷받침하는지 설명하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct beneficial effect of food delivery apps on people.",
+        "satisfiedWhenEn": "The answer adds a concrete positive effect separate from the main impact already described.",
+        "semanticRoleKo": "음식 배달 앱이 사람들에게 주는 별도의 긍정적인 영향.",
+        "satisfiedWhenKo": "답변이 이미 설명한 주된 영향과 구별되는 구체적인 긍정 효과를 덧붙이면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct harmful effect of food delivery apps on people.",
+        "satisfiedWhenEn": "The answer adds a concrete negative effect separate from the main impact already described.",
+        "semanticRoleKo": "음식 배달 앱이 사람들에게 주는 별도의 부정적인 영향.",
+        "satisfiedWhenKo": "답변이 이미 설명한 주된 영향과 구별되는 구체적인 부정 효과를 덧붙이면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific context clarifying how or for whom food delivery apps produce an effect.",
+        "satisfiedWhenEn": "The answer adds concrete information about the user group, ordering pattern, delivery arrangement, or setting involved.",
+        "semanticRoleKo": "음식 배달 앱이 누구에게 또는 어떤 방식으로 영향을 주는지 분명하게 하는 구체적인 맥락.",
+        "satisfiedWhenKo": "답변이 관련된 사용자 집단, 주문 양상, 배달 방식 또는 상황에 관한 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-39",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete way food delivery apps help people.",
+        "satisfiedWhenEn": "The answer identifies a specific benefit for customers, workers, restaurant owners, or another affected group.",
+        "semanticRoleKo": "음식 배달 앱이 사람들에게 도움이 되는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 고객, 노동자, 음식점 운영자 또는 다른 관련 집단이 얻는 구체적인 이점을 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete way food delivery apps harm or disadvantage people.",
+        "satisfiedWhenEn": "The answer identifies a specific burden, risk, or negative effect for an affected group.",
+        "semanticRoleKo": "음식 배달 앱이 사람들에게 해를 주거나 불리하게 작용하는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 관련 집단에 생기는 구체적인 부담, 위험 또는 부정적 영향을 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's comparative judgment about whether food delivery apps help more than they harm.",
+        "satisfiedWhenEn": "The answer clearly states which side outweighs the other overall or gives a meaningful conditional comparison.",
+        "semanticRoleKo": "음식 배달 앱이 주는 도움과 해악 중 어느 쪽이 더 큰지에 대한 학습자의 비교 판단.",
+        "satisfiedWhenKo": "답변이 음식 배달 앱의 도움과 해악 중 전반적으로 어느 쪽이 더 큰지 분명히 밝히거나 의미 있는 조건부 비교를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner believes the helpful or harmful side of food delivery apps is greater.",
+        "satisfiedWhenEn": "The answer explains the comparison by weighing the significance, reach, or severity of the effects discussed.",
+        "semanticRoleKo": "음식 배달 앱의 유익한 측면이나 해로운 측면 중 한쪽이 더 크다고 보는 이유.",
+        "satisfiedWhenKo": "답변이 논의한 영향의 중요성, 범위 또는 심각성을 따져 비교를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific delivery-app case showing help or harm.",
+        "satisfiedWhenEn": "The answer describes a concrete customer, restaurant, courier, or household situation that demonstrates one side.",
+        "semanticRoleKo": "음식 배달 앱의 도움이나 해악을 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 한쪽 측면을 보여 주는 구체적인 고객, 음식점, 배달 노동자 또는 가정의 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A broader outcome that follows from the help or harm caused by food delivery apps.",
+        "satisfiedWhenEn": "The answer states a concrete later consequence for habits, businesses, employment, health, or communities.",
+        "semanticRoleKo": "음식 배달 앱이 주는 도움이나 해악에서 이어지는 더 넓은 결과.",
+        "satisfiedWhenKo": "답변이 습관, 사업, 고용, 건강 또는 지역사회에 뒤따르는 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete condition that qualifies when or for whom food delivery apps help or harm.",
+        "satisfiedWhenEn": "The answer specifies a user group, type of order, fee structure, location, or circumstance that affects the comparison.",
+        "semanticRoleKo": "음식 배달 앱이 언제 또는 누구에게 도움이나 해를 주는지 한정하는 구체적인 조건.",
+        "satisfiedWhenKo": "답변이 비교에 영향을 주는 사용자 집단, 주문 유형, 수수료 구조, 지역 또는 상황을 구체적으로 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-40",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "An advantage of food delivery apps that informs the learner's overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive feature or effect of food delivery apps rather than offering generic praise.",
+        "semanticRoleKo": "음식 배달 앱에 대한 학습자의 종합 의견에 반영되는 장점.",
+        "satisfiedWhenKo": "답변이 막연한 칭찬이 아니라 음식 배달 앱의 구체적인 긍정적 기능이나 효과를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A disadvantage of food delivery apps that informs the learner's overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete negative feature, limitation, cost, or effect of food delivery apps.",
+        "semanticRoleKo": "음식 배달 앱에 대한 학습자의 종합 의견에 반영되는 단점.",
+        "satisfiedWhenKo": "답변이 음식 배달 앱의 구체적인 부정적 기능, 제약, 비용 또는 효과를 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall assessment of food delivery apps after considering both advantages and disadvantages.",
+        "satisfiedWhenEn": "The answer reaches a clear overall view that takes both sides into account.",
+        "semanticRoleKo": "음식 배달 앱의 장단점을 모두 고려한 뒤 내리는 학습자의 종합 평가.",
+        "satisfiedWhenKo": "답변이 양쪽 측면을 고려하여 분명한 종합 견해에 이르면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A consideration explaining the learner's final assessment of food delivery apps.",
+        "satisfiedWhenEn": "The answer explains why a stated benefit, drawback, or tradeoff leads to the overall view.",
+        "semanticRoleKo": "음식 배달 앱에 대한 학습자의 최종 평가를 설명하는 고려 사항.",
+        "satisfiedWhenKo": "답변이 언급한 이점, 단점 또는 상충 관계가 왜 종합 견해로 이어지는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete food-delivery-app experience supporting one side of the assessment.",
+        "satisfiedWhenEn": "The answer describes a particular ordering or delivery situation in which a claimed advantage or disadvantage is evident.",
+        "semanticRoleKo": "평가의 한쪽 측면을 뒷받침하는 구체적인 음식 배달 앱 경험.",
+        "satisfiedWhenKo": "답변이 주장한 장점이나 단점이 분명히 드러나는 특정 주문 또는 배달 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of food delivery app use that extends the assessment.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for users, restaurants, workers, or communities that follows from a discussed feature.",
+        "semanticRoleKo": "평가를 확장하는 음식 배달 앱 사용의 결과.",
+        "satisfiedWhenKo": "답변이 논의한 기능에서 이어지는 사용자, 음식점, 노동자 또는 지역사회의 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific information about food delivery app use that makes the balanced assessment more precise.",
+        "satisfiedWhenEn": "The answer adds a concrete service feature, user group, ordering pattern, or condition relevant to weighing both sides.",
+        "semanticRoleKo": "균형 잡힌 평가를 더 정밀하게 만드는 음식 배달 앱 이용에 관한 구체적인 정보.",
+        "satisfiedWhenKo": "답변이 양쪽을 비교하는 데 관련된 구체적인 서비스 기능, 사용자 집단, 주문 양상 또는 조건을 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-41",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete benefit of using online reviews.",
+        "satisfiedWhenEn": "The answer identifies a specific way online reviews help consumers, businesses, or another affected group; merely saying they are useful is too vague.",
+        "semanticRoleKo": "온라인 리뷰를 이용할 때 얻는 구체적인 이점.",
+        "satisfiedWhenKo": "답변이 온라인 리뷰가 소비자, 사업체 또는 다른 관련 집단에 도움이 되는 구체적인 방식을 밝히면 충족되며, 단순히 유용하다고만 하면 너무 막연하다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete drawback or risk of online reviews.",
+        "satisfiedWhenEn": "The answer identifies a specific problem such as unreliability, manipulation, unfairness, or another harmful effect.",
+        "semanticRoleKo": "온라인 리뷰의 구체적인 단점이나 위험.",
+        "satisfiedWhenKo": "답변이 신뢰성 부족, 조작, 불공정 또는 다른 해로운 영향처럼 구체적인 문제를 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall view of online reviews after considering their benefits and drawbacks.",
+        "satisfiedWhenEn": "The answer expresses a clear overall evaluation beyond listing a positive and a negative feature.",
+        "semanticRoleKo": "온라인 리뷰의 장단점을 고려한 뒤 내리는 학습자의 종합 견해.",
+        "satisfiedWhenKo": "답변이 긍정적 특성과 부정적 특성을 나열하는 데서 더 나아가 분명한 종합 평가를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A reason supporting the learner's overall view of online reviews.",
+        "satisfiedWhenEn": "The answer explains why the discussed qualities justify trusting, limiting, or otherwise evaluating online reviews as stated.",
+        "semanticRoleKo": "온라인 리뷰에 대한 학습자의 종합 견해를 뒷받침하는 이유.",
+        "satisfiedWhenKo": "답변이 논의한 특성 때문에 온라인 리뷰를 왜 신뢰하거나 제한하거나 제시한 방식으로 평가하는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular decision or review situation illustrating a stated benefit or drawback.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion in which an online review has the claimed effect.",
+        "semanticRoleKo": "온라인 리뷰의 장점이나 단점을 보여 주는 구체적인 의사결정 또는 리뷰 상황.",
+        "satisfiedWhenKo": "답변이 온라인 리뷰의 주장한 효과가 나타나는 구체적인 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A further consequence of online reviews for choices, reputations, or business behavior.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that develops one of the evaluated qualities in practice.",
+        "semanticRoleKo": "온라인 리뷰가 선택, 평판 또는 사업 행동에 가져오는 추가적인 결과.",
+        "satisfiedWhenKo": "답변이 평가한 특성 중 하나가 실제로 어떤 구체적인 결과로 이어지는지 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature or condition of online reviews relevant to the evaluation.",
+        "satisfiedWhenEn": "The answer adds concrete information about the platform, reviewer, review content, rating pattern, or use context.",
+        "semanticRoleKo": "평가와 관련된 온라인 리뷰의 구체적인 특성이나 조건.",
+        "satisfiedWhenKo": "답변이 플랫폼, 작성자, 리뷰 내용, 평점 양상 또는 이용 맥락에 관한 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-42",
+    "slotContracts": {
+      "BEFORE_STATE": {
+        "semanticRoleEn": "How people made choices or shared consumer information before online reviews changed daily life.",
+        "satisfiedWhenEn": "The answer conveys an earlier decision-making or information-sharing practice that can be contrasted with review-driven behavior today.",
+        "semanticRoleKo": "온라인 리뷰가 일상을 바꾸기 전 사람들이 선택하거나 소비 정보를 나누던 방식.",
+        "satisfiedWhenKo": "답변이 오늘날의 리뷰 중심 행동과 대비할 수 있는 과거의 의사결정 또는 정보 공유 방식을 나타내면 충족된다."
+      },
+      "NOW_STATE": {
+        "semanticRoleEn": "A present-day daily-life pattern shaped by access to online reviews.",
+        "satisfiedWhenEn": "The answer describes a current choice, behavior, or condition specifically connected to online reviews.",
+        "semanticRoleKo": "온라인 리뷰에 접근할 수 있게 되면서 형성된 현재의 일상생활 양상.",
+        "satisfiedWhenKo": "답변이 온라인 리뷰와 구체적으로 연결된 현재의 선택, 행동 또는 상태를 설명하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the change caused by online reviews is mostly positive.",
+        "satisfiedWhenEn": "The answer clearly evaluates the described change overall as positive, negative, or mixed with a definite leaning.",
+        "semanticRoleKo": "온라인 리뷰로 생긴 변화가 대체로 긍정적인지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 설명한 변화를 전반적으로 긍정적, 부정적 또는 뚜렷한 방향을 가진 복합적인 변화로 평가하면 충족된다."
+      },
+      "CHANGE_CAUSE": {
+        "semanticRoleEn": "A property of online reviews or review platforms that explains how the daily-life change occurred.",
+        "satisfiedWhenEn": "The answer identifies a concrete mechanism, such as broad access to other users' experiences, that produced the stated difference.",
+        "semanticRoleKo": "일상 변화가 일어난 방식을 설명하는 온라인 리뷰나 리뷰 플랫폼의 특성.",
+        "satisfiedWhenKo": "답변이 다른 이용자의 경험에 폭넓게 접근할 수 있는 점처럼 제시한 차이를 만든 구체적인 메커니즘을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific daily decision demonstrating a change linked to online reviews.",
+        "satisfiedWhenEn": "The answer gives a concrete purchase, visit, booking, or other choice in which past and present behavior differ.",
+        "semanticRoleKo": "온라인 리뷰와 관련된 변화를 보여 주는 구체적인 일상 의사결정.",
+        "satisfiedWhenKo": "답변이 과거와 현재의 행동이 달라진 구체적인 구매, 방문, 예약 또는 다른 선택을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of relying on online reviews for people, businesses, or everyday choices.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that follows from the changed decision-making practice.",
+        "semanticRoleKo": "온라인 리뷰에 의존하는 변화가 사람, 사업체 또는 일상적인 선택에 가져온 결과.",
+        "satisfiedWhenKo": "답변이 달라진 의사결정 방식에서 이어진 구체적인 결과를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for the learner's evaluation of the change brought by online reviews.",
+        "satisfiedWhenEn": "The answer connects the overall judgment to a specific effect on confidence, accuracy, fairness, or behavior.",
+        "semanticRoleKo": "온라인 리뷰가 가져온 변화에 대한 학습자의 평가 근거.",
+        "satisfiedWhenKo": "답변이 종합 판단을 확신, 정확성, 공정성 또는 행동에 미친 구체적인 영향과 연결하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A positive side of online reviews changing daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete improvement or opportunity created by review access.",
+        "semanticRoleKo": "온라인 리뷰가 일상을 바꾼 방식의 긍정적인 측면.",
+        "satisfiedWhenKo": "답변이 리뷰 접근으로 생긴 구체적인 개선점이나 기회를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A negative side of online reviews changing daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete problem, distortion, or burden created by review-driven behavior.",
+        "semanticRoleKo": "온라인 리뷰가 일상을 바꾼 방식의 부정적인 측면.",
+        "satisfiedWhenKo": "답변이 리뷰 중심 행동으로 생긴 구체적인 문제, 왜곡 또는 부담을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-43",
+    "slotContracts": {
+      "RESULT": {
+        "semanticRoleEn": "A specific way online reviews have affected people.",
+        "satisfiedWhenEn": "The answer identifies a concrete effect on people's decisions, trust, expectations, spending, or reputation; saying only that reviews influence people is insufficient.",
+        "semanticRoleKo": "온라인 리뷰가 사람들에게 미친 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 사람들의 결정, 신뢰, 기대, 지출 또는 평판에 미친 구체적인 영향을 밝히면 충족되며, 단지 리뷰가 영향을 준다고만 하면 부족하다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the effects of online reviews are mostly good.",
+        "satisfiedWhenEn": "The answer takes a clear overall position on the value of the described effects of online reviews.",
+        "semanticRoleKo": "온라인 리뷰의 영향이 대체로 좋은지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 자신이 설명한 온라인 리뷰 영향의 가치에 대해 분명한 종합 입장을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete person, business, or decision illustrating an effect of online reviews.",
+        "satisfiedWhenEn": "The answer presents a specific case in which a claimed effect of online reviews can be observed.",
+        "semanticRoleKo": "온라인 리뷰의 영향을 보여 주는 구체적인 사람, 사업체 또는 의사결정의 사례.",
+        "satisfiedWhenKo": "답변이 온라인 리뷰의 주장한 영향을 확인할 수 있는 구체적인 사례를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for judging the effects of online reviews as mostly good or otherwise.",
+        "satisfiedWhenEn": "The answer explains why the identified effects of online reviews justify the learner's overall evaluation.",
+        "semanticRoleKo": "온라인 리뷰의 영향을 대체로 좋거나 그렇지 않다고 판단하는 근거.",
+        "satisfiedWhenKo": "답변이 제시된 온라인 리뷰의 영향이 왜 학습자의 종합 평가를 정당화하는지 설명하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct beneficial effect of online reviews on people.",
+        "satisfiedWhenEn": "The answer adds a concrete positive effect of online reviews independent of the main impact already identified.",
+        "semanticRoleKo": "온라인 리뷰가 사람들에게 주는 별도의 긍정적인 영향.",
+        "satisfiedWhenKo": "답변이 이미 밝힌 주된 영향과 독립된 온라인 리뷰의 구체적인 긍정 효과를 덧붙이면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct harmful effect of online reviews on people.",
+        "satisfiedWhenEn": "The answer adds a concrete negative effect of online reviews independent of the main impact already identified.",
+        "semanticRoleKo": "온라인 리뷰가 사람들에게 주는 별도의 부정적인 영향.",
+        "satisfiedWhenKo": "답변이 이미 밝힌 주된 영향과 독립된 온라인 리뷰의 구체적인 부정 효과를 덧붙이면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific context clarifying how or for whom online reviews produce a stated effect.",
+        "satisfiedWhenEn": "The answer adds concrete information about the reviewer, reader, business, platform, or decision involved.",
+        "semanticRoleKo": "온라인 리뷰가 누구에게 또는 어떤 방식으로 언급한 영향을 주는지 분명하게 하는 구체적인 맥락.",
+        "satisfiedWhenKo": "답변이 관련된 리뷰 작성자, 독자, 사업체, 플랫폼 또는 결정에 관한 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-44",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete way online reviews help people.",
+        "satisfiedWhenEn": "The answer identifies a specific benefit people gain when reading, writing, or being represented by online reviews.",
+        "semanticRoleKo": "온라인 리뷰가 사람들에게 도움이 되는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 온라인 리뷰를 읽거나 쓰거나 리뷰의 대상이 될 때 사람들이 얻는 구체적인 이점을 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete way online reviews harm or disadvantage people.",
+        "satisfiedWhenEn": "The answer identifies a specific negative effect, distortion, or risk arising from online reviews.",
+        "semanticRoleKo": "온라인 리뷰가 사람들에게 해를 주거나 불리하게 작용하는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 온라인 리뷰에서 비롯되는 구체적인 부정적 영향, 왜곡 또는 위험을 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's comparative judgment about whether online reviews help people more than they harm them.",
+        "satisfiedWhenEn": "The answer clearly states which side is greater overall or offers a meaningful conditional comparison.",
+        "semanticRoleKo": "온라인 리뷰가 사람들에게 주는 도움과 해악 중 어느 쪽이 더 큰지에 대한 학습자의 비교 판단.",
+        "satisfiedWhenKo": "답변이 온라인 리뷰의 도움과 해악 중 전반적으로 어느 쪽이 더 큰지 분명히 밝히거나 의미 있는 조건부 비교를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner believes the helpful or harmful side of online reviews is greater.",
+        "satisfiedWhenEn": "The answer explains the comparison by weighing the importance, reliability, frequency, or reach of the stated effects.",
+        "semanticRoleKo": "온라인 리뷰의 유익한 측면이나 해로운 측면 중 한쪽이 더 크다고 보는 이유.",
+        "satisfiedWhenKo": "답변이 언급한 영향의 중요성, 신뢰성, 빈도 또는 범위를 따져 비교를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific case showing online reviews helping or harming someone.",
+        "satisfiedWhenEn": "The answer describes a concrete purchase, visit, reputation, or business situation that demonstrates one side.",
+        "semanticRoleKo": "온라인 리뷰가 누군가에게 도움이나 해를 주는 모습을 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 한쪽 측면을 보여 주는 구체적인 구매, 방문, 평판 또는 사업 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A broader outcome that follows from the help or harm caused by online reviews.",
+        "satisfiedWhenEn": "The answer states a concrete later consequence for consumer behavior, trust, reputation, or business practice.",
+        "semanticRoleKo": "온라인 리뷰가 주는 도움이나 해악에서 이어지는 더 넓은 결과.",
+        "satisfiedWhenKo": "답변이 소비자 행동, 신뢰, 평판 또는 사업 관행에 뒤따르는 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete condition that qualifies when or for whom online reviews help or harm.",
+        "satisfiedWhenEn": "The answer specifies a type of review, user, platform, verification practice, or circumstance that affects the comparison.",
+        "semanticRoleKo": "온라인 리뷰가 언제 또는 누구에게 도움이나 해를 주는지 한정하는 구체적인 조건.",
+        "satisfiedWhenKo": "답변이 비교에 영향을 주는 리뷰 유형, 이용자, 플랫폼, 검증 방식 또는 상황을 구체적으로 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-45",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "An advantage of online reviews that informs the learner's overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive feature or effect of online reviews rather than giving general approval.",
+        "semanticRoleKo": "온라인 리뷰에 대한 학습자의 종합 의견에 반영되는 장점.",
+        "satisfiedWhenKo": "답변이 막연한 찬성이 아니라 온라인 리뷰의 구체적인 긍정적 특성이나 효과를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A disadvantage of online reviews that informs the learner's overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete negative feature, limitation, or effect of online reviews.",
+        "semanticRoleKo": "온라인 리뷰에 대한 학습자의 종합 의견에 반영되는 단점.",
+        "satisfiedWhenKo": "답변이 온라인 리뷰의 구체적인 부정적 특성, 제약 또는 효과를 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall assessment of online reviews after considering both advantages and disadvantages.",
+        "satisfiedWhenEn": "The answer reaches a clear final view that takes both sides into account rather than leaving them as an unresolved list.",
+        "semanticRoleKo": "온라인 리뷰의 장단점을 모두 고려한 뒤 내리는 학습자의 종합 평가.",
+        "satisfiedWhenKo": "답변이 양쪽 측면을 미결정된 목록으로 남기지 않고 이를 고려한 분명한 최종 견해에 이르면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A reason the learner arrives at the stated overall assessment of online reviews.",
+        "satisfiedWhenEn": "The answer explains why the discussed strengths, weaknesses, or tradeoff support the final view.",
+        "semanticRoleKo": "학습자가 온라인 리뷰에 대해 제시한 종합 평가에 이르게 된 이유.",
+        "satisfiedWhenKo": "답변이 논의한 강점, 약점 또는 상충 관계가 왜 최종 견해를 뒷받침하는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete online-review experience supporting an advantage or disadvantage.",
+        "satisfiedWhenEn": "The answer describes a particular decision or interaction in which one evaluated quality is evident.",
+        "semanticRoleKo": "온라인 리뷰의 장점이나 단점을 뒷받침하는 구체적인 경험.",
+        "satisfiedWhenKo": "답변이 평가한 특성 중 하나가 분명히 드러나는 특정 결정이나 상호작용을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of online reviews that extends the balanced assessment.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for consumers, reviewers, businesses, or communities that follows from a discussed quality.",
+        "semanticRoleKo": "균형 잡힌 평가를 확장하는 온라인 리뷰의 결과.",
+        "satisfiedWhenKo": "답변이 논의한 특성에서 이어지는 소비자, 리뷰 작성자, 사업체 또는 지역사회의 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific information about online-review content or use that makes the assessment more precise.",
+        "satisfiedWhenEn": "The answer adds a concrete review type, platform feature, user group, or reliability condition relevant to weighing both sides.",
+        "semanticRoleKo": "온라인 리뷰에 대한 평가를 더 정밀하게 만드는 리뷰 내용이나 이용 방식의 구체적인 정보.",
+        "satisfiedWhenKo": "답변이 양쪽을 비교하는 데 관련된 구체적인 리뷰 유형, 플랫폼 기능, 이용자 집단 또는 신뢰 조건을 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-46",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete benefit of using a wearable device.",
+        "satisfiedWhenEn": "The answer identifies a specific way wearable devices help users, such as through information, monitoring, access, or support; merely calling them useful is too vague.",
+        "semanticRoleKo": "웨어러블 기기를 사용할 때 얻는 구체적인 이점.",
+        "satisfiedWhenKo": "답변이 정보, 모니터링, 접근 또는 지원 등을 통해 웨어러블 기기가 사용자에게 도움이 되는 구체적인 방식을 밝히면 충족되며, 단순히 유용하다고만 하면 너무 막연하다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete drawback or risk of wearable devices.",
+        "satisfiedWhenEn": "The answer identifies a specific cost, privacy issue, inaccuracy, distraction, dependency, or other limitation.",
+        "semanticRoleKo": "웨어러블 기기의 구체적인 단점이나 위험.",
+        "satisfiedWhenKo": "답변이 비용, 사생활 문제, 부정확성, 주의 분산, 의존성 또는 다른 구체적인 제약을 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall view of wearable devices after considering their benefits and drawbacks.",
+        "satisfiedWhenEn": "The answer gives a clear overall evaluation in addition to discussing a positive and a negative side.",
+        "semanticRoleKo": "웨어러블 기기의 장단점을 고려한 뒤 내리는 학습자의 종합 견해.",
+        "satisfiedWhenKo": "답변이 긍정적 측면과 부정적 측면을 논의하는 데 더해 분명한 종합 평가를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A reason supporting the learner's overall view of wearable devices.",
+        "satisfiedWhenEn": "The answer explains why the discussed benefit, risk, or tradeoff leads to that view.",
+        "semanticRoleKo": "웨어러블 기기에 대한 학습자의 종합 견해를 뒷받침하는 이유.",
+        "satisfiedWhenKo": "답변이 논의한 이점, 위험 또는 상충 관계 때문에 왜 그러한 견해를 갖는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular use case illustrating a benefit or drawback of a wearable device.",
+        "satisfiedWhenEn": "The answer describes a concrete situation in which a wearable device produces the claimed effect.",
+        "semanticRoleKo": "웨어러블 기기의 장점이나 단점을 보여 주는 구체적인 사용 사례.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기로 주장한 효과가 나타나는 구체적인 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A further consequence of wearable-device use for health, behavior, safety, work, or privacy.",
+        "satisfiedWhenEn": "The answer states a concrete outcome showing how one evaluated quality of wearable devices plays out in practice.",
+        "semanticRoleKo": "웨어러블 기기 사용이 건강, 행동, 안전, 업무 또는 사생활에 가져오는 추가적인 결과.",
+        "satisfiedWhenKo": "답변이 평가한 웨어러블 기기 특성 중 하나가 실제로 어떤 구체적인 결과로 이어지는지 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific device feature or usage condition relevant to evaluating wearable devices.",
+        "satisfiedWhenEn": "The answer adds concrete information about what a device measures or does, who uses it, or under what circumstances.",
+        "semanticRoleKo": "웨어러블 기기 평가와 관련된 구체적인 기기 기능이나 사용 조건.",
+        "satisfiedWhenKo": "답변이 기기가 무엇을 측정하거나 수행하는지, 누가 사용하는지 또는 어떤 상황에서 쓰는지 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-47",
+    "slotContracts": {
+      "BEFORE_STATE": {
+        "semanticRoleEn": "What an aspect of daily monitoring, access, or activity was like before wearable devices changed it.",
+        "satisfiedWhenEn": "The answer conveys an earlier habit or condition that can be contrasted with wearable-supported daily life.",
+        "semanticRoleKo": "웨어러블 기기가 바꾸기 전 일상적인 모니터링, 정보 접근 또는 활동의 한 측면.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기의 지원을 받는 현재 일상과 대비할 수 있는 과거의 습관이나 상태를 나타내면 충족된다."
+      },
+      "NOW_STATE": {
+        "semanticRoleEn": "A present-day daily-life pattern shaped by wearable devices.",
+        "satisfiedWhenEn": "The answer describes a current behavior, capability, or condition specifically connected to wearable-device use.",
+        "semanticRoleKo": "웨어러블 기기의 영향을 받아 형성된 현재의 일상생활 양상.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기 사용과 구체적으로 연결된 현재의 행동, 능력 또는 상태를 설명하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the wearable-device change is mostly positive.",
+        "satisfiedWhenEn": "The answer clearly evaluates the wearable-driven change overall as positive, negative, or mixed with a definite leaning.",
+        "semanticRoleKo": "웨어러블 기기로 인한 변화가 대체로 긍정적인지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기로 인한 변화를 전반적으로 긍정적, 부정적 또는 뚜렷한 방향을 가진 복합적인 변화로 평가하면 충족된다."
+      },
+      "CHANGE_CAUSE": {
+        "semanticRoleEn": "A wearable capability or usage pattern that explains how daily life changed.",
+        "satisfiedWhenEn": "The answer identifies a concrete mechanism, such as continuous tracking or hands-free access, that produced the stated difference.",
+        "semanticRoleKo": "일상이 어떻게 달라졌는지 설명하는 웨어러블 기기의 기능이나 사용 양상.",
+        "satisfiedWhenKo": "답변이 지속적인 추적이나 손을 쓰지 않는 접근처럼 제시한 차이를 만든 구체적인 메커니즘을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific everyday situation demonstrating a change linked to wearable devices.",
+        "satisfiedWhenEn": "The answer gives a concrete health, exercise, work, safety, or communication situation in which past and present differ.",
+        "semanticRoleKo": "웨어러블 기기와 관련된 변화를 보여 주는 구체적인 일상 상황.",
+        "satisfiedWhenKo": "답변이 과거와 현재가 달라진 구체적인 건강, 운동, 업무, 안전 또는 소통 상황을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of wearable devices for people's health, behavior, access, or privacy.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that follows from a daily pattern changed by wearable devices.",
+        "semanticRoleKo": "웨어러블 기기가 사람들의 건강, 행동, 접근성 또는 사생활에 가져온 결과.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기로 달라진 일상 양상에서 이어진 구체적인 결과를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for the learner's evaluation of the change caused by wearable devices.",
+        "satisfiedWhenEn": "The answer connects the overall judgment to a specific consequence or value.",
+        "semanticRoleKo": "웨어러블 기기가 일으킨 변화에 대한 학습자의 평가 근거.",
+        "satisfiedWhenKo": "답변이 종합 판단을 구체적인 결과나 가치와 연결하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A positive side of wearable devices changing daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete improvement or opportunity produced by wearable-driven change.",
+        "semanticRoleKo": "웨어러블 기기가 일상을 바꾼 방식의 긍정적인 측면.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기로 인한 변화에서 생긴 구체적인 개선점이나 기회를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A negative side of wearable devices changing daily life.",
+        "satisfiedWhenEn": "The answer identifies a concrete problem, burden, or loss produced by wearable-driven change.",
+        "semanticRoleKo": "웨어러블 기기가 일상을 바꾼 방식의 부정적인 측면.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기로 인한 변화에서 생긴 구체적인 문제, 부담 또는 손실을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-48",
+    "slotContracts": {
+      "RESULT": {
+        "semanticRoleEn": "A specific way wearable devices have affected people.",
+        "satisfiedWhenEn": "The answer identifies a concrete effect on people's health awareness, behavior, access, safety, work, or privacy; saying only that wearables changed people is insufficient.",
+        "semanticRoleKo": "웨어러블 기기가 사람들에게 미친 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 사람들의 건강 인식, 행동, 접근성, 안전, 업무 또는 사생활에 미친 구체적인 영향을 밝히면 충족되며, 단지 사람들을 바꾸었다고만 하면 부족하다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether the effects of wearable devices are mostly good.",
+        "satisfiedWhenEn": "The answer takes a clear overall position on the value of the described effects of wearable devices.",
+        "semanticRoleKo": "웨어러블 기기의 영향이 대체로 좋은지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 자신이 설명한 웨어러블 기기 영향의 가치에 대해 분명한 종합 입장을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete person or situation illustrating an effect of wearable devices.",
+        "satisfiedWhenEn": "The answer presents a specific real or plausible case in which the claimed effect can be observed.",
+        "semanticRoleKo": "웨어러블 기기의 영향을 보여 주는 구체적인 사람이나 상황의 사례.",
+        "satisfiedWhenKo": "답변이 주장한 영향을 확인할 수 있는 구체적인 실제 또는 가능한 사례를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for judging the effects of wearable devices as mostly good or otherwise.",
+        "satisfiedWhenEn": "The answer explains why the identified effects of wearable devices justify the learner's overall evaluation.",
+        "semanticRoleKo": "웨어러블 기기의 영향을 대체로 좋거나 그렇지 않다고 판단하는 근거.",
+        "satisfiedWhenKo": "답변이 제시된 웨어러블 기기의 영향이 왜 학습자의 종합 평가를 정당화하는지 설명하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A distinct beneficial effect of wearable devices on people.",
+        "satisfiedWhenEn": "The answer adds a concrete positive effect of wearable devices independent of the main impact already identified.",
+        "semanticRoleKo": "웨어러블 기기가 사람들에게 주는 별도의 긍정적인 영향.",
+        "satisfiedWhenKo": "답변이 이미 밝힌 주된 영향과 독립된 웨어러블 기기의 구체적인 긍정 효과를 덧붙이면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A distinct harmful effect of wearable devices on people.",
+        "satisfiedWhenEn": "The answer adds a concrete negative effect of wearable devices independent of the main impact already identified.",
+        "semanticRoleKo": "웨어러블 기기가 사람들에게 주는 별도의 부정적인 영향.",
+        "satisfiedWhenKo": "답변이 이미 밝힌 주된 영향과 독립된 웨어러블 기기의 구체적인 부정 효과를 덧붙이면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific context clarifying how or for whom wearable devices produce a stated effect.",
+        "satisfiedWhenEn": "The answer adds concrete information about the device, measured data, user group, or setting involved.",
+        "semanticRoleKo": "웨어러블 기기가 누구에게 또는 어떤 방식으로 언급한 영향을 주는지 분명하게 하는 구체적인 맥락.",
+        "satisfiedWhenKo": "답변이 관련된 기기, 측정 데이터, 사용자 집단 또는 상황에 관한 구체적인 정보를 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-49",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "A concrete way wearable devices help people.",
+        "satisfiedWhenEn": "The answer identifies a specific benefit people gain from wearing or having access to such a device.",
+        "semanticRoleKo": "웨어러블 기기가 사람들에게 도움이 되는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기를 착용하거나 이용할 수 있어서 사람들이 얻는 구체적인 이점을 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A concrete way wearable devices harm or disadvantage people.",
+        "satisfiedWhenEn": "The answer identifies a specific negative effect, burden, or risk arising from wearable-device use.",
+        "semanticRoleKo": "웨어러블 기기가 사람들에게 해를 주거나 불리하게 작용하는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기 사용에서 생기는 구체적인 부정적 영향, 부담 또는 위험을 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's comparative judgment about whether wearable devices help people more than they harm them.",
+        "satisfiedWhenEn": "The answer clearly states which side outweighs the other overall or offers a meaningful conditional comparison.",
+        "semanticRoleKo": "웨어러블 기기가 사람들에게 주는 도움과 해악 중 어느 쪽이 더 큰지에 대한 학습자의 비교 판단.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기의 도움과 해악 중 전반적으로 어느 쪽이 더 큰지 분명히 밝히거나 의미 있는 조건부 비교를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner believes the helpful or harmful side of wearable devices is greater.",
+        "satisfiedWhenEn": "The answer explains the comparison by weighing the importance, likelihood, reach, or severity of the stated effects.",
+        "semanticRoleKo": "웨어러블 기기의 유익한 측면이나 해로운 측면 중 한쪽이 더 크다고 보는 이유.",
+        "satisfiedWhenKo": "답변이 언급한 영향의 중요성, 발생 가능성, 범위 또는 심각성을 따져 비교를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific case showing a wearable device helping or harming someone.",
+        "satisfiedWhenEn": "The answer describes a concrete health, exercise, safety, work, or privacy situation that demonstrates one side.",
+        "semanticRoleKo": "웨어러블 기기가 누군가에게 도움이나 해를 주는 모습을 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 한쪽 측면을 보여 주는 구체적인 건강, 운동, 안전, 업무 또는 사생활 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A broader outcome that follows from the help or harm caused by wearable devices.",
+        "satisfiedWhenEn": "The answer states a concrete later consequence for habits, decisions, health, work, or social norms.",
+        "semanticRoleKo": "웨어러블 기기가 주는 도움이나 해악에서 이어지는 더 넓은 결과.",
+        "satisfiedWhenKo": "답변이 습관, 결정, 건강, 업무 또는 사회 규범에 뒤따르는 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete condition that qualifies when or for whom wearable devices help or harm.",
+        "satisfiedWhenEn": "The answer specifies a device type, user group, data practice, or circumstance that affects the comparison.",
+        "semanticRoleKo": "웨어러블 기기가 언제 또는 누구에게 도움이나 해를 주는지 한정하는 구체적인 조건.",
+        "satisfiedWhenKo": "답변이 비교에 영향을 주는 기기 유형, 사용자 집단, 데이터 처리 방식 또는 상황을 구체적으로 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-50",
+    "slotContracts": {
+      "ADVANTAGE": {
+        "semanticRoleEn": "An advantage of wearable devices that informs the learner's overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete positive feature or effect of wearable devices rather than offering generic praise.",
+        "semanticRoleKo": "웨어러블 기기에 대한 학습자의 종합 의견에 반영되는 장점.",
+        "satisfiedWhenKo": "답변이 막연한 칭찬이 아니라 웨어러블 기기의 구체적인 긍정적 기능이나 효과를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A disadvantage of wearable devices that informs the learner's overall opinion.",
+        "satisfiedWhenEn": "The answer identifies a concrete negative feature, limitation, cost, or effect of wearable devices.",
+        "semanticRoleKo": "웨어러블 기기에 대한 학습자의 종합 의견에 반영되는 단점.",
+        "satisfiedWhenKo": "답변이 웨어러블 기기의 구체적인 부정적 기능, 제약, 비용 또는 효과를 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's overall assessment of wearable devices after considering both advantages and disadvantages.",
+        "satisfiedWhenEn": "The answer reaches a clear final view that takes both sides into account.",
+        "semanticRoleKo": "웨어러블 기기의 장단점을 모두 고려한 뒤 내리는 학습자의 종합 평가.",
+        "satisfiedWhenKo": "답변이 양쪽 측면을 고려하여 분명한 최종 견해에 이르면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "A consideration explaining the learner's final assessment of wearable devices.",
+        "satisfiedWhenEn": "The answer explains why a stated benefit, drawback, or tradeoff of wearable devices leads to the overall view.",
+        "semanticRoleKo": "웨어러블 기기에 대한 학습자의 최종 평가를 설명하는 고려 사항.",
+        "satisfiedWhenKo": "답변이 언급한 웨어러블 기기의 이점, 단점 또는 상충 관계가 왜 종합 견해로 이어지는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A concrete wearable-device experience supporting one side of the assessment.",
+        "satisfiedWhenEn": "The answer describes a particular use case in which a claimed advantage or disadvantage is evident.",
+        "semanticRoleKo": "평가의 한쪽 측면을 뒷받침하는 구체적인 웨어러블 기기 경험.",
+        "satisfiedWhenKo": "답변이 주장한 장점이나 단점이 분명히 드러나는 특정 사용 사례를 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of wearable-device use that extends the assessment.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for users or society that follows from a discussed feature.",
+        "semanticRoleKo": "평가를 확장하는 웨어러블 기기 사용의 결과.",
+        "satisfiedWhenKo": "답변이 논의한 기능에서 이어지는 사용자나 사회의 구체적인 결과를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Specific information about a wearable device or its use that makes the balanced assessment more precise.",
+        "satisfiedWhenEn": "The answer adds a concrete device capability, user group, data condition, or setting relevant to weighing both sides.",
+        "semanticRoleKo": "균형 잡힌 평가를 더 정밀하게 만드는 웨어러블 기기나 그 사용에 관한 구체적인 정보.",
+        "satisfiedWhenKo": "답변이 양쪽을 비교하는 데 관련된 구체적인 기기 기능, 사용자 집단, 데이터 조건 또는 상황을 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-c-1",
+    "slotContracts": {
+      "BEFORE_STATE": {
+        "semanticRoleEn": "How people built or maintained relationships before the relevant technological changes.",
+        "satisfiedWhenEn": "The answer conveys an earlier relationship-building practice or condition that can be contrasted with technology-mediated connection today.",
+        "semanticRoleKo": "관련 기술 변화가 일어나기 전 사람들이 관계를 만들거나 유지하던 방식.",
+        "satisfiedWhenKo": "답변이 오늘날의 기술 매개 연결과 대비할 수 있는 과거의 관계 형성 방식이나 상태를 나타내면 충족된다."
+      },
+      "NOW_STATE": {
+        "semanticRoleEn": "How people currently build or maintain relationships through or alongside technology.",
+        "satisfiedWhenEn": "The answer describes a present relationship-building behavior or condition specifically shaped by technology.",
+        "semanticRoleKo": "사람들이 기술을 통하거나 기술과 함께 현재 관계를 만들거나 유지하는 방식.",
+        "satisfiedWhenKo": "답변이 기술의 영향을 구체적으로 받은 현재의 관계 형성 행동이나 상태를 설명하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's judgment of whether technology's change to relationship-building is mostly positive.",
+        "satisfiedWhenEn": "The answer clearly evaluates technology's change to relationship-building as positive, negative, or mixed with a definite leaning.",
+        "semanticRoleKo": "기술이 관계 형성에 가져온 변화가 대체로 긍정적인지에 대한 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 기술이 관계 형성에 가져온 변화를 긍정적, 부정적 또는 뚜렷한 방향을 가진 복합적인 변화로 평가하면 충족된다."
+      },
+      "CHANGE_CAUSE": {
+        "semanticRoleEn": "A technological capability or adoption pattern that explains how relationship-building changed.",
+        "satisfiedWhenEn": "The answer identifies a concrete mechanism, such as persistent online access or easier long-distance contact, that produced the stated difference.",
+        "semanticRoleKo": "관계 형성이 어떻게 달라졌는지 설명하는 기술 기능이나 보급 양상.",
+        "satisfiedWhenKo": "답변이 지속적인 온라인 접속이나 쉬워진 장거리 연락처럼 제시한 차이를 만든 구체적인 메커니즘을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific relationship situation demonstrating technology's change.",
+        "satisfiedWhenEn": "The answer gives a concrete case of meeting, communicating with, or maintaining contact with someone differently because of technology.",
+        "semanticRoleKo": "기술이 관계 형성을 바꾼 모습을 보여 주는 구체적인 관계 상황.",
+        "satisfiedWhenKo": "답변이 기술 때문에 누군가를 만나거나 소통하거나 연락을 유지하는 방식이 달라진 구체적인 사례를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of technology-shaped relationship-building for closeness, access, trust, or social behavior.",
+        "satisfiedWhenEn": "The answer states a concrete outcome that follows from the changed way people form relationships.",
+        "semanticRoleKo": "기술의 영향을 받은 관계 형성이 친밀감, 접근성, 신뢰 또는 사회적 행동에 가져온 결과.",
+        "satisfiedWhenKo": "답변이 달라진 관계 형성 방식에서 이어진 구체적인 결과를 밝히면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "The basis for the learner's evaluation of technology's effect on relationship-building.",
+        "satisfiedWhenEn": "The answer connects the overall judgment to a specific relational consequence or value.",
+        "semanticRoleKo": "관계 형성에 미친 기술의 영향에 대한 학습자의 평가 근거.",
+        "satisfiedWhenKo": "답변이 종합 판단을 관계에 생긴 구체적인 결과나 가치와 연결하면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A positive side of technology changing how relationships are built.",
+        "satisfiedWhenEn": "The answer identifies a concrete improvement or opportunity in forming or maintaining relationships.",
+        "semanticRoleKo": "기술이 관계 형성 방식을 바꾼 데서 생긴 긍정적인 측면.",
+        "satisfiedWhenKo": "답변이 관계를 만들거나 유지하는 데 생긴 구체적인 개선점이나 기회를 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A negative side of technology changing how relationships are built.",
+        "satisfiedWhenEn": "The answer identifies a concrete problem, loss, or limitation in forming or maintaining relationships.",
+        "semanticRoleKo": "기술이 관계 형성 방식을 바꾼 데서 생긴 부정적인 측면.",
+        "satisfiedWhenKo": "답변이 관계를 만들거나 유지하는 데 생긴 구체적인 문제, 손실 또는 제약을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-c-2",
+    "slotContracts": {
+      "OPINION": {
+        "semanticRoleEn": "The social responsibilities the learner believes successful companies should assume in modern society.",
+        "satisfiedWhenEn": "The answer proposes at least one identifiable social duty, standard, or commitment for successful companies; merely saying they should be responsible is insufficient.",
+        "semanticRoleKo": "현대 사회에서 성공한 기업이 맡아야 한다고 학습자가 생각하는 사회적 책임.",
+        "satisfiedWhenKo": "답변이 성공한 기업이 지켜야 할 알아볼 수 있는 사회적 의무, 기준 또는 약속을 적어도 하나 제안하면 충족되며, 단지 책임감이 있어야 한다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why a proposed responsibility belongs to successful companies.",
+        "satisfiedWhenEn": "The answer explains why companies should carry the stated duty by linking it to their power, resources, impact, obligations, or another concrete basis.",
+        "semanticRoleKo": "제안한 책임을 성공한 기업이 맡아야 하는 이유.",
+        "satisfiedWhenKo": "답변이 기업의 권한, 자원, 영향력, 의무 또는 다른 구체적인 근거와 연결하여 왜 그 책임을 져야 하는지 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific company action illustrating a proposed social responsibility.",
+        "satisfiedWhenEn": "The answer gives a concrete policy, practice, or initiative that a company could carry out.",
+        "semanticRoleKo": "제안한 사회적 책임을 보여 주는 구체적인 기업 행동의 사례.",
+        "satisfiedWhenKo": "답변이 기업이 실행할 수 있는 구체적인 정책, 관행 또는 활동을 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An intended social outcome of companies fulfilling the proposed responsibility.",
+        "satisfiedWhenEn": "The answer states a concrete effect on workers, consumers, communities, the environment, or society that would follow.",
+        "semanticRoleKo": "기업이 제안한 책임을 이행할 때 기대되는 사회적 결과.",
+        "satisfiedWhenKo": "답변이 그 책임의 이행으로 노동자, 소비자, 지역사회, 환경 또는 사회에 생길 구체적인 효과를 밝히면 충족된다."
+      },
+      "ADVANTAGE": {
+        "semanticRoleEn": "A benefit of successful companies taking on the proposed social responsibilities.",
+        "satisfiedWhenEn": "The answer identifies a concrete improvement for society, stakeholders, or the company that comes from responsible conduct.",
+        "semanticRoleKo": "성공한 기업이 제안한 사회적 책임을 맡을 때 생기는 이점.",
+        "satisfiedWhenKo": "답변이 책임 있는 행동으로 사회, 이해관계자 또는 기업에 생기는 구체적인 개선점을 제시하면 충족된다."
+      },
+      "DISADVANTAGE": {
+        "semanticRoleEn": "A potential cost, limitation, or tension involved in companies carrying the proposed responsibilities.",
+        "satisfiedWhenEn": "The answer identifies a concrete tradeoff or implementation difficulty without treating it as a reason to ignore all responsibility.",
+        "semanticRoleKo": "기업이 제안한 책임을 수행할 때 생길 수 있는 비용, 제약 또는 긴장.",
+        "satisfiedWhenKo": "답변이 모든 책임을 무시할 이유로 삼지 않으면서 구체적인 상충 관계나 실행상의 어려움을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-c-3",
+    "slotContracts": {
+      "BEFORE_STATE": {
+        "semanticRoleEn": "A specific belief the learner previously held.",
+        "satisfiedWhenEn": "The answer clearly states or conveys an identifiable earlier belief, not merely that the learner used to think differently.",
+        "semanticRoleKo": "학습자가 과거에 가지고 있던 구체적인 신념이나 생각.",
+        "satisfiedWhenKo": "답변이 과거에는 다르게 생각했다고만 하지 않고 알아볼 수 있는 이전 신념을 분명히 밝히거나 전달하면 충족된다."
+      },
+      "NOW_STATE": {
+        "semanticRoleEn": "The learner's current belief on the same matter.",
+        "satisfiedWhenEn": "The answer states or clearly conveys the present belief in a way that reveals how it differs from the earlier one.",
+        "semanticRoleKo": "같은 사안에 대해 학습자가 현재 가지고 있는 신념이나 생각.",
+        "satisfiedWhenKo": "답변이 이전 신념과 어떻게 다른지 드러나도록 현재의 신념을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "CHANGE_CAUSE": {
+        "semanticRoleEn": "The experience, evidence, person, or realization that caused the learner's belief to change.",
+        "satisfiedWhenEn": "The answer identifies a concrete trigger or influence and connects it causally to the shift in belief.",
+        "semanticRoleKo": "학습자의 신념 변화를 일으킨 경험, 증거, 사람 또는 깨달음.",
+        "satisfiedWhenKo": "답변이 구체적인 계기나 영향을 밝히고 그것을 신념의 변화와 인과적으로 연결하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific incident illustrating the learner's former belief, changed belief, or turning point.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion that makes one stage of the belief change easier to understand.",
+        "semanticRoleKo": "학습자의 이전 신념, 달라진 신념 또는 전환점을 보여 주는 구체적인 사건.",
+        "satisfiedWhenKo": "답변이 신념 변화의 한 단계를 더 잘 이해하게 하는 구체적인 일을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to the old belief, the change, or the new belief.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling tied to some part of the belief change.",
+        "semanticRoleKo": "이전 신념, 변화 과정 또는 새로운 신념에 대한 학습자의 감정적 반응.",
+        "satisfiedWhenKo": "답변이 신념 변화의 어느 한 부분과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the changed belief for the learner's behavior, choices, or relationships.",
+        "satisfiedWhenEn": "The answer states a concrete way the new belief subsequently affected what the learner did or experienced.",
+        "semanticRoleKo": "달라진 신념이 학습자의 행동, 선택 또는 관계에 가져온 결과.",
+        "satisfiedWhenKo": "답변이 새로운 신념으로 인해 이후 학습자의 행동이나 경험이 구체적으로 어떻게 달라졌는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or life period locating when the belief or its change occurred.",
+        "satisfiedWhenEn": "The answer identifies a recognizable time, age, stage, or occasion associated with the change, beyond saying only that it happened over time.",
+        "semanticRoleKo": "신념이나 그 변화가 언제 일어났는지 나타내는 구체적인 시점 또는 삶의 시기.",
+        "satisfiedWhenKo": "답변이 시간이 지나며 바뀌었다고만 하지 않고 변화와 관련된 알아볼 수 있는 시점, 나이, 단계 또는 계기를 밝히면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete nuance about the belief or the way it changed that is not already covered by the states or cause.",
+        "satisfiedWhenEn": "The answer adds specific content clarifying the scope, strength, or progression of the learner's belief change.",
+        "semanticRoleKo": "이전·현재 상태나 변화 원인에 이미 포함되지 않은 신념 또는 변화 방식의 구체적인 뉘앙스.",
+        "satisfiedWhenKo": "답변이 학습자의 신념 변화 범위, 강도 또는 진행 과정을 분명하게 하는 구체적인 내용을 덧붙이면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-01",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and useful characteristics of an app the learner uses often.",
+        "satisfiedWhenEn": "The answer identifies a recognizable app or app type and gives concrete information about what it does or what makes it useful; saying only that it is a useful app is insufficient.",
+        "semanticRoleKo": "학습자가 자주 사용하는 앱의 정체와 유용한 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 앱이나 앱 유형을 밝히고 무엇을 하거나 왜 유용한지 구체적인 정보를 제시하면 충족되며, 단지 유용한 앱이라고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the frequently used app is personally meaningful to the learner.",
+        "satisfiedWhenEn": "The answer explains the app's personal significance through a concrete need, value, memory, or role in the learner's life.",
+        "semanticRoleKo": "자주 사용하는 그 앱이 학습자에게 개인적으로 의미 있는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 필요, 가치, 기억 또는 삶에서의 역할을 통해 그 앱의 개인적 의미를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does with the app in regular use.",
+        "satisfiedWhenEn": "The answer states a concrete task or activity the learner performs through the app.",
+        "semanticRoleKo": "학습자가 평소 그 앱으로 하는 행동.",
+        "satisfiedWhenKo": "답변이 학습자가 그 앱을 통해 수행하는 구체적인 작업이나 활동을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion showing how the app is useful or meaningful to the learner.",
+        "satisfiedWhenEn": "The answer describes a concrete situation in which the learner used the app and its value became evident.",
+        "semanticRoleKo": "그 앱이 학습자에게 유용하거나 의미 있는 모습을 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 앱을 사용했고 그 가치가 드러난 구체적인 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete benefit or outcome the learner gets from using the app.",
+        "satisfiedWhenEn": "The answer states how using the app changes, improves, or enables something in the learner's life.",
+        "semanticRoleKo": "학습자가 그 앱을 사용하여 얻는 구체적인 이익이나 결과.",
+        "satisfiedWhenKo": "답변이 앱 사용으로 학습자의 삶에서 무엇이 달라지거나 개선되거나 가능해지는지 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling while using or thinking about the app.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the app or its role in the learner's life.",
+        "semanticRoleKo": "그 앱을 사용하거나 떠올릴 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 앱이나 삶에서 앱이 하는 역할과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, occasion, or frequency pattern for the learner's use of the app.",
+        "satisfiedWhenEn": "The answer identifies when or how often the app is used with more specificity than simply repeating that it is used often.",
+        "semanticRoleKo": "학습자가 그 앱을 사용하는 구체적인 시간, 상황 또는 빈도 양상.",
+        "satisfiedWhenKo": "답변이 자주 사용한다고 반복하는 데 그치지 않고 언제 또는 얼마나 자주 사용하는지 더 구체적으로 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-02",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity of an often-used useful app and the characteristic that stands out about it.",
+        "satisfiedWhenEn": "The answer identifies a recognizable app or app type and states a concrete distinctive feature, function, or quality; generic praise such as saying it is nice is insufficient.",
+        "semanticRoleKo": "자주 사용하는 유용한 앱의 정체와 그 앱에서 두드러지는 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 앱이나 앱 유형을 밝히고 구체적으로 눈에 띄는 기능, 특성 또는 품질을 제시하면 충족되며, 단지 좋다고 하는 막연한 칭찬은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified app feature stands out to the learner.",
+        "satisfiedWhenEn": "The answer explains why a concrete feature is especially noticeable, valuable, or distinctive to the learner.",
+        "semanticRoleKo": "확인한 앱의 특성이 학습자에게 눈에 띄는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 기능이 학습자에게 특히 눈에 띄거나 가치 있거나 독특한 이유를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific activity the learner regularly performs with the app.",
+        "satisfiedWhenEn": "The answer states what the learner actually does through the app rather than only naming a feature.",
+        "semanticRoleKo": "학습자가 그 앱으로 정기적으로 하는 구체적인 활동.",
+        "satisfiedWhenKo": "답변이 기능의 이름만 말하지 않고 학습자가 실제로 앱을 통해 무엇을 하는지 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion illustrating the app's standout quality.",
+        "satisfiedWhenEn": "The answer describes a concrete use situation in which the distinctive feature or usefulness is evident.",
+        "semanticRoleKo": "그 앱의 두드러지는 특성을 보여 주는 구체적인 사용 사례.",
+        "satisfiedWhenKo": "답변이 독특한 기능이나 유용성이 드러나는 구체적인 사용 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome the learner gets from the app's standout feature or regular use.",
+        "satisfiedWhenEn": "The answer states how the app enables, improves, or changes something for the learner.",
+        "semanticRoleKo": "앱의 두드러진 기능이나 반복적인 사용으로 학습자가 얻는 구체적인 결과.",
+        "satisfiedWhenKo": "답변이 그 앱으로 인해 학습자에게 무엇이 가능해지거나 개선되거나 달라지는지 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to using the app or its standout quality.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling connected to the app experience.",
+        "semanticRoleKo": "그 앱을 사용하거나 두드러진 특성을 접할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 앱 사용 경험과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-03",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and useful characteristics of the app being introduced.",
+        "satisfiedWhenEn": "The answer identifies a recognizable app or app type and provides concrete information about what it offers or how it works.",
+        "semanticRoleKo": "소개하는 앱의 정체와 유용한 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 앱이나 앱 유형을 밝히고 무엇을 제공하거나 어떻게 작동하는지 구체적인 정보를 제시하면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's recommendation of the app to other people.",
+        "satisfiedWhenEn": "The answer clearly states or conveys that the learner would recommend the identified app, including any meaningful qualification.",
+        "semanticRoleKo": "다른 사람에게 그 앱을 추천하려는 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 필요한 조건을 포함하여 확인한 앱을 추천하겠다는 뜻을 분명히 밝히거나 전달하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would recommend the app.",
+        "satisfiedWhenEn": "The answer gives a concrete benefit, quality, or suitable use that justifies the recommendation.",
+        "semanticRoleKo": "학습자가 그 앱을 추천하려는 이유.",
+        "satisfiedWhenKo": "답변이 추천을 정당화하는 구체적인 이점, 특성 또는 적합한 사용 목적을 제시하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner or a prospective user can do with the recommended app.",
+        "satisfiedWhenEn": "The answer states a concrete task or activity performed through the app.",
+        "semanticRoleKo": "학습자나 추천받는 사람이 그 앱으로 할 수 있는 행동.",
+        "satisfiedWhenKo": "답변이 그 앱을 통해 수행하는 구체적인 작업이나 활동을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific use case demonstrating why the app deserves recommendation.",
+        "satisfiedWhenEn": "The answer describes a concrete situation in which the app's recommended value becomes evident.",
+        "semanticRoleKo": "그 앱을 추천할 만한 이유를 보여 주는 구체적인 사용 사례.",
+        "satisfiedWhenKo": "답변이 앱의 추천 가치가 드러나는 구체적인 상황을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete benefit or outcome a user can gain from the app.",
+        "satisfiedWhenEn": "The answer states what the app helps a user accomplish, improve, avoid, or experience.",
+        "semanticRoleKo": "사용자가 그 앱으로 얻을 수 있는 구체적인 이익이나 결과.",
+        "satisfiedWhenKo": "답변이 그 앱이 사용자의 성취, 개선, 문제 회피 또는 경험에 어떤 도움을 주는지 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling about using or recommending the app.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the app experience or recommendation.",
+        "semanticRoleKo": "그 앱을 사용하거나 추천하는 데 대한 학습자의 감정.",
+        "satisfiedWhenKo": "답변이 앱 사용 경험이나 추천과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-04",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity of an often-used useful app and what is special about it.",
+        "satisfiedWhenEn": "The answer identifies a recognizable app or app type and gives a concrete feature or quality that distinguishes it; saying only that it is special is insufficient.",
+        "semanticRoleKo": "자주 사용하는 유용한 앱의 정체와 그 앱의 특별한 점.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 앱이나 앱 유형을 밝히고 다른 앱과 구별되는 구체적인 기능이나 특성을 제시하면 충족되며, 단지 특별하다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why this app remains memorable to the learner.",
+        "satisfiedWhenEn": "The answer explains the app's memorability through a concrete experience, association, impact, or personal significance.",
+        "semanticRoleKo": "그 앱이 학습자의 기억에 남아 있는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 경험, 연상, 영향 또는 개인적 의미를 통해 앱이 기억에 남는 이유를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific memory or use occasion illustrating what is special about the app.",
+        "satisfiedWhenEn": "The answer describes a concrete incident in which the app's distinctive value was evident.",
+        "semanticRoleKo": "그 앱의 특별한 점을 보여 주는 구체적인 기억이나 사용 사례.",
+        "satisfiedWhenKo": "답변이 앱의 독특한 가치가 드러난 구체적인 일을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific activity the learner performs with the memorable app.",
+        "satisfiedWhenEn": "The answer states what the learner does through the app in a way that adds information beyond its feature description.",
+        "semanticRoleKo": "학습자가 기억에 남는 그 앱으로 하는 구체적인 활동.",
+        "satisfiedWhenKo": "답변이 앱의 기능 설명을 넘어 학습자가 앱을 통해 무엇을 하는지 구체적으로 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling associated with the app or a remembered use of it.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the app or a memory involving it.",
+        "semanticRoleKo": "그 앱이나 기억에 남는 사용 경험과 관련된 학습자의 감정.",
+        "satisfiedWhenKo": "답변이 앱 또는 앱과 관련된 기억에 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome of using the app that helps explain its special or memorable status.",
+        "satisfiedWhenEn": "The answer states how the app affected something the learner did, achieved, learned, or experienced.",
+        "semanticRoleKo": "그 앱이 특별하거나 기억에 남는 이유를 보강하는 구체적인 사용 결과.",
+        "satisfiedWhenKo": "답변이 앱이 학습자의 행동, 성취, 학습 또는 경험에 어떤 영향을 주었는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or occasion associated with a memorable use of the app.",
+        "satisfiedWhenEn": "The answer identifies when a relevant app experience occurred with more specificity than saying the app is used often.",
+        "semanticRoleKo": "그 앱을 기억에 남게 사용한 경험과 관련된 구체적인 시점이나 상황.",
+        "satisfiedWhenKo": "답변이 앱을 자주 사용한다고만 하지 않고 관련된 앱 경험이 언제 일어났는지 더 구체적으로 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-05",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and relevant characteristics of an app the learner uses often.",
+        "satisfiedWhenEn": "The answer identifies a recognizable app or app type and provides concrete information about its function or use.",
+        "semanticRoleKo": "학습자가 자주 사용하는 앱의 정체와 관련 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 앱이나 앱 유형을 밝히고 그 기능이나 사용에 관한 구체적인 정보를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the app matters in the learner's life.",
+        "satisfiedWhenEn": "The answer explains a concrete personal need, value, contribution, or connection that makes the app important.",
+        "semanticRoleKo": "그 앱이 학습자의 삶에서 중요한 이유.",
+        "satisfiedWhenKo": "답변이 앱을 중요하게 만드는 구체적인 개인적 필요, 가치, 기여 또는 연결을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner regularly does with the app.",
+        "satisfiedWhenEn": "The answer states a concrete task or activity the learner regularly performs through this important app.",
+        "semanticRoleKo": "학습자가 그 앱으로 정기적으로 하는 행동.",
+        "satisfiedWhenKo": "답변이 학습자가 삶에서 중요한 그 앱을 통해 정기적으로 수행하는 구체적인 작업이나 활동을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect of the app on the learner's daily life.",
+        "satisfiedWhenEn": "The answer states how app use changes, improves, supports, or enables something for the learner.",
+        "semanticRoleKo": "그 앱이 학습자의 일상생활에 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 앱 사용으로 학습자에게 무엇이 달라지거나 개선되거나 지원되거나 가능해지는지 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific situation demonstrating the app's importance in the learner's life.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion in which the app's role or value was evident.",
+        "semanticRoleKo": "그 앱이 학습자의 삶에서 중요한 모습을 보여 주는 구체적인 상황.",
+        "satisfiedWhenKo": "답변이 앱의 역할이나 가치가 드러난 구체적인 상황을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to the app's place in daily life.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling connected to using or relying on the app.",
+        "semanticRoleKo": "일상에서 그 앱이 차지하는 역할에 대한 학습자의 감정적 반응.",
+        "satisfiedWhenKo": "답변이 앱을 사용하거나 의지하는 것과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, occasion, or frequency pattern for the learner's app use.",
+        "satisfiedWhenEn": "The answer identifies when or how often the app is used with more detail than simply saying it is used often.",
+        "semanticRoleKo": "학습자가 삶에서 중요한 그 앱을 사용하는 구체적인 시간, 상황 또는 빈도 양상.",
+        "satisfiedWhenKo": "답변이 자주 사용한다고만 하지 않고 언제 또는 얼마나 자주 사용하는지 더 자세히 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-06",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "A recognizable place in the learner's town that the learner likes.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a particular local place and connects it to the learner's liking; an unidentified nice place is insufficient.",
+        "semanticRoleKo": "학습자가 사는 동네에서 좋아하는 알아볼 수 있는 장소.",
+        "satisfiedWhenKo": "답변이 특정한 동네 장소를 식별하거나 분명히 위치시키고 학습자가 좋아한다는 관계를 나타내면 충족되며, 어디인지 알 수 없는 좋은 장소만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Concrete characteristics that describe the liked place.",
+        "satisfiedWhenEn": "The answer gives specific information about the place's appearance, atmosphere, features, people, or offerings beyond merely naming it.",
+        "semanticRoleKo": "좋아하는 그 장소를 묘사하는 구체적인 특성.",
+        "satisfiedWhenKo": "답변이 장소의 이름만 말하지 않고 외관, 분위기, 특징, 사람 또는 제공하는 것에 관한 구체적인 정보를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the local place is personally meaningful to the learner.",
+        "satisfiedWhenEn": "The answer explains the place's personal significance through a concrete memory, relationship, value, routine, or impact.",
+        "semanticRoleKo": "그 동네 장소가 학습자에게 개인적으로 의미 있는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 기억, 관계, 가치, 습관 또는 영향을 통해 그 장소의 개인적 의미를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does at the liked place.",
+        "satisfiedWhenEn": "The answer states a concrete activity the learner performs there.",
+        "semanticRoleKo": "학습자가 좋아하는 그 장소에서 하는 행동.",
+        "satisfiedWhenKo": "답변이 학습자가 그곳에서 하는 구체적인 활동을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels at or about the meaningful place.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the place.",
+        "semanticRoleKo": "그 의미 있는 장소에 있거나 그곳을 생각할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 장소와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific visit or memory illustrating why the place is liked or meaningful.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion at the place that demonstrates its value to the learner.",
+        "semanticRoleKo": "그 장소를 좋아하거나 의미 있게 여기는 이유를 보여 주는 구체적인 방문이나 기억.",
+        "satisfiedWhenKo": "답변이 그 장소가 학습자에게 지닌 가치를 보여 주는 구체적인 일을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the place or visits there have on the learner's life.",
+        "satisfiedWhenEn": "The answer states how being at the place changes, supports, or contributes to the learner.",
+        "semanticRoleKo": "그 장소나 그곳을 방문하는 일이 학습자의 삶에 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그곳에 있는 것이 학습자를 어떻게 변화시키거나 돕거나 학습자의 삶에 기여하는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, occasion, or frequency for visiting the liked place.",
+        "satisfiedWhenEn": "The answer identifies when or how often the learner goes there in a recognizable way.",
+        "semanticRoleKo": "학습자가 좋아하는 장소를 방문하는 구체적인 시간, 상황 또는 빈도.",
+        "satisfiedWhenKo": "답변이 학습자가 그곳에 언제 또는 얼마나 자주 가는지 알아볼 수 있게 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-07",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "A particular place in the learner's town that the learner likes.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable local place and conveys that it is one the learner likes.",
+        "semanticRoleKo": "학습자가 사는 동네에서 좋아하는 특정 장소.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 동네 장소를 식별하거나 분명히 위치시키고 학습자가 좋아하는 곳임을 전달하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The feature or quality that stands out about the liked local place.",
+        "satisfiedWhenEn": "The answer states a concrete distinctive characteristic of the place; saying only that it is nice or special is insufficient.",
+        "semanticRoleKo": "좋아하는 동네 장소에서 눈에 띄는 특징이나 특성.",
+        "satisfiedWhenKo": "답변이 그 장소의 구체적으로 두드러지는 특성을 밝히면 충족되며, 단지 좋거나 특별하다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified feature or place stands out to the learner.",
+        "satisfiedWhenEn": "The answer explains why a concrete quality is especially noticeable or valuable to the learner.",
+        "semanticRoleKo": "확인한 특징이나 장소가 학습자에게 눈에 띄는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 특성이 학습자에게 특히 눈에 띄거나 가치 있는 이유를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific activity the learner does at the local place.",
+        "satisfiedWhenEn": "The answer states what the learner does there in a way that adds information beyond liking the place.",
+        "semanticRoleKo": "학습자가 그 동네 장소에서 하는 구체적인 활동.",
+        "satisfiedWhenKo": "답변이 그 장소를 좋아한다는 말 외에 학습자가 그곳에서 무엇을 하는지 구체적으로 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling at or about the standout place.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to being there or thinking about it.",
+        "semanticRoleKo": "눈에 띄는 그 장소에 있거나 그곳을 생각할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그곳에 있거나 그곳을 생각하는 것과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular visit illustrating what stands out about the place.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion in which the place's distinctive quality was evident.",
+        "semanticRoleKo": "그 장소의 눈에 띄는 점을 보여 주는 구체적인 방문 사례.",
+        "satisfiedWhenKo": "답변이 그 장소의 독특한 특성이 드러난 구체적인 일을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect of visiting or spending time at the place.",
+        "satisfiedWhenEn": "The answer states how the place affects the learner's mood, routine, relationships, or another part of life.",
+        "semanticRoleKo": "그 장소를 방문하거나 그곳에서 시간을 보내는 일이 가져오는 구체적인 결과.",
+        "satisfiedWhenKo": "답변이 그 장소가 학습자의 기분, 일상, 관계 또는 삶의 다른 부분에 어떤 영향을 주는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-08",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular liked place in the learner's town that is being recommended.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable local place and makes it the object of the recommendation.",
+        "semanticRoleKo": "학습자가 사는 동네에서 좋아하며 추천하려는 특정 장소.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 동네 장소를 식별하거나 분명히 위치시키고 그곳을 추천 대상으로 삼으면 충족된다."
+      },
+      "OPINION": {
+        "semanticRoleEn": "The learner's recommendation of the identified local place.",
+        "satisfiedWhenEn": "The answer clearly states or conveys that the learner would recommend the place, including any meaningful condition.",
+        "semanticRoleKo": "확인한 동네 장소를 추천하려는 학습자의 판단.",
+        "satisfiedWhenKo": "답변이 필요한 조건을 포함하여 그 장소를 추천하겠다는 뜻을 분명히 밝히거나 전달하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner would recommend the local place.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, experience, suitability, or benefit that justifies the recommendation.",
+        "semanticRoleKo": "학습자가 그 동네 장소를 추천하려는 이유.",
+        "satisfiedWhenKo": "답변이 추천을 정당화하는 구체적인 특성, 경험, 적합성 또는 이점을 제시하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete characteristic of the recommended place.",
+        "satisfiedWhenEn": "The answer adds specific information about the place's atmosphere, appearance, facilities, people, or offerings.",
+        "semanticRoleKo": "추천하는 그 장소의 구체적인 특성.",
+        "satisfiedWhenKo": "답변이 장소의 분위기, 외관, 시설, 사람 또는 제공하는 것에 관한 구체적인 정보를 덧붙이면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What a visitor can do at the recommended place.",
+        "satisfiedWhenEn": "The answer states a concrete activity available or suitable there.",
+        "semanticRoleKo": "방문자가 추천하는 그 장소에서 할 수 있는 행동.",
+        "satisfiedWhenKo": "답변이 그곳에서 할 수 있거나 하기에 적합한 구체적인 활동을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific visit supporting the recommendation.",
+        "satisfiedWhenEn": "The answer describes a concrete experience at the place that demonstrates why it is worth recommending.",
+        "semanticRoleKo": "그 장소의 추천을 뒷받침하는 구체적인 방문 사례.",
+        "satisfiedWhenKo": "답변이 그 장소를 추천할 만한 이유를 보여 주는 구체적인 경험을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels at or about the recommended place.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion that helps characterize the learner's experience of the recommended place.",
+        "semanticRoleKo": "추천하는 그 장소에 있거나 그곳을 생각할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 추천하는 그 장소에서의 학습자 경험을 보여 주는 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete benefit or outcome a visitor can get from the place.",
+        "satisfiedWhenEn": "The answer states how visiting the place could help, affect, or enrich someone.",
+        "semanticRoleKo": "방문자가 그 장소에서 얻을 수 있는 구체적인 이익이나 결과.",
+        "satisfiedWhenKo": "답변이 그 장소를 방문하는 일이 누군가에게 어떻게 도움이 되거나 영향을 주거나 경험을 풍부하게 하는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-09",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular place in the learner's town that the learner likes and remembers.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable local place and presents it as the place the learner likes and remembers; merely mentioning a local place or an unrelated personal experience does not satisfy the role.",
+        "semanticRoleKo": "학습자가 사는 지역에서 좋아하고 기억하는 특정 장소.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 지역 장소를 식별하거나 분명히 위치시키고 그곳을 학습자가 좋아하며 기억하는 장소로 나타내면 충족된다. 지역 장소를 단순히 언급하거나 무관한 개인 경험과 연결하는 것만으로는 충족되지 않는다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "What is special about the remembered local place.",
+        "satisfiedWhenEn": "The answer states a concrete feature, quality, atmosphere, or association that distinguishes the place; calling it special without detail is insufficient.",
+        "semanticRoleKo": "기억에 남는 그 동네 장소의 특별한 점.",
+        "satisfiedWhenKo": "답변이 장소를 구별하는 구체적인 특징, 특성, 분위기 또는 연관성을 밝히면 충족되며, 자세한 내용 없이 특별하다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the local place remains in the learner's memory.",
+        "satisfiedWhenEn": "The answer explains its memorability through a concrete experience, relationship, feeling, or personal significance.",
+        "semanticRoleKo": "그 동네 장소가 학습자의 기억에 남아 있는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 경험, 관계, 감정 또는 개인적 의미를 통해 그 장소가 기억에 남는 이유를 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion at the place illustrating its special or memorable quality.",
+        "satisfiedWhenEn": "The answer describes a concrete visit or event in which the place's significance became evident.",
+        "semanticRoleKo": "그 장소의 특별하거나 기억에 남는 특성을 보여 주는 구체적인 일.",
+        "satisfiedWhenKo": "답변이 그 장소의 의미가 드러난 구체적인 방문이나 사건을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does or did at the remembered place.",
+        "satisfiedWhenEn": "The answer states a concrete activity connected to the learner's experience there.",
+        "semanticRoleKo": "학습자가 기억에 남는 그 장소에서 하거나 했던 행동.",
+        "satisfiedWhenKo": "답변이 그곳에서의 학습자 경험과 연결된 구체적인 활동을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling associated with the place or a memory there.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the place.",
+        "semanticRoleKo": "그 장소나 그곳에서의 기억과 관련된 학습자의 감정.",
+        "satisfiedWhenKo": "답변이 기억에 남는 그 장소와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the place or an experience there had on the learner.",
+        "satisfiedWhenEn": "The answer states how the place changed, supported, taught, or otherwise affected the learner.",
+        "semanticRoleKo": "그 장소나 그곳에서의 경험이 학습자에게 미친 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 장소가 학습자를 어떻게 변화시키거나 돕거나 가르치거나 다른 방식으로 영향을 주었는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or occasion connected to the learner's memory of the place.",
+        "satisfiedWhenEn": "The answer identifies when a relevant visit or experience occurred in a recognizable way.",
+        "semanticRoleKo": "그 장소에 대한 학습자의 기억과 연결된 구체적인 시점이나 상황.",
+        "satisfiedWhenKo": "답변이 관련 방문이나 경험이 언제 일어났는지 알아볼 수 있게 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-10",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular liked place in the learner's town that holds a role in the learner's life.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable local place and conveys that it is personally liked.",
+        "semanticRoleKo": "학습자가 사는 동네에서 좋아하며 자신의 삶에서 역할을 지닌 특정 장소.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 동네 장소를 식별하거나 분명히 위치시키고 개인적으로 좋아하는 곳임을 전달하면 충족된다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Concrete information describing the liked local place.",
+        "satisfiedWhenEn": "The answer gives a specific characteristic, feature, atmosphere, or association beyond merely naming the place.",
+        "semanticRoleKo": "좋아하는 그 동네 장소를 묘사하는 구체적인 정보.",
+        "satisfiedWhenKo": "답변이 장소의 이름만 말하지 않고 구체적인 특성, 특징, 분위기 또는 연관성을 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the local place matters in the learner's life.",
+        "satisfiedWhenEn": "The answer explains a concrete personal role, memory, relationship, value, or impact that makes the place important.",
+        "semanticRoleKo": "그 동네 장소가 학습자의 삶에서 중요한 이유.",
+        "satisfiedWhenKo": "답변이 그 장소를 중요하게 만드는 구체적인 개인적 역할, 기억, 관계, 가치 또는 영향을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does at the place.",
+        "satisfiedWhenEn": "The answer states a concrete activity the learner performs at this personally important local place.",
+        "semanticRoleKo": "학습자가 그 장소에서 하는 행동.",
+        "satisfiedWhenKo": "답변이 학습자가 개인적으로 중요한 그 동네 장소에서 하는 구체적인 활동을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect of the place or visits there on the learner's life.",
+        "satisfiedWhenEn": "The answer states how the place supports, changes, restores, connects, or otherwise affects the learner.",
+        "semanticRoleKo": "개인적으로 중요한 그 동네 장소나 그곳을 방문하는 일이 학습자의 삶에 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 장소가 학습자를 돕거나 변화시키거나 회복시키거나 연결하거나 다른 방식으로 영향을 주는지 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific experience demonstrating why the place matters.",
+        "satisfiedWhenEn": "The answer describes a concrete visit or event at the place that shows its personal importance.",
+        "semanticRoleKo": "그 장소가 중요한 이유를 보여 주는 구체적인 경험.",
+        "satisfiedWhenKo": "답변이 그 장소의 개인적 중요성을 보여 주는 구체적인 방문이나 사건을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels at or about the important place.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the place's role in the learner's life.",
+        "semanticRoleKo": "그 중요한 장소에 있거나 그곳을 생각할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 학습자의 삶에서 그 장소가 하는 역할과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, occasion, or frequency for the learner's visits to the place.",
+        "satisfiedWhenEn": "The answer identifies a recognizable time, occasion, or frequency associated with visits to this personally important place.",
+        "semanticRoleKo": "학습자가 그 장소를 방문하는 구체적인 시간, 상황 또는 빈도.",
+        "satisfiedWhenKo": "답변이 개인적으로 중요한 그 장소의 방문과 관련된 알아볼 수 있는 시간, 상황 또는 빈도를 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-11",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and relevant characteristics of a teacher or mentor who influenced the learner.",
+        "satisfiedWhenEn": "The answer identifies a recognizable teacher or mentor and gives concrete information about that person's qualities, role, or relationship to the learner.",
+        "semanticRoleKo": "학습자에게 영향을 준 교사나 멘토의 정체와 관련 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 교사나 멘토를 밝히고 그 사람의 특성, 역할 또는 학습자와의 관계에 관한 구체적인 정보를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that teacher or mentor is important to the learner.",
+        "satisfiedWhenEn": "The answer explains the person's importance through a concrete contribution, relationship, value, support, or personal meaning.",
+        "semanticRoleKo": "그 교사나 멘토가 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 기여, 관계, 가치, 지원 또는 개인적 의미를 통해 그 사람의 중요성을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A specific way the teacher or mentor influenced the learner.",
+        "satisfiedWhenEn": "The answer states a concrete change in the learner's thinking, behavior, skills, choices, or direction that resulted from the person's influence.",
+        "semanticRoleKo": "그 교사나 멘토가 학습자에게 영향을 준 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 그 사람의 영향으로 학습자의 생각, 행동, 기술, 선택 또는 진로가 구체적으로 어떻게 달라졌는지 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific interaction illustrating the teacher's or mentor's importance or influence.",
+        "satisfiedWhenEn": "The answer describes a concrete incident in which the person's guidance, conduct, or support affected the learner.",
+        "semanticRoleKo": "그 교사나 멘토의 중요성 또는 영향을 보여 주는 구체적인 상호작용.",
+        "satisfiedWhenKo": "답변이 그 사람의 지도, 행동 또는 지원이 학습자에게 영향을 준 구체적인 일을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete action by the teacher, mentor, or learner that shows their influential relationship.",
+        "satisfiedWhenEn": "The answer states something relevant the person did for the learner or the learner did under that person's guidance.",
+        "semanticRoleKo": "두 사람의 영향 관계를 보여 주는 교사, 멘토 또는 학습자의 구체적인 행동.",
+        "satisfiedWhenKo": "답변이 그 사람이 학습자를 위해 한 일이나 학습자가 그 사람의 지도 아래 한 관련 행동을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling toward the teacher or mentor or about the influence received.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the person or the learner's experience with them.",
+        "semanticRoleKo": "그 교사나 멘토 또는 그에게 받은 영향에 대한 학습자의 감정.",
+        "satisfiedWhenKo": "답변이 그 사람이나 함께한 경험과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or life stage associated with the teacher's or mentor's influence.",
+        "satisfiedWhenEn": "The answer identifies when the relationship or an influential interaction occurred in a recognizable way.",
+        "semanticRoleKo": "그 교사나 멘토의 영향과 관련된 구체적인 시점 또는 삶의 단계.",
+        "satisfiedWhenKo": "답변이 그 관계나 영향력 있는 상호작용이 언제 일어났는지 알아볼 수 있게 밝히면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The setting in which the learner knew or interacted with the teacher or mentor.",
+        "satisfiedWhenEn": "The answer identifies a concrete school, workplace, program, community, or other setting connected to the relationship.",
+        "semanticRoleKo": "학습자가 그 교사나 멘토를 알거나 교류한 장소 또는 환경.",
+        "satisfiedWhenKo": "답변이 그 관계와 연결된 구체적인 학교, 직장, 프로그램, 공동체 또는 다른 환경을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1101",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete character of a neighborhood festival the learner enjoys.",
+        "satisfiedWhenEn": "The answer identifies a recognizable local festival or festival type and describes what happens there or what distinguishes it; saying only that it is enjoyable is insufficient.",
+        "semanticRoleKo": "학습자가 즐기는 동네 축제의 정체와 구체적인 성격.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 지역 축제나 축제 유형을 밝히고 그곳에서 무엇이 열리거나 무엇이 특징적인지 설명하면 충족되며, 단지 즐겁다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the neighborhood festival matters personally to the learner.",
+        "satisfiedWhenEn": "The answer explains the festival's personal significance through a concrete relationship, tradition, memory, value, or contribution to community life.",
+        "semanticRoleKo": "그 동네 축제가 학습자에게 개인적으로 중요한 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 관계, 전통, 기억, 가치 또는 공동체 생활에 대한 기여를 통해 축제의 개인적 의미를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific activity the learner does at the festival.",
+        "satisfiedWhenEn": "The answer states how the learner participates, watches, helps, eats, performs, or otherwise takes part.",
+        "semanticRoleKo": "학습자가 그 축제에서 하는 구체적인 활동.",
+        "satisfiedWhenKo": "답변이 학습자가 참여하거나 관람하거나 돕거나 먹거나 공연하는 등 축제에 어떻게 함께하는지 밝히면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The local setting where the neighborhood festival takes place.",
+        "satisfiedWhenEn": "The answer identifies a recognizable venue, street, park, district, or route and clearly presents it as a place where the described neighborhood festival is held or takes place; merely mentioning a place associated with the festival is insufficient.",
+        "semanticRoleKo": "그 동네 축제가 실제로 열리는 지역 장소나 환경.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 행사장, 거리, 공원, 구역 또는 이동 경로를 밝히고 그곳을 설명한 동네 축제가 열리는 장소로 분명히 연결하면 충족된다. 축제와 관련된 장소를 단순히 언급하는 것만으로는 부족하다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to attending or remembering the festival.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling connected to the festival experience.",
+        "semanticRoleKo": "그 축제에 참여하거나 축제를 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 축제 경험과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular festival moment illustrating why it is enjoyable or meaningful.",
+        "satisfiedWhenEn": "The answer describes a concrete incident, performance, encounter, or tradition from one festival experience.",
+        "semanticRoleKo": "그 축제가 즐겁거나 의미 있는 이유를 보여 주는 구체적인 축제 순간.",
+        "satisfiedWhenKo": "답변이 한 번의 축제 경험에서 있었던 구체적인 사건, 공연, 만남 또는 전통을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect of the festival on the learner or the neighborhood community.",
+        "satisfiedWhenEn": "The answer states how the festival strengthens, changes, supports, or otherwise affects the learner or local relationships.",
+        "semanticRoleKo": "그 축제가 학습자나 동네 공동체에 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 축제가 학습자나 지역 관계를 어떻게 강화하거나 변화시키거나 돕거나 다른 방식으로 영향을 주는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1102",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete characteristics of a small desk item the learner uses every day.",
+        "satisfiedWhenEn": "The answer identifies a recognizable item and describes a relevant feature, form, origin, or function beyond merely calling it meaningful.",
+        "semanticRoleKo": "학습자가 매일 사용하는 작은 책상 물건의 정체와 구체적인 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 물건을 밝히고 단지 의미 있다고 하는 것을 넘어 관련된 특징, 형태, 유래 또는 기능을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the everyday desk item feels meaningful to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal significance through a concrete memory, giver, habit, value, or role in the learner's work or study.",
+        "semanticRoleKo": "매일 쓰는 그 책상 물건이 학습자에게 의미 있게 느껴지는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 기억, 준 사람, 습관, 가치 또는 업무나 공부에서의 역할을 통해 물건의 개인적 의미를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "How the learner uses the desk item.",
+        "satisfiedWhenEn": "The answer states a concrete task or repeated action performed with the item, adding information beyond the given fact of daily use.",
+        "semanticRoleKo": "학습자가 그 책상 물건을 사용하는 방식.",
+        "satisfiedWhenKo": "답변이 매일 사용한다는 주어진 사실을 넘어 그 물건으로 수행하는 구체적인 작업이나 반복 행동을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion or memory illustrating the item's meaning.",
+        "satisfiedWhenEn": "The answer describes a concrete incident in which the item's usefulness or personal significance became evident.",
+        "semanticRoleKo": "그 물건의 의미를 보여 주는 구체적인 상황이나 기억.",
+        "satisfiedWhenKo": "답변이 그 물건의 유용성이나 개인적 의미가 드러난 구체적인 일을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the desk item has on the learner's work, study, routine, or mood.",
+        "satisfiedWhenEn": "The answer states how using or seeing the item helps, changes, reminds, or enables something for the learner.",
+        "semanticRoleKo": "그 책상 물건이 학습자의 업무, 공부, 일상 또는 기분에 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 물건을 사용하거나 보는 일이 학습자에게 어떻게 도움이 되거나 변화를 주거나 무언가를 떠올리게 하거나 가능하게 하는지 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling when using or looking at the meaningful desk item.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the item.",
+        "semanticRoleKo": "의미 있는 그 책상 물건을 사용하거나 볼 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 물건과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A particular time or occasion when the desk item is used or became meaningful.",
+        "satisfiedWhenEn": "The answer identifies a recognizable work, study, life period, or incident beyond simply repeating that the item is used every day.",
+        "semanticRoleKo": "그 책상 물건을 사용하거나 의미 있게 된 구체적인 시점 또는 상황.",
+        "satisfiedWhenKo": "답변이 매일 사용한다고 반복하는 데 그치지 않고 알아볼 수 있는 업무, 공부, 삶의 시기 또는 사건을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1103",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity of a familiar bus route and the feature that makes it stand out to the learner.",
+        "satisfiedWhenEn": "The answer identifies a recognizable route or route pattern and describes a concrete distinctive feature, experience, or quality; saying only that it is memorable is insufficient.",
+        "semanticRoleKo": "학습자가 잘 아는 버스 노선의 정체와 그 노선을 눈에 띄게 하는 특징.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 노선이나 노선 형태를 밝히고 구체적으로 두드러지는 특징, 경험 또는 특성을 설명하면 충족되며, 단지 기억에 남는다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the familiar bus route has stayed in the learner's memory.",
+        "satisfiedWhenEn": "The answer explains its memorability through a concrete association, repeated experience, event, person, view, or personal significance.",
+        "semanticRoleKo": "그 익숙한 버스 노선이 학습자의 기억에 남아 있는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 연상, 반복 경험, 사건, 사람, 풍경 또는 개인적 의미를 통해 그 노선이 기억에 남는 이유를 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A geographic point or area that locates the remembered bus route.",
+        "satisfiedWhenEn": "The answer identifies a concrete origin, destination, stop, neighborhood, landmark, or area along the route.",
+        "semanticRoleKo": "기억에 남는 버스 노선의 위치를 나타내는 지리적 지점이나 지역.",
+        "satisfiedWhenKo": "답변이 그 노선의 구체적인 출발지, 목적지, 정류장, 동네, 랜드마크 또는 지나가는 지역을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular trip illustrating why the bus route stands out or remains memorable.",
+        "satisfiedWhenEn": "The answer describes a concrete ride or incident on the route that demonstrates its significance.",
+        "semanticRoleKo": "그 버스 노선이 눈에 띄거나 기억에 남는 이유를 보여 주는 구체적인 탑승 경험.",
+        "satisfiedWhenKo": "답변이 그 노선의 의미를 보여 주는 구체적인 탑승이나 사건을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does or experiences while using the bus route.",
+        "satisfiedWhenEn": "The answer states a concrete activity or repeated behavior associated with riding that route.",
+        "semanticRoleKo": "학습자가 그 버스 노선을 이용하며 하는 행동이나 경험.",
+        "satisfiedWhenKo": "답변이 그 노선을 타는 것과 관련된 구체적인 활동이나 반복 행동을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling while riding or remembering the bus route.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the route or a journey on it.",
+        "semanticRoleKo": "그 버스 노선을 타거나 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 노선이나 그곳에서의 이동과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect that knowing or using the route has had on the learner.",
+        "satisfiedWhenEn": "The answer states how the route enabled, changed, connected, taught, or otherwise affected the learner.",
+        "semanticRoleKo": "그 노선을 잘 알거나 이용하는 일이 학습자에게 미친 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 노선이 학습자에게 무엇을 가능하게 하거나 변화시키거나 연결하거나 가르치거나 다른 방식으로 영향을 주었는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1104",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete characteristics or origin of a gift the learner still keeps.",
+        "satisfiedWhenEn": "The answer identifies a recognizable gift and gives specific information about what it is, who gave it, its appearance, or the occasion behind it.",
+        "semanticRoleKo": "학습자가 아직 간직하는 선물의 정체와 구체적인 특성 또는 유래.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 선물을 밝히고 그것이 무엇인지, 누가 주었는지, 어떻게 생겼는지 또는 어떤 계기의 선물인지 구체적인 정보를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the kept gift matters to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal importance through a concrete relationship, memory, value, symbol, or life event.",
+        "semanticRoleKo": "간직하고 있는 그 선물이 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 관계, 기억, 가치, 상징 또는 삶의 사건을 통해 그 선물의 개인적 중요성을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling when seeing, using, or remembering the gift.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the gift or its giver.",
+        "semanticRoleKo": "그 선물을 보거나 사용하거나 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 선물이나 선물을 준 사람과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific memory or occasion illustrating the gift's importance.",
+        "satisfiedWhenEn": "The answer describes a concrete incident involving the gift that demonstrates why it matters.",
+        "semanticRoleKo": "그 선물의 중요성을 보여 주는 구체적인 기억이나 상황.",
+        "satisfiedWhenKo": "답변이 그 선물이 왜 중요한지 보여 주는 구체적인 일을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does with the gift besides continuing to keep it.",
+        "satisfiedWhenEn": "The answer states a concrete use, display, care routine, or other interaction with the gift.",
+        "semanticRoleKo": "계속 간직하는 것 외에 학습자가 그 선물과 관련해 하는 행동.",
+        "satisfiedWhenKo": "답변이 그 선물을 사용하거나 전시하거나 돌보는 방식 또는 다른 구체적인 상호작용을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the gift or its memory has on the learner.",
+        "satisfiedWhenEn": "The answer states how the gift reminds, motivates, comforts, connects, or otherwise affects the learner.",
+        "semanticRoleKo": "그 선물이나 선물에 대한 기억이 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 선물이 학습자에게 무언가를 떠올리게 하거나 동기를 주거나 위로하거나 연결하거나 다른 방식으로 영향을 주는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or occasion when the learner received the gift or when it became important.",
+        "satisfiedWhenEn": "The answer identifies a recognizable date, age, life stage, celebration, or event associated with the gift.",
+        "semanticRoleKo": "학습자가 그 선물을 받았거나 선물이 중요해진 구체적인 시점 또는 상황.",
+        "satisfiedWhenKo": "답변이 그 선물과 관련된 알아볼 수 있는 날짜, 나이, 삶의 단계, 기념일 또는 사건을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1105",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular corner or area within the learner's room that the learner likes.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a specific part of the room and connects it to the learner's preference; an unspecified nice corner is insufficient.",
+        "semanticRoleKo": "학습자가 방 안에서 좋아하는 특정 구석이나 공간.",
+        "satisfiedWhenKo": "답변이 방 안의 특정 부분을 식별하거나 분명히 위치시키고 학습자가 좋아한다는 관계를 나타내면 충족되며, 어디인지 알 수 없는 좋은 구석만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Concrete features that describe the liked corner of the room.",
+        "satisfiedWhenEn": "The answer gives specific information about its arrangement, light, objects, view, atmosphere, or another distinguishing quality.",
+        "semanticRoleKo": "좋아하는 방 구석을 묘사하는 구체적인 특징.",
+        "satisfiedWhenKo": "답변이 그곳의 배치, 빛, 물건, 전망, 분위기 또는 다른 두드러진 특성에 관한 구체적인 정보를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why that corner of the room feels meaningful to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal significance through a concrete routine, memory, function, feeling, value, or sense of ownership.",
+        "semanticRoleKo": "방의 그 구석이 학습자에게 의미 있게 느껴지는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 습관, 기억, 기능, 감정, 가치 또는 자기만의 공간이라는 느낌을 통해 그곳의 개인적 의미를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does in the liked corner.",
+        "satisfiedWhenEn": "The answer states a concrete activity or routine performed in that part of the room.",
+        "semanticRoleKo": "학습자가 좋아하는 방 구석에서 하는 행동.",
+        "satisfiedWhenKo": "답변이 방의 그 부분에서 하는 구체적인 활동이나 습관을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while in or thinking about that corner.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the space.",
+        "semanticRoleKo": "방의 그 구석에 있거나 그곳을 생각할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 공간과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific moment illustrating why the room corner is liked or meaningful.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion in that space that demonstrates its value to the learner.",
+        "semanticRoleKo": "그 방 구석을 좋아하거나 의미 있게 여기는 이유를 보여 주는 구체적인 순간.",
+        "satisfiedWhenKo": "답변이 그 공간이 학습자에게 지닌 가치를 보여 주는 구체적인 일을 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect spending time in that corner has on the learner.",
+        "satisfiedWhenEn": "The answer states how the space helps the learner focus, rest, create, remember, or otherwise changes an experience.",
+        "semanticRoleKo": "방의 그 구석에서 시간을 보내는 일이 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 공간이 학습자의 집중, 휴식, 창작, 기억 또는 다른 경험에 어떻게 영향을 주는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, occasion, or frequency for using the liked corner.",
+        "satisfiedWhenEn": "The answer identifies when or how often the learner spends time there in a recognizable way.",
+        "semanticRoleKo": "학습자가 좋아하는 방 구석을 이용하는 구체적인 시간, 상황 또는 빈도.",
+        "satisfiedWhenKo": "답변이 학습자가 그곳에서 언제 또는 얼마나 자주 시간을 보내는지 알아볼 수 있게 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1106",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular local bridge or walkway the learner likes crossing.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable local bridge or walkway and presents it as one the learner likes crossing; merely naming a bridge or linking it to any crossing experience is insufficient.",
+        "semanticRoleKo": "학습자가 건너기를 좋아하는 특정 지역 다리나 산책로.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 지역 다리나 산책로를 식별하거나 분명히 위치시키고 그곳을 학습자가 건너기를 좋아하는 장소로 나타내면 충족된다. 다리를 단순히 언급하거나 임의의 통행 경험과 연결하는 것만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The feature or quality that stands out about the local bridge or walkway.",
+        "satisfiedWhenEn": "The answer gives a concrete distinctive feature such as its design, view, atmosphere, surroundings, or sensory quality; saying only that it is special is insufficient.",
+        "semanticRoleKo": "그 지역 다리나 산책로에서 눈에 띄는 특징이나 특성.",
+        "satisfiedWhenKo": "답변이 디자인, 전망, 분위기, 주변 환경 또는 감각적 특성처럼 구체적으로 두드러지는 점을 제시하면 충족되며, 단지 특별하다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the bridge or walkway has stayed in the learner's memory.",
+        "satisfiedWhenEn": "The answer explains its memorability through a concrete experience, association, person, event, feeling, or personal significance.",
+        "semanticRoleKo": "그 다리나 산책로가 학습자의 기억에 남아 있는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 경험, 연상, 사람, 사건, 감정 또는 개인적 의미를 통해 그곳이 기억에 남는 이유를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does while crossing or visiting the bridge or walkway.",
+        "satisfiedWhenEn": "The answer states a concrete activity or repeated behavior beyond the given act of crossing.",
+        "semanticRoleKo": "학습자가 그 다리나 산책로를 건너거나 방문하며 하는 행동.",
+        "satisfiedWhenKo": "답변이 질문에 주어진 건너는 행동을 넘어 구체적인 활동이나 반복 행동을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular crossing or visit illustrating why the place stands out or remains memorable.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion at the bridge or walkway that demonstrates its significance.",
+        "semanticRoleKo": "그 장소가 눈에 띄거나 기억에 남는 이유를 보여 주는 구체적인 통행 또는 방문 사례.",
+        "satisfiedWhenKo": "답변이 그 다리나 산책로의 의미를 보여 주는 구체적인 일을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling while crossing or remembering the bridge or walkway.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the place or an experience there.",
+        "semanticRoleKo": "그 다리나 산책로를 건너거나 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 장소나 그곳에서의 경험과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect crossing or visiting the bridge or walkway has on the learner.",
+        "satisfiedWhenEn": "The answer states how the experience affects the learner's mood, routine, perspective, relationships, or another part of life.",
+        "semanticRoleKo": "그 다리나 산책로를 건너거나 방문하는 일이 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 경험이 학습자의 기분, 일상, 관점, 관계 또는 삶의 다른 부분에 어떤 영향을 주는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or occasion associated with a memorable crossing or visit.",
+        "satisfiedWhenEn": "The answer identifies when a relevant experience at the bridge or walkway occurred in a recognizable way.",
+        "semanticRoleKo": "기억에 남는 통행이나 방문과 관련된 구체적인 시점 또는 상황.",
+        "satisfiedWhenKo": "답변이 그 다리나 산책로에서의 관련 경험이 언제 일어났는지 알아볼 수 있게 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1107",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete musical or organizational characteristics of a playlist the learner uses for studying.",
+        "satisfiedWhenEn": "The answer identifies a recognizable playlist or type of playlist and describes its music, mood, structure, source, or another relevant feature.",
+        "semanticRoleKo": "학습자가 공부할 때 사용하는 플레이리스트의 정체와 구체적인 음악적 또는 구성적 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 플레이리스트나 유형을 밝히고 음악, 분위기, 구성, 출처 또는 다른 관련 특징을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the study playlist matters to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal importance through a concrete role in studying, memory, routine, value, or connection.",
+        "semanticRoleKo": "그 공부용 플레이리스트가 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 공부에서의 구체적인 역할, 기억, 습관, 가치 또는 연결을 통해 플레이리스트의 개인적 중요성을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "How the learner uses the playlist during study.",
+        "satisfiedWhenEn": "The answer states a concrete listening or study routine involving the playlist, beyond merely saying it is for studying.",
+        "semanticRoleKo": "학습자가 공부하면서 그 플레이리스트를 사용하는 방식.",
+        "satisfiedWhenKo": "답변이 공부용이라고만 하지 않고 플레이리스트와 관련된 구체적인 청취 또는 공부 습관을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific study occasion or track illustrating the playlist's importance.",
+        "satisfiedWhenEn": "The answer describes a concrete session, task, song, or moment in which the playlist's value became evident.",
+        "semanticRoleKo": "그 플레이리스트의 중요성을 보여 주는 구체적인 공부 상황이나 곡.",
+        "satisfiedWhenKo": "답변이 플레이리스트의 가치가 드러난 구체적인 공부 시간, 과제, 곡 또는 순간을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional or mental state while listening to the study playlist.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling or state tied to listening while studying.",
+        "semanticRoleKo": "공부하며 그 플레이리스트를 들을 때 학습자가 느끼는 감정이나 정신 상태.",
+        "satisfiedWhenKo": "답변이 공부 중 청취와 연결된 구체적인 감정이나 상태를 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the playlist has on the learner's studying.",
+        "satisfiedWhenEn": "The answer states how the playlist changes concentration, motivation, pace, memory, endurance, or another study outcome.",
+        "semanticRoleKo": "그 플레이리스트가 학습자의 공부에 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 플레이리스트가 집중력, 동기, 속도, 기억, 지속력 또는 다른 공부 결과를 어떻게 바꾸는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, task, or frequency for using the study playlist.",
+        "satisfiedWhenEn": "The answer identifies when, during what kind of study, or how often the learner uses it.",
+        "semanticRoleKo": "그 공부용 플레이리스트를 사용하는 구체적인 시간, 과제 또는 빈도.",
+        "satisfiedWhenKo": "답변이 학습자가 언제, 어떤 종류의 공부 중에 또는 얼마나 자주 그것을 사용하는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1108",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete characteristics of a meal the learner taught themselves to cook.",
+        "satisfiedWhenEn": "The answer identifies a recognizable dish and describes a relevant ingredient, style, difficulty, origin, or feature beyond merely saying it is a meal.",
+        "semanticRoleKo": "학습자가 스스로 요리하는 법을 배운 음식의 정체와 구체적인 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 요리를 밝히고 단지 음식이라고 하는 것을 넘어 관련된 재료, 방식, 난이도, 유래 또는 특징을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why learning to cook that meal feels meaningful to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal significance through a concrete achievement, relationship, memory, independence, tradition, or value.",
+        "semanticRoleKo": "그 음식을 요리하는 법을 배운 일이 학습자에게 의미 있게 느껴지는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 성취, 관계, 기억, 자립, 전통 또는 가치를 통해 그 경험의 개인적 의미를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific step or practice involved in learning or cooking the meal.",
+        "satisfiedWhenEn": "The answer states a concrete cooking, practice, or problem-solving action beyond the given fact that the learner learned it independently.",
+        "semanticRoleKo": "그 음식을 배우거나 요리하는 데 포함된 구체적인 단계나 연습.",
+        "satisfiedWhenKo": "답변이 스스로 배웠다는 주어진 사실을 넘어 구체적인 요리, 연습 또는 문제 해결 행동을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular cooking experience illustrating why the meal is meaningful.",
+        "satisfiedWhenEn": "The answer describes a concrete attempt, success, mistake, occasion, or shared meal that demonstrates its significance.",
+        "semanticRoleKo": "그 음식이 의미 있는 이유를 보여 주는 구체적인 요리 경험.",
+        "satisfiedWhenKo": "답변이 그 의미를 보여 주는 구체적인 시도, 성공, 실수, 상황 또는 함께한 식사를 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling while learning, cooking, serving, or remembering the meal.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the cooking experience.",
+        "semanticRoleKo": "그 음식을 배우거나 요리하거나 대접하거나 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 요리 경험과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome of learning to cook the meal.",
+        "satisfiedWhenEn": "The answer states how the skill affected the learner's confidence, independence, relationships, habits, or ability to feed others.",
+        "semanticRoleKo": "그 음식을 요리하는 법을 배운 구체적인 결과.",
+        "satisfiedWhenKo": "답변이 그 기술이 학습자의 자신감, 자립, 관계, 습관 또는 다른 사람에게 음식을 해 주는 능력에 어떤 영향을 주었는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or occasion associated with learning or cooking the meal.",
+        "satisfiedWhenEn": "The answer identifies a recognizable age, life period, event, or recurring occasion tied to the cooking experience.",
+        "semanticRoleKo": "그 음식을 배우거나 요리한 경험과 관련된 구체적인 시점 또는 상황.",
+        "satisfiedWhenKo": "답변이 요리 경험과 연결된 알아볼 수 있는 나이, 삶의 시기, 사건 또는 반복되는 상황을 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1109",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular cafe the learner revisits often.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable cafe and connects it to the learner's repeated visits; an unnamed nice cafe is insufficient.",
+        "semanticRoleKo": "학습자가 자주 다시 방문하는 특정 카페.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 카페를 식별하거나 분명히 위치시키고 학습자의 반복 방문과 연결하면 충족되며, 어디인지 알 수 없는 좋은 카페만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The feature or quality that stands out about the often-visited cafe.",
+        "satisfiedWhenEn": "The answer gives a concrete distinctive characteristic such as its atmosphere, menu, people, design, sound, or view; generic praise is insufficient.",
+        "semanticRoleKo": "자주 방문하는 그 카페에서 눈에 띄는 특징이나 특성.",
+        "satisfiedWhenKo": "답변이 분위기, 메뉴, 사람, 디자인, 소리 또는 전망처럼 구체적으로 두드러지는 특성을 제시하면 충족되며, 막연한 칭찬은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the cafe has stayed in the learner's memory.",
+        "satisfiedWhenEn": "The answer explains its memorability through a concrete experience, routine, relationship, feeling, event, or personal significance.",
+        "semanticRoleKo": "그 카페가 학습자의 기억에 남아 있는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 경험, 습관, 관계, 감정, 사건 또는 개인적 의미를 통해 그 카페가 기억에 남는 이유를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does at the cafe besides revisiting it.",
+        "satisfiedWhenEn": "The answer states a concrete activity or routine performed at the cafe.",
+        "semanticRoleKo": "다시 방문하는 것 외에 학습자가 그 카페에서 하는 행동.",
+        "satisfiedWhenKo": "답변이 학습자가 그 카페에서 하는 구체적인 활동이나 습관을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular cafe visit illustrating why it stands out or remains memorable.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion at the cafe that demonstrates its significance.",
+        "semanticRoleKo": "그 카페가 눈에 띄거나 기억에 남는 이유를 보여 주는 구체적인 방문 사례.",
+        "satisfiedWhenKo": "답변이 그 카페의 의미를 보여 주는 구체적인 일을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling while at or remembering the cafe.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the cafe or an experience there.",
+        "semanticRoleKo": "그 카페에 있거나 그곳을 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 카페나 그곳에서의 경험과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect visiting the cafe has on the learner.",
+        "satisfiedWhenEn": "The answer states how time at the cafe affects the learner's mood, work, relationships, routine, or another part of life.",
+        "semanticRoleKo": "그 카페를 방문하는 일이 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 카페에서 보내는 시간이 학습자의 기분, 업무, 관계, 일상 또는 삶의 다른 부분에 어떤 영향을 주는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, occasion, or pattern associated with visiting the cafe.",
+        "satisfiedWhenEn": "The answer identifies when or under what circumstances the learner visits, beyond simply repeating that visits are frequent.",
+        "semanticRoleKo": "그 카페 방문과 관련된 구체적인 시간, 상황 또는 양상.",
+        "satisfiedWhenKo": "답변이 자주 방문한다고 반복하는 데 그치지 않고 언제 또는 어떤 상황에서 가는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1110",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The recognizable contents or context of a family photo the learner remembers well.",
+        "satisfiedWhenEn": "The answer identifies a particular photo by describing who or what is shown, the setting, the event, or another concrete feature; saying only that it is a family photo is insufficient.",
+        "semanticRoleKo": "학습자가 잘 기억하는 가족사진의 알아볼 수 있는 내용이나 맥락.",
+        "satisfiedWhenKo": "답변이 사진 속 사람이나 사물, 장소, 사건 또는 다른 구체적인 특징을 설명하여 특정 사진을 식별하면 충족되며, 단지 가족사진이라고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the remembered family photo matters to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal importance through a concrete relationship, memory, change, loss, celebration, value, or family connection.",
+        "semanticRoleKo": "기억에 남는 그 가족사진이 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 관계, 기억, 변화, 상실, 축하, 가치 또는 가족적 연결을 통해 사진의 개인적 중요성을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling when viewing or remembering the family photo.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the photo or the people and event shown.",
+        "semanticRoleKo": "그 가족사진을 보거나 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 사진이나 사진 속 사람과 사건에 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific memory associated with the family photo.",
+        "satisfiedWhenEn": "The answer describes a concrete incident before, during, or after the photo that illustrates its significance.",
+        "semanticRoleKo": "그 가족사진과 관련된 구체적인 기억.",
+        "satisfiedWhenKo": "답변이 사진의 의미를 보여 주는 촬영 전, 촬영 중 또는 촬영 후의 구체적인 일을 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, age, life stage, or occasion connected to the family photo.",
+        "satisfiedWhenEn": "The answer locates when the photo was taken or when its associated event occurred in a recognizable way.",
+        "semanticRoleKo": "그 가족사진과 연결된 구체적인 시점, 나이, 삶의 단계 또는 상황.",
+        "satisfiedWhenKo": "답변이 사진을 찍었거나 관련 사건이 일어난 때를 알아볼 수 있게 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the family photo or its memory has on the learner.",
+        "satisfiedWhenEn": "The answer states how the photo reminds, connects, comforts, motivates, preserves, or otherwise affects the learner.",
+        "semanticRoleKo": "그 가족사진이나 사진에 대한 기억이 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 사진이 학습자에게 무언가를 떠올리게 하거나 연결하거나 위로하거나 동기를 주거나 보존하거나 다른 방식으로 영향을 주는지 밝히면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete action shown in the photo or taken by the learner in relation to it.",
+        "satisfiedWhenEn": "The answer states what someone was doing in the pictured moment or what the learner now does with the photo.",
+        "semanticRoleKo": "사진 속에 나타나거나 학습자가 그 사진과 관련해 하는 구체적인 행동.",
+        "satisfiedWhenKo": "답변이 사진 속 순간에 누군가 무엇을 하고 있었는지 또는 학습자가 현재 그 사진으로 무엇을 하는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1111",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and relevant operation of a phone feature the learner relies on.",
+        "satisfiedWhenEn": "The answer identifies a recognizable phone feature and gives concrete information about what it does or how it works; saying only that it is useful is insufficient.",
+        "semanticRoleKo": "학습자가 의지하는 휴대폰 기능의 정체와 관련 작동 방식.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 휴대폰 기능을 밝히고 무엇을 하거나 어떻게 작동하는지 구체적인 정보를 제시하면 충족되며, 단지 유용하다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the relied-upon phone feature is important to the learner.",
+        "satisfiedWhenEn": "The answer explains its importance through a concrete need, responsibility, accessibility requirement, routine, safety concern, or personal value.",
+        "semanticRoleKo": "의지하는 그 휴대폰 기능이 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 필요, 책임, 접근성 요구, 일상, 안전 문제 또는 개인적 가치를 통해 그 기능의 중요성을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "How the learner uses the phone feature.",
+        "satisfiedWhenEn": "The answer states a concrete task or repeated action performed with the feature, beyond merely saying the learner relies on it.",
+        "semanticRoleKo": "학습자가 그 휴대폰 기능을 사용하는 방식.",
+        "satisfiedWhenKo": "답변이 그 기능에 의지한다고만 하지 않고 기능으로 수행하는 구체적인 작업이나 반복 행동을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete benefit or outcome the learner gets from the phone feature.",
+        "satisfiedWhenEn": "The answer states how the feature saves, enables, improves, prevents, or changes something for the learner.",
+        "semanticRoleKo": "학습자가 그 휴대폰 기능으로 얻는 구체적인 이익이나 결과.",
+        "satisfiedWhenKo": "답변이 그 기능이 학습자에게 시간이나 노력을 절약하게 하거나 무언가를 가능하게 하거나 개선하거나 예방하거나 변화시키는지 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific situation demonstrating why the learner relies on the phone feature.",
+        "satisfiedWhenEn": "The answer describes a concrete occasion in which the feature was used and its importance became evident.",
+        "semanticRoleKo": "학습자가 그 휴대폰 기능에 의지하는 이유를 보여 주는 구체적인 상황.",
+        "satisfiedWhenKo": "답변이 그 기능을 사용했고 그 중요성이 드러난 구체적인 일을 설명하면 충족된다."
+      },
+      "PROBLEM": {
+        "semanticRoleEn": "A specific difficulty or risk the phone feature helps the learner handle.",
+        "satisfiedWhenEn": "The answer identifies a concrete problem that would arise or be harder to manage without the feature.",
+        "semanticRoleKo": "그 휴대폰 기능이 학습자의 해결을 돕는 구체적인 어려움이나 위험.",
+        "satisfiedWhenKo": "답변이 그 기능이 없으면 생기거나 관리하기 더 어려워질 구체적인 문제를 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling when using, having, or being without the relied-upon feature.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to dependence on the feature.",
+        "semanticRoleKo": "의지하는 그 기능을 사용하거나 갖고 있거나 사용할 수 없을 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 기능에 대한 의존과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1112",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete characteristics of a notebook the learner often carries.",
+        "satisfiedWhenEn": "The answer identifies a recognizable notebook and describes its appearance, contents, origin, organization, or another relevant feature beyond simply saying it is carried often.",
+        "semanticRoleKo": "학습자가 자주 가지고 다니는 노트의 정체와 구체적인 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 노트를 밝히고 자주 가지고 다닌다고만 하지 않고 외관, 내용, 유래, 구성 또는 다른 관련 특징을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the often-carried notebook matters to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal importance through a concrete purpose, memory, habit, creative role, responsibility, or value.",
+        "semanticRoleKo": "자주 가지고 다니는 그 노트가 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 목적, 기억, 습관, 창작 역할, 책임 또는 가치를 통해 그 노트의 개인적 중요성을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does with the notebook.",
+        "satisfiedWhenEn": "The answer states a concrete writing, planning, drawing, recording, reviewing, or other activity performed with it.",
+        "semanticRoleKo": "학습자가 그 노트로 하는 행동.",
+        "satisfiedWhenKo": "답변이 그 노트로 하는 구체적인 글쓰기, 계획, 그림, 기록, 복습 또는 다른 활동을 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, occasion, or frequency for carrying or using the notebook.",
+        "satisfiedWhenEn": "The answer identifies when, during what kind of situation, or how often the notebook is used beyond saying it is often carried.",
+        "semanticRoleKo": "그 노트를 가지고 다니거나 사용하는 구체적인 시간, 상황 또는 빈도.",
+        "satisfiedWhenKo": "답변이 자주 가지고 다닌다고만 하지 않고 언제, 어떤 상황에서 또는 얼마나 자주 사용하는지 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific entry or occasion illustrating why the notebook matters.",
+        "satisfiedWhenEn": "The answer describes a concrete note, plan, idea, event, or use situation that demonstrates its value.",
+        "semanticRoleKo": "그 노트가 중요한 이유를 보여 주는 구체적인 기록이나 상황.",
+        "satisfiedWhenKo": "답변이 그 노트의 가치를 보여 주는 구체적인 메모, 계획, 아이디어, 사건 또는 사용 상황을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling when carrying, using, or reviewing the notebook.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the notebook.",
+        "semanticRoleKo": "그 노트를 가지고 다니거나 사용하거나 다시 볼 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 노트와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the notebook has on the learner's ideas, memory, organization, work, or daily life.",
+        "satisfiedWhenEn": "The answer states how using the notebook helps, changes, preserves, or enables something for the learner.",
+        "semanticRoleKo": "그 노트가 학습자의 생각, 기억, 정리, 업무 또는 일상에 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 노트 사용이 학습자에게 어떻게 도움이 되거나 변화를 주거나 무언가를 보존하거나 가능하게 하는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1113",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete characteristics of an object that stays on the learner's desk.",
+        "satisfiedWhenEn": "The answer identifies a recognizable object and describes its appearance, function, origin, arrangement, or another relevant feature; merely saying it is on the desk is insufficient.",
+        "semanticRoleKo": "학습자의 책상 위에 계속 놓여 있는 물건의 정체와 구체적인 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 물건을 밝히고 외관, 기능, 유래, 배치 또는 다른 관련 특징을 설명하면 충족되며, 단지 책상 위에 있다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the desk object matters to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal importance through a concrete use, memory, relationship, symbol, value, or role in daily work or study.",
+        "semanticRoleKo": "그 책상 물건이 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 용도, 기억, 관계, 상징, 가치 또는 일상적인 업무나 공부에서의 역할을 통해 물건의 개인적 중요성을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does with the desk object.",
+        "satisfiedWhenEn": "The answer states a concrete use, care routine, interaction, or repeated action involving the object.",
+        "semanticRoleKo": "학습자가 그 책상 물건으로 하거나 그 물건에 대해 하는 행동.",
+        "satisfiedWhenKo": "답변이 그 물건의 구체적인 사용, 관리 방식, 상호작용 또는 반복 행동을 밝히면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The object's specific placement or spatial relationship on the learner's desk.",
+        "satisfiedWhenEn": "The answer gives concrete information about where the object sits or what it is placed beside, beyond repeating that it is somewhere on the desk.",
+        "semanticRoleKo": "학습자의 책상에서 그 물건이 놓인 구체적인 위치나 공간적 관계.",
+        "satisfiedWhenKo": "답변이 책상 위 어딘가에 있다고 반복하는 데 그치지 않고 어디에 놓였거나 무엇 옆에 있는지 구체적으로 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion or memory illustrating why the desk object matters.",
+        "satisfiedWhenEn": "The answer describes a concrete incident in which the object's use or personal significance became evident.",
+        "semanticRoleKo": "그 책상 물건이 중요한 이유를 보여 주는 구체적인 상황이나 기억.",
+        "satisfiedWhenKo": "답변이 그 물건의 용도나 개인적 의미가 드러난 구체적인 일을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling when seeing or using the desk object.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the object.",
+        "semanticRoleKo": "그 책상 물건을 보거나 사용할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 책상 위에 계속 놓여 있는 그 물건과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the desk object has on the learner's work, study, memory, routine, or mood.",
+        "satisfiedWhenEn": "The answer states how the object helps, changes, reminds, organizes, or otherwise affects the learner.",
+        "semanticRoleKo": "그 책상 물건이 학습자의 업무, 공부, 기억, 일상 또는 기분에 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 물건이 학습자에게 어떻게 도움이 되거나 변화를 주거나 무언가를 떠올리게 하거나 정리하게 하거나 다른 방식으로 영향을 주는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1114",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete nature of a volunteer event the learner joined.",
+        "satisfiedWhenEn": "The answer identifies a recognizable event or event type and describes its purpose, participants, organization, beneficiaries, or another defining feature.",
+        "semanticRoleKo": "학습자가 참여한 봉사 행사의 정체와 구체적인 성격.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 행사나 행사 유형을 밝히고 목적, 참가자, 운영 방식, 수혜자 또는 다른 핵심 특징을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why participating in the volunteer event feels meaningful to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal significance through a concrete value, connection, contribution, realization, memory, or change in perspective.",
+        "semanticRoleKo": "그 봉사 행사에 참여한 일이 학습자에게 의미 있게 느껴지는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 가치, 연결, 기여, 깨달음, 기억 또는 관점의 변화를 통해 그 참여의 개인적 의미를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific contribution or task the learner performed at the volunteer event.",
+        "satisfiedWhenEn": "The answer states what the learner actually did to help, beyond merely repeating that the learner joined the event.",
+        "semanticRoleKo": "학습자가 그 봉사 행사에서 수행한 구체적인 기여나 과업.",
+        "satisfiedWhenKo": "답변이 행사에 참여했다는 말을 반복하는 데 그치지 않고 돕기 위해 실제로 무엇을 했는지 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome of the volunteer event for beneficiaries, the community, other volunteers, or the learner.",
+        "satisfiedWhenEn": "The answer states what changed, improved, was provided, or was learned because of the event.",
+        "semanticRoleKo": "그 봉사 행사가 수혜자, 지역사회, 다른 봉사자 또는 학습자에게 가져온 구체적인 결과.",
+        "satisfiedWhenKo": "답변이 행사로 인해 무엇이 달라지거나 개선되거나 제공되거나 학습되었는지 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response during or after the volunteer event.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling connected to participating in the event.",
+        "semanticRoleKo": "봉사 행사 중이나 이후에 학습자가 느낀 감정.",
+        "satisfiedWhenKo": "답변이 행사 참여와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular moment at the volunteer event illustrating its meaning.",
+        "satisfiedWhenEn": "The answer describes a concrete interaction, task, difficulty, or response that demonstrates why the experience mattered.",
+        "semanticRoleKo": "그 봉사 행사의 의미를 보여 주는 구체적인 순간.",
+        "satisfiedWhenKo": "답변이 그 경험이 중요했던 이유를 보여 주는 구체적인 상호작용, 과업, 어려움 또는 반응을 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The physical or online setting where the volunteer event took place.",
+        "satisfiedWhenEn": "The answer identifies a recognizable venue, neighborhood site, institution, outdoor area, community setting, or online setting and clearly connects it to where the described volunteer event was held or where the learner participated; merely mentioning a place associated with the event is insufficient.",
+        "semanticRoleKo": "그 봉사 행사가 실제로 진행된 물리적 또는 온라인 장소나 환경.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 행사장, 동네 장소, 기관, 야외 공간, 공동체 환경 또는 온라인 환경을 밝히고 그곳을 설명한 봉사 행사가 열렸거나 학습자가 참여한 장소로 분명히 연결하면 충족된다. 행사와 관련된 장소를 단순히 언급하는 것만으로는 부족하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or occasion when the volunteer event occurred.",
+        "satisfiedWhenEn": "The answer identifies a recognizable date, season, life period, schedule, or triggering occasion for the event.",
+        "semanticRoleKo": "그 봉사 행사가 열린 구체적인 시점이나 상황.",
+        "satisfiedWhenKo": "답변이 행사의 알아볼 수 있는 날짜, 계절, 삶의 시기, 일정 또는 계기를 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1115",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete scope of a topic the learner enjoys discussing.",
+        "satisfiedWhenEn": "The answer identifies a recognizable subject and gives specific information about the aspect, questions, ideas, or conversations it includes; saying only that it is interesting is insufficient.",
+        "semanticRoleKo": "학습자가 이야기하기를 즐기는 주제의 정체와 구체적인 범위.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 주제를 밝히고 그 안에 포함되는 관점, 질문, 생각 또는 대화에 관한 구체적인 정보를 제시하면 충족되며, 단지 흥미롭다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the discussion topic has remained important to the learner.",
+        "satisfiedWhenEn": "The answer explains its continuing importance through a concrete value, experience, identity, concern, relationship, curiosity, or role over time.",
+        "semanticRoleKo": "그 대화 주제가 학습자에게 계속 중요하게 남아 있는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 가치, 경험, 정체성, 관심사, 관계, 호기심 또는 시간에 걸친 역할을 통해 지속적인 중요성을 설명하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific idea or conversation illustrating why the topic is engaging or important.",
+        "satisfiedWhenEn": "The answer gives a concrete subtopic, question, discussion, or incident that demonstrates the topic's value.",
+        "semanticRoleKo": "그 주제가 흥미롭거나 중요한 이유를 보여 주는 구체적인 생각이나 대화.",
+        "satisfiedWhenKo": "답변이 주제의 가치를 보여 주는 구체적인 하위 주제, 질문, 토론 또는 사건을 제시하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "How the learner engages in conversations about the topic.",
+        "satisfiedWhenEn": "The answer states a concrete discussion, sharing, teaching, debating, researching, or listening activity involving the topic.",
+        "semanticRoleKo": "학습자가 그 주제에 관한 대화에 참여하는 방식.",
+        "satisfiedWhenKo": "답변이 그 주제와 관련된 구체적인 토론, 공유, 가르침, 논쟁, 조사 또는 듣기 활동을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling while discussing or thinking about the topic.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to engagement with the topic.",
+        "semanticRoleKo": "그 주제를 이야기하거나 생각할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 주제에 관여하는 것과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect that discussing the topic has on the learner or others.",
+        "satisfiedWhenEn": "The answer states how such conversations change understanding, relationships, decisions, skills, motivation, or another outcome.",
+        "semanticRoleKo": "그 주제를 이야기하는 일이 학습자나 다른 사람에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그런 대화가 이해, 관계, 결정, 기술, 동기 또는 다른 결과를 어떻게 바꾸는지 밝히면 충족된다."
+      },
+      "CHANGE_CAUSE": {
+        "semanticRoleEn": "An experience or development that caused the topic to gain or retain importance over time.",
+        "satisfiedWhenEn": "The answer identifies a concrete influence or turning point and connects it to a change or renewal in the topic's importance.",
+        "semanticRoleKo": "그 주제가 시간이 지나며 중요해지거나 중요성을 유지하게 한 경험 또는 변화.",
+        "satisfiedWhenKo": "답변이 구체적인 영향이나 전환점을 밝히고 그것을 주제 중요성의 변화나 재확인과 연결하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1116",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete characteristics or history of an old jacket or coat the learner still wears.",
+        "satisfiedWhenEn": "The answer identifies a recognizable garment and describes its appearance, material, origin, age, condition, or another relevant feature.",
+        "semanticRoleKo": "학습자가 아직 입는 오래된 재킷이나 코트의 정체와 구체적인 특성 또는 내력.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 옷을 밝히고 외관, 소재, 유래, 나이, 상태 또는 다른 관련 특징을 설명하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the old jacket or coat matters to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal importance through a concrete memory, giver, relationship, function, identity, value, or history.",
+        "semanticRoleKo": "그 오래된 재킷이나 코트가 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 기억, 준 사람, 관계, 기능, 정체성, 가치 또는 내력을 통해 그 옷의 개인적 중요성을 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "How or in what kind of activity the learner wears or cares for the garment.",
+        "satisfiedWhenEn": "The answer states a concrete wearing routine, use, repair, storage practice, or other interaction beyond the given fact that it is still worn.",
+        "semanticRoleKo": "학습자가 그 옷을 입거나 관리하는 방식 또는 관련 활동.",
+        "satisfiedWhenKo": "답변이 아직 입는다는 주어진 사실을 넘어 구체적인 착용 습관, 용도, 수선, 보관 방식 또는 다른 상호작용을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling when wearing, seeing, or remembering the old garment.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the jacket or coat.",
+        "semanticRoleKo": "그 오래된 옷을 입거나 보거나 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 재킷이나 코트와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion or memory illustrating why the garment matters.",
+        "satisfiedWhenEn": "The answer describes a concrete event in which the jacket or coat's practical or personal significance became evident.",
+        "semanticRoleKo": "그 옷이 중요한 이유를 보여 주는 구체적인 상황이나 기억.",
+        "satisfiedWhenKo": "답변이 재킷이나 코트의 실용적 또는 개인적 의미가 드러난 구체적인 일을 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or occasion associated with receiving, first wearing, or continuing to wear the garment.",
+        "satisfiedWhenEn": "The answer identifies a recognizable year, age, life period, season, or event connected to the jacket or coat.",
+        "semanticRoleKo": "그 옷을 받거나 처음 입거나 계속 입는 것과 관련된 구체적인 시점 또는 상황.",
+        "satisfiedWhenKo": "답변이 재킷이나 코트와 연결된 알아볼 수 있는 연도, 나이, 삶의 시기, 계절 또는 사건을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the old jacket or coat has on the learner.",
+        "satisfiedWhenEn": "The answer states how the garment provides comfort, preserves a connection, shapes confidence or identity, saves resources, or otherwise affects the learner.",
+        "semanticRoleKo": "그 오래된 재킷이나 코트가 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 옷이 편안함을 주거나 연결을 보존하거나 자신감이나 정체성에 영향을 주거나 자원을 아끼게 하거나 다른 방식으로 학습자에게 영향을 주는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1117",
+    "slotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular market stall the learner likes visiting.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable market stall and presents it as one the learner likes visiting; merely naming a stall or linking it to any visit is insufficient.",
+        "semanticRoleKo": "학습자가 방문하기를 좋아하는 특정 시장 가판대.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 시장 가판대를 식별하거나 분명히 위치시키고 그곳을 학습자가 방문하기를 좋아하는 곳으로 나타내면 충족된다. 가판대를 단순히 언급하거나 임의의 방문과 연결하는 것만으로는 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Concrete characteristics of the liked market stall.",
+        "satisfiedWhenEn": "The answer gives specific information about what it sells, who runs it, its appearance, atmosphere, service, or another distinguishing feature.",
+        "semanticRoleKo": "좋아하는 그 시장 가판대의 구체적인 특성.",
+        "satisfiedWhenKo": "답변이 무엇을 파는지, 누가 운영하는지, 외관, 분위기, 서비스 또는 다른 두드러진 특징에 관한 구체적인 정보를 제시하면 충족된다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why visiting the market stall feels meaningful to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal significance through a concrete relationship, routine, memory, tradition, value, product, or community connection.",
+        "semanticRoleKo": "그 시장 가판대를 방문하는 일이 학습자에게 의미 있게 느껴지는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 관계, 습관, 기억, 전통, 가치, 상품 또는 공동체 연결을 통해 그 방문의 개인적 의미를 설명하면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner does at the market stall.",
+        "satisfiedWhenEn": "The answer states a concrete buying, browsing, talking, tasting, helping, or other activity performed there.",
+        "semanticRoleKo": "학습자가 그 시장 가판대에서 하는 행동.",
+        "satisfiedWhenKo": "답변이 그곳에서 하는 구체적인 구매, 구경, 대화, 시식, 도움 또는 다른 활동을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular visit or interaction illustrating why the stall is meaningful.",
+        "satisfiedWhenEn": "The answer describes a concrete purchase, conversation, discovery, favor, or event at the stall.",
+        "semanticRoleKo": "그 가판대가 의미 있는 이유를 보여 주는 구체적인 방문이나 상호작용.",
+        "satisfiedWhenKo": "답변이 가판대에서 있었던 구체적인 구매, 대화, 발견, 호의 또는 사건을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling while visiting or thinking about the market stall.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to the stall or the people there.",
+        "semanticRoleKo": "그 시장 가판대를 방문하거나 생각할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 가판대나 그곳 사람들과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect of visiting the market stall on the learner or local community.",
+        "satisfiedWhenEn": "The answer states how the visits support, connect, teach, comfort, supply, or otherwise affect the learner or community.",
+        "semanticRoleKo": "그 시장 가판대 방문이 학습자나 지역사회에 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 방문이 학습자나 공동체를 어떻게 돕거나 연결하거나 가르치거나 위로하거나 필요한 것을 제공하거나 다른 방식으로 영향을 주는지 밝히면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time, occasion, or frequency for visiting the market stall.",
+        "satisfiedWhenEn": "The answer identifies when or how often the learner visits in a recognizable way.",
+        "semanticRoleKo": "학습자가 그 시장 가판대를 방문하는 구체적인 시간, 상황 또는 빈도.",
+        "satisfiedWhenKo": "답변이 학습자가 그곳을 언제 또는 얼마나 자주 방문하는지 알아볼 수 있게 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1118",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete acoustic qualities of a rainy-day sound the learner likes.",
+        "satisfiedWhenEn": "The answer identifies a recognizable source or kind of sound and describes how it sounds or what makes it stand out; saying only that rain sounds nice is insufficient.",
+        "semanticRoleKo": "학습자가 좋아하는 비 오는 날 소리의 정체와 구체적인 음향적 특성.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 소리의 원천이나 유형을 밝히고 어떻게 들리거나 무엇이 눈에 띄는지 설명하면 충족되며, 단지 빗소리가 좋다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the rainy-day sound has stayed in the learner's memory.",
+        "satisfiedWhenEn": "The answer explains its memorability through a concrete association, event, person, place, feeling, sensory quality, or personal significance.",
+        "semanticRoleKo": "그 비 오는 날 소리가 학습자의 기억에 남아 있는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 연상, 사건, 사람, 장소, 감정, 감각적 특성 또는 개인적 의미를 통해 그 소리가 기억에 남는 이유를 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to hearing or remembering the rainy-day sound.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling connected to the sound.",
+        "semanticRoleKo": "그 비 오는 날 소리를 듣거나 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 소리와 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular rainy occasion illustrating why the sound stands out or remains memorable.",
+        "satisfiedWhenEn": "The answer describes a concrete moment in which the sound was heard and its significance became evident.",
+        "semanticRoleKo": "그 소리가 눈에 띄거나 기억에 남는 이유를 보여 주는 구체적인 비 오는 날의 사례.",
+        "satisfiedWhenKo": "답변이 그 소리를 들었고 그 의미가 드러난 구체적인 순간을 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or occasion associated with hearing the memorable rainy-day sound.",
+        "satisfiedWhenEn": "The answer identifies a recognizable age, season, part of day, life period, or event connected to the sound.",
+        "semanticRoleKo": "기억에 남는 그 비 오는 날 소리를 들은 구체적인 시점 또는 상황.",
+        "satisfiedWhenKo": "답변이 그 소리와 연결된 알아볼 수 있는 나이, 계절, 시간대, 삶의 시기 또는 사건을 밝히면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The setting where the learner heard or associates the rainy-day sound.",
+        "satisfiedWhenEn": "The answer identifies a concrete indoor or outdoor location, surface, building, vehicle, or surrounding environment tied to the sound.",
+        "semanticRoleKo": "학습자가 그 비 오는 날 소리를 들었거나 연관 짓는 장소나 환경.",
+        "satisfiedWhenKo": "답변이 그 소리와 연결된 구체적인 실내외 위치, 표면, 건물, 차량 또는 주변 환경을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the rainy-day sound has on the learner.",
+        "satisfiedWhenEn": "The answer states how hearing it changes the learner's mood, attention, behavior, memory, rest, or another experience.",
+        "semanticRoleKo": "그 비 오는 날 소리가 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 소리를 듣는 것이 학습자의 기분, 주의, 행동, 기억, 휴식 또는 다른 경험을 어떻게 바꾸는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1119",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The recognizable scene and concrete visual qualities of a remembered view from a window.",
+        "satisfiedWhenEn": "The answer describes what could be seen and gives enough specific visual or situational information to distinguish the view; saying only that it was beautiful is insufficient.",
+        "semanticRoleKo": "기억에 남는 창밖 풍경의 알아볼 수 있는 장면과 구체적인 시각적 특성.",
+        "satisfiedWhenKo": "답변이 무엇이 보였는지 설명하고 그 풍경을 구별할 수 있을 만큼 구체적인 시각적 또는 상황적 정보를 제시하면 충족되며, 단지 아름다웠다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the remembered window view matters to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal importance through a concrete memory, person, event, life period, realization, comfort, or symbolic meaning.",
+        "semanticRoleKo": "기억에 남는 그 창밖 풍경이 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 기억, 사람, 사건, 삶의 시기, 깨달음, 위안 또는 상징적 의미를 통해 그 풍경의 개인적 중요성을 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The location of the window or the setting visible from it.",
+        "satisfiedWhenEn": "The answer identifies a concrete home, room, building, vehicle, destination, neighborhood, or landscape connected to the view.",
+        "semanticRoleKo": "그 창문의 위치나 창을 통해 보이던 환경.",
+        "satisfiedWhenKo": "답변이 그 풍경과 연결된 구체적인 집, 방, 건물, 차량, 목적지, 동네 또는 자연환경을 밝히면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling while seeing or remembering the window view.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the scene.",
+        "semanticRoleKo": "그 창밖 풍경을 보거나 기억할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 그 장면과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular moment involving the window view that illustrates its importance.",
+        "satisfiedWhenEn": "The answer describes a concrete incident or observation in which the view's significance became evident.",
+        "semanticRoleKo": "그 창밖 풍경의 중요성을 보여 주는 구체적인 순간.",
+        "satisfiedWhenKo": "답변이 그 풍경의 의미가 드러난 구체적인 사건이나 관찰을 설명하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time or occasion associated with the remembered view.",
+        "satisfiedWhenEn": "The answer identifies a recognizable age, life period, season, part of day, trip, or event connected to seeing it.",
+        "semanticRoleKo": "기억에 남는 그 풍경과 관련된 구체적인 시점 또는 상황.",
+        "satisfiedWhenKo": "답변이 그 풍경을 본 것과 연결된 알아볼 수 있는 나이, 삶의 시기, 계절, 시간대, 여행 또는 사건을 밝히면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the window view or its memory has on the learner.",
+        "satisfiedWhenEn": "The answer states how the scene changed perspective, provided comfort, inspired action, preserved a connection, or otherwise affected the learner.",
+        "semanticRoleKo": "그 창밖 풍경이나 그 기억이 학습자에게 미치는 구체적인 영향.",
+        "satisfiedWhenKo": "답변이 그 장면이 관점을 바꾸거나 위안을 주거나 행동을 이끌거나 연결을 보존하거나 다른 방식으로 학습자에게 영향을 주는지 밝히면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1120",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The identity and concrete content or format of a community class the learner found useful.",
+        "satisfiedWhenEn": "The answer identifies a recognizable class or class type and describes what it taught, how it worked, who it served, or another defining feature; saying only that it was useful is insufficient.",
+        "semanticRoleKo": "학습자가 유용하다고 느낀 지역 수업의 정체와 구체적인 내용 또는 형식.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 수업이나 수업 유형을 밝히고 무엇을 가르쳤는지, 어떻게 진행되었는지, 누구를 위한 것이었는지 또는 다른 핵심 특징을 설명하면 충족되며, 단지 유용했다고만 하면 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the community class feels personally meaningful to the learner.",
+        "satisfiedWhenEn": "The answer explains its personal significance through a concrete need, value, achievement, connection, opportunity, confidence, or change.",
+        "semanticRoleKo": "그 지역 수업이 학습자에게 개인적으로 의미 있게 느껴지는 이유.",
+        "satisfiedWhenKo": "답변이 구체적인 필요, 가치, 성취, 연결, 기회, 자신감 또는 변화를 통해 수업의 개인적 의미를 설명하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete benefit or outcome the learner gained from the useful community class.",
+        "satisfiedWhenEn": "The answer states a specific skill, knowledge, habit, relationship, opportunity, solution, or other change produced by taking the class.",
+        "semanticRoleKo": "학습자가 유용한 그 지역 수업에서 얻은 구체적인 이익이나 결과.",
+        "satisfiedWhenKo": "답변이 수업을 통해 생긴 구체적인 기술, 지식, 습관, 관계, 기회, 해결책 또는 다른 변화를 밝히면 충족된다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A specific activity the learner performed in or because of the community class.",
+        "satisfiedWhenEn": "The answer states a concrete exercise, project, practice, discussion, application, or other class-related action.",
+        "semanticRoleKo": "학습자가 그 지역 수업 안에서 또는 수업으로 인해 수행한 구체적인 활동.",
+        "satisfiedWhenKo": "답변이 구체적인 연습, 프로젝트, 실습, 토론, 적용 또는 다른 수업 관련 행동을 밝히면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular class moment or later use illustrating why the class was useful or meaningful.",
+        "satisfiedWhenEn": "The answer describes a concrete lesson, task, interaction, or real-life application that demonstrates the class's value.",
+        "semanticRoleKo": "그 수업이 유용하거나 의미 있는 이유를 보여 주는 구체적인 수업 순간이나 이후 활용 사례.",
+        "satisfiedWhenKo": "답변이 수업의 가치를 보여 주는 구체적인 수업 내용, 과제, 상호작용 또는 실제 생활 적용을 설명하면 충족된다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's feeling during the class or about what it provided.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion connected to attending, learning, or applying the class content.",
+        "semanticRoleKo": "그 수업 중에 또는 수업이 제공한 것에 대해 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 수업 참여, 학습 또는 배운 내용의 적용과 연결된 구체적인 감정을 밝히거나 분명히 전달하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The physical or online community setting where the class took place.",
+        "satisfiedWhenEn": "The answer identifies a recognizable community center, library, school, workshop, neighborhood venue, online community setting, or other location and clearly presents it as where the described class was held or attended; merely mentioning a place associated with the class is insufficient.",
+        "semanticRoleKo": "그 지역 수업이 실제로 열린 물리적 또는 온라인 공동체 장소나 환경.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 주민 센터, 도서관, 학교, 작업장, 동네 행사장, 온라인 공동체 환경 또는 다른 장소를 밝히고 그곳을 설명한 수업이 열렸거나 학습자가 참여한 곳으로 분명히 연결하면 충족된다. 수업과 관련된 장소를 단순히 언급하는 것만으로는 부족하다."
+      }
+    }
+  }
+]

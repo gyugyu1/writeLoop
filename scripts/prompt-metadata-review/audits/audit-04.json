@@ -1,0 +1,99 @@
+{
+  "auditedParts": [
+    "07",
+    "08"
+  ],
+  "auditedCount": 241,
+  "issues": [
+    {
+      "promptId": "prompt-preference-2281",
+      "severity": "ERROR",
+      "fields": [
+        "answerMode",
+        "requiredSlots",
+        "rationale"
+      ],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": [
+          "DETAIL"
+        ],
+        "optionalSlots": [
+          "FEELING",
+          "REASON",
+          "EXAMPLE"
+        ],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question asks which texture feels comfortable, not which texture the learner likes or prefers. The learner supplies a descriptive texture, so GENERAL_DESCRIPTION with DETAIL does not invent a preference obligation."
+    },
+    {
+      "promptId": "prompt-preference-2335",
+      "severity": "ERROR",
+      "fields": [
+        "answerMode",
+        "rationale"
+      ],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": [
+          "CHOICE"
+        ],
+        "optionalSlots": [
+          "REASON",
+          "PLAN",
+          "FEELING",
+          "RESULT"
+        ],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The source asks what hobby the learner likes to start, which directly requests a preferred hobby. It is not phrased as a hypothetical choice, despite the current rationale rewriting it with 'would'."
+    },
+    {
+      "promptId": "prompt-preference-24",
+      "severity": "ERROR",
+      "fields": [
+        "requiredSlots",
+        "optionalSlots",
+        "rationale"
+      ],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": [
+          "CHOICE",
+          "REASON"
+        ],
+        "optionalSlots": [
+          "DETAIL",
+          "EXAMPLE",
+          "FEELING"
+        ],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Asking what the learner likes most requires selecting the most-liked aspect, so that literal obligation is CHOICE. DETAIL is useful as elaboration but should not replace the requested selection."
+    },
+    {
+      "promptId": "prompt-preference-2537",
+      "severity": "WARNING",
+      "fields": [
+        "answerMode",
+        "requiredSlots",
+        "rationale"
+      ],
+      "recommended": {
+        "answerMode": "OPINION_REASON",
+        "requiredSlots": [
+          "OPINION",
+          "REASON"
+        ],
+        "optionalSlots": [
+          "ACTION",
+          "RESULT",
+          "FEELING"
+        ],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Calling one cleaning job the easiest is an evaluative judgment, and the question separately asks the learner to justify it. Treating the judgment as a preference is defensible but less precise."
+    }
+  ]
+}

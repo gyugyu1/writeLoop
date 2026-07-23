@@ -1,0 +1,942 @@
+[
+  {
+    "promptId": "prompt-intro-v2-0241",
+    "verdict": "PASS",
+    "auditReasonKo": "매일 사용하는 앱이라는 일상 관계를 CHOICE가 정확히 잡고, 특정 앱을 요구해 막연한 범주도 적절히 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0242",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자에게 유용한 특정 앱이라는 선택 관계와 그 이점, 이유, 기능의 선택 슬롯이 원문 범위에 맞고 한영 의미도 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0243",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 재미있다고 느끼는 앱을 고르는 필수 관계가 분명하며, 감정과 이유와 사례도 서로 구별되는 자연스러운 보충 정보다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0244",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대폰으로 본다는 행동은 질문에 이미 있으므로 실제 미지 항목인 평소 시청 콘텐츠를 CHOICE로 둔 1차 수정이 정확하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0245",
+    "verdict": "CHANGE",
+    "auditReasonKo": "온라인에서 검색한다는 행동은 질문에 이미 주어지고 직접 묻는 것은 평소 검색하는 주제나 정보다. ACTION은 공통 의미와 맞지 않으므로 선택한 검색 대상을 나타내는 CHOICE로 바꿔야 한다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The topic or type of information the learner habitually chooses to search for online.",
+        "satisfiedWhenEn": "In the search context, the answer identifies a concrete subject, item, question, or recognizable type of information as something the learner usually looks up; vague references such as \"things\" or \"information\" alone are insufficient.",
+        "semanticRoleKo": "학습자가 온라인에서 습관적으로 검색 대상으로 선택하는 주제나 정보 유형.",
+        "satisfiedWhenKo": "검색 맥락에서 학습자가 평소 찾아보는 구체적인 주제, 항목, 질문 또는 알아볼 수 있는 정보 유형을 밝히면 충족한다. \"것들\"이나 \"정보\"라고만 하면 부족하다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "ROUTINE",
+      "requiredSlots": [
+        "CHOICE"
+      ],
+      "optionalSlots": [
+        "DETAIL",
+        "REASON",
+        "SPECIFIC_TIME",
+        "RESULT"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "Searching online is already supplied by the question. The direct unknown is the topic or information the learner habitually selects to look up, so CHOICE is more precise than ACTION for this simple routine prompt.",
+      "rationaleKo": "온라인에서 검색한다는 행동은 질문에 이미 제시되어 있다. 직접 묻는 내용은 학습자가 평소 찾아보기로 선택하는 주제나 정보이므로, 이 간단한 일상 질문에는 ACTION보다 CHOICE가 더 정확하다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0246",
+    "verdict": "PASS",
+    "auditReasonKo": "셀카 촬영에 대한 긍정, 부정 또는 조건부 입장과 그 구체적 이유를 모두 필수로 요구해 두 절의 의미를 빠짐없이 반영한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0247",
+    "verdict": "PASS",
+    "auditReasonKo": "소셜 미디어 사용에 대한 학습자의 태도와 그 근거를 필수로 분리하고, 단순한 좋고 나쁨의 반복도 이유로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0248",
+    "verdict": "CHANGE",
+    "auditReasonKo": "온라인에 게시한다는 행동은 질문에 이미 주어지고 직접 묻는 것은 평소 공유하는 콘텐츠 종류다. ACTION 대신 CHOICE가 필요하며 DETAIL도 같은 주제를 되풀이하지 않고 추가 특성만 세도록 좁혀야 한다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The kind or subject of content the learner habitually chooses to post online.",
+        "satisfiedWhenEn": "In the posting context, the answer identifies a recognizable content type or subject as something the learner usually shares online; vague references such as \"something\" or \"many things\" are insufficient.",
+        "semanticRoleKo": "학습자가 온라인에 습관적으로 게시 대상으로 선택하는 콘텐츠의 종류나 주제.",
+        "satisfiedWhenKo": "게시 맥락에서 학습자가 평소 온라인에 공유하는 알아볼 수 있는 콘텐츠 종류나 주제를 밝히면 충족한다. \"무언가\"나 \"많은 것\"이라고만 하면 부족하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "An additional characteristic of the learner's usual online posts beyond the selected content type.",
+        "satisfiedWhenEn": "The answer adds a specific format, intended audience, platform-specific presentation, narrower subject, or other feature beyond the content type already used as the main choice; repeating the same type or subject is insufficient.",
+        "semanticRoleKo": "선택한 콘텐츠 종류를 넘어 학습자의 평소 온라인 게시물에 관해 더하는 추가 특성.",
+        "satisfiedWhenKo": "주된 선택으로 이미 제시한 콘텐츠 종류를 넘어 구체적인 형식, 대상 독자, 플랫폼별 표현 방식, 더 좁은 주제 또는 다른 특징을 덧붙이면 충족한다. 같은 종류나 주제를 되풀이하면 부족하다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "ROUTINE",
+      "requiredSlots": [
+        "CHOICE"
+      ],
+      "optionalSlots": [
+        "DETAIL",
+        "SPECIFIC_TIME",
+        "REASON",
+        "FEELING"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "Posting online is already supplied by the question. The direct unknown is the kind of content the learner habitually selects to share, so CHOICE is more precise than ACTION for this routine prompt.",
+      "rationaleKo": "온라인에 게시한다는 행동은 질문에 이미 제시되어 있다. 직접 묻는 내용은 학습자가 평소 공유하기로 선택하는 콘텐츠 종류이므로, 이 일상 질문에는 ACTION보다 CHOICE가 더 정확하다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0249",
+    "verdict": "CHANGE",
+    "auditReasonKo": "DETAIL의 역할은 학습자가 실제로 찍는 사진 종류이지만 현재 충족 기준은 사진 범주를 식별하기만 하면 되어, 학습자의 촬영과 무관한 종류를 언급해도 통과할 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The recognizable type, subject, or style of photos the learner takes.",
+        "satisfiedWhenEn": "The answer identifies a concrete photo category, recurring subject, or photographic style and presents it as a kind of photo the learner takes; merely mentioning or describing a photo type without connecting it to the learner's own photo-taking is insufficient.",
+        "semanticRoleKo": "학습자가 찍는 사진의 알아볼 수 있는 종류, 피사체 또는 스타일.",
+        "satisfiedWhenKo": "구체적인 사진 범주, 반복해서 찍는 피사체 또는 촬영 스타일을 밝히고 그것을 학습자가 찍는 사진 종류로 나타내면 충족한다. 사진 종류를 학습자 자신의 촬영과 연결하지 않고 단순히 언급하거나 묘사하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0250",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 휴대폰 사진을 식별하는 CHOICE와 촬영 시점, 장소, 감정, 이유 등의 독립 깊이 정보가 분명히 구별된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0251",
+    "verdict": "PASS",
+    "auditReasonKo": "배터리 부족은 질문의 문제 전제로 남기고, 이를 충전하거나 절전하는 학습자의 실제 대응만 SOLUTION으로 요구해 관계가 정확하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0252",
+    "verdict": "PASS",
+    "auditReasonKo": "하루 휴대폰 사용의 총시간이나 대략적 지속 시간을 요구하며, 단순히 오래 쓴다는 막연한 표현은 구체적 시간으로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0253",
+    "verdict": "PASS",
+    "auditReasonKo": "줄이고 싶은 휴대폰 용도라는 방향성 있는 미래 변화를 GOAL로 잡고, 단순히 휴대폰을 덜 쓰겠다는 불완전한 답도 적절히 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0254",
+    "verdict": "PASS",
+    "auditReasonKo": "늘리고 싶은 휴대폰 활용 목적이라는 미래 변화가 GOAL에 정확히 담기며, 이유와 실행 방법과 기대 결과도 각각 독립적이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0255",
+    "verdict": "PASS",
+    "auditReasonKo": "문자와 전화 사이의 선택과 그 선택의 구체적 이유를 모두 필수로 두고 조건부 선호도 자연스럽게 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0256",
+    "verdict": "CHANGE",
+    "auditReasonKo": "CHOICE의 현재 충족 기준은 이모지를 식별하기만 하면 되어, 자주 사용하지 않는 이모지의 단순 언급도 통과할 수 있다. 식별 정보와 빈번한 사용 관계를 함께 입증해야 한다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular emoji the learner uses frequently.",
+        "satisfiedWhenEn": "The answer identifies an emoji by showing it, naming it, or describing it clearly and conveys, explicitly or through the direct response context, that it is one the learner uses often; merely mentioning another identifiable emoji is insufficient.",
+        "semanticRoleKo": "학습자가 자주 사용하는 특정 이모지.",
+        "satisfiedWhenKo": "이모지를 직접 보여 주거나 이름을 말하거나 분명히 묘사하고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 학습자가 자주 쓰는 이모지임을 나타내면 충족한다. 다른 이모지를 식별 가능하게 언급하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0257",
+    "verdict": "CHANGE",
+    "auditReasonKo": "CHOICE의 역할에는 최근 영상이 학습자를 웃게 했다는 인과 관계가 있지만 현재 충족 기준은 최근 영상을 식별하기만 해도 된다. 영상 정체성과 웃음 관계를 함께 요구해야 한다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular recent video that made the learner laugh.",
+        "satisfiedWhenEn": "The answer distinguishes a recognizable video through its subject, title, creator, scene, or another identifier and conveys, explicitly or through the direct response context, that the video recently made the learner laugh; merely identifying an unrelated recent video is insufficient.",
+        "semanticRoleKo": "최근에 학습자를 웃게 만든 특정 영상.",
+        "satisfiedWhenKo": "주제, 제목, 제작자, 장면 또는 다른 단서로 알아볼 수 있는 영상을 구별하고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 그 영상이 최근 학습자를 웃게 했음을 나타내면 충족한다. 웃음과 무관한 최근 영상을 식별하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0258",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 자주 이용하는 특정 온라인 상점을 CHOICE로 식별하고 반복 이용 관계까지 요구하므로 단순 상점 언급과 구별된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0259",
+    "verdict": "PASS",
+    "auditReasonKo": "인터넷의 구체적인 긍정적 기능이나 이점 하나를 ADVANTAGE로 요구하고 좋다거나 편리하다는 막연한 평가만으로는 통과시키지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0260",
+    "verdict": "PASS",
+    "auditReasonKo": "과도한 휴대폰 사용 때문에 생기는 구체적인 피해나 손실을 DISADVANTAGE로 요구하며 해결책은 질문에 맞게 선택 사항으로 남긴다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0261",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 1 문항인데 EXAMPLE이 필수 CHOICE에 이미 사용한 구체적 구매 품목을 그대로 사례로 다시 셀 수 있다. 선택한 범주나 품목을 넘어서는 별도 상품 또는 구매 정보만 인정해야 한다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate specific product or purchase that illustrates the broader item or category the learner likes to buy.",
+        "satisfiedWhenEn": "The answer names a concrete model, style, variety, or recent purchase that adds information beyond the item or product category already used as the learner's main choice; repeating the same item at the same level of specificity is insufficient.",
+        "semanticRoleKo": "학습자가 사기 좋아하는 더 넓은 품목이나 범주를 보여 주는 별도의 구체적인 상품 또는 구매 사례.",
+        "satisfiedWhenKo": "학습자의 주된 선택으로 이미 사용한 물건이나 상품 범주를 넘어 구체적인 모델, 스타일, 종류 또는 최근 구매품을 덧붙이면 충족한다. 같은 구체성의 동일 품목을 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0262",
+    "verdict": "CHANGE",
+    "auditReasonKo": "EXAMPLE이 필수 CHOICE에 이미 사용한 자주 사는 상품을 같은 구체성으로 다시 받아들일 수 있어 깊이 1을 허위로 채울 수 있다. 실제 구매의 추가 사례나 하위 정보를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate recent or typical purchase that adds an instance beyond the learner's recurring item or product category.",
+        "satisfiedWhenEn": "The answer gives a concrete purchase occasion, variety, brand, quantity, or item that adds information beyond what was already used to identify the frequent purchase; repeating the same item at the same level of specificity is insufficient.",
+        "semanticRoleKo": "학습자가 자주 사는 품목이나 상품 범주를 넘어 별도 사례를 더하는 최근 또는 전형적인 구매.",
+        "satisfiedWhenKo": "자주 사는 대상을 식별할 때 이미 사용한 정보보다 더 구체적인 구매 상황, 종류, 브랜드, 수량 또는 품목을 덧붙이면 충족한다. 같은 구체성의 동일 품목을 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0263",
+    "verdict": "CHANGE",
+    "auditReasonKo": "사고 싶다는 현재 의도는 질문에 이미 주어지고 직접 묻는 것은 어떤 물건을 선택하는지다. 물건 자체를 GOAL로 부르기보다 CHOICE로 바꾸는 것이 공통 슬롯 의미에 맞다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular item or product category the learner currently wants to buy.",
+        "satisfiedWhenEn": "The answer identifies a concrete product or recognizable category as the learner's current purchase choice; an unspecified reference such as \"something new\" is insufficient.",
+        "semanticRoleKo": "학습자가 요즘 구매 대상으로 선택하고 싶은 특정 물건이나 상품 범주.",
+        "satisfiedWhenKo": "학습자가 현재 사고 싶은 구체적인 상품이나 알아볼 수 있는 범주를 밝히면 충족한다. 무엇인지 알 수 없는 \"새로운 것\"은 부족하다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "GOAL_PLAN",
+      "requiredSlots": [
+        "CHOICE"
+      ],
+      "optionalSlots": [
+        "REASON",
+        "PLAN",
+        "DETAIL"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "Wanting to buy something these days supplies the current purchase intention. The direct unknown is the item the learner selects, so CHOICE is more precise than GOAL while reasons, purchasing steps, and item details remain optional.",
+      "rationaleKo": "요즘 무언가를 사고 싶다는 현재의 구매 의도는 질문에 제시되어 있다. 직접 묻는 내용은 학습자가 선택하는 물건이므로 GOAL보다 CHOICE가 더 정확하며, 이유와 구매 단계와 물건의 세부 사항은 선택 정보로 남는다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0264",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 최근에 온라인으로 주문한 구체적인 상품이나 서비스를 CHOICE로 식별하며 주문 시점, 이유, 결과는 자연스러운 선택 보충 정보다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0265",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인과 오프라인 쇼핑 사이의 명시적 선택과 그 근거를 모두 필수로 반영하고, 조건에 따른 선호도 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0266",
+    "verdict": "PASS",
+    "auditReasonKo": "정기적으로 방문하는 특정 상점이라는 관계가 CHOICE에 담기며, PLACE는 상점 자체가 아니라 그 상점의 위치를 추가하도록 구별된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0267",
+    "verdict": "PASS",
+    "auditReasonKo": "슈퍼마켓에서 보통 사는 품목이나 범주를 CHOICE로 요구하고, 식료품이라는 포괄적 반복만으로는 충분하지 않게 한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0268",
+    "verdict": "PASS",
+    "auditReasonKo": "편의점에서 보통 선택하는 구체적인 상품이라는 관계가 정확하며, 맛이나 브랜드 같은 DETAIL도 선택 품목보다 좁은 정보를 더한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0269",
+    "verdict": "PASS",
+    "auditReasonKo": "저렴하면서 유용하다고 판단한 물건을 CHOICE로 식별한 뒤 실제 이점이나 근거 중 하나를 독립 깊이로 요구해 평가를 뒷받침한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0270",
+    "verdict": "PASS",
+    "auditReasonKo": "비싸지만 가격만큼 가치 있다고 판단한 대상을 고르고 구체적 이유, 결과, 사례 또는 특성 하나를 별도 근거로 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0271",
+    "verdict": "CHANGE",
+    "auditReasonKo": "슬롯과 깊이는 적절하지만 한국어 근거는 원문이 지출 항목뿐 아니라 이유까지 직접 묻는다고 잘못 번역한다. 이유는 선택 깊이 중 하나라는 영어 근거와 일치하도록 고쳐야 한다.",
+    "reviewOverride": {
+      "answerMode": "ROUTINE",
+      "requiredSlots": [
+        "CHOICE"
+      ],
+      "optionalSlots": [
+        "REASON",
+        "SPECIFIC_TIME",
+        "RESULT",
+        "FEELING"
+      ],
+      "minimumDepthSlots": 1,
+      "rationale": "The question asks for a spending category the learner considers excessive, and one reason, concrete timing detail, result, or feeling adds needed context to that evaluation.",
+      "rationaleKo": "질문은 학습자가 과도하다고 여기는 지출 범주를 묻고, 그 평가에 필요한 맥락을 더하려면 이유, 구체적인 시점, 결과 또는 감정 중 하나를 덧붙여야 한다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0272",
+    "verdict": "PASS",
+    "auditReasonKo": "저축하려는 구체적인 구매, 경험 또는 미래 목적을 GOAL로 요구하고, 막연한 미래라는 표현만으로는 목적을 충족시키지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0273",
+    "verdict": "PASS",
+    "auditReasonKo": "1만 원 미만이라는 예산 관계를 포함한 선물 추천을 OPINION으로 요구하고 추천을 뒷받침할 독립 정보 하나도 적절히 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0274",
+    "verdict": "PASS",
+    "auditReasonKo": "5만 원 미만의 구체적 선물을 추천한다는 판단 관계와 그 품질, 용도, 받는 사람 적합성 등의 보충 기준이 정확하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0275",
+    "verdict": "PASS",
+    "auditReasonKo": "아이쇼핑에 대한 긍정, 부정 또는 조건부 태도와 그 구체적 이유를 모두 필수로 두어 원문의 두 요구를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0276",
+    "verdict": "PASS",
+    "auditReasonKo": "구매 전에 가격, 품질, 후기 등을 확인하는 구체적 행동을 ACTION으로 보고, 별도의 두 번째 확인은 ADDITIONAL_ACTION으로 분리한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0277",
+    "verdict": "PASS",
+    "auditReasonKo": "최근 구매 중 좋았던 대상을 식별하고 긍정 평가와 연결하며, SPECIFIC_TIME은 막연한 최근보다 구체적인 시점만 인정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0278",
+    "verdict": "PASS",
+    "auditReasonKo": "최근의 나쁜 구매를 구체적으로 식별하고 부정 평가와 연결하며, 결함과 결과와 세부 특성도 서로 구별되는 깊이 정보다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0279",
+    "verdict": "PASS",
+    "auditReasonKo": "자기 방을 위해 살 구체적인 물건을 선택하고 이유, 기대 변화, 원하는 특징 또는 방 안 위치 중 하나를 독립적으로 더하게 한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0280",
+    "verdict": "PASS",
+    "auditReasonKo": "사랑하는 사람에게 줄 구체적인 선물 선택과 받는 사람의 필요, 감정, 기대 효과 등의 독립 깊이가 원문에 맞다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0281",
+    "verdict": "PASS",
+    "auditReasonKo": "건강을 유지하기 위해 학습자가 직접 하는 행동을 ACTION으로 요구하고, 시점이나 별도 행동 등 한 가지를 추가 깊이로 분명히 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0282",
+    "verdict": "PASS",
+    "auditReasonKo": "건강에 좋다고 여기면서 좋아하는 구체적인 음식을 CHOICE로 요구해 건강성과 개인 선호의 관계를 모두 보존한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0283",
+    "verdict": "PASS",
+    "auditReasonKo": "건강에 좋지 않다고 여기면서도 좋아하는 음식이라는 양면 관계가 CHOICE에 정확히 담기고 한영 기준도 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0284",
+    "verdict": "PASS",
+    "auditReasonKo": "걷기에 대한 학습자의 선호 입장과 그 이유를 필수로 요구하며, 신체 느낌과 실제 효과는 선택 정보로 적절히 분리한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0285",
+    "verdict": "PASS",
+    "auditReasonKo": "달리기를 좋아하는지에 대한 입장과 그 근거를 정확히 요구하고, 조건부 선호와 자연스러운 의역도 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0286",
+    "verdict": "CHANGE",
+    "auditReasonKo": "운동을 해 보고 싶다는 의도는 질문에 이미 주어지고 직접 묻는 것은 어떤 운동을 선택하는지다. 운동 대상을 GOAL로 두기보다 CHOICE로 바꿔야 공통 슬롯 의미와 맞는다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular exercise or physical activity the learner chooses as something they want to try.",
+        "satisfiedWhenEn": "The answer identifies a concrete exercise, sport, class, or recognizable physical activity as the learner's intended choice for a future attempt; an unspecified reference such as \"something new\" is insufficient.",
+        "semanticRoleKo": "학습자가 앞으로 해 볼 대상으로 선택하는 특정 운동이나 신체 활동.",
+        "satisfiedWhenKo": "학습자가 앞으로 시도할 대상으로 구체적인 운동, 스포츠, 수업 또는 알아볼 수 있는 신체 활동을 밝히면 충족한다. \"새로운 것\"이라고만 하면 부족하다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "GOAL_PLAN",
+      "requiredSlots": [
+        "CHOICE"
+      ],
+      "optionalSlots": [
+        "REASON",
+        "PLAN",
+        "FEELING",
+        "RESULT"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "The intention to try an exercise is supplied by the question. The direct unknown is which exercise the learner selects for that future attempt, so CHOICE is more precise than GOAL.",
+      "rationaleKo": "운동을 시도하고 싶다는 의도는 질문에 이미 제시되어 있다. 직접 묻는 내용은 학습자가 앞으로 시도할 운동의 선택이므로 GOAL보다 CHOICE가 더 정확하다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0287",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 개인적으로 쉽다고 느끼는 구체적인 운동을 CHOICE로 요구하고 쉬움의 이유와 수행 사례는 선택 보충으로 둔다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0288",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자에게 어려운 특정 운동이라는 관계가 CHOICE에 분명하고, 단순히 어려운 운동이라는 순환적 표현은 식별로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0289",
+    "verdict": "PASS",
+    "auditReasonKo": "운동 후의 감정이나 신체 감각을 FEELING으로 직접 요구하며, 막연한 느낌과 이후 결과도 구별할 수 있게 한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0290",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME의 증상 관련 상황이 질문에 이미 주어진 감기 상태 자체를 다시 받을 수 있다. 감기에 걸렸다는 전제를 넘어선 시점, 기간, 빈도 또는 더 구체적인 증상 단계만 인정해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing, duration, frequency, or symptom-stage information for the learner's cold-care action.",
+        "satisfiedWhenEn": "The answer gives a definite time, frequency, duration, or symptom stage more specific than the supplied fact that the learner has a cold; merely saying that the response is used when the learner has a cold is insufficient.",
+        "semanticRoleKo": "감기에 걸렸다는 전제를 넘어 학습자의 감기 관리 행동에 관한 추가 시점, 기간, 빈도 또는 증상 단계 정보.",
+        "satisfiedWhenKo": "답변이 감기에 걸렸다는 질문의 전제보다 구체적인 시간, 빈도, 지속 기간 또는 증상 단계를 제시하면 충족한다. 단지 감기에 걸렸을 때 그 대응을 한다고 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0291",
+    "verdict": "PASS",
+    "auditReasonKo": "두통에 대응하는 구체적인 행동을 SOLUTION으로 요구하고, 시간 슬롯도 단순 두통 여부가 아니라 구체적 증상 기준이나 기간을 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0292",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME의 반복 상황이 원문에 이미 있는 몸의 피로 자체를 다시 셀 수 있다. 피곤하다는 조건 외의 추가 시점, 상황, 빈도 또는 기간을 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "Additional timing, duration, frequency, or recurring-circumstance information for the learner's tiredness response.",
+        "satisfiedWhenEn": "The answer gives a definite time, additional recurring situation, frequency, or duration beyond the supplied condition of the learner's body feeling tired; merely saying that the response is used when tired is insufficient.",
+        "semanticRoleKo": "몸이 피곤하다는 전제를 넘어 학습자의 피로 대응에 관한 추가 시점, 기간, 빈도 또는 반복 상황 정보.",
+        "satisfiedWhenKo": "답변이 몸이 피곤하다는 질문의 조건을 넘어 구체적인 시간, 추가 반복 상황, 빈도 또는 지속 기간을 제시하면 충족한다. 단지 피곤할 때 그 대응을 한다고 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0293",
+    "verdict": "PASS",
+    "auditReasonKo": "숙면 도움 요인이 습관, 물건, 환경 또는 조건일 수 있음을 DETAIL이 포괄하고, 학습자의 행동은 선택 사항으로 둔 수정이 정확하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0294",
+    "verdict": "PASS",
+    "auditReasonKo": "숙면을 방해하는 구체적인 요인만 PROBLEM으로 요구하고 해결책은 선택 사항으로 두어 질문에 없는 대응 의무를 추가하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0295",
+    "verdict": "PASS",
+    "auditReasonKo": "원하는 취침 시각이나 분명한 시간대를 SPECIFIC_TIME으로 요구하며, 기준 없는 더 일찍이라는 표현은 적절히 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0296",
+    "verdict": "PASS",
+    "auditReasonKo": "원하는 기상 시각이라는 좁은 시간 관계를 정확히 평가하고, 질문이 요구하지 않은 계획이나 더 넓은 목표를 필수로 만들지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0297",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 1 문항에서 EXAMPLE이 필수 OPINION에 이미 사용한 건강 습관 행동 자체를 그대로 실천 사례로 다시 셀 수 있다. 습관 이름을 넘어선 별도 상황이나 구체적 실행 정보가 필요하다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate instance or practical form that illustrates the good health habit beyond the behavior already named as the habit.",
+        "satisfiedWhenEn": "The answer gives a specific occasion, routine variation, personal experience, or implementation detail that adds information beyond the behavior already used to identify the good health habit; restating the same behavior is insufficient.",
+        "semanticRoleKo": "좋은 건강 습관으로 이미 밝힌 행동을 넘어 그 습관을 보여 주는 별도의 사례나 구체적인 실천 형태.",
+        "satisfiedWhenKo": "좋은 건강 습관을 식별할 때 이미 사용한 행동을 넘어 구체적인 상황, 습관의 변형, 개인적 경험 또는 실행 세부 정보를 덧붙이면 충족한다. 같은 행동을 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0298",
+    "verdict": "CHANGE",
+    "auditReasonKo": "EXAMPLE이 필수 OPINION에서 나쁜 건강 습관으로 이미 제시한 행동을 그대로 다시 받아들여 깊이를 부풀릴 수 있다. 별도 발생 상황이나 반복 양상을 추가해야 한다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate instance or situation that illustrates the bad health habit beyond the behavior already named as the habit.",
+        "satisfiedWhenEn": "The answer gives a specific occasion, trigger, routine pattern, personal experience, or context that adds information beyond the behavior already used to identify the bad health habit; restating the same behavior is insufficient.",
+        "semanticRoleKo": "나쁜 건강 습관으로 이미 밝힌 행동을 넘어 그 습관을 보여 주는 별도의 사례나 상황.",
+        "satisfiedWhenKo": "나쁜 건강 습관을 식별할 때 이미 사용한 행동을 넘어 구체적인 상황, 계기, 반복 양상, 개인적 경험 또는 맥락을 덧붙이면 충족한다. 같은 행동을 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0299",
+    "verdict": "PASS",
+    "auditReasonKo": "섭취를 줄이고 싶은 구체적인 음식이나 식품 범주라는 방향성 있는 식단 변화를 GOAL로 정확히 평가한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0300",
+    "verdict": "PASS",
+    "auditReasonKo": "섭취를 늘리고 싶은 구체적인 음식이나 식품 범주를 미래 식습관 변화로 잡고, 막연한 표현은 관련 시도로만 남길 수 있게 한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0301",
+    "verdict": "CHANGE",
+    "auditReasonKo": "다시 보고 싶다는 의도는 질문에 이미 주어지고 직접 묻는 것은 어떤 영화를 선택하는지다. 영화 자체를 GOAL로 두기보다 CHOICE로 바꾸는 것이 공통 슬롯 의미에 맞다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific movie the learner chooses as one they want to watch again.",
+        "satisfiedWhenEn": "The answer identifies a recognizable movie and conveys, explicitly or through the direct response context, that it is the learner's choice for rewatching.",
+        "semanticRoleKo": "학습자가 다시 볼 작품으로 선택하는 구체적인 영화.",
+        "satisfiedWhenKo": "알아볼 수 있는 영화를 밝히고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 학습자가 다시 볼 작품으로 선택했음을 나타내면 충족한다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "GOAL_PLAN",
+      "requiredSlots": [
+        "CHOICE"
+      ],
+      "optionalSlots": [
+        "REASON",
+        "FEELING",
+        "DETAIL",
+        "SPECIFIC_TIME"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "Wanting to watch a movie again supplies the future intention. The direct unknown is which movie the learner selects for rewatching, so CHOICE is more precise than GOAL.",
+      "rationaleKo": "영화를 다시 보고 싶다는 미래 의도는 질문에 이미 제시되어 있다. 직접 묻는 내용은 학습자가 다시 볼 영화의 선택이므로 GOAL보다 CHOICE가 더 정확하다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0302",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자를 웃게 만든 특정 영화라는 인과 관계를 CHOICE가 명시적으로 요구하고, 장면과 감정과 이유도 정확히 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0303",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자를 울게 만든 영화의 정체성과 인과 관계를 함께 요구하며, 눈물의 감정이나 원인은 자연스러운 선택 보충 정보다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0304",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 좋아하는 특정 드라마를 CHOICE로 식별하고, 작품의 특징과 장면 사례는 제목 선택과 구별되는 정보를 더한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0305",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 특정 드라마 인물을 CHOICE로 정확히 잡고, 인물의 특성과 구체적 행동 사례도 서로 구별된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0306",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 1 문항인데 필수 CHOICE가 장르뿐 아니라 주제나 특징적 방식으로도 이야기 종류를 식별할 수 있고, DETAIL도 같은 주제나 방식을 그대로 받을 수 있다. 추가 특징만 인정하도록 분리해야 한다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "An additional defining feature of the learner's preferred stories beyond the story kind already selected.",
+        "satisfiedWhenEn": "The answer adds a specific theme, character pattern, setting, tone, or plot feature that was not already used to identify the preferred story type; repeating the same genre, theme, or defining style is insufficient.",
+        "semanticRoleKo": "이미 선택한 이야기 종류를 넘어 학습자가 선호하는 이야기에 관해 더하는 추가 특징.",
+        "satisfiedWhenKo": "선호하는 이야기 유형을 식별할 때 이미 사용하지 않은 구체적인 주제, 인물 유형, 배경, 분위기 또는 줄거리 특징을 덧붙이면 충족한다. 같은 장르, 주제 또는 특징적 방식을 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0307",
+    "verdict": "PASS",
+    "auditReasonKo": "해피엔딩에 대한 긍정, 부정 또는 조건부 견해와 그 이유를 모두 필수로 요구해 원문의 두 절을 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0308",
+    "verdict": "PASS",
+    "auditReasonKo": "무서운 영화에 대한 선호 입장과 공포, 긴장, 불편 또는 흥분에 근거한 구체적 이유를 모두 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0309",
+    "verdict": "PASS",
+    "auditReasonKo": "액션 영화에 대한 학습자의 견해와 그 견해를 설명하는 작품 특성이나 개인 반응을 필수 관계로 정확히 잡는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0310",
+    "verdict": "PASS",
+    "auditReasonKo": "로맨스 영화에 대한 긍정, 부정 또는 조건부 입장과 구체적인 서사적, 정서적 이유가 한영 모두 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0311",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 CHOICE가 노래, 가수, 재생 목록까지 구체적으로 받을 수 있는데 EXAMPLE도 같은 노래, 가수, 재생 목록을 그대로 인정한다. 행복할 때 듣는 선택을 반복하지 않는 별도 사례만 허용해야 한다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate specific piece of music that illustrates a broader happy-mood listening choice.",
+        "satisfiedWhenEn": "The answer identifies a particular song, artist, album, or playlist that adds an instance beyond the music already used as the main happy-mood choice; repeating the same song, artist, or playlist is insufficient.",
+        "semanticRoleKo": "행복할 때 듣는 더 넓은 음악 선택을 보여 주는 별도의 구체적인 음악 사례.",
+        "satisfiedWhenKo": "행복할 때의 주된 음악 선택으로 이미 사용한 정보보다 더 구체적인 노래, 음악가, 음반 또는 재생 목록을 덧붙이면 충족한다. 같은 노래, 음악가 또는 재생 목록을 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0312",
+    "verdict": "CHANGE",
+    "auditReasonKo": "CHOICE와 EXAMPLE이 모두 슬플 때 듣는 특정 노래, 가수 또는 재생 목록을 같은 증거로 받을 수 있다. 주된 음악 선택보다 구체적인 별도 사례를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate specific piece of music that illustrates a broader sad-mood listening choice.",
+        "satisfiedWhenEn": "The answer identifies a particular song, artist, album, or playlist that adds an instance beyond the music already used as the main sad-mood choice; repeating the same song, artist, or playlist is insufficient.",
+        "semanticRoleKo": "슬플 때 듣는 더 넓은 음악 선택을 보여 주는 별도의 구체적인 음악 사례.",
+        "satisfiedWhenKo": "슬플 때의 주된 음악 선택으로 이미 사용한 정보보다 더 구체적인 노래, 음악가, 음반 또는 재생 목록을 덧붙이면 충족한다. 같은 노래, 음악가 또는 재생 목록을 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0313",
+    "verdict": "CHANGE",
+    "auditReasonKo": "공부할 때 듣는 필수 CHOICE가 특정 노래, 음악가, 채널 또는 재생 목록일 수 있고 EXAMPLE도 같은 대상을 그대로 받는다. 선택보다 좁은 추가 사례만 인정해야 한다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate specific piece of music that illustrates a broader study-time music choice.",
+        "satisfiedWhenEn": "The answer identifies a particular song, artist, album, channel, or playlist that adds an instance beyond the music already used as the main study-time choice; repeating the same song, artist, channel, or playlist is insufficient.",
+        "semanticRoleKo": "공부할 때 듣는 더 넓은 음악 선택을 보여 주는 별도의 구체적인 음악 사례.",
+        "satisfiedWhenKo": "공부할 때의 주된 음악 선택으로 이미 사용한 정보보다 더 구체적인 노래, 음악가, 음반, 채널 또는 재생 목록을 덧붙이면 충족한다. 같은 노래, 음악가, 채널 또는 재생 목록을 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0314",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 가수나 밴드의 정체성을 CHOICE로 요구하고, EXAMPLE은 그 음악가의 별도 작품이나 공연을 요구해 중복되지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0315",
+    "verdict": "PASS",
+    "auditReasonKo": "특정 노래를 잘 부를 수 있게 되려는 능력 목표가 GOAL에 정확히 담기고, 연습 방법과 익힐 부분도 자연스럽게 분리된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0316",
+    "verdict": "CHANGE",
+    "auditReasonKo": "읽고 싶다는 의도는 질문에 이미 제시되어 있고 직접 묻는 것은 어떤 책을 선택하는지다. 책 자체를 GOAL로 두기보다 CHOICE로 바꿔야 공통 의미와 맞다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific book or reading target the learner chooses as something they want to read.",
+        "satisfiedWhenEn": "The answer identifies a recognizable book or sufficiently specific reading target and conveys, explicitly or through the direct response context, that the learner wants or intends to read it.",
+        "semanticRoleKo": "학습자가 읽을 대상으로 선택하는 구체적인 책이나 읽기 대상.",
+        "satisfiedWhenKo": "알아볼 수 있는 책이나 충분히 구체적인 읽기 대상을 밝히고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 학습자가 읽고 싶거나 읽을 의향이 있음을 나타내면 충족한다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "GOAL_PLAN",
+      "requiredSlots": [
+        "CHOICE"
+      ],
+      "optionalSlots": [
+        "REASON",
+        "PLAN",
+        "DETAIL",
+        "SPECIFIC_TIME"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "Wanting to read a book supplies the future reading intention. The direct unknown is which book or reading target the learner selects, so CHOICE is more precise than GOAL.",
+      "rationaleKo": "책을 읽고 싶다는 미래의 읽기 의도는 질문에 이미 제시되어 있다. 직접 묻는 내용은 학습자가 선택하는 책이나 읽기 대상이므로 GOAL보다 CHOICE가 더 정확하다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0317",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME이 질문에 이미 주어진 어린 시절 자체를 하나의 생애 기간으로 다시 인정할 수 있다. 어린 시절보다 구체적인 나이, 학교 단계, 시기 또는 계기만 추가 정보로 세어야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "An age, stage, period, or occasion more specific than childhood itself when the learner liked or encountered the story.",
+        "satisfiedWhenEn": "The answer gives a recognizable age, school stage, narrower childhood period, or specific occasion connected to reading, hearing, or liking the story; merely repeating that it was during childhood is insufficient.",
+        "semanticRoleKo": "어린 시절 자체보다 구체적으로 학습자가 그 이야기를 좋아하거나 접했던 나이, 단계, 시기 또는 상황.",
+        "satisfiedWhenKo": "그 이야기를 읽거나 듣거나 좋아했던 구체적인 나이, 학교 단계, 더 좁은 어린 시절 시기 또는 특정 상황을 제시하면 충족한다. 단지 어린 시절이었다고 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0318",
+    "verdict": "CHANGE",
+    "auditReasonKo": "만나고 싶다는 가상 의도는 질문에 이미 주어지고 직접 묻는 것은 어떤 등장인물을 선택하는지다. 인물 자체는 GOAL보다 CHOICE가 정확하다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular fictional or story character the learner chooses as someone they want to meet.",
+        "satisfiedWhenEn": "The answer identifies a recognizable fictional or story character and conveys, explicitly or through the direct response context, that the learner would like to meet that character.",
+        "semanticRoleKo": "학습자가 만나고 싶은 대상으로 선택하는 특정 허구 또는 이야기 속 인물.",
+        "satisfiedWhenKo": "알아볼 수 있는 허구 또는 이야기 속 인물을 밝히고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 학습자가 그 인물을 만나고 싶어 함을 나타내면 충족한다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "GOAL_PLAN",
+      "requiredSlots": [
+        "CHOICE"
+      ],
+      "optionalSlots": [
+        "REASON",
+        "FEELING",
+        "DETAIL",
+        "PLAN"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "Wanting to meet a character supplies the hypothetical intention. The direct unknown is which character the learner selects, so CHOICE is more precise than GOAL.",
+      "rationaleKo": "등장인물을 만나고 싶다는 가상의 의도는 질문에 이미 제시되어 있다. 직접 묻는 내용은 학습자가 선택하는 인물이므로 GOAL보다 CHOICE가 더 정확하다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0319",
+    "verdict": "PASS",
+    "auditReasonKo": "영화를 볼 때 좋아하는 간식이라는 상황별 선호 관계가 CHOICE에 정확히 담기고, 맛이나 구체적 제품은 추가 정보로 구별된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0320",
+    "verdict": "CHANGE",
+    "auditReasonKo": "SPECIFIC_TIME의 상황 기준은 질문에 이미 있는 쉬고 싶은 때 자체를 다시 받을 수 있다. 휴식 욕구를 넘어 퇴근 후나 취침 전 같은 추가 시기나 계기를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "An additional identifiable time or occasion when the learner watches the selected show to relax.",
+        "satisfiedWhenEn": "The answer gives a recognizable period or situation, such as after work or before bed, beyond the supplied desire to relax; merely saying that the show is watched when the learner wants to relax is insufficient.",
+        "semanticRoleKo": "쉬고 싶다는 조건을 넘어 학습자가 휴식을 위해 선택한 프로그램을 보는 추가적인 식별 가능 시기나 상황.",
+        "satisfiedWhenKo": "쉬고 싶다는 질문의 조건을 넘어 퇴근 후나 잠들기 전처럼 알아볼 수 있는 기간 또는 상황을 제시하면 충족한다. 단지 쉬고 싶을 때 본다고 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0321",
+    "verdict": "PASS",
+    "auditReasonKo": "아침과 밤 사이의 선택과 그 이유를 필수로 두고, 시간대의 느낌, 특징, 실제 경험은 각각 독립적인 선택 정보로 구성한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0322",
+    "verdict": "PASS",
+    "auditReasonKo": "고양이와 개 중 하나 또는 분명한 조건부 선호를 선택하고, 성격이나 돌봄 경험에 근거한 이유를 필수로 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0323",
+    "verdict": "PASS",
+    "auditReasonKo": "여름과 겨울 사이의 선호와 이유를 정확히 요구하며, 계절 활동을 ACTION으로 둔 것은 필수가 아닌 구체적 보충 행동이라 적절하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0324",
+    "verdict": "PASS",
+    "auditReasonKo": "봄과 가을 중 선호 계절과 그 이유를 필수로 반영하고, 자연 변화, 감정, 활동, 경험의 관계도 한영 모두 구체적이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0325",
+    "verdict": "PASS",
+    "auditReasonKo": "커피와 주스 사이의 선택과 맛, 효과, 건강 요소 등에 근거한 이유를 모두 요구하고 상황별 선호도 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0326",
+    "verdict": "PASS",
+    "auditReasonKo": "밥과 면 중 하나를 고르는 관계와 그 음식 선호의 이유가 명확하며, 특정 요리는 선택을 구체화하는 사례로 분리된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0327",
+    "verdict": "PASS",
+    "auditReasonKo": "빵과 밥 사이의 선택 및 그 근거를 필수로 두며, 특정 종류나 식사 상황은 자연스러운 추가 정보다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0328",
+    "verdict": "PASS",
+    "auditReasonKo": "버스와 지하철 사이의 선호와 그 이유를 필수로 요구하고, 이동 조건에 따른 분명한 선택도 자연스럽게 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0329",
+    "verdict": "PASS",
+    "auditReasonKo": "책과 영상 중 선호 매체를 고르고 학습, 오락, 접근성 등의 구체적인 이유를 설명하는 두 관계가 정확하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0330",
+    "verdict": "PASS",
+    "auditReasonKo": "문자와 말로 대화하기 사이의 선택 및 그 이유를 필수로 반영하고, 특정 소통 상황에 따른 조건부 선호도 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0331",
+    "verdict": "PASS",
+    "auditReasonKo": "직접 요리하기와 외식하기 중 선호 방식과 그 근거를 요구하며, 식사 상황에 따른 조건부 선택도 정확히 처리한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0332",
+    "verdict": "PASS",
+    "auditReasonKo": "집과 바깥 중 선호 환경과 이유를 필수로 두고, ACTION은 그 환경에서 하는 구체적인 선택 보충 활동으로 적절하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0333",
+    "verdict": "PASS",
+    "auditReasonKo": "조용한 음악과 큰 음악 사이의 음량 선호와 이유를 정확히 요구하며, 청취 상황과 효과도 구체적으로 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0334",
+    "verdict": "PASS",
+    "auditReasonKo": "단순한 옷과 화려한 색상의 옷 사이의 스타일 선택과 그 근거를 필수로 두고, 디자인 DETAIL도 선택과 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0335",
+    "verdict": "PASS",
+    "auditReasonKo": "미리 계획하기와 자유롭게 행동하기 중 선호 접근법 및 그 이유를 정확히 요구하고 조건에 따른 선호도 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0336",
+    "verdict": "PASS",
+    "auditReasonKo": "소규모와 대규모 모임 사이의 선택 및 소통, 편안함, 참여 등에 근거한 이유를 모두 필수로 반영한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0337",
+    "verdict": "PASS",
+    "auditReasonKo": "사진을 찍는 역할과 사진에 나오는 역할 사이의 선택 및 그 구체적인 이유가 명확하고 한영 기준도 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0338",
+    "verdict": "PASS",
+    "auditReasonKo": "패스트푸드와 집에서 만든 음식 사이의 선호와 그 이유를 정확히 요구하며, 구체적인 메뉴는 별도 사례로 기능한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0339",
+    "verdict": "PASS",
+    "auditReasonKo": "도시 생활과 시골 생활 중 선호 환경과 그 근거를 필수로 두고, 생활 경험과 환경 특성도 질문 관계에 맞다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0340",
+    "verdict": "PASS",
+    "auditReasonKo": "혼자 일하기와 팀으로 일하기 사이의 선택과 이유를 필수로 요구하며, 과제 유형에 따른 조건부 선호도 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0341",
+    "verdict": "PASS",
+    "auditReasonKo": "이번 주에 시작하려는 구체적인 반복 행동을 GOAL로 요구하고, 이번 주 안의 추가 실행 시점은 별도 시간 정보로 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0342",
+    "verdict": "PASS",
+    "auditReasonKo": "이번 주에 중단하려는 기존 습관이라는 변화 목표가 명확하며, 중단 방법과 기대 결과도 독립적인 선택 정보다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0343",
+    "verdict": "PASS",
+    "auditReasonKo": "매일 아침의 일부로 만들고 싶은 행동이라는 반복 목표를 정확히 요구하며, 실행 방법과 세부 형태는 선택 보충으로 남긴다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0344",
+    "verdict": "PASS",
+    "auditReasonKo": "매일 밤 하고 싶은 구체적인 행동을 반복 목표로 잡고, 수면이나 다음 날 준비 같은 결과도 별도 의미로 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0345",
+    "verdict": "PASS",
+    "auditReasonKo": "매일 연습하고 싶은 기술이나 활동이라는 반복 목표가 GOAL에 정확히 담기며, 하위 기술 DETAIL도 자연스럽다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0346",
+    "verdict": "PASS",
+    "auditReasonKo": "하루 10분이라는 조건 안에서 배우고 싶은 주제나 기술을 GOAL로 요구하고, PLAN은 그 10분을 쓰는 실제 방법으로 분리한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0347",
+    "verdict": "PASS",
+    "auditReasonKo": "빈도를 줄이고 싶은 구체적인 활동이라는 방향성 있는 변화가 GOAL에 담기고, 목표 빈도와 실행 방법도 의미상 구별된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0348",
+    "verdict": "PASS",
+    "auditReasonKo": "더 자주 하고 싶은 구체적인 행동이라는 미래 습관 변화가 GOAL에 정확하며, 증가시킬 시기나 계획은 선택 정보다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0349",
+    "verdict": "CHANGE",
+    "auditReasonKo": "RESULT가 필수 GOAL에 이미 사용된 완료 과제나 완성물을 그대로 다시 인정할 수 있다. 오늘 목표의 완료 자체가 아니라 완료 뒤 생기는 별도 효과나 변화를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "RESULT": {
+        "semanticRoleEn": "A downstream effect or benefit that follows after the learner completes the small goal today.",
+        "satisfiedWhenEn": "The answer describes a concrete consequence for the learner's day, responsibilities, progress, well-being, or next activity beyond the completion of the goal itself; merely restating the finished task, product, or goal is insufficient.",
+        "semanticRoleKo": "학습자가 오늘의 작은 목표를 완료한 뒤 이어지는 별도의 효과나 이점.",
+        "satisfiedWhenKo": "목표 완료 자체를 넘어 학습자의 하루, 책임, 진척, 안녕 또는 다음 활동에 생기는 구체적인 결과를 설명하면 충족한다. 끝낸 과제, 완성물 또는 목표를 그대로 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0350",
+    "verdict": "CHANGE",
+    "auditReasonKo": "주간 RESULT가 필수 GOAL과 같은 완료 과제, 완성물 또는 진척 지점을 다시 받을 수 있다. 목표 완료 이후의 독립적인 단기 효과만 인정해야 한다.",
+    "replacementSlotContracts": {
+      "RESULT": {
+        "semanticRoleEn": "A downstream effect or benefit that follows after the learner completes the small goal this week.",
+        "satisfiedWhenEn": "The answer describes a concrete consequence for the learner's responsibilities, progress, schedule, well-being, or next step beyond the completion of the weekly goal itself; merely restating the finished task, product, or goal is insufficient.",
+        "semanticRoleKo": "학습자가 이번 주의 작은 목표를 완료한 뒤 이어지는 별도의 효과나 이점.",
+        "satisfiedWhenKo": "주간 목표의 완료 자체를 넘어 학습자의 책임, 진척, 일정, 안녕 또는 다음 단계에 생기는 구체적인 결과를 설명하면 충족한다. 끝낸 과제, 완성물 또는 목표를 그대로 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0351",
+    "verdict": "CHANGE",
+    "auditReasonKo": "습관 유지에 도움이 되는 것은 알림, 사람, 체계, 환경 조건 또는 행동일 수 있다. 비행동 요인까지 SOLUTION으로 넓히면 공통 의미와 충돌하므로 GENERAL_DESCRIPTION의 DETAIL을 필수로 두고 실제 행동은 선택 사항으로 남겨야 한다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific support, strategy, person, condition, or other factor that helps the learner maintain a habit.",
+        "satisfiedWhenEn": "The answer identifies a concrete habit-maintenance factor and connects it to helping the learner continue a habit; vague references such as \"something helpful\" or merely mentioning an unrelated aid are insufficient.",
+        "semanticRoleKo": "학습자가 습관을 유지하도록 돕는 구체적인 지원, 전략, 사람, 조건 또는 다른 요인.",
+        "satisfiedWhenKo": "구체적인 습관 유지 요인을 밝히고 그것을 학습자가 습관을 이어 가도록 돕는 관계와 연결하면 충족한다. \"도움이 되는 것\" 같은 막연한 표현이나 무관한 보조 수단의 단순 언급은 부족하다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "GENERAL_DESCRIPTION",
+      "requiredSlots": [
+        "DETAIL"
+      ],
+      "optionalSlots": [
+        "ACTION",
+        "REASON",
+        "EXAMPLE",
+        "RESULT"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "The question broadly asks for any factor that helps the learner keep a habit. A valid answer may be a reminder, person, system, environmental condition, strategy, or action, so GENERAL_DESCRIPTION with DETAIL includes non-action factors while ACTION remains optional.",
+      "rationaleKo": "질문은 학습자가 습관을 유지하는 데 도움이 되는 요인을 폭넓게 묻는다. 유효한 답은 알림, 사람, 체계, 환경 조건, 전략 또는 행동일 수 있으므로 GENERAL_DESCRIPTION과 DETAIL이 비행동 요인까지 포괄하고 ACTION은 선택 사항으로 남는다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0352",
+    "verdict": "PASS",
+    "auditReasonKo": "습관 유지를 방해하는 구체적인 상황이나 자원 부족을 PROBLEM으로 요구하고, 질문에 없는 해결 행동은 선택 사항으로 둔다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0353",
+    "verdict": "PASS",
+    "auditReasonKo": "목표를 도와줄 구체적인 사람, 관계, 역할 또는 집단을 DETAIL로 식별하고 그 지원자와 목표의 관계까지 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0354",
+    "verdict": "PASS",
+    "auditReasonKo": "영어 공부에서 이루고 싶은 구체적인 능력이나 성과를 GOAL로 요구하며, 단순히 영어를 향상하겠다는 막연한 표현은 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0355",
+    "verdict": "PASS",
+    "auditReasonKo": "건강, 체력, 수면, 영양 등에서 원하는 구체적인 변화나 행동을 GOAL로 포괄하고 비현실적인 정밀도는 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0356",
+    "verdict": "PASS",
+    "auditReasonKo": "저축, 수입, 지출 변화, 상환 등 알아볼 수 있는 재정 결과를 GOAL로 요구하고 단순히 돈을 더 갖겠다는 막연함을 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0357",
+    "verdict": "PASS",
+    "auditReasonKo": "집에 관해 원하는 수리, 정리, 구매, 이사 또는 상태 변화를 GOAL로 요구하며 실행 단계와 관련 공간은 선택 정보로 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0358",
+    "verdict": "PASS",
+    "auditReasonKo": "여가 시간에 이루거나 반복하고 싶은 구체적인 활동, 경험, 휴식 방식 또는 기술을 GOAL로 포괄한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0359",
+    "verdict": "PASS",
+    "auditReasonKo": "목표를 마친 뒤 하려는 구체적인 다음 행동과 완료 이후라는 순서 관계를 PLAN이 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0360",
+    "verdict": "PASS",
+    "auditReasonKo": "달성하면 자부심을 느낄 구체적인 목표를 요구하고, FEELING은 자랑스럽다는 단어의 반복을 넘어선 감정만 인정해 깊이가 독립적이다."
+  }
+]

@@ -1,0 +1,1890 @@
+[
+  {
+    "promptId": "prompt-goal-50",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "DETAIL",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify a creative project they intend to finish and explain its personal significance; those two required ideas already provide sufficient B-level depth."
+  },
+  {
+    "promptId": "prompt-intro-v2-0001",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The second clause asks which aspect of the name the learner likes. OPINION captures only a positive stance, while CHOICE captures the requested liked aspect alongside the required name detail."
+  },
+  {
+    "promptId": "prompt-intro-v2-0002",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "FEELING",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The only direct obligation is to state the place where the learner lives, and a place alone is adequate for this simple personal question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0003",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must select an aspect of their city that they like; one reason or concrete description is needed so the response is more than a bare feature name."
+  },
+  {
+    "promptId": "prompt-intro-v2-0004",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording explicitly requests both a favorite color and why it is favored, which is already a complete beginner preference answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0005",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "ACTION",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner has to name a favorite season and give the reason for that preference, so no extra supporting slot is necessary."
+  },
+  {
+    "promptId": "prompt-intro-v2-0006",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "ACTION",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "This is a simple self-description asking for one ability or strength, and naming that strength fully answers the beginner prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0007",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLAN",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for one learning goal, and the requested goal alone is sufficient at this introductory level."
+  },
+  {
+    "promptId": "prompt-intro-v2-0008",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe a usual morning action; one additional action or context detail keeps this broad routine from becoming a single bare verb phrase."
+  },
+  {
+    "promptId": "prompt-intro-v2-0009",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks about typical nighttime behavior, and one independent routine detail is appropriate beyond the first action."
+  },
+  {
+    "promptId": "prompt-intro-v2-0010",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "ACTION",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must identify a cause of the learner's happiness; naming that cause directly completes this simple personal question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0011",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "ACTION",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly seeks what causes a calm feeling, and one clear cause is an adequate introductory response."
+  },
+  {
+    "promptId": "prompt-intro-v2-0012",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "DETAIL",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question explicitly asks for the learner's favorite day of the week, including any weekday or weekend day, and the reason for that preference; those two required ideas form a complete answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0013",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "ACTION",
+      "FEELING",
+      "OPINION"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe their personality, and one example or behavior is needed to develop the answer beyond a lone adjective."
+  },
+  {
+    "promptId": "prompt-intro-v2-0014",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for one current small goal, so a clearly stated desired outcome is complete without mandatory elaboration."
+  },
+  {
+    "promptId": "prompt-intro-v2-0015",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must name an activity they enjoy alone; one reason, feeling, or context detail prevents a bare activity-only answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0016",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for an enjoyed social activity, and one independent explanation or setting gives this broad preference useful depth."
+  },
+  {
+    "promptId": "prompt-intro-v2-0017",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The direct task is simply to identify an item the learner always carries, so the item itself adequately answers the prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0018",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "ACTION",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only has to select a favorite nearby place, and that concrete choice is sufficient for this tightly bounded question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0019",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for one unknown personal fact, and stating that fact directly forms a complete introductory answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0020",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "ACTION",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state an improvement they want to achieve this year; the improvement goal itself satisfies the simple prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0021",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "SPECIFIC_TIME"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The waking action is already supplied, and the question directly requires only the learner's usual clock time."
+  },
+  {
+    "promptId": "prompt-intro-v2-0022",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt narrowly asks for the first action after waking, so one specific action is a sufficient beginner response."
+  },
+  {
+    "promptId": "prompt-intro-v2-0023",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "ADDITIONAL_ACTION",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Eating breakfast is supplied by the question. The missing content is the food the learner habitually selects, so ACTION would require the supplied premise instead of the requested item."
+  },
+  {
+    "promptId": "prompt-intro-v2-0024",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "REASON",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "A busy day is a broad situation, so the required action should be supported by another step, timing detail, or consequence."
+  },
+  {
+    "promptId": "prompt-intro-v2-0025",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe free-day behavior, and one extra activity or context detail is needed for this open routine prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0026",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The favorite time of day and the reason for preferring it are both literal obligations, already producing a complete answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0027",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "PLACE",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question deliberately limits the response to one daily action, so that action is sufficient without required support."
+  },
+  {
+    "promptId": "prompt-intro-v2-0028",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "SPECIFIC_TIME",
+      "SOLUTION",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The requested forgotten thing may be an item or an action. DETAIL covers that literal open category, whereas ACTION incorrectly excludes valid item answers and repeats the supplied act of forgetting."
+  },
+  {
+    "promptId": "prompt-intro-v2-0029",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "This is a focused introductory question with the tiredness condition already supplied. One clear response action adequately answers it, so mandatory extra support risks overburdening the learner."
+  },
+  {
+    "promptId": "prompt-intro-v2-0030",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Free-time behavior is open-ended, so one independent supporting detail is appropriate in addition to the main activity."
+  },
+  {
+    "promptId": "prompt-intro-v2-0031",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "A morning routine requires at least one habitual action, and one additional step or timing detail makes the routine meaningfully developed."
+  },
+  {
+    "promptId": "prompt-intro-v2-0032",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe a nighttime routine, for which one supporting step or concrete context should accompany the main action."
+  },
+  {
+    "promptId": "prompt-intro-v2-0033",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PLACE",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks broadly about usual behavior after work or school, so a context detail or second action is needed beyond the core activity."
+  },
+  {
+    "promptId": "prompt-intro-v2-0034",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must name a preferred weekend activity; one reason or setting prevents this broad preference from being only an activity label."
+  },
+  {
+    "promptId": "prompt-intro-v2-0035",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "SOLUTION"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question seeks a disliked daily action, and one reason, feeling, or consequence is needed to explain that negative preference."
+  },
+  {
+    "promptId": "prompt-intro-v2-0036",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to identify one thing that improves their day, and that concrete item or event directly completes the prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0037",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "ACTION",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The direct obligation is one desired change in daily life, so the stated change goal is enough at the introductory level."
+  },
+  {
+    "promptId": "prompt-intro-v2-0038",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The sleep problem is supplied by the question, while the learner must state the action used to handle it; that solution alone satisfies the simple task."
+  },
+  {
+    "promptId": "prompt-intro-v2-0039",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "DETAIL",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Buying at a convenience store is already supplied. The learner must identify the item habitually selected, making CHOICE the direct obligation rather than ACTION."
+  },
+  {
+    "promptId": "prompt-intro-v2-0040",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requests one simple daily enjoyment, and selecting that thing is enough because the response is intentionally narrow."
+  },
+  {
+    "promptId": "prompt-intro-v2-0041",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Naming a favorite food directly answers this short personal preference question, with explanation left optional."
+  },
+  {
+    "promptId": "prompt-intro-v2-0042",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "FEELING",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The food and the preference are established by context. This follow-up asks the learner to produce only a reason, so its response shape is GENERAL_DESCRIPTION rather than PREFERENCE."
+  },
+  {
+    "promptId": "prompt-intro-v2-0043",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "PLACE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The repeated eating action is part of the question premise. The direct answer is the food selected often, so CHOICE is required instead of ACTION."
+  },
+  {
+    "promptId": "prompt-intro-v2-0044",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "PLAN",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The intention to try a food is supplied generically, while the literal missing content is which food the learner selects. CHOICE captures that target more precisely than GOAL."
+  },
+  {
+    "promptId": "prompt-intro-v2-0045",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The sole direct request is to identify a disliked food, making the negative preference itself sufficient."
+  },
+  {
+    "promptId": "prompt-intro-v2-0046",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "PLACE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Drinking in the morning is supplied by the wording. The learner is asked to identify the usual drink, which is a selected item rather than a new action obligation."
+  },
+  {
+    "promptId": "prompt-intro-v2-0047",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "FEELING",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires a choice between coffee and tea plus an explanation, and those two units already form a complete response."
+  },
+  {
+    "promptId": "prompt-intro-v2-0048",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Selecting a favorite snack is the only stated obligation and is adequate for this simple preference prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0049",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is directly asked only to name a favorite fruit, so the chosen fruit completes the answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0050",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A favorite Korean food is a specific personal choice, and naming it is sufficient without mandatory explanation."
+  },
+  {
+    "promptId": "prompt-intro-v2-0051",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "BEFORE_STATE",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The task asks for a food connected to memories of home, and identifying that food directly satisfies the personal association prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0052",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "PLACE",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Both eating and the tiredness condition are supplied. The only literal unknown is the food habitually selected in that condition, so CHOICE should be required."
+  },
+  {
+    "promptId": "prompt-intro-v2-0053",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question already provides the eating action and happy condition. Its direct obligation is the food selected in that situation, which is CHOICE rather than ACTION."
+  },
+  {
+    "promptId": "prompt-intro-v2-0054",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state whether they like spicy food and explain why or why not, giving the response two explicit semantic parts."
+  },
+  {
+    "promptId": "prompt-intro-v2-0055",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly requires a like-or-dislike judgment about sweet food and the reason behind that judgment."
+  },
+  {
+    "promptId": "prompt-intro-v2-0056",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "FEELING",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must recommend or judge a suitable rainy-day meal; one reason or descriptive detail is needed beyond merely naming a dish."
+  },
+  {
+    "promptId": "prompt-intro-v2-0057",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Eating with friends is supplied context. The learner must select the food they like in that context, so the required preference content is CHOICE rather than ACTION."
+  },
+  {
+    "promptId": "prompt-intro-v2-0058",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The cooking ability is supplied and the question asks which dish the learner can cook well. CHOICE captures the requested dish instead of requiring the already stated cooking action."
+  },
+  {
+    "promptId": "prompt-intro-v2-0059",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLAN",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Wanting to cook someday supplies the future intention. The direct unknown is the dish selected for that experience, so CHOICE is more exact than a generic GOAL."
+  },
+  {
+    "promptId": "prompt-intro-v2-0060",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "DETAIL",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The hypothetical condition asks for exactly one food choice today, making the selected food sufficient without further required support."
+  },
+  {
+    "promptId": "prompt-intro-v2-0061",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The only direct obligation is to name a favorite hobby, so the choice alone completes this short preference question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0062",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The hobby and the fact that it is liked are already established. Because the learner produces only the requested reason, the follow-up is GENERAL_DESCRIPTION rather than PREFERENCE."
+  },
+  {
+    "promptId": "prompt-intro-v2-0063",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLAN",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The intention to try a hobby is supplied by the question. The required missing content is which hobby the learner selects, making CHOICE more literal than GOAL."
+  },
+  {
+    "promptId": "prompt-intro-v2-0064",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question broadly asks about usual fun activities, so one reason, setting, or feeling should support the main action."
+  },
+  {
+    "promptId": "prompt-intro-v2-0065",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The boredom condition makes this a focused introductory response question. One coping action is an adequate complete answer, so an additional mandatory support is questionable at difficulty I."
+  },
+  {
+    "promptId": "prompt-intro-v2-0066",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for a judgment about watching movies and an explanation, so both necessary parts are already required."
+  },
+  {
+    "promptId": "prompt-intro-v2-0067",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must choose a preferred kind of movie; one reason or example develops the answer beyond only naming a genre."
+  },
+  {
+    "promptId": "prompt-intro-v2-0068",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt explicitly requires both whether the learner likes listening to music and why, which supplies adequate depth."
+  },
+  {
+    "promptId": "prompt-intro-v2-0069",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The task asks for a preferred type of music, and one explanation or example is needed so the response is not just a genre label."
+  },
+  {
+    "promptId": "prompt-intro-v2-0070",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner needs to identify a song selected repeatedly for listening, and the song choice itself answers this narrow habit question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0071",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state a like-or-dislike position on reading books and explain the position, so no additional depth is required."
+  },
+  {
+    "promptId": "prompt-intro-v2-0072",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Watching videos online is supplied. The learner must identify the kind of video habitually selected, so CHOICE is the literal required content instead of ACTION."
+  },
+  {
+    "promptId": "prompt-intro-v2-0073",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only has to identify a game they like to play, so naming the selected game is adequate."
+  },
+  {
+    "promptId": "prompt-intro-v2-0074",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The direct request is a liked sport, and the sport choice alone forms a complete beginner preference answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0075",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt explicitly asks whether the learner likes taking photos and why, requiring both the judgment and its explanation."
+  },
+  {
+    "promptId": "prompt-intro-v2-0076",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT",
+      "ADDITIONAL_ACTION"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must name an enjoyed activity at home; one reason, feeling, or additional action gives the broad prompt enough substance."
+  },
+  {
+    "promptId": "prompt-intro-v2-0077",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks generally about a preferred outdoor activity, so one explanation or context detail should accompany that action."
+  },
+  {
+    "promptId": "prompt-intro-v2-0078",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner needs to identify the hobby associated with relaxation, and that selected hobby directly answers the focused question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0079",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "EXAMPLE",
+      "FEELING",
+      "BEFORE_STATE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The required action already expresses an earlier behavior, and childhood is supplied. BEFORE_STATE is therefore a weak first support; a reason, setting, or example is more useful and more independent."
+  },
+  {
+    "promptId": "prompt-intro-v2-0080",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "ACTION",
+      "DETAIL",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question presents a hypothetical effect and does not state an actual goal or intention. The learner identifies a possible hobby, so GENERAL_DESCRIPTION with CHOICE matches the response and avoids assuming a real plan."
+  },
+  {
+    "promptId": "prompt-intro-v2-0081",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks only for the identity of the learner's best friend, so naming the person completes the answer."
+  },
+  {
+    "promptId": "prompt-intro-v2-0082",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe a liked quality of their best friend; one example or explanation prevents the answer from being only a trait word."
+  },
+  {
+    "promptId": "prompt-intro-v2-0083",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "ACTION",
+      "PLACE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only needs to identify the person they habitually talk to, making that selected person a sufficient response."
+  },
+  {
+    "promptId": "prompt-intro-v2-0084",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "FEELING",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The direct task is to name a person who makes the learner laugh, and the person's identity alone answers the simple question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0085",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "PROBLEM",
+      "SOLUTION",
+      "EXAMPLE",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Although a problem provides the situation, the wording asks specifically for the person who helps, so identifying that person is sufficient."
+  },
+  {
+    "promptId": "prompt-intro-v2-0086",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The intention to thank someone today is supplied. The direct obligation is to select the person, so CHOICE captures the missing content while GOAL merely restates the premise."
+  },
+  {
+    "promptId": "prompt-intro-v2-0087",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt broadly asks for an activity enjoyed with friends, and one reason, setting, or feeling is needed beyond the activity itself."
+  },
+  {
+    "promptId": "prompt-intro-v2-0088",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "DETAIL",
+      "ACTION",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must judge what quality or behavior defines a good friend; one explanation or example develops the judgment beyond a bare trait."
+  },
+  {
+    "promptId": "prompt-intro-v2-0089",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Talking with friends is supplied by the question. The requested content is the conversation topic, which is a concrete DETAIL; an EXAMPLE then provides a useful independent first support."
+  },
+  {
+    "promptId": "prompt-intro-v2-0090",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state whether they like meeting new people and explain why or why not, so the required pair is already complete."
+  },
+  {
+    "promptId": "prompt-intro-v2-0091",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requests a direct self-classification between quiet and talkative, and that binary choice adequately answers it."
+  },
+  {
+    "promptId": "prompt-intro-v2-0092",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe a preferred kind of person, and one reason or example gives substance beyond a single personality label."
+  },
+  {
+    "promptId": "prompt-intro-v2-0093",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A friend's sadness is the supplied problem, and the learner is directly asked for their response or solution; that response completes the simple task."
+  },
+  {
+    "promptId": "prompt-intro-v2-0094",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must recommend a suitable gift for a friend, and one reason or concrete detail is needed beyond just naming an object."
+  },
+  {
+    "promptId": "prompt-intro-v2-0095",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for the identity of one respected person, so naming that person is sufficient at this level."
+  },
+  {
+    "promptId": "prompt-intro-v2-0096",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "ACTION",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The respected person and the stance of respect are supplied by context. The learner only explains why, so this reason-only follow-up is GENERAL_DESCRIPTION rather than OPINION_REASON."
+  },
+  {
+    "promptId": "prompt-intro-v2-0097",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "DETAIL",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must recommend an effective way to apologize, and one action detail, reason, or example should clarify the recommendation."
+  },
+  {
+    "promptId": "prompt-intro-v2-0098",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "DETAIL",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The task asks for a good method of expressing thanks; one concrete action, explanation, or example keeps the advice from being a bare label."
+  },
+  {
+    "promptId": "prompt-intro-v2-0099",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks which family activity the learner intends to do this month. ACTION is the literal response unit, while GOAL is broader than the requested activity."
+  },
+  {
+    "promptId": "prompt-intro-v2-0100",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "ACTION",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The only explicit request is to identify an important person in the learner's life, so the person's identity is adequate."
+  },
+  {
+    "promptId": "prompt-intro-v2-0101",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The school period is already supplied and no past-present contrast is requested. An example or subject detail supports the chosen subject more directly than BEFORE_STATE."
+  },
+  {
+    "promptId": "prompt-intro-v2-0102",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PROBLEM"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "SOLUTION",
+      "BEFORE_STATE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks which school subject presented difficulty, so identifying that challenge is sufficient without requiring a solution."
+  },
+  {
+    "promptId": "prompt-intro-v2-0103",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "PLAN"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must choose a type or topic of learning they enjoy; one reason or example develops this broad preference beyond a topic name."
+  },
+  {
+    "promptId": "prompt-intro-v2-0104",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "GOAL",
+      "PLAN",
+      "RESULT",
+      "EXAMPLE",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The direct obligation is to explain the motivation for learning English, and one clear reason fully addresses the beginner question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0105",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify one easy aspect of learning English, and that specific aspect is enough for the simple prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0106",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PROBLEM"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "FEELING",
+      "SOLUTION",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks only for a difficult aspect of learning English, so stating the learning challenge completes it without a required solution."
+  },
+  {
+    "promptId": "prompt-intro-v2-0107",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to select an English word they like, and that word choice alone is a complete introductory response."
+  },
+  {
+    "promptId": "prompt-intro-v2-0108",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state what they want to express more effectively in English, which is a focused communication goal requiring no mandatory support."
+  },
+  {
+    "promptId": "prompt-intro-v2-0109",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The task asks the learner to recommend a good study method, and one action detail, reason, or result should support that recommendation."
+  },
+  {
+    "promptId": "prompt-intro-v2-0110",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "SPECIFIC_TIME"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "PLACE",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for the time or timing condition when the learner studies most effectively, and that timing answer is sufficient."
+  },
+  {
+    "promptId": "prompt-intro-v2-0111",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only needs to identify the place where they study best, so a location directly completes the prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0112",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "EXAMPLE",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt offers a clear choice between studying alone and with others, and selecting one option is adequate because no explanation is requested."
+  },
+  {
+    "promptId": "prompt-intro-v2-0113",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "EXAMPLE",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify one factor that helps concentration, and naming that factor directly answers the question."
+  },
+  {
+    "promptId": "prompt-intro-v2-0114",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "SOLUTION",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for a cause or trigger of lost focus, so one clear cause is a complete introductory response."
+  },
+  {
+    "promptId": "prompt-intro-v2-0115",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe a preferred kind of work, and one reason or concrete characteristic is needed beyond a broad job label."
+  },
+  {
+    "promptId": "prompt-intro-v2-0116",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "DETAIL",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for a judgment about what matters in a job; one reason or example should support the stated priority."
+  },
+  {
+    "promptId": "prompt-intro-v2-0117",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify an improvement they want at work or school, and that desired outcome directly fulfills the prompt."
+  },
+  {
+    "promptId": "prompt-intro-v2-0118",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for one desired future skill, so clearly naming that skill is sufficient for the introductory goal task."
+  },
+  {
+    "promptId": "prompt-intro-v2-0119",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner needs to state something learned recently, and the learned fact or skill alone answers this focused memory question."
+  }
+]

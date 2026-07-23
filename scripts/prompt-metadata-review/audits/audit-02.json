@@ -1,0 +1,558 @@
+{
+  "auditedParts": ["03", "04"],
+  "auditedCount": 241,
+  "issues": [
+    {
+      "promptId": "prompt-intro-v2-0001",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["DETAIL", "CHOICE"],
+        "optionalSlots": ["REASON", "FEELING", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The second clause asks which aspect of the name the learner likes. OPINION captures only a positive stance, while CHOICE captures the requested liked aspect alongside the required name detail."
+    },
+    {
+      "promptId": "prompt-intro-v2-0023",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["SPECIFIC_TIME", "PLACE", "REASON", "ADDITIONAL_ACTION", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Eating breakfast is supplied by the question. The missing content is the food the learner habitually selects, so ACTION would require the supplied premise instead of the requested item."
+    },
+    {
+      "promptId": "prompt-intro-v2-0028",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["DETAIL"],
+        "optionalSlots": ["RESULT", "REASON", "SPECIFIC_TIME", "SOLUTION", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The requested forgotten thing may be an item or an action. DETAIL covers that literal open category, whereas ACTION incorrectly excludes valid item answers and repeats the supplied act of forgetting."
+    },
+    {
+      "promptId": "prompt-intro-v2-0029",
+      "severity": "WARNING",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "PLACE", "SPECIFIC_TIME", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "This is a focused introductory question with the tiredness condition already supplied. One clear response action adequately answers it, so mandatory extra support risks overburdening the learner."
+    },
+    {
+      "promptId": "prompt-intro-v2-0039",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["SPECIFIC_TIME", "REASON", "DETAIL", "RESULT", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Buying at a convenience store is already supplied. The learner must identify the item habitually selected, making CHOICE the direct obligation rather than ACTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0042",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["REASON"],
+        "optionalSlots": ["DETAIL", "FEELING", "EXAMPLE", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The food and the preference are established by context. This follow-up asks the learner to produce only a reason, so its response shape is GENERAL_DESCRIPTION rather than PREFERENCE."
+    },
+    {
+      "promptId": "prompt-intro-v2-0043",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["SPECIFIC_TIME", "REASON", "PLACE", "RESULT", "DETAIL"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The repeated eating action is part of the question premise. The direct answer is the food selected often, so CHOICE is required instead of ACTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0044",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "PLACE", "SPECIFIC_TIME", "PLAN", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The intention to try a food is supplied generically, while the literal missing content is which food the learner selects. CHOICE captures that target more precisely than GOAL."
+    },
+    {
+      "promptId": "prompt-intro-v2-0046",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["SPECIFIC_TIME", "REASON", "PLACE", "RESULT", "DETAIL"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Drinking in the morning is supplied by the wording. The learner is asked to identify the usual drink, which is a selected item rather than a new action obligation."
+    },
+    {
+      "promptId": "prompt-intro-v2-0052",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "RESULT", "FEELING", "PLACE", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Both eating and the tiredness condition are supplied. The only literal unknown is the food habitually selected in that condition, so CHOICE should be required."
+    },
+    {
+      "promptId": "prompt-intro-v2-0053",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "FEELING", "PLACE", "SPECIFIC_TIME", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question already provides the eating action and happy condition. Its direct obligation is the food selected in that situation, which is CHOICE rather than ACTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0057",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "FEELING", "PLACE", "SPECIFIC_TIME", "RESULT"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Eating with friends is supplied context. The learner must select the food they like in that context, so the required preference content is CHOICE rather than ACTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0058",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["DETAIL", "EXAMPLE", "REASON", "RESULT", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The cooking ability is supplied and the question asks which dish the learner can cook well. CHOICE captures the requested dish instead of requiring the already stated cooking action."
+    },
+    {
+      "promptId": "prompt-intro-v2-0059",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "PLAN", "SPECIFIC_TIME", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Wanting to cook someday supplies the future intention. The direct unknown is the dish selected for that experience, so CHOICE is more exact than a generic GOAL."
+    },
+    {
+      "promptId": "prompt-intro-v2-0062",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["REASON"],
+        "optionalSlots": ["DETAIL", "EXAMPLE", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The hobby and the fact that it is liked are already established. Because the learner produces only the requested reason, the follow-up is GENERAL_DESCRIPTION rather than PREFERENCE."
+    },
+    {
+      "promptId": "prompt-intro-v2-0063",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "PLAN", "SPECIFIC_TIME", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The intention to try a hobby is supplied by the question. The required missing content is which hobby the learner selects, making CHOICE more literal than GOAL."
+    },
+    {
+      "promptId": "prompt-intro-v2-0065",
+      "severity": "WARNING",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["RESULT", "REASON", "PLACE", "SPECIFIC_TIME", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The boredom condition makes this a focused introductory response question. One coping action is an adequate complete answer, so an additional mandatory support is questionable at difficulty I."
+    },
+    {
+      "promptId": "prompt-intro-v2-0072",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "SPECIFIC_TIME", "FEELING", "RESULT", "EXAMPLE"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Watching videos online is supplied. The learner must identify the kind of video habitually selected, so CHOICE is the literal required content instead of ACTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0079",
+      "severity": "WARNING",
+      "fields": ["optionalSlots"],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["REASON", "PLACE", "EXAMPLE", "FEELING", "BEFORE_STATE"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "The required action already expresses an earlier behavior, and childhood is supplied. BEFORE_STATE is therefore a weak first support; a reason, setting, or example is more useful and more independent."
+    },
+    {
+      "promptId": "prompt-intro-v2-0080",
+      "severity": "ERROR",
+      "fields": ["answerMode", "requiredSlots", "optionalSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "RESULT", "ACTION", "DETAIL", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question presents a hypothetical effect and does not state an actual goal or intention. The learner identifies a possible hobby, so GENERAL_DESCRIPTION with CHOICE matches the response and avoids assuming a real plan."
+    },
+    {
+      "promptId": "prompt-intro-v2-0086",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "ACTION", "FEELING", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The intention to thank someone today is supplied. The direct obligation is to select the person, so CHOICE captures the missing content while GOAL merely restates the premise."
+    },
+    {
+      "promptId": "prompt-intro-v2-0089",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "optionalSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["DETAIL"],
+        "optionalSlots": ["EXAMPLE", "REASON", "SPECIFIC_TIME", "FEELING", "PLACE"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Talking with friends is supplied by the question. The requested content is the conversation topic, which is a concrete DETAIL; an EXAMPLE then provides a useful independent first support."
+    },
+    {
+      "promptId": "prompt-intro-v2-0096",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["REASON"],
+        "optionalSlots": ["EXAMPLE", "DETAIL", "ACTION", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The respected person and the stance of respect are supplied by context. The learner only explains why, so this reason-only follow-up is GENERAL_DESCRIPTION rather than OPINION_REASON."
+    },
+    {
+      "promptId": "prompt-intro-v2-0099",
+      "severity": "ERROR",
+      "fields": ["requiredSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["PLAN", "REASON", "SPECIFIC_TIME", "PLACE", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question directly asks which family activity the learner intends to do this month. ACTION is the literal response unit, while GOAL is broader than the requested activity."
+    },
+    {
+      "promptId": "prompt-intro-v2-0101",
+      "severity": "WARNING",
+      "fields": ["optionalSlots"],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "EXAMPLE", "DETAIL", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The school period is already supplied and no past-present contrast is requested. An example or subject detail supports the chosen subject more directly than BEFORE_STATE."
+    },
+    {
+      "promptId": "prompt-intro-v2-0122",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["REASON"],
+        "optionalSlots": ["DETAIL", "ACTION", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The room and the fact that it is liked are already established. This follow-up asks only for the reason, so GENERAL_DESCRIPTION matches the learner response rather than PREFERENCE."
+    },
+    {
+      "promptId": "prompt-intro-v2-0125",
+      "severity": "WARNING",
+      "fields": ["optionalSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["DETAIL"],
+        "optionalSlots": ["PLACE", "FEELING", "ACTION", "REASON"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "A preferred selection does not independently develop the desk's appearance. Arrangement, impression, use, and the reason for its setup are more relevant optional additions than CHOICE."
+    },
+    {
+      "promptId": "prompt-intro-v2-0133",
+      "severity": "WARNING",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "DETAIL", "EXAMPLE", "FEELING"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "This open preference can otherwise be answered with only a feature label. One reason, description, or example is appropriate to develop the broad neighborhood prompt even at difficulty I."
+    },
+    {
+      "promptId": "prompt-intro-v2-0134",
+      "severity": "WARNING",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["ACTION", "SPECIFIC_TIME", "REASON", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question narrowly asks for the place visited often, and a location directly completes this introductory factual routine. Requiring an extra semantic unit is unnecessarily demanding."
+    },
+    {
+      "promptId": "prompt-intro-v2-0135",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["REASON", "PLAN", "SPECIFIC_TIME", "ACTION"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The learner only names a focused desired place in the supplied city; no broader goal or plan is required. The guide assigns this response shape to GENERAL_DESCRIPTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0140",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["REASON", "PLAN", "DETAIL", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The direct answer is only a desired future location, with no request for relocation steps or a broader goal. This focused place response should be GENERAL_DESCRIPTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0142",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["REASON", "PLAN", "ACTION", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Travel is supplied and the learner produces only a desired destination. A focused desired place without a required plan is GENERAL_DESCRIPTION under the guide."
+    },
+    {
+      "promptId": "prompt-intro-v2-0143",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["REASON", "PLAN", "ACTION", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question asks only for a country destination and does not require a broader travel goal or preparation. Its response shape is a focused place description."
+    },
+    {
+      "promptId": "prompt-intro-v2-0144",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["REASON", "PLAN", "ACTION", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Only the desired city must be produced; visiting is already supplied and no plan is required. The focused PLACE answer belongs to GENERAL_DESCRIPTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0147",
+      "severity": "WARNING",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "DETAIL", "RESULT", "EXAMPLE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "This focused introductory prompt asks for one item always taken on a trip. Naming that item is a complete answer, so mandatory elaboration is not necessary."
+    },
+    {
+      "promptId": "prompt-intro-v2-0151",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["REASON", "PLAN", "SPECIFIC_TIME", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The learner only identifies a desired place to revisit. Because the question does not require a broader goal or plan, the focused location response is GENERAL_DESCRIPTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0157",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["ADDITIONAL_ACTION", "PLACE", "SPECIFIC_TIME", "REASON", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "This is a hypothetical action, not an actual intention or preparation plan. The learner describes what they would do, so GENERAL_DESCRIPTION is the guide-aligned mode."
+    },
+    {
+      "promptId": "prompt-intro-v2-0160",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["REASON", "ACTION", "PLAN", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The condition is hypothetical and the learner supplies only a destination. Both the hypothetical framing and focused PLACE response rule out GOAL_PLAN."
+    },
+    {
+      "promptId": "prompt-intro-v2-0187",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["REASON", "PLACE", "ADDITIONAL_ACTION", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "A free afternoon is a hypothetical condition, not a stated future intention. The learner describes a possible action, which is GENERAL_DESCRIPTION rather than GOAL_PLAN."
+    },
+    {
+      "promptId": "prompt-intro-v2-0188",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["REASON", "PLACE", "ADDITIONAL_ACTION", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The one-free-day scenario asks for a hypothetical action and does not establish a real plan. GENERAL_DESCRIPTION matches the response structure."
+    },
+    {
+      "promptId": "prompt-intro-v2-0190",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["REASON", "GOAL", "PLACE", "RESULT", "FEELING"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Having more time is an unreal condition, and the learner describes a hypothetical action rather than committing to a goal or plan. GENERAL_DESCRIPTION is the required mode."
+    },
+    {
+      "promptId": "prompt-intro-v2-0191",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["REASON", "GOAL", "PLACE", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "Speaking English well is a hypothetical premise, and the learner only states what they would do under it. That possible action is GENERAL_DESCRIPTION, not GOAL_PLAN."
+    },
+    {
+      "promptId": "prompt-intro-v2-0192",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["PLACE", "REASON", "GOAL", "RESULT", "FEELING"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Living in another country is explicitly hypothetical. The learner describes a possible action in that scenario, so GOAL_PLAN incorrectly treats it as an actual intention."
+    },
+    {
+      "promptId": "prompt-intro-v2-0225",
+      "severity": "WARNING",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "ROUTINE",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["ACTION", "SPECIFIC_TIME", "REASON", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question narrowly asks for the childhood place visited often. A place directly answers this simple factual routine, so requiring another support is questionable for difficulty I."
+    },
+    {
+      "promptId": "prompt-intro-v2-0227",
+      "severity": "WARNING",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "DETAIL", "EXAMPLE", "FEELING"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "This broad past preference otherwise permits only an isolated school feature. One reason, detail, or example is appropriate to make the introductory answer meaningful."
+    },
+    {
+      "promptId": "prompt-intro-v2-0228",
+      "severity": "WARNING",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "EXAMPLE", "FEELING", "SOLUTION"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "The open dislike prompt can be answered with only a feature label at depth zero. One independent reason, example, feeling, or solution is appropriate support for this broad preference."
+    }
+  ]
+}

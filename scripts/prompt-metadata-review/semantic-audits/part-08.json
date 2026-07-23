@@ -1,0 +1,697 @@
+[
+  {
+    "promptId": "prompt-preference-2277",
+    "verdict": "PASS",
+    "auditReasonKo": "손 씻기 뒤 학습자가 선호하는 깨끗한 감각의 종류를 핵심 선택으로 구분하고, 막연한 '좋은 느낌'은 배제하면서 감각 특성·반응·이유를 독립적으로 보강한다."
+  },
+  {
+    "promptId": "prompt-preference-2278",
+    "verdict": "PASS",
+    "auditReasonKo": "머리 감기를 상쾌하거나 편안하게 만드는 요인을 행동에 한정하지 않고 제품·감각·조건까지 열어 두며, 그 요인과 경험의 관계를 분명히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2279",
+    "verdict": "PASS",
+    "auditReasonKo": "건조한 입술에 학습자가 실제로 사용하는 물건과 그 사용 이유를 각각 필수 관계로 잡고, 효과와 사용 세부는 별도 정보로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2280",
+    "verdict": "CHANGE",
+    "auditReasonKo": "원문은 샤워 후에 상쾌하게 느끼도록 돕는 요인을 묻지만, 현재 DETAIL과 ACTION은 요인이나 행동 자체도 샤워 후에 있어야 하는 것으로 좁혀 샤워 중의 찬물·바디워시·헹굼 같은 자연스러운 답을 배제할 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific action, product, object, condition, or other factor used during or after showering that helps the learner feel fresh afterward.",
+        "satisfiedWhenEn": "The answer identifies a concrete factor from the shower or the period after it and connects that factor to the learner's post-shower freshness; \"something refreshing\" without clarification is insufficient.",
+        "semanticRoleKo": "샤워 중이나 샤워 후에 활용되어 학습자가 이후 상쾌하게 느끼도록 돕는 구체적인 행동, 제품, 물건, 조건 또는 다른 요인.",
+        "satisfiedWhenKo": "답변이 샤워 중 또는 샤워 후의 구체적인 요인을 밝히고 그것을 학습자의 샤워 후 상쾌함과 연결하면 충족된다. 구체화하지 않은 \"상쾌한 것\"은 부족하다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A behavior the learner performs during or after showering to feel fresh afterward.",
+        "satisfiedWhenEn": "The answer describes a specific action during the shower or afterward that contributes to the learner's post-shower freshness, rather than only naming a product or condition.",
+        "semanticRoleKo": "샤워 후 상쾌하게 느끼기 위해 학습자가 샤워 중이나 샤워 후에 하는 행동.",
+        "satisfiedWhenKo": "제품이나 조건의 이름만 말하는 데서 더 나아가, 샤워 후 상쾌함에 기여하도록 샤워 중 또는 샤워 후에 하는 구체적인 행동을 설명하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2281",
+    "verdict": "PASS",
+    "auditReasonKo": "피부에 편안한 촉감 자체를 필수 DETAIL로 두어 선호를 억지로 요구하지 않으며, 알아볼 수 있는 질감과 피부 편안함의 관계를 정확히 판별한다."
+  },
+  {
+    "promptId": "prompt-preference-2282",
+    "verdict": "PASS",
+    "auditReasonKo": "깨끗한 수건의 작고 구체적인 특성이 사용을 기분 좋게 만든다는 관계를 정확히 담고, 느낌·이유·결과는 그 특성과 구별되는 보강 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2283",
+    "verdict": "PASS",
+    "auditReasonKo": "목욕 시간을 더 편안하게 만드는 열린 요인을 활동뿐 아니라 물건·감각 조건으로도 인정해 원문 범위를 보존하고, 막연한 분위기 언급은 적절히 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2284",
+    "verdict": "PASS",
+    "auditReasonKo": "외출 전 피부를 보호하는 구체적인 행동을 핵심으로 삼고, 선택 시간 슬롯도 시계 시각을 강제하지 않은 채 낮 외출·햇빛 조건·출발 직전 같은 의미 있는 추가 맥락을 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2285",
+    "verdict": "PASS",
+    "auditReasonKo": "긴 하루 뒤 얼굴을 상쾌하게 하는 요인을 행동으로 한정하지 않고 제품·온도·조건까지 포함하며, 얼굴 상쾌함과의 인과 관계를 분명히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2286",
+    "verdict": "PASS",
+    "auditReasonKo": "아침이나 밤의 양치를 상쾌하게 만드는 맛·감각·제품 특성을 핵심으로 두고, 제품 선택과 양치 행동 및 반응을 별도 의미로 적절히 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2287",
+    "verdict": "PASS",
+    "auditReasonKo": "방에서 깨끗하거나 편안한 향이 나게 하는 요인을 향의 원천·제품·조건·행동까지 넓게 허용하면서, 실제 방의 냄새와 연결되지 않은 막연한 향 언급은 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2288",
+    "verdict": "CHANGE",
+    "auditReasonKo": "머리를 감은 뒤 단정하거나 부드러운 결과를 만드는 제품과 행동은 세정 중에도 사용할 수 있는데, 현재 ACTION과 CHOICE는 모두 세정 후 사용으로 좁혀 컨디셔너나 샤워 중 관리 행동을 부당하게 배제한다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A hair-care behavior the learner performs during or after washing to make their hair feel neat or soft afterward.",
+        "satisfiedWhenEn": "The answer describes a specific washing, conditioning, drying, brushing, applying, or styling action performed during or after washing that contributes to the desired post-washing hair condition.",
+        "semanticRoleKo": "머리를 감은 뒤 단정하거나 부드럽게 느끼도록 학습자가 세정 중이나 세정 후에 하는 모발 관리 행동.",
+        "satisfiedWhenKo": "답변이 원하는 세정 후 모발 상태에 기여하도록 머리를 감는 중이나 감은 뒤에 하는 구체적인 세정, 컨디셔닝, 말리기, 빗기, 제품 바르기 또는 손질 행동을 설명하면 충족된다."
+      },
+      "CHOICE": {
+        "semanticRoleEn": "The hair-care product, tool, or setting the learner selects during or after washing to help their hair feel neat or soft afterward.",
+        "satisfiedWhenEn": "The answer identifies a recognizable conditioner, serum, brush, towel, dryer setting, or other selected aid used during or after washing and connects it to post-washing neatness or softness.",
+        "semanticRoleKo": "머리를 감은 뒤 단정하거나 부드럽게 느끼도록 학습자가 세정 중이나 세정 후에 선택하는 모발 관리 제품, 도구 또는 설정.",
+        "satisfiedWhenKo": "답변이 세정 중이나 세정 후에 사용하는 알아볼 수 있는 컨디셔너, 세럼, 빗, 수건, 드라이어 설정 또는 다른 보조 수단을 밝히고 그것을 세정 후의 단정함이나 부드러움과 연결하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2289",
+    "verdict": "PASS",
+    "auditReasonKo": "깨끗한 옷을 입기 좋게 만드는 구체적인 특성을 필수로 판별하고, 착용 느낌·이유·사례가 그 특성에 독립 정보를 더하도록 구성되어 있다."
+  },
+  {
+    "promptId": "prompt-preference-2290",
+    "verdict": "PASS",
+    "auditReasonKo": "취침 전 선호하는 개인 관리 제품과 그 제품이 긴장을 풀어 주는 구체적인 효과를 각각 필수로 요구해 원문의 두 절을 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-preference-2291",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 휴대전화에 쓰기 좋아하는 배경 화면과 그 선호 이유를 분리해 판별하며, 시각 세부와 감정은 유용한 독립 보강 역할을 한다."
+  },
+  {
+    "promptId": "prompt-preference-2292",
+    "verdict": "PASS",
+    "auditReasonKo": "잠에서 깨는 데 도움이 되는 식별 가능한 알람 소리와 그 소리가 효과적인 이유를 필수로 잡아, 단순 소리 언급이나 순환적인 설명을 구별할 수 있다."
+  },
+  {
+    "promptId": "prompt-preference-2293",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대전화에서 일정을 확인하는 구체적인 방법을 핵심 ACTION으로 판별하고, 앱 기능·확인 시점·실용 결과는 서로 구별되는 추가 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2294",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대전화에 짧은 메모를 쓰는 때나 계기를 직접 요구하며, 회의 중·아이디어가 떠오를 때 같은 넓지만 의미 있는 조건을 시계 시각 없이도 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2295",
+    "verdict": "PASS",
+    "auditReasonKo": "메시지에서 스티커를 사용하는 상황과 그 이유를 각각 필수로 두고, 정확한 시각 대신 대화 상대·축하·표현 곤란 같은 자연스러운 사용 맥락을 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2296",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 1이 필요한 질문인데, 필수 ACTION이 이미 상황에 맞춰 음악을 고르는 기준까지 받을 수 있고 현재 DETAIL도 같은 기준을 그대로 받아 독립 보강 없이 두 슬롯을 중복 충족할 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "An additional selection criterion or music feature beyond the method or decision rule already used as the learner's main phone-music selection action.",
+        "satisfiedWhenEn": "The answer adds a definite factor such as genre, tempo, artist, lyrics, energy level, activity, or weather that was not already the sole basis of the selection method used for ACTION; repeating the same method or criterion is insufficient.",
+        "semanticRoleKo": "휴대전화 음악을 고르는 주된 행동으로 이미 제시한 방법이나 판단 기준을 넘어서는 추가 선택 기준 또는 음악 특성.",
+        "satisfiedWhenKo": "답변이 ACTION에 사용한 선택 방법의 유일한 기준을 되풀이하지 않고 장르, 빠르기, 가수, 가사, 에너지 수준, 활동 또는 날씨 같은 별도의 뚜렷한 기준을 덧붙이면 충족된다. 같은 방법이나 기준의 반복은 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2297",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 사용하는 사진 필터와 그 필터를 쓰는 촬영 상황을 모두 필수로 잡고, 인물·음식·야간 촬영 같은 의미 있는 경우를 시각 정밀도 없이 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2298",
+    "verdict": "PASS",
+    "auditReasonKo": "어딘가로 갈 때 휴대전화로 경로를 고르는 구체적인 과정이 핵심이며, 이동 기준·상황·결과가 그 방법과 구별되는 보강 역할을 한다."
+  },
+  {
+    "promptId": "prompt-preference-2299",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대전화로 날씨를 확인하는 시점과 그 이유를 각각 요구하고, 매일 아침·외출 전·구름이 낄 때 같은 넓지만 의미 있는 시간 조건을 정확히 허용한다."
+  },
+  {
+    "promptId": "prompt-preference-23",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 음악 종류와 서로 구별되는 두 가지 즐기는 이유를 정확히 요구하며, 같은 이유를 표현만 바꾸어 반복하는 답을 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2300",
+    "verdict": "PASS",
+    "auditReasonKo": "입력을 쉽게 만드는 휴대전화 키보드 설정을 식별 가능한 선택으로 요구하고, 개선 효과·적합 이유·구성 세부를 독립적으로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2301",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 사용하는 휴대전화 단축 기능과 반복 사용의 이유를 필수로 판별하며, 결과·사용 시점·사례가 별도 의미를 제공한다."
+  },
+  {
+    "promptId": "prompt-preference-2302",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 여는 재생 목록과 그 목록을 여는 때를 정확히 요구하고, 통근·공부·운동·밤의 휴식처럼 넓은 활동 맥락을 충분히 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2303",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대전화에 설정하는 알림의 알아볼 수 있는 주제와 설정 이유를 핵심으로 두어, '중요한 것' 같은 미해결 범주와 구체적인 알림을 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2304",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 확인하는 휴대전화 위젯과 반복 확인 이유를 각각 필수로 잡고, 아침·외출 전·하루 여러 번 같은 의미 있는 빈도도 시계 시각 없이 허용한다."
+  },
+  {
+    "promptId": "prompt-preference-2305",
+    "verdict": "PASS",
+    "auditReasonKo": "아침에 사용하는 구체적인 앱 기능과 그 기능이 돕는 방식을 모두 요구하며, 넓은 앱 이름만으로 기능 선택을 대신하지 못하게 한다."
+  },
+  {
+    "promptId": "prompt-preference-2306",
+    "verdict": "PASS",
+    "auditReasonKo": "동네 근처 작은 공원 안에서 학습자가 앉기 좋아하는 특정 자리와 그 이유를 정확히 구분하며, 공원 자체의 막연한 언급은 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2307",
+    "verdict": "PASS",
+    "auditReasonKo": "근처 편의점에서 보통 사는 물건과 그 구매가 실제로 유용한 방식을 필수로 요구해, 구매 이유와 사용 결과도 의미상 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2308",
+    "verdict": "PASS",
+    "auditReasonKo": "집 근처에서 걷기 좋아하는 특정 거리나 경로와 그 선호 이유를 정확히 요구하고, 장소 특징·느낌·산책 시점은 독립 보강 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2309",
+    "verdict": "PASS",
+    "auditReasonKo": "집 근처 꽃 가판대에 들를 의미 있는 경우와 고를 꽃이나 물건을 모두 필수로 잡으며, 정확한 시각이나 더 큰 계획을 부당하게 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2310",
+    "verdict": "PASS",
+    "auditReasonKo": "집 근처 버스 정류장을 일과 속에서 반복적으로 이용하는 행동을 핵심으로 하고, 시점·목적·결과 중 하나가 독립적으로 일상 관계를 보강하므로 깊이 1이 적절하다."
+  },
+  {
+    "promptId": "prompt-preference-2311",
+    "verdict": "PASS",
+    "auditReasonKo": "기차나 버스에서 선호하는 좌석 위치와 그 이유를 정확히 요구하며, 창가·문 근처 같은 위치 관계와 단순 교통수단 언급을 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2312",
+    "verdict": "PASS",
+    "auditReasonKo": "근처 가판대에서 살 과일과 먹을 때를 모두 필수로 두고, 아침 식사·운동 후·오후 간식 같은 넓고 자연스러운 섭취 시점을 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2313",
+    "verdict": "PASS",
+    "auditReasonKo": "식료품점까지 습관적으로 이용하는 구별 가능한 경로와 그 경로를 좋아하는 이유를 요구해, 단순한 '늘 가는 길'과 실제 경로 관계를 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2314",
+    "verdict": "PASS",
+    "auditReasonKo": "시장 안에서 가장 먼저 가는 구역과 그곳이 첫 방문 지점인 이유를 정확히 판별하며, 시장 이름만 언급하는 답은 적절히 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2315",
+    "verdict": "PASS",
+    "auditReasonKo": "급히 필요한 것을 구할 때 유용한 집 근처의 작은 상점·시설·서비스 지점을 폭넓게 인정하고, 즉각적인 필요와의 관계를 분명히 요구한다."
+  },
+  {
+    "promptId": "prompt-preference-2316",
+    "verdict": "PASS",
+    "auditReasonKo": "밖에서 쉬며 앉기 좋아하는 특정 장소나 자리와 그 이유를 필수로 두고, 편안함·그늘·풍경 같은 근거를 자연스럽게 허용한다."
+  },
+  {
+    "promptId": "prompt-preference-2317",
+    "verdict": "PASS",
+    "auditReasonKo": "근처에서 일몰을 보기 좋아하는 관람 장소와 그 장소를 선호하는 이유를 정확히 요구하며, 계절·퇴근 후·주말 같은 넓은 시간도 선택 정보로 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2318",
+    "verdict": "PASS",
+    "auditReasonKo": "창문과의 위치 관계가 드러나는 선호 좌석과 그 이유를 필수로 잡아, 단순 장소 언급과 실제 창가 자리를 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2319",
+    "verdict": "PASS",
+    "auditReasonKo": "귀갓길에 들르기 좋아하는 경유 목적지와 그 이유를 정확히 요구하며, 장소·귀가 경로·선호의 관계가 모두 계약에 반영되어 있다."
+  },
+  {
+    "promptId": "prompt-preference-2320",
+    "verdict": "PASS",
+    "auditReasonKo": "바람을 쐬고 싶을 때 동네 근처에서 가는 목적지를 핵심 PLACE로 정확히 정의하고, 활동·이유·느낌·시점은 서로 다른 보강 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2321",
+    "verdict": "PASS",
+    "auditReasonKo": "여가 시간에 즐기는 간단한 퍼즐이나 게임과 즐기는 이유를 필수로 요구하며, 게임의 특징·느낌·플레이 시점을 별도로 판별한다."
+  },
+  {
+    "promptId": "prompt-preference-2322",
+    "verdict": "PASS",
+    "auditReasonKo": "가볍게 즐기는 카드 게임과 플레이하는 때를 정확히 요구하고, 가족 모임·주말 저녁·여행 같은 의미 있는 경우를 시각 강제 없이 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2323",
+    "verdict": "PASS",
+    "auditReasonKo": "재미로 보는 유튜브 영상의 식별 가능한 종류와 그 즐거움의 이유를 필수로 잡으며, 사례·느낌·시청 시점은 독립적으로 구체화한다."
+  },
+  {
+    "promptId": "prompt-preference-2324",
+    "verdict": "PASS",
+    "auditReasonKo": "여가 시간에 즐기는 팟캐스트 주제와 즐기는 이유를 정확히 요구하며, 특정 프로그램·청취 반응·시점은 주제 선택을 되풀이하지 않는 보강 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2325",
+    "verdict": "PASS",
+    "auditReasonKo": "긴장을 풀어 주는 간단한 창작 활동과 그 활동에 쓰는 구체적인 도구·재료를 모두 필수로 두어 원문의 두 요청을 빠짐없이 반영한다."
+  },
+  {
+    "promptId": "prompt-preference-2326",
+    "verdict": "PASS",
+    "auditReasonKo": "여가에 해 보고 싶은 구체적인 공예 활동과 사용할 도구·재료를 가정형 관계로 정확히 판별하며, 별도의 목표나 계획을 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-preference-2327",
+    "verdict": "PASS",
+    "auditReasonKo": "저장하거나 공유하기 전 선호하는 사진 편집 행동을 핵심으로 하고, 설정·이유·편집 결과·사례가 그 방식에 독립적인 정보를 더한다."
+  },
+  {
+    "promptId": "prompt-preference-2328",
+    "verdict": "PASS",
+    "auditReasonKo": "10분 휴식 안에 할 수 있는 구체적인 활동과 그 활동을 고르는 이유를 필수로 요구해 시간 조건과 행동의 현실적인 관계를 유지한다."
+  },
+  {
+    "promptId": "prompt-preference-2329",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날 실내에서 하기 좋은 식별 가능한 취미와 그 이유를 정확히 요구하며, 날씨·실내 편안함·기분과의 연결도 자연스럽게 허용한다."
+  },
+  {
+    "promptId": "prompt-preference-2330",
+    "verdict": "PASS",
+    "auditReasonKo": "여가 시간에 긴장을 푸는 데 도움이 되는 알아볼 수 있는 소리나 음악을 핵심 선택으로 두고, 이유·반응·효과·음향 세부를 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2331",
+    "verdict": "PASS",
+    "auditReasonKo": "더운 날 실내에서 즐기는 구체적인 활동과 그 이유를 필수로 요구하며, 단순히 실내에 있다는 상태만으로 활동을 대신하지 못하게 한다."
+  },
+  {
+    "promptId": "prompt-preference-2332",
+    "verdict": "PASS",
+    "auditReasonKo": "줄을 기다리며 보통 하는 구체적인 활동과 그 활동이 도움을 주는 방식을 각각 필수로 잡아 행동과 실용 결과를 분명히 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2333",
+    "verdict": "PASS",
+    "auditReasonKo": "새로운 것을 배우게 하는 식별 가능한 짧은 영상과 그 영상을 보는 이유를 필수로 요구하며, 실제 학습 결과와 영상 특성은 별도 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2334",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 친구와 함께 하기 좋아하는 구체적인 활동을 선호 관계로 정확히 판별하고, 이유·느낌·추가 행동·세부 방식을 독립적으로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2335",
+    "verdict": "PASS",
+    "auditReasonKo": "집의 조용한 저녁에 시작하기 좋아하는 취미를 원문 그대로 선호 선택으로 처리하고, 이유·시작 방법·예상 느낌·결과를 적절히 보강한다."
+  },
+  {
+    "promptId": "prompt-preference-24",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 음악 종류에서 특히 가장 좋아하는 요소와 그 이유를 정확히 요구하며, 장르 이름만으로 요청된 요소 선택을 대신하지 못하게 한다."
+  },
+  {
+    "promptId": "prompt-preference-25",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 음악 종류를 소개하고 개인적으로 특별한 이유를 설명하는 두 관계를 정확히 판별하며, 음악 특성·사례·감정은 독립 보강 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2501",
+    "verdict": "PASS",
+    "auditReasonKo": "낮 동안 휴대하는 식별 가능한 물병과 그 휴대가 실제로 도움을 주는 방식을 필수로 요구하며, 정확한 시각 대신 활동 맥락을 허용한다."
+  },
+  {
+    "promptId": "prompt-preference-2502",
+    "verdict": "PASS",
+    "auditReasonKo": "낮 동안 텀블러를 다시 채우는 시간·일과 지점·조건을 직접 요구하고, 점심 후나 비었을 때 같은 넓지만 분명한 계기를 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2503",
+    "verdict": "PASS",
+    "auditReasonKo": "선호하는 탄산수 맛과 마시는 때를 모두 필수로 잡고, 식사·운동 후·더운 오후 같은 의미 있는 상황을 시계 시각 없이 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2504",
+    "verdict": "PASS",
+    "auditReasonKo": "산책할 때 휴대하기 좋아하는 구체적인 음료와 그 이유를 정확히 요구하며, 효과·느낌·준비 세부를 선택과 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2505",
+    "verdict": "PASS",
+    "auditReasonKo": "점심과 함께 마시기 좋아하는 식별 가능한 주스와 그 이유를 필수로 두어, 막연한 음료 범주와 실제 선택을 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2506",
+    "verdict": "PASS",
+    "auditReasonKo": "물에 넣기 좋아하는 구체적인 과일과 그 선택 이유를 정확히 요구하며, 준비 방식·물의 변화·마실 때의 반응을 독립적으로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2507",
+    "verdict": "PASS",
+    "auditReasonKo": "가지고 다니기 좋아하는 식별 가능한 병과 그 선호 이유를 필수로 판별하고, 병의 특징·휴대 결과·사용 상황은 별도 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2508",
+    "verdict": "PASS",
+    "auditReasonKo": "더운 날 선호하는 구체적인 차가운 음료와 그 이유를 정확히 요구하며, 시원함이라는 일반 속성만으로 음료 선택을 대신하지 못하게 한다."
+  },
+  {
+    "promptId": "prompt-preference-2509",
+    "verdict": "PASS",
+    "auditReasonKo": "여름에 차갑게 보관하기 좋아하는 구체적인 음료와 차갑게 두는 이유를 모두 요구해 음료 선택과 보관 관계를 분명히 판별한다."
+  },
+  {
+    "promptId": "prompt-preference-2510",
+    "verdict": "PASS",
+    "auditReasonKo": "공부하면서 조금씩 마시는 식별 가능한 음료와 그 선택 이유를 필수로 잡으며, 공부 효과·음료 세부·신체 반응을 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2511",
+    "verdict": "PASS",
+    "auditReasonKo": "집 밖에서 재사용 컵을 쓰는 구체적인 경우와 이유를 요구하고, 단순히 '밖에 나갈 때'라는 질문 전제의 반복은 정확히 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2512",
+    "verdict": "PASS",
+    "auditReasonKo": "가벼운 운동 뒤 마시는 구체적인 음료와 그 음료가 돕는 방식을 필수로 두어, 선택 이유와 실제 회복 효과도 의미상 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2513",
+    "verdict": "PASS",
+    "auditReasonKo": "더운 날 고르는 구체적인 차가운 음료와 그 이유를 정확히 요구하며, '차가운 것이면 무엇이든' 같은 미해결 선택을 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2514",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 잡기 쉽다고 느끼는 특정 병과 그 병을 사용하는 때를 필수로 판별하며, 활동·조건 같은 넓은 시간 맥락을 충분히 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2515",
+    "verdict": "PASS",
+    "auditReasonKo": "따뜻한 날 귀가한 뒤 마시는 구체적인 음료와 그 상황에서 선택하는 이유를 정확히 요구하며, 느낌·결과·제공 세부를 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2516",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 1을 요구하지만 필수 ACTION의 구체적인 짐 싸기 행동과 현재 DETAIL의 물건·칸 배치 예시가 같은 사실을 그대로 받을 수 있어 독립 보강 없이 깊이를 중복 충족할 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "An additional specific item, compartment arrangement, order, or packing rule beyond the packing or organizing action already used as the learner's main backpack-setup method.",
+        "satisfiedWhenEn": "The answer adds a distinct backpack content or arrangement fact beyond the action already used for ACTION, such as another item's compartment, a separate grouping rule, or an additional packing-order decision; repeating the same item placement is insufficient.",
+        "semanticRoleKo": "배낭 준비의 주된 방법으로 이미 제시한 짐 싸기나 정리 행동을 넘어서는 추가 물건, 칸 배치, 순서 또는 포장 원칙.",
+        "satisfiedWhenKo": "답변이 ACTION에 이미 사용한 행동과 구별되는 다른 물건의 수납칸, 별도의 묶음 원칙 또는 추가 포장 순서처럼 새로운 내용물이나 배치 사실을 덧붙이면 충족된다. 같은 물건 배치를 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2517",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 외출이라는 전제를 되풀이하지 않고 토트백을 쓰는 구체적인 외출 종류나 계기를 요구해, 자연스러운 상황 답변을 정확히 판별한다."
+  },
+  {
+    "promptId": "prompt-preference-2518",
+    "verdict": "PASS",
+    "auditReasonKo": "가방 속 작은 파우치에 보관하는 알아볼 수 있는 물건을 핵심 DETAIL로 요구하고, 보관 이유·사용 사례·정리 결과를 독립적으로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2519",
+    "verdict": "PASS",
+    "auditReasonKo": "일상적으로 쓰기 위해 지갑에 넣어 두는 구체적인 내용물을 직접 요구하며, 이유·사용 상황·휴대 결과는 내용물과 별도 의미를 제공한다."
+  },
+  {
+    "promptId": "prompt-preference-2520",
+    "verdict": "PASS",
+    "auditReasonKo": "매일 사용하는 식별 가능한 열쇠고리와 그 이유를 필수로 판별하고, 외형 세부·감정·실용 결과를 서로 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2521",
+    "verdict": "PASS",
+    "auditReasonKo": "가방 안이나 가방에 물병을 두는 구체적인 수납 위치를 정확히 요구해, '가방 어딘가'와 옆 주머니·본칸 같은 실제 배치를 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2522",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 1이 필요한데 필수 ACTION의 구체적인 배치 행동을 현재 DETAIL이 그대로 다시 받을 수 있고, RESULT도 질문에 이미 있는 '쉽게 열고 닫기'만 반복해 깊이로 셀 여지가 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "An additional arrangement near the zipper, flap, opening, or top of the bag beyond the organizing action already used as the learner's main method.",
+        "satisfiedWhenEn": "The answer adds a distinct placement rule or feature beyond the action already used for ACTION, such as a separate rule for bulky items, loose straps, or small contents; repeating the same arrangement is insufficient.",
+        "semanticRoleKo": "가방의 주된 정리 방법으로 이미 제시한 행동을 넘어 지퍼, 덮개, 입구 또는 윗부분 주변에 더하는 별도의 배치 방식.",
+        "satisfiedWhenKo": "답변이 ACTION에 이미 사용한 배치를 되풀이하지 않고 큰 물건, 느슨한 끈 또는 작은 내용물에 관한 별도의 위치 원칙이나 특징을 덧붙이면 충족된다. 같은 배치의 반복은 부족하다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A specific consequence of the organization beyond the question's general goal of making the bag easy to open and close.",
+        "satisfiedWhenEn": "The answer states a concrete effect such as the zipper no longer catching, the flap closing fully, contents staying inside, or access taking less time; merely repeating that the bag is easy to open or close is insufficient.",
+        "semanticRoleKo": "가방을 쉽게 열고 닫는다는 질문의 일반 목표를 넘어 정리 방식이 만드는 구체적인 결과.",
+        "satisfiedWhenKo": "답변이 지퍼가 걸리지 않음, 덮개가 완전히 닫힘, 내용물이 쏟아지지 않음 또는 여닫는 시간이 줄어듦 같은 구체적인 효과를 제시하면 충족된다. 가방을 쉽게 열고 닫는다고만 되풀이하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2523",
+    "verdict": "PASS",
+    "auditReasonKo": "카드홀더를 사용하는 의미 있는 상황과 그 이유를 각각 필수로 요구하며, '필요할 때' 같은 막연한 계기와 실제 통근·결제·출입 상황을 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2524",
+    "verdict": "PASS",
+    "auditReasonKo": "가방을 오래 메도 편안하게 만드는 요인을 제품 특징뿐 아니라 짐 배치·조절·휴대 방식까지 열어 두어 원문의 열린 범위를 정확히 보존한다."
+  },
+  {
+    "promptId": "prompt-preference-2525",
+    "verdict": "PASS",
+    "auditReasonKo": "일상에서 가장 많이 사용하는 특정 가방과 다른 가방보다 자주 쓰는 이유를 정확히 요구하며, 특징·결과·사용 상황은 별도 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2526",
+    "verdict": "PASS",
+    "auditReasonKo": "접이식 장바구니를 사용하는 구체적인 장보기 계기나 상황을 요구하고, 단순한 '쇼핑할 때'라는 용도 반복은 적절히 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2527",
+    "verdict": "PASS",
+    "auditReasonKo": "보조배터리를 휴대하는 시간·외출·배터리 조건과 그 이유를 각각 요구하며, 긴 외출·여행·사용량 같은 자연스러운 상황을 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2528",
+    "verdict": "PASS",
+    "auditReasonKo": "펜이나 케이블용 파우치에 보관하는 구체적인 관련 물건을 핵심으로 판별하고, 보관 이유·사용 사례·정리 효과를 독립적으로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2529",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날 사용하는 특정 가방과 그 날씨에 알맞은 이유를 정확히 요구하며, 방수 특징·보호 결과·감정은 각각 별도 정보를 더한다."
+  },
+  {
+    "promptId": "prompt-preference-2530",
+    "verdict": "PASS",
+    "auditReasonKo": "잠깐 외출할 때 쓰는 식별 가능한 작은 가방을 직접 요구하고, 크기만 막연히 반복하는 답과 실제 가방 선택을 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2531",
+    "verdict": "PASS",
+    "auditReasonKo": "집의 수납 상자에 보관하는 알아볼 수 있는 물건이나 범주를 핵심으로 두며, 이유·꺼내 쓰는 사례·정리 결과는 독립 보강 정보다."
+  },
+  {
+    "promptId": "prompt-preference-2532",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 일상복을 걸어 두는 구체적인 방법을 요구해 단순한 '건다'와 옷걸이·행거·고리를 활용하는 실제 행동을 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2533",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 1이 필요한데 필수 ACTION의 분류·접기·칸 나누기·배치 행동과 현재 DETAIL의 배치 예시가 같은 사실을 그대로 받아 독립 의미 없이 깊이를 중복 충족할 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "An additional category, divider, layout, order, or placement rule beyond the organizing action already used as the learner's main drawer method.",
+        "satisfiedWhenEn": "The answer adds a distinct drawer-arrangement fact beyond the action already used for ACTION, such as a separate item category, another placement rule, or an additional divider or layout choice; repeating the same organization step is insufficient.",
+        "semanticRoleKo": "서랍의 주된 정리 방법으로 이미 제시한 행동을 넘어서는 추가 물건 범주, 칸막이, 배치, 순서 또는 위치 원칙.",
+        "satisfiedWhenKo": "답변이 ACTION에 이미 사용한 정리 단계를 되풀이하지 않고 별도의 물건 범주, 다른 위치 원칙 또는 추가 칸막이·배치 선택을 덧붙이면 충족된다. 같은 정리 행동의 반복은 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2534",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 벽걸이 고리를 사용하는 구체적인 위치와 그 고리에 거는 물건을 각각 필수로 요구해 장소와 내용물 관계를 빠짐없이 반영한다."
+  },
+  {
+    "promptId": "prompt-preference-2535",
+    "verdict": "PASS",
+    "auditReasonKo": "집의 상자에 보관하는 알아볼 수 있는 작은 물건이나 범주를 정확히 요구하며, '작은 것들' 같은 미해결 표현은 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2536",
+    "verdict": "PASS",
+    "auditReasonKo": "공부 전 책상을 청소할 때 사용하는 식별 가능한 도구나 제품을 핵심 선택으로 두고, 사용 행동·이유·결과·도구 세부를 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2537",
+    "verdict": "PASS",
+    "auditReasonKo": "집안의 작은 청소 일 중 시작하기 가장 쉽다는 평가와 그 판단 이유를 각각 필수로 잡아 단순 선호보다 정확한 의견 구조를 사용한다."
+  },
+  {
+    "promptId": "prompt-preference-2538",
+    "verdict": "PASS",
+    "auditReasonKo": "주방 청소에 사용하는 특정 스펀지나 도구를 직접 요구하며, 사용 행동·선택 이유·청소 결과·물리적 특징을 독립적으로 판별한다."
+  },
+  {
+    "promptId": "prompt-preference-2539",
+    "verdict": "PASS",
+    "auditReasonKo": "방을 쓰기 쉽게 만드는 식별 가능한 수납공간이나 설비를 핵심 선택으로 두고, 구체적인 사용 개선·적합 이유·구성 세부를 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2540",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 라벨을 붙이는 구체적인 대상과 라벨링이 유용한 방식을 각각 필수로 잡아 대상 선택과 실용 결과를 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2541",
+    "verdict": "CHANGE",
+    "auditReasonKo": "깊이 1이 필요한데 필수 ACTION의 분류·칸 나누기·용기 사용·배치 행동과 현재 DETAIL의 욕실 서랍 배치 예시가 같은 사실을 그대로 받아 깊이를 중복 충족할 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "An additional category, container, divider, order, or placement rule beyond the organizing action already used as the learner's main bathroom-drawer method.",
+        "satisfiedWhenEn": "The answer adds a distinct bathroom-drawer arrangement fact beyond the action already used for ACTION, such as another product category, a separate container rule, or an additional placement decision; repeating the same organization step is insufficient.",
+        "semanticRoleKo": "욕실 서랍의 주된 정리 방법으로 이미 제시한 행동을 넘어서는 추가 물건 범주, 용기, 칸막이, 순서 또는 배치 원칙.",
+        "satisfiedWhenKo": "답변이 ACTION에 이미 사용한 정리 단계를 되풀이하지 않고 다른 제품 범주, 별도의 용기 사용 원칙 또는 추가 배치 결정을 덧붙이면 충족된다. 같은 정리 행동의 반복은 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2542",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 신발 상자에 부여하는 구체적인 새 용도나 재사용 행동을 핵심으로 판별하며, 개조 세부·이유·결과를 별도로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2543",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 케이블을 보관하는 구체적인 위치와 그 위치를 쓰는 이유를 필수로 요구해 장소·케이블 보관 관계를 정확히 판별한다."
+  },
+  {
+    "promptId": "prompt-preference-2544",
+    "verdict": "PASS",
+    "auditReasonKo": "수건 바구니에 넣는 구체적인 수건류와 바구니를 두는 집 안 위치를 각각 필수로 잡아 원문의 두 요청을 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-preference-2545",
+    "verdict": "PASS",
+    "auditReasonKo": "문 근처라는 전제를 반복하지 않고 가방이나 열쇠를 두는 고리·선반·트레이 같은 구체적인 자리를 요구해 실제 위치를 판별한다."
+  },
+  {
+    "promptId": "prompt-preference-2546",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 충전 중에도 휴대전화를 쉽게 쓰게 하는 구체적인 연결·배치 방법을 요구하며, 장소·구성·효과·이유를 독립적으로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2547",
+    "verdict": "PASS",
+    "auditReasonKo": "일상 기기를 쓰기 쉽게 만드는 구체적인 케이블 배선·연결 구성을 핵심 DETAIL로 두고, 개선 결과·이유·위치 관계를 정확히 보강한다."
+  },
+  {
+    "promptId": "prompt-preference-2548",
+    "verdict": "CHANGE",
+    "auditReasonKo": "원문의 'what do you use'는 재생 기기나 앱뿐 아니라 특정 재생목록 같은 음악 원천으로도 자연스럽게 답할 수 있는데, 현재 CHOICE는 재생 수단 중심이라 이 답을 불명확하게 배제할 수 있다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The device, app, service, speaker, playlist, or other identifiable source the learner uses to play background music at home.",
+        "satisfiedWhenEn": "The answer identifies a recognizable playback tool, service, playlist, or music source and makes clear that the learner uses it for background music at home; saying only \"music\" without identifying the means or source is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 배경 음악을 재생하는 데 쓰는 기기, 앱, 서비스, 스피커, 재생목록 또는 그 밖의 식별 가능한 음원.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 재생 도구, 서비스, 재생목록 또는 음원을 밝히고 그것을 집의 배경 음악에 사용한다고 나타내면 충족된다. 재생 수단이나 음원을 특정하지 않고 \"음악\"이라고만 하면 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2549",
+    "verdict": "PASS",
+    "auditReasonKo": "따뜻한 날 탁상용 선풍기를 쓰는 구체적인 시간·책상 활동·더위 조건을 요구하고, 단순히 '따뜻할 때'라는 질문 반복은 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2550",
+    "verdict": "PASS",
+    "auditReasonKo": "하루 일정을 지키기 위해 알람이나 알림을 설정·확인·반응하는 구체적인 방법을 요구하고, 시점·설정·결과·사례 중 하나가 독립 깊이를 더한다."
+  },
+  {
+    "promptId": "prompt-preference-2551",
+    "verdict": "PASS",
+    "auditReasonKo": "책상에서 휴대전화 거치대를 사용하는 구체적인 활동이나 배치 행동을 요구해, 단순히 휴대전화를 올린다는 말과 실제 사용 방식을 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2552",
+    "verdict": "PASS",
+    "auditReasonKo": "밤에 독서할 때 사용하는 식별 가능한 조명 종류와 그 이유를 필수로 잡으며, 밝기·효과·느낌을 별도 의미로 구분한다."
+  },
+  {
+    "promptId": "prompt-preference-2553",
+    "verdict": "PASS",
+    "auditReasonKo": "타이머를 사용하는 구체적인 짧은 작업이나 작업 단계를 요구하고, '짧은 작업에 쓴다'라는 질문 전제의 반복은 정확히 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2554",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 가습기를 쓰는 시기·방 상태·반복 상황과 실제 도움 효과를 필수로 요구하며, '공기가 건조할 때'도 분명한 사용 조건이면 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2555",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 멀티탭을 사용하는 구체적인 위치와 그곳에 두는 이유를 정확히 요구해, 막연한 콘센트 필요와 실제 장소 관계를 구별한다."
+  },
+  {
+    "promptId": "prompt-preference-2556",
+    "verdict": "CHANGE",
+    "auditReasonKo": "원문은 집에서 독서를 돕는 'light'를 넓게 묻는데, 현재 CHOICE는 램프·기구·전구·모드로 한정해 창문으로 들어오는 자연광이나 밝은 자연 조명 같은 유효한 답을 배제할 수 있다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The light source or kind of lighting the learner uses to help them read at home.",
+        "satisfiedWhenEn": "The answer identifies a recognizable artificial or natural light source, or a meaningful type of lighting such as a desk lamp, ceiling light, bright daylight from a window, or warm task lighting, and connects it to the learner's home reading; unspecified \"some light\" is insufficient.",
+        "semanticRoleKo": "학습자가 집에서 독서하는 데 도움을 받기 위해 사용하는 광원이나 조명의 종류.",
+        "satisfiedWhenKo": "답변이 책상 램프, 천장 조명, 창문으로 들어오는 밝은 자연광 또는 따뜻한 작업 조명처럼 알아볼 수 있는 인공·자연 광원이나 의미 있는 조명 종류를 밝히고 집에서의 독서와 연결하면 충족된다. 무엇인지 특정하지 않은 \"어떤 빛\"은 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-preference-2557",
+    "verdict": "PASS",
+    "auditReasonKo": "충전기를 침대 옆에 두는 구체적인 밤·아침 활동, 접근성, 배터리 또는 생활 습관상의 이유를 직접 요구해 순환적인 '편해서'를 배제한다."
+  },
+  {
+    "promptId": "prompt-preference-2558",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대용 선풍기를 쓰는 시간·활동·날씨 조건과 그 이유를 필수로 잡고, '더울 때'도 학습자의 실제 사용 조건을 분명히 나타내면 인정한다."
+  },
+  {
+    "promptId": "prompt-preference-2559",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 태블릿 거치대를 사용하는 구체적인 활동이나 배치 행동을 요구해, 단순히 태블릿을 올린다는 말과 실제 사용 방식을 구별한다."
+  }
+]

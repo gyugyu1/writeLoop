@@ -1,0 +1,658 @@
+[
+  {
+    "promptId": "prompt-a-1",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁 식사 후에 평소 하는 주된 행동이 ACTION으로 분명히 한정되고, 시간·장소·이유도 그 식후 활동에 연결된 독립 정보로 판정되도록 되어 있다."
+  },
+  {
+    "promptId": "prompt-a-2",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 간단한 식사를 만드는 때나 상황과 평소 선택하는 음식이 각각 SPECIFIC_TIME과 CHOICE로 구분되며, 의미 있는 시간대나 상황도 허용해 과도한 정밀도를 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-a-3",
+    "verdict": "PASS",
+    "auditReasonKo": "주말에 보통 하는 주 활동을 ACTION으로 확인하고, 추가 활동·시점·장소 등은 그 주말 일과에 연결된 별도 깊이 정보로만 인정한다."
+  },
+  {
+    "promptId": "prompt-a-4",
+    "verdict": "PASS",
+    "auditReasonKo": "퇴근 후 평소 활동과 그 활동을 즐기는 구체적인 이유가 서로 다른 필수 관계로 잡혀 있어, 단순 활동 언급이나 막연한 호감만으로는 두 요구를 함께 충족할 수 없다."
+  },
+  {
+    "promptId": "prompt-b-1",
+    "verdict": "PASS",
+    "auditReasonKo": "직장이나 학교에서 반복해 겪는 구체적인 어려움과 학습자가 실제로 사용하는 대처 방식이 각각 PROBLEM과 SOLUTION으로 정확히 연결되어 있다."
+  },
+  {
+    "promptId": "prompt-b-2",
+    "verdict": "PASS",
+    "auditReasonKo": "방문하고 싶은 특정 도시를 미래 여행 목표로 밝히는 관계와 그 도시에서 하려는 활동 관계가 GOAL과 PLAN에 각각 구체적으로 반영되어 있다."
+  },
+  {
+    "promptId": "prompt-b-3",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 만들고 싶은 반복 가능한 습관과 그 습관이 학습자에게 중요한 구체적 근거가 GOAL과 REASON으로 분리되어 질문의 두 절을 충실히 반영한다."
+  },
+  {
+    "promptId": "prompt-b-4",
+    "verdict": "PASS",
+    "auditReasonKo": "내년에 원하는 여행 유형과 실제 준비 행동이 필수 관계로 구분되며, PLACE는 단순 장소가 아니라 여행 목적지나 경로로 연결되고 SPECIFIC_TIME은 계절이나 기간도 허용한다."
+  },
+  {
+    "promptId": "prompt-b-5",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 향상하려는 알아볼 수 있는 기술과 그 기술을 연습할 구체적인 방법이 GOAL과 PLAN으로 정확히 대응하며, 세부 기술은 별도 DETAIL로 구분된다."
+  },
+  {
+    "promptId": "prompt-balance-01",
+    "verdict": "PASS",
+    "auditReasonKo": "소셜 미디어 이전의 일상 방식과 현재의 대응 상태가 각각 식별되고, 현재 상태가 소셜 미디어로 인한 변화에 연결되어야 하므로 단순히 변화가 있었다는 말만으로는 부족하다."
+  },
+  {
+    "promptId": "prompt-balance-02",
+    "verdict": "PASS",
+    "auditReasonKo": "소셜 미디어의 구체적인 이점과 단점, 두 측면을 고려한 전체 견해가 모두 독립 필수 관계로 정의되어 막연한 좋고 나쁨을 배제한다."
+  },
+  {
+    "promptId": "prompt-balance-03",
+    "verdict": "PASS",
+    "auditReasonKo": "소셜 미디어 때문에 사람들에게 생긴 실제 변화와 그 영향이 대체로 좋은지에 대한 평가가 분명히 연결되며, 추가 깊이 정보도 주 영향과 구별되는 근거나 사례를 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-04",
+    "verdict": "PASS",
+    "auditReasonKo": "소셜 미디어가 사람들에게 준 도움과 피해를 각각 구체적으로 제시하고 어느 쪽이 더 큰지 판단한 뒤 그 비교 근거까지 설명하도록 계약이 구성되어 있다."
+  },
+  {
+    "promptId": "prompt-balance-05",
+    "verdict": "PASS",
+    "auditReasonKo": "소셜 미디어 전후의 생활 또는 교류 방식이 서로 대비 가능한 상태로 정의되고, 그 변화에 대한 전체 의견도 같은 관계 범위를 평가하도록 되어 있다."
+  },
+  {
+    "promptId": "prompt-balance-06",
+    "verdict": "PASS",
+    "auditReasonKo": "원격 근무 이전의 업무 관련 일상과 현재의 원격 근무 일상이 대응되게 정의되며, 현재 상태와 평가 모두 원격 근무가 만든 변화에 명시적으로 연결된다."
+  },
+  {
+    "promptId": "prompt-balance-07",
+    "verdict": "PASS",
+    "auditReasonKo": "원격 근무가 근로자·조직·일상에 주는 구체적인 이점과 비용 또는 위험을 구분하고, 이를 따져 내린 전체 견해까지 질문에 맞게 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-08",
+    "verdict": "PASS",
+    "auditReasonKo": "사람들의 일이나 삶에 생긴 실제 결과를 원격 근무에 귀속시키고 그 결과의 전체 가치를 판단하게 하며, 독립 사례나 근거로 필요한 깊이를 보완한다."
+  },
+  {
+    "promptId": "prompt-balance-09",
+    "verdict": "PASS",
+    "auditReasonKo": "원격 근무의 도움과 피해를 각각 식별한 뒤 어느 영향이 더 큰지 비교하고 중요성·범위·지속성 같은 구체적 근거로 그 판단을 설명하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-10",
+    "verdict": "PASS",
+    "auditReasonKo": "원격 근무 전후의 생활 또는 연결 방식이 같은 업무 맥락에서 대비되고, 현재 변화와 전체 의견이 원격 근무의 영향 범위를 벗어나지 않는다."
+  },
+  {
+    "promptId": "prompt-balance-11",
+    "verdict": "PASS",
+    "auditReasonKo": "교육용 인공지능 도입 전의 교육 일상과 현재의 학습·수업 경험이 대응되며, 현재 상태와 평가가 교육 분야 인공지능에 의해 생긴 변화임을 입증하도록 되어 있다."
+  },
+  {
+    "promptId": "prompt-balance-1101",
+    "verdict": "PASS",
+    "auditReasonKo": "셀프 계산대가 고객·직원·매장에 주는 구체적인 이점과 어려움을 각각 요구하고, 두 측면을 고려한 전체 판단과 운영 조건도 질문 대상에 맞게 한정한다."
+  },
+  {
+    "promptId": "prompt-balance-1102",
+    "verdict": "PASS",
+    "auditReasonKo": "개방형 사무실의 협업 등 도움과 소음·사생활 등 방해를 양쪽 관계로 구분하고, 어느 쪽이 더 큰지 또는 어떤 조건에서 달라지는지 분명히 판단하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-1103",
+    "verdict": "PASS",
+    "auditReasonKo": "재사용 포장 규정의 환경·경제적 강점과 시행 부담을 각각 구체적으로 제시하고 어느 측면이 더 중요한지 비교하는 질문 관계가 정확하다."
+  },
+  {
+    "promptId": "prompt-balance-1104",
+    "verdict": "PASS",
+    "auditReasonKo": "구독 서비스가 이용자나 제공자에게 주는 구체적 이익과 비용·종속·소유권 제약을 구분하고, 이를 고려한 전체 또는 조건부 평가를 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1105",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 청원의 참여·인식 제고 효과와 오정보·피상적 참여 같은 위험이 독립적으로 정의되고, 어느 쪽이 더 큰지에 대한 비교 판단까지 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-balance-1106",
+    "verdict": "PASS",
+    "auditReasonKo": "스마트 홈 기기의 가정 내 편의·안전 이점과 사생활·보안·의존 문제를 각각 식별하고, 가정 조건에 따른 강약 판단을 분명히 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1107",
+    "verdict": "PASS",
+    "auditReasonKo": "학교 순위가 의사결정과 책임성에 주는 이점과 왜곡·압박·불평등 위험을 구체화하고, 장단점을 고려한 학습자의 전체 평가를 별도로 확인한다."
+  },
+  {
+    "promptId": "prompt-balance-1108",
+    "verdict": "PASS",
+    "auditReasonKo": "현금 없는 학교 식당의 운영상 이점과 학생·가족의 접근성 및 형평성 문제를 양쪽으로 구분하고, 어느 쪽이 더 중요한지 판단하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-1109",
+    "verdict": "PASS",
+    "auditReasonKo": "반려동물 친화적 사무실의 직원 복지상 강점과 알레르기·안전·집중 문제를 각각 구체화하고, 업무 환경 조건을 반영한 비교 의견을 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1110",
+    "verdict": "PASS",
+    "auditReasonKo": "관광세의 지역 서비스·보전 이점과 비용 부담·공정성 우려가 구분되며, 세금 설계 조건을 고려한 전체 견해까지 질문 범위 안에서 판정한다."
+  },
+  {
+    "promptId": "prompt-balance-1111",
+    "verdict": "PASS",
+    "auditReasonKo": "디지털 교과서의 접근·휴대·상호작용 이점과 화면 피로·기기 접근·사생활 문제를 각각 요구하고, 양쪽을 비교한 최종 판단을 명확히 확인한다."
+  },
+  {
+    "promptId": "prompt-balance-1112",
+    "verdict": "PASS",
+    "auditReasonKo": "동네 보안 카메라의 안전상 강점과 감시·사생활·오용 위험이 독립적으로 정의되고, 보호 조치에 따른 강약 판단도 질문의 비교 관계에 맞다."
+  },
+  {
+    "promptId": "prompt-balance-1113",
+    "verdict": "PASS",
+    "auditReasonKo": "식품 기한 표시가 안전한 판단을 돕는 효과와 혼란·불필요한 폐기를 만드는 효과를 구분하고, 표시 유형까지 구체화할 수 있게 설계되어 있다."
+  },
+  {
+    "promptId": "prompt-balance-1114",
+    "verdict": "PASS",
+    "auditReasonKo": "인공지능 고객 서비스의 속도·가용성 이점과 오해·공감 부족·상담원 연결 실패를 각각 식별하며, 업무 조건에 따른 전체 판단을 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1115",
+    "verdict": "PASS",
+    "auditReasonKo": "자전거 공유 시스템의 도시 이동상 강점과 안전·정비·주차 문제를 구체적으로 나누고, 도시 기반 시설에 따라 어느 쪽이 더 큰지 판단하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-1116",
+    "verdict": "PASS",
+    "auditReasonKo": "코워킹 공간의 유연성·시설·공동체 이점과 소음·사생활·비용 문제를 양쪽으로 분리하고, 업무 유형에 따른 전체 평가를 별도로 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1117",
+    "verdict": "PASS",
+    "auditReasonKo": "주 4일 근무제의 삶의 질·생산성 이점과 압축 업무·서비스 공백 위험이 각각 구체적이며, 시행 방식에 따른 비교 판단도 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-balance-1118",
+    "verdict": "PASS",
+    "auditReasonKo": "친구 사이 위치 공유의 안전·조율 이점과 사생활·통제·보안 위험을 분리하고, 동의와 통제 조건을 반영한 강약 판단을 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1119",
+    "verdict": "PASS",
+    "auditReasonKo": "도시 전동 킥보드의 단거리 이동 이점과 사고·보행·주차 문제를 각각 구체화하고, 도시 정책에 따른 전체 견해를 별도 관계로 확인한다."
+  },
+  {
+    "promptId": "prompt-balance-1120",
+    "verdict": "PASS",
+    "auditReasonKo": "라이브 스트리밍 쇼핑의 실시간 정보·도달 이점과 충동구매·기만·사기 위험을 구분하고, 보호 장치에 따른 최종 판단을 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1121",
+    "verdict": "PASS",
+    "auditReasonKo": "재사용 컵 보증금 제도의 반환 유도·폐기물 감소 강점과 선결제·반환 불편·위생 문제를 나누고, 제도 조건에 따른 우세 판단을 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1122",
+    "verdict": "PASS",
+    "auditReasonKo": "여행용 번역 앱의 소통·길 찾기 이점과 오역·연결성·과의존 문제를 구체적으로 구분하고, 여행자에게 지니는 전체 가치를 판단하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-1123",
+    "verdict": "PASS",
+    "auditReasonKo": "밀키트 서비스의 식사 준비·시간 절약 이점과 가격·포장·선택 제약을 각각 식별하며, 가구와 서비스 조건에 따른 비교 의견을 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1124",
+    "verdict": "PASS",
+    "auditReasonKo": "개인정보 제공 보상 제도의 금전·개인화 강점과 동의·보안·불공정 교환 위험을 구분하고, 데이터 조건에 따른 우세 판단을 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-balance-1125",
+    "verdict": "PASS",
+    "auditReasonKo": "자동 출석 시스템의 기록·업무 효율 이점과 오류·감시·편향 문제를 각각 구체화하고, 보호 조치 아래의 전체 가치 판단을 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1126",
+    "verdict": "PASS",
+    "auditReasonKo": "사무실 자율 좌석제의 공간 효율·유연성 이점과 좌석 부족·준비 시간·소속감 문제를 분리하고, 운영 방식에 따른 비교 판단을 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-1127",
+    "verdict": "PASS",
+    "auditReasonKo": "세컨드 스크린 시청의 추가 정보·상호작용 강점과 주의 분산·이해 저하 약점을 구분하고, 사용 목적과 시청 조건에 따른 우세 판단을 확인한다."
+  },
+  {
+    "promptId": "prompt-balance-12",
+    "verdict": "PASS",
+    "auditReasonKo": "교육용 인공지능의 학습·수업 지원 이점과 교육상 피해·위험·불공정 효과가 독립적으로 정의되고, 장단점을 고려한 전체 견해를 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-13",
+    "verdict": "PASS",
+    "auditReasonKo": "교육용 인공지능 때문에 학습자·교사 등에게 생긴 실제 결과와 그 영향의 전체 가치 판단이 연결되며, 추가 근거나 사례로 필요한 깊이를 확보한다."
+  },
+  {
+    "promptId": "prompt-balance-14",
+    "verdict": "PASS",
+    "auditReasonKo": "교육용 인공지능이 사람들에게 준 도움과 피해를 각각 구체화하고, 어느 영향이 더 큰지와 그 중요성·범위·공정성 근거를 함께 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-15",
+    "verdict": "PASS",
+    "auditReasonKo": "교육용 인공지능 전후의 생활·학습·연결 방식이 서로 대비되고, 현재 상태와 전체 의견이 교육에서의 인공지능 사용에 분명히 연결된다."
+  },
+  {
+    "promptId": "prompt-balance-16",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 쇼핑 이전의 구매 방식과 현재의 구매·배송 일상이 대응되며, 현재 상태와 평가가 온라인 쇼핑으로 생긴 변화임을 입증하도록 되어 있다."
+  },
+  {
+    "promptId": "prompt-balance-17",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 쇼핑의 편의·선택 이점과 사기·반품·노동·환경 문제를 각각 구체화하고, 이를 고려한 전체 또는 조건부 견해를 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-18",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 쇼핑 때문에 소비자·근로자·판매자 등에게 생긴 실제 결과를 요구하고, 그 결과가 대체로 좋은지에 대한 평가와 독립 지원을 구분한다."
+  },
+  {
+    "promptId": "prompt-balance-19",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 쇼핑의 구체적인 도움과 피해를 양쪽에서 제시한 뒤 어느 쪽이 더 큰지 판단하고, 영향의 범위·빈도·심각성으로 비교를 설명하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-20",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 쇼핑 전후의 물건 구매·생활·판매자 연결 방식이 대비되며, 현재 변화와 전체 평가가 온라인 쇼핑의 영향 범위에 정확히 머문다."
+  },
+  {
+    "promptId": "prompt-balance-21",
+    "verdict": "PASS",
+    "auditReasonKo": "일상적 스마트폰 사용 이전의 생활 방식과 현재의 대응 행동이 대비되고, 현재 상태와 평가가 매일의 스마트폰 사용으로 생긴 변화에 연결된다."
+  },
+  {
+    "promptId": "prompt-balance-22",
+    "verdict": "PASS",
+    "auditReasonKo": "매일 스마트폰을 사용할 때의 소통·정보·안전 이점과 집중·건강·사생활 문제를 각각 구체화하고, 장단점을 고려한 전체 평가를 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-23",
+    "verdict": "PASS",
+    "auditReasonKo": "일상적 스마트폰 사용 때문에 사람들의 행동·관계·건강 등에 생긴 실제 결과와 그 결과의 전체 가치를 판단하게 하며, 깊이 정보는 별도 단위로 제한한다."
+  },
+  {
+    "promptId": "prompt-balance-24",
+    "verdict": "PASS",
+    "auditReasonKo": "매일의 스마트폰 사용이 준 도움과 피해를 각각 식별하고 어느 쪽이 더 큰지 비교한 뒤 중요성·빈도·지속성 같은 근거로 판단을 설명하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-25",
+    "verdict": "PASS",
+    "auditReasonKo": "스마트폰 보편화 전후의 생활 또는 소통 방식이 각각 식별되고, 현재 방식과 전체 의견이 일상적 스마트폰 사용이 만든 변화에 연결된다."
+  },
+  {
+    "promptId": "prompt-balance-26",
+    "verdict": "CHANGE",
+    "auditReasonKo": "REASON의 현재 조건은 현금 없는 결제를 왜 지지하거나 반대하는지 설명하라고만 하여 '좋기 때문이다' 같은 순환적 평가를 걸러내지 못한다. 구체적인 결제 관련 근거와 전체 견해의 연결을 요구해야 한다.",
+    "replacementSlotContracts": {
+      "REASON": {
+        "semanticRoleEn": "A concrete basis for the learner's overall view of cashless payments.",
+        "satisfiedWhenEn": "The answer gives a specific payment-related consideration, such as convenience, access, security, cost, or reliability, that explains why the learner favors, opposes, or conditionally accepts cashless payments; merely restating that they are good or bad is insufficient.",
+        "semanticRoleKo": "현금 없는 결제에 대한 학습자의 종합 견해를 뒷받침하는 구체적인 근거.",
+        "satisfiedWhenKo": "답변이 편의성, 접근성, 보안, 비용 또는 신뢰성처럼 현금 없는 결제를 찬성하거나 반대하거나 조건부로 받아들이는 이유가 되는 구체적인 결제 관련 고려 사항을 제시하면 충족되며, 단지 좋거나 나쁘다는 판단을 되풀이하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-balance-27",
+    "verdict": "PASS",
+    "auditReasonKo": "현금 결제 중심이던 과거와 현금 없는 현재의 구매 방식이 대비되고, 현재 상태와 의견이 현금 없는 결제의 보급으로 생긴 변화에 명확히 연결된다."
+  },
+  {
+    "promptId": "prompt-balance-28",
+    "verdict": "PASS",
+    "auditReasonKo": "현금 없는 결제로 사람들의 행동·접근성·재정 등에 생긴 구체적 결과를 요구하고, 그 결과가 대체로 좋은지에 대한 판단과 독립 지원 정보를 구분한다."
+  },
+  {
+    "promptId": "prompt-balance-29",
+    "verdict": "PASS",
+    "auditReasonKo": "현금 없는 결제가 사람들에게 주는 구체적인 도움과 불이익을 모두 확인한 뒤 어느 쪽이 더 큰지와 그 영향의 중요성·범위를 비교하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-30",
+    "verdict": "PASS",
+    "auditReasonKo": "현금 없는 결제의 구체적인 장점과 단점이 전체 의견을 형성하는 독립 근거로 정의되고, 두 측면을 고려한 최종 평가까지 분명히 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-31",
+    "verdict": "PASS",
+    "auditReasonKo": "숏폼 영상의 구체적인 긍정 효과와 해로운 효과를 구분하고, 두 측면을 고려한 전체 견해를 요구해 단순히 재미있다는 말만으로 장점을 채울 수 없다."
+  },
+  {
+    "promptId": "prompt-balance-32",
+    "verdict": "PASS",
+    "auditReasonKo": "숏폼 영상 이전의 미디어 이용·주의 습관과 현재 행동이 대비되고, 현재 상태와 평가는 숏폼의 길이·피드·공유 방식이 만든 변화에 연결된다."
+  },
+  {
+    "promptId": "prompt-balance-33",
+    "verdict": "PASS",
+    "auditReasonKo": "숏폼 영상이 사람들의 주의·습관·지식 등에 미친 구체적인 주 영향과 그 가치 판단이 필수이며, 깊이용 긍정·부정 효과는 주 영향과 독립되어야 한다."
+  },
+  {
+    "promptId": "prompt-balance-34",
+    "verdict": "PASS",
+    "auditReasonKo": "숏폼 영상이 사람들에게 주는 도움과 피해를 구체적으로 나누고 어느 쪽이 더 큰지 판단한 뒤 영향의 중요성이나 보편성으로 그 비교를 설명하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-35",
+    "verdict": "PASS",
+    "auditReasonKo": "숏폼 영상의 구체적 장점과 단점이 전체 의견에 반영되어야 하고, 양쪽을 나열하는 데 그치지 않은 최종 평가를 요구하도록 계약이 정렬되어 있다."
+  },
+  {
+    "promptId": "prompt-balance-36",
+    "verdict": "PASS",
+    "auditReasonKo": "음식 배달 앱이 고객·음식점 등에 주는 구체적 이점과 비용·위험을 구분하고, 막연한 편리함 대신 양쪽 효과를 고려한 전체 판단을 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-37",
+    "verdict": "PASS",
+    "auditReasonKo": "배달 앱 이전의 식사 마련 방식과 현재의 앱 기반 행동이 대비되며, 현재 상태와 평가가 음식 배달 앱의 구체적 작동 방식에 연결된다."
+  },
+  {
+    "promptId": "prompt-balance-38",
+    "verdict": "PASS",
+    "auditReasonKo": "음식 배달 앱이 식사·지출·시간·노동 등에 만든 실제 결과와 그 결과의 전체 평가를 요구하고, 깊이용 효과는 이미 제시한 주 영향과 구별한다."
+  },
+  {
+    "promptId": "prompt-balance-39",
+    "verdict": "PASS",
+    "auditReasonKo": "배달 앱이 고객·노동자·음식점 등에 주는 도움과 부담을 각각 식별한 뒤 어느 쪽이 더 큰지 영향의 범위와 심각성으로 비교하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-40",
+    "verdict": "PASS",
+    "auditReasonKo": "음식 배달 앱의 장점과 단점이 전체 의견을 형성하는 구체적 근거로 정의되고, 두 측면을 함께 고려한 최종 견해를 별도로 확인한다."
+  },
+  {
+    "promptId": "prompt-balance-41",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 리뷰가 소비자·사업체에 주는 구체적 이점과 신뢰성·조작 위험을 구분하고, 단순 유용성 언급을 넘어 장단점을 고려한 전체 판단을 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-42",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 리뷰 이전의 선택·정보 공유 방식과 현재의 리뷰 중심 행동이 대비되며, 현재 상태와 평가는 리뷰 접근이 만든 변화에 연결된다."
+  },
+  {
+    "promptId": "prompt-balance-43",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 리뷰가 결정·신뢰·지출·평판에 미친 구체적인 주 영향과 전체 가치 판단을 요구하고, 깊이용 장단점은 주 영향과 독립되도록 정의한다."
+  },
+  {
+    "promptId": "prompt-balance-44",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 리뷰가 사람들에게 주는 도움과 피해를 각각 구체화하고 어느 쪽이 더 큰지 판단한 뒤 신뢰성·빈도·범위로 비교를 설명하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-45",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 리뷰의 구체적인 장점과 단점이 최종 의견에 반영되어야 하며, 해결되지 않은 양쪽 목록이 아니라 분명한 전체 평가를 요구한다."
+  },
+  {
+    "promptId": "prompt-balance-46",
+    "verdict": "PASS",
+    "auditReasonKo": "웨어러블 기기의 정보·모니터링 이점과 비용·사생활·부정확성 위험을 구체적으로 나누고, 막연한 유용성 언급을 전체 견해로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-balance-47",
+    "verdict": "PASS",
+    "auditReasonKo": "웨어러블 이전의 모니터링·접근·활동 방식과 현재 상태가 대비되고, 현재 행동과 평가는 웨어러블 기능이 만든 일상 변화에 연결된다."
+  },
+  {
+    "promptId": "prompt-balance-48",
+    "verdict": "PASS",
+    "auditReasonKo": "웨어러블 기기가 건강 인식·행동·안전 등에 미친 구체적인 주 영향과 전체 가치 판단을 요구하며, 추가 장단점은 이미 제시한 영향과 독립되어야 한다."
+  },
+  {
+    "promptId": "prompt-balance-49",
+    "verdict": "PASS",
+    "auditReasonKo": "웨어러블 기기의 구체적인 도움과 부담·위험을 양쪽에서 제시하고, 어느 쪽이 더 큰지 영향의 중요성·가능성·심각성으로 비교하게 한다."
+  },
+  {
+    "promptId": "prompt-balance-50",
+    "verdict": "PASS",
+    "auditReasonKo": "웨어러블 기기의 구체적 장점과 단점이 전체 평가를 형성하는 별도 관계로 정의되고, 양쪽을 고려한 분명한 최종 견해를 요구한다."
+  },
+  {
+    "promptId": "prompt-c-1",
+    "verdict": "PASS",
+    "auditReasonKo": "기술 변화 전후의 관계 형성·유지 방식이 서로 대비되고, 현재 관계 방식과 긍정성 판단이 기술에 의해 생긴 변화로 명확히 연결된다."
+  },
+  {
+    "promptId": "prompt-c-2",
+    "verdict": "PASS",
+    "auditReasonKo": "성공한 기업이 맡아야 할 식별 가능한 사회적 의무를 OPINION으로 요구해 단순히 책임감이 있어야 한다는 말은 배제하며, 한 가지 독립 근거나 사례로 깊이를 확보한다."
+  },
+  {
+    "promptId": "prompt-c-3",
+    "verdict": "PASS",
+    "auditReasonKo": "같은 사안에 대한 이전 신념과 현재 신념이 각각 구체적으로 식별되고, 경험·증거·사람·깨달음이 그 변화의 원인으로 인과 연결되어야 한다."
+  },
+  {
+    "promptId": "prompt-general-01",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 쓰는 알아볼 수 있는 앱의 정체와 유용한 특성을 DETAIL로 함께 요구하고, 그 앱이 개인적으로 의미 있는 구체적 이유를 별도 REASON으로 판정한다."
+  },
+  {
+    "promptId": "prompt-general-02",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 쓰는 앱의 정체와 눈에 띄는 구체적 특성이 핵심 DETAIL에 포함되고, 이유·사용 행동·사례 중 하나가 독립 깊이 정보가 되도록 정의되어 있다."
+  },
+  {
+    "promptId": "prompt-general-03",
+    "verdict": "PASS",
+    "auditReasonKo": "소개하는 앱의 정체와 기능, 다른 사람에게 추천한다는 판단, 그 추천을 정당화하는 구체적 이점이 세 개의 필수 관계로 정확히 구분된다."
+  },
+  {
+    "promptId": "prompt-general-04",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 쓰는 앱의 특별한 구체적 특징과 그 앱이 기억에 남는 개인적 이유가 분리되어, 단순히 특별하거나 좋다는 평가만으로는 충족되지 않는다."
+  },
+  {
+    "promptId": "prompt-general-05",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 사용하는 앱의 정체와 기능을 구체적으로 설명하고, 그 앱이 학습자의 삶에서 맡는 개인적 역할이나 가치를 별도 이유로 제시하게 한다."
+  },
+  {
+    "promptId": "prompt-general-06",
+    "verdict": "PASS",
+    "auditReasonKo": "PLACE가 단순 장소 언급이 아니라 학습자의 동네에 있으며 좋아하는 특정 장소라는 관계를 요구하고, 장소 묘사와 개인적 의미도 각각 필수로 구분한다."
+  },
+  {
+    "promptId": "prompt-general-07",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자의 동네에서 좋아하는 특정 장소라는 PLACE 관계와 그 장소에서 눈에 띄는 구체적 특성이 각각 입증되어야 하므로 막연한 좋은 장소는 통과하지 않는다."
+  },
+  {
+    "promptId": "prompt-general-08",
+    "verdict": "PASS",
+    "auditReasonKo": "PLACE가 학습자가 좋아하며 실제 추천 대상으로 삼는 동네 장소로 한정되고, 추천 판단과 이를 정당화하는 구체적 이유가 별도로 요구된다."
+  },
+  {
+    "promptId": "prompt-general-09",
+    "verdict": "CHANGE",
+    "auditReasonKo": "PLACE의 역할은 학습자가 좋아하고 기억하는 동네 장소이지만 현재 충족 조건은 장소를 개인 경험에 연결하기만 하면 되어, 싫어하거나 단지 관련만 있는 장소도 통과할 수 있다.",
+    "replacementSlotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular place in the learner's town that the learner likes and remembers.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable local place and presents it as the place the learner likes and remembers; merely mentioning a local place or an unrelated personal experience does not satisfy the role.",
+        "semanticRoleKo": "학습자가 사는 지역에서 좋아하고 기억하는 특정 장소.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 지역 장소를 식별하거나 분명히 위치시키고 그곳을 학습자가 좋아하며 기억하는 장소로 나타내면 충족된다. 지역 장소를 단순히 언급하거나 무관한 개인 경험과 연결하는 것만으로는 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-10",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자의 동네에서 개인적으로 좋아하는 특정 장소라는 PLACE 관계가 분명하고, 장소의 구체적 묘사와 삶에서 중요한 이유도 각각 독립 필수 내용으로 정의된다."
+  },
+  {
+    "promptId": "prompt-general-11",
+    "verdict": "PASS",
+    "auditReasonKo": "영향을 준 교사나 멘토의 정체와 관계·특성을 설명하고 그 사람이 중요한 구체적 이유를 요구하며, 실제 영향 결과는 질문 전제를 반복하지 않는 선택 정보로 적절히 남겨 두었다."
+  },
+  {
+    "promptId": "prompt-general-1101",
+    "verdict": "CHANGE",
+    "auditReasonKo": "PLACE는 동네 축제가 실제로 열리는 행사 장소여야 하지만 현재 조건은 축제와 관련된 장소이면 충분하다고 해, 집결지나 광고 장소처럼 개최지가 아닌 곳도 통과할 수 있다.",
+    "replacementSlotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The local setting where the neighborhood festival takes place.",
+        "satisfiedWhenEn": "The answer identifies a recognizable venue, street, park, district, or route and clearly presents it as a place where the described neighborhood festival is held or takes place; merely mentioning a place associated with the festival is insufficient.",
+        "semanticRoleKo": "그 동네 축제가 실제로 열리는 지역 장소나 환경.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 행사장, 거리, 공원, 구역 또는 이동 경로를 밝히고 그곳을 설명한 동네 축제가 열리는 장소로 분명히 연결하면 충족된다. 축제와 관련된 장소를 단순히 언급하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1102",
+    "verdict": "PASS",
+    "auditReasonKo": "매일 쓰는 작은 책상 물건의 정체와 구체적 특징을 밝히고, 기억·준 사람·습관·업무 역할을 통한 개인적 의미를 별도 이유로 설명하게 한다."
+  },
+  {
+    "promptId": "prompt-general-1103",
+    "verdict": "PASS",
+    "auditReasonKo": "잘 아는 버스 노선의 정체와 눈에 띄는 특성, 기억에 남는 구체적 이유가 정확히 구분되며, PLACE도 노선의 출발지·목적지·정류장 등 지리 관계로 한정된다."
+  },
+  {
+    "promptId": "prompt-general-1104",
+    "verdict": "PASS",
+    "auditReasonKo": "아직 간직하는 선물의 정체와 유래·특성을 구체적으로 밝히고, 관계·기억·상징을 통한 개인적 중요성을 설명하게 하며 시간은 나이·삶의 시기·행사도 허용한다."
+  },
+  {
+    "promptId": "prompt-general-1105",
+    "verdict": "PASS",
+    "auditReasonKo": "PLACE가 방 안의 특정 구석을 식별하면서 학습자가 좋아한다는 관계까지 요구하고, 공간의 특징과 개인적으로 의미 있는 이유가 각각 별도 필수 슬롯으로 구성된다."
+  },
+  {
+    "promptId": "prompt-general-1106",
+    "verdict": "CHANGE",
+    "auditReasonKo": "PLACE의 역할은 학습자가 건너기를 좋아하는 지역 다리나 산책로인데 현재 조건은 단지 그곳을 건넌 경험과 연결하면 충족되어, 좋아한다는 선택 관계를 입증하지 못한다.",
+    "replacementSlotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular local bridge or walkway the learner likes crossing.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable local bridge or walkway and presents it as one the learner likes crossing; merely naming a bridge or linking it to any crossing experience is insufficient.",
+        "semanticRoleKo": "학습자가 건너기를 좋아하는 특정 지역 다리나 산책로.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 지역 다리나 산책로를 식별하거나 분명히 위치시키고 그곳을 학습자가 건너기를 좋아하는 장소로 나타내면 충족된다. 다리를 단순히 언급하거나 임의의 통행 경험과 연결하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1107",
+    "verdict": "PASS",
+    "auditReasonKo": "공부할 때 쓰는 플레이리스트의 음악·분위기·구성을 구체적으로 설명하고, 공부에서의 역할이나 개인적 연결을 통해 중요한 이유를 밝히도록 되어 있다."
+  },
+  {
+    "promptId": "prompt-general-1108",
+    "verdict": "PASS",
+    "auditReasonKo": "스스로 요리법을 배운 알아볼 수 있는 음식과 그 특성을 제시하고, 성취·자립·관계·전통을 통한 개인적 의미를 설명하며 추가 행동은 스스로 배웠다는 전제와 구별한다."
+  },
+  {
+    "promptId": "prompt-general-1109",
+    "verdict": "PASS",
+    "auditReasonKo": "PLACE가 알아볼 수 있는 특정 카페와 학습자의 반복 방문 관계를 요구하고, 카페의 두드러진 특성과 기억에 남는 이유도 각각 독립 필수 내용으로 정의한다."
+  },
+  {
+    "promptId": "prompt-general-1110",
+    "verdict": "PASS",
+    "auditReasonKo": "특정 가족사진을 구별할 수 있는 사람·장소·사건 등의 내용과 그 사진이 중요한 구체적 이유가 분리되며, 시간은 나이·삶의 단계·행사도 자연스럽게 허용한다."
+  },
+  {
+    "promptId": "prompt-general-1111",
+    "verdict": "PASS",
+    "auditReasonKo": "의지하는 휴대폰 기능의 정체와 작동 방식을 구체적으로 밝히고, 필요·책임·접근성·안전과 연결된 중요성을 설명하며 사용 행동과 결과는 독립 깊이 정보로 구분한다."
+  },
+  {
+    "promptId": "prompt-general-1112",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 가지고 다니는 노트의 정체와 외관·내용·구성을 설명하고, 목적·기억·창작 역할을 통한 개인적 중요성을 별도로 요구하며 시간 조건도 상황과 빈도를 허용한다."
+  },
+  {
+    "promptId": "prompt-general-1113",
+    "verdict": "PASS",
+    "auditReasonKo": "책상 위 물건의 정체와 특성, 개인적 중요성이 분리되어 있고, PLACE는 단순히 책상 위라는 전제를 반복하지 않고 책상 안의 구체적 배치 관계를 요구한다."
+  },
+  {
+    "promptId": "prompt-general-1114",
+    "verdict": "CHANGE",
+    "auditReasonKo": "PLACE는 봉사 행사가 실제로 진행된 환경이어야 하지만 현재 조건은 행사와 연결된 장소만 요구해, 수혜 기관이나 관련 동네처럼 행사 개최지가 아닌 곳도 충족할 수 있다.",
+    "replacementSlotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The physical or online setting where the volunteer event took place.",
+        "satisfiedWhenEn": "The answer identifies a recognizable venue, neighborhood site, institution, outdoor area, community setting, or online setting and clearly connects it to where the described volunteer event was held or where the learner participated; merely mentioning a place associated with the event is insufficient.",
+        "semanticRoleKo": "그 봉사 행사가 실제로 진행된 물리적 또는 온라인 장소나 환경.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 행사장, 동네 장소, 기관, 야외 공간, 공동체 환경 또는 온라인 환경을 밝히고 그곳을 설명한 봉사 행사가 열렸거나 학습자가 참여한 장소로 분명히 연결하면 충족된다. 행사와 관련된 장소를 단순히 언급하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1115",
+    "verdict": "PASS",
+    "auditReasonKo": "이야기하기를 즐기는 주제의 정체와 구체적 범위를 밝히고, 그 주제가 오랫동안 중요한 이유를 가치·경험·정체성 등과 연결하며 추가 사례나 활동은 독립 정보를 더한다."
+  },
+  {
+    "promptId": "prompt-general-1116",
+    "verdict": "PASS",
+    "auditReasonKo": "아직 입는 오래된 재킷이나 코트의 정체와 내력을 구체적으로 설명하고, 기억·관계·기능·정체성을 통한 중요성을 별도로 요구하며 시점은 계절과 삶의 시기도 허용한다."
+  },
+  {
+    "promptId": "prompt-general-1117",
+    "verdict": "CHANGE",
+    "auditReasonKo": "PLACE의 역할은 학습자가 방문하기를 좋아하는 특정 시장 가판대이지만 현재 조건은 가판대를 임의의 방문과 연결하기만 하므로, 좋아한다는 선택 관계가 증거로 보장되지 않는다.",
+    "replacementSlotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The particular market stall the learner likes visiting.",
+        "satisfiedWhenEn": "The answer identifies or clearly locates a recognizable market stall and presents it as one the learner likes visiting; merely naming a stall or linking it to any visit is insufficient.",
+        "semanticRoleKo": "학습자가 방문하기를 좋아하는 특정 시장 가판대.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 시장 가판대를 식별하거나 분명히 위치시키고 그곳을 학습자가 방문하기를 좋아하는 곳으로 나타내면 충족된다. 가판대를 단순히 언급하거나 임의의 방문과 연결하는 것만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1118",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 비 오는 날 소리의 원천과 음향적 특성을 구체적으로 식별하고, 기억에 남은 이유를 사건·장소·감정과 연결하며 PLACE도 그 소리를 들었거나 연상하는 환경으로 한정한다."
+  },
+  {
+    "promptId": "prompt-general-1119",
+    "verdict": "PASS",
+    "auditReasonKo": "창문에서 본 기억 속 장면을 구별할 수 있는 시각 정보와 그 풍경이 중요한 구체적 이유가 분리되며, PLACE는 창문의 위치나 실제로 보인 환경 관계를 보충한다."
+  },
+  {
+    "promptId": "prompt-general-1120",
+    "verdict": "CHANGE",
+    "auditReasonKo": "PLACE는 지역 수업이 실제로 열린 물리적 또는 온라인 환경이어야 하지만 현재 조건은 수업과 연결된 장소이면 충분해, 광고나 운영 기관처럼 수업 장소가 아닌 곳도 통과할 수 있다.",
+    "replacementSlotContracts": {
+      "PLACE": {
+        "semanticRoleEn": "The physical or online community setting where the class took place.",
+        "satisfiedWhenEn": "The answer identifies a recognizable community center, library, school, workshop, neighborhood venue, online community setting, or other location and clearly presents it as where the described class was held or attended; merely mentioning a place associated with the class is insufficient.",
+        "semanticRoleKo": "그 지역 수업이 실제로 열린 물리적 또는 온라인 공동체 장소나 환경.",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 주민 센터, 도서관, 학교, 작업장, 동네 행사장, 온라인 공동체 환경 또는 다른 장소를 밝히고 그곳을 설명한 수업이 열렸거나 학습자가 참여한 곳으로 분명히 연결하면 충족된다. 수업과 관련된 장소를 단순히 언급하는 것만으로는 부족하다."
+      }
+    }
+  }
+]

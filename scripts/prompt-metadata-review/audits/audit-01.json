@@ -1,0 +1,138 @@
+{
+  "auditedParts": ["01", "02"],
+  "auditedCount": 241,
+  "issues": [
+    {
+      "promptId": "prompt-general-11",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "optionalSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["DETAIL", "REASON"],
+        "optionalSlots": ["RESULT", "EXAMPLE", "ACTION", "FEELING", "SPECIFIC_TIME", "PLACE"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The teacher or mentor's influence is part of the question's selection premise, not a separate result the learner is directly asked to state. A description of the person and the requested reason for that person's importance are the required content; the specific influence remains a highly relevant optional result."
+    },
+    {
+      "promptId": "prompt-general-1114",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "optionalSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["DETAIL", "REASON"],
+        "optionalSlots": ["ACTION", "RESULT", "FEELING", "EXAMPLE", "PLACE", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Joining the volunteer event is already supplied as the premise and does not directly require the learner to describe an action. Once ACTION is made optional, one independent action, result, feeling, example, place, or time detail is appropriate for this broad C-level event reflection."
+    },
+    {
+      "promptId": "prompt-goal-1102",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["PLAN"],
+        "optionalSlots": ["SPECIFIC_TIME", "PROBLEM", "RESULT", "REASON", "PLACE"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Keeping a daily journal is supplied by the question, so the learner is asked only for the plan and consistency method rather than a restatement of that goal. With one required plan slot at difficulty B, one independent supporting detail is needed."
+    },
+    {
+      "promptId": "prompt-goal-1105",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["PLAN"],
+        "optionalSlots": ["PLACE", "PROBLEM", "SPECIFIC_TIME", "RESULT", "FEELING"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Speaking more confidently in meetings is the question-supplied target, not content the learner must independently provide. The response must give the plan for staying consistent, and one separate setting, obstacle, timing detail, result, or feeling provides appropriate B-level depth."
+    },
+    {
+      "promptId": "prompt-goal-1108",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["PLAN"],
+        "optionalSlots": ["SPECIFIC_TIME", "PLACE", "PROBLEM", "RESULT", "REASON"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Preparing weekly meals in advance is already fixed by the prompt. Only the learner's plan and consistency method are required, so GOAL should be removed and one independent timing, place, obstacle, result, or reason should supply the expected B-level development."
+    },
+    {
+      "promptId": "prompt-goal-1111",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["PLAN"],
+        "optionalSlots": ["DETAIL", "PROBLEM", "RESULT", "REASON", "EXAMPLE"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Improving the note-taking system is supplied as the purpose of the requested plan, so requiring GOAL makes the learner restate the premise. PLAN captures the direct obligation, and one independent system detail, obstacle, result, reason, or example is appropriate at difficulty B."
+    },
+    {
+      "promptId": "prompt-goal-1114",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["PLAN"],
+        "optionalSlots": ["PLACE", "EXAMPLE", "PROBLEM", "RESULT", "REASON"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "The question already states the target of asking clearer questions in class. The learner must provide the plan for doing so consistently, not repeat that target as a goal, and one independent setting, example, obstacle, result, or reason is needed for B-level depth."
+    },
+    {
+      "promptId": "prompt-goal-1117",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["PLAN"],
+        "optionalSlots": ["SPECIFIC_TIME", "PROBLEM", "RESULT", "REASON", "FEELING"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Building a habit of reviewing the week is provided by the question and should not be required again as GOAL. The requested consistency plan is the sole direct slot, so one independent timing detail, obstacle, result, reason, or feeling is appropriate additional depth."
+    },
+    {
+      "promptId": "prompt-goal-1120",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["PLAN"],
+        "optionalSlots": ["EXAMPLE", "PROBLEM", "RESULT", "REASON", "PLACE"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Learning simple repair skills is the supplied purpose of the plan rather than a learner-provided goal. PLAN captures what the prompt asks the learner to explain, and one independent skill example, obstacle, result, reason, or practice place is needed to develop the B-level answer."
+    },
+    {
+      "promptId": "prompt-goal-1123",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["PLAN"],
+        "optionalSlots": ["PROBLEM", "EXAMPLE", "RESULT", "REASON", "FEELING"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Becoming a more patient listener is already stated as the target, so GOAL incorrectly requires repetition of the premise. The learner must explain a consistency plan, with one independent obstacle, example, result, reason, or feeling added for suitable B-level depth."
+    },
+    {
+      "promptId": "prompt-goal-1126",
+      "severity": "ERROR",
+      "fields": ["requiredSlots", "minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "GOAL_PLAN",
+        "requiredSlots": ["PLAN"],
+        "optionalSlots": ["EXAMPLE", "PROBLEM", "RESULT", "SPECIFIC_TIME", "REASON"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "Making more realistic to-do lists is supplied by the question, so it should not be a required goal restatement. The direct obligation is the consistency plan, and one independent example, obstacle, result, timing detail, or reason provides the additional depth normally needed at difficulty B."
+    }
+  ]
+}

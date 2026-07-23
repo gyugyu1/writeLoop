@@ -1,0 +1,1892 @@
+[
+  {
+    "promptId": "prompt-routine-2119",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for a preferred weekend-at-home activity and explicitly asks why; those two required ideas already provide adequate beginner-level depth."
+  },
+  {
+    "promptId": "prompt-routine-2120",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording asks what the learner usually does during an especially free weekend; one context or explanation should support the habitual action."
+  },
+  {
+    "promptId": "prompt-routine-2121",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name an action used to simplify phone time and explain why they use it, so no extra depth slot is necessary."
+  },
+  {
+    "promptId": "prompt-routine-2122",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "REASON",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "This focused difficulty-I prompt asks for one small helpful phone habit, so the habit action itself is an adequate answer without a mandatory optional detail."
+  },
+  {
+    "promptId": "prompt-routine-2123",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Opening the calendar app supplies a narrow situation, and one usual app action fully answers this difficulty-I question."
+  },
+  {
+    "promptId": "prompt-routine-2124",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the frequently used phone feature and explain why it is used; the selected feature and reason sufficiently answer this simple prompt."
+  },
+  {
+    "promptId": "prompt-routine-2125",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Rushed phone time is supplied by the question, and one concrete way to stay focused adequately answers this focused difficulty-I task."
+  },
+  {
+    "promptId": "prompt-routine-2126",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "DETAIL",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Checking a map app is a tightly scoped situation, so one usual action is sufficient at difficulty I."
+  },
+  {
+    "promptId": "prompt-routine-2127",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe what they habitually prepare ahead for phone use and explain why; the preparation action and reason are sufficient at this level."
+  },
+  {
+    "promptId": "prompt-routine-2128",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "FEELING",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for the learner's usual feeling during phone use and the reason for it, creating two complete required units."
+  },
+  {
+    "promptId": "prompt-routine-2129",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The low battery is already the stated problem, and one usual response is a complete beginner-level solution."
+  },
+  {
+    "promptId": "prompt-routine-2130",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only needs to identify one desired improvement to their phone habits, so the requested goal is adequate for this simple personal question."
+  },
+  {
+    "promptId": "prompt-routine-2131",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "SPECIFIC_TIME",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for one helpful phone habit, and naming that habit adequately completes the focused difficulty-I task."
+  },
+  {
+    "promptId": "prompt-routine-2132",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Reviewing simple notes provides a narrow context, and one usual review action is sufficient for this difficulty-I prompt."
+  },
+  {
+    "promptId": "prompt-routine-2133",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "EXAMPLE"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner is asked to tell about a recent occasion, so one action, result, feeling, time, or detail is needed beyond merely identifying an instance."
+  },
+  {
+    "promptId": "prompt-routine-2134",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A helpful way of using the phone and the explicit reason for using it are both required, making additional support optional."
+  },
+  {
+    "promptId": "prompt-routine-2135",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The desired memory outcome is supplied, and one usual action for remembering words fully answers this focused difficulty-I question."
+  },
+  {
+    "promptId": "prompt-routine-22",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question seeks a usual action at the start of Saturday; at advanced-beginner level, one independent timing, sequence, place, reason, or result detail should accompany it."
+  },
+  {
+    "promptId": "prompt-routine-23",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Describing a Saturday-start routine requires at least one habitual action, and one additional action or context detail is needed for an actual description."
+  },
+  {
+    "promptId": "prompt-routine-24",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner is asked what they often do at the beginning of Saturday; one supporting detail prevents the answer from stopping at a single activity label."
+  },
+  {
+    "promptId": "prompt-routine-2401",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must say what the learner checks when weather changes and explain why, so the checking action and reason fulfill the prompt."
+  },
+  {
+    "promptId": "prompt-routine-2402",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "REASON",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "One small habit for changing weather is the complete requested content, so this focused difficulty-I prompt should not require extra support."
+  },
+  {
+    "promptId": "prompt-routine-2403",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what preparation action happens when the weather changes and explicitly requests its reason; both required clauses supply enough depth."
+  },
+  {
+    "promptId": "prompt-routine-2404",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "DETAIL",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Rain before departure is the supplied complication, and one usual response adequately solves the narrow difficulty-I task."
+  },
+  {
+    "promptId": "prompt-routine-2405",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The sudden weather change and calming goal are supplied, so one concrete calming response is sufficient at difficulty I."
+  },
+  {
+    "promptId": "prompt-routine-2406",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what the learner habitually prepares ahead for rainy or cold days and why, so the preparation action and reason complete the response."
+  },
+  {
+    "promptId": "prompt-routine-2407",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "FEELING",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly requests the usual feeling caused by changing weather and an explanation for it, so those two units are sufficient."
+  },
+  {
+    "promptId": "prompt-routine-2408",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Only one desired improvement concerning rainy or cold days is requested; naming that personal goal adequately answers this beginner prompt."
+  },
+  {
+    "promptId": "prompt-routine-2409",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "DETAIL",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for one comfort action in a specific weather setting, which is a complete difficulty-I answer without another required detail."
+  },
+  {
+    "promptId": "prompt-routine-2410",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "DETAIL",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A sudden weather change is the supplied problem, and one usual response is sufficient for this focused beginner question."
+  },
+  {
+    "promptId": "prompt-routine-2411",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "EXAMPLE"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Telling about a recent rainy or cold day requires one independent event detail beyond simply identifying the occasion."
+  },
+  {
+    "promptId": "prompt-routine-2412",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name the item brought and explain why; the item is a selected thing, not an action, and result is more useful than timing as the next optional support."
+  },
+  {
+    "promptId": "prompt-routine-2413",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "DETAIL",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The first usual response to a weather change and the reason for doing it are explicitly requested, so optional follow-up or outcome details are not mandatory."
+  },
+  {
+    "promptId": "prompt-routine-2414",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "One end-of-day action that creates the supplied settled feeling fully answers this narrow difficulty-I prompt."
+  },
+  {
+    "promptId": "prompt-routine-2415",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires identifying what the learner avoids during weather changes and why, yielding both an avoidance action and its reason."
+  },
+  {
+    "promptId": "prompt-routine-2416",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state the habitual preparation action before a quick errand and separately explain why it is done, which fully answers the prompt."
+  },
+  {
+    "promptId": "prompt-routine-2417",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "EXAMPLE",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The task asks for one small helpful errand habit, so that action alone is adequate at difficulty I."
+  },
+  {
+    "promptId": "prompt-routine-2418",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "DETAIL",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The faster-errand outcome is supplied by the question, and one action used to achieve it is a complete beginner response."
+  },
+  {
+    "promptId": "prompt-routine-2419",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "DETAIL",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The rushed errand is already supplied, and the first response to it is sufficient for this focused difficulty-I solution prompt."
+  },
+  {
+    "promptId": "prompt-routine-2420",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks what the learner regularly prepares ahead for an errand or store stop and why, requiring an action and its reason rather than a future plan."
+  },
+  {
+    "promptId": "prompt-routine-2421",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "REASON",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Needing only one or two things is a narrow supplied condition, so one usual action adequately answers this difficulty-I question."
+  },
+  {
+    "promptId": "prompt-routine-2422",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "FEELING",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The usual feeling during a quick errand and the reason for that feeling are both directly requested and provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-routine-2423",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for one desired improvement to a quick errand or store stop, so a clearly stated goal alone satisfies the simple request."
+  },
+  {
+    "promptId": "prompt-routine-2424",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for whatever factor helps, which may be an aid, list, or other feature rather than an action; that concrete factor belongs in DETAIL."
+  },
+  {
+    "promptId": "prompt-routine-2425",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "EXAMPLE"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The instruction to tell about a recent errand calls for one independent action, result, time, feeling, or detail beyond identifying an example."
+  },
+  {
+    "promptId": "prompt-routine-2426",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked for their usual preparation action before a quick errand and the reason for it, so no broader plan structure is required."
+  },
+  {
+    "promptId": "prompt-routine-2427",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A store stop on the way home is a specific setting, and one usual action completes the difficulty-I task."
+  },
+  {
+    "promptId": "prompt-routine-2428",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "DETAIL",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The first usual errand or store-stop action and the reason for doing it are explicitly required, making further sequence details optional."
+  },
+  {
+    "promptId": "prompt-routine-2429",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for one action in a narrowly defined transition after an errand, so extra support should remain optional at difficulty I."
+  },
+  {
+    "promptId": "prompt-routine-2430",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Making a short shopping list supplies a focused context, and one usual list-making action is enough for a beginner answer."
+  },
+  {
+    "promptId": "prompt-routine-2431",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "CHOICE",
+      "DETAIL",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks how the learner makes an ordering decision at a cafe or bakery and why that method is used; both the process and reason are mandatory."
+  },
+  {
+    "promptId": "prompt-routine-2432",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "EXAMPLE",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "One small helpful cafe or bakery habit is the full requested content, so this difficulty-I item should not force another detail."
+  },
+  {
+    "promptId": "prompt-routine-2433",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "DETAIL",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name the first cafe or bakery action and explain why it comes first, which supplies enough depth without another required detail."
+  },
+  {
+    "promptId": "prompt-routine-2434",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "DETAIL",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The busy venue is the supplied challenge, and one first response adequately answers this focused difficulty-I problem-solution question."
+  },
+  {
+    "promptId": "prompt-routine-2435",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe what they habitually prepare ahead for a cafe or bakery visit and why, which calls for an action and reason rather than a future plan."
+  },
+  {
+    "promptId": "prompt-routine-2436",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "An afternoon bakery stop is a specific context, and one usual action is an adequate difficulty-I response."
+  },
+  {
+    "promptId": "prompt-routine-2437",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "FEELING",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe the usual feeling during a cafe or bakery visit and explain why, so the two direct obligations provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-routine-2438",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requests one desired improvement to a cafe or bakery visit; the improvement goal itself is adequate for this simple personal task."
+  },
+  {
+    "promptId": "prompt-routine-2439",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify an aspect they like about cafe or bakery visits and explain why, making the preferred aspect and reason sufficient."
+  },
+  {
+    "promptId": "prompt-routine-2440",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "EXAMPLE"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "A response that tells about a recent cafe or bakery visit needs one independent descriptive unit beyond merely naming the occasion."
+  },
+  {
+    "promptId": "prompt-routine-2441",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "EXAMPLE",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The usual cafe or bakery order is a selected choice, and the question explicitly asks why the learner likes it; these two units fully answer the prompt."
+  },
+  {
+    "promptId": "prompt-routine-2442",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "DETAIL",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The first usual action on entering a cafe or bakery and its reason are both literal obligations, leaving later actions or outcomes optional."
+  },
+  {
+    "promptId": "prompt-routine-2443",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "CHOICE",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The after-work-or-class bakery stop is narrowly specified, so one usual action sufficiently answers the beginner question."
+  },
+  {
+    "promptId": "prompt-routine-2444",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "One action before leaving the venue directly and adequately answers this narrow difficulty-I prompt."
+  },
+  {
+    "promptId": "prompt-routine-2445",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify something they avoid during cafe or bakery visits and explain why, satisfying both requested clauses."
+  },
+  {
+    "promptId": "prompt-routine-2446",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what the learner regularly prepares before a walk or light exercise and why, so the required structure is a routine action plus its reason."
+  },
+  {
+    "promptId": "prompt-routine-2447",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "EXAMPLE",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked for one small helpful walking or exercise habit, which is sufficient by itself at difficulty I."
+  },
+  {
+    "promptId": "prompt-routine-2448",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state the habitual preparation action before a walk or light exercise and explain why it is done; these two obligations are sufficient."
+  },
+  {
+    "promptId": "prompt-routine-2449",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Feeling rushed is supplied as the problem, and one way to slow down is a complete solution for this difficulty-I task."
+  },
+  {
+    "promptId": "prompt-routine-2450",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks what the learner habitually prepares ahead for walking or light exercise and why, requiring an action and reason rather than a future intention."
+  },
+  {
+    "promptId": "prompt-routine-2451",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Wanting to stretch after sitting is a focused condition, and one usual stretching action fully answers the difficulty-I question."
+  },
+  {
+    "promptId": "prompt-routine-2452",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "FEELING",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe a usual feeling during walking or light exercise and explain its cause, providing two complete required elements."
+  },
+  {
+    "promptId": "prompt-routine-2453",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Only one desired improvement to walking or light exercise is requested, so a specific goal is enough for the beginner-level answer."
+  },
+  {
+    "promptId": "prompt-routine-2454",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only needs to identify the part of walking or light exercise that has the supplied feel-good effect; this is a focused factual description, not a preference."
+  },
+  {
+    "promptId": "prompt-routine-2455",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "EXAMPLE"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Telling about a recent walk or exercise occasion requires one independent descriptive detail beyond identifying the example."
+  },
+  {
+    "promptId": "prompt-routine-2456",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "DETAIL",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A short walk in a park is narrowly scoped, so one usual action is sufficient for this difficulty-I answer."
+  },
+  {
+    "promptId": "prompt-routine-2457",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify something brought or worn for a walk and explain why it is chosen, so the item choice and reason complete the answer."
+  },
+  {
+    "promptId": "prompt-routine-2458",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "DETAIL",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The first usual walking or exercise action and the reason it comes first are directly requested, making further sequence or effect details optional."
+  },
+  {
+    "promptId": "prompt-routine-2459",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "REASON",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The ten-minute limit makes the task specific, and one exercise action adequately answers the beginner prompt."
+  },
+  {
+    "promptId": "prompt-routine-2460",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "DETAIL",
+      "REASON",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly requests one post-exercise cool-down action, which is sufficient at difficulty I."
+  },
+  {
+    "promptId": "prompt-routine-2461",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The easier night routine is the supplied purpose, and one before-bed action fully answers this focused difficulty-I task."
+  },
+  {
+    "promptId": "prompt-routine-2462",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "REASON",
+      "SPECIFIC_TIME",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "One small helpful bedtime habit is exactly what the difficulty-I prompt asks for, so another detail should not be mandatory."
+  },
+  {
+    "promptId": "prompt-routine-2463",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires an action that makes bedtime preparation easier and an explicit reason for it, so those two ideas provide enough depth."
+  },
+  {
+    "promptId": "prompt-routine-2464",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A rushed bedtime is the supplied problem, and one calming response is an adequate solution at difficulty I."
+  },
+  {
+    "promptId": "prompt-routine-2465",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Washing up and the readiness goal are supplied, so one following action completes this narrow difficulty-I question."
+  },
+  {
+    "promptId": "prompt-routine-2466",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Preparing ahead for bedtime is described as a repeated personal behavior, and the explicit why-clause requires the action's reason; no future plan is requested."
+  },
+  {
+    "promptId": "prompt-routine-2467",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "FEELING",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The usual feeling while getting ready for bed and its reason are both requested directly, providing sufficient beginner-level depth."
+  },
+  {
+    "promptId": "prompt-routine-2468",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner only has to identify one desired improvement to getting ready for bed, so the stated goal adequately fulfills the prompt."
+  },
+  {
+    "promptId": "prompt-routine-2469",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "What helps may be an aid, condition, or other factor rather than an action, so the required content is a concrete DETAIL and action should remain optional."
+  },
+  {
+    "promptId": "prompt-routine-2470",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "EXAMPLE"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "ACTION",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must tell about the recent bedtime-preparation occasion, so one independent descriptive unit is needed beyond identifying it."
+  },
+  {
+    "promptId": "prompt-routine-2471",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "REASON",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The desired clean feeling and before-bed setting are supplied, and one usual action is enough for this focused beginner prompt."
+  },
+  {
+    "promptId": "prompt-routine-2472",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires a before-bed action intended to improve sleep and asks why it is used, so the action and explanation are sufficient."
+  },
+  {
+    "promptId": "prompt-routine-2473",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "DETAIL",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The first usual step in getting ready for bed and the reason for starting with it are explicit obligations that fully answer the question."
+  },
+  {
+    "promptId": "prompt-routine-2474",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "RESULT",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for the factor that helps after a shower and why; the factor can be an aid or condition, so DETAIL is required rather than ACTION."
+  },
+  {
+    "promptId": "prompt-routine-2475",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "RESULT"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "DETAIL",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for the last action before bed and how it produces relaxation, so both the action and its effect are required and sufficient."
+  },
+  {
+    "promptId": "prompt-routine-25",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording asks how the learner typically uses the beginning of Saturday; one timing, sequence, setting, explanation, or outcome detail should support the activity."
+  },
+  {
+    "promptId": "prompt-routine-26",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "This simple difficulty-I question asks only for one usual action before bed, so that action is adequate without mandatory support."
+  },
+  {
+    "promptId": "prompt-routine-27",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for an often-repeated before-bed action; one supporting detail is appropriate at this level to develop the routine."
+  },
+  {
+    "promptId": "prompt-routine-28",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "REASON",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Describing a before-bed routine requires a habitual action, and one additional step or contextual detail is needed for a meaningful description."
+  },
+  {
+    "promptId": "prompt-routine-29",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must provide one usual before-bed action and explain why it is done; these two required ideas are sufficient for the advanced-beginner task."
+  },
+  {
+    "promptId": "prompt-routine-30",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Despite the awkward time framing, the question asks what the learner normally does before bed; one independent support should accompany the action."
+  },
+  {
+    "promptId": "prompt-routine-31",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "SPECIFIC_TIME",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks for the usual commuting action; one route or place, timing, reason, feeling, or result detail should develop the beginner response."
+  },
+  {
+    "promptId": "prompt-routine-32",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "SPECIFIC_TIME",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "An often-repeated action on the commute is required, with one independent setting, timing, explanation, feeling, or outcome detail needed for depth."
+  },
+  {
+    "promptId": "prompt-routine-33",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "A commute routine description needs at least one recurring action, plus one additional action or contextual detail to become more than a label."
+  },
+  {
+    "promptId": "prompt-routine-34",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly requests one usual commute action and the reason for doing it, so the two required clauses already provide adequate depth."
+  },
+  {
+    "promptId": "prompt-routine-35",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "SPECIFIC_TIME",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question's core is what the learner normally does while commuting; one independent context or explanation should support the habitual action."
+  },
+  {
+    "promptId": "prompt-routine-36",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must say how they usually spend lunch break; one setting, timing, additional activity, reason, or feeling should flesh out the routine."
+  },
+  {
+    "promptId": "prompt-routine-37",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "An often-repeated lunch-break action is the direct answer, and one independent context or consequence should provide advanced-beginner depth."
+  },
+  {
+    "promptId": "prompt-routine-38",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Describing a lunch-break routine requires a habitual action and at least one additional step or contextual detail to make the description substantive."
+  },
+  {
+    "promptId": "prompt-routine-39",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "One usual lunch-break action and the explicit reason for it are both required, already giving the answer enough depth for this level."
+  },
+  {
+    "promptId": "prompt-routine-40",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Although the phrasing is awkward, it asks for the learner's normal lunch-break action; one place, timing, sequence, explanation, or outcome detail should support it."
+  },
+  {
+    "promptId": "prompt-routine-41",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks what the learner usually does at home on rainy days; one independent detail, further activity, reason, feeling, or result should add depth."
+  },
+  {
+    "promptId": "prompt-routine-42",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "An often-repeated rainy-day-at-home action is required, and one supporting detail should make the advanced-beginner response more than a single activity."
+  },
+  {
+    "promptId": "prompt-routine-43",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "A description of the rainy-day home routine needs a recurring action plus one additional action or context detail to be adequately developed."
+  },
+  {
+    "promptId": "prompt-routine-44",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for one usual rainy-day home action and why it is chosen, so the action and reason provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-routine-45",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "ADDITIONAL_ACTION",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The intended task is the learner's normal behavior at home on rainy days; one detail, further activity, explanation, feeling, or outcome should support it."
+  },
+  {
+    "promptId": "prompt-routine-46",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Right after waking is a tightly bounded time, and one usual first action fully answers this simple difficulty-I prompt."
+  },
+  {
+    "promptId": "prompt-routine-47",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "An often-repeated action immediately after waking is required, with one independent sequence or context detail needed for advanced-beginner depth."
+  },
+  {
+    "promptId": "prompt-routine-48",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Describing the routine immediately after waking requires a habitual action and one further step or contextual detail for a meaningful description."
+  },
+  {
+    "promptId": "prompt-routine-49",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name one usual action immediately after waking and explain why it is done, so the two required units are adequate."
+  },
+  {
+    "promptId": "prompt-routine-50",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Despite the awkward construction, the question asks for normal behavior right after waking; one independent sequence, timing, place, explanation, or result detail should accompany it."
+  }
+]

@@ -1,0 +1,679 @@
+[
+  {
+    "promptId": "prompt-routine-2119",
+    "verdict": "PASS",
+    "auditReasonKo": "주말에 집에서 좋아하는 활동과 그 이유를 각각 필수로 판정하고, 시간·추가 행동·감정·결과는 선호 활동에 독립 의미를 더하도록 적절히 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-2120",
+    "verdict": "PASS",
+    "auditReasonKo": "유난히 여유로운 주말이라는 조건에서 평소 선택하는 행동을 핵심으로 두고, 시점·장소·이유·감정·결과도 그 행동과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2121",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대폰 사용을 단순하게 만드는 구체적 행동과 그 이유를 모두 요구하며, 단순해졌다는 반복만으로 결과를 충족하지 않게 한 기준도 타당하다."
+  },
+  {
+    "promptId": "prompt-routine-2122",
+    "verdict": "CHANGE",
+    "auditReasonKo": "질문은 단순한 휴대폰 습관이 아니라 학습자에게 도움이 되는 습관을 묻지만, 현재 ACTION 충족 기준은 반복 행동만 있으면 도움 관계 없이 통과할 수 있다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "One small recurring phone-use habit that concretely helps the learner.",
+        "satisfiedWhenEn": "The answer identifies a concrete, repeatable action used while using or managing the phone and clearly shows that the action helps the learner in that context. Merely naming a phone habit without conveying the helpful relationship does not satisfy the role.",
+        "semanticRoleKo": "휴대폰을 사용하거나 관리할 때 학습자에게 구체적으로 도움이 되는 작고 반복적인 습관.",
+        "satisfiedWhenKo": "휴대폰을 사용하거나 관리할 때 하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 해당 상황에서 학습자에게 도움이 된다는 관계를 분명히 드러내면 충족한다. 도움 관계 없이 휴대폰 습관만 언급하면 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2123",
+    "verdict": "PASS",
+    "auditReasonKo": "캘린더 앱을 연 뒤 실제로 하는 일정 관련 행동을 요구하고, 확인 내용·시점·목적·계획 효과를 서로 다른 보강 정보로 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-2124",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 쓰는 휴대폰 기능과 사용 이유를 필수로 식별하며, 실제 사용 방식·시점·결과·사례는 기능명이나 이유를 되풀이하지 않는 별도 정보다."
+  },
+  {
+    "promptId": "prompt-routine-2125",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대폰 사용 시간이 촉박할 때 집중을 지키는 실행 가능한 대응을 필수로 두고, 이유·효과·적용 시점·사례도 같은 상황에 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2126",
+    "verdict": "PASS",
+    "auditReasonKo": "지도 앱에서 평소 수행하는 구체적인 탐색이나 경로 행동을 핵심으로 판정하고, 장소는 목적지·경로와 실제 지도 사용 관계를 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2127",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대폰 습관을 위해 미리 준비하는 설정·내용·도구 등의 행동과 이유를 직접 요구하며, 시점과 결과도 이후 휴대폰 사용에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2128",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대폰 사용 중의 평소 감정과 그 감정을 일으킨 구체적인 사용 요인을 필수로 구분하고, 사례·결과·세부 맥락도 감정 관계를 보강한다."
+  },
+  {
+    "promptId": "prompt-routine-2129",
+    "verdict": "PASS",
+    "auditReasonKo": "배터리가 부족한 상황에서 충전·절전·사용 관리 중 실제 대응을 요구하고, 이유와 결과도 배터리 가용성이나 필요한 작업에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2130",
+    "verdict": "PASS",
+    "auditReasonKo": "휴대폰 사용 방식에서 바꾸고 싶은 구체적인 목표를 핵심으로 두고, 계획·동기·기대 결과·적용 시점을 각각 독립적으로 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-2131",
+    "verdict": "PASS",
+    "auditReasonKo": "하루를 더 수월하게 만드는 반복적인 휴대폰 행동이라는 도움 관계를 ACTION에서 직접 요구하고, 구체적인 개선 효과도 별도 결과로 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-2132",
+    "verdict": "PASS",
+    "auditReasonKo": "간단한 노트를 복습할 때 실제로 하는 학습 행동을 핵심으로 두고, 자료·방법·시점·목적·기억 효과를 질문 범위 안에서 구체화했다."
+  },
+  {
+    "promptId": "prompt-routine-2133",
+    "verdict": "PASS",
+    "auditReasonKo": "최근 휴대폰 습관이 잘 작동한 식별 가능한 사례를 필수로 요구하고, 최소 깊이 한 칸이 성공 결과나 실제 행동 같은 사건 내용을 보완하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-2134",
+    "verdict": "PASS",
+    "auditReasonKo": "유용한 목적을 수행하는 휴대폰 행동과 그 유용성의 이유를 필수로 두며, 결과·시점·추가 행동·사례가 같은 도움 관계를 독립적으로 확장한다."
+  },
+  {
+    "promptId": "prompt-routine-2135",
+    "verdict": "PASS",
+    "auditReasonKo": "새 단어를 기억하기 위해 반복하는 구체적 학습 행동을 요구하고, 자료·방법·복습 시점·기억 원리·회상 결과도 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-22",
+    "verdict": "PASS",
+    "auditReasonKo": "토요일을 시작하는 때의 평소 활동을 핵심으로 판정하고, 시간·추가 행동·장소·이유·결과 중 하나가 독립적인 루틴 깊이를 더하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-23",
+    "verdict": "PASS",
+    "auditReasonKo": "토요일 시작 루틴의 핵심 행동과 별도 단계를 구분하며, 시간 순서·장소·목적·이후 효과 중 하나를 더해야 루틴 설명이 완성되도록 했다."
+  },
+  {
+    "promptId": "prompt-routine-24",
+    "verdict": "PASS",
+    "auditReasonKo": "토요일 초반에 자주 반복하는 구체적 행동을 요구하고, 넓지만 의미 있는 시간 표현과 추가 행동·장소·이유·감정도 독립 보강으로 수용한다."
+  },
+  {
+    "promptId": "prompt-routine-2401",
+    "verdict": "PASS",
+    "auditReasonKo": "날씨가 바뀔 때 확인하는 대상과 확인 행동, 그 이유를 함께 요구하며 온도·강수·이동 정보는 확인 내용을 구체화하는 별도 세부 정보다."
+  },
+  {
+    "promptId": "prompt-routine-2402",
+    "verdict": "CHANGE",
+    "auditReasonKo": "질문은 날씨 변화 때 도움이 되는 작은 습관을 묻지만, 현재 ACTION 기준은 변화에 반응하는 반복 행동만으로 도움 관계 없이 충족될 수 있다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "One small recurring habit that concretely helps the learner when the weather changes.",
+        "satisfiedWhenEn": "The answer identifies a concrete, repeatable action used when the weather changes and clearly shows that the action helps the learner handle those changing conditions. Merely naming a weather-related habit without conveying the helpful relationship does not satisfy the role.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 변화한 조건에 대처하도록 구체적으로 도와주는 작고 반복적인 습관.",
+        "satisfiedWhenKo": "날씨가 바뀔 때 하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 변화한 조건에 대처하는 데 도움이 된다는 관계를 분명히 드러내면 충족한다. 도움 관계 없이 날씨 관련 습관만 언급하면 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2403",
+    "verdict": "PASS",
+    "auditReasonKo": "날씨 변화에 맞춰 물품·옷·이동 계획 등을 준비하는 구체적 행동과 이유를 직접 판정하고, 조건·시점·결과·사례도 준비와 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2404",
+    "verdict": "PASS",
+    "auditReasonKo": "외출 전에 비가 시작된 상황에 대한 실행 가능한 대응을 필수로 두고, 우산·교통·대기 같은 세부 조정과 이동 결과도 해당 대응을 보강한다."
+  },
+  {
+    "promptId": "prompt-routine-2405",
+    "verdict": "PASS",
+    "auditReasonKo": "갑작스러운 날씨 변화에서 침착함을 유지하는 구체적 대응을 요구하며, 단순히 침착해진다는 반복 대신 불확실성이나 스트레스를 줄이는 관계를 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-2406",
+    "verdict": "PASS",
+    "auditReasonKo": "비나 추위에 앞서 준비하는 구체적 행동과 그 이유를 필수로 구분하고, 시점은 시계 시각을 강제하지 않고 의미 있는 선행 시점을 수용한다."
+  },
+  {
+    "promptId": "prompt-routine-2407",
+    "verdict": "PASS",
+    "auditReasonKo": "날씨가 바뀔 때의 평소 감정과 그 원인이 되는 날씨 특성·불편·기억을 직접 요구하며, 사례와 결과도 감정에 인과적으로 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2408",
+    "verdict": "PASS",
+    "auditReasonKo": "날씨 자체가 아니라 비나 추위에 대처하고 경험하는 방식을 개선하는 구체적 목표로 한정해 질문 의도를 현실적인 학습자 행동으로 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-2409",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오거나 추운 날 편안함을 높이는 실제 행동을 핵심으로 요구하고, 따뜻함·건조함·긴장 완화 같은 효과와 행동의 관계도 명확하다."
+  },
+  {
+    "promptId": "prompt-routine-2410",
+    "verdict": "PASS",
+    "auditReasonKo": "갑작스러운 날씨 변화에 평소 취하는 실행 가능한 조정을 해결 행동으로 판정하며, 이유·효과·상세 조건·사례도 같은 변화 상황에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2411",
+    "verdict": "PASS",
+    "auditReasonKo": "최근 비나 추위 속에서 잘 풀린 구체적 사건을 필수로 두고, 최소 깊이 한 칸이 성공 결과·실제 행동·날씨 맥락 등을 보완하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-2412",
+    "verdict": "PASS",
+    "auditReasonKo": "날씨 변화에 대비해 가져가는 식별 가능한 물품과 선택 이유를 요구하며, 물품 특성·사용 시점·효과·사례는 각각 독립된 보강 정보다."
+  },
+  {
+    "promptId": "prompt-routine-2413",
+    "verdict": "PASS",
+    "auditReasonKo": "날씨가 바뀌었을 때 가장 먼저 하는 행동과 그 우선 이유를 필수로 판정하며, 후속 행동과 결과도 첫 대응을 반복하지 않게 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-2414",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오거나 추운 하루 끝에 안정을 얻기 위해 하는 구체적 행동을 요구하고, 결과와 감정은 단순히 안정됐다는 반복보다 구체적이어야 한다."
+  },
+  {
+    "promptId": "prompt-routine-2415",
+    "verdict": "PASS",
+    "auditReasonKo": "날씨 변화 때 의도적으로 피하는 활동·노출·대응과 그 이유를 필수로 구분하고, 무엇을 왜 피하는지의 관계가 분명해야 통과한다."
+  },
+  {
+    "promptId": "prompt-routine-2416",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 심부름 전에 목록·결제·경로 등을 준비하는 행동과 그 이유를 직접 요구하며, 구체 물품·선행 시점·효과·사례도 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-2417",
+    "verdict": "CHANGE",
+    "auditReasonKo": "질문은 가게 방문이나 짧은 심부름에 도움이 되는 습관을 묻지만, 현재 ACTION 기준은 반복 행동만 식별하면 실제 도움 관계가 없어도 통과할 수 있다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "One small recurring habit that concretely helps the learner during a store stop or quick errand.",
+        "satisfiedWhenEn": "The answer identifies a concrete, repeatable action used while preparing for or carrying out a store stop or quick errand and clearly shows that the action helps the learner in that situation. Merely naming an errand habit without conveying the helpful relationship does not satisfy the role.",
+        "semanticRoleKo": "가게에 들르거나 짧은 심부름을 할 때 학습자에게 구체적으로 도움이 되는 작고 반복적인 습관.",
+        "satisfiedWhenKo": "가게 방문이나 짧은 심부름을 준비하거나 수행할 때 하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 해당 상황에서 도움이 된다는 관계를 분명히 드러내면 충족한다. 도움 관계 없이 심부름 습관만 언급하면 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2418",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 가게 심부름을 더 빨리 끝내게 하는 실제 행동을 핵심으로 두고, 단순히 빨라진다는 반복이 아니라 지연이나 불필요한 단계를 줄이는 관계를 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2419",
+    "verdict": "PASS",
+    "auditReasonKo": "촉박한 짧은 심부름에서 가장 먼저 취하는 실행 가능한 대응을 요구하고, 우선 이유·효과·제약 조건·사례를 같은 상황에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2420",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 심부름이나 가게 방문 전에 미리 준비하는 목록·결제·이동 계획과 이유를 필수로 판정하며, 준비 결과와 사례도 독립적이다."
+  },
+  {
+    "promptId": "prompt-routine-2421",
+    "verdict": "PASS",
+    "auditReasonKo": "한두 가지 물품만 필요할 때 평소 취하는 구체적 구매·수령 방식을 핵심으로 두고, 물품·장소·이유·효과는 해당 방식에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2422",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 심부름 중의 평소 감정과 시간 압박·가게 상황 등 그 원인을 필수로 구분하며, 사례와 행동 결과도 감정 경험을 보강한다."
+  },
+  {
+    "promptId": "prompt-routine-2423",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 심부름에서 개선하려는 속도·준비·지출 등의 구체 목표를 요구하고, 계획·동기·기대 결과·사례를 서로 다른 의미로 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-2424",
+    "verdict": "PASS",
+    "auditReasonKo": "심부름을 순조롭게 끝내게 하는 목록·조건·습관 같은 구체 요인을 핵심으로 두며, 행동과 결과는 그 요인이 실제로 기여한 관계를 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2425",
+    "verdict": "PASS",
+    "auditReasonKo": "최근 잘 끝난 짧은 심부름이나 가게 방문을 식별 가능한 사건으로 요구하고, 성공 결과나 실제 행동 중 하나가 사건 깊이를 보완하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-2426",
+    "verdict": "PASS",
+    "auditReasonKo": "출발 전 준비하는 목록·물품·결제·경로와 그 준비 이유를 필수로 두고, 구체 시점과 이후 심부름 효과도 자연스럽게 수용한다."
+  },
+  {
+    "promptId": "prompt-routine-2427",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가길 가게 방문에서 평소 하는 구체적 행동을 핵심으로 판정하고, 구매 대상·가정 목적·저녁 결과·방문 빈도를 해당 행동과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2428",
+    "verdict": "PASS",
+    "auditReasonKo": "가게나 짧은 심부름을 시작할 때의 첫 행동과 그 우선 이유를 직접 요구하며, 후속 행동·세부 대상·효과·사례도 첫 단계와 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2429",
+    "verdict": "PASS",
+    "auditReasonKo": "심부름을 마친 뒤 다음 활동으로 넘어가기 전 하는 전환 행동을 정확히 요구하고, 추가 행동·이유·결과·구매물 세부도 그 시간 관계를 유지한다."
+  },
+  {
+    "promptId": "prompt-routine-2430",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 장보기 목록을 만들 때의 확인·선택·기록 행동을 핵심으로 두고, 항목 구성·작성 이유·쇼핑 효과·작성 시점을 독립적으로 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-2431",
+    "verdict": "PASS",
+    "auditReasonKo": "카페나 빵집 메뉴를 고르는 실제 판단 과정과 그 기준의 이유를 필수로 두며, 최종 메뉴·세부 기준·결과·사례는 선택 과정을 보강한다."
+  },
+  {
+    "promptId": "prompt-routine-2432",
+    "verdict": "CHANGE",
+    "auditReasonKo": "질문은 카페나 빵집 방문에 도움이 되는 작은 습관을 묻지만, 현재 ACTION 충족 기준은 방문 중 반복 행동만 있으면 도움 관계 없이 통과할 수 있다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "One small recurring habit that concretely helps the learner during a cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer identifies a concrete, repeatable action used while preparing for, ordering during, or spending time at a cafe or bakery and clearly shows that the action helps the learner during the visit. Merely naming a visit habit without conveying the helpful relationship does not satisfy the role.",
+        "semanticRoleKo": "카페나 빵집을 방문할 때 학습자에게 구체적으로 도움이 되는 작고 반복적인 습관.",
+        "satisfiedWhenKo": "카페나 빵집 방문을 준비하거나 주문하거나 머무는 동안 하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 방문 중 학습자에게 도움이 된다는 관계를 분명히 드러내면 충족한다. 도움 관계 없이 방문 습관만 언급하면 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2433",
+    "verdict": "PASS",
+    "auditReasonKo": "카페나 빵집에 갔을 때의 첫 행동과 그 우선 이유를 필수로 요구하고, 후속 행동·메뉴 세부·효과·사례도 첫 단계와 독립적이다."
+  },
+  {
+    "promptId": "prompt-routine-2434",
+    "verdict": "PASS",
+    "auditReasonKo": "붐비는 카페나 빵집에서 가장 먼저 취하는 실행 가능한 대응을 핵심으로 두고, 대기·좌석·재고 조건과 실제 결과도 대응에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2435",
+    "verdict": "PASS",
+    "auditReasonKo": "카페나 빵집 방문 전에 메뉴·결제·재사용 물품 등을 준비하는 행동과 이유를 직접 요구하며, 시점·결과·사례도 선행 준비와 맞는다."
+  },
+  {
+    "promptId": "prompt-routine-2436",
+    "verdict": "PASS",
+    "auditReasonKo": "오후 빵집 방문에서 평소 하는 구체적인 행동을 핵심으로 두고, 선택 메뉴·제품 세부·방문 이유·이후 결과를 행동과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2437",
+    "verdict": "PASS",
+    "auditReasonKo": "카페나 빵집 방문 중의 평소 감정과 그 감정을 만드는 분위기·제품·상호작용을 필수로 판정하며, 사례와 결과도 감정에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2438",
+    "verdict": "PASS",
+    "auditReasonKo": "카페나 빵집 방문에서 바꾸고 싶은 주문·지출·대기 등의 구체 목표를 요구하고, 계획·동기·기대 결과·과거 사례를 구별한다."
+  },
+  {
+    "promptId": "prompt-routine-2439",
+    "verdict": "PASS",
+    "auditReasonKo": "카페나 빵집 방문에서 좋아하는 구체적 측면과 그 이유를 필수로 두며, 단순히 방문이 좋다는 표현은 선호 대상으로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-routine-2440",
+    "verdict": "PASS",
+    "auditReasonKo": "최근 잘 풀린 카페나 빵집 방문을 식별 가능한 사건으로 요구하고, 최소 깊이 한 칸이 성공 결과·행동·시간·맥락을 보완하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-2441",
+    "verdict": "PASS",
+    "auditReasonKo": "평소 직접 주문하는 구체 메뉴와 그 메뉴를 좋아하는 이유를 필수로 판정하며, 세부 옵션·주문 시점·사례·감정도 메뉴 선택에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2442",
+    "verdict": "PASS",
+    "auditReasonKo": "카페나 빵집 방문에서 평소 가장 먼저 하는 행동과 우선 이유를 요구하며, 후속 단계와 첫 행동 내부의 세부 방식도 명확히 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2443",
+    "verdict": "PASS",
+    "auditReasonKo": "퇴근이나 수업 뒤 빵집에 들렀을 때 하는 구체적 행동을 핵심으로 두고, 고른 물품·방문 이유·감정·이후 결과도 해당 상황과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2444",
+    "verdict": "PASS",
+    "auditReasonKo": "카페나 빵집을 떠나기 직전에 하는 행동을 정확히 요구하고, 두 번째 단계·예의나 점검 이유·정리 결과·처리 대상도 출발 전 관계를 유지한다."
+  },
+  {
+    "promptId": "prompt-routine-2445",
+    "verdict": "PASS",
+    "auditReasonKo": "카페나 빵집에서 의도적으로 피하는 물품·행동·상황과 이유를 필수로 두며, 단순히 조심한다는 막연한 진술은 배제한다."
+  },
+  {
+    "promptId": "prompt-routine-2446",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 가벼운 운동 전에 준비하는 물품·복장·경로·몸 준비와 그 이유를 필수로 판정하고, 시점·효과·사례도 준비와 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2447",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 가벼운 운동에 도움이 되는 반복 행동과 도움 관계를 ACTION에서 함께 요구하고 있어 습관만 언급하는 조기 충족을 막는다."
+  },
+  {
+    "promptId": "prompt-routine-2448",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 운동 전에 실제로 준비하는 물품·경로·준비 운동과 그 목적을 필수로 두며, 상세 방식·시점·결과·사례도 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-2449",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 운동이 촉박하게 느껴질 때 속도와 압박을 낮추는 구체 대응을 요구하고, 이유·결과·감정·사례도 해당 대응에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2450",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 가벼운 운동을 위해 미리 준비하는 식별 가능한 행동과 이유를 직접 요구하며, 의미 있는 선행 시점과 활동 결과도 수용한다."
+  },
+  {
+    "promptId": "prompt-routine-2451",
+    "verdict": "PASS",
+    "auditReasonKo": "앉아 있다가 스트레칭하고 싶을 때 실제로 하는 동작을 핵심으로 두고, 신체 부위·발동 시점·선택 이유·신체 효과를 구체화했다."
+  },
+  {
+    "promptId": "prompt-routine-2452",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 가벼운 운동 중의 평소 감정·신체 상태와 그 원인을 필수로 구분하고, 시점·사례·결과·운동 조건도 경험과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2453",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 가벼운 운동에서 개선하려는 빈도·기술·편안함 등의 구체 목표를 요구하고, 계획·동기·기대 결과·사례도 독립적이다."
+  },
+  {
+    "promptId": "prompt-routine-2454",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 운동에서 기분을 좋게 만드는 구체적 부분을 핵심으로 판정하고, 이유·효과·사례·구체 감정은 그 부분과 관계를 입증한다."
+  },
+  {
+    "promptId": "prompt-routine-2455",
+    "verdict": "PASS",
+    "auditReasonKo": "최근 잘 된 산책이나 운동을 식별 가능한 사건으로 요구하고, 최소 깊이 한 칸이 성공 결과·행동·시간·감정·상황을 보충하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-2456",
+    "verdict": "PASS",
+    "auditReasonKo": "공원에서 짧게 걸을 때 하는 구체적 행동을 요구하며, PLACE는 질문에 이미 나온 공원을 반복하지 않고 공원 내 경로나 위치를 더하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-2457",
+    "verdict": "PASS",
+    "auditReasonKo": "산책에 가져가거나 착용하는 식별 가능한 물품과 이유를 필수로 두고, 물품 특성·사용 조건·효과·사례도 해당 선택과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2458",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 가벼운 운동을 시작할 때의 첫 행동과 우선 이유를 직접 판정하며, 후속 동작·방법·효과·사례도 첫 단계와 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2459",
+    "verdict": "PASS",
+    "auditReasonKo": "운동 시간이 10분뿐인 조건에 맞는 구체적 운동을 핵심으로 두고, 동작 방식·선택 이유·짧은 운동 결과·사례도 시간 제약에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2460",
+    "verdict": "PASS",
+    "auditReasonKo": "산책이나 운동 뒤 몸을 식히기 위한 구체적 행동과 목적 관계를 요구하며, 동작·신체 효과·이유·지속 시간도 회복 과정에 맞는다."
+  },
+  {
+    "promptId": "prompt-routine-2461",
+    "verdict": "PASS",
+    "auditReasonKo": "밤 준비를 더 쉽게 만드는 취침 전 행동이라는 관계를 ACTION에서 직접 요구하고, 쉬워지는 구체 결과와 별도 단계도 적절히 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-2462",
+    "verdict": "PASS",
+    "auditReasonKo": "잠자리를 준비할 때 도움이 되는 반복 습관과 도움 관계를 함께 요구하며, 결과·이유·시점·사례가 그 유용성을 독립적으로 보강한다."
+  },
+  {
+    "promptId": "prompt-routine-2463",
+    "verdict": "PASS",
+    "auditReasonKo": "잠자리 준비를 더 쉽게 하는 구체 행동과 그 이유를 필수로 판정하고, 수월해진 결과·순서·추가 단계·세부 방식도 정확하다."
+  },
+  {
+    "promptId": "prompt-routine-2464",
+    "verdict": "PASS",
+    "auditReasonKo": "잠자리 준비가 촉박할 때 진정하기 위한 실행 가능한 대응을 요구하며, 이유·결과·감정·사례도 촉박한 상황과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2465",
+    "verdict": "PASS",
+    "auditReasonKo": "씻은 뒤 휴식이나 수면 준비로 전환하기 위해 하는 구체적 행동을 핵심으로 두고, 결과·추가 행동·이유·감정도 시간 관계를 유지한다."
+  },
+  {
+    "promptId": "prompt-routine-2466",
+    "verdict": "PASS",
+    "auditReasonKo": "취침 준비 전에 미리 갖추는 물품·환경·할 일과 그 목적을 필수로 두며, 선행 시점과 이후 루틴 효과도 자연스럽게 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-2467",
+    "verdict": "PASS",
+    "auditReasonKo": "잠자리를 준비하는 동안의 평소 감정·신체 상태와 그 원인을 직접 요구하고, 특정 단계·사례·결과·환경도 감정과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2468",
+    "verdict": "PASS",
+    "auditReasonKo": "취침 준비에서 개선하려는 시간·일관성·정리·편안함 등의 구체 목표를 요구하고, 계획·동기·결과·실행 일정도 독립적이다."
+  },
+  {
+    "promptId": "prompt-routine-2469",
+    "verdict": "PASS",
+    "auditReasonKo": "편안한 취침 준비를 돕는 습관·물품·환경 등의 구체 요인을 핵심으로 두며, 단순히 편안하다는 반복은 충족하지 않게 했다."
+  },
+  {
+    "promptId": "prompt-routine-2470",
+    "verdict": "PASS",
+    "auditReasonKo": "최근 취침 준비가 잘 된 식별 가능한 사건을 필수로 요구하고, 최소 깊이 한 칸이 성공 결과·행동·시간·감정·환경을 보완하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-2471",
+    "verdict": "PASS",
+    "auditReasonKo": "잠들기 전 깨끗함을 얻기 위해 하는 구체적 위생 행동을 핵심으로 두고, 신체 부위·이유·추가 효과·시점도 해당 행동과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2472",
+    "verdict": "PASS",
+    "auditReasonKo": "더 나은 수면을 위해 하는 취침 전 행동과 선택 이유를 필수로 두며, 실제 수면 효과·시점·추가 행동·사례도 정확히 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-2473",
+    "verdict": "PASS",
+    "auditReasonKo": "취침 준비를 시작할 때의 첫 행동과 그 우선 이유를 직접 요구하고, 후속 단계·내부 방식·결과·시점도 첫 행동과 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2474",
+    "verdict": "PASS",
+    "auditReasonKo": "샤워 뒤 잠자리 준비에 도움을 주는 구체 요인과 그 이유를 필수로 두며, 행동·결과·감정·사례도 해당 도움 관계를 보강한다."
+  },
+  {
+    "promptId": "prompt-routine-2475",
+    "verdict": "PASS",
+    "auditReasonKo": "잠들기 전 마지막 행동과 그 행동이 긴장을 푸는 구체적 효과를 필수로 판정하며, 이유·감정·세부 방식·시점도 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-25",
+    "verdict": "PASS",
+    "auditReasonKo": "토요일 초반을 보내는 구체적 활동을 핵심으로 두고, 시간·추가 행동·장소·이유·결과 중 하나가 독립적인 주말 깊이를 더하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-26",
+    "verdict": "PASS",
+    "auditReasonKo": "취침 전에 평소 하는 식별 가능한 행동을 핵심으로 판정하며, 단순히 준비하거나 잔다는 반복은 배제하고 시점·이유·결과·감정을 보강한다."
+  },
+  {
+    "promptId": "prompt-routine-27",
+    "verdict": "PASS",
+    "auditReasonKo": "취침 전에 자주 반복하는 구체 행동을 요구하고, 최소 깊이 한 칸이 시점·추가 행동·이유·결과·감정 중 독립 내용을 더하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-28",
+    "verdict": "PASS",
+    "auditReasonKo": "취침 전 루틴의 핵심 행동과 별도 단계를 구분하며, 시간·목적·결과·감정 중 하나를 더해야 루틴 설명의 깊이가 확보되도록 했다."
+  },
+  {
+    "promptId": "prompt-routine-29",
+    "verdict": "PASS",
+    "auditReasonKo": "취침 전 하는 한 가지 구체 행동과 그 이유를 필수로 요구하며, 시점·결과·감정·행동 내부 세부는 독립 보강 정보다."
+  },
+  {
+    "promptId": "prompt-routine-30",
+    "verdict": "PASS",
+    "auditReasonKo": "어색한 원문 표현에도 취침 전 평소 행동이라는 의도를 정확히 보존하고, 시간·추가 행동·이유·결과·감정으로 깊이를 보완한다."
+  },
+  {
+    "promptId": "prompt-routine-31",
+    "verdict": "PASS",
+    "auditReasonKo": "통근 이동 중 평소 하는 구체적 활동을 요구하며, 교통수단·이동 단계·이유·감정·도착 효과 중 하나가 별도 의미를 더하도록 했다."
+  },
+  {
+    "promptId": "prompt-routine-32",
+    "verdict": "PASS",
+    "auditReasonKo": "통근 중 자주 반복하는 실제 활동을 핵심으로 두고, 장소·시점·이유·감정·결과를 그 활동과 연결된 독립 깊이로 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-33",
+    "verdict": "PASS",
+    "auditReasonKo": "통근 루틴의 핵심 행동과 별도 행동을 구분하고, 교통 환경·시간 순서·목적·도착 결과 중 하나가 루틴 설명을 보강하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-34",
+    "verdict": "PASS",
+    "auditReasonKo": "통근 중 하는 한 가지 구체 활동과 그 이유를 필수로 두며, 교통수단·시점·감정·도착 효과도 선택한 활동에 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-35",
+    "verdict": "PASS",
+    "auditReasonKo": "어색한 문장 구조에도 통근 중 평소 행동이라는 의미를 올바르게 복원하고, 장소·시간·이유·감정·결과를 독립 보강으로 구성했다."
+  },
+  {
+    "promptId": "prompt-routine-36",
+    "verdict": "PASS",
+    "auditReasonKo": "점심시간을 보내는 구체적 활동을 핵심으로 두며, 장소·시간·추가 행동·이유·감정 중 하나가 해당 휴식 활동에 깊이를 더하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-37",
+    "verdict": "PASS",
+    "auditReasonKo": "점심시간에 자주 반복하는 실제 행동을 요구하고, 장소·시점·추가 행동·이유·오후 결과 중 하나를 독립 정보로 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-38",
+    "verdict": "PASS",
+    "auditReasonKo": "점심시간 루틴의 핵심 단계와 두 번째 단계를 구분하며, 장소·시간 순서·목적·오후 효과 중 하나가 루틴을 구체화한다."
+  },
+  {
+    "promptId": "prompt-routine-39",
+    "verdict": "PASS",
+    "auditReasonKo": "점심시간에 하는 한 가지 구체 활동과 그 이유를 필수로 두고, 장소·시점·감정·오후 결과도 선택 행동과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-40",
+    "verdict": "PASS",
+    "auditReasonKo": "어색한 원문에도 점심시간의 평소 행동이라는 의도를 보존하고, 장소·시간·추가 행동·이유·결과로 독립 깊이를 확보한다."
+  },
+  {
+    "promptId": "prompt-routine-41",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날 집에서 평소 하는 구체 활동을 요구하며, 활동 방식·추가 행동·이유·감정·결과 중 하나가 독립적인 설명을 더한다."
+  },
+  {
+    "promptId": "prompt-routine-42",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날 집에서 자주 반복하는 행동을 핵심으로 두고, 세부 방식·추가 행동·이유·감정·결과를 해당 활동과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-43",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날의 집 루틴에서 핵심 행동과 별도 단계를 구분하며, 세부 방식·시간·이유·감정 중 하나가 루틴을 보강하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-44",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날 집에서 하는 한 가지 구체 활동과 그 이유를 필수로 요구하며, 방식·시점·감정·결과는 독립적인 선택 정보다."
+  },
+  {
+    "promptId": "prompt-routine-45",
+    "verdict": "PASS",
+    "auditReasonKo": "어색한 문장 구조에도 비 오는 날 집에서의 평소 행동이라는 관계를 정확히 보존하고, 상세·추가 행동·이유·감정·결과로 깊이를 더한다."
+  },
+  {
+    "promptId": "prompt-routine-46",
+    "verdict": "CHANGE",
+    "auditReasonKo": "원문은 기상 직후 평소 하는 행동을 묻지만 현재 계약은 그것을 학습자의 가장 첫 행동으로 좁힌다. 직후에 하는 행동이면 충분하며 첫 순서까지 강제하면 안 된다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A concrete action the learner usually takes immediately after waking up.",
+        "satisfiedWhenEn": "The answer identifies a concrete habitual action and clearly relates it to the period immediately after the learner wakes. The answer does not need to establish that this is the learner's very first action.",
+        "semanticRoleKo": "학습자가 잠에서 깬 직후 평소 하는 구체적인 행동.",
+        "satisfiedWhenKo": "구체적이고 습관적인 행동을 밝히고 그 행동을 학습자가 잠에서 깬 직후의 시간과 분명히 연결하면 충족한다. 그 행동이 학습자의 가장 첫 행동임을 입증할 필요는 없다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate action the learner also performs during the immediate post-waking routine.",
+        "satisfiedWhenEn": "The answer states another concrete morning action that occurs in the same immediate post-waking period and is independent of the core action; no particular order between the actions is required.",
+        "semanticRoleKo": "학습자가 기상 직후 루틴에서 함께 하는 별도의 행동.",
+        "satisfiedWhenKo": "같은 기상 직후 시간대에 일어나며 핵심 행동과 독립적인 또 다른 구체적 아침 행동을 제시하면 충족한다. 두 행동 사이의 특정 순서를 밝힐 필요는 없다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect of the learner's stated immediate post-waking action on the morning.",
+        "satisfiedWhenEn": "The answer states what becomes ready, cleaner, more alert, organized, comfortable, or possible because of the stated action and connects that outcome to the action.",
+        "semanticRoleKo": "학습자가 말한 기상 직후 행동이 아침에 미치는 구체적인 효과.",
+        "satisfiedWhenKo": "말한 행동 때문에 준비 상태, 청결함, 각성도, 정돈, 편안함 또는 이후 가능해지는 일이 어떻게 달라지는지 밝히고 그 결과를 행동과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-47",
+    "verdict": "PASS",
+    "auditReasonKo": "기상 직후 자주 반복하는 구체 행동을 요구하되 가장 첫 행동까지 강제하지 않고, 추가 행동·시간·장소·이유·결과로 깊이를 보완한다."
+  },
+  {
+    "promptId": "prompt-routine-48",
+    "verdict": "PASS",
+    "auditReasonKo": "기상 직후 루틴의 핵심 행동과 별도 단계를 구분하며, 시간·장소·이유·아침 결과 중 하나가 독립적인 루틴 정보를 더하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-49",
+    "verdict": "CHANGE",
+    "auditReasonKo": "원문은 기상 직후 하는 한 가지 행동을 묻지만 현재 ACTION과 보강 계약은 이를 첫 행동으로 간주한다. 선택한 행동의 직후 관계만 요구해야 한다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "One specific action the learner usually takes immediately after waking up.",
+        "satisfiedWhenEn": "The answer identifies one concrete habitual action and clearly relates it to the period immediately after the learner wakes. The answer does not need to establish that this is the learner's very first action.",
+        "semanticRoleKo": "학습자가 잠에서 깬 직후 평소 하는 한 가지 구체적인 행동.",
+        "satisfiedWhenKo": "한 가지 구체적이고 습관적인 행동을 밝히고 그 행동을 학습자가 잠에서 깬 직후의 시간과 분명히 연결하면 충족한다. 그 행동이 학습자의 가장 첫 행동임을 입증할 필요는 없다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate action the learner also performs during the immediate post-waking routine.",
+        "satisfiedWhenEn": "The answer states another concrete morning action that occurs in the same immediate post-waking period and is independent of the chosen core action; no particular order between the actions is required.",
+        "semanticRoleKo": "학습자가 기상 직후 루틴에서 함께 하는 별도의 행동.",
+        "satisfiedWhenKo": "같은 기상 직후 시간대에 일어나며 선택한 핵심 행동과 독립적인 또 다른 구체적 아침 행동을 제시하면 충족한다. 두 행동 사이의 특정 순서를 밝힐 필요는 없다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect of the learner's chosen immediate post-waking action on the morning.",
+        "satisfiedWhenEn": "The answer states what changes in alertness, cleanliness, comfort, organization, readiness, or later morning activity because of the chosen action and connects that outcome to the action.",
+        "semanticRoleKo": "학습자가 선택한 기상 직후 행동이 아침에 미치는 구체적인 효과.",
+        "satisfiedWhenKo": "선택한 행동 때문에 각성도, 청결함, 편안함, 정돈, 준비 상태 또는 이후 아침 활동이 어떻게 달라지는지 밝히고 그 결과를 행동과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-50",
+    "verdict": "PASS",
+    "auditReasonKo": "어색한 원문에도 기상 직후의 평소 행동이라는 관계를 정확히 보존하고, 추가 행동·시간·장소·이유·아침 결과로 깊이를 확보한다."
+  }
+]

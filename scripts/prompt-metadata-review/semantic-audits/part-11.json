@@ -1,0 +1,626 @@
+[
+  {
+    "promptId": "prompt-routine-20",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 여가를 보내는 평소 활동을 핵심으로 두고 세부 방식·시간·이유·감정·결과를 독립 보강 정보로 구분한 계약이 질문에 맞다."
+  },
+  {
+    "promptId": "prompt-routine-2001",
+    "verdict": "PASS",
+    "auditReasonKo": "아침 식사 전에 평소 하는 행동을 요구하는 관계가 분명하며, 시간 슬롯도 질문에 이미 나온 전후 관계를 단순 반복하지 않도록 제한되어 있다."
+  },
+  {
+    "promptId": "prompt-routine-2002",
+    "verdict": "PASS",
+    "auditReasonKo": "전날 밤에 준비하는 구체적 대상이나 일을 다음 날 아침과 연결하도록 했고, 결과와 시간도 별개의 의미 단위로 판정할 수 있다."
+  },
+  {
+    "promptId": "prompt-routine-2003",
+    "verdict": "PASS",
+    "auditReasonKo": "아침 준비에 실제로 도움이 되는 작고 반복 가능한 습관을 요구하며, 도움의 결과와 실행 세부를 분리한 기준이 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-2004",
+    "verdict": "PASS",
+    "auditReasonKo": "아침 준비 속도를 높이기 위한 구체적 행동과 그 목적 관계를 정확히 요구하고, 결과·이유·방법을 중복 없이 보강하도록 했다."
+  },
+  {
+    "promptId": "prompt-routine-2005",
+    "verdict": "PASS",
+    "auditReasonKo": "서두르는 아침에 침착함을 유지하거나 되찾는 대응을 해결책으로 판정하고, 그 효과와 실행 방법을 별도로 확인하는 구성이 타당하다."
+  },
+  {
+    "promptId": "prompt-routine-2006",
+    "verdict": "PASS",
+    "auditReasonKo": "아침 일과 전에 준비하는 구체적 항목 또는 일을 필수 행동으로, 준비 이유를 별도 필수 정보로 둔 것이 질문의 두 요구를 모두 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-2007",
+    "verdict": "PASS",
+    "auditReasonKo": "아침 준비 중의 평소 감정과 그 원인을 각각 필수로 요구하며, 상황 세부·시점·사례·결과가 독립 보강 역할을 한다."
+  },
+  {
+    "promptId": "prompt-routine-2008",
+    "verdict": "PASS",
+    "auditReasonKo": "개선하고 싶은 아침 일과의 구체적 측면을 목표로 판정하고, 실행 계획·이유·예상 결과를 선택 정보로 둔 구성이 질문 범위를 넘지 않는다."
+  },
+  {
+    "promptId": "prompt-routine-2009",
+    "verdict": "PASS",
+    "auditReasonKo": "하루를 준비됐다고 느끼게 하는 아침 일과의 특정 단계를 필수 행동으로 요구하며, 준비에 기여하는 관계까지 명시되어 있다."
+  },
+  {
+    "promptId": "prompt-routine-2010",
+    "verdict": "PASS",
+    "auditReasonKo": "최근의 특정 아침 일과가 잘 풀린 사건과 성공 관계를 사례 슬롯에서 함께 요구하고, 행동·결과·시간은 사건을 독립적으로 구체화한다."
+  },
+  {
+    "promptId": "prompt-routine-2011",
+    "verdict": "PASS",
+    "auditReasonKo": "아침에 하는 한 가지 행동과 그 행동이 준비에 도움이 되는 이유를 필수로 분리해 질문의 두 부분을 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-2012",
+    "verdict": "PASS",
+    "auditReasonKo": "아침 준비 순서에서 실제로 첫 번째인 행동과 그 우선순위의 이유를 요구해 단순 행동 언급만으로 충족되지 않도록 했다."
+  },
+  {
+    "promptId": "prompt-routine-2013",
+    "verdict": "PASS",
+    "auditReasonKo": "아침 일과의 마지막 단계라는 순서 관계와 하루 준비 목적을 행동 계약에 모두 포함해 질문에 대한 직접 답을 판정할 수 있다."
+  },
+  {
+    "promptId": "prompt-routine-2014",
+    "verdict": "PASS",
+    "auditReasonKo": "피하려는 행동·방해 요소·상황을 회피 행위와 아침 준비 맥락에 연결하도록 해 단순 키워드가 아닌 질문의 회피 관계를 검증한다."
+  },
+  {
+    "promptId": "prompt-routine-2015",
+    "verdict": "PASS",
+    "auditReasonKo": "아침 계획이 어긋났을 때 순서·우선순위·시간 등을 실제로 바꾸는 대응을 해결책으로 판정하는 기준이 질문에 맞다."
+  },
+  {
+    "promptId": "prompt-routine-2016",
+    "verdict": "PASS",
+    "auditReasonKo": "장소를 옮기기 전에 확인하는 구체적 항목·사실·상태를 확인 행동과 연결해, 출발 전 점검이라는 질문 관계를 정확히 잡았다."
+  },
+  {
+    "promptId": "prompt-routine-2017",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 ACTION 기준이 현재는 이동 중 반복하는 습관이면 충족되어, 질문이 요구하는 '이동에 도움이 되는 습관' 관계가 빠져도 통과할 수 있다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "One small repeated habit that helps the learner when moving between places.",
+        "satisfiedWhenEn": "The answer identifies a specific, repeatable action used while moving between places and clearly presents it as helping the learner's transition or travel.",
+        "semanticRoleKo": "학습자가 장소 사이를 이동할 때 도움이 되는 작고 반복적인 습관.",
+        "satisfiedWhenKo": "장소 사이를 이동할 때 사용하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 학습자의 이동이나 전환에 도움이 된다는 관계를 분명히 나타내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2018",
+    "verdict": "PASS",
+    "auditReasonKo": "버스에서 자리가 없을 때 하는 평소 행동을 상황과 연결하고, 자세·안전·편안함 같은 독립 세부를 보강하도록 한 계약이 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-2019",
+    "verdict": "PASS",
+    "auditReasonKo": "장소 간 이동을 더 쉽게 만드는 구체적 전략과 그 효과 관계가 분명하며, 이유·방법·사례가 별도 의미를 추가한다."
+  },
+  {
+    "promptId": "prompt-routine-2020",
+    "verdict": "PASS",
+    "auditReasonKo": "이동 중 서두르는 상황에서 침착함을 되찾는 대응을 직접 요구하고, 결과·이유·감정·실행 세부를 구분한 기준이 타당하다."
+  },
+  {
+    "promptId": "prompt-routine-2021",
+    "verdict": "PASS",
+    "auditReasonKo": "통근 전에 미리 준비하는 구체적 항목이나 일을 필수 행동으로, 그 준비의 이유를 별도 필수 정보로 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-2022",
+    "verdict": "PASS",
+    "auditReasonKo": "장소 사이를 이동할 때의 평소 감정과 원인을 필수로 두고, PLACE도 감정을 경험하는 알아볼 수 있는 이동 위치 관계로 제한했다."
+  },
+  {
+    "promptId": "prompt-routine-2023",
+    "verdict": "PASS",
+    "auditReasonKo": "버스 지연 때문에 취하는 구체적 대응을 해결책으로 요구해 단순 대기 상황 묘사와 실제 대처를 구분할 수 있다."
+  },
+  {
+    "promptId": "prompt-routine-2024",
+    "verdict": "PASS",
+    "auditReasonKo": "통근에서 개선하려는 구체적 측면을 목표로 판정하고 계획·이유·결과·세부를 독립 보강 정보로 둔 구성이 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-2025",
+    "verdict": "PASS",
+    "auditReasonKo": "통근을 쉽거나 편안하게 만드는 구체적 요소와 그 기여 관계를 필수 DETAIL에서 함께 요구해 막연한 좋은 점을 배제한다."
+  },
+  {
+    "promptId": "prompt-routine-2026",
+    "verdict": "PASS",
+    "auditReasonKo": "최근의 특정 통근이 잘 풀렸다는 사건 관계를 필수 사례로 요구하고, 성공 결과와 행동·시간·감정을 독립적으로 구체화한다."
+  },
+  {
+    "promptId": "prompt-routine-2027",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 이동 중 평소 하는 활동을 직접 판정하며, 활동의 내용·선택 이유·감정·결과가 서로 다른 보강 의미를 가진다."
+  },
+  {
+    "promptId": "prompt-routine-2028",
+    "verdict": "PASS",
+    "auditReasonKo": "이동할 때 가져가는 구체적 물건과 그 물건이 실제로 돕는 방식을 각각 필수로 요구해 질문의 두 관계를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-2029",
+    "verdict": "PASS",
+    "auditReasonKo": "이동을 시작할 때 다른 단계보다 먼저 하는 행동과 그 우선순위의 이유를 요구하며, 출발 장소는 독립 위치 정보로 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-2030",
+    "verdict": "PASS",
+    "auditReasonKo": "통근이 끝나갈 때 취하는 행동을 시간적 위치와 함께 판정하고, 목적지 PLACE도 그 행동이 일어나는 지점과 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2031",
+    "verdict": "PASS",
+    "auditReasonKo": "5분이라는 짧은 휴식에 실제로 하는 평소 활동을 필수로 두고, 제한된 시간에 맞는 이유와 결과를 독립적으로 보강한다."
+  },
+  {
+    "promptId": "prompt-routine-2032",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 휴식의 시작 단계에 하는 행동과 휴식을 돕는 목적을 함께 요구해, 순서와 기능이 빠진 답을 걸러낼 수 있다."
+  },
+  {
+    "promptId": "prompt-routine-2033",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 ACTION 기준이 현재는 짧은 휴식 때 반복하는 습관이면 충족되어, 그 습관이 실제로 휴식에 도움이 된다는 질문 관계를 보장하지 못한다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "One small repeated habit that helps the learner when taking a short break.",
+        "satisfiedWhenEn": "The answer identifies a specific, repeatable action used during short breaks and clearly presents it as helping the learner rest, recover, or return to activity.",
+        "semanticRoleKo": "학습자가 짧은 휴식을 취할 때 도움이 되는 작고 반복적인 습관.",
+        "satisfiedWhenKo": "짧은 휴식 중 사용하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 휴식·회복 또는 활동 복귀에 도움이 된다는 관계를 분명히 나타내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2034",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 시간 안에 쉬기 위해 하는 구체적 행동과 빠른 휴식 목적을 연결하며, 결과·이유·방법·감정이 별도 의미를 더한다."
+  },
+  {
+    "promptId": "prompt-routine-2035",
+    "verdict": "PASS",
+    "auditReasonKo": "신선한 공기를 마시러 밖에 나간 상황에서 평소 하는 활동을 요구하고, 실외 맥락과 행동의 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-routine-2036",
+    "verdict": "PASS",
+    "auditReasonKo": "휴식마저 서두르게 느껴질 때 속도를 낮추는 구체적 대응을 해결책으로 판정해 문제 상황과 대처가 정확히 연결된다."
+  },
+  {
+    "promptId": "prompt-routine-2037",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 휴식을 위해 미리 준비하는 구체적 항목 또는 일을 필수로 두고, 준비 이유와 실제 휴식 효과를 분리했다."
+  },
+  {
+    "promptId": "prompt-routine-2038",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 재정비가 필요할 때 평소 취하는 구체적 행동과 재정비 목적을 함께 요구해 막연한 행동 언급을 배제한다."
+  },
+  {
+    "promptId": "prompt-routine-2039",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 휴식 중의 평소 감정과 그 원인을 필수로 구분하고, 활동·상황·사례·결과를 독립 보강 단위로 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-2040",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 실외 산책을 마친 뒤 하는 행동이라는 시간 관계를 명확히 요구해 산책 중 행동과 산책 후 행동을 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2041",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 휴식에서 바꾸려는 구체적 측면을 목표로 판정하고, 실행 계획·이유·기대 결과를 질문보다 과도하게 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-routine-2042",
+    "verdict": "PASS",
+    "auditReasonKo": "잠시 조용히 앉아 있는 동안 추가로 하는 구체적 정신적·신체적 활동을 요구해 질문에 이미 주어진 앉기와 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2043",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 휴식 중 상쾌해지기 위해 하는 구체적 행동과 그 회복 목적을 함께 판정하고, 결과는 실제 변화로 제한했다."
+  },
+  {
+    "promptId": "prompt-routine-2044",
+    "verdict": "PASS",
+    "auditReasonKo": "오후 졸림이 생겼기 때문에 취하는 구체적 대응을 해결책으로 요구하며, 졸림 자체와 대처 행동을 명확히 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2045",
+    "verdict": "PASS",
+    "auditReasonKo": "최근의 특정 짧은 휴식이 성공적이었던 관계를 사례에서 요구하고, 회복 결과·행동·시간·감정을 별도로 구체화한다."
+  },
+  {
+    "promptId": "prompt-routine-2046",
+    "verdict": "PASS",
+    "auditReasonKo": "점심이나 간식 전에 하는 구체적 준비와 그 준비가 식사를 쉽게 만드는 관계를 필수 행동 기준에 포함했다."
+  },
+  {
+    "promptId": "prompt-routine-2047",
+    "verdict": "PASS",
+    "auditReasonKo": "혼자 점심을 먹는 동안 추가로 하는 활동을 요구해 혼자 먹는다는 질문의 전제만 반복하는 답을 배제한다."
+  },
+  {
+    "promptId": "prompt-routine-2048",
+    "verdict": "PASS",
+    "auditReasonKo": "친구와 점심을 먹는 동안 하는 사회적 또는 식사 활동을 요구하고, 친구의 존재만 반복하지 않도록 기준을 세웠다."
+  },
+  {
+    "promptId": "prompt-routine-2049",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 ACTION 기준이 현재는 점심·간식 때 반복하는 습관이면 충족되어, 질문이 요구하는 '식사에 도움이 되는 습관' 관계가 빠질 수 있다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "One small repeated habit that helps the learner when eating lunch or a snack.",
+        "satisfiedWhenEn": "The answer identifies a specific, repeatable action used during lunch or snack time and clearly presents it as helping the learner's eating routine or experience.",
+        "semanticRoleKo": "학습자가 점심이나 간식을 먹을 때 도움이 되는 작고 반복적인 습관.",
+        "satisfiedWhenKo": "점심이나 간식 시간에 사용하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 학습자의 식사 과정이나 경험에 도움이 된다는 관계를 분명히 나타내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2050",
+    "verdict": "PASS",
+    "auditReasonKo": "빠른 점심이나 간식으로 고르는 구체적 음식·음료와 선택 이유를 필수로 요구하며, 막연한 좋다는 평가를 이유로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-routine-2051",
+    "verdict": "PASS",
+    "auditReasonKo": "점심이나 간식 시간이 급할 때 침착함을 유지하는 구체적 대응을 해결책으로 판정해 질문 상황과 목적을 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-2052",
+    "verdict": "PASS",
+    "auditReasonKo": "점심·간식 전에 미리 준비하는 음식·용기·도구·일과 그 이유를 각각 필수로 두어 질문의 두 요구를 모두 포착한다."
+  },
+  {
+    "promptId": "prompt-routine-2053",
+    "verdict": "PASS",
+    "auditReasonKo": "점심 후 조금 남는 시간을 사용하는 평소 활동을 필수로 요구하고, 활동의 세부·감정·이유·결과를 독립적으로 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-2054",
+    "verdict": "PASS",
+    "auditReasonKo": "점심이나 간식을 먹을 때의 평소 감정과 그 원인을 필수로 판정하며, 음식·환경·행동·사례가 감정을 구체화한다."
+  },
+  {
+    "promptId": "prompt-routine-2055",
+    "verdict": "PASS",
+    "auditReasonKo": "점심 또는 간식 시간에서 개선하려는 구체적 측면을 목표로 두고 계획·이유·결과·세부를 선택 보강으로 분리했다."
+  },
+  {
+    "promptId": "prompt-routine-2056",
+    "verdict": "PASS",
+    "auditReasonKo": "점심 후 작은 간식을 먹는 동안 추가로 하는 활동을 요구해 질문에 이미 주어진 간식 먹기 자체와 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2057",
+    "verdict": "PASS",
+    "auditReasonKo": "점심·간식 시간을 편안하게 만드는 습관·음식·환경 등 폭넓은 요인을 DETAIL로 수용하면서 실제 완화 관계까지 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2058",
+    "verdict": "PASS",
+    "auditReasonKo": "최근의 특정 점심이나 간식 시간이 잘 풀린 사건을 사례로 요구하고, 성공 결과와 행동·시간·감정을 별도로 확인한다."
+  },
+  {
+    "promptId": "prompt-routine-2059",
+    "verdict": "PASS",
+    "auditReasonKo": "점심이나 간식으로 고르는 구체적 음식과 그것을 좋아하는 이유를 필수로 분리해 질문의 선택·선호 관계를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-2060",
+    "verdict": "PASS",
+    "auditReasonKo": "오후에 가벼운 간식을 원할 때의 평소 대응을 필수 행동으로 두고, 음식 선택은 별도 보강 슬롯으로 올바르게 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-2061",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가 후 빠르게 자리를 잡기 위해 하는 구체적 행동과 전환 목적이 연결되어 있으며, 효과·이유·세부·감정이 독립적이다."
+  },
+  {
+    "promptId": "prompt-routine-2062",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가할 때 반복하는 습관을 단순 행동이 아니라 실제로 도움이 되는 행동으로 제시하도록 필수 기준에 명시했다."
+  },
+  {
+    "promptId": "prompt-routine-2063",
+    "verdict": "PASS",
+    "auditReasonKo": "집으로 가는 길의 피로를 관리하기 위해 취하는 구체적 대응을 해결책으로 요구해 피로 상태 언급만으로는 충족되지 않는다."
+  },
+  {
+    "promptId": "prompt-routine-2064",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가 직후 가장 먼저 하는 행동과 그 우선순위의 이유를 각각 필수로 요구하며, 순서 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-routine-2065",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가 후 서두르는 느낌을 관리하기 위해 먼저 취하는 구체적 대응을 해결책으로 판정해 상황·순서·대처가 연결된다."
+  },
+  {
+    "promptId": "prompt-routine-2066",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가 일과를 위해 사전에 준비하는 구체적 항목이나 일을 필수로 두고, 준비 이유를 별도의 필수 의미로 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2067",
+    "verdict": "PASS",
+    "auditReasonKo": "편한 옷으로 갈아입은 직후 다음에 하는 행동이라는 순서 관계를 명확히 요구해 일반 귀가 활동과 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2068",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가할 때의 평소 감정 또는 신체 상태와 그 원인을 필수로 분리하고, 상황·행동·사례·결과가 독립 보강 역할을 한다."
+  },
+  {
+    "promptId": "prompt-routine-2069",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가 일과에서 바꾸려는 구체적 측면을 목표로 판정하고, 계획·이유·기대 결과·세부가 질문 범위 안에서 보강된다."
+  },
+  {
+    "promptId": "prompt-routine-2070",
+    "verdict": "PASS",
+    "auditReasonKo": "바쁜 하루를 머릿속에서 내려놓기 위해 하는 구체적 대응을 해결책으로 정의해 단순히 잊고 싶다는 진술과 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2071",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가 후 일상 요구에서 휴식 상태로 전환하기 위해 하는 행동을 요구하고, 실제 전환 효과도 별도로 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-2072",
+    "verdict": "PASS",
+    "auditReasonKo": "최근의 특정 귀가 일과가 성공적이었다는 관계를 사례에서 요구하며, 행동·결과·시간·감정이 사건을 독립적으로 구체화한다."
+  },
+  {
+    "promptId": "prompt-routine-2073",
+    "verdict": "PASS",
+    "auditReasonKo": "일이나 수업 뒤 조용한 잠깐의 휴식을 확보하기 위해 하는 평소 행동과 그 목적 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-routine-2074",
+    "verdict": "PASS",
+    "auditReasonKo": "집에 도착한 뒤 실제 첫 단계인 행동과 그것이 먼저인 이유를 필수로 요구해 단순 귀가 활동 나열을 배제한다."
+  },
+  {
+    "promptId": "prompt-routine-2075",
+    "verdict": "PASS",
+    "auditReasonKo": "귀가 후 평소 다른 활동보다 먼저 하는 행동과 그 우선순위의 이유를 정확히 판정하며 세부·결과·감정은 보강 정보다."
+  },
+  {
+    "promptId": "prompt-routine-2076",
+    "verdict": "PASS",
+    "auditReasonKo": "작은 집안일이나 주방 작업 전에 준비하는 도구·재료·배치·일을 폭넓게 수용하면서 사전 준비 관계를 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2077",
+    "verdict": "PASS",
+    "auditReasonKo": "집안일이나 주방 작업에서 사용하는 반복 가능한 습관을 실제로 도움이 되는 행동으로 제시하도록 필수 기준에 포함했다."
+  },
+  {
+    "promptId": "prompt-routine-2078",
+    "verdict": "PASS",
+    "auditReasonKo": "탁자를 닦는 주어진 행동을 반복하지 않고 실제 닦는 방법을 ACTION으로 요구하며, 추가 단계와 결과를 별도 슬롯으로 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2079",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 가장 먼저 하는 구체적 작은 집안일과 그 우선순위의 이유를 필수로 두어 작업 이름과 순서 관계를 모두 확인한다."
+  },
+  {
+    "promptId": "prompt-routine-2080",
+    "verdict": "PASS",
+    "auditReasonKo": "집안일이나 주방 작업이 급할 때 침착함을 유지하는 구체적 대응을 해결책으로 판정하고 실제 완화 관계를 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2081",
+    "verdict": "PASS",
+    "auditReasonKo": "책상을 정리한다는 주어진 행동이 아니라 실제 정리 방법을 필수 ACTION으로 요구하고, 별도의 추가 정리 단계도 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-2082",
+    "verdict": "PASS",
+    "auditReasonKo": "작은 집안일이나 주방 작업 전에 미리 준비하는 구체적 도구·재료·설정과 그 이유를 정확히 필수화했다."
+  },
+  {
+    "promptId": "prompt-routine-2083",
+    "verdict": "PASS",
+    "auditReasonKo": "집안일이나 주방 작업 중의 평소 감정 또는 신체 상태와 원인을 필수로 두고, 작업 상황·행동·사례·결과를 분리했다."
+  },
+  {
+    "promptId": "prompt-routine-2084",
+    "verdict": "PASS",
+    "auditReasonKo": "식료품을 냉장고에 넣는 행위 자체가 아니라 배치·분류·확인 방법을 필수로 요구하고, 추가 단계도 독립적으로 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-2085",
+    "verdict": "PASS",
+    "auditReasonKo": "집안일이나 주방 작업에서 개선하려는 구체적 과정·능력·기준을 목표로 판정하고 계획과 결과를 보강하도록 했다."
+  },
+  {
+    "promptId": "prompt-routine-2086",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 쉽다고 느끼는 구체적 집안일 또는 주방 작업과 그 판단 이유를 필수로 분리해 선택 관계를 정확히 포착한다."
+  },
+  {
+    "promptId": "prompt-routine-2087",
+    "verdict": "PASS",
+    "auditReasonKo": "최근의 특정 집안일 또는 주방 작업이 잘 풀린 사건을 사례로 요구하며, 성공 결과와 행동·시간·감정을 별도로 확인한다."
+  },
+  {
+    "promptId": "prompt-routine-2088",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 빠른 식사가 필요할 때의 평소 대응을 필수 행동으로 두고, 선택 음식은 독립 선택 정보로 올바르게 분리했다."
+  },
+  {
+    "promptId": "prompt-routine-2089",
+    "verdict": "PASS",
+    "auditReasonKo": "집안일이나 주방 작업에 실제 사용하는 구체적 도구와 그 선택 이유를 필수로 요구하고, 사용 행동과 결과를 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-2090",
+    "verdict": "PASS",
+    "auditReasonKo": "집안일이나 주방 작업을 시작할 때 실제로 첫 번째인 행동과 그 이유를 필수로 판정하며 추가 행동은 별도 의미로 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-2091",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁에 소파에 앉아 있는 동안 하는 구체적 활동을 요구해 질문에 주어진 앉기 자체만 반복하는 답을 배제한다."
+  },
+  {
+    "promptId": "prompt-routine-2092",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁 휴식을 더 편하게 만드는 습관·물건·배치·환경을 포괄하는 DETAIL과 그 이유를 필수로 둔 구성이 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-2093",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁 휴식에 실제로 도움이 되는 작고 반복 가능한 습관을 요구하고, 이점·이유·감정·세부를 독립적으로 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-2094",
+    "verdict": "PASS",
+    "auditReasonKo": "조용히 쉬고 싶을 때 하는 구체적 평소 활동을 요구하며, 활동과 조용한 휴식 목적의 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-routine-2095",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁에 쉬기 위해 하는 구체적 활동과 그 이유를 각각 필수로 두고 결과·감정·세부·시점을 독립 보강으로 분리했다."
+  },
+  {
+    "promptId": "prompt-routine-2096",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁이 급하게 느껴질 때 긴장을 낮추는 구체적 대응을 해결책으로 판정해 상황과 완화 목적을 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-2097",
+    "verdict": "PASS",
+    "auditReasonKo": "밤에 잠깐 읽는다는 전제를 반복하지 않고 그 독서 세션 안의 방법 또는 동반 행동을 필수로 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2098",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁 휴식을 위해 미리 준비하는 구체적 물건·환경·배치·일과 그 이유를 필수로 요구해 질문의 두 부분을 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-2099",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁 휴식 중의 평소 감정 또는 신체 상태와 원인을 필수로 분리하고, 상황·행동·사례·결과를 독립 보강으로 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-21",
+    "verdict": "PASS",
+    "auditReasonKo": "토요일을 평소 어떻게 시작하는지 보여 주는 구체적 첫 활동을 요구하고, 시점은 토요일이라는 말의 단순 반복을 배제한다."
+  },
+  {
+    "promptId": "prompt-routine-2100",
+    "verdict": "PASS",
+    "auditReasonKo": "차분한 저녁을 만들거나 누리기 위해 하는 구체적 활동을 필수로 두고, 결과는 단순히 차분하다는 반복보다 구체적으로 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2101",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁 휴식에서 개선하려는 구체적 측면을 목표로 판정하고 계획·이유·예상 이점·세부를 독립 보강으로 둔 것이 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-2102",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁에 쉬는 구체적 방법과 그 방법이 학습자에게 효과적인 이유를 필수로 분리해 질문의 개인적 적합성 관계를 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-2103",
+    "verdict": "PASS",
+    "auditReasonKo": "집이 조용한 상황에서 평소 하는 구체적 활동을 요구하며, 조용함이 그 활동을 선택하게 하는 관계를 이유에서 확인한다."
+  },
+  {
+    "promptId": "prompt-routine-2104",
+    "verdict": "PASS",
+    "auditReasonKo": "최근의 특정 저녁 휴식이 성공적이었다는 관계를 사례에서 요구하고 행동·결과·시간·감정·상황을 독립적으로 구체화한다."
+  },
+  {
+    "promptId": "prompt-routine-2105",
+    "verdict": "PASS",
+    "auditReasonKo": "저녁에 긴장을 풀기 위해 하는 구체적 행동과 그 이유를 필수로 두며, 시간 슬롯은 저녁이라는 전제보다 추가 시점을 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2106",
+    "verdict": "PASS",
+    "auditReasonKo": "일요일 아침 집에서 하는 평소 활동을 핵심으로 두고, 깊이 슬롯은 질문에 주어진 장소·시간 전제를 반복하지 않는 정보를 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2107",
+    "verdict": "PASS",
+    "auditReasonKo": "느긋한 토요일 오후에 하는 평소 활동을 직접 판정하며, 선택 깊이는 활동을 구체화하거나 이유·감정·결과를 추가하도록 했다."
+  },
+  {
+    "promptId": "prompt-routine-2108",
+    "verdict": "PASS",
+    "auditReasonKo": "주말에 계획이 없을 때 실제로 선택하는 활동을 필수로 두고, 장소는 활동이 일어나는 알아볼 수 있는 위치 관계로 제한했다."
+  },
+  {
+    "promptId": "prompt-routine-2109",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 편안한 주말을 보내기 위한 구체적 계획과 그 선택 이유를 필수로 요구하고, 실행 행동은 계획과 별도 단계로 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-2110",
+    "verdict": "PASS",
+    "auditReasonKo": "주말에 집에서 지낼 때 실제로 도움이 되는 작고 반복 가능한 습관을 요구하며, 효과·이유·세부·사례가 독립적이다."
+  },
+  {
+    "promptId": "prompt-routine-2111",
+    "verdict": "PASS",
+    "auditReasonKo": "주말에 잠옷을 입고 있다는 전제를 반복하지 않고 그 상태에서 하는 구체적 활동을 필수 행동으로 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2112",
+    "verdict": "PASS",
+    "auditReasonKo": "주말에 집에서 하는 구체적 활동과 그 활동을 좋아하는 이유를 필수로 분리해 활동·선호 관계를 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-2113",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 보내는 주말이 급하게 느껴질 때 속도를 낮추는 구체적 대응을 해결책으로 요구해 문제·대처 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-routine-2114",
+    "verdict": "PASS",
+    "auditReasonKo": "조용한 주말 저녁을 위해 선택하는 구체적 활동을 필수로 두고, 감정·결과·이유·세부를 독립 보강 정보로 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-2115",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 보낼 주말 전에 준비하는 구체적 물건·음식·활동 설정·일과 그 이유를 각각 필수로 정확히 요구한다."
+  },
+  {
+    "promptId": "prompt-routine-2116",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 보내는 주말의 평소 감정 또는 신체 상태와 그 원인을 필수로 두고 상황·행동·사례·결과를 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-2117",
+    "verdict": "PASS",
+    "auditReasonKo": "혼자 주말을 보낼 때 실제로 하는 평소 활동을 필수로 요구하고, 장소는 그 활동과 연결된 알아볼 수 있는 위치로 제한했다."
+  },
+  {
+    "promptId": "prompt-routine-2118",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 보내는 주말에서 개선하려는 구체적 측면을 목표로 판정하고 계획·이유·예상 결과·세부를 독립 보강으로 정의했다."
+  }
+]

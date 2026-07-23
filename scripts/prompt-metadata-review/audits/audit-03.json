@@ -1,0 +1,126 @@
+{
+  "auditedParts": ["05", "06"],
+  "auditedCount": 241,
+  "issues": [
+    {
+      "promptId": "prompt-intro-v2-0294",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PROBLEM"],
+        "optionalSlots": ["SOLUTION", "REASON", "RESULT", "SPECIFIC_TIME"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The learner supplies only the obstacle to sleeping well. Because the question does not request any handling or response, this is a factual personal description rather than a problem-plus-solution task."
+    },
+    {
+      "promptId": "prompt-intro-v2-0295",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["SPECIFIC_TIME"],
+        "optionalSlots": ["REASON", "PLAN", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question asks only for a desired bedtime, not for a broader goal or a plan. The response is a focused time description."
+    },
+    {
+      "promptId": "prompt-intro-v2-0296",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["SPECIFIC_TIME"],
+        "optionalSlots": ["REASON", "PLAN", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The learner only states a desired wake-up time. No broader goal, preparation, or future steps are required, so this is a focused time description."
+    },
+    {
+      "promptId": "prompt-intro-v2-0352",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PROBLEM"],
+        "optionalSlots": ["REASON", "EXAMPLE", "SOLUTION", "FEELING"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The question asks only for an obstacle to maintaining a habit. Since the learner is not required to give a response or remedy, the answer is a general description rather than a problem-plus-solution structure."
+    },
+    {
+      "promptId": "prompt-intro-v2-0376",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["REASON"],
+        "optionalSlots": ["EXAMPLE", "DETAIL", "FEELING", "RESULT"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The learner supplies only a cause of conversational enjoyment and does not have to state a separate judgment or position. A cause-only response belongs in GENERAL_DESCRIPTION."
+    },
+    {
+      "promptId": "prompt-intro-v2-0377",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["REASON"],
+        "optionalSlots": ["EXAMPLE", "DETAIL", "FEELING", "SOLUTION"],
+        "minimumDepthSlots": 0
+      },
+      "reason": "The prompt asks only what causes conversational difficulty; it does not require an opinion or stance in addition to that cause. The response shape is GENERAL_DESCRIPTION with REASON."
+    },
+    {
+      "promptId": "prompt-intro-v2-0381",
+      "severity": "ERROR",
+      "fields": ["answerMode", "requiredSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["REASON", "ACTION", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "The ability to fly is a supplied hypothetical premise, and the learner only gives the destination. This is not an expressed preference, and the literal where obligation requires PLACE rather than CHOICE."
+    },
+    {
+      "promptId": "prompt-intro-v2-0382",
+      "severity": "ERROR",
+      "fields": ["answerMode"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["ACTION"],
+        "optionalSlots": ["REASON", "PLACE", "RESULT", "FEELING"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "The learner describes a hypothetical action while invisible; the question does not ask for a preference or selection between options."
+    },
+    {
+      "promptId": "prompt-intro-v2-0391",
+      "severity": "ERROR",
+      "fields": ["answerMode", "requiredSlots"],
+      "recommended": {
+        "answerMode": "GENERAL_DESCRIPTION",
+        "requiredSlots": ["PLACE"],
+        "optionalSlots": ["REASON", "ACTION", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "The free ticket is the hypothetical premise, while the learner supplies only a destination. The response is a place description, not a stated preference, and where directly requires PLACE."
+    },
+    {
+      "promptId": "prompt-intro-v2-0400",
+      "severity": "ERROR",
+      "fields": ["minimumDepthSlots"],
+      "recommended": {
+        "answerMode": "PREFERENCE",
+        "requiredSlots": ["CHOICE"],
+        "optionalSlots": ["REASON", "RESULT", "FEELING", "DETAIL"],
+        "minimumDepthSlots": 1
+      },
+      "reason": "This unrestricted hypothetical gift preference is broad enough that a bare gift noun is underdeveloped. One independent reason, benefit, feeling, or detail is appropriate even at the introductory level."
+    }
+  ]
+}

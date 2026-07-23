@@ -1,0 +1,2288 @@
+[
+  {
+    "promptId": "prompt-routine-2119",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific activity the learner prefers doing at home on the weekend.",
+        "satisfiedWhenEn": "The answer identifies a recognizable at-home weekend activity that the learner personally likes, rather than referring vaguely to doing something enjoyable.",
+        "semanticRoleKo": "학습자가 주말에 집에서 하기를 좋아하는 구체적인 활동.",
+        "satisfiedWhenKo": "답변이 막연히 즐거운 무언가를 한다고 하지 않고, 학습자가 개인적으로 좋아하는 식별 가능한 주말 집 활동을 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes the chosen at-home weekend activity.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, benefit, or personal motivation that explains the learner's preference for that activity.",
+        "semanticRoleKo": "학습자가 선택한 주말 집 활동을 좋아하는 이유.",
+        "satisfiedWhenKo": "답변이 그 활동에 대한 학습자의 선호를 설명하는 구체적인 특성, 이점 또는 개인적 동기를 제시하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A particular time within the weekend when the learner likes to do the activity.",
+        "satisfiedWhenEn": "The answer gives a meaningful time or part of the weekend associated with the preferred activity, beyond merely repeating that it happens on the weekend.",
+        "semanticRoleKo": "학습자가 그 활동을 즐겨 하는 주말 중의 구체적인 때.",
+        "satisfiedWhenKo": "답변이 단순히 주말이라고 되풀이하지 않고, 선호 활동과 관련된 의미 있는 시간이나 주말의 특정 부분을 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate activity the learner also does before, during, or after the preferred weekend activity.",
+        "satisfiedWhenEn": "The answer states another concrete action that accompanies or follows the preferred activity and is distinct from the activity itself.",
+        "semanticRoleKo": "학습자가 선호하는 주말 활동의 전후나 도중에 함께 하는 별도의 활동.",
+        "satisfiedWhenKo": "답변이 선호 활동 자체와 구별되면서 그 활동에 동반되거나 뒤따르는 또 다른 구체적 행동을 밝히면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to doing the preferred activity at home on the weekend.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling the learner experiences while doing or after doing the activity, beyond merely repeating that the learner likes it.",
+        "semanticRoleKo": "주말에 집에서 선호 활동을 할 때 느끼는 학습자의 감정.",
+        "satisfiedWhenKo": "답변이 그 활동을 좋아한다고만 되풀이하지 않고, 활동 중이나 이후에 학습자가 경험하는 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the preferred activity has on the learner's weekend, tasks, or well-being.",
+        "satisfiedWhenEn": "The answer states an identifiable outcome and connects it to doing the chosen activity at home on the weekend.",
+        "semanticRoleKo": "선호 활동이 학습자의 주말, 할 일 또는 안녕감에 미치는 구체적인 효과.",
+        "satisfiedWhenKo": "답변이 식별 가능한 결과를 제시하고 그것을 주말에 집에서 선택한 활동을 하는 것과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2120",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner habitually does when a weekend has unusually ample free time.",
+        "satisfiedWhenEn": "The answer states a concrete action or activity the learner usually chooses in that especially free weekend situation.",
+        "semanticRoleKo": "주말에 평소보다 여유 시간이 많을 때 학습자가 습관적으로 하는 일.",
+        "satisfiedWhenKo": "답변이 유난히 여유로운 주말 상황에서 학습자가 보통 선택하는 구체적인 행동이나 활동을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When during an especially free weekend the usual activity takes place.",
+        "satisfiedWhenEn": "The answer identifies a meaningful time, day segment, or sequence point within the free weekend for the stated activity.",
+        "semanticRoleKo": "유난히 여유로운 주말 중 평소 활동이 이루어지는 때.",
+        "satisfiedWhenKo": "답변이 말한 활동이 이루어지는 여유로운 주말 내의 의미 있는 시간, 하루의 구간 또는 순서상 시점을 밝히면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The setting where the learner spends the especially free weekend doing the stated activity.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a recognizable location connected to performing the usual activity.",
+        "semanticRoleKo": "학습자가 유난히 여유로운 주말에 말한 활동을 하며 시간을 보내는 장소.",
+        "satisfiedWhenKo": "답변이 그 평소 활동을 하는 것과 연결된 식별 가능한 장소를 직접 말하거나 분명히 나타내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses the stated activity when the weekend feels especially free.",
+        "satisfiedWhenEn": "The answer provides a concrete motivation or benefit that explains the learner's usual choice in that situation.",
+        "semanticRoleKo": "주말이 특히 여유로울 때 학습자가 말한 활동을 선택하는 이유.",
+        "satisfiedWhenKo": "답변이 그 상황에서 학습자의 평소 선택을 설명하는 구체적인 동기나 이점을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while spending the extra-free weekend in the stated way.",
+        "satisfiedWhenEn": "The answer conveys a definite emotion tied to doing the usual activity during an especially free weekend.",
+        "semanticRoleKo": "유난히 여유로운 주말을 말한 방식으로 보내며 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 특히 여유로운 주말에 평소 활동을 하는 것과 연결된 분명한 감정을 드러내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "An outcome of how the learner spends an especially free weekend.",
+        "satisfiedWhenEn": "The answer gives a concrete effect on the learner's rest, enjoyment, responsibilities, or later state and links it to the stated activity.",
+        "semanticRoleKo": "학습자가 유난히 여유로운 주말을 보내는 방식에서 생기는 결과.",
+        "satisfiedWhenKo": "답변이 휴식, 즐거움, 책임 수행 또는 이후 상태에 생긴 구체적 효과를 제시하고 그것을 말한 활동과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2121",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The habitual step the learner takes to keep phone use simple.",
+        "satisfiedWhenEn": "The answer describes a concrete behavior that the learner uses to reduce complexity, distraction, or unnecessary phone use.",
+        "semanticRoleKo": "휴대전화 사용을 단순하게 유지하기 위해 학습자가 습관적으로 취하는 조치.",
+        "satisfiedWhenKo": "답변이 복잡함, 산만함 또는 불필요한 휴대전화 사용을 줄이기 위해 학습자가 하는 구체적 행동을 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses that simplifying phone habit.",
+        "satisfiedWhenEn": "The answer gives a concrete need, preference, or benefit that explains why the learner performs the stated action.",
+        "semanticRoleKo": "학습자가 휴대전화 사용을 단순화하는 그 습관을 쓰는 이유.",
+        "satisfiedWhenKo": "답변이 학습자가 말한 행동을 하는 이유를 설명하는 구체적인 필요, 선호 또는 이점을 제시하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner applies the simplifying habit during phone use.",
+        "satisfiedWhenEn": "The answer identifies a concrete time, frequency, or recurring phone-use context for the action beyond merely saying that it happens during phone use.",
+        "semanticRoleKo": "휴대전화를 사용할 때 학습자가 단순화 습관을 적용하는 때.",
+        "satisfiedWhenKo": "답변이 휴대전화 사용 중이라고만 하지 않고, 말한 행동을 하는 구체적인 시간, 빈도 또는 반복되는 휴대전화 사용 맥락을 밝히면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another distinct step that supports the learner's effort to keep phone time simple.",
+        "satisfiedWhenEn": "The answer states a separate concrete behavior that complements the main simplifying action rather than rephrasing it.",
+        "semanticRoleKo": "휴대전화 사용 시간을 단순하게 유지하려는 노력을 돕는 또 다른 별도의 조치.",
+        "satisfiedWhenKo": "답변이 주된 단순화 행동을 바꿔 말하는 데 그치지 않고, 이를 보완하는 별도의 구체적 행동을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the simplifying habit on the learner's phone use or day.",
+        "satisfiedWhenEn": "The answer states a concrete consequence for focus, time use, or daily functioning caused by the habit; merely saying phone time becomes simpler or easier is insufficient.",
+        "semanticRoleKo": "단순화 습관이 학습자의 휴대전화 사용이나 하루에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 그 습관 때문에 집중, 시간 사용 또는 일상 기능에 생기는 구체적 결과를 제시하면 충족하며, 휴대전화 사용이 단순하거나 쉬워진다고만 하면 불충분하다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to using the phone in the simpler way.",
+        "satisfiedWhenEn": "The answer conveys a specific feeling linked to applying the stated habit or experiencing its effect.",
+        "semanticRoleKo": "더 단순한 방식으로 휴대전화를 사용할 때 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 말한 습관을 적용하거나 그 효과를 경험하는 것과 연결된 구체적인 감정을 드러내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2122",
+    "slotContracts": {
+    "ACTION": {
+      "semanticRoleEn": "One small recurring phone-use habit that concretely helps the learner.",
+      "satisfiedWhenEn": "The answer identifies a concrete, repeatable action used while using or managing the phone and clearly shows that the action helps the learner in that context. Merely naming a phone habit without conveying the helpful relationship does not satisfy the role.",
+      "semanticRoleKo": "휴대폰을 사용하거나 관리할 때 학습자에게 구체적으로 도움이 되는 작고 반복적인 습관.",
+      "satisfiedWhenKo": "휴대폰을 사용하거나 관리할 때 하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 해당 상황에서 학습자에게 도움이 된다는 관계를 분명히 드러내면 충족한다. 도움 관계 없이 휴대폰 습관만 언급하면 충족되지 않는다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical or personal benefit produced by the small phone habit.",
+        "satisfiedWhenEn": "The answer states an identifiable improvement in phone use or daily functioning and connects it to the habit; merely saying the habit helps is insufficient.",
+        "semanticRoleKo": "작은 휴대전화 습관이 만들어 내는 실용적 또는 개인적 이점.",
+        "satisfiedWhenKo": "답변이 휴대전화 사용이나 일상 기능의 식별 가능한 개선을 제시하고 그것을 그 습관과 연결하면 충족하며, 습관이 도움이 된다고만 하면 불충분하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A more specific time, frequency, or stage of phone use when the small habit is performed.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or recurring trigger beyond the question's general condition of using the phone.",
+        "semanticRoleKo": "그 작은 습관을 실천하는 더 구체적인 시간, 빈도 또는 휴대전화 사용 단계.",
+        "satisfiedWhenKo": "답변이 질문에 이미 주어진 일반적인 휴대전화 사용 조건을 넘어선 구체적인 시간, 빈도 또는 반복 계기를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the small phone habit helpful.",
+        "satisfiedWhenEn": "The answer gives a concrete need or mechanism that explains how or why the habit helps the learner.",
+        "semanticRoleKo": "학습자가 그 작은 휴대전화 습관이 도움이 된다고 여기는 이유.",
+        "satisfiedWhenKo": "답변이 그 습관이 학습자에게 어떻게 또는 왜 도움이 되는지 설명하는 구체적인 필요나 작용 방식을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion when the learner used the small phone habit.",
+        "satisfiedWhenEn": "The answer describes an identifiable phone-use situation in which the learner actually performed the habit.",
+        "semanticRoleKo": "학습자가 그 작은 휴대전화 습관을 사용한 구체적인 경우.",
+        "satisfiedWhenKo": "답변이 학습자가 실제로 그 습관을 실천한 식별 가능한 휴대전화 사용 상황을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2123",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner usually does after opening the calendar app.",
+        "satisfiedWhenEn": "The answer states a concrete calendar-related action the learner habitually performs once the app is open.",
+        "semanticRoleKo": "캘린더 앱을 연 뒤 학습자가 보통 하는 일.",
+        "satisfiedWhenKo": "답변이 앱을 연 뒤 학습자가 습관적으로 하는 구체적인 일정 관련 행동을 밝히면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific calendar information, entry, or app feature involved in the learner's usual action.",
+        "satisfiedWhenEn": "The answer identifies concrete content or a feature that clarifies what the learner checks, adds, changes, or organizes in the calendar.",
+        "semanticRoleKo": "학습자의 평소 행동에 관련된 구체적인 일정 정보, 항목 또는 앱 기능.",
+        "satisfiedWhenKo": "답변이 학습자가 캘린더에서 확인, 추가, 변경 또는 정리하는 대상을 분명하게 해 주는 구체적 내용이나 기능을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner normally opens the calendar app or performs the stated calendar action.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or recurring situation more specific than the already supplied act of opening the calendar app.",
+        "semanticRoleKo": "학습자가 보통 캘린더 앱을 열거나 말한 일정 행동을 하는 때.",
+        "satisfiedWhenKo": "답변이 질문에 이미 주어진 캘린더 앱을 여는 행동보다 더 구체적인 시간, 빈도 또는 반복 상황을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner performs the stated action in the calendar app.",
+        "satisfiedWhenEn": "The answer provides a concrete purpose or need that explains the calendar action.",
+        "semanticRoleKo": "학습자가 캘린더 앱에서 말한 행동을 하는 이유.",
+        "satisfiedWhenKo": "답변이 그 일정 행동을 설명하는 구체적인 목적이나 필요를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the calendar-app routine on the learner's planning or daily life.",
+        "satisfiedWhenEn": "The answer states a concrete planning, memory, preparedness, or time-management outcome caused by the stated action.",
+        "semanticRoleKo": "캘린더 앱 사용 습관이 학습자의 계획이나 일상생활에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 말한 행동으로 생기는 계획, 기억, 준비 또는 시간 관리상의 구체적 결과를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2124",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The identifiable phone feature the learner uses frequently.",
+        "satisfiedWhenEn": "The answer names or clearly identifies a specific phone function, setting, or built-in capability that the learner often uses.",
+        "semanticRoleKo": "학습자가 자주 사용하는 식별 가능한 휴대전화 기능.",
+        "satisfiedWhenKo": "답변이 학습자가 자주 쓰는 구체적인 휴대전화 기능, 설정 또는 내장 기능을 직접 말하거나 분명히 식별하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner frequently uses the chosen phone feature.",
+        "satisfiedWhenEn": "The answer gives a concrete use, advantage, or personal need that explains the feature's frequent use.",
+        "semanticRoleKo": "학습자가 선택한 휴대전화 기능을 자주 사용하는 이유.",
+        "satisfiedWhenKo": "답변이 그 기능을 자주 쓰는 이유를 설명하는 구체적인 용도, 장점 또는 개인적 필요를 제시하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "How the learner uses the chosen phone feature in practice.",
+        "satisfiedWhenEn": "The answer describes a concrete operation or task the learner performs with the feature, beyond merely naming it.",
+        "semanticRoleKo": "학습자가 선택한 휴대전화 기능을 실제로 사용하는 방식.",
+        "satisfiedWhenKo": "답변이 기능의 이름만 말하는 데 그치지 않고, 그 기능으로 학습자가 수행하는 구체적인 조작이나 작업을 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner uses the chosen phone feature.",
+        "satisfiedWhenEn": "The answer supplies a concrete time, frequency, or recurring situation that is more precise than merely saying the feature is used often.",
+        "semanticRoleKo": "학습자가 선택한 휴대전화 기능을 사용하는 때나 빈도.",
+        "satisfiedWhenKo": "답변이 그 기능을 자주 쓴다고만 하지 않고, 더 구체적인 시간, 빈도 또는 반복 상황을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome the learner gets from using the chosen phone feature.",
+        "satisfiedWhenEn": "The answer states an identifiable effect on a task, communication, organization, convenience, or daily life and links it to the feature.",
+        "semanticRoleKo": "학습자가 선택한 휴대전화 기능을 사용해 얻는 구체적인 결과.",
+        "satisfiedWhenKo": "답변이 업무, 소통, 정리, 편의 또는 일상생활에 미치는 식별 가능한 효과를 제시하고 그것을 그 기능과 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion that demonstrates the learner's use of the phone feature.",
+        "satisfiedWhenEn": "The answer describes an identifiable situation in which the learner used the chosen feature for a particular purpose.",
+        "semanticRoleKo": "학습자가 그 휴대전화 기능을 사용한 모습을 보여 주는 구체적인 경우.",
+        "satisfiedWhenKo": "답변이 학습자가 특정한 목적을 위해 선택한 기능을 사용한 식별 가능한 상황을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2125",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The concrete response the learner uses to stay focused when phone time feels rushed.",
+        "satisfiedWhenEn": "The answer states a specific, workable action or strategy the learner applies in the rushed phone-use situation to protect focus.",
+        "semanticRoleKo": "휴대전화 사용 시간이 촉박하게 느껴질 때 집중을 유지하기 위해 학습자가 쓰는 구체적인 대응.",
+        "satisfiedWhenKo": "답변이 촉박한 휴대전화 사용 상황에서 집중을 지키기 위해 학습자가 적용하는 구체적이고 실행 가능한 행동이나 전략을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the stated response helps the learner stay focused during rushed phone use.",
+        "satisfiedWhenEn": "The answer explains a concrete mechanism or need that makes the solution useful in that situation.",
+        "semanticRoleKo": "말한 대응이 촉박한 휴대전화 사용 중 학습자의 집중에 도움이 되는 이유.",
+        "satisfiedWhenKo": "답변이 그 상황에서 해결책이 유용한 까닭을 보여 주는 구체적인 작용 방식이나 필요를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of using the focus strategy during rushed phone time.",
+        "satisfiedWhenEn": "The answer identifies a concrete effect on how attention is maintained, accuracy, speed, stress, or task completion; merely saying the solution helps the learner focus is insufficient.",
+        "semanticRoleKo": "촉박한 휴대전화 사용 중 집중 전략을 쓴 결과.",
+        "satisfiedWhenKo": "답변이 주의를 유지하는 방식, 정확성, 속도, 스트레스 또는 과업 완료에 생기는 구체적 효과를 밝히면 충족하며, 해결책이 집중에 도움이 된다고만 하면 불충분하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The point during rushed phone use when the learner applies the focus strategy.",
+        "satisfiedWhenEn": "The answer gives a concrete time, stage, or recurring moment beyond merely repeating that the strategy is used when phone time feels rushed.",
+        "semanticRoleKo": "촉박한 휴대전화 사용 중 학습자가 집중 전략을 적용하는 시점.",
+        "satisfiedWhenKo": "답변이 휴대전화 사용 시간이 촉박할 때라고만 되풀이하지 않고, 해결책을 쓰는 구체적인 시간, 단계 또는 반복되는 순간을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular rushed phone-use occasion when the learner used the focus strategy.",
+        "satisfiedWhenEn": "The answer describes an identifiable situation in which phone time felt rushed and the learner actually applied the stated solution.",
+        "semanticRoleKo": "학습자가 집중 전략을 사용했던 구체적인 촉박한 휴대전화 사용 사례.",
+        "satisfiedWhenKo": "답변이 휴대전화 사용 시간이 촉박하게 느껴졌고 학습자가 실제로 말한 해결책을 적용한 식별 가능한 상황을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2126",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner usually does while checking the map app.",
+        "satisfiedWhenEn": "The answer describes a concrete map-related operation or task the learner habitually performs in the app.",
+        "semanticRoleKo": "지도 앱을 확인할 때 학습자가 보통 하는 일.",
+        "satisfiedWhenKo": "답변이 지도 앱에서 학습자가 습관적으로 수행하는 구체적인 지도 관련 조작이나 작업을 설명하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The destination, route location, or area connected to the learner's map-app use.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place the learner searches for, checks, travels to, or uses to orient the route.",
+        "semanticRoleKo": "학습자의 지도 앱 사용과 관련된 목적지, 경로상의 장소 또는 지역.",
+        "satisfiedWhenKo": "답변이 학습자가 검색하거나 확인하거나 찾아가거나 경로 파악의 기준으로 삼는 식별 가능한 장소를 밝히면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific route, travel condition, or map information the learner checks.",
+        "satisfiedWhenEn": "The answer names concrete map content such as directions, distance, transit, traffic, landmarks, or another identifiable feature relevant to the action.",
+        "semanticRoleKo": "학습자가 확인하는 구체적인 경로, 이동 조건 또는 지도 정보.",
+        "satisfiedWhenKo": "답변이 길 안내, 거리, 대중교통, 교통 상황, 랜드마크 등 그 행동과 관련된 식별 가능한 지도 내용을 구체적으로 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner performs the stated action in the map app.",
+        "satisfiedWhenEn": "The answer provides a concrete navigation, planning, time, or certainty need that explains the map-app action.",
+        "semanticRoleKo": "학습자가 지도 앱에서 말한 행동을 하는 이유.",
+        "satisfiedWhenKo": "답변이 그 지도 앱 행동을 설명하는 구체적인 길 찾기, 계획, 시간 또는 확실성에 관한 필요를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The travel or planning outcome produced by the learner's map-app routine.",
+        "satisfiedWhenEn": "The answer states a concrete effect on finding the way, choosing a route, arriving, saving time, or feeling prepared and links it to the action.",
+        "semanticRoleKo": "학습자의 지도 앱 사용 습관이 만들어 내는 이동 또는 계획상의 결과.",
+        "satisfiedWhenKo": "답변이 길 찾기, 경로 선택, 도착, 시간 절약 또는 준비 상태에 생기는 구체적 효과를 제시하고 그것을 말한 행동과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2127",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner habitually prepares in advance to support their phone habits.",
+        "satisfiedWhenEn": "The answer describes a concrete advance preparation involving the phone, its settings, content, accessories, or intended use.",
+        "semanticRoleKo": "휴대전화 습관을 돕기 위해 학습자가 미리 준비하는 일.",
+        "satisfiedWhenKo": "답변이 휴대전화, 설정, 콘텐츠, 액세서리 또는 사용 목적과 관련해 미리 하는 구체적인 준비를 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner makes that preparation for their phone habits.",
+        "satisfiedWhenEn": "The answer gives a concrete problem avoided, need met, or benefit gained that explains the advance preparation.",
+        "semanticRoleKo": "학습자가 휴대전화 습관을 위해 그 준비를 미리 하는 이유.",
+        "satisfiedWhenKo": "답변이 미리 준비하는 이유를 설명하는 구체적인 문제 예방, 필요 충족 또는 이점을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific item, setting, content, or configuration involved in the phone preparation.",
+        "satisfiedWhenEn": "The answer identifies concrete prepared material or a phone configuration that clarifies what the learner sets up in advance.",
+        "semanticRoleKo": "휴대전화 사전 준비에 포함되는 구체적인 물품, 설정, 콘텐츠 또는 구성.",
+        "satisfiedWhenKo": "답변이 학습자가 미리 마련하는 내용을 분명하게 해 주는 구체적인 준비물이나 휴대전화 설정을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner makes the advance preparation for phone use.",
+        "satisfiedWhenEn": "The answer gives a concrete lead time, schedule, frequency, or trigger more specific than simply saying the preparation happens ahead of phone use.",
+        "semanticRoleKo": "학습자가 휴대전화 사용을 위한 사전 준비를 하는 때.",
+        "satisfiedWhenKo": "답변이 휴대전화 사용 전에 준비한다고만 하지 않고, 더 구체적인 사전 시간, 일정, 빈도 또는 계기를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of preparing ahead on the learner's later phone use.",
+        "satisfiedWhenEn": "The answer states a concrete improvement in readiness, focus, convenience, battery use, or task completion caused by the preparation.",
+        "semanticRoleKo": "미리 준비하는 것이 이후 학습자의 휴대전화 사용에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 그 준비로 인해 준비 상태, 집중, 편의, 배터리 사용 또는 과업 완료에 생기는 구체적인 개선을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion when the learner's advance phone preparation was used.",
+        "satisfiedWhenEn": "The answer describes an identifiable situation in which the learner prepared beforehand and then relied on that preparation during phone use.",
+        "semanticRoleKo": "학습자가 미리 한 휴대전화 준비를 실제로 활용한 구체적인 경우.",
+        "satisfiedWhenKo": "답변이 학습자가 사전에 준비한 뒤 휴대전화 사용 중 그 준비를 활용한 식별 가능한 상황을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2128",
+    "slotContracts": {
+      "FEELING": {
+        "semanticRoleEn": "The learner's usual emotional state while using the phone.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion the learner commonly experiences during phone use.",
+        "semanticRoleKo": "휴대전화를 사용할 때 학습자가 보통 느끼는 감정 상태.",
+        "satisfiedWhenKo": "답변이 휴대전화 사용 중 학습자가 흔히 경험하는 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What causes the learner's usual feeling during phone use.",
+        "satisfiedWhenEn": "The answer identifies a concrete feature, activity, interaction, effect, or circumstance of phone use that explains the stated emotion.",
+        "semanticRoleKo": "휴대전화 사용 중 학습자의 평소 감정을 일으키는 이유.",
+        "satisfiedWhenKo": "답변이 말한 감정을 설명하는 휴대전화 사용의 구체적인 기능, 활동, 상호작용, 영향 또는 상황을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time or phone-use situation in which the learner usually has the stated feeling.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or recurring context tied to the emotion beyond the general fact that it occurs during phone use.",
+        "semanticRoleKo": "학습자가 말한 감정을 보통 느끼는 시간이나 휴대전화 사용 상황.",
+        "satisfiedWhenKo": "답변이 휴대전화 사용 중이라는 일반적 사실을 넘어, 그 감정과 연결된 구체적인 시간, 빈도 또는 반복 맥락을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific phone-use occasion that illustrates the learner's usual feeling.",
+        "satisfiedWhenEn": "The answer describes an identifiable instance of using the phone in which the stated emotion arose.",
+        "semanticRoleKo": "휴대전화 사용 중 학습자의 평소 감정을 보여 주는 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 휴대전화를 사용하면서 말한 감정이 생긴 식별 가능한 경우를 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the learner's phone-related feeling for their behavior or day.",
+        "satisfiedWhenEn": "The answer states a concrete effect on continued phone use, attention, mood, decisions, or daily activity and connects it to the stated feeling.",
+        "semanticRoleKo": "휴대전화와 관련된 학습자의 감정이 행동이나 하루에 미치는 결과.",
+        "satisfiedWhenKo": "답변이 이후 휴대전화 사용, 집중, 기분, 결정 또는 일상 활동에 미치는 구체적 효과를 제시하고 그것을 말한 감정과 연결하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific kind of phone use or circumstance that clarifies the learner's emotional experience.",
+        "satisfiedWhenEn": "The answer identifies concrete content, an app activity, an interaction, or another condition that makes the phone-use feeling more precise.",
+        "semanticRoleKo": "학습자의 감정 경험을 분명하게 해 주는 구체적인 휴대전화 사용 유형이나 상황.",
+        "satisfiedWhenKo": "답변이 휴대전화 사용 감정을 더 정확하게 드러내는 구체적인 콘텐츠, 앱 활동, 상호작용 또는 다른 조건을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2129",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The learner's usual concrete response to having a low phone battery.",
+        "satisfiedWhenEn": "The answer states a workable action or strategy the learner normally uses to charge the phone, conserve power, or manage use when the battery is low.",
+        "semanticRoleKo": "휴대전화 배터리가 부족할 때 학습자가 보통 취하는 구체적인 대응.",
+        "satisfiedWhenKo": "답변이 배터리가 부족할 때 휴대전화를 충전하거나 전력을 아끼거나 사용을 조절하기 위해 학습자가 보통 쓰는 실행 가능한 행동이나 전략을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses the stated response when the battery is low.",
+        "satisfiedWhenEn": "The answer gives a concrete need, constraint, or priority that explains the learner's low-battery response.",
+        "semanticRoleKo": "배터리가 부족할 때 학습자가 말한 대응을 선택하는 이유.",
+        "satisfiedWhenKo": "답변이 학습자의 배터리 부족 대응을 설명하는 구체적인 필요, 제약 또는 우선순위를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the learner's low-battery response on phone availability or intended tasks.",
+        "satisfiedWhenEn": "The answer states a concrete battery, communication, navigation, task, or convenience outcome caused by the stated response.",
+        "semanticRoleKo": "학습자의 배터리 부족 대응이 휴대전화 사용 가능성이나 예정된 일에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 말한 대응으로 생기는 배터리, 소통, 길 찾기, 과업 또는 편의상의 구체적 결과를 제시하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When in the day or at what stage of an activity the learner responds to a low battery.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or activity stage in addition to the low-battery condition; saying only that the battery is low does not satisfy the role.",
+        "semanticRoleKo": "하루 중 언제 또는 활동의 어느 단계에서 학습자가 배터리 부족에 대응하는지에 관한 시점.",
+        "satisfiedWhenKo": "답변이 배터리가 부족하다는 조건 외에 구체적인 시간, 빈도 또는 활동 단계를 제시하면 충족하며, 배터리가 부족할 때라고만 하면 충족하지 않는다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion when the learner dealt with a low phone battery.",
+        "satisfiedWhenEn": "The answer describes an identifiable situation in which the battery was low and the learner used the stated response.",
+        "semanticRoleKo": "학습자가 휴대전화 배터리 부족에 대처한 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 배터리가 부족했고 학습자가 말한 대응을 사용한 식별 가능한 상황을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2130",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific improvement the learner wants to make to their phone habits.",
+        "satisfiedWhenEn": "The answer identifies a definite desired change in how, when, why, or how much the learner uses the phone, rather than merely saying the habits should improve.",
+        "semanticRoleKo": "학습자가 자신의 휴대전화 습관에서 이루고 싶은 구체적인 개선.",
+        "satisfiedWhenKo": "답변이 습관이 좋아져야 한다고 막연히 말하지 않고, 휴대전화를 사용하는 방식, 시점, 목적 또는 양에 관해 바라는 분명한 변화를 밝히면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A concrete step the learner intends to take toward the phone-habit improvement.",
+        "satisfiedWhenEn": "The answer states a feasible future action, rule, or routine that could move the learner toward the stated goal.",
+        "semanticRoleKo": "휴대전화 습관 개선을 위해 학습자가 실행하려는 구체적인 단계.",
+        "satisfiedWhenKo": "답변이 말한 목표에 가까워지게 할 수 있는 실행 가능한 미래 행동, 규칙 또는 일과를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the desired phone-habit improvement matters to the learner.",
+        "satisfiedWhenEn": "The answer gives a concrete problem, value, or personal need that motivates the stated improvement.",
+        "semanticRoleKo": "바라는 휴대전화 습관 개선이 학습자에게 중요한 이유.",
+        "satisfiedWhenKo": "답변이 말한 개선의 동기가 되는 구체적인 문제, 가치 또는 개인적 필요를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects or hopes the improved phone habit will produce.",
+        "satisfiedWhenEn": "The answer identifies a concrete anticipated effect on time, attention, sleep, relationships, tasks, or well-being and links it to reaching the goal.",
+        "semanticRoleKo": "개선된 휴대전화 습관이 만들어 내기를 학습자가 기대하거나 바라는 결과.",
+        "satisfiedWhenKo": "답변이 시간, 집중, 수면, 관계, 과업 또는 안녕감에 미칠 구체적인 예상 효과를 밝히고 그것을 목표 달성과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner intends to apply or achieve the phone-habit improvement.",
+        "satisfiedWhenEn": "The answer gives a meaningful start point, schedule, deadline, frequency, or phone-use situation for pursuing the goal.",
+        "semanticRoleKo": "학습자가 휴대전화 습관 개선을 적용하거나 달성하려는 때.",
+        "satisfiedWhenKo": "답변이 목표를 추진할 의미 있는 시작 시점, 일정, 기한, 빈도 또는 휴대전화 사용 상황을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2131",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The recurring phone habit that helps the learner's day run more smoothly.",
+        "satisfiedWhenEn": "The answer identifies a concrete, repeatable phone-related behavior that supports an easier or better-organized day.",
+        "semanticRoleKo": "학습자의 하루가 더 순조롭게 흘러가도록 돕는 반복적인 휴대전화 습관.",
+        "satisfiedWhenKo": "답변이 하루를 더 수월하거나 잘 정돈되게 만드는 구체적이고 반복 가능한 휴대전화 관련 행동을 밝히면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The particular way the phone habit makes the learner's day smoother.",
+        "satisfiedWhenEn": "The answer states an identifiable improvement in organization, transitions, memory, communication, time use, or task completion; merely restating that the day feels smoother is insufficient.",
+        "semanticRoleKo": "그 휴대전화 습관이 학습자의 하루를 더 순조롭게 만드는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 그 습관으로 인해 정리, 전환, 기억, 소통, 시간 사용 또는 과업 완료에 생기는 식별 가능한 개선을 제시하면 충족하며, 하루가 더 순조롭다고만 되풀이하면 불충분하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the stated phone habit is useful in the learner's day.",
+        "satisfiedWhenEn": "The answer gives a concrete need or mechanism that explains the habit's usefulness for daily life.",
+        "semanticRoleKo": "말한 휴대전화 습관이 학습자의 하루에 유용한 이유.",
+        "satisfiedWhenKo": "답변이 그 습관이 일상생활에 유용한 까닭을 설명하는 구체적인 필요나 작용 방식을 제시하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner carries out the phone habit that smooths the day.",
+        "satisfiedWhenEn": "The answer identifies a meaningful time, frequency, or daily trigger for performing the stated behavior.",
+        "semanticRoleKo": "하루를 순조롭게 만드는 휴대전화 습관을 학습자가 실행하는 때.",
+        "satisfiedWhenKo": "답변이 말한 행동을 하는 의미 있는 시간, 빈도 또는 일상적 계기를 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific daily situation in which the phone habit helped things go smoothly.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion when the learner used the habit and it supported a task, transition, or part of the day.",
+        "semanticRoleKo": "그 휴대전화 습관이 하루를 순조롭게 만드는 데 도움이 된 구체적인 일상 상황.",
+        "satisfiedWhenKo": "답변이 학습자가 그 습관을 사용했고 그것이 과업, 전환 또는 하루의 한 부분을 도운 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2132",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner usually does while reviewing simple notes.",
+        "satisfiedWhenEn": "The answer describes a concrete review behavior the learner habitually performs with the notes.",
+        "semanticRoleKo": "간단한 메모를 복습할 때 학습자가 보통 하는 일.",
+        "satisfiedWhenKo": "답변이 메모를 가지고 학습자가 습관적으로 수행하는 구체적인 복습 행동을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular note content, review method, or feature involved in the learner's routine.",
+        "satisfiedWhenEn": "The answer identifies concrete material or a method that clarifies what the learner reviews or how the review is carried out.",
+        "semanticRoleKo": "학습자의 복습 습관에 포함되는 구체적인 메모 내용, 복습 방법 또는 요소.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 복습하거나 복습을 어떻게 하는지 분명하게 해 주는 구체적 자료나 방법을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner usually reviews the simple notes.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or recurring context beyond merely saying that it happens when the learner reviews notes.",
+        "semanticRoleKo": "학습자가 간단한 메모를 보통 복습하는 때.",
+        "satisfiedWhenKo": "답변이 메모를 복습할 때라고만 하지 않고, 그 행동을 하는 구체적인 시간, 빈도 또는 반복 맥락을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner reviews the simple notes in the stated way.",
+        "satisfiedWhenEn": "The answer gives a concrete learning, memory, organization, or task-related purpose for the review behavior.",
+        "semanticRoleKo": "학습자가 말한 방식으로 간단한 메모를 복습하는 이유.",
+        "satisfiedWhenKo": "답변이 그 복습 행동에 대한 구체적인 학습, 기억, 정리 또는 과업 관련 목적을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the note-review routine on the learner's understanding, memory, or tasks.",
+        "satisfiedWhenEn": "The answer states a concrete improvement or consequence caused by carrying out the stated review action.",
+        "semanticRoleKo": "메모 복습 습관이 학습자의 이해, 기억 또는 과업에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 말한 복습 행동을 실행해 생긴 구체적인 개선이나 결과를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2133",
+    "slotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific recent occasion when the learner's phone habits worked well.",
+        "satisfiedWhenEn": "The answer identifies and describes a recognizable recent phone-use situation, rather than merely saying that the habits went well recently.",
+        "semanticRoleKo": "학습자의 휴대전화 습관이 잘 작동했던 최근의 구체적인 경우.",
+        "satisfiedWhenKo": "답변이 최근에 습관이 잘됐다고만 말하지 않고, 식별 가능한 최근 휴대전화 사용 상황을 밝히고 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "What went well because of the learner's phone habits on that occasion.",
+        "satisfiedWhenEn": "The answer states a concrete successful outcome for focus, time, communication, a task, or well-being and links it to the phone habits used.",
+        "semanticRoleKo": "그 사례에서 학습자의 휴대전화 습관 덕분에 잘된 일.",
+        "satisfiedWhenKo": "답변이 집중, 시간, 소통, 과업 또는 안녕감에 관한 구체적인 성공 결과를 제시하고 그것을 사용한 휴대전화 습관과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the successful recent phone-habit occasion happened.",
+        "satisfiedWhenEn": "The answer gives a meaningful recent time, day, or sequence context that locates the event more precisely than simply calling it recent.",
+        "semanticRoleKo": "휴대전화 습관이 잘된 최근 사례가 일어난 때.",
+        "satisfiedWhenKo": "답변이 단순히 최근이라고 하는 것보다 사건을 더 정확히 위치시키는 의미 있는 최근 시간, 날짜 또는 순서 맥락을 제시하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "The phone-related behavior the learner performed during the successful occasion.",
+        "satisfiedWhenEn": "The answer describes a concrete action or habit the learner actually used in the reported event.",
+        "semanticRoleKo": "성공한 사례에서 학습자가 실행한 휴대전화 관련 행동.",
+        "satisfiedWhenKo": "답변이 보고한 사건에서 학습자가 실제로 사용한 구체적인 행동이나 습관을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response during or after the successful phone-habit occasion.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling tied to how the event unfolded or ended.",
+        "semanticRoleKo": "휴대전화 습관이 잘된 사례의 도중이나 이후에 학습자가 느낀 감정.",
+        "satisfiedWhenKo": "답변이 사건의 진행이나 결과와 연결된 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Concrete context that clarifies the successful phone-habit occasion.",
+        "satisfiedWhenEn": "The answer supplies an identifiable app, task, setting, person, phone setting, or other circumstance that makes the event specific.",
+        "semanticRoleKo": "휴대전화 습관이 잘된 사례를 분명하게 해 주는 구체적인 맥락.",
+        "satisfiedWhenKo": "답변이 사건을 구체화하는 식별 가능한 앱, 과업, 장소, 사람, 휴대전화 설정 또는 다른 상황 정보를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2134",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The concrete way the learner uses the phone so that the use is helpful.",
+        "satisfiedWhenEn": "The answer describes a specific phone-use behavior that serves a useful personal, practical, learning, or communication purpose.",
+        "semanticRoleKo": "휴대전화를 유용하게 쓰기 위해 학습자가 사용하는 구체적인 방식.",
+        "satisfiedWhenKo": "답변이 개인적, 실용적, 학습 또는 소통 목적에 도움이 되는 구체적인 휴대전화 사용 행동을 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the stated way of using the phone helpful.",
+        "satisfiedWhenEn": "The answer gives a concrete purpose, need, or benefit that explains the value of the phone-use behavior.",
+        "semanticRoleKo": "학습자가 말한 휴대전화 사용 방식을 유용하다고 여기는 이유.",
+        "satisfiedWhenKo": "답변이 그 휴대전화 사용 행동의 가치를 설명하는 구체적인 목적, 필요 또는 이점을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome produced by the learner's helpful phone use.",
+        "satisfiedWhenEn": "The answer states an identifiable effect on a task, learning, communication, organization, safety, or well-being and connects it to the action; merely calling the use helpful is insufficient.",
+        "semanticRoleKo": "학습자의 유용한 휴대전화 사용이 만들어 내는 구체적인 결과.",
+        "satisfiedWhenKo": "답변이 과업, 학습, 소통, 정리, 안전 또는 안녕감에 미치는 식별 가능한 효과를 제시하고 그것을 말한 행동과 연결하면 충족하며, 사용이 유용하다고만 하면 불충분하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner uses the phone in the stated helpful way.",
+        "satisfiedWhenEn": "The answer gives a meaningful time, frequency, or recurring situation for performing the helpful phone action.",
+        "semanticRoleKo": "학습자가 말한 유용한 방식으로 휴대전화를 사용하는 때.",
+        "satisfiedWhenKo": "답변이 그 유용한 휴대전화 행동을 하는 의미 있는 시간, 빈도 또는 반복 상황을 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate phone-use step that accompanies or extends the main helpful action.",
+        "satisfiedWhenEn": "The answer states another concrete behavior that supports the same useful purpose without merely repeating the main action.",
+        "semanticRoleKo": "주된 유용한 행동에 동반되거나 이를 확장하는 별도의 휴대전화 사용 단계.",
+        "satisfiedWhenKo": "답변이 주된 행동을 단순히 반복하지 않고 같은 유용한 목적을 돕는 또 다른 구체적 행동을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular occasion when the learner used the phone in the helpful way.",
+        "satisfiedWhenEn": "The answer describes an identifiable situation in which the learner performed the stated action for its useful purpose.",
+        "semanticRoleKo": "학습자가 말한 유용한 방식으로 휴대전화를 사용한 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 유용한 목적을 위해 말한 행동을 실행한 식별 가능한 상황을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2135",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner usually does in order to remember new words.",
+        "satisfiedWhenEn": "The answer describes a concrete, repeatable study or practice behavior the learner uses to retain newly encountered words.",
+        "semanticRoleKo": "새로운 단어를 기억하기 위해 학습자가 보통 하는 일.",
+        "satisfiedWhenKo": "답변이 새로 접한 단어를 기억하기 위해 학습자가 사용하는 구체적이고 반복 가능한 학습 또는 연습 행동을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific material, method, or feature involved in the learner's word-memory routine.",
+        "satisfiedWhenEn": "The answer identifies concrete content or a technique that clarifies how the learner practices or records new words.",
+        "semanticRoleKo": "학습자의 단어 기억 습관에 사용되는 구체적인 자료, 방법 또는 요소.",
+        "satisfiedWhenKo": "답변이 학습자가 새 단어를 어떻게 연습하거나 기록하는지 분명하게 해 주는 구체적 내용이나 기법을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner performs the new-word memory action.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, interval, or learning stage beyond merely saying the practice happens when the learner wants to remember words.",
+        "semanticRoleKo": "학습자가 새 단어 기억 행동을 하는 때나 빈도.",
+        "satisfiedWhenKo": "답변이 단어를 기억하고 싶을 때라고만 하지 않고, 말한 연습을 실행하는 구체적인 시간, 빈도, 간격 또는 학습 단계를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses the stated method to remember new words.",
+        "satisfiedWhenEn": "The answer gives a concrete learning need or mechanism that explains why this behavior supports memory.",
+        "semanticRoleKo": "학습자가 새 단어를 기억하기 위해 말한 방법을 쓰는 이유.",
+        "satisfiedWhenKo": "답변이 그 행동이 기억을 돕는 까닭을 설명하는 구체적인 학습 필요나 작용 방식을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the learner's routine on retaining or using new words.",
+        "satisfiedWhenEn": "The answer states a concrete later-recall, recognition, confidence, or actual-use outcome caused by the practice; merely saying the learner remembers the words better is insufficient.",
+        "semanticRoleKo": "학습자의 습관이 새 단어를 기억하거나 사용하는 데 미치는 효과.",
+        "satisfiedWhenKo": "답변이 그 연습으로 인해 이후 회상, 인식, 자신감 또는 실제 단어 사용에 생기는 구체적 결과를 제시하면 충족하며, 단어를 더 잘 기억한다고만 하면 불충분하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-22",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A habitual activity the learner does at the beginning of Saturday.",
+        "satisfiedWhenEn": "The answer states a concrete action the learner normally performs during the opening part of Saturday.",
+        "semanticRoleKo": "토요일이 시작되는 무렵 학습자가 습관적으로 하는 활동.",
+        "satisfiedWhenKo": "답변이 토요일 초반에 학습자가 보통 하는 구체적인 행동을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The particular point or period at the beginning of Saturday when the activity occurs.",
+        "satisfiedWhenEn": "The answer provides a meaningful morning time, duration, or sequence point that locates the action more precisely than simply saying Saturday.",
+        "semanticRoleKo": "토요일 초반 중 그 활동이 이루어지는 구체적인 시점이나 시간대.",
+        "satisfiedWhenKo": "답변이 단순히 토요일이라고 하는 것보다 행동의 때를 더 정확히 나타내는 의미 있는 아침 시간, 지속 시간 또는 순서상 시점을 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another distinct step in what the learner does at the start of Saturday.",
+        "satisfiedWhenEn": "The answer gives a separate concrete action that precedes, accompanies, or follows the main Saturday-start activity.",
+        "semanticRoleKo": "토요일을 시작하며 학습자가 하는 또 다른 별도의 단계.",
+        "satisfiedWhenKo": "답변이 주된 토요일 시작 활동보다 앞서거나 함께 이루어지거나 뒤따르는 별도의 구체적 행동을 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The location where the learner performs the Saturday-start activity.",
+        "satisfiedWhenEn": "The answer identifies a recognizable setting connected to the stated action at the beginning of Saturday.",
+        "semanticRoleKo": "학습자가 토요일 시작 활동을 하는 장소.",
+        "satisfiedWhenKo": "답변이 토요일 초반의 말한 행동과 연결된 식별 가능한 장소를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner includes the stated activity at the beginning of Saturday.",
+        "satisfiedWhenEn": "The answer gives a concrete personal, practical, or restorative motivation for doing the activity then.",
+        "semanticRoleKo": "학습자가 말한 활동을 토요일 시작에 하는 이유.",
+        "satisfiedWhenKo": "답변이 그때 활동을 하는 구체적인 개인적, 실용적 또는 회복 관련 동기를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the Saturday-start activity on the learner's later day.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for mood, energy, readiness, plans, or tasks and links it to the stated activity.",
+        "semanticRoleKo": "토요일 시작 활동이 학습자의 이후 하루에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 기분, 에너지, 준비 상태, 계획 또는 할 일에 미치는 구체적 결과를 제시하고 그것을 말한 활동과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-23",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The main recurring action that anchors the learner's routine at the start of Saturday.",
+        "satisfiedWhenEn": "The answer describes at least one concrete behavior the learner regularly performs as Saturday begins.",
+        "semanticRoleKo": "학습자의 토요일 시작 루틴을 이루는 주된 반복 행동.",
+        "satisfiedWhenKo": "답변이 토요일이 시작될 때 학습자가 규칙적으로 하는 구체적 행동을 하나 이상 설명하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A further distinct action that forms part of the Saturday-start routine.",
+        "satisfiedWhenEn": "The answer describes another concrete step and makes it separate from the routine's main action.",
+        "semanticRoleKo": "토요일 시작 루틴의 일부를 이루는 추가적인 별도 행동.",
+        "satisfiedWhenKo": "답변이 또 다른 구체적 단계를 설명하고 그것이 루틴의 주된 행동과 구별되면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The timing, order, or duration of an action in the learner's Saturday-start routine.",
+        "satisfiedWhenEn": "The answer gives a concrete time marker, duration, or sequence relation beyond merely restating that the routine happens at the start of Saturday.",
+        "semanticRoleKo": "학습자의 토요일 시작 루틴에 포함된 행동의 시점, 순서 또는 지속 시간.",
+        "satisfiedWhenKo": "답변이 토요일 시작에 루틴이 있다고만 되풀이하지 않고, 구체적인 시간 표시, 지속 시간 또는 순서 관계를 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A setting where a step of the learner's Saturday-start routine occurs.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a recognizable location tied to one of the stated routine actions.",
+        "semanticRoleKo": "학습자의 토요일 시작 루틴 중 한 단계가 이루어지는 장소.",
+        "satisfiedWhenKo": "답변이 말한 루틴 행동 중 하나와 연결된 식별 가능한 장소를 직접 말하거나 분명히 나타내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner includes a stated step in the Saturday-start routine.",
+        "satisfiedWhenEn": "The answer gives a concrete purpose or motivation for one of the routine actions.",
+        "semanticRoleKo": "학습자가 말한 단계를 토요일 시작 루틴에 포함하는 이유.",
+        "satisfiedWhenKo": "답변이 루틴 행동 중 하나에 대한 구체적인 목적이나 동기를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of following the learner's Saturday-start routine.",
+        "satisfiedWhenEn": "The answer states a concrete effect on the rest of Saturday, the learner's state, or planned responsibilities and links it to the routine.",
+        "semanticRoleKo": "학습자가 토요일 시작 루틴을 따름으로써 생기는 결과.",
+        "satisfiedWhenKo": "답변이 토요일의 나머지 시간, 학습자의 상태 또는 예정된 책임에 미치는 구체적 효과를 제시하고 그것을 루틴과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-24",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner often does during the early part of Saturday.",
+        "satisfiedWhenEn": "The answer identifies a concrete action or activity that recurs for the learner near the beginning of Saturday.",
+        "semanticRoleKo": "토요일 초반에 학습자가 자주 하는 일.",
+        "satisfiedWhenKo": "답변이 토요일이 시작되는 무렵 학습자에게 반복되는 구체적인 행동이나 활동을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A more precise time within the start of Saturday for the frequent activity.",
+        "satisfiedWhenEn": "The answer supplies a meaningful hour, morning period, duration, or sequence cue associated with the stated action.",
+        "semanticRoleKo": "자주 하는 활동이 이루어지는 토요일 시작 무렵의 더 구체적인 때.",
+        "satisfiedWhenKo": "답변이 말한 행동과 관련된 의미 있는 시각, 아침 시간대, 지속 시간 또는 순서 단서를 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate activity the learner also does while beginning Saturday.",
+        "satisfiedWhenEn": "The answer gives another concrete action that is distinct from, but connected in context to, the frequently performed activity.",
+        "semanticRoleKo": "토요일을 시작하며 학습자가 함께 하는 별도의 활동.",
+        "satisfiedWhenKo": "답변이 자주 하는 활동과 구별되면서 같은 맥락에 연결된 또 다른 구체적 행동을 제시하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "Where the learner often performs the stated Saturday-start activity.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location and relates it to the frequent early-Saturday action.",
+        "semanticRoleKo": "학습자가 말한 토요일 시작 활동을 자주 하는 장소.",
+        "satisfiedWhenKo": "답변이 식별 가능한 장소를 밝히고 그것을 토요일 초반의 반복 행동과 연결하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner often chooses the stated activity at the start of Saturday.",
+        "satisfiedWhenEn": "The answer gives a concrete motivation, need, or benefit that explains the recurring choice.",
+        "semanticRoleKo": "학습자가 토요일 시작에 말한 활동을 자주 선택하는 이유.",
+        "satisfiedWhenKo": "답변이 그 반복되는 선택을 설명하는 구체적인 동기, 필요 또는 이점을 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "How the learner feels while doing or after doing the frequent Saturday-start activity.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion tied to the stated early-Saturday behavior.",
+        "semanticRoleKo": "토요일 초반에 자주 하는 활동의 도중이나 이후에 학습자가 느끼는 감정.",
+        "satisfiedWhenKo": "답변이 말한 토요일 초반 행동과 연결된 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2401",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The weather-related source, condition, or item the learner checks when the weather changes.",
+        "satisfiedWhenEn": "The answer describes a concrete checking action and makes clear what recognizable weather source, condition, plan, or item the learner checks.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 확인하는 날씨 관련 정보원, 상태 또는 대상.",
+        "satisfiedWhenKo": "답변이 구체적인 확인 행동을 설명하고, 학습자가 어떤 식별 가능한 날씨 정보원, 상태, 계획 또는 물품을 확인하는지 분명히 하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner checks the stated thing when the weather changes.",
+        "satisfiedWhenEn": "The answer gives a concrete preparation, safety, comfort, travel, or planning need that explains the check.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 말한 대상을 확인하는 이유.",
+        "satisfiedWhenKo": "답변이 그 확인 행동을 설명하는 구체적인 준비, 안전, 편안함, 이동 또는 계획상의 필요를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular weather information or practical feature the learner looks for during the check.",
+        "satisfiedWhenEn": "The answer identifies concrete information such as temperature, rain timing, wind, road conditions, clothing needs, or another relevant feature.",
+        "semanticRoleKo": "확인할 때 학습자가 살펴보는 구체적인 날씨 정보나 실용적 요소.",
+        "satisfiedWhenKo": "답변이 기온, 비가 오는 시간, 바람, 도로 상태, 옷차림의 필요 등 관련된 구체적 정보를 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner makes the weather-related check as conditions change.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or stage for the check beyond the question's general condition that the weather changes.",
+        "semanticRoleKo": "날씨가 변할 때 학습자가 날씨 관련 확인을 하는 시점.",
+        "satisfiedWhenKo": "답변이 질문에 이미 주어진 날씨 변화 조건을 넘어, 그 확인을 하는 구체적인 시간, 빈도 또는 단계를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the weather check on the learner's preparation or decisions.",
+        "satisfiedWhenEn": "The answer states a concrete change in clothing, belongings, travel, scheduling, safety, or comfort caused by what the learner checked.",
+        "semanticRoleKo": "날씨 확인이 학습자의 준비나 결정에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 확인한 내용 때문에 옷차림, 소지품, 이동, 일정, 안전 또는 편안함에 생기는 구체적인 변화를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular weather change when the learner made the stated check.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion with changing weather in which the learner actually checked the stated source, condition, or item.",
+        "semanticRoleKo": "학습자가 말한 확인을 했던 구체적인 날씨 변화 사례.",
+        "satisfiedWhenKo": "답변이 날씨가 변했고 학습자가 실제로 말한 정보원, 상태 또는 대상을 확인한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2402",
+    "slotContracts": {
+    "ACTION": {
+      "semanticRoleEn": "One small recurring habit that concretely helps the learner when the weather changes.",
+      "satisfiedWhenEn": "The answer identifies a concrete, repeatable action used when the weather changes and clearly shows that the action helps the learner handle those changing conditions. Merely naming a weather-related habit without conveying the helpful relationship does not satisfy the role.",
+      "semanticRoleKo": "날씨가 바뀔 때 학습자가 변화한 조건에 대처하도록 구체적으로 도와주는 작고 반복적인 습관.",
+      "satisfiedWhenKo": "날씨가 바뀔 때 하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 변화한 조건에 대처하는 데 도움이 된다는 관계를 분명히 드러내면 충족한다. 도움 관계 없이 날씨 관련 습관만 언급하면 충족되지 않는다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical or personal benefit of the learner's small weather-change habit.",
+        "satisfiedWhenEn": "The answer states an identifiable improvement in readiness, safety, comfort, movement, or daily plans and links it to the habit; merely saying the habit helps with weather changes is insufficient.",
+        "semanticRoleKo": "학습자의 작은 날씨 변화 습관이 주는 실용적 또는 개인적 이점.",
+        "satisfiedWhenKo": "답변이 준비 상태, 안전, 편안함, 이동 또는 하루 계획에 생기는 식별 가능한 개선을 제시하고 그것을 그 습관과 연결하면 충족하며, 날씨 변화에 도움이 된다고만 하면 불충분하다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A more specific time, frequency, or stage when the learner performs the small weather-change habit.",
+        "satisfiedWhenEn": "The answer identifies a concrete time, frequency, or weather-transition stage beyond merely saying that the action occurs when the weather changes.",
+        "semanticRoleKo": "학습자가 작은 날씨 변화 습관을 실행하는 더 구체적인 시간, 빈도 또는 단계.",
+        "satisfiedWhenKo": "답변이 날씨가 바뀔 때 행동한다고만 하지 않고, 구체적인 시간, 빈도 또는 날씨 전환 단계를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the small habit helps the learner deal with changing weather.",
+        "satisfiedWhenEn": "The answer gives a concrete need or mechanism that explains the habit's usefulness under changing conditions.",
+        "semanticRoleKo": "그 작은 습관이 학습자가 변하는 날씨에 대처하는 데 도움이 되는 이유.",
+        "satisfiedWhenKo": "답변이 변하는 조건에서 그 습관이 유용한 까닭을 설명하는 구체적인 필요나 작용 방식을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion when the learner used the small weather-change habit.",
+        "satisfiedWhenEn": "The answer describes an identifiable weather-change situation in which the learner actually performed the stated habit.",
+        "semanticRoleKo": "학습자가 작은 날씨 변화 습관을 사용한 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 날씨가 변하는 상황에서 학습자가 실제로 말한 습관을 실행한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2403",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The concrete preparation the learner makes when the weather changes.",
+        "satisfiedWhenEn": "The answer describes a recognizable action through which the learner readies an item, clothing, travel plan, home, or another practical resource for the changed weather.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 하는 구체적인 준비.",
+        "satisfiedWhenKo": "답변이 바뀐 날씨에 맞춰 물품, 옷차림, 이동 계획, 집 또는 다른 실용적 자원을 갖추는 식별 가능한 행동을 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner makes the stated preparation when the weather changes.",
+        "satisfiedWhenEn": "The answer gives a concrete risk, need, or expected benefit that explains the preparation.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 말한 준비를 하는 이유.",
+        "satisfiedWhenKo": "답변이 그 준비를 설명하는 구체적인 위험, 필요 또는 기대 이점을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific item, adjustment, or weather condition involved in the learner's preparation.",
+        "satisfiedWhenEn": "The answer identifies concrete prepared material, a changed setting or plan, or a weather feature that clarifies what the learner gets ready.",
+        "semanticRoleKo": "학습자의 준비에 관련된 구체적인 물품, 조정 사항 또는 날씨 조건.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 준비하는지 분명하게 해 주는 구체적인 준비물, 바뀐 설정이나 계획 또는 날씨 요소를 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner makes the preparation in relation to the weather change.",
+        "satisfiedWhenEn": "The answer gives a concrete moment, frequency, or stage for preparing, such as before leaving, beyond the generic condition that the weather changes.",
+        "semanticRoleKo": "날씨 변화와 관련해 학습자가 준비를 하는 때.",
+        "satisfiedWhenKo": "답변이 날씨가 바뀔 때라고만 하지 않고, 외출 전처럼 준비를 하는 구체적인 시점, 빈도 또는 단계를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of preparing for the changed weather.",
+        "satisfiedWhenEn": "The answer states a concrete effect on comfort, safety, dryness, warmth, travel, or schedule and links it to the preparation.",
+        "semanticRoleKo": "바뀐 날씨에 맞춰 준비한 결과.",
+        "satisfiedWhenKo": "답변이 편안함, 안전, 건조함, 보온, 이동 또는 일정에 미치는 구체적 효과를 제시하고 그것을 그 준비와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular weather change for which the learner made the stated preparation.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion when conditions changed and the learner carried out the preparation.",
+        "semanticRoleKo": "학습자가 말한 준비를 했던 구체적인 날씨 변화 사례.",
+        "satisfiedWhenKo": "답변이 날씨 조건이 변했고 학습자가 그 준비를 실행한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2404",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The learner's usual response when rain begins before they leave.",
+        "satisfiedWhenEn": "The answer states a specific, workable action or adjustment the learner makes before departing in response to the rain.",
+        "semanticRoleKo": "출발하기 전에 비가 내리기 시작할 때 학습자가 보통 취하는 대응.",
+        "satisfiedWhenKo": "답변이 비에 대응해 출발 전에 학습자가 하는 구체적이고 실행 가능한 행동이나 조정을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses the stated response to rain before leaving.",
+        "satisfiedWhenEn": "The answer gives a concrete concern or benefit involving dryness, safety, timing, transport, belongings, or comfort.",
+        "semanticRoleKo": "출발 전 비에 대해 학습자가 말한 대응을 선택하는 이유.",
+        "satisfiedWhenKo": "답변이 건조함, 안전, 시간, 교통수단, 소지품 또는 편안함과 관련된 구체적인 우려나 이점을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the rain response on the learner's departure or trip.",
+        "satisfiedWhenEn": "The answer identifies a concrete outcome for leaving time, route, transport, dryness, safety, or arrival caused by the response.",
+        "semanticRoleKo": "비에 대한 대응이 학습자의 출발이나 이동에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 그 대응으로 인해 출발 시간, 경로, 교통수단, 건조함, 안전 또는 도착에 생기는 구체적인 결과를 밝히면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific rain gear, travel adjustment, or departure condition involved in the learner's response.",
+        "satisfiedWhenEn": "The answer identifies a concrete item, route, transport choice, waiting condition, or other feature that clarifies how the learner responds.",
+        "semanticRoleKo": "학습자의 대응에 포함되는 구체적인 우비·도구, 이동 조정 또는 출발 조건.",
+        "satisfiedWhenKo": "답변이 학습자가 어떻게 대응하는지 분명하게 해 주는 구체적인 물품, 경로, 교통수단 선택, 대기 조건 또는 다른 요소를 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific occasion when rain started before the learner left.",
+        "satisfiedWhenEn": "The answer describes an identifiable departure situation in which rain began and the learner used the stated response.",
+        "semanticRoleKo": "학습자가 출발하기 전에 비가 내리기 시작했던 구체적인 사례.",
+        "satisfiedWhenKo": "답변이 출발 전에 비가 시작되었고 학습자가 말한 대응을 사용한 식별 가능한 상황을 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2405",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The concrete response the learner uses to remain calm when the weather changes suddenly.",
+        "satisfiedWhenEn": "The answer states a workable action, thought process, or adjustment the learner applies to regulate their reaction to an abrupt weather change.",
+        "semanticRoleKo": "날씨가 갑자기 바뀔 때 침착함을 유지하기 위해 학습자가 쓰는 구체적인 대응.",
+        "satisfiedWhenKo": "답변이 갑작스러운 날씨 변화에 대한 반응을 조절하기 위해 학습자가 적용하는 실행 가능한 행동, 사고 방식 또는 조정을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the stated response helps the learner stay calm during a sudden weather change.",
+        "satisfiedWhenEn": "The answer explains a concrete way the response reduces uncertainty, stress, discomfort, or practical difficulty.",
+        "semanticRoleKo": "말한 대응이 갑작스러운 날씨 변화 중 학습자가 침착함을 유지하는 데 도움이 되는 이유.",
+        "satisfiedWhenKo": "답변이 그 대응이 불확실성, 스트레스, 불편함 또는 실질적 어려움을 줄이는 구체적인 방식을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of using the calming response during an abrupt weather change.",
+        "satisfiedWhenEn": "The answer states a concrete change in stress or an effect on decision-making, safety, movement, or plans caused by the response; merely saying the learner stays calm is insufficient.",
+        "semanticRoleKo": "갑작스러운 날씨 변화 중 진정 대응을 사용한 결과.",
+        "satisfiedWhenKo": "답변이 그 대응으로 인한 구체적인 스트레스 변화나 의사 결정, 안전, 이동 또는 계획상의 효과를 제시하면 충족하며, 침착함을 유지한다고만 하면 불충분하다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's specific emotional state before, during, or after using the calming response.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a distinct emotion such as initial anxiety or resulting relief; merely repeating the stated goal of staying calm is insufficient.",
+        "semanticRoleKo": "진정 대응을 사용하기 전, 도중 또는 이후의 학습자의 구체적인 감정 상태.",
+        "satisfiedWhenKo": "답변이 처음의 불안이나 대응 후의 안도감 같은 별도의 감정을 직접 말하거나 분명히 드러내면 충족하며, 침착함을 유지한다는 목표만 되풀이하면 불충분하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular sudden weather change when the learner used the calming response.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion with an abrupt change in conditions and the learner's actual response.",
+        "semanticRoleKo": "학습자가 진정 대응을 사용했던 구체적인 갑작스러운 날씨 변화 사례.",
+        "satisfiedWhenKo": "답변이 날씨 조건이 갑자기 변했고 학습자가 실제로 대응한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2406",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The advance preparation the learner habitually makes for rainy or cold days.",
+        "satisfiedWhenEn": "The answer describes a concrete action through which the learner gets an item, clothing, home, transport, or schedule ready before rainy or cold conditions.",
+        "semanticRoleKo": "비 오거나 추운 날을 위해 학습자가 습관적으로 미리 하는 준비.",
+        "satisfiedWhenKo": "답변이 비 오거나 추운 날씨보다 앞서 물품, 옷차림, 집, 교통수단 또는 일정을 갖추는 구체적인 행동을 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner prepares that thing or makes that adjustment in advance.",
+        "satisfiedWhenEn": "The answer gives a concrete comfort, safety, health, travel, or convenience need that explains the preparation.",
+        "semanticRoleKo": "학습자가 그 물품이나 조정을 미리 준비하는 이유.",
+        "satisfiedWhenKo": "답변이 그 준비를 설명하는 구체적인 편안함, 안전, 건강, 이동 또는 편의상의 필요를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific item, clothing, home setting, or travel arrangement involved in the preparation.",
+        "satisfiedWhenEn": "The answer identifies concrete prepared material or an adjustment that makes the rainy- or cold-day preparation clear.",
+        "semanticRoleKo": "사전 준비에 포함되는 구체적인 물품, 옷차림, 집안 설정 또는 이동 계획.",
+        "satisfiedWhenKo": "답변이 비 오거나 추운 날의 준비를 분명하게 보여 주는 구체적인 준비물이나 조정을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner prepares ahead for rainy or cold weather.",
+        "satisfiedWhenEn": "The answer gives a concrete lead time, schedule, or frequency beyond merely saying that preparation happens ahead of a rainy or cold day.",
+        "semanticRoleKo": "학습자가 비 오거나 추운 날씨에 대비해 미리 준비하는 때.",
+        "satisfiedWhenKo": "답변이 비 오거나 추운 날보다 앞서 준비한다고만 하지 않고, 구체적인 사전 시간, 일정 또는 빈도를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of advance preparation on the learner's rainy or cold day.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for warmth, dryness, safety, punctuality, comfort, or readiness caused by preparing ahead.",
+        "semanticRoleKo": "사전 준비가 학습자의 비 오거나 추운 날에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 미리 준비함으로써 보온, 건조함, 안전, 시간 준수, 편안함 또는 준비 상태에 생기는 구체적인 결과를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific rainy or cold day when the learner used the advance preparation.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion when the learner prepared beforehand and then relied on that preparation in the weather.",
+        "semanticRoleKo": "학습자가 미리 한 준비를 활용한 구체적인 비 오거나 추운 날의 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 사전에 준비했고 그 뒤 해당 날씨에서 그 준비를 활용한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2407",
+    "slotContracts": {
+      "FEELING": {
+        "semanticRoleEn": "The learner's usual emotional response when the weather changes.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion the learner commonly experiences in response to changing weather.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 보통 느끼는 감정적 반응.",
+        "satisfiedWhenKo": "답변이 날씨 변화에 반응해 학습자가 흔히 경험하는 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What about changing weather causes the learner's usual feeling.",
+        "satisfiedWhenEn": "The answer identifies a concrete weather feature, disruption, memory, physical effect, or practical consequence that explains the emotion.",
+        "semanticRoleKo": "변하는 날씨의 어떤 점이 학습자의 평소 감정을 일으키는지에 대한 이유.",
+        "satisfiedWhenKo": "답변이 그 감정을 설명하는 구체적인 날씨 특성, 방해, 기억, 신체적 영향 또는 실질적 결과를 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific weather change that illustrates the learner's usual emotional response.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion when conditions changed and the stated feeling arose.",
+        "semanticRoleKo": "학습자의 평소 감정 반응을 보여 주는 구체적인 날씨 변화 사례.",
+        "satisfiedWhenKo": "답변이 날씨 조건이 변했고 말한 감정이 생긴 식별 가능한 경우를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time, season, or stage of a weather change when the learner tends to feel that way.",
+        "satisfiedWhenEn": "The answer gives a concrete recurring time, season, or identifiable transition stage beyond merely saying the feeling occurs when the weather changes.",
+        "semanticRoleKo": "학습자가 그런 감정을 느끼는 경향이 있는 시간, 계절 또는 날씨 변화 단계.",
+        "satisfiedWhenKo": "답변이 날씨가 바뀔 때 감정을 느낀다고만 하지 않고, 구체적인 반복 시간, 계절 또는 식별 가능한 전환 단계를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the learner's weather-related feeling for behavior or daily life.",
+        "satisfiedWhenEn": "The answer states a concrete effect on plans, activity, preparation, concentration, social behavior, or well-being and links it to the feeling.",
+        "semanticRoleKo": "날씨와 관련된 학습자의 감정이 행동이나 일상생활에 미치는 결과.",
+        "satisfiedWhenKo": "답변이 계획, 활동, 준비, 집중, 사회적 행동 또는 안녕감에 미치는 구체적 효과를 제시하고 그것을 그 감정과 연결하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular weather condition or surrounding circumstance that clarifies the learner's feeling.",
+        "satisfiedWhenEn": "The answer identifies concrete conditions such as a temperature shift, rain, wind, light, travel impact, or another relevant circumstance.",
+        "semanticRoleKo": "학습자의 감정을 분명하게 해 주는 구체적인 날씨 조건이나 주변 상황.",
+        "satisfiedWhenKo": "답변이 기온 변화, 비, 바람, 빛, 이동 영향 등 관련된 구체적인 조건이나 상황을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2408",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific improvement the learner wants in how they handle or experience rainy or cold days.",
+        "satisfiedWhenEn": "The answer identifies a definite personal change in preparation, comfort, safety, activity, mood, or routine, rather than proposing vaguely to improve the weather.",
+        "semanticRoleKo": "비 오거나 추운 날을 대처하거나 경험하는 방식에서 학습자가 바라는 구체적인 개선.",
+        "satisfiedWhenKo": "답변이 날씨 자체를 막연히 개선하겠다고 하지 않고, 준비, 편안함, 안전, 활동, 기분 또는 일과에 관한 분명한 개인적 변화를 밝히면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A concrete step the learner intends to take toward the rainy- or cold-day improvement.",
+        "satisfiedWhenEn": "The answer states a feasible future preparation, behavior, or routine that could advance the stated goal.",
+        "semanticRoleKo": "비 오거나 추운 날의 개선 목표를 위해 학습자가 실행하려는 구체적인 단계.",
+        "satisfiedWhenKo": "답변이 말한 목표를 진전시킬 수 있는 실행 가능한 미래 준비, 행동 또는 일과를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants the stated improvement for rainy or cold days.",
+        "satisfiedWhenEn": "The answer gives a concrete difficulty, risk, value, or personal need that motivates the goal.",
+        "semanticRoleKo": "학습자가 비 오거나 추운 날에 대해 말한 개선을 원하는 이유.",
+        "satisfiedWhenKo": "답변이 그 목표의 동기가 되는 구체적인 어려움, 위험, 가치 또는 개인적 필요를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from making the rainy- or cold-day improvement.",
+        "satisfiedWhenEn": "The answer identifies a concrete anticipated effect on comfort, safety, health, movement, mood, or plans and connects it to the goal.",
+        "semanticRoleKo": "비 오거나 추운 날의 개선을 통해 학습자가 기대하는 결과.",
+        "satisfiedWhenKo": "답변이 편안함, 안전, 건강, 이동, 기분 또는 계획에 미칠 구체적인 예상 효과를 밝히고 그것을 목표와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific rainy or cold day that illustrates the area the learner wants to improve.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion that shows the current difficulty, need, or opportunity behind the stated goal.",
+        "semanticRoleKo": "학습자가 개선하려는 부분을 보여 주는 구체적인 비 오거나 추운 날의 사례.",
+        "satisfiedWhenKo": "답변이 말한 목표의 배경이 되는 현재의 어려움, 필요 또는 개선 기회를 보여 주는 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2409",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The concrete action the learner takes to feel comfortable on a rainy or cold day.",
+        "satisfiedWhenEn": "The answer describes a specific behavior the learner uses to improve physical or emotional comfort in rainy or cold conditions.",
+        "semanticRoleKo": "비 오거나 추운 날 편안함을 느끼기 위해 학습자가 하는 구체적인 행동.",
+        "satisfiedWhenKo": "답변이 비 오거나 추운 조건에서 신체적 또는 정서적 편안함을 높이기 위해 학습자가 하는 구체적인 행동을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The particular comfort or other beneficial effect produced by the learner's action.",
+        "satisfiedWhenEn": "The answer states a concrete change in warmth, dryness, physical tension, mood, energy, or ease and links it to the behavior; merely saying the learner feels comfortable is insufficient.",
+        "semanticRoleKo": "학습자의 행동이 만들어 내는 구체적인 편안함 또는 다른 유익한 효과.",
+        "satisfiedWhenKo": "답변이 따뜻함, 건조함, 신체 긴장, 기분, 에너지 또는 수월함에 생기는 구체적인 변화를 제시하고 그것을 말한 행동과 연결하면 충족하며, 편안하다고만 하면 불충분하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the stated action makes the learner more comfortable in rainy or cold weather.",
+        "satisfiedWhenEn": "The answer explains a concrete way the behavior addresses cold, wetness, tension, inconvenience, or another relevant discomfort.",
+        "semanticRoleKo": "말한 행동이 비 오거나 추운 날씨에 학습자를 더 편안하게 만드는 이유.",
+        "satisfiedWhenKo": "답변이 그 행동이 추위, 젖음, 긴장, 불편 또는 다른 관련 불쾌감을 해결하는 구체적인 방식을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific item, setting, food, drink, clothing, or method involved in the comfort action.",
+        "satisfiedWhenEn": "The answer identifies a concrete feature that clarifies what the learner uses or how the comfort behavior is carried out.",
+        "semanticRoleKo": "편안함을 위한 행동에 관련된 구체적인 물품, 환경 설정, 음식, 음료, 옷차림 또는 방법.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 사용하거나 편안함을 위한 행동을 어떻게 하는지 분명하게 해 주는 구체적인 요소를 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When during a rainy or cold day the learner performs the comfort action.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or stage of the day beyond merely repeating that the action occurs on a rainy or cold day.",
+        "semanticRoleKo": "비 오거나 추운 날 중 학습자가 편안함을 위한 행동을 하는 때.",
+        "satisfiedWhenKo": "답변이 비 오거나 추운 날이라고만 되풀이하지 않고, 말한 행동을 실행하는 구체적인 시간, 빈도 또는 하루의 단계를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2410",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The learner's usual concrete response to a sudden change in the weather.",
+        "satisfiedWhenEn": "The answer states a specific, workable action or adjustment the learner normally makes because conditions changed abruptly.",
+        "semanticRoleKo": "갑작스러운 날씨 변화에 대해 학습자가 보통 취하는 구체적인 대응.",
+        "satisfiedWhenKo": "답변이 날씨 조건이 갑자기 변했기 때문에 학습자가 보통 하는 구체적이고 실행 가능한 행동이나 조정을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses the stated response when the weather changes suddenly.",
+        "satisfiedWhenEn": "The answer gives a concrete safety, comfort, travel, schedule, health, or preparedness need that explains the response.",
+        "semanticRoleKo": "날씨가 갑자기 바뀔 때 학습자가 말한 대응을 사용하는 이유.",
+        "satisfiedWhenKo": "답변이 그 대응을 설명하는 구체적인 안전, 편안함, 이동, 일정, 건강 또는 준비상의 필요를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of the learner's usual response to a sudden weather change.",
+        "satisfiedWhenEn": "The answer states a concrete effect on safety, comfort, movement, timing, plans, or belongings caused by the response.",
+        "semanticRoleKo": "갑작스러운 날씨 변화에 대한 학습자의 평소 대응 결과.",
+        "satisfiedWhenKo": "답변이 그 대응으로 인해 안전, 편안함, 이동, 시간, 계획 또는 소지품에 생기는 구체적인 효과를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific weather condition, item, route, or adjustment involved in the learner's response.",
+        "satisfiedWhenEn": "The answer identifies concrete information or a practical feature that clarifies what changed and how the learner adapted.",
+        "semanticRoleKo": "학습자의 대응에 관련된 구체적인 날씨 조건, 물품, 경로 또는 조정.",
+        "satisfiedWhenKo": "답변이 무엇이 변했고 학습자가 어떻게 적응했는지 분명하게 해 주는 구체적 정보나 실용적 요소를 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular sudden weather change when the learner used the stated response.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion with an abrupt shift in weather and the learner's actual action or adjustment.",
+        "semanticRoleKo": "학습자가 말한 대응을 사용했던 구체적인 갑작스러운 날씨 변화 사례.",
+        "satisfiedWhenKo": "답변이 날씨가 갑자기 바뀌었고 학습자가 실제로 행동하거나 조정한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2411",
+    "slotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific recent rainy or cold day that went well for the learner.",
+        "satisfiedWhenEn": "The answer identifies and describes a recognizable recent rainy- or cold-day occasion, rather than merely saying that such days have gone well.",
+        "semanticRoleKo": "학습자에게 잘 풀렸던 최근의 구체적인 비 오거나 추운 날.",
+        "satisfiedWhenKo": "답변이 그런 날들이 잘 풀렸다고만 말하지 않고, 식별 가능한 최근의 비 오거나 추운 날 사례를 밝히고 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "What specifically went well on the reported rainy or cold day.",
+        "satisfiedWhenEn": "The answer states a concrete successful outcome involving comfort, safety, travel, plans, tasks, or enjoyment and connects it to the event.",
+        "semanticRoleKo": "보고한 비 오거나 추운 날에 구체적으로 잘된 일.",
+        "satisfiedWhenKo": "답변이 편안함, 안전, 이동, 계획, 과업 또는 즐거움과 관련된 구체적인 성공 결과를 제시하고 그것을 사건과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the successful recent rainy or cold day or event occurred.",
+        "satisfiedWhenEn": "The answer gives a meaningful recent date, time of day, season, or sequence context that locates the occasion more precisely.",
+        "semanticRoleKo": "잘 풀린 최근의 비 오거나 추운 날 또는 사건이 일어난 때.",
+        "satisfiedWhenKo": "답변이 그 사례를 더 정확히 위치시키는 의미 있는 최근 날짜, 하루 중 시간, 계절 또는 순서 맥락을 제시하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner did during the rainy or cold day that went well.",
+        "satisfiedWhenEn": "The answer describes a concrete action the learner actually performed as part of the reported successful occasion.",
+        "semanticRoleKo": "잘 풀린 비 오거나 추운 날에 학습자가 한 일.",
+        "satisfiedWhenKo": "답변이 보고한 성공 사례의 일부로 학습자가 실제로 한 구체적인 행동을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response during or after the successful rainy or cold day.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling tied to the conditions, events, or outcome of that occasion.",
+        "semanticRoleKo": "잘 풀린 비 오거나 추운 날의 도중이나 이후에 학습자가 느낀 감정.",
+        "satisfiedWhenKo": "답변이 그 사례의 날씨 조건, 사건 또는 결과와 연결된 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Concrete context that clarifies the reported rainy- or cold-day success.",
+        "satisfiedWhenEn": "The answer identifies a specific weather condition, destination, companion, item, activity, or other circumstance that makes the occasion distinct.",
+        "semanticRoleKo": "보고한 비 오거나 추운 날의 성공 사례를 분명하게 해 주는 구체적인 맥락.",
+        "satisfiedWhenKo": "답변이 그 사례를 뚜렷하게 만드는 구체적인 날씨 조건, 목적지, 동행인, 물품, 활동 또는 다른 상황 정보를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2412",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific item the learner chooses to bring when the weather changes.",
+        "satisfiedWhenEn": "The answer names or clearly identifies a concrete item the learner takes along in response to changing weather.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 가져가기로 선택하는 구체적인 물품.",
+        "satisfiedWhenKo": "답변이 변하는 날씨에 대응해 학습자가 챙겨 가는 구체적인 물품을 직접 말하거나 분명히 식별하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner brings the chosen item when the weather changes.",
+        "satisfiedWhenEn": "The answer gives a concrete weather-related need, protection, convenience, or expected use that explains the choice.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 선택한 물품을 가져가는 이유.",
+        "satisfiedWhenKo": "답변이 그 선택을 설명하는 구체적인 날씨 관련 필요, 보호 효과, 편의 또는 예상 용도를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A specific feature, type, or use condition of the item brought for changing weather.",
+        "satisfiedWhenEn": "The answer gives concrete information about the item's kind, size, contents, protective quality, or relevant weather condition that makes the choice clearer.",
+        "semanticRoleKo": "변하는 날씨에 대비해 가져가는 물품의 구체적인 특징, 종류 또는 사용 조건.",
+        "satisfiedWhenKo": "답변이 선택을 더 분명하게 해 주는 물품의 종류, 크기, 내용물, 보호 특성 또는 관련 날씨 조건을 구체적으로 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of bringing the chosen item during changing weather.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for dryness, warmth, safety, comfort, travel, or preparedness and links it to having the item.",
+        "semanticRoleKo": "변하는 날씨에 선택한 물품을 가져감으로써 생기는 효과.",
+        "satisfiedWhenKo": "답변이 건조함, 보온, 안전, 편안함, 이동 또는 준비 상태에 미치는 구체적인 결과를 제시하고 그것을 그 물품을 챙긴 것과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner decides to bring or actually uses the weather-related item.",
+        "satisfiedWhenEn": "The answer gives a concrete time, forecast period, trip stage, or frequency beyond the general fact that the weather changes.",
+        "semanticRoleKo": "학습자가 날씨 관련 물품을 가져가기로 결정하거나 실제 사용하는 때.",
+        "satisfiedWhenKo": "답변이 날씨가 바뀐다는 일반적 사실을 넘어, 그 물품을 챙기는 구체적인 시간, 예보 기간, 이동 단계 또는 빈도를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular weather change when the learner brought the chosen item.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which conditions changed and the learner took or used the stated item.",
+        "semanticRoleKo": "학습자가 선택한 물품을 가져갔던 구체적인 날씨 변화 사례.",
+        "satisfiedWhenKo": "답변이 날씨 조건이 변했고 학습자가 말한 물품을 가져가거나 사용한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2413",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The first action the learner usually takes when the weather changes.",
+        "satisfiedWhenEn": "The answer states a concrete response and clearly presents it as the learner's habitual first step after noticing a weather change.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 보통 가장 먼저 하는 행동.",
+        "satisfiedWhenKo": "답변이 구체적인 대응을 밝히고 그것을 날씨 변화를 알아챈 뒤 학습자가 습관적으로 하는 첫 단계로 분명히 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner makes the stated response the first step after a weather change.",
+        "satisfiedWhenEn": "The answer gives a concrete priority, need, or benefit that explains why this action comes before other responses.",
+        "semanticRoleKo": "학습자가 말한 대응을 날씨 변화 후 첫 단계로 삼는 이유.",
+        "satisfiedWhenKo": "답변이 그 행동이 다른 대응보다 먼저 이루어지는 이유를 설명하는 구체적인 우선순위, 필요 또는 이점을 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate action the learner takes after or alongside the first weather-change response.",
+        "satisfiedWhenEn": "The answer states another concrete step that is distinct from the first action and fits the same weather-change sequence.",
+        "semanticRoleKo": "첫 날씨 변화 대응의 뒤나 함께 학습자가 하는 별도의 행동.",
+        "satisfiedWhenKo": "답변이 첫 행동과 구별되면서 같은 날씨 변화 대응 순서에 들어가는 또 다른 구체적 단계를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular weather information, item, setting, or adjustment involved in the first response.",
+        "satisfiedWhenEn": "The answer identifies concrete content or a practical feature that clarifies exactly what the learner checks, changes, gets, or prepares first.",
+        "semanticRoleKo": "첫 대응에 관련된 구체적인 날씨 정보, 물품, 설정 또는 조정.",
+        "satisfiedWhenKo": "답변이 학습자가 가장 먼저 무엇을 확인, 변경, 가져오거나 준비하는지 정확히 보여 주는 구체적 내용이나 실용적 요소를 밝히면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of taking the stated first action when the weather changes.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for readiness, safety, comfort, timing, movement, or later decisions and links it to the first response.",
+        "semanticRoleKo": "날씨가 바뀔 때 말한 첫 행동을 취한 효과.",
+        "satisfiedWhenKo": "답변이 준비 상태, 안전, 편안함, 시간, 이동 또는 이후 결정에 미치는 구체적 결과를 제시하고 그것을 첫 대응과 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific weather change when the learner used the stated first response.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which conditions changed and the learner performed that action first.",
+        "semanticRoleKo": "학습자가 말한 첫 대응을 사용했던 구체적인 날씨 변화 사례.",
+        "satisfiedWhenKo": "답변이 날씨 조건이 변했고 학습자가 그 행동을 가장 먼저 한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2414",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The action the learner takes at the end of a rainy or cold day to become settled.",
+        "satisfiedWhenEn": "The answer describes a concrete end-of-day behavior intended to help the learner unwind, get comfortable, or feel mentally settled after rainy or cold conditions.",
+        "semanticRoleKo": "비 오거나 추운 날의 끝에 마음을 가라앉히기 위해 학습자가 하는 행동.",
+        "satisfiedWhenKo": "답변이 비 오거나 추운 날씨를 보낸 뒤 긴장을 풀거나 편안해지거나 마음을 안정시키려는 구체적인 하루 마무리 행동을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The settling effect or other outcome produced by the learner's end-of-day action.",
+        "satisfiedWhenEn": "The answer states a concrete change in warmth, readiness for sleep, physical tension, mood, or another observable state and links it to the action; merely saying the learner feels settled is insufficient.",
+        "semanticRoleKo": "학습자의 하루 마무리 행동이 만들어 내는 안정 효과나 다른 결과.",
+        "satisfiedWhenKo": "답변이 따뜻함, 수면 준비, 신체 긴장, 기분 또는 다른 관찰 가능한 상태에 생기는 구체적 변화를 제시하고 그것을 말한 행동과 연결하면 충족하며, 마음이 가라앉는다고만 하면 불충분하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the stated end-of-day action helps the learner feel settled after rainy or cold weather.",
+        "satisfiedWhenEn": "The answer explains a concrete way the action addresses chill, wetness, fatigue, tension, disrupted plans, or another effect of the day.",
+        "semanticRoleKo": "말한 하루 마무리 행동이 비 오거나 추운 날 뒤 학습자의 마음을 가라앉히는 데 도움이 되는 이유.",
+        "satisfiedWhenKo": "답변이 그 행동이 추위, 젖음, 피로, 긴장, 흐트러진 계획 또는 그날의 다른 영향을 해결하는 구체적인 방식을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's specific emotional state during or after the end-of-day action.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a distinct emotion connected to the action, such as relief or contentment; merely repeating that the learner feels settled is insufficient.",
+        "semanticRoleKo": "하루 마무리 행동의 도중이나 이후에 학습자가 느끼는 구체적인 감정 상태.",
+        "satisfiedWhenKo": "답변이 안도감이나 만족감처럼 그 행동과 연결된 별도의 감정을 직접 말하거나 분명히 드러내면 충족하며, 마음이 가라앉는다고만 되풀이하면 불충분하다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific item, setting, routine feature, or weather effect involved in the settling action.",
+        "satisfiedWhenEn": "The answer gives concrete information that clarifies what the learner uses, where the action occurs, or how the end-of-day routine is carried out.",
+        "semanticRoleKo": "안정을 위한 행동에 관련된 구체적인 물품, 환경, 루틴 요소 또는 날씨의 영향.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 사용하거나 어디에서 또는 어떻게 하루 마무리 루틴을 실행하는지 분명하게 해 주는 구체적 정보를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2415",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The specific activity, exposure, or response the learner tries to avoid when the weather changes.",
+        "satisfiedWhenEn": "The answer identifies a recognizable thing the learner deliberately refrains from doing or encountering because of changing weather.",
+        "semanticRoleKo": "날씨가 바뀔 때 학습자가 피하려고 하는 구체적인 활동, 노출 또는 대응.",
+        "satisfiedWhenKo": "답변이 변하는 날씨 때문에 학습자가 의도적으로 하지 않거나 겪지 않으려는 식별 가능한 대상을 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner tries to avoid the stated thing during weather changes.",
+        "satisfiedWhenEn": "The answer gives a concrete risk, discomfort, inconvenience, health concern, or negative consequence that motivates the avoidance.",
+        "semanticRoleKo": "날씨가 변할 때 학습자가 말한 대상을 피하려는 이유.",
+        "satisfiedWhenKo": "답변이 회피의 동기가 되는 구체적인 위험, 불편함, 번거로움, 건강 우려 또는 부정적 결과를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of avoiding the stated activity, exposure, or response.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for comfort, safety, health, time, plans, or belongings and connects it to the learner's avoidance.",
+        "semanticRoleKo": "말한 활동, 노출 또는 대응을 피함으로써 생기는 효과.",
+        "satisfiedWhenKo": "답변이 편안함, 안전, 건강, 시간, 계획 또는 소지품에 미치는 구체적 결과를 제시하고 그것을 학습자의 회피와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular weather change when the learner avoided the stated thing.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which conditions changed and the learner deliberately avoided that activity, exposure, or response.",
+        "semanticRoleKo": "학습자가 말한 대상을 피했던 구체적인 날씨 변화 사례.",
+        "satisfiedWhenKo": "답변이 날씨 조건이 변했고 학습자가 그 활동, 노출 또는 대응을 의도적으로 피한 식별 가능한 경우를 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific weather condition or practical context that defines what the learner avoids.",
+        "satisfiedWhenEn": "The answer supplies concrete information about the weather, place, activity, threshold, or circumstance involved in the avoidance.",
+        "semanticRoleKo": "학습자가 피하는 대상을 규정하는 구체적인 날씨 조건이나 실질적 맥락.",
+        "satisfiedWhenKo": "답변이 회피와 관련된 날씨, 장소, 활동, 기준 또는 상황에 관한 구체적인 정보를 제시하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotion about encountering or successfully avoiding the stated thing.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling tied to the unwanted situation or to being able to avoid it.",
+        "semanticRoleKo": "말한 대상을 겪거나 성공적으로 피하는 것에 대한 학습자의 감정.",
+        "satisfiedWhenKo": "답변이 원치 않는 상황이나 그것을 피할 수 있었던 것과 연결된 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2416",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The preparation the learner habitually makes before a quick errand.",
+        "satisfiedWhenEn": "The answer describes a concrete action through which the learner readies needed information, items, money, transport, or a route before leaving for the errand.",
+        "semanticRoleKo": "빠른 심부름 전에 학습자가 습관적으로 하는 준비.",
+        "satisfiedWhenKo": "답변이 심부름을 나서기 전에 필요한 정보, 물품, 돈, 교통수단 또는 경로를 갖추는 구체적인 행동을 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner makes the stated preparation before a quick errand.",
+        "satisfiedWhenEn": "The answer gives a concrete efficiency, memory, cost, convenience, or problem-avoidance reason for preparing.",
+        "semanticRoleKo": "학습자가 빠른 심부름 전에 말한 준비를 하는 이유.",
+        "satisfiedWhenKo": "답변이 준비에 대한 구체적인 효율, 기억, 비용, 편의 또는 문제 예방의 이유를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific list item, information, payment method, bag, route, or other feature involved in the preparation.",
+        "satisfiedWhenEn": "The answer identifies concrete prepared content or an arrangement that clarifies exactly what the learner gets ready.",
+        "semanticRoleKo": "준비에 포함되는 구체적인 목록 항목, 정보, 결제 수단, 가방, 경로 또는 다른 요소.",
+        "satisfiedWhenKo": "답변이 학습자가 정확히 무엇을 준비하는지 분명하게 해 주는 구체적인 내용이나 계획을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner makes the preparation before the quick errand.",
+        "satisfiedWhenEn": "The answer gives a concrete lead time, recurring moment, or schedule beyond merely saying that the preparation occurs before the errand.",
+        "semanticRoleKo": "빠른 심부름 전에 학습자가 준비를 하는 때.",
+        "satisfiedWhenKo": "답변이 심부름 전에 준비한다고만 하지 않고, 구체적인 사전 시간, 반복 시점 또는 일정을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the preparation on how the quick errand goes.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for speed, completeness, cost, ease, memory, or travel and links it to preparing beforehand.",
+        "semanticRoleKo": "그 준비가 빠른 심부름의 진행 방식에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 속도, 완결성, 비용, 수월함, 기억 또는 이동에 미치는 구체적 결과를 제시하고 그것을 사전 준비와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific quick errand for which the learner made the stated preparation.",
+        "satisfiedWhenEn": "The answer describes an identifiable errand occasion when the learner prepared beforehand and used that preparation.",
+        "semanticRoleKo": "학습자가 말한 준비를 했던 구체적인 빠른 심부름 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 미리 준비했고 그 준비를 활용한 식별 가능한 심부름 사례를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2417",
+    "slotContracts": {
+    "ACTION": {
+      "semanticRoleEn": "One small recurring habit that concretely helps the learner during a store stop or quick errand.",
+      "satisfiedWhenEn": "The answer identifies a concrete, repeatable action used while preparing for or carrying out a store stop or quick errand and clearly shows that the action helps the learner in that situation. Merely naming an errand habit without conveying the helpful relationship does not satisfy the role.",
+      "semanticRoleKo": "가게에 들르거나 짧은 심부름을 할 때 학습자에게 구체적으로 도움이 되는 작고 반복적인 습관.",
+      "satisfiedWhenKo": "가게 방문이나 짧은 심부름을 준비하거나 수행할 때 하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 해당 상황에서 도움이 된다는 관계를 분명히 드러내면 충족한다. 도움 관계 없이 심부름 습관만 언급하면 충족되지 않는다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical benefit produced by the learner's small errand habit.",
+        "satisfiedWhenEn": "The answer states an identifiable improvement in speed, accuracy, cost, ease, memory, or task completion and links it to the habit; merely saying the habit helps is insufficient.",
+        "semanticRoleKo": "학습자의 작은 심부름 습관이 만들어 내는 실용적인 이점.",
+        "satisfiedWhenKo": "답변이 속도, 정확성, 비용, 수월함, 기억 또는 과업 완료에 생기는 식별 가능한 개선을 제시하고 그것을 그 습관과 연결하면 충족하며, 습관이 도움이 된다고만 하면 불충분하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the small store-stop or errand habit helpful.",
+        "satisfiedWhenEn": "The answer gives a concrete need or mechanism that explains how the habit helps with the brief errand.",
+        "semanticRoleKo": "학습자가 작은 가게 방문 또는 심부름 습관이 도움이 된다고 여기는 이유.",
+        "satisfiedWhenKo": "답변이 그 습관이 짧은 심부름에 어떻게 도움이 되는지 설명하는 구체적인 필요나 작용 방식을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular store stop or quick errand when the learner used the small habit.",
+        "satisfiedWhenEn": "The answer describes an identifiable store stop or quick errand in which the learner actually performed the stated habit.",
+        "semanticRoleKo": "학습자가 그 작은 습관을 사용했던 구체적인 가게 방문 또는 빠른 심부름 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 실제로 말한 습관을 실행한 식별 가능한 사례를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner performs the small habit in relation to the store stop or errand.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or identifiable errand stage beyond merely saying that the behavior occurs during a store stop or quick errand.",
+        "semanticRoleKo": "가게 방문이나 심부름과 관련해 학습자가 그 작은 습관을 실행하는 때.",
+        "satisfiedWhenKo": "답변이 가게 방문이나 빠른 심부름 중이라고만 하지 않고, 그 행동을 하는 구체적인 시간, 빈도 또는 식별 가능한 심부름 단계를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2418",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The concrete action the learner takes to complete a brief store errand more quickly.",
+        "satisfiedWhenEn": "The answer describes a specific behavior that directly streamlines choosing, locating, buying, paying for, or carrying the needed item.",
+        "semanticRoleKo": "짧은 가게 심부름을 더 빨리 끝내기 위해 학습자가 하는 구체적인 행동.",
+        "satisfiedWhenKo": "답변이 필요한 물건을 고르거나 찾거나 구매하거나 결제하거나 운반하는 과정을 직접 간소화하는 구체적인 행동을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The specific efficiency outcome produced by the learner's action.",
+        "satisfiedWhenEn": "The answer states an identifiable reduction in time, searching, waiting, extra purchases, or repeated steps and links it to the behavior; merely saying the errand is faster is insufficient.",
+        "semanticRoleKo": "학습자의 행동이 만들어 내는 구체적인 효율성 결과.",
+        "satisfiedWhenKo": "답변이 시간, 탐색, 대기, 불필요한 구매 또는 반복 단계가 식별 가능하게 줄어든 결과를 제시하고 그것을 그 행동과 연결하면 충족하며, 심부름이 더 빨라진다고만 하면 불충분하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the stated action makes the quick store errand faster.",
+        "satisfiedWhenEn": "The answer explains a concrete way the behavior removes a delay, decision, detour, or unnecessary task.",
+        "semanticRoleKo": "말한 행동이 빠른 가게 심부름을 더 신속하게 만드는 이유.",
+        "satisfiedWhenKo": "답변이 그 행동이 지연, 결정 과정, 우회 또는 불필요한 작업을 없애는 구체적인 방식을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific list, store area, item arrangement, route, payment method, or other feature involved in the speed-up action.",
+        "satisfiedWhenEn": "The answer identifies concrete information or a practical feature that clarifies how the learner carries out the action.",
+        "semanticRoleKo": "속도를 높이는 행동에 관련된 구체적인 목록, 매장 구역, 물품 배치, 경로, 결제 수단 또는 다른 요소.",
+        "satisfiedWhenKo": "답변이 학습자가 그 행동을 어떻게 하는지 분명하게 해 주는 구체적인 정보나 실용적 요소를 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular quick store errand when the learner used the speed-up action.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the learner performed the stated behavior to finish the errand faster.",
+        "semanticRoleKo": "학습자가 속도를 높이는 행동을 사용했던 구체적인 빠른 가게 심부름 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 심부름을 더 빨리 끝내기 위해 말한 행동을 실행한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2419",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The first concrete response the learner uses when a quick errand feels rushed.",
+        "satisfiedWhenEn": "The answer states a specific, workable action and clearly presents it as the learner's first step for handling the rushed errand.",
+        "semanticRoleKo": "빠른 심부름이 촉박하게 느껴질 때 학습자가 가장 먼저 쓰는 구체적인 대응.",
+        "satisfiedWhenKo": "답변이 구체적이고 실행 가능한 행동을 밝히고 그것을 촉박한 심부름을 처리하기 위한 학습자의 첫 단계로 분명히 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses that response first during a rushed errand.",
+        "satisfiedWhenEn": "The answer gives a concrete priority, constraint, or efficiency benefit that explains why the solution comes first.",
+        "semanticRoleKo": "촉박한 심부름 중 학습자가 그 대응을 가장 먼저 선택하는 이유.",
+        "satisfiedWhenKo": "답변이 그 해결책이 먼저 이루어지는 이유를 설명하는 구체적인 우선순위, 제약 또는 효율상의 이점을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of applying the first response to the rushed errand.",
+        "satisfiedWhenEn": "The answer states a concrete effect on time, focus, completeness, mistakes, stress, or travel caused by the solution.",
+        "semanticRoleKo": "촉박한 심부름에 첫 대응을 적용한 결과.",
+        "satisfiedWhenKo": "답변이 그 해결책으로 인해 시간, 집중, 완결성, 실수, 스트레스 또는 이동에 생기는 구체적인 효과를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific errand priority, needed item, list, route, store condition, or time constraint involved in the first response.",
+        "satisfiedWhenEn": "The answer gives concrete information that clarifies what the learner handles first and what makes the errand rushed.",
+        "semanticRoleKo": "첫 대응에 관련된 구체적인 심부름 우선순위, 필요한 물품, 목록, 경로, 매장 상황 또는 시간 제약.",
+        "satisfiedWhenKo": "답변이 학습자가 무엇을 먼저 처리하고 무엇 때문에 심부름이 촉박한지 분명하게 해 주는 구체적 정보를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific rushed errand when the learner used the stated first response.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which a brief errand felt rushed and the learner actually applied the solution first.",
+        "semanticRoleKo": "학습자가 말한 첫 대응을 사용했던 구체적인 촉박한 심부름 사례.",
+        "satisfiedWhenKo": "답변이 짧은 심부름이 촉박하게 느껴졌고 학습자가 실제로 그 해결책을 먼저 적용한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2420",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner habitually prepares in advance for a quick errand or store stop.",
+        "satisfiedWhenEn": "The answer describes a concrete advance preparation of information, needed items, payment, transport, or an errand plan.",
+        "semanticRoleKo": "빠른 심부름이나 가게 방문을 위해 학습자가 습관적으로 미리 준비하는 일.",
+        "satisfiedWhenKo": "답변이 정보, 필요한 물품, 결제 수단, 교통수단 또는 심부름 계획을 미리 갖추는 구체적인 준비를 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner makes that advance preparation for the errand or store stop.",
+        "satisfiedWhenEn": "The answer gives a concrete goal or need involving speed, memory, cost, convenience, availability, or avoiding a problem.",
+        "semanticRoleKo": "학습자가 심부름이나 가게 방문을 위해 그 준비를 미리 하는 이유.",
+        "satisfiedWhenKo": "답변이 속도, 기억, 비용, 편의, 물품 확보 또는 문제 예방과 관련된 구체적인 목표나 필요를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific list content, item, store information, route, payment method, or arrangement prepared ahead.",
+        "satisfiedWhenEn": "The answer identifies concrete prepared material or an arrangement that makes the learner's advance preparation precise.",
+        "semanticRoleKo": "미리 준비하는 구체적인 목록 내용, 물품, 매장 정보, 경로, 결제 수단 또는 계획.",
+        "satisfiedWhenKo": "답변이 학습자가 심부름이나 가게 방문을 위해 미리 마련한 구체적인 준비물이나 계획을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner prepares ahead for the errand or store stop.",
+        "satisfiedWhenEn": "The answer gives a concrete lead time, schedule, or frequency beyond merely saying that the preparation happens ahead of the errand or store stop.",
+        "semanticRoleKo": "학습자가 심부름이나 가게 방문을 위해 미리 준비하는 때.",
+        "satisfiedWhenKo": "답변이 심부름이나 가게 방문 전에 준비한다고만 하지 않고, 구체적인 사전 시간, 일정 또는 빈도를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of advance preparation on the learner's later errand or store stop.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for speed, completeness, spending, ease, travel, or avoiding return trips and links it to the preparation.",
+        "semanticRoleKo": "사전 준비가 이후 학습자의 심부름이나 가게 방문에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 속도, 완결성, 지출, 수월함, 이동 또는 재방문 방지에 미치는 구체적 결과를 제시하고 그것을 그 준비와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular quick errand or store stop when the learner used the advance preparation.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the learner prepared beforehand and then relied on that preparation.",
+        "semanticRoleKo": "학습자가 사전 준비를 활용했던 구체적인 빠른 심부름이나 가게 방문 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 미리 준비했고 그 뒤 그 준비를 활용한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2421",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner usually does when an errand requires only one or two items.",
+        "satisfiedWhenEn": "The answer describes a concrete behavior the learner habitually uses to handle a very small purchase or pickup.",
+        "semanticRoleKo": "심부름에 한두 가지 물건만 필요할 때 학습자가 보통 하는 일.",
+        "satisfiedWhenKo": "답변이 아주 적은 물건을 사거나 찾아오는 일을 처리하기 위해 학습자가 습관적으로 하는 구체적인 행동을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific needed item, purchasing method, store feature, or practical condition involved in the small errand.",
+        "satisfiedWhenEn": "The answer gives concrete information that clarifies what the learner needs or how the one- or two-item errand is handled.",
+        "semanticRoleKo": "작은 심부름에 관련된 구체적인 필요 물품, 구매 방식, 매장 요소 또는 실질적 조건.",
+        "satisfiedWhenKo": "답변이 학습자에게 무엇이 필요하거나 한두 가지 물건의 심부름을 어떻게 처리하는지 분명하게 해 주는 구체적 정보를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses the stated approach when only one or two things are needed.",
+        "satisfiedWhenEn": "The answer gives a concrete efficiency, convenience, cost, availability, or effort-related reason for the approach.",
+        "semanticRoleKo": "한두 가지 물건만 필요할 때 학습자가 말한 방식을 사용하는 이유.",
+        "satisfiedWhenKo": "답변이 그 방식에 대한 구체적인 효율, 편의, 비용, 물품 확보 또는 수고 관련 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of the learner's usual approach to a one- or two-item errand.",
+        "satisfiedWhenEn": "The answer states a concrete effect on speed, spending, effort, completeness, or travel and links it to the stated action.",
+        "semanticRoleKo": "한두 가지 물건의 심부름에 대한 학습자의 평소 방식이 만든 결과.",
+        "satisfiedWhenKo": "답변이 속도, 지출, 수고, 완결성 또는 이동에 미치는 구체적 효과를 제시하고 그것을 말한 행동과 연결하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The store, pickup point, or other location the learner uses for the small errand.",
+        "satisfiedWhenEn": "The answer identifies a recognizable place and connects it to obtaining the one or two needed things.",
+        "semanticRoleKo": "작은 심부름을 위해 학습자가 이용하는 가게, 수령 장소 또는 다른 위치.",
+        "satisfiedWhenKo": "답변이 식별 가능한 장소를 밝히고 그것을 필요한 한두 가지 물건을 구하는 일과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2422",
+    "slotContracts": {
+      "FEELING": {
+        "semanticRoleEn": "The learner's usual emotional state while running a quick errand.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion the learner commonly experiences during a brief errand.",
+        "semanticRoleKo": "빠른 심부름을 하는 동안 학습자가 보통 느끼는 감정 상태.",
+        "satisfiedWhenKo": "답변이 짧은 심부름 중 학습자가 흔히 경험하는 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What about the quick errand causes the learner's usual feeling.",
+        "satisfiedWhenEn": "The answer identifies a concrete time pressure, task feature, store condition, interaction, expectation, or outcome that explains the emotion.",
+        "semanticRoleKo": "빠른 심부름의 어떤 점이 학습자의 평소 감정을 일으키는지에 대한 이유.",
+        "satisfiedWhenKo": "답변이 그 감정을 설명하는 구체적인 시간 압박, 과업 특성, 매장 상황, 상호작용, 기대 또는 결과를 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular quick errand that illustrates the learner's usual feeling.",
+        "satisfiedWhenEn": "The answer describes an identifiable brief errand during which the stated emotion arose.",
+        "semanticRoleKo": "학습자의 평소 감정을 보여 주는 구체적인 빠른 심부름 사례.",
+        "satisfiedWhenKo": "답변이 말한 감정이 생겼던 식별 가능한 짧은 심부름을 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The time or stage of a quick errand when the learner tends to feel that way.",
+        "satisfiedWhenEn": "The answer gives a concrete recurring time, frequency, or identifiable errand phase beyond merely saying the feeling occurs during a quick errand.",
+        "semanticRoleKo": "빠른 심부름 중 학습자가 그런 감정을 느끼는 경향이 있는 시간이나 단계.",
+        "satisfiedWhenKo": "답변이 빠른 심부름 중에 감정을 느낀다고만 하지 않고, 구체적인 반복 시간, 빈도 또는 식별 가능한 심부름 단계를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the learner's errand-related feeling for behavior or task completion.",
+        "satisfiedWhenEn": "The answer states a concrete effect on decisions, speed, attention, purchases, interactions, or later mood and links it to the feeling.",
+        "semanticRoleKo": "심부름과 관련된 학습자의 감정이 행동이나 과업 완료에 미치는 결과.",
+        "satisfiedWhenKo": "답변이 결정, 속도, 주의, 구매, 상호작용 또는 이후 기분에 미치는 구체적 효과를 제시하고 그것을 그 감정과 연결하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular errand task or circumstance that clarifies the learner's emotional experience.",
+        "satisfiedWhenEn": "The answer identifies concrete context such as what was needed, where the errand occurred, how busy it was, or what constraint applied.",
+        "semanticRoleKo": "학습자의 감정 경험을 분명하게 해 주는 구체적인 심부름 과업이나 상황.",
+        "satisfiedWhenKo": "답변이 필요했던 물건, 심부름 장소, 혼잡도 또는 적용된 제약 같은 구체적인 맥락을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2423",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific improvement the learner wants to make to a quick errand or store stop.",
+        "satisfiedWhenEn": "The answer identifies a definite desired change in speed, preparation, spending, navigation, confidence, completeness, or another part of the errand.",
+        "semanticRoleKo": "빠른 심부름이나 가게 방문에서 학습자가 이루고 싶은 구체적인 개선.",
+        "satisfiedWhenKo": "답변이 속도, 준비, 지출, 동선, 자신감, 완결성 또는 심부름의 다른 부분에 관해 바라는 분명한 변화를 밝히면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A concrete step the learner intends to take toward improving the errand or store stop.",
+        "satisfiedWhenEn": "The answer states a feasible future errand behavior, preparation, shopping rule, or practice that could advance the stated goal.",
+        "semanticRoleKo": "심부름이나 가게 방문을 개선하기 위해 학습자가 실행하려는 구체적인 단계.",
+        "satisfiedWhenKo": "답변이 말한 목표를 진전시킬 수 있는 실행 가능한 미래 심부름 행동, 준비, 쇼핑 규칙 또는 연습을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants the stated improvement to quick errands or store stops.",
+        "satisfiedWhenEn": "The answer gives a concrete current difficulty, cost, inconvenience, risk, or personal priority that motivates the goal.",
+        "semanticRoleKo": "학습자가 빠른 심부름이나 가게 방문에서 말한 개선을 원하는 이유.",
+        "satisfiedWhenKo": "답변이 그 목표의 동기가 되는 구체적인 현재 어려움, 비용, 불편, 위험 또는 개인적 우선순위를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from improving the errand or store stop.",
+        "satisfiedWhenEn": "The answer identifies a concrete anticipated effect on time, spending, effort, accuracy, stress, or task completion and links it to the goal.",
+        "semanticRoleKo": "심부름이나 가게 방문을 개선함으로써 학습자가 기대하는 결과.",
+        "satisfiedWhenKo": "답변이 시간, 지출, 수고, 정확성, 스트레스 또는 과업 완료에 미칠 구체적인 예상 효과를 밝히고 그것을 목표와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific errand or store stop that illustrates what the learner wants to improve.",
+        "satisfiedWhenEn": "The answer describes an identifiable errand or store-stop occasion showing the current problem, need, or opportunity behind the stated goal.",
+        "semanticRoleKo": "학습자가 개선하려는 부분을 보여 주는 구체적인 심부름이나 가게 방문 사례.",
+        "satisfiedWhenKo": "답변이 말한 목표의 배경이 되는 현재 문제, 필요 또는 개선 기회를 보여 주는 식별 가능한 심부름이나 가게 방문 사례를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2424",
+    "slotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The concrete aid, resource, condition, or other factor that helps the learner complete a quick errand or store stop smoothly.",
+        "satisfiedWhenEn": "The answer identifies a recognizable helpful factor, such as a list, prepared item, store condition, route knowledge, payment option, or personal habit, rather than saying only that something helps.",
+        "semanticRoleKo": "학습자가 빠른 심부름이나 가게 방문을 순조롭게 끝내도록 돕는 구체적인 도구, 자원, 조건 또는 다른 요소.",
+        "satisfiedWhenKo": "답변이 무언가가 도움이 된다고만 하지 않고, 목록, 준비물, 매장 조건, 동선 지식, 결제 수단 또는 개인 습관 같은 식별 가능한 도움 요소를 밝히면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A concrete behavior through which the learner uses or creates the helpful factor during the errand.",
+        "satisfiedWhenEn": "The answer describes a specific action the learner takes that contributes to smooth completion, beyond merely naming the aid or condition.",
+        "semanticRoleKo": "심부름 중 학습자가 도움 요소를 활용하거나 만들어 내는 구체적인 행동.",
+        "satisfiedWhenKo": "답변이 도구나 조건의 이름만 말하는 데 그치지 않고, 순조로운 완료에 기여하도록 학습자가 하는 구체적인 행동을 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified factor helps the quick errand or store stop go smoothly.",
+        "satisfiedWhenEn": "The answer explains a concrete way the factor prevents delay, confusion, forgetting, overspending, unnecessary movement, or another obstacle.",
+        "semanticRoleKo": "밝힌 요소가 빠른 심부름이나 가게 방문을 순조롭게 만드는 이유.",
+        "satisfiedWhenKo": "답변이 그 요소가 지연, 혼란, 망각, 과소비, 불필요한 이동 또는 다른 장애를 막는 구체적인 방식을 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The particular smooth-completion outcome produced by the helpful factor.",
+        "satisfiedWhenEn": "The answer states a concrete effect on speed, accuracy, completeness, spending, effort, or stress and connects it to the factor; merely saying the errand goes smoothly is insufficient.",
+        "semanticRoleKo": "도움 요소가 만들어 내는 구체적인 순조로운 완료 결과.",
+        "satisfiedWhenKo": "답변이 속도, 정확성, 완결성, 지출, 수고 또는 스트레스에 미치는 구체적 효과를 제시하고 그것을 밝힌 요소와 연결하면 충족하며, 심부름이 순조롭다고만 하면 불충분하다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular quick errand or store stop when the helpful factor made a difference.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the factor was present or used and contributed to smooth completion.",
+        "semanticRoleKo": "그 도움 요소가 실제 차이를 만든 구체적인 빠른 심부름이나 가게 방문 사례.",
+        "satisfiedWhenKo": "답변이 그 요소가 있었거나 사용되었고 순조로운 완료에 기여한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2425",
+    "slotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific recent quick errand or store stop that went well.",
+        "satisfiedWhenEn": "The answer identifies and describes a recognizable recent errand occasion, rather than merely saying that a store visit went well.",
+        "semanticRoleKo": "잘 풀렸던 최근의 구체적인 빠른 심부름이나 가게 방문.",
+        "satisfiedWhenKo": "답변이 가게 방문이 잘됐다고만 말하지 않고, 식별 가능한 최근 심부름 사례를 밝히고 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "What specifically went well during the reported errand or store stop.",
+        "satisfiedWhenEn": "The answer states a concrete successful outcome involving speed, finding items, spending, service, travel, or completion and connects it to the event.",
+        "semanticRoleKo": "보고한 심부름이나 가게 방문에서 구체적으로 잘된 일.",
+        "satisfiedWhenKo": "답변이 속도, 물건 찾기, 지출, 서비스, 이동 또는 완료와 관련된 구체적인 성공 결과를 제시하고 그것을 사건과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the successful recent errand or store stop occurred.",
+        "satisfiedWhenEn": "The answer gives a meaningful recent date, time of day, or point in the outing that locates the errand more precisely.",
+        "semanticRoleKo": "잘 풀린 최근 심부름이나 가게 방문이 일어난 때.",
+        "satisfiedWhenKo": "답변이 그 심부름을 더 정확히 위치시키는 의미 있는 최근 날짜, 하루 중 시간 또는 외출 과정의 시점을 제시하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner did during the successful errand or store stop.",
+        "satisfiedWhenEn": "The answer describes a concrete shopping or errand action the learner actually performed during the reported occasion.",
+        "semanticRoleKo": "성공한 심부름이나 가게 방문 중 학습자가 한 일.",
+        "satisfiedWhenKo": "답변이 보고한 사례에서 학습자가 실제로 한 구체적인 쇼핑 또는 심부름 행동을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response during or after the successful errand.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling tied to how the errand unfolded or ended.",
+        "semanticRoleKo": "성공한 심부름의 도중이나 이후에 학습자가 느낀 감정.",
+        "satisfiedWhenKo": "답변이 심부름의 진행이나 결과와 연결된 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Concrete context that clarifies the successful errand or store-stop occasion.",
+        "satisfiedWhenEn": "The answer identifies a specific needed item, store, route, companion, service condition, payment method, or other circumstance that makes the event distinct.",
+        "semanticRoleKo": "성공한 심부름이나 가게 방문 사례를 분명하게 해 주는 구체적인 맥락.",
+        "satisfiedWhenKo": "답변이 사건을 뚜렷하게 만드는 구체적인 필요 물품, 가게, 경로, 동행인, 서비스 상황, 결제 수단 또는 다른 상황 정보를 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2426",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The concrete preparation the learner makes before setting out on a quick errand.",
+        "satisfiedWhenEn": "The answer describes a habitual step that gets necessary items, information, payment, transportation, or the errand sequence ready before departure.",
+        "semanticRoleKo": "빠른 심부름을 나서기 전에 학습자가 하는 구체적인 준비.",
+        "satisfiedWhenKo": "답변이 출발 전에 필요한 물품, 정보, 결제 수단, 교통수단 또는 심부름 순서를 갖추는 습관적인 단계를 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner completes that preparation before the quick errand.",
+        "satisfiedWhenEn": "The answer gives a concrete need involving efficiency, remembering necessities, controlling spending, avoiding a return, or reducing effort.",
+        "semanticRoleKo": "학습자가 빠른 심부름 전에 그 준비를 마치는 이유.",
+        "satisfiedWhenKo": "답변이 효율, 필수품 기억, 지출 관리, 재방문 방지 또는 수고 절감과 관련된 구체적인 필요를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular prepared item, list content, payment option, route, or store information involved.",
+        "satisfiedWhenEn": "The answer identifies concrete material or an arrangement that specifies what the learner gets ready for the errand.",
+        "semanticRoleKo": "준비에 포함되는 구체적인 물품, 목록 내용, 결제 수단, 경로 또는 매장 정보.",
+        "satisfiedWhenKo": "답변이 학습자가 심부름을 위해 무엇을 갖추는지 특정하는 구체적인 준비물이나 계획을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "The point before departure when the learner makes the quick-errand preparation.",
+        "satisfiedWhenEn": "The answer gives a concrete lead time or recurring schedule beyond merely saying that the step occurs before leaving for the errand.",
+        "semanticRoleKo": "출발 전에 학습자가 빠른 심부름 준비를 하는 시점.",
+        "satisfiedWhenKo": "답변이 심부름을 떠나기 전에 그 단계를 실행한다고만 하지 않고, 구체적인 사전 시간이나 반복 일정을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "How the learner's preparation affects the later quick errand.",
+        "satisfiedWhenEn": "The answer states a concrete effect on speed, completeness, expense, ease, travel, or memory and links it to preparing first.",
+        "semanticRoleKo": "학습자의 준비가 이후 빠른 심부름에 미치는 영향.",
+        "satisfiedWhenKo": "답변이 속도, 완결성, 비용, 수월함, 이동 또는 기억에 미치는 구체적 효과를 제시하고 그것을 먼저 준비한 것과 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular quick errand when the learner used the stated preparation.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the learner prepared before leaving and then used that preparation during the errand.",
+        "semanticRoleKo": "학습자가 말한 준비를 사용했던 구체적인 빠른 심부름 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 출발 전에 준비했고 그 뒤 심부름 중 그 준비를 활용한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2427",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner usually does during a store stop on the way home.",
+        "satisfiedWhenEn": "The answer states a concrete store-related action the learner habitually performs in that homeward stop.",
+        "semanticRoleKo": "집에 가는 길에 가게에 들를 때 학습자가 보통 하는 일.",
+        "satisfiedWhenKo": "답변이 귀가 중 가게 방문에서 학습자가 습관적으로 하는 구체적인 매장 관련 행동을 밝히면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular item, store section, shopping method, or homeward circumstance involved in the usual action.",
+        "satisfiedWhenEn": "The answer gives concrete information that clarifies what the learner gets, checks, chooses, or handles at the store.",
+        "semanticRoleKo": "평소 행동에 관련된 구체적인 물품, 매장 구역, 쇼핑 방식 또는 귀가 상황.",
+        "satisfiedWhenKo": "답변이 학습자가 가게에서 무엇을 구하거나 확인하거나 선택하거나 처리하는지 분명하게 해 주는 구체적 정보를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner performs the stated action at a store on the way home.",
+        "satisfiedWhenEn": "The answer gives a concrete need, convenience, schedule, availability, or household purpose that explains the action.",
+        "semanticRoleKo": "학습자가 집에 가는 길의 가게에서 말한 행동을 하는 이유.",
+        "satisfiedWhenKo": "답변이 그 행동을 설명하는 구체적인 필요, 편의, 일정, 물품 확보 또는 가정 내 목적을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the homeward store-stop action on the learner's evening or household needs.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for preparedness, meals, supplies, time, convenience, or later plans and links it to the action.",
+        "semanticRoleKo": "귀가 중 가게에서 한 행동이 학습자의 저녁이나 가정 내 필요에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 준비 상태, 식사, 생활용품, 시간, 편의 또는 이후 계획에 미치는 구체적 결과를 제시하고 그것을 말한 행동과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When or how often the learner makes the store stop on the way home.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or day pattern more specific than the already supplied setting of being on the way home.",
+        "semanticRoleKo": "학습자가 집에 가는 길에 가게에 들르는 때나 빈도.",
+        "satisfiedWhenKo": "답변이 질문에 이미 주어진 귀가 중이라는 상황보다 더 구체적인 시간, 빈도 또는 요일 패턴을 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2428",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The first action the learner usually takes at a store stop or quick errand.",
+        "satisfiedWhenEn": "The answer states a concrete behavior and clearly presents it as the learner's habitual first step upon beginning the store visit or errand.",
+        "semanticRoleKo": "가게 방문이나 빠른 심부름에서 학습자가 보통 가장 먼저 하는 행동.",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 밝히고 그것을 가게 방문이나 심부름을 시작할 때 학습자가 습관적으로 하는 첫 단계로 분명히 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner makes the stated action the first step of the store stop or errand.",
+        "satisfiedWhenEn": "The answer gives a concrete priority or benefit involving orientation, remembering needs, saving time, availability, or controlling purchases.",
+        "semanticRoleKo": "학습자가 말한 행동을 가게 방문이나 심부름의 첫 단계로 삼는 이유.",
+        "satisfiedWhenKo": "답변이 위치 파악, 필요한 물건 기억, 시간 절약, 재고 확인 또는 구매 관리와 관련된 구체적인 우선순위나 이점을 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate action the learner takes after or alongside the first errand step.",
+        "satisfiedWhenEn": "The answer describes another concrete behavior that is distinct from the first action and fits the same store-stop sequence.",
+        "semanticRoleKo": "첫 심부름 단계의 뒤나 함께 학습자가 하는 별도의 행동.",
+        "satisfiedWhenKo": "답변이 첫 행동과 구별되면서 같은 가게 방문 순서에 들어가는 또 다른 구체적 행동을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific list, needed item, store area, route, or method involved in the learner's first action.",
+        "satisfiedWhenEn": "The answer gives concrete information that clarifies exactly what the learner checks, finds, chooses, or organizes first.",
+        "semanticRoleKo": "학습자의 첫 행동에 관련된 구체적인 목록, 필요 물품, 매장 구역, 경로 또는 방법.",
+        "satisfiedWhenKo": "답변이 학습자가 가장 먼저 무엇을 확인, 탐색, 선택 또는 정리하는지 정확히 보여 주는 구체적 정보를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of beginning the store stop or errand with the stated action.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for speed, focus, finding items, spending, completeness, or ease and links it to the first step.",
+        "semanticRoleKo": "가게 방문이나 심부름을 말한 행동으로 시작한 효과.",
+        "satisfiedWhenKo": "답변이 속도, 집중, 물건 찾기, 지출, 완결성 또는 수월함에 미치는 구체적 결과를 제시하고 그것을 첫 단계와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular store stop or quick errand when the learner used the stated first action.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the learner began the errand by performing that action.",
+        "semanticRoleKo": "학습자가 말한 첫 행동을 사용했던 구체적인 가게 방문이나 빠른 심부름 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 그 행동을 하며 심부름을 시작한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2429",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The action the learner takes in the transition after a quick errand or store stop and before the next activity.",
+        "satisfiedWhenEn": "The answer describes a concrete behavior the learner performs after finishing the errand but before moving on.",
+        "semanticRoleKo": "빠른 심부름이나 가게 방문을 마친 뒤 다음 활동으로 넘어가기 전에 학습자가 하는 행동.",
+        "satisfiedWhenKo": "답변이 심부름을 끝낸 뒤이지만 다음 일로 넘어가기 전에 학습자가 하는 구체적인 행동을 설명하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "Another distinct step in the learner's post-errand transition.",
+        "satisfiedWhenEn": "The answer states a separate concrete behavior that accompanies or follows the main after-errand action before the learner moves on.",
+        "semanticRoleKo": "학습자의 심부름 후 전환 과정에 포함되는 또 다른 별도 단계.",
+        "satisfiedWhenKo": "답변이 다음 일로 넘어가기 전에 주된 심부름 후 행동에 동반되거나 뒤따르는 별도의 구체적 행동을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner performs the stated action before moving on from the errand.",
+        "satisfiedWhenEn": "The answer gives a concrete need involving checking, organizing, storing, resting, planning, or preventing a problem.",
+        "semanticRoleKo": "학습자가 심부름에서 다음 일로 넘어가기 전에 말한 행동을 하는 이유.",
+        "satisfiedWhenKo": "답변이 확인, 정리, 보관, 휴식, 계획 또는 문제 예방과 관련된 구체적인 필요를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the learner's post-errand action on the next activity or remaining day.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for readiness, organization, comfort, memory, safety, or timing and links it to the transition action.",
+        "semanticRoleKo": "학습자의 심부름 후 행동이 다음 활동이나 남은 하루에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 준비 상태, 정리, 편안함, 기억, 안전 또는 시간에 미치는 구체적 결과를 제시하고 그것을 전환 행동과 연결하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific purchase, receipt, bag, belongings, route, or next-task context involved in the post-errand action.",
+        "satisfiedWhenEn": "The answer gives concrete information that clarifies what the learner checks, puts away, carries, changes, or prepares before moving on.",
+        "semanticRoleKo": "심부름 후 행동에 관련된 구체적인 구매품, 영수증, 가방, 소지품, 경로 또는 다음 과업 맥락.",
+        "satisfiedWhenKo": "답변이 다음 일로 넘어가기 전에 학습자가 무엇을 확인, 보관, 운반, 변경 또는 준비하는지 분명하게 해 주는 구체적 정보를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2430",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner usually does while making a short shopping list.",
+        "satisfiedWhenEn": "The answer describes a concrete list-making behavior such as checking needs, selecting items, writing them down, grouping them, or reviewing the list.",
+        "semanticRoleKo": "짧은 쇼핑 목록을 만들 때 학습자가 보통 하는 일.",
+        "satisfiedWhenKo": "답변이 필요한 것 확인, 물품 선택, 기록, 묶기 또는 목록 검토 같은 구체적인 목록 작성 행동을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific list content, organization method, tool, or selection rule involved in the learner's routine.",
+        "satisfiedWhenEn": "The answer identifies concrete items, categories, an app or paper method, priorities, quantities, or another feature that clarifies how the list is made.",
+        "semanticRoleKo": "학습자의 목록 작성 습관에 관련된 구체적인 목록 내용, 정리 방법, 도구 또는 선택 기준.",
+        "satisfiedWhenKo": "답변이 목록을 어떻게 만드는지 분명하게 해 주는 구체적인 물품, 범주, 앱이나 종이 방식, 우선순위, 수량 또는 다른 요소를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses the stated method when making a short shopping list.",
+        "satisfiedWhenEn": "The answer gives a concrete reason involving memory, speed, budget, avoiding extras, store layout, or household needs.",
+        "semanticRoleKo": "학습자가 짧은 쇼핑 목록을 만들 때 말한 방식을 사용하는 이유.",
+        "satisfiedWhenKo": "답변이 기억, 속도, 예산, 불필요한 구매 방지, 매장 배치 또는 가정 내 필요와 관련된 구체적인 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the learner's list-making routine on the later shopping trip.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for remembering items, shopping speed, spending, route, or completeness and links it to the list action.",
+        "semanticRoleKo": "학습자의 목록 작성 습관이 이후 쇼핑에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 물품 기억, 쇼핑 속도, 지출, 동선 또는 완결성에 미치는 구체적 결과를 제시하고 그것을 목록 작성 행동과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner makes or reviews the short shopping list.",
+        "satisfiedWhenEn": "The answer gives a concrete time, lead period, or frequency beyond merely saying that the action occurs while making a shopping list.",
+        "semanticRoleKo": "학습자가 짧은 쇼핑 목록을 만들거나 검토하는 때.",
+        "satisfiedWhenKo": "답변이 쇼핑 목록을 만들 때라고만 하지 않고, 말한 목록 행동을 하는 구체적인 시간, 사전 기간 또는 빈도를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2431",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The process the learner uses to decide what to order at a cafe or bakery.",
+        "satisfiedWhenEn": "The answer describes a concrete decision-making behavior, comparison, or selection method the learner uses before ordering.",
+        "semanticRoleKo": "카페나 베이커리에서 무엇을 주문할지 정할 때 학습자가 사용하는 과정.",
+        "satisfiedWhenKo": "답변이 주문 전에 학습자가 사용하는 구체적인 의사 결정 행동, 비교 또는 선택 방법을 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner uses the stated process or criterion to choose an order.",
+        "satisfiedWhenEn": "The answer gives a concrete preference, need, constraint, or expected benefit that explains the learner's decision method.",
+        "semanticRoleKo": "학습자가 주문을 고를 때 말한 과정이나 기준을 사용하는 이유.",
+        "satisfiedWhenKo": "답변이 학습자의 결정 방식을 설명하는 구체적인 선호, 필요, 제약 또는 기대 이점을 제시하면 충족한다."
+      },
+      "CHOICE": {
+        "semanticRoleEn": "A specific drink, baked item, meal, or other menu option the learner chooses.",
+        "satisfiedWhenEn": "The answer names or clearly identifies a concrete cafe or bakery item selected through the stated decision process.",
+        "semanticRoleKo": "학습자가 선택하는 구체적인 음료, 빵, 식사 또는 다른 메뉴 항목.",
+        "satisfiedWhenKo": "답변이 말한 결정 과정을 통해 선택한 구체적인 카페나 베이커리 메뉴를 직접 말하거나 분명히 식별하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular menu information or selection criterion the learner considers when deciding.",
+        "satisfiedWhenEn": "The answer identifies concrete factors such as flavor, price, ingredients, size, freshness, dietary needs, appearance, or availability.",
+        "semanticRoleKo": "학습자가 주문을 결정할 때 고려하는 구체적인 메뉴 정보나 선택 기준.",
+        "satisfiedWhenKo": "답변이 맛, 가격, 재료, 크기, 신선도, 식이 요구, 모양 또는 재고 여부 같은 구체적인 요소를 밝히면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of using the learner's ordering decision process.",
+        "satisfiedWhenEn": "The answer gives a concrete outcome such as greater satisfaction, controlled spending, faster ordering, meeting dietary needs, avoiding waste, or stronger confidence and links it to the method.",
+        "semanticRoleKo": "학습자가 주문 결정 과정을 사용함으로써 생기는 결과.",
+        "satisfiedWhenKo": "답변이 더 큰 만족, 지출 관리, 빠른 주문, 식이 요구 충족, 낭비 방지 또는 더 높은 자신감 같은 구체적 결과를 제시하고 그것을 그 방법과 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular cafe or bakery visit when the learner used the stated ordering process.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the learner applied the decision method and chose an order.",
+        "semanticRoleKo": "학습자가 말한 주문 과정을 사용했던 구체적인 카페나 베이커리 방문 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 그 결정 방법을 적용해 주문을 선택한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2432",
+    "slotContracts": {
+    "ACTION": {
+      "semanticRoleEn": "One small recurring habit that concretely helps the learner during a cafe or bakery visit.",
+      "satisfiedWhenEn": "The answer identifies a concrete, repeatable action used while preparing for, ordering during, or spending time at a cafe or bakery and clearly shows that the action helps the learner during the visit. Merely naming a visit habit without conveying the helpful relationship does not satisfy the role.",
+      "semanticRoleKo": "카페나 빵집을 방문할 때 학습자에게 구체적으로 도움이 되는 작고 반복적인 습관.",
+      "satisfiedWhenKo": "카페나 빵집 방문을 준비하거나 주문하거나 머무는 동안 하는 구체적이고 반복 가능한 행동을 밝히고, 그 행동이 방문 중 학습자에게 도움이 된다는 관계를 분명히 드러내면 충족한다. 도움 관계 없이 방문 습관만 언급하면 충족되지 않는다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The practical or personal benefit produced by the small cafe or bakery habit.",
+        "satisfiedWhenEn": "The answer states an identifiable improvement in ordering, waiting, spending, comfort, enjoyment, communication, or time use and links it to the habit; merely saying the habit helps is insufficient.",
+        "semanticRoleKo": "작은 카페나 베이커리 습관이 만들어 내는 실용적 또는 개인적 이점.",
+        "satisfiedWhenKo": "답변이 주문, 대기, 지출, 편안함, 즐거움, 소통 또는 시간 사용에 생기는 식별 가능한 개선을 제시하고 그것을 그 습관과 연결하면 충족하며, 습관이 도움이 된다고만 하면 불충분하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner considers the small cafe or bakery habit helpful.",
+        "satisfiedWhenEn": "The answer gives a concrete need or mechanism that explains how the habit improves the visit.",
+        "semanticRoleKo": "학습자가 작은 카페나 베이커리 습관이 도움이 된다고 여기는 이유.",
+        "satisfiedWhenKo": "답변이 그 습관이 방문을 어떻게 개선하는지 설명하는 구체적인 필요나 작용 방식을 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific cafe or bakery visit when the learner used the small habit.",
+        "satisfiedWhenEn": "The answer describes an identifiable cafe or bakery visit in which the learner actually performed the stated habit.",
+        "semanticRoleKo": "학습자가 그 작은 습관을 사용했던 구체적인 카페나 베이커리 방문 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 실제로 말한 습관을 실행한 식별 가능한 방문 사례를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner performs the small habit in relation to a cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or identifiable visit stage beyond merely saying that the behavior occurs during a cafe or bakery visit.",
+        "semanticRoleKo": "카페나 베이커리 방문과 관련해 학습자가 그 작은 습관을 실행하는 때.",
+        "satisfiedWhenKo": "답변이 카페나 베이커리 방문 중이라고만 하지 않고, 그 행동을 하는 구체적인 시간, 빈도 또는 식별 가능한 방문 단계를 제시하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2433",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "The first action the learner takes when visiting a cafe or bakery.",
+        "satisfiedWhenEn": "The answer states a concrete behavior and clearly presents it as the learner's first step upon arriving or beginning the visit.",
+        "semanticRoleKo": "카페나 베이커리를 방문할 때 학습자가 가장 먼저 하는 행동.",
+        "satisfiedWhenKo": "답변이 구체적인 행동을 밝히고 그것을 도착하거나 방문을 시작할 때 학습자가 하는 첫 단계로 분명히 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner makes the stated action the first step of the cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer gives a concrete priority or benefit involving the menu, seating, availability, ordering, waiting, or comfort.",
+        "semanticRoleKo": "학습자가 말한 행동을 카페나 베이커리 방문의 첫 단계로 삼는 이유.",
+        "satisfiedWhenKo": "답변이 메뉴, 좌석, 재고, 주문, 대기 또는 편안함과 관련된 구체적인 우선순위나 이점을 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate action the learner takes after or alongside the first cafe or bakery step.",
+        "satisfiedWhenEn": "The answer describes another concrete behavior that is distinct from the first action and belongs to the same visit sequence.",
+        "semanticRoleKo": "카페나 베이커리에서 첫 단계의 뒤나 함께 학습자가 하는 별도의 행동.",
+        "satisfiedWhenKo": "답변이 첫 행동과 구별되면서 같은 방문 순서에 들어가는 또 다른 구체적인 행동을 설명하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific menu, display, seat, queue, order method, or other feature involved in the learner's first action.",
+        "satisfiedWhenEn": "The answer gives concrete information that clarifies exactly what the learner checks, chooses, finds, or does first.",
+        "semanticRoleKo": "학습자의 첫 행동에 관련된 구체적인 메뉴, 진열대, 좌석, 대기 줄, 주문 방식 또는 다른 요소.",
+        "satisfiedWhenKo": "답변이 학습자가 가장 먼저 무엇을 확인, 선택, 탐색 또는 실행하는지 정확히 보여 주는 구체적 정보를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of starting the cafe or bakery visit with the stated action.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for ordering speed, finding an item or seat, waiting, spending, comfort, or enjoyment and links it to the first step.",
+        "semanticRoleKo": "카페나 베이커리 방문을 말한 행동으로 시작한 효과.",
+        "satisfiedWhenKo": "답변이 주문 속도, 메뉴나 좌석 찾기, 대기, 지출, 편안함 또는 즐거움에 미치는 구체적 결과를 제시하고 그것을 첫 단계와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular cafe or bakery visit when the learner used the stated first action.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the learner began the visit by performing that action.",
+        "semanticRoleKo": "학습자가 말한 첫 행동을 사용했던 구체적인 카페나 베이커리 방문 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 그 행동을 하며 방문을 시작한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2434",
+    "slotContracts": {
+      "SOLUTION": {
+        "semanticRoleEn": "The first concrete response the learner uses when a cafe or bakery is busy.",
+        "satisfiedWhenEn": "The answer states a specific, workable action and presents it as the learner's first step for handling the crowded or high-demand situation.",
+        "semanticRoleKo": "카페나 베이커리가 붐빌 때 학습자가 가장 먼저 쓰는 구체적인 대응.",
+        "satisfiedWhenKo": "답변이 구체적이고 실행 가능한 행동을 밝히고 그것을 혼잡하거나 수요가 많은 상황을 처리하기 위한 학습자의 첫 단계로 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner chooses the stated response first at a busy cafe or bakery.",
+        "satisfiedWhenEn": "The answer gives a concrete priority or constraint involving waiting, seating, item availability, ordering, time, comfort, or crowding.",
+        "semanticRoleKo": "붐비는 카페나 베이커리에서 학습자가 말한 대응을 가장 먼저 선택하는 이유.",
+        "satisfiedWhenKo": "답변이 대기, 좌석, 메뉴 재고, 주문, 시간, 편안함 또는 혼잡과 관련된 구체적인 우선순위나 제약을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome of applying the first response at the busy cafe or bakery.",
+        "satisfiedWhenEn": "The answer states a concrete effect on waiting time, obtaining an order or seat, comfort, schedule, spending, or the decision to stay and links it to the solution.",
+        "semanticRoleKo": "붐비는 카페나 베이커리에서 첫 대응을 적용한 결과.",
+        "satisfiedWhenKo": "답변이 대기 시간, 주문이나 좌석 확보, 편안함, 일정, 지출 또는 머물지에 대한 결정에 미치는 구체적 효과를 제시하고 그것을 해결책과 연결하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific queue, seating condition, order option, crowd level, time limit, or alternative involved in the response.",
+        "satisfiedWhenEn": "The answer gives concrete information that clarifies what makes the venue busy and how the learner adapts.",
+        "semanticRoleKo": "대응에 관련된 구체적인 대기 줄, 좌석 상황, 주문 선택지, 혼잡도, 시간 제한 또는 대안.",
+        "satisfiedWhenKo": "답변이 무엇 때문에 매장이 붐비고 학습자가 어떻게 적응하는지 분명하게 해 주는 구체적 정보를 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific busy cafe or bakery visit when the learner used the first response.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the venue was busy and the learner actually applied the stated solution first.",
+        "semanticRoleKo": "학습자가 첫 대응을 사용했던 구체적인 붐비는 카페나 베이커리 방문 사례.",
+        "satisfiedWhenKo": "답변이 매장이 붐볐고 학습자가 실제로 말한 해결책을 먼저 적용한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2435",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner habitually prepares in advance for a cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer describes a concrete advance preparation involving an order choice, menu information, payment, a reusable item, seating plans, or the purpose of the visit.",
+        "semanticRoleKo": "카페나 베이커리 방문을 위해 학습자가 습관적으로 미리 준비하는 일.",
+        "satisfiedWhenKo": "답변이 주문 선택, 메뉴 정보, 결제 수단, 재사용 물품, 좌석 계획 또는 방문 목적과 관련해 미리 하는 구체적인 준비를 설명하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner makes that preparation before a cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer gives a concrete need or benefit involving time, budget, availability, dietary needs, comfort, communication, or avoiding waste.",
+        "semanticRoleKo": "학습자가 카페나 베이커리 방문 전에 그 준비를 하는 이유.",
+        "satisfiedWhenKo": "답변이 시간, 예산, 재고, 식이 요구, 편안함, 소통 또는 낭비 방지와 관련된 구체적인 필요나 이점을 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The specific menu item, information, payment option, reusable item, reservation, or other arrangement prepared ahead.",
+        "satisfiedWhenEn": "The answer identifies concrete prepared material or a plan that makes the learner's advance preparation precise.",
+        "semanticRoleKo": "미리 준비하는 구체적인 메뉴, 정보, 결제 수단, 재사용 물품, 예약 또는 다른 계획.",
+        "satisfiedWhenKo": "답변이 학습자의 사전 준비를 정확하게 보여 주는 구체적인 준비물이나 계획을 밝히면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner prepares ahead for the cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer gives a concrete lead time, schedule, or frequency beyond merely saying that the preparation happens ahead of the cafe or bakery visit.",
+        "semanticRoleKo": "학습자가 카페나 베이커리 방문을 위해 미리 준비하는 때.",
+        "satisfiedWhenKo": "답변이 카페나 베이커리 방문 전에 준비한다고만 하지 않고, 구체적인 사전 시간, 일정 또는 빈도를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of advance preparation on the learner's later cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for ordering speed, spending, obtaining an item, comfort, communication, or enjoyment and links it to the preparation.",
+        "semanticRoleKo": "사전 준비가 이후 학습자의 카페나 베이커리 방문에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 주문 속도, 지출, 메뉴 확보, 편안함, 소통 또는 즐거움에 미치는 구체적 결과를 제시하고 그것을 그 준비와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular cafe or bakery visit when the learner used the advance preparation.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the learner prepared beforehand and then relied on that preparation during the visit.",
+        "semanticRoleKo": "학습자가 사전 준비를 활용했던 구체적인 카페나 베이커리 방문 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 미리 준비했고 그 뒤 방문 중 그 준비를 활용한 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2436",
+    "slotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "What the learner usually does during an afternoon stop at a bakery.",
+        "satisfiedWhenEn": "The answer describes a concrete bakery-related action the learner habitually performs in that afternoon setting.",
+        "semanticRoleKo": "오후에 베이커리에 들를 때 학습자가 보통 하는 일.",
+        "satisfiedWhenKo": "답변이 그 오후 상황에서 학습자가 습관적으로 하는 구체적인 베이커리 관련 행동을 설명하면 충족한다."
+      },
+      "CHOICE": {
+        "semanticRoleEn": "A specific baked item, drink, or other product the learner selects during the afternoon bakery stop.",
+        "satisfiedWhenEn": "The answer names or clearly identifies a concrete bakery product the learner chooses on such visits.",
+        "semanticRoleKo": "오후 베이커리 방문 중 학습자가 선택하는 구체적인 빵, 음료 또는 다른 상품.",
+        "satisfiedWhenKo": "답변이 그런 방문에서 학습자가 고르는 구체적인 베이커리 상품을 직접 말하거나 분명히 식별하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular product feature, display area, order method, or visit circumstance involved in the learner's usual action.",
+        "satisfiedWhenEn": "The answer gives concrete information such as flavor, freshness, quantity, section, packaging, or intended use that clarifies the bakery routine.",
+        "semanticRoleKo": "학습자의 평소 행동에 관련된 구체적인 상품 특징, 진열 구역, 주문 방식 또는 방문 상황.",
+        "satisfiedWhenKo": "답변이 베이커리 습관을 분명하게 해 주는 맛, 신선도, 수량, 구역, 포장 또는 용도 같은 구체적 정보를 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner performs the stated action or makes the stated choice during the afternoon bakery stop.",
+        "satisfiedWhenEn": "The answer gives a concrete preference, hunger, schedule, convenience, social, or household reason connected to the visit behavior.",
+        "semanticRoleKo": "학습자가 오후 베이커리 방문 중 말한 행동을 하거나 선택을 하는 이유.",
+        "satisfiedWhenKo": "답변이 그 방문 행동과 연결된 구체적인 선호, 허기, 일정, 편의, 사회적 또는 가정 내 이유를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The effect of the learner's afternoon bakery action or choice on the rest of the day.",
+        "satisfiedWhenEn": "The answer states a concrete outcome for hunger, energy, enjoyment, spending, sharing, meals, or later plans and links it to the visit.",
+        "semanticRoleKo": "학습자의 오후 베이커리 행동이나 선택이 남은 하루에 미치는 효과.",
+        "satisfiedWhenKo": "답변이 허기, 에너지, 즐거움, 지출, 나눔, 식사 또는 이후 계획에 미치는 구체적 결과를 제시하고 그것을 그 방문과 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2437",
+    "slotContracts": {
+      "FEELING": {
+        "semanticRoleEn": "The learner's usual emotional state while visiting a cafe or bakery.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific emotion the learner commonly experiences during such a visit.",
+        "semanticRoleKo": "카페나 베이커리를 방문할 때 학습자가 보통 느끼는 감정 상태.",
+        "satisfiedWhenKo": "답변이 그런 방문 중 학습자가 흔히 경험하는 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "What about visiting a cafe or bakery causes the learner's usual feeling.",
+        "satisfiedWhenEn": "The answer identifies a concrete sensory feature, activity, interaction, memory, atmosphere, product, or practical circumstance that explains the emotion.",
+        "semanticRoleKo": "카페나 베이커리 방문의 어떤 점이 학습자의 평소 감정을 일으키는지에 대한 이유.",
+        "satisfiedWhenKo": "답변이 그 감정을 설명하는 구체적인 감각적 특징, 활동, 상호작용, 기억, 분위기, 상품 또는 실질적 상황을 밝히면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific cafe or bakery visit that illustrates the learner's usual feeling.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion during which the stated emotion arose.",
+        "semanticRoleKo": "학습자의 평소 감정을 보여 주는 구체적인 카페나 베이커리 방문 사례.",
+        "satisfiedWhenKo": "답변이 말한 감정이 생겼던 식별 가능한 방문 사례를 설명하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the learner tends to experience the stated feeling during cafe or bakery visits.",
+        "satisfiedWhenEn": "The answer gives a concrete time, frequency, or identifiable visit stage beyond merely saying the feeling occurs during a cafe or bakery visit.",
+        "semanticRoleKo": "카페나 베이커리 방문 중 학습자가 말한 감정을 느끼는 경향이 있는 때.",
+        "satisfiedWhenKo": "답변이 카페나 베이커리 방문 중에 감정을 느낀다고만 하지 않고, 구체적인 시간, 빈도 또는 식별 가능한 방문 단계를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A consequence of the learner's cafe- or bakery-related feeling for behavior or the rest of the visit.",
+        "satisfiedWhenEn": "The answer states a concrete effect on ordering, staying, spending, interacting, working, relaxing, or later mood and links it to the feeling.",
+        "semanticRoleKo": "카페나 베이커리와 관련된 학습자의 감정이 행동이나 남은 방문에 미치는 결과.",
+        "satisfiedWhenKo": "답변이 주문, 머무는 시간, 지출, 상호작용, 작업, 휴식 또는 이후 기분에 미치는 구체적 효과를 제시하고 그것을 그 감정과 연결하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "The particular cafe or bakery feature or circumstance that clarifies the learner's emotional experience.",
+        "satisfiedWhenEn": "The answer identifies concrete context such as the atmosphere, smell, noise, seating, crowd, service, menu, companion, or purpose of the visit.",
+        "semanticRoleKo": "학습자의 감정 경험을 분명하게 해 주는 구체적인 카페나 베이커리 요소 또는 상황.",
+        "satisfiedWhenKo": "답변이 분위기, 냄새, 소음, 좌석, 혼잡, 서비스, 메뉴, 동행인 또는 방문 목적 같은 구체적 맥락을 밝히면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2438",
+    "slotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "The specific improvement the learner wants to make to a cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer identifies a definite desired change in ordering, spending, waiting, choosing, communication, comfort, habits, or another part of the visit.",
+        "semanticRoleKo": "카페나 베이커리 방문에서 학습자가 이루고 싶은 구체적인 개선.",
+        "satisfiedWhenKo": "답변이 주문, 지출, 대기, 선택, 소통, 편안함, 습관 또는 방문의 다른 부분에 관해 바라는 분명한 변화를 밝히면 충족한다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "A concrete step the learner intends to take toward improving cafe or bakery visits.",
+        "satisfiedWhenEn": "The answer states a feasible future behavior, preparation, rule, or practice that could advance the stated goal.",
+        "semanticRoleKo": "카페나 베이커리 방문을 개선하기 위해 학습자가 실행하려는 구체적인 단계.",
+        "satisfiedWhenKo": "답변이 말한 목표를 진전시킬 수 있는 실행 가능한 미래 행동, 준비, 규칙 또는 연습을 제시하면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants the stated improvement to cafe or bakery visits.",
+        "satisfiedWhenEn": "The answer gives a concrete current difficulty, expense, health need, inconvenience, preference, or personal value that motivates the goal.",
+        "semanticRoleKo": "학습자가 카페나 베이커리 방문에서 말한 개선을 원하는 이유.",
+        "satisfiedWhenKo": "답변이 그 목표의 동기가 되는 구체적인 현재 어려움, 비용, 건강상 필요, 불편, 선호 또는 개인적 가치를 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The outcome the learner expects from improving cafe or bakery visits.",
+        "satisfiedWhenEn": "The answer identifies a concrete anticipated effect on spending, health, confidence, time, comfort, communication, or enjoyment and links it to the goal.",
+        "semanticRoleKo": "카페나 베이커리 방문을 개선함으로써 학습자가 기대하는 결과.",
+        "satisfiedWhenKo": "답변이 지출, 건강, 자신감, 시간, 편안함, 소통 또는 즐거움에 미칠 구체적인 예상 효과를 밝히고 그것을 목표와 연결하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific cafe or bakery visit that illustrates what the learner wants to improve.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion showing the current problem, need, or opportunity behind the stated goal.",
+        "semanticRoleKo": "학습자가 개선하려는 부분을 보여 주는 구체적인 카페나 베이커리 방문 사례.",
+        "satisfiedWhenKo": "답변이 말한 목표의 배경이 되는 현재 문제, 필요 또는 개선 기회를 보여 주는 식별 가능한 경우를 설명하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2439",
+    "slotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific aspect of visiting a cafe or bakery that the learner likes.",
+        "satisfiedWhenEn": "The answer identifies a recognizable liked feature, experience, activity, product, atmosphere, or social opportunity, rather than saying only that visits are nice.",
+        "semanticRoleKo": "카페나 베이커리 방문에서 학습자가 좋아하는 구체적인 측면.",
+        "satisfiedWhenKo": "답변이 방문이 좋다고만 말하지 않고, 식별 가능한 선호 요소, 경험, 활동, 상품, 분위기 또는 사회적 기회를 밝히면 충족한다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner likes the identified aspect of cafe or bakery visits.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, benefit, memory, sensory response, or personal motivation that explains the preference.",
+        "semanticRoleKo": "학습자가 카페나 베이커리 방문에서 밝힌 측면을 좋아하는 이유.",
+        "satisfiedWhenKo": "답변이 그 선호를 설명하는 구체적인 특성, 이점, 기억, 감각적 반응 또는 개인적 동기를 제시하면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "A concrete feature of the liked cafe or bakery aspect.",
+        "satisfiedWhenEn": "The answer specifies an identifiable product quality, atmosphere element, service feature, activity, setting, or interaction that makes the preference more precise.",
+        "semanticRoleKo": "좋아하는 카페나 베이커리 측면의 구체적인 특징.",
+        "satisfiedWhenKo": "답변이 선호를 더 정확히 보여 주는 식별 가능한 상품 특성, 분위기 요소, 서비스 특징, 활동, 환경 또는 상호작용을 구체적으로 제시하면 충족한다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A particular cafe or bakery visit that demonstrates the learner's preference.",
+        "satisfiedWhenEn": "The answer describes an identifiable occasion in which the learner experienced the liked aspect.",
+        "semanticRoleKo": "학습자의 선호를 보여 주는 구체적인 카페나 베이커리 방문 사례.",
+        "satisfiedWhenKo": "답변이 학습자가 좋아하는 측면을 경험한 식별 가능한 경우를 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response to the liked aspect of cafe or bakery visits.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling tied to experiencing that aspect, beyond merely repeating that the learner likes it.",
+        "semanticRoleKo": "카페나 베이커리 방문에서 좋아하는 측면에 대한 학습자의 감정적 반응.",
+        "satisfiedWhenKo": "답변이 그 측면을 좋아한다고만 되풀이하지 않고, 그것을 경험할 때의 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete effect the liked aspect has on the learner's visit or later state.",
+        "satisfiedWhenEn": "The answer states an identifiable outcome for relaxation, energy, social connection, work, mood, or return visits and links it to the preferred aspect; merely saying it is liked or satisfying is insufficient.",
+        "semanticRoleKo": "좋아하는 측면이 학습자의 방문이나 이후 상태에 미치는 구체적인 효과.",
+        "satisfiedWhenKo": "답변이 휴식, 에너지, 사회적 연결, 작업, 기분 또는 재방문에 미치는 식별 가능한 결과를 제시하고 그것을 선호하는 측면과 연결하면 충족하며, 좋아하거나 만족스럽다고만 하면 불충분하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-2440",
+    "slotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific recent cafe or bakery visit that went well.",
+        "satisfiedWhenEn": "The answer identifies and describes a recognizable recent visit, rather than merely saying that a cafe or bakery experience was good.",
+        "semanticRoleKo": "잘 풀렸던 최근의 구체적인 카페나 베이커리 방문.",
+        "satisfiedWhenKo": "답변이 카페나 베이커리 경험이 좋았다고만 말하지 않고, 식별 가능한 최근 방문을 밝히고 설명하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "What specifically went well during the reported cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer states a concrete successful outcome involving an order, product, service, seating, waiting, work, conversation, comfort, or enjoyment and connects it to the event.",
+        "semanticRoleKo": "보고한 카페나 베이커리 방문에서 구체적으로 잘된 일.",
+        "satisfiedWhenKo": "답변이 주문, 상품, 서비스, 좌석, 대기, 작업, 대화, 편안함 또는 즐거움과 관련된 구체적인 성공 결과를 제시하고 그것을 사건과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "When the successful recent cafe or bakery visit occurred.",
+        "satisfiedWhenEn": "The answer gives a meaningful recent date, time of day, or sequence context that locates the occasion more precisely.",
+        "semanticRoleKo": "잘 풀린 최근 카페나 베이커리 방문이 일어난 때.",
+        "satisfiedWhenKo": "답변이 그 사례를 더 정확히 위치시키는 의미 있는 최근 날짜, 하루 중 시간 또는 순서 맥락을 제시하면 충족한다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "What the learner did during the successful cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer describes a concrete action the learner actually performed as part of the reported occasion.",
+        "semanticRoleKo": "성공한 카페나 베이커리 방문 중 학습자가 한 일.",
+        "satisfiedWhenKo": "답변이 보고한 사례의 일부로 학습자가 실제로 한 구체적인 행동을 설명하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional response during or after the successful visit.",
+        "satisfiedWhenEn": "The answer names or clearly conveys a specific feeling tied to how the cafe or bakery occasion unfolded or ended.",
+        "semanticRoleKo": "성공한 방문의 도중이나 이후에 학습자가 느낀 감정.",
+        "satisfiedWhenKo": "답변이 카페나 베이커리 방문의 진행이나 결과와 연결된 구체적인 감정을 직접 말하거나 분명히 드러내면 충족한다."
+      },
+      "DETAIL": {
+        "semanticRoleEn": "Concrete context that clarifies the successful cafe or bakery visit.",
+        "satisfiedWhenEn": "The answer identifies a specific venue, menu item, companion, seat, service condition, purpose, atmosphere, or other circumstance that makes the event distinct.",
+        "semanticRoleKo": "성공한 카페나 베이커리 방문을 분명하게 해 주는 구체적인 맥락.",
+        "satisfiedWhenKo": "답변이 사건을 뚜렷하게 만드는 구체적인 장소, 메뉴, 동행인, 좌석, 서비스 상황, 방문 목적, 분위기 또는 다른 상황 정보를 밝히면 충족한다."
+      }
+    }
+  }
+]

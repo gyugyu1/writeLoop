@@ -1,0 +1,2082 @@
+[
+  {
+    "promptId": "prompt-a-1",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for the learner's usual post-dinner action; one independent detail such as another step, timing, or a reason is needed to keep this beginner response from being a bare activity."
+  },
+  {
+    "promptId": "prompt-a-2",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "SPECIFIC_TIME",
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The two clauses directly require a situation or time for making a quick meal and the meal usually chosen; those two concrete beginner-level elements already form an adequate answer."
+  },
+  {
+    "promptId": "prompt-a-3",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "FEELING",
+      "REASON",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording asks broadly about a usual weekend activity, so one separate detail about another activity, timing, place, or motivation is needed beyond the core action."
+  },
+  {
+    "promptId": "prompt-a-4",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state a usual after-work action and explain why it is enjoyable; the action-plus-reason structure supplies sufficient depth for this beginner prompt."
+  },
+  {
+    "promptId": "prompt-b-1",
+    "answerMode": "PROBLEM_SOLUTION",
+    "requiredSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "FEELING",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question explicitly asks for a recurring work or school challenge and the way the learner handles it, so the required problem and solution already create a complete intermediate response."
+  },
+  {
+    "promptId": "prompt-b-2",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Wanting to visit a particular city establishes the future goal, while the desired activities there supply the plan; both requested clauses are enough without mandatory extra depth."
+  },
+  {
+    "promptId": "prompt-b-3",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "PROBLEM",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires a habit-building goal for this year and an explanation of its importance; a plan for building it is useful but is not directly requested."
+  },
+  {
+    "promptId": "prompt-b-4",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The desired kind of trip is the future goal and the preparation method is the plan; these are two explicit, independent obligations and therefore need no added slot."
+  },
+  {
+    "promptId": "prompt-b-5",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly requires an improvement target and a practice method, represented by the goal and plan; together they provide adequate intermediate-level development."
+  },
+  {
+    "promptId": "prompt-balance-01",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Explaining how social media changed daily life requires an earlier and current state, and the second clause requires a judgment about whether that change is mostly positive; those three units provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-balance-02",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording explicitly asks for social media's benefits, drawbacks, and the learner's view, so all three sides of the balanced response are required and already create adequate depth."
+  },
+  {
+    "promptId": "prompt-balance-03",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe effects of social media on people and judge whether those effects are mostly good; at this advanced level, one example or explanation is also needed to support the broad effect claim."
+  },
+  {
+    "promptId": "prompt-balance-04",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Judging whether social media has helped more than harmed people requires weighing its helpful and harmful sides, stating the comparative opinion, and answering the explicit why clause; no further slot is necessary."
+  },
+  {
+    "promptId": "prompt-balance-05",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must contrast how people lived or connected before and after social media and then give an overall opinion, yielding three independent required elements."
+  },
+  {
+    "promptId": "prompt-balance-06",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks how remote work altered daily life and whether that alteration is mostly positive, requiring a before-and-now contrast plus an evaluative position; these obligations are sufficient."
+  },
+  {
+    "promptId": "prompt-balance-07",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Remote work's benefits and drawbacks are both directly requested along with the learner's view, so the three required slots already ensure a developed balanced answer."
+  },
+  {
+    "promptId": "prompt-balance-08",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt calls for ways remote work has affected people and a judgment of whether the effect is mostly good; one independent example or reason is appropriate for this broad advanced claim."
+  },
+  {
+    "promptId": "prompt-balance-09",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The helped-versus-harmed comparison asks the learner to weigh remote work's positive and negative sides, choose which is stronger, and explain why; those four requirements are ample."
+  },
+  {
+    "promptId": "prompt-balance-10",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Describing how remote work changed living or connecting requires contrasting earlier and current conditions, while the final clause requires an overall opinion; no additional depth slot is needed."
+  },
+  {
+    "promptId": "prompt-balance-11",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain daily life before and after artificial intelligence in education and judge whether the change is mostly positive, giving three substantive required units."
+  },
+  {
+    "promptId": "prompt-balance-1101",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question explicitly requires a benefit of self-checkout kiosks, a drawback, and the learner's own view; these three independent components satisfy the advanced response depth."
+  },
+  {
+    "promptId": "prompt-balance-1102",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The instruction to explain both sides of open-plan offices directly requires helpful and harmful aspects, and the final instruction requires an overall opinion; nothing further must be added."
+  },
+  {
+    "promptId": "prompt-balance-1103",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Strengths and weaknesses of reusable packaging rules map to advantages and disadvantages, while deciding which side is stronger supplies the opinion; all requested analytical parts are required."
+  },
+  {
+    "promptId": "prompt-balance-1104",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Subscription services must be discussed through both benefits and drawbacks before the learner gives a view, so the three explicit slots already form a sufficiently developed answer."
+  },
+  {
+    "promptId": "prompt-balance-1105",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Because the prompt says to explain both sides of online petitions and give an opinion, a helpful aspect, a harmful aspect, and the final judgment are all mandatory and sufficient."
+  },
+  {
+    "promptId": "prompt-balance-1106",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked to identify strengths and weaknesses of smart home devices and determine which side is stronger, directly requiring both sides and an opinion with no extra depth obligation."
+  },
+  {
+    "promptId": "prompt-balance-1107",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "School rankings are to be evaluated through their benefits, drawbacks, and the learner's view; these three independently requested elements provide enough advanced-level depth."
+  },
+  {
+    "promptId": "prompt-balance-1108",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The explicit request to explain both sides of cashless school cafeterias requires helpful and harmful aspects, followed by the learner's overall judgment; those requirements are already substantial."
+  },
+  {
+    "promptId": "prompt-balance-1109",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Discussing the strengths and weaknesses of pet-friendly offices and selecting the stronger side directly creates an advantage, disadvantage, and opinion, so no optional slot is mandatory."
+  },
+  {
+    "promptId": "prompt-balance-1110",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question explicitly calls for benefits and drawbacks of tourist taxes plus a personal view, making all three balanced-opinion components required and sufficient."
+  },
+  {
+    "promptId": "prompt-balance-1111",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Digital textbooks must be considered from both the helpful and harmful sides, and the learner must state an opinion; the explicit three-part task needs no additional required depth."
+  },
+  {
+    "promptId": "prompt-balance-1112",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Neighborhood security cameras are framed through strengths, weaknesses, and a decision about the stronger side, so advantages, disadvantages, and opinion are all direct and adequate obligations."
+  },
+  {
+    "promptId": "prompt-balance-1113",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for both benefits and drawbacks of food expiration labels and then a view, so the required balanced structure itself supplies sufficient depth."
+  },
+  {
+    "promptId": "prompt-balance-1114",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is explicitly told to explain AI customer service's helpful and harmful sides and give an opinion, requiring three independent units and no mandatory supplement."
+  },
+  {
+    "promptId": "prompt-balance-1115",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Strengths and weaknesses of bicycle sharing systems provide the two sides, and choosing which side is stronger provides the opinion; this complete structure does not need an extra slot."
+  },
+  {
+    "promptId": "prompt-balance-1116",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Coworking spaces must be assessed through a benefit, a drawback, and the learner's view, and those three explicitly requested elements are sufficient for this advanced prompt."
+  },
+  {
+    "promptId": "prompt-balance-1117",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt demands both helpful and harmful aspects of four-day workweeks and a final opinion, so all three balanced-opinion slots are required and already ensure depth."
+  },
+  {
+    "promptId": "prompt-balance-1118",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Location sharing among friends is to be analyzed through strengths and weaknesses and then weighed to select the stronger side, making the three required slots sufficient."
+  },
+  {
+    "promptId": "prompt-balance-1119",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks for benefits and drawbacks of electric scooters in cities and an overall view, so the balanced three-part answer needs no additional depth slot."
+  },
+  {
+    "promptId": "prompt-balance-1120",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Live-stream shopping's helpful and harmful sides must both be explained before the learner gives an opinion, producing three adequate required semantic units."
+  },
+  {
+    "promptId": "prompt-balance-1121",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The strengths and weaknesses of reusable cup deposit programs are both requested, as is a judgment about which side is stronger; the resulting three requirements are sufficient."
+  },
+  {
+    "promptId": "prompt-balance-1122",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Translation apps for travel must be discussed through benefits and drawbacks and followed by the learner's view, so all direct obligations already provide adequate depth."
+  },
+  {
+    "promptId": "prompt-balance-1123",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The instruction to explain both sides of meal kit services makes an advantage and disadvantage mandatory, while the requested opinion completes a sufficiently developed response."
+  },
+  {
+    "promptId": "prompt-balance-1124",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Personal data rewards programs are framed in terms of strengths, weaknesses, and which side is stronger, directly requiring both sides and the learner's overall judgment."
+  },
+  {
+    "promptId": "prompt-balance-1125",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state benefits and drawbacks of automated attendance systems and then give a view, so the three explicit parts are enough without mandatory optional content."
+  },
+  {
+    "promptId": "prompt-balance-1126",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Office hot-desking must be explained from both its helpful and harmful sides and evaluated overall, making advantage, disadvantage, and opinion sufficient required slots."
+  },
+  {
+    "promptId": "prompt-balance-1127",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for strengths and weaknesses of second-screen viewing habits and a decision about the stronger side, so its three required analytical components already create depth."
+  },
+  {
+    "promptId": "prompt-balance-12",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Benefits and drawbacks of artificial intelligence in education are both explicitly requested together with the learner's view, so the complete balanced structure requires no extra slot."
+  },
+  {
+    "promptId": "prompt-balance-13",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The response must identify effects of artificial intelligence in education on people and judge whether those effects are mostly good; one supporting example or reason is needed for advanced-level adequacy."
+  },
+  {
+    "promptId": "prompt-balance-14",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks whether educational AI has helped more than harmed people and why, so the response must weigh both sides, state the comparison, and explain its basis; that is already ample depth."
+  },
+  {
+    "promptId": "prompt-balance-15",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must contrast how people lived or connected before and after artificial intelligence entered education and then give an overall opinion, yielding sufficient required depth."
+  },
+  {
+    "promptId": "prompt-balance-16",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Explaining online shopping's change to daily life requires earlier and current conditions, and the second clause requires a judgment of that change; these three obligations are sufficient."
+  },
+  {
+    "promptId": "prompt-balance-17",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly asks for online shopping's benefits, drawbacks, and the learner's view, so all three balanced-opinion slots are mandatory and already substantive."
+  },
+  {
+    "promptId": "prompt-balance-18",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe ways online shopping has affected people and decide whether the effect is mostly good; one independent support is needed to develop this broad advanced judgment."
+  },
+  {
+    "promptId": "prompt-balance-19",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Deciding whether online shopping has helped more than harmed people calls for both sides, a comparative opinion, and the explicitly requested reason, which together need no added depth."
+  },
+  {
+    "promptId": "prompt-balance-20",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires a before-and-now account of how online shopping changed living or connecting and an overall opinion, so the three direct semantic units provide enough depth."
+  },
+  {
+    "promptId": "prompt-balance-21",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must contrast people's lives before and after daily smartphone use became common and evaluate whether the change is mostly positive; those requirements are sufficient."
+  },
+  {
+    "promptId": "prompt-balance-22",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Daily smartphone use is explicitly framed through benefits, drawbacks, and the learner's view, so the required three-part balanced answer already meets the depth target."
+  },
+  {
+    "promptId": "prompt-balance-23",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for effects of daily smartphone use on people and a judgment of whether they are mostly good; one example or explanatory reason is needed to support the advanced response."
+  },
+  {
+    "promptId": "prompt-balance-24",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The helped-versus-harmed comparison requires positive and negative effects of daily smartphone use, an overall judgment, and an explanation of why that side is stronger; no extra slot is necessary."
+  },
+  {
+    "promptId": "prompt-balance-25",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must show how living or connecting differed before and after daily smartphone use and then state an overall opinion, producing adequate depth through three required units."
+  },
+  {
+    "promptId": "prompt-balance-26",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Cashless payments must be discussed through their benefits and drawbacks before the learner gives a view, so the three directly requested parts are sufficient."
+  },
+  {
+    "promptId": "prompt-balance-27",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Explaining how cashless payments changed daily life entails an earlier and current state, and judging whether that change is mostly positive adds the required opinion; these are enough."
+  },
+  {
+    "promptId": "prompt-balance-28",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must identify effects of cashless payments on people and judge whether the effect is mostly good; one independent support keeps the advanced response from remaining a broad assertion."
+  },
+  {
+    "promptId": "prompt-balance-29",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Assessing whether cashless payments help more than harm people requires both sides, a comparative position, and the requested reason, so the required structure already has ample depth."
+  },
+  {
+    "promptId": "prompt-balance-30",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The phrase considering both advantages and disadvantages makes both sides of cashless payments obligatory, and the question also directly requires an overall opinion; no supplement is needed."
+  },
+  {
+    "promptId": "prompt-balance-31",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner is asked for benefits and drawbacks of short-form videos as well as a view, making the three balanced-opinion components explicit and sufficient."
+  },
+  {
+    "promptId": "prompt-balance-32",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires a contrast between daily life before and after short-form videos and a judgment of whether the change is mostly positive, giving sufficient required depth."
+  },
+  {
+    "promptId": "prompt-balance-33",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe effects of short-form videos on people and assess whether they are mostly good; one added example or reason is appropriate for the breadth and advanced difficulty."
+  },
+  {
+    "promptId": "prompt-balance-34",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks whether short-form videos help more than harm people and why, directly calling for both sides, a comparative judgment, and its reason; these are already sufficient."
+  },
+  {
+    "promptId": "prompt-balance-35",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "An overall opinion on short-form videos must explicitly consider both advantages and disadvantages, so those two sides and the final position form a complete response."
+  },
+  {
+    "promptId": "prompt-balance-36",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Food delivery apps are to be evaluated through benefits, drawbacks, and the learner's view, so the explicit balanced structure supplies enough depth on its own."
+  },
+  {
+    "promptId": "prompt-balance-37",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks how food delivery apps changed daily life and whether that change is mostly positive, requiring before and current states plus an opinion; these three units suffice."
+  },
+  {
+    "promptId": "prompt-balance-38",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The task directly requires effects of food delivery apps on people and a mostly-good judgment; one independent illustration or explanation is needed to develop the advanced answer."
+  },
+  {
+    "promptId": "prompt-balance-39",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Comparing how food delivery apps help and harm people requires positive and negative sides, a conclusion about which dominates, and the explicitly requested explanation, leaving no depth gap."
+  },
+  {
+    "promptId": "prompt-balance-40",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner's overall opinion on food delivery apps must consider both advantages and disadvantages, making those three elements direct and sufficient obligations."
+  },
+  {
+    "promptId": "prompt-balance-41",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question explicitly asks for benefits and drawbacks of online reviews and the learner's view, so the three required balanced components already provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-balance-42",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Explaining online reviews' change to daily life calls for an earlier and current state, while deciding whether the change is mostly positive supplies the third required unit."
+  },
+  {
+    "promptId": "prompt-balance-43",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The response must identify ways online reviews have affected people and assess whether the effect is mostly good; one separate support is needed for a sufficiently developed advanced answer."
+  },
+  {
+    "promptId": "prompt-balance-44",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must weigh how online reviews help and harm people, state which effect is greater, and answer why; these four direct requirements make optional depth unnecessary."
+  },
+  {
+    "promptId": "prompt-balance-45",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording requires an overall opinion on online reviews while considering both advantages and disadvantages, so the three required slots fully capture the task."
+  },
+  {
+    "promptId": "prompt-balance-46",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Wearable devices must be discussed through a benefit, a drawback, and the learner's view, and those three explicit obligations already ensure an adequate advanced response."
+  },
+  {
+    "promptId": "prompt-balance-47",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires daily life before and after wearable devices and a judgment about whether that change is mostly positive; the resulting three-part reflection is sufficiently deep."
+  },
+  {
+    "promptId": "prompt-balance-48",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "RESULT",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe effects of wearable devices on people and judge whether those effects are mostly good; one independent example or explanation is needed at the advanced level."
+  },
+  {
+    "promptId": "prompt-balance-49",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Determining whether wearable devices help more than harm people requires considering positive and negative sides, taking a position, and explaining why, which is already a complete analysis."
+  },
+  {
+    "promptId": "prompt-balance-50",
+    "answerMode": "BALANCED_OPINION",
+    "requiredSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "An overall opinion on wearable devices must be formed while considering both their advantages and disadvantages, so all three balanced elements are required and sufficient."
+  },
+  {
+    "promptId": "prompt-c-1",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "CHANGE_CAUSE",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must contrast relationship-building before and after technological change and judge whether the change is mostly positive; those three substantial obligations provide adequate advanced depth."
+  },
+  {
+    "promptId": "prompt-c-2",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "OPINION"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question directly asks for a position on successful companies' social responsibilities but does not request multiple supporting clauses; one concrete reason, example, or outcome is enough to substantiate the position."
+  },
+  {
+    "promptId": "prompt-c-3",
+    "answerMode": "CHANGE_REFLECTION",
+    "requiredSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "CHANGE_CAUSE"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A changed belief requires the earlier belief, the current belief, and the explicitly requested cause of the change; these three independent reflection units are already sufficient."
+  },
+  {
+    "promptId": "prompt-general-01",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe a frequently used useful app and explain why it is meaningful, so a concrete description and the significance reason satisfy both clauses."
+  },
+  {
+    "promptId": "prompt-general-02",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The wording only directly requires identifying and describing what stands out about a useful app; one independent reason, use, or example is needed to avoid a thin intermediate description."
+  },
+  {
+    "promptId": "prompt-general-03",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "DETAIL",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Introducing the useful app requires descriptive information, while recommending it and explaining why require a recommendation judgment and its reason; those three obligations are enough."
+  },
+  {
+    "promptId": "prompt-general-04",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "ACTION",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain what is special about the often-used app and why it remains memorable, so the distinguishing detail and memory reason directly complete the prompt."
+  },
+  {
+    "promptId": "prompt-general-05",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "RESULT",
+      "EXAMPLE",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Telling about the app calls for concrete description, and explaining why it matters in the learner's life requires a reason; the two direct clauses provide adequate intermediate depth."
+  },
+  {
+    "promptId": "prompt-general-06",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "FEELING",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify a liked place in the learner's town, describe it, and explain its personal meaning; those three required elements already form a developed answer."
+  },
+  {
+    "promptId": "prompt-general-07",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the local place and tell what stands out about it; these two concrete pieces adequately answer the intermediate prompt even without a separately required explanation."
+  },
+  {
+    "promptId": "prompt-general-08",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "PLACE",
+      "OPINION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "ACTION",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The place must be identified, and the learner must offer and justify a recommendation; the location, recommendation opinion, and reason cover every direct obligation."
+  },
+  {
+    "promptId": "prompt-general-09",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "ACTION",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt requires the town place, what makes it special, and why it is remembered, so the place, distinguishing detail, and memory reason provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-general-10",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "RESULT",
+      "EXAMPLE",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify and describe a liked place in town and explain why it matters personally, giving three direct semantic units that need no extra depth."
+  },
+  {
+    "promptId": "prompt-general-11",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "ACTION",
+      "FEELING",
+      "SPECIFIC_TIME",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The teacher or mentor's influence is part of the question's selection premise, not a separate result the learner is directly asked to state. A description of the person and the requested reason for that person's importance are the required content; the specific influence remains a highly relevant optional result."
+  },
+  {
+    "promptId": "prompt-general-1101",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "PLACE",
+      "FEELING",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The festival must be described and its personal significance explained, but the broad advanced prompt benefits from one independent event, place, feeling, or example to develop the account."
+  },
+  {
+    "promptId": "prompt-general-1102",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe the everyday desk item and explain why it feels meaningful; one separate account of its use, effect, or associated experience is appropriate for advanced depth."
+  },
+  {
+    "promptId": "prompt-general-1103",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "EXAMPLE",
+      "ACTION",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The bus route must be described through what stands out and the learner must explain why it stayed memorable; one independent setting, experience, or feeling gives this advanced memory prompt enough depth."
+  },
+  {
+    "promptId": "prompt-general-1104",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "EXAMPLE",
+      "ACTION",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The response must describe a kept gift and explain why it matters, while one independent memory, feeling, use, or outcome is needed to make the advanced personal account more than two short clauses."
+  },
+  {
+    "promptId": "prompt-general-1105",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "FEELING",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must locate the room corner, describe it, and explain its personal meaning; these three independent required elements already make a sufficiently developed response."
+  },
+  {
+    "promptId": "prompt-general-1106",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The local bridge or walkway must be identified as a place, described through what stands out, and connected to a reason it remained memorable; the three obligations are enough."
+  },
+  {
+    "promptId": "prompt-general-1107",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The study playlist must be described and its importance explained; one independent example of use, feeling, effect, or timing is needed to develop this advanced personal description."
+  },
+  {
+    "promptId": "prompt-general-1108",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must tell about the self-taught meal and explain its meaning, and one separate cooking action, memory, feeling, or result is appropriate to flesh out the advanced response."
+  },
+  {
+    "promptId": "prompt-general-1109",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The cafe must be identified as a place, described through its standout quality, and tied to why it remains memorable; these three required parts already provide adequate depth."
+  },
+  {
+    "promptId": "prompt-general-1110",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The family photo must be described and its personal importance explained, but one independent memory, feeling, time, or consequence is needed to give the advanced recollection sufficient substance."
+  },
+  {
+    "promptId": "prompt-general-1111",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe a relied-upon phone feature and explain its importance; one independent use, benefit, example, or problem it addresses is needed for advanced-level development."
+  },
+  {
+    "promptId": "prompt-general-1112",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "SPECIFIC_TIME",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The often-carried notebook must be described and its meaning explained, and one separate use, occasion, memory, or effect is needed to make the advanced answer fully developed."
+  },
+  {
+    "promptId": "prompt-general-1113",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "PLACE",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The desk object needs a concrete description and an explanation of why it matters; one independent use, placement, memory, or feeling adds the depth expected from this advanced prompt."
+  },
+  {
+    "promptId": "prompt-general-1114",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "RESULT",
+      "FEELING",
+      "EXAMPLE",
+      "PLACE",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Joining the volunteer event is already supplied as the premise and does not directly require the learner to describe an action. Once ACTION is made optional, one independent action, result, feeling, example, place, or time detail is appropriate for this broad C-level event reflection."
+  },
+  {
+    "promptId": "prompt-general-1115",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "ACTION",
+      "FEELING",
+      "RESULT",
+      "CHANGE_CAUSE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The topic must be described and its continuing importance explained, while one separate example, conversational activity, feeling, or effect is needed to develop the advanced response."
+  },
+  {
+    "promptId": "prompt-general-1116",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "FEELING",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The old jacket or coat must be described and its significance explained; one independent wearing experience, feeling, memory, or effect is appropriate for a substantial advanced answer."
+  },
+  {
+    "promptId": "prompt-general-1117",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "PLACE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The market stall must be identified as a place, described, and connected to why visiting it feels meaningful; these three required elements already create a complete response."
+  },
+  {
+    "promptId": "prompt-general-1118",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must describe the standout rainy-day sound and explain why it remained memorable; one independent feeling, occasion, setting, or effect is needed for advanced depth."
+  },
+  {
+    "promptId": "prompt-general-1119",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "FEELING",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The remembered window view must be described and its importance explained, and one independent location, feeling, memory, or time detail is needed to round out the advanced response."
+  },
+  {
+    "promptId": "prompt-general-1120",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "ACTION",
+      "EXAMPLE",
+      "FEELING",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The community class must be described and its personal meaning explained; one independent benefit, activity, example, or feeling is needed to substantiate why this advanced-level experience was useful."
+  }
+]

@@ -1,0 +1,817 @@
+[
+  {
+    "promptId": "prompt-intro-v2-0120",
+    "verdict": "PASS",
+    "auditReasonKo": "이번 주에 이루고 싶은 작은 학습 목표를 GOAL로 식별하고, 계획·이유·결과를 그 목표에 연결하는 기준이 원문 범위와 맞는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0121",
+    "verdict": "PASS",
+    "auditReasonKo": "집 안에서 가장 좋아하는 방이라는 선택 관계가 분명하고, 방의 특징·활동·감정도 선택한 방에 귀속되도록 정의되어 있다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0122",
+    "verdict": "PASS",
+    "auditReasonKo": "앞서 정해진 방을 좋아하는 구체적 이유를 요구하며, 단순한 방 묘사나 활동만으로 REASON을 대신하지 못하게 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0123",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 평소 하는 행동과 별도의 두 번째 행동·시점·이유·감정·결과가 각각 독립 관계로 정의되어 넓은 일상 질문에 맞는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0124",
+    "verdict": "PASS",
+    "auditReasonKo": "자기 방에 있는 좋아하는 물건을 CHOICE로 식별하고, PLACE도 방 자체가 아니라 그 물건이 놓인 방 안 위치를 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0125",
+    "verdict": "PASS",
+    "auditReasonKo": "책상의 보이는 모습이나 배치를 DETAIL로 요구하며 크기·색·상태·정리 방식 같은 자연스러운 외관 묘사를 폭넓게 인정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0126",
+    "verdict": "PASS",
+    "auditReasonKo": "방에서 바꾸고 싶은 구체적 특징·물건·배치·상태를 목표로 잡아, 막연한 개선 의도와 실제 변화 대상을 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0127",
+    "verdict": "PASS",
+    "auditReasonKo": "깨끗한 방에 대한 긍정·부정·조건부 견해와 그 이유를 모두 필수로 요구해 두 절의 질문 의무를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0128",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자에게 편안한 장소라는 관계를 요구하고 '좋은 곳 어딘가' 같은 식별 불가능한 장소는 명시적으로 배제한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0129",
+    "verdict": "PASS",
+    "auditReasonKo": "단순한 장소 언급이 아니라 학습자의 긴장 완화에 도움이 되는 장소로 연결해야 하며, 이유와 활동도 그 효과에 귀속된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0130",
+    "verdict": "PASS",
+    "auditReasonKo": "이름·위치·충분한 설명으로 알아볼 수 있는 카페를 학습자의 최애로 선택하게 하며, 카페 위치와 선택 자체도 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0131",
+    "verdict": "PASS",
+    "auditReasonKo": "카페에서 즐겨 하는 행동을 필수로 잡고 추가 행동·이유·시점·감정·결과가 그 카페 활동을 독립적으로 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0132",
+    "verdict": "PASS",
+    "auditReasonKo": "특정 공원을 가장 좋아한다는 선택 관계와 그 공원의 실제 위치, 그곳에서 하는 행동을 서로 다른 의미 역할로 판정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0133",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 CHOICE가 동네의 특정 장소나 경험 자체일 수 있는데 기존 EXAMPLE은 같은 장소나 경험을 그대로 다시 받아 깊이 1을 중복 충족할 수 있다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate specific local place or experience that illustrates the liked neighborhood aspect beyond the aspect already selected.",
+        "satisfiedWhenEn": "The answer provides a concrete location, event, interaction, or occasion that adds an illustrative instance beyond the feature, place, quality, or experience already used as the learner's liked neighborhood aspect. Merely repeating that selected aspect does not satisfy this role.",
+        "semanticRoleKo": "이미 선택한 동네의 좋아하는 측면을 넘어 그 선호를 보여 주는 별도의 구체적인 지역 장소나 경험",
+        "satisfiedWhenKo": "답변이 좋아하는 동네의 측면으로 이미 사용한 특징, 장소, 성격 또는 경험과 구별되는 구체적인 장소, 사건, 교류 또는 때를 사례로 더하면 충족된다. 선택한 측면을 그대로 반복하는 것만으로는 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0134",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 실제로 자주 방문하는 목적지라는 반복 방문 관계를 요구해, 단지 알거나 좋아하는 장소와 구별할 수 있다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0135",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자 자신의 도시 안에서 방문하고 싶은 지역 목적지를 요구하며, 방문 이유·준비·시점·현지 활동도 그 목적지에 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0136",
+    "verdict": "PASS",
+    "auditReasonKo": "조용한 장소와 붐비는 장소 사이의 선택뿐 아니라 분명한 조건부 선호도 허용해 원문보다 엄격하지 않다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0137",
+    "verdict": "PASS",
+    "auditReasonKo": "친구를 만나기에 좋다고 추천하는 장소 관계와 그 추천을 뒷받침하는 사회적·실용적·환경적 근거를 분리해 평가한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0138",
+    "verdict": "PASS",
+    "auditReasonKo": "공부하기에 적합하다고 판단한 장소와 소음·좌석·자료·접근성 같은 독립 근거를 요구해 추천 관계가 명확하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0139",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자를 행복하게 하는 구체적 장소를 필수로 식별하며, 특징·사례·구체 감정은 그 장소의 행복 효과를 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0140",
+    "verdict": "PASS",
+    "auditReasonKo": "미래에 살고 싶은 곳이라는 거주지 관계를 명시해, 단순 방문 희망이나 일반적인 장소 묘사와 혼동하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0141",
+    "verdict": "PASS",
+    "auditReasonKo": "여행에 대한 긍정·부정·조건부 견해와 구체적인 이유를 모두 필수로 두어 '왜 또는 왜 아닌지'까지 충실히 반영한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0142",
+    "verdict": "PASS",
+    "auditReasonKo": "국가·도시·지역·명소 등 자연스러운 의역 범위를 허용하면서 그곳을 원하는 여행 목적지로 제시해야 충족된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0143",
+    "verdict": "PASS",
+    "auditReasonKo": "알아볼 수 있는 국가를 방문 희망지로 연결해야 하며, 국가의 단순 언급과 방문 의도를 구별하는 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0144",
+    "verdict": "PASS",
+    "auditReasonKo": "알아볼 수 있는 도시를 학습자가 방문하고 싶은 곳으로 제시하도록 하여 질문의 대상과 희망 관계를 정확히 잡는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0145",
+    "verdict": "PASS",
+    "auditReasonKo": "여행 중 즐기는 행동이나 여행 경험을 ACTION으로 인정하고, 장소·이유·감정·결과는 그 활동에 연결된 별도 정보다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0146",
+    "verdict": "CHANGE",
+    "auditReasonKo": "원문은 여행에서 맛보고 싶은 food를 묻지만 CHOICE 충족 조건은 drink까지 허용해 질문의 대상을 음식보다 넓게 잘못 확장한다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The specific food or dish the learner wants to try during a trip.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food or dish and presents it as something the learner wants to taste while traveling. Naming only a beverage does not satisfy this food-specific role.",
+        "semanticRoleKo": "학습자가 여행 중에 맛보고 싶은 구체적인 음식이나 요리",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식이나 요리를 여행하면서 맛보고 싶은 것으로 제시하면 충족된다. 음료만 밝히는 것은 음식을 특정한 이 역할을 충족하지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0147",
+    "verdict": "PASS",
+    "auditReasonKo": "여행마다 빠짐없이 챙기거나 휴대하는 물건이라는 반복 관계를 요구해, 한 번 가져간 물건이나 단순 선호 물건과 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0148",
+    "verdict": "PASS",
+    "auditReasonKo": "혼자 여행과 동행 여행 중 하나 또는 분명한 조건부 선호를 허용하며, 이유·사례·감정·결과가 선택 방식에 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0149",
+    "verdict": "PASS",
+    "auditReasonKo": "과거의 특정 여행을 최고로 선택하는 관계가 분명하고 목적지·시점·사건·감정·이유가 그 여행을 식별하고 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0150",
+    "verdict": "PASS",
+    "auditReasonKo": "앞서 정한 여행의 특별함을 설명하는 사건·관계·성취·발견·개인적 의미를 요구하며 단순히 좋았다는 평가는 배제한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0151",
+    "verdict": "PASS",
+    "auditReasonKo": "전에 방문한 적이 있고 다시 가고 싶은 장소라는 재방문 관계를 요구해 첫 방문 희망이나 일반 장소 언급과 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0152",
+    "verdict": "PASS",
+    "auditReasonKo": "좋은 여행을 막연히 지칭하는 대신 기억 속에서 실제로 어떤 일이 있었는지 식별하도록 하여 구체적 여행 기억을 판정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0153",
+    "verdict": "PASS",
+    "auditReasonKo": "여행 중 겪는 알아볼 수 있는 장애물·부담·과업을 PROBLEM으로 요구하며 '몇 가지 문제' 같은 막연한 표현을 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0154",
+    "verdict": "CHANGE",
+    "auditReasonKo": "무엇이 재미있는지 묻는 열린 질문은 음식·풍경·사람·상황도 답이 될 수 있는데 필수 ACTION은 행동이나 참여 경험으로만 좁혀 자연스러운 답을 배제한다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific activity, experience, person, place, food, feature, or other aspect the learner finds fun while traveling.",
+        "satisfiedWhenEn": "The answer identifies a recognizable travel-related factor and presents it as something the learner finds fun. A vague response such as \"everything\" or \"something fun\" is insufficient.",
+        "semanticRoleKo": "학습자가 여행 중 재미있다고 느끼는 구체적인 활동, 경험, 사람, 장소, 음식, 특징 또는 그 밖의 측면",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 여행 관련 요인을 밝히고 그것을 학습자가 재미있게 느끼는 대상으로 제시하면 충족된다. '모든 것'이나 '재미있는 무언가' 같은 막연한 표현은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the identified travel factor is fun for the learner.",
+        "satisfiedWhenEn": "The answer gives a concrete quality, discovery, interaction, challenge, sensory appeal, or benefit that explains the learner's enjoyment of the identified factor.",
+        "semanticRoleKo": "밝힌 여행 요인이 학습자에게 재미있는 이유",
+        "satisfiedWhenKo": "답변이 밝힌 요인을 즐기는 이유가 되는 구체적인 특성, 발견, 교류, 도전, 감각적 매력 또는 이점을 제시하면 충족된다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A specific travel occasion that illustrates why the identified factor is fun.",
+        "satisfiedWhenEn": "The answer describes a concrete trip event, encounter, or moment that demonstrates the enjoyable quality of the identified factor rather than merely naming it again.",
+        "semanticRoleKo": "밝힌 요인이 왜 재미있는지 보여 주는 구체적인 여행 사례",
+        "satisfiedWhenKo": "답변이 밝힌 요인을 다시 이름 붙이는 데 그치지 않고 그 요인의 즐거움을 보여 주는 구체적인 여행 사건, 만남 또는 순간을 설명하면 충족된다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "A destination or setting where the learner experiences the identified fun travel factor.",
+        "satisfiedWhenEn": "The answer identifies a recognizable destination, site, route, or setting and clearly connects it to experiencing the identified fun factor; merely repeating a place already used as the factor itself adds no separate place support.",
+        "semanticRoleKo": "학습자가 밝힌 재미있는 여행 요인을 경험하는 목적지나 환경",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 목적지, 명소, 이동 경로 또는 환경을 밝히고 그곳을 재미있는 요인을 경험하는 장소로 분명히 연결하면 충족된다. 요인 자체로 이미 제시한 장소를 그대로 반복하는 것은 별도의 장소 정보가 아니다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's particular emotional response to the identified fun travel factor.",
+        "satisfiedWhenEn": "The answer conveys a distinct feeling the learner experiences because of or while engaging with the identified factor.",
+        "semanticRoleKo": "밝힌 재미있는 여행 요인에 대한 학습자의 구체적인 감정 반응",
+        "satisfiedWhenKo": "답변이 밝힌 요인 때문에 또는 그 요인을 경험하면서 학습자가 느끼는 뚜렷한 감정을 나타내면 충족된다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "GENERAL_DESCRIPTION",
+      "requiredSlots": [
+        "DETAIL"
+      ],
+      "optionalSlots": [
+        "REASON",
+        "EXAMPLE",
+        "PLACE",
+        "FEELING"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "The question asks for any recognizable aspect of travel the learner finds fun, which may be an activity, experience, person, place, food, or condition; an inclusive DETAIL slot captures that open factor without forcing it to be an action.",
+      "rationaleKo": "질문은 학습자가 여행에서 재미있다고 느끼는 알아볼 수 있는 측면을 묻고 있으며, 그 답은 활동뿐 아니라 경험, 사람, 장소, 음식 또는 상황일 수 있다. 열린 요인을 DETAIL로 받으면 행동으로 강제하지 않고 질문을 정확히 반영한다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0155",
+    "verdict": "PASS",
+    "auditReasonKo": "해변과 산 사이의 선택 또는 분명한 조건부 선호를 인정하고, 활동·감정·사례는 선택한 환경에 구체적으로 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0156",
+    "verdict": "PASS",
+    "auditReasonKo": "호텔과 게스트하우스 사이의 숙박 선호를 정확히 요구하며 비용·사생활·서비스 등 자연스러운 이유 범위를 허용한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0157",
+    "verdict": "PASS",
+    "auditReasonKo": "가상의 당일 여행에서 할 행동을 필수로 두고, 추가 행동·목적지·하루 중 시점·이유·결과를 별도 관계로 정의한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0158",
+    "verdict": "PASS",
+    "auditReasonKo": "여행 선물로 살 수 있는 물건·음식·공예품을 폭넓게 인정하고, 받는 사람도 선물을 구체화하는 독립 정보로 처리한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0159",
+    "verdict": "PASS",
+    "auditReasonKo": "여행에서 찍을 사진의 대상·장면·순간을 CHOICE로 정확히 잡고, 촬영 장소와 사진 속 세부 구성을 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0160",
+    "verdict": "PASS",
+    "auditReasonKo": "내일 여행할 수 있다는 가정 아래 선택할 목적지를 요구하며, 실제 계획으로 오인하지 않고 이유·행동·준비를 선택 정보로 둔다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0161",
+    "verdict": "PASS",
+    "auditReasonKo": "미소를 유발하는 사람·사건·생각·활동·자극을 폭넓게 인정하면서 '좋은 무언가' 같은 불특정 요인은 배제한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0162",
+    "verdict": "PASS",
+    "auditReasonKo": "긴장을 일으키는 상황·과업·생각·사람·불확실성을 구체적 유발 요인으로 요구해 단순히 긴장한다고만 한 답과 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0163",
+    "verdict": "PASS",
+    "auditReasonKo": "분노를 일으키는 행동·사건·상황·부당한 조건을 식별하게 하며 '나쁜 일' 같은 막연한 원인은 충족하지 못한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0164",
+    "verdict": "PASS",
+    "auditReasonKo": "자부심의 원천이 되는 성취·노력·특성·사람·사건을 포괄하고, 단순히 자랑스럽다는 감정 진술과 원인을 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0165",
+    "verdict": "PASS",
+    "auditReasonKo": "감사함을 일으키는 사람·행동·상황·기회·이점을 원인으로 식별하며 감사 표현 행동은 별도 선택 슬롯으로 분리한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0166",
+    "verdict": "PASS",
+    "auditReasonKo": "슬플 때 실제로 하는 대응 행동을 필수로 요구하고, 이유·장소·결과도 그 슬픔 대응과 연결되도록 정의한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0167",
+    "verdict": "PASS",
+    "auditReasonKo": "스트레스를 느낄 때의 알아볼 수 있는 대처 행동을 요구하며 두 번째 행동과 효과는 주된 대응과 구별된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0168",
+    "verdict": "PASS",
+    "auditReasonKo": "신이 나거나 설렐 때 보이는 반응 행동을 필수로 두고, 추가 행동·이유·장소·결과를 그 반응에 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0169",
+    "verdict": "PASS",
+    "auditReasonKo": "에너지를 주는 작은 요인을 물건·활동·습관·음식·교류까지 포괄하는 DETAIL로 받아 열린 답을 행동으로 좁히지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0170",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자를 거슬리게 하는 작은 행동·물건·조건·방해·상황을 구체적으로 요구하고 막연한 '사소한 것들'을 배제한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0171",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 날에 대한 긍정·부정·조건부 견해와 구체적 이유를 모두 필수로 요구해 질문의 두 의무가 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0172",
+    "verdict": "PASS",
+    "auditReasonKo": "추운 날씨에 대한 견해와 편안함·건강·이동·활동 등 그 견해를 설명하는 구체적 이유를 함께 요구한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0173",
+    "verdict": "PASS",
+    "auditReasonKo": "더운 날씨에 대한 견해와 수면·건강·활동·일상에 미치는 구체적 근거를 필수로 구분해 판정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0174",
+    "verdict": "PASS",
+    "auditReasonKo": "새로운 것을 시도하는 데 대한 조건부 태도까지 허용하고, 음식·장소·기술·경험 같은 사례 범위도 충분히 포괄적이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0175",
+    "verdict": "PASS",
+    "auditReasonKo": "계획 세우기에 대한 긍정·부정·조건부 태도와 이유·사례·감정·결과가 서로 다른 보강 관계로 정의되어 있다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0176",
+    "verdict": "PASS",
+    "auditReasonKo": "예상 밖의 사건·소식·선물에 대한 조건부 선호까지 인정하고 구체적 놀라움 사례와 감정도 충실히 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0177",
+    "verdict": "PASS",
+    "auditReasonKo": "쉽다고 느끼는 과업·기술·과목·활동·상황을 폭넓게 인정하면서 '많은 것' 같은 막연한 답은 거부한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0178",
+    "verdict": "PASS",
+    "auditReasonKo": "어렵다고 느끼는 구체적 과업·기술·상황을 PROBLEM으로 식별하고 원인·감정·해결책을 별도 관계로 평가한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0179",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 DETAIL이 현재 중요한 목표나 활동 자체를 받을 수 있는데 GOAL과 ACTION은 같은 목표나 활동을 다시 받아 깊이 1을 중복 충족할 수 있다.",
+    "replacementSlotContracts": {
+      "GOAL": {
+        "semanticRoleEn": "A separate desired outcome the learner is pursuing through or beyond the identified current priority.",
+        "satisfiedWhenEn": "The answer states a concrete state, achievement, change, or protection the learner wants in relation to the identified priority and adds an outcome beyond any goal already used to name that priority. Merely repeating the same goal as the important thing does not satisfy this role.",
+        "semanticRoleKo": "밝힌 현재의 우선순위를 통해 또는 그 너머에서 학습자가 추구하는 별도의 바람직한 결과",
+        "satisfiedWhenKo": "답변이 밝힌 우선순위와 관련해 원하는 구체적인 상태, 성취, 변화 또는 보호할 대상을 제시하고, 우선순위를 이름 붙일 때 이미 사용한 목표를 넘어서는 결과를 더하면 충족된다. 같은 목표를 중요한 것으로 다시 말하는 것만으로는 충족되지 않는다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A separate concrete present behavior that supports, protects, or advances the identified current priority.",
+        "satisfiedWhenEn": "The answer states what the learner currently does to care for or make progress in the identified area and adds behavioral information beyond any activity already used to name the priority. Merely repeating that same activity does not satisfy this role.",
+        "semanticRoleKo": "밝힌 현재의 우선순위를 돕거나 지키거나 발전시키는 별도의 구체적인 현재 행동",
+        "satisfiedWhenKo": "답변이 밝힌 영역을 돌보거나 그 영역에서 진전하기 위해 현재 하는 일을 제시하고, 우선순위를 이름 붙일 때 이미 사용한 활동을 넘어서는 행동 정보를 더하면 충족된다. 같은 활동을 그대로 반복하는 것만으로는 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0180",
+    "verdict": "CHANGE",
+    "auditReasonKo": "REASON의 '의미 있는 원인·도움·중요성' 기준만으로는 '좋은 사람이기 때문' 같은 막연한 칭찬을 거르기 어려워 구체적 감사 근거를 요구해야 한다.",
+    "replacementSlotContracts": {
+      "REASON": {
+        "semanticRoleEn": "A concrete basis for the learner's gratitude toward the identified person, experience, circumstance, or thing.",
+        "satisfiedWhenEn": "The answer gives a specific action, help, benefit, relief, opportunity, or personal significance that explains the learner's gratitude. General praise such as saying the person or thing is merely nice or good is insufficient.",
+        "semanticRoleKo": "밝힌 사람, 경험, 상황 또는 대상에 대한 학습자의 감사를 뒷받침하는 구체적인 근거",
+        "satisfiedWhenKo": "답변이 학습자의 감사를 설명하는 구체적인 행동, 도움, 이점, 안도, 기회 또는 개인적 의미를 제시하면 충족된다. 사람이나 대상이 단지 착하거나 좋다고 하는 일반적인 칭찬만으로는 부족하다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0181",
+    "verdict": "PASS",
+    "auditReasonKo": "내일 하기를 원하거나 계획하는 알아볼 수 있는 행동을 요구하며 장소·이유·추가 행동·결과가 그 내일 활동에 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0182",
+    "verdict": "PASS",
+    "auditReasonKo": "다가오는 주말에 하고 싶은 활동을 필수 행동으로 잡고, 두 번째 활동은 주된 주말 행동과 의미상 구별되도록 한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0183",
+    "verdict": "PASS",
+    "auditReasonKo": "다음 달에 실행하려는 행동을 필수로 두며 이유·준비 단계·장소·예상 결과가 그 행동에 구체적으로 귀속된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0184",
+    "verdict": "PASS",
+    "auditReasonKo": "내년에 하거나 추진하고 싶은 행동을 직접 요구하고, 더 큰 목표와 행동의 결과를 서로 다른 선택 역할로 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0185",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 GOAL이 원하는 자질 자체로 충족될 수 있는데 기존 DETAIL도 같은 자질 하나를 다시 받아 깊이 1을 허위로 채울 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "A separate trait or concrete behavior that further defines the person the learner wants to become beyond the core aspiration already stated.",
+        "satisfiedWhenEn": "The answer adds a second distinct quality or a specific behavior that demonstrates the desired identity beyond the quality, character, or way of being already used to satisfy the goal. Repeating the same desired trait does not satisfy this depth role.",
+        "semanticRoleKo": "이미 제시한 핵심 포부를 넘어 학습자가 되고 싶은 사람을 더 구체화하는 별도의 자질 또는 행동",
+        "satisfiedWhenKo": "답변이 GOAL을 충족할 때 이미 사용한 자질, 성품 또는 삶의 태도와 구별되는 두 번째 특성이나 원하는 정체성을 보여 주는 구체적인 행동을 더하면 충족된다. 같은 희망 자질을 반복하는 것은 이 깊이 역할을 충족하지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0186",
+    "verdict": "PASS",
+    "auditReasonKo": "미래의 성취·경험·상태를 구체적인 꿈으로 폭넓게 인정하며, 불특정한 꿈이 있다는 말만으로는 충족되지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0187",
+    "verdict": "PASS",
+    "auditReasonKo": "자유로운 오후가 생긴 가정에서 선택할 행동을 요구하고, 실제 미래 계획으로 오인하지 않는 답변 방식과 계약이 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0188",
+    "verdict": "PASS",
+    "auditReasonKo": "온전히 자유로운 하루에 할 주된 행동을 가정형으로 판정하며 이유·장소·추가 행동·감정이 그 선택을 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0189",
+    "verdict": "PASS",
+    "auditReasonKo": "5만 원 예산 안에서 살 물건이나 서비스를 선택하게 하며 구체 종류·용도·구매처도 그 가상 구매에 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0190",
+    "verdict": "PASS",
+    "auditReasonKo": "시간이 더 있다는 가정에서 할 행동을 필수로 잡고, 실제 목표나 확정 계획으로 바꾸지 않아 원문의 조건법과 맞는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0191",
+    "verdict": "PASS",
+    "auditReasonKo": "영어를 잘한다는 가정이 가능하게 하는 구체적 행동을 요구하며 더 큰 목표·사용 장소·결과는 별도로 구분된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0192",
+    "verdict": "PASS",
+    "auditReasonKo": "다른 나라에서 산다는 가정 아래 할 행동을 필수로 두고, 국가·도시·현지 장소는 그 해외 생활과 연결된 장소 역할이다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0193",
+    "verdict": "PASS",
+    "auditReasonKo": "하루 동안 되어 보고 싶은 동물을 알아볼 수 있게 선택하도록 하며, 그 동물로서 할 행동과 예상 감정을 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0194",
+    "verdict": "PASS",
+    "auditReasonKo": "현재 계획이 아니라 어린 시절 원했던 직업을 과거의 GOAL로 판정하고, 이후 실제 결과도 별도 슬롯으로 처리한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0195",
+    "verdict": "PASS",
+    "auditReasonKo": "현재 흥미롭게 보이는 직업을 선택하게 하며 업무·가치·기회 같은 구체적 이유와 직무 활동을 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0196",
+    "verdict": "CHANGE",
+    "auditReasonKo": "곧 시도할 '새로운 것'은 음식·제품·방식·기술·경험도 될 수 있는데 필수 ACTION은 활동으로만 한정해 열린 답의 범위를 잘못 좁힌다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific new activity, experience, food, product, skill, method, style, or other thing the learner wants to try soon.",
+        "satisfiedWhenEn": "The answer identifies a recognizable thing that is new to the learner and presents it as something they intend or hope to try soon. An unspecified response such as \"something new\" is insufficient.",
+        "semanticRoleKo": "학습자가 곧 새롭게 시도하고 싶은 구체적인 활동, 경험, 음식, 제품, 기술, 방법, 스타일 또는 그 밖의 대상",
+        "satisfiedWhenKo": "답변이 학습자에게 새로운 알아볼 수 있는 대상을 밝히고 곧 시도하려는 것으로 제시하면 충족된다. '새로운 무언가'처럼 특정되지 않은 답은 부족하다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner wants to try the identified new thing soon.",
+        "satisfiedWhenEn": "The answer gives a concrete curiosity, motivation, need, recommendation, or expected benefit that explains the learner's intention to try it.",
+        "semanticRoleKo": "학습자가 밝힌 새로운 대상을 곧 시도하고 싶은 이유",
+        "satisfiedWhenKo": "답변이 그것을 시도하려는 의도를 설명하는 구체적인 호기심, 동기, 필요, 추천 또는 기대 이점을 제시하면 충족된다."
+      },
+      "PLAN": {
+        "semanticRoleEn": "How the learner will prepare for or begin trying the identified new thing.",
+        "satisfiedWhenEn": "The answer gives a concrete first step, purchase, reservation, practice method, arrangement, or other preparation suited to trying the identified thing.",
+        "semanticRoleKo": "학습자가 밝힌 새로운 대상을 준비하거나 시도하기 시작할 방법",
+        "satisfiedWhenKo": "답변이 밝힌 대상을 시도하는 데 맞는 구체적인 첫 단계, 구매, 예약, 연습 방법, 약속 또는 그 밖의 준비를 제시하면 충족된다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A more precise time when the learner intends to try the identified new thing.",
+        "satisfiedWhenEn": "The answer gives a recognizable date, day, bounded period, or occasion that narrows the general idea of trying it soon.",
+        "semanticRoleKo": "학습자가 밝힌 새로운 대상을 시도하려는 더 구체적인 시점",
+        "satisfiedWhenKo": "답변이 곧 시도한다는 일반적 시기를 좁혀 주는 알아볼 수 있는 날짜, 요일, 범위가 있는 기간 또는 계기를 제시하면 충족된다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "The experience, benefit, discovery, or change the learner hopes trying the identified new thing will produce.",
+        "satisfiedWhenEn": "The answer states a concrete outcome the learner expects or hopes for after trying the identified thing.",
+        "semanticRoleKo": "밝힌 새로운 대상을 시도하여 학습자가 바라는 경험, 이점, 발견 또는 변화",
+        "satisfiedWhenKo": "답변이 밝힌 대상을 시도한 뒤 기대하거나 바라는 구체적인 결과를 제시하면 충족된다."
+      }
+    },
+    "reviewOverride": {
+      "answerMode": "GOAL_PLAN",
+      "requiredSlots": [
+        "DETAIL"
+      ],
+      "optionalSlots": [
+        "REASON",
+        "PLAN",
+        "SPECIFIC_TIME",
+        "RESULT"
+      ],
+      "minimumDepthSlots": 0,
+      "rationale": "The learner intends to try one new thing soon, but that open factor may be an activity, experience, food, product, skill, method, style, or another concrete option; DETAIL captures the intended target without incorrectly requiring an action.",
+      "rationaleKo": "학습자는 곧 시도할 새로운 대상 하나를 말해야 하지만, 그 대상은 활동뿐 아니라 경험, 음식, 제품, 기술, 방법, 스타일 또는 다른 구체적인 선택지일 수 있다. DETAIL을 필수로 두면 열린 대상을 행동으로 잘못 제한하지 않는다."
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0197",
+    "verdict": "PASS",
+    "auditReasonKo": "규칙적으로 시작하고 싶은 반복 행동을 습관 목표로 식별하며, 실천 시점과 유지 방법도 그 습관에 정확히 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0198",
+    "verdict": "PASS",
+    "auditReasonKo": "그만두고 싶은 반복 행동을 구체적 GOAL로 요구하고, 해로움·중단 방법·기대 개선을 별도 관계로 평가한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0199",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 DETAIL이 완벽한 하루를 보내는 활동 자체로 충족될 수 있는데 기존 ACTION도 같은 활동을 그대로 받아 깊이 1을 중복 계산할 수 있다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A separate concrete activity that adds information about the learner's perfect day beyond the defining element already stated.",
+        "satisfiedWhenEn": "The answer identifies a recognizable action included in the ideal day and adds it beyond any activity or way of spending the day already used to satisfy DETAIL. Repeating the same defining activity does not satisfy this depth role.",
+        "semanticRoleKo": "이미 제시한 완벽한 하루의 핵심 요소를 넘어 추가 정보를 주는 별도의 구체적인 활동",
+        "satisfiedWhenKo": "답변이 이상적인 하루에 포함되는 알아볼 수 있는 행동을 제시하고, DETAIL을 충족할 때 이미 사용한 활동이나 하루를 보내는 방식을 넘어서는 정보를 더하면 충족된다. 같은 핵심 활동을 반복하는 것은 이 깊이 역할을 충족하지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0200",
+    "verdict": "PASS",
+    "auditReasonKo": "미래의 자신에게 보내는 실질적인 조언·격려·당부·정보를 요구해, 메시지의 대상과 내용 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0201",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 특정 숫자와 그 선호를 설명하는 연관성·특징·기억·가치를 모두 필수로 두어 두 절을 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0202",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 동물을 식별하고 특성·행동·경험·가치에 근거한 이유를 함께 요구해 선택과 이유가 모두 입증된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0203",
+    "verdict": "PASS",
+    "auditReasonKo": "알아볼 수 있는 꽃이나 꽃 종류를 가장 좋아하는 것으로 제시하게 하며 향기·계절·상징도 자연스러운 세부로 인정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0204",
+    "verdict": "PASS",
+    "auditReasonKo": "구체적인 향이나 향의 원천을 가장 좋아하는 냄새로 식별하며 감각적 특성·기억·감정과 한영 의미도 일치한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0205",
+    "verdict": "PASS",
+    "auditReasonKo": "알아볼 수 있는 소리나 소리의 원천을 최애로 선택하게 하고 음색·리듬·크기 같은 청각적 세부를 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0206",
+    "verdict": "PASS",
+    "auditReasonKo": "구체적인 한국어 단어를 가장 좋아하는 단어로 식별하며 의미·소리·쓰임·감정을 선택한 단어에 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0207",
+    "verdict": "PASS",
+    "auditReasonKo": "구체적인 영어 단어를 가장 좋아한다고 제시해야 하며 의미·소리·문맥·감정은 그 단어를 보강하는 독립 정보다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0208",
+    "verdict": "PASS",
+    "auditReasonKo": "옷·장신구 등 실제로 즐겨 착용하는 물건을 요구하고, 단순 소유물이나 좋아하지만 입지 않는 물건과 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0209",
+    "verdict": "PASS",
+    "auditReasonKo": "가방 또는 다른 개인 물건을 가장 좋아하는 대상으로 식별하며 쓰임·특징·감정도 선택한 물건에 구체적으로 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0210",
+    "verdict": "PASS",
+    "auditReasonKo": "알아볼 수 있는 신발 종류나 스타일을 최애로 선택하게 하고 소재·착용 시점·편안함을 별도 정보로 판정한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0211",
+    "verdict": "PASS",
+    "auditReasonKo": "단순히 좋아하는 색이 아니라 실제 옷에 자주 나타나는 색이라는 반복 착용 관계를 요구해 원문 의미가 정확하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0212",
+    "verdict": "CHANGE",
+    "auditReasonKo": "현재 CHOICE 조건은 음식을 반복해서 즐긴다는 사실만 요구해, 자주 먹지만 때로 질리는 음식도 'never get tired of' 관계로 잘못 통과시킬 수 있다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "A food the learner can continue enjoying without becoming tired of it.",
+        "satisfiedWhenEn": "The answer identifies a recognizable food and, explicitly or through the direct response context, presents it as one the learner can keep enjoying without becoming tired of it. Merely saying the learner eats or enjoys the food often does not establish this lasting-preference relation.",
+        "semanticRoleKo": "학습자가 질리지 않고 계속 즐길 수 있는 음식",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음식을 밝히고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 학습자가 질리지 않고 계속 즐길 음식으로 제시하면 충족된다. 그 음식을 자주 먹거나 즐긴다고만 하는 것은 이런 지속적 선호 관계를 입증하지 못한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0213",
+    "verdict": "CHANGE",
+    "auditReasonKo": "현재 CHOICE 조건은 음료를 반복해서 즐기기만 하면 충족되어, 자주 마셔도 질릴 수 있는 음료와 'never get tired of' 관계를 구별하지 못한다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "A drink the learner can continue enjoying without becoming tired of it.",
+        "satisfiedWhenEn": "The answer identifies a recognizable drink and, explicitly or through the direct response context, presents it as one the learner can keep enjoying without becoming tired of it. Merely saying the learner drinks or enjoys it often does not establish this lasting-preference relation.",
+        "semanticRoleKo": "학습자가 질리지 않고 계속 즐길 수 있는 음료",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 음료를 밝히고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 학습자가 질리지 않고 계속 즐길 음료로 제시하면 충족된다. 그 음료를 자주 마시거나 즐긴다고만 하는 것은 이런 지속적 선호 관계를 입증하지 못한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0214",
+    "verdict": "PASS",
+    "auditReasonKo": "집에 있는 알아볼 수 있는 물건이나 요소를 가장 좋아하는 것으로 제시하게 하며 집 안 위치도 그 대상의 실제 위치로 정의한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0215",
+    "verdict": "PASS",
+    "auditReasonKo": "책상 위에 실제로 있는 물건을 최애로 식별하고, 특징·내력·사용 행동·감정을 선택 물건에 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0216",
+    "verdict": "PASS",
+    "auditReasonKo": "가방 안에 넣어 다니는 알아볼 수 있는 물건을 가장 좋아하는 것으로 요구하며 사용 행동과 실용적 결과도 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0217",
+    "verdict": "PASS",
+    "auditReasonKo": "자연에서 발생하는 알아볼 수 있는 소리를 최애로 선택하게 하며, 듣는 환경·기억·감정도 그 소리에 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0218",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 구체적 좌석이나 앉는 자리를 CHOICE로 잡고, PLACE는 그 좌석을 포함하는 더 넓은 환경으로 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0219",
+    "verdict": "PASS",
+    "auditReasonKo": "작은 물건뿐 아니라 경험·요소·소소한 즐거움도 사랑하는 대상으로 인정해 열린 'thing'을 과도하게 제한하지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0220",
+    "verdict": "CHANGE",
+    "auditReasonKo": "원문은 식당에서 가장 먼저 고르는 대상을 열어 두지만 현재 CHOICE 조건과 한국어 기준은 음식·메뉴로 좁혀 좌석이나 테이블 같은 자연스러운 답을 배제한다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The first thing the learner usually chooses when at a restaurant.",
+        "satisfiedWhenEn": "The answer identifies a recognizable selection, such as a seat, table, menu item, drink, or ordering option, and presents it as what the learner normally chooses first at a restaurant.",
+        "semanticRoleKo": "학습자가 식당에서 보통 가장 먼저 고르는 대상",
+        "satisfiedWhenKo": "답변이 좌석, 테이블, 메뉴, 음료 또는 주문 선택지처럼 알아볼 수 있는 대상을 밝히고 학습자가 식당에서 보통 가장 먼저 고르는 것으로 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0221",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 시절이 행복했다고만 하지 않고 한 기억에서 실제로 무슨 일이 있었는지 식별하도록 하여 구체적 사건 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0222",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 시절 좋아했던 알아볼 수 있는 게임이나 놀이를 요구하며 놀이 방식·사례·감정을 선택한 게임에 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0223",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 시절 좋아했던 구체적 음식을 식별하고 맛·식감·기억·감정을 과거 선호에 맞게 평가한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0224",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 시절 좋아했던 만화나 애니메이션을 알아볼 수 있게 선택하게 하고 등장인물·장면·시청 기억을 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0225",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 시절 반복해서 실제 방문한 장소를 요구해, 단지 알았거나 좋아했던 장소와 자주 갔던 곳을 정확히 구별한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0226",
+    "verdict": "PASS",
+    "auditReasonKo": "이름·과목·역할 등으로 알아볼 수 있는 특정 선생님을 최애로 식별하게 하며 영향 사례와 선택 이유도 분리한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0227",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 CHOICE가 학교의 특징·활동·경험 자체일 수 있는데 DETAIL과 EXAMPLE은 같은 특징이나 경험을 다시 받아 깊이 1을 중복 충족할 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "A separate characteristic that further describes the liked school aspect beyond the aspect already selected.",
+        "satisfiedWhenEn": "The answer adds concrete information about what the selected part of school was like beyond the feature, person, activity, or experience already used to identify what the learner liked. Repeating the same selected aspect does not satisfy this role.",
+        "semanticRoleKo": "이미 선택한 좋아하는 학교 측면을 넘어 그 부분을 더 묘사하는 별도의 구체적인 특징",
+        "satisfiedWhenKo": "답변이 학습자가 좋아한 것으로 이미 제시한 특징, 사람, 활동 또는 경험을 넘어 선택한 학교 부분이 어떠했는지 구체적인 정보를 더하면 충족된다. 같은 선택 측면을 반복하는 것만으로는 충족되지 않는다."
+      },
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate specific school incident or experience that illustrates the liked aspect beyond the aspect already selected.",
+        "satisfiedWhenEn": "The answer provides a concrete incident, activity, or interaction that adds an illustrative instance beyond any activity or experience already used as the learner's liked school aspect. Recasting the same selected experience as an example does not satisfy this role.",
+        "semanticRoleKo": "이미 선택한 좋아하는 학교 측면을 넘어 그 선호를 보여 주는 별도의 구체적인 학교 사건이나 경험",
+        "satisfiedWhenKo": "답변이 좋아하는 학교 측면으로 이미 사용한 활동이나 경험과 구별되는 구체적인 사건, 활동 또는 상호작용을 사례로 더하면 충족된다. 같은 선택 경험을 사례라고 다시 부르는 것만으로는 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0228",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 CHOICE가 싫어했던 학교 경험 자체를 받을 수 있는데 기존 EXAMPLE도 같은 경험을 다시 사례로 인정해 깊이 1의 독립성을 보장하지 못한다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate specific school incident that illustrates the disliked aspect beyond the aspect already selected.",
+        "satisfiedWhenEn": "The answer provides a concrete event, interaction, or recurring situation that adds an illustrative instance beyond any experience already used to identify what the learner disliked. Repeating or relabeling the same selected experience does not satisfy this role.",
+        "semanticRoleKo": "이미 선택한 싫어했던 학교 측면을 넘어 그 문제를 보여 주는 별도의 구체적인 학교 사건",
+        "satisfiedWhenKo": "답변이 싫어했던 측면으로 이미 사용한 경험과 구별되는 구체적인 사건, 상호작용 또는 반복 상황을 사례로 더하면 충족된다. 같은 선택 경험을 반복하거나 사례라고 이름만 바꾸는 것은 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0229",
+    "verdict": "PASS",
+    "auditReasonKo": "알아볼 수 있는 학교 급식이나 메뉴를 가장 좋아했던 것으로 제시하게 하고 맛·반찬·급식 기억·감정을 구분한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0230",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 시절 되고 싶었던 역할이나 직업을 과거의 포부로 식별하며, 이유·특징·감정·이후 결과가 그 꿈에 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0231",
+    "verdict": "PASS",
+    "auditReasonKo": "어릴 때 좋아했던 알아볼 수 있는 장난감을 요구하며 놀이 행동·특징·내력·감정을 선택한 장난감에 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0232",
+    "verdict": "CHANGE",
+    "auditReasonKo": "현재 DETAIL 조건은 노래를 어린 시절 기억과 연결하기만 하면 되어, 어릴 때 들었지만 지금 어린 시절을 떠올리게 하지는 않는 노래도 통과할 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific song that reminds the learner of their childhood.",
+        "satisfiedWhenEn": "The answer identifies a recognizable song and, explicitly or through the direct response context, presents it as one that evokes or brings back the learner's childhood. Merely saying the learner heard or liked the song in childhood does not establish the reminder relation.",
+        "semanticRoleKo": "학습자에게 어린 시절을 떠올리게 하는 구체적인 노래",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 노래를 밝히고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 그 노래가 학습자의 어린 시절을 떠올리게 한다고 제시하면 충족된다. 어릴 때 그 노래를 듣거나 좋아했다고만 하는 것은 회상 관계를 입증하지 못한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0233",
+    "verdict": "CHANGE",
+    "auditReasonKo": "현재 DETAIL 조건은 냄새와 어린 시절 기억의 일반적 연결만 요구해, 어릴 때 맡았지만 지금 회상을 일으키지 않는 냄새도 충족할 수 있다.",
+    "replacementSlotContracts": {
+      "DETAIL": {
+        "semanticRoleEn": "The specific smell that reminds the learner of their childhood.",
+        "satisfiedWhenEn": "The answer identifies a recognizable scent or source and, explicitly or through the direct response context, presents it as one that evokes or brings back the learner's childhood. Merely saying the learner encountered or liked the smell in childhood does not establish the reminder relation.",
+        "semanticRoleKo": "학습자에게 어린 시절을 떠올리게 하는 구체적인 냄새",
+        "satisfiedWhenKo": "답변이 알아볼 수 있는 향이나 그 원천을 밝히고, 명시적으로 또는 질문에 대한 직접 응답 맥락을 통해 그 냄새가 학습자의 어린 시절을 떠올리게 한다고 제시하면 충족된다. 어릴 때 그 냄새를 맡거나 좋아했다고만 하는 것은 회상 관계를 입증하지 못한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-intro-v2-0234",
+    "verdict": "PASS",
+    "auditReasonKo": "구체적이고 알아볼 수 있는 가족 여행을 최애로 선택하게 하며 목적지·시점·사건·감정·이유가 그 여행을 보강한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0235",
+    "verdict": "PASS",
+    "auditReasonKo": "과거 방과 후에 반복해서 했던 행동을 요구하고, 두 번째 행동·장소·이유·감정·결과를 그 일상과 연결한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0236",
+    "verdict": "PASS",
+    "auditReasonKo": "과거 휴가 중 즐겨 했던 행동을 필수로 잡고 추가 행동·휴가지·이유·감정·결과가 별도 의미를 더한다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0237",
+    "verdict": "PASS",
+    "auditReasonKo": "학교 안에서 가장 좋아했던 알아볼 수 있는 장소를 CHOICE로 요구하며 활동·특징·감정도 그 장소에 귀속된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0238",
+    "verdict": "PASS",
+    "auditReasonKo": "학교 기억을 단순히 재미있었다고 부르는 대신 실제로 어떤 일이 있었는지 식별하게 하며 장소·시점·결과도 사건에 연결된다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0239",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 시절에서 그리워하는 사람·활동·물건·장소·상황을 폭넓게 인정해 열린 'thing'을 특정 유형으로 좁히지 않는다."
+  },
+  {
+    "promptId": "prompt-intro-v2-0240",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 자신에게 전할 조언·안심·경고·정보를 실질적 메시지로 요구하고, 이유·견해·경험·감정·목표를 구별한다."
+  }
+]

@@ -1,0 +1,2058 @@
+[
+  {
+    "promptId": "prompt-general-1121",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify and describe the plant, then explain its personal importance; those three explicit elements already provide sufficient depth for this C-level prompt."
+  },
+  {
+    "promptId": "prompt-general-1122",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for a still-liked childhood snack, a description of it, and why it remains personally important, so no extra optional support is necessary."
+  },
+  {
+    "promptId": "prompt-general-1123",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "ACTION",
+      "FEELING",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must select and describe a familiar nearby path or street and explain its meaning; these distinct obligations make a complete C-level answer."
+  },
+  {
+    "promptId": "prompt-general-1124",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "FEELING",
+      "ACTION",
+      "PLACE",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly requires choosing and describing a home recipe and explaining why it stayed memorable, which already supplies three independent semantic units."
+  },
+  {
+    "promptId": "prompt-general-1125",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A complete answer must name and describe the second-hand purchase and explain why it matters, so the required content itself is adequately developed."
+  },
+  {
+    "promptId": "prompt-general-1126",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "ACTION",
+      "SPECIFIC_TIME",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The shortcut must be identified and described, and its personal meaning must be explained; those explicit pieces already meet the requested C-level depth."
+  },
+  {
+    "promptId": "prompt-general-12",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "REASON",
+      "FEELING",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must identify the influential teacher or mentor and say what stands out; one further independent point such as the influence or an example prevents a thin identification."
+  },
+  {
+    "promptId": "prompt-general-13",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "RESULT"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "DETAIL",
+      "ACTION",
+      "FEELING",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks the learner to introduce the teacher or mentor and state what they learned, so the person and learning outcome already form an adequate B-level response."
+  },
+  {
+    "promptId": "prompt-general-14",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "FEELING",
+      "ACTION",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must identify the influential person, explain what was special, and give the reason the experience remains memorable; no optional depth is needed beyond those clauses."
+  },
+  {
+    "promptId": "prompt-general-15",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "FEELING",
+      "ACTION",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The teacher or mentor must be introduced and described, and the learner must explain that person's importance in their life, giving sufficient required depth."
+  },
+  {
+    "promptId": "prompt-general-16",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "ACTION",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must choose and describe a recommendable hobby and explain its personal meaning; the recommendation context and explanation are already substantial."
+  },
+  {
+    "promptId": "prompt-general-17",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "RESULT",
+      "EXAMPLE",
+      "ACTION",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner makes a hobby recommendation by selecting one and explaining what stands out about it; these two explicit units adequately answer the B-level question."
+  },
+  {
+    "promptId": "prompt-general-18",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL",
+      "ACTION",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt directly asks which hobby the learner recommends and why, so the recommendation choice and supporting reason complete the task without extra depth."
+  },
+  {
+    "promptId": "prompt-general-19",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "FEELING",
+      "ACTION",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must identify the hobby, say what makes it special, and explain why it is remembered, providing three required elements of development."
+  },
+  {
+    "promptId": "prompt-general-20",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "ACTION",
+      "FEELING",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must tell about the hobby and explain its importance in their life, with identification and description represented separately from the reason."
+  },
+  {
+    "promptId": "prompt-general-21",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The memory itself must be described and its continuing meaning explained; these two substantive obligations are enough for the B-level response."
+  },
+  {
+    "promptId": "prompt-general-22",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Talking about the memory and what stands out can be satisfied by one descriptive unit, so one independent reason, feeling, outcome, time, or place is needed for B-level depth."
+  },
+  {
+    "promptId": "prompt-general-23",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must introduce the memory with concrete information and explain its personal meaning, so the required description and reason are sufficient."
+  },
+  {
+    "promptId": "prompt-general-24",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question separately asks what is special about the memory and why it remains remembered, making detail and reason complete the B-level task."
+  },
+  {
+    "promptId": "prompt-general-25",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "FEELING",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Describing the memory and explaining its importance in the learner's life supplies two independent required units, so no optional slot is mandatory."
+  },
+  {
+    "promptId": "prompt-general-26",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must choose and describe a liked small shop and explain its personal significance, which already yields a developed preference answer."
+  },
+  {
+    "promptId": "prompt-general-27",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING",
+      "ACTION"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify and tell about the small shop and justify recommending it, so the recommendation is already supported by explicit descriptive content."
+  },
+  {
+    "promptId": "prompt-general-28",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "EXAMPLE",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The direct obligation is to select the most-liked aspect of the shop; one independent explanation or illustration is needed so the B-level answer is not only a label."
+  },
+  {
+    "promptId": "prompt-general-29",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "ACTION",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question directly requires a reason the shop is important in daily life; one distinct effect, example, routine use, time, or feeling gives that B-level explanation adequate depth."
+  },
+  {
+    "promptId": "prompt-general-30",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "PLACE",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the liked shop and provide the specifically requested memorable description, so the two required units sufficiently answer the prompt."
+  },
+  {
+    "promptId": "prompt-general-31",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A complete response identifies and describes the useful website and explains why it matters personally, making additional depth optional."
+  },
+  {
+    "promptId": "prompt-general-32",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name and tell about the useful website and explain the recommendation, so all central parts of the opinion are already required."
+  },
+  {
+    "promptId": "prompt-general-33",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "EXAMPLE",
+      "ACTION",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Selecting the feature liked most is the only literal obligation, so one reason, use case, action, result, or concrete detail is needed beyond that choice."
+  },
+  {
+    "promptId": "prompt-general-34",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "ACTION",
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must explain why the website is important in daily life; one separate result, example, use, timing detail, or feature keeps the B-level explanation from being generic."
+  },
+  {
+    "promptId": "prompt-general-35",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "EXAMPLE",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify the useful website and give the requested memorable detail, which provides enough required content without forcing another optional slot."
+  },
+  {
+    "promptId": "prompt-general-36",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Describing the family tradition requires stating the repeated practice, and the prompt also asks why it matters; those two units adequately develop the routine."
+  },
+  {
+    "promptId": "prompt-general-37",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain what the valued family tradition involves and why they recommend it, so the practice and recommendation reason complete the B-level task."
+  },
+  {
+    "promptId": "prompt-general-38",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question asks for the most-liked part of the family tradition; one independent reason, action, feeling, effect, or example is needed beyond naming that part."
+  },
+  {
+    "promptId": "prompt-general-39",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "RESULT",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Explaining the tradition's daily importance is required, and one separate practice, effect, example, timing detail, or feeling gives the single required reason appropriate B-level support."
+  },
+  {
+    "promptId": "prompt-general-40",
+    "answerMode": "ROUTINE",
+    "requiredSlots": [
+      "ACTION",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "ADDITIONAL_ACTION",
+      "PLACE",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must describe what the recurring family tradition involves and include one memorable detail, giving two distinct required elements."
+  },
+  {
+    "promptId": "prompt-general-41",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "ACTION",
+      "FEELING",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner selects and describes a liked walking place and explains why it matters, so the required preference, description, and significance are already sufficient."
+  },
+  {
+    "promptId": "prompt-general-42",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "ACTION",
+      "RESULT",
+      "FEELING",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify and tell about the walking place and justify recommending it, making additional optional depth unnecessary."
+  },
+  {
+    "promptId": "prompt-general-43",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "DETAIL",
+      "FEELING",
+      "ACTION",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The direct request is the feature liked most about the walking place; one independent explanation, description, feeling, activity, or result is needed to develop that choice."
+  },
+  {
+    "promptId": "prompt-general-44",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "RESULT",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The learner must explain the place's importance in daily life, and one distinct walking use, effect, example, time, or feeling is needed to substantiate the reason."
+  },
+  {
+    "promptId": "prompt-general-45",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "REASON",
+      "ACTION",
+      "FEELING",
+      "RESULT"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires identifying the walking place and supplying a memorable descriptive detail, which already creates an adequate B-level answer."
+  },
+  {
+    "promptId": "prompt-general-46",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "EXAMPLE",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A complete answer names and describes the frequently used household item and explains its personal importance, so no extra optional slot is required."
+  },
+  {
+    "promptId": "prompt-general-47",
+    "answerMode": "OPINION_REASON",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "RESULT",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify and tell about the household item and explain why they recommend it, covering the recommendation and its support explicitly."
+  },
+  {
+    "promptId": "prompt-general-48",
+    "answerMode": "PREFERENCE",
+    "requiredSlots": [
+      "CHOICE"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "RESULT",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Naming the most-liked feature of the often-used item is required; one separate reason, use, result, example, or detail is needed for a developed B-level answer."
+  },
+  {
+    "promptId": "prompt-general-49",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "REASON"
+    ],
+    "optionalSlots": [
+      "ACTION",
+      "RESULT",
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The prompt asks why the household item is important in daily life; one independent use, effect, example, timing detail, or feature must support that reason."
+  },
+  {
+    "promptId": "prompt-general-50",
+    "answerMode": "GENERAL_DESCRIPTION",
+    "requiredSlots": [
+      "CHOICE",
+      "DETAIL"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "ACTION",
+      "RESULT",
+      "EXAMPLE",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the household item and give the requested memorable detail, so the explicit obligations already provide sufficient B-level content."
+  },
+  {
+    "promptId": "prompt-goal-01",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "REASON",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name the skill they want to improve this year and state how they will work on it; those two explicit units complete the B-level task."
+  },
+  {
+    "promptId": "prompt-goal-02",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "PROBLEM",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Describing the skill to improve establishes the goal, and explaining the plan supplies the second required unit, so no extra optional depth is needed."
+  },
+  {
+    "promptId": "prompt-goal-03",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question asks for the skill improvement target and how progress will be made, making the goal and progress plan sufficient required content."
+  },
+  {
+    "promptId": "prompt-goal-04",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the skill being improved and give the steps they will take, so the named goal and actionable plan already answer the B-level prompt."
+  },
+  {
+    "promptId": "prompt-goal-05",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "RESULT",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "This version asks for the skill improvement goal and why it matters rather than how to pursue it, and those two required elements are adequate."
+  },
+  {
+    "promptId": "prompt-goal-06",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must state the habit the learner wants to build and how they will work on it, giving both the future target and method explicitly."
+  },
+  {
+    "promptId": "prompt-goal-07",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The desired new habit is the goal and the requested explanation of the plan is a separate obligation, so required content alone is sufficient."
+  },
+  {
+    "promptId": "prompt-goal-08",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the habit-building target and explain how progress will happen, which provides two substantive B-level units."
+  },
+  {
+    "promptId": "prompt-goal-09",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Answering requires naming the habit to be built and outlining the steps for building it, so no additional optional slot is mandatory."
+  },
+  {
+    "promptId": "prompt-goal-10",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "RESULT",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question directly asks which habit the learner wants to build and why that future change matters, so goal and reason complete the response."
+  },
+  {
+    "promptId": "prompt-goal-11",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The health outcome to reach and the method for working toward it are both explicitly requested, giving the B-level answer enough built-in depth."
+  },
+  {
+    "promptId": "prompt-goal-1101",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must define a sleep-schedule improvement goal and explain how they will pursue it, so the target and method adequately fulfill the prompt."
+  },
+  {
+    "promptId": "prompt-goal-1102",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Keeping a daily journal is supplied by the question, so the learner is asked only for the plan and consistency method rather than a restatement of that goal. With one required plan slot at difficulty B, one independent supporting detail is needed."
+  },
+  {
+    "promptId": "prompt-goal-1103",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must specify what cooking ability should improve and state the steps for improving it, creating a complete goal-and-plan answer."
+  },
+  {
+    "promptId": "prompt-goal-1104",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "REASON",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state a digital-file organization goal and describe how they will work toward it; those separate requirements already provide B-level depth."
+  },
+  {
+    "promptId": "prompt-goal-1105",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Speaking more confidently in meetings is the question-supplied target, not content the learner must independently provide. The response must give the plan for staying consistent, and one separate setting, obstacle, timing detail, result, or feeling provides appropriate B-level depth."
+  },
+  {
+    "promptId": "prompt-goal-1106",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the desired change to nighttime screen use and outline the steps, making the improvement goal and plan sufficient."
+  },
+  {
+    "promptId": "prompt-goal-1107",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PLACE",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question explicitly requires a regular-photography goal and a method for reaching it, so no optional support is needed to complete the B-level answer."
+  },
+  {
+    "promptId": "prompt-goal-1108",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PLACE",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Preparing weekly meals in advance is already fixed by the prompt. Only the learner's plan and consistency method are required, so GOAL should be removed and one independent timing, place, obstacle, result, or reason should supply the expected B-level development."
+  },
+  {
+    "promptId": "prompt-goal-1109",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "REASON",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must define the desired improvement to the weekly long-article habit and give concrete steps, which fully establishes both goal and plan."
+  },
+  {
+    "promptId": "prompt-goal-1110",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must name the better stretching-habit goal and explain how they will pursue it, so the required pair already forms an adequate answer."
+  },
+  {
+    "promptId": "prompt-goal-1111",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "DETAIL",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Improving the note-taking system is supplied as the purpose of the requested plan, so requiring GOAL makes the learner restate the premise. PLAN captures the direct obligation, and one independent system detail, obstacle, result, reason, or example is appropriate at difficulty B."
+  },
+  {
+    "promptId": "prompt-goal-1112",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must specify the desired improvement in finishing household tasks on time and state the steps, producing a complete target-and-method response."
+  },
+  {
+    "promptId": "prompt-goal-1113",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The future state of calmer mornings and the method for reaching it are separately requested, so no additional optional slot is required."
+  },
+  {
+    "promptId": "prompt-goal-1114",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "PLACE",
+      "EXAMPLE",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "The question already states the target of asking clearer questions in class. The learner must provide the plan for doing so consistently, not repeat that target as a goal, and one independent setting, example, obstacle, result, or reason is needed for B-level depth."
+  },
+  {
+    "promptId": "prompt-goal-1115",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "REASON",
+      "PROBLEM",
+      "RESULT",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must identify the basic design skills to improve and explain the steps that will be taken, so the explicit goal and plan are sufficient."
+  },
+  {
+    "promptId": "prompt-goal-1116",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "PROBLEM",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Reducing household food waste is the desired outcome and the prompt also requires a method for working toward it, yielding enough required depth."
+  },
+  {
+    "promptId": "prompt-goal-1117",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Building a habit of reviewing the week is provided by the question and should not be required again as GOAL. The requested consistency plan is the sole direct slot, so one independent timing detail, obstacle, result, reason, or feeling is appropriate additional depth."
+  },
+  {
+    "promptId": "prompt-goal-1118",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "PLACE",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state the map-reading improvement they want and the steps they will take, giving a complete B-level goal-and-plan response."
+  },
+  {
+    "promptId": "prompt-goal-1119",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "DETAIL",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The weekend reset routine is the intended future habit, and the question separately asks how it will be built, so required content is sufficient."
+  },
+  {
+    "promptId": "prompt-goal-1120",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Learning simple repair skills is the supplied purpose of the plan rather than a learner-provided goal. PLAN captures what the prompt asks the learner to explain, and one independent skill example, obstacle, result, reason, or practice place is needed to develop the B-level answer."
+  },
+  {
+    "promptId": "prompt-goal-1121",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "RESULT",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must define the desired improvement to keeping the desk clear and state the steps, so the target and plan complete the task."
+  },
+  {
+    "promptId": "prompt-goal-1122",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Remembering names more easily is the goal and the method for working toward it is explicitly required, making additional optional depth unnecessary."
+  },
+  {
+    "promptId": "prompt-goal-1123",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "PROBLEM",
+      "EXAMPLE",
+      "RESULT",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Becoming a more patient listener is already stated as the target, so GOAL incorrectly requires repetition of the premise. The learner must explain a consistency plan, with one independent obstacle, example, result, reason, or feeling added for suitable B-level depth."
+  },
+  {
+    "promptId": "prompt-goal-1124",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify what should improve in plant care and outline the steps, so the improvement goal and action plan provide enough required content."
+  },
+  {
+    "promptId": "prompt-goal-1125",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Making better use of small pockets of time is the desired outcome, and the prompt also asks how it will be pursued, completing the goal-plan structure."
+  },
+  {
+    "promptId": "prompt-goal-1126",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "PROBLEM",
+      "RESULT",
+      "SPECIFIC_TIME",
+      "REASON"
+    ],
+    "minimumDepthSlots": 1,
+    "rationale": "Making more realistic to-do lists is supplied by the question, so it should not be a required goal restatement. The direct obligation is the consistency plan, and one independent example, obstacle, result, timing detail, or reason provides the additional depth normally needed at difficulty B."
+  },
+  {
+    "promptId": "prompt-goal-1127",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "FEELING",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must define the desired improvement in resting without guilt and state the steps for achieving it, giving both target and method explicitly."
+  },
+  {
+    "promptId": "prompt-goal-12",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe the health outcome they want this year and explain the plan for reaching it, so the two required units are sufficient."
+  },
+  {
+    "promptId": "prompt-goal-13",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The health goal and the way progress will be made are both directly requested, giving this B-level response enough required depth."
+  },
+  {
+    "promptId": "prompt-goal-14",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "A complete answer identifies the health goal and states the steps for pursuing it, so no independent optional support is needed."
+  },
+  {
+    "promptId": "prompt-goal-15",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "RESULT",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "This wording requires the chosen health goal and an explanation of its personal importance; those two semantic units already complete the prompt."
+  },
+  {
+    "promptId": "prompt-goal-16",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state the language goal they will focus on and explain how they will work toward it, fully covering the target and method."
+  },
+  {
+    "promptId": "prompt-goal-17",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "PROBLEM",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Describing the language goal and explaining the plan are separate direct obligations, so their required slots provide adequate B-level content."
+  },
+  {
+    "promptId": "prompt-goal-18",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must identify the language improvement target and say how progress will occur, making additional depth optional."
+  },
+  {
+    "promptId": "prompt-goal-19",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The language goal must be named to establish what the requested steps serve, and the steps themselves form the plan; together they answer the task."
+  },
+  {
+    "promptId": "prompt-goal-20",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "RESULT",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain which language goal they want and why it matters, so the required target and motivation already form a complete response."
+  },
+  {
+    "promptId": "prompt-goal-21",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The area for greater confidence is the desired future state, and the question also requires a method for developing it, so both core units are explicit."
+  },
+  {
+    "promptId": "prompt-goal-22",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe the confidence-building area and explain their plan, which gives sufficient required development for difficulty B."
+  },
+  {
+    "promptId": "prompt-goal-23",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must identify where confidence should grow and explain how progress will be made, so the goal and plan fulfill the prompt."
+  },
+  {
+    "promptId": "prompt-goal-24",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "EXAMPLE",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Answering requires naming the confidence area and giving the steps for building it, providing two independent required units."
+  },
+  {
+    "promptId": "prompt-goal-25",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The prompt asks for the area of desired confidence and why that change matters, so the future target and reason are enough without an extra slot."
+  },
+  {
+    "promptId": "prompt-goal-26",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "EXAMPLE",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The career skill to build and the method for building it are both directly requested, so required content alone adequately answers the B-level question."
+  },
+  {
+    "promptId": "prompt-goal-27",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "EXAMPLE",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Describing the desired career skill establishes the goal, and explaining the plan satisfies the second explicit clause."
+  },
+  {
+    "promptId": "prompt-goal-28",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must state the career skill target and how progress will happen, making the paired required slots sufficient."
+  },
+  {
+    "promptId": "prompt-goal-29",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "EXAMPLE",
+      "PROBLEM",
+      "RESULT",
+      "REASON"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The career skill must be identified and the planned steps must be stated, so the B-level response already contains both target and method."
+  },
+  {
+    "promptId": "prompt-goal-30",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "RESULT",
+      "EXAMPLE",
+      "PROBLEM",
+      "SPECIFIC_TIME"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The question requires the career skill goal and its personal importance, giving two independent obligations without requiring planning details."
+  },
+  {
+    "promptId": "prompt-goal-31",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The reading habit to build is the goal and the method for working toward it is the plan, so the explicit clauses provide enough depth."
+  },
+  {
+    "promptId": "prompt-goal-32",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "PROBLEM",
+      "RESULT",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe the desired reading habit and explain the plan for creating it, fully satisfying this goal-and-plan prompt."
+  },
+  {
+    "promptId": "prompt-goal-33",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "EXAMPLE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must name the reading habit and explain how progress will be made, so optional elaboration is useful but not required."
+  },
+  {
+    "promptId": "prompt-goal-34",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the intended reading habit and list the steps for building it, which supplies adequate required content."
+  },
+  {
+    "promptId": "prompt-goal-35",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "RESULT",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The desired reading habit and the reason it matters are separately requested, so these two slots complete the B-level answer."
+  },
+  {
+    "promptId": "prompt-goal-36",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The response must state the savings target and how the learner will work toward it, covering both the intended outcome and plan."
+  },
+  {
+    "promptId": "prompt-goal-37",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "PROBLEM",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Describing the savings goal and explaining the plan are the prompt's two direct obligations, so they provide sufficient depth."
+  },
+  {
+    "promptId": "prompt-goal-38",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The savings outcome must be named and the means of making progress explained, giving a complete goal-and-plan response."
+  },
+  {
+    "promptId": "prompt-goal-39",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the savings goal that the steps serve and provide those steps, so no optional slot is necessary."
+  },
+  {
+    "promptId": "prompt-goal-40",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "RESULT",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The wording asks for a savings goal and why reaching it matters, so target and motivation already make an adequate B-level answer."
+  },
+  {
+    "promptId": "prompt-goal-41",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The fitness routine to maintain is the desired future state, and the question also requires a method for keeping it, so the required pair is sufficient."
+  },
+  {
+    "promptId": "prompt-goal-42",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "PROBLEM",
+      "RESULT",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must describe the fitness routine goal and explain the plan for maintaining it, fully covering the task's explicit demands."
+  },
+  {
+    "promptId": "prompt-goal-43",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The answer must state which fitness routine will be kept and how progress will be made, so required content alone is adequately developed."
+  },
+  {
+    "promptId": "prompt-goal-44",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "PLACE"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Identifying the fitness routine establishes the goal and stating the steps establishes the plan, providing two independent B-level units."
+  },
+  {
+    "promptId": "prompt-goal-45",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "optionalSlots": [
+      "PLAN",
+      "RESULT",
+      "PROBLEM",
+      "SPECIFIC_TIME",
+      "FEELING"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must explain which fitness routine they want to keep and why it matters, so the goal and reason complete this version of the task."
+  },
+  {
+    "promptId": "prompt-goal-46",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The creative project to finish is the goal, and the prompt explicitly asks how the learner will work toward completion, so no extra depth is required."
+  },
+  {
+    "promptId": "prompt-goal-47",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "REASON",
+      "PROBLEM",
+      "RESULT",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "Describing the intended creative project and explaining the plan are separate obligations that already produce a complete B-level response."
+  },
+  {
+    "promptId": "prompt-goal-48",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "RESULT",
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "REASON",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The learner must identify the creative project target and explain how progress will be made, fully establishing both goal and plan."
+  },
+  {
+    "promptId": "prompt-goal-49",
+    "answerMode": "GOAL_PLAN",
+    "requiredSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "optionalSlots": [
+      "SPECIFIC_TIME",
+      "PROBLEM",
+      "RESULT",
+      "REASON",
+      "DETAIL"
+    ],
+    "minimumDepthSlots": 0,
+    "rationale": "The creative project must be named to define the goal, and the requested steps form the plan, so the required slots are sufficient."
+  }
+]

@@ -1,0 +1,695 @@
+[
+  {
+    "promptId": "prompt-reflection-03",
+    "verdict": "PASS",
+    "auditReasonKo": "성공에 관한 과거 기준, 현재 기준, 변화 원인을 각각 요구하며 세 슬롯의 관계와 선택 보강 기준이 원문에 정확히 맞는다."
+  },
+  {
+    "promptId": "prompt-reflection-04",
+    "verdict": "PASS",
+    "auditReasonKo": "과거에 가졌던 성공관과 그 믿음을 바꾼 이유를 필수로 두고, 현재 관점은 독립 보강 정보로 판정하도록 적절히 구분했다."
+  },
+  {
+    "promptId": "prompt-reflection-05",
+    "verdict": "PASS",
+    "auditReasonKo": "시간에 따른 성공관의 변화를 과거와 현재의 실질적인 기준 차이로 판정하며, 원인을 질문이 직접 요구하지 않는 보강 슬롯으로 둔 점도 적절하다."
+  },
+  {
+    "promptId": "prompt-reflection-06",
+    "verdict": "PASS",
+    "auditReasonKo": "과거와 현재의 공부 습관 및 변화 이유를 구체적인 학습 행동과 인과 관계로 판정해 질문의 세 의무를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-reflection-07",
+    "verdict": "PASS",
+    "auditReasonKo": "공부 습관에 관한 이전 믿음과 그 생각을 바꾼 계기를 필수로 구분하고, 현재 믿음은 별도 의미를 더하는 보강 슬롯으로 적절히 정의했다."
+  },
+  {
+    "promptId": "prompt-reflection-08",
+    "verdict": "PASS",
+    "auditReasonKo": "공부 방식의 과거 상태와 현재 상태를 실제 습관으로 식별하고, 변화 계기가 두 상태를 인과적으로 연결해야 한다는 기준이 정확하다."
+  },
+  {
+    "promptId": "prompt-reflection-09",
+    "verdict": "PASS",
+    "auditReasonKo": "공부 습관에 관한 과거 믿음과 이를 수정한 이유를 직접 판정하며, 선택 슬롯들도 같은 믿음의 변화에 독립적인 맥락을 더하도록 구성됐다."
+  },
+  {
+    "promptId": "prompt-reflection-10",
+    "verdict": "PASS",
+    "auditReasonKo": "시간에 따라 달라진 공부 습관을 비교 가능한 과거 행동과 현재 행동으로 요구해 단순히 바뀌었다는 진술만으로 통과하지 않게 한다."
+  },
+  {
+    "promptId": "prompt-reflection-11",
+    "verdict": "PASS",
+    "auditReasonKo": "소셜 미디어에 관한 이전 관점, 현재 관점, 변화 이유를 각각 구체적으로 입증하게 하며 사례와 결과도 해당 관점 변화에 연결한다."
+  },
+  {
+    "promptId": "prompt-reflection-1101",
+    "verdict": "PASS",
+    "auditReasonKo": "경쟁에 대한 과거와 현재의 실질적인 관점 및 그 변화 이유를 정확히 구분하고, 경쟁 상황의 사례와 결과도 독립적으로 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-1102",
+    "verdict": "PASS",
+    "auditReasonKo": "휴식의 목적과 가치에 대한 이전 이해와 현재 이해, 그 변화를 일으킨 영향을 모두 질문 관계에 맞게 구체화했다."
+  },
+  {
+    "promptId": "prompt-reflection-1103",
+    "verdict": "PASS",
+    "auditReasonKo": "혼자 사는 것의 매력·어려움·적합성에 관한 과거와 현재 의견을 구별하고, 의견 변화의 실제 원인을 별도로 요구한다."
+  },
+  {
+    "promptId": "prompt-reflection-1104",
+    "verdict": "PASS",
+    "auditReasonKo": "네트워킹의 목적·가치·어려움에 관한 과거와 현재 관점 및 이를 바꾼 상호작용을 정확히 판정하도록 정의했다."
+  },
+  {
+    "promptId": "prompt-reflection-1105",
+    "verdict": "PASS",
+    "auditReasonKo": "스몰토크의 목적이나 가치에 관한 이전 이해와 현재 이해를 구분하고, 이를 바꾼 실제 대화나 깨달음을 인과적으로 연결한다."
+  },
+  {
+    "promptId": "prompt-reflection-1106",
+    "verdict": "PASS",
+    "auditReasonKo": "도움을 요청하는 일에 대한 과거와 현재 의견 및 그 변화 이유를 정확히 묻고, 도움의 유형이나 상황은 독립적인 세부 정보로 남긴다."
+  },
+  {
+    "promptId": "prompt-reflection-1107",
+    "verdict": "PASS",
+    "auditReasonKo": "생산성의 의미나 측정 기준이 과거와 현재에 어떻게 다른지 판정하고, 그 기준을 바꾼 경험과 결과를 명확히 연결한다."
+  },
+  {
+    "promptId": "prompt-reflection-1108",
+    "verdict": "PASS",
+    "auditReasonKo": "지루함의 의미에 관한 이전 해석과 현재 해석, 그리고 그 변화를 만든 경험을 서로 구별되는 의미 단위로 적절히 정의했다."
+  },
+  {
+    "promptId": "prompt-reflection-1109",
+    "verdict": "PASS",
+    "auditReasonKo": "패션의 중요성이나 목적에 관한 과거와 현재 의견을 구분하고, 실제 경험이나 영향이 의견 변화와 연결되어야 하도록 했다."
+  },
+  {
+    "promptId": "prompt-reflection-1110",
+    "verdict": "PASS",
+    "auditReasonKo": "혼자 보내는 시간의 가치·편안함·어려움에 관한 이전 관점과 현재 관점 및 변화 이유를 질문에 맞게 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-1111",
+    "verdict": "PASS",
+    "auditReasonKo": "운동의 목적·가치·실천에 대한 과거와 현재 이해를 비교하고, 이를 바꾼 건강 경험이나 깨달음을 인과적으로 요구한다."
+  },
+  {
+    "promptId": "prompt-reflection-1112",
+    "verdict": "PASS",
+    "auditReasonKo": "온라인 수업의 효과·가치·편의성에 관한 과거와 현재 의견 및 그 변화를 만든 수업 경험을 정확히 구별한다."
+  },
+  {
+    "promptId": "prompt-reflection-1113",
+    "verdict": "PASS",
+    "auditReasonKo": "일기 쓰기의 목적과 유용성에 관한 과거와 현재 관점 및 변화 이유를 구체적으로 판정하며, 일기 사례도 같은 관계를 입증하게 한다."
+  },
+  {
+    "promptId": "prompt-reflection-1114",
+    "verdict": "PASS",
+    "auditReasonKo": "동네 생활과 지역 공동체에 관한 이전 이해와 현재 이해, 이를 바꾼 사람·장소·경험의 관계를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-reflection-1115",
+    "verdict": "PASS",
+    "auditReasonKo": "일상의 루틴이 유용한지 또는 제한적인지에 관한 과거와 현재 의견을 구분하고, 변화 이유도 실제 생활 조건에 연결한다."
+  },
+  {
+    "promptId": "prompt-reflection-1116",
+    "verdict": "PASS",
+    "auditReasonKo": "실수의 의미와 대응 방식에 관한 이전 믿음과 현재 믿음, 이를 바꾼 경험을 명확히 구분해 단순한 변화 언급을 배제한다."
+  },
+  {
+    "promptId": "prompt-reflection-1117",
+    "verdict": "PASS",
+    "auditReasonKo": "피드백을 받는 의미와 활용 방식에 관한 과거·현재 이해 및 변화에 영향을 준 구체적인 피드백 경험을 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-1118",
+    "verdict": "PASS",
+    "auditReasonKo": "주말을 보내는 목적이나 이상적인 방식에 관한 과거와 현재 선호를 구분하고, 생활 변화나 필요가 의견 변화와 연결되게 한다."
+  },
+  {
+    "promptId": "prompt-reflection-1119",
+    "verdict": "PASS",
+    "auditReasonKo": "적게 소유하는 것의 가치와 실용성에 관한 과거·현재 관점 및 이를 바꾼 생활 경험을 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-reflection-1120",
+    "verdict": "PASS",
+    "auditReasonKo": "시간을 지키는 의미와 중요성에 관한 이전 이해와 현재 이해, 그 변화를 만든 경험이나 기대를 인과적으로 연결한다."
+  },
+  {
+    "promptId": "prompt-reflection-1121",
+    "verdict": "PASS",
+    "auditReasonKo": "팀워크의 가치·공정성·효과에 관한 과거와 현재 의견을 구별하고, 실제 협업 경험이 변화 이유를 입증하도록 했다."
+  },
+  {
+    "promptId": "prompt-reflection-1122",
+    "verdict": "PASS",
+    "auditReasonKo": "개인정보와 개인 경계에 관한 과거·현재 관점 및 이를 바꾼 기술·관계·경험을 정확한 질문 관계로 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-1123",
+    "verdict": "PASS",
+    "auditReasonKo": "직장이나 학교 가까이 사는 것의 가치와 상충 요소에 대한 과거·현재 이해 및 변화 영향을 구체적으로 구분한다."
+  },
+  {
+    "promptId": "prompt-reflection-1124",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 요리하는 일의 가치·난이도·실용성에 관한 이전 의견과 현재 의견 및 그 변화 이유를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-reflection-1125",
+    "verdict": "PASS",
+    "auditReasonKo": "대중 앞에서 말하는 일의 가치·어려움·위험에 관한 과거와 현재 관점 및 이를 바꾼 발표 경험을 명확히 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-1126",
+    "verdict": "PASS",
+    "auditReasonKo": "아르바이트의 목적·가치·책임에 관한 이전 이해와 현재 이해를 구분하고, 실제 일 경험이나 필요가 변화와 연결되게 한다."
+  },
+  {
+    "promptId": "prompt-reflection-1127",
+    "verdict": "PASS",
+    "auditReasonKo": "미리 계획하는 일의 유용성·부담·유연성에 관한 과거와 현재 의견 및 이를 바꾼 실제 경험을 적절히 구분한다."
+  },
+  {
+    "promptId": "prompt-reflection-12",
+    "verdict": "PASS",
+    "auditReasonKo": "소셜 미디어에 관한 과거 믿음과 그 생각을 바꾼 경험을 필수로 두며, 현재 믿음은 별도 의미를 더하는 보강 슬롯으로 정확히 정의했다."
+  },
+  {
+    "promptId": "prompt-reflection-13",
+    "verdict": "PASS",
+    "auditReasonKo": "소셜 미디어에 대한 이전 관점, 현재 관점, 변화 원인을 모두 구체적인 내용과 인과 관계로 입증하게 한다."
+  },
+  {
+    "promptId": "prompt-reflection-14",
+    "verdict": "PASS",
+    "auditReasonKo": "바꾼 소셜 미디어 믿음과 그 이유를 직접 판정하며, 현재 믿음과 사례는 필수 답을 반복하지 않는 보강 정보로 구성했다."
+  },
+  {
+    "promptId": "prompt-reflection-15",
+    "verdict": "PASS",
+    "auditReasonKo": "시간에 따라 달라진 소셜 미디어 관점을 과거와 현재의 실질적인 의견 차이로 판정하고 선택 슬롯도 독립 맥락을 더한다."
+  },
+  {
+    "promptId": "prompt-reflection-16",
+    "verdict": "PASS",
+    "auditReasonKo": "돈의 가치와 사용 방식에 관한 과거 의견, 현재 의견, 변화 이유를 구체적으로 구분해 질문의 세 요구를 모두 반영한다."
+  },
+  {
+    "promptId": "prompt-reflection-17",
+    "verdict": "PASS",
+    "auditReasonKo": "돈에 관해 과거에 가졌던 믿음과 그 생각을 바꾼 경험을 직접 요구하며, 현재 믿음과 재정 사례는 독립 보강으로 남긴다."
+  },
+  {
+    "promptId": "prompt-reflection-18",
+    "verdict": "PASS",
+    "auditReasonKo": "돈에 관한 과거·현재 의견과 변화 원인을 실제 재정 경험이나 생활 조건에 연결해 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-19",
+    "verdict": "PASS",
+    "auditReasonKo": "과거의 돈 관련 의견과 이를 바꾼 이유를 필수로 판정하고, 현재 의견과 결과는 별도의 의미 단위로 적절히 정의했다."
+  },
+  {
+    "promptId": "prompt-reflection-20",
+    "verdict": "PASS",
+    "auditReasonKo": "시간에 따른 돈 관점의 변화를 과거와 현재의 믿음·우선순위·관행 차이로 정확히 식별하도록 했다."
+  },
+  {
+    "promptId": "prompt-reflection-21",
+    "verdict": "PASS",
+    "auditReasonKo": "리더의 역할과 자질에 관한 과거 이해, 현재 이해, 변화 이유를 실제 리더십 경험에 연결해 명확히 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-22",
+    "verdict": "PASS",
+    "auditReasonKo": "리더십에 관한 이전 믿음과 이를 바꾼 사람·팀 경험을 필수로 구분하며 현재 믿음은 독립적인 보강 정보로 적절하다."
+  },
+  {
+    "promptId": "prompt-reflection-23",
+    "verdict": "PASS",
+    "auditReasonKo": "리더십의 과거 이해와 현재 이해 및 변화 계기를 구체적인 역할·행동·팀 관계로 입증하게 한다."
+  },
+  {
+    "promptId": "prompt-reflection-24",
+    "verdict": "PASS",
+    "auditReasonKo": "과거의 리더십 믿음과 이를 수정한 이유를 정확히 요구하고, 현재 믿음과 사례는 같은 내용을 반복하지 않도록 분리했다."
+  },
+  {
+    "promptId": "prompt-reflection-25",
+    "verdict": "PASS",
+    "auditReasonKo": "시간에 따른 리더십 이해의 변화를 과거와 현재의 실질적인 역할·자질 기준 차이로 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-26",
+    "verdict": "PASS",
+    "auditReasonKo": "우정의 의미와 기대에 관한 과거 관점과 현재 관점을 비교하게 하고, 변화 원인과 사례는 독립적인 깊이 정보로 적절히 구성했다."
+  },
+  {
+    "promptId": "prompt-reflection-27",
+    "verdict": "PASS",
+    "auditReasonKo": "우정에 관한 한 가지 과거 믿음과 현재 믿음의 차이 및 그 변화를 만든 원인을 질문 의도에 맞게 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-28",
+    "verdict": "PASS",
+    "auditReasonKo": "우정에 대해 이전에 가졌던 의견과 현재 의견의 차이를 필수로 두고, 변화 이유와 사례는 별도 보강 정보로 정의했다."
+  },
+  {
+    "promptId": "prompt-reflection-29",
+    "verdict": "PASS",
+    "auditReasonKo": "현재 우정관과 비교 대상인 과거 우정관을 모두 명시하게 해 두 관점의 실제 차이가 증거로 드러나도록 한다."
+  },
+  {
+    "promptId": "prompt-reflection-30",
+    "verdict": "PASS",
+    "auditReasonKo": "우정에 관한 생각을 바꾼 경험 자체와 그 경험이 생각을 어떻게 바꿨는지를 필수 관계로 요구하며, 전후 관점은 독립 보강으로 적절하다."
+  },
+  {
+    "promptId": "prompt-reflection-31",
+    "verdict": "PASS",
+    "auditReasonKo": "건강한 식사의 의미에 관한 과거 기준과 현재 기준을 비교하고, 원인·사례·결과는 별도의 구체성을 더하도록 구성했다."
+  },
+  {
+    "promptId": "prompt-reflection-32",
+    "verdict": "PASS",
+    "auditReasonKo": "건강한 식사에 관한 한 가지 과거·현재 생각의 차이와 이를 만든 건강 경험이나 정보를 정확히 인과적으로 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-33",
+    "verdict": "PASS",
+    "auditReasonKo": "건강한 식사에 대해 예전에 가졌던 의견과 현재 의견을 비교 가능한 내용으로 요구하고, 선택 슬롯들은 독립 맥락을 더한다."
+  },
+  {
+    "promptId": "prompt-reflection-34",
+    "verdict": "PASS",
+    "auditReasonKo": "현재의 건강한 식사 기준과 과거 기준을 모두 구체적으로 밝히게 해 단순한 변화 선언만으로는 충족되지 않는다."
+  },
+  {
+    "promptId": "prompt-reflection-35",
+    "verdict": "PASS",
+    "auditReasonKo": "건강한 식사에 관한 생각을 바꾼 식사·건강 경험과 그 영향 관계를 직접 판정하고, 전후 관점은 독립 보강으로 적절하다."
+  },
+  {
+    "promptId": "prompt-reflection-36",
+    "verdict": "PASS",
+    "auditReasonKo": "뉴스를 소비하는 방식과 양에 관한 과거 관점과 현재 관점을 비교하며, 변화 원인과 출처 선택은 독립적인 보강 의미를 제공한다."
+  },
+  {
+    "promptId": "prompt-reflection-37",
+    "verdict": "PASS",
+    "auditReasonKo": "뉴스 소비에 관한 한 가지 과거·현재 생각의 차이와 그 변화를 만든 경험을 정확히 구분하고 인과적으로 연결한다."
+  },
+  {
+    "promptId": "prompt-reflection-38",
+    "verdict": "PASS",
+    "auditReasonKo": "뉴스 소비에 대해 이전에 가졌던 의견과 수정된 현재 의견을 모두 식별 가능하게 요구하며 선택 슬롯도 질문 주제에 충실하다."
+  },
+  {
+    "promptId": "prompt-reflection-39",
+    "verdict": "PASS",
+    "auditReasonKo": "현재 뉴스 소비 관점과 비교 대상인 과거 관점을 구체적으로 밝히게 하고, 출처·검증·빈도 차이는 독립 세부 정보로 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-40",
+    "verdict": "PASS",
+    "auditReasonKo": "뉴스 소비 사고방식을 바꾼 특정 경험과 그 경험의 영향을 필수 관계로 판정하며, 전후 관점과 결과는 독립 보강으로 적절하다."
+  },
+  {
+    "promptId": "prompt-reflection-41",
+    "verdict": "PASS",
+    "auditReasonKo": "여행의 목적과 선호 방식에 관한 과거 관점과 현재 관점을 비교하고, 여행 경험과 결과는 별도의 깊이를 더하도록 했다."
+  },
+  {
+    "promptId": "prompt-reflection-42",
+    "verdict": "PASS",
+    "auditReasonKo": "여행에 관한 한 가지 과거·현재 생각의 차이와 그 변화를 만든 여행 경험을 구체적으로 인과 연결한다."
+  },
+  {
+    "promptId": "prompt-reflection-43",
+    "verdict": "PASS",
+    "auditReasonKo": "여행에 대해 예전에 가졌던 의견과 현재 의견을 비교 가능한 내용으로 요구하고, 원인과 사례는 독립 보강 정보로 남긴다."
+  },
+  {
+    "promptId": "prompt-reflection-44",
+    "verdict": "PASS",
+    "auditReasonKo": "현재 여행관과 과거 여행관의 실질적인 차이를 밝히게 하며 목적·속도·비용 같은 세부 기준도 두 관점의 차이에 연결한다."
+  },
+  {
+    "promptId": "prompt-reflection-45",
+    "verdict": "PASS",
+    "auditReasonKo": "여행에 관한 생각을 바꾼 구체적인 경험과 그 영향 관계를 필수로 판정하고, 전후 관점과 행동 결과는 독립 보강으로 적절하다."
+  },
+  {
+    "promptId": "prompt-reflection-46",
+    "verdict": "PASS",
+    "auditReasonKo": "실패의 의미와 대응에 관한 과거 관점과 현재 관점을 비교하고, 변화 계기와 실제 결과는 별도 의미 단위로 구성했다."
+  },
+  {
+    "promptId": "prompt-reflection-47",
+    "verdict": "PASS",
+    "auditReasonKo": "실패에 관한 한 가지 과거 믿음과 현재 믿음의 차이 및 이를 만든 구체적 좌절이나 깨달음을 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-reflection-48",
+    "verdict": "PASS",
+    "auditReasonKo": "실패에 대해 이전에 가졌던 의견과 현재 의견을 모두 실질적인 내용으로 요구하고, 원인과 결과는 독립적인 깊이를 더한다."
+  },
+  {
+    "promptId": "prompt-reflection-49",
+    "verdict": "PASS",
+    "auditReasonKo": "현재 실패관과 과거 실패관을 비교 가능한 믿음으로 제시하게 하고, 회복·학습·재도전 같은 차이도 질문 관계에 맞게 정의했다."
+  },
+  {
+    "promptId": "prompt-reflection-50",
+    "verdict": "PASS",
+    "auditReasonKo": "실패에 관한 생각을 바꾼 특정 경험과 그 영향 관계를 필수로 판정하며, 전후 관점과 이후 행동은 독립 보강으로 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-01",
+    "verdict": "PASS",
+    "auditReasonKo": "평일 아침에 반복하는 구체적인 행동을 핵심으로 요구하고, 시간·이유·감정·결과는 그 행동에 연결된 독립 보강 정보로 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-02",
+    "verdict": "PASS",
+    "auditReasonKo": "평일 아침에 보통 하는 활동을 식별하게 하며, 두 번째 행동과 아침 안의 시점은 첫 행동을 단순 반복하지 않도록 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-03",
+    "verdict": "PASS",
+    "auditReasonKo": "평일 아침 루틴의 핵심 단계를 구체적인 반복 행동으로 판정하고, 추가 단계와 순서·결과도 독립적인 의미 단위로 정의했다."
+  },
+  {
+    "promptId": "prompt-routine-04",
+    "verdict": "PASS",
+    "auditReasonKo": "평일 아침에 자주 반복하는 행동과 그 행동의 계기·이유·결과를 서로 구분해 막연한 루틴 진술을 배제한다."
+  },
+  {
+    "promptId": "prompt-routine-05",
+    "verdict": "PASS",
+    "auditReasonKo": "평일 아침 시간을 실제로 어떻게 사용하는지 구체적인 활동으로 요구하고, 두 번째 활동과 시간 순서가 별도 정보를 더하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-06",
+    "verdict": "PASS",
+    "auditReasonKo": "퇴근이나 수업 뒤 저녁에 반복하는 구체적 행동을 핵심으로 두고, 장소와 시점도 해당 행동과 명시적으로 연결하도록 했다."
+  },
+  {
+    "promptId": "prompt-routine-07",
+    "verdict": "PASS",
+    "auditReasonKo": "일이나 수업 뒤 저녁의 평소 활동을 직접 판정하며, 장소·시간·이유·결과는 그 활동에 연결된 독립 보강 정보로 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-08",
+    "verdict": "PASS",
+    "auditReasonKo": "퇴근이나 수업 후 저녁 루틴의 핵심 단계와 별도 두 번째 단계를 구분하고, 장소와 순서도 실제 단계에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-09",
+    "verdict": "PASS",
+    "auditReasonKo": "일이나 수업 뒤 저녁에 자주 하는 구체적인 행동을 요구하며, 반복 시점과 장소가 해당 행동을 입증하도록 구성됐다."
+  },
+  {
+    "promptId": "prompt-routine-10",
+    "verdict": "PASS",
+    "auditReasonKo": "퇴근이나 수업 후 저녁 시간을 사용하는 실제 활동과 그 결과를 구체화하며, 막연히 쉰다는 표현만으로는 통과하지 않게 한다."
+  },
+  {
+    "promptId": "prompt-routine-11",
+    "verdict": "PASS",
+    "auditReasonKo": "일요일 오후에 보통 하는 행동을 식별하게 하고, 장소·시점·이유·감정·결과가 그 행동과 연결된 별도 깊이를 제공한다."
+  },
+  {
+    "promptId": "prompt-routine-1101",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 빨래하는 날의 실제 행동과 그중 가장 도움이 되는 단계를 각각 요구하며, 도움의 결과는 선택된 단계와 별도로 구체화한다."
+  },
+  {
+    "promptId": "prompt-routine-1102",
+    "verdict": "PASS",
+    "auditReasonKo": "이른 약속 전에 하는 준비 행동과 그 루틴이 잘 작동하게 만드는 구체적 결과를 필수로 구분해 두 질문 절을 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-1103",
+    "verdict": "CHANGE",
+    "auditReasonKo": "원문은 식료품 쇼핑을 마친 뒤의 평소 행동과 이유를 넓게 묻지만 기존 계약은 귀가 후 식료품을 정리하는 행동만 사실상 허용한다. 매장 밖 이동, 휴식, 식사 또는 귀가 후 정리를 모두 수용하도록 관련 슬롯의 범위를 원문 수준으로 넓혀야 한다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A habitual action the learner takes after completing grocery shopping.",
+        "satisfiedWhenEn": "The answer identifies a concrete action that the learner usually takes after grocery shopping and makes the temporal relationship clear. The action may occur at the store, while traveling onward, or after arriving elsewhere; it does not have to involve handling the groceries.",
+        "semanticRoleKo": "학습자가 식료품 쇼핑을 마친 뒤 습관적으로 하는 행동.",
+        "satisfiedWhenKo": "식료품 쇼핑 뒤에 평소 하는 구체적인 행동을 밝히고 그 시간적 관계가 분명하면 충족한다. 행동은 매장, 이후 이동 중 또는 다른 장소에 도착한 뒤에 일어날 수 있으며 반드시 식료품 정리와 관련될 필요는 없다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner usually performs the stated action after grocery shopping.",
+        "satisfiedWhenEn": "The answer gives a concrete need, goal, circumstance, preference, responsibility, or expected benefit that explains the stated post-grocery-shopping action.",
+        "semanticRoleKo": "학습자가 식료품 쇼핑 후 말한 행동을 보통 하는 이유.",
+        "satisfiedWhenKo": "말한 쇼핑 후 행동을 설명하는 구체적인 필요, 목표, 상황, 선호, 책임 또는 기대 효과를 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second action in the learner's usual routine after grocery shopping.",
+        "satisfiedWhenEn": "The answer states another concrete action that is distinct from the core post-shopping action and also occurs after the grocery shopping is completed.",
+        "semanticRoleKo": "학습자의 평소 식료품 쇼핑 후 일과에 포함된 별도의 두 번째 행동.",
+        "satisfiedWhenKo": "핵심 쇼핑 후 행동과 구분되며 식료품 쇼핑을 마친 뒤에도 일어나는 또 다른 구체적인 행동을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome of the learner's stated action after grocery shopping.",
+        "satisfiedWhenEn": "The answer describes an identifiable effect caused by the stated post-shopping action and connects that effect to the action.",
+        "semanticRoleKo": "학습자가 말한 식료품 쇼핑 후 행동으로 생기는 구체적인 결과.",
+        "satisfiedWhenKo": "말한 쇼핑 후 행동에서 생긴 식별 가능한 효과를 설명하고 그 효과를 해당 행동과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A meaningful time or trigger for the learner's stated action after grocery shopping.",
+        "satisfiedWhenEn": "The answer locates the action at a recognizable point after grocery shopping, such as immediately after checkout, before traveling home, on arriving at the next place, or before beginning another task.",
+        "semanticRoleKo": "식료품 쇼핑 후 말한 행동이 일어나는 의미 있는 시점 또는 계기.",
+        "satisfiedWhenKo": "계산 직후, 귀가 이동 전, 다음 장소에 도착했을 때 또는 다른 일을 시작하기 전처럼 쇼핑 뒤의 알아볼 수 있는 시점에 행동을 연결하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The setting where the learner performs the stated action after grocery shopping.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location, such as the store exit, a bus stop, a car, a cafe, home, or a kitchen, and clearly connects it to the stated post-shopping action.",
+        "semanticRoleKo": "학습자가 말한 식료품 쇼핑 후 행동을 하는 장소.",
+        "satisfiedWhenKo": "매장 출구, 버스 정류장, 자동차, 카페, 집 또는 부엌처럼 알아볼 수 있는 장소를 밝히고 말한 쇼핑 후 행동과 명확히 연결하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional or physical response after grocery shopping or while doing the stated action.",
+        "satisfiedWhenEn": "The answer conveys a specific feeling or bodily state and clearly connects it to completing the grocery shopping, the stated post-shopping action, or its outcome.",
+        "semanticRoleKo": "식료품 쇼핑 후 또는 말한 행동을 하는 동안의 학습자 감정이나 몸의 반응.",
+        "satisfiedWhenKo": "구체적인 감정이나 신체 상태를 나타내고 이를 식료품 쇼핑의 완료, 말한 쇼핑 후 행동 또는 그 결과와 명확히 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-1104",
+    "verdict": "PASS",
+    "auditReasonKo": "수업 시작을 기다리며 하는 구체적인 행동과 그중 가장 도움이 되는 단계를 별도로 요구하고, 도움의 결과도 선택된 단계에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-1105",
+    "verdict": "PASS",
+    "auditReasonKo": "근무 첫 한 시간의 반복 행동과 그 루틴이 잘 작동하는 구체적 결과를 필수로 두어 활동과 효과를 혼동하지 않는다."
+  },
+  {
+    "promptId": "prompt-routine-1106",
+    "verdict": "PASS",
+    "auditReasonKo": "조용한 일요일 저녁에 보통 하는 구체적인 행동과 그 이유를 직접 판정하며, 감정·장소·결과는 독립 보강 정보로 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-1107",
+    "verdict": "PASS",
+    "auditReasonKo": "친구들과 저녁을 먹기 전의 준비 행동과 그중 가장 도움이 되는 단계를 각각 식별하게 해 질문의 두 요구를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-1108",
+    "verdict": "PASS",
+    "auditReasonKo": "운동을 마친 뒤의 구체적인 회복 행동과 그 루틴이 잘 작동하게 하는 결과를 필수로 구분해 원문 관계에 맞는다."
+  },
+  {
+    "promptId": "prompt-routine-1109",
+    "verdict": "PASS",
+    "auditReasonKo": "긴 기차 여행 중 평소 하는 활동과 그 이유를 직접 판정하며, 시점·감정·결과는 여행 활동에 연결된 별도 보강 정보로 구성됐다."
+  },
+  {
+    "promptId": "prompt-routine-1110",
+    "verdict": "PASS",
+    "auditReasonKo": "실내에서 보내는 날의 구체적인 활동과 그중 가장 도움이 되는 부분을 각각 요구하고, 막연한 실내 생활 진술을 배제한다."
+  },
+  {
+    "promptId": "prompt-routine-1111",
+    "verdict": "PASS",
+    "auditReasonKo": "시험 준비 중 반복하는 실제 학습 행동과 그 루틴의 도움 결과를 필수로 두며, 학습 도구와 시점은 독립적인 보강 정보다."
+  },
+  {
+    "promptId": "prompt-routine-1112",
+    "verdict": "PASS",
+    "auditReasonKo": "늦은 점심 뒤 보통 하는 구체적인 행동과 그 이유를 직접 요구하고, 신체 반응·시점·결과도 해당 행동에 연결하도록 했다."
+  },
+  {
+    "promptId": "prompt-routine-1113",
+    "verdict": "PASS",
+    "auditReasonKo": "방을 청소할 때 하는 실제 단계와 그중 가장 도움이 되는 단계를 구분해 청결하다는 일반 결과만으로 선택을 대신하지 못하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-1114",
+    "verdict": "PASS",
+    "auditReasonKo": "금요일 밤 집에서 반복하는 구체적 활동과 그 루틴이 잘 작동하는 결과를 필수로 두고, 이유와 시간은 별도 의미로 구분했다."
+  },
+  {
+    "promptId": "prompt-routine-1115",
+    "verdict": "PASS",
+    "auditReasonKo": "가족 나들이 전에 하는 준비 행동과 그 이유를 가족 필요나 이동 조건에 연결하며, 추가 준비와 결과는 독립 보강으로 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-1116",
+    "verdict": "PASS",
+    "auditReasonKo": "주말 저녁의 구체적인 활동과 그중 가장 도움이 되는 부분을 각각 판정하고, 장소와 감정도 해당 활동에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-1117",
+    "verdict": "PASS",
+    "auditReasonKo": "약속 장소 등에 너무 일찍 도착했을 때의 구체적 행동과 그 루틴의 도움 결과를 필수로 구분해 질문 관계를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-routine-1118",
+    "verdict": "CHANGE",
+    "auditReasonKo": "원문은 쇼핑을 마친 뒤의 평소 행동과 이유를 넓게 묻지만 기존 계약은 귀가 후 구매품 확인·정리만 사실상 허용한다. 이동, 식사, 휴식 또는 구매품 정리처럼 쇼핑 뒤에 가능한 모든 관련 행동을 수용하도록 슬롯 계약을 넓혀야 한다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A habitual action the learner takes after completing a shopping trip.",
+        "satisfiedWhenEn": "The answer identifies a concrete action that the learner usually takes after a shopping trip and makes the temporal relationship clear. The action may occur near the shops, while traveling onward, or after arriving elsewhere; it does not have to involve the purchased items.",
+        "semanticRoleKo": "학습자가 쇼핑을 마친 뒤 습관적으로 하는 행동.",
+        "satisfiedWhenKo": "쇼핑을 마친 뒤 평소 하는 구체적인 행동을 밝히고 그 시간적 관계가 분명하면 충족한다. 행동은 매장 근처, 이후 이동 중 또는 다른 장소에 도착한 뒤에 일어날 수 있으며 반드시 구매품과 관련될 필요는 없다."
+      },
+      "REASON": {
+        "semanticRoleEn": "Why the learner usually performs the stated action after a shopping trip.",
+        "satisfiedWhenEn": "The answer gives a concrete need, goal, circumstance, preference, responsibility, or expected benefit that explains the stated post-shopping action.",
+        "semanticRoleKo": "학습자가 쇼핑 후 말한 행동을 보통 하는 이유.",
+        "satisfiedWhenKo": "말한 쇼핑 후 행동을 설명하는 구체적인 필요, 목표, 상황, 선호, 책임 또는 기대 효과를 제시하면 충족한다."
+      },
+      "ADDITIONAL_ACTION": {
+        "semanticRoleEn": "A separate second action in the learner's usual routine after a shopping trip.",
+        "satisfiedWhenEn": "The answer states another concrete action that is distinct from the core post-shopping action and also occurs after the shopping trip is completed.",
+        "semanticRoleKo": "학습자의 평소 쇼핑 후 일과에 포함된 별도의 두 번째 행동.",
+        "satisfiedWhenKo": "핵심 쇼핑 후 행동과 구분되며 쇼핑을 마친 뒤에도 일어나는 또 다른 구체적인 행동을 제시하면 충족한다."
+      },
+      "RESULT": {
+        "semanticRoleEn": "A concrete outcome of the learner's stated action after a shopping trip.",
+        "satisfiedWhenEn": "The answer describes an identifiable effect caused by the stated post-shopping action and connects that effect to the action.",
+        "semanticRoleKo": "학습자가 말한 쇼핑 후 행동으로 생기는 구체적인 결과.",
+        "satisfiedWhenKo": "말한 쇼핑 후 행동에서 생긴 식별 가능한 효과를 설명하고 그 효과를 해당 행동과 연결하면 충족한다."
+      },
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A meaningful time or trigger for the learner's stated action after a shopping trip.",
+        "satisfiedWhenEn": "The answer locates the action at a recognizable point after shopping, such as immediately after leaving a shop, before traveling home, on reaching the next destination, or later that day.",
+        "semanticRoleKo": "쇼핑 후 말한 행동이 일어나는 의미 있는 시점 또는 계기.",
+        "satisfiedWhenKo": "매장을 나온 직후, 귀가 이동 전, 다음 목적지에 도착했을 때 또는 그날 늦게처럼 쇼핑 뒤의 알아볼 수 있는 시점에 행동을 연결하면 충족한다."
+      },
+      "PLACE": {
+        "semanticRoleEn": "The setting where the learner performs the stated action after a shopping trip.",
+        "satisfiedWhenEn": "The answer identifies a recognizable location, such as a shopping area, station, restaurant, car, home, or return counter, and clearly connects it to the stated post-shopping action.",
+        "semanticRoleKo": "학습자가 말한 쇼핑 후 행동을 하는 장소.",
+        "satisfiedWhenKo": "쇼핑 지역, 역, 식당, 자동차, 집 또는 반품 창구처럼 알아볼 수 있는 장소를 밝히고 말한 쇼핑 후 행동과 명확히 연결하면 충족한다."
+      },
+      "FEELING": {
+        "semanticRoleEn": "The learner's emotional or physical response after the shopping trip or while doing the stated action.",
+        "satisfiedWhenEn": "The answer conveys a specific feeling or bodily state and clearly connects it to completing the shopping trip, the stated post-shopping action, or its outcome.",
+        "semanticRoleKo": "쇼핑을 마친 뒤 또는 말한 행동을 하는 동안의 학습자 감정이나 몸의 반응.",
+        "satisfiedWhenKo": "구체적인 감정이나 신체 상태를 나타내고 이를 쇼핑의 완료, 말한 쇼핑 후 행동 또는 그 결과와 명확히 연결하면 충족한다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-routine-1119",
+    "verdict": "PASS",
+    "auditReasonKo": "학교에 떠나기 전의 준비 행동과 그중 가장 도움이 되는 단계를 각각 요구하고, 준비 시점과 세부 물품도 해당 단계에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-1120",
+    "verdict": "PASS",
+    "auditReasonKo": "혼자 지하철을 탈 때의 구체적인 활동과 그 루틴이 주는 도움 결과를 필수로 구분하며 안전·이동 조건도 행동 이유로 수용한다."
+  },
+  {
+    "promptId": "prompt-routine-1121",
+    "verdict": "PASS",
+    "auditReasonKo": "집안일을 마친 뒤 평소 하는 구체적인 행동과 그 이유를 직접 요구하고, 결과·감정·시점은 해당 행동에 연결된 보강 정보다."
+  },
+  {
+    "promptId": "prompt-routine-1122",
+    "verdict": "PASS",
+    "auditReasonKo": "비 오는 아침 실내에서 하는 구체적인 활동과 그중 가장 도움이 되는 부분을 구분하며 날씨와 활동의 관계도 정확히 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-1123",
+    "verdict": "PASS",
+    "auditReasonKo": "사이드 프로젝트 시작 전의 실제 준비 행동과 그 루틴의 도움 결과를 필수로 두고, 준비 시점과 도구는 독립 보강으로 구성했다."
+  },
+  {
+    "promptId": "prompt-routine-1124",
+    "verdict": "PASS",
+    "auditReasonKo": "공항에서 기다리는 동안 보통 하는 구체적 활동과 그 이유를 직접 판정하고, 탑승 관련 시점·장소·감정도 활동에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-1125",
+    "verdict": "PASS",
+    "auditReasonKo": "짧은 낮잠 뒤의 실제 행동과 그중 가장 도움이 되는 단계를 각각 요구하며, 도움의 결과도 선택된 단계와 명확히 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-1126",
+    "verdict": "PASS",
+    "auditReasonKo": "캠퍼스 휴식 시간의 구체적인 활동과 그 루틴의 도움 결과를 필수로 두고, 캠퍼스 장소는 실제 활동과 연결된 보강 정보로 판정한다."
+  },
+  {
+    "promptId": "prompt-routine-1127",
+    "verdict": "PASS",
+    "auditReasonKo": "개인 또는 수업용 영상 촬영 전의 구체적 준비 행동과 그 이유를 직접 요구하며 기술 점검과 시점도 독립 정보로 구분한다."
+  },
+  {
+    "promptId": "prompt-routine-12",
+    "verdict": "PASS",
+    "auditReasonKo": "일요일 오후에 보통 하는 구체적인 활동을 핵심으로 두고, 장소·시점·이유·결과는 그 활동에 연결된 독립 보강으로 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-13",
+    "verdict": "PASS",
+    "auditReasonKo": "일요일 오후 루틴의 핵심 단계와 별도 두 번째 단계를 구분하고, 시간 순서와 장소가 실제 단계의 관계를 입증하게 한다."
+  },
+  {
+    "promptId": "prompt-routine-14",
+    "verdict": "PASS",
+    "auditReasonKo": "일요일 오후에 자주 반복하는 실제 행동을 요구하며, 이유·감정·결과가 그 행동에 연결된 별도 의미를 제공한다."
+  },
+  {
+    "promptId": "prompt-routine-15",
+    "verdict": "PASS",
+    "auditReasonKo": "일요일 오후 시간을 사용하는 구체적 활동과 두 번째 활동을 구분하고, 시점·장소·결과도 각 활동에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-16",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 자유 시간에 보통 하는 구체적인 활동을 핵심으로 판정하고, 시간·이유·감정·결과·세부 방식은 독립 보강으로 적절하다."
+  },
+  {
+    "promptId": "prompt-routine-17",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 자유 시간에 반복하는 실제 행동을 요구하며, 막연한 개인 활동 진술을 배제하고 구체적인 결과와 세부 방식을 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-18",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 보내는 자유 시간 루틴의 핵심 단계와 추가 단계를 독립적으로 식별하고, 순서·이유·결과도 실제 단계에 연결한다."
+  },
+  {
+    "promptId": "prompt-routine-19",
+    "verdict": "PASS",
+    "auditReasonKo": "집에서 자유 시간에 자주 하는 구체적인 활동과 그 계기·이유·감정·결과를 구분해 질문 의도를 정확히 반영한다."
+  }
+]

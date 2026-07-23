@@ -1,0 +1,693 @@
+[
+  {
+    "promptId": "prompt-general-1121",
+    "verdict": "CHANGE",
+    "auditReasonKo": "질문은 돌봄 행위가 아니라 식물 자체가 학습자에게 중요한 이유를 묻는데, 기존 REASON 역할은 중요성의 주체를 돌봄 행위로 바꾸고 있다.",
+    "replacementSlotContracts": {
+      "REASON": {
+        "semanticRoleEn": "Why this particular plant matters personally to the learner.",
+        "satisfiedWhenEn": "The answer explains a concrete personal value, connection, memory, responsibility, or role that makes the plant itself important to the learner. Merely saying that the plant is nice does not satisfy the role.",
+        "semanticRoleKo": "이 특정 식물 자체가 학습자에게 개인적으로 중요한 이유",
+        "satisfiedWhenKo": "답변이 식물 자체를 중요하게 만드는 구체적인 개인적 가치, 관계, 추억, 책임 또는 역할을 설명하면 충족된다. 단순히 식물이 좋다고 말하는 것만으로는 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1122",
+    "verdict": "PASS",
+    "auditReasonKo": "어린 시절부터 지금도 좋아하는 특정 간식의 정체성, 특징, 개인적 중요성을 구분하며 단순히 맛있다는 설명은 이유로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-general-1123",
+    "verdict": "PASS",
+    "auditReasonKo": "가까우면서 익숙한 길의 정체성·특징·개인적 의미가 정확히 분리되고, 위치와 이용 경험도 해당 길과의 관계를 요구한다."
+  },
+  {
+    "promptId": "prompt-general-1124",
+    "verdict": "CHANGE",
+    "auditReasonKo": "ACTION 역할은 요리법을 만들고 차리고 나누는 행동을 포함하지만 기존 충족 기준은 준비와 상차림만 인정해 자연스러운 공유 행동을 빠뜨린다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A specific action involved in making, serving, or sharing the home recipe.",
+        "satisfiedWhenEn": "The answer states a concrete preparation, cooking, serving, teaching, passing-on, or sharing action performed by the learner or someone at home in connection with the recipe.",
+        "semanticRoleKo": "집의 요리법을 만들거나 차리거나 나누는 과정에 포함된 구체적인 행동",
+        "satisfiedWhenKo": "답변이 그 요리법과 관련하여 학습자나 가족이 한 구체적인 준비, 조리, 상차림, 가르침, 전수 또는 나눔 행동을 제시하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-1125",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 실제로 중고로 산 물건이라는 관계와 물건의 특징, 개인적 중요성이 정확하며 구매 장소·시점·결과도 구체적 관계로 제한된다."
+  },
+  {
+    "promptId": "prompt-general-1126",
+    "verdict": "PASS",
+    "auditReasonKo": "동네의 특정 지름길을 식별하고 특징과 개인적 의미를 설명하게 하며, 막연한 편리함 대신 추억·관계·일상·가치를 요구한다."
+  },
+  {
+    "promptId": "prompt-general-12",
+    "verdict": "CHANGE",
+    "auditReasonKo": "EXAMPLE과 ACTION이 필수 DETAIL에 이미 사용된 두드러진 상호작용이나 행동을 그대로 다시 받아들일 수 있어 독립 깊이 정보를 보장하지 못한다.",
+    "replacementSlotContracts": {
+      "EXAMPLE": {
+        "semanticRoleEn": "A separate specific incident that illustrates the teacher's or mentor's influence beyond the standout detail already given.",
+        "satisfiedWhenEn": "The answer recounts a particular lesson, conversation, decision, or event that adds an illustrative instance beyond the quality, behavior, lesson, or interaction already used to describe what stands out. Recasting the same detail as an incident does not satisfy this role.",
+        "semanticRoleKo": "이미 제시한 두드러진 특징을 넘어 교사나 멘토의 영향을 보여 주는 별도의 구체적인 사건",
+        "satisfiedWhenKo": "답변이 두드러지는 점을 설명할 때 이미 사용한 성품, 행동, 가르침 또는 상호작용과 구별되는 특정 수업, 대화, 결정 또는 사건을 덧붙이면 충족된다. 같은 세부 사항을 사건으로 다시 부르는 것만으로는 충족되지 않는다."
+      },
+      "ACTION": {
+        "semanticRoleEn": "A separate concrete action by the mentor or learner that adds information beyond the standout aspect.",
+        "satisfiedWhenEn": "The answer states a specific thing the mentor did to guide the learner or the learner did in response, and the action adds information beyond the behavior or interaction already used to satisfy the standout detail. Repeating that same behavior does not satisfy this role.",
+        "semanticRoleKo": "두드러지는 점을 넘어 추가 정보를 주는 멘토나 학습자의 별도 행동",
+        "satisfiedWhenKo": "답변이 멘토가 학습자를 지도하기 위해 한 일이나 학습자가 그에 반응해 한 일을 구체적으로 제시하고, 그 행동이 두드러지는 점에 이미 사용된 행동이나 상호작용과 다른 정보를 더하면 충족된다. 같은 행동의 반복은 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-13",
+    "verdict": "CHANGE",
+    "auditReasonKo": "CHOICE는 영향을 준 교사나 멘토의 정체성을 맡아야 하는데 기존 역할은 별도로 평가할 배움과 요구되지 않은 '중요한 교훈'까지 인물 선택 관계에 섞는다.",
+    "replacementSlotContracts": {
+      "CHOICE": {
+        "semanticRoleEn": "The particular teacher or mentor who influenced the learner.",
+        "satisfiedWhenEn": "The answer identifies a recognizable teacher or mentor and conveys, explicitly or through the direct response context, that this is the person who influenced the learner.",
+        "semanticRoleKo": "학습자에게 영향을 준 특정 교사나 멘토",
+        "satisfiedWhenKo": "답변이 식별 가능한 교사나 멘토를 밝히고, 명시적으로 또는 질문에 대한 직접적인 응답 맥락을 통해 그 사람이 학습자에게 영향을 준 인물임을 나타내면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-14",
+    "verdict": "PASS",
+    "auditReasonKo": "영향을 준 인물, 그 사람의 특별한 점, 계속 기억하는 이유가 각각 구체적인 관계로 정의되고 선택 슬롯도 기억 경험을 독립적으로 보강한다."
+  },
+  {
+    "promptId": "prompt-general-15",
+    "verdict": "PASS",
+    "auditReasonKo": "특정 교사나 멘토의 정체성과 설명, 학습자의 삶에서 중요한 이유가 원문 요구와 일치하며 지속적 영향도 별도 결과로 구분된다."
+  },
+  {
+    "promptId": "prompt-general-16",
+    "verdict": "PASS",
+    "auditReasonKo": "추천할 취미의 정체성·구체적 설명·학습자에게 지닌 의미를 정확히 요구하고, 단순한 재미 표현을 개인적 의미로 과대평가하지 않는다."
+  },
+  {
+    "promptId": "prompt-general-17",
+    "verdict": "PASS",
+    "auditReasonKo": "추천 대상으로 선택한 취미와 그 취미에서 두드러지는 구체적 특징을 필수로 구분하며 추천 이유와 경험은 자연스러운 선택 보강으로 남긴다."
+  },
+  {
+    "promptId": "prompt-general-18",
+    "verdict": "PASS",
+    "auditReasonKo": "다른 사람에게 추천하는 특정 취미와 추천 근거가 직접 대응하고, 특징·행동·효과·경험도 단순 추천 반복 없이 충족되도록 정의된다."
+  },
+  {
+    "promptId": "prompt-general-19",
+    "verdict": "PASS",
+    "auditReasonKo": "추천하고 기억하는 취미, 특별한 점, 기억에 남는 이유라는 세 관계가 질문에 맞고 구체적 사건과 결과도 해당 취미 경험에 연결된다."
+  },
+  {
+    "promptId": "prompt-general-20",
+    "verdict": "PASS",
+    "auditReasonKo": "추천할 취미를 식별하고 설명한 뒤 삶에서 중요한 이유를 말하게 하므로 원문의 소개와 개인적 중요성 요구를 빠짐없이 반영한다."
+  },
+  {
+    "promptId": "prompt-general-21",
+    "verdict": "PASS",
+    "auditReasonKo": "막연한 과거 언급이 아니라 식별 가능한 기억을 설명하고 그 기억이 지금도 지닌 구체적인 의미를 제시해야 하므로 질문 관계가 정확하다."
+  },
+  {
+    "promptId": "prompt-general-22",
+    "verdict": "PASS",
+    "auditReasonKo": "특정 기억과 그 기억에서 두드러지는 점을 한 필수 역할 안에서 모두 요구하고, 이유·감정·결과·시공간 정보는 추가 의미 단위로 정의한다."
+  },
+  {
+    "promptId": "prompt-general-23",
+    "verdict": "PASS",
+    "auditReasonKo": "지금도 중요한 특정 기억을 식별할 구체적 내용과 그 기억의 개인적 의미를 구분하며 자연스러운 사건 묘사와 의역을 허용한다."
+  },
+  {
+    "promptId": "prompt-general-24",
+    "verdict": "PASS",
+    "auditReasonKo": "특별한 기억의 정체성과 특별한 특징, 계속 기억하는 구체적 이유를 정확히 검사하고 막연한 '특별하다'만으로는 충족되지 않는다."
+  },
+  {
+    "promptId": "prompt-general-25",
+    "verdict": "PASS",
+    "auditReasonKo": "식별 가능한 기억 내용과 현재 삶에서 이어지는 중요성의 관계가 분명하며 결과·감정·시간·장소·행동도 기억 속 사건에 연결된다."
+  },
+  {
+    "promptId": "prompt-general-26",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 특정 작은 가게를 식별하고 구체적으로 설명한 뒤 개인적 중요성을 밝히게 하며 단순한 호감 표현은 이유로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-general-27",
+    "verdict": "PASS",
+    "auditReasonKo": "추천하는 작은 가게의 정체성과 특징, 다른 사람이 방문할 만한 구체적 추천 근거가 원문에 맞게 분리되어 있다."
+  },
+  {
+    "promptId": "prompt-general-28",
+    "verdict": "PASS",
+    "auditReasonKo": "가게에서 가장 좋아하는 한 측면을 구체적으로 선택하게 하고 이유·설명·경험·효과·감정이 그 선택을 독립적으로 발전시키도록 한다."
+  },
+  {
+    "promptId": "prompt-general-29",
+    "verdict": "PASS",
+    "auditReasonKo": "작은 가게가 일상에서 중요한 구체적 필요·역할·관계·편의를 요구하며 단순히 좋은 곳이라는 평가는 거부한다."
+  },
+  {
+    "promptId": "prompt-general-30",
+    "verdict": "PASS",
+    "auditReasonKo": "좋아하는 작은 가게의 정체성과 기억에 남은 한 가지 세부 사항을 필수로 요구하고 막연한 칭찬을 구체적 DETAIL로 세지 않는다."
+  },
+  {
+    "promptId": "prompt-general-31",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 직접 이용하는 유용한 웹사이트, 구체적 기능, 개인적 중요성의 관계가 정확하며 사용 행동과 결과도 별도로 구분된다."
+  },
+  {
+    "promptId": "prompt-general-32",
+    "verdict": "PASS",
+    "auditReasonKo": "추천할 웹사이트를 식별하고 제공 기능을 설명한 뒤 타인에게 추천할 구체적 이유를 제시하게 하므로 질문의 추천 구조와 일치한다."
+  },
+  {
+    "promptId": "prompt-general-33",
+    "verdict": "PASS",
+    "auditReasonKo": "가장 좋아하는 웹사이트 기능이나 경험을 하나 선택하게 하고 이유·사용 사례·행동·효과·특징이 선택을 구체적으로 보강한다."
+  },
+  {
+    "promptId": "prompt-general-34",
+    "verdict": "PASS",
+    "auditReasonKo": "웹사이트가 일상에서 중요한 이유를 반복되는 필요·책임·목표·가치로 구체화하고 일반적인 유용성만으로는 충족시키지 않는다."
+  },
+  {
+    "promptId": "prompt-general-35",
+    "verdict": "PASS",
+    "auditReasonKo": "유용한 웹사이트의 정체성과 실제로 기억하는 기능·자료·경험을 필수로 분리해 일반적인 유용성 주장과 구별한다."
+  },
+  {
+    "promptId": "prompt-general-36",
+    "verdict": "PASS",
+    "auditReasonKo": "가족 전통을 이루는 반복 실천과 학습자에게 중요한 이유를 정확히 요구하며 단순히 전통이 있다고 말하는 답은 거부한다."
+  },
+  {
+    "promptId": "prompt-general-37",
+    "verdict": "PASS",
+    "auditReasonKo": "추천하는 가족 전통의 반복 행동과 다른 가족도 받아들일 만한 구체적 이유가 분명하고 시점·추가 행동·결과·사례도 관련성이 있다."
+  },
+  {
+    "promptId": "prompt-general-38",
+    "verdict": "CHANGE",
+    "auditReasonKo": "필수 CHOICE가 가족 전통의 활동 자체를 가장 좋아하는 부분으로 선택할 수 있는데 기존 ACTION은 같은 활동을 다시 받아들여 독립 깊이를 허위로 늘릴 수 있다.",
+    "replacementSlotContracts": {
+      "ACTION": {
+        "semanticRoleEn": "A separate concrete family action that adds information about the learner's favorite part of the tradition.",
+        "satisfiedWhenEn": "The answer states what the learner or family members do in connection with the selected favorite part and adds behavioral information beyond merely repeating an activity already named as that favorite part.",
+        "semanticRoleKo": "가장 좋아하는 전통의 부분에 관해 추가 정보를 주는 별도의 구체적인 가족 행동",
+        "satisfiedWhenKo": "답변이 선택한 가장 좋아하는 부분과 관련해 학습자나 가족 구성원이 하는 일을 제시하고, 이미 그 부분으로 선택한 활동을 그대로 반복하는 것을 넘어서는 행동 정보를 더하면 충족된다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-general-39",
+    "verdict": "PASS",
+    "auditReasonKo": "가족 전통이 일상과 이어지는 구체적 역할·가치·관계·정체성을 이유로 요구하고 반복 실천과 효과는 별도 보강 정보가 된다."
+  },
+  {
+    "promptId": "prompt-general-40",
+    "verdict": "PASS",
+    "auditReasonKo": "가족 전통의 반복적인 핵심 행동과 기억에 남는 구체적 세부 사항을 구분하며 추가 단계는 핵심 행동의 단순한 바꿔 말하기를 거부한다."
+  },
+  {
+    "promptId": "prompt-general-41",
+    "verdict": "PASS",
+    "auditReasonKo": "학습자가 걷기를 좋아하는 특정 장소, 장소의 구체적 모습, 개인적 중요성을 정확히 요구하고 지리적 위치와 산책 효과도 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-general-42",
+    "verdict": "PASS",
+    "auditReasonKo": "추천하는 산책 장소의 정체성과 특징, 다른 사람이 그곳에서 걸을 만한 근거를 구분하며 단순 장소 언급은 추천 이유가 되지 않는다."
+  },
+  {
+    "promptId": "prompt-general-43",
+    "verdict": "PASS",
+    "auditReasonKo": "산책 장소에서 가장 좋아하는 구체적 특징이나 경험을 선택하고 이유·설명·감정·활동·효과가 그 선택과 직접 연결되도록 한다."
+  },
+  {
+    "promptId": "prompt-general-44",
+    "verdict": "PASS",
+    "auditReasonKo": "산책 장소가 일상에서 중요한 이유를 반복되는 필요·역할·관계·도움으로 구체화하고 단순히 보기 좋다는 평가는 거부한다."
+  },
+  {
+    "promptId": "prompt-general-45",
+    "verdict": "PASS",
+    "auditReasonKo": "걷기를 좋아하는 특정 장소와 기억에 남는 풍경·경로·사건을 구분하고 PLACE는 장소 정체성 외의 지리적 위치를 요구한다."
+  },
+  {
+    "promptId": "prompt-general-46",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 직접 사용하는 생활용품, 물건의 구체적 특징, 개인적 중요성을 정확히 묻고 단순 소유나 유용성만으로는 이유가 충족되지 않는다."
+  },
+  {
+    "promptId": "prompt-general-47",
+    "verdict": "PASS",
+    "auditReasonKo": "추천하는 생활용품의 정체성과 설명, 다른 사람이 사용할 만한 구체적 근거가 원문에 맞고 사용 행동과 효과도 분리된다."
+  },
+  {
+    "promptId": "prompt-general-48",
+    "verdict": "PASS",
+    "auditReasonKo": "생활용품에서 가장 좋아하는 기능이나 측면을 하나 선택하고 이유·사용·효과·사례·특징이 그 선택에 독립적인 정보를 더한다."
+  },
+  {
+    "promptId": "prompt-general-49",
+    "verdict": "PASS",
+    "auditReasonKo": "생활용품이 일상에서 중요한 반복적 필요·책임·역할을 요구하며 일반적인 편리함과 구체적인 중요성을 구별한다."
+  },
+  {
+    "promptId": "prompt-general-50",
+    "verdict": "PASS",
+    "auditReasonKo": "자주 쓰는 생활용품의 정체성과 실제로 기억에 남은 특징·내력·경험을 필수로 구분하고 선택 슬롯도 해당 물건 사용에 연결된다."
+  },
+  {
+    "promptId": "prompt-goal-01",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 향상할 구체적 기술과 그 기술을 위한 실행 가능한 방법을 필수로 요구하며 장소·시간·장애물은 계획을 자연스럽게 보강한다."
+  },
+  {
+    "promptId": "prompt-goal-02",
+    "verdict": "PASS",
+    "auditReasonKo": "향상하려는 기술의 방향과 구체적 실행 계획이 질문의 두 절에 정확히 대응하고 결과는 관찰 가능한 진전으로 정의된다."
+  },
+  {
+    "promptId": "prompt-goal-03",
+    "verdict": "PASS",
+    "auditReasonKo": "진전을 이루고 싶은 특정 기술과 진전을 만드는 연습·자료·일과를 구분해 막연한 향상 의도와 실제 계획을 판별한다."
+  },
+  {
+    "promptId": "prompt-goal-04",
+    "verdict": "PASS",
+    "auditReasonKo": "제안하는 단계의 대상이 되는 기술을 식별하고 하나 이상의 실행 가능한 단계를 요구하므로 목표 없는 계획이나 계획 없는 목표를 모두 거부한다."
+  },
+  {
+    "promptId": "prompt-goal-05",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 향상할 기술과 그 목표가 개인적으로 중요한 구체적 이유를 필수로 두고 계획은 질문에 강제되지 않는 선택 정보로 남긴다."
+  },
+  {
+    "promptId": "prompt-goal-06",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 만들 반복 행동과 습관을 형성할 구체적 방법을 분리하며 막연한 의도, 장애물, 결과, 실천 환경을 의미 관계에 맞게 판별한다."
+  },
+  {
+    "promptId": "prompt-goal-07",
+    "verdict": "PASS",
+    "auditReasonKo": "형성할 반복 가능한 습관과 이를 꾸준하게 만들 미래 과정이 정확히 대응하고 신호·지원·기록 같은 자연스러운 계획 의역을 허용한다."
+  },
+  {
+    "promptId": "prompt-goal-08",
+    "verdict": "PASS",
+    "auditReasonKo": "생활의 일부로 만들 습관과 꾸준함을 높일 진전 방법을 요구하며 결과는 습관 정착의 관찰 가능한 징표로 구분한다."
+  },
+  {
+    "promptId": "prompt-goal-09",
+    "verdict": "PASS",
+    "auditReasonKo": "단계가 겨냥하는 구체적 습관과 실행 가능한 형성 순서를 모두 요구해 질문의 목표-단계 관계를 정확히 반영한다."
+  },
+  {
+    "promptId": "prompt-goal-10",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 정착시킬 구체적 습관과 그 습관이 중요한 개인적 가치·필요·책임을 필수로 구분하며 계획을 과도하게 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-goal-11",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 달성할 구체적 건강 결과와 그 결과를 위한 미래 행동을 정확히 요구하고 증상·한계·효과도 건강 목표에 연결한다."
+  },
+  {
+    "promptId": "prompt-goal-1101",
+    "verdict": "CHANGE",
+    "auditReasonKo": "수면 일정 질문은 시계 시각을 요구하지 않는데 기존 SPECIFIC_TIME 충족 기준은 의미 있는 시간대나 일과 기준 표현을 충분히 허용하지 않아 지나치게 엄격하다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time of day, routine anchor, adjustment interval, frequency, checkpoint, or deadline for improving the sleep schedule.",
+        "satisfiedWhenEn": "The answer gives recognizable timing connected to the sleep-schedule improvement, such as a part of the day, a routine anchor, a clock time, a recurrence, a gradual adjustment interval, a review point, or a target date. A clock time is not required, and merely repeating that the goal is for this year is not enough.",
+        "semanticRoleKo": "수면 일정 개선을 위한 구체적인 시간대, 일과 기준 시점, 조정 간격, 빈도, 점검 시점 또는 기한",
+        "satisfiedWhenKo": "답변이 시간대, 일과와 연결된 시점, 시계 시각, 반복 주기, 점진적 조정 간격, 점검 시점 또는 목표 날짜처럼 수면 일정 개선과 연결된 식별 가능한 시간 정보를 제시하면 충족된다. 시계 시각이 반드시 필요하지는 않으며 목표가 올해라는 말만 반복해서는 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1102",
+    "verdict": "CHANGE",
+    "auditReasonKo": "질문이 이미 매일 쓰기를 전제로 하므로 SPECIFIC_TIME은 '매일'을 반복해서 깊이로 세지 말고 하루 중 시점·지속 시간·시작 또는 점검 시점을 추가해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete time of day, duration, start point, or consistency checkpoint for journaling beyond the already-stated daily frequency.",
+        "satisfiedWhenEn": "The answer specifies when during the day or for how long the learner will write, when the routine will begin, or when consistency will be reviewed. Merely repeating that the journal will be written every day does not satisfy this depth role.",
+        "semanticRoleKo": "질문에 이미 제시된 매일의 빈도를 넘어서는 구체적인 일기 시각, 지속 시간, 시작 시점 또는 꾸준함 점검 시점",
+        "satisfiedWhenKo": "답변이 하루 중 언제 또는 얼마나 오래 일기를 쓸지, 습관을 언제 시작할지, 혹은 꾸준함을 언제 점검할지 구체적으로 제시하면 충족된다. 매일 쓴다는 전제를 그대로 반복하는 것만으로는 이 깊이 역할이 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1103",
+    "verdict": "PASS",
+    "auditReasonKo": "간단한 식사에서 개선할 조리 능력과 그 능력을 위한 실행 단계를 정확히 요구하고 요리 예시는 목표를 구체화하는 별도 정보가 된다."
+  },
+  {
+    "promptId": "prompt-goal-1104",
+    "verdict": "PASS",
+    "auditReasonKo": "디지털 파일 정리에서 바라는 구체적 결과와 분류·이름 변경·백업 등의 실행 계획이 분리되어 질문의 목표-방법 구조와 일치한다."
+  },
+  {
+    "promptId": "prompt-goal-1105",
+    "verdict": "PASS",
+    "auditReasonKo": "회의 발언 자신감을 높이는 실행 방법과 그 노력을 유지하는 방식을 모두 PLAN에 요구하며 단순히 '회의에서'라는 장소 반복을 거부한다."
+  },
+  {
+    "promptId": "prompt-goal-1106",
+    "verdict": "PASS",
+    "auditReasonKo": "야간 화면 사용에서 바꿀 구체적 행동이나 결과와 실행 조치를 필수로 구분하고 유발 요인·시간 제한·예상 효과도 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-goal-1107",
+    "verdict": "PASS",
+    "auditReasonKo": "정기적 연습이라는 막연한 바람을 넘어 사진 능력·습관·결과물 목표를 식별하고 이를 발전시킬 실행 가능한 연습을 요구한다."
+  },
+  {
+    "promptId": "prompt-goal-1108",
+    "verdict": "CHANGE",
+    "auditReasonKo": "질문 자체가 주간 식사 준비를 전제로 하는데 기존 SPECIFIC_TIME은 '매주'라는 반복만으로 선택 깊이를 충족시킬 수 있어 독립 시간 정보를 보장하지 못한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete day, time, duration, or more specific recurrence for advance meal preparation beyond the already-stated weekly scope.",
+        "satisfiedWhenEn": "The answer states when within the week, for how long, or at what more specific recurrence the learner will plan, shop, cook, or portion the meals. Merely repeating that preparation will happen every week does not satisfy this depth role.",
+        "semanticRoleKo": "질문에 이미 제시된 주간 범위를 넘어서는 식사 사전 준비의 구체적인 요일, 시각, 지속 시간 또는 더 세부적인 반복 주기",
+        "satisfiedWhenKo": "답변이 한 주 중 언제, 얼마나 오래 또는 어떤 더 세부적인 주기로 식사를 계획하고, 장을 보고, 조리하거나 소분할지 제시하면 충족된다. 매주 준비한다는 말만 반복해서는 이 깊이 역할이 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1109",
+    "verdict": "CHANGE",
+    "auditReasonKo": "질문에 이미 긴 글 한 편을 매주 읽는다는 빈도가 있으므로 SPECIFIC_TIME은 주간 반복 자체가 아니라 주중 시점이나 완료·복습 구간을 추가해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A concrete day, time, completion window, or review point within the weekly long-article reading routine.",
+        "satisfiedWhenEn": "The answer specifies when within the week the learner will select, read, finish, or review the long article, or gives another timing detail beyond the supplied weekly frequency. Merely repeating that one article will be read each week does not satisfy the role.",
+        "semanticRoleKo": "주간 긴 글 읽기 습관 안의 구체적인 요일, 시각, 완료 구간 또는 복습 시점",
+        "satisfiedWhenKo": "답변이 한 주 중 언제 긴 글을 고르고, 읽고, 끝내거나 복습할지 또는 질문에 주어진 주간 빈도를 넘어서는 다른 시간 정보를 제시하면 충족된다. 매주 한 편을 읽는다는 말만 반복해서는 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1110",
+    "verdict": "PASS",
+    "auditReasonKo": "더 나은 습관이라는 일반 표현을 넘어 구체적 스트레칭 방식·능력·꾸준함 목표를 요구하고 이를 만들 실행 단계와 시간 패턴을 구분한다."
+  },
+  {
+    "promptId": "prompt-goal-1111",
+    "verdict": "PASS",
+    "auditReasonKo": "필기 체계를 실제로 바꾸는 방법과 지속 사용·점검 방식을 PLAN에 함께 요구하며 구체적 체계 요소와 사례는 독립 깊이를 제공한다."
+  },
+  {
+    "promptId": "prompt-goal-1112",
+    "verdict": "PASS",
+    "auditReasonKo": "집안일을 제시간에 끝내는 방식에서 개선할 구체적 측면과 실행 조치를 구분하고 PLACE는 단순히 '집에서'라는 전제를 반복하지 않는다."
+  },
+  {
+    "promptId": "prompt-goal-1113",
+    "verdict": "PASS",
+    "auditReasonKo": "더 차분한 아침을 위한 구체적 변화와 실행 방법을 필수로 요구하고 현재 감정·방해 요인·성공 결과도 아침 일과에 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-goal-1114",
+    "verdict": "PASS",
+    "auditReasonKo": "수업에서 더 명확하게 질문하는 접근법과 지속 사용 방식을 PLAN에 담고 PLACE는 특정 과목이나 학습 환경을 요구해 전제 반복을 막는다."
+  },
+  {
+    "promptId": "prompt-goal-1115",
+    "verdict": "PASS",
+    "auditReasonKo": "레이아웃·색상·타이포그래피처럼 개선할 기초 디자인 능력을 구체적으로 식별하고 해당 능력을 겨냥한 학습 단계를 요구한다."
+  },
+  {
+    "promptId": "prompt-goal-1116",
+    "verdict": "PASS",
+    "auditReasonKo": "가정의 음식물 쓰레기에서 줄일 구체적 양이나 행동과 실행 방법을 구분하고 원인·사례·측정 가능한 결과도 정확히 연결한다."
+  },
+  {
+    "promptId": "prompt-goal-1117",
+    "verdict": "CHANGE",
+    "auditReasonKo": "한 주를 돌아보는 습관은 이미 주간 반복을 포함하므로 SPECIFIC_TIME 역할에서도 단순한 '매주'가 아니라 요일·시각·지속 시간 같은 추가 정보를 명시해야 한다.",
+    "replacementSlotContracts": {
+      "SPECIFIC_TIME": {
+        "semanticRoleEn": "A defined day, time, duration, or consistency checkpoint within the weekly review habit.",
+        "satisfiedWhenEn": "The answer states a recognizable point in the week, length of time, or checkpoint reserved for reviewing the week. Merely repeating that the review will happen weekly does not satisfy this depth role.",
+        "semanticRoleKo": "주간 회고 습관 안의 명확한 요일, 시각, 지속 시간 또는 꾸준함 점검 시점",
+        "satisfiedWhenKo": "답변이 한 주를 돌아보기 위해 정한 식별 가능한 주중 시점, 소요 시간 또는 점검 시점을 제시하면 충족된다. 매주 회고한다는 전제를 그대로 반복하는 것만으로는 이 깊이 역할이 충족되지 않는다."
+      }
+    }
+  },
+  {
+    "promptId": "prompt-goal-1118",
+    "verdict": "PASS",
+    "auditReasonKo": "지도 읽기에서 개선할 방향·경로·기호 등의 구체적 능력과 이를 위한 연습 단계를 요구하며 장소는 실제 적용 환경으로 정의된다."
+  },
+  {
+    "promptId": "prompt-goal-1119",
+    "verdict": "PASS",
+    "auditReasonKo": "만들고 싶은 주말 재정비 습관이나 상태와 이를 반복시키는 방법을 구분하고 구체적 구성 요소·장애물·효과도 습관에 연결한다."
+  },
+  {
+    "promptId": "prompt-goal-1120",
+    "verdict": "PASS",
+    "auditReasonKo": "간단한 수리 기술을 배우고 계속 연습할 방법을 PLAN에 요구하며 특정 수리 과제는 막연한 '수리 기술'을 구체화하는 독립 예시가 된다."
+  },
+  {
+    "promptId": "prompt-goal-1121",
+    "verdict": "PASS",
+    "auditReasonKo": "책상 상태나 정리 행동에서 바라는 구체적 개선과 어수선함을 막는 실행 조치를 구분해 일반적인 '더 깔끔하게'라는 답을 거부한다."
+  },
+  {
+    "promptId": "prompt-goal-1122",
+    "verdict": "PASS",
+    "auditReasonKo": "이름을 더 쉽게 기억한다는 전제를 넘어 구체적 기억 결과나 상황을 목표로 요구하고 학습·유지·회상 기법을 계획으로 판별한다."
+  },
+  {
+    "promptId": "prompt-goal-1123",
+    "verdict": "PASS",
+    "auditReasonKo": "더 인내심 있게 듣는 실행 방식과 그 행동을 계속 적용할 방법을 PLAN에 요구하며 장애물·대화 사례·결과는 독립 깊이를 더한다."
+  },
+  {
+    "promptId": "prompt-goal-1124",
+    "verdict": "PASS",
+    "auditReasonKo": "식물 돌봄에서 개선할 행동·기술·결과와 그 변화를 위한 실행 조치를 구분하고 특정 식물이나 관리 작업은 관련 예시로 제한한다."
+  },
+  {
+    "promptId": "prompt-goal-1125",
+    "verdict": "PASS",
+    "auditReasonKo": "짧게 비는 시간에 할 구체적 활용이나 결과를 목표로 요구하고 그 시간을 알아차리고 준비해 쓰는 실행 방법을 계획으로 구분한다."
+  },
+  {
+    "promptId": "prompt-goal-1126",
+    "verdict": "PASS",
+    "auditReasonKo": "현실적인 할 일 목록을 만드는 구체적 방법과 그 방법의 지속 사용을 PLAN에 담고 사례·장애물·결과·점검 시점은 별도 깊이를 제공한다."
+  },
+  {
+    "promptId": "prompt-goal-1127",
+    "verdict": "PASS",
+    "auditReasonKo": "죄책감 없이 쉬는 행동·경계·감정에서 바라는 구체적 변화와 휴식 보호·자기 대화 조정 등의 실행 단계를 정확히 구분한다."
+  },
+  {
+    "promptId": "prompt-goal-12",
+    "verdict": "PASS",
+    "auditReasonKo": "막연히 건강해지고 싶다는 말이 아닌 구체적 건강 결과와 그 결과를 위한 실행 계획을 필수로 요구해 질문 구조와 일치한다."
+  },
+  {
+    "promptId": "prompt-goal-13",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 도달할 식별 가능한 건강 목표와 진전을 만드는 실행 수단을 구분하며 결과는 목표 반복이 아닌 관찰 가능한 중간 성과로 정의한다."
+  },
+  {
+    "promptId": "prompt-goal-14",
+    "verdict": "PASS",
+    "auditReasonKo": "제안하는 단계의 목적이 되는 건강 목표를 식별하고 목표를 향한 실행 조치를 요구하므로 원문의 단계 질문에 필요한 관계가 완전하다."
+  },
+  {
+    "promptId": "prompt-goal-15",
+    "verdict": "PASS",
+    "auditReasonKo": "구체적 건강 목표와 그 목표가 개인적으로 중요한 필요·가치·이점을 필수로 구분하고 실행 계획은 선택 정보로만 둔다."
+  },
+  {
+    "promptId": "prompt-goal-16",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 집중할 구체적 언어 능력이나 결과와 이를 위한 공부·연습·노출 방법이 정확히 대응하며 막연한 언어 향상을 거부한다."
+  },
+  {
+    "promptId": "prompt-goal-17",
+    "verdict": "PASS",
+    "auditReasonKo": "식별 가능한 언어 기술·수행 목표와 공부·연습·피드백 계획을 구분해 목표 설명과 계획 설명이라는 두 직접 요구를 충족한다."
+  },
+  {
+    "promptId": "prompt-goal-18",
+    "verdict": "PASS",
+    "auditReasonKo": "진전하려는 구체적 언어 목표와 그 진전을 만드는 실행 가능한 연습·전략을 분리하고 결과는 관찰 가능한 언어 변화로 정의한다."
+  },
+  {
+    "promptId": "prompt-goal-19",
+    "verdict": "PASS",
+    "auditReasonKo": "제안하는 단계가 향하는 구체적 언어 능력과 실제 공부·연습·사용 조치를 모두 요구해 목표 없는 단계 나열을 방지한다."
+  },
+  {
+    "promptId": "prompt-goal-20",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 노력할 구체적 언어 목표와 그 목표가 중요한 개인적 필요·기회·사용 목적을 필수로 두고 계획을 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-goal-21",
+    "verdict": "PASS",
+    "auditReasonKo": "자신감을 키울 구체적 능력·활동·역할과 그 영역을 위한 연습·노출·준비 방법을 구분해 막연한 자신감 희망을 거부한다."
+  },
+  {
+    "promptId": "prompt-goal-22",
+    "verdict": "PASS",
+    "auditReasonKo": "자신감을 높일 특정 삶·기술·상황 영역과 그곳에서 경험과 행동을 늘릴 실행 계획이 질문의 두 절에 정확히 대응한다."
+  },
+  {
+    "promptId": "prompt-goal-23",
+    "verdict": "PASS",
+    "auditReasonKo": "자신감이 성장할 구체적 영역과 진전을 만드는 연습·준비·단계적 도전을 구분하고 결과를 관찰 가능한 행동 변화로 판별한다."
+  },
+  {
+    "promptId": "prompt-goal-24",
+    "verdict": "PASS",
+    "auditReasonKo": "자신감 향상 단계의 대상이 되는 기술·상황·역할을 식별하고 실제 연습이나 경험 조치를 요구하므로 단계의 목적 관계가 분명하다."
+  },
+  {
+    "promptId": "prompt-goal-25",
+    "verdict": "PASS",
+    "auditReasonKo": "자신감을 키울 구체적 영역과 그 변화가 중요한 가치·필요·기회를 필수로 요구하며 계획은 원문보다 엄격하게 강제하지 않는다."
+  },
+  {
+    "promptId": "prompt-goal-26",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 기를 구체적 직무 능력과 이를 배우고 연습하고 적용할 방법을 구분해 막연한 경력 개발 답변을 거부한다."
+  },
+  {
+    "promptId": "prompt-goal-27",
+    "verdict": "PASS",
+    "auditReasonKo": "얻거나 강화할 특정 직업 기술과 학습·연습·멘토링·피드백 계획을 필수로 요구해 질문의 목표-계획 관계와 일치한다."
+  },
+  {
+    "promptId": "prompt-goal-28",
+    "verdict": "PASS",
+    "auditReasonKo": "발전시킬 식별 가능한 직무 기술과 그 기술에서 진전할 실행 방법을 구분하며 결과·업무 사례·장애물은 관련 보강 정보가 된다."
+  },
+  {
+    "promptId": "prompt-goal-29",
+    "verdict": "PASS",
+    "auditReasonKo": "단계가 겨냥하는 구체적 직업 기술과 실행 가능한 학습·적용·피드백 조치를 모두 요구해 질문의 목적과 방법을 정확히 잇는다."
+  },
+  {
+    "promptId": "prompt-goal-30",
+    "verdict": "PASS",
+    "auditReasonKo": "기르고 싶은 특정 직업 기술과 그 기술이 중요한 직업 목표·필요·기회를 필수로 구분하며 계획 세부사항은 선택으로 남긴다."
+  },
+  {
+    "promptId": "prompt-goal-31",
+    "verdict": "PASS",
+    "auditReasonKo": "만들고 싶은 구체적 반복 독서 행동과 이를 시작하고 유지할 방법을 구분하며 단순히 더 읽고 싶다는 말은 목표로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-goal-32",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 기를 독서 행동·분량·패턴과 그 습관을 만들고 지속할 실행 단계를 필수로 요구해 질문의 계획 설명과 일치한다."
+  },
+  {
+    "promptId": "prompt-goal-33",
+    "verdict": "PASS",
+    "auditReasonKo": "식별 가능한 독서 습관과 시작·반복·기록·지원 방법을 구분하고 진전 결과는 더 많은 독서일이나 완독처럼 관찰 가능하다."
+  },
+  {
+    "promptId": "prompt-goal-34",
+    "verdict": "PASS",
+    "auditReasonKo": "제안하는 단계의 대상인 구체적 독서 습관과 이를 만들고 유지할 실행 조치를 모두 요구해 목적 없는 계획을 배제한다."
+  },
+  {
+    "promptId": "prompt-goal-35",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 만들 구체적 독서 습관과 그 습관이 중요한 관심·가치·필요·이점을 필수로 두고 계획은 선택 정보로 처리한다."
+  },
+  {
+    "promptId": "prompt-goal-36",
+    "verdict": "PASS",
+    "auditReasonKo": "구체적 저축 금액·목적·재정 목표와 돈을 모으거나 지출을 줄이는 실행 방법을 구분하며 막연한 저축 의도를 거부한다."
+  },
+  {
+    "promptId": "prompt-goal-37",
+    "verdict": "PASS",
+    "auditReasonKo": "도달할 식별 가능한 저축 목표와 적립·지출 통제·진전 확인 계획을 필수로 요구하고 세부 재정 정보는 중복 없이 추가된다."
+  },
+  {
+    "promptId": "prompt-goal-38",
+    "verdict": "PASS",
+    "auditReasonKo": "올해의 저축 결과와 그 결과를 향한 실행 전략을 구분하고 중간 성과·시간 약속·장애물도 저축 진전 관계로 정확히 정의한다."
+  },
+  {
+    "promptId": "prompt-goal-39",
+    "verdict": "PASS",
+    "auditReasonKo": "제안하는 단계의 목적이 되는 금액·목적·비상 자금과 실제 적립·지출 조정 조치를 모두 요구해 질문에 완전하게 대응한다."
+  },
+  {
+    "promptId": "prompt-goal-40",
+    "verdict": "PASS",
+    "auditReasonKo": "구체적 저축 목표와 그 목표가 중요한 필요·미래 계획·안정 이유를 필수로 구분하며 실행 계획을 직접 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-goal-41",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 유지할 구체적 운동 습관과 일정을 잡고 중단 후 돌아오는 유지 방법을 구분해 일반적인 건강 유지 답변을 거부한다."
+  },
+  {
+    "promptId": "prompt-goal-42",
+    "verdict": "PASS",
+    "auditReasonKo": "유지할 반복 운동이나 훈련과 이를 계속하기 위한 일정·지원·조정 계획이 질문의 두 직접 요구에 정확히 대응한다."
+  },
+  {
+    "promptId": "prompt-goal-43",
+    "verdict": "PASS",
+    "auditReasonKo": "계속할 식별 가능한 운동 습관과 꾸준함을 높이고 중단 후 회복하는 진전 방법을 구분하며 결과는 관찰 가능한 유지 지표로 정의한다."
+  },
+  {
+    "promptId": "prompt-goal-44",
+    "verdict": "PASS",
+    "auditReasonKo": "단계가 유지하려는 구체적 운동 습관을 식별하고 일정·지원·기록·재시작 조치를 요구하므로 목표와 단계의 관계가 명확하다."
+  },
+  {
+    "promptId": "prompt-goal-45",
+    "verdict": "PASS",
+    "auditReasonKo": "유지하고 싶은 특정 운동 습관과 건강·수행·정서상 중요 이유를 필수로 두고 계획은 원문보다 엄격하게 요구하지 않는다."
+  },
+  {
+    "promptId": "prompt-goal-46",
+    "verdict": "PASS",
+    "auditReasonKo": "올해 완성할 식별 가능한 창작 프로젝트와 제작·정리·수정·마무리 방법을 구분하며 막연한 창작 의도를 목표로 인정하지 않는다."
+  },
+  {
+    "promptId": "prompt-goal-47",
+    "verdict": "PASS",
+    "auditReasonKo": "완료 가능한 특정 창작 프로젝트와 이를 제작하고 자원을 마련해 마무리할 실행 계획을 필수로 요구해 질문 구조와 일치한다."
+  },
+  {
+    "promptId": "prompt-goal-48",
+    "verdict": "PASS",
+    "auditReasonKo": "완성하려는 창작물의 정체성과 프로젝트를 완성에 가깝게 할 실행 방법을 구분하고 결과·세부사항도 독립 정보로 정의한다."
+  },
+  {
+    "promptId": "prompt-goal-49",
+    "verdict": "PASS",
+    "auditReasonKo": "제안하는 단계의 대상인 구체적 창작 프로젝트와 제작·수정·자원 마련·마무리 조치를 모두 요구해 단계의 목적이 분명하다."
+  }
+]

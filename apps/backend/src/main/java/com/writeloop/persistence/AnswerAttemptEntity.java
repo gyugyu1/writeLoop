@@ -43,7 +43,7 @@ public class AnswerAttemptEntity {
     @Column(name = "answer_text", nullable = false, columnDefinition = "TEXT")
     private String answerText;
 
-    @Column(nullable = false)
+    @Column
     private Integer score;
 
     @Column(name = "feedback_summary", nullable = false, columnDefinition = "TEXT")

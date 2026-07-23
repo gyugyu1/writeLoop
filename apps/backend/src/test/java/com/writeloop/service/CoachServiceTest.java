@@ -459,7 +459,6 @@ class CoachServiceTest {
                 prompt.id(),
                 "session-3",
                 1,
-                90,
                 false,
                 null,
                 "Good job",
@@ -470,10 +469,19 @@ class CoachServiceTest {
                         "I want to learn Spanish this year.",
                         "I want to learn Spanish this year."
                 )),
+                List.of(),
                 "I want to learn Spanish this year.",
                 List.of(),
                 "Model answer",
-                "Rewrite it with one more detail."
+                null,
+                "Rewrite it with one more detail.",
+                List.of(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
         AnswerAttemptEntity attempt = new AnswerAttemptEntity(
                 "session-3",
@@ -627,7 +635,6 @@ class CoachServiceTest {
                 prompt.id(),
                 "session-5",
                 1,
-                92,
                 false,
                 null,
                 "Nice point",
@@ -638,10 +645,19 @@ class CoachServiceTest {
                         "Online conversations feel less awkward now.",
                         "Online conversations feel less awkward now."
                 )),
+                List.of(),
                 "Online conversations feel less awkward now.",
                 List.of(),
                 "Model answer",
-                "Add one supporting detail."
+                null,
+                "Add one supporting detail.",
+                List.of(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
         );
         AnswerAttemptEntity attempt = new AnswerAttemptEntity(
                 "session-5",

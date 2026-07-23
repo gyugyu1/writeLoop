@@ -97,10 +97,14 @@ public record FeedbackCoachMissionDto(
     }
 
     public FeedbackCoachMoveDto toCoachMove() {
+        return toCoachMove(null);
+    }
+
+    public FeedbackCoachMoveDto toCoachMove(String targetSlot) {
         boolean hasComparisonPair = isComparisonMission(missionType)
                 && originalText != null
                 && revisedText != null;
-        boolean grammarCorrection = isGrammarCorrectionMission(missionType);
+        boolean directCorrection = isDirectCorrectionMission(missionType);
         return new FeedbackCoachMoveDto(
                 title,
                 missionType,
@@ -108,11 +112,12 @@ public record FeedbackCoachMissionDto(
                 hasComparisonPair ? originalText : null,
                 hasComparisonPair ? revisedText : null,
                 instructionKo,
-                grammarCorrection ? null : exampleEn,
-                grammarCorrection ? null : skeletonEn,
-                grammarCorrection ? null : skeletonKo,
-                grammarCorrection ? List.of() : suggestedPhrases,
-                null
+                directCorrection ? null : exampleEn,
+                directCorrection ? null : skeletonEn,
+                directCorrection ? null : skeletonKo,
+                directCorrection ? List.of() : suggestedPhrases,
+                null,
+                targetSlot
         );
     }
 
@@ -132,12 +137,12 @@ public record FeedbackCoachMissionDto(
         }
 
         return switch (normalized.toUpperCase()) {
-            case "MICRO_FIX", "GRAMMAR_FIX", "FIX_LOCAL_GRAMMAR", "FIX_BLOCKING_GRAMMAR", "EXPRESSION_POLISH" -> true;
+            case "MICRO_FIX", "STRUCTURE_FIX", "GRAMMAR_FIX", "FIX_LOCAL_GRAMMAR", "FIX_BLOCKING_GRAMMAR", "EXPRESSION_POLISH" -> true;
             default -> false;
         };
     }
 
-    private static boolean isGrammarCorrectionMission(String missionType) {
+    private static boolean isDirectCorrectionMission(String missionType) {
         String normalized = normalize(missionType);
         if (normalized == null) {
             return false;
@@ -145,6 +150,7 @@ public record FeedbackCoachMissionDto(
 
         return switch (normalized.toUpperCase()) {
             case "MICRO_FIX",
+                    "STRUCTURE_FIX",
                     "GRAMMAR",
                     "GRAMMAR_FIX",
                     "LOCAL_GRAMMAR",

@@ -46,6 +46,18 @@ public class PromptTaskProfileSlotEntity {
     @Column(name = "display_order", nullable = false)
     private Integer displayOrder;
 
+    @Column(name = "semantic_role_en", columnDefinition = "TEXT")
+    private String semanticRoleEn;
+
+    @Column(name = "satisfied_when_en", columnDefinition = "TEXT")
+    private String satisfiedWhenEn;
+
+    @Column(name = "semantic_role_ko", columnDefinition = "TEXT")
+    private String semanticRoleKo;
+
+    @Column(name = "satisfied_when_ko", columnDefinition = "TEXT")
+    private String satisfiedWhenKo;
+
     @Column(name = "is_active", nullable = false)
     private Boolean active;
 
@@ -56,10 +68,28 @@ public class PromptTaskProfileSlotEntity {
             Integer displayOrder,
             Boolean active
     ) {
+        this(profile, slot, slotRole, displayOrder, null, null, null, null, active);
+    }
+
+    public PromptTaskProfileSlotEntity(
+            PromptTaskProfileEntity profile,
+            PromptTaskSlotEntity slot,
+            String slotRole,
+            Integer displayOrder,
+            String semanticRoleEn,
+            String satisfiedWhenEn,
+            String semanticRoleKo,
+            String satisfiedWhenKo,
+            Boolean active
+    ) {
         attachProfile(profile);
         this.slot = slot;
         this.slotRole = slotRole;
         this.displayOrder = displayOrder;
+        this.semanticRoleEn = normalizeText(semanticRoleEn);
+        this.satisfiedWhenEn = normalizeText(satisfiedWhenEn);
+        this.semanticRoleKo = normalizeText(semanticRoleKo);
+        this.satisfiedWhenKo = normalizeText(satisfiedWhenKo);
         this.active = active;
     }
 
@@ -73,9 +103,30 @@ public class PromptTaskProfileSlotEntity {
             Integer displayOrder,
             Boolean active
     ) {
+        update(slot, slotRole, displayOrder, null, null, null, null, active);
+    }
+
+    public void update(
+            PromptTaskSlotEntity slot,
+            String slotRole,
+            Integer displayOrder,
+            String semanticRoleEn,
+            String satisfiedWhenEn,
+            String semanticRoleKo,
+            String satisfiedWhenKo,
+            Boolean active
+    ) {
         this.slot = slot;
         this.slotRole = slotRole;
         this.displayOrder = displayOrder;
+        this.semanticRoleEn = normalizeText(semanticRoleEn);
+        this.satisfiedWhenEn = normalizeText(satisfiedWhenEn);
+        this.semanticRoleKo = normalizeText(semanticRoleKo);
+        this.satisfiedWhenKo = normalizeText(satisfiedWhenKo);
         this.active = active;
+    }
+
+    private String normalizeText(String value) {
+        return value == null ? null : value.trim();
     }
 }

@@ -7,7 +7,6 @@ public record AnswerHistoryAttemptDto(
         Integer attemptNo,
         String attemptType,
         String answerText,
-        Integer score,
         String feedbackSummary,
         AnswerHistoryFeedbackDto feedback,
         java.util.List<AnswerHistoryUsedExpressionDto> usedExpressions,

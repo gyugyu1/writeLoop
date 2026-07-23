@@ -45,7 +45,7 @@ public class PromptSeedConfig {
             });
             seededHints().forEach(hint -> upsertSeedHint(promptHintRepository, promptHintItemSupport, entityManager, hint));
 
-            promptTaskMetaSupport.syncProfiles(promptRepository.findAllByOrderByDisplayOrderAsc());
+            promptTaskMetaSupport.backfillMissingProfiles(promptRepository.findAllByOrderByDisplayOrderAsc());
 
             promptRepository.findAllByOrderByDisplayOrderAsc().forEach(prompt -> {
                 if (!promptCoachProfileSupport.shouldRefreshSeededProfile(prompt)) {
@@ -72,6 +72,9 @@ public class PromptSeedConfig {
             backfillLegacyHintItemsFromRawContent(jdbcTemplate, promptHintItemSupport);
 
             entityManager.flush();
+            promptTaskMetaSupport.validateCompleteSlotContracts(
+                    promptRepository.findAllByOrderByDisplayOrderAsc()
+            );
         });
     }
 
@@ -81,27 +84,27 @@ public class PromptSeedConfig {
                         "prompt-a-1",
                         "Routine - After Dinner",
                         "I",
-                        "What do you usually do after dinner?",
-                        "저녁을 먹고 난 뒤에는 보통 무엇을 하나요?",
-                        "시간 순서와 자주 하는 행동을 함께 말해 보세요.",
+                        "What do you usually do after dinner, and why do you do it?",
+                        "저녁 식사 후에 보통 무엇을 하며, 왜 그 일을 하나요?",
+                        "저녁 식사 후에 하는 활동과 그 이유를 함께 말해 보세요.",
                         1
                 ),
                 prompt(
                         "prompt-a-2",
                         "Preference - Quick Meal",
                         "I",
-                        "When do you like to make a quick meal at home, and what do you usually choose?",
-                        "집에서 간단한 음식을 만들고 싶어지는 때는 언제이고, 보통 무엇을 선택하나요?",
-                        "상황을 먼저 말하고, 그때 고르는 음식과 이유를 덧붙여 보세요.",
+                        "When do you usually make a quick meal at home, and what meal do you make?",
+                        "집에서 간단한 식사를 주로 언제 만들고, 보통 어떤 식사를 만드나요?",
+                        "간단한 식사를 만드는 때와 음식 이름을 차례로 말해 보세요.",
                         2
                 ),
                 prompt(
                         "prompt-a-3",
                         "Routine - Weekend",
                         "I",
-                        "How do you usually spend your weekend?",
-                        "주말은 보통 어떻게 보내나요?",
-                        "장소나 함께 있는 사람도 함께 덧붙여 보세요.",
+                        "What do you usually do on weekends, and where do you usually do it?",
+                        "주말에는 보통 무엇을 하며, 주로 어디에서 하나요?",
+                        "주말에 하는 활동과 그 활동을 하는 장소를 함께 말해 보세요.",
                         3
                 ),
                 prompt(
@@ -190,20 +193,20 @@ public class PromptSeedConfig {
 
     private List<PromptHintEntity> seededHints() {
         return List.of(
-                hint("hint-a-1-1", "prompt-a-1", "STARTER", "\"After dinner, I usually...\"로 시작해 보세요.", 1),
+                hint("hint-a-1-1", "prompt-a-1", "STARTER", "\"After dinner, I usually ... because ...\"로 시작해 보세요.", 1),
                 hint("hint-a-1-2", "prompt-a-1", "VOCAB_WORD", "활용 단어: relax", 2),
                 hint("hint-a-1-3", "prompt-a-1", "VOCAB_PHRASE", "활용 표현: after dinner, in the evening, before bed, most days, right after I eat, wash the dishes, watch videos, take a walk, get ready for bed", 3),
-                hint("hint-a-1-4", "prompt-a-1", "STRUCTURE", "저녁을 먹은 뒤 하는 일 2개와 하루를 마무리하는 행동을 순서대로 이어 보세요.", 4),
+                hint("hint-a-1-4", "prompt-a-1", "STRUCTURE", "저녁 식사 후에 하는 활동을 말한 뒤, 그 활동을 하는 구체적인 이유를 이어 보세요.", 4),
 
-                hint("hint-a-2-1", "prompt-a-2", "STARTER", "\"When I need a quick meal at home, I usually choose...\"로 시작해 보세요.", 1),
+                hint("hint-a-2-1", "prompt-a-2", "STARTER", "\"When I need a quick meal at home, I usually make...\"로 시작해 보세요.", 1),
                 hint("hint-a-2-2", "prompt-a-2", "VOCAB_WORD", "활용 단어: quick, simple, warm, filling, delicious", 2),
                 hint("hint-a-2-3", "prompt-a-2", "VOCAB_PHRASE", "활용 표현: my favorite quick meal, easy to make, ready in minutes, when I am busy, it tastes", 3),
                 hint("hint-a-2-4", "prompt-a-2", "DETAIL", "맛, 느낌, 자주 먹는 상황 중 2가지를 넣으면 답변이 더 자연스러워져요.", 4),
 
-                hint("hint-a-3-1", "prompt-a-3", "STARTER", "\"On weekends, I usually...\"로 시작해 보세요.", 1),
+                hint("hint-a-3-1", "prompt-a-3", "STARTER", "\"On weekends, I usually ... at ...\"로 시작해 보세요.", 1),
                 hint("hint-a-3-2", "prompt-a-3", "VOCAB_WORD", "활용 단어: rest, exercise, study", 2),
                 hint("hint-a-3-3", "prompt-a-3", "VOCAB_PHRASE", "활용 표현: on weekends, in the morning, in the afternoon, with my family, most of the time, meet friends, go out", 3),
-                hint("hint-a-3-4", "prompt-a-3", "STRUCTURE", "주말에 하는 활동, 함께하는 사람, 자주 가는 장소를 순서대로 이어 보세요.", 4),
+                hint("hint-a-3-4", "prompt-a-3", "STRUCTURE", "주말에 하는 활동을 말한 뒤, 그 활동을 하는 장소를 이어 보세요.", 4),
 
                 hint("hint-b-1-1", "prompt-b-1", "STARTER", "\"One challenge I often face at work or school is...\"로 시작해 보세요.", 1),
                 hint("hint-b-1-2", "prompt-b-1", "VOCAB_WORD", "활용 단어: deadline, pressure, teamwork, schedule, solution", 2),

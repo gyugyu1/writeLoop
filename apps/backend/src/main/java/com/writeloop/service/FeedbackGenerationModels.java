@@ -1,342 +1,360 @@
 package com.writeloop.service;
 
 import com.writeloop.dto.CoachExpressionUsageDto;
-import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackCoachMissionDto;
-import com.writeloop.dto.FeedbackFocusCardDto;
-import com.writeloop.dto.FeedbackModelAnswerVariantDto;
-import com.writeloop.dto.FeedbackNextStepPracticeDto;
-import com.writeloop.dto.FeedbackPrimaryFixDto;
-import com.writeloop.dto.FeedbackRewriteSuggestionDto;
 import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
-import com.writeloop.dto.GrammarFeedbackItemDto;
+import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.RefinementExpressionDto;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
-enum ExpansionBudget {
-    NONE,
-    ONE_DETAIL,
-    ONE_SUPPORT_SENTENCE
+enum TopicRelevance {
+    ON_TOPIC,
+    OFF_TOPIC;
+
+    static TopicRelevance fromCode(String value) {
+        if (value == null || value.isBlank()) {
+            return OFF_TOPIC;
+        }
+        try {
+            return valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return OFF_TOPIC;
+        }
+    }
 }
 
-enum MeaningClarity {
-    CLEAR,
-    PARTLY_CLEAR,
-    BLOCKED
+enum StructureStatus {
+    COMPLETE,
+    FRAGMENT;
+
+    static StructureStatus fromCode(String value) {
+        if (value == null || value.isBlank()) {
+            return FRAGMENT;
+        }
+        try {
+            return valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return FRAGMENT;
+        }
+    }
 }
 
 enum GrammarImpact {
     NONE,
-    POLISH,
     LOCAL,
-    BLOCKING
-}
+    BLOCKING;
 
-enum ContentOpportunity {
-    NONE,
-    REASON,
-    DETAIL,
-    EXAMPLE,
-    SITUATION,
-    FEELING,
-    RESULT
+    static GrammarImpact fromCode(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
 }
 
 record DiagnosedGrammarIssue(
+        GrammarImpact impact,
         String code,
-        String span,
-        String correction,
+        String originalText,
+        String revisedText,
         String reasonKo,
-        boolean blocksMeaning,
-        GrammarSeverity severity
+        String instructionKo
 ) {
+    DiagnosedGrammarIssue(
+            String impact,
+            String code,
+            String originalText,
+            String revisedText,
+            String reasonKo,
+            String instructionKo
+    ) {
+        this(GrammarImpact.fromCode(impact), code, originalText, revisedText, reasonKo, instructionKo);
+    }
+
     DiagnosedGrammarIssue {
-        code = code == null ? "" : code.trim();
-        span = span == null ? "" : span.trim();
-        correction = correction == null ? "" : correction.trim();
-        reasonKo = reasonKo == null ? "" : reasonKo.trim();
-        severity = severity == null ? GrammarSeverity.NONE : severity;
+        code = normalizeCode(code);
+        originalText = normalize(originalText);
+        revisedText = normalize(revisedText);
+        reasonKo = normalize(reasonKo);
+        instructionKo = normalize(instructionKo);
+    }
+
+    boolean isUsableFor(String learnerAnswer) {
+        if (originalText == null
+                || revisedText == null
+                || originalText.equals(revisedText)
+                || reasonKo == null
+                || instructionKo == null) {
+            return false;
+        }
+        return learnerAnswer != null && learnerAnswer.contains(originalText);
+    }
+
+    private static String normalizeCode(String value) {
+        String normalized = normalize(value);
+        return normalized == null ? "GRAMMAR" : normalized.toUpperCase(Locale.ROOT).replace('-', '_');
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+}
+
+record StructureRepair(
+        String originalText,
+        String correctedAnswer,
+        String reasonKo,
+        String instructionKo
+) {
+    StructureRepair {
+        originalText = normalize(originalText);
+        correctedAnswer = normalize(correctedAnswer);
+        reasonKo = normalize(reasonKo);
+        instructionKo = normalize(instructionKo);
+    }
+
+    boolean isUsableFor(String learnerAnswer) {
+        if (originalText == null
+                || correctedAnswer == null
+                || originalText.equals(correctedAnswer)
+                || reasonKo == null
+                || instructionKo == null) {
+            return false;
+        }
+        return learnerAnswer != null && learnerAnswer.trim().equals(originalText);
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+}
+
+record StructureAssessment(
+        StructureStatus status,
+        List<StructureRepair> repair
+) {
+    StructureAssessment(String status, List<StructureRepair> repair) {
+        this(StructureStatus.fromCode(status), repair);
+    }
+
+    StructureAssessment {
+        status = status == null ? StructureStatus.FRAGMENT : status;
+        repair = repair == null
+                ? List.of()
+                : repair.stream().filter(item -> item != null).toList();
+    }
+}
+
+record TopicAssessment(
+        TopicRelevance status,
+        String reasonKo
+) {
+    TopicAssessment {
+        status = status == null ? TopicRelevance.OFF_TOPIC : status;
+        reasonKo = reasonKo == null || reasonKo.isBlank() ? null : reasonKo.trim();
     }
 }
 
 record FeedbackDiagnosisResult(
-        int score,
-        AnswerBand answerBand,
-        TaskCompletion taskCompletion,
-        boolean onTopic,
-        boolean finishable,
-        MeaningClarity meaningClarity,
-        GrammarImpact grammarImpact,
-        ContentOpportunity contentOpportunity,
-        String selectedMissionReason,
-        GrammarSeverity grammarSeverity,
-        List<DiagnosedGrammarIssue> grammarIssues,
-        String minimalCorrection,
-        String primaryIssueCode,
-        String secondaryIssueCode,
-        RewriteTarget rewriteTarget,
-        ExpansionBudget expansionBudget,
-        List<String> regressionSensitiveFacts
+        TopicAssessment topicAssessment,
+        StructureAssessment structureAssessment,
+        List<DiagnosedGrammarIssue> grammarIssues
 ) {
-    FeedbackDiagnosisResult(
-            int score,
-            AnswerBand answerBand,
-            TaskCompletion taskCompletion,
-            boolean onTopic,
-            boolean finishable,
-            GrammarSeverity grammarSeverity,
-            List<DiagnosedGrammarIssue> grammarIssues,
-            String minimalCorrection,
-            String primaryIssueCode,
-            String secondaryIssueCode,
-            RewriteTarget rewriteTarget,
-            ExpansionBudget expansionBudget,
-            List<String> regressionSensitiveFacts
-    ) {
-        this(
-                score,
-                answerBand,
-                taskCompletion,
-                onTopic,
-                finishable,
-                inferMeaningClarity(onTopic, answerBand, taskCompletion, grammarSeverity),
-                inferGrammarImpact(answerBand, grammarSeverity, grammarIssues),
-                inferContentOpportunity(primaryIssueCode, rewriteTarget, expansionBudget, answerBand, taskCompletion),
-                null,
-                grammarSeverity,
-                grammarIssues,
-                minimalCorrection,
-                primaryIssueCode,
-                secondaryIssueCode,
-                rewriteTarget,
-                expansionBudget,
-                regressionSensitiveFacts
-        );
-    }
-
     FeedbackDiagnosisResult {
-        score = Math.max(0, Math.min(100, score));
-        answerBand = answerBand == null ? AnswerBand.SHORT_BUT_VALID : answerBand;
-        taskCompletion = taskCompletion == null ? TaskCompletion.PARTIAL : taskCompletion;
-        meaningClarity = meaningClarity == null ? inferMeaningClarity(onTopic, answerBand, taskCompletion, grammarSeverity) : meaningClarity;
-        grammarImpact = grammarImpact == null ? inferGrammarImpact(answerBand, grammarSeverity, grammarIssues) : grammarImpact;
-        contentOpportunity = contentOpportunity == null
-                ? inferContentOpportunity(primaryIssueCode, rewriteTarget, expansionBudget, answerBand, taskCompletion)
-                : contentOpportunity;
-        selectedMissionReason = selectedMissionReason == null || selectedMissionReason.isBlank()
-                ? null
-                : selectedMissionReason.trim();
-        grammarSeverity = grammarSeverity == null ? GrammarSeverity.NONE : grammarSeverity;
-        grammarIssues = grammarIssues == null ? List.of() : List.copyOf(grammarIssues);
-        minimalCorrection = minimalCorrection == null || minimalCorrection.isBlank()
-                ? null
-                : minimalCorrection.trim();
-        primaryIssueCode = primaryIssueCode == null ? "" : primaryIssueCode.trim();
-        secondaryIssueCode = secondaryIssueCode == null || secondaryIssueCode.isBlank()
-                ? null
-                : secondaryIssueCode.trim();
-        expansionBudget = expansionBudget == null ? ExpansionBudget.NONE : expansionBudget;
-        regressionSensitiveFacts = regressionSensitiveFacts == null ? List.of() : List.copyOf(regressionSensitiveFacts);
+        topicAssessment = topicAssessment == null
+                ? new TopicAssessment(TopicRelevance.OFF_TOPIC, null)
+                : topicAssessment;
+        structureAssessment = structureAssessment == null
+                ? new StructureAssessment(StructureStatus.FRAGMENT, List.of())
+                : structureAssessment;
+        grammarIssues = grammarIssues == null
+                ? List.of()
+                : grammarIssues.stream().filter(issue -> issue != null).limit(3).toList();
     }
 
-    private static MeaningClarity inferMeaningClarity(
-            boolean onTopic,
-            AnswerBand answerBand,
-            TaskCompletion taskCompletion,
-            GrammarSeverity grammarSeverity
-    ) {
-        if (!onTopic || answerBand == AnswerBand.OFF_TOPIC || taskCompletion == TaskCompletion.MISS) {
-            return MeaningClarity.BLOCKED;
-        }
-        if (answerBand == AnswerBand.GRAMMAR_BLOCKING || grammarSeverity == GrammarSeverity.MAJOR) {
-            return MeaningClarity.PARTLY_CLEAR;
-        }
-        return MeaningClarity.CLEAR;
+    TopicRelevance topicRelevance() {
+        return topicAssessment.status();
     }
 
-    private static GrammarImpact inferGrammarImpact(
-            AnswerBand answerBand,
-            GrammarSeverity grammarSeverity,
-            List<DiagnosedGrammarIssue> grammarIssues
-    ) {
-        if (answerBand == AnswerBand.GRAMMAR_BLOCKING || grammarSeverity == GrammarSeverity.MAJOR) {
-            return GrammarImpact.BLOCKING;
+    GrammarImpact strongestGrammarImpact() {
+        GrammarImpact strongest = GrammarImpact.NONE;
+        for (DiagnosedGrammarIssue issue : grammarIssues) {
+            if (issue.impact() != null && issue.impact().ordinal() > strongest.ordinal()) {
+                strongest = issue.impact();
+            }
         }
-        boolean hasMeaningBlockingIssue = grammarIssues != null
-                && grammarIssues.stream().anyMatch(issue -> issue != null && issue.blocksMeaning());
-        if (hasMeaningBlockingIssue) {
-            return GrammarImpact.BLOCKING;
-        }
-        if (grammarSeverity == GrammarSeverity.MODERATE) {
-            return GrammarImpact.LOCAL;
-        }
-        if (grammarSeverity == GrammarSeverity.MINOR) {
-            return GrammarImpact.POLISH;
-        }
-        return GrammarImpact.NONE;
+        return strongest;
     }
 
-    private static ContentOpportunity inferContentOpportunity(
-            String primaryIssueCode,
-            RewriteTarget rewriteTarget,
-            ExpansionBudget expansionBudget,
-            AnswerBand answerBand,
-            TaskCompletion taskCompletion
-    ) {
-        String action = rewriteTarget == null ? null : rewriteTarget.action();
-        String code = action == null || action.isBlank() ? primaryIssueCode : action;
-        if (code != null) {
-            return switch (code.trim().toUpperCase()) {
-                case "ADD_REASON" -> ContentOpportunity.REASON;
-                case "ADD_EXAMPLE" -> ContentOpportunity.EXAMPLE;
-                case "ADD_SITUATION" -> ContentOpportunity.SITUATION;
-                case "ADD_FEELING" -> ContentOpportunity.FEELING;
-                case "ADD_RESULT" -> ContentOpportunity.RESULT;
-                case "ADD_DETAIL", "MAKE_IT_MORE_SPECIFIC" -> ContentOpportunity.DETAIL;
-                default -> fallbackContentOpportunity(expansionBudget, answerBand, taskCompletion);
-            };
-        }
-        return fallbackContentOpportunity(expansionBudget, answerBand, taskCompletion);
+}
+
+enum SlotAssessmentStatus {
+    SATISFIED,
+    GENERIC,
+    MISSING
+}
+
+record SlotAssessmentValue(
+        String evidence,
+        List<SlotFeedbackSupport> support
+) {
+    SlotAssessmentValue {
+        evidence = normalize(evidence);
+        support = support == null
+                ? List.of()
+                : support.stream().filter(item -> item != null).toList();
     }
 
-    private static ContentOpportunity fallbackContentOpportunity(
-            ExpansionBudget expansionBudget,
-            AnswerBand answerBand,
-            TaskCompletion taskCompletion
-    ) {
-        if (expansionBudget == ExpansionBudget.ONE_SUPPORT_SENTENCE || expansionBudget == ExpansionBudget.ONE_DETAIL) {
-            return ContentOpportunity.DETAIL;
+    SlotAssessmentStatus derivedStatus() {
+        if (evidence != null && support.isEmpty()) {
+            return SlotAssessmentStatus.SATISFIED;
         }
-        if (answerBand == AnswerBand.CONTENT_THIN || taskCompletion == TaskCompletion.PARTIAL) {
-            return ContentOpportunity.DETAIL;
+        if (evidence != null && support.size() == 1) {
+            return SlotAssessmentStatus.GENERIC;
         }
-        return ContentOpportunity.NONE;
+        if (evidence == null && support.size() == 1) {
+            return SlotAssessmentStatus.MISSING;
+        }
+        return null;
+    }
+
+    boolean isSatisfied() {
+        return derivedStatus() == SlotAssessmentStatus.SATISFIED;
+    }
+
+    private static String normalize(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
     }
 }
 
-record RefinementCard(
-        String expression,
-        String guidanceKo,
+record SlotFeedbackSupport(
+        String title,
+        String whyKo,
+        String instructionKo,
         String exampleEn,
-        String exampleKo,
-        String meaningKo
+        String skeletonEn,
+        String skeletonKo,
+        List<FeedbackSuggestedPhraseDto> suggestedPhrases,
+        String targetHintKo
 ) {
-    RefinementCard {
-        expression = expression == null ? "" : expression.trim();
-        guidanceKo = guidanceKo == null ? "" : guidanceKo.trim();
-        exampleEn = exampleEn == null ? "" : exampleEn.trim();
-        exampleKo = blankToNull(exampleKo);
-        meaningKo = blankToNull(meaningKo);
+    SlotFeedbackSupport {
+        title = normalize(title);
+        whyKo = normalize(whyKo);
+        instructionKo = normalize(instructionKo);
+        exampleEn = normalize(exampleEn);
+        skeletonEn = normalize(skeletonEn);
+        skeletonKo = normalize(skeletonKo);
+        suggestedPhrases = suggestedPhrases == null
+                ? List.of()
+                : suggestedPhrases.stream()
+                .filter(item -> item != null && item.phrase() != null)
+                .distinct()
+                .limit(4)
+                .toList();
+        targetHintKo = normalize(targetHintKo);
     }
 
-    static RefinementCard fromDto(RefinementExpressionDto dto) {
-        if (dto == null) {
-            return null;
-        }
-        return new RefinementCard(
-                dto.expression(),
-                dto.guidanceKo(),
-                dto.exampleEn(),
-                dto.exampleKo(),
-                dto.meaningKo()
-        );
+    boolean isComplete() {
+        return title != null
+                && whyKo != null
+                && instructionKo != null
+                && exampleEn != null
+                && skeletonEn != null
+                && skeletonKo != null
+                && suggestedPhrases.size() >= 2
+                && targetHintKo != null;
     }
 
-    RefinementExpressionDto toDto() {
-        return new RefinementExpressionDto(
-                expression,
-                guidanceKo,
+    FeedbackCoachMissionDto toCoachMission(String missionType) {
+        return new FeedbackCoachMissionDto(
+                missionType,
+                title,
+                null,
+                null,
+                whyKo,
+                instructionKo,
                 exampleEn,
-                exampleKo,
-                meaningKo
+                skeletonEn,
+                skeletonKo,
+                suggestedPhrases,
+                skeletonEn,
+                targetHintKo,
+                null
         );
     }
 
-    private static String blankToNull(String value) {
+    FeedbackSecondaryLearningPointDto toFixPoint(String slot) {
+        return new FeedbackSecondaryLearningPointDto(
+                slot,
+                title,
+                null,
+                whyKo,
+                null,
+                null,
+                null,
+                instructionKo,
+                exampleEn,
+                null
+        );
+    }
+
+    private static String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
 }
 
-record MissionMinorFix(
-        String originalText,
-        String revisedText,
-        String reasonKo
-) {
-    MissionMinorFix {
-        originalText = blankToNull(originalText);
-        revisedText = blankToNull(revisedText);
-        reasonKo = blankToNull(reasonKo);
-    }
+enum MissionKind {
+    SLOT,
+    TASK_RESET,
+    STRUCTURE_FIX,
+    GRAMMAR_FIX,
+    COMPLETE
+}
 
-    private static String blankToNull(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
+record SlotAssessments(
+        Map<String, SlotAssessmentValue> values
+) {
+    SlotAssessments {
+        Map<String, SlotAssessmentValue> normalized = new LinkedHashMap<>();
+        if (values != null) {
+            values.forEach((slot, assessment) -> {
+                if (slot != null && assessment != null) {
+                    normalized.put(slot, assessment);
+                }
+            });
+        }
+        values = Collections.unmodifiableMap(normalized);
     }
 }
 
 record MissionDecision(
-        String chosenType,
-        String grammarPriority,
-        String contentNeed,
+        MissionKind missionKind,
         List<String> presentSlots,
         List<String> missingSlots,
         String chosenSlot,
-        String whyChosenKo,
-        String whyNotGrammarFirstKo,
-        String addOnExampleEn,
-        String addOnPlacementKo,
-        List<MissionMinorFix> minorFixes
+        Map<String, SlotAssessmentValue> slotAssessments
 ) {
-    MissionDecision(
-            String chosenType,
-            String grammarPriority,
-            String contentNeed,
-            String whyChosenKo,
-            String whyNotGrammarFirstKo,
-            String addOnExampleEn,
-            String addOnPlacementKo,
-            List<MissionMinorFix> minorFixes
-    ) {
-        this(
-                chosenType,
-                grammarPriority,
-                contentNeed,
-                List.of(),
-                List.of(),
-                null,
-                whyChosenKo,
-                whyNotGrammarFirstKo,
-                addOnExampleEn,
-                addOnPlacementKo,
-                minorFixes
-        );
-    }
-
     MissionDecision {
-        chosenType = normalizeCode(chosenType);
-        grammarPriority = normalizeCode(grammarPriority);
-        contentNeed = normalizeCode(contentNeed);
         presentSlots = normalizeSlots(presentSlots);
         missingSlots = normalizeSlots(missingSlots);
         chosenSlot = normalizeCode(chosenSlot);
-        whyChosenKo = blankToNull(whyChosenKo);
-        whyNotGrammarFirstKo = blankToNull(whyNotGrammarFirstKo);
-        addOnExampleEn = blankToNull(addOnExampleEn);
-        addOnPlacementKo = blankToNull(addOnPlacementKo);
-        minorFixes = minorFixes == null ? List.of() : List.copyOf(minorFixes);
+        slotAssessments = slotAssessments == null
+                ? Map.of()
+                : Collections.unmodifiableMap(new LinkedHashMap<>(slotAssessments));
     }
 
-    private static String normalizeCode(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return value.trim()
-                .toUpperCase()
-                .replace('-', '_')
-                .replaceAll("\\s+", "_")
-                .replaceAll("[^A-Z_]", "_")
-                .replaceAll("_+", "_")
-                .replaceAll("^_+|_+$", "");
+    boolean isComplete() {
+        return missionKind == MissionKind.COMPLETE;
     }
 
     private static List<String> normalizeSlots(List<String> values) {
@@ -345,440 +363,68 @@ record MissionDecision(
         }
         return values.stream()
                 .map(MissionDecision::normalizeCode)
-                .filter(value -> value != null && !value.isBlank())
+                .filter(value -> value != null)
                 .distinct()
                 .toList();
     }
 
-    private static String blankToNull(String value) {
+    private static String normalizeCode(String value) {
+        return value == null || value.isBlank()
+                ? null
+                : value.trim().toUpperCase(Locale.ROOT).replace('-', '_').replaceAll("\\s+", "_");
+    }
+}
+
+record GeneratedContent(
+        List<String> strengths,
+        List<RefinementExpressionDto> refinementExpressions,
+        List<CoachExpressionUsageDto> usedExpressions,
+        String modelAnswer,
+        String modelAnswerKo
+) {
+    GeneratedContent {
+        strengths = strengths == null ? List.of() : strengths.stream().filter(value -> value != null).limit(1).toList();
+        refinementExpressions = refinementExpressions == null
+                ? List.of()
+                : refinementExpressions.stream().filter(value -> value != null).limit(3).toList();
+        usedExpressions = usedExpressions == null
+                ? List.of()
+                : usedExpressions.stream().filter(value -> value != null).limit(3).toList();
+        modelAnswer = normalize(modelAnswer);
+        modelAnswerKo = normalize(modelAnswerKo);
+    }
+
+    private static String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
 }
 
 record GeneratedSections(
-        String summary,
         List<String> strengths,
-        FeedbackFocusCardDto focusCard,
-        FeedbackPrimaryFixDto primaryFix,
-        List<GrammarFeedbackItemDto> grammarFeedback,
-        List<CorrectionDto> corrections,
-        List<RefinementCard> refinementExpressions,
-        String rewriteGuide,
+        List<RefinementExpressionDto> refinementExpressions,
+        List<CoachExpressionUsageDto> usedExpressions,
         String modelAnswer,
         String modelAnswerKo,
-        List<FeedbackModelAnswerVariantDto> modelAnswerVariants,
-        List<CoachExpressionUsageDto> usedExpressions,
-        List<FeedbackSecondaryLearningPointDto> fixPoints,
-        List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-        FeedbackNextStepPracticeDto nextStepPractice,
-        List<FeedbackRewriteSuggestionDto> rewriteSuggestions,
+        MissionDecision missionDecision,
         FeedbackCoachMissionDto coachMission,
-        MissionDecision missionDecision
+        List<FeedbackSecondaryLearningPointDto> fixPoints
 ) {
-    GeneratedSections(
-            String summary,
-            List<String> strengths,
-            FeedbackFocusCardDto focusCard,
-            FeedbackPrimaryFixDto primaryFix,
-            List<GrammarFeedbackItemDto> grammarFeedback,
-            List<CorrectionDto> corrections,
-            List<RefinementCard> refinementExpressions,
-            String rewriteGuide,
-            String modelAnswer,
-            String modelAnswerKo,
-            List<CoachExpressionUsageDto> usedExpressions,
-            List<FeedbackSecondaryLearningPointDto> fixPoints,
-            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            FeedbackNextStepPracticeDto nextStepPractice,
-            List<FeedbackRewriteSuggestionDto> rewriteSuggestions
-    ) {
-        this(
-                summary,
-                strengths,
-                focusCard,
-                primaryFix,
-                grammarFeedback,
-                corrections,
-                refinementExpressions,
-                rewriteGuide,
-                modelAnswer,
-                modelAnswerKo,
-                List.of(),
-                usedExpressions,
-                fixPoints,
-                secondaryLearningPoints,
-                nextStepPractice,
-                rewriteSuggestions,
-                null,
-                null
-        );
-    }
-
-    GeneratedSections(
-            String summary,
-            List<String> strengths,
-            FeedbackPrimaryFixDto primaryFix,
-            List<GrammarFeedbackItemDto> grammarFeedback,
-            List<CorrectionDto> corrections,
-            List<RefinementCard> refinementExpressions,
-            String rewriteGuide,
-            String modelAnswer,
-            String modelAnswerKo,
-            List<CoachExpressionUsageDto> usedExpressions
-    ) {
-        this(
-                summary,
-                strengths,
-                null,
-                primaryFix,
-                grammarFeedback,
-                corrections,
-                refinementExpressions,
-                rewriteGuide,
-                modelAnswer,
-                modelAnswerKo,
-                List.of(),
-                usedExpressions,
-                List.of(),
-                List.of(),
-                null,
-                List.of(),
-                null,
-                null
-        );
-    }
-
-    GeneratedSections(
-            String summary,
-            List<String> strengths,
-            FeedbackFocusCardDto focusCard,
-            FeedbackPrimaryFixDto primaryFix,
-            List<GrammarFeedbackItemDto> grammarFeedback,
-            List<CorrectionDto> corrections,
-            List<RefinementCard> refinementExpressions,
-            String rewriteGuide,
-            String modelAnswer,
-            String modelAnswerKo,
-            List<CoachExpressionUsageDto> usedExpressions
-    ) {
-        this(
-                summary,
-                strengths,
-                focusCard,
-                primaryFix,
-                grammarFeedback,
-                corrections,
-                refinementExpressions,
-                rewriteGuide,
-                modelAnswer,
-                modelAnswerKo,
-                List.of(),
-                usedExpressions,
-                List.of(),
-                List.of(),
-                null,
-                List.of(),
-                null,
-                null
-        );
-    }
-
-    GeneratedSections(
-            String summary,
-            List<String> strengths,
-            List<GrammarFeedbackItemDto> grammarFeedback,
-            List<CorrectionDto> corrections,
-            List<RefinementCard> refinementExpressions,
-            String rewriteGuide,
-            String modelAnswer,
-            String modelAnswerKo,
-            List<CoachExpressionUsageDto> usedExpressions
-    ) {
-        this(
-                summary,
-                strengths,
-                null,
-                null,
-                grammarFeedback,
-                corrections,
-                refinementExpressions,
-                rewriteGuide,
-                modelAnswer,
-                modelAnswerKo,
-                List.of(),
-                usedExpressions,
-                List.of(),
-                List.of(),
-                null,
-                List.of(),
-                null,
-                null
-            );
-    }
-
     GeneratedSections {
-        summary = blankToNull(summary);
-        strengths = strengths == null ? List.of() : List.copyOf(strengths);
-        focusCard = focusCard == null ? null : new FeedbackFocusCardDto(
-                focusCard.title(),
-                focusCard.headline(),
-                focusCard.supportText()
-        );
-        primaryFix = primaryFix == null ? null : new FeedbackPrimaryFixDto(
-                primaryFix.title(),
-                primaryFix.instruction(),
-                primaryFix.originalText(),
-                primaryFix.revisedText(),
-                primaryFix.reasonKo()
-        );
-        grammarFeedback = grammarFeedback == null ? List.of() : List.copyOf(grammarFeedback);
-        corrections = corrections == null ? List.of() : List.copyOf(corrections);
-        refinementExpressions = refinementExpressions == null ? List.of() : List.copyOf(refinementExpressions);
-        rewriteGuide = blankToNull(rewriteGuide);
-        modelAnswer = blankToNull(modelAnswer);
-        modelAnswerKo = blankToNull(modelAnswerKo);
-        modelAnswerVariants = modelAnswerVariants == null ? List.of() : List.copyOf(modelAnswerVariants);
-        usedExpressions = usedExpressions == null ? List.of() : List.copyOf(usedExpressions);
-        fixPoints = fixPoints == null ? List.of() : List.copyOf(fixPoints);
-        secondaryLearningPoints = secondaryLearningPoints == null ? List.of() : List.copyOf(secondaryLearningPoints);
-        nextStepPractice = nextStepPractice == null ? null : new FeedbackNextStepPracticeDto(
-                nextStepPractice.kind(),
-                nextStepPractice.title(),
-                nextStepPractice.headline(),
-                nextStepPractice.supportText(),
-                nextStepPractice.originalText(),
-                nextStepPractice.revisedText(),
-                nextStepPractice.meaningKo(),
-                nextStepPractice.guidanceKo(),
-                nextStepPractice.exampleEn(),
-                nextStepPractice.exampleKo(),
-                nextStepPractice.ctaLabel(),
-                nextStepPractice.optionalTone()
-        );
-        rewriteSuggestions = rewriteSuggestions == null ? List.of() : List.copyOf(rewriteSuggestions);
-        coachMission = coachMission == null ? null : new FeedbackCoachMissionDto(
-                coachMission.missionType(),
-                coachMission.title(),
-                coachMission.originalText(),
-                coachMission.revisedText(),
-                coachMission.whyKo(),
-                coachMission.instructionKo(),
-                coachMission.exampleEn(),
-                coachMission.skeletonEn(),
-                coachMission.skeletonKo(),
-                coachMission.suggestedPhrases(),
-                coachMission.placeholderEn(),
-                coachMission.targetHintKo(),
-                coachMission.successCheckKo()
-        );
-        missionDecision = missionDecision == null ? null : new MissionDecision(
-                missionDecision.chosenType(),
-                missionDecision.grammarPriority(),
-                missionDecision.contentNeed(),
-                missionDecision.presentSlots(),
-                missionDecision.missingSlots(),
-                missionDecision.chosenSlot(),
-                missionDecision.whyChosenKo(),
-                missionDecision.whyNotGrammarFirstKo(),
-                missionDecision.addOnExampleEn(),
-                missionDecision.addOnPlacementKo(),
-                missionDecision.minorFixes()
-        );
+        strengths = strengths == null ? List.of() : strengths.stream().filter(value -> value != null).limit(1).toList();
+        refinementExpressions = refinementExpressions == null
+                ? List.of()
+                : refinementExpressions.stream().filter(value -> value != null).limit(3).toList();
+        usedExpressions = usedExpressions == null
+                ? List.of()
+                : usedExpressions.stream().filter(value -> value != null).limit(3).toList();
+        modelAnswer = normalize(modelAnswer);
+        modelAnswerKo = normalize(modelAnswerKo);
+        fixPoints = fixPoints == null
+                ? List.of()
+                : fixPoints.stream().filter(value -> value != null).limit(3).toList();
     }
 
-    GeneratedSections(
-            String summary,
-            List<String> strengths,
-            FeedbackFocusCardDto focusCard,
-            FeedbackPrimaryFixDto primaryFix,
-            List<GrammarFeedbackItemDto> grammarFeedback,
-            List<CorrectionDto> corrections,
-            List<RefinementCard> refinementExpressions,
-            String rewriteGuide,
-            String modelAnswer,
-            String modelAnswerKo,
-            List<CoachExpressionUsageDto> usedExpressions,
-            List<FeedbackSecondaryLearningPointDto> fixPoints,
-            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            FeedbackNextStepPracticeDto nextStepPractice
-    ) {
-        this(
-                summary,
-                strengths,
-                focusCard,
-                primaryFix,
-                grammarFeedback,
-                corrections,
-                refinementExpressions,
-                rewriteGuide,
-                modelAnswer,
-                modelAnswerKo,
-                List.of(),
-                usedExpressions,
-                fixPoints,
-                secondaryLearningPoints,
-                nextStepPractice,
-                List.of(),
-                null,
-                null
-        );
-    }
-
-    GeneratedSections(
-            String summary,
-            List<String> strengths,
-            FeedbackFocusCardDto focusCard,
-            FeedbackPrimaryFixDto primaryFix,
-            List<GrammarFeedbackItemDto> grammarFeedback,
-            List<CorrectionDto> corrections,
-            List<RefinementCard> refinementExpressions,
-            String rewriteGuide,
-            String modelAnswer,
-            String modelAnswerKo,
-            List<CoachExpressionUsageDto> usedExpressions,
-            List<FeedbackSecondaryLearningPointDto> secondaryLearningPoints,
-            FeedbackNextStepPracticeDto nextStepPractice
-    ) {
-        this(
-                summary,
-                strengths,
-                focusCard,
-                primaryFix,
-                grammarFeedback,
-                corrections,
-                refinementExpressions,
-                rewriteGuide,
-                modelAnswer,
-                modelAnswerKo,
-                List.of(),
-                usedExpressions,
-                List.of(),
-                secondaryLearningPoints,
-                nextStepPractice,
-                List.of(),
-                null,
-                null
-        );
-    }
-
-    GeneratedSections merge(GeneratedSections override) {
-        if (override == null) {
-            return this;
-        }
-        return new GeneratedSections(
-                override.summary != null ? override.summary : summary,
-                !override.strengths.isEmpty() ? override.strengths : strengths,
-                override.focusCard != null ? override.focusCard : focusCard,
-                override.primaryFix != null ? override.primaryFix : primaryFix,
-                !override.grammarFeedback.isEmpty() ? override.grammarFeedback : grammarFeedback,
-                !override.corrections.isEmpty() ? override.corrections : corrections,
-                !override.refinementExpressions.isEmpty() ? override.refinementExpressions : refinementExpressions,
-                override.rewriteGuide != null ? override.rewriteGuide : rewriteGuide,
-                override.modelAnswer != null ? override.modelAnswer : modelAnswer,
-                override.modelAnswerKo != null ? override.modelAnswerKo : modelAnswerKo,
-                !override.modelAnswerVariants.isEmpty() ? override.modelAnswerVariants : modelAnswerVariants,
-                !override.usedExpressions.isEmpty() ? override.usedExpressions : usedExpressions,
-                !override.fixPoints.isEmpty() ? override.fixPoints : fixPoints,
-                !override.secondaryLearningPoints.isEmpty() ? override.secondaryLearningPoints : secondaryLearningPoints,
-                override.nextStepPractice != null ? override.nextStepPractice : nextStepPractice,
-                !override.rewriteSuggestions.isEmpty() ? override.rewriteSuggestions : rewriteSuggestions,
-                override.coachMission != null ? override.coachMission : coachMission,
-                override.missionDecision != null ? override.missionDecision : missionDecision
-        );
-    }
-
-    private static String blankToNull(String value) {
+    private static String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
-    }
-}
-
-enum SectionKey {
-    STRENGTHS,
-    PRIMARY_FIX,
-    GRAMMAR,
-    IMPROVEMENT,
-    REFINEMENT,
-    SUMMARY,
-    REWRITE_GUIDE,
-    MODEL_ANSWER,
-    USED_EXPRESSIONS
-}
-
-enum ValidationFailureCode {
-    EMPTY_STRENGTHS,
-    EMPTY_PRIMARY_FIX,
-    EMPTY_GRAMMAR,
-    INVALID_GRAMMAR,
-    EMPTY_IMPROVEMENT,
-    EMPTY_SECTION,
-    PLACEHOLDER,
-    GENERIC_TEXT,
-    BROKEN_SPAN_REUSE,
-    NEAR_DUPLICATE,
-    MEANING_DRIFT,
-    MODEL_REGRESSION,
-    MODEL_DUPLICATE_ANCHOR,
-    REWRITE_DUPLICATE_MODEL_ANSWER,
-    SUMMARY_DUPLICATES_IMPROVEMENT,
-    LOW_VALUE_SECTION,
-    UNALIGNED_PRIMARY_FIX,
-    UNALIGNED_REWRITE_TARGET,
-    LOW_VALUE_MODEL_ANSWER,
-    LOW_VALUE_REFINEMENT
-}
-
-record ValidationFailure(
-        SectionKey sectionKey,
-        ValidationFailureCode failureCode,
-        String detail
-) {
-    ValidationFailure {
-        sectionKey = sectionKey == null ? SectionKey.SUMMARY : sectionKey;
-        failureCode = failureCode == null ? ValidationFailureCode.LOW_VALUE_SECTION : failureCode;
-        detail = detail == null ? "" : detail.trim();
-    }
-}
-
-record ValidationResult(
-        GeneratedSections sanitizedSections,
-        List<ValidationFailure> failures,
-        boolean shouldRetry
-) {
-    ValidationResult {
-        sanitizedSections = sanitizedSections == null
-                ? new GeneratedSections(
-                null,
-                List.of(),
-                null,
-                null,
-                List.of(),
-                List.of(),
-                List.of(),
-                null,
-                null,
-                null,
-                List.of(),
-                List.of(),
-                List.of(),
-                List.of(),
-                null,
-                List.of(),
-                null,
-                null
-        )
-                : sanitizedSections;
-        failures = failures == null ? List.of() : List.copyOf(failures);
-    }
-}
-
-record RegenerationRequest(
-        List<SectionKey> failedSections,
-        AnswerProfile answerProfile,
-        SectionPolicy sectionPolicy,
-        List<ValidationFailureCode> failureCodes
-) {
-    RegenerationRequest {
-        failedSections = failedSections == null ? List.of() : List.copyOf(failedSections);
-        failureCodes = failureCodes == null ? List.of() : List.copyOf(failureCodes);
     }
 }

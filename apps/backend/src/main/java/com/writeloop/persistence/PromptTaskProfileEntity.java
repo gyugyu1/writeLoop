@@ -73,6 +73,12 @@ public class PromptTaskProfileEntity {
     )
     private String expectedPov;
 
+    @Column(name = "minimum_depth_slots", nullable = false)
+    private Integer minimumDepthSlots;
+
+    @Column(name = "review_rationale", columnDefinition = "TEXT")
+    private String reviewRationale;
+
     @Column(name = "is_active", nullable = false)
     private Boolean active;
 
@@ -87,10 +93,22 @@ public class PromptTaskProfileEntity {
             String expectedPov,
             Boolean active
     ) {
+        this(prompt, answerMode, expectedTense, expectedPov, 0, active);
+    }
+
+    public PromptTaskProfileEntity(
+            PromptEntity prompt,
+            PromptAnswerModeEntity answerMode,
+            String expectedTense,
+            String expectedPov,
+            Integer minimumDepthSlots,
+            Boolean active
+    ) {
         attachPrompt(prompt);
         this.answerMode = answerMode;
         this.expectedTense = normalizeMetaCode(expectedTense);
         this.expectedPov = normalizeMetaCode(expectedPov);
+        this.minimumDepthSlots = normalizeMinimumDepthSlots(minimumDepthSlots);
         this.active = active;
     }
 
@@ -105,9 +123,20 @@ public class PromptTaskProfileEntity {
             String expectedPov,
             Boolean active
     ) {
+        update(answerMode, expectedTense, expectedPov, 0, active);
+    }
+
+    public void update(
+            PromptAnswerModeEntity answerMode,
+            String expectedTense,
+            String expectedPov,
+            Integer minimumDepthSlots,
+            Boolean active
+    ) {
         this.answerMode = answerMode;
         this.expectedTense = normalizeMetaCode(expectedTense);
         this.expectedPov = normalizeMetaCode(expectedPov);
+        this.minimumDepthSlots = normalizeMinimumDepthSlots(minimumDepthSlots);
         this.active = active;
     }
 
@@ -144,6 +173,10 @@ public class PromptTaskProfileEntity {
                         assignment.getSlot(),
                         assignment.getSlotRole(),
                         assignment.getDisplayOrder(),
+                        preferMetadata(assignment.getSemanticRoleEn(), existing.getSemanticRoleEn()),
+                        preferMetadata(assignment.getSatisfiedWhenEn(), existing.getSatisfiedWhenEn()),
+                        preferMetadata(assignment.getSemanticRoleKo(), existing.getSemanticRoleKo()),
+                        preferMetadata(assignment.getSatisfiedWhenKo(), existing.getSatisfiedWhenKo()),
                         assignment.getActive()
                 );
                 continue;
@@ -157,6 +190,14 @@ public class PromptTaskProfileEntity {
 
     private String normalizeMetaCode(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private int normalizeMinimumDepthSlots(Integer value) {
+        return value == null ? 0 : Math.max(0, value);
+    }
+
+    private String preferMetadata(String incoming, String existing) {
+        return incoming == null || incoming.isBlank() ? existing : incoming;
     }
 
     private String assignmentKey(PromptTaskSlotEntity slot, String slotRole) {

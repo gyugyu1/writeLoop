@@ -17,7 +17,6 @@ class FeedbackResponseContractTest {
                 "prompt-1",
                 "session-1",
                 1,
-                78,
                 false,
                 "Keep going.",
                 "Readable public summary",
@@ -98,6 +97,7 @@ class FeedbackResponseContractTest {
         assertThat(root.has("refinementExpressions")).isTrue();
         assertThat(root.has("coachMove")).isTrue();
         assertThat(root.has("rewriteWorkspace")).isTrue();
+        assertThat(root.has("score")).isFalse();
         assertThat(root.has("corrections")).isFalse();
         assertThat(root.has("grammarFeedback")).isFalse();
 

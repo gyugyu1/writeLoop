@@ -132,8 +132,11 @@ public class FeedbackDiagnosisLogEntity {
     @Column(name = "diagnosis_task_completion", length = 16)
     private String diagnosisTaskCompletion;
 
-    @Column(name = "diagnosis_on_topic")
-    private Boolean diagnosisOnTopic;
+    @Column(name = "diagnosis_topic_relevance", length = 16)
+    private String diagnosisTopicRelevance;
+
+    @Column(name = "diagnosis_utterance_form", length = 16)
+    private String diagnosisUtteranceForm;
 
     @Column(name = "diagnosis_finishable")
     private Boolean diagnosisFinishable;

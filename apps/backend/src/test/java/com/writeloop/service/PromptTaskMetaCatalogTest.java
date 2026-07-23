@@ -2,68 +2,95 @@ package com.writeloop.service;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 class PromptTaskMetaCatalogTest {
 
     @Test
-    void classify_supports_all_seeded_prompt_families() {
-        assertThat(PromptTaskMetaCatalog.classify("prompt-routine-21", "How do you usually spend the start of your Saturday?"))
-                .extracting(
-                        PromptTaskMetaCatalog.TaskMetaEntry::answerMode,
-                        PromptTaskMetaCatalog.TaskMetaEntry::requiredSlots,
-                        PromptTaskMetaCatalog.TaskMetaEntry::optionalSlots,
-                        PromptTaskMetaCatalog.TaskMetaEntry::expectedTense,
-                        PromptTaskMetaCatalog.TaskMetaEntry::expectedPov
-                )
-                .containsExactly(
-                        "ROUTINE",
-                        java.util.List.of("MAIN_ANSWER", "ACTIVITY"),
-                        java.util.List.of("TIME_OR_PLACE", "FEELING"),
-                        "PRESENT_SIMPLE",
-                        "FIRST_PERSON"
-                );
+    void routineRequiresActionAndOneDistinctDepthSlot() {
+        PromptTaskMetaCatalog.TaskMetaEntry entry = PromptTaskMetaCatalog.classify(
+                "prompt-routine-21",
+                "How do you usually spend the start of your Saturday?"
+        );
 
-        assertThat(PromptTaskMetaCatalog.classify("prompt-goal-05", "Explain one skill you want to improve this year and why it matters to you."))
-                .extracting(
-                        PromptTaskMetaCatalog.TaskMetaEntry::answerMode,
-                        PromptTaskMetaCatalog.TaskMetaEntry::requiredSlots,
-                        PromptTaskMetaCatalog.TaskMetaEntry::expectedTense,
-                        PromptTaskMetaCatalog.TaskMetaEntry::expectedPov
-                )
-                .containsExactly("GOAL_PLAN", java.util.List.of("MAIN_ANSWER", "REASON"), "FUTURE_PLAN", "FIRST_PERSON");
+        assertThat(entry.answerMode()).isEqualTo("ROUTINE");
+        assertThat(entry.requiredSlots()).containsExactly("ACTION");
+        assertThat(entry.optionalSlots()).startsWith("ADDITIONAL_ACTION", "SPECIFIC_TIME", "PLACE", "REASON");
+        assertThat(entry.minimumDepthSlots()).isEqualTo(1);
+    }
 
-        assertThat(PromptTaskMetaCatalog.classify("prompt-problem-12", "Describe a problem you have with speaking in front of people and explain how you deal with it."))
-                .extracting(
-                        PromptTaskMetaCatalog.TaskMetaEntry::answerMode,
-                        PromptTaskMetaCatalog.TaskMetaEntry::requiredSlots,
-                        PromptTaskMetaCatalog.TaskMetaEntry::expectedTense
-                )
-                .containsExactly("PROBLEM_SOLUTION", java.util.List.of("MAIN_ANSWER", "ACTIVITY"), "PRESENT_SIMPLE");
+    @Test
+    void preferenceSeparatesChoiceFromReason() {
+        PromptTaskMetaCatalog.TaskMetaEntry explicitWhy = PromptTaskMetaCatalog.classify(
+                "prompt-intro-v2-0004",
+                "What is your favorite color? Why?"
+        );
+        PromptTaskMetaCatalog.TaskMetaEntry openPreference = PromptTaskMetaCatalog.classify(
+                "prompt-intro-v2-0003",
+                "What do you like about your city?"
+        );
 
-        assertThat(PromptTaskMetaCatalog.classify("prompt-balance-17", "What are the benefits and drawbacks of online shopping, and what is your view?"))
-                .extracting(
-                        PromptTaskMetaCatalog.TaskMetaEntry::answerMode,
-                        PromptTaskMetaCatalog.TaskMetaEntry::requiredSlots,
-                        PromptTaskMetaCatalog.TaskMetaEntry::expectedPov
-                )
-                .containsExactly("BALANCED_OPINION", java.util.List.of("MAIN_ANSWER", "REASON"), "GENERAL_OR_FIRST_PERSON");
+        assertThat(explicitWhy.requiredSlots()).containsExactly("CHOICE", "REASON");
+        assertThat(explicitWhy.minimumDepthSlots()).isZero();
+        assertThat(openPreference.requiredSlots()).containsExactly("CHOICE");
+        assertThat(openPreference.optionalSlots()).startsWith("REASON", "DETAIL");
+        assertThat(openPreference.minimumDepthSlots()).isEqualTo(1);
+    }
 
-        assertThat(PromptTaskMetaCatalog.classify("prompt-reflection-20", "In what way has your opinion about money changed over time?"))
-                .extracting(
-                        PromptTaskMetaCatalog.TaskMetaEntry::answerMode,
-                        PromptTaskMetaCatalog.TaskMetaEntry::requiredSlots,
-                        PromptTaskMetaCatalog.TaskMetaEntry::expectedTense
-                )
-                .containsExactly("CHANGE_REFLECTION", java.util.List.of("MAIN_ANSWER"), "MIXED_PAST_PRESENT");
+    @Test
+    void questionReclassificationOverridesStaleConfiguredMode() {
+        PromptTaskMetaCatalog.TaskMetaEntry entry = PromptTaskMetaCatalog.classify(
+                "prompt-intro-v2-test",
+                "Do you like coffee or tea? Why?",
+                "GENERAL_DESCRIPTION"
+        );
 
-        assertThat(PromptTaskMetaCatalog.classify("prompt-general-03", "Introduce a useful app you use often and explain why you would recommend it."))
-                .extracting(
-                        PromptTaskMetaCatalog.TaskMetaEntry::answerMode,
-                        PromptTaskMetaCatalog.TaskMetaEntry::requiredSlots,
-                        PromptTaskMetaCatalog.TaskMetaEntry::expectedTense,
-                        PromptTaskMetaCatalog.TaskMetaEntry::expectedPov
-                )
-                .containsExactly("GENERAL_DESCRIPTION", java.util.List.of("MAIN_ANSWER", "REASON"), "PRESENT_SIMPLE", "FIRST_PERSON");
+        assertThat(entry.answerMode()).isEqualTo("PREFERENCE");
+        assertThat(entry.requiredSlots()).containsExactly("CHOICE", "REASON");
+    }
+
+    @Test
+    void goalAndProblemModesUseDistinctCoreAndActionSlots() {
+        PromptTaskMetaCatalog.TaskMetaEntry goal = PromptTaskMetaCatalog.classify(
+                "prompt-goal-05",
+                "Explain one skill you want to improve this year and why it matters to you."
+        );
+        PromptTaskMetaCatalog.TaskMetaEntry problem = PromptTaskMetaCatalog.classify(
+                "prompt-problem-12",
+                "Describe a problem you have with speaking in front of people and explain how you deal with it."
+        );
+
+        assertThat(goal.requiredSlots()).containsExactly("GOAL", "REASON");
+        assertThat(goal.optionalSlots()).contains("PLAN");
+        assertThat(goal.expectedTense()).isEqualTo("FUTURE_PLAN");
+        assertThat(problem.requiredSlots()).containsExactly("PROBLEM", "SOLUTION");
+    }
+
+    @Test
+    void balancedAndChangeQuestionsPreserveTheirSemanticObligations() {
+        PromptTaskMetaCatalog.TaskMetaEntry balanced = PromptTaskMetaCatalog.classify(
+                "prompt-balance-17",
+                "What are the benefits and drawbacks of online shopping, and what is your view?"
+        );
+        PromptTaskMetaCatalog.TaskMetaEntry reflection = PromptTaskMetaCatalog.classify(
+                "prompt-reflection-20",
+                "In what way has your opinion about money changed over time?"
+        );
+
+        assertThat(balanced.requiredSlots()).containsExactly("OPINION", "ADVANTAGE", "DISADVANTAGE");
+        assertThat(reflection.requiredSlots()).containsExactly("BEFORE_STATE", "NOW_STATE");
+        assertThat(reflection.expectedTense()).isEqualTo("MIXED_PAST_PRESENT");
+    }
+
+    @Test
+    void generalQuestionsDistinguishPlaceTimeActionAndDetail() {
+        assertThat(PromptTaskMetaCatalog.classify("prompt-x-1", "Where do you live?").requiredSlots())
+                .isEqualTo(List.of("PLACE"));
+        assertThat(PromptTaskMetaCatalog.classify("prompt-x-2", "What time do you usually wake up?").requiredSlots())
+                .isEqualTo(List.of("ACTION", "SPECIFIC_TIME"));
+        assertThat(PromptTaskMetaCatalog.classify("prompt-x-3", "Who is your best friend?").requiredSlots())
+                .isEqualTo(List.of("DETAIL"));
     }
 }

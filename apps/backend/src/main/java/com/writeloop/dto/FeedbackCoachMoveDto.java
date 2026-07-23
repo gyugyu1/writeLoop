@@ -16,7 +16,8 @@ public record FeedbackCoachMoveDto(
         String skeletonEn,
         String skeletonKo,
         List<FeedbackSuggestedPhraseDto> suggestedPhrases,
-        String successCheck
+        String successCheck,
+        String targetSlot
 ) {
     public FeedbackCoachMoveDto {
         focus = normalize(focus);
@@ -30,6 +31,36 @@ public record FeedbackCoachMoveDto(
         skeletonKo = normalize(skeletonKo);
         suggestedPhrases = normalizePhrases(suggestedPhrases);
         successCheck = normalize(successCheck);
+        targetSlot = normalize(targetSlot);
+    }
+
+    public FeedbackCoachMoveDto(
+            String focus,
+            String focusType,
+            String why,
+            String before,
+            String after,
+            String instruction,
+            String exampleEn,
+            String skeletonEn,
+            String skeletonKo,
+            List<FeedbackSuggestedPhraseDto> suggestedPhrases,
+            String successCheck
+    ) {
+        this(
+                focus,
+                focusType,
+                why,
+                before,
+                after,
+                instruction,
+                exampleEn,
+                skeletonEn,
+                skeletonKo,
+                suggestedPhrases,
+                successCheck,
+                null
+        );
     }
 
     public FeedbackCoachMoveDto(
@@ -44,7 +75,7 @@ public record FeedbackCoachMoveDto(
             List<FeedbackSuggestedPhraseDto> suggestedPhrases,
             String successCheck
     ) {
-        this(focus, focusType, why, before, after, instruction, exampleEn, skeletonEn, null, suggestedPhrases, successCheck);
+        this(focus, focusType, why, before, after, instruction, exampleEn, skeletonEn, null, suggestedPhrases, successCheck, null);
     }
 
     public FeedbackCoachMoveDto(
@@ -57,7 +88,7 @@ public record FeedbackCoachMoveDto(
             String exampleEn,
             String successCheck
     ) {
-        this(focus, focusType, why, before, after, instruction, exampleEn, null, null, List.of(), successCheck);
+        this(focus, focusType, why, before, after, instruction, exampleEn, null, null, List.of(), successCheck, null);
     }
 
     public FeedbackCoachMoveDto(
@@ -69,7 +100,7 @@ public record FeedbackCoachMoveDto(
             String instruction,
             String successCheck
     ) {
-        this(focus, focusType, why, before, after, instruction, null, null, null, List.of(), successCheck);
+        this(focus, focusType, why, before, after, instruction, null, null, null, List.of(), successCheck, null);
     }
 
     private static List<FeedbackSuggestedPhraseDto> normalizePhrases(List<FeedbackSuggestedPhraseDto> values) {

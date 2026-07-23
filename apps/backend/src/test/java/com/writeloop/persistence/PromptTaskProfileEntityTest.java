@@ -29,7 +29,17 @@ class PromptTaskProfileEntityTest {
         PromptTaskSlotEntity activity = new PromptTaskSlotEntity("ACTIVITY", 2, true);
 
         profile.replaceSlotAssignments(List.of(
-                new PromptTaskProfileSlotEntity(profile, mainAnswer, "REQUIRED", 1, true),
+                new PromptTaskProfileSlotEntity(
+                        profile,
+                        mainAnswer,
+                        "REQUIRED",
+                        1,
+                        "The learner's main routine action.",
+                        "The answer identifies a concrete routine action.",
+                        "학습자의 핵심 일상 행동.",
+                        "구체적인 일상 행동을 밝히면 충족한다.",
+                        true
+                ),
                 new PromptTaskProfileSlotEntity(profile, activity, "REQUIRED", 2, true)
         ));
 
@@ -42,6 +52,14 @@ class PromptTaskProfileEntityTest {
 
         assertThat(profile.getSlotAssignments()).hasSize(2);
         assertThat(profile.getSlotAssignments().get(0)).isSameAs(originalMainAnswerAssignment);
+        assertThat(originalMainAnswerAssignment.getSemanticRoleEn())
+                .isEqualTo("The learner's main routine action.");
+        assertThat(originalMainAnswerAssignment.getSatisfiedWhenEn())
+                .isEqualTo("The answer identifies a concrete routine action.");
+        assertThat(originalMainAnswerAssignment.getSemanticRoleKo())
+                .isEqualTo("학습자의 핵심 일상 행동.");
+        assertThat(originalMainAnswerAssignment.getSatisfiedWhenKo())
+                .isEqualTo("구체적인 일상 행동을 밝히면 충족한다.");
         assertThat(profile.getSlotAssignments())
                 .extracting(assignment -> assignment.getSlot().getCode(), PromptTaskProfileSlotEntity::getSlotRole)
                 .containsExactly(

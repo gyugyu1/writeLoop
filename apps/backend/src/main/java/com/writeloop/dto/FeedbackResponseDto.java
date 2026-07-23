@@ -1,14 +1,15 @@
 package com.writeloop.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.util.List;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public record FeedbackResponseDto(
         String promptId,
         String sessionId,
         int attemptNo,
-        int score,
         boolean loopComplete,
         String completionMessage,
         String summary,
@@ -29,231 +30,20 @@ public record FeedbackResponseDto(
         FeedbackCompletionDto completion,
         FeedbackRevealLaterDto revealLater
 ) {
-    public FeedbackResponseDto(
-            String promptId,
-            String sessionId,
-            int attemptNo,
-            int score,
-            boolean loopComplete,
-            String completionMessage,
-            String summary,
-            List<String> strengths,
-            List<CorrectionDto> corrections,
-            List<InlineFeedbackSegmentDto> inlineFeedback,
-            List<GrammarFeedbackItemDto> grammarFeedback,
-            String correctedAnswer,
-            List<RefinementExpressionDto> refinementExpressions,
-            String modelAnswer,
-            String modelAnswerKo,
-            String rewriteChallenge,
-            List<CoachExpressionUsageDto> usedExpressions
-    ) {
-        this(
-                promptId,
-                sessionId,
-                attemptNo,
-                score,
-                loopComplete,
-                completionMessage,
-                summary,
-                strengths,
-                corrections,
-                inlineFeedback,
-                grammarFeedback,
-                correctedAnswer,
-                refinementExpressions,
-                modelAnswer,
-                modelAnswerKo,
-                rewriteChallenge,
-                usedExpressions,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
+    public FeedbackResponseDto {
+        strengths = strengths == null ? List.of() : List.copyOf(strengths);
+        corrections = corrections == null ? List.of() : List.copyOf(corrections);
+        inlineFeedback = inlineFeedback == null ? List.of() : List.copyOf(inlineFeedback);
+        grammarFeedback = grammarFeedback == null ? List.of() : List.copyOf(grammarFeedback);
+        refinementExpressions = refinementExpressions == null ? List.of() : List.copyOf(refinementExpressions);
+        usedExpressions = usedExpressions == null ? List.of() : List.copyOf(usedExpressions);
     }
 
-    public FeedbackResponseDto(
-            String promptId,
-            String sessionId,
-            int attemptNo,
-            int score,
-            boolean loopComplete,
-            String completionMessage,
-            String summary,
-            List<String> strengths,
-            List<CorrectionDto> corrections,
-            List<InlineFeedbackSegmentDto> inlineFeedback,
-            List<GrammarFeedbackItemDto> grammarFeedback,
-            String correctedAnswer,
-            List<RefinementExpressionDto> refinementExpressions,
-            String modelAnswer,
-            String rewriteChallenge,
-            List<CoachExpressionUsageDto> usedExpressions
-    ) {
-        this(
-                promptId,
-                sessionId,
-                attemptNo,
-                score,
-                loopComplete,
-                completionMessage,
-                summary,
-                strengths,
-                corrections,
-                inlineFeedback,
-                grammarFeedback,
-                correctedAnswer,
-                refinementExpressions,
-                modelAnswer,
-                null,
-                rewriteChallenge,
-                usedExpressions
-        );
-    }
-
-    public FeedbackResponseDto(
-            String promptId,
-            String sessionId,
-            int attemptNo,
-            int score,
-            boolean loopComplete,
-            String completionMessage,
-            String summary,
-            List<String> strengths,
-            List<CorrectionDto> corrections,
-            List<InlineFeedbackSegmentDto> inlineFeedback,
-            String correctedAnswer,
-            List<RefinementExpressionDto> refinementExpressions,
-            String modelAnswer,
-            String rewriteChallenge
-    ) {
-        this(
-                promptId,
-                sessionId,
-                attemptNo,
-                score,
-                loopComplete,
-                completionMessage,
-                summary,
-                strengths,
-                corrections,
-                inlineFeedback,
-                List.of(),
-                correctedAnswer,
-                refinementExpressions,
-                modelAnswer,
-                null,
-                rewriteChallenge,
-                List.of(),
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-    }
-
-    public FeedbackResponseDto(
-            String promptId,
-            String sessionId,
-            int attemptNo,
-            int score,
-            boolean loopComplete,
-            String completionMessage,
-            String summary,
-            List<String> strengths,
-            List<CorrectionDto> corrections,
-            List<InlineFeedbackSegmentDto> inlineFeedback,
-            String correctedAnswer,
-            List<RefinementExpressionDto> refinementExpressions,
-            String modelAnswer,
-            String rewriteChallenge,
-            List<CoachExpressionUsageDto> usedExpressions
-    ) {
-        this(
-                promptId,
-                sessionId,
-                attemptNo,
-                score,
-                loopComplete,
-                completionMessage,
-                summary,
-                strengths,
-                corrections,
-                inlineFeedback,
-                List.of(),
-                correctedAnswer,
-                refinementExpressions,
-                modelAnswer,
-                null,
-                rewriteChallenge,
-                usedExpressions,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-    }
-
-    public FeedbackResponseDto(
-            String promptId,
-            String sessionId,
-            int attemptNo,
-            int score,
-            boolean loopComplete,
-            String completionMessage,
-            String summary,
-            List<String> strengths,
-            List<CorrectionDto> corrections,
-            List<InlineFeedbackSegmentDto> inlineFeedback,
-            List<GrammarFeedbackItemDto> grammarFeedback,
-            String correctedAnswer,
-            List<RefinementExpressionDto> refinementExpressions,
-            String modelAnswer,
-            String modelAnswerKo,
-            String rewriteChallenge,
-            List<CoachExpressionUsageDto> usedExpressions,
-            FeedbackUiDto ui
-    ) {
-        this(
-                promptId,
-                sessionId,
-                attemptNo,
-                score,
-                loopComplete,
-                completionMessage,
-                summary,
-                strengths,
-                corrections,
-                inlineFeedback,
-                grammarFeedback,
-                correctedAnswer,
-                refinementExpressions,
-                modelAnswer,
-                modelAnswerKo,
-                rewriteChallenge,
-                usedExpressions,
-                ui,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-    }
-
-    public FeedbackResponseDto withUi(FeedbackUiDto ui) {
+    public FeedbackResponseDto withUi(FeedbackUiDto nextUi) {
         return new FeedbackResponseDto(
                 promptId,
                 sessionId,
                 attemptNo,
-                score,
                 loopComplete,
                 completionMessage,
                 summary,
@@ -267,7 +57,7 @@ public record FeedbackResponseDto(
                 modelAnswerKo,
                 rewriteChallenge,
                 usedExpressions,
-                ui,
+                nextUi,
                 loop,
                 coachMove,
                 rewriteWorkspace,
@@ -277,17 +67,16 @@ public record FeedbackResponseDto(
     }
 
     public FeedbackResponseDto withLoopExperience(
-            FeedbackLoopDto loop,
-            FeedbackCoachMoveDto coachMove,
-            FeedbackRewriteWorkspaceDto rewriteWorkspace,
-            FeedbackCompletionDto completion,
-            FeedbackRevealLaterDto revealLater
+            FeedbackLoopDto nextLoop,
+            FeedbackCoachMoveDto nextCoachMove,
+            FeedbackRewriteWorkspaceDto nextRewriteWorkspace,
+            FeedbackCompletionDto nextCompletion,
+            FeedbackRevealLaterDto nextRevealLater
     ) {
         return new FeedbackResponseDto(
                 promptId,
                 sessionId,
                 attemptNo,
-                score,
                 loopComplete,
                 completionMessage,
                 summary,
@@ -302,11 +91,11 @@ public record FeedbackResponseDto(
                 rewriteChallenge,
                 usedExpressions,
                 ui,
-                loop,
-                coachMove,
-                rewriteWorkspace,
-                completion,
-                revealLater
+                nextLoop,
+                nextCoachMove,
+                nextRewriteWorkspace,
+                nextCompletion,
+                nextRevealLater
         );
     }
 }

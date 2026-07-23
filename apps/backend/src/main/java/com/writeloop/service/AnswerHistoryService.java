@@ -460,7 +460,6 @@ public class AnswerHistoryService {
                 attempt.getAttemptNo(),
                 attempt.getAttemptType().name(),
                 attempt.getAnswerText(),
-                attempt.getScore(),
                 attempt.getFeedbackSummary(),
                 toHistoryFeedback(attempt),
                 extractUsedExpressions(attempt),
@@ -488,7 +487,6 @@ public class AnswerHistoryService {
                         FeedbackResponseDto.class
                 );
                 return new AnswerHistoryFeedbackDto(
-                        feedback.score(),
                         feedback.loopComplete(),
                         feedback.completionMessage(),
                         feedback.summary(),
@@ -508,7 +506,6 @@ public class AnswerHistoryService {
 
         try {
             return new AnswerHistoryFeedbackDto(
-                    attempt.getScore(),
                     false,
                     null,
                     attempt.getFeedbackSummary(),

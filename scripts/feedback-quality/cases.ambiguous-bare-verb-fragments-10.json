@@ -1,0 +1,192 @@
+[
+  {
+    "caseId": "ambiguous-bare-verb-fragment-001",
+    "name": "bare verb fragment - nap",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Nap on weekend.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  },
+  {
+    "caseId": "ambiguous-bare-verb-fragment-002",
+    "name": "bare verb fragment - sleep",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Sleep late on weekends.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  },
+  {
+    "caseId": "ambiguous-bare-verb-fragment-003",
+    "name": "bare verb fragment - rest",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Rest at home on Sundays.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  },
+  {
+    "caseId": "ambiguous-bare-verb-fragment-004",
+    "name": "bare verb fragment - watch",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Watch movies on Saturday nights.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  },
+  {
+    "caseId": "ambiguous-bare-verb-fragment-005",
+    "name": "bare verb fragment - play",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Play games after lunch.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  },
+  {
+    "caseId": "ambiguous-bare-verb-fragment-006",
+    "name": "bare verb fragment - read",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Read books at a cafe.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  },
+  {
+    "caseId": "ambiguous-bare-verb-fragment-007",
+    "name": "bare verb fragment - meet",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Meet friends on Saturdays.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  },
+  {
+    "caseId": "ambiguous-bare-verb-fragment-008",
+    "name": "bare verb fragment - hike",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Go hiking on Sunday mornings.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  },
+  {
+    "caseId": "ambiguous-bare-verb-fragment-009",
+    "name": "bare verb fragment - cook",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Cook dinner with my family.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  },
+  {
+    "caseId": "ambiguous-bare-verb-fragment-010",
+    "name": "bare verb fragment - clean",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Clean my room every weekend.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Treat the relevant bare-verb answer as an elliptical fragment and restore a first-person subject."
+  }
+]

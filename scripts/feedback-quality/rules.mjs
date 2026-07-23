@@ -1,4 +1,35 @@
-export const KNOWN_FOCUS_TYPES = new Set([
+export const KNOWN_MISSION_KINDS = new Set([
+  "SLOT",
+  "TASK_RESET",
+  "STRUCTURE_FIX",
+  "GRAMMAR_FIX",
+  "COMPLETE"
+]);
+
+export const KNOWN_TARGET_SLOTS = new Set([
+  "ACTION",
+  "CHOICE",
+  "GOAL",
+  "PROBLEM",
+  "OPINION",
+  "PLAN",
+  "SOLUTION",
+  "ADVANTAGE",
+  "DISADVANTAGE",
+  "BEFORE_STATE",
+  "NOW_STATE",
+  "CHANGE_CAUSE",
+  "ADDITIONAL_ACTION",
+  "SPECIFIC_TIME",
+  "PLACE",
+  "REASON",
+  "DETAIL",
+  "EXAMPLE",
+  "FEELING",
+  "RESULT"
+]);
+
+const LEGACY_FOCUS_TYPES = new Set([
   "REASON",
   "DETAIL",
   "SITUATION",
@@ -9,10 +40,35 @@ export const KNOWN_FOCUS_TYPES = new Set([
   "TASK_RESET",
   "EXPRESSION_POLISH"
 ]);
-
-const RETIRED_RESPONSE_FIELDS = ["corrections", "grammarFeedback"];
-const RETIRED_UI_FIELDS = ["secondaryLearningPoints", "modelAnswerVariants"];
-const COMPARISON_FOCUS_TYPES = new Set(["GRAMMAR_FIX", "EXPRESSION_POLISH"]);
+const LEGACY_CONTENT_FOCUS_TYPES = new Set([
+  "REASON",
+  "DETAIL",
+  "SITUATION",
+  "EXAMPLE",
+  "FEELING",
+  "RESULT"
+]);
+const RETIRED_RESPONSE_FIELDS = [
+  "score",
+  "corrections",
+  "grammarFeedback",
+  "answerBand",
+  "taskCompletion",
+  "finishable",
+  "meaningClarity",
+  "grammarSeverity",
+  "correctionSupport",
+  "missionDecision",
+  "chosenType",
+  "actionType"
+];
+const RETIRED_UI_FIELDS = [
+  "focusCard",
+  "primaryFix",
+  "nextStepPractice",
+  "secondaryLearningPoints",
+  "modelAnswerVariants"
+];
 
 export function getPath(value, dottedPath) {
   if (!dottedPath) {
@@ -44,6 +100,10 @@ export function isNonBlank(value) {
   return typeof value === "string" && value.trim().length > 0;
 }
 
+export function containsHangul(value) {
+  return isNonBlank(value) && /[\uAC00-\uD7A3]/u.test(value);
+}
+
 export function normalizeText(value) {
   return textOf(value).replace(/\s+/g, " ").trim().toLowerCase();
 }
@@ -52,54 +112,116 @@ export function hasOwn(object, key) {
   return object != null && Object.prototype.hasOwnProperty.call(object, key);
 }
 
-export function hasComparisonPair(payload) {
-  const coachBefore = payload?.coachMove?.before;
-  const coachAfter = payload?.coachMove?.after;
-  if (isMeaningfulPair(coachBefore, coachAfter)) {
-    return true;
+export function hasCoachComparisonPair(payload) {
+  return isMeaningfulPair(payload?.coachMove?.before, payload?.coachMove?.after);
+}
+
+export function hasContentScaffold(payload) {
+  const move = payload?.coachMove;
+  const validPhraseChoices = Array.isArray(move?.suggestedPhrases)
+    ? move.suggestedPhrases.filter((item) => isNonBlank(item?.phrase) && containsHangul(item?.meaningKo))
+    : [];
+  return isNonBlank(move?.skeletonEn)
+    && containsHangul(move?.skeletonKo)
+    && validPhraseChoices.length >= 2;
+}
+
+export function resolveExpectedMissionKinds(testCase) {
+  if (Array.isArray(testCase?.expectedMissionKinds) && testCase.expectedMissionKinds.length > 0) {
+    return unique(testCase.expectedMissionKinds);
   }
 
-  const primaryFix = payload?.ui?.primaryFix;
-  if (isMeaningfulPair(primaryFix?.originalText, primaryFix?.revisedText)) {
-    return true;
+  const resolved = [];
+  for (const focusType of testCase?.expectedFocusTypes ?? []) {
+    const missionKind = legacyFocusToMissionKind(focusType);
+    if (missionKind) {
+      resolved.push(missionKind);
+    }
+  }
+  if (testCase?.expectedLoopComplete === true) {
+    resolved.push("COMPLETE");
+  }
+  return unique(resolved);
+}
+
+export function resolveForbiddenMissionKinds(testCase) {
+  if (Array.isArray(testCase?.forbiddenMissionKinds)) {
+    return unique(testCase.forbiddenMissionKinds);
   }
 
-  const nextStepPractice = payload?.ui?.nextStepPractice;
-  if (isMeaningfulPair(nextStepPractice?.originalText, nextStepPractice?.revisedText)) {
-    return true;
-  }
-
-  const fixPoints = Array.isArray(payload?.ui?.fixPoints) ? payload.ui.fixPoints : [];
-  return fixPoints.some((point) => isMeaningfulPair(point?.originalText, point?.revisedText));
+  // Coarse legacy content types cannot safely forbid the canonical SLOT mission.
+  return unique((testCase?.forbiddenFocusTypes ?? [])
+    .filter((focusType) => focusType === "GRAMMAR_FIX" || focusType === "TASK_RESET")
+    .map(legacyFocusToMissionKind)
+    .filter(Boolean));
 }
 
 export function evaluatePayload(testCase, payload) {
   const failures = [];
   const warnings = [];
-  const focusType = payload?.coachMove?.focusType;
-  const expectedFocusTypes = testCase.expectedFocusTypes ?? [];
-  const forbiddenFocusTypes = testCase.forbiddenFocusTypes ?? [];
+  const loopComplete = payload?.loopComplete === true;
+  const rawMissionKind = payload?.coachMove?.focusType ?? null;
+  const missionKind = loopComplete ? "COMPLETE" : rawMissionKind;
+  const targetSlot = payload?.coachMove?.targetSlot ?? null;
+  const expectedMissionKinds = resolveExpectedMissionKinds(testCase);
+  const forbiddenMissionKinds = resolveForbiddenMissionKinds(testCase);
+  const expectedTargetSlots = testCase.expectedTargetSlots ?? [];
+  const forbiddenTargetSlots = testCase.forbiddenTargetSlots ?? [];
+  const acceptableRevision = testCase.expectedLoopComplete === true
+    && testCase.allowAcceptedRevision !== false
+    && !loopComplete
+    && expectedMissionKinds.includes(missionKind);
 
-  requireNonBlank(payload?.coachMove?.focus, "missing_coach_focus", "coachMove.focus is blank", failures);
-  requireNonBlank(payload?.coachMove?.instruction, "missing_coach_instruction", "coachMove.instruction is blank", failures);
-  requireNonBlank(payload?.coachMove?.successCheck, "missing_success_check", "coachMove.successCheck is blank", failures);
+  if (!loopComplete) {
+    requireNonBlank(payload?.coachMove?.focus, "missing_coach_focus", "coachMove.focus is blank", failures);
+    requireNonBlank(payload?.coachMove?.why, "missing_coach_reason", "coachMove.why is blank", failures);
+    requireNonBlank(payload?.coachMove?.instruction, "missing_coach_instruction", "coachMove.instruction is blank", failures);
 
-  if (expectedFocusTypes.length > 0 && !expectedFocusTypes.includes(focusType)) {
+    if (!KNOWN_MISSION_KINDS.has(missionKind)) {
+      failures.push({
+        code: "unknown_mission_kind",
+        message: `missionKind ${missionKind || "(blank)"} is not canonical`
+      });
+    }
+  }
+
+  if (expectedMissionKinds.length > 0 && !expectedMissionKinds.includes(missionKind)) {
     failures.push({
-      code: "wrong_focus_type",
-      message: `focusType ${focusType || "(blank)"} is not one of ${expectedFocusTypes.join(", ")}`
+      code: "wrong_mission_kind",
+      message: `missionKind ${missionKind || "(blank)"} is not one of ${expectedMissionKinds.join(", ")}`
     });
   }
 
-  if (forbiddenFocusTypes.includes(focusType)) {
+  if (forbiddenMissionKinds.includes(missionKind)) {
     failures.push({
-      code: "forbidden_focus_type",
-      message: `focusType ${focusType} is forbidden for this case`
+      code: "forbidden_mission_kind",
+      message: `missionKind ${missionKind} is forbidden for this case`
+    });
+  }
+
+  if ((missionKind === "SLOT" || missionKind === "TASK_RESET") && !KNOWN_TARGET_SLOTS.has(targetSlot)) {
+    failures.push({
+      code: "missing_canonical_target_slot",
+      message: `${missionKind} requires a canonical targetSlot`
+    });
+  }
+
+  if (!loopComplete && expectedTargetSlots.length > 0 && !expectedTargetSlots.includes(targetSlot)) {
+    failures.push({
+      code: "wrong_target_slot",
+      message: `targetSlot ${targetSlot || "(blank)"} is not one of ${expectedTargetSlots.join(", ")}`
+    });
+  }
+
+  if (!loopComplete && forbiddenTargetSlots.includes(targetSlot)) {
+    failures.push({
+      code: "forbidden_target_slot",
+      message: `targetSlot ${targetSlot} is forbidden for this case`
     });
   }
 
   const fixPoints = Array.isArray(payload?.ui?.fixPoints) ? payload.ui.fixPoints : [];
-  if (testCase.expectFixPoints !== false && !testCase.expectedLoopComplete && fixPoints.length === 0) {
+  if (testCase.expectFixPoints !== false && !loopComplete && fixPoints.length === 0) {
     failures.push({
       code: "empty_fix_points",
       message: "ui.fixPoints is empty"
@@ -107,18 +229,61 @@ export function evaluatePayload(testCase, payload) {
   }
 
   const comparisonRequired = testCase.requiresComparison === true
-    || (payload?.loopComplete !== true && COMPARISON_FOCUS_TYPES.has(focusType));
-  if (comparisonRequired && !testCase.allowMissingComparison && !hasComparisonPair(payload)) {
+    || missionKind === "STRUCTURE_FIX"
+    || missionKind === "GRAMMAR_FIX";
+  if (comparisonRequired && !testCase.allowMissingComparison && !hasCoachComparisonPair(payload)) {
     failures.push({
       code: "missing_comparison",
-      message: "comparison mission has no before/after pair"
+      message: "direct correction mission has no coachMove before/after pair"
     });
   }
 
-  if (testCase.expectedLoopComplete === true && payload?.loopComplete !== true) {
+  if (comparisonRequired && hasCoachComparisonPair(payload)
+      && !normalizeText(testCase.answer).includes(normalizeText(payload?.coachMove?.before))) {
+    failures.push({
+      code: "ungrounded_comparison",
+      message: "coachMove.before is not grounded in the learner answer"
+    });
+  }
+
+  if (missionKind === "STRUCTURE_FIX") {
+    const correctedAnswer = textOf(payload?.correctedAnswer).trim();
+    const comparisonAfter = textOf(payload?.coachMove?.after).trim();
+    const firstFixAfter = textOf(fixPoints[0]?.revisedText).trim();
+    if (!correctedAnswer) {
+      failures.push({
+        code: "missing_structure_corrected_answer",
+        message: "STRUCTURE_FIX requires one authoritative correctedAnswer"
+      });
+    } else if (normalizeText(correctedAnswer) !== normalizeText(comparisonAfter)
+        || (firstFixAfter && normalizeText(correctedAnswer) !== normalizeText(firstFixAfter))) {
+      failures.push({
+        code: "structure_correction_mismatch",
+        message: "correctedAnswer, coachMove.after, and the first fixPoint revision must match"
+      });
+    }
+  }
+
+  const scaffoldRequired = testCase.requiresScaffold === true
+    || missionKind === "SLOT"
+    || missionKind === "TASK_RESET";
+  if (scaffoldRequired && !testCase.allowMissingScaffold && !hasContentScaffold(payload)) {
+    failures.push({
+      code: "missing_content_scaffold",
+      message: "content mission needs skeletonEn, a Korean skeletonKo, and at least two phrase choices with Korean meanings"
+    });
+  }
+
+  if (testCase.expectedLoopComplete === true && !loopComplete && !acceptableRevision) {
     failures.push({
       code: "loop_not_complete",
-      message: "loopComplete was expected to be true"
+      message: "Expected completion or an explicitly accepted revision mission"
+    });
+  }
+  if (testCase.expectedLoopComplete === false && loopComplete) {
+    failures.push({
+      code: "loop_completed_too_early",
+      message: "loopComplete was expected to be false"
     });
   }
 
@@ -140,24 +305,26 @@ export function evaluatePayload(testCase, payload) {
     }
   }
 
-  for (const [fieldPath, needles] of Object.entries(testCase.mustContainAny ?? {})) {
-    const haystack = normalizeText(getPath(payload, fieldPath));
-    if (!needles.some((needle) => haystack.includes(normalizeText(needle)))) {
-      failures.push({
-        code: "missing_expected_keyword",
-        message: `${fieldPath} does not contain any of: ${needles.join(", ")}`
-      });
+  if (!loopComplete) {
+    for (const [fieldPath, needles] of Object.entries(testCase.mustContainAny ?? {})) {
+      const haystack = normalizeText(getPath(payload, fieldPath));
+      if (!needles.some((needle) => haystack.includes(normalizeText(needle)))) {
+        failures.push({
+          code: "missing_expected_keyword",
+          message: `${fieldPath} does not contain any of: ${needles.join(", ")}`
+        });
+      }
     }
-  }
 
-  for (const [fieldPath, needles] of Object.entries(testCase.mustNotContainAny ?? {})) {
-    const haystack = normalizeText(getPath(payload, fieldPath));
-    const matched = needles.find((needle) => haystack.includes(normalizeText(needle)));
-    if (matched) {
-      failures.push({
-        code: "forbidden_keyword",
-        message: `${fieldPath} contains forbidden text: ${matched}`
-      });
+    for (const [fieldPath, needles] of Object.entries(testCase.mustNotContainAny ?? {})) {
+      const haystack = normalizeText(getPath(payload, fieldPath));
+      const matched = needles.find((needle) => haystack.includes(normalizeText(needle)));
+      if (matched) {
+        failures.push({
+          code: "forbidden_keyword",
+          message: `${fieldPath} contains forbidden text: ${matched}`
+        });
+      }
     }
   }
 
@@ -170,20 +337,37 @@ export function evaluatePayload(testCase, payload) {
     });
   }
 
+  const firstFixKind = normalizeText(fixPoints[0]?.kind).toUpperCase();
+  const expectedFirstFixKind = missionKind === "STRUCTURE_FIX" || missionKind === "GRAMMAR_FIX"
+    ? missionKind
+    : (missionKind === "SLOT" || missionKind === "TASK_RESET" ? targetSlot : null);
+  if (expectedFirstFixKind && firstFixKind && firstFixKind !== expectedFirstFixKind) {
+    warnings.push({
+      code: "first_fix_mission_mismatch",
+      message: `first fixPoint kind ${firstFixKind} differs from target ${expectedFirstFixKind}`
+    });
+  }
+
   return {
     pass: failures.length === 0,
     failures,
     warnings,
-    focusType: focusType ?? null,
-    loopComplete: payload?.loopComplete === true,
+    missionKind: missionKind ?? null,
+    targetSlot,
+    expectedMissionKinds,
+    forbiddenMissionKinds,
+    loopComplete,
     fixPointCount: fixPoints.length,
-    hasComparison: hasComparisonPair(payload)
+    hasComparison: hasCoachComparisonPair(payload),
+    hasScaffold: hasContentScaffold(payload)
   };
 }
 
 export function validateCases(cases) {
   const failures = [];
   const warnings = [];
+  const caseIds = new Set();
+  const promptAnswers = new Set();
 
   cases.forEach((testCase, index) => {
     const label = testCase?.name || `case ${index + 1}`;
@@ -196,23 +380,70 @@ export function validateCases(cases) {
     if (!isNonBlank(testCase?.answer)) {
       failures.push(`${label}: answer is required`);
     }
-    if (!Array.isArray(testCase?.expectedFocusTypes) || testCase.expectedFocusTypes.length === 0) {
-      failures.push(`${label}: expectedFocusTypes must be a non-empty array`);
-    } else {
-      for (const focusType of testCase.expectedFocusTypes) {
-        if (!KNOWN_FOCUS_TYPES.has(focusType)) {
-          warnings.push(`${label}: expectedFocusTypes contains unknown focus type ${focusType}`);
-        }
+    if (isNonBlank(testCase?.caseId)) {
+      if (caseIds.has(testCase.caseId)) {
+        failures.push(`${label}: duplicate caseId ${testCase.caseId}`);
+      }
+      caseIds.add(testCase.caseId);
+    }
+    const promptAnswerKey = `${testCase?.promptId || ""}\u0000${normalizeText(testCase?.answer)}`;
+    if (promptAnswers.has(promptAnswerKey)) {
+      warnings.push(`${label}: duplicate promptId + answer pair`);
+    }
+    promptAnswers.add(promptAnswerKey);
+
+    const expectedMissionKinds = resolveExpectedMissionKinds(testCase);
+    if (expectedMissionKinds.length === 0) {
+      failures.push(`${label}: expectedMissionKinds or legacy expectedFocusTypes must define at least one outcome`);
+    }
+    for (const missionKind of expectedMissionKinds) {
+      if (!KNOWN_MISSION_KINDS.has(missionKind)) {
+        failures.push(`${label}: unknown expected mission kind ${missionKind}`);
       }
     }
-    for (const focusType of testCase?.forbiddenFocusTypes ?? []) {
-      if (!KNOWN_FOCUS_TYPES.has(focusType)) {
-        warnings.push(`${label}: forbiddenFocusTypes contains unknown focus type ${focusType}`);
+    for (const missionKind of resolveForbiddenMissionKinds(testCase)) {
+      if (!KNOWN_MISSION_KINDS.has(missionKind)) {
+        failures.push(`${label}: unknown forbidden mission kind ${missionKind}`);
+      }
+    }
+    for (const focusType of testCase?.expectedFocusTypes ?? []) {
+      if (!LEGACY_FOCUS_TYPES.has(focusType)) {
+        warnings.push(`${label}: legacy expectedFocusTypes contains unknown focus type ${focusType}`);
+      }
+    }
+    for (const targetSlot of testCase?.expectedTargetSlots ?? []) {
+      if (!KNOWN_TARGET_SLOTS.has(targetSlot)) {
+        warnings.push(`${label}: expectedTargetSlots contains unknown canonical slot ${targetSlot}`);
+      }
+    }
+    for (const targetSlot of testCase?.forbiddenTargetSlots ?? []) {
+      if (!KNOWN_TARGET_SLOTS.has(targetSlot)) {
+        warnings.push(`${label}: forbiddenTargetSlots contains unknown canonical slot ${targetSlot}`);
       }
     }
   });
 
   return { failures, warnings };
+}
+
+function legacyFocusToMissionKind(focusType) {
+  if (LEGACY_CONTENT_FOCUS_TYPES.has(focusType)) {
+    return "SLOT";
+  }
+  if (focusType === "GRAMMAR_FIX") {
+    return "GRAMMAR_FIX";
+  }
+  if (focusType === "TASK_RESET") {
+    return "TASK_RESET";
+  }
+  if (focusType === "EXPRESSION_POLISH") {
+    return "COMPLETE";
+  }
+  return null;
+}
+
+function unique(values) {
+  return [...new Set(values.filter(Boolean))];
 }
 
 function requireNonBlank(value, code, message, failures) {

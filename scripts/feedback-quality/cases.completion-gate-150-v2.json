@@ -1,0 +1,3287 @@
+[
+  {
+    "caseId": "completion-gate-001",
+    "name": "routine-after-dinner - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-a-1",
+    "promptQuestionIncludesAny": [
+      "after dinner"
+    ],
+    "answer": "My favorite color is navy because it looks calm.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-002",
+    "name": "routine-after-dinner - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-1",
+    "promptQuestionIncludesAny": [
+      "after dinner"
+    ],
+    "answer": "Dishes and TV after dinner.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-003",
+    "name": "routine-after-dinner - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-a-1",
+    "promptQuestionIncludesAny": [
+      "after dinner"
+    ],
+    "answer": "After dinner is usually quiet at my home.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target ACTION, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-004",
+    "name": "routine-after-dinner - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-a-1",
+    "promptQuestionIncludesAny": [
+      "after dinner"
+    ],
+    "answer": "I usually relax after dinner.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "FEELING",
+      "RESULT"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target ADDITIONAL_ACTION or SPECIFIC_TIME or PLACE or REASON or FEELING or RESULT, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-005",
+    "name": "routine-after-dinner - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-a-1",
+    "promptQuestionIncludesAny": [
+      "after dinner"
+    ],
+    "answer": "After dinner, I usually wash the dishes and then watches TV to relax.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-006",
+    "name": "routine-after-dinner - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-a-1",
+    "promptQuestionIncludesAny": [
+      "after dinner"
+    ],
+    "answer": "After dinner, I wash the dishes and take a short walk around my neighborhood because it helps me unwind.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-007",
+    "name": "preference-quick-meal - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-a-2",
+    "promptQuestionIncludesAny": [
+      "quick meal at home"
+    ],
+    "answer": "I take the subway to work every weekday.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "SPECIFIC_TIME",
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-008",
+    "name": "preference-quick-meal - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-2",
+    "promptQuestionIncludesAny": [
+      "quick meal at home"
+    ],
+    "answer": "After work, maybe noodles.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-009",
+    "name": "preference-quick-meal - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-a-2",
+    "promptQuestionIncludesAny": [
+      "quick meal at home"
+    ],
+    "answer": "I like to make a quick meal after work.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHOICE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-010",
+    "name": "preference-quick-meal - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-a-2",
+    "promptQuestionIncludesAny": [
+      "quick meal at home"
+    ],
+    "answer": "After work, I usually choose something easy.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHOICE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required CHOICE is present only as the placeholder 'something easy', so the learner should name the actual meal before adding another depth slot."
+  },
+  {
+    "caseId": "completion-gate-011",
+    "name": "preference-quick-meal - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-a-2",
+    "promptQuestionIncludesAny": [
+      "quick meal at home"
+    ],
+    "answer": "After work, I likes to make noodles because they is quick.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-012",
+    "name": "preference-quick-meal - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-a-2",
+    "promptQuestionIncludesAny": [
+      "quick meal at home"
+    ],
+    "answer": "After work, I like to make vegetable noodles because they are quick and require only one pan.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-013",
+    "name": "routine-weekend - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Pasta is my favorite food because it is creamy.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-014",
+    "name": "routine-weekend - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Nap on weekend.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-015",
+    "name": "routine-weekend - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "Weekends are my free time.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target ACTION, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-016",
+    "name": "routine-weekend - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "I usually take a nap on weekends.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "FEELING",
+      "REASON",
+      "RESULT"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target ADDITIONAL_ACTION or SPECIFIC_TIME or PLACE or FEELING or REASON or RESULT, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-017",
+    "name": "routine-weekend - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "On weekends, I usually taking a nap and meet my friends.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-018",
+    "name": "routine-weekend - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "spend your weekend"
+    ],
+    "answer": "On Saturday afternoons, I take a nap and then meet a friend at a nearby cafe to recharge.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-019",
+    "name": "routine-after-work - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "Online shopping is convenient for many people.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-020",
+    "name": "routine-after-work - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "Gym after work, relaxing.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-021",
+    "name": "routine-after-work - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "After work, I go to the gym.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-022",
+    "name": "routine-after-work - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "After work, I go to the gym because it is nice.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required REASON is present but 'it is nice' carries no specific cause, so the same REASON should be made concrete."
+  },
+  {
+    "caseId": "completion-gate-023",
+    "name": "routine-after-work - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "After work, I goes to the gym because exercise help me relax.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-024",
+    "name": "routine-after-work - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "After work, I go to the gym because a short workout helps me release stress from the day.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-025",
+    "name": "problem-work-school - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-b-1",
+    "promptQuestionIncludesAny": [
+      "challenge you often face"
+    ],
+    "answer": "Spring is my favorite season because the weather is mild.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-026",
+    "name": "problem-work-school - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-b-1",
+    "promptQuestionIncludesAny": [
+      "challenge you often face"
+    ],
+    "answer": "Too many tasks at work.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-027",
+    "name": "problem-work-school - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-b-1",
+    "promptQuestionIncludesAny": [
+      "challenge you often face"
+    ],
+    "answer": "I often have too many tasks at work.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target SOLUTION, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-028",
+    "name": "problem-work-school - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-b-1",
+    "promptQuestionIncludesAny": [
+      "challenge you often face"
+    ],
+    "answer": "I often have too many tasks, so I deal with the problem somehow.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target SOLUTION, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required SOLUTION is represented only by 'somehow', so the next mission should specify the actual coping action."
+  },
+  {
+    "caseId": "completion-gate-029",
+    "name": "problem-work-school - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-b-1",
+    "promptQuestionIncludesAny": [
+      "challenge you often face"
+    ],
+    "answer": "I often has too many tasks, so I make a priority list to handle them.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-030",
+    "name": "problem-work-school - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-b-1",
+    "promptQuestionIncludesAny": [
+      "challenge you often face"
+    ],
+    "answer": "I often receive several urgent tasks at once, so I rank them by deadline and confirm priorities with my manager.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-031",
+    "name": "goal-reading-habit - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "Public transportation is useful in large cities.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "GOAL",
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-032",
+    "name": "goal-reading-habit - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "Reading every day for focus.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-033",
+    "name": "goal-reading-habit - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "I want to read for twenty minutes every day.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-034",
+    "name": "goal-reading-habit - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "I want to read every day because it is good for me.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required REASON is present as the vague phrase 'it is good for me'; it should be clarified before optional planning detail is requested."
+  },
+  {
+    "caseId": "completion-gate-035",
+    "name": "goal-reading-habit - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "I want build a reading habit because it help me focus.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-036",
+    "name": "goal-reading-habit - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "I want to read for twenty minutes before bed because it helps me focus and keeps me away from my phone.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-037",
+    "name": "goal-speaking-plan - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "My room is small but comfortable.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-038",
+    "name": "goal-speaking-plan - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "Speaking English better.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-039",
+    "name": "goal-speaking-plan - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "I want to improve my English speaking this year.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "PLAN"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target PLAN, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-040",
+    "name": "goal-speaking-plan - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "I want to improve my English speaking, so I will practice somehow.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "PLAN"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target PLAN, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required PLAN is represented only by 'practice somehow', so the learner should name a concrete practice method."
+  },
+  {
+    "caseId": "completion-gate-041",
+    "name": "goal-speaking-plan - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "I want to improve speaking, and I will practices with a friend every evening.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-042",
+    "name": "goal-speaking-plan - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "I want to improve my English speaking, so I will practice a five-minute conversation with a friend every evening.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-043",
+    "name": "reflection-technology - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-c-1",
+    "promptQuestionIncludesAny": [
+      "technology changed"
+    ],
+    "answer": "I usually cook noodles after work.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "OPINION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-044",
+    "name": "reflection-technology - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-c-1",
+    "promptQuestionIncludesAny": [
+      "technology changed"
+    ],
+    "answer": "Online relationships now.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-045",
+    "name": "reflection-technology - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-c-1",
+    "promptQuestionIncludesAny": [
+      "technology changed"
+    ],
+    "answer": "People used to meet mostly in person, but now they often connect online.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "OPINION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target OPINION, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-046",
+    "name": "reflection-technology - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-c-1",
+    "promptQuestionIncludesAny": [
+      "technology changed"
+    ],
+    "answer": "People used to meet differently, but now they use technology, and I think the change is good.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "BEFORE_STATE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target BEFORE_STATE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The first required comparison slot is only 'used to meet differently'; the earlier state should be described concretely before optional evidence is added."
+  },
+  {
+    "caseId": "completion-gate-047",
+    "name": "reflection-technology - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-c-1",
+    "promptQuestionIncludesAny": [
+      "technology changed"
+    ],
+    "answer": "People used meet in person, but now they connects online, and I think this change is positive.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-048",
+    "name": "reflection-technology - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-c-1",
+    "promptQuestionIncludesAny": [
+      "technology changed"
+    ],
+    "answer": "People used to rely on face-to-face meetings, but now they maintain relationships through messaging and video calls. I think the change is mostly positive because distance matters less.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-049",
+    "name": "opinion-company-duty - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "My favorite snack is chocolate.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "OPINION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-050",
+    "name": "opinion-company-duty - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "Helping society and workers.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-051",
+    "name": "opinion-company-duty - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "Successful companies should protect their workers.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON",
+      "EXAMPLE",
+      "RESULT",
+      "ADVANTAGE",
+      "DISADVANTAGE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON or EXAMPLE or RESULT or ADVANTAGE or DISADVANTAGE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-052",
+    "name": "opinion-company-duty - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "Successful companies should protect workers because it is important.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The opinion is clear, but the depth REASON is only 'it is important'; the same reason should be made informative."
+  },
+  {
+    "caseId": "completion-gate-053",
+    "name": "opinion-company-duty - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "Companies should protects workers because safe workplaces benefits society and employees.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-054",
+    "name": "opinion-company-duty - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "Successful companies should provide safe working conditions, reduce pollution, and report their impact honestly because their decisions affect employees and local communities.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-055",
+    "name": "reflection-belief - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed"
+    ],
+    "answer": "I enjoy watching baseball with my brother.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "CHANGE_CAUSE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-056",
+    "name": "reflection-belief - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed"
+    ],
+    "answer": "A different belief now.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-057",
+    "name": "reflection-belief - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed"
+    ],
+    "answer": "I used to think working long hours meant success, but now I value balance.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHANGE_CAUSE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHANGE_CAUSE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-058",
+    "name": "reflection-belief - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed"
+    ],
+    "answer": "I used to value long hours, but now I value balance because of an experience.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHANGE_CAUSE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHANGE_CAUSE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required CHANGE_CAUSE is present only as 'an experience', so the learner should identify what experience caused the change."
+  },
+  {
+    "caseId": "completion-gate-059",
+    "name": "reflection-belief - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed"
+    ],
+    "answer": "I used to think long hours meant success, but now I believes balance matters because burnout change my priorities.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-060",
+    "name": "reflection-belief - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed"
+    ],
+    "answer": "I used to think working long hours proved commitment, but now I value sustainable work because burnout taught me that constant overtime reduces both health and performance.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-061",
+    "name": "routine-grocery - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "Comedy movies make me laugh after a busy day.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "ACTION",
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-062",
+    "name": "routine-grocery - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "Home, refrigerator, tired.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-063",
+    "name": "routine-grocery - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "After grocery shopping, I go home and put the food away.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-064",
+    "name": "routine-grocery - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "I put the food away because that is better.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required REASON is only 'that is better'; the learner should explain what makes putting the food away better."
+  },
+  {
+    "caseId": "completion-gate-065",
+    "name": "routine-grocery - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "After grocery shopping, I goes home and put the cold food away because it need refrigeration.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-066",
+    "name": "routine-grocery - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "After grocery shopping, I put the cold food in the refrigerator first because I do not want it to spoil.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-067",
+    "name": "routine-morning - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "My best friend is kind and funny.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-068",
+    "name": "routine-morning - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "Wake up and coffee.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-069",
+    "name": "routine-morning - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "Mornings are usually busy for me.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target ACTION, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-070",
+    "name": "routine-morning - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "I drink coffee every morning.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "ADDITIONAL_ACTION",
+      "SPECIFIC_TIME",
+      "PLACE",
+      "REASON",
+      "RESULT"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target ADDITIONAL_ACTION or SPECIFIC_TIME or PLACE or REASON or RESULT, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-071",
+    "name": "routine-morning - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "Every morning, I drinks water and check my schedule before work.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-072",
+    "name": "routine-morning - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "Every morning, I drink a glass of water, make coffee, and check my schedule before work.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-073",
+    "name": "preference-color - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "I usually wake up at seven on weekdays.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "CHOICE",
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-074",
+    "name": "preference-color - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "Blue, calm ocean.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-075",
+    "name": "preference-color - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "My favorite color is blue.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-076",
+    "name": "preference-color - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "My favorite color is blue because it is nice.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required REASON is present only as 'it is nice', so it should be made specific instead of opening a different optional slot."
+  },
+  {
+    "caseId": "completion-gate-077",
+    "name": "preference-color - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "My favorite color are blue because it make me feel calm.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-078",
+    "name": "preference-color - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "My favorite color is blue because it reminds me of the ocean and makes me feel calm.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-079",
+    "name": "preference-nearby-place - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "I want to improve my English this year.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-080",
+    "name": "preference-nearby-place - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "The quiet park nearby.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-081",
+    "name": "preference-nearby-place - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "I like it because it is quiet and close to home.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHOICE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-082",
+    "name": "preference-nearby-place - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "My favorite place near my home is somewhere nice.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHOICE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required CHOICE is still an unnamed placeholder, 'somewhere nice'; the learner should name the place first."
+  },
+  {
+    "caseId": "completion-gate-083",
+    "name": "preference-nearby-place - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "My favorite place are the riverside park because it feel peaceful.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-084",
+    "name": "preference-nearby-place - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "My favorite place near my home is the riverside park because I can walk there quietly after dinner.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-085",
+    "name": "preference-food - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "Rainy days make the streets look gray.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-086",
+    "name": "preference-food - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "Kimchi stew, spicy and warm.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-087",
+    "name": "preference-food - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "I like it because the taste is comforting.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHOICE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-088",
+    "name": "preference-food - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "My favorite food is something delicious.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHOICE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required CHOICE is still 'something delicious', so the learner should identify the food before adding preference details."
+  },
+  {
+    "caseId": "completion-gate-089",
+    "name": "preference-food - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "My favorite food are kimchi stew because it remind me of home.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-090",
+    "name": "preference-food - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "My favorite food is kimchi stew because its spicy broth reminds me of meals with my family.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-091",
+    "name": "goal-health-plan - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "I would like to visit Canada next winter.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "GOAL",
+      "PLAN"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-092",
+    "name": "goal-health-plan - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "Better stamina this year.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-093",
+    "name": "goal-health-plan - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "I want to improve my stamina this year.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "PLAN"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target PLAN, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-094",
+    "name": "goal-health-plan - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "I want to improve my stamina, so I will exercise more.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "PLAN"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target PLAN, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required PLAN says only 'exercise more'; the next mission should make the exercise method or schedule concrete."
+  },
+  {
+    "caseId": "completion-gate-095",
+    "name": "goal-health-plan - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "I want to improve my stamina, so I will jogs three times a week.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-096",
+    "name": "goal-health-plan - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "I want to improve my stamina, so I will jog for thirty minutes three times a week and track each run.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-097",
+    "name": "problem-time-management - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "I like beaches more than mountains.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-098",
+    "name": "problem-time-management - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "Too many tasks and no time.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-099",
+    "name": "problem-time-management - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "I often waste time because I check my phone while working.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target SOLUTION, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-100",
+    "name": "problem-time-management - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "I often waste time on my phone, so I try to handle it somehow.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target SOLUTION, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required SOLUTION is represented only by 'handle it somehow', so the actual time-management action should be specified."
+  },
+  {
+    "caseId": "completion-gate-101",
+    "name": "problem-time-management - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "I often waste time on my phone, so I makes a list and turn it off.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-102",
+    "name": "problem-time-management - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "I often lose time by checking my phone, so I put it in another room and work from a short priority list.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-103",
+    "name": "problem-commute-delay - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delay"
+    ],
+    "answer": "My favorite singer released a new song yesterday.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "PROBLEM",
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-104",
+    "name": "problem-commute-delay - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delay"
+    ],
+    "answer": "Late bus, very stressful.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-105",
+    "name": "problem-commute-delay - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delay"
+    ],
+    "answer": "My bus is often delayed during the morning commute.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target SOLUTION, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-106",
+    "name": "problem-commute-delay - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delay"
+    ],
+    "answer": "My bus is often delayed, so I do something about it.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target SOLUTION, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required SOLUTION is only 'do something about it'; the learner should name the response to the delayed bus."
+  },
+  {
+    "caseId": "completion-gate-107",
+    "name": "problem-commute-delay - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delay"
+    ],
+    "answer": "When my bus is delayed, I checks the subway route and message my team.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-108",
+    "name": "problem-commute-delay - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delay"
+    ],
+    "answer": "When my bus is delayed, I check the subway route and message my team before I become late.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-109",
+    "name": "balanced-self-checkout - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "I usually read a book before bed.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-110",
+    "name": "balanced-self-checkout - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "Convenient but sometimes confusing.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-111",
+    "name": "balanced-self-checkout - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "Self-checkout kiosks reduce waiting time, and I support using them.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "DISADVANTAGE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target DISADVANTAGE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-112",
+    "name": "balanced-self-checkout - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "They reduce waiting time, but they also have some problems. Overall, I support them.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "DISADVANTAGE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target DISADVANTAGE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required DISADVANTAGE is present only as 'some problems', so that negative side should be made concrete."
+  },
+  {
+    "caseId": "completion-gate-113",
+    "name": "balanced-self-checkout - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "Self-checkout kiosks reduces waiting time, but errors makes them confusing, so I supports them only with staff nearby.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-114",
+    "name": "balanced-self-checkout - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "Self-checkout kiosks reduce waiting time, but they can be confusing when an error occurs. Overall, I support them when staff are nearby.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-115",
+    "name": "balanced-open-office - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "I want to learn how to bake bread.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "ADVANTAGE",
+      "DISADVANTAGE",
+      "OPINION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-116",
+    "name": "balanced-open-office - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "Helpful and harmful overall.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-117",
+    "name": "balanced-open-office - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "Open-plan offices make communication easier, so I think they are helpful overall.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "DISADVANTAGE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target DISADVANTAGE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-118",
+    "name": "balanced-open-office - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "They make communication easier, but they can also be bad. Overall, I think they are helpful.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "DISADVANTAGE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target DISADVANTAGE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required DISADVANTAGE is present only as 'can also be bad', so the drawback should be identified explicitly."
+  },
+  {
+    "caseId": "completion-gate-119",
+    "name": "balanced-open-office - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "Open-plan offices makes teamwork easier, but noise hurt concentration, so I thinks quiet rooms are necessary.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-120",
+    "name": "balanced-open-office - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "Open-plan offices make quick collaboration easier, but constant noise can hurt concentration. I think they work best when quiet rooms are available.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-121",
+    "name": "preference-spicy-food - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "I take the subway to work every morning.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "OPINION",
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-122",
+    "name": "preference-spicy-food - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "Yes, spicy food, exciting.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-123",
+    "name": "preference-spicy-food - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "I like spicy food.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-124",
+    "name": "preference-spicy-food - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "I like spicy food because it is good.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required REASON is only 'it is good', so the learner should explain what they like about spicy food."
+  },
+  {
+    "caseId": "completion-gate-125",
+    "name": "preference-spicy-food - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "I likes spicy food because the strong flavor make meals exciting.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-126",
+    "name": "preference-spicy-food - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "I like spicy food because the strong flavor wakes me up and makes a simple meal more exciting.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-127",
+    "name": "reflection-success - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "I usually play games after dinner.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE",
+      "CHANGE_CAUSE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-128",
+    "name": "reflection-success - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "A different meaning of success now.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-129",
+    "name": "reflection-success - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "I used to think success meant earning a high salary.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "NOW_STATE",
+      "CHANGE_CAUSE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target NOW_STATE or CHANGE_CAUSE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-130",
+    "name": "reflection-success - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "I used to value money, but now I value balance because life changed.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHANGE_CAUSE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHANGE_CAUSE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required CHANGE_CAUSE is only 'life changed', so the event or experience behind the change should be specified."
+  },
+  {
+    "caseId": "completion-gate-131",
+    "name": "reflection-success - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "I used to value money, but now I values balance because burnout change my priorities.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-132",
+    "name": "reflection-success - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "I used to think success meant earning a high salary, but now I value meaningful work and personal time because burnout changed my priorities.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-133",
+    "name": "reflection-friendship - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "Online classes are convenient for busy students.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "BEFORE_STATE",
+      "NOW_STATE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-134",
+    "name": "reflection-friendship - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "A different view of friendship now.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-135",
+    "name": "reflection-friendship - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "When I was younger, I thought a good friend had to contact me every day.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "NOW_STATE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target NOW_STATE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-136",
+    "name": "reflection-friendship - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "I used to want many friends, but now I prefer fewer friends.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "CHANGE_CAUSE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target CHANGE_CAUSE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The before and now states are clear, but the configured depth requirement is still unmet; CHANGE_CAUSE is the highest-priority missing depth slot."
+  },
+  {
+    "caseId": "completion-gate-137",
+    "name": "reflection-friendship - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "I used to want many friends, but now I prefers a few people I can trust.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-138",
+    "name": "reflection-friendship - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "I used to value having many friends, but now I prefer a few people I can trust because honest conversations matter more to me.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-139",
+    "name": "general-home-location - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I want to become a better cook.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "PLACE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-140",
+    "name": "general-home-location - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "Western Seoul, near a park.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-141",
+    "name": "general-home-location - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "My neighborhood is quiet and convenient.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "PLACE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target PLACE, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-142",
+    "name": "general-home-location - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I live in a nice area.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "PLACE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target PLACE, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required PLACE is only 'a nice area', which does not identify a location; the learner should provide a concrete place."
+  },
+  {
+    "caseId": "completion-gate-143",
+    "name": "general-home-location - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I am live in western Seoul near a small park.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-144",
+    "name": "general-home-location - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I live in western Seoul near a small park, so the neighborhood is quiet in the evening.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  },
+  {
+    "caseId": "completion-gate-145",
+    "name": "general-learning-reason - off-topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "My favorite bag is a small backpack.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot."
+  },
+  {
+    "caseId": "completion-gate-146",
+    "name": "general-learning-reason - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "Because travel and new people.",
+    "expectedMissionKinds": [
+      "STRUCTURE_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence."
+  },
+  {
+    "caseId": "completion-gate-147",
+    "name": "general-learning-reason - missing-slot",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "I am learning English these days.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and provide a usable scaffold."
+  },
+  {
+    "caseId": "completion-gate-148",
+    "name": "general-learning-reason - generic-content",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "I am learning English because it is useful.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Keep the loop open, target REASON, and make the vague content already occupying that slot concrete with a usable scaffold.",
+    "oracleRevision": "v2-generic-slot-concretization",
+    "oracleRationale": "The required REASON is only 'it is useful', so the learner should say what English is useful for."
+  },
+  {
+    "caseId": "completion-gate-149",
+    "name": "general-learning-reason - grammar",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "I learning English because I want talk with local people when I travel.",
+    "expectedMissionKinds": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [
+      "TASK_RESET",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": false,
+    "requiresComparison": true,
+    "requiresScaffold": false,
+    "expectedBehavior": "Choose GRAMMAR_FIX and show a grounded before/after repair."
+  },
+  {
+    "caseId": "completion-gate-150",
+    "name": "general-learning-reason - complete",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "I am learning English because I want to talk with local people confidently when I travel abroad.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedTargetSlots": [],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Complete the loop without forcing an optional mission."
+  }
+]

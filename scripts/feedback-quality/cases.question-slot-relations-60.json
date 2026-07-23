@@ -1,0 +1,1242 @@
+[
+  {
+    "caseId": "relation-action-satisfied",
+    "name": "ACTION relation - satisfied first waking action",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0022",
+    "promptQuestionIncludesAny": [
+      "first thing you do after waking up"
+    ],
+    "answer": "After I wake up, I first drink a glass of water.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize the concrete first waking activity as SATISFIED ACTION, do not target ACTION again, and complete the loop."
+  },
+  {
+    "caseId": "relation-action-unresolved",
+    "name": "ACTION relation - generic first waking action",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0022",
+    "promptQuestionIncludesAny": [
+      "first thing you do after waking up"
+    ],
+    "answer": "After I wake up, I first do something simple to help myself feel alert.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the unspecified first activity as GENERIC ACTION and ask for the concrete thing the learner does after waking."
+  },
+  {
+    "caseId": "relation-action-offtopic",
+    "name": "ACTION relation - off-topic museum statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0022",
+    "promptQuestionIncludesAny": [
+      "first thing you do after waking up"
+    ],
+    "answer": "My favorite museum has a large collection of modern paintings.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the museum statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, ACTION."
+  },
+  {
+    "caseId": "relation-choice-satisfied",
+    "name": "CHOICE relation - satisfied favorite food",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "My favorite food is kimchi stew.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize kimchi stew as a specific favorite-food CHOICE, do not target CHOICE again, and complete the loop."
+  },
+  {
+    "caseId": "relation-choice-unresolved",
+    "name": "CHOICE relation - generic favorite food",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "My favorite food is something warm and savory.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the unidentified warm and savory food as GENERIC CHOICE and ask for a recognizable food or dish."
+  },
+  {
+    "caseId": "relation-choice-offtopic",
+    "name": "CHOICE relation - off-topic commute statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "I take the bus to work because parking is expensive.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "CHOICE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the commute statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, CHOICE."
+  },
+  {
+    "caseId": "relation-goal-satisfied",
+    "name": "GOAL relation - satisfied reading habit",
+    "category": "COMPLETE",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build this year"
+    ],
+    "answer": "This year, I want to build a habit of reading for twenty minutes before bed because regular reading will improve my concentration.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "GOAL"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize the repeatable reading habit as SATISFIED GOAL and the concentration benefit as REASON, then complete without targeting GOAL."
+  },
+  {
+    "caseId": "relation-goal-unresolved",
+    "name": "GOAL relation - generic better habit",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build this year"
+    ],
+    "answer": "This year, I want to build a better habit because I often waste my evenings scrolling on my phone.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "GOAL"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the unspecified better habit as GENERIC GOAL even though the learner gives a concrete personal reason."
+  },
+  {
+    "caseId": "relation-goal-offtopic",
+    "name": "GOAL relation - off-topic bakery statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build this year"
+    ],
+    "answer": "The bakery near my office sells excellent sourdough bread.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "GOAL"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the bakery statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, GOAL."
+  },
+  {
+    "caseId": "relation-problem-satisfied",
+    "name": "PROBLEM relation - satisfied listening difficulty",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0106",
+    "promptQuestionIncludesAny": [
+      "hard about learning English"
+    ],
+    "answer": "Understanding native speakers when they talk quickly is hard for me.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "PROBLEM"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize fast native-speaker listening as a specific English-learning PROBLEM, do not target PROBLEM again, and complete the loop."
+  },
+  {
+    "caseId": "relation-problem-unresolved",
+    "name": "PROBLEM relation - generic English difficulty",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0106",
+    "promptQuestionIncludesAny": [
+      "hard about learning English"
+    ],
+    "answer": "There is something about learning English that I find difficult.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "PROBLEM"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the unidentified difficulty as GENERIC PROBLEM and ask for a specific English skill, task, feature, or situation."
+  },
+  {
+    "caseId": "relation-problem-offtopic",
+    "name": "PROBLEM relation - off-topic gardening statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0106",
+    "promptQuestionIncludesAny": [
+      "hard about learning English"
+    ],
+    "answer": "I grow tomatoes and basil on my balcony every summer.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "PROBLEM"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the gardening statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, PROBLEM."
+  },
+  {
+    "caseId": "relation-opinion-satisfied",
+    "name": "OPINION relation - satisfied new-friend question",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0378",
+    "promptQuestionIncludesAny": [
+      "good question to ask a new friend"
+    ],
+    "answer": "I think a good question to ask a new friend is, \"What do you like to do on weekends?\"",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "OPINION"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize the proposed weekend-hobby question as a specific recommended OPINION, do not target OPINION again, and complete the loop."
+  },
+  {
+    "caseId": "relation-opinion-unresolved",
+    "name": "OPINION relation - generic friendly question",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0378",
+    "promptQuestionIncludesAny": [
+      "good question to ask a new friend"
+    ],
+    "answer": "I think it is best to ask a new friend a friendly and welcoming question.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "OPINION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the undefined friendly question as GENERIC OPINION and ask for a recognizable question or clearly defined topic."
+  },
+  {
+    "caseId": "relation-opinion-offtopic",
+    "name": "OPINION relation - off-topic river statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0378",
+    "promptQuestionIncludesAny": [
+      "good question to ask a new friend"
+    ],
+    "answer": "Heavy rain usually makes the river rise behind my house.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "OPINION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the river statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, OPINION."
+  },
+  {
+    "caseId": "relation-plan-satisfied",
+    "name": "PLAN relation - satisfied journal routine",
+    "category": "COMPLETE",
+    "promptId": "prompt-goal-1102",
+    "promptQuestionIncludesAny": [
+      "keeping a daily journal"
+    ],
+    "answer": "To stay consistent, I will keep my journal on my pillow and write three sentences every night at ten.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "PLAN"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize the pillow cue and three-sentence routine as PLAN plus the nightly time as depth, then complete without targeting PLAN."
+  },
+  {
+    "caseId": "relation-plan-unresolved",
+    "name": "PLAN relation - unspecified journal method",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-goal-1102",
+    "promptQuestionIncludesAny": [
+      "keeping a daily journal"
+    ],
+    "answer": "I want to use a method that will keep my daily journal consistent this year, but I have not chosen one yet.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "PLAN"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the claimed but undefined consistency method as GENERIC PLAN and ask for a concrete journaling routine or support strategy."
+  },
+  {
+    "caseId": "relation-plan-offtopic",
+    "name": "PLAN relation - off-topic coastal train statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-goal-1102",
+    "promptQuestionIncludesAny": [
+      "keeping a daily journal"
+    ],
+    "answer": "The coastal train passes several quiet fishing villages.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "PLAN"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the coastal train statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, PLAN."
+  },
+  {
+    "caseId": "relation-solution-satisfied",
+    "name": "SOLUTION relation - satisfied sleeplessness method",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0038",
+    "promptQuestionIncludesAny": [
+      "when you cannot sleep"
+    ],
+    "answer": "When I cannot sleep, I get out of bed and read a paper book for a few minutes.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize getting up to read as a concrete response to sleeplessness, do not target SOLUTION again, and complete the loop."
+  },
+  {
+    "caseId": "relation-solution-unresolved",
+    "name": "SOLUTION relation - generic relaxation method",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0038",
+    "promptQuestionIncludesAny": [
+      "when you cannot sleep"
+    ],
+    "answer": "When I cannot sleep, I try something that usually helps me relax.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the unspecified relaxing method as GENERIC SOLUTION and ask for the concrete action or strategy."
+  },
+  {
+    "caseId": "relation-solution-offtopic",
+    "name": "SOLUTION relation - off-topic coin collection",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0038",
+    "promptQuestionIncludesAny": [
+      "when you cannot sleep"
+    ],
+    "answer": "My cousin collects old coins from different countries.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "SOLUTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the coin-collection statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, SOLUTION."
+  },
+  {
+    "caseId": "relation-advantage-satisfied",
+    "name": "ADVANTAGE relation - satisfied kiosk benefit",
+    "category": "COMPLETE",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "benefits and drawbacks of self-checkout kiosks"
+    ],
+    "answer": "Self-checkout kiosks can shorten lines for shoppers with only a few items, but scanning errors can be frustrating when no employee is nearby. Overall, I support using them as long as staffed checkout lanes remain available.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "ADVANTAGE"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize shorter lines as ADVANTAGE, scanning errors as DISADVANTAGE, and the conditional support as OPINION, then complete without retargeting ADVANTAGE."
+  },
+  {
+    "caseId": "relation-advantage-unresolved",
+    "name": "ADVANTAGE relation - generic kiosk benefit",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "benefits and drawbacks of self-checkout kiosks"
+    ],
+    "answer": "Self-checkout kiosks are beneficial for shoppers in some ways, but scanning errors can be frustrating when no employee is nearby. Overall, I support using them as long as staffed checkout lanes remain available.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "ADVANTAGE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the unnamed useful benefit as GENERIC ADVANTAGE while recognizing the concrete drawback and overall view."
+  },
+  {
+    "caseId": "relation-advantage-offtopic",
+    "name": "ADVANTAGE relation - off-topic guitar plan",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "benefits and drawbacks of self-checkout kiosks"
+    ],
+    "answer": "I am planning to learn the guitar during my summer vacation.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "ADVANTAGE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the guitar plan as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, ADVANTAGE."
+  },
+  {
+    "caseId": "relation-disadvantage-satisfied",
+    "name": "DISADVANTAGE relation - satisfied phone harm",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0260",
+    "promptQuestionIncludesAny": [
+      "bad thing about using your phone too much"
+    ],
+    "answer": "Using my phone too much strains my eyes and gives me headaches.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "DISADVANTAGE"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize eye strain and headaches as a concrete DISADVANTAGE, do not target DISADVANTAGE again, and complete the loop."
+  },
+  {
+    "caseId": "relation-disadvantage-unresolved",
+    "name": "DISADVANTAGE relation - generic phone problem",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0260",
+    "promptQuestionIncludesAny": [
+      "bad thing about using your phone too much"
+    ],
+    "answer": "Using my phone too much can cause some problems in my daily life.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "DISADVANTAGE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the unspecified problems as GENERIC DISADVANTAGE and ask for one recognizable harm, difficulty, or loss."
+  },
+  {
+    "caseId": "relation-disadvantage-offtopic",
+    "name": "DISADVANTAGE relation - off-topic mango statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0260",
+    "promptQuestionIncludesAny": [
+      "bad thing about using your phone too much"
+    ],
+    "answer": "Fresh mangoes taste sweetest in the middle of summer.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "DISADVANTAGE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the mango statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, DISADVANTAGE."
+  },
+  {
+    "caseId": "relation-before_state-satisfied",
+    "name": "BEFORE_STATE relation - satisfied earlier relationship practice",
+    "category": "COMPLETE",
+    "promptId": "prompt-c-1",
+    "promptQuestionIncludesAny": [
+      "technology changed the way people build relationships"
+    ],
+    "answer": "Before messaging apps, people often built friendships through repeated face-to-face meetings. Now they can maintain relationships through group chats and video calls, and I think this change is mostly positive.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "BEFORE_STATE"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize face-to-face meetings as the earlier relationship practice, satisfy the current state and opinion, and complete without targeting BEFORE_STATE."
+  },
+  {
+    "caseId": "relation-before_state-unresolved",
+    "name": "BEFORE_STATE relation - generic earlier relationship state",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-c-1",
+    "promptQuestionIncludesAny": [
+      "technology changed the way people build relationships"
+    ],
+    "answer": "Before modern communication technology, people built relationships in a different way. Now they can maintain friendships through group chats and video calls, and I think this change is mostly positive.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "BEFORE_STATE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the phrase 'in a different way' as GENERIC BEFORE_STATE while recognizing the technology-shaped current state and positive opinion."
+  },
+  {
+    "caseId": "relation-before_state-offtopic",
+    "name": "BEFORE_STATE relation - off-topic swimming statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-c-1",
+    "promptQuestionIncludesAny": [
+      "technology changed the way people build relationships"
+    ],
+    "answer": "My favorite way to exercise is swimming laps at the community pool.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "BEFORE_STATE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the swimming statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, BEFORE_STATE."
+  },
+  {
+    "caseId": "relation-now_state-satisfied",
+    "name": "NOW_STATE relation - satisfied current work belief",
+    "category": "COMPLETE",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed over time"
+    ],
+    "answer": "I used to believe that working longer hours always led to better results, but now I believe that focused work and regular breaks are more effective. I changed my mind after burnout made my performance worse.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "NOW_STATE"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize focused work and regular breaks as the learner's contrasting current belief, satisfy the earlier belief and cause, and complete without targeting NOW_STATE."
+  },
+  {
+    "caseId": "relation-now_state-unresolved",
+    "name": "NOW_STATE relation - generic current belief",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed over time"
+    ],
+    "answer": "I used to believe that working longer hours always led to better results, but now I see the issue differently. I changed my mind after burnout made my performance worse.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "NOW_STATE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat 'I see the issue differently' as GENERIC NOW_STATE after accepting the concrete earlier belief, while leaving NOW_STATE as the first unresolved required slot."
+  },
+  {
+    "caseId": "relation-now_state-offtopic",
+    "name": "NOW_STATE relation - off-topic library statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed over time"
+    ],
+    "answer": "The new library has wider desks and brighter reading lamps.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "BEFORE_STATE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the library statement as OFF_TOPIC, return TASK_RESET, and target BEFORE_STATE because it is this question's first required slot."
+  },
+  {
+    "caseId": "relation-change_cause-satisfied",
+    "name": "CHANGE_CAUSE relation - satisfied colleague influence",
+    "category": "COMPLETE",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed over time"
+    ],
+    "answer": "I used to believe that asking for help showed weakness, but now I believe it is a practical way to learn. A patient colleague changed my mind by showing me how quickly teamwork solved a difficult task.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "CHANGE_CAUSE"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize the colleague's teamwork demonstration as the concrete cause of the belief change and complete without targeting CHANGE_CAUSE."
+  },
+  {
+    "caseId": "relation-change_cause-unresolved",
+    "name": "CHANGE_CAUSE relation - generic influence",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed over time"
+    ],
+    "answer": "I used to believe that asking for help showed weakness, but now I believe it is a practical way to learn. Several things influenced this change over time.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "CHANGE_CAUSE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Accept the concrete earlier and current beliefs, treat the unspecified influences as GENERIC CHANGE_CAUSE, and target that third required slot."
+  },
+  {
+    "caseId": "relation-change_cause-offtopic",
+    "name": "CHANGE_CAUSE relation - off-topic soup routine",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-c-3",
+    "promptQuestionIncludesAny": [
+      "belief you have changed over time"
+    ],
+    "answer": "I usually make vegetable soup on Sunday afternoons.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "BEFORE_STATE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the soup routine as OFF_TOPIC, return TASK_RESET, and target BEFORE_STATE because it is this question's first required slot."
+  },
+  {
+    "caseId": "relation-additional_action-satisfied",
+    "name": "ADDITIONAL_ACTION relation - satisfied second post-dinner action",
+    "category": "COMPLETE",
+    "promptId": "prompt-a-1",
+    "promptQuestionIncludesAny": [
+      "usually do after dinner"
+    ],
+    "answer": "After dinner, I wash the dishes and then take a short walk around my neighborhood.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "ADDITIONAL_ACTION"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize washing the dishes as ACTION and the distinct walk as SATISFIED ADDITIONAL_ACTION, meet the depth requirement, and complete the loop."
+  },
+  {
+    "caseId": "relation-additional_action-unresolved",
+    "name": "ADDITIONAL_ACTION relation - generic second post-dinner action",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-a-1",
+    "promptQuestionIncludesAny": [
+      "usually do after dinner"
+    ],
+    "answer": "After dinner, I wash the dishes and then do something else before bed.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "ADDITIONAL_ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Accept washing the dishes as ACTION, treat 'do something else' as GENERIC ADDITIONAL_ACTION, and target the first unresolved depth slot."
+  },
+  {
+    "caseId": "relation-additional_action-offtopic",
+    "name": "ADDITIONAL_ACTION relation - off-topic documentary statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-a-1",
+    "promptQuestionIncludesAny": [
+      "usually do after dinner"
+    ],
+    "answer": "The history documentary explained how ancient bridges were built.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the documentary statement as OFF_TOPIC, return TASK_RESET, and target ACTION because it is this question's first required slot."
+  },
+  {
+    "caseId": "relation-specific_time-satisfied",
+    "name": "SPECIFIC_TIME relation - satisfied waking time",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0021",
+    "promptQuestionIncludesAny": [
+      "time do you usually wake up"
+    ],
+    "answer": "I usually wake up at 6:30 a.m.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "SPECIFIC_TIME"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize 6:30 a.m. as the learner's usual concrete waking time, do not target SPECIFIC_TIME again, and complete the loop."
+  },
+  {
+    "caseId": "relation-specific_time-unresolved",
+    "name": "SPECIFIC_TIME relation - unspecified regular waking time",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0021",
+    "promptQuestionIncludesAny": [
+      "time do you usually wake up"
+    ],
+    "answer": "I usually wake up at around the same time each day.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "SPECIFIC_TIME"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the unreported regular time as GENERIC SPECIFIC_TIME and ask for a recognizable clock time or narrow range."
+  },
+  {
+    "caseId": "relation-specific_time-offtopic",
+    "name": "SPECIFIC_TIME relation - off-topic motorcycle workshop",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0021",
+    "promptQuestionIncludesAny": [
+      "time do you usually wake up"
+    ],
+    "answer": "My brother repairs motorcycles in a small workshop.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "SPECIFIC_TIME"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the motorcycle-workshop statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, SPECIFIC_TIME."
+  },
+  {
+    "caseId": "relation-place-satisfied",
+    "name": "PLACE relation - satisfied current residence",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I live in an apartment in Incheon.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "PLACE"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize Incheon as the learner's current residence, do not target PLACE again, and complete the loop."
+  },
+  {
+    "caseId": "relation-place-unresolved",
+    "name": "PLACE relation - generic nearby residence",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I live in a pleasant area somewhere nearby.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "PLACE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the unanchored pleasant area as GENERIC PLACE and ask for a recognizable current residence location."
+  },
+  {
+    "caseId": "relation-place-offtopic",
+    "name": "PLACE relation - off-topic piano routine",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I practice the piano for thirty minutes every evening.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "PLACE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the piano routine as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, PLACE."
+  },
+  {
+    "caseId": "relation-reason-satisfied",
+    "name": "REASON relation - satisfied workplace motivation",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "Why are you learning English"
+    ],
+    "answer": "I am learning English so I can lead meetings with our overseas clients.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize leading meetings with overseas clients as a concrete English-learning motivation, do not target REASON again, and complete the loop."
+  },
+  {
+    "caseId": "relation-reason-unresolved",
+    "name": "REASON relation - generic importance",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "Why are you learning English"
+    ],
+    "answer": "I am learning English because it is important to me.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat importance without a personal need, interest, responsibility, or intended use as GENERIC REASON."
+  },
+  {
+    "caseId": "relation-reason-offtopic",
+    "name": "REASON relation - off-topic park closing",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "Why are you learning English"
+    ],
+    "answer": "The park closes its main gate at sunset.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "REASON"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the park-closing statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, REASON."
+  },
+  {
+    "caseId": "relation-detail-satisfied",
+    "name": "DETAIL relation - satisfied bicycle repair skill",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0006",
+    "promptQuestionIncludesAny": [
+      "thing you are good at"
+    ],
+    "answer": "I am good at repairing bicycles.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "DETAIL"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize repairing bicycles as a specific ability, do not target DETAIL again, and complete the loop."
+  },
+  {
+    "caseId": "relation-detail-unresolved",
+    "name": "DETAIL relation - generic practical ability",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0006",
+    "promptQuestionIncludesAny": [
+      "thing you are good at"
+    ],
+    "answer": "I am good at several practical tasks.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "DETAIL"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the undefined practical things as GENERIC DETAIL and ask for a recognizable skill, task, or capability."
+  },
+  {
+    "caseId": "relation-detail-offtopic",
+    "name": "DETAIL relation - off-topic autumn leaves",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0006",
+    "promptQuestionIncludesAny": [
+      "thing you are good at"
+    ],
+    "answer": "The autumn leaves turn red along the mountain trail.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "DETAIL"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the autumn-leaves statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, DETAIL."
+  },
+  {
+    "caseId": "relation-example-satisfied",
+    "name": "EXAMPLE relation - satisfied patience experience",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0013",
+    "promptQuestionIncludesAny": [
+      "kind of person are you"
+    ],
+    "answer": "I am patient. Last week, I calmly explained the same math problem to my younger brother three times until he understood it.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "EXAMPLE"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize patience as DETAIL and the repeated explanation in a specific recent situation as EXAMPLE, meet depth, and complete without targeting EXAMPLE."
+  },
+  {
+    "caseId": "relation-example-unresolved",
+    "name": "EXAMPLE relation - generic supporting situations",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0013",
+    "promptQuestionIncludesAny": [
+      "kind of person are you"
+    ],
+    "answer": "I am patient, and I have shown this quality in various situations.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "EXAMPLE"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Accept patient as the required personality DETAIL, treat the unspecified situations as GENERIC EXAMPLE, and target the first unresolved depth slot."
+  },
+  {
+    "caseId": "relation-example-offtopic",
+    "name": "EXAMPLE relation - off-topic airport train",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0013",
+    "promptQuestionIncludesAny": [
+      "kind of person are you"
+    ],
+    "answer": "The express train reaches the airport in forty minutes.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "DETAIL"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the airport-train statement as OFF_TOPIC, return TASK_RESET, and target DETAIL because it is this question's first required slot."
+  },
+  {
+    "caseId": "relation-feeling-satisfied",
+    "name": "FEELING relation - satisfied post-exercise state",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0289",
+    "promptQuestionIncludesAny": [
+      "feel after exercise"
+    ],
+    "answer": "After exercise, I feel refreshed and energetic.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "FEELING"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize refreshed and energetic as a clear post-exercise FEELING, do not target FEELING again, and complete the loop."
+  },
+  {
+    "caseId": "relation-feeling-unresolved",
+    "name": "FEELING relation - unspecified post-exercise state",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0289",
+    "promptQuestionIncludesAny": [
+      "feel after exercise"
+    ],
+    "answer": "After exercise, I feel different for a while.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "FEELING"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat 'a certain way' as GENERIC FEELING and ask for a recognizable emotion or bodily condition."
+  },
+  {
+    "caseId": "relation-feeling-offtopic",
+    "name": "FEELING relation - off-topic bookstore statement",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0289",
+    "promptQuestionIncludesAny": [
+      "feel after exercise"
+    ],
+    "answer": "My uncle owns a bookstore near the university.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "FEELING"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the bookstore statement as OFF_TOPIC, return TASK_RESET, and target the question's first required slot, FEELING."
+  },
+  {
+    "caseId": "relation-result-satisfied",
+    "name": "RESULT relation - satisfied photo organization benefit",
+    "category": "COMPLETE",
+    "promptId": "prompt-preference-1124",
+    "promptQuestionIncludesAny": [
+      "organize photos on your phone"
+    ],
+    "answer": "I sort my phone photos into monthly albums, which helps me find specific pictures quickly.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "forbiddenTargetSlots": [
+      "RESULT"
+    ],
+    "expectedLoopComplete": true,
+    "requiresComparison": false,
+    "requiresScaffold": false,
+    "allowAcceptedRevision": false,
+    "expectFixPoints": false,
+    "expectedBehavior": "Recognize monthly albums as ACTION and faster picture retrieval as RESULT, then complete without targeting RESULT."
+  },
+  {
+    "caseId": "relation-result-unresolved",
+    "name": "RESULT relation - generic photo organization benefit",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-preference-1124",
+    "promptQuestionIncludesAny": [
+      "organize photos on your phone"
+    ],
+    "answer": "I sort my phone photos into monthly albums, and I find this system helpful.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedTargetSlots": [
+      "RESULT"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Accept monthly albums as the required ACTION, treat 'helps me in some way' as GENERIC RESULT, and target the second required slot."
+  },
+  {
+    "caseId": "relation-result-offtopic",
+    "name": "RESULT relation - off-topic coffee preference",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-preference-1124",
+    "promptQuestionIncludesAny": [
+      "organize photos on your phone"
+    ],
+    "answer": "I prefer black coffee because I enjoy its bitter flavor.",
+    "expectedMissionKinds": [
+      "TASK_RESET"
+    ],
+    "expectedTargetSlots": [
+      "ACTION"
+    ],
+    "expectedLoopComplete": false,
+    "requiresComparison": false,
+    "requiresScaffold": true,
+    "expectedBehavior": "Treat the coffee preference as OFF_TOPIC, return TASK_RESET, and target ACTION because it is this question's first required slot."
+  }
+]

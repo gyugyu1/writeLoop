@@ -1,0 +1,1762 @@
+[
+  {
+    "caseId": "slot-unification-001",
+    "name": "routine-weekend - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "usually spend your weekend"
+    ],
+    "answer": "My favorite food is pasta because it is creamy.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-002",
+    "name": "routine-weekend - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "usually spend your weekend"
+    ],
+    "answer": "Nap on weekend.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-003",
+    "name": "routine-weekend - one bare action",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "usually spend your weekend"
+    ],
+    "answer": "I usually take a nap.",
+    "expectedFocusTypes": [
+      "DETAIL",
+      "SITUATION",
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-004",
+    "name": "routine-weekend - broken habitual form",
+    "category": "GRAMMAR",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "usually spend your weekend"
+    ],
+    "answer": "I usually taking a nap on Saturday.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-005",
+    "name": "routine-weekend - complete routine",
+    "category": "COMPLETE",
+    "promptId": "prompt-a-3",
+    "promptQuestionIncludesAny": [
+      "usually spend your weekend"
+    ],
+    "answer": "On Saturday afternoons, I usually take a nap and then walk around my neighborhood to clear my head.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "DETAIL",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-006",
+    "name": "routine-after-work-reason - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "Online shopping is convenient for many people.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-007",
+    "name": "routine-after-work-reason - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "Go home and dinner.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-008",
+    "name": "routine-after-work-reason - missing reason",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "After work, I go to the gym.",
+    "expectedFocusTypes": [
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-009",
+    "name": "routine-after-work-reason - broken reason",
+    "category": "GRAMMAR",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "After work, I go gym because make me healthy.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX",
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-010",
+    "name": "routine-after-work-reason - complete answer",
+    "category": "COMPLETE",
+    "promptId": "prompt-a-4",
+    "promptQuestionIncludesAny": [
+      "after work"
+    ],
+    "answer": "After work, I go to the gym because exercising helps me release stress from the day.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "DETAIL",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-011",
+    "name": "routine-grocery - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "I enjoy watching baseball with my brother.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-012",
+    "name": "routine-grocery - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "Home, refrigerator, rest.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-013",
+    "name": "routine-grocery - missing reason",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "After grocery shopping, I go home and put the food away.",
+    "expectedFocusTypes": [
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-014",
+    "name": "routine-grocery - grammar conflict",
+    "category": "GRAMMAR",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "I goes home and putting food in refrigerator because tired.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-015",
+    "name": "routine-grocery - complete answer",
+    "category": "COMPLETE",
+    "promptId": "prompt-routine-1103",
+    "promptQuestionIncludesAny": [
+      "grocery shopping"
+    ],
+    "answer": "After grocery shopping, I put the cold food in the refrigerator first because I do not want it to spoil.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "DETAIL",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-016",
+    "name": "routine-morning - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "My best friend is kind and funny.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-017",
+    "name": "routine-morning - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "Wake up and coffee.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-018",
+    "name": "routine-morning - one bare action",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "I drink coffee.",
+    "expectedFocusTypes": [
+      "DETAIL",
+      "SITUATION",
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-019",
+    "name": "routine-morning - wrong habit tense",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "I drank coffee every morning before work.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-020",
+    "name": "routine-morning - complete routine",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0008",
+    "promptQuestionIncludesAny": [
+      "in the morning"
+    ],
+    "answer": "Every morning, I drink a glass of water, make coffee, and check my schedule before work.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "DETAIL",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-021",
+    "name": "preference-color - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "I usually wake up at seven on weekdays.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-022",
+    "name": "preference-color - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "Blue.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-023",
+    "name": "preference-color - missing reason",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "My favorite color is blue.",
+    "expectedFocusTypes": [
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-024",
+    "name": "preference-color - generic reason",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "My favorite color is blue because it is nice.",
+    "expectedFocusTypes": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Treat the stated slot as present but request one concrete supporting detail."
+  },
+  {
+    "caseId": "slot-unification-025",
+    "name": "preference-color - complete preference",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0004",
+    "promptQuestionIncludesAny": [
+      "favorite color"
+    ],
+    "answer": "My favorite color is blue because it reminds me of the ocean and makes me feel calm.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-026",
+    "name": "preference-nearby-place - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "I want to improve my English this year.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-027",
+    "name": "preference-nearby-place - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "The park.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "DETAIL",
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-028",
+    "name": "preference-nearby-place - bare choice",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "My favorite place near my home is the riverside park.",
+    "expectedFocusTypes": [
+      "REASON",
+      "DETAIL",
+      "FEELING"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-029",
+    "name": "preference-nearby-place - broken description",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "I like riverside park because there very quiet.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-030",
+    "name": "preference-nearby-place - complete preference",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0018",
+    "promptQuestionIncludesAny": [
+      "favorite place near your home"
+    ],
+    "answer": "My favorite place near my home is the riverside park because I can walk there quietly after dinner.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-031",
+    "name": "preference-food - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "Rainy days make the streets look gray.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-032",
+    "name": "preference-food - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "Kimchi stew.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "REASON",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-033",
+    "name": "preference-food - bare choice",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "My favorite food is kimchi stew.",
+    "expectedFocusTypes": [
+      "REASON",
+      "DETAIL",
+      "FEELING"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-034",
+    "name": "preference-food - generic reason",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "My favorite food is kimchi stew because it is good.",
+    "expectedFocusTypes": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Treat the stated slot as present but request one concrete supporting detail."
+  },
+  {
+    "caseId": "slot-unification-035",
+    "name": "preference-food - complete preference",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0041",
+    "promptQuestionIncludesAny": [
+      "favorite food"
+    ],
+    "answer": "My favorite food is kimchi stew because its spicy broth reminds me of meals with my family.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-036",
+    "name": "goal-speaking-plan - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "My room is small but comfortable.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-037",
+    "name": "goal-speaking-plan - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "Speaking English better.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-038",
+    "name": "goal-speaking-plan - goal without plan",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "I want to improve my English speaking this year.",
+    "expectedFocusTypes": [
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-039",
+    "name": "goal-speaking-plan - broken plan",
+    "category": "GRAMMAR",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "I want improve speaking and I will practice with friend every day.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-040",
+    "name": "goal-speaking-plan - complete goal plan",
+    "category": "COMPLETE",
+    "promptId": "prompt-b-5",
+    "promptQuestionIncludesAny": [
+      "skill you want to improve"
+    ],
+    "answer": "I want to improve my English speaking this year, so I will practice a five-minute conversation with a friend every evening.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "RESULT",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-041",
+    "name": "goal-habit-reason - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "Public transportation is useful in large cities.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-042",
+    "name": "goal-habit-reason - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "Read every day.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-043",
+    "name": "goal-habit-reason - missing reason",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "I want to read for twenty minutes every day.",
+    "expectedFocusTypes": [
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-044",
+    "name": "goal-habit-reason - generic reason",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "I want to read every day because it is good.",
+    "expectedFocusTypes": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Treat the stated slot as present but request one concrete supporting detail."
+  },
+  {
+    "caseId": "slot-unification-045",
+    "name": "goal-habit-reason - complete goal",
+    "category": "COMPLETE",
+    "promptId": "prompt-b-3",
+    "promptQuestionIncludesAny": [
+      "habit you want to build"
+    ],
+    "answer": "I want to read for twenty minutes before bed because regular reading helps me focus and sleep without my phone.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "DETAIL",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-046",
+    "name": "goal-health-plan - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "Comedy movies are my favorite because they are funny.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-047",
+    "name": "goal-health-plan - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "Healthy body this year.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-048",
+    "name": "goal-health-plan - goal without plan",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "I want to improve my stamina this year.",
+    "expectedFocusTypes": [
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-049",
+    "name": "goal-health-plan - vague plan",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "I want to be healthier, and I will do many exercises.",
+    "expectedFocusTypes": [
+      "DETAIL",
+      "EXAMPLE",
+      "RESULT",
+      "EXPRESSION_POLISH"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Treat the stated slot as present but request one concrete supporting detail."
+  },
+  {
+    "caseId": "slot-unification-050",
+    "name": "goal-health-plan - complete goal plan",
+    "category": "COMPLETE",
+    "promptId": "prompt-goal-11",
+    "promptQuestionIncludesAny": [
+      "health goal"
+    ],
+    "answer": "I want to improve my stamina, so I will jog for thirty minutes three times a week and track each run.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "RESULT",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-051",
+    "name": "problem-time-management - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "I would like to visit Canada next winter.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-052",
+    "name": "problem-time-management - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "Too many tasks.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-053",
+    "name": "problem-time-management - problem without solution",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "I often waste time because I check my phone while working.",
+    "expectedFocusTypes": [
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-054",
+    "name": "problem-time-management - broken solution",
+    "category": "GRAMMAR",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "I make list and turn off phone for solve it.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-055",
+    "name": "problem-time-management - complete problem solution",
+    "category": "COMPLETE",
+    "promptId": "prompt-problem-01",
+    "promptQuestionIncludesAny": [
+      "managing your time"
+    ],
+    "answer": "I often lose time by checking my phone, so I put it in another room and work from a short priority list.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-056",
+    "name": "problem-commute-delay - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delays"
+    ],
+    "answer": "My favorite singer released a new song yesterday.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-057",
+    "name": "problem-commute-delay - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delays"
+    ],
+    "answer": "Late bus, very stress.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-058",
+    "name": "problem-commute-delay - problem without solution",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delays"
+    ],
+    "answer": "My bus is often delayed during the morning commute.",
+    "expectedFocusTypes": [
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-059",
+    "name": "problem-commute-delay - broken response",
+    "category": "GRAMMAR",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delays"
+    ],
+    "answer": "When bus late, I checking subway and call company.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-060",
+    "name": "problem-commute-delay - complete problem solution",
+    "category": "COMPLETE",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionIncludesAny": [
+      "commuting delays"
+    ],
+    "answer": "When my bus is delayed, I check the subway route and message my team before I become late.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "RESULT",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-061",
+    "name": "balanced-self-checkout - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "I usually cook noodles after work.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-062",
+    "name": "balanced-self-checkout - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "Convenient but difficult.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-063",
+    "name": "balanced-self-checkout - missing drawback",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "Self-checkout kiosks are useful because they reduce waiting time, and I support them.",
+    "expectedFocusTypes": [
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-064",
+    "name": "balanced-self-checkout - missing opinion",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "They reduce waiting time, but older customers may find them confusing.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-065",
+    "name": "balanced-self-checkout - complete balance",
+    "category": "COMPLETE",
+    "promptId": "prompt-balance-1101",
+    "promptQuestionIncludesAny": [
+      "self-checkout kiosks"
+    ],
+    "answer": "Self-checkout kiosks reduce waiting time, but they can be confusing when an error occurs. Overall, I support them when staff are nearby.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-066",
+    "name": "balanced-open-office - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "I want to learn how to bake bread.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-067",
+    "name": "balanced-open-office - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "Helpful and harmful.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-068",
+    "name": "balanced-open-office - one side only",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "Open-plan offices make communication easier, so I think they are helpful.",
+    "expectedFocusTypes": [
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-069",
+    "name": "balanced-open-office - sides without clear view",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "They make teamwork easy, but the noise makes concentration difficult.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-070",
+    "name": "balanced-open-office - complete balance",
+    "category": "COMPLETE",
+    "promptId": "prompt-balance-1102",
+    "promptQuestionIncludesAny": [
+      "open-plan offices"
+    ],
+    "answer": "Open-plan offices make quick collaboration easier, but constant noise can hurt concentration. I think they work best when quiet rooms are available.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-071",
+    "name": "opinion-spicy-food - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "I take the subway to work every morning.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-072",
+    "name": "opinion-spicy-food - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "Yes, spicy food.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX",
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-073",
+    "name": "opinion-spicy-food - missing reason",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "I like spicy food.",
+    "expectedFocusTypes": [
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-074",
+    "name": "opinion-spicy-food - generic reason",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "I like spicy food because it is good.",
+    "expectedFocusTypes": [
+      "DETAIL",
+      "EXAMPLE",
+      "FEELING",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Treat the stated slot as present but request one concrete supporting detail."
+  },
+  {
+    "caseId": "slot-unification-075",
+    "name": "opinion-spicy-food - complete opinion",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0054",
+    "promptQuestionIncludesAny": [
+      "spicy food"
+    ],
+    "answer": "I like spicy food because the strong flavor wakes me up and makes a simple meal more exciting.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-076",
+    "name": "opinion-company-duty - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "My favorite season is spring because the flowers are pretty.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-077",
+    "name": "opinion-company-duty - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "Help society.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-078",
+    "name": "opinion-company-duty - thin opinion",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "Successful companies should protect the environment.",
+    "expectedFocusTypes": [
+      "REASON",
+      "DETAIL",
+      "EXAMPLE"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-079",
+    "name": "opinion-company-duty - broken opinion",
+    "category": "GRAMMAR",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "Companies should helping workers and not make pollution.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-080",
+    "name": "opinion-company-duty - complete opinion",
+    "category": "COMPLETE",
+    "promptId": "prompt-c-2",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "Successful companies should reduce pollution and provide safe working conditions because their decisions affect both communities and employees.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-081",
+    "name": "reflection-success - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "I usually play games after dinner.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-082",
+    "name": "reflection-success - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "Success changed a lot.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-083",
+    "name": "reflection-success - missing current state",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "I used to think success meant earning a high salary.",
+    "expectedFocusTypes": [
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-084",
+    "name": "reflection-success - missing cause",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "I used to value money, but now I think having enough personal time is more important.",
+    "expectedFocusTypes": [
+      "REASON"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-085",
+    "name": "reflection-success - complete reflection",
+    "category": "COMPLETE",
+    "promptId": "prompt-reflection-01",
+    "promptQuestionIncludesAny": [
+      "idea of success"
+    ],
+    "answer": "I used to think success meant earning a high salary, but now I value meaningful work and personal time because burnout changed my priorities.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-086",
+    "name": "reflection-friendship - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "Online classes are convenient for busy students.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-087",
+    "name": "reflection-friendship - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "Friendship different now.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-088",
+    "name": "reflection-friendship - only past",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "When I was younger, I thought a good friend had to contact me every day.",
+    "expectedFocusTypes": [
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-089",
+    "name": "reflection-friendship - broken comparison",
+    "category": "GRAMMAR",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "Before I want many friends, but now close friends more important.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-090",
+    "name": "reflection-friendship - complete reflection",
+    "category": "COMPLETE",
+    "promptId": "prompt-reflection-26",
+    "promptQuestionIncludesAny": [
+      "view of friendship"
+    ],
+    "answer": "I used to value having many friends, but now I prefer a few people I can trust and speak honestly with.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-091",
+    "name": "general-home-location - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I want to become a better cook.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-092",
+    "name": "general-home-location - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "Seoul.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "SITUATION",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-093",
+    "name": "general-home-location - short valid",
+    "category": "MISSING_SLOT",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I live in Seoul.",
+    "expectedFocusTypes": [
+      "DETAIL",
+      "SITUATION",
+      "EXPRESSION_POLISH"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Choose the precise missing semantic slot and provide a directly usable scaffold."
+  },
+  {
+    "caseId": "slot-unification-094",
+    "name": "general-home-location - grammar error",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I am live in Seoul near river.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-095",
+    "name": "general-home-location - complete description",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0002",
+    "promptQuestionIncludesAny": [
+      "Where do you live"
+    ],
+    "answer": "I live in western Seoul near a small park, so the neighborhood is quiet in the evening.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "DETAIL",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  },
+  {
+    "caseId": "slot-unification-096",
+    "name": "general-learning-reason - off topic",
+    "category": "OFF_TOPIC",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "My favorite snack is chocolate.",
+    "expectedFocusTypes": [
+      "TASK_RESET"
+    ],
+    "forbiddenFocusTypes": [
+      "GRAMMAR_FIX",
+      "EXPRESSION_POLISH"
+    ],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Reset to the actual question without polishing the unrelated answer."
+  },
+  {
+    "caseId": "slot-unification-097",
+    "name": "general-learning-reason - fragment",
+    "category": "FRAGMENT",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "Because travel.",
+    "expectedFocusTypes": [
+      "TASK_RESET",
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Recover a usable sentence or reset when no proposition is available."
+  },
+  {
+    "caseId": "slot-unification-098",
+    "name": "general-learning-reason - generic reason",
+    "category": "GENERIC_CONTENT",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "I am learning English because it is important.",
+    "expectedFocusTypes": [
+      "DETAIL",
+      "EXAMPLE",
+      "RESULT"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Treat the stated slot as present but request one concrete supporting detail."
+  },
+  {
+    "caseId": "slot-unification-099",
+    "name": "general-learning-reason - broken reason",
+    "category": "GRAMMAR",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "I learning English because want talk foreign people.",
+    "expectedFocusTypes": [
+      "GRAMMAR_FIX"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": false,
+    "expectedBehavior": "Repair the blocking or high-value local grammar before optional enrichment."
+  },
+  {
+    "caseId": "slot-unification-100",
+    "name": "general-learning-reason - complete reason",
+    "category": "COMPLETE",
+    "promptId": "prompt-intro-v2-0104",
+    "promptQuestionIncludesAny": [
+      "learning English"
+    ],
+    "answer": "I am learning English because I want to talk with local people confidently when I travel abroad.",
+    "expectedFocusTypes": [
+      "EXPRESSION_POLISH",
+      "EXAMPLE",
+      "DETAIL"
+    ],
+    "forbiddenFocusTypes": [],
+    "expectedLoopComplete": true,
+    "expectedBehavior": "Complete the loop or offer only a genuinely optional small refinement."
+  }
+]

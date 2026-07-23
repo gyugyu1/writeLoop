@@ -3,7 +3,13 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
-import { evaluatePayload, normalizeText, validateCases } from "./feedback-quality/rules.mjs";
+import {
+  evaluatePayload,
+  normalizeText,
+  resolveExpectedMissionKinds,
+  resolveForbiddenMissionKinds,
+  validateCases
+} from "./feedback-quality/rules.mjs";
 import { writeReport } from "./feedback-quality/report-writer.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -87,7 +93,8 @@ const results = await runPool(cases, concurrency, async (testCase, index) => {
     const elapsedMs = Date.now() - startedAtMs;
     const status = evaluation.pass ? "ok" : "not ok";
 
-    console.log(`${status} ${index + 1}/${cases.length}: ${testCase.name} -> ${evaluation.focusType ?? "(blank)"} (${elapsedMs}ms)`);
+    const targetLabel = evaluation.targetSlot ? `/${evaluation.targetSlot}` : "";
+    console.log(`${status} ${index + 1}/${cases.length}: ${testCase.name} -> ${evaluation.missionKind ?? "(blank)"}${targetLabel} (${elapsedMs}ms)`);
     return {
       index: index + 1,
       name: testCase.name,
@@ -95,15 +102,22 @@ const results = await runPool(cases, concurrency, async (testCase, index) => {
       promptId: testCase.promptId,
       answer: testCase.answer,
       elapsedMs,
-      focusType: evaluation.focusType,
+      missionKind: evaluation.missionKind,
+      targetSlot: evaluation.targetSlot,
       loopComplete: evaluation.loopComplete,
       fixPointCount: evaluation.fixPointCount,
       hasComparison: evaluation.hasComparison,
+      hasScaffold: evaluation.hasScaffold,
       pass: evaluation.pass,
       failures: evaluation.failures,
       warnings: evaluation.warnings,
-      expectedFocusTypes: testCase.expectedFocusTypes,
-      forbiddenFocusTypes: testCase.forbiddenFocusTypes ?? [],
+      expectedMissionKinds: evaluation.expectedMissionKinds,
+      forbiddenMissionKinds: evaluation.forbiddenMissionKinds,
+      legacyExpectedFocusTypes: testCase.expectedFocusTypes ?? [],
+      expectedTargetSlots: testCase.expectedTargetSlots ?? [],
+      forbiddenTargetSlots: testCase.forbiddenTargetSlots ?? [],
+      expectedLoopComplete: testCase.expectedLoopComplete ?? null,
+      requiresScaffold: testCase.requiresScaffold === true,
       expectedBehavior: testCase.expectedBehavior ?? null,
       badBehavior: testCase.badBehavior ?? null,
       actual: evaluation.pass && !includePassPayloads ? null : buildPayloadSnapshot(payload)
@@ -119,15 +133,22 @@ const results = await runPool(cases, concurrency, async (testCase, index) => {
       promptId: testCase.promptId,
       answer: testCase.answer,
       elapsedMs,
-      focusType: null,
+      missionKind: null,
+      targetSlot: null,
       loopComplete: false,
       fixPointCount: 0,
       hasComparison: false,
+      hasScaffold: false,
       pass: false,
       failures: [{ code: "request_failed", message }],
       warnings: [],
-      expectedFocusTypes: testCase.expectedFocusTypes,
-      forbiddenFocusTypes: testCase.forbiddenFocusTypes ?? [],
+      expectedMissionKinds: resolveExpectedMissionKinds(testCase),
+      forbiddenMissionKinds: resolveForbiddenMissionKinds(testCase),
+      legacyExpectedFocusTypes: testCase.expectedFocusTypes ?? [],
+      expectedTargetSlots: testCase.expectedTargetSlots ?? [],
+      forbiddenTargetSlots: testCase.forbiddenTargetSlots ?? [],
+      expectedLoopComplete: testCase.expectedLoopComplete ?? null,
+      requiresScaffold: testCase.requiresScaffold === true,
       expectedBehavior: testCase.expectedBehavior ?? null,
       badBehavior: testCase.badBehavior ?? null,
       actual: null
@@ -149,9 +170,17 @@ const report = {
   total: results.length,
   passed,
   failed,
+  runtime: {
+    provider: process.env.WRITELOOP_FEEDBACK_PROVIDER || null,
+    model: process.env.WRITELOOP_FEEDBACK_MODEL || null,
+    reasoningEffort: process.env.WRITELOOP_FEEDBACK_REASONING_EFFORT || null,
+    variant: process.env.WRITELOOP_FEEDBACK_VARIANT || null
+  },
+  latencyMs: buildLatencySummary(results),
   failureCounts,
   warningCounts,
-  focusConfusions: buildFocusConfusions(results),
+  missionConfusions: buildMissionConfusions(results),
+  targetSlotConfusions: buildTargetSlotConfusions(results),
   failedSnapshots: results
     .filter((result) => !result.pass)
     .map((result) => ({
@@ -160,8 +189,10 @@ const report = {
       category: result.category,
       promptId: result.promptId,
       answer: result.answer,
-      expectedFocusTypes: result.expectedFocusTypes,
-      actualFocusType: result.focusType,
+      expectedMissionKinds: result.expectedMissionKinds,
+      actualMissionKind: result.missionKind,
+      expectedTargetSlots: result.expectedTargetSlots,
+      actualTargetSlot: result.targetSlot,
       failures: result.failures,
       expectedBehavior: result.expectedBehavior,
       badBehavior: result.badBehavior,
@@ -367,14 +398,14 @@ function countByCode(items) {
   }, {});
 }
 
-function buildFocusConfusions(results) {
+function buildMissionConfusions(results) {
   const counts = new Map();
   for (const result of results) {
     if (result.pass) {
       continue;
     }
-    const expected = result.expectedFocusTypes?.join("/") || "(none)";
-    const actual = result.focusType || "(none)";
+    const expected = result.expectedMissionKinds?.join("/") || "(none)";
+    const actual = result.missionKind || "(none)";
     const key = `${actual} -> ${expected}`;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
@@ -384,9 +415,46 @@ function buildFocusConfusions(results) {
     .sort((left, right) => right.count - left.count || left.pattern.localeCompare(right.pattern));
 }
 
+function buildTargetSlotConfusions(results) {
+  const counts = new Map();
+  for (const result of results) {
+    if (!result.expectedTargetSlots?.length || result.expectedTargetSlots.includes(result.targetSlot)) {
+      continue;
+    }
+    const expected = result.expectedTargetSlots.join("/");
+    const actual = result.targetSlot || "(none)";
+    const key = `${actual} -> ${expected}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  return [...counts.entries()]
+    .map(([pattern, count]) => ({ pattern, count }))
+    .sort((left, right) => right.count - left.count || left.pattern.localeCompare(right.pattern));
+}
+
+function buildLatencySummary(results) {
+  const values = results
+    .map((result) => Number(result.elapsedMs))
+    .filter(Number.isFinite)
+    .sort((left, right) => left - right);
+  if (values.length === 0) {
+    return { count: 0, mean: null, p50: null, p95: null };
+  }
+  return {
+    count: values.length,
+    mean: Math.round(values.reduce((sum, value) => sum + value, 0) / values.length),
+    p50: percentile(values, 0.5),
+    p95: percentile(values, 0.95)
+  };
+}
+
+function percentile(sortedValues, ratio) {
+  const index = Math.min(sortedValues.length - 1, Math.max(0, Math.ceil(sortedValues.length * ratio) - 1));
+  return sortedValues[index];
+}
+
 function buildPayloadSnapshot(payload) {
   return {
-    score: payload?.score ?? null,
     loopComplete: payload?.loopComplete === true,
     completionMessage: limitText(payload?.completionMessage, 500),
     summary: limitText(payload?.summary, 800),
@@ -397,10 +465,18 @@ function buildPayloadSnapshot(payload) {
     coachMove: compactObject({
       focus: limitText(payload?.coachMove?.focus, 500),
       focusType: payload?.coachMove?.focusType ?? null,
+      targetSlot: payload?.coachMove?.targetSlot ?? null,
       why: limitText(payload?.coachMove?.why, 800),
       before: limitText(payload?.coachMove?.before, 800),
       after: limitText(payload?.coachMove?.after, 800),
       instruction: limitText(payload?.coachMove?.instruction, 800),
+      exampleEn: limitText(payload?.coachMove?.exampleEn, 800),
+      skeletonEn: limitText(payload?.coachMove?.skeletonEn, 800),
+      skeletonKo: limitText(payload?.coachMove?.skeletonKo, 800),
+      suggestedPhrases: sliceArray(payload?.coachMove?.suggestedPhrases, 6).map((item) => compactObject({
+        phrase: limitText(item?.phrase, 300),
+        meaningKo: limitText(item?.meaningKo, 300)
+      })),
       successCheck: limitText(payload?.coachMove?.successCheck, 800)
     }),
     rewriteWorkspace: compactObject({

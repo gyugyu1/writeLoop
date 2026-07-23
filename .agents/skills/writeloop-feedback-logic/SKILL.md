@@ -9,12 +9,14 @@ Use this skill to modify, debug, or evaluate the WriteLoop question-answer feedb
 
 ## Core Principle
 
-Treat `coachMission` as the single source of truth for the learner's next action.
+Treat `topicAssessment.status` as the sole topic-relevance authority and the backend-confirmed canonical `targetSlot` as the source of truth for content feedback. The LLM returns one fixed-key `slotAssessments` object whose canonical slot keys contain only `evidence` and `support`; it does not choose slot status, the target, or completion. The backend derives `SATISFIED` from evidence plus no support, `GENERIC` from evidence plus one support item, and `MISSING` from no evidence plus one support item. Only derived `SATISFIED` slots count as present. Never encode off-topic state again in `answerBand`, `taskCompletion`, or a separate `onTopic` field.
+
+Judge each slot from the original question plus `questionContract.slotContracts`: the shared `definition`, question-specific `semanticRole`, and question-specific `satisfiedWhen`. The English question-specific metadata is authoritative. Never fall back to only the shared definition when a question-specific contract is missing.
 
 Every visible section must support that one mission:
-- `coachMission`: one immediate action chosen by the LLM.
+- `coachMission`: one immediate action assembled by the backend for the confirmed target.
 - `coachMove`: mobile/web top mission card derived from `coachMission`.
-- `fixPoints`: detailed feedback and correction cards.
+- `fixPoints`: backend-derived detailed feedback and correction cards.
 - `refinementExpressions`: optional expression add-ons.
 - `rewriteWorkspace`: rewrite input seeded from the mission.
 - `modelAnswer`: quiet reference only, not the teaching plan.
@@ -22,7 +24,11 @@ Every visible section must support that one mission:
 ## First Files To Inspect
 
 Read these before changing behavior:
+- `apps/backend/src/main/java/com/writeloop/service/CanonicalFeedbackContract.java`
+- `apps/backend/src/main/java/com/writeloop/service/FeedbackLearningContractPolicy.java`
+- `apps/backend/src/main/java/com/writeloop/service/CanonicalFeedbackAssembler.java`
 - `apps/backend/src/main/java/com/writeloop/service/OpenAiFeedbackClient.java`
+- `apps/backend/src/main/java/com/writeloop/service/GeminiFeedbackClient.java`
 - `apps/backend/src/main/java/com/writeloop/dto/FeedbackCoachMissionDto.java`
 - `apps/backend/src/main/java/com/writeloop/dto/FeedbackCoachMoveDto.java`
 - `apps/backend/src/main/java/com/writeloop/dto/FeedbackUiDto.java`
@@ -36,6 +42,21 @@ Use `references/file-map.md` for a fuller map.
 Use `references/feedback-schema.md` when touching DTOs, OpenAI schema, parsers, or UI types.
 
 Legacy schema guardrail: do not reintroduce these OpenAI output fields unless the feedback contract is intentionally redesigned:
+- `score`
+- `answerBand`
+- `taskCompletion`
+- `finishable`
+- `meaningClarity`
+- `grammarSeverity`
+- `grammarImpact`
+- `utteranceForm` as a standalone top-level field
+- `correctedAnswer` as a standalone LLM diagnosis field
+- `structureIssues`
+- `correctionSupport`
+- `missionDecision`
+- `chosenType`
+- `actionType`
+- `fixPoints`
 - `secondaryLearningPoints`
 - `modelAnswerVariants`
 - `nextStepPractice`
@@ -48,25 +69,30 @@ Current replacements:
 ## Editing Rules
 
 When changing feedback logic:
-1. Update OpenAI schema and parser together.
-2. Keep `missionDecision`, `coachMission`, the first `fixPoint`, and rewrite UI aligned.
-3. For add-on missions, do not force a before/after comparison.
-4. For grammar or expression correction missions, require short aligned `originalText` and `revisedText`.
-5. Keep detailed explanations in `fixPoints`.
-6. Keep reusable phrases and optional starters in `refinementExpressions`.
-7. Do not make `modelAnswer` the primary plan.
-8. Prefer OpenAI-focused changes; do not expand Gemini unless the task explicitly asks for provider parity.
+1. Update the common canonical schema and parser together; OpenAI and Gemini must use the same contract.
+2. Keep LLM authority limited to topic relevance, one atomic `structureAssessment` with at most one authoritative repair, grammar issues with per-issue impact/evidence,
+   canonical `slotAssessments`, and reference content.
+3. Keep the backend slot decision, `coachMission`, `coachMove.targetSlot`, the first `fixPoint`, and rewrite UI aligned.
+4. For content missions, require complete support for the exact target slot: English/Korean skeletons and at least two phrase choices.
+5. For structure correction, require the complete learner answer and one authoritative full correction in the same `structureAssessment.repair` item; never assemble a final sentence from fragments. For grammar correction, require a direct replacement in `revisedText`.
+6. Do not invent fallback teaching content when the LLM contract is incomplete; return a retryable unavailable response.
+7. Keep reusable phrases and optional starters in `refinementExpressions`.
+   Grammar issues are reserved for actual `LOCAL` or `BLOCKING` errors; route optional naturalness alternatives exclusively to `refinementExpressions`.
+8. Do not hide or rewrite `modelAnswer`; expose it as a quiet reference and evaluate quality through regression tests.
 
 ## Quality Rubric
 
 Use `references/mission-quality-rubric.md` when judging whether feedback is good.
 
 The short version:
-- Pick one actionable mission.
-- Prefer content/detail/reason missions for understandable but thin answers.
-- Prefer grammar missions only when meaning or rewrite success is blocked.
+- Derive exactly one `missionKind`: `TASK_RESET`, `STRUCTURE_FIX`, `GRAMMAR_FIX`, `SLOT`, or `COMPLETE`.
+- Apply priority in this order: off-topic, fragment structure, blocking grammar, required slot, local grammar, depth slot, complete.
+- Treat `structureAssessment.status=FRAGMENT` as a structure problem only; complete but short or content-thin sentences stay `COMPLETE` and use slot feedback.
+- Treat backend-derived `GENERIC` as unresolved and teach the same slot instead of selecting another detail slot.
+- Never add `status` inside an LLM `slotAssessments` value; status is derived exclusively from the validated `evidence/support` shape.
+- Never classify grammatically acceptable wording as a grammar issue merely because another expression is more idiomatic, common, concise, or specific.
 - Use `TASK_RESET` for non-English, romanized Korean, meaningless, or off-topic answers.
-- Always provide an example sentence when the learner is asked to add content.
+- Always provide an example, bilingual skeleton, and at least two phrases when the learner is asked to add content.
 
 ## Question Prompt Quality Guardrail
 
@@ -105,7 +131,7 @@ If the script is not available or needs manual execution, run:
 ```powershell
 cd apps/backend
 .\gradlew.bat compileJava
-.\gradlew.bat test --tests com.writeloop.dto.FeedbackResponseContractTest --tests com.writeloop.service.FeedbackUiComposerTest
+.\gradlew.bat test --tests com.writeloop.dto.FeedbackResponseContractTest --tests com.writeloop.service.CanonicalFeedbackContractTest --tests com.writeloop.service.CanonicalFeedbackAssemblerTest --tests com.writeloop.service.FeedbackLearningContractPolicyTest
 
 cd ..\mobile
 npm.cmd run typecheck

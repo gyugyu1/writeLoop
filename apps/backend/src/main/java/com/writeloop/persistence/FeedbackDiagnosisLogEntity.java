@@ -2,6 +2,8 @@ package com.writeloop.persistence;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,7 +25,8 @@ import java.time.Instant;
                 @Index(name = "idx_feedback_diag_prompt_created", columnList = "prompt_id, created_at"),
                 @Index(name = "idx_feedback_diag_session_attempt", columnList = "session_id, attempt_no"),
                 @Index(name = "idx_feedback_diag_answer_attempt", columnList = "answer_attempt_id"),
-                @Index(name = "idx_feedback_diag_band_created", columnList = "diagnosis_answer_band, created_at")
+                @Index(name = "idx_feedback_diag_execution_created", columnList = "execution_status, created_at"),
+                @Index(name = "idx_feedback_diag_input_created", columnList = "prompt_id, input_fingerprint, created_at")
         }
 )
 @Getter
@@ -35,6 +38,10 @@ public class FeedbackDiagnosisLogEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "execution_status", nullable = false, length = 16)
+    private FeedbackDiagnosisExecutionStatus executionStatus;
 
     @Column(name = "answer_attempt_id")
     private Long answerAttemptId;
@@ -56,6 +63,9 @@ public class FeedbackDiagnosisLogEntity {
 
     @Column(name = "prompt_id", nullable = false, length = 64)
     private String promptId;
+
+    @Column(name = "input_fingerprint", nullable = false, length = 64)
+    private String inputFingerprint;
 
     @Column(name = "prompt_topic", nullable = false, length = 160)
     private String promptTopic;
@@ -93,11 +103,14 @@ public class FeedbackDiagnosisLogEntity {
     @Column(name = "llm_model", length = 64)
     private String llmModel;
 
+    @Column(name = "reasoning_effort", length = 24)
+    private String reasoningEffort;
+
+    @Column(name = "thinking_budget")
+    private Integer thinkingBudget;
+
     @Column(name = "diagnosis_response_status_code")
     private Integer diagnosisResponseStatusCode;
-
-    @Column(name = "generation_response_status_code")
-    private Integer generationResponseStatusCode;
 
     @Column(name = "regeneration_response_status_code")
     private Integer regenerationResponseStatusCode;
@@ -105,32 +118,23 @@ public class FeedbackDiagnosisLogEntity {
     @Column(name = "diagnosis_response_body_json", columnDefinition = "JSON")
     private String diagnosisResponseBodyJson;
 
-    @Column(name = "generation_response_body_json", columnDefinition = "JSON")
-    private String generationResponseBodyJson;
-
     @Column(name = "regeneration_response_body_json", columnDefinition = "JSON")
     private String regenerationResponseBodyJson;
 
-    @Column(name = "authoritative_feedback", nullable = false)
-    private boolean authoritativeFeedback;
-
-    @Column(name = "diagnosis_fallback_used", nullable = false)
-    private boolean diagnosisFallbackUsed;
-
-    @Column(name = "deterministic_response_fallback_used", nullable = false)
-    private boolean deterministicResponseFallbackUsed;
+    @Column(name = "contract_violation_detected", nullable = false)
+    private boolean contractViolationDetected;
 
     @Column(name = "retry_attempted", nullable = false)
     private boolean retryAttempted;
 
-    @Column(name = "diagnosis_score")
-    private Integer diagnosisScore;
+    @Column(name = "contract_retry_succeeded")
+    private Boolean contractRetrySucceeded;
 
-    @Column(name = "diagnosis_answer_band", length = 32)
-    private String diagnosisAnswerBand;
+    @Column(name = "contract_original_error_reason", columnDefinition = "TEXT")
+    private String contractOriginalErrorReason;
 
-    @Column(name = "diagnosis_task_completion", length = 16)
-    private String diagnosisTaskCompletion;
+    @Column(name = "contract_final_error_reason", columnDefinition = "TEXT")
+    private String contractFinalErrorReason;
 
     @Column(name = "diagnosis_topic_relevance", length = 16)
     private String diagnosisTopicRelevance;
@@ -138,80 +142,14 @@ public class FeedbackDiagnosisLogEntity {
     @Column(name = "diagnosis_utterance_form", length = 16)
     private String diagnosisUtteranceForm;
 
-    @Column(name = "diagnosis_finishable")
-    private Boolean diagnosisFinishable;
-
-    @Column(name = "diagnosis_grammar_severity", length = 16)
-    private String diagnosisGrammarSeverity;
-
     @Column(name = "diagnosis_grammar_issue_count")
     private Integer diagnosisGrammarIssueCount;
 
-    @Column(name = "diagnosis_primary_issue_code", length = 96)
-    private String diagnosisPrimaryIssueCode;
-
-    @Column(name = "diagnosis_secondary_issue_code", length = 96)
-    private String diagnosisSecondaryIssueCode;
-
-    @Column(name = "diagnosis_minimal_correction", columnDefinition = "TEXT")
-    private String diagnosisMinimalCorrection;
-
-    @Column(name = "rewrite_target_action", length = 255)
-    private String rewriteTargetAction;
-
-    @Column(name = "rewrite_target_skeleton", columnDefinition = "TEXT")
-    private String rewriteTargetSkeleton;
-
-    @Column(name = "rewrite_target_max_new_sentence_count")
-    private Integer rewriteTargetMaxNewSentenceCount;
-
-    @Column(name = "expansion_budget", length = 32)
-    private String expansionBudget;
-
-    @Column(name = "profile_task_answer_band", length = 32)
-    private String profileTaskAnswerBand;
-
-    @Column(name = "profile_task_completion", length = 16)
-    private String profileTaskCompletion;
-
-    @Column(name = "profile_task_finishable")
-    private Boolean profileTaskFinishable;
-
-    @Column(name = "profile_grammar_severity", length = 16)
-    private String profileGrammarSeverity;
-
-    @Column(name = "profile_grammar_issue_count")
-    private Integer profileGrammarIssueCount;
-
-    @Column(name = "profile_content_specificity", length = 16)
-    private String profileContentSpecificity;
-
-    @Column(name = "profile_has_main_answer")
-    private Boolean profileHasMainAnswer;
-
-    @Column(name = "profile_has_reason")
-    private Boolean profileHasReason;
-
-    @Column(name = "profile_has_example")
-    private Boolean profileHasExample;
-
-    @Column(name = "profile_has_feeling")
-    private Boolean profileHasFeeling;
-
-    @Column(name = "profile_has_activity")
-    private Boolean profileHasActivity;
-
-    @Column(name = "profile_has_time_or_place")
-    private Boolean profileHasTimeOrPlace;
+    @Column(name = "elapsed_ms")
+    private Long elapsedMs;
 
     @Column(name = "diagnosis_payload_json", columnDefinition = "JSON")
     private String diagnosisPayloadJson;
-
-    @Column(name = "answer_profile_json", columnDefinition = "JSON")
-    private String answerProfileJson;
-
-    @Column(name = "section_policy_json", columnDefinition = "JSON")
-    private String sectionPolicyJson;
 
     @Column(name = "final_sections_json", columnDefinition = "JSON")
     private String finalSectionsJson;

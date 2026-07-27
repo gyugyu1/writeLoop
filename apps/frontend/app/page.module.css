@@ -4573,6 +4573,178 @@
   line-height: 1.65;
 }
 
+.visibleFeedbackStack {
+  display: grid;
+  gap: 18px;
+}
+
+.visibleStrengthCard {
+  display: grid;
+  gap: 16px;
+  padding: clamp(28px, 4vw, 42px);
+  border: 1px solid rgba(221, 196, 165, 0.78);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 34px -28px rgba(127, 82, 0, 0.28);
+}
+
+.visibleStrengthCard span {
+  color: #23222a;
+  font-family: var(--font-primary);
+  font-size: clamp(2rem, 5.6vw, 3.8rem);
+  font-weight: 900;
+  line-height: 1.18;
+  letter-spacing: -0.07em;
+}
+
+.visibleExpressionLabel {
+  color: #397447;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.visibleStrengthCard p {
+  margin: 0;
+  color: #3d342c;
+  font-size: clamp(1.02rem, 1.8vw, 1.22rem);
+  font-weight: 800;
+  line-height: 1.65;
+}
+
+.visibleExpressionCard {
+  display: grid;
+  gap: 12px;
+  padding: 22px 24px;
+  border: 1px solid rgba(226, 165, 84, 0.28);
+  border-radius: 24px;
+  background: #fffaf2;
+}
+
+.visibleExpressionLabel {
+  color: #9a611c;
+}
+
+.visibleExpressionList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.visibleExpressionChip {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 3px 12px;
+  align-items: center;
+  padding: 14px 16px;
+  border: 1px solid rgba(226, 165, 84, 0.32);
+  border-radius: 18px;
+  background: #fff;
+  color: #5d4428;
+  text-align: left;
+  cursor: pointer;
+}
+
+.visibleExpressionChip strong,
+.visibleExpressionChip small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.visibleExpressionChip small {
+  grid-column: 1;
+  color: #8a735b;
+  font-size: 0.82rem;
+}
+
+.visibleExpressionChip em {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: #a46612;
+  font-size: 0.78rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.visibleExpressionChipSaved {
+  border-color: rgba(61, 130, 76, 0.34);
+  background: #f2f8f1;
+}
+
+.visibleModelAnswerCard {
+  overflow: hidden;
+  border: 1px solid rgba(221, 196, 165, 0.78);
+  border-radius: 24px;
+  background: #fffdf9;
+}
+
+.visibleModelAnswerCard summary {
+  display: flex;
+  min-height: 76px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 22px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.visibleModelAnswerCard summary::-webkit-details-marker {
+  display: none;
+}
+
+.visibleModelAnswerCard summary > span:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.visibleModelAnswerCard summary small {
+  color: #a46612;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.visibleModelAnswerCard summary strong {
+  color: #3d3227;
+  font-size: 1.08rem;
+}
+
+.visibleModelAnswerToggle {
+  color: #9a611c;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.visibleModelAnswerCard[open] .visibleModelAnswerToggle {
+  font-size: 0;
+}
+
+.visibleModelAnswerCard[open] .visibleModelAnswerToggle::after {
+  content: "접기";
+  font-size: 0.82rem;
+}
+
+.visibleModelAnswerBody {
+  display: grid;
+  gap: 8px;
+  padding: 20px 22px;
+  border-top: 1px solid rgba(221, 196, 165, 0.56);
+}
+
+.visibleModelAnswerBody p {
+  margin: 0;
+  color: #3d342c;
+  font-size: 1rem;
+  font-weight: 800;
+  line-height: 1.7;
+}
+
+.visibleModelAnswerBody p + p {
+  color: #806e5b;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .coachMoveCard {
   display: grid;
   gap: 22px;
@@ -4581,6 +4753,12 @@
   border: 1px solid rgba(221, 196, 165, 0.78);
   background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 16px 34px -28px rgba(127, 82, 0, 0.28);
+}
+
+@media (max-width: 720px) {
+  .visibleExpressionList {
+    grid-template-columns: 1fr;
+  }
 }
 
 .coachMoveHeadline {
@@ -4599,15 +4777,6 @@
 .coachMoveSuccessBox {
   display: grid;
   gap: 10px;
-}
-
-.coachMoveFocus {
-  margin: 0;
-  color: #2f2b27;
-  font-size: clamp(1.3rem, 2.4vw, 2rem);
-  font-weight: 900;
-  line-height: 1.32;
-  letter-spacing: -0.04em;
 }
 
 .coachMoveSwap {
@@ -4669,6 +4838,91 @@
   background: rgba(74, 190, 102, 0.18);
   border-radius: 0.35em;
   padding: 0 0.08em;
+}
+
+.languageCorrectionList {
+  display: grid;
+  gap: 12px;
+}
+
+.languageCorrectionItem {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #eadbc8;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.languageCorrectionBadge {
+  justify-self: start;
+  padding: 6px 11px;
+  border-radius: 999px;
+  color: #47382b;
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.languageCorrectionBadgeStructure {
+  background: #f7e4c5;
+}
+
+.languageCorrectionBadgeCore {
+  background: #f8d8d1;
+}
+
+.languageCorrectionBadgeDetail {
+  background: #dceee5;
+}
+
+.languageCorrectionSwap {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: #9a7148;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.languageCorrectionSwap del {
+  color: #9b3b2e;
+  font-weight: 800;
+}
+
+.languageCorrectionSwap strong {
+  color: #1f6b35;
+  font-weight: 900;
+}
+
+.languageCorrectionReason {
+  margin: 0;
+  color: #67594b;
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+
+.languageCorrectionToggle {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #ddbb8e;
+  border-radius: 16px;
+  background: #fff9f0;
+  color: #8d5617;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.languageCorrectionToggle:hover {
+  background: #fff3e1;
+}
+
+.languageCorrectionToggle:focus-visible {
+  outline: 3px solid rgba(221, 187, 142, 0.45);
+  outline-offset: 2px;
 }
 
 .coachMoveWhy,

@@ -1,8 +1,7 @@
 export const KNOWN_MISSION_KINDS = new Set([
   "SLOT",
   "TASK_RESET",
-  "STRUCTURE_FIX",
-  "GRAMMAR_FIX",
+  "LANGUAGE_FIX",
   "COMPLETE"
 ]);
 
@@ -36,6 +35,7 @@ const LEGACY_FOCUS_TYPES = new Set([
   "EXAMPLE",
   "FEELING",
   "RESULT",
+  "STRUCTURE_FIX",
   "GRAMMAR_FIX",
   "TASK_RESET",
   "EXPRESSION_POLISH"
@@ -67,8 +67,14 @@ const RETIRED_UI_FIELDS = [
   "primaryFix",
   "nextStepPractice",
   "secondaryLearningPoints",
-  "modelAnswerVariants"
+  "modelAnswerVariants",
+  "fixPoints"
 ];
+const KNOWN_LANGUAGE_CORRECTION_KINDS = new Set([
+  "STRUCTURE",
+  "GRAMMAR_BLOCKING",
+  "GRAMMAR_LOCAL"
+]);
 
 export function getPath(value, dottedPath) {
   if (!dottedPath) {
@@ -128,7 +134,7 @@ export function hasContentScaffold(payload) {
 
 export function resolveExpectedMissionKinds(testCase) {
   if (Array.isArray(testCase?.expectedMissionKinds) && testCase.expectedMissionKinds.length > 0) {
-    return unique(testCase.expectedMissionKinds);
+    return unique(testCase.expectedMissionKinds.map(normalizeExpectedMissionKind));
   }
 
   const resolved = [];
@@ -146,12 +152,15 @@ export function resolveExpectedMissionKinds(testCase) {
 
 export function resolveForbiddenMissionKinds(testCase) {
   if (Array.isArray(testCase?.forbiddenMissionKinds)) {
-    return unique(testCase.forbiddenMissionKinds);
+    return unique(testCase.forbiddenMissionKinds.map(normalizeExpectedMissionKind));
   }
 
   // Coarse legacy content types cannot safely forbid the canonical SLOT mission.
   return unique((testCase?.forbiddenFocusTypes ?? [])
-    .filter((focusType) => focusType === "GRAMMAR_FIX" || focusType === "TASK_RESET")
+    .filter((focusType) =>
+      focusType === "STRUCTURE_FIX"
+      || focusType === "GRAMMAR_FIX"
+      || focusType === "TASK_RESET")
     .map(legacyFocusToMissionKind)
     .filter(Boolean));
 }
@@ -220,17 +229,8 @@ export function evaluatePayload(testCase, payload) {
     });
   }
 
-  const fixPoints = Array.isArray(payload?.ui?.fixPoints) ? payload.ui.fixPoints : [];
-  if (testCase.expectFixPoints !== false && !loopComplete && fixPoints.length === 0) {
-    failures.push({
-      code: "empty_fix_points",
-      message: "ui.fixPoints is empty"
-    });
-  }
-
   const comparisonRequired = testCase.requiresComparison === true
-    || missionKind === "STRUCTURE_FIX"
-    || missionKind === "GRAMMAR_FIX";
+    || missionKind === "LANGUAGE_FIX";
   if (comparisonRequired && !testCase.allowMissingComparison && !hasCoachComparisonPair(payload)) {
     failures.push({
       code: "missing_comparison",
@@ -239,29 +239,57 @@ export function evaluatePayload(testCase, payload) {
   }
 
   if (comparisonRequired && hasCoachComparisonPair(payload)
-      && !normalizeText(testCase.answer).includes(normalizeText(payload?.coachMove?.before))) {
+      && normalizeText(testCase.answer) !== normalizeText(payload?.coachMove?.before)) {
     failures.push({
       code: "ungrounded_comparison",
-      message: "coachMove.before is not grounded in the learner answer"
+      message: "coachMove.before must be the complete learner answer"
     });
   }
 
-  if (missionKind === "STRUCTURE_FIX") {
-    const correctedAnswer = textOf(payload?.correctedAnswer).trim();
+  const languageCorrections = Array.isArray(payload?.coachMove?.languageCorrections)
+    ? payload.coachMove.languageCorrections
+    : [];
+  if (missionKind === "LANGUAGE_FIX") {
+    const revisedAnswer = textOf(payload?.revisedAnswer).trim();
     const comparisonAfter = textOf(payload?.coachMove?.after).trim();
-    const firstFixAfter = textOf(fixPoints[0]?.revisedText).trim();
-    if (!correctedAnswer) {
+    if (!revisedAnswer) {
       failures.push({
-        code: "missing_structure_corrected_answer",
-        message: "STRUCTURE_FIX requires one authoritative correctedAnswer"
+        code: "missing_revised_answer",
+        message: "LANGUAGE_FIX requires one authoritative revisedAnswer"
       });
-    } else if (normalizeText(correctedAnswer) !== normalizeText(comparisonAfter)
-        || (firstFixAfter && normalizeText(correctedAnswer) !== normalizeText(firstFixAfter))) {
+    } else if (normalizeText(revisedAnswer) !== normalizeText(comparisonAfter)) {
       failures.push({
-        code: "structure_correction_mismatch",
-        message: "correctedAnswer, coachMove.after, and the first fixPoint revision must match"
+        code: "language_revision_mismatch",
+        message: "revisedAnswer and coachMove.after must match"
       });
     }
+    if (languageCorrections.length < 1 || languageCorrections.length > 25) {
+      failures.push({
+        code: "invalid_language_correction_count",
+        message: "LANGUAGE_FIX requires one to 25 languageCorrections"
+      });
+    }
+    languageCorrections.forEach((correction, index) => {
+      const hasBefore = isNonBlank(correction?.before);
+      const hasAfter = isNonBlank(correction?.after);
+      const hasDistinctChange = (hasBefore || hasAfter)
+        && normalizeText(correction?.before) !== normalizeText(correction?.after);
+      const grammarPairIsComplete = correction?.kind === "STRUCTURE" || (hasBefore && hasAfter);
+      if (!KNOWN_LANGUAGE_CORRECTION_KINDS.has(correction?.kind)
+          || !hasDistinctChange
+          || !grammarPairIsComplete
+          || !isNonBlank(correction?.reason)) {
+        failures.push({
+          code: "invalid_language_correction",
+          message: `languageCorrections[${index}] needs a canonical kind, an explained change, and a reason`
+        });
+      }
+    });
+  } else if (hasOwn(payload, "revisedAnswer") && isNonBlank(payload?.revisedAnswer)) {
+    failures.push({
+      code: "unexpected_revised_answer",
+      message: "Only LANGUAGE_FIX may expose revisedAnswer"
+    });
   }
 
   const scaffoldRequired = testCase.requiresScaffold === true
@@ -337,17 +365,6 @@ export function evaluatePayload(testCase, payload) {
     });
   }
 
-  const firstFixKind = normalizeText(fixPoints[0]?.kind).toUpperCase();
-  const expectedFirstFixKind = missionKind === "STRUCTURE_FIX" || missionKind === "GRAMMAR_FIX"
-    ? missionKind
-    : (missionKind === "SLOT" || missionKind === "TASK_RESET" ? targetSlot : null);
-  if (expectedFirstFixKind && firstFixKind && firstFixKind !== expectedFirstFixKind) {
-    warnings.push({
-      code: "first_fix_mission_mismatch",
-      message: `first fixPoint kind ${firstFixKind} differs from target ${expectedFirstFixKind}`
-    });
-  }
-
   return {
     pass: failures.length === 0,
     failures,
@@ -357,7 +374,7 @@ export function evaluatePayload(testCase, payload) {
     expectedMissionKinds,
     forbiddenMissionKinds,
     loopComplete,
-    fixPointCount: fixPoints.length,
+    fixPointCount: languageCorrections.length,
     hasComparison: hasCoachComparisonPair(payload),
     hasScaffold: hasContentScaffold(payload)
   };
@@ -430,8 +447,8 @@ function legacyFocusToMissionKind(focusType) {
   if (LEGACY_CONTENT_FOCUS_TYPES.has(focusType)) {
     return "SLOT";
   }
-  if (focusType === "GRAMMAR_FIX") {
-    return "GRAMMAR_FIX";
+  if (focusType === "GRAMMAR_FIX" || focusType === "STRUCTURE_FIX") {
+    return "LANGUAGE_FIX";
   }
   if (focusType === "TASK_RESET") {
     return "TASK_RESET";
@@ -440,6 +457,12 @@ function legacyFocusToMissionKind(focusType) {
     return "COMPLETE";
   }
   return null;
+}
+
+function normalizeExpectedMissionKind(missionKind) {
+  return missionKind === "GRAMMAR_FIX" || missionKind === "STRUCTURE_FIX"
+    ? "LANGUAGE_FIX"
+    : missionKind;
 }
 
 function unique(values) {

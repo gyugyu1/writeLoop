@@ -2,7 +2,6 @@ package com.writeloop.service;
 
 import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackCoachMissionDto;
-import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.RefinementExpressionDto;
 
@@ -62,47 +61,66 @@ enum GrammarImpact {
 
 }
 
-record DiagnosedGrammarIssue(
-        GrammarImpact impact,
+enum LanguageIssueKind {
+    STRUCTURE,
+    GRAMMAR_BLOCKING,
+    GRAMMAR_LOCAL;
+
+    static LanguageIssueKind fromCode(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
+
+    GrammarImpact grammarImpact() {
+        return switch (this) {
+            case GRAMMAR_BLOCKING -> GrammarImpact.BLOCKING;
+            case GRAMMAR_LOCAL -> GrammarImpact.LOCAL;
+            case STRUCTURE -> GrammarImpact.NONE;
+        };
+    }
+}
+
+record LanguageRevisionStep(
+        LanguageIssueKind kind,
         String code,
-        String originalText,
-        String revisedText,
+        String answerAfter,
         String reasonKo,
         String instructionKo
 ) {
-    DiagnosedGrammarIssue(
-            String impact,
+    LanguageRevisionStep(
+            String kind,
             String code,
-            String originalText,
-            String revisedText,
+            String answerAfter,
             String reasonKo,
             String instructionKo
     ) {
-        this(GrammarImpact.fromCode(impact), code, originalText, revisedText, reasonKo, instructionKo);
+        this(LanguageIssueKind.fromCode(kind), code, answerAfter, reasonKo, instructionKo);
     }
 
-    DiagnosedGrammarIssue {
+    LanguageRevisionStep {
         code = normalizeCode(code);
-        originalText = normalize(originalText);
-        revisedText = normalize(revisedText);
+        answerAfter = normalize(answerAfter);
         reasonKo = normalize(reasonKo);
         instructionKo = normalize(instructionKo);
     }
 
-    boolean isUsableFor(String learnerAnswer) {
-        if (originalText == null
-                || revisedText == null
-                || originalText.equals(revisedText)
-                || reasonKo == null
-                || instructionKo == null) {
-            return false;
-        }
-        return learnerAnswer != null && learnerAnswer.contains(originalText);
+    boolean isComplete() {
+        return kind != null
+                && code != null
+                && answerAfter != null
+                && reasonKo != null
+                && instructionKo != null;
     }
 
     private static String normalizeCode(String value) {
         String normalized = normalize(value);
-        return normalized == null ? "GRAMMAR" : normalized.toUpperCase(Locale.ROOT).replace('-', '_');
+        return normalized == null ? null : normalized.toUpperCase(Locale.ROOT).replace('-', '_');
     }
 
     private static String normalize(String value) {
@@ -110,48 +128,25 @@ record DiagnosedGrammarIssue(
     }
 }
 
-record StructureRepair(
-        String originalText,
-        String correctedAnswer,
-        String reasonKo,
-        String instructionKo
+record LanguageAssessment(
+        List<LanguageRevisionStep> revisionSteps
 ) {
-    StructureRepair {
-        originalText = normalize(originalText);
-        correctedAnswer = normalize(correctedAnswer);
-        reasonKo = normalize(reasonKo);
-        instructionKo = normalize(instructionKo);
-    }
-
-    boolean isUsableFor(String learnerAnswer) {
-        if (originalText == null
-                || correctedAnswer == null
-                || originalText.equals(correctedAnswer)
-                || reasonKo == null
-                || instructionKo == null) {
-            return false;
-        }
-        return learnerAnswer != null && learnerAnswer.trim().equals(originalText);
-    }
-
-    private static String normalize(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
+    LanguageAssessment {
+        revisionSteps = revisionSteps == null
+                ? List.of()
+                : revisionSteps.stream().filter(step -> step != null).toList();
     }
 }
 
 record StructureAssessment(
-        StructureStatus status,
-        List<StructureRepair> repair
+        StructureStatus status
 ) {
-    StructureAssessment(String status, List<StructureRepair> repair) {
-        this(StructureStatus.fromCode(status), repair);
+    StructureAssessment(String status) {
+        this(StructureStatus.fromCode(status));
     }
 
     StructureAssessment {
         status = status == null ? StructureStatus.FRAGMENT : status;
-        repair = repair == null
-                ? List.of()
-                : repair.stream().filter(item -> item != null).toList();
     }
 }
 
@@ -168,18 +163,18 @@ record TopicAssessment(
 record FeedbackDiagnosisResult(
         TopicAssessment topicAssessment,
         StructureAssessment structureAssessment,
-        List<DiagnosedGrammarIssue> grammarIssues
+        LanguageAssessment languageAssessment
 ) {
     FeedbackDiagnosisResult {
         topicAssessment = topicAssessment == null
                 ? new TopicAssessment(TopicRelevance.OFF_TOPIC, null)
                 : topicAssessment;
         structureAssessment = structureAssessment == null
-                ? new StructureAssessment(StructureStatus.FRAGMENT, List.of())
+                ? new StructureAssessment(StructureStatus.FRAGMENT)
                 : structureAssessment;
-        grammarIssues = grammarIssues == null
-                ? List.of()
-                : grammarIssues.stream().filter(issue -> issue != null).limit(3).toList();
+        languageAssessment = languageAssessment == null
+                ? new LanguageAssessment(List.of())
+                : languageAssessment;
     }
 
     TopicRelevance topicRelevance() {
@@ -188,9 +183,13 @@ record FeedbackDiagnosisResult(
 
     GrammarImpact strongestGrammarImpact() {
         GrammarImpact strongest = GrammarImpact.NONE;
-        for (DiagnosedGrammarIssue issue : grammarIssues) {
-            if (issue.impact() != null && issue.impact().ordinal() > strongest.ordinal()) {
-                strongest = issue.impact();
+        for (LanguageRevisionStep step : languageAssessment.revisionSteps()) {
+            if (step.kind() == null) {
+                continue;
+            }
+            GrammarImpact impact = step.kind().grammarImpact();
+            if (impact.ordinal() > strongest.ordinal()) {
+                strongest = impact;
             }
         }
         return strongest;
@@ -293,21 +292,6 @@ record SlotFeedbackSupport(
         );
     }
 
-    FeedbackSecondaryLearningPointDto toFixPoint(String slot) {
-        return new FeedbackSecondaryLearningPointDto(
-                slot,
-                title,
-                null,
-                whyKo,
-                null,
-                null,
-                null,
-                instructionKo,
-                exampleEn,
-                null
-        );
-    }
-
     private static String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
@@ -316,8 +300,7 @@ record SlotFeedbackSupport(
 enum MissionKind {
     SLOT,
     TASK_RESET,
-    STRUCTURE_FIX,
-    GRAMMAR_FIX,
+    LANGUAGE_FIX,
     COMPLETE
 }
 
@@ -406,8 +389,7 @@ record GeneratedSections(
         String modelAnswer,
         String modelAnswerKo,
         MissionDecision missionDecision,
-        FeedbackCoachMissionDto coachMission,
-        List<FeedbackSecondaryLearningPointDto> fixPoints
+        FeedbackCoachMissionDto coachMission
 ) {
     GeneratedSections {
         strengths = strengths == null ? List.of() : strengths.stream().filter(value -> value != null).limit(1).toList();
@@ -419,9 +401,6 @@ record GeneratedSections(
                 : usedExpressions.stream().filter(value -> value != null).limit(3).toList();
         modelAnswer = normalize(modelAnswer);
         modelAnswerKo = normalize(modelAnswerKo);
-        fixPoints = fixPoints == null
-                ? List.of()
-                : fixPoints.stream().filter(value -> value != null).limit(3).toList();
     }
 
     private static String normalize(String value) {

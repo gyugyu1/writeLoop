@@ -64,12 +64,16 @@ public class LlmFeedbackClient {
         return delegate().takeLastAnalysisSnapshot();
     }
 
-    public List<InlineFeedbackSegmentDto> buildInlineFeedbackFromCorrectedAnswer(String learnerAnswer, String correctedAnswer) {
-        return delegate().buildInlineFeedbackFromCorrectedAnswer(learnerAnswer, correctedAnswer);
+    FeedbackExecutionTrace takeLastExecutionTrace() {
+        return delegate().takeLastExecutionTrace();
     }
 
-    public List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String learnerAnswer, String correctedAnswer) {
-        return delegate().buildPreciseInlineFeedback(learnerAnswer, correctedAnswer);
+    public List<InlineFeedbackSegmentDto> buildInlineFeedbackFromRevisedAnswer(String learnerAnswer, String revisedAnswer) {
+        return delegate().buildInlineFeedbackFromRevisedAnswer(learnerAnswer, revisedAnswer);
+    }
+
+    public List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String learnerAnswer, String revisedAnswer) {
+        return delegate().buildPreciseInlineFeedback(learnerAnswer, revisedAnswer);
     }
 
     private FeedbackLlmEngine delegate() {

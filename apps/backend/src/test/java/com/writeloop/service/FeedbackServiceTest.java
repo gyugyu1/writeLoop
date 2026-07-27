@@ -2,8 +2,11 @@ package com.writeloop.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.writeloop.dto.FeedbackCoachMoveDto;
+import com.writeloop.dto.FeedbackFinishRequestDto;
 import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
+import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptTaskMetaDto;
 import com.writeloop.exception.ApiException;
@@ -11,6 +14,7 @@ import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionEntity;
 import com.writeloop.persistence.AnswerSessionRepository;
+import com.writeloop.persistence.FeedbackDiagnosisExecutionStatus;
 import com.writeloop.persistence.FeedbackDiagnosisLogEntity;
 import com.writeloop.persistence.FeedbackDiagnosisLogRepository;
 import com.writeloop.persistence.SessionStatus;
@@ -57,6 +61,9 @@ class FeedbackServiceTest {
     @Mock
     private FeedbackDiagnosisLogRepository diagnosisLogRepository;
 
+    @Mock
+    private FeedbackDiagnosisLogRecorder diagnosisLogRecorder;
+
     private FeedbackService service;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -70,6 +77,7 @@ class FeedbackServiceTest {
                 objectMapper
         );
         ReflectionTestUtils.setField(service, "feedbackDiagnosisLogRepository", diagnosisLogRepository);
+        ReflectionTestUtils.setField(service, "feedbackDiagnosisLogRecorder", diagnosisLogRecorder);
 
         lenient().when(answerAttemptRepository.countBySessionId(anyString())).thenReturn(0);
         lenient().when(answerAttemptRepository.findBySessionIdAndAttemptNo(anyString(), anyInt()))
@@ -134,9 +142,14 @@ class FeedbackServiceTest {
 
         ArgumentCaptor<FeedbackDiagnosisLogEntity> logCaptor = ArgumentCaptor.forClass(FeedbackDiagnosisLogEntity.class);
         verify(diagnosisLogRepository).save(logCaptor.capture());
+        assertThat(logCaptor.getValue().getExecutionStatus())
+                .isEqualTo(FeedbackDiagnosisExecutionStatus.SUCCESS);
+        assertThat(logCaptor.getValue().getInputFingerprint()).hasSize(64);
         assertThat(logCaptor.getValue().getDiagnosisTopicRelevance()).isEqualTo("ON_TOPIC");
         assertThat(logCaptor.getValue().getDiagnosisUtteranceForm()).isEqualTo("COMPLETE");
-        assertThat(logCaptor.getValue().getDiagnosisAnswerBand()).isNull();
+        assertThat(logCaptor.getValue().isRetryAttempted()).isFalse();
+        assertThat(logCaptor.getValue().getContractRetrySucceeded()).isNull();
+        assertThat(logCaptor.getValue().getContractFinalErrorReason()).isNull();
         JsonNode diagnosisPayload = objectMapper.readTree(logCaptor.getValue().getDiagnosisPayloadJson());
         assertThat(diagnosisPayload.has("grammarImpact")).isFalse();
         assertThat(diagnosisPayload.has("utteranceForm")).isFalse();
@@ -144,14 +157,110 @@ class FeedbackServiceTest {
         assertThat(diagnosisPayload.has("structureIssues")).isFalse();
         assertThat(diagnosisPayload.path("structureAssessment").path("status").asText())
                 .isEqualTo("COMPLETE");
-        assertThat(diagnosisPayload.path("structureAssessment").path("repair")).isEmpty();
-        assertThat(diagnosisPayload.path("grammarIssues"))
-                .isEmpty();
+        assertThat(diagnosisPayload.path("structureAssessment").has("repair")).isFalse();
+        assertThat(diagnosisPayload.has("grammarIssues")).isFalse();
+        assertThat(diagnosisPayload.path("languageAssessment").path("revisionSteps")).isEmpty();
+        assertThat(diagnosisPayload.path("languageAssessment").has("revisedAnswer")).isFalse();
+        assertThat(diagnosisPayload.path("languageAssessment").has("issues")).isFalse();
 
         assertThat(response.sessionId()).isEqualTo(session.getId());
         assertThat(response.attemptNo()).isEqualTo(1);
         assertThat(response.loop()).isNotNull();
         assertThat(response.loopComplete()).isFalse();
+    }
+
+    @Test
+    void storesOnlyUserVisibleCoachFieldsInTheVisibleSnapshot() throws Exception {
+        PromptDto prompt = prompt();
+        AnswerSessionEntity session = session(prompt, "session-visible-snapshot");
+        FeedbackCoachMoveDto coachMove = new FeedbackCoachMoveDto(
+                "Add a concrete method.",
+                "DETAIL",
+                "The current answer does not explain how.",
+                "study English",
+                "review words with flashcards",
+                "Name one method you actually use.",
+                "I review words with flashcards.",
+                "I use [a study method] to remember words.",
+                "나는 단어를 기억하기 위해 [학습 방법]을 사용해요.",
+                List.of(new FeedbackSuggestedPhraseDto("use flashcards", "플래시카드를 사용하다")),
+                "The answer includes one concrete study method.",
+                "DETAIL"
+        );
+        FeedbackResponseDto internal = feedback(prompt, false)
+                .withLoopExperience(null, coachMove, null, null, null);
+        stubSuccessfulReview(prompt, session, internal, snapshot(false));
+
+        FeedbackResponseDto response = service.review(
+                new FeedbackRequestDto(prompt.id(), "I study English.", session.getId(), "INITIAL", null),
+                7L
+        );
+
+        FeedbackCoachMoveDto visibleCoachMove = response.visibleFeedback().coachMove();
+        assertThat(visibleCoachMove.skeletonEn()).isEqualTo(
+                "I use [a study method] to remember words."
+        );
+        assertThat(visibleCoachMove.suggestedPhrases()).hasSize(1);
+        assertThat(visibleCoachMove.exampleEn()).isNull();
+        assertThat(visibleCoachMove.successCheck()).isNull();
+
+        ArgumentCaptor<AnswerAttemptEntity> attemptCaptor = ArgumentCaptor.forClass(AnswerAttemptEntity.class);
+        verify(answerAttemptRepository).save(attemptCaptor.capture());
+        JsonNode visibleSnapshot = objectMapper.readTree(
+                attemptCaptor.getValue().getVisibleFeedbackSnapshotJson()
+        );
+        assertThat(visibleSnapshot.path("coachMove").has("exampleEn")).isFalse();
+        assertThat(visibleSnapshot.path("coachMove").has("successCheck")).isFalse();
+
+        JsonNode internalPayload = objectMapper.readTree(
+                attemptCaptor.getValue().getFeedbackPayloadJson()
+        );
+        assertThat(internalPayload.path("coachMove").path("exampleEn").asText())
+                .isEqualTo("I review words with flashcards.");
+        assertThat(internalPayload.path("coachMove").path("successCheck").asText())
+                .isEqualTo("The answer includes one concrete study method.");
+    }
+
+    @Test
+    void storesTheRejectedResponseAndRecoveredContractRetrySeparately() {
+        PromptDto prompt = prompt();
+        AnswerSessionEntity session = session(prompt, "session-contract-retry");
+        FeedbackResponseDto internal = feedback(prompt, false);
+        FeedbackAnalysisSnapshot baseSnapshot = snapshot(false);
+        FeedbackAnalysisSnapshot retriedSnapshot = new FeedbackAnalysisSnapshot(
+                baseSnapshot.provider(),
+                baseSnapshot.model(),
+                200,
+                "{\"result\":\"accepted\"}",
+                baseSnapshot.diagnosis(),
+                baseSnapshot.finalSections(),
+                FeedbackContractRetryTrace.recovered(
+                        "Every grammar issue must quote an exact learner-answer span",
+                        200,
+                        "{\"result\":\"rejected\"}",
+                        200,
+                        "{\"result\":\"accepted\"}"
+                )
+        );
+        stubSuccessfulReview(prompt, session, internal, retriedSnapshot);
+
+        service.review(
+                new FeedbackRequestDto(prompt.id(), "I take a walk.", session.getId(), "INITIAL", null),
+                7L
+        );
+
+        ArgumentCaptor<FeedbackDiagnosisLogEntity> logCaptor =
+                ArgumentCaptor.forClass(FeedbackDiagnosisLogEntity.class);
+        verify(diagnosisLogRepository).save(logCaptor.capture());
+        FeedbackDiagnosisLogEntity saved = logCaptor.getValue();
+        assertThat(saved.isRetryAttempted()).isTrue();
+        assertThat(saved.getContractRetrySucceeded()).isTrue();
+        assertThat(saved.getContractOriginalErrorReason())
+                .isEqualTo("Every grammar issue must quote an exact learner-answer span");
+        assertThat(saved.getDiagnosisResponseBodyJson()).isEqualTo("{\"result\":\"rejected\"}");
+        assertThat(saved.getRegenerationResponseBodyJson()).isEqualTo("{\"result\":\"accepted\"}");
+        assertThat(saved.getDiagnosisResponseStatusCode()).isEqualTo(200);
+        assertThat(saved.getRegenerationResponseStatusCode()).isEqualTo(200);
     }
 
     @Test
@@ -178,7 +287,106 @@ class FeedbackServiceTest {
     }
 
     @Test
-    void marksSessionCompleteOnlyFromBackendDerivedCompletion() {
+    void storesFailedLlmExecutionIndependentlyWithoutSavingAnAnswerAttempt() {
+        PromptDto prompt = prompt();
+        AnswerSessionEntity session = session(prompt, "session-failed-diagnosis");
+        FeedbackExecutionTrace trace = new FeedbackExecutionTrace(
+                "openai",
+                "test-model",
+                "medium",
+                null,
+                200,
+                "{\"result\":\"rejected\"}",
+                200,
+                "{\"result\":\"still-rejected\"}",
+                true,
+                true,
+                false,
+                false,
+                "Initial contract failure",
+                "Final contract failure",
+                321L
+        );
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(llmFeedbackClient.isConfigured()).thenReturn(true);
+        when(answerSessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
+        when(llmFeedbackClient.review(
+                any(PromptDto.class), anyString(), anyList(), anyInt(), nullable(String.class), nullable(String.class)
+        )).thenThrow(new IllegalStateException("feedback failed"));
+        when(llmFeedbackClient.takeLastExecutionTrace()).thenReturn(trace);
+
+        assertThatThrownBy(() -> service.review(
+                new FeedbackRequestDto(prompt.id(), "I goes home.", session.getId(), "INITIAL", null),
+                7L
+        )).isInstanceOf(IllegalStateException.class);
+
+        ArgumentCaptor<FeedbackDiagnosisFailureEvent> eventCaptor =
+                ArgumentCaptor.forClass(FeedbackDiagnosisFailureEvent.class);
+        verify(diagnosisLogRecorder).recordFailure(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().executionTrace()).isEqualTo(trace);
+        assertThat(eventCaptor.getValue().learnerAnswer()).isEqualTo("I goes home.");
+        verify(answerAttemptRepository, never()).save(any());
+        verify(diagnosisLogRepository, never()).save(any());
+    }
+
+    @Test
+    void returnsStoredResponseForRepeatedSubmissionWithoutCallingLlm() throws Exception {
+        PromptDto prompt = prompt();
+        AnswerSessionEntity session = session(prompt, "session-idempotent");
+        FeedbackResponseDto storedFeedback = feedback(prompt, false)
+                .withVisibleFeedback(new com.writeloop.dto.VisibleFeedbackSnapshotDto(
+                        1,
+                        com.writeloop.dto.VisibleFeedbackState.NEEDS_REWRITE,
+                        "The main action is clear.",
+                        null,
+                        null,
+                        List.of(),
+                        null,
+                        null,
+                        false
+                ));
+        AnswerAttemptEntity storedAttempt = new AnswerAttemptEntity(
+                session.getId(),
+                1,
+                com.writeloop.persistence.AttemptType.INITIAL,
+                "I take a walk.",
+                null,
+                "Add one relevant detail.",
+                "[]",
+                "[]",
+                "",
+                "Add one detail.",
+                objectMapper.writeValueAsString(storedFeedback),
+                "submission-idempotent",
+                objectMapper.writeValueAsString(storedFeedback.visibleFeedback())
+        );
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(answerSessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
+        when(answerAttemptRepository.findBySessionIdAndSubmissionId(
+                session.getId(),
+                "submission-idempotent"
+        )).thenReturn(Optional.of(storedAttempt));
+
+        FeedbackResponseDto response = service.review(
+                new FeedbackRequestDto(
+                        prompt.id(),
+                        "I take a walk.",
+                        session.getId(),
+                        "INITIAL",
+                        null,
+                        "submission-idempotent"
+                ),
+                7L
+        );
+
+        assertThat(response.visibleFeedback().state())
+                .isEqualTo(com.writeloop.dto.VisibleFeedbackState.NEEDS_REWRITE);
+        verifyNoInteractions(llmFeedbackClient);
+        verify(answerAttemptRepository, never()).save(any());
+    }
+
+    @Test
+    void keepsBackendDerivedCompletionReadyUntilUserFinishes() {
         PromptDto prompt = prompt();
         AnswerSessionEntity session = session(prompt, "session-3");
         FeedbackResponseDto internal = feedback(prompt, true);
@@ -191,6 +399,55 @@ class FeedbackServiceTest {
 
         assertThat(response.loopComplete()).isTrue();
         assertThat(response.completion()).isNotNull();
+        assertThat(response.visibleFeedback().state().name()).isEqualTo("READY_TO_FINISH");
+        assertThat(session.getStatus()).isEqualTo(SessionStatus.READY_TO_FINISH);
+        verify(promptService, never()).recordDailyPromptComplete(anyString(), any(), any(), anyString());
+    }
+
+    @Test
+    void completesReadySessionOnlyAfterExplicitFinish() throws Exception {
+        PromptDto prompt = prompt();
+        AnswerSessionEntity session = new AnswerSessionEntity(
+                "session-ready",
+                prompt.id(),
+                null,
+                7L,
+                SessionStatus.READY_TO_FINISH
+        );
+        FeedbackResponseDto readyFeedback = feedback(prompt, true)
+                .withVisibleFeedback(new com.writeloop.dto.VisibleFeedbackSnapshotDto(
+                        1,
+                        com.writeloop.dto.VisibleFeedbackState.READY_TO_FINISH,
+                        "The main action is clear.",
+                        null,
+                        null,
+                        List.of(),
+                        "I usually take a walk after work.",
+                        "퇴근 후에는 보통 산책해요.",
+                        false
+                ));
+        AnswerAttemptEntity latestAttempt = new AnswerAttemptEntity(
+                session.getId(),
+                1,
+                com.writeloop.persistence.AttemptType.INITIAL,
+                "I usually take a walk after work.",
+                null,
+                "Ready",
+                "[]",
+                "[]",
+                readyFeedback.modelAnswer(),
+                "",
+                objectMapper.writeValueAsString(readyFeedback),
+                "submission-ready",
+                objectMapper.writeValueAsString(readyFeedback.visibleFeedback())
+        );
+        when(answerSessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
+        when(answerAttemptRepository.findFirstBySessionIdOrderByAttemptNoDesc(session.getId()))
+                .thenReturn(Optional.of(latestAttempt));
+
+        var result = service.finish(session.getId(), new FeedbackFinishRequestDto(null), 7L);
+
+        assertThat(result.status()).isEqualTo("COMPLETED");
         assertThat(session.getStatus()).isEqualTo(SessionStatus.COMPLETED);
         verify(promptService).recordDailyPromptComplete(prompt.id(), 7L, null, session.getId());
     }
@@ -209,6 +466,8 @@ class FeedbackServiceTest {
         )).thenReturn(feedback);
         when(llmFeedbackClient.isAuthoritativeFeedback(feedback)).thenReturn(true);
         when(llmFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(snapshot);
+        when(llmFeedbackClient.takeLastExecutionTrace())
+                .thenReturn(FeedbackExecutionTrace.successful(snapshot));
     }
 
     private PromptDto prompt() {
@@ -267,8 +526,8 @@ class FeedbackServiceTest {
     private FeedbackAnalysisSnapshot snapshot(boolean complete) {
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 new TopicAssessment(TopicRelevance.ON_TOPIC, "The answer addresses the question."),
-                new StructureAssessment(StructureStatus.COMPLETE, List.of()),
-                List.of()
+                new StructureAssessment(StructureStatus.COMPLETE),
+                new LanguageAssessment(List.of())
         );
         MissionDecision decision = new MissionDecision(
                 complete ? MissionKind.COMPLETE : MissionKind.SLOT,
@@ -284,8 +543,7 @@ class FeedbackServiceTest {
                 "I usually take a walk after work.",
                 "I usually take a walk after work.",
                 decision,
-                null,
-                List.of()
+                null
         );
         return new FeedbackAnalysisSnapshot("openai", "test-model", 200, "{}", diagnosis, sections);
     }

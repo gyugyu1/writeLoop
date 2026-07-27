@@ -66,12 +66,17 @@ class OpenAiFeedbackEngine implements FeedbackLlmEngine {
     }
 
     @Override
-    public List<InlineFeedbackSegmentDto> buildInlineFeedbackFromCorrectedAnswer(String learnerAnswer, String correctedAnswer) {
-        return delegate.buildInlineFeedbackFromCorrectedAnswer(learnerAnswer, correctedAnswer);
+    public FeedbackExecutionTrace takeLastExecutionTrace() {
+        return delegate.takeLastExecutionTrace();
     }
 
     @Override
-    public List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String learnerAnswer, String correctedAnswer) {
-        return delegate.buildPreciseInlineFeedback(learnerAnswer, correctedAnswer);
+    public List<InlineFeedbackSegmentDto> buildInlineFeedbackFromRevisedAnswer(String learnerAnswer, String revisedAnswer) {
+        return delegate.buildInlineFeedbackFromRevisedAnswer(learnerAnswer, revisedAnswer);
+    }
+
+    @Override
+    public List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String learnerAnswer, String revisedAnswer) {
+        return delegate.buildPreciseInlineFeedback(learnerAnswer, revisedAnswer);
     }
 }

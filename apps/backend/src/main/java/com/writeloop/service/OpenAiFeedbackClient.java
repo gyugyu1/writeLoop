@@ -1,5 +1,6 @@
 package com.writeloop.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
@@ -35,6 +36,7 @@ public class OpenAiFeedbackClient {
     private final CanonicalFeedbackContract contract;
     private final CanonicalFeedbackAssembler assembler = new CanonicalFeedbackAssembler();
     private final ThreadLocal<FeedbackAnalysisSnapshot> latestAnalysisSnapshot = new ThreadLocal<>();
+    private final ThreadLocal<FeedbackExecutionTrace> latestExecutionTrace = new ThreadLocal<>();
 
     @Autowired(required = false)
     private FeedbackTimingRecorder feedbackTimingRecorder;
@@ -88,12 +90,23 @@ public class OpenAiFeedbackClient {
             String previousCoachingSummary
     ) {
         latestAnalysisSnapshot.remove();
+        latestExecutionTrace.remove();
         if (!isConfigured()) {
             throw feedbackGenerationUnavailable();
         }
 
         long startedAt = System.nanoTime();
-        Integer statusCode = null;
+        Integer initialStatusCode = null;
+        Integer retryStatusCode = null;
+        FeedbackContractException originalContractError = null;
+        boolean retryAttempted = false;
+        Boolean retrySucceeded = null;
+        Exception finalException = null;
+        boolean finalSuccess = false;
+        String initialProviderBody = null;
+        String initialStructuredText = null;
+        String retryProviderBody = null;
+        String retryStructuredText = null;
         try {
             String userPrompt = contract.userPrompt(
                     prompt,
@@ -103,57 +116,95 @@ public class OpenAiFeedbackClient {
                     previousAnswer,
                     previousCoachingSummary
             );
-            String requestBody = OpenAiStructuredOutputSupport.buildResponsesRequestBody(
-                    objectMapper,
-                    model,
-                    contract.developerPrompt(),
-                    userPrompt,
-                    "writeloop_feedback_canonical",
-                    contract.schema(prompt),
-                    reasoningEffort
-            );
-            HttpRequest request = OpenAiStructuredOutputSupport.buildResponsesRequest(
-                    apiUrl,
-                    apiKey,
-                    requestBody,
-                    requestTimeoutSeconds
-            );
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            statusCode = response.statusCode();
-            if (statusCode < 200 || statusCode >= 300) {
-                throw new IllegalStateException("OpenAI returned HTTP " + statusCode);
+            ProviderResponse initialResponse = requestCanonicalFeedback(prompt, userPrompt);
+            initialStatusCode = initialResponse.statusCode();
+            initialProviderBody = initialResponse.body();
+            requireSuccessfulResponse(initialResponse);
+
+            AssembledFeedback assembled;
+            try {
+                initialStructuredText = extractCanonicalText(initialResponse.body());
+                assembled = assemble(prompt, answer, attemptIndex, initialStructuredText);
+            } catch (FeedbackContractException exception) {
+                originalContractError = exception;
+                if (!exception.retryable()) {
+                    throw exception;
+                }
+                String rejectedOutput = initialStructuredText == null
+                        ? initialResponse.body()
+                        : initialStructuredText;
+                String retryPrompt = contract.contractRetryPrompt(
+                        userPrompt,
+                        rejectedOutput,
+                        exception.getMessage()
+                );
+                retryAttempted = true;
+                retrySucceeded = false;
+                ProviderResponse retryResponse = requestCanonicalFeedback(prompt, retryPrompt);
+                retryStatusCode = retryResponse.statusCode();
+                retryProviderBody = retryResponse.body();
+                requireSuccessfulResponse(retryResponse);
+                retryStructuredText = extractCanonicalText(retryResponse.body());
+                assembled = assemble(prompt, answer, attemptIndex, retryStructuredText);
+                retrySucceeded = true;
             }
-            String structuredText = OpenAiStructuredOutputSupport.extractStructuredOutputText(
-                    objectMapper,
-                    response.body()
-            );
-            CanonicalLlmOutput output = contract.parse(structuredText);
-            AssembledFeedback assembled = assembler.assemble(
-                    INTERNAL_AUTHORITATIVE_SESSION_ID,
-                    prompt,
-                    answer,
-                    attemptIndex,
-                    output
-            );
+
+            Integer finalStatusCode = retrySucceeded == Boolean.TRUE ? retryStatusCode : initialStatusCode;
+            String finalStructuredText = retrySucceeded == Boolean.TRUE
+                    ? retryStructuredText
+                    : initialStructuredText;
+            FeedbackContractRetryTrace retryTrace = originalContractError == null
+                    ? FeedbackContractRetryTrace.notAttempted()
+                    : FeedbackContractRetryTrace.recovered(
+                            originalContractError.getMessage(),
+                            initialStatusCode,
+                            initialStructuredText == null ? initialResponse.body() : initialStructuredText,
+                            retryStatusCode,
+                            retryStructuredText
+                    );
             latestAnalysisSnapshot.set(new FeedbackAnalysisSnapshot(
                     "openai",
                     model,
-                    statusCode,
-                    structuredText,
+                    finalStatusCode,
+                    finalStructuredText,
                     assembled.diagnosis(),
-                    assembled.sections()
+                    assembled.sections(),
+                    retryTrace
             ));
-            recordTiming(prompt, attemptIndex, true, statusCode, null, startedAt);
+            finalSuccess = true;
+            recordTiming(prompt, attemptIndex, true, finalStatusCode, null, startedAt);
             return assembled.response();
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            recordTiming(prompt, attemptIndex, false, statusCode, exception, startedAt);
+            finalException = exception;
+            Integer finalStatusCode = retryStatusCode == null ? initialStatusCode : retryStatusCode;
+            recordTiming(prompt, attemptIndex, false, finalStatusCode, exception, startedAt);
             LOGGER.warn("OpenAI feedback request was interrupted", exception);
             throw feedbackGenerationUnavailable();
         } catch (Exception exception) {
-            recordTiming(prompt, attemptIndex, false, statusCode, exception, startedAt);
+            finalException = exception;
+            Integer finalStatusCode = retryStatusCode == null ? initialStatusCode : retryStatusCode;
+            recordTiming(prompt, attemptIndex, false, finalStatusCode, exception, startedAt);
             LOGGER.warn("OpenAI canonical feedback failed", exception);
             throw feedbackGenerationUnavailable();
+        } finally {
+            latestExecutionTrace.set(new FeedbackExecutionTrace(
+                    "openai",
+                    model,
+                    reasoningEffort,
+                    null,
+                    initialStatusCode,
+                    preferredOutput(initialStructuredText, initialProviderBody),
+                    retryStatusCode,
+                    preferredOutput(retryStructuredText, retryProviderBody),
+                    originalContractError != null,
+                    retryAttempted,
+                    retrySucceeded,
+                    finalSuccess,
+                    originalContractError == null ? null : originalContractError.getMessage(),
+                    finalException == null ? null : finalException.getMessage(),
+                    (System.nanoTime() - startedAt) / 1_000_000
+            ));
         }
     }
 
@@ -176,7 +227,7 @@ public class OpenAiFeedbackClient {
                 feedback.corrections(),
                 feedback.inlineFeedback(),
                 feedback.grammarFeedback(),
-                feedback.correctedAnswer(),
+                feedback.revisedAnswer(),
                 feedback.refinementExpressions(),
                 feedback.modelAnswer(),
                 feedback.modelAnswerKo(),
@@ -197,12 +248,18 @@ public class OpenAiFeedbackClient {
         return snapshot;
     }
 
-    List<InlineFeedbackSegmentDto> buildInlineFeedbackFromCorrectedAnswer(String learnerAnswer, String correctedAnswer) {
-        return FeedbackInlineDiffSupport.diff(learnerAnswer, correctedAnswer);
+    FeedbackExecutionTrace takeLastExecutionTrace() {
+        FeedbackExecutionTrace trace = latestExecutionTrace.get();
+        latestExecutionTrace.remove();
+        return trace;
     }
 
-    List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String learnerAnswer, String correctedAnswer) {
-        return FeedbackInlineDiffSupport.diff(learnerAnswer, correctedAnswer);
+    List<InlineFeedbackSegmentDto> buildInlineFeedbackFromRevisedAnswer(String learnerAnswer, String revisedAnswer) {
+        return FeedbackInlineDiffSupport.diff(learnerAnswer, revisedAnswer);
+    }
+
+    List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String learnerAnswer, String revisedAnswer) {
+        return FeedbackInlineDiffSupport.diff(learnerAnswer, revisedAnswer);
     }
 
     private ApiException feedbackGenerationUnavailable() {
@@ -211,6 +268,76 @@ public class OpenAiFeedbackClient {
                 "FEEDBACK_GENERATION_UNAVAILABLE",
                 "지금은 피드백을 생성할 수 없어요. 잠시 후 다시 시도해 주세요."
         );
+    }
+
+    private ProviderResponse requestCanonicalFeedback(
+            PromptDto prompt,
+            String userPrompt
+    ) throws Exception {
+        String requestBody = OpenAiStructuredOutputSupport.buildResponsesRequestBody(
+                objectMapper,
+                model,
+                contract.developerPrompt(),
+                userPrompt,
+                "writeloop_feedback_canonical",
+                contract.schema(prompt),
+                reasoningEffort
+        );
+        HttpRequest request = OpenAiStructuredOutputSupport.buildResponsesRequest(
+                apiUrl,
+                apiKey,
+                requestBody,
+                requestTimeoutSeconds
+        );
+        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        return new ProviderResponse(response.statusCode(), response.body());
+    }
+
+    private void requireSuccessfulResponse(ProviderResponse response) {
+        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+            throw new IllegalStateException("OpenAI returned HTTP " + response.statusCode());
+        }
+    }
+
+    private String extractCanonicalText(String responseBody) {
+        try {
+            return OpenAiStructuredOutputSupport.extractStructuredOutputText(objectMapper, responseBody);
+        } catch (java.io.IOException | IllegalStateException exception) {
+            throw new FeedbackContractException(
+                    "OpenAI response did not contain valid canonical structured output: "
+                            + exception.getMessage()
+            );
+        }
+    }
+
+    private AssembledFeedback assemble(
+            PromptDto prompt,
+            String answer,
+            int attemptIndex,
+            String structuredText
+    ) {
+        CanonicalLlmOutput output;
+        try {
+            output = contract.parse(structuredText);
+        } catch (JsonProcessingException exception) {
+            throw new FeedbackContractException(
+                    "OpenAI canonical output could not be parsed: " + exception.getMessage()
+            );
+        }
+        return assembler.assemble(
+                INTERNAL_AUTHORITATIVE_SESSION_ID,
+                prompt,
+                answer,
+                attemptIndex,
+                output
+        );
+    }
+
+    private String preferredOutput(String structuredText, String providerBody) {
+        if (structuredText != null && !structuredText.isBlank()) {
+            return structuredText;
+        }
+        return providerBody == null || providerBody.isBlank() ? null : providerBody;
     }
 
     private void recordTiming(
@@ -237,5 +364,11 @@ public class OpenAiFeedbackClient {
                 exception == null ? null : exception.getClass().getSimpleName(),
                 (System.nanoTime() - startedAt) / 1_000_000
         );
+    }
+
+    private record ProviderResponse(
+            int statusCode,
+            String body
+    ) {
     }
 }

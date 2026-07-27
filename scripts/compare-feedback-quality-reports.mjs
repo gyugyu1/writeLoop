@@ -160,7 +160,7 @@ function isContentMission(value) {
 }
 
 function isComparisonMission(value) {
-  return value === "GRAMMAR_FIX" || value === "STRUCTURE_FIX";
+  return value === "LANGUAGE_FIX" || value === "GRAMMAR_FIX" || value === "STRUCTURE_FIX";
 }
 
 function latencySummary(values) {

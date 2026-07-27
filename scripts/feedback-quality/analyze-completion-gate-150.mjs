@@ -52,7 +52,7 @@ const summary = {
       100
     ),
     grammarClassification: ratioGate(
-      grammar.filter((result) => !result.loopComplete && result.missionKind === "GRAMMAR_FIX").length,
+      grammar.filter((result) => !result.loopComplete && result.missionKind === "LANGUAGE_FIX").length,
       grammar.length,
       95
     ),
@@ -72,7 +72,7 @@ const summary = {
       complete.length
     ),
     fragmentStructureFix: ratio(
-      fragment.filter((result) => !result.loopComplete && result.missionKind === "STRUCTURE_FIX").length,
+      fragment.filter((result) => !result.loopComplete && result.missionKind === "LANGUAGE_FIX").length,
       fragment.length
     ),
     groundedGrammarRepair: ratio(

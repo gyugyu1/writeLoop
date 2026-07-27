@@ -35,23 +35,23 @@ The LLM output has exactly these top-level fields:
   - `reasonKo`: concise evidence for the topic judgment
 - `structureAssessment`
   - `status` is `COMPLETE` when every answer-bearing segment forms an independent sentence, otherwise `FRAGMENT`.
-  - `repair` contains 0-1 atomic structure repairs.
-  - `COMPLETE` and every `OFF_TOPIC` answer require an empty `repair` array.
-  - An `ON_TOPIC` `FRAGMENT` requires exactly one repair with `originalText`, `correctedAnswer`, `reasonKo`, and `instructionKo`.
-  - `originalText` must equal the complete learner answer exactly, preserving case and punctuation.
-  - `correctedAnswer` is the one authoritative, minimally corrected full answer and preserves the learner's meaning and facts.
-- `grammarIssues`
-  - `impact`, `code`, `originalText`, `revisedText`, `reasonKo`, `instructionKo`
-  - `impact` is `LOCAL` or `BLOCKING` for that exact correction.
-  - An empty list means no correction is needed; the backend derives the aggregate impact as `NONE`.
-  - For multiple issues, the backend derives the strongest impact in this order: `BLOCKING`, `LOCAL`.
-  - `originalText` must be an exact, case-sensitive learner-answer substring.
-  - `revisedText` is the direct replacement for that substring.
-  - Grammatically acceptable wording must not appear here merely because another version is more natural, common, concise, or specific.
+  - This object does not carry repair text. The full revision lives only in `languageAssessment`.
+- `languageAssessment`
+  - `revisionSteps` contains zero to 25 cumulative full-answer correction steps.
+  - Each step contains `kind`, `code`, `answerAfter`, `reasonKo`, and `instructionKo`.
+  - `answerAfter` is the complete learner answer after applying that step, never a fragment, patch, example, or model answer.
+  - `kind` is `STRUCTURE`, `GRAMMAR_BLOCKING`, or `GRAMMAR_LOCAL`.
+  - The first step starts from the untouched learner answer. Every later step starts from the prior `answerAfter` and preserves every earlier correction exactly.
+  - Steps are ordered by `STRUCTURE`, `GRAMMAR_BLOCKING`, and `GRAMMAR_LOCAL`, then left to right within the same kind.
+  - One step may contain multiple low-level diff spans only when they form one local construction with one teaching explanation. The backend exposes their smallest contiguous envelope as one correction card.
+  - Unrelated corrections require separate cumulative steps. Overlapping corrections are merged into the earlier, higher-priority step.
+  - If more than 25 correction groups are possible, apply and explain only the first 25 and leave unselected errors unchanged.
+  - If no language correction is needed, return an empty `revisionSteps` array.
+  - Grammatically acceptable wording must not be revised merely because another version is more natural, common, concise, or specific.
 - `slotAssessments`
   - A fixed-key object with exactly one property for every canonical slot in the question contract.
   - Each slot value contains only `evidence` and a `support` array; the nested value does not repeat the slot code or return a status.
-  - Evidence must quote the untouched learner answer. If a grammar correction overlaps the evidence, keep the learner's original wording here and put the revised wording only in `grammarIssues`.
+  - Evidence must quote the untouched learner answer. If a language correction overlaps the evidence, keep the learner's original wording here; corrected text belongs only in `languageAssessment.revisionSteps`.
   - Non-empty learner-answer evidence and zero support items -> the backend derives `SATISFIED`.
   - Non-empty learner-answer evidence and exactly one support item -> the backend derives `GENERIC`.
   - Empty evidence and exactly one support item -> the backend derives `MISSING`.
@@ -92,10 +92,10 @@ Do not add LLM fields for backend decisions or duplicate diagnoses:
 The backend validates the mechanical contract, computes present/missing slots from DB metadata, and derives one `missionKind` in this order:
 
 1. `OFF_TOPIC` -> `TASK_RESET`
-2. `FRAGMENT` utterance form -> `STRUCTURE_FIX`
-3. `BLOCKING` grammar -> `GRAMMAR_FIX`
+2. `FRAGMENT` utterance form -> `LANGUAGE_FIX`
+3. `BLOCKING` grammar -> `LANGUAGE_FIX`
 4. unresolved required slot -> `SLOT`
-5. `LOCAL` grammar -> `GRAMMAR_FIX`
+5. `LOCAL` grammar -> `LANGUAGE_FIX`
 6. unresolved required depth slot -> `SLOT`
 7. otherwise -> `COMPLETE`
 
@@ -109,11 +109,32 @@ The backend then derives:
 - `presentSlots` and `missingSlots`
 - `coachMission`
 - `coachMove` and `coachMove.targetSlot`
-- `fixPoints`
+- `coachMove.languageCorrections`
+- `revisedAnswer`
 - `rewriteWorkspace`
 - `loopComplete`
 
-If slot evidence differs from the learner answer only by one or more declared grammar correction pairs, the backend may reverse those corrections only when they produce one unambiguous exact original span. It never uses fuzzy matching or invents evidence. All other evidence/support violations, missing bilingual skeletons, missing phrase choices, unusable structure repairs, and unusable grammar evidence are rejected without backend-authored teaching content.
+If slot evidence differs from the learner answer only because it quotes text from a cumulative revision step, the backend may walk the validated steps backward and restore it only when one unambiguous original span results. It never uses fuzzy matching or invents evidence. Slot/support violations remain eligible for one whole-response contract retry. Invalid language-step ordering, overlap, preservation, or completeness is rejected immediately without retry or backend-authored teaching content.
+
+## Diagnosis Persistence
+
+`feedback_diagnosis_logs` is the single authority for both successful and failed
+LLM feedback executions.
+
+- `execution_status` is `SUCCESS` or `FAILED`.
+- `input_fingerprint` identifies repeated runs of the same prompt and learner answer.
+- Initial and one retry output are stored separately in
+  `diagnosis_response_body_json` and `regeneration_response_body_json`.
+- Contract detection, retry outcome, original error, final error, provider
+  configuration, and elapsed time are stored on the same row.
+- A successful row can reference `answer_attempt_id`; a failed row has no answer
+  attempt because no user-visible feedback was created.
+- Failed rows are saved in an independent transaction so the calling feedback
+  transaction can roll back without erasing the diagnostic evidence.
+- Raw internal diagnostic output has no automatic expiration policy.
+
+Do not recreate `feedback_contract_execution_logs` or split execution outcomes
+across another authority table.
 
 ## Canonical Slots
 
@@ -146,10 +167,16 @@ Do not write new metadata with `MAIN_ANSWER`, `ACTIVITY`, `TIME_OR_PLACE`, or `S
 
 - `coachMove.focusType` carries backend `missionKind`, not an LLM-selected category.
 - `coachMove.targetSlot` preserves the exact canonical content slot for `SLOT` and `TASK_RESET`.
-- `STRUCTURE_FIX` uses `structureAssessment.repair.originalText` as the before value and the same repair's `correctedAnswer` as the after value. It exposes no separate grammar correction in that attempt.
-- `fixPoints` are backend-derived from the selected slot support, grounded structure issues, or grounded grammar issues.
+- `LANGUAGE_FIX` shows the complete learner answer as `before` and the validated full `revisedAnswer` as `after`.
+- `coachMove.languageCorrections` contains every validated correction row, up to 25.
+- The backend compares each cumulative `answerAfter` with the preceding full answer and derives one positioned correction row per validated revision step.
+- When one step has several low-level diff spans, the row uses the smallest contiguous source/revised envelope covering them all.
+- Mobile and web show the first four correction rows initially. Any remaining rows stay stored and are available through an expand/collapse control.
+- `revisedAnswer` applies exactly the listed corrections and no hidden fixes. Errors outside the 25-item technical cap remain untouched and are diagnosed again on the learner's next submission.
 - `refinementExpressions` remain optional add-ons for grammatically acceptable alternative wording.
 - `modelAnswer` and `modelAnswerKo` are visible reference content, not completion authorities.
 - Question-answer feedback does not expose a numeric score.
 
-Historical DB columns and stored JSON may still contain retired fields during migration. New requests must not write or publish them.
+Retired diagnosis columns were removed from the operational table. Historical
+JSON payloads may still contain older fields, but new requests must not write or
+publish them.

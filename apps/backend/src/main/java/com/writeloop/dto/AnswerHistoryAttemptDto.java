@@ -8,7 +8,7 @@ public record AnswerHistoryAttemptDto(
         String attemptType,
         String answerText,
         String feedbackSummary,
-        AnswerHistoryFeedbackDto feedback,
+        VisibleFeedbackSnapshotDto visibleFeedback,
         java.util.List<AnswerHistoryUsedExpressionDto> usedExpressions,
         Instant createdAt
 ) {

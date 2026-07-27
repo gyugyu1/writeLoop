@@ -60,7 +60,7 @@ class FeedbackSlotCatalogTest {
 
     @Test
     void correctionMissionsDoNotExposeAContentSlot() {
-        MissionDecision decision = decision(MissionKind.GRAMMAR_FIX, List.of("REASON"), "REASON");
+        MissionDecision decision = decision(MissionKind.LANGUAGE_FIX, List.of("REASON"), "REASON");
 
         assertThat(FeedbackSlotCatalog.targetSlotForUi(decision)).isNull();
     }

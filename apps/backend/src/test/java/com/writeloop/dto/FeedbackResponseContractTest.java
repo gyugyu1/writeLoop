@@ -37,53 +37,32 @@ class FeedbackResponseContractTest {
                 "Try one focused rewrite.",
                 List.of(),
                 new FeedbackUiDto(
-                        new FeedbackFocusCardDto("legacy", "legacy headline", "legacy support"),
-                        new FeedbackPrimaryFixDto("legacy", "legacy", "old", "new", "why"),
-                        null,
-                        List.of(new FeedbackSecondaryLearningPointDto(
-                                "EXPRESSION",
-                                "Hidden secondary point",
-                                "after that",
-                                "Hidden support",
-                                null,
-                                null,
-                                "그 후에",
-                                "Use it for sequence.",
-                                "After that, I rested.",
-                                null
-                        )),
-                        List.of(new FeedbackSecondaryLearningPointDto(
-                                "GRAMMAR",
-                                "Fix past tense",
-                                null,
-                                "Past events need past tense.",
-                                "I go home",
-                                "I went home",
-                                null,
-                                null,
-                                null,
-                                null
-                        )),
                         null,
                         List.of(),
-                        List.of(new FeedbackModelAnswerVariantDto(
-                                "NATURAL_POLISH",
-                                "I went home and got some rest.",
-                                "집에 가서 조금 쉬었어요.",
-                                "Smoother version."
-                        )),
                         null,
                         null
                 ),
                 null,
                 new FeedbackCoachMoveDto(
                         "Past tense",
-                        "GRAMMAR_FIX",
+                        "LANGUAGE_FIX",
                         "The event already happened.",
                         "I go home",
                         "I went home",
                         "Use past tense for yesterday.",
-                        "The verb is in past tense."
+                        null,
+                        null,
+                        null,
+                        List.of(),
+                        "The verb is in past tense.",
+                        null,
+                        List.of(new FeedbackLanguageCorrectionDto(
+                                "GRAMMAR_LOCAL",
+                                "세부 교정",
+                                "go",
+                                "went",
+                                "Use past tense for a finished event."
+                        ))
                 ),
                 new FeedbackRewriteWorkspaceDto("I go home.", "I went ____.", "Change the verb.", true),
                 null,
@@ -94,15 +73,19 @@ class FeedbackResponseContractTest {
 
         assertThat(root.has("summary")).isTrue();
         assertThat(root.has("inlineFeedback")).isTrue();
+        assertThat(root.path("revisedAnswer").asText()).isEqualTo("I went home.");
+        assertThat(root.has("correctedAnswer")).isFalse();
         assertThat(root.has("refinementExpressions")).isTrue();
         assertThat(root.has("coachMove")).isTrue();
+        assertThat(root.path("coachMove").path("focusType").asText()).isEqualTo("LANGUAGE_FIX");
+        assertThat(root.path("coachMove").path("languageCorrections").size()).isEqualTo(1);
         assertThat(root.has("rewriteWorkspace")).isTrue();
         assertThat(root.has("score")).isFalse();
         assertThat(root.has("corrections")).isFalse();
         assertThat(root.has("grammarFeedback")).isFalse();
 
         JsonNode ui = root.path("ui");
-        assertThat(ui.has("fixPoints")).isTrue();
+        assertThat(ui.has("fixPoints")).isFalse();
         assertThat(ui.has("secondaryLearningPoints")).isFalse();
         assertThat(ui.has("modelAnswerVariants")).isFalse();
         assertThat(ui.has("focusCard")).isFalse();
@@ -157,12 +140,11 @@ class FeedbackResponseContractTest {
         FeedbackResponseDto response = objectMapper.readValue(legacyJson, FeedbackResponseDto.class);
         JsonNode root = objectMapper.readTree(objectMapper.writeValueAsString(response));
 
-        assertThat(response.ui().fixPoints()).singleElement().satisfies(point -> {
-            assertThat(point.kind()).isEqualTo("GRAMMAR");
-            assertThat(point.originalText()).isEqualTo("I go home");
-            assertThat(point.revisedText()).isEqualTo("I went home");
-        });
-        assertThat(root.path("ui").has("fixPoints")).isTrue();
+        assertThat(response.ui()).isNotNull();
+        assertThat(response.revisedAnswer()).isEqualTo("I went home.");
+        assertThat(root.path("revisedAnswer").asText()).isEqualTo("I went home.");
+        assertThat(root.has("correctedAnswer")).isFalse();
+        assertThat(root.path("ui").has("fixPoints")).isFalse();
         assertThat(root.path("ui").has("secondaryLearningPoints")).isFalse();
         assertThat(root.path("ui").has("modelAnswerVariants")).isFalse();
     }

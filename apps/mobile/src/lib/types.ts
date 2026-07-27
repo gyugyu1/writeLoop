@@ -470,21 +470,6 @@ export interface FeedbackInlineSegment {
   revisedText: string;
 }
 
-export type FeedbackFixPointKind = "GRAMMAR" | "CORRECTION" | "EXPRESSION";
-
-export interface FeedbackFixPoint {
-  kind: FeedbackFixPointKind;
-  title?: string | null;
-  headline?: string | null;
-  supportText?: string | null;
-  originalText?: string | null;
-  revisedText?: string | null;
-  meaningKo?: string | null;
-  guidanceKo?: string | null;
-  exampleEn?: string | null;
-  exampleKo?: string | null;
-}
-
 export interface FeedbackLoopStatus {
   badge?: string | null;
   headline: string;
@@ -512,6 +497,19 @@ export type FeedbackSuggestedPhrase =
       meaningKo?: string | null;
     };
 
+export type FeedbackLanguageCorrectionKind =
+  | "STRUCTURE"
+  | "GRAMMAR_BLOCKING"
+  | "GRAMMAR_LOCAL";
+
+export interface FeedbackLanguageCorrection {
+  kind: FeedbackLanguageCorrectionKind;
+  label: string;
+  before?: string | null;
+  after?: string | null;
+  reason: string;
+}
+
 export interface FeedbackCoachMove {
   focus?: string | null;
   focusType?: string | null;
@@ -525,6 +523,7 @@ export interface FeedbackCoachMove {
   suggestedPhrases?: FeedbackSuggestedPhrase[] | null;
   successCheck?: string | null;
   targetSlot?: string | null;
+  languageCorrections?: FeedbackLanguageCorrection[] | null;
 }
 
 export interface FeedbackRewriteWorkspace {
@@ -546,8 +545,21 @@ export interface FeedbackRevealLater {
   modelAnswerLabel?: string | null;
 }
 
+export type VisibleFeedbackState = "NEEDS_REWRITE" | "READY_TO_FINISH";
+
+export interface VisibleFeedbackSnapshot {
+  schemaVersion: number;
+  state: VisibleFeedbackState;
+  strength?: string | null;
+  coachMove?: FeedbackCoachMove | null;
+  completion?: FeedbackCompletion | null;
+  refinementExpressions?: RefinementExpression[] | null;
+  modelAnswer?: string | null;
+  modelAnswerKo?: string | null;
+  legacy?: boolean | null;
+}
+
 export interface FeedbackUi {
-  fixPoints?: FeedbackFixPoint[] | null;
   loopStatus?: FeedbackLoopStatus | null;
 }
 
@@ -576,6 +588,7 @@ export interface FeedbackRequest {
   sessionId?: string;
   attemptType?: AttemptType;
   guestId?: string;
+  submissionId?: string;
 }
 
 export interface Feedback {
@@ -587,7 +600,7 @@ export interface Feedback {
   summary: string;
   strengths: string[];
   inlineFeedback: FeedbackInlineSegment[] | null;
-  correctedAnswer: string | null;
+  revisedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
   usedExpressions?: FeedbackUsedExpression[] | null;
   modelAnswer: string;
@@ -599,6 +612,12 @@ export interface Feedback {
   rewriteWorkspace?: FeedbackRewriteWorkspace | null;
   completion?: FeedbackCompletion | null;
   revealLater?: FeedbackRevealLater | null;
+  visibleFeedback?: VisibleFeedbackSnapshot | null;
+}
+
+export interface FeedbackSessionStatus {
+  sessionId: string;
+  status: "IN_PROGRESS" | "READY_TO_FINISH" | "COMPLETED";
 }
 
 export type DiaryAnswerBand =
@@ -720,26 +739,13 @@ export interface DiaryCalendarSummary {
   days: DiaryCalendarDay[];
 }
 
-export interface HistoryFeedback {
-  loopComplete: boolean;
-  completionMessage: string | null;
-  summary: string;
-  strengths: string[];
-  inlineFeedback: FeedbackInlineSegment[] | null;
-  correctedAnswer: string | null;
-  modelAnswer: string;
-  modelAnswerKo?: string | null;
-  rewriteChallenge: string;
-  ui?: FeedbackUi | null;
-}
-
 export interface HistoryAttempt {
   id: number;
   attemptNo: number;
   attemptType: AttemptType;
   answerText: string;
   feedbackSummary: string;
-  feedback: HistoryFeedback;
+  visibleFeedback?: VisibleFeedbackSnapshot | null;
   usedExpressions: HistoryUsedExpression[];
   createdAt: string;
 }
@@ -751,6 +757,7 @@ export interface HistorySession {
   difficulty: PromptDifficulty;
   questionEn: string;
   questionKo: string;
+  status: "IN_PROGRESS" | "READY_TO_FINISH" | "COMPLETED";
   createdAt: string;
   updatedAt: string;
   attempts: HistoryAttempt[];

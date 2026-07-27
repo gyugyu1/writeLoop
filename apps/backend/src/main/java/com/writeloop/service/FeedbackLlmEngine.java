@@ -36,7 +36,9 @@ interface FeedbackLlmEngine {
 
     FeedbackAnalysisSnapshot takeLastAnalysisSnapshot();
 
-    List<InlineFeedbackSegmentDto> buildInlineFeedbackFromCorrectedAnswer(String learnerAnswer, String correctedAnswer);
+    FeedbackExecutionTrace takeLastExecutionTrace();
 
-    List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String learnerAnswer, String correctedAnswer);
+    List<InlineFeedbackSegmentDto> buildInlineFeedbackFromRevisedAnswer(String learnerAnswer, String revisedAnswer);
+
+    List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String learnerAnswer, String revisedAnswer);
 }

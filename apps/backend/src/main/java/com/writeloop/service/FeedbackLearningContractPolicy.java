@@ -15,7 +15,18 @@ import java.util.Set;
 
 final class FeedbackLearningContractPolicy {
 
+    private static final int MAX_LANGUAGE_CORRECTIONS = 25;
+
     MissionDecision resolve(
+            PromptDto prompt,
+            String learnerAnswer,
+            FeedbackDiagnosisResult diagnosis,
+            SlotAssessments assessments
+    ) {
+        return resolveContract(prompt, learnerAnswer, diagnosis, assessments).decision();
+    }
+
+    LearningContractResolution resolveContract(
             PromptDto prompt,
             String learnerAnswer,
             FeedbackDiagnosisResult diagnosis,
@@ -24,7 +35,7 @@ final class FeedbackLearningContractPolicy {
         if (diagnosis == null) {
             throw new FeedbackContractException("The LLM response did not include a diagnosis");
         }
-        verifyDiagnosis(learnerAnswer, diagnosis);
+        ValidatedLanguageRevision languageRevision = verifyDiagnosis(learnerAnswer, diagnosis);
 
         PromptTaskMetaDto taskMeta = prompt == null ? null : prompt.taskMeta();
         List<String> requiredSlots = taskMeta == null
@@ -43,7 +54,7 @@ final class FeedbackLearningContractPolicy {
                 taskMeta == null ? null : taskMeta.answerMode(),
                 allowedSlots,
                 assessments,
-                diagnosis.grammarIssues()
+                languageRevision.corrections()
         );
         if (diagnosis.topicRelevance() == TopicRelevance.OFF_TOPIC
                 && verified.values().values().stream()
@@ -67,30 +78,58 @@ final class FeedbackLearningContractPolicy {
 
         if (diagnosis.topicRelevance() == TopicRelevance.OFF_TOPIC) {
             String target = firstSlot(requiredSlots, depthSlots);
-            return decision(
-                    MissionKind.TASK_RESET,
-                    presentSlots,
-                    missingSlots,
-                    target,
-                    verified
+            return resolution(
+                    decision(
+                            MissionKind.TASK_RESET,
+                            presentSlots,
+                            missingSlots,
+                            target,
+                            verified
+                    ),
+                    diagnosis,
+                    languageRevision
             );
         }
         if (diagnosis.structureAssessment().status() == StructureStatus.FRAGMENT) {
-            return decision(MissionKind.STRUCTURE_FIX, presentSlots, missingSlots, null, verified);
+            return resolution(
+                    decision(MissionKind.LANGUAGE_FIX, presentSlots, missingSlots, null, verified),
+                    diagnosis,
+                    languageRevision
+            );
         }
         if (diagnosis.strongestGrammarImpact() == GrammarImpact.BLOCKING) {
-            return decision(MissionKind.GRAMMAR_FIX, presentSlots, missingSlots, null, verified);
+            return resolution(
+                    decision(MissionKind.LANGUAGE_FIX, presentSlots, missingSlots, null, verified),
+                    diagnosis,
+                    languageRevision
+            );
         }
         if (!unresolvedRequired.isEmpty()) {
-            return decision(MissionKind.SLOT, presentSlots, missingSlots, unresolvedRequired.get(0), verified);
+            return resolution(
+                    decision(MissionKind.SLOT, presentSlots, missingSlots, unresolvedRequired.get(0), verified),
+                    diagnosis,
+                    languageRevision
+            );
         }
         if (diagnosis.strongestGrammarImpact() == GrammarImpact.LOCAL) {
-            return decision(MissionKind.GRAMMAR_FIX, presentSlots, missingSlots, null, verified);
+            return resolution(
+                    decision(MissionKind.LANGUAGE_FIX, presentSlots, missingSlots, null, verified),
+                    diagnosis,
+                    languageRevision
+            );
         }
         if (!unresolvedDepth.isEmpty()) {
-            return decision(MissionKind.SLOT, presentSlots, missingSlots, unresolvedDepth.get(0), verified);
+            return resolution(
+                    decision(MissionKind.SLOT, presentSlots, missingSlots, unresolvedDepth.get(0), verified),
+                    diagnosis,
+                    languageRevision
+            );
         }
-        return decision(MissionKind.COMPLETE, presentSlots, List.of(), null, verified);
+        return resolution(
+                decision(MissionKind.COMPLETE, presentSlots, List.of(), null, verified),
+                diagnosis,
+                languageRevision
+        );
     }
 
     Map<String, Object> promptContract(PromptDto prompt) {
@@ -173,7 +212,7 @@ final class FeedbackLearningContractPolicy {
             String answerMode,
             Set<String> allowedSlots,
             SlotAssessments assessments,
-            List<DiagnosedGrammarIssue> grammarIssues
+            List<ValidatedLanguageCorrection> languageCorrections
     ) {
         Map<String, SlotAssessmentValue> proposed = assessments == null ? Map.of() : assessments.values();
         if (allowedSlots.isEmpty()) {
@@ -210,21 +249,21 @@ final class FeedbackLearningContractPolicy {
             }
             switch (status) {
                 case SATISFIED -> {
-                    SlotAssessmentValue restored = restoreGrammarCorrectedEvidence(
+                    SlotAssessmentValue restored = restoreLanguageCorrectedEvidence(
                             item,
                             learnerAnswer,
                             normalizedAnswer,
-                            grammarIssues
+                            languageCorrections
                     );
                     entry.setValue(restored);
                     requireQuotedEvidence(slot, normalizeText(restored.evidence()), normalizedAnswer);
                 }
                 case GENERIC -> {
-                    SlotAssessmentValue restored = restoreGrammarCorrectedEvidence(
+                    SlotAssessmentValue restored = restoreLanguageCorrectedEvidence(
                             item,
                             learnerAnswer,
                             normalizedAnswer,
-                            grammarIssues
+                            languageCorrections
                     );
                     entry.setValue(restored);
                     requireQuotedEvidence(slot, normalizeText(restored.evidence()), normalizedAnswer);
@@ -236,30 +275,39 @@ final class FeedbackLearningContractPolicy {
         return new ContractAssessment(Collections.unmodifiableMap(new LinkedHashMap<>(assessmentsBySlot)));
     }
 
-    private SlotAssessmentValue restoreGrammarCorrectedEvidence(
+    private SlotAssessmentValue restoreLanguageCorrectedEvidence(
             SlotAssessmentValue assessment,
             String learnerAnswer,
             String normalizedAnswer,
-            List<DiagnosedGrammarIssue> grammarIssues
+            List<ValidatedLanguageCorrection> languageCorrections
     ) {
         String evidence = assessment.evidence();
         if (normalizedAnswer.contains(normalizeText(evidence))) {
             return assessment;
         }
-        if (evidence == null || learnerAnswer == null || grammarIssues == null || grammarIssues.isEmpty()) {
+        if (evidence == null
+                || learnerAnswer == null
+                || languageCorrections == null
+                || languageCorrections.isEmpty()) {
             return assessment;
         }
 
         LinkedHashSet<String> candidates = new LinkedHashSet<>();
         candidates.add(evidence);
-        for (DiagnosedGrammarIssue issue : grammarIssues) {
-            if (issue == null || issue.originalText() == null || issue.revisedText() == null) {
+        for (int index = languageCorrections.size() - 1; index >= 0; index--) {
+            ValidatedLanguageCorrection correction = languageCorrections.get(index);
+            if (correction == null) {
+                continue;
+            }
+            String originalText = correction.edit().displayOriginalText();
+            String revisedText = correction.edit().displayRevisedText();
+            if (originalText.isEmpty() || revisedText.isEmpty()) {
                 continue;
             }
             LinkedHashSet<String> expanded = new LinkedHashSet<>(candidates);
             for (String candidate : candidates) {
-                if (occurrenceCount(candidate, issue.revisedText()) == 1) {
-                    expanded.add(replaceOnce(candidate, issue.revisedText(), issue.originalText()));
+                if (occurrenceCount(candidate, revisedText) == 1) {
+                    expanded.add(replaceOnce(candidate, revisedText, originalText));
                 }
             }
             candidates = expanded;
@@ -345,49 +393,177 @@ final class FeedbackLearningContractPolicy {
         );
     }
 
-    private void verifyDiagnosis(String learnerAnswer, FeedbackDiagnosisResult diagnosis) {
+    private LearningContractResolution resolution(
+            MissionDecision decision,
+            FeedbackDiagnosisResult diagnosis,
+            ValidatedLanguageRevision languageRevision
+    ) {
+        return new LearningContractResolution(
+                decision,
+                diagnosis,
+                languageRevision.revisedAnswer(),
+                languageRevision.corrections()
+        );
+    }
+
+    private ValidatedLanguageRevision verifyDiagnosis(
+            String learnerAnswer,
+            FeedbackDiagnosisResult diagnosis
+    ) {
         if (diagnosis.topicAssessment().reasonKo() == null) {
             throw new FeedbackContractException("Topic assessment requires a reason");
         }
+        String sourceAnswer = learnerAnswer == null ? "" : learnerAnswer.trim();
         StructureAssessment structure = diagnosis.structureAssessment();
-        List<StructureRepair> repairs = structure.repair();
-        if (structure.status() == StructureStatus.COMPLETE && !repairs.isEmpty()) {
-            throw new FeedbackContractException("COMPLETE structure assessment cannot include a repair");
-        }
-        if (diagnosis.topicRelevance() == TopicRelevance.OFF_TOPIC && !repairs.isEmpty()) {
-            throw new FeedbackContractException("OFF_TOPIC structure assessment cannot include a repair");
-        }
-        if (diagnosis.topicRelevance() == TopicRelevance.ON_TOPIC
-                && structure.status() == StructureStatus.FRAGMENT
-                && repairs.size() != 1) {
-            throw new FeedbackContractException("FRAGMENT structure assessment requires exactly one repair");
-        }
-        if (diagnosis.topicRelevance() == TopicRelevance.ON_TOPIC
-                && structure.status() == StructureStatus.FRAGMENT
-                && !repairs.isEmpty()
-                && (repairs.get(0).correctedAnswer() == null
-                || repairs.get(0).correctedAnswer().equals(learnerAnswer == null ? null : learnerAnswer.trim()))) {
-            throw new FeedbackContractException("FRAGMENT structure assessment requires one distinct corrected answer");
-        }
-        boolean invalidStructureRepair = repairs.stream()
-                .anyMatch(repair -> !repair.isUsableFor(learnerAnswer));
-        if (invalidStructureRepair) {
-            throw new FeedbackContractException(
-                    "Every structure repair requires the complete learner answer, one correction, and an explanation"
+        LanguageAssessment language = diagnosis.languageAssessment();
+        List<LanguageRevisionStep> steps = language.revisionSteps();
+        if (steps.size() > MAX_LANGUAGE_CORRECTIONS) {
+            throw languageRevisionViolation(
+                    "languageAssessment.revisionSteps may contain at most "
+                            + MAX_LANGUAGE_CORRECTIONS
+                            + " correction steps"
             );
         }
-        boolean invalidImpact = diagnosis.grammarIssues().stream()
-                .anyMatch(issue -> issue.impact() == null || issue.impact() == GrammarImpact.NONE);
-        if (invalidImpact) {
-            throw new FeedbackContractException(
-                    "Every grammar issue requires a LOCAL or BLOCKING impact"
+        if (steps.stream().anyMatch(step -> !step.isComplete())) {
+            throw languageRevisionViolation(
+                    "Every revision step requires kind, code, answerAfter, reasonKo, and instructionKo"
             );
         }
-        boolean invalidIssue = diagnosis.grammarIssues().stream()
-                .anyMatch(issue -> !issue.isUsableFor(learnerAnswer));
-        if (invalidIssue) {
-            throw new FeedbackContractException("Every grammar issue must quote an exact learner-answer span");
+
+        if (diagnosis.topicRelevance() == TopicRelevance.OFF_TOPIC) {
+            if (structure.status() != StructureStatus.COMPLETE) {
+                throw languageRevisionViolation(
+                        "OFF_TOPIC answers must use COMPLETE structure status"
+                );
+            }
+            if (!steps.isEmpty()) {
+                throw languageRevisionViolation(
+                        "OFF_TOPIC answers cannot include language revision steps"
+                );
+            }
+            return new ValidatedLanguageRevision(sourceAnswer, List.of());
         }
+
+        List<ValidatedLanguageCorrection> corrections = new ArrayList<>();
+        List<ProtectedRevisionRange> protectedRanges = new ArrayList<>();
+        String currentAnswer = sourceAnswer;
+        int previousPriority = -1;
+        int lastStartWithinKind = -1;
+
+        for (int index = 0; index < steps.size(); index++) {
+            LanguageRevisionStep step = steps.get(index);
+            int priority = languagePriority(step.kind());
+            if (priority < previousPriority) {
+                throw languageRevisionViolation(
+                        "Revision steps must be ordered STRUCTURE, GRAMMAR_BLOCKING, then GRAMMAR_LOCAL"
+                );
+            }
+            if (priority != previousPriority) {
+                lastStartWithinKind = -1;
+            }
+
+            FeedbackRevisionDiff stepDiff = FeedbackRevisionDiffSupport.compare(
+                    currentAnswer,
+                    step.answerAfter()
+            );
+            if (stepDiff.edits().isEmpty()) {
+                throw languageRevisionViolation(
+                        "Every revision step must change the complete answer from the previous step"
+                );
+            }
+            LanguageRevisionEdit combinedEdit = FeedbackRevisionDiffSupport.enclosingEdit(
+                    currentAnswer,
+                    step.answerAfter(),
+                    stepDiff
+            );
+            if (lastStartWithinKind >= 0 && combinedEdit.sourceStart() < lastStartWithinKind) {
+                throw languageRevisionViolation(
+                        "Revision steps of the same kind must follow learner-answer source order"
+                );
+            }
+            if (protectedRanges.stream().anyMatch(range -> overlaps(range, combinedEdit))) {
+                throw languageRevisionViolation(
+                        "A later revision step cannot change or revert text corrected by an earlier step"
+                );
+            }
+
+            protectedRanges = advanceProtectedRanges(protectedRanges, combinedEdit);
+            protectedRanges.add(new ProtectedRevisionRange(
+                    combinedEdit.revisedStart(),
+                    combinedEdit.revisedEnd()
+            ));
+            corrections.add(new ValidatedLanguageCorrection(step, combinedEdit, index));
+            currentAnswer = step.answerAfter();
+            previousPriority = priority;
+            lastStartWithinKind = combinedEdit.revisedStart();
+        }
+
+        boolean hasStructureStep = steps.stream()
+                .anyMatch(step -> step.kind() == LanguageIssueKind.STRUCTURE);
+        if (structure.status() == StructureStatus.FRAGMENT && !hasStructureStep) {
+            throw languageRevisionViolation(
+                    "FRAGMENT structure assessment requires at least one STRUCTURE revision step"
+            );
+        }
+        if (structure.status() == StructureStatus.COMPLETE && hasStructureStep) {
+            throw languageRevisionViolation(
+                    "COMPLETE structure assessment cannot include a STRUCTURE revision step"
+            );
+        }
+        if (structure.status() == StructureStatus.FRAGMENT && corrections.isEmpty()) {
+            throw languageRevisionViolation(
+                    "FRAGMENT structure assessment requires at least one answer revision"
+            );
+        }
+        return new ValidatedLanguageRevision(currentAnswer, List.copyOf(corrections));
+    }
+
+    private int languagePriority(LanguageIssueKind kind) {
+        return switch (kind) {
+            case STRUCTURE -> 0;
+            case GRAMMAR_BLOCKING -> 1;
+            case GRAMMAR_LOCAL -> 2;
+        };
+    }
+
+    private boolean overlaps(ProtectedRevisionRange protectedRange, LanguageRevisionEdit edit) {
+        int editStart = edit.sourceStart();
+        int editEnd = edit.sourceEnd();
+        if (protectedRange.start() == protectedRange.end() && editStart == editEnd) {
+            return protectedRange.start() == editStart;
+        }
+        if (editStart == editEnd) {
+            return editStart > protectedRange.start() && editStart < protectedRange.end();
+        }
+        if (protectedRange.start() == protectedRange.end()) {
+            return protectedRange.start() > editStart && protectedRange.start() < editEnd;
+        }
+        return editStart < protectedRange.end() && editEnd > protectedRange.start();
+    }
+
+    private List<ProtectedRevisionRange> advanceProtectedRanges(
+            List<ProtectedRevisionRange> ranges,
+            LanguageRevisionEdit edit
+    ) {
+        int sourceLength = edit.sourceEnd() - edit.sourceStart();
+        int revisedLength = edit.revisedEnd() - edit.revisedStart();
+        int delta = revisedLength - sourceLength;
+        List<ProtectedRevisionRange> advanced = new ArrayList<>();
+        for (ProtectedRevisionRange range : ranges) {
+            if (range.end() <= edit.sourceStart()) {
+                advanced.add(range);
+            } else if (range.start() >= edit.sourceEnd()) {
+                advanced.add(new ProtectedRevisionRange(
+                        range.start() + delta,
+                        range.end() + delta
+                ));
+            }
+        }
+        return advanced;
+    }
+
+    private FeedbackContractException languageRevisionViolation(String message) {
+        return new FeedbackContractException(message, false);
     }
 
     private List<String> unresolved(List<String> slots, List<String> presentSlots) {
@@ -443,10 +619,58 @@ final class FeedbackLearningContractPolicy {
             Map<String, SlotAssessmentValue> values
     ) {
     }
+
+    private record ProtectedRevisionRange(
+            int start,
+            int end
+    ) {
+    }
+
 }
 
-final class FeedbackContractException extends IllegalStateException {
+record LearningContractResolution(
+        MissionDecision decision,
+        FeedbackDiagnosisResult diagnosis,
+        String revisedAnswer,
+        List<ValidatedLanguageCorrection> languageCorrections
+) {
+    LearningContractResolution {
+        revisedAnswer = revisedAnswer == null ? null : revisedAnswer.trim();
+        languageCorrections = languageCorrections == null ? List.of() : List.copyOf(languageCorrections);
+    }
+}
+
+record ValidatedLanguageCorrection(
+        LanguageRevisionStep step,
+        LanguageRevisionEdit edit,
+        int stepIndex
+) {
+}
+
+record ValidatedLanguageRevision(
+        String revisedAnswer,
+        List<ValidatedLanguageCorrection> corrections
+) {
+    ValidatedLanguageRevision {
+        revisedAnswer = revisedAnswer == null ? null : revisedAnswer.trim();
+        corrections = corrections == null ? List.of() : List.copyOf(corrections);
+    }
+}
+
+class FeedbackContractException extends IllegalStateException {
+
+    private final boolean retryable;
+
     FeedbackContractException(String message) {
+        this(message, true);
+    }
+
+    FeedbackContractException(String message, boolean retryable) {
         super(message);
+        this.retryable = retryable;
+    }
+
+    boolean retryable() {
+        return retryable;
     }
 }

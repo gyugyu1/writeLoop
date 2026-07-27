@@ -40,6 +40,9 @@ public class AnswerAttemptEntity {
     @Column(name = "attempt_type", nullable = false, length = 24)
     private AttemptType attemptType;
 
+    @Column(name = "submission_id", length = 64)
+    private String submissionId;
+
     @Column(name = "answer_text", nullable = false, columnDefinition = "TEXT")
     private String answerText;
 
@@ -64,6 +67,9 @@ public class AnswerAttemptEntity {
     @Column(name = "feedback_payload_json", columnDefinition = "JSON")
     private String feedbackPayloadJson;
 
+    @Column(name = "visible_feedback_snapshot_json", columnDefinition = "JSON")
+    private String visibleFeedbackSnapshotJson;
+
     @Column(name = "used_coach_expressions_json", columnDefinition = "JSON")
     private String usedCoachExpressionsJson;
 
@@ -81,7 +87,9 @@ public class AnswerAttemptEntity {
             String correctionsJson,
             String modelAnswer,
             String rewriteChallenge,
-            String feedbackPayloadJson
+            String feedbackPayloadJson,
+            String submissionId,
+            String visibleFeedbackSnapshotJson
     ) {
         this.sessionId = sessionId;
         this.attemptNo = attemptNo;
@@ -94,6 +102,38 @@ public class AnswerAttemptEntity {
         this.modelAnswer = modelAnswer;
         this.rewriteChallenge = rewriteChallenge;
         this.feedbackPayloadJson = feedbackPayloadJson;
+        this.submissionId = submissionId;
+        this.visibleFeedbackSnapshotJson = visibleFeedbackSnapshotJson;
+    }
+
+    public AnswerAttemptEntity(
+            String sessionId,
+            Integer attemptNo,
+            AttemptType attemptType,
+            String answerText,
+            Integer score,
+            String feedbackSummary,
+            String strengthsJson,
+            String correctionsJson,
+            String modelAnswer,
+            String rewriteChallenge,
+            String feedbackPayloadJson
+    ) {
+        this(
+                sessionId,
+                attemptNo,
+                attemptType,
+                answerText,
+                score,
+                feedbackSummary,
+                strengthsJson,
+                correctionsJson,
+                modelAnswer,
+                rewriteChallenge,
+                feedbackPayloadJson,
+                null,
+                null
+        );
     }
 
     @PrePersist

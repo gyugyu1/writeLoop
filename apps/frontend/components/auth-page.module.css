@@ -943,6 +943,175 @@
   color: #10244c;
 }
 
+.historyVisibleFeedbackStack {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+  padding-bottom: 18px;
+}
+
+.historyVisibleFeedbackNotice,
+.historyVisibleStrength,
+.historyVisibleCoach,
+.historyVisibleReady {
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(119, 87, 61, 0.1);
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.historyVisibleFeedbackNotice {
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.historyVisibleStrength,
+.historyVisibleCoach,
+.historyVisibleReady,
+.historyVisibleInstruction {
+  display: grid;
+  gap: 8px;
+}
+
+.historyVisibleStrength > span,
+.historyVisibleInstruction > span,
+.historyVisibleReady > span {
+  color: var(--warm-accent-deep);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.historyVisibleStrength p,
+.historyVisibleCoach p,
+.historyVisibleReady p,
+.historyVisibleInstruction p {
+  margin: 0;
+  color: var(--text-sub);
+  line-height: 1.6;
+}
+
+.historyVisibleCoach {
+  border-color: rgba(var(--warm-accent-rgb), 0.22);
+  background: rgba(var(--warm-accent-light-rgb), 0.2);
+}
+
+.historyVisibleCoach > strong,
+.historyVisibleReady > strong {
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+.historyVisibleCoachSwap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.historyVisibleCoachSwap > div {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.historyVisibleCoachSwap span,
+.historyVisibleCorrectionList article > span {
+  color: var(--warm-accent-deep);
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.historyVisibleCorrectionList {
+  display: grid;
+  gap: 8px;
+}
+
+.historyVisibleCorrectionList article {
+  display: grid;
+  gap: 6px;
+  padding: 11px 12px;
+  border: 1px solid rgba(119, 87, 61, 0.13);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.historyVisibleCorrectionList article > strong {
+  color: var(--text-main);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.historyVisibleCorrectionToggle {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid rgba(164, 102, 18, 0.35);
+  border-radius: 12px;
+  background: #fff9f0;
+  color: var(--warm-accent-deep);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.historyVisibleCorrectionToggle:hover {
+  background: #fff3e1;
+}
+
+.historyVisibleCorrectionToggle:focus-visible {
+  outline: 3px solid rgba(164, 102, 18, 0.2);
+  outline-offset: 2px;
+}
+
+.historyVisibleInstruction {
+  padding-top: 4px;
+}
+
+.historyVisibleReady {
+  border-color: rgba(90, 123, 116, 0.22);
+  background: rgba(234, 242, 239, 0.88);
+}
+
+.historyVisibleExpressionList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.historyVisibleExpressionList > span {
+  display: grid;
+  gap: 2px;
+  padding: 8px 11px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.historyVisibleExpressionList strong {
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.historyVisibleExpressionList small {
+  color: var(--text-sub);
+}
+
+.historyVisibleModelAnswer {
+  border-top: 1px solid rgba(90, 123, 116, 0.16);
+  padding-top: 10px;
+}
+
+.historyVisibleModelAnswer summary {
+  color: var(--primary);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.historyVisibleModelAnswer p {
+  margin-top: 10px;
+}
+
 .historySummary {
   margin: 10px 0 0;
   color: var(--text-sub);

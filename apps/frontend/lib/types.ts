@@ -237,23 +237,6 @@ export interface FeedbackMicroTip {
   reasonKo?: string | null;
 }
 
-export type FeedbackSecondaryLearningPointKind = "GRAMMAR" | "CORRECTION" | "EXPRESSION";
-
-export interface FeedbackSecondaryLearningPoint {
-  kind: FeedbackSecondaryLearningPointKind;
-  title?: string | null;
-  headline?: string | null;
-  supportText?: string | null;
-  originalText?: string | null;
-  revisedText?: string | null;
-  meaningKo?: string | null;
-  guidanceKo?: string | null;
-  exampleEn?: string | null;
-  exampleKo?: string | null;
-}
-
-export type FeedbackFixPoint = FeedbackSecondaryLearningPoint;
-
 export interface FeedbackRewriteSuggestion {
   english: string;
   meaningKo?: string | null;
@@ -311,6 +294,19 @@ export interface FeedbackLoop {
   detailToggleLabel?: string | null;
 }
 
+export type FeedbackLanguageCorrectionKind =
+  | "STRUCTURE"
+  | "GRAMMAR_BLOCKING"
+  | "GRAMMAR_LOCAL";
+
+export interface FeedbackLanguageCorrection {
+  kind: FeedbackLanguageCorrectionKind;
+  label: string;
+  before?: string | null;
+  after?: string | null;
+  reason: string;
+}
+
 export interface FeedbackCoachMove {
   focus?: string | null;
   focusType?: string | null;
@@ -324,6 +320,7 @@ export interface FeedbackCoachMove {
   suggestedPhrases?: (string | { phrase?: string | null; meaningKo?: string | null })[] | null;
   successCheck?: string | null;
   targetSlot?: string | null;
+  languageCorrections?: FeedbackLanguageCorrection[] | null;
 }
 
 export interface FeedbackRewriteWorkspace {
@@ -345,9 +342,22 @@ export interface FeedbackRevealLater {
   modelAnswerLabel?: string | null;
 }
 
+export type VisibleFeedbackState = "NEEDS_REWRITE" | "READY_TO_FINISH";
+
+export interface VisibleFeedbackSnapshot {
+  schemaVersion: number;
+  state: VisibleFeedbackState;
+  strength?: string | null;
+  coachMove?: FeedbackCoachMove | null;
+  completion?: FeedbackCompletion | null;
+  refinementExpressions?: RefinementExpression[] | null;
+  modelAnswer?: string | null;
+  modelAnswerKo?: string | null;
+  legacy?: boolean | null;
+}
+
 export interface FeedbackUi {
   microTip?: FeedbackMicroTip | null;
-  fixPoints?: FeedbackFixPoint[] | null;
   rewriteSuggestions?: FeedbackRewriteSuggestion[] | null;
   screenPolicy?: FeedbackScreenPolicy | null;
   loopStatus?: FeedbackLoopStatus | null;
@@ -378,6 +388,7 @@ export interface FeedbackRequest {
   sessionId?: string;
   attemptType?: "INITIAL" | "REWRITE";
   guestId?: string;
+  submissionId?: string;
 }
 
 export interface Feedback {
@@ -389,9 +400,9 @@ export interface Feedback {
   /** Legacy persistence/history field. The main feedback screen no longer renders this directly. */
   summary: string;
   strengths: string[];
-  /** Legacy analysis/history field. Main feedback UI is fixPoints-based and does not render this directly. */
+  /** Legacy analysis/history field. The main feedback UI does not render this directly. */
   inlineFeedback: FeedbackInlineSegment[] | null;
-  correctedAnswer: string | null;
+  revisedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
   usedExpressions?: FeedbackUsedExpression[] | null;
   modelAnswer: string;
@@ -403,6 +414,12 @@ export interface Feedback {
   rewriteWorkspace?: FeedbackRewriteWorkspace | null;
   completion?: FeedbackCompletion | null;
   revealLater?: FeedbackRevealLater | null;
+  visibleFeedback?: VisibleFeedbackSnapshot | null;
+}
+
+export interface FeedbackSessionStatus {
+  sessionId: string;
+  status: "IN_PROGRESS" | "READY_TO_FINISH" | "COMPLETED";
 }
 
 export type DiaryAnswerBand =
@@ -547,9 +564,9 @@ export interface StoredFeedback {
   /** Legacy persistence/history field. The main feedback screen no longer renders this directly. */
   summary: string;
   strengths: string[];
-  /** Legacy analysis/history field. Main feedback UI is fixPoints-based and does not render this directly. */
+  /** Legacy analysis/history field. The main feedback UI does not render this directly. */
   inlineFeedback: FeedbackInlineSegment[] | null;
-  correctedAnswer: string | null;
+  revisedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
   usedExpressions?: FeedbackUsedExpression[] | null;
   modelAnswer: string;
@@ -730,7 +747,7 @@ export interface HistoryAttempt {
   attemptType: "INITIAL" | "REWRITE";
   answerText: string;
   feedbackSummary: string;
-  feedback: StoredFeedback;
+  visibleFeedback?: VisibleFeedbackSnapshot | null;
   usedExpressions: HistoryUsedExpression[];
   createdAt: string;
 }
@@ -749,6 +766,7 @@ export interface HistorySession {
   difficulty: PromptDifficulty;
   questionEn: string;
   questionKo: string;
+  status: "IN_PROGRESS" | "READY_TO_FINISH" | "COMPLETED";
   createdAt: string;
   updatedAt: string;
   attempts: HistoryAttempt[];

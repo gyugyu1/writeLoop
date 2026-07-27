@@ -18,11 +18,6 @@ import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import { SymbolView } from "expo-symbols";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
-import { PracticeFeedbackContent } from "@/components/practice-feedback-content";
-import {
-  buildInlineFeedbackSegments,
-  type RenderedInlineFeedbackSegment
-} from "@/lib/inline-feedback";
 import {
   deleteSavedExpression,
   getAnswerHistory,
@@ -32,7 +27,10 @@ import {
 import { getDifficultyLabel } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { isDailyDifficulty, normalizeDailyDifficulty } from "@/lib/practice";
-import type { PracticeFeedbackState } from "@/lib/practice-feedback-state";
+import {
+  savePracticeFeedbackState,
+  type PracticeFeedbackState
+} from "@/lib/practice-feedback-state";
 import { useSession } from "@/lib/session";
 import {
   formatNowInEnglishDateLabel,
@@ -49,17 +47,9 @@ import type {
   TodayWritingStatus
 } from "@/lib/types";
 
-type HistoryComparisonView = {
-  initialAttempt: HistoryAttempt;
-  rewriteAttempt: HistoryAttempt;
-  segments: RenderedInlineFeedbackSegment[];
-};
-
 type HistorySessionDetailModalProps = {
-  feedbackState: PracticeFeedbackState | null;
   onClose: () => void;
-  onOpenFeedback: (attempt: HistoryAttempt) => void;
-  onReturnToHistory: () => void;
+  onResume: (session: HistorySession) => void;
   session: HistorySession | null;
 };
 
@@ -544,25 +534,37 @@ function buildHistoryPrompt(session: HistorySession): Prompt {
 }
 
 function buildHistoryFeedback(session: HistorySession, attempt: HistoryAttempt): Feedback {
+  const visibleFeedback = attempt.visibleFeedback ?? null;
+  const readyToFinish = visibleFeedback?.state === "READY_TO_FINISH";
   return {
     promptId: session.promptId,
     sessionId: session.sessionId,
     attemptNo: attempt.attemptNo,
-    loopComplete: attempt.feedback.loopComplete,
-    completionMessage: attempt.feedback.completionMessage,
-    summary: attempt.feedback.summary ?? attempt.feedbackSummary ?? "",
-    strengths: attempt.feedback.strengths ?? [],
-    inlineFeedback: attempt.feedback.inlineFeedback ?? null,
-    correctedAnswer: attempt.feedback.correctedAnswer,
+    loopComplete: readyToFinish,
+    completionMessage: visibleFeedback?.completion?.headline ?? null,
+    summary: attempt.feedbackSummary ?? "",
+    strengths: visibleFeedback?.strength ? [visibleFeedback.strength] : [],
+    inlineFeedback: null,
+    revisedAnswer: null,
+    refinementExpressions: visibleFeedback?.refinementExpressions ?? [],
     usedExpressions:
       attempt.usedExpressions?.map((expression) => ({
         expression: expression.expression,
         matchedText: expression.matchedText ?? null
       })) ?? [],
-    modelAnswer: attempt.feedback.modelAnswer ?? "",
-    modelAnswerKo: attempt.feedback.modelAnswerKo ?? null,
-    rewriteChallenge: attempt.feedback.rewriteChallenge ?? "",
-    ui: attempt.feedback.ui ?? null
+    modelAnswer: visibleFeedback?.modelAnswer ?? "",
+    modelAnswerKo: visibleFeedback?.modelAnswerKo ?? null,
+    rewriteChallenge:
+      visibleFeedback?.coachMove?.instruction ?? visibleFeedback?.coachMove?.focus ?? "",
+    ui: null,
+    loop: {
+      status: visibleFeedback?.state ?? "NEEDS_REWRITE",
+      nextAction: readyToFinish ? "finish" : "rewrite",
+      nextActionLabel: readyToFinish ? "루프 완료하기" : "다시 써보기"
+    },
+    coachMove: visibleFeedback?.coachMove ?? null,
+    completion: visibleFeedback?.completion ?? null,
+    visibleFeedback
   };
 }
 
@@ -578,70 +580,195 @@ function buildHistoryFeedbackState(
   };
 }
 
-function buildHistoryComparisonView(session: HistorySession): HistoryComparisonView | null {
-  const initialAttempt =
-    session.attempts.find((attempt) => attempt.attemptType === "INITIAL") ?? session.attempts[0];
-  const rewriteAttempts = session.attempts.filter((attempt) => attempt.attemptType === "REWRITE");
-  const rewriteAttempt = rewriteAttempts[rewriteAttempts.length - 1];
+function HistoryVisibleFeedback({ attempt }: { attempt: HistoryAttempt }) {
+  const [isModelAnswerOpen, setIsModelAnswerOpen] = useState(false);
+  const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
+    useState(false);
+  const snapshot = attempt.visibleFeedback;
 
-  if (!initialAttempt || !rewriteAttempt) {
-    return null;
+  if (!snapshot) {
+    return (
+      <View style={styles.historyFeedbackNotice}>
+        <Text style={styles.historyFeedbackNoticeText}>
+          이전 형식의 기록이라 당시 노출된 피드백을 정확히 복원할 수 없어요.
+        </Text>
+      </View>
+    );
   }
 
-  const original = initialAttempt.answerText.trim();
-  const revised = rewriteAttempt.answerText.trim();
+  const coachMove = snapshot.coachMove;
+  const expressions = (snapshot.refinementExpressions ?? []).slice(0, 2);
+  const allLanguageCorrections = coachMove?.languageCorrections ?? [];
+  const languageCorrections = areAllLanguageCorrectionsVisible
+    ? allLanguageCorrections
+    : allLanguageCorrections.slice(0, 4);
+  const hiddenLanguageCorrectionCount = Math.max(
+    0,
+    allLanguageCorrections.length - 4
+  );
+  const isLanguageFix = coachMove?.focusType?.trim().toUpperCase() === "LANGUAGE_FIX";
+  const coachPhrases = (coachMove?.suggestedPhrases ?? [])
+    .map((phrase) =>
+      typeof phrase === "string"
+        ? { phrase: phrase.trim(), meaningKo: "" }
+        : {
+            phrase: phrase?.phrase?.trim() ?? "",
+            meaningKo: phrase?.meaningKo?.trim() ?? ""
+          }
+    )
+    .filter((phrase) => phrase.phrase);
 
-  if (!original || !revised || original === revised) {
-    return null;
-  }
+  return (
+    <View style={styles.historyFeedbackStack}>
+      {snapshot.strength ? (
+        <View style={styles.historyStrengthCard}>
+          <Text style={styles.historyFeedbackLabel}>잘한 점</Text>
+          <Text style={styles.historyStrengthText}>{snapshot.strength}</Text>
+        </View>
+      ) : null}
 
-  return {
-    initialAttempt,
-    rewriteAttempt,
-    segments: buildInlineFeedbackSegments(initialAttempt.answerText, rewriteAttempt.answerText, null)
-  };
-}
+      {snapshot.state === "NEEDS_REWRITE" && coachMove ? (
+        <View style={styles.historyCoachCard}>
+          <Text style={styles.historyCoachTitle}>
+            {coachMove.focus?.trim() || "다음에 반영할 한 가지"}
+          </Text>
+          {coachMove.before?.trim() || coachMove.after?.trim() ? (
+            <View style={styles.historyCoachComparison}>
+              {coachMove.before?.trim() ? (
+                <View style={styles.historyCoachAnswer}>
+                  <Text style={styles.historyCoachAnswerLabel}>지금</Text>
+                  <Text style={styles.historyCoachBefore}>{coachMove.before}</Text>
+                </View>
+              ) : null}
+              {coachMove.after?.trim() ? (
+                <View style={styles.historyCoachAnswer}>
+                  <Text style={styles.historyCoachAnswerLabel}>
+                    {isLanguageFix ? "이번에 고친 문장" : "적용"}
+                  </Text>
+                  <Text style={styles.historyCoachAfter}>{coachMove.after}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+          {languageCorrections.length > 0 ? (
+            <View style={styles.historyLanguageCorrectionList}>
+              {languageCorrections.map((correction, index) => (
+                <View
+                  key={`${correction.kind}-${correction.before ?? ""}-${index}`}
+                  style={styles.historyLanguageCorrectionItem}
+                >
+                  <Text style={styles.historyLanguageCorrectionLabel}>{correction.label}</Text>
+                  <Text style={styles.historyLanguageCorrectionSwap}>
+                    {correction.before?.trim() ? `${correction.before} → ` : ""}
+                    {correction.after}
+                  </Text>
+                  <Text style={styles.historyCoachWhy}>{correction.reason}</Text>
+                </View>
+              ))}
+              {hiddenLanguageCorrectionCount > 0 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: areAllLanguageCorrectionsVisible }}
+                  onPress={() =>
+                    setAreAllLanguageCorrectionsVisible((current) => !current)
+                  }
+                  style={({ pressed }) => [
+                    styles.historyLanguageCorrectionToggle,
+                    pressed ? styles.historyLanguageCorrectionTogglePressed : null
+                  ]}
+                >
+                  <Text style={styles.historyLanguageCorrectionToggleText}>
+                    {areAllLanguageCorrectionsVisible
+                      ? "추가 교정 접기"
+                      : `교정 ${hiddenLanguageCorrectionCount}개 더 보기`}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
+          {coachMove.why?.trim() ? (
+            <Text style={styles.historyCoachWhy}>{coachMove.why}</Text>
+          ) : null}
+          {coachMove.instruction?.trim() ? (
+            <View style={styles.historyCoachInstruction}>
+              <Text style={styles.historyFeedbackLabel}>다시 쓸 때</Text>
+              <Text style={styles.historyCoachInstructionText}>{coachMove.instruction}</Text>
+            </View>
+          ) : null}
+          {coachMove.skeletonEn?.trim() ? (
+            <View style={styles.historyCoachInstruction}>
+              <Text style={styles.historyFeedbackLabel}>문장 틀</Text>
+              <Text style={styles.historyCoachInstructionText}>{coachMove.skeletonEn}</Text>
+              {coachMove.skeletonKo?.trim() ? (
+                <Text style={styles.historyExpressionMeaning}>{coachMove.skeletonKo}</Text>
+              ) : null}
+            </View>
+          ) : null}
+          {coachPhrases.length > 0 ? (
+            <View style={styles.historyExpressionList}>
+              {coachPhrases.map((phrase) => (
+                <View key={phrase.phrase} style={styles.historyExpressionChip}>
+                  <Text style={styles.historyExpressionText}>{phrase.phrase}</Text>
+                  {phrase.meaningKo ? (
+                    <Text style={styles.historyExpressionMeaning}>{phrase.meaningKo}</Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
 
-function renderComparisonSegment(
-  segment: RenderedInlineFeedbackSegment,
-  mode: "original" | "revised",
-  index: number
-) {
-  switch (segment.kind) {
-    case "equal":
-      return <Text key={`${mode}-equal-${index}`}>{segment.text}</Text>;
-    case "replace":
-      return mode === "original" ? (
-        <Text key={`${mode}-replace-${index}`} style={styles.diffRemovedText}>
-          {segment.removed}
-        </Text>
-      ) : (
-        <Text key={`${mode}-replace-${index}`} style={styles.diffAddedText}>
-          {segment.added}
-        </Text>
-      );
-    case "remove":
-      return mode === "original" ? (
-        <Text key={`${mode}-remove-${index}`} style={styles.diffRemovedText}>
-          {segment.text}
-        </Text>
-      ) : null;
-    case "add":
-      return mode === "revised" ? (
-        <Text key={`${mode}-add-${index}`} style={styles.diffAddedText}>
-          {segment.text}
-        </Text>
-      ) : null;
-    default:
-      return null;
-  }
+      {snapshot.state === "READY_TO_FINISH" ? (
+        <View style={styles.historyReadyCard}>
+          <Text style={styles.historyFeedbackLabel}>완료할 준비가 됐어요</Text>
+          <Text style={styles.historyReadyText}>
+            {snapshot.completion?.headline?.trim() ||
+              snapshot.completion?.improvedPoint?.trim() ||
+              "이 답변으로 루프를 마칠 수 있어요."}
+          </Text>
+          {expressions.length > 0 ? (
+            <View style={styles.historyExpressionList}>
+              {expressions.map((expression) => (
+                <View key={expression.expression} style={styles.historyExpressionChip}>
+                  <Text style={styles.historyExpressionText}>{expression.expression}</Text>
+                  {expression.meaningKo ? (
+                    <Text style={styles.historyExpressionMeaning}>{expression.meaningKo}</Text>
+                  ) : null}
+                </View>
+              ))}
+            </View>
+          ) : null}
+          {snapshot.modelAnswer?.trim() ? (
+            <View style={styles.historyModelAnswerCard}>
+              <Pressable
+                style={styles.historyModelAnswerToggle}
+                onPress={() => setIsModelAnswerOpen((current) => !current)}
+              >
+                <Text style={styles.historyModelAnswerTitle}>모범답안</Text>
+                <Text style={styles.historyModelAnswerAction}>
+                  {isModelAnswerOpen ? "접기" : "펼쳐보기"}
+                </Text>
+              </Pressable>
+              {isModelAnswerOpen ? (
+                <View style={styles.historyModelAnswerBody}>
+                  <Text style={styles.historyModelAnswerEn}>{snapshot.modelAnswer}</Text>
+                  {snapshot.modelAnswerKo ? (
+                    <Text style={styles.historyModelAnswerKo}>{snapshot.modelAnswerKo}</Text>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
+      ) : null}
+    </View>
+  );
 }
 
 function HistorySessionDetailModal({
-  feedbackState,
   onClose,
-  onOpenFeedback,
-  onReturnToHistory,
+  onResume,
   session
 }: HistorySessionDetailModalProps) {
   const orderedAttempts = useMemo(
@@ -657,9 +784,6 @@ function HistorySessionDetailModal({
   );
 
   const latestAttempt = useMemo(() => (session ? getLatestAttempt(session) : null), [session]);
-  const comparisonView = useMemo(() => (session ? buildHistoryComparisonView(session) : null), [session]);
-  const isFeedbackView = Boolean(feedbackState);
-
   if (!session) {
     return null;
   }
@@ -668,30 +792,24 @@ function HistorySessionDetailModal({
     <Modal
       visible
       animationType="slide"
-      onRequestClose={isFeedbackView ? onReturnToHistory : onClose}
+      onRequestClose={onClose}
     >
       <ModalSafeAreaView style={styles.modalSafeArea}>
         <View style={styles.modalHeader}>
           <View style={styles.modalHeaderCopy}>
-            <Text style={styles.modalTitle}>{isFeedbackView ? "피드백 보기" : "질문 기록"}</Text>
+            <Text style={styles.modalTitle}>질문 기록</Text>
           </View>
           <Pressable
             style={styles.modalCloseButton}
             hitSlop={10}
-            onPress={isFeedbackView ? onReturnToHistory : onClose}
+            onPress={onClose}
           >
-            <Text style={styles.modalCloseText}>{isFeedbackView ? "목록으로" : "닫기"}</Text>
+            <Text style={styles.modalCloseText}>닫기</Text>
           </Pressable>
         </View>
 
         <ScrollView contentContainerStyle={styles.modalContent}>
-          {feedbackState ? (
-            <PracticeFeedbackContent
-              feedbackState={feedbackState}
-              showCompletionSummary={false}
-            />
-          ) : (
-            <View style={styles.sessionDetailStack}>
+          <View style={styles.sessionDetailStack}>
               <View style={styles.promptCard}>
                 <View style={styles.chipRow}>
                   <View style={styles.topicChip}>
@@ -713,45 +831,6 @@ function HistorySessionDetailModal({
                 <Text style={styles.promptQuestionEn}>{session.questionEn}</Text>
                 <Text style={styles.promptQuestionKo}>{session.questionKo}</Text>
               </View>
-
-              {comparisonView ? (
-                <View style={styles.detailCard}>
-                  <View style={styles.detailHeader}>
-                    <Text style={styles.detailTitle}>최종 답안</Text>
-                    <Text style={styles.detailMeta}>
-                      {`${getHistoryWordCount(comparisonView.initialAttempt.answerText)}단어 → ${getHistoryWordCount(comparisonView.rewriteAttempt.answerText)}단어`}
-                    </Text>
-                  </View>
-                  <View style={styles.comparisonStack}>
-                    <View style={[styles.comparisonCard, styles.comparisonCardOriginal]}>
-                      <Text style={styles.comparisonLabel}>내 초안</Text>
-                      <Text style={styles.comparisonBody}>
-                        {comparisonView.segments.map((segment, index) =>
-                          renderComparisonSegment(segment, "original", index)
-                        )}
-                      </Text>
-                    </View>
-                    <View style={[styles.comparisonCard, styles.comparisonCardRevised]}>
-                      <Text style={[styles.comparisonLabel, styles.comparisonLabelPrimary]}>
-                        최종 답안
-                      </Text>
-                      <Text style={[styles.comparisonBody, styles.comparisonBodyPrimary]}>
-                        {comparisonView.segments.map((segment, index) =>
-                          renderComparisonSegment(segment, "revised", index)
-                        )}
-                      </Text>
-                    </View>
-                  </View>
-                </View>
-              ) : (
-                <View style={styles.detailNoticeCard}>
-                  <Text style={styles.detailNoticeTitle}>아직 최종 답안이 없어요</Text>
-                  <Text style={styles.detailNoticeBody}>
-                    이 질문에서는 아직 다시쓰기 답변이 없어요. 아래 답변 기록에서 각 시도의
-                    피드백을 열어 흐름을 확인해 보세요.
-                  </Text>
-                </View>
-              )}
 
               <View style={styles.detailCard}>
                 <View style={styles.detailHeader}>
@@ -807,25 +886,23 @@ function HistorySessionDetailModal({
                             </Text>
                           </View>
 
-                          <Pressable
-                            style={({ pressed }) => [
-                              styles.inlineButton,
-                              pressed && styles.inlineButtonPressed
-                            ]}
-                            onPress={() => onOpenFeedback(attempt)}
-                          >
-                            <Text style={styles.inlineButtonText}>피드백 보기</Text>
-                          </Pressable>
                         </View>
 
                         <Text style={styles.attemptAnswer}>{attempt.answerText}</Text>
+                        <HistoryVisibleFeedback attempt={attempt} />
                       </View>
                     );
                   })}
                 </View>
               </View>
+              {session.status !== "COMPLETED" && latestAttempt?.visibleFeedback ? (
+                <Pressable style={styles.resumeSessionButton} onPress={() => onResume(session)}>
+                  <Text style={styles.resumeSessionButtonText}>
+                    {session.status === "READY_TO_FINISH" ? "완료 화면으로 이어가기" : "이어서 다시 쓰기"}
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
-          )}
         </ScrollView>
       </ModalSafeAreaView>
     </Modal>
@@ -1552,34 +1629,6 @@ const detailStyles = StyleSheet.create({
   },
   detailNoticeTitle: { fontSize: 18, fontWeight: "900", color: "#232128" },
   detailNoticeBody: { fontSize: 15, lineHeight: 22, color: "#6A5D4E" },
-  comparisonStack: { gap: 0 },
-  comparisonCard: {
-    paddingVertical: 12,
-    gap: 10
-  },
-  comparisonCardOriginal: {
-    backgroundColor: "transparent"
-  },
-  comparisonCardRevised: {
-    backgroundColor: "transparent",
-    borderTopWidth: 1,
-    borderTopColor: "#E8DACB",
-    paddingTop: 16,
-    marginTop: 4
-  },
-  comparisonLabel: { fontSize: 14, fontWeight: "900", color: "#A06213" },
-  comparisonLabelPrimary: { color: "#345891" },
-  comparisonBody: { fontSize: 15, lineHeight: 24, color: "#4C4134" },
-  comparisonBodyPrimary: { color: "#223654" },
-  diffRemovedText: {
-    color: "#8C5549",
-    backgroundColor: "#F8DED7",
-    textDecorationLine: "line-through"
-  },
-  diffAddedText: {
-    color: "#244F7A",
-    backgroundColor: "#DCE8FF"
-  },
   attemptStack: { gap: 0 },
   attemptCard: {
     paddingVertical: 16,
@@ -1633,7 +1682,167 @@ const detailStyles = StyleSheet.create({
   },
   inlineButtonPressed: { opacity: 0.86 },
   inlineButtonText: { fontSize: 13, fontWeight: "900", color: "#7A6244" },
-  attemptAnswer: { fontSize: 16, lineHeight: 24, color: "#2C2924" }
+  attemptAnswer: { fontSize: 16, lineHeight: 24, color: "#2C2924" },
+  historyFeedbackStack: { gap: 10 },
+  historyFeedbackNotice: {
+    borderRadius: 18,
+    backgroundColor: "#F4EFE8",
+    paddingHorizontal: 14,
+    paddingVertical: 12
+  },
+  historyFeedbackNoticeText: { fontSize: 13, lineHeight: 20, color: "#7C6D5C" },
+  historyStrengthCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#D2E5D3",
+    backgroundColor: "#F2F8F1",
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    gap: 5
+  },
+  historyFeedbackLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#4D7E56"
+  },
+  historyStrengthText: { fontSize: 14, lineHeight: 21, fontWeight: "700", color: "#38513D" },
+  historyCoachCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#E8D6BE",
+    backgroundColor: "#FFF9F1",
+    padding: 15,
+    gap: 10
+  },
+  historyCoachTitle: { fontSize: 17, lineHeight: 23, fontWeight: "900", color: "#3D342B" },
+  historyCoachComparison: { gap: 6 },
+  historyCoachAnswer: { gap: 4 },
+  historyCoachAnswerLabel: {
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "900",
+    color: "#8B6A45"
+  },
+  historyCoachBefore: {
+    borderRadius: 14,
+    backgroundColor: "#FCECE8",
+    padding: 10,
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#984437"
+  },
+  historyCoachAfter: {
+    borderRadius: 14,
+    backgroundColor: "#EAF6EC",
+    padding: 10,
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "800",
+    color: "#2D6E3D"
+  },
+  historyLanguageCorrectionList: { gap: 7 },
+  historyLanguageCorrectionItem: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E7D8C5",
+    backgroundColor: "#FFFFFF",
+    padding: 11,
+    gap: 5
+  },
+  historyLanguageCorrectionLabel: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    backgroundColor: "#F3E4CF",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    color: "#704914",
+    fontSize: 11,
+    fontWeight: "900"
+  },
+  historyLanguageCorrectionSwap: {
+    color: "#43372B",
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: "800"
+  },
+  historyLanguageCorrectionToggle: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#DDBB8E",
+    backgroundColor: "#FFF9F0",
+    paddingHorizontal: 12,
+    paddingVertical: 10
+  },
+  historyLanguageCorrectionTogglePressed: {
+    opacity: 0.72
+  },
+  historyLanguageCorrectionToggleText: {
+    color: "#8D5617",
+    fontSize: 13,
+    fontWeight: "900"
+  },
+  historyCoachWhy: { fontSize: 13, lineHeight: 20, color: "#786856" },
+  historyCoachInstruction: { gap: 4 },
+  historyCoachInstructionText: { fontSize: 14, lineHeight: 21, fontWeight: "800", color: "#463A2E" },
+  historyReadyCard: {
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#D7E4C9",
+    backgroundColor: "#F7FAF1",
+    padding: 15,
+    gap: 10
+  },
+  historyReadyText: { fontSize: 15, lineHeight: 22, fontWeight: "800", color: "#40523C" },
+  historyExpressionList: { gap: 7 },
+  historyExpressionChip: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E6D3B8",
+    backgroundColor: "#FFFCF7",
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    gap: 2
+  },
+  historyExpressionText: { fontSize: 14, fontWeight: "900", color: "#5A442C" },
+  historyExpressionMeaning: { fontSize: 12, lineHeight: 18, color: "#87715A" },
+  historyModelAnswerCard: {
+    overflow: "hidden",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E4D4BF",
+    backgroundColor: "#FFFEFC"
+  },
+  historyModelAnswerToggle: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 13,
+    paddingVertical: 12
+  },
+  historyModelAnswerTitle: { fontSize: 14, fontWeight: "900", color: "#4A3D31" },
+  historyModelAnswerAction: { fontSize: 12, fontWeight: "800", color: "#A46612" },
+  historyModelAnswerBody: {
+    borderTopWidth: 1,
+    borderTopColor: "#E8DACB",
+    paddingHorizontal: 13,
+    paddingVertical: 12,
+    gap: 6
+  },
+  historyModelAnswerEn: { fontSize: 14, lineHeight: 22, fontWeight: "800", color: "#3E342B" },
+  historyModelAnswerKo: { fontSize: 12, lineHeight: 19, color: "#806E5B" },
+  resumeSessionButton: {
+    minHeight: 54,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
+    backgroundColor: "#EF9413",
+    paddingHorizontal: 20,
+    paddingVertical: 14
+  },
+  resumeSessionButtonText: { fontSize: 16, fontWeight: "900", color: "#2E2416" }
 });
 
 const styles = {
@@ -1680,8 +1889,6 @@ export default function RecordsScreen() {
   );
   const [selectedDateKey, setSelectedDateKey] = useState(highlightedDateKey);
   const [selectedSession, setSelectedSession] = useState<HistorySession | null>(null);
-  const [selectedHistoryFeedback, setSelectedHistoryFeedback] =
-    useState<PracticeFeedbackState | null>(null);
   const deferredSavedExpressionSearchQuery = useDeferredValue(savedExpressionSearchQuery);
 
   useEffect(() => {
@@ -1912,7 +2119,6 @@ export default function RecordsScreen() {
       setSelectedSavedExpressionTag(null);
       setSelectedSavedExpressionTagAnchorId(null);
       setSelectedSession(null);
-      setSelectedHistoryFeedback(null);
       return;
     }
 
@@ -2009,20 +2215,28 @@ export default function RecordsScreen() {
 
   function handleOpenSession(session: HistorySession) {
     setSelectedSession(session);
-    setSelectedHistoryFeedback(null);
   }
 
   function handleCloseSessionModal() {
-    setSelectedHistoryFeedback(null);
     setSelectedSession(null);
   }
 
-  function handleOpenFeedback(attempt: HistoryAttempt) {
-    if (!selectedSession) {
+  function handleResumeSession(session: HistorySession) {
+    const latestAttempt = getLatestAttempt(session);
+    if (!latestAttempt?.visibleFeedback || session.status === "COMPLETED") {
       return;
     }
 
-    setSelectedHistoryFeedback(buildHistoryFeedbackState(selectedSession, attempt));
+    const nextState = buildHistoryFeedbackState(session, latestAttempt);
+    savePracticeFeedbackState(nextState);
+    setSelectedSession(null);
+    router.push({
+      pathname: "/practice/feedback",
+      params: {
+        difficulty: session.difficulty,
+        promptId: session.promptId
+      }
+    });
   }
 
   function handleDeleteSavedExpression(savedExpression: SavedExpression) {
@@ -2133,7 +2347,6 @@ export default function RecordsScreen() {
       ...current,
       [dateKey]: true
     }));
-    setSelectedHistoryFeedback(null);
     setSelectedSession(targetSession);
   }
 
@@ -2942,10 +3155,8 @@ export default function RecordsScreen() {
       </SafeAreaView>
 
       <HistorySessionDetailModal
-        feedbackState={selectedHistoryFeedback}
         onClose={handleCloseSessionModal}
-        onOpenFeedback={handleOpenFeedback}
-        onReturnToHistory={() => setSelectedHistoryFeedback(null)}
+        onResume={handleResumeSession}
         session={selectedSession}
       />
 

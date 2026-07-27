@@ -20,14 +20,14 @@ function normalizeRefinementText(value?: string | null) {
 export function filterSuggestedRefinementExpressions<T extends RefinementExpressionLike>(
   expressions: T[] | null | undefined,
   learnerAnswer?: string | null,
-  correctedAnswer?: string | null
+  revisedAnswer?: string | null
 ) {
   if (!expressions || expressions.length === 0) {
     return [];
   }
 
   const normalizedLearnerAnswer = normalizeRefinementText(learnerAnswer);
-  const normalizedCorrectedAnswer = normalizeRefinementText(correctedAnswer);
+  const normalizedRevisedAnswer = normalizeRefinementText(revisedAnswer);
   const seen = new Set<string>();
 
   return expressions.filter((expression) => {
@@ -60,7 +60,7 @@ export function filterSuggestedRefinementExpressions<T extends RefinementExpress
 
     return (
       !normalizedLearnerAnswer.includes(normalizedExpression) &&
-      !normalizedCorrectedAnswer.includes(normalizedExpression)
+      !normalizedRevisedAnswer.includes(normalizedExpression)
     );
   });
 }

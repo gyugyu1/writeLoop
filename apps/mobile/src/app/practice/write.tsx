@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from "expo-router";
+import { randomUUID } from "expo-crypto";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsFocused, useNavigation } from "@react-navigation/native";
 import {
@@ -19,7 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ModalSafeAreaView from "@/components/modal-safe-area-view";
-import { PracticeFeedbackContent } from "@/components/practice-feedback-content";
+import { VisiblePracticeFeedbackContent } from "@/components/visible-practice-feedback-content";
 import FeedbackLoadingOverlay from "@/components/feedback-loading-overlay";
 import {
   ApiError,
@@ -401,6 +402,7 @@ export default function PracticeWriteScreen() {
   const latestAnswerRef = useRef("");
   const latestSelectedPromptRef = useRef<Prompt | null>(null);
   const draftAutosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSubmissionRef = useRef<{ answer: string; submissionId: string } | null>(null);
 
   const selectedPrompt = useMemo(() => {
     const prompts = recommendation?.prompts ?? [];
@@ -752,12 +754,21 @@ export default function PracticeWriteScreen() {
       setError("");
       const trimmedAnswer = answer.trim();
       const guestId = await resolveFeedbackGuestId();
+      const pendingSubmission =
+        pendingSubmissionRef.current?.answer === trimmedAnswer
+          ? pendingSubmissionRef.current
+          : {
+              answer: trimmedAnswer,
+              submissionId: randomUUID()
+            };
+      pendingSubmissionRef.current = pendingSubmission;
       const nextFeedback = await submitFeedback({
         promptId: selectedPrompt.id,
         answer: trimmedAnswer,
         sessionId: feedback?.sessionId,
         attemptType: feedback ? "REWRITE" : "INITIAL",
-        guestId: guestId || undefined
+        guestId: guestId || undefined,
+        submissionId: pendingSubmission.submissionId
       });
 
       savePracticeFeedbackState({
@@ -772,6 +783,7 @@ export default function PracticeWriteScreen() {
       await clearPersistedDraft(selectedPrompt.id, activeDraftType);
       setDraftStatusMessage("");
       setFeedback(nextFeedback);
+      pendingSubmissionRef.current = null;
       setInitialAnswer(feedback ? pickFirstNonEmpty(initialAnswer, rewriteSeedAnswer, trimmedAnswer) : trimmedAnswer);
       setRewriteSeedAnswer(trimmedAnswer);
       setLatestFeedbackAnswer(trimmedAnswer);
@@ -1638,7 +1650,7 @@ export default function PracticeWriteScreen() {
               showsVerticalScrollIndicator={false}
             >
               {previousFeedbackState ? (
-                <PracticeFeedbackContent feedbackState={previousFeedbackState} />
+                <VisiblePracticeFeedbackContent feedbackState={previousFeedbackState} />
               ) : (
                 <View style={styles.feedbackModalEmptyCard}>
                   <Text style={styles.feedbackModalEmptyTitle}>이전 피드백을 찾지 못했어요</Text>

@@ -1,5 +1,6 @@
 import { router, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
+import { randomUUID } from "expo-crypto";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -18,11 +19,8 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
-  PracticeFeedbackContent,
-  type FeedbackTabKey
-} from "@/components/practice-feedback-content";
-import {
   ApiError,
+  completeFeedbackSession,
   deleteSavedExpression,
   getSavedExpressions,
   saveExpression,
@@ -115,7 +113,7 @@ function buildCompletionRefinementPhrases(expressions?: RefinementExpression[] |
     phrases.push(phrase);
   }
 
-  return phrases.slice(0, 4);
+  return phrases.slice(0, 2);
 }
 
 function renderFeedbackExpressionSaveIcon(saved: boolean, saving: boolean) {
@@ -162,6 +160,8 @@ function hasCoachMove(coachMove?: FeedbackCoachMove | null) {
       trimText(coachMove?.instruction) ||
       trimText(coachMove?.exampleEn) ||
       trimText(coachMove?.skeletonEn) ||
+      (Array.isArray(coachMove?.languageCorrections) &&
+        coachMove.languageCorrections.length > 0) ||
       (Array.isArray(coachMove?.suggestedPhrases) &&
         coachMove.suggestedPhrases.some((phrase) => normalizeSuggestedPhrase(phrase)))
   );
@@ -181,6 +181,7 @@ function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
 
   return [
     "MICRO_FIX",
+    "LANGUAGE_FIX",
     "STRUCTURE_FIX",
     "GRAMMAR",
     "GRAMMAR_FIX",
@@ -197,6 +198,7 @@ function isDirectCorrectionCoachMove(coachMove?: FeedbackCoachMove | null) {
   const focusType = trimText(coachMove?.focusType).toUpperCase();
   return [
     "MICRO_FIX",
+    "LANGUAGE_FIX",
     "STRUCTURE_FIX",
     "GRAMMAR",
     "GRAMMAR_FIX",
@@ -313,35 +315,56 @@ export default function PracticeFeedbackScreen() {
   const [isHydratingFeedbackState, setIsHydratingFeedbackState] = useState(
     () => !getPracticeFeedbackState(requestedDifficulty, requestedPromptId)
   );
-  const [activeTab, setActiveTab] = useState<FeedbackTabKey>("feedback");
-  const [showDetailedFeedback, setShowDetailedFeedback] = useState(false);
-  const [tabBarY, setTabBarY] = useState<number | null>(null);
   const [inlineRewriteY, setInlineRewriteY] = useState<number | null>(null);
-  const [scrollY, setScrollY] = useState(0);
   const scrollViewRef = useRef<ScrollView | null>(null);
+  const rewriteSubmissionIdRef = useRef<string | null>(null);
   const [isCompletionRewriteOpen, setIsCompletionRewriteOpen] = useState(false);
+  const [isModelAnswerOpen, setIsModelAnswerOpen] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
   const [rewriteDraft, setRewriteDraft] = useState(() => feedbackState?.answer ?? "");
   const [rewriteError, setRewriteError] = useState("");
   const [isSubmittingRewrite, setIsSubmittingRewrite] = useState(false);
+  const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
+    useState(false);
   const [savedExpressionIdsByKey, setSavedExpressionIdsByKey] = useState<Record<string, number>>(
     {}
   );
   const [savingExpressionKeys, setSavingExpressionKeys] = useState<string[]>([]);
 
   const feedback = feedbackState?.feedback ?? null;
+  const visibleFeedback = feedback?.visibleFeedback ?? null;
   const loopStatus = feedback?.ui?.loopStatus ?? null;
   const loopExperience = feedback?.loop ?? null;
-  const coachMove = feedback?.coachMove ?? null;
+  const coachMove = visibleFeedback?.coachMove ?? feedback?.coachMove ?? null;
+  const allLanguageCorrections = Array.isArray(coachMove?.languageCorrections)
+    ? coachMove.languageCorrections
+    : [];
+  const languageCorrections = areAllLanguageCorrectionsVisible
+    ? allLanguageCorrections
+    : allLanguageCorrections.slice(0, 4);
+  const hiddenLanguageCorrectionCount = Math.max(
+    0,
+    allLanguageCorrections.length - 4
+  );
+  const isLanguageFix = trimText(coachMove?.focusType).toUpperCase() === "LANGUAGE_FIX";
   const rewriteWorkspace = feedback?.rewriteWorkspace ?? null;
-  const completion = feedback?.completion ?? null;
+  const completion = visibleFeedback?.completion ?? feedback?.completion ?? null;
+  const visibleStrength = pickFirstNonEmpty(
+    visibleFeedback?.strength,
+    feedback?.strengths?.[0]
+  );
   const isLoopReadyToFinish =
-    feedback?.loopComplete || loopExperience?.nextAction === "finish" || loopExperience?.status === "COMPLETE";
+    visibleFeedback?.state === "READY_TO_FINISH" ||
+    feedback?.loopComplete ||
+    loopExperience?.nextAction === "finish" ||
+    loopExperience?.status === "READY_TO_FINISH";
   const shouldShowCoachMoveCard = !isLoopReadyToFinish && hasCoachMove(coachMove);
   const completionRefinementPhrases = isLoopReadyToFinish
-    ? buildCompletionRefinementPhrases(feedback?.refinementExpressions)
+    ? buildCompletionRefinementPhrases(
+        visibleFeedback?.refinementExpressions ?? feedback?.refinementExpressions
+      )
     : [];
-  const shouldShowCompletionRewriteChoice =
-    isLoopReadyToFinish && completionRefinementPhrases.length > 0;
+  const shouldShowCompletionRewriteChoice = isLoopReadyToFinish;
   const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
   const shouldShowCorrectionReasonLabel = isDirectCorrectionCoachMove(coachMove);
   const shouldShowInlineRewriteWorkspace =
@@ -377,17 +400,8 @@ export default function PracticeFeedbackScreen() {
     coachMove?.instruction,
     rewriteWorkspace?.targetTextHint,
     feedback?.rewriteChallenge,
-    coachSlotUiCopy?.description,
     "의미는 유지하고 오늘의 한 가지 코치만 반영해 다시 써보세요."
   );
-  const coachSupportingText = pickFirstNonEmpty(
-    coachSlotUiCopy?.description,
-    coachMove?.focus
-  );
-  const shouldShowCoachFocus =
-    Boolean(trimText(coachSupportingText)) &&
-    trimText(coachSupportingText) !== trimText(coachHeadline) &&
-    trimText(coachSupportingText) !== trimText(coachInstruction);
   const coachSkeleton = shouldShowCorrectionReasonLabel
     ? ""
     : pickFirstNonEmpty(coachMove?.skeletonEn, coachSlotUiCopy?.skeletonEn);
@@ -397,15 +411,18 @@ export default function PracticeFeedbackScreen() {
   const coachSuggestedPhrases = !shouldShowCorrectionReasonLabel && Array.isArray(coachMove?.suggestedPhrases)
     ? coachMove.suggestedPhrases.map(normalizeSuggestedPhrase).filter((phrase) => phrase !== null).slice(0, 6)
     : [];
-  const detailToggleLabel = showDetailedFeedback
-    ? "자세한 피드백 접기"
-    : pickFirstNonEmpty(loopExperience?.detailToggleLabel, "자세한 피드백 보기");
+  const modelAnswer = pickFirstNonEmpty(visibleFeedback?.modelAnswer, feedback?.modelAnswer);
+  const modelAnswerKo = pickFirstNonEmpty(visibleFeedback?.modelAnswerKo, feedback?.modelAnswerKo);
   const inlineRewriteSubmitLabel = isSubmittingRewrite
     ? "피드백 받는 중..."
     : REWRITE_FEEDBACK_BUTTON_LABEL;
   const inlineRewriteHelpText = isLoopReadyToFinish
     ? "이미 충분히 좋아요. 원하면 표현 하나만 가볍게 다듬어 보세요."
     : "전체를 완벽하게 바꾸려 하지 말고, 위 코치 포인트 하나만 반영하면 돼요.";
+
+  useEffect(() => {
+    setAreAllLanguageCorrectionsVisible(false);
+  }, [feedback?.attemptNo]);
 
   useEffect(() => {
     const inMemoryState = getPracticeFeedbackState(requestedDifficulty, requestedPromptId);
@@ -462,13 +479,11 @@ export default function PracticeFeedbackScreen() {
   }, [currentUser]);
 
   useEffect(() => {
-    setActiveTab("feedback");
-    setShowDetailedFeedback(false);
-    setTabBarY(null);
     setInlineRewriteY(null);
-    setScrollY(0);
     setSavingExpressionKeys([]);
     setIsCompletionRewriteOpen(false);
+    setIsModelAnswerOpen(false);
+    rewriteSubmissionIdRef.current = null;
   }, [requestedDifficulty, requestedPromptId]);
 
   useEffect(() => {
@@ -480,7 +495,12 @@ export default function PracticeFeedbackScreen() {
     setRewriteError("");
     setIsCompletionRewriteOpen(false);
     setInlineRewriteY(null);
-  }, [feedbackState?.prompt.id, feedbackState?.feedback.attemptNo]);
+  }, [
+    feedbackState?.answer,
+    feedbackState?.feedback.attemptNo,
+    feedbackState?.feedback.rewriteWorkspace?.seedText,
+    feedbackState?.prompt.id
+  ]);
 
   useEffect(() => {
     if (!isCompletionRewriteOpen || inlineRewriteY == null) {
@@ -611,12 +631,15 @@ export default function PracticeFeedbackScreen() {
 
       const resolvedUser = currentUser ?? (await refreshSession().catch(() => null));
       const guestId = resolvedUser ? undefined : await getOrCreateGuestId();
+      const submissionId = rewriteSubmissionIdRef.current ?? randomUUID();
+      rewriteSubmissionIdRef.current = submissionId;
       const nextFeedback = await submitFeedback({
         promptId: feedbackState.prompt.id,
         answer: trimmedAnswer,
         sessionId: feedbackState.feedback.sessionId,
         attemptType: "REWRITE",
-        guestId: guestId || undefined
+        guestId: guestId || undefined,
+        submissionId
       });
       const nextState: PracticeFeedbackState = {
         difficulty: requestedDifficulty,
@@ -628,10 +651,7 @@ export default function PracticeFeedbackScreen() {
 
       savePracticeFeedbackState(nextState);
       setFeedbackState(nextState);
-      setActiveTab("feedback");
-      setShowDetailedFeedback(false);
-      setTabBarY(null);
-      setScrollY(0);
+      rewriteSubmissionIdRef.current = null;
       requestAnimationFrame(() => {
         scrollViewRef.current?.scrollTo({ y: 0, animated: true });
       });
@@ -651,24 +671,33 @@ export default function PracticeFeedbackScreen() {
     }
   }
 
-  function handleFinishLoop() {
+  async function handleFinishLoop() {
     if (!feedbackState) {
       handleBackToQuestions();
       return;
     }
 
-    router.push({
-      pathname: "/practice/complete",
-      params: {
-        difficulty: requestedDifficulty,
-        promptId: feedbackState.prompt.id
-      }
-    });
+    try {
+      setIsFinishing(true);
+      const resolvedUser = currentUser ?? (await refreshSession().catch(() => null));
+      const guestId = resolvedUser ? undefined : await getOrCreateGuestId();
+      await completeFeedbackSession(feedbackState.feedback.sessionId, guestId || undefined);
+      router.push({
+        pathname: "/practice/complete",
+        params: {
+          difficulty: requestedDifficulty,
+          promptId: feedbackState.prompt.id
+        }
+      });
+    } catch (caughtError) {
+      Alert.alert(
+        "완료하지 못했어요",
+        caughtError instanceof Error ? caughtError.message : "잠시 후 다시 시도해 주세요."
+      );
+    } finally {
+      setIsFinishing(false);
+    }
   }
-
-  const stickyThreshold = tabBarY === null ? Number.POSITIVE_INFINITY : Math.max(tabBarY - 8, 0);
-  const shouldShowStickyTabBar =
-    Boolean(feedbackState) && showDetailedFeedback && scrollY >= stickyThreshold;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -684,8 +713,6 @@ export default function PracticeFeedbackScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
-          onScroll={(event) => setScrollY(event.nativeEvent.contentOffset.y)}
-          scrollEventThrottle={16}
         >
           <View style={styles.header}>
             <Pressable
@@ -706,16 +733,19 @@ export default function PracticeFeedbackScreen() {
             </View>
           ) : feedbackState ? (
             <>
+              {visibleStrength ? (
+                <View style={styles.strengthCard}>
+                  <Text style={styles.strengthLabel}>잘한 점</Text>
+                  <Text style={styles.strengthText}>{visibleStrength}</Text>
+                </View>
+              ) : null}
+
               {shouldShowCoachMoveCard ? (
               <View style={styles.coachMoveCard}>
                 <Text style={styles.coachMoveHeadline}>{coachHeadline}</Text>
 
                 {hasCoachMove(coachMove) ? (
                   <View style={styles.coachMoveBody}>
-                    {shouldShowCoachFocus ? (
-                      <Text style={styles.coachMoveFocus}>{coachSupportingText}</Text>
-                    ) : null}
-
                     {shouldShowCoachMoveComparison ? (
                       <View style={styles.coachMoveSwap}>
                         {trimText(coachMove?.before) ? (
@@ -732,7 +762,9 @@ export default function PracticeFeedbackScreen() {
                         ) : null}
                         {trimText(coachMove?.after) ? (
                           <View style={[styles.coachMoveSwapRow, styles.coachMoveAfterRow]}>
-                            <Text style={styles.coachMoveSwapLabel}>적용</Text>
+                            <Text style={styles.coachMoveSwapLabel}>
+                              {isLanguageFix ? "이번에 고친 문장" : "적용"}
+                            </Text>
                             <Text style={styles.coachMoveAfter}>
                               {renderCoachMoveDiffText(
                                 trimText(coachMove?.before),
@@ -741,6 +773,71 @@ export default function PracticeFeedbackScreen() {
                               )}
                             </Text>
                           </View>
+                        ) : null}
+                      </View>
+                    ) : null}
+
+                    {languageCorrections.length > 0 ? (
+                      <View style={styles.languageCorrectionList}>
+                        {languageCorrections.map((correction, index) => (
+                          <View
+                            key={`${correction.kind}-${correction.before ?? ""}-${index}`}
+                            style={styles.languageCorrectionItem}
+                          >
+                            <View
+                              style={[
+                                styles.languageCorrectionBadge,
+                                correction.kind === "STRUCTURE"
+                                  ? styles.languageCorrectionBadgeStructure
+                                  : correction.kind === "GRAMMAR_BLOCKING"
+                                    ? styles.languageCorrectionBadgeCore
+                                    : styles.languageCorrectionBadgeDetail
+                              ]}
+                            >
+                              <Text style={styles.languageCorrectionBadgeText}>
+                                {correction.label}
+                              </Text>
+                            </View>
+                            {trimText(correction.before) || trimText(correction.after) ? (
+                              <View style={styles.languageCorrectionSwap}>
+                                {trimText(correction.before) ? (
+                                  <Text style={styles.languageCorrectionBefore}>
+                                    {correction.before}
+                                  </Text>
+                                ) : null}
+                                <Text style={styles.languageCorrectionArrow}>→</Text>
+                                {trimText(correction.after) ? (
+                                  <Text style={styles.languageCorrectionAfter}>
+                                    {correction.after}
+                                  </Text>
+                                ) : null}
+                              </View>
+                            ) : null}
+                            <Text style={styles.languageCorrectionReason}>
+                              {correction.reason}
+                            </Text>
+                          </View>
+                        ))}
+                        {hiddenLanguageCorrectionCount > 0 ? (
+                          <Pressable
+                            accessibilityRole="button"
+                            accessibilityState={{
+                              expanded: areAllLanguageCorrectionsVisible
+                            }}
+                            onPress={() =>
+                              setAreAllLanguageCorrectionsVisible((current) => !current)
+                            }
+                            style={({ pressed }) => [
+                              styles.languageCorrectionToggle,
+                              pressed ? styles.languageCorrectionTogglePressed : null
+                            ]}
+                          >
+                            <Text style={styles.languageCorrectionToggleText}>
+                              {areAllLanguageCorrectionsVisible
+                                ? "추가 교정 접기"
+                                : `교정 ${hiddenLanguageCorrectionCount}개 더 보기`}
+                            </Text>
+                          </Pressable>
                         ) : null}
                       </View>
                     ) : null}
@@ -829,55 +926,6 @@ export default function PracticeFeedbackScreen() {
               </View>
               ) : null}
 
-              <Pressable
-                style={styles.detailToggleButton}
-                onPress={() => setShowDetailedFeedback((current) => !current)}
-              >
-                <Text style={styles.detailToggleButtonText}>{detailToggleLabel}</Text>
-              </Pressable>
-
-              {showDetailedFeedback ? (
-                <PracticeFeedbackContent
-                  feedbackState={feedbackState}
-                  showCompletionSummary={false}
-                  activeTab={activeTab}
-                  onActiveTabChange={setActiveTab}
-                  onTabBarLayout={setTabBarY}
-                  onSaveUsedExpression={(expression, meaningKo, exampleEn, usageTip, tags) =>
-                    void handleToggleFeedbackExpression(
-                      expression,
-                      "USED_EXPRESSION",
-                      meaningKo,
-                      exampleEn,
-                      usageTip,
-                      tags
-                    )
-                  }
-                  onSaveRefinementExpression={(expression, meaningKo, exampleEn, usageTip, tags) =>
-                    void handleToggleFeedbackExpression(
-                      expression,
-                      "REFINEMENT_EXPRESSION",
-                      meaningKo,
-                      exampleEn,
-                      usageTip,
-                      tags
-                    )
-                  }
-                  isUsedExpressionSaved={(expression) =>
-                    Boolean(savedExpressionIdsByKey[normalizeExpressionKey(expression)])
-                  }
-                  isSavingUsedExpression={(expression) =>
-                    savingExpressionKeys.includes(normalizeExpressionKey(expression))
-                  }
-                  isRefinementExpressionSaved={(expression) =>
-                    Boolean(savedExpressionIdsByKey[normalizeExpressionKey(expression)])
-                  }
-                  isSavingRefinementExpression={(expression) =>
-                    savingExpressionKeys.includes(normalizeExpressionKey(expression))
-                  }
-                />
-              ) : null}
-
               {shouldShowInlineRewriteWorkspace ? (
                 <View
                   style={styles.inlineRewriteCard}
@@ -889,6 +937,7 @@ export default function PracticeFeedbackScreen() {
                     value={rewriteDraft}
                     onChangeText={(value) => {
                       setRewriteDraft(value);
+                      rewriteSubmissionIdRef.current = null;
                       if (rewriteError) {
                         setRewriteError("");
                       }
@@ -985,6 +1034,33 @@ export default function PracticeFeedbackScreen() {
                   </View>
                 ) : null}
 
+                {isLoopReadyToFinish && modelAnswer ? (
+                  <View style={styles.modelAnswerCard}>
+                    <Pressable
+                      style={styles.modelAnswerToggle}
+                      onPress={() => setIsModelAnswerOpen((current) => !current)}
+                      accessibilityRole="button"
+                      accessibilityLabel={isModelAnswerOpen ? "모범답안 접기" : "모범답안 펼치기"}
+                    >
+                      <View>
+                        <Text style={styles.modelAnswerEyebrow}>참고용</Text>
+                        <Text style={styles.modelAnswerTitle}>모범답안</Text>
+                      </View>
+                      <Text style={styles.modelAnswerToggleIcon}>
+                        {isModelAnswerOpen ? "−" : "+"}
+                      </Text>
+                    </Pressable>
+                    {isModelAnswerOpen ? (
+                      <View style={styles.modelAnswerBody}>
+                        <Text style={styles.modelAnswerEn}>{modelAnswer}</Text>
+                        {modelAnswerKo ? (
+                          <Text style={styles.modelAnswerKo}>{modelAnswerKo}</Text>
+                        ) : null}
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
+
                 {isLoopReadyToFinish ? (
                   <>
                     {shouldShowCompletionRewriteChoice && !isCompletionRewriteOpen ? (
@@ -993,9 +1069,15 @@ export default function PracticeFeedbackScreen() {
                       </Pressable>
                     ) : null}
 
-                  <Pressable style={styles.primaryButton} onPress={handleFinishLoop}>
+                  <Pressable
+                    style={[styles.primaryButton, isFinishing && styles.primaryButtonDisabled]}
+                    onPress={() => void handleFinishLoop()}
+                    disabled={isFinishing}
+                  >
                     <Text style={styles.primaryButtonText}>
-                      {pickFirstNonEmpty(finishButtonLabel, "루프 완료하기")}
+                      {isFinishing
+                        ? "완료하는 중..."
+                        : pickFirstNonEmpty(finishButtonLabel, "루프 완료하기")}
                     </Text>
                   </Pressable>
                   </>
@@ -1015,46 +1097,6 @@ export default function PracticeFeedbackScreen() {
             </View>
           )}
           </ScrollView>
-
-        {shouldShowStickyTabBar ? (
-          <View pointerEvents="box-none" style={styles.stickyTabOverlay}>
-            <View style={styles.stickyTabBar}>
-              <Pressable
-                style={[
-                  styles.stickyTabButton,
-                  activeTab === "feedback" && styles.stickyTabButtonActive
-                ]}
-                onPress={() => setActiveTab("feedback")}
-              >
-                <Text
-                  style={[
-                    styles.stickyTabButtonText,
-                    activeTab === "feedback" && styles.stickyTabButtonTextActive
-                  ]}
-                >
-                  피드백
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={[
-                  styles.stickyTabButton,
-                  activeTab === "improve" && styles.stickyTabButtonActive
-                ]}
-                onPress={() => setActiveTab("improve")}
-              >
-                <Text
-                  style={[
-                    styles.stickyTabButtonText,
-                    activeTab === "improve" && styles.stickyTabButtonTextActive
-                  ]}
-                >
-                  표현 더하기
-                </Text>
-              </Pressable>
-            </View>
-          </View>
-        ) : null}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -1105,6 +1147,88 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 42,
     height: 42
+  },
+  strengthCard: {
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: "#E9D9C6",
+    backgroundColor: "#FFFEFC",
+    paddingHorizontal: 22,
+    paddingVertical: 24,
+    gap: 14,
+    shadowColor: "#C58A43",
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: {
+      width: 0,
+      height: 8
+    },
+    elevation: 2
+  },
+  strengthLabel: {
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: "900",
+    letterSpacing: -1.4,
+    color: "#232128"
+  },
+  strengthText: {
+    fontSize: 17,
+    lineHeight: 26,
+    fontWeight: "800",
+    color: "#3D342B"
+  },
+  modelAnswerCard: {
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "#E5D4BE",
+    backgroundColor: "#FFFCF7",
+    overflow: "hidden"
+  },
+  modelAnswerToggle: {
+    minHeight: 72,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between"
+  },
+  modelAnswerEyebrow: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#A56A1C"
+  },
+  modelAnswerTitle: {
+    marginTop: 2,
+    fontSize: 18,
+    lineHeight: 24,
+    fontWeight: "900",
+    color: "#3D3227"
+  },
+  modelAnswerToggleIcon: {
+    fontSize: 28,
+    lineHeight: 30,
+    fontWeight: "500",
+    color: "#A56A1C"
+  },
+  modelAnswerBody: {
+    borderTopWidth: 1,
+    borderTopColor: "#EEDFCB",
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    gap: 8
+  },
+  modelAnswerEn: {
+    fontSize: 17,
+    lineHeight: 27,
+    fontWeight: "800",
+    color: "#382F27"
+  },
+  modelAnswerKo: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: "#826E58"
   },
   stickyTabOverlay: {
     position: "absolute",
@@ -1176,12 +1300,6 @@ const styles = StyleSheet.create({
   coachMoveBody: {
     gap: 12
   },
-  coachMoveFocus: {
-    fontSize: 18,
-    lineHeight: 27,
-    fontWeight: "900",
-    color: "#2F2A24"
-  },
   coachMoveSwap: {
     gap: 10
   },
@@ -1223,6 +1341,84 @@ const styles = StyleSheet.create({
   coachMoveAfterHighlight: {
     backgroundColor: "#BDEAC7",
     color: "#145F2A",
+    fontWeight: "900"
+  },
+  languageCorrectionList: {
+    gap: 10
+  },
+  languageCorrectionItem: {
+    gap: 9,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#EADBC8",
+    backgroundColor: "#FFFFFF",
+    padding: 14
+  },
+  languageCorrectionBadge: {
+    alignSelf: "flex-start",
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 5
+  },
+  languageCorrectionBadgeStructure: {
+    backgroundColor: "#F7E4C5"
+  },
+  languageCorrectionBadgeCore: {
+    backgroundColor: "#F8D8D1"
+  },
+  languageCorrectionBadgeDetail: {
+    backgroundColor: "#DCEEE5"
+  },
+  languageCorrectionBadgeText: {
+    color: "#47382B",
+    fontSize: 12,
+    fontWeight: "900"
+  },
+  languageCorrectionSwap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 7
+  },
+  languageCorrectionBefore: {
+    color: "#9B3B2E",
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "800",
+    textDecorationLine: "line-through"
+  },
+  languageCorrectionArrow: {
+    color: "#A67A48",
+    fontSize: 15,
+    fontWeight: "900"
+  },
+  languageCorrectionAfter: {
+    color: "#1F6B35",
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "900"
+  },
+  languageCorrectionReason: {
+    color: "#67594B",
+    fontSize: 14,
+    lineHeight: 21
+  },
+  languageCorrectionToggle: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#DDBB8E",
+    backgroundColor: "#FFF9F0",
+    paddingHorizontal: 14,
+    paddingVertical: 12
+  },
+  languageCorrectionTogglePressed: {
+    opacity: 0.72
+  },
+  languageCorrectionToggleText: {
+    color: "#8D5617",
+    fontSize: 14,
     fontWeight: "900"
   },
   coachMoveWhyBox: {

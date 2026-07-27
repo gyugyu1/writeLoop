@@ -30,7 +30,7 @@ class GeminiFeedbackClientTest {
     void buildsInlineDiffFromTheBackendCorrection() {
         assertThat(client("test-key")
                 .buildPreciseInlineFeedback("I goes home.", "I go home."))
-                .anySatisfy(segment -> assertThat(segment.type()).isEqualTo("REMOVE"));
+                .anySatisfy(segment -> assertThat(segment.type()).isEqualTo("REPLACE"));
     }
 
     private GeminiFeedbackClient client(String apiKey) {

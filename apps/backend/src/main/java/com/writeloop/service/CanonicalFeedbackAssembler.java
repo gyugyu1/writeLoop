@@ -3,16 +3,14 @@ package com.writeloop.service;
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackCoachMissionDto;
 import com.writeloop.dto.FeedbackCoachMoveDto;
+import com.writeloop.dto.FeedbackLanguageCorrectionDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackRewriteWorkspaceDto;
-import com.writeloop.dto.FeedbackSecondaryLearningPointDto;
 import com.writeloop.dto.FeedbackUiDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 final class CanonicalFeedbackAssembler {
@@ -26,58 +24,59 @@ final class CanonicalFeedbackAssembler {
             int attemptIndex,
         CanonicalLlmOutput output
     ) {
-        FeedbackDiagnosisResult diagnosis = output.diagnosis();
         GeneratedContent generated = output.content();
-        MissionDecision decision = policy.resolve(
+        LearningContractResolution resolution = policy.resolveContract(
                 prompt,
                 learnerAnswer,
-                diagnosis,
+                output.diagnosis(),
                 output.slotAssessments()
         );
+        FeedbackDiagnosisResult diagnosis = resolution.diagnosis();
+        MissionDecision decision = resolution.decision();
 
-        List<DiagnosedGrammarIssue> usableGrammarIssues = diagnosis.grammarIssues().stream()
-                .filter(issue -> issue.isUsableFor(learnerAnswer))
-                .sorted(Comparator.comparingInt(
-                        (DiagnosedGrammarIssue issue) -> issue.impact().ordinal()
-                ).reversed())
+        boolean languageMission = decision.missionKind() == MissionKind.LANGUAGE_FIX;
+        String revisedAnswer = languageMission
+                ? resolution.revisedAnswer()
+                : null;
+        List<FeedbackLanguageCorrectionDto> languageCorrections = languageMission
+                ? buildLanguageCorrections(resolution.languageCorrections())
+                : List.of();
+        if (languageMission && (revisedAnswer == null
+                || revisedAnswer.equals(learnerAnswer == null ? null : learnerAnswer.trim())
+                || languageCorrections.isEmpty())) {
+            throw new FeedbackContractException(
+                    "LANGUAGE_FIX requires one to 25 explained changes and a distinct revised answer"
+            );
+        }
+        List<ValidatedLanguageCorrection> grammarCorrections = resolution.languageCorrections().stream()
+                .filter(correction -> correction.step().kind() != LanguageIssueKind.STRUCTURE)
                 .toList();
-        List<StructureRepair> usableStructureRepairs = diagnosis.structureAssessment().repair().stream()
-                .filter(repair -> repair.isUsableFor(learnerAnswer))
-                .toList();
-        boolean structureMission = decision.missionKind() == MissionKind.STRUCTURE_FIX;
-        List<DiagnosedGrammarIssue> visibleGrammarIssues = structureMission ? List.of() : usableGrammarIssues;
-        String correctedAnswer = structureMission
-                ? usableStructureRepairs.stream()
-                .findFirst()
-                .map(StructureRepair::correctedAnswer)
-                .orElse(null)
-                : applyGrammarIssues(learnerAnswer, visibleGrammarIssues);
-        List<GrammarFeedbackItemDto> grammarFeedback = visibleGrammarIssues.stream()
-                .map(issue -> new GrammarFeedbackItemDto(
-                        issue.originalText(),
-                        issue.revisedText(),
-                        issue.reasonKo()
+        List<GrammarFeedbackItemDto> grammarFeedback = languageMission
+                ? grammarCorrections.stream()
+                .map(correction -> new GrammarFeedbackItemDto(
+                        correction.edit().displayOriginalText(),
+                        correction.edit().displayRevisedText(),
+                        correction.step().reasonKo()
                 ))
-                .toList();
-        List<CorrectionDto> corrections = visibleGrammarIssues.stream()
-                .map(issue -> new CorrectionDto(issue.reasonKo(), issue.revisedText()))
-                .toList();
-        List<InlineFeedbackSegmentDto> inlineFeedback = FeedbackInlineDiffSupport.diff(
-                learnerAnswer,
-                correctedAnswer
-        );
+                .toList()
+                : List.of();
+        List<CorrectionDto> corrections = languageMission
+                ? resolution.languageCorrections().stream()
+                .map(correction -> new CorrectionDto(
+                        correction.step().reasonKo(),
+                        correction.edit().displayRevisedText()
+                ))
+                .toList()
+                : List.of();
+        List<InlineFeedbackSegmentDto> inlineFeedback = revisedAnswer == null
+                ? List.of()
+                : FeedbackInlineDiffSupport.diff(learnerAnswer, revisedAnswer);
 
         FeedbackCoachMissionDto coachMission = buildCoachMission(
                 decision,
-                correctedAnswer,
-                usableStructureRepairs,
-                usableGrammarIssues
-        );
-        List<FeedbackSecondaryLearningPointDto> fixPoints = buildFixPoints(
-                decision,
-                correctedAnswer,
-                usableStructureRepairs,
-                usableGrammarIssues
+                learnerAnswer,
+                revisedAnswer,
+                languageCorrections
         );
         GeneratedSections finalSections = new GeneratedSections(
                 generated.strengths(),
@@ -86,8 +85,7 @@ final class CanonicalFeedbackAssembler {
                 generated.modelAnswer(),
                 generated.modelAnswerKo(),
                 decision,
-                coachMission,
-                fixPoints
+                coachMission
         );
         String targetSlot = FeedbackSlotCatalog.targetSlotForUi(decision);
         FeedbackCoachMoveDto coachMove = coachMission == null ? null : coachMission.toCoachMove(targetSlot);
@@ -101,7 +99,7 @@ final class CanonicalFeedbackAssembler {
                 coachMission == null ? null : coachMission.title(),
                 complete ? completionMessage : "한 가지만 더 다듬어 볼게요."
         );
-        FeedbackUiDto ui = new FeedbackUiDto(null, null, null, fixPoints, null);
+        FeedbackUiDto ui = new FeedbackUiDto(null, List.of(), null, null);
 
         FeedbackResponseDto response = new FeedbackResponseDto(
                 prompt == null ? null : prompt.id(),
@@ -114,7 +112,7 @@ final class CanonicalFeedbackAssembler {
                 corrections,
                 inlineFeedback,
                 grammarFeedback,
-                correctedAnswer,
+                revisedAnswer,
                 generated.refinementExpressions(),
                 generated.modelAnswer(),
                 generated.modelAnswerKo(),
@@ -132,110 +130,37 @@ final class CanonicalFeedbackAssembler {
 
     private FeedbackCoachMissionDto buildCoachMission(
             MissionDecision decision,
-            String correctedAnswer,
-            List<StructureRepair> structureRepairs,
-            List<DiagnosedGrammarIssue> grammarIssues
+            String learnerAnswer,
+            String revisedAnswer,
+            List<FeedbackLanguageCorrectionDto> languageCorrections
     ) {
         if (decision.missionKind() == MissionKind.SLOT || decision.missionKind() == MissionKind.TASK_RESET) {
             SlotFeedbackSupport support = supportFor(decision, decision.chosenSlot());
             return support == null ? null : support.toCoachMission(decision.missionKind().name());
         }
-        if (decision.missionKind() == MissionKind.STRUCTURE_FIX) {
-            StructureRepair repair = structureRepairs.stream().findFirst()
-                    .orElseThrow(() -> new FeedbackContractException(
-                            "STRUCTURE_FIX requires structure correction evidence"
-                    ));
+        if (decision.missionKind() == MissionKind.LANGUAGE_FIX) {
+            int correctionCount = languageCorrections.size();
+            String title = correctionCount == 1
+                    ? "문장 한 곳 바로잡기"
+                    : "문장 " + correctionCount + "곳 바로잡기";
             return new FeedbackCoachMissionDto(
-                    "STRUCTURE_FIX",
-                    "문장 완성하기",
-                    repair.originalText(),
-                    correctedAnswer,
-                    repair.reasonKo(),
-                    repair.instructionKo(),
-                    correctedAnswer,
-                    correctedAnswer,
+                    "LANGUAGE_FIX",
+                    title,
+                    learnerAnswer,
+                    revisedAnswer,
+                    null,
+                    "위 교정들을 반영해 문장 전체를 다시 써 보세요.",
+                    revisedAnswer,
+                    revisedAnswer,
                     null,
                     List.of(),
-                    correctedAnswer,
-                    repair.instructionKo(),
-                    "주어와 서술어가 있는 완전한 문장으로 쓰면 돼요."
-            );
-        }
-        if (decision.missionKind() == MissionKind.GRAMMAR_FIX) {
-            DiagnosedGrammarIssue issue = grammarIssues.stream().findFirst()
-                    .orElseThrow(() -> new FeedbackContractException("GRAMMAR_FIX requires correction evidence"));
-            return new FeedbackCoachMissionDto(
-                    "GRAMMAR_FIX",
-                    "문법 한 곳 바로잡기",
-                    issue.originalText(),
-                    issue.revisedText(),
-                    issue.reasonKo(),
-                    issue.instructionKo(),
-                    issue.revisedText(),
-                    issue.revisedText(),
-                    null,
-                    List.of(),
-                    issue.revisedText(),
-                    issue.instructionKo(),
-                    "고친 표현이 문장 안에 정확히 들어가면 돼요."
+                    revisedAnswer,
+                    "교정 내용을 반영해 전체 문장을 다시 써 보세요.",
+                    "표시된 교정이 모두 문장에 반영되면 돼요.",
+                    languageCorrections
             );
         }
         return null;
-    }
-
-    private List<FeedbackSecondaryLearningPointDto> buildFixPoints(
-            MissionDecision decision,
-            String correctedAnswer,
-            List<StructureRepair> structureRepairs,
-            List<DiagnosedGrammarIssue> grammarIssues
-    ) {
-        if (decision.missionKind() == MissionKind.SLOT || decision.missionKind() == MissionKind.TASK_RESET) {
-            SlotFeedbackSupport support = supportFor(decision, decision.chosenSlot());
-            return support == null ? List.of() : List.of(support.toFixPoint(decision.chosenSlot()));
-        }
-        if (decision.missionKind() == MissionKind.STRUCTURE_FIX) {
-            return structureRepairs.stream()
-                    .map(repair -> structureFixPoint(repair, correctedAnswer))
-                    .limit(1)
-                    .toList();
-        }
-        if (decision.missionKind() == MissionKind.GRAMMAR_FIX) {
-            return grammarIssues.stream().map(this::grammarFixPoint).limit(3).toList();
-        }
-        return List.of();
-    }
-
-    private FeedbackSecondaryLearningPointDto structureFixPoint(
-            StructureRepair repair,
-            String correctedAnswer
-    ) {
-        return new FeedbackSecondaryLearningPointDto(
-                "STRUCTURE_FIX",
-                "문장 완성하기",
-                null,
-                repair.reasonKo(),
-                repair.originalText(),
-                correctedAnswer,
-                null,
-                repair.instructionKo(),
-                correctedAnswer,
-                null
-        );
-    }
-
-    private FeedbackSecondaryLearningPointDto grammarFixPoint(DiagnosedGrammarIssue issue) {
-        return new FeedbackSecondaryLearningPointDto(
-                "GRAMMAR_FIX",
-                "문법 한 곳 바로잡기",
-                null,
-                issue.reasonKo(),
-                issue.originalText(),
-                issue.revisedText(),
-                null,
-                issue.instructionKo(),
-                issue.revisedText(),
-                null
-        );
     }
 
     private SlotFeedbackSupport supportFor(MissionDecision decision, String slot) {
@@ -248,18 +173,27 @@ final class CanonicalFeedbackAssembler {
                 : assessment.support().get(0);
     }
 
-    private String applyGrammarIssues(String learnerAnswer, List<DiagnosedGrammarIssue> issues) {
-        String corrected = learnerAnswer == null ? "" : learnerAnswer;
-        for (DiagnosedGrammarIssue issue : issues) {
-            int index = corrected.indexOf(issue.originalText());
-            if (index < 0) {
-                continue;
-            }
-            corrected = corrected.substring(0, index)
-                    + issue.revisedText()
-                    + corrected.substring(index + issue.originalText().length());
-        }
-        return corrected;
+    private List<FeedbackLanguageCorrectionDto> buildLanguageCorrections(
+            List<ValidatedLanguageCorrection> validatedCorrections
+    ) {
+        return validatedCorrections.stream()
+                .sorted(java.util.Comparator.comparingInt(ValidatedLanguageCorrection::stepIndex))
+                .map(correction -> new FeedbackLanguageCorrectionDto(
+                        correction.step().kind().name(),
+                        displayLabel(correction.step().kind()),
+                        correction.edit().displayOriginalText(),
+                        correction.edit().displayRevisedText(),
+                        correction.step().reasonKo()
+                ))
+                .toList();
+    }
+
+    private String displayLabel(LanguageIssueKind kind) {
+        return switch (kind) {
+            case STRUCTURE -> "문장 구조";
+            case GRAMMAR_BLOCKING -> "핵심 교정";
+            case GRAMMAR_LOCAL -> "세부 교정";
+        };
     }
 
     private String firstNonBlank(String... values) {

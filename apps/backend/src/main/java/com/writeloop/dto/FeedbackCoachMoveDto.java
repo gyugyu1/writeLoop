@@ -17,7 +17,8 @@ public record FeedbackCoachMoveDto(
         String skeletonKo,
         List<FeedbackSuggestedPhraseDto> suggestedPhrases,
         String successCheck,
-        String targetSlot
+        String targetSlot,
+        List<FeedbackLanguageCorrectionDto> languageCorrections
 ) {
     public FeedbackCoachMoveDto {
         focus = normalize(focus);
@@ -32,6 +33,7 @@ public record FeedbackCoachMoveDto(
         suggestedPhrases = normalizePhrases(suggestedPhrases);
         successCheck = normalize(successCheck);
         targetSlot = normalize(targetSlot);
+        languageCorrections = normalizeLanguageCorrections(languageCorrections);
     }
 
     public FeedbackCoachMoveDto(
@@ -59,7 +61,39 @@ public record FeedbackCoachMoveDto(
                 skeletonKo,
                 suggestedPhrases,
                 successCheck,
-                null
+                null,
+                List.of()
+        );
+    }
+
+    public FeedbackCoachMoveDto(
+            String focus,
+            String focusType,
+            String why,
+            String before,
+            String after,
+            String instruction,
+            String exampleEn,
+            String skeletonEn,
+            String skeletonKo,
+            List<FeedbackSuggestedPhraseDto> suggestedPhrases,
+            String successCheck,
+            String targetSlot
+    ) {
+        this(
+                focus,
+                focusType,
+                why,
+                before,
+                after,
+                instruction,
+                exampleEn,
+                skeletonEn,
+                skeletonKo,
+                suggestedPhrases,
+                successCheck,
+                targetSlot,
+                List.of()
         );
     }
 
@@ -75,7 +109,7 @@ public record FeedbackCoachMoveDto(
             List<FeedbackSuggestedPhraseDto> suggestedPhrases,
             String successCheck
     ) {
-        this(focus, focusType, why, before, after, instruction, exampleEn, skeletonEn, null, suggestedPhrases, successCheck, null);
+        this(focus, focusType, why, before, after, instruction, exampleEn, skeletonEn, null, suggestedPhrases, successCheck, null, List.of());
     }
 
     public FeedbackCoachMoveDto(
@@ -88,7 +122,7 @@ public record FeedbackCoachMoveDto(
             String exampleEn,
             String successCheck
     ) {
-        this(focus, focusType, why, before, after, instruction, exampleEn, null, null, List.of(), successCheck, null);
+        this(focus, focusType, why, before, after, instruction, exampleEn, null, null, List.of(), successCheck, null, List.of());
     }
 
     public FeedbackCoachMoveDto(
@@ -100,7 +134,7 @@ public record FeedbackCoachMoveDto(
             String instruction,
             String successCheck
     ) {
-        this(focus, focusType, why, before, after, instruction, null, null, null, List.of(), successCheck, null);
+        this(focus, focusType, why, before, after, instruction, null, null, null, List.of(), successCheck, null, List.of());
     }
 
     private static List<FeedbackSuggestedPhraseDto> normalizePhrases(List<FeedbackSuggestedPhraseDto> values) {
@@ -112,6 +146,19 @@ public record FeedbackCoachMoveDto(
                 .filter(value -> value != null && value.phrase() != null)
                 .distinct()
                 .limit(6)
+                .toList();
+    }
+
+    private static List<FeedbackLanguageCorrectionDto> normalizeLanguageCorrections(
+            List<FeedbackLanguageCorrectionDto> values
+    ) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+
+        return values.stream()
+                .filter(value -> value != null && value.kind() != null)
+                .limit(25)
                 .toList();
     }
 

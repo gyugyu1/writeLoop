@@ -10,6 +10,7 @@ public record AnswerHistorySessionDto(
         String difficulty,
         String questionEn,
         String questionKo,
+        String status,
         Instant createdAt,
         Instant updatedAt,
         List<AnswerHistoryAttemptDto> attempts

@@ -1,6 +1,6 @@
 ---
 name: writeloop-feedback-logic
-description: Use when working on WriteLoop question-answer feedback logic, mission-centered feedback, OpenAI feedback schema, coachMission/fixPoints/refinementExpressions, feedback quality regression, mobile/web feedback UI alignment, or WriteLoop mobile App Store/Play Store build and release versioning guardrails.
+description: Use when working on WriteLoop question-answer feedback logic, mission-centered feedback, OpenAI feedback schema, coachMission/languageCorrections/refinementExpressions, feedback quality regression, mobile/web feedback UI alignment, or WriteLoop mobile App Store/Play Store build and release versioning guardrails.
 ---
 
 # WriteLoop Feedback Logic
@@ -16,10 +16,11 @@ Judge each slot from the original question plus `questionContract.slotContracts`
 Every visible section must support that one mission:
 - `coachMission`: one immediate action assembled by the backend for the confirmed target.
 - `coachMove`: mobile/web top mission card derived from `coachMission`.
-- `fixPoints`: backend-derived detailed feedback and correction cards.
+- `coachMove.languageCorrections`: all validated explained changes for a `LANGUAGE_FIX`, capped at 25.
 - `refinementExpressions`: optional expression add-ons.
 - `rewriteWorkspace`: rewrite input seeded from the mission.
 - `modelAnswer`: quiet reference only, not the teaching plan.
+- `visibleFeedback`: the exact exposed snapshot retained for answer history.
 
 ## First Files To Inspect
 
@@ -31,6 +32,7 @@ Read these before changing behavior:
 - `apps/backend/src/main/java/com/writeloop/service/GeminiFeedbackClient.java`
 - `apps/backend/src/main/java/com/writeloop/dto/FeedbackCoachMissionDto.java`
 - `apps/backend/src/main/java/com/writeloop/dto/FeedbackCoachMoveDto.java`
+- `apps/backend/src/main/java/com/writeloop/dto/FeedbackLanguageCorrectionDto.java`
 - `apps/backend/src/main/java/com/writeloop/dto/FeedbackUiDto.java`
 - `apps/mobile/src/app/practice/feedback.tsx`
 - `apps/mobile/src/lib/types.ts`
@@ -62,7 +64,9 @@ Legacy schema guardrail: do not reintroduce these OpenAI output fields unless th
 - `nextStepPractice`
 
 Current replacements:
-- Use `fixPoints` for detailed feedback.
+- Use `languageAssessment.revisionSteps` as the LLM's sole language-revision authority.
+- Each step carries one cumulative full `answerAfter` plus one explanation. The backend derives the final `revisedAnswer` and positioned correction row from the validated steps.
+- Use `coachMove.languageCorrections` for all validated structure/grammar changes, capped at 25.
 - Use `coachMission` / `coachMove` for the one-action rewrite mission.
 - Use `refinementExpressions` for optional expression add-ons.
 
@@ -70,23 +74,26 @@ Current replacements:
 
 When changing feedback logic:
 1. Update the common canonical schema and parser together; OpenAI and Gemini must use the same contract.
-2. Keep LLM authority limited to topic relevance, one atomic `structureAssessment` with at most one authoritative repair, grammar issues with per-issue impact/evidence,
+2. Keep LLM authority limited to topic relevance, `structureAssessment.status`, cumulative full-answer `languageAssessment.revisionSteps`,
    canonical `slotAssessments`, and reference content.
-3. Keep the backend slot decision, `coachMission`, `coachMove.targetSlot`, the first `fixPoint`, and rewrite UI aligned.
+3. Keep the backend decision, `coachMission`, `coachMove`, `languageCorrections`, `revisedAnswer`, and rewrite UI aligned.
 4. For content missions, require complete support for the exact target slot: English/Korean skeletons and at least two phrase choices.
-5. For structure correction, require the complete learner answer and one authoritative full correction in the same `structureAssessment.repair` item; never assemble a final sentence from fragments. For grammar correction, require a direct replacement in `revisedText`.
-6. Do not invent fallback teaching content when the LLM contract is incomplete; return a retryable unavailable response.
-7. Keep reusable phrases and optional starters in `refinementExpressions`.
+5. Diff each cumulative `answerAfter` against the previous complete answer; never ask the LLM to identify a change by an ambiguous source substring.
+6. Require steps in structure, blocking grammar, local grammar order, then left to right. Later steps must preserve earlier corrections, and overlapping repairs must be merged into the earlier step.
+7. Allow at most 25 validated correction spans. Store all of them, show the first four by default, and place the remainder behind an expand/collapse control.
+8. The public `revisedAnswer` may apply only changes represented by those correction rows. Do not silently fix additional errors.
+9. Do not invent fallback teaching content when the LLM contract is incomplete. Language-step violations are unavailable without retry; retryable whole-response or slot-contract violations may be retried once.
+10. Keep reusable phrases and optional starters in `refinementExpressions`.
    Grammar issues are reserved for actual `LOCAL` or `BLOCKING` errors; route optional naturalness alternatives exclusively to `refinementExpressions`.
-8. Do not hide or rewrite `modelAnswer`; expose it as a quiet reference and evaluate quality through regression tests.
+11. Do not hide or rewrite `modelAnswer`; expose it as a quiet reference and evaluate quality through regression tests.
 
 ## Quality Rubric
 
 Use `references/mission-quality-rubric.md` when judging whether feedback is good.
 
 The short version:
-- Derive exactly one `missionKind`: `TASK_RESET`, `STRUCTURE_FIX`, `GRAMMAR_FIX`, `SLOT`, or `COMPLETE`.
-- Apply priority in this order: off-topic, fragment structure, blocking grammar, required slot, local grammar, depth slot, complete.
+- Derive exactly one `missionKind`: `TASK_RESET`, `LANGUAGE_FIX`, `SLOT`, or `COMPLETE`.
+- Apply priority in this order: off-topic, fragment structure, blocking grammar, required slot, local grammar, depth slot, complete. Fragment and either grammar level are exposed as `LANGUAGE_FIX`.
 - Treat `structureAssessment.status=FRAGMENT` as a structure problem only; complete but short or content-thin sentences stay `COMPLETE` and use slot feedback.
 - Treat backend-derived `GENERIC` as unresolved and teach the same slot instead of selecting another detail slot.
 - Never add `status` inside an LLM `slotAssessments` value; status is derived exclusively from the validated `evidence/support` shape.

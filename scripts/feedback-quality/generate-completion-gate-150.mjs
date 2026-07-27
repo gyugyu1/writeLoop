@@ -214,7 +214,7 @@ for (const item of scenarios) {
   cases.push(buildCase(item, "OFF_TOPIC", item.samples.offTopic, ["TASK_RESET"], item.requiredSlots, false, {
     forbiddenFocusTypes: ["GRAMMAR_FIX", "EXPRESSION_POLISH"]
   }));
-  cases.push(buildCase(item, "FRAGMENT", item.samples.fragment, ["STRUCTURE_FIX"], [], false, {
+  cases.push(buildCase(item, "FRAGMENT", item.samples.fragment, ["LANGUAGE_FIX"], [], false, {
     requiresComparison: true
   }));
   cases.push(buildCase(
@@ -233,7 +233,7 @@ for (const item of scenarios) {
     item.samples.generic.targetSlots,
     false
   ));
-  cases.push(buildCase(item, "GRAMMAR", item.samples.grammar, ["GRAMMAR_FIX"], [], false, {
+  cases.push(buildCase(item, "GRAMMAR", item.samples.grammar, ["LANGUAGE_FIX"], [], false, {
     requiresComparison: true,
     forbiddenFocusTypes: ["TASK_RESET", "EXPRESSION_POLISH"]
   }));
@@ -282,8 +282,8 @@ function m(answer, targetSlots) {
 
 function expectedBehavior(category, targetSlots) {
   if (category === "OFF_TOPIC") return "Return TASK_RESET, keep the loop open, and scaffold a direct answer to one required slot.";
-  if (category === "FRAGMENT") return "Choose STRUCTURE_FIX and minimally turn the grounded fragment into a complete sentence.";
-  if (category === "GRAMMAR") return "Choose GRAMMAR_FIX and show a grounded before/after repair.";
+  if (category === "FRAGMENT") return "Choose LANGUAGE_FIX and minimally turn the grounded fragment into a complete sentence.";
+  if (category === "GRAMMAR") return "Choose LANGUAGE_FIX and show a grounded before/after repair.";
   if (category === "COMPLETE") return "Complete the loop without forcing an optional mission.";
   return `Keep the loop open, target ${targetSlots.join(" or ")}, and provide a usable scaffold.`;
 }

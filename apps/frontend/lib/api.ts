@@ -28,6 +28,7 @@ import type {
   PendingSocialRegistration,
   Feedback,
   FeedbackRequest,
+  FeedbackSessionStatus,
   HistorySession,
   LoginRequest,
   PromptHint,
@@ -113,17 +114,33 @@ function normalizeRefinementExpressionItem(
   };
 }
 
-function normalizeFeedbackPayload<T extends { refinementExpressions?: unknown[] | null }>(
+function normalizeFeedbackPayload<
+  T extends {
+    refinementExpressions?: unknown[] | null;
+    visibleFeedback?: {
+      refinementExpressions?: unknown[] | null;
+    } | null;
+  }
+>(
   feedback: T
 ): T {
   const refinementExpressions = (feedback.refinementExpressions ?? [])
     .map((item) => normalizeRefinementExpressionItem(item as never))
     .filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const visibleFeedback = feedback.visibleFeedback
+    ? {
+        ...feedback.visibleFeedback,
+        refinementExpressions: (feedback.visibleFeedback.refinementExpressions ?? [])
+          .map((item) => normalizeRefinementExpressionItem(item as never))
+          .filter((item): item is NonNullable<typeof item> => Boolean(item))
+      }
+    : feedback.visibleFeedback;
 
   return {
     ...feedback,
-    refinementExpressions
-  };
+    refinementExpressions,
+    visibleFeedback
+  } as T;
 }
 
 function normalizePromptItem(prompt: Prompt): Prompt {
@@ -801,6 +818,29 @@ export async function submitFeedback(request: FeedbackRequest): Promise<Feedback
   return normalizeFeedbackPayload(payload);
 }
 
+export async function completeFeedbackSession(
+  sessionId: string,
+  guestId?: string
+): Promise<FeedbackSessionStatus> {
+  const response = await fetch(
+    `${API_BASE}/api/feedback/${encodeURIComponent(sessionId)}/complete`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ guestId })
+    }
+  );
+
+  if (!response.ok) {
+    throw await parseApiError(response, "Failed to finish answer session");
+  }
+
+  return (await response.json()) as FeedbackSessionStatus;
+}
+
 export async function getDiaryEntries(): Promise<DiaryEntry[]> {
   const response = await fetch(`${API_BASE}/api/diary/entries`, {
     cache: "no-store",
@@ -1226,7 +1266,11 @@ export async function getAnswerHistory(): Promise<HistorySession[]> {
     ...session,
     attempts: (session.attempts ?? []).map((attempt) => ({
       ...attempt,
-      feedback: normalizeFeedbackPayload(attempt.feedback),
+      visibleFeedback: attempt.visibleFeedback
+        ? normalizeFeedbackPayload({
+            visibleFeedback: attempt.visibleFeedback
+          }).visibleFeedback
+        : null,
       usedExpressions: (attempt.usedExpressions ?? []).map((expression) => ({
         ...expression,
         source: expression.source ?? "RECOMMENDED"

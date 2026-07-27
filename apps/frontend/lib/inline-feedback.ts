@@ -270,20 +270,20 @@ function findOriginalSlice(
 
 function buildSegmentsFromDiff(
   originalAnswer: string,
-  correctedAnswer: string | null | undefined
+  revisedAnswer: string | null | undefined
 ): RenderedInlineFeedbackSegment[] {
   if (!originalAnswer.trim()) {
     return [];
   }
 
-  const safeCorrectedAnswer =
-    correctedAnswer && correctedAnswer.trim() ? correctedAnswer : originalAnswer;
+  const safeRevisedAnswer =
+    revisedAnswer && revisedAnswer.trim() ? revisedAnswer : originalAnswer;
 
-  if (originalAnswer === safeCorrectedAnswer) {
+  if (originalAnswer === safeRevisedAnswer) {
     return [{ kind: "equal", text: originalAnswer }];
   }
 
-  const operations = buildDiffOperations(tokenize(originalAnswer), tokenize(safeCorrectedAnswer));
+  const operations = buildDiffOperations(tokenize(originalAnswer), tokenize(safeRevisedAnswer));
   const segments: RenderedInlineFeedbackSegment[] = [];
 
   for (let index = 0; index < operations.length; ) {
@@ -434,7 +434,7 @@ function buildSegmentsFromModel(
 
 export function buildInlineFeedbackSegments(
   originalAnswer: string,
-  correctedAnswer: string | null | undefined,
+  revisedAnswer: string | null | undefined,
   inlineFeedback?: FeedbackInlineSegment[] | null
 ): RenderedInlineFeedbackSegment[] {
   const modelSegments = buildSegmentsFromModel(originalAnswer, inlineFeedback);
@@ -442,5 +442,5 @@ export function buildInlineFeedbackSegments(
     return modelSegments;
   }
 
-  return buildSegmentsFromDiff(originalAnswer, correctedAnswer);
+  return buildSegmentsFromDiff(originalAnswer, revisedAnswer);
 }

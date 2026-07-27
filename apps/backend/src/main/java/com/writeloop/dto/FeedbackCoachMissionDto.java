@@ -18,7 +18,8 @@ public record FeedbackCoachMissionDto(
         List<FeedbackSuggestedPhraseDto> suggestedPhrases,
         String placeholderEn,
         String targetHintKo,
-        String successCheckKo
+        String successCheckKo,
+        List<FeedbackLanguageCorrectionDto> languageCorrections
 ) {
     public FeedbackCoachMissionDto(
             String missionType,
@@ -45,7 +46,8 @@ public record FeedbackCoachMissionDto(
                 List.of(),
                 placeholderEn,
                 targetHintKo,
-                successCheckKo
+                successCheckKo,
+                List.of()
         );
     }
 
@@ -76,7 +78,41 @@ public record FeedbackCoachMissionDto(
                 suggestedPhrases,
                 placeholderEn,
                 targetHintKo,
-                successCheckKo
+                successCheckKo,
+                List.of()
+        );
+    }
+
+    public FeedbackCoachMissionDto(
+            String missionType,
+            String title,
+            String originalText,
+            String revisedText,
+            String whyKo,
+            String instructionKo,
+            String exampleEn,
+            String skeletonEn,
+            String skeletonKo,
+            List<FeedbackSuggestedPhraseDto> suggestedPhrases,
+            String placeholderEn,
+            String targetHintKo,
+            String successCheckKo
+    ) {
+        this(
+                missionType,
+                title,
+                originalText,
+                revisedText,
+                whyKo,
+                instructionKo,
+                exampleEn,
+                skeletonEn,
+                skeletonKo,
+                suggestedPhrases,
+                placeholderEn,
+                targetHintKo,
+                successCheckKo,
+                List.of()
         );
     }
 
@@ -94,6 +130,7 @@ public record FeedbackCoachMissionDto(
         placeholderEn = normalize(placeholderEn);
         targetHintKo = normalize(targetHintKo);
         successCheckKo = normalize(successCheckKo);
+        languageCorrections = normalizeLanguageCorrections(languageCorrections);
     }
 
     public FeedbackCoachMoveDto toCoachMove() {
@@ -117,7 +154,8 @@ public record FeedbackCoachMissionDto(
                 directCorrection ? null : skeletonKo,
                 directCorrection ? List.of() : suggestedPhrases,
                 null,
-                targetSlot
+                targetSlot,
+                languageCorrections
         );
     }
 
@@ -137,7 +175,7 @@ public record FeedbackCoachMissionDto(
         }
 
         return switch (normalized.toUpperCase()) {
-            case "MICRO_FIX", "STRUCTURE_FIX", "GRAMMAR_FIX", "FIX_LOCAL_GRAMMAR", "FIX_BLOCKING_GRAMMAR", "EXPRESSION_POLISH" -> true;
+            case "MICRO_FIX", "LANGUAGE_FIX", "STRUCTURE_FIX", "GRAMMAR_FIX", "FIX_LOCAL_GRAMMAR", "FIX_BLOCKING_GRAMMAR", "EXPRESSION_POLISH" -> true;
             default -> false;
         };
     }
@@ -150,6 +188,7 @@ public record FeedbackCoachMissionDto(
 
         return switch (normalized.toUpperCase()) {
             case "MICRO_FIX",
+                    "LANGUAGE_FIX",
                     "STRUCTURE_FIX",
                     "GRAMMAR",
                     "GRAMMAR_FIX",
@@ -185,6 +224,19 @@ public record FeedbackCoachMissionDto(
                 .filter(value -> value != null && value.phrase() != null)
                 .distinct()
                 .limit(6)
+                .toList();
+    }
+
+    private static List<FeedbackLanguageCorrectionDto> normalizeLanguageCorrections(
+            List<FeedbackLanguageCorrectionDto> values
+    ) {
+        if (values == null || values.isEmpty()) {
+            return List.of();
+        }
+
+        return values.stream()
+                .filter(value -> value != null && value.kind() != null)
+                .limit(25)
                 .toList();
     }
 

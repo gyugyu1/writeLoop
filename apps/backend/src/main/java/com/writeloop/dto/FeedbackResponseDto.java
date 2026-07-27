@@ -2,6 +2,7 @@ package com.writeloop.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonAlias;
 
 import java.util.List;
 
@@ -17,7 +18,7 @@ public record FeedbackResponseDto(
         @JsonIgnore List<CorrectionDto> corrections,
         List<InlineFeedbackSegmentDto> inlineFeedback,
         @JsonIgnore List<GrammarFeedbackItemDto> grammarFeedback,
-        String correctedAnswer,
+        @JsonAlias("correctedAnswer") String revisedAnswer,
         List<RefinementExpressionDto> refinementExpressions,
         String modelAnswer,
         String modelAnswerKo,
@@ -28,7 +29,8 @@ public record FeedbackResponseDto(
         FeedbackCoachMoveDto coachMove,
         FeedbackRewriteWorkspaceDto rewriteWorkspace,
         FeedbackCompletionDto completion,
-        FeedbackRevealLaterDto revealLater
+        FeedbackRevealLaterDto revealLater,
+        VisibleFeedbackSnapshotDto visibleFeedback
 ) {
     public FeedbackResponseDto {
         strengths = strengths == null ? List.of() : List.copyOf(strengths);
@@ -37,6 +39,57 @@ public record FeedbackResponseDto(
         grammarFeedback = grammarFeedback == null ? List.of() : List.copyOf(grammarFeedback);
         refinementExpressions = refinementExpressions == null ? List.of() : List.copyOf(refinementExpressions);
         usedExpressions = usedExpressions == null ? List.of() : List.copyOf(usedExpressions);
+    }
+
+    public FeedbackResponseDto(
+            String promptId,
+            String sessionId,
+            int attemptNo,
+            boolean loopComplete,
+            String completionMessage,
+            String summary,
+            List<String> strengths,
+            List<CorrectionDto> corrections,
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            String revisedAnswer,
+            List<RefinementExpressionDto> refinementExpressions,
+            String modelAnswer,
+            String modelAnswerKo,
+            String rewriteChallenge,
+            List<CoachExpressionUsageDto> usedExpressions,
+            FeedbackUiDto ui,
+            FeedbackLoopDto loop,
+            FeedbackCoachMoveDto coachMove,
+            FeedbackRewriteWorkspaceDto rewriteWorkspace,
+            FeedbackCompletionDto completion,
+            FeedbackRevealLaterDto revealLater
+    ) {
+        this(
+                promptId,
+                sessionId,
+                attemptNo,
+                loopComplete,
+                completionMessage,
+                summary,
+                strengths,
+                corrections,
+                inlineFeedback,
+                grammarFeedback,
+                revisedAnswer,
+                refinementExpressions,
+                modelAnswer,
+                modelAnswerKo,
+                rewriteChallenge,
+                usedExpressions,
+                ui,
+                loop,
+                coachMove,
+                rewriteWorkspace,
+                completion,
+                revealLater,
+                null
+        );
     }
 
     public FeedbackResponseDto withUi(FeedbackUiDto nextUi) {
@@ -51,7 +104,7 @@ public record FeedbackResponseDto(
                 corrections,
                 inlineFeedback,
                 grammarFeedback,
-                correctedAnswer,
+                revisedAnswer,
                 refinementExpressions,
                 modelAnswer,
                 modelAnswerKo,
@@ -62,7 +115,8 @@ public record FeedbackResponseDto(
                 coachMove,
                 rewriteWorkspace,
                 completion,
-                revealLater
+                revealLater,
+                visibleFeedback
         );
     }
 
@@ -84,7 +138,7 @@ public record FeedbackResponseDto(
                 corrections,
                 inlineFeedback,
                 grammarFeedback,
-                correctedAnswer,
+                revisedAnswer,
                 refinementExpressions,
                 modelAnswer,
                 modelAnswerKo,
@@ -95,7 +149,36 @@ public record FeedbackResponseDto(
                 nextCoachMove,
                 nextRewriteWorkspace,
                 nextCompletion,
-                nextRevealLater
+                nextRevealLater,
+                visibleFeedback
+        );
+    }
+
+    public FeedbackResponseDto withVisibleFeedback(VisibleFeedbackSnapshotDto nextVisibleFeedback) {
+        return new FeedbackResponseDto(
+                promptId,
+                sessionId,
+                attemptNo,
+                loopComplete,
+                completionMessage,
+                summary,
+                strengths,
+                corrections,
+                inlineFeedback,
+                grammarFeedback,
+                revisedAnswer,
+                refinementExpressions,
+                modelAnswer,
+                modelAnswerKo,
+                rewriteChallenge,
+                usedExpressions,
+                ui,
+                loop,
+                coachMove,
+                rewriteWorkspace,
+                completion,
+                revealLater,
+                nextVisibleFeedback
         );
     }
 }

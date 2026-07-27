@@ -14,43 +14,20 @@ import {
 } from "../lib/api";
 import { clearHomeDraftForLogin } from "../lib/auth-flow";
 import { getDifficultyLabel, normalizeDailyDifficulty } from "../lib/difficulty";
-import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
-import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import { clearAllLocalWritingDrafts } from "../lib/home-writing-drafts";
-import { clearAllIncompleteLoops } from "../lib/incomplete-loop";
-import type { AuthUser, DailyDifficulty, HistorySession, SavedExpression, TodayWritingStatus } from "../lib/types";
+import { clearAllIncompleteLoops, saveIncompleteLoop } from "../lib/incomplete-loop";
+import type {
+  AuthUser,
+  DailyDifficulty,
+  Feedback,
+  HistorySession,
+  SavedExpression,
+  TodayWritingStatus
+} from "../lib/types";
 import styles from "./auth-page.module.css";
 
 type MyPageTab = "account" | "writing";
 type WritingContentTab = "history" | "expressions";
-type HistoryDiffSegment = {
-  text: string;
-  changed: boolean;
-};
-
-type HistoryComparisonView = {
-  initialAttempt: HistorySession["attempts"][number];
-  rewriteAttempt: HistorySession["attempts"][number];
-  initialSegments: HistoryDiffSegment[];
-  rewriteSegments: HistoryDiffSegment[];
-  changedChunkCount: number;
-  addedWordCount: number;
-  removedWordCount: number;
-  beforeWordCount: number;
-  afterWordCount: number;
-};
-
-type HistoryTextComparison = {
-  beforeSegments: HistoryDiffSegment[];
-  afterSegments: HistoryDiffSegment[];
-  changedChunkCount: number;
-  addedWordCount: number;
-  removedWordCount: number;
-  beforeWordCount: number;
-  afterWordCount: number;
-};
-
-const ATTEMPT_USED_EXPRESSION_PREVIEW_COUNT = 4;
 const TAG_PRACTICE_EXPRESSION_LIMIT = 5;
 
 function formatHistoryDateKey(dateTime: string) {
@@ -78,160 +55,6 @@ function formatHistoryTime(dateTime: string) {
   }).format(new Date(dateTime));
 }
 
-function buildHistoryDiffUnits(text: string) {
-  const tokens = text.match(/\s+|[^\s]+/g) ?? [];
-  const units: Array<{ text: string; token: string }> = [];
-  let pendingWhitespace = "";
-
-  for (const part of tokens) {
-    if (/^\s+$/.test(part)) {
-      pendingWhitespace += part;
-      continue;
-    }
-
-    units.push({
-      text: pendingWhitespace + part,
-      token: part
-    });
-    pendingWhitespace = "";
-  }
-
-  if (pendingWhitespace && units.length > 0) {
-    units[units.length - 1] = {
-      ...units[units.length - 1],
-      text: units[units.length - 1].text + pendingWhitespace
-    };
-  }
-
-  return units;
-}
-
-function mergeHistoryDiffSegments(segments: HistoryDiffSegment[]) {
-  return segments.reduce<HistoryDiffSegment[]>((accumulator, segment) => {
-    if (!segment.text) {
-      return accumulator;
-    }
-
-    const previous = accumulator[accumulator.length - 1];
-    if (previous && previous.changed === segment.changed) {
-      previous.text += segment.text;
-      return accumulator;
-    }
-
-    accumulator.push({ ...segment });
-    return accumulator;
-  }, []);
-}
-
-function buildHistoryTextComparison(beforeText: string, afterText: string): HistoryTextComparison | null {
-  const beforeUnits = buildHistoryDiffUnits(beforeText);
-  const afterUnits = buildHistoryDiffUnits(afterText);
-
-  if (beforeUnits.length === 0 || afterUnits.length === 0) {
-    return null;
-  }
-
-  const lcs = Array.from({ length: beforeUnits.length + 1 }, () =>
-    Array<number>(afterUnits.length + 1).fill(0)
-  );
-
-  for (let leftIndex = beforeUnits.length - 1; leftIndex >= 0; leftIndex -= 1) {
-    for (let rightIndex = afterUnits.length - 1; rightIndex >= 0; rightIndex -= 1) {
-      if (beforeUnits[leftIndex].token === afterUnits[rightIndex].token) {
-        lcs[leftIndex][rightIndex] = lcs[leftIndex + 1][rightIndex + 1] + 1;
-      } else {
-        lcs[leftIndex][rightIndex] = Math.max(
-          lcs[leftIndex + 1][rightIndex],
-          lcs[leftIndex][rightIndex + 1]
-        );
-      }
-    }
-  }
-
-  const beforeSegments: HistoryDiffSegment[] = [];
-  const afterSegments: HistoryDiffSegment[] = [];
-  let changedChunkCount = 0;
-  let addedWordCount = 0;
-  let removedWordCount = 0;
-  let leftCursor = 0;
-  let rightCursor = 0;
-
-  while (leftCursor < beforeUnits.length && rightCursor < afterUnits.length) {
-    if (beforeUnits[leftCursor].token === afterUnits[rightCursor].token) {
-      beforeSegments.push({ text: beforeUnits[leftCursor].text, changed: false });
-      afterSegments.push({ text: afterUnits[rightCursor].text, changed: false });
-      leftCursor += 1;
-      rightCursor += 1;
-      continue;
-    }
-
-    if (lcs[leftCursor + 1][rightCursor] >= lcs[leftCursor][rightCursor + 1]) {
-      beforeSegments.push({ text: beforeUnits[leftCursor].text, changed: true });
-      changedChunkCount += 1;
-      removedWordCount += 1;
-      leftCursor += 1;
-      continue;
-    }
-
-    afterSegments.push({ text: afterUnits[rightCursor].text, changed: true });
-    changedChunkCount += 1;
-    addedWordCount += 1;
-    rightCursor += 1;
-  }
-
-  while (leftCursor < beforeUnits.length) {
-    beforeSegments.push({ text: beforeUnits[leftCursor].text, changed: true });
-    changedChunkCount += 1;
-    removedWordCount += 1;
-    leftCursor += 1;
-  }
-
-  while (rightCursor < afterUnits.length) {
-    afterSegments.push({ text: afterUnits[rightCursor].text, changed: true });
-    changedChunkCount += 1;
-    addedWordCount += 1;
-    rightCursor += 1;
-  }
-
-  return {
-    beforeSegments: mergeHistoryDiffSegments(beforeSegments),
-    afterSegments: mergeHistoryDiffSegments(afterSegments),
-    changedChunkCount,
-    addedWordCount,
-    removedWordCount,
-    beforeWordCount: beforeUnits.length,
-    afterWordCount: afterUnits.length
-  };
-}
-
-function buildHistoryComparisonView(session: HistorySession): HistoryComparisonView | null {
-  const initialAttempt =
-    session.attempts.find((attempt) => attempt.attemptType === "INITIAL") ?? session.attempts[0];
-  const rewriteAttempts = session.attempts.filter((attempt) => attempt.attemptType === "REWRITE");
-  const rewriteAttempt = rewriteAttempts[rewriteAttempts.length - 1];
-
-  if (!initialAttempt || !rewriteAttempt) {
-    return null;
-  }
-
-  const textComparison = buildHistoryTextComparison(initialAttempt.answerText, rewriteAttempt.answerText);
-
-  if (!textComparison) {
-    return null;
-  }
-
-  return {
-    initialAttempt,
-    rewriteAttempt,
-    initialSegments: textComparison.beforeSegments,
-    rewriteSegments: textComparison.afterSegments,
-    changedChunkCount: textComparison.changedChunkCount,
-    addedWordCount: textComparison.addedWordCount,
-    removedWordCount: textComparison.removedWordCount,
-    beforeWordCount: textComparison.beforeWordCount,
-    afterWordCount: textComparison.afterWordCount
-  };
-}
 function getLoginMethodLabel(user: AuthUser) {
   switch (user.socialProvider) {
     case "NAVER":
@@ -274,6 +97,40 @@ function formatHistoryDateHeading(dateKey: string) {
 
 function getLatestAttempt(session: HistorySession) {
   return session.attempts[session.attempts.length - 1];
+}
+
+function buildHistoryFeedback(session: HistorySession): Feedback | null {
+  const attempt = getLatestAttempt(session);
+  if (!attempt?.visibleFeedback) {
+    return null;
+  }
+
+  const visibleFeedback = attempt.visibleFeedback;
+  const readyToFinish = visibleFeedback.state === "READY_TO_FINISH";
+  return {
+    promptId: session.promptId,
+    sessionId: session.sessionId,
+    attemptNo: attempt.attemptNo,
+    loopComplete: readyToFinish,
+    completionMessage: visibleFeedback.completion?.headline ?? null,
+    summary: attempt.feedbackSummary ?? "",
+    strengths: visibleFeedback.strength ? [visibleFeedback.strength] : [],
+    inlineFeedback: null,
+    revisedAnswer: null,
+    refinementExpressions: visibleFeedback.refinementExpressions ?? [],
+    modelAnswer: visibleFeedback.modelAnswer ?? "",
+    modelAnswerKo: visibleFeedback.modelAnswerKo ?? null,
+    rewriteChallenge:
+      visibleFeedback.coachMove?.instruction ?? visibleFeedback.coachMove?.focus ?? "",
+    coachMove: visibleFeedback.coachMove ?? null,
+    completion: visibleFeedback.completion ?? null,
+    visibleFeedback,
+    loop: {
+      status: visibleFeedback.state,
+      nextAction: readyToFinish ? "finish" : "rewrite",
+      nextActionLabel: readyToFinish ? "루프 완료하기" : "다시 써보기"
+    }
+  };
 }
 
 function getAttemptLabel(value?: string | null) {
@@ -607,6 +464,8 @@ export function MyPageClient() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openDates, setOpenDates] = useState<Record<string, boolean>>({});
+  const [expandedLanguageCorrectionAttempts, setExpandedLanguageCorrectionAttempts] =
+    useState<Record<number, boolean>>({});
   const [selectedHistoryDate, setSelectedHistoryDate] = useState("");
   const [profileDisplayName, setProfileDisplayName] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -627,7 +486,6 @@ export function MyPageClient() {
   const [selectedSavedExpressionTag, setSelectedSavedExpressionTag] = useState<string | null>(null);
   const [selectedSavedExpressionTagAnchorId, setSelectedSavedExpressionTagAnchorId] = useState<number | null>(null);
   const [selectedSession, setSelectedSession] = useState<HistorySession | null>(null);
-  const [expandedAttemptExpressions, setExpandedAttemptExpressions] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     function syncTabFromUrl() {
@@ -903,19 +761,6 @@ export function MyPageClient() {
   }, [historyDates, selectedHistoryDate]);
 
   useEffect(() => {
-    const validAttemptIds = new Set<string>(
-      history.flatMap((session) => session.attempts.map((attempt) => String(attempt.id)))
-    );
-
-    setExpandedAttemptExpressions((current) => {
-      const next = Object.fromEntries(
-        Object.entries(current).filter(([attemptId]) => validAttemptIds.has(attemptId))
-      );
-      return Object.keys(next).length === Object.keys(current).length ? current : next;
-    });
-  }, [history]);
-
-  useEffect(() => {
     const validSavedExpressionIds = new Set(savedExpressions.map((item) => String(item.id)));
 
     setOpenSavedExpressionPrompts((current) => {
@@ -980,261 +825,157 @@ export function MyPageClient() {
     }));
   }
 
-  function toggleAttemptExpressions(attemptId: string) {
-    setExpandedAttemptExpressions((current) => ({
-      ...current,
-      [attemptId]: !current[attemptId]
-    }));
-  }
-
-  function shouldCollapseAttemptExpressions(attempt: HistorySession["attempts"][number]) {
-    return attempt.usedExpressions.length > ATTEMPT_USED_EXPRESSION_PREVIEW_COUNT;
-  }
-
-  function getVisibleAttemptExpressions(attempt: HistorySession["attempts"][number]) {
-    const attemptKey = String(attempt.id);
-    if (!shouldCollapseAttemptExpressions(attempt) || expandedAttemptExpressions[attemptKey]) {
-      return attempt.usedExpressions;
-    }
-    return attempt.usedExpressions.slice(0, ATTEMPT_USED_EXPRESSION_PREVIEW_COUNT);
-  }
-
-  function getHiddenAttemptExpressionCount(attempt: HistorySession["attempts"][number]) {
-    return Math.max(0, attempt.usedExpressions.length - getVisibleAttemptExpressions(attempt).length);
-  }
-function renderWritingHistoryFeedbackDetails(attempt?: HistorySession["attempts"][number]) {
-    if (!attempt) {
-      return null;
-    }
-
-    const suggestedExpressions = filterSuggestedRefinementExpressions(
-      attempt.feedback.refinementExpressions,
-      attempt.answerText,
-      attempt.feedback.correctedAnswer
-    );
-    const fixPoints =
-      attempt.feedback.ui?.fixPoints?.filter((point) => {
-        if (!point || point.kind === "EXPRESSION") {
-          return false;
-        }
-
-        return Boolean(
-          point.headline?.trim() ||
-            point.originalText?.trim() ||
-            point.revisedText?.trim() ||
-            point.supportText?.trim()
-        );
-      }) ?? [];
-    const correctionCards =
-      fixPoints.length > 0
-        ? fixPoints.map((point, index) => ({
-            key: `${point.headline ?? point.originalText ?? point.revisedText ?? index}`,
-            title: point.headline?.trim() || point.originalText?.trim() || "한 번 더 다듬어 보기",
-            body: point.supportText?.trim() || point.revisedText?.trim() || ""
-          }))
-        : (attempt.feedback.inlineFeedback ?? [])
-            .filter(
-              (segment) =>
-                segment.type !== "KEEP" &&
-                Boolean(segment.originalText?.trim() || segment.revisedText?.trim())
-            )
-            .map((segment, index) => ({
-              key: `inline-${segment.originalText}-${segment.revisedText}-${index}`,
-              title: segment.originalText?.trim() || segment.revisedText?.trim() || "한 번 더 다듬어 보기",
-              body:
-                segment.originalText?.trim() && segment.revisedText?.trim()
-                  ? `${segment.originalText} -> ${segment.revisedText}`
-                  : segment.revisedText?.trim() || segment.originalText?.trim() || ""
-            }));
-    const feedbackSummary = attempt.feedback.summary?.trim() ?? "";
-    const modelAnswer = attempt.feedback.modelAnswer?.trim() ?? "";
-    const modelAnswerKo = attempt.feedback.modelAnswerKo?.trim() ?? "";
-    const rewriteChallenge = attempt.feedback.rewriteChallenge?.trim() ?? "";
-    const completionMessage = attempt.feedback.completionMessage?.trim() ?? "";
-    const comparisonTargetText = modelAnswer || attempt.feedback.correctedAnswer?.trim() || "";
-    const comparisonTargetLabel = modelAnswer ? "예시 답변" : "다듬은 답안";
-    const answerComparison = buildHistoryTextComparison(attempt.answerText, comparisonTargetText);
-    const hasComparisonSection = Boolean(answerComparison) || Boolean(comparisonTargetText);
-    const hasModelAnswerSection = hasComparisonSection || Boolean(modelAnswerKo) || suggestedExpressions.length > 0;
-    const hasRefineSection = correctionCards.length > 0;
-    const hasStrengthsSection = attempt.feedback.strengths.length > 0;
-    const shouldShowSummaryCard = Boolean(feedbackSummary) && !hasStrengthsSection;
-    const hasNextLoopSection = Boolean(rewriteChallenge) || Boolean(completionMessage);
-
+function renderWritingHistoryVisibleFeedback(attempt: HistorySession["attempts"][number]) {
+  const snapshot = attempt.visibleFeedback;
+  if (!snapshot) {
     return (
-      <details className={styles.writingHistoryFeedbackDetails}>
-        <summary>
-          <span>피드백 전문 보기</span>
-          <span className={`material-symbols-outlined ${styles.writingHistoryFeedbackSummaryIcon}`}>
-            expand_more
-          </span>
-        </summary>
-
-        <div className={styles.writingHistoryFeedbackBody}>
-          <div className={styles.writingHistoryFeedbackGrid}>
-            {hasModelAnswerSection || shouldShowSummaryCard ? (
-              <div className={`${styles.writingHistoryFeedbackColumn} ${styles.writingHistoryFeedbackColumnPrimary}`}>
-                {hasComparisonSection ? (
-                  <section
-                    className={`${styles.writingHistoryFeedbackCard} ${styles.writingHistoryFeedbackComparisonCard}`}
-                  >
-                    <span className={styles.writingHistoryFeedbackLabel}>내 답변 vs 예시 답변</span>
-                    <div className={styles.writingHistoryFeedbackCompareGrid}>
-                      <div className={styles.writingHistoryFeedbackCompareBlock}>
-                        <h5>내 답변</h5>
-                        <div className={styles.writingHistoryFeedbackCompareBody}>
-                          {answerComparison
-                            ? answerComparison.beforeSegments.map((segment, index) => (
-                                <span
-                                  key={`history-before-${attempt.id}-${index}`}
-                                  className={
-                                    segment.changed ? styles.historyComparisonChangedBefore : undefined
-                                  }
-                                >
-                                  {segment.text}
-                                </span>
-                              ))
-                            : attempt.answerText}
-                        </div>
-                      </div>
-
-                      <div
-                        className={`${styles.writingHistoryFeedbackCompareBlock} ${styles.writingHistoryFeedbackCompareBlockAccent}`}
-                      >
-                        <h5>{comparisonTargetLabel}</h5>
-                        <div
-                          className={`${styles.writingHistoryFeedbackCompareBody} ${styles.writingHistoryFeedbackCompareBodyAccent}`}
-                        >
-                          {answerComparison
-                            ? answerComparison.afterSegments.map((segment, index) => (
-                                <span
-                                  key={`history-after-${attempt.id}-${index}`}
-                                  className={segment.changed ? styles.historyComparisonChangedAfter : undefined}
-                                >
-                                  {segment.text}
-                                </span>
-                              ))
-                            : comparisonTargetText}
-                        </div>
-                      </div>
-                    </div>
-                    {modelAnswerKo ? (
-                      <p className={styles.writingHistoryFeedbackCompareTranslation}>{`해석: ${modelAnswerKo}`}</p>
-                    ) : null}
-                  </section>
-                ) : null}
-
-                {suggestedExpressions.length > 0 ? (
-                  <section className={styles.writingHistoryFeedbackCard}>
-                    <span className={styles.writingHistoryFeedbackLabel}>가져오면 좋은 표현</span>
-                    <div className={styles.writingHistoryFeedbackSuggestionSection}>
-                      <div className={styles.writingHistoryFeedbackSuggestionList}>
-                        {suggestedExpressions.map((expression, index) => (
-                          <span
-                            key={`${expression.expression}-${index}`}
-                            className={styles.writingHistoryFeedbackSuggestionChip}
-                          >
-                            {expression.expression}
-                          </span>
-                        ))}
-                      </div>
-                      <div className={styles.writingHistoryFeedbackExpressionList}>
-                        {suggestedExpressions.map((expression, index) => (
-                          <article
-                            key={`${expression.expression}-detail-${index}`}
-                            className={styles.writingHistoryFeedbackExpressionItem}
-                          >
-                            <strong>{expression.expression}</strong>
-                            {expression.meaningKo ? (
-                              <p className={styles.writingHistoryFeedbackExpressionMeaning}>
-                                {expression.meaningKo}
-                              </p>
-                            ) : null}
-                            {expression.guidanceKo ? <p>{expression.guidanceKo}</p> : null}
-                            {expression.exampleEn ? (
-                              <p className={styles.writingHistoryFeedbackExpressionExample}>
-                                {expression.exampleEn}
-                              </p>
-                            ) : null}
-                            {expression.exampleKo ? <p>{expression.exampleKo}</p> : null}
-                          </article>
-                        ))}
-                      </div>
-                    </div>
-                  </section>
-                ) : null}
-
-                {shouldShowSummaryCard ? (
-                  <section className={styles.writingHistoryFeedbackCard}>
-                    <span className={styles.writingHistoryFeedbackLabel}>핵심 피드백</span>
-                    <p>{feedbackSummary}</p>
-                  </section>
-                ) : null}
-              </div>
-            ) : null}
-
-            {hasStrengthsSection || hasRefineSection || hasNextLoopSection ? (
-              <div className={`${styles.writingHistoryFeedbackColumn} ${styles.writingHistoryFeedbackColumnSecondary}`}>
-                {hasStrengthsSection ? (
-                  <section className={styles.writingHistoryFeedbackCard}>
-                    <span className={styles.writingHistoryFeedbackLabel}>잘한 점</span>
-                    <ul className={styles.writingHistoryFeedbackBulletList}>
-                      {attempt.feedback.strengths.map((strength) => (
-                        <li key={strength}>{strength}</li>
-                      ))}
-                    </ul>
-                  </section>
-                ) : null}
-
-                {hasRefineSection ? (
-                  <section className={styles.writingHistoryFeedbackCard}>
-                    <span className={styles.writingHistoryFeedbackLabel}>고쳐야 할 점</span>
-                    <div className={styles.writingHistoryFeedbackCorrectionList}>
-                      {correctionCards.map((card) => (
-                        <article key={card.key} className={styles.writingHistoryFeedbackCorrectionItem}>
-                          <strong>{card.title}</strong>
-                          {card.body ? <p>{card.body}</p> : null}
-                        </article>
-                      ))}
-                    </div>
-                  </section>
-                ) : null}
-
-                {hasNextLoopSection ? (
-                  <section className={styles.writingHistoryFeedbackCard}>
-                    <span className={styles.writingHistoryFeedbackLabel}>다시쓰기 가이드</span>
-                    {rewriteChallenge ? <p>{rewriteChallenge}</p> : null}
-                    {false ? (
-                      <div className={styles.writingHistoryFeedbackRewriteSuggestions}>
-                        <strong>이런 문장으로 확장해 보세요</strong>
-                        <ul className={styles.writingHistoryFeedbackBulletList}>
-                          {([] as Array<{ key: string; english: string; meaningKo: string; noteKo: string }>).map((suggestion) => (
-                            <li key={suggestion.key}>
-                              <span className={styles.writingHistoryFeedbackRewriteSuggestionEn}>
-                                {suggestion.english}
-                              </span>
-                              {suggestion.meaningKo ? <span>{suggestion.meaningKo}</span> : null}
-                              {suggestion.noteKo ? <span>{suggestion.noteKo}</span> : null}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                    {completionMessage ? (
-                      <div className={styles.writingHistoryFeedbackCompletion}>
-                        <strong>완료 안내</strong>
-                        <p>{completionMessage}</p>
-                      </div>
-                    ) : null}
-                  </section>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        </div>
-      </details>
+      <div className={styles.historyVisibleFeedbackNotice}>
+        이전 형식의 기록이라 당시 노출된 피드백을 정확히 복원할 수 없어요.
+      </div>
     );
   }
+
+  const coachMove = snapshot.coachMove;
+  const expressions = (snapshot.refinementExpressions ?? []).slice(0, 2);
+  const allLanguageCorrections = coachMove?.languageCorrections ?? [];
+  const areAllLanguageCorrectionsVisible =
+    expandedLanguageCorrectionAttempts[attempt.id] ?? false;
+  const languageCorrections = areAllLanguageCorrectionsVisible
+    ? allLanguageCorrections
+    : allLanguageCorrections.slice(0, 4);
+  const hiddenLanguageCorrectionCount = Math.max(
+    0,
+    allLanguageCorrections.length - 4
+  );
+  const isLanguageFix = coachMove?.focusType?.trim().toUpperCase() === "LANGUAGE_FIX";
+  const coachPhrases = (coachMove?.suggestedPhrases ?? [])
+    .map((phrase) =>
+      typeof phrase === "string"
+        ? { phrase: phrase.trim(), meaningKo: "" }
+        : {
+            phrase: phrase?.phrase?.trim() ?? "",
+            meaningKo: phrase?.meaningKo?.trim() ?? ""
+          }
+    )
+    .filter((phrase) => phrase.phrase);
+
+  return (
+    <div className={styles.historyVisibleFeedbackStack}>
+      {snapshot.strength ? (
+        <section className={styles.historyVisibleStrength}>
+          <span>잘한 점</span>
+          <p>{snapshot.strength}</p>
+        </section>
+      ) : null}
+
+      {snapshot.state === "NEEDS_REWRITE" && coachMove ? (
+        <section className={styles.historyVisibleCoach}>
+          <strong>{coachMove.focus?.trim() || "다음에 반영할 한 가지"}</strong>
+          {coachMove.before?.trim() || coachMove.after?.trim() ? (
+            <div className={styles.historyVisibleCoachSwap}>
+              {coachMove.before?.trim() ? (
+                <div>
+                  <span>지금</span>
+                  <p>{coachMove.before}</p>
+                </div>
+              ) : null}
+              {coachMove.after?.trim() ? (
+                <div>
+                  <span>{isLanguageFix ? "이번에 고친 문장" : "적용"}</span>
+                  <p>{coachMove.after}</p>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {languageCorrections.length > 0 ? (
+            <div className={styles.historyVisibleCorrectionList}>
+              {languageCorrections.map((correction, index) => (
+                <article key={`${correction.kind}-${correction.before ?? ""}-${index}`}>
+                  <span>{correction.label}</span>
+                  <strong>
+                    {correction.before?.trim() ? `${correction.before} → ` : ""}
+                    {correction.after}
+                  </strong>
+                  <p>{correction.reason}</p>
+                </article>
+              ))}
+              {hiddenLanguageCorrectionCount > 0 ? (
+                <button
+                  type="button"
+                  className={styles.historyVisibleCorrectionToggle}
+                  aria-expanded={areAllLanguageCorrectionsVisible}
+                  onClick={() =>
+                    setExpandedLanguageCorrectionAttempts((current) => ({
+                      ...current,
+                      [attempt.id]: !areAllLanguageCorrectionsVisible
+                    }))
+                  }
+                >
+                  {areAllLanguageCorrectionsVisible
+                    ? "추가 교정 접기"
+                    : `교정 ${hiddenLanguageCorrectionCount}개 더 보기`}
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+          {coachMove.why?.trim() ? <p>{coachMove.why}</p> : null}
+          {coachMove.instruction?.trim() ? (
+            <div className={styles.historyVisibleInstruction}>
+              <span>다시 쓸 때</span>
+              <p>{coachMove.instruction}</p>
+            </div>
+          ) : null}
+          {coachMove.skeletonEn?.trim() ? (
+            <div className={styles.historyVisibleInstruction}>
+              <span>문장 틀</span>
+              <p>{coachMove.skeletonEn}</p>
+              {coachMove.skeletonKo?.trim() ? <p>{coachMove.skeletonKo}</p> : null}
+            </div>
+          ) : null}
+          {coachPhrases.length > 0 ? (
+            <div className={styles.historyVisibleExpressionList}>
+              {coachPhrases.map((phrase) => (
+                <span key={phrase.phrase}>
+                  <strong>{phrase.phrase}</strong>
+                  {phrase.meaningKo ? <small>{phrase.meaningKo}</small> : null}
+                </span>
+              ))}
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {snapshot.state === "READY_TO_FINISH" ? (
+        <section className={styles.historyVisibleReady}>
+          <span>완료할 준비가 됐어요</span>
+          <strong>
+            {snapshot.completion?.headline?.trim() ||
+              snapshot.completion?.improvedPoint?.trim() ||
+              "이 답변으로 루프를 마칠 수 있어요."}
+          </strong>
+          {expressions.length > 0 ? (
+            <div className={styles.historyVisibleExpressionList}>
+              {expressions.map((expression) => (
+                <span key={expression.expression}>
+                  <strong>{expression.expression}</strong>
+                  {expression.meaningKo ? <small>{expression.meaningKo}</small> : null}
+                </span>
+              ))}
+            </div>
+          ) : null}
+          {snapshot.modelAnswer?.trim() ? (
+            <details className={styles.historyVisibleModelAnswer}>
+              <summary>모범답안 펼쳐보기</summary>
+              <p>{snapshot.modelAnswer}</p>
+              {snapshot.modelAnswerKo ? <p>{snapshot.modelAnswerKo}</p> : null}
+            </details>
+          ) : null}
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
 function renderWritingHistoryAttemptTimeline(session: HistorySession) {
     return (
       <div className={styles.historyAttemptList}>
@@ -1257,39 +998,16 @@ function renderWritingHistoryAttemptTimeline(session: HistorySession) {
               </strong>
               <span>
                 {attempt.attemptType === "INITIAL" ? "초안" : "다시쓰기"} ·{" "}
-                {getFeedbackLevelInfo(attempt.feedback.loopComplete).label} ·{" "}
+                {attempt.visibleFeedback?.state === "READY_TO_FINISH"
+                  ? "완료 준비"
+                  : "한 번 더 쓰기"}{" "}
+                ·{" "}
                 {formatHistoryTime(attempt.createdAt)}
               </span>
             </div>
 
             <p className={styles.historyAnswer}>{attempt.answerText}</p>
-            {attempt.feedbackSummary ? <p className={styles.historySummary}>{attempt.feedbackSummary}</p> : null}
-
-            {attempt.usedExpressions.length > 0 ? (
-              <div className={styles.historyUsedExpressionSection}>
-                <span className={styles.historyUsedExpressionLabel}>이번 답변에서 쓴 표현</span>
-                <div className={styles.historyUsedExpressionList}>
-                  {getVisibleAttemptExpressions(attempt).map((expression) => (
-                    <span key={`${attempt.id}-${expression.expression}`} className={styles.historyUsedExpressionChip}>
-                      {expression.expression}
-                    </span>
-                  ))}
-                </div>
-                {shouldCollapseAttemptExpressions(attempt) ? (
-                  <button
-                    type="button"
-                    className={styles.historyInlineToggle}
-                    onClick={() => toggleAttemptExpressions(String(attempt.id))}
-                  >
-                    {expandedAttemptExpressions[String(attempt.id)]
-                      ? "표현 접기"
-                      : `표현 ${getHiddenAttemptExpressionCount(attempt)}개 더 보기`}
-                  </button>
-                ) : null}
-              </div>
-            ) : null}
-
-            {renderWritingHistoryFeedbackDetails(attempt)}
+            {renderWritingHistoryVisibleFeedback(attempt)}
           </article>
         ))}
       </div>
@@ -1297,9 +1015,6 @@ function renderWritingHistoryAttemptTimeline(session: HistorySession) {
   }
 function renderWritingHistoryExpandedContent(
     session: HistorySession,
-    comparisonView: HistoryComparisonView | null,
-    latestAttempt: HistorySession["attempts"][number] | undefined,
-    improvedText: string,
     promptLabel: string,
     promptText: string,
     containerClassName: string
@@ -1311,51 +1026,17 @@ function renderWritingHistoryExpandedContent(
           <p>{promptText}</p>
         </div>
 
-        <div className={styles.writingHistoryFeaturedColumns}>
-          <section className={styles.writingHistoryDraftColumn}>
-            <h4>내 초안</h4>
-            <div className={styles.writingHistoryDraftBody}>
-              {comparisonView
-                ? comparisonView.initialSegments.map((segment, index) => (
-                    <span
-                      key={`initial-row-${comparisonView.initialAttempt.id}-${index}`}
-                      className={segment.changed ? styles.historyComparisonChangedBefore : undefined}
-                    >
-                      {segment.text}
-                    </span>
-                  ))
-                : session.attempts[0]?.answerText}
-            </div>
-          </section>
-
-          <section className={styles.writingHistoryDraftColumn}>
-            <h4>
-              <span className="material-symbols-outlined">magic_button</span>
-              최종 답안
-            </h4>
-            <div className={`${styles.writingHistoryDraftBody} ${styles.writingHistoryDraftBodyImproved}`}>
-              {comparisonView
-                ? comparisonView.rewriteSegments.map((segment, index) => (
-                    <span
-                      key={`rewrite-row-${comparisonView.rewriteAttempt.id}-${index}`}
-                      className={segment.changed ? styles.historyComparisonChangedAfter : undefined}
-                    >
-                      {segment.text}
-                    </span>
-                  ))
-                : improvedText}
-            </div>
-          </section>
-        </div>
-
-        {latestAttempt?.feedbackSummary ? (
-          <div className={styles.writingHistoryExpandedSummary}>
-            <span className="material-symbols-outlined">auto_awesome</span>
-            <p>{latestAttempt.feedbackSummary}</p>
-          </div>
-        ) : null}
-
         {renderWritingHistoryAttemptTimeline(session)}
+
+        {session.status !== "COMPLETED" && getLatestAttempt(session)?.visibleFeedback ? (
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={() => handleResumeHistorySession(session)}
+          >
+            {session.status === "READY_TO_FINISH" ? "완료 화면으로 이어가기" : "이어서 다시 쓰기"}
+          </button>
+        ) : null}
       </div>
     );
   }
@@ -1495,6 +1176,48 @@ function renderWritingHistoryExpandedContent(
 
   function handleCloseSelectedSession() {
     setSelectedSession(null);
+  }
+
+  function handleResumeHistorySession(session: HistorySession) {
+    if (!currentUser) {
+      return;
+    }
+
+    const latestAttempt = getLatestAttempt(session);
+    const restoredFeedback = buildHistoryFeedback(session);
+    if (!latestAttempt || !restoredFeedback) {
+      setHistoryError("이전 형식의 기록은 당시 피드백을 정확히 복원할 수 없어요.");
+      return;
+    }
+
+    saveIncompleteLoop(
+      {
+        promptId: session.promptId,
+        difficulty: normalizeDailyDifficulty(session.difficulty),
+        step: "feedback",
+        sessionId: session.sessionId,
+        updatedAt: new Date().toISOString(),
+        promptSnapshot: {
+          topic: session.topic,
+          questionEn: session.questionEn,
+          questionKo: session.questionKo
+        },
+        snapshot: {
+          selectedDifficulty: normalizeDailyDifficulty(session.difficulty),
+          selectedPromptId: session.promptId,
+          sessionId: session.sessionId,
+          answer: latestAttempt.answerText,
+          rewrite: latestAttempt.answerText,
+          lastSubmittedAnswer: latestAttempt.answerText,
+          feedback: restoredFeedback,
+          step: "feedback"
+        }
+      },
+      currentUser.id
+    );
+
+    setSelectedSession(null);
+    router.push("/");
   }
 
   async function confirmDeleteSavedExpression(savedExpressionId: number) {
@@ -2269,14 +1992,6 @@ function renderWritingHistoryExpandedContent(
       return null;
     }
 
-    const latestAttempt = getLatestAttempt(selectedSession);
-    const comparisonView = buildHistoryComparisonView(selectedSession);
-    const improvedText =
-      comparisonView?.rewriteAttempt.answerText ??
-      latestAttempt?.feedback.correctedAnswer ??
-      latestAttempt?.answerText ??
-      "";
-
     return (
       <div
         className={styles.writingSessionModalOverlay}
@@ -2306,9 +2021,6 @@ function renderWritingHistoryExpandedContent(
 
           {renderWritingHistoryExpandedContent(
             selectedSession,
-            comparisonView,
-            latestAttempt,
-            improvedText,
             "질문 해석",
             selectedSession.questionKo,
             styles.writingSessionModalContent

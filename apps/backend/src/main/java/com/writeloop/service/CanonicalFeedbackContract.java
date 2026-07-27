@@ -22,16 +22,18 @@ final class CanonicalFeedbackContract {
 
             Diagnose in this exact order:
             1. Decide topicAssessment.status before grammar or slot assessment.
-            2. Diagnose structureAssessment and, when required, one authoritative repair.
-            3. Diagnose only actual grammar errors and assign LOCAL or BLOCKING to each grammarIssue.
+            2. Diagnose structureAssessment.status.
+            3. Produce zero to 25 cumulative languageAssessment.revisionSteps.
             4. Assess every configured slot exactly once in the fixed-key slotAssessments object.
             5. Keep each slot's evidence and teaching support together under that slot key.
 
             Authority boundaries:
-            - You diagnose topic relevance, one atomic structure assessment and repair,
-              grammar correction evidence with per-issue impact, slot evidence, and slot teaching support.
+            - You diagnose topic relevance, sentence structure, cumulative full-answer revision steps,
+              slot evidence, and slot teaching support.
             - Do not return a slot status or decide completion, mission type, target slot, action type, score, or UI layout.
-            - The backend derives slot status and those final values from your output and the question metadata.
+            - Do not return a separate revisedAnswer or issues array. The backend derives the final revised answer and
+              visible correction cards from revisionSteps.
+            - The backend derives slot status and all final decision values from your output and the question metadata.
 
             Topic rules:
             - ON_TOPIC means the answer directly addresses the question or clearly contributes relevant information.
@@ -39,6 +41,7 @@ final class CanonicalFeedbackContract {
             - A short but relevant answer is ON_TOPIC. A grammatically broken but relevant answer is ON_TOPIC.
             - When status is OFF_TOPIC, use the MISSING shape for every configured slot: empty evidence and exactly one support item.
               Unrelated facts never satisfy question slots.
+            - When status is OFF_TOPIC, return COMPLETE and an empty languageAssessment.revisionSteps array.
 
             Structure-assessment rules:
             - structureAssessment.status is COMPLETE when every answer-bearing segment forms an independent sentence.
@@ -48,31 +51,46 @@ final class CanonicalFeedbackContract {
               action or thought, an imperative reading that changes the actor to implicit "you" does not make the answer complete.
               In that case, set structureAssessment.status to FRAGMENT and minimally restore the learner as the subject.
             - Diagnose sentence structure only. A complete but short or content-thin sentence is still COMPLETE.
-            - structureAssessment.repair is empty for COMPLETE and for every OFF_TOPIC answer.
-            - For an ON_TOPIC FRAGMENT, return exactly one repair containing the correction and its explanation.
-            - repair.originalText must equal the complete learner answer exactly, preserving case and punctuation.
-            - repair.correctedAnswer must be one minimal, complete correction of the entire learner answer.
-            - Preserve the learner's meaning and facts in repair.correctedAnswer. Restore only the structure needed to form a sentence.
+            - For an ON_TOPIC FRAGMENT, at least one revision step must restore the minimum structure needed
+              to form complete sentences and use kind STRUCTURE.
+            - Preserve the learner's meaning and facts in every answerAfter. Never invent learner facts.
             - You may use the question's sentence frame to restore omitted structure, but never invent learner facts.
-            - repair.reasonKo and repair.instructionKo must explain the structural repair in concise Korean.
+            - When structure and grammar changes overlap in the same phrase, include them in one STRUCTURE step.
+              When they affect separate phrases, use separate steps.
 
-            Grammar rules:
-            - Return an empty grammarIssues array when no correction is needed; the backend derives NONE.
-            - grammarIssues is only for text that is grammatically unacceptable in standard English in this context.
-            - Each grammarIssue has exactly one impact: LOCAL or BLOCKING.
-            - LOCAL: meaning is clear, but this real grammar error should be corrected.
-            - BLOCKING: this grammar problem prevents reliable understanding of the intended meaning.
-            - Before returning an issue, check whether the original wording can remain unchanged as acceptable English. If it can, do not return a grammarIssue.
+            Language-assessment rules:
+            - languageAssessment.revisionSteps is the only authoritative language revision.
+            - Each step's answerAfter must contain the complete learner answer after applying exactly one pedagogical correction group.
+              It must never be a fragment, patch, example, or model answer.
+            - The first answerAfter starts from the untouched learner answer. Every later answerAfter starts from the previous
+              step's complete answer and must preserve all earlier corrections exactly.
+            - A later step must never revise, expand, or revert text already corrected by an earlier step.
+              If corrections overlap, combine them into the earlier, higher-priority step.
+            - Every step must make a real change from the previous complete answer.
+            - If no language correction is needed, return an empty revisionSteps array.
+            - Return at most 25 steps. If more than 25 correction groups are possible, apply and explain only the first 25
+              under the priority below and leave every unselected error unchanged.
+            - One step may contain multiple low-level changed spans only when they form one local grammatical construction
+              that needs one teaching explanation. Include the unchanged bridge words in that correction group.
+            - Example: "I'm like eat" -> "I like eating" is one step even though "like" itself stays unchanged.
+            - Unrelated errors, even inside one sentence, require separate cumulative steps.
+            - Order steps by kind: STRUCTURE, then GRAMMAR_BLOCKING, then GRAMMAR_LOCAL.
+              Within the same kind, order steps from left to right in the current answer.
+            - Use kind STRUCTURE only for a change required to turn a fragment or broken clause connection into a complete sentence.
+            - Use kind GRAMMAR_BLOCKING when a real grammar problem prevents reliable understanding.
+            - Use kind GRAMMAR_LOCAL when meaning is clear but the wording is grammatically unacceptable in standard English.
+            - If one correction group inseparably contains structure and grammar repairs, classify the step as STRUCTURE.
+              Otherwise prefer GRAMMAR_BLOCKING over GRAMMAR_LOCAL within one overlapping group.
+            - When at least one structural or blocking step exists, include local grammar steps too, up to the 25-step cap.
+            - If only local grammar steps exist, still diagnose them; the backend keeps them below unresolved required content slots.
+            - Before returning a step, check whether the original wording can remain unchanged as acceptable English. If it can, do not revise it.
             - A difference in naturalness, idiomatic preference, collocation preference, register, concision, or specificity alone is not a grammar error.
               Put a useful optional alternative in refinementExpressions instead.
             - For example, "practice a five-minute conversation" is acceptable. Do not change it to "practice having a five-minute conversation"
               as a grammar correction. If useful, offer the latter only as an optional refinementExpression.
             - Real errors such as "Companies should protects workers" -> "Companies should protect workers" and
-              "I am live in Seoul" -> "I live in Seoul" belong in grammarIssues with LOCAL impact.
-            - The backend derives the answer-level impact from the strongest issue: BLOCKING, then LOCAL.
-            - originalText must be an exact, case-sensitive substring of the learner answer.
-            - revisedText must be the direct replacement for originalText, not a full invented answer.
-            - reasonKo and instructionKo must explain that exact change in concise Korean.
+              "I am live in Seoul" -> "I live in Seoul" use GRAMMAR_LOCAL.
+            - code names the exact error category. reasonKo and instructionKo must explain every change made by that step in concise Korean.
 
             Slot rules:
             - slotAssessments has exactly the fixed keys supplied by the response schema. Do not omit, add, or rename keys.
@@ -92,8 +110,8 @@ final class CanonicalFeedbackContract {
               The backend derives SATISFIED.
             - Evidence must be the smallest exact learner-answer span that, when interpreted together with the original question, proves the
               slot relationship. It must remain a literal learner-answer substring; never paraphrase or invent evidence.
-            - Copy slot evidence from the untouched learner answer before applying any grammar correction. When a grammarIssue overlaps
-              the slot evidence, preserve the learner's incorrect original wording in evidence and put the correction only in grammarIssues.
+            - Copy slot evidence from the untouched learner answer before applying any language correction. When a language change overlaps
+              the slot evidence, preserve the learner's incorrect original wording in evidence and put the correction only in languageAssessment.
               For learner answer "I usually washes the dishes.", valid ACTION evidence is "washes the dishes"; "wash the dishes" is invalid
               because it exists only after correction.
             - For "What challenge do you face at work or school?", "too many tasks" can prove PROBLEM without repeating "at work or school".
@@ -125,7 +143,7 @@ final class CanonicalFeedbackContract {
             - modelAnswer is a useful reference answer to the original question. Do not copy it from the learner answer mechanically.
             - modelAnswerKo is the faithful Korean translation of modelAnswer.
             - refinementExpressions are optional alternatives for grammatically acceptable wording and never block completion.
-            - Do not repeat a grammarIssue in refinementExpressions or describe an optional refinement as a required correction.
+            - Do not repeat a language revision step in refinementExpressions or describe an optional refinement as a required correction.
             - usedExpressions should include only prompt hints that the learner actually used.
             """;
 
@@ -166,6 +184,28 @@ final class CanonicalFeedbackContract {
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
     }
 
+    String contractRetryPrompt(
+            String originalUserPrompt,
+            String rejectedOutput,
+            String validationError
+    ) throws JsonProcessingException {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("requestType", "CANONICAL_CONTRACT_RETRY");
+        payload.put("retryInstruction", Map.of(
+                "validationError", value(limit(validationError, 2_000)),
+                "requiredAction", """
+                        Re-evaluate the original input and return one complete canonical JSON response.
+                        Fix the stated contract violation without merely patching or quoting the rejected output.
+                        Every languageAssessment.revisionSteps item must contain one cumulative complete answerAfter.
+                        Preserve every earlier correction exactly in each later answerAfter.
+                        All slot evidence values must be copied exactly from the untouched learner answer.
+                        """
+        ));
+        payload.put("originalInput", jsonValueOrText(originalUserPrompt));
+        payload.put("rejectedOutput", jsonValueOrText(limit(rejectedOutput, 24_000)));
+        return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
+    }
+
     Map<String, Object> schema(PromptDto prompt) {
         List<String> slots = policy.allowedSlots(prompt);
         Map<String, Object> properties = new LinkedHashMap<>();
@@ -174,22 +214,21 @@ final class CanonicalFeedbackContract {
                 "reasonKo", stringSchema()
         )));
         properties.put("structureAssessment", objectSchema(Map.of(
-                "status", enumString(List.of("COMPLETE", "FRAGMENT")),
-                "repair", arraySchema(objectSchema(Map.of(
-                        "originalText", stringSchema(),
-                        "correctedAnswer", stringSchema(),
+                "status", enumString(List.of("COMPLETE", "FRAGMENT"))
+        )));
+        properties.put("languageAssessment", objectSchema(Map.of(
+                "revisionSteps", arraySchema(objectSchema(Map.of(
+                        "kind", enumString(List.of(
+                                "STRUCTURE",
+                                "GRAMMAR_BLOCKING",
+                                "GRAMMAR_LOCAL"
+                        )),
+                        "code", stringSchema(),
+                        "answerAfter", stringSchema(),
                         "reasonKo", stringSchema(),
                         "instructionKo", stringSchema()
-                )), 0, 1)
+                )), 0, 25)
         )));
-        properties.put("grammarIssues", arraySchema(objectSchema(Map.of(
-                "impact", enumString(List.of("LOCAL", "BLOCKING")),
-                "code", stringSchema(),
-                "originalText", stringSchema(),
-                "revisedText", stringSchema(),
-                "reasonKo", stringSchema(),
-                "instructionKo", stringSchema()
-        )), 0, 3));
         properties.put("strengths", arraySchema(stringSchema(), 0, 1));
         properties.put("usedExpressions", arraySchema(objectSchema(Map.of(
                 "expression", stringSchema(),
@@ -225,33 +264,21 @@ final class CanonicalFeedbackContract {
                 text(root.path("topicAssessment"), "reasonKo")
         );
         JsonNode structureNode = root.path("structureAssessment");
-        List<StructureRepair> structureRepair = new ArrayList<>();
-        for (JsonNode item : structureNode.path("repair")) {
-            structureRepair.add(new StructureRepair(
-                    text(item, "originalText"),
-                    text(item, "correctedAnswer"),
-                    text(item, "reasonKo"),
-                    text(item, "instructionKo")
-            ));
-        }
-        List<DiagnosedGrammarIssue> grammarIssues = new ArrayList<>();
-        for (JsonNode item : root.path("grammarIssues")) {
-            grammarIssues.add(new DiagnosedGrammarIssue(
-                    text(item, "impact"),
+        JsonNode languageNode = root.path("languageAssessment");
+        List<LanguageRevisionStep> revisionSteps = new ArrayList<>();
+        for (JsonNode item : languageNode.path("revisionSteps")) {
+            revisionSteps.add(new LanguageRevisionStep(
+                    text(item, "kind"),
                     text(item, "code"),
-                    text(item, "originalText"),
-                    text(item, "revisedText"),
+                    text(item, "answerAfter"),
                     text(item, "reasonKo"),
                     text(item, "instructionKo")
             ));
         }
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 topicAssessment,
-                new StructureAssessment(
-                        StructureStatus.fromCode(text(structureNode, "status")),
-                        structureRepair
-                ),
-                grammarIssues
+                new StructureAssessment(StructureStatus.fromCode(text(structureNode, "status"))),
+                new LanguageAssessment(revisionSteps)
         );
 
         Map<String, SlotAssessmentValue> slotAssessments = new LinkedHashMap<>();
@@ -317,6 +344,25 @@ final class CanonicalFeedbackContract {
                 phrases,
                 text(item, "targetHintKo")
         );
+    }
+
+    private Object jsonValueOrText(String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        try {
+            JsonNode parsed = objectMapper.readTree(value);
+            return parsed == null ? value : parsed;
+        } catch (JsonProcessingException ignored) {
+            return value;
+        }
+    }
+
+    private String limit(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
     }
 
     private static Map<String, Object> slotSupportSchema() {

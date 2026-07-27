@@ -13,6 +13,10 @@ public interface AnswerAttemptRepository extends JpaRepository<AnswerAttemptEnti
 
     Optional<AnswerAttemptEntity> findBySessionIdAndAttemptNo(String sessionId, Integer attemptNo);
 
+    Optional<AnswerAttemptEntity> findBySessionIdAndSubmissionId(String sessionId, String submissionId);
+
+    Optional<AnswerAttemptEntity> findFirstBySessionIdOrderByAttemptNoDesc(String sessionId);
+
     List<AnswerAttemptEntity> findBySessionIdOrderByAttemptNoAsc(String sessionId);
 
     List<AnswerAttemptEntity> findBySessionIdInOrderByCreatedAtAsc(List<String> sessionIds);

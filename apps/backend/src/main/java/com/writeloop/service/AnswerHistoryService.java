@@ -3,7 +3,6 @@ package com.writeloop.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.AnswerHistoryAttemptDto;
-import com.writeloop.dto.AnswerHistoryFeedbackDto;
 import com.writeloop.dto.AnswerHistorySessionDto;
 import com.writeloop.dto.AnswerHistoryUsedExpressionDto;
 import com.writeloop.dto.CommonMistakeDto;
@@ -12,6 +11,8 @@ import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.MonthWritingStatusDayDto;
 import com.writeloop.dto.MonthWritingStatusDto;
 import com.writeloop.dto.TodayWritingStatusDto;
+import com.writeloop.dto.VisibleFeedbackSnapshotDto;
+import com.writeloop.dto.VisibleFeedbackState;
 import com.writeloop.persistence.AnswerAttemptEntity;
 import com.writeloop.persistence.AnswerAttemptRepository;
 import com.writeloop.persistence.AnswerSessionEntity;
@@ -44,10 +45,6 @@ public class AnswerHistoryService {
 
     private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
 
-    private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
-    };
-    private static final TypeReference<List<CorrectionDto>> CORRECTION_LIST_TYPE = new TypeReference<>() {
-    };
     private static final TypeReference<List<AnswerHistoryUsedExpressionDto>> USED_EXPRESSION_LIST_TYPE =
             new TypeReference<>() {
             };
@@ -272,72 +269,25 @@ public class AnswerHistoryService {
     }
 
     private List<CorrectionDto> extractCorrections(AnswerAttemptEntity attempt) {
-        if (attempt.getFeedbackPayloadJson() != null && !attempt.getFeedbackPayloadJson().isBlank()) {
-            try {
-                FeedbackResponseDto feedback = objectMapper.readValue(
-                        attempt.getFeedbackPayloadJson(),
-                        FeedbackResponseDto.class
-                );
-                List<CorrectionDto> payloadCorrections = extractCorrections(feedback);
-                if (!payloadCorrections.isEmpty()) {
-                    return payloadCorrections;
-                }
-            } catch (Exception ignored) {
-                // Fall back to legacy correction columns below.
-            }
+        VisibleFeedbackSnapshotDto snapshot = toVisibleFeedback(attempt);
+        if (snapshot == null || snapshot.coachMove() == null) {
+            return List.of();
         }
-
-        if (attempt.getCorrectionsJson() == null || attempt.getCorrectionsJson().isBlank()) {
-            return Collections.emptyList();
-        }
-
-        try {
-            List<CorrectionDto> legacyCorrections = objectMapper.readValue(attempt.getCorrectionsJson(), CORRECTION_LIST_TYPE);
-            return legacyCorrections == null ? Collections.emptyList() : legacyCorrections;
-        } catch (Exception ignored) {
-            return Collections.emptyList();
-        }
-    }
-
-    private List<CorrectionDto> extractCorrections(FeedbackResponseDto feedback) {
-        if (feedback == null) {
-            return Collections.emptyList();
-        }
-
-        if (feedback.ui() != null && feedback.ui().fixPoints() != null && !feedback.ui().fixPoints().isEmpty()) {
-            List<CorrectionDto> fixPointCorrections = feedback.ui().fixPoints().stream()
-                    .filter(point -> point != null && !"EXPRESSION".equalsIgnoreCase(nullSafe(point.kind())))
-                    .map(point -> new CorrectionDto(
-                            firstNonBlank(point.title(), point.headline(), point.originalText(), point.supportText()),
-                            firstNonBlank(point.revisedText(), point.supportText(), point.headline(), point.originalText())
-                    ))
-                    .filter(correction -> isNotBlank(correction.issue()) || isNotBlank(correction.suggestion()))
-                    .toList();
-            if (!fixPointCorrections.isEmpty()) {
-                return fixPointCorrections;
-            }
-        }
-
-        if (feedback.corrections() != null && !feedback.corrections().isEmpty()) {
-            return feedback.corrections().stream()
-                    .filter(correction -> correction != null)
-                    .filter(correction -> isNotBlank(correction.issue()) || isNotBlank(correction.suggestion()))
-                    .toList();
-        }
-
-        if (feedback.inlineFeedback() != null && !feedback.inlineFeedback().isEmpty()) {
-            return feedback.inlineFeedback().stream()
-                    .filter(segment -> segment != null)
-                    .filter(segment -> segment.type() == null || !"KEEP".equalsIgnoreCase(segment.type()))
-                    .map(segment -> new CorrectionDto(
-                            firstNonBlank(segment.originalText(), segment.revisedText()),
-                            firstNonBlank(segment.revisedText(), segment.originalText())
-                    ))
-                    .filter(correction -> isNotBlank(correction.issue()) || isNotBlank(correction.suggestion()))
-                    .toList();
-        }
-
-        return Collections.emptyList();
+        CorrectionDto correction = new CorrectionDto(
+                firstNonBlank(
+                        snapshot.coachMove().focus(),
+                        snapshot.coachMove().why(),
+                        snapshot.coachMove().before()
+                ),
+                firstNonBlank(
+                        snapshot.coachMove().after(),
+                        snapshot.coachMove().instruction(),
+                        snapshot.coachMove().successCheck()
+                )
+        );
+        return isNotBlank(correction.issue()) || isNotBlank(correction.suggestion())
+                ? List.of(correction)
+                : List.of();
     }
 
     private String firstNonBlank(String... values) {
@@ -448,6 +398,7 @@ public class AnswerHistoryService {
                 prompt == null ? "" : prompt.getDifficulty(),
                 prompt == null ? "" : prompt.getQuestionEn(),
                 prompt == null ? "" : prompt.getQuestionKo(),
+                session.getStatus().name(),
                 session.getCreatedAt(),
                 session.getUpdatedAt(),
                 attemptDtos
@@ -461,7 +412,7 @@ public class AnswerHistoryService {
                 attempt.getAttemptType().name(),
                 attempt.getAnswerText(),
                 attempt.getFeedbackSummary(),
-                toHistoryFeedback(attempt),
+                toVisibleFeedback(attempt),
                 extractUsedExpressions(attempt),
                 attempt.getCreatedAt()
         );
@@ -479,47 +430,43 @@ public class AnswerHistoryService {
         }
     }
 
-    private AnswerHistoryFeedbackDto toHistoryFeedback(AnswerAttemptEntity attempt) {
-        if (attempt.getFeedbackPayloadJson() != null && !attempt.getFeedbackPayloadJson().isBlank()) {
+    private VisibleFeedbackSnapshotDto toVisibleFeedback(AnswerAttemptEntity attempt) {
+        if (attempt.getVisibleFeedbackSnapshotJson() != null
+                && !attempt.getVisibleFeedbackSnapshotJson().isBlank()) {
             try {
-                FeedbackResponseDto feedback = objectMapper.readValue(
-                        attempt.getFeedbackPayloadJson(),
-                        FeedbackResponseDto.class
-                );
-                return new AnswerHistoryFeedbackDto(
-                        feedback.loopComplete(),
-                        feedback.completionMessage(),
-                        feedback.summary(),
-                        feedback.strengths(),
-                        feedback.inlineFeedback(),
-                        feedback.correctedAnswer(),
-                        feedback.refinementExpressions(),
-                        feedback.modelAnswer(),
-                        feedback.modelAnswerKo(),
-                        feedback.rewriteChallenge(),
-                        feedback.ui()
+                return objectMapper.readValue(
+                        attempt.getVisibleFeedbackSnapshotJson(),
+                        VisibleFeedbackSnapshotDto.class
                 );
             } catch (Exception ignored) {
-                // Fall back to legacy feedback columns below.
+                return null;
             }
         }
 
+        if (attempt.getFeedbackPayloadJson() == null || attempt.getFeedbackPayloadJson().isBlank()) {
+            return null;
+        }
         try {
-            return new AnswerHistoryFeedbackDto(
-                    false,
-                    null,
-                    attempt.getFeedbackSummary(),
-                    objectMapper.readValue(attempt.getStrengthsJson(), STRING_LIST_TYPE),
-                    List.of(),
-                    attempt.getAnswerText(),
-                    List.of(),
-                    attempt.getModelAnswer(),
-                    null,
-                    attempt.getRewriteChallenge(),
-                    null
+            FeedbackResponseDto feedback = objectMapper.readValue(
+                    attempt.getFeedbackPayloadJson(),
+                    FeedbackResponseDto.class
             );
-        } catch (Exception exception) {
-            throw new IllegalStateException("Failed to deserialize stored feedback", exception);
+            if (feedback.loopComplete() || feedback.coachMove() == null) {
+                return null;
+            }
+            return new VisibleFeedbackSnapshotDto(
+                    1,
+                    VisibleFeedbackState.NEEDS_REWRITE,
+                    null,
+                    feedback.coachMove(),
+                    null,
+                    List.of(),
+                    null,
+                    null,
+                    true
+            );
+        } catch (Exception ignored) {
+            return null;
         }
     }
 

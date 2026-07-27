@@ -15,6 +15,7 @@ import {
 import {
   checkCoachExpressionUsage,
   ApiError,
+  completeFeedbackSession,
   deleteSavedExpression,
   deleteWritingDraft,
   getFeaturedDailyPrompt,
@@ -63,10 +64,7 @@ import type {
   CoachUsageCheckResponse,
   Feedback,
   FeedbackCoachMove,
-  FeedbackInlineSegment,
   FeedbackLoopStatus,
-  FeedbackSecondaryLearningPoint,
-  FeedbackScreenPolicy,
   HistoryMonthStatus,
   HomeDraftSnapshot,
   HomeFlowStep,
@@ -85,17 +83,12 @@ const GUEST_SESSION_ID_KEY = "writeloop_guest_session_id";
 const GUEST_PROMPT_ID_KEY = "writeloop_guest_prompt_id";
 const HOME_RETURN_TO = "/";
 
+function createSubmissionId() {
+  return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 type Step = "pick" | "answer" | "feedback" | "rewrite" | "complete";
 type PickFlowScreen = "difficulty" | "prompt";
-type UsedExpressionCard = {
-  key: string;
-  expression: string;
-  matchedText?: string | null;
-  meaningKo?: string | null;
-  exampleEn?: string | null;
-  usageTip: string;
-  tags?: string[] | null;
-};
 type WritingGuideHintItem = {
   id: string;
   content: string;
@@ -103,32 +96,12 @@ type WritingGuideHintItem = {
 };
 type DifficultyStageIconName = "auto_stories" | "menu_book" | "psychology";
 
-type RewriteSuggestion = {
-  key: string;
-  english: string;
-  korean?: string | null;
-  note?: string | null;
-};
-type RefinementIdeaCard = {
-  key: string;
-  title: string;
-  english: string;
-  korean: string;
-  note: string;
-  originalText: string;
-  revisedText: string;
-  exampleEn?: string | null;
-  tags?: string[] | null;
-  hasSwapPair: boolean;
-  optionalTone: boolean;
-};
 type PracticeExpressionHint = {
   expression: string;
   tag?: string | null;
   tagLabel?: string | null;
   expressions: string[];
 };
-type FeedbackPanelTab = "feedback" | "improve";
 type IncompleteLoopCopy = {
   title: string;
   body: string;
@@ -136,13 +109,6 @@ type IncompleteLoopCopy = {
   badgeLabel: string;
   icon: string;
 };
-type FixCard = {
-  key: string;
-  reasonLines: string[];
-  original: string;
-  revised: string;
-};
-
 const EXPRESSION_SLOT_LABELS: Record<string, string> = {
   action: "동사",
   actions: "동사",
@@ -188,172 +154,6 @@ const EXPRESSION_SLOT_LABELS: Record<string, string> = {
   verbs: "동사"
 };
 
-const feedbackSectionHeadingKeepStyle: CSSProperties = {
-  color: "#2f7a46"
-};
-
-const feedbackSectionHeadingFixStyle: CSSProperties = {
-  color: "#c84b31"
-};
-
-const feedbackSectionHeadingBlueStyle: CSSProperties = {
-  color: "#315c9c"
-};
-
-const feedbackBulletLineStyle: CSSProperties = {
-  margin: 0,
-  color: "#52483c",
-  fontSize: "1rem",
-  lineHeight: 1.72,
-  fontWeight: 700
-};
-
-const feedbackFixStackStyle: CSSProperties = {
-  display: "grid",
-  gap: 0
-};
-
-const feedbackFixItemStyle: CSSProperties = {
-  display: "grid",
-  gap: "12px"
-};
-
-const feedbackFixItemDividerStyle: CSSProperties = {
-  marginTop: "12px",
-  paddingTop: "16px",
-  borderTop: "2px solid rgba(177, 172, 168, 0.36)"
-};
-
-const feedbackFixReasonStyle: CSSProperties = {
-  margin: 0,
-  color: "#5c4b39",
-  fontSize: "1rem",
-  lineHeight: 1.72,
-  fontWeight: 700
-};
-
-const feedbackSwapStackStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px"
-};
-
-const feedbackSwapSentenceStyle: CSSProperties = {
-  display: "grid",
-  gap: "8px"
-};
-
-const feedbackSwapBadgeStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  width: "fit-content",
-  padding: "4px 8px",
-  borderRadius: "999px",
-  fontSize: "0.72rem",
-  fontWeight: 900,
-  lineHeight: 1.2
-};
-
-const feedbackSwapBadgeOriginalStyle: CSSProperties = {
-  background: "#ffd7cd",
-  color: "#b04328"
-};
-
-const feedbackSwapBadgeRevisedStyle: CSSProperties = {
-  background: "#fbe4b7",
-  color: "#8d5b16"
-};
-
-const feedbackSwapTextStyle: CSSProperties = {
-  margin: 0,
-  fontSize: "1.02rem",
-  lineHeight: 1.72,
-  fontWeight: 800,
-  overflowWrap: "anywhere"
-};
-
-const feedbackSwapTextOriginalStyle: CSSProperties = {
-  color: "#b04328"
-};
-
-const feedbackSwapTextRevisedStyle: CSSProperties = {
-  color: "#6d4b1d"
-};
-
-const feedbackRewriteListStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px"
-};
-
-const feedbackRewriteMobileListStyle: CSSProperties = {
-  display: "grid",
-  gap: 0
-};
-
-const feedbackRewriteHeroStyle: CSSProperties = {
-  display: "grid",
-  gap: "12px",
-  padding: "16px",
-  borderRadius: "22px",
-  background: "#fffefc",
-  border: "1px solid #e8dacb"
-};
-
-const feedbackRewriteHeroOptionalStyle: CSSProperties = {
-  opacity: 0.96
-};
-
-const feedbackRewriteMobileItemStyle: CSSProperties = {
-  display: "grid",
-  gap: "10px",
-  padding: "0 0 16px",
-  borderRadius: 0,
-  background: "transparent",
-  boxShadow: "none"
-};
-
-const feedbackRewriteMobileItemDividerStyle: CSSProperties = {
-  borderBottom: "1px solid rgba(140, 120, 92, 0.4)"
-};
-
-const feedbackRewriteSuggestionCardStyle: CSSProperties = {
-  display: "grid",
-  gap: "6px"
-};
-
-const feedbackRewriteStarterStyle: CSSProperties = {
-  color: "#6a4b1d",
-  fontSize: "1rem",
-  lineHeight: 1.55,
-  fontWeight: 900
-};
-
-const feedbackRewriteTranslationStyle: CSSProperties = {
-  color: "#876b47",
-  fontSize: "0.92rem",
-  lineHeight: 1.6
-};
-
-const feedbackRewriteInstructionStyle: CSSProperties = {
-  margin: 0,
-  color: "#5a4c3d",
-  fontSize: "0.95rem",
-  lineHeight: 1.62
-};
-
-const feedbackTabEmptyStateStyle: CSSProperties = {
-  borderRadius: "20px",
-  background: "#fff9f2",
-  border: "1px solid #e8dacb",
-  padding: "16px"
-};
-
-const feedbackTabEmptyStateTextStyle: CSSProperties = {
-  margin: 0,
-  color: "#7a6853",
-  fontSize: "0.92rem",
-  lineHeight: 1.6
-};
 
 const COACH_MOVE_DIFF_MAX_CHARS = 700;
 const COACH_MOVE_DIFF_MAX_TOKENS = 140;
@@ -398,6 +198,8 @@ function hasCoachMove(coachMove?: FeedbackCoachMove | null) {
       trimNullable(coachMove?.instruction) ||
       trimNullable(coachMove?.exampleEn) ||
       trimNullable(coachMove?.skeletonEn) ||
+      (Array.isArray(coachMove?.languageCorrections) &&
+        coachMove.languageCorrections.length > 0) ||
       (Array.isArray(coachMove?.suggestedPhrases) &&
         coachMove.suggestedPhrases.some((phrase) => normalizeSuggestedPhrase(phrase)))
   );
@@ -417,6 +219,7 @@ function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
 
   return [
     "MICRO_FIX",
+    "LANGUAGE_FIX",
     "STRUCTURE_FIX",
     "GRAMMAR",
     "GRAMMAR_FIX",
@@ -433,6 +236,7 @@ function isDirectCorrectionCoachMove(coachMove?: FeedbackCoachMove | null) {
   const focusType = trimNullable(coachMove?.focusType)?.toUpperCase();
   return [
     "MICRO_FIX",
+    "LANGUAGE_FIX",
     "STRUCTURE_FIX",
     "GRAMMAR",
     "GRAMMAR_FIX",
@@ -476,17 +280,6 @@ function canBuildCoachMoveDiff(original: string, revised: string) {
   );
 }
 
-function shouldShowFixComparison(original: string, revised: string) {
-  if (!original && !revised) {
-    return false;
-  }
-
-  if (!original || !revised || original === revised) {
-    return true;
-  }
-
-  return isCoachMoveDiffScopeAligned(original, revised);
-}
 
 function normalizeSavedExpressionKey(value?: string | null) {
   return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? "";
@@ -537,299 +330,6 @@ function parsePracticeExpressionsParam(value: string | null) {
   }
 }
 
-function looksLikeEnglishText(value?: string | null) {
-  const text = trimNullable(value);
-  if (!text) {
-    return false;
-  }
-  const latinCount = (text.match(/[A-Za-z]/g) ?? []).length;
-  const hangulCount = (text.match(/[가-힣]/g) ?? []).length;
-  return latinCount > 0 && latinCount >= hangulCount;
-}
-
-function hasHangulText(value?: string | null) {
-  const text = trimNullable(value);
-  return Boolean(text && /[가-힣ㄱ-ㅎㅏ-ㅣ]/.test(text));
-}
-
-function looksLikeEnglishSentence(value?: string | null) {
-  const text = trimNullable(value);
-  if (!text || !looksLikeEnglishText(text)) {
-    return false;
-  }
-  if (/[.!?]/.test(text) || text.includes(",")) {
-    return true;
-  }
-  return text.split(/\s+/).length >= 5;
-}
-
-const REWRITE_PLACEHOLDER_PATTERN = /(?:_{3,}|\.{3,})/;
-const REWRITE_CONNECTOR_WORDS = new Set([
-  "because",
-  "and",
-  "but",
-  "so",
-  "or",
-  "to",
-  "for",
-  "with",
-  "in",
-  "on",
-  "at",
-  "about",
-  "after",
-  "before",
-  "if",
-  "when",
-  "that"
-]);
-const REWRITE_OVERLAP_STOP_WORDS = new Set([
-  "a",
-  "an",
-  "and",
-  "are",
-  "at",
-  "be",
-  "because",
-  "been",
-  "being",
-  "but",
-  "for",
-  "from",
-  "had",
-  "has",
-  "have",
-  "he",
-  "her",
-  "hers",
-  "him",
-  "his",
-  "i",
-  "if",
-  "in",
-  "is",
-  "it",
-  "its",
-  "me",
-  "my",
-  "of",
-  "on",
-  "or",
-  "our",
-  "she",
-  "so",
-  "that",
-  "the",
-  "their",
-  "them",
-  "they",
-  "this",
-  "to",
-  "us",
-  "was",
-  "we",
-  "were",
-  "with",
-  "you",
-  "your"
-]);
-
-function stripRewriteSuggestionTerminalPunctuation(value: string) {
-  return value.replace(/[.!?]+$/g, "").trim();
-}
-
-function normalizeRefinementIdeaAnchor(value?: string | null) {
-  const normalized = trimNullable(value);
-  if (!normalized) {
-    return "";
-  }
-
-  return stripRewriteSuggestionTerminalPunctuation(normalized)
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
-function extractRewriteComparisonTokens(value?: string | null) {
-  const text = trimNullable(value)?.toLowerCase() ?? "";
-  return text
-    .match(/[a-z]+(?:'[a-z]+)?/g)
-    ?.filter((token) => !REWRITE_OVERLAP_STOP_WORDS.has(token)) ?? [];
-}
-
-function canSuggestionFillRewriteStarter(english: string, starter?: string | null) {
-  const normalizedStarter = trimNullable(starter);
-  if (!normalizedStarter || !REWRITE_PLACEHOLDER_PATTERN.test(normalizedStarter)) {
-    return true;
-  }
-
-  const cleanedEnglish = stripRewriteSuggestionTerminalPunctuation(english);
-  if (!cleanedEnglish) {
-    return false;
-  }
-
-  const sentenceLikeWordCount = cleanedEnglish.split(/\s+/).filter(Boolean).length;
-  if (sentenceLikeWordCount > 10) {
-    return false;
-  }
-
-  if (/[.!?]\s+\S/.test(cleanedEnglish)) {
-    return false;
-  }
-
-  const [prefix = ""] = normalizedStarter.split(REWRITE_PLACEHOLDER_PATTERN, 2);
-  const prefixLastWord = (prefix.toLowerCase().match(/[a-z]+(?:'[a-z]+)?(?=[^a-z']*$)/) ?? [null])[0];
-  const candidateLower = cleanedEnglish.toLowerCase();
-
-  if (prefixLastWord && REWRITE_CONNECTOR_WORDS.has(prefixLastWord)) {
-    if (candidateLower === prefixLastWord || candidateLower.startsWith(`${prefixLastWord} `)) {
-      return false;
-    }
-  }
-
-  const candidateTokens = extractRewriteComparisonTokens(cleanedEnglish);
-  const prefixTokens = new Set(extractRewriteComparisonTokens(prefix));
-  if (candidateTokens.length >= 3) {
-    const overlapCount = candidateTokens.filter((token) => prefixTokens.has(token)).length;
-    if (overlapCount / candidateTokens.length >= 0.5) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-function getFixLabel(type: FeedbackInlineSegment["type"]) {
-  switch (type) {
-    case "ADD":
-      return "추가하면 더 자연스러워요.";
-    case "REMOVE":
-      return "빼면 더 자연스러워요.";
-    case "REPLACE":
-    default:
-      return "이 부분을 다듬어 보세요.";
-  }
-}
-
-function normalizeReasonLines(...values: Array<string | null | undefined>) {
-  const seen = new Set<string>();
-  const lines: string[] = [];
-
-  values.forEach((value) => {
-    (value ?? "")
-      .split(/\n+/)
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .forEach((line) => {
-        const dedupeKey = line.replace(/\s+/g, " ").toLowerCase();
-        if (seen.has(dedupeKey)) {
-          return;
-        }
-
-        seen.add(dedupeKey);
-        lines.push(line);
-      });
-  });
-
-  return lines;
-}
-
-function normalizeCompactDiffText(value: string) {
-  return value
-    .toLowerCase()
-    .replace(/[`"'“”‘’.,!?()[\]{}]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function isRedundantReplacementSummaryLine(line: string, original: string, revised: string) {
-  if (!original || !revised) {
-    return false;
-  }
-
-  const normalizedLine = normalizeCompactDiffText(line);
-  const normalizedOriginal = normalizeCompactDiffText(original);
-  const normalizedRevised = normalizeCompactDiffText(revised);
-  const hasArrowPattern = /(?:->|=>|→)/.test(normalizedLine);
-
-  return Boolean(
-    hasArrowPattern &&
-      normalizedOriginal &&
-      normalizedRevised &&
-      normalizedLine.includes(normalizedOriginal) &&
-      normalizedLine.includes(normalizedRevised)
-  );
-}
-
-function normalizeFixPoint(point: FeedbackSecondaryLearningPoint, index: number): FixCard | null {
-  if (!point || point.kind === "EXPRESSION") {
-    return null;
-  }
-
-  const original = trimNullable(point.originalText) ?? "";
-  const revised = trimNullable(point.revisedText) ?? "";
-  const fallbackLead = pickFirstNonEmpty(point.supportText, point.meaningKo, point.guidanceKo) ?? "";
-  const headlineCandidate = pickFirstNonEmpty(point.headline, point.title) ?? "";
-  const reasonLines = normalizeReasonLines(
-    fallbackLead,
-    headlineCandidate !== original && headlineCandidate !== revised ? headlineCandidate : ""
-  ).filter((line) => !isRedundantReplacementSummaryLine(line, original, revised));
-
-  if (reasonLines.length === 0 && !original && !revised) {
-    return null;
-  }
-
-  return {
-    key: `${original || revised || reasonLines.join("-") || index}`,
-    reasonLines,
-    original,
-    revised
-  };
-}
-
-function buildFallbackFixItems(answer: string, feedback: Feedback): FixCard[] {
-  const items =
-    feedback.inlineFeedback
-      ?.filter((item) => item.type !== "KEEP")
-      .map((item, index) => ({
-        key: `${item.type}-${item.originalText}-${item.revisedText}-${index}`,
-        reasonLines: [getFixLabel(item.type)],
-        original: trimNullable(item.originalText) ?? "",
-        revised: trimNullable(item.revisedText) ?? ""
-      }))
-      .filter((item) => item.original || item.revised) ?? [];
-
-  if (items.length > 0) {
-    return items;
-  }
-
-  const correctedAnswer = trimNullable(feedback.correctedAnswer) ?? "";
-  if (correctedAnswer && correctedAnswer !== (trimNullable(answer) ?? "")) {
-    return [
-      {
-        key: "corrected-answer",
-        reasonLines: ["이렇게 다듬어 보면 더 자연스러워요."],
-        original: trimNullable(answer) ?? "",
-        revised: correctedAnswer
-      }
-    ];
-  }
-
-  return [];
-}
-
-function buildFixItems(answer: string, feedback: Feedback): FixCard[] {
-  const uiFixPoints =
-    feedback.ui?.fixPoints
-      ?.map((point, index) => normalizeFixPoint(point, index))
-      .filter((item): item is FixCard => Boolean(item)) ?? [];
-
-  if (uiFixPoints.length > 0) {
-    return uiFixPoints;
-  }
-
-  return buildFallbackFixItems(answer, feedback);
-}
 
 function renderLocalizedExpression(expression: string) {
   const parts: ReactNode[] = [];
@@ -1623,8 +1123,9 @@ export function AnswerLoop() {
   const [welcomeCompletedDateKeys, setWelcomeCompletedDateKeys] = useState<string[]>([]);
   const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
   const [showRewriteFeedback, setShowRewriteFeedback] = useState(false);
-  const [feedbackPanelTab, setFeedbackPanelTab] = useState<FeedbackPanelTab>("feedback");
   const [showPreviousRewriteAnswer, setShowPreviousRewriteAnswer] = useState(false);
+  const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
+    useState(false);
   const [showAnswerTranslation, setShowAnswerTranslation] = useState(false);
   const [showMonthStatus, setShowMonthStatus] = useState(false);
   const [showCoachAssistant, setShowCoachAssistant] = useState(false);
@@ -1656,13 +1157,19 @@ export function AnswerLoop() {
   const [questionRefreshHistory, setQuestionRefreshHistory] = useState<string[]>([]);
   const [isRefreshingQuestion, setIsRefreshingQuestion] = useState(false);
   const [revealedTranslations, setRevealedTranslations] = useState<Record<string, boolean>>({});
-  const [showDetailedFeedback, setShowDetailedFeedback] = useState(false);
+  const [isFinishingLoop, setIsFinishingLoop] = useState(false);
   const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mobileComposerBarRef = useRef<HTMLDivElement | null>(null);
   const coachPromptInputRef = useRef<HTMLTextAreaElement | null>(null);
   const coachDialogCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const helpSheetCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const knownPersistedDraftKeysRef = useRef<Set<string>>(new Set());
+  const pendingSubmissionRef = useRef<{
+    promptId: string;
+    answer: string;
+    mode: "INITIAL" | "REWRITE";
+    submissionId: string;
+  } | null>(null);
   const practiceParamsAppliedRef = useRef(false);
   const [mobileComposerBarHeight, setMobileComposerBarHeight] = useState(0);
   const monthStatusCloseButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -1674,15 +1181,9 @@ export function AnswerLoop() {
 
   useEffect(() => {
     if (step === "feedback" || step === "rewrite") {
-      setFeedbackPanelTab("feedback");
     }
   }, [feedback?.attemptNo, step]);
 
-  useEffect(() => {
-    if (step === "feedback") {
-      setShowDetailedFeedback(false);
-    }
-  }, [feedback?.attemptNo, step]);
   const isCurrentMonthView = isSameMonthView(activeMonthView, currentMonthView);
 
   useEffect(() => {
@@ -2361,38 +1862,6 @@ export function AnswerLoop() {
       }) as CSSProperties,
     [mobileComposerBarHeight]
   );
-  const fallbackUsedExpressions = useMemo<UsedExpressionCard[]>(
-    () =>
-      (feedback?.usedExpressions ?? []).map((expression) => ({
-        key: expression.expression,
-        expression: expression.expression,
-        matchedText: expression.matchedText ?? null,
-        meaningKo: expression.meaningKo ?? null,
-        exampleEn: expression.exampleEn ?? null,
-        usageTip: expression.usageTip ?? "답변 안에서 자연스럽게 살린 표현이에요.",
-        tags: normalizeExpressionTagList(expression.tags)
-      })),
-    [feedback?.usedExpressions]
-  );
-  const usedExpressions = useMemo<UsedExpressionCard[]>(
-    () =>
-      (coachUsage?.usedExpressions ?? []).length > 0
-        ? (coachUsage?.usedExpressions ?? []).map((expression) => ({
-            key: expression.id,
-            expression: expression.expression,
-            matchedText: expression.matchedText ?? null,
-            meaningKo: expression.meaningKo ?? null,
-            exampleEn: expression.example ?? null,
-            usageTip: expression.usageTip,
-            tags: normalizeExpressionTagList(expression.tags)
-          }))
-        : fallbackUsedExpressions,
-    [coachUsage?.usedExpressions, fallbackUsedExpressions]
-  );
-  const fixItems = useMemo<FixCard[]>(
-    () => (feedback ? buildFixItems(lastSubmittedAnswer, feedback) : []),
-    [feedback, lastSubmittedAnswer]
-  );
   const coachRelatedPrompts = useMemo(() => {
     const sourceIds = coachUsage?.relatedPromptIds ?? [];
     const sourcePrompts = allPrompts.length > 0 ? allPrompts : prompts;
@@ -2425,13 +1894,38 @@ export function AnswerLoop() {
   const activeDraftType: WritingDraftType | null =
     step === "answer" ? "ANSWER" : step === "rewrite" ? "REWRITE" : null;
   const isGuestCycleComplete = Boolean(feedback && guestSessionId && feedback.attemptNo >= 2);
-  const shouldSuggestFinish = Boolean(feedback?.ui?.screenPolicy?.showFinishCta ?? feedback?.loopComplete);
   const feedbackLevel = feedback ? getFeedbackLevelInfo(feedback.loopComplete) : null;
+  const visibleFeedback = feedback?.visibleFeedback ?? null;
   const loopExperience = feedback?.loop ?? null;
-  const coachMove = feedback?.coachMove ?? null;
+  const coachMove = visibleFeedback?.coachMove ?? feedback?.coachMove ?? null;
+  const allLanguageCorrections = Array.isArray(coachMove?.languageCorrections)
+    ? coachMove.languageCorrections
+    : [];
+  const languageCorrections = areAllLanguageCorrectionsVisible
+    ? allLanguageCorrections
+    : allLanguageCorrections.slice(0, 4);
+  const hiddenLanguageCorrectionCount = Math.max(
+    0,
+    allLanguageCorrections.length - 4
+  );
+  const isLanguageFix = trimNullable(coachMove?.focusType)?.toUpperCase() === "LANGUAGE_FIX";
   const rewriteWorkspace = feedback?.rewriteWorkspace ?? null;
   const isLoopReadyToFinish =
-    Boolean(feedback?.loopComplete) || loopExperience?.nextAction === "finish" || loopExperience?.status === "COMPLETE";
+    visibleFeedback?.state === "READY_TO_FINISH" ||
+    Boolean(feedback?.loopComplete) ||
+    loopExperience?.nextAction === "finish" ||
+    loopExperience?.status === "READY_TO_FINISH";
+  const visibleStrength = pickFirstNonEmpty(visibleFeedback?.strength, feedback?.strengths?.[0]);
+  const completionRefinementExpressions = filterSuggestedRefinementExpressions(
+    visibleFeedback?.refinementExpressions ?? feedback?.refinementExpressions,
+    lastSubmittedAnswer,
+    feedback?.revisedAnswer
+  ).slice(0, 2);
+  const visibleModelAnswer = pickFirstNonEmpty(visibleFeedback?.modelAnswer, feedback?.modelAnswer);
+  const visibleModelAnswerKo = pickFirstNonEmpty(
+    visibleFeedback?.modelAnswerKo,
+    feedback?.modelAnswerKo
+  );
   const shouldShowCoachMoveCard = !isLoopReadyToFinish && hasCoachMove(coachMove);
   const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
   const shouldShowCorrectionReasonLabel = isDirectCorrectionCoachMove(coachMove);
@@ -2448,16 +1942,10 @@ export function AnswerLoop() {
     coachMove?.instruction,
     rewriteWorkspace?.targetTextHint,
     feedback?.rewriteChallenge,
-    coachSlotUiCopy?.description,
     isLoopReadyToFinish
       ? "이미 충분히 좋아요. 원하면 표현 하나만 가볍게 다듬어 보세요."
       : "전체를 완벽하게 바꾸려 하지 말고, 위 코치 포인트 하나만 반영해 다시 써 보세요."
   );
-  const coachSupportingText = pickFirstNonEmpty(coachSlotUiCopy?.description, coachMove?.focus);
-  const shouldShowCoachFocus =
-    Boolean(trimNullable(coachSupportingText)) &&
-    trimNullable(coachSupportingText) !== trimNullable(coachHeadline) &&
-    trimNullable(coachSupportingText) !== trimNullable(coachInstruction);
   const coachSkeleton = shouldShowCorrectionReasonLabel
     ? null
     : pickFirstNonEmpty(coachMove?.skeletonEn, coachSlotUiCopy?.skeletonEn);
@@ -2468,10 +1956,11 @@ export function AnswerLoop() {
     !shouldShowCorrectionReasonLabel && Array.isArray(coachMove?.suggestedPhrases)
       ? coachMove.suggestedPhrases.map(normalizeSuggestedPhrase).filter((phrase) => phrase !== null).slice(0, 6)
       : [];
-  const detailToggleLabel = showDetailedFeedback
-    ? "자세한 피드백 접기"
-    : pickFirstNonEmpty(loopExperience?.detailToggleLabel, "자세한 피드백 보기");
   const streakDays = todayStatus?.streakDays ?? 0;
+  useEffect(() => {
+    setAreAllLanguageCorrectionsVisible(false);
+  }, [feedback?.attemptNo]);
+
   useEffect(() => {
     if (step !== "complete") {
       return;
@@ -2979,13 +2468,43 @@ export function AnswerLoop() {
     }
   }
 
-  function handleFinishLoop() {
-    if (selectedPromptId) {
-      clearVisibleIncompleteLoop(selectedPromptId);
+  async function handleFinishLoop() {
+    if (!sessionId || isFinishingLoop) {
+      return;
     }
-    setShowLoginWall(false);
-    setError("");
-    setStep("complete");
+
+    try {
+      setIsFinishingLoop(true);
+      setError("");
+      await completeFeedbackSession(sessionId, guestId || undefined);
+      if (selectedPromptId) {
+        clearVisibleIncompleteLoop(selectedPromptId);
+      }
+      setShowLoginWall(false);
+      setStep("complete");
+
+      if (isLoggedIn) {
+        setTodayStatus((current) => ({
+          date: current?.date ?? new Date().toISOString().slice(0, 10),
+          completed: true,
+          completedSessions: Math.max(1, current?.completedSessions ?? 0),
+          startedSessions: Math.max(1, current?.startedSessions ?? 0),
+          streakDays: Math.max(1, current?.streakDays ?? 0),
+          totalWrittenSentences: current?.totalWrittenSentences ?? 0,
+          totalAnswerSessions: current?.totalAnswerSessions ?? 0
+        }));
+        setWelcomeCompletedDateKeys((current) => {
+          const todayKey = formatDateKey(new Date());
+          return current.includes(todayKey) ? current : [...current, todayKey];
+        });
+      }
+    } catch (caughtError) {
+      setError(
+        caughtError instanceof Error ? caughtError.message : "지금은 루프를 완료할 수 없어요."
+      );
+    } finally {
+      setIsFinishingLoop(false);
+    }
   }
 
   function handleTryAnotherPrompt() {
@@ -3261,40 +2780,39 @@ export function AnswerLoop() {
     const coachHelpSnapshot = coachHelp;
     const promptSnapshot = selectedPrompt;
     const promptPoolSnapshot = allPrompts.length > 0 ? allPrompts : prompts;
+    const trimmedAnswer = nextAnswer.trim();
+    const pendingSubmission =
+      pendingSubmissionRef.current?.promptId === selectedPromptId &&
+      pendingSubmissionRef.current.answer === trimmedAnswer &&
+      pendingSubmissionRef.current.mode === mode
+        ? pendingSubmissionRef.current
+        : {
+            promptId: selectedPromptId,
+            answer: trimmedAnswer,
+            mode,
+            submissionId: createSubmissionId()
+          };
+    pendingSubmissionRef.current = pendingSubmission;
 
     void submitFeedback({
       promptId: selectedPromptId,
-      answer: nextAnswer.trim(),
+      answer: trimmedAnswer,
       sessionId: sessionId || undefined,
       attemptType: mode,
-      guestId: guestId || undefined
+      guestId: guestId || undefined,
+      submissionId: pendingSubmission.submissionId
     })
       .then((result) => {
+        pendingSubmissionRef.current = null;
         setFeedback(result);
         setSessionId(result.sessionId);
-        setLastSubmittedAnswer(nextAnswer.trim());
+        setLastSubmittedAnswer(trimmedAnswer);
         setStep("feedback");
         setDraftStatusMessage("");
 
         void clearPersistedDraft(selectedPromptId, mode === "INITIAL" ? "ANSWER" : "REWRITE").catch(
           () => undefined
         );
-
-        if (isLoggedIn && result.loopComplete) {
-          setTodayStatus((current) => ({
-            date: current?.date ?? new Date().toISOString().slice(0, 10),
-            completed: true,
-            completedSessions: Math.max(1, current?.completedSessions ?? 0),
-            startedSessions: Math.max(1, current?.startedSessions ?? 0),
-            streakDays: Math.max(1, current?.streakDays ?? 0),
-            totalWrittenSentences: (current?.totalWrittenSentences ?? 0) + 1,
-            totalAnswerSessions: (current?.totalAnswerSessions ?? 0) + 1
-          }));
-          setWelcomeCompletedDateKeys((current) => {
-            const todayKey = formatDateKey(new Date());
-            return current.includes(todayKey) ? current : [...current, todayKey];
-          });
-        }
 
         if (!isLoggedIn && !guestSessionId) {
           setGuestSessionId(result.sessionId);
@@ -3313,7 +2831,7 @@ export function AnswerLoop() {
             try {
               const usageRequest = {
                 promptId: selectedPromptId,
-                answer: nextAnswer.trim(),
+                answer: trimmedAnswer,
                 sessionId: result.sessionId,
                 guestId: guestId || undefined,
                 attemptNo: result.attemptNo,
@@ -3328,7 +2846,7 @@ export function AnswerLoop() {
               } catch {
                 usageResult = buildLocalCoachUsage(
                   promptSnapshot,
-                  nextAnswer.trim(),
+                  trimmedAnswer,
                   coachHelpSnapshot.expressions,
                   promptPoolSnapshot
                 );
@@ -4100,47 +3618,6 @@ export function AnswerLoop() {
     });
   }, [scrollRewriteFeedbackIntoView]);
 
-  function resolveScreenPolicy(): FeedbackScreenPolicy | null {
-    if (!feedback) {
-      return null;
-    }
-
-    return (
-      feedback.ui?.screenPolicy ?? {
-        completionState: feedback.loopComplete ? "CAN_FINISH" : "NEEDS_REVISION",
-        sectionOrder: [
-          "QUESTION_ANSWER",
-          "TOP_STATUS",
-          "KEEP_WHAT_WORKS",
-          "FIX_FIRST",
-          "REWRITE_GUIDE",
-          "MODEL_ANSWER",
-          "REFINEMENT",
-          "CTA"
-        ],
-        keepWhatWorksDisplayMode:
-          feedback.strengths.length > 0 || usedExpressions.length > 0 ? "SHOW_EXPANDED" : "HIDE",
-        refinementDisplayMode:
-          fixItems.length > 0 ||
-          Boolean(feedback.ui?.microTip?.originalText?.trim() && feedback.ui?.microTip?.revisedText?.trim())
-            ? "SHOW_EXPANDED"
-            : "HIDE",
-        rewriteGuideDisplayMode: "SHOW_EXPANDED",
-        rewriteGuideMode: feedback.loopComplete ? "OPTIONAL_POLISH" : "DETAIL_SCAFFOLD",
-        modelAnswerDisplayMode: feedback.modelAnswer?.trim()
-          ? feedback.loopComplete
-            ? "SHOW_COLLAPSED"
-            : "SHOW_EXPANDED"
-          : "HIDE",
-        keepWhatWorksMaxItems: 1,
-        keepExpressionChipMaxItems: 2,
-        refinementMaxCards: 2,
-        showFinishCta: Boolean(feedback.loopComplete),
-        showRewriteCta: true,
-        showCancelCta: false
-      }
-    );
-  }
 
   function resolveLoopStatus(): FeedbackLoopStatus | null {
     if (!feedback) {
@@ -4165,371 +3642,6 @@ export function AnswerLoop() {
     );
   }
 
-  function resolveSecondaryLearningPoints(): FeedbackSecondaryLearningPoint[] {
-    if (!feedback) {
-      return [];
-    }
-
-    const uiPoints =
-      feedback.ui?.fixPoints?.filter((point) => {
-        if (!point) {
-          return false;
-        }
-        return Boolean(
-          point.headline?.trim() ||
-            point.originalText?.trim() ||
-            point.revisedText?.trim() ||
-            point.exampleEn?.trim()
-        );
-      }) ?? [];
-    if (uiPoints.length > 0) {
-      return uiPoints;
-    }
-
-    const fallback: FeedbackSecondaryLearningPoint[] = [];
-    const microTip = feedback.ui?.microTip;
-    if (microTip?.originalText?.trim() && microTip.revisedText?.trim() && microTip.reasonKo?.trim()) {
-      fallback.push({
-        kind: "GRAMMAR",
-        title: microTip.title || "작은 표현 다듬기",
-        originalText: microTip.originalText,
-        revisedText: microTip.revisedText,
-        supportText: microTip.reasonKo
-      });
-    }
-
-    filterSuggestedRefinementExpressions(
-      feedback.refinementExpressions,
-      lastSubmittedAnswer,
-      feedback.correctedAnswer
-    )
-      .filter((expression) => expression.displayable !== false)
-      .forEach((expression) => {
-        if (!expression.expression?.trim()) {
-          return;
-        }
-        fallback.push({
-          kind: "EXPRESSION",
-          title: "써보면 좋은 표현",
-          headline: expression.expression,
-          meaningKo: expression.meaningKo,
-          guidanceKo: expression.guidanceKo,
-          exampleEn: expression.exampleEn,
-          exampleKo: expression.exampleKo
-        });
-      });
-
-    return fallback;
-  }
-
-  function resolveLearningPointLead(point: FeedbackSecondaryLearningPoint) {
-    const headline = trimNullable(point.headline);
-    const exampleEn = trimNullable(point.exampleEn);
-    if (looksLikeEnglishText(headline)) {
-      return headline;
-    }
-    if (looksLikeEnglishText(exampleEn)) {
-      return exampleEn;
-    }
-    return pickFirstNonEmpty(headline, point.revisedText, point.originalText, exampleEn);
-  }
-
-  function resolveLearningPointMeaning(
-    point: FeedbackSecondaryLearningPoint,
-    lead: string | null
-  ) {
-    const headline = trimNullable(point.headline);
-    const meaningKo = trimNullable(point.meaningKo);
-    const exampleKo = trimNullable(point.exampleKo);
-    if (meaningKo) {
-      if (looksLikeEnglishSentence(lead) && exampleKo) {
-        return null;
-      }
-      return meaningKo;
-    }
-    if (headline && headline !== lead && !looksLikeEnglishText(headline)) {
-      return headline;
-    }
-    return null;
-  }
-
-  function resolveLearningPointGuidance(point: FeedbackSecondaryLearningPoint) {
-    return trimNullable(point.guidanceKo);
-  }
-
-  function resolveLearningPointSupport(point: FeedbackSecondaryLearningPoint) {
-    return trimNullable(point.supportText);
-  }
-
-  function resolveRewritePracticeSuggestions(starter?: string | null): RewriteSuggestion[] {
-    const uiRewriteSuggestions = feedback?.ui?.rewriteSuggestions;
-    if (uiRewriteSuggestions) {
-      const suggestions: RewriteSuggestion[] = [];
-      const seen = new Set<string>();
-
-      uiRewriteSuggestions.forEach((suggestion, index) => {
-        const english = stripRewriteSuggestionTerminalPunctuation(suggestion?.english ?? "");
-        if (!english || !canSuggestionFillRewriteStarter(english, starter)) {
-          return;
-        }
-        const dedupeKey = `ui-${english.toLowerCase()}`;
-        if (seen.has(dedupeKey)) {
-          return;
-        }
-        seen.add(dedupeKey);
-        suggestions.push({
-          key: `ui-${english}-${index}`,
-          english,
-          korean: trimNullable(suggestion?.meaningKo),
-          note: trimNullable(suggestion?.noteKo)
-        });
-      });
-
-      return suggestions.slice(0, 3);
-    }
-
-    const seen = new Set<string>();
-    const suggestions: RewriteSuggestion[] = [];
-
-    [...resolveSecondaryLearningPoints()]
-      .filter((point) => point.kind === "EXPRESSION")
-      .sort((left, right) => {
-        const leftPriority = left.kind === "EXPRESSION" ? 0 : 1;
-        const rightPriority = right.kind === "EXPRESSION" ? 0 : 1;
-        return leftPriority - rightPriority;
-      })
-      .forEach((point, index) => {
-        const lead = resolveLearningPointLead(point);
-        if (!lead || !looksLikeEnglishText(lead)) {
-          return;
-        }
-        const normalizedLead = stripRewriteSuggestionTerminalPunctuation(lead);
-        if (!canSuggestionFillRewriteStarter(normalizedLead, starter)) {
-          return;
-        }
-        const korean = resolveLearningPointMeaning(point, lead) ?? trimNullable(point.exampleKo);
-        const note = pickFirstNonEmpty(resolveLearningPointGuidance(point), resolveLearningPointSupport(point));
-        const key = `${point.kind}-${normalizedLead}-${index}`;
-        if (seen.has(key)) {
-          return;
-        }
-        seen.add(key);
-        suggestions.push({
-          key,
-          english: normalizedLead,
-          korean,
-          note
-        });
-      });
-
-    return suggestions.slice(0, 3);
-  }
-
-  void resolveRewritePracticeSuggestions;
-
-  function buildRefinementIdeaCards(): RefinementIdeaCard[] {
-    const merged: RefinementIdeaCard[] = [];
-    const seen = new Set<string>();
-
-    const pushCard = (card: RefinementIdeaCard | null) => {
-      if (!card) {
-        return;
-      }
-
-      const englishAnchor = normalizeRefinementIdeaAnchor(card.english || card.revisedText);
-      const dedupeKey = englishAnchor
-        ? englishAnchor
-        : `${normalizeRefinementIdeaAnchor(card.originalText)}|${normalizeRefinementIdeaAnchor(card.revisedText)}`;
-
-      if (!dedupeKey || seen.has(dedupeKey)) {
-        return;
-      }
-
-      seen.add(dedupeKey);
-      merged.push(card);
-    };
-
-    filterSuggestedRefinementExpressions(
-      feedback?.refinementExpressions,
-      lastSubmittedAnswer,
-      feedback?.correctedAnswer
-    ).forEach((expression, index) => {
-      if (!expression || expression.displayable === false) {
-        return;
-      }
-      const english = stripRewriteSuggestionTerminalPunctuation(trimNullable(expression.expression) ?? "");
-      if (!english || !looksLikeEnglishText(english)) {
-        return;
-      }
-
-      pushCard({
-        key: `refinement-${english.toLowerCase()}-${index}`,
-        title: "",
-        english,
-        korean: trimNullable(expression.meaningKo) ?? trimNullable(expression.exampleKo) ?? "",
-        note: trimNullable(expression.guidanceKo) ?? "",
-        originalText: "",
-        revisedText: "",
-        exampleEn: trimNullable(expression.exampleEn),
-        tags: null,
-        hasSwapPair: false,
-        optionalTone: false
-      });
-    });
-
-    resolveSecondaryLearningPoints()
-      .filter((point) => point.kind === "EXPRESSION")
-      .forEach((point, index) => {
-        const lead = resolveLearningPointLead(point);
-        const english = stripRewriteSuggestionTerminalPunctuation(lead ?? "");
-        if (!english || !looksLikeEnglishText(english)) {
-          return;
-        }
-
-        pushCard({
-          key: `point-${english.toLowerCase()}-${index}`,
-          title: "",
-          english,
-          korean: resolveLearningPointMeaning(point, lead) ?? trimNullable(point.exampleKo) ?? "",
-          note: pickFirstNonEmpty(resolveLearningPointGuidance(point), resolveLearningPointSupport(point)) ?? "",
-          originalText: "",
-          revisedText: "",
-          exampleEn: trimNullable(point.exampleEn),
-          tags: null,
-          hasSwapPair: false,
-          optionalTone: false
-        });
-      });
-
-    return merged;
-  }
-
-  function renderKeepSection() {
-    if (!feedback) {
-      return null;
-    }
-
-    const keepStrengths = feedback.strengths.slice(0, 1);
-    const expressionChips = usedExpressions.slice(0, 2);
-    if (keepStrengths.length === 0 && expressionChips.length === 0) {
-      return null;
-    }
-
-    return (
-      <section className={styles.feedbackCard}>
-        <h3 className={styles.feedbackSectionHeading} style={feedbackSectionHeadingKeepStyle}>
-          유지할 점
-        </h3>
-        {keepStrengths.map((strength) => (
-          <p key={strength} style={feedbackBulletLineStyle}>
-            {`\u2022 ${strength}`}
-          </p>
-        ))}
-        {expressionChips.length > 0 ? (
-          <div
-            className={`${styles.feedbackChipSection} ${
-              keepStrengths.length === 0 ? styles.feedbackChipSectionStandalone : ""
-            }`}
-          >
-            <span className={styles.feedbackChipLabel}>잘 쓴 표현</span>
-            <div className={styles.feedbackChipList}>
-              {expressionChips.map((expression) => (
-                <button
-                  key={expression.key}
-                  type="button"
-                  className={
-                    isExpressionSaved(expression.expression)
-                      ? styles.feedbackChipSaveButtonActive
-                      : styles.feedbackChipSaveButton
-                  }
-                  onClick={() =>
-                    void handleToggleSavedExpression({
-                      expression: expression.expression,
-                      meaningKo: expression.meaningKo,
-                      exampleEn: expression.exampleEn,
-                      usageTipKo: expression.usageTip,
-                      tags: expression.tags,
-                      sourceType: "USED_EXPRESSION"
-                    })
-                  }
-                  disabled={isExpressionSaving(expression.expression)}
-                >
-                  <span>{expression.expression}</span>
-                  <small>
-                    {isExpressionSaving(expression.expression)
-                      ? "저장 중"
-                      : isExpressionSaved(expression.expression)
-                        ? "저장됨"
-                        : "저장"}
-                  </small>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : null}
-        {expressionSaveError ? <p className={styles.feedbackExpressionError}>{expressionSaveError}</p> : null}
-        {expressionSaveNotice ? <p className={styles.feedbackExpressionNotice}>{expressionSaveNotice}</p> : null}
-      </section>
-    );
-  }
-
-  function renderPrimaryFixDiff(
-    originalTextValue?: string | null,
-    revisedTextValue?: string | null,
-    mode: "original" | "revised" = "original"
-  ) {
-    const originalText = originalTextValue?.trim() ?? "";
-    const revisedText = revisedTextValue?.trim() ?? "";
-
-    if (originalText && revisedText && originalText !== revisedText && shouldShowFixComparison(originalText, revisedText)) {
-      const segments = buildInlineFeedbackSegments(
-        originalText,
-        revisedText,
-        null
-      );
-
-      if (segments.length > 0) {
-        return segments.map((segment, index) => renderPrimaryFixDiffSegment(segment, mode, index));
-      }
-    }
-
-    return mode === "original" ? originalTextValue : revisedTextValue;
-  }
-
-  function renderPrimaryFixDiffSegment(
-    segment: RenderedInlineFeedbackSegment,
-    mode: "original" | "revised",
-    index: number
-  ) {
-    switch (segment.kind) {
-      case "equal":
-        return <span key={`${mode}-equal-${index}`}>{segment.text}</span>;
-      case "replace":
-        return mode === "original" ? (
-          <span key={`${mode}-replace-${index}`} className={styles.primaryFixRemoved}>
-            {segment.removed}
-          </span>
-        ) : (
-          <span key={`${mode}-replace-${index}`} className={styles.primaryFixAdded}>
-            {segment.added}
-          </span>
-        );
-      case "remove":
-        return mode === "original" ? (
-          <span key={`${mode}-remove-${index}`} className={styles.primaryFixRemoved}>
-            {segment.text}
-          </span>
-        ) : null;
-      case "add":
-        return mode === "revised" ? (
-          <span key={`${mode}-add-${index}`} className={styles.primaryFixAdded}>
-            {segment.text}
-          </span>
-        ) : null;
-      default:
-        return null;
-    }
-  }
 
   function renderCoachMoveDiffSegment(
     segment: RenderedInlineFeedbackSegment,
@@ -4591,8 +3703,6 @@ export function AnswerLoop() {
 
         {hasCoachMove(coachMove) ? (
           <div className={styles.coachMoveBody}>
-            {shouldShowCoachFocus ? <p className={styles.coachMoveFocus}>{coachSupportingText}</p> : null}
-
             {shouldShowCoachMoveComparison ? (
               <div className={styles.coachMoveSwap}>
                 {before ? (
@@ -4603,9 +3713,60 @@ export function AnswerLoop() {
                 ) : null}
                 {after ? (
                   <div className={`${styles.coachMoveSwapRow} ${styles.coachMoveAfterRow}`}>
-                    <span className={styles.coachMoveSwapLabel}>적용</span>
+                    <span className={styles.coachMoveSwapLabel}>
+                      {isLanguageFix ? "이번에 고친 문장" : "적용"}
+                    </span>
                     <p className={styles.coachMoveAfter}>{renderCoachMoveDiffText(before ?? "", after, "revised")}</p>
                   </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {languageCorrections.length > 0 ? (
+              <div className={styles.languageCorrectionList}>
+                {languageCorrections.map((correction, index) => (
+                  <article
+                    key={`${correction.kind}-${correction.before ?? ""}-${index}`}
+                    className={styles.languageCorrectionItem}
+                  >
+                    <span
+                      className={`${styles.languageCorrectionBadge} ${
+                        correction.kind === "STRUCTURE"
+                          ? styles.languageCorrectionBadgeStructure
+                          : correction.kind === "GRAMMAR_BLOCKING"
+                            ? styles.languageCorrectionBadgeCore
+                            : styles.languageCorrectionBadgeDetail
+                      }`}
+                    >
+                      {correction.label}
+                    </span>
+                    {trimNullable(correction.before) || trimNullable(correction.after) ? (
+                      <p className={styles.languageCorrectionSwap}>
+                        {trimNullable(correction.before) ? (
+                          <del>{correction.before}</del>
+                        ) : null}
+                        <span aria-hidden="true">→</span>
+                        {trimNullable(correction.after) ? (
+                          <strong>{correction.after}</strong>
+                        ) : null}
+                      </p>
+                    ) : null}
+                    <p className={styles.languageCorrectionReason}>{correction.reason}</p>
+                  </article>
+                ))}
+                {hiddenLanguageCorrectionCount > 0 ? (
+                  <button
+                    type="button"
+                    className={styles.languageCorrectionToggle}
+                    aria-expanded={areAllLanguageCorrectionsVisible}
+                    onClick={() =>
+                      setAreAllLanguageCorrectionsVisible((current) => !current)
+                    }
+                  >
+                    {areAllLanguageCorrectionsVisible
+                      ? "추가 교정 접기"
+                      : `교정 ${hiddenLanguageCorrectionCount}개 더 보기`}
+                  </button>
                 ) : null}
               </div>
             ) : null}
@@ -4656,286 +3817,77 @@ export function AnswerLoop() {
     );
   }
 
-  function renderRewritePracticeSection() {
-    const refinementIdeaCards = buildRefinementIdeaCards();
+  function renderVisibleFeedbackSummary() {
+    if (!feedback) {
+      return null;
+    }
 
     return (
-      <section className={styles.feedbackCard}>
-        <h3 className={styles.feedbackSectionHeading} style={feedbackSectionHeadingBlueStyle}>
-          표현 더하기
-        </h3>
-        {refinementIdeaCards.length > 0 ? (
-          <div style={isMobileViewport ? feedbackRewriteMobileListStyle : feedbackRewriteListStyle}>
-            {refinementIdeaCards.map((idea, index) => (
-              <article
-                key={idea.key}
-                className={styles.feedbackSubsectionCard}
-                style={
-                  isMobileViewport
-                    ? {
-                        ...feedbackRewriteMobileItemStyle,
-                        ...(index < refinementIdeaCards.length - 1 ? feedbackRewriteMobileItemDividerStyle : null)
-                      }
-                    : idea.optionalTone
-                      ? { ...feedbackRewriteHeroStyle, ...feedbackRewriteHeroOptionalStyle }
-                      : feedbackRewriteHeroStyle
-                }
-              >
-                {idea.title ? <span className={styles.feedbackSubsectionLabel}>{idea.title}</span> : null}
-                {idea.hasSwapPair ? (
-                  <div style={feedbackSwapStackStyle}>
-                    <div style={feedbackSwapSentenceStyle}>
-                      <span style={{ ...feedbackSwapBadgeStyle, ...feedbackSwapBadgeOriginalStyle }}>
-                        원문
-                      </span>
-                      <p style={{ ...feedbackSwapTextStyle, ...feedbackSwapTextOriginalStyle }}>
-                        {renderPrimaryFixDiff(idea.originalText, idea.revisedText, "original")}
-                      </p>
-                    </div>
-                    <div style={feedbackSwapSentenceStyle}>
-                      <span style={{ ...feedbackSwapBadgeStyle, ...feedbackSwapBadgeRevisedStyle }}>
-                        수정문
-                      </span>
-                      <p style={{ ...feedbackSwapTextStyle, ...feedbackSwapTextRevisedStyle }}>
-                        {renderPrimaryFixDiff(idea.originalText, idea.revisedText, "revised")}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={feedbackRewriteSuggestionCardStyle}>
-                    <strong style={feedbackRewriteStarterStyle}>{idea.english}</strong>
-                    {idea.korean ? (
-                      <span style={feedbackRewriteTranslationStyle}>
-                        {renderLocalizedExpression(idea.korean)}
-                      </span>
-                    ) : null}
-                  </div>
-                )}
-                {!idea.hasSwapPair && idea.english ? (
+      <div className={styles.visibleFeedbackStack}>
+        {visibleStrength ? (
+          <section className={styles.visibleStrengthCard}>
+            <span>잘한 점</span>
+            <p>{visibleStrength}</p>
+          </section>
+        ) : null}
+
+        {renderCoachMoveSection()}
+
+        {isLoopReadyToFinish && completionRefinementExpressions.length > 0 ? (
+          <section className={styles.visibleExpressionCard}>
+            <span className={styles.visibleExpressionLabel}>가볍게 넣어볼 표현</span>
+            <div className={styles.visibleExpressionList}>
+              {completionRefinementExpressions.map((expression) => {
+                const saved = isExpressionSaved(expression.expression);
+                const saving = isExpressionSaving(expression.expression);
+                return (
                   <button
+                    key={expression.expression}
                     type="button"
-                    className={
-                      isExpressionSaved(idea.english)
-                        ? styles.feedbackRewriteSaveButtonActive
-                        : styles.feedbackRewriteSaveButton
-                    }
+                    className={`${styles.visibleExpressionChip} ${
+                      saved ? styles.visibleExpressionChipSaved : ""
+                    }`}
                     onClick={() =>
                       void handleToggleSavedExpression({
-                        expression: idea.english,
-                        meaningKo: idea.korean,
-                        exampleEn: idea.exampleEn,
-                        usageTipKo: idea.note,
-                        tags: idea.tags,
+                        expression: expression.expression,
+                        meaningKo: expression.meaningKo,
+                        exampleEn: expression.exampleEn,
+                        usageTipKo: expression.guidanceKo,
+                        tags: ["표현 더하기"],
                         sourceType: "REFINEMENT_EXPRESSION"
                       })
                     }
-                    disabled={isExpressionSaving(idea.english)}
+                    disabled={saving}
                   >
-                    {isExpressionSaving(idea.english)
-                      ? "저장 중"
-                      : isExpressionSaved(idea.english)
-                        ? "저장됨"
-                        : "표현 저장"}
+                    <strong>{expression.expression}</strong>
+                    {expression.meaningKo ? <small>{expression.meaningKo}</small> : null}
+                    <em>{saving ? "저장 중" : saved ? "저장됨" : "저장"}</em>
                   </button>
-                ) : null}
-                {idea.note ? <p style={feedbackRewriteInstructionStyle}>{idea.note}</p> : null}
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div style={feedbackTabEmptyStateStyle}>
-            <p style={feedbackTabEmptyStateTextStyle}>이번 피드백에는 추가 표현 제안이 아직 없어요.</p>
-          </div>
-        )}
-      </section>
-    );
-  }
-
-  function renderPromptSection() {
-    if (!feedback) {
-      return null;
-    }
-
-    return (
-      <article className={styles.feedbackPromptCard}>
-        <p className={styles.feedbackPromptText}>
-          {selectedPrompt?.questionEn ?? "질문을 불러오고 있어요."}
-        </p>
-        {selectedPrompt?.questionKo ? (
-          <p className={styles.feedbackPromptTranslation}>{selectedPrompt.questionKo}</p>
+                );
+              })}
+            </div>
+          </section>
         ) : null}
-      </article>
-    );
-  }
 
-  function renderExampleAnswerSection() {
-    return null;
-  }
-
-  function renderFixPointsSection() {
-    if (fixItems.length === 0) {
-      return null;
-    }
-
-    return (
-      <section className={styles.feedbackCard}>
-        <h3 className={styles.feedbackSectionHeading} style={feedbackSectionHeadingFixStyle}>
-          고쳐볼 점
-        </h3>
-        <div style={feedbackFixStackStyle}>
-          {fixItems.map((item, index) => {
-            const showComparison = shouldShowFixComparison(item.original, item.revised);
-
-            return (
-              <article
-                key={item.key}
-                style={index > 0 ? { ...feedbackFixItemStyle, ...feedbackFixItemDividerStyle } : feedbackFixItemStyle}
-              >
-                {item.reasonLines.map((line) => (
-                  <p key={`${item.key}-${line}`} style={feedbackFixReasonStyle}>
-                    {`\u2022 ${line}`}
-                  </p>
-                ))}
-                {showComparison && item.original ? (
-                  <div style={feedbackSwapSentenceStyle}>
-                    <span style={{ ...feedbackSwapBadgeStyle, ...feedbackSwapBadgeOriginalStyle }}>
-                      원문
-                    </span>
-                    <p style={{ ...feedbackSwapTextStyle, ...feedbackSwapTextOriginalStyle }}>
-                      {renderPrimaryFixDiff(item.original, item.revised, "original")}
-                    </p>
-                  </div>
-                ) : null}
-                {showComparison && item.revised ? (
-                  <div style={feedbackSwapSentenceStyle}>
-                    <span style={{ ...feedbackSwapBadgeStyle, ...feedbackSwapBadgeRevisedStyle }}>
-                      수정문
-                    </span>
-                    <p style={{ ...feedbackSwapTextStyle, ...feedbackSwapTextRevisedStyle }}>
-                      {renderPrimaryFixDiff(item.original, item.revised, "revised")}
-                    </p>
-                  </div>
-                ) : null}
-              </article>
-            );
-          })}
-        </div>
-      </section>
-    );
-  }
-
-  function renderAnswerComparisonSection() {
-    if (!feedback) {
-      return null;
-    }
-
-    const comparisonTarget = feedback.modelAnswer?.trim() || feedback.correctedAnswer?.trim() || "";
-    const comparisonLabel = feedback.modelAnswer?.trim() ? "모범 답안" : "다듬은 답안";
-    if (!comparisonTarget || comparisonTarget === lastSubmittedAnswer.trim()) {
-      return null;
-    }
-    const comparisonSegments = buildInlineFeedbackSegments(
-      lastSubmittedAnswer,
-      comparisonTarget,
-      feedback.inlineFeedback
-    );
-
-    return (
-      <section className={styles.feedbackCard}>
-        <h3 className={styles.feedbackSectionTitle}>내 답변 VS {comparisonLabel}</h3>
-        <div className={styles.comparisonGrid}>
-          <article className={`${styles.answerCard} ${styles.answerCardOriginal}`}>
-            <span className={styles.answerLabel}>내 답변</span>
-            <p className={styles.answerText}>
-              {comparisonSegments.length > 0
-                ? comparisonSegments.map((segment, index) =>
-                    renderPrimaryFixDiffSegment(segment, "original", index)
-                  )
-                : lastSubmittedAnswer}
-            </p>
-          </article>
-          <article className={`${styles.answerCard} ${styles.answerCardRevised}`}>
-            <span className={`${styles.answerLabel} ${styles.answerLabelPrimary}`}>{comparisonLabel}</span>
-            <p className={`${styles.answerText} ${styles.answerTextRevised}`}>
-              {comparisonSegments.length > 0
-                ? comparisonSegments.map((segment, index) =>
-                    renderPrimaryFixDiffSegment(segment, "revised", index)
-                  )
-                : comparisonTarget}
-            </p>
-            {hasHangulText(feedback.modelAnswerKo) ? (
-              <p className={styles.modelAnswerTranslation}>해석: {feedback.modelAnswerKo}</p>
-            ) : null}
-          </article>
-        </div>
-      </section>
-    );
-  }
-
-  function renderExpressionLearningSection() {
-    return null;
-  }
-
-  function renderFeedbackCoreSections() {
-    return (
-      <div className={styles.feedbackShowcase}>
-        {renderPromptSection()}
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button
-            type="button"
-            style={{
-              flex: 1,
-              appearance: "none",
-              border: feedbackPanelTab === "feedback" ? "1px solid #e09128" : "1px solid rgba(177, 172, 168, 0.32)",
-              borderRadius: "999px",
-              background: feedbackPanelTab === "feedback" ? "#f2a14a" : "#fff8ef",
-              padding: "12px 16px",
-              color: feedbackPanelTab === "feedback" ? "#2e2416" : "#7a6244",
-              fontSize: "0.96rem",
-              fontWeight: 900,
-              lineHeight: 1.2,
-              cursor: "pointer"
-            }}
-            onClick={() => setFeedbackPanelTab("feedback")}
-          >
-            피드백
-          </button>
-          <button
-            type="button"
-            style={{
-              flex: 1,
-              appearance: "none",
-              border: feedbackPanelTab === "improve" ? "1px solid #e09128" : "1px solid rgba(177, 172, 168, 0.32)",
-              borderRadius: "999px",
-              background: feedbackPanelTab === "improve" ? "#f2a14a" : "#fff8ef",
-              padding: "12px 16px",
-              color: feedbackPanelTab === "improve" ? "#2e2416" : "#7a6244",
-              fontSize: "0.96rem",
-              fontWeight: 900,
-              lineHeight: 1.2,
-              cursor: "pointer"
-            }}
-            onClick={() => setFeedbackPanelTab("improve")}
-          >
-            표현 더하기
-          </button>
-        </div>
-        <div style={{ display: "grid", gap: "18px" }}>
-          {feedbackPanelTab === "feedback" ? (
-            <>
-              {renderAnswerComparisonSection()}
-              {renderKeepSection()}
-              {renderFixPointsSection()}
-              {renderExampleAnswerSection()}
-              {renderExpressionLearningSection()}
-            </>
-          ) : (
-            renderRewritePracticeSection()
-          )}
-        </div>
+        {isLoopReadyToFinish && visibleModelAnswer ? (
+          <details className={styles.visibleModelAnswerCard}>
+            <summary>
+              <span>
+                <small>참고용</small>
+                <strong>모범답안</strong>
+              </span>
+              <span className={styles.visibleModelAnswerToggle}>펼쳐보기</span>
+            </summary>
+            <div className={styles.visibleModelAnswerBody}>
+              <p>{visibleModelAnswer}</p>
+              {visibleModelAnswerKo ? <p>{visibleModelAnswerKo}</p> : null}
+            </div>
+          </details>
+        ) : null}
       </div>
     );
   }
+
 
   function renderHelpSheet() {
     if (!showHelpSheet || !isMobileViewport || (step !== "answer" && step !== "rewrite")) {
@@ -5093,11 +4045,11 @@ export function AnswerLoop() {
   }
 
   function renderFeedbackStep() {
-    const screenPolicy = resolveScreenPolicy();
     const resolvedLoopStatus = resolveLoopStatus();
-    const showRewriteCta = screenPolicy?.showRewriteCta ?? Boolean(feedback);
-    const showFinishCta = screenPolicy?.showFinishCta ?? shouldSuggestFinish;
+    const showRewriteCta = Boolean(feedback);
+    const showFinishCta = isLoopReadyToFinish;
     const completionHeadline =
+      visibleFeedback?.completion?.headline ??
       resolvedLoopStatus?.headline ??
       feedback?.completionMessage ??
       feedbackLevel?.summary ??
@@ -5110,17 +4062,7 @@ export function AnswerLoop() {
             <div className={styles.feedbackAttemptMetaRow}>
               <span className={styles.feedbackAttemptMetaOnly}>{`${feedback.attemptNo}번째 시도`}</span>
             </div>
-            {renderCoachMoveSection()}
-            {shouldShowCoachMoveCard ? (
-              <button
-                type="button"
-                className={styles.detailToggleButton}
-                onClick={() => setShowDetailedFeedback((current) => !current)}
-              >
-                {detailToggleLabel}
-              </button>
-            ) : null}
-            {showDetailedFeedback || !shouldShowCoachMoveCard ? renderFeedbackCoreSections() : null}
+            {renderVisibleFeedbackSummary()}
           </div>
         ) : (
           <p className={styles.placeholderText}>답변을 제출하면 여기에 피드백이 표시됩니다.</p>
@@ -5149,9 +4091,12 @@ export function AnswerLoop() {
               <button
                 type="button"
                 className={styles.footerButtonRewrite}
-                onClick={handleFinishLoop}
+                onClick={() => void handleFinishLoop()}
+                disabled={isFinishingLoop}
               >
-                {resolvedLoopStatus?.finishCtaLabel ?? "루프 완료하기"}
+                {isFinishingLoop
+                  ? "완료하는 중..."
+                  : resolvedLoopStatus?.finishCtaLabel ?? "루프 완료하기"}
               </button>
             ) : null}
             {showRewriteCta ? (
@@ -5223,7 +4168,9 @@ export function AnswerLoop() {
               {showRewriteFeedback ? "피드백 숨기기" : "피드백 보기"}
             </button>
           </div>
-            {showRewriteFeedback ? <div className={styles.rewriteFeedbackBody}>{renderFeedbackCoreSections()}</div> : null}
+            {showRewriteFeedback ? (
+              <div className={styles.rewriteFeedbackBody}>{renderVisibleFeedbackSummary()}</div>
+            ) : null}
           </section>
         ) : null}
         <div className={styles.writingEditorFooterStack}>

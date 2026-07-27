@@ -35,14 +35,15 @@ const guestIdPrefix = normalizeGuestIdPrefix(
 );
 const concurrency = Math.max(1, Number(options.concurrency ?? process.env.WRITELOOP_FEEDBACK_QUALITY_CONCURRENCY ?? 1));
 const timeoutMs = Math.max(1000, Number(options.timeoutMs ?? process.env.WRITELOOP_FEEDBACK_QUALITY_TIMEOUT_MS ?? 120000));
+const repetitions = Math.max(1, Number(options.repeat ?? process.env.WRITELOOP_FEEDBACK_QUALITY_REPEAT ?? 1));
 const dryRun = options.dryRun === true;
 const shouldWriteReport = options.report !== false && !dryRun;
 const includePassPayloads = options.includePassPayloads === true || process.env.WRITELOOP_FEEDBACK_INCLUDE_PASS_PAYLOADS === "true";
 const skipPromptPreflight = options.skipPromptPreflight === true
   || process.env.WRITELOOP_FEEDBACK_SKIP_PROMPT_PREFLIGHT === "true";
 
-const cases = await loadCases(casesPath);
-const validation = validateCases(cases);
+const baseCases = await loadCases(casesPath);
+const validation = validateCases(baseCases);
 if (validation.warnings.length > 0) {
   console.warn("Feedback quality case warnings:");
   for (const warning of validation.warnings) {
@@ -59,12 +60,15 @@ if (validation.failures.length > 0) {
 }
 
 if (dryRun) {
-  console.log(`Feedback quality cases are valid: ${cases.length} case(s) from ${displayPath(casesPath)}`);
+  console.log(
+    `Feedback quality cases are valid: ${baseCases.length} base case(s) x ${repetitions} repetition(s) `
+    + `= ${baseCases.length * repetitions} execution(s) from ${displayPath(casesPath)}`
+  );
   process.exit(0);
 }
 
 if (!skipPromptPreflight) {
-  const promptValidation = await validatePromptCoverage(cases, baseUrl);
+  const promptValidation = await validatePromptCoverage(baseCases, baseUrl);
   if (promptValidation.warnings.length > 0) {
     console.warn("Feedback quality prompt warnings:");
     for (const warning of promptValidation.warnings) {
@@ -81,9 +85,13 @@ if (!skipPromptPreflight) {
   }
 }
 
+const cases = repeatCases(baseCases, repetitions);
 const startedAt = new Date().toISOString();
 console.log(`Running feedback quality suite "${suite}" against ${baseUrl}`);
-console.log(`Cases: ${cases.length}, concurrency: ${concurrency}, timeoutMs: ${timeoutMs}`);
+console.log(
+  `Cases: ${baseCases.length} x ${repetitions} = ${cases.length}, `
+  + `concurrency: ${concurrency}, timeoutMs: ${timeoutMs}`
+);
 
 const results = await runPool(cases, concurrency, async (testCase, index) => {
   const startedAtMs = Date.now();
@@ -94,9 +102,14 @@ const results = await runPool(cases, concurrency, async (testCase, index) => {
     const status = evaluation.pass ? "ok" : "not ok";
 
     const targetLabel = evaluation.targetSlot ? `/${evaluation.targetSlot}` : "";
-    console.log(`${status} ${index + 1}/${cases.length}: ${testCase.name} -> ${evaluation.missionKind ?? "(blank)"}${targetLabel} (${elapsedMs}ms)`);
+    const repetitionLabel = repetitions > 1
+      ? ` [${testCase.__qualityRepetition}/${repetitions}]`
+      : "";
+    console.log(`${status} ${index + 1}/${cases.length}: ${testCase.name}${repetitionLabel} -> ${evaluation.missionKind ?? "(blank)"}${targetLabel} (${elapsedMs}ms)`);
     return {
       index: index + 1,
+      caseIndex: testCase.__qualityCaseIndex,
+      repetition: testCase.__qualityRepetition,
       name: testCase.name,
       category: testCase.category ?? null,
       promptId: testCase.promptId,
@@ -128,6 +141,8 @@ const results = await runPool(cases, concurrency, async (testCase, index) => {
     console.error(`not ok ${index + 1}/${cases.length}: ${testCase.name} (${elapsedMs}ms)`);
     return {
       index: index + 1,
+      caseIndex: testCase.__qualityCaseIndex,
+      repetition: testCase.__qualityRepetition,
       name: testCase.name,
       category: testCase.category ?? null,
       promptId: testCase.promptId,
@@ -167,6 +182,8 @@ const report = {
   baseUrl,
   startedAt,
   finishedAt,
+  baseCaseCount: baseCases.length,
+  repetitions,
   total: results.length,
   passed,
   failed,
@@ -181,10 +198,13 @@ const report = {
   warningCounts,
   missionConfusions: buildMissionConfusions(results),
   targetSlotConfusions: buildTargetSlotConfusions(results),
+  repeatStability: buildRepeatStability(results),
   failedSnapshots: results
     .filter((result) => !result.pass)
     .map((result) => ({
       index: result.index,
+      caseIndex: result.caseIndex,
+      repetition: result.repetition,
       name: result.name,
       category: result.category,
       promptId: result.promptId,
@@ -209,7 +229,8 @@ if (shouldWriteReport) {
 if (failed > 0) {
   console.error(`\nFeedback quality check failed: ${passed}/${results.length} passed`);
   for (const result of results.filter((item) => !item.pass)) {
-    console.error(`- ${result.name}: ${result.failures.map((failure) => failure.message).join("; ")}`);
+    const repetitionLabel = repetitions > 1 ? ` [${result.repetition}/${repetitions}]` : "";
+    console.error(`- ${result.name}${repetitionLabel}: ${result.failures.map((failure) => failure.message).join("; ")}`);
   }
   process.exit(1);
 }
@@ -305,6 +326,7 @@ function parseArgs(args) {
     reportDir: null,
     concurrency: null,
     timeoutMs: null,
+    repeat: null,
     dryRun: false,
     report: true,
     stableGuestId: false,
@@ -331,6 +353,9 @@ function parseArgs(args) {
         break;
       case "--timeout-ms":
         parsed.timeoutMs = args[++index];
+        break;
+      case "--repeat":
+        parsed.repeat = args[++index];
         break;
       case "--dry-run":
         parsed.dryRun = true;
@@ -448,6 +473,44 @@ function buildLatencySummary(results) {
   };
 }
 
+function buildRepeatStability(results) {
+  const groups = new Map();
+  for (const result of results) {
+    const key = `${result.caseIndex}:${result.promptId}:${result.name}`;
+    const group = groups.get(key) ?? {
+      caseIndex: result.caseIndex,
+      name: result.name,
+      promptId: result.promptId,
+      executions: 0,
+      passed: 0,
+      requestFailures: 0
+    };
+    group.executions += 1;
+    group.passed += result.pass ? 1 : 0;
+    group.requestFailures += result.failures.some((failure) => failure.code === "request_failed") ? 1 : 0;
+    groups.set(key, group);
+  }
+
+  return [...groups.values()]
+    .map((group) => ({
+      ...group,
+      failed: group.executions - group.passed,
+      passRate: Number((group.passed / group.executions).toFixed(4)),
+      finalRequestFailureRate: Number((group.requestFailures / group.executions).toFixed(4))
+    }))
+    .sort((left, right) => left.caseIndex - right.caseIndex);
+}
+
+function repeatCases(casesToRepeat, repeatCount) {
+  return casesToRepeat.flatMap((testCase, caseIndex) =>
+    Array.from({ length: repeatCount }, (_, repetitionIndex) => ({
+      ...testCase,
+      __qualityCaseIndex: caseIndex + 1,
+      __qualityRepetition: repetitionIndex + 1
+    }))
+  );
+}
+
 function percentile(sortedValues, ratio) {
   const index = Math.min(sortedValues.length - 1, Math.max(0, Math.ceil(sortedValues.length * ratio) - 1));
   return sortedValues[index];
@@ -458,7 +521,7 @@ function buildPayloadSnapshot(payload) {
     loopComplete: payload?.loopComplete === true,
     completionMessage: limitText(payload?.completionMessage, 500),
     summary: limitText(payload?.summary, 800),
-    correctedAnswer: limitText(payload?.correctedAnswer, 1200),
+    revisedAnswer: limitText(payload?.revisedAnswer, 1200),
     modelAnswer: limitText(payload?.modelAnswer, 1200),
     modelAnswerKo: limitText(payload?.modelAnswerKo, 1200),
     rewriteChallenge: limitText(payload?.rewriteChallenge, 800),
@@ -477,7 +540,14 @@ function buildPayloadSnapshot(payload) {
         phrase: limitText(item?.phrase, 300),
         meaningKo: limitText(item?.meaningKo, 300)
       })),
-      successCheck: limitText(payload?.coachMove?.successCheck, 800)
+      successCheck: limitText(payload?.coachMove?.successCheck, 800),
+      languageCorrections: sliceArray(payload?.coachMove?.languageCorrections, 25).map((correction) => compactObject({
+        kind: correction?.kind ?? null,
+        label: limitText(correction?.label, 200),
+        before: limitText(correction?.before, 800),
+        after: limitText(correction?.after, 800),
+        reason: limitText(correction?.reason, 800)
+      }))
     }),
     rewriteWorkspace: compactObject({
       seedText: limitText(payload?.rewriteWorkspace?.seedText, 1200),
@@ -626,6 +696,7 @@ Options:
   --base-url <url>      Override backend URL
   --concurrency <n>     Request concurrency, default 1
   --timeout-ms <n>      Per-case timeout, default 120000
+  --repeat <n>          Execute every case n times with the exact same prompt and answer
   --dry-run             Validate cases without calling the backend
   --no-report           Do not write JSON report
   --stable-guest-id     Reuse WRITELOOP_FEEDBACK_GUEST_ID instead of per-case guest ids

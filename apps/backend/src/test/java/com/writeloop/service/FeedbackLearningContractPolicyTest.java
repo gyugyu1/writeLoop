@@ -6,6 +6,7 @@ import com.writeloop.dto.PromptSlotContractDto;
 import com.writeloop.dto.PromptTaskMetaDto;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,574 +20,497 @@ class FeedbackLearningContractPolicyTest {
 
     @Test
     void promptContractCombinesCommonDefinitionWithQuestionSpecificEnglishMetadata() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of("REASON"), 1);
+        Map<String, Object> contract = policy.promptContract(prompt(List.of("ACTION"), List.of(), 0));
 
-        Map<String, Object> contract = policy.promptContract(prompt);
-
+        assertThat(contract).containsEntry("requiredSlots", List.of("ACTION"));
         @SuppressWarnings("unchecked")
-        Map<String, Map<String, String>> slotContracts =
+        Map<String, Map<String, String>> slots =
                 (Map<String, Map<String, String>>) contract.get("slotContracts");
-        assertThat(slotContracts.get("ACTION"))
+        assertThat(slots.get("ACTION"))
                 .containsKeys("definition", "semanticRole", "satisfiedWhen");
-        assertThat(slotContracts.get("ACTION"))
-                .doesNotContainKeys("semanticRoleKo", "satisfiedWhenKo");
     }
 
     @Test
     void promptContractRejectsMissingQuestionSpecificSlotMetadata() {
         PromptDto prompt = new PromptDto(
-                "prompt-without-contract",
+                "missing-contract",
                 "Daily life",
                 "Daily life",
                 "Routine",
                 "A",
-                "What do you usually do?",
-                "What do you usually do?",
+                "What do you do?",
+                "무엇을 하나요?",
                 "",
                 null,
-                new PromptTaskMetaDto("ROUTINE", List.of("ACTION"), List.of())
+                new PromptTaskMetaDto(
+                        "ROUTINE",
+                        List.of("ACTION"),
+                        List.of(),
+                        "PRESENT_SIMPLE",
+                        "FIRST_PERSON",
+                        0,
+                        Map.of()
+                )
         );
 
         assertThatThrownBy(() -> policy.promptContract(prompt))
                 .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("slot contracts do not match");
+                .hasMessageContaining("slot contracts");
     }
 
     @Test
-    void choosesOffTopicResetBeforeGrammarAndSlots() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of("REASON"), 1);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.OFF_TOPIC, List.of(
-                issue("baseball", "baseball games")
-        ));
-        SlotAssessments assessment = assessment(
-                missing("ACTION"),
-                missing("REASON")
+    void choosesOffTopicResetBeforeSlots() {
+        String answer = "I like baseball.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.OFF_TOPIC,
+                StructureStatus.COMPLETE,
+                answer,
+                List.of()
         );
 
-        MissionDecision result = policy.resolve(prompt, "I enjoy baseball.", diagnosis, assessment);
+        MissionDecision decision = policy.resolve(
+                prompt(List.of("ACTION"), List.of("REASON"), 1),
+                answer,
+                diagnosis,
+                assessment(missing("ACTION"), missing("REASON"))
+        );
 
-        assertThat(result.missionKind()).isEqualTo(MissionKind.TASK_RESET);
-        assertThat(result.chosenSlot()).isEqualTo("ACTION");
+        assertThat(decision.missionKind()).isEqualTo(MissionKind.TASK_RESET);
     }
 
     @Test
-    void rejectsOffTopicDiagnosisThatTreatsUnrelatedFactsAsSatisfiedSlots() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.OFF_TOPIC, List.of());
-        SlotAssessments assessment = assessment(satisfied("ACTION", "enjoy baseball"));
+    void rejectsOffTopicDiagnosisThatChangesTheAnswer() {
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.OFF_TOPIC,
+                StructureStatus.COMPLETE,
+                "I enjoy baseball.",
+                List.of(step(LanguageIssueKind.GRAMMAR_LOCAL, "I enjoy baseball."))
+        );
 
-        assertThatThrownBy(() -> policy.resolve(prompt, "I enjoy baseball.", diagnosis, assessment))
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION"), List.of(), 0),
+                "I like baseball.",
+                diagnosis,
+                assessment(missing("ACTION"))
+        ))
                 .isInstanceOf(FeedbackContractException.class)
                 .hasMessageContaining("OFF_TOPIC");
     }
 
     @Test
-    void rejectsGrammarIssueWithoutGroundedCorrectionEvidence() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of(
-                issue("invented text", "corrected text")
-        ));
-        SlotAssessments assessment = assessment(satisfied("ACTION", "goes home"));
+    void acceptsOneRevisionStepThatContainsSeveralLowLevelDiffSpans() {
+        String answer = "i take phill to stay focus.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I take a pill to stay focused.",
+                List.of(step(LanguageIssueKind.GRAMMAR_LOCAL, "I take a pill to stay focused."))
+        );
 
-        assertThatThrownBy(() -> policy.resolve(prompt, "I goes home.", diagnosis, assessment))
-                .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("exact learner-answer span");
+        LearningContractResolution resolution = policy.resolveContract(
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis,
+                assessment(satisfied("ACTION", "take phill"))
+        );
+
+        assertThat(resolution.languageCorrections()).singleElement()
+                .satisfies(correction -> {
+                    assertThat(correction.edit().originalText())
+                            .isEqualTo("i take phill to stay focus.");
+                    assertThat(correction.edit().revisedText())
+                            .isEqualTo("I take a pill to stay focused.");
+                });
     }
 
     @Test
-    void rejectsGrammarIssueWithoutAUsableImpact() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of(
-                issue(GrammarImpact.NONE, "goes", "go")
-        ));
-        SlotAssessments assessment = assessment(satisfied("ACTION", "goes home"));
+    void acceptsCumulativeRevisionStepsInSourceOrder() {
+        String answer = "i take phill to stay focus.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I take a pill to stay focused.",
+                List.of(
+                        step(LanguageIssueKind.GRAMMAR_LOCAL, "I take phill to stay focus."),
+                        step(LanguageIssueKind.GRAMMAR_LOCAL, "I take a pill to stay focus."),
+                        step(LanguageIssueKind.GRAMMAR_LOCAL, "I take a pill to stay focused.")
+                )
+        );
 
-        assertThatThrownBy(() -> policy.resolve(prompt, "I goes home.", diagnosis, assessment))
-                .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("LOCAL or BLOCKING");
+        LearningContractResolution resolution = policy.resolveContract(
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis,
+                assessment(satisfied("ACTION", "take phill"))
+        );
+
+        assertThat(resolution.languageCorrections()).hasSize(3);
+        assertThat(resolution.languageCorrections())
+                .extracting(correction -> correction.edit().sourceStart())
+                .isSorted();
+        assertThat(resolution.revisedAnswer()).isEqualTo("I take a pill to stay focused.");
+    }
+
+    @Test
+    void repeatedWordsDoNotMakeARevisionAmbiguous() {
+        String answer = "I drink makgeolli, and I enjoy makgeolli.";
+        String revised = "I drink makgeolli, and I enjoy Makgeolli.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                revised,
+                List.of(step(LanguageIssueKind.GRAMMAR_LOCAL, revised))
+        );
+
+        LearningContractResolution resolution = policy.resolveContract(
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis,
+                assessment(satisfied("ACTION", "drink makgeolli"))
+        );
+
+        assertThat(resolution.languageCorrections()).singleElement()
+                .satisfies(correction -> assertThat(correction.edit().sourceStart()).isGreaterThan(20));
+    }
+
+    @Test
+    void rejectsLanguageStepsThatMoveBackwardsWithinTheSameKind() {
+        String answer = "i go hom.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I go home.",
+                List.of(
+                        step(LanguageIssueKind.GRAMMAR_LOCAL, "i go home."),
+                        step(LanguageIssueKind.GRAMMAR_LOCAL, "I go home.")
+                )
+        );
+
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis,
+                assessment(satisfied("ACTION", "go"))
+        ))
+                .isInstanceOfSatisfying(FeedbackContractException.class, exception -> {
+                    assertThat(exception.retryable()).isFalse();
+                    assertThat(exception).hasMessageContaining("source order");
+                });
+    }
+
+    @Test
+    void rejectsLaterLanguageStepThatChangesAnEarlierCorrection() {
+        String answer = "I bad home.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I went home.",
+                List.of(
+                        step(LanguageIssueKind.GRAMMAR_BLOCKING, "I go home."),
+                        step(LanguageIssueKind.GRAMMAR_LOCAL, "I went home.")
+                )
+        );
+
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis,
+                assessment(satisfied("ACTION", "bad home"))
+        ))
+                .isInstanceOfSatisfying(FeedbackContractException.class, exception -> {
+                    assertThat(exception.retryable()).isFalse();
+                    assertThat(exception).hasMessageContaining("earlier step");
+                });
+    }
+
+    @Test
+    void rejectsLanguageStepsThatReverseTheKindPriority() {
+        String answer = "i work no today.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I do not work today.",
+                List.of(
+                        step(LanguageIssueKind.GRAMMAR_LOCAL, "I work no today."),
+                        step(LanguageIssueKind.GRAMMAR_BLOCKING, "I do not work today.")
+                )
+        );
+
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis,
+                assessment(satisfied("ACTION", "work no"))
+        ))
+                .isInstanceOfSatisfying(FeedbackContractException.class, exception -> {
+                    assertThat(exception.retryable()).isFalse();
+                    assertThat(exception).hasMessageContaining("ordered STRUCTURE");
+                });
     }
 
     @Test
     void blockingGrammarPreemptsMissingRequiredSlot() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of(
-                issue(GrammarImpact.BLOCKING, "I am go", "I am going")
-        ));
-        SlotAssessments assessment = assessment(missing("ACTION"));
+        String answer = "I work no today.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I do not work today.",
+                List.of(step(LanguageIssueKind.GRAMMAR_BLOCKING, "I do not work today."))
+        );
 
-        MissionDecision result = policy.resolve(prompt, "I am go.", diagnosis, assessment);
+        MissionDecision decision = policy.resolve(
+                prompt(List.of("ACTION", "REASON"), List.of(), 0),
+                answer,
+                diagnosis,
+                assessment(satisfied("ACTION", "work no"), missing("REASON"))
+        );
 
-        assertThat(result.missionKind()).isEqualTo(MissionKind.GRAMMAR_FIX);
-        assertThat(result.chosenSlot()).isNull();
+        assertThat(decision.missionKind()).isEqualTo(MissionKind.LANGUAGE_FIX);
     }
 
     @Test
-    void onTopicFragmentPreemptsBlockingGrammarAndMissingRequiredSlot() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
-                new TopicAssessment(TopicRelevance.ON_TOPIC, "질문에 관련된 답이에요."),
-                structureAssessment(
-                        StructureStatus.FRAGMENT,
-                        structureRepair("Too many tasks at work.", "I have too many tasks at work.")
-                ),
-                List.of(issue(GrammarImpact.BLOCKING, "Too many tasks", "I have too many tasks"))
+    void fragmentRequiresAStructureIssueAndPreemptsGrammarAndSlots() {
+        String answer = "After work, noodles.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.FRAGMENT,
+                "After work, I eat noodles.",
+                List.of(step(LanguageIssueKind.STRUCTURE, "After work, I eat noodles."))
         );
-        SlotAssessments assessment = assessment(missing("ACTION"));
 
-        MissionDecision result = policy.resolve(prompt, "Too many tasks at work.", diagnosis, assessment);
+        MissionDecision decision = policy.resolve(
+                prompt(List.of("ACTION", "REASON"), List.of(), 0),
+                answer,
+                diagnosis,
+                assessment(satisfied("ACTION", "noodles"), missing("REASON"))
+        );
 
-        assertThat(result.missionKind()).isEqualTo(MissionKind.STRUCTURE_FIX);
-        assertThat(result.chosenSlot()).isNull();
+        assertThat(decision.missionKind()).isEqualTo(MissionKind.LANGUAGE_FIX);
     }
 
     @Test
-    void offTopicStillPreemptsFragment() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
-                new TopicAssessment(TopicRelevance.OFF_TOPIC, "질문과 다른 주제예요."),
-                structureAssessment(StructureStatus.FRAGMENT),
-                List.of()
+    void rejectsFragmentWithoutAStructureIssue() {
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.FRAGMENT,
+                "I eat noodles.",
+                List.of(step(LanguageIssueKind.GRAMMAR_LOCAL, "I eat noodles."))
         );
-        SlotAssessments assessment = assessment(missing("ACTION"));
 
-        MissionDecision result = policy.resolve(prompt, "Baseball with my brother.", diagnosis, assessment);
-
-        assertThat(result.missionKind()).isEqualTo(MissionKind.TASK_RESET);
-    }
-
-    @Test
-    void rejectsOffTopicDiagnosisWithStructureRepair() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
-                new TopicAssessment(TopicRelevance.OFF_TOPIC, "질문과 다른 주제예요."),
-                structureAssessment(
-                        StructureStatus.FRAGMENT,
-                        structureRepair("Baseball with my brother.", "I watch baseball with my brother.")
-                ),
-                List.of()
-        );
-        SlotAssessments assessment = assessment(missing("ACTION"));
-
-        assertThatThrownBy(() -> policy.resolve(prompt, "Baseball with my brother.", diagnosis, assessment))
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION"), List.of(), 0),
+                "Eat noodles.",
+                diagnosis,
+                assessment(satisfied("ACTION", "Eat noodles"))
+        ))
                 .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("OFF_TOPIC structure assessment");
+                .hasMessageContaining("STRUCTURE");
     }
 
     @Test
-    void rejectsFragmentWithoutStructureRepair() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
-                new TopicAssessment(TopicRelevance.ON_TOPIC, "질문에 관련된 답이에요."),
-                structureAssessment(StructureStatus.FRAGMENT),
-                List.of()
+    void rejectsCompleteAssessmentWithAStructureIssue() {
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I eat noodles.",
+                List.of(step(LanguageIssueKind.STRUCTURE, "I eat noodles."))
         );
-        SlotAssessments assessment = assessment(missing("ACTION"));
 
-        assertThatThrownBy(() -> policy.resolve(prompt, "At the gym.", diagnosis, assessment))
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION"), List.of(), 0),
+                "Eat noodles.",
+                diagnosis,
+                assessment(satisfied("ACTION", "Eat noodles"))
+        ))
                 .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("exactly one repair");
-    }
-
-    @Test
-    void rejectsFragmentWithoutOneAuthoritativeCorrectedAnswer() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
-                new TopicAssessment(TopicRelevance.ON_TOPIC, "질문에 관련된 답이에요."),
-                structureAssessment(
-                        StructureStatus.FRAGMENT,
-                        structureRepair("At the gym.", null)
-                ),
-                List.of()
-        );
-        SlotAssessments assessment = assessment(missing("ACTION"));
-
-        assertThatThrownBy(() -> policy.resolve(prompt, "At the gym.", diagnosis, assessment))
-                .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("one distinct corrected answer");
-    }
-
-    @Test
-    void rejectsFragmentWithMoreThanOneStructureRepair() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
-                new TopicAssessment(TopicRelevance.ON_TOPIC, "질문에 관련된 답이에요."),
-                structureAssessment(
-                        StructureStatus.FRAGMENT,
-                        structureRepair("After work, maybe noodles.", "After work, I usually eat noodles."),
-                        structureRepair("After work, maybe noodles.", "I usually eat noodles after work.")
-                ),
-                List.of()
-        );
-        SlotAssessments assessment = assessment(satisfied("ACTION", "noodles"));
-
-        assertThatThrownBy(() -> policy.resolve(prompt, "After work, maybe noodles.", diagnosis, assessment))
-                .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("exactly one repair");
-    }
-
-    @Test
-    void rejectsStructureRepairThatQuotesOnlyPartOfTheAnswer() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
-                new TopicAssessment(TopicRelevance.ON_TOPIC, "질문에 관련된 답이에요."),
-                structureAssessment(
-                        StructureStatus.FRAGMENT,
-                        structureRepair("maybe noodles", "After work, I usually eat noodles.")
-                ),
-                List.of()
-        );
-        SlotAssessments assessment = assessment(satisfied("ACTION", "noodles"));
-
-        assertThatThrownBy(() -> policy.resolve(prompt, "After work, maybe noodles.", diagnosis, assessment))
-                .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("complete learner answer");
-    }
-
-    @Test
-    void rejectsCompleteAnswerWithStructureRepair() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
-                new TopicAssessment(TopicRelevance.ON_TOPIC, "질문에 관련된 답이에요."),
-                structureAssessment(
-                        StructureStatus.COMPLETE,
-                        structureRepair("I go home.", "I go home after work.")
-                ),
-                List.of()
-        );
-        SlotAssessments assessment = assessment(satisfied("ACTION", "go home"));
-
-        assertThatThrownBy(() -> policy.resolve(prompt, "I go home.", diagnosis, assessment))
-                .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("cannot include a repair");
+                .hasMessageContaining("COMPLETE");
     }
 
     @Test
     void missingRequiredSlotPreemptsLocalGrammar() {
-        PromptDto prompt = prompt(List.of("ACTION", "REASON"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of(
-                issue("I goes", "I go")
-        ));
-        SlotAssessments assessment = assessment(
-                satisfied("ACTION", "I goes home"),
-                missing("REASON")
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I go home.",
+                List.of(step(LanguageIssueKind.GRAMMAR_LOCAL, "I go home."))
         );
 
-        MissionDecision result = policy.resolve(prompt, "I goes home.", diagnosis, assessment);
-
-        assertThat(result.missionKind()).isEqualTo(MissionKind.SLOT);
-        assertThat(result.chosenSlot()).isEqualTo("REASON");
-    }
-
-    @Test
-    void genericRequiredSlotRemainsTheTargetSlot() {
-        PromptDto prompt = prompt(List.of("PLAN"), List.of("DETAIL"), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessment = assessment(
-                generic("PLAN", "exercise more"),
-                missing("DETAIL")
-        );
-
-        MissionDecision result = policy.resolve(
-                prompt,
-                "I will exercise more.",
+        MissionDecision decision = policy.resolve(
+                prompt(List.of("ACTION", "REASON"), List.of(), 0),
+                "I goes home.",
                 diagnosis,
-                assessment
+                assessment(satisfied("ACTION", "goes home"), missing("REASON"))
         );
 
-        assertThat(result.missionKind()).isEqualTo(MissionKind.SLOT);
-        assertThat(result.chosenSlot()).isEqualTo("PLAN");
+        assertThat(decision.missionKind()).isEqualTo(MissionKind.SLOT);
+        assertThat(decision.chosenSlot()).isEqualTo("REASON");
     }
 
     @Test
     void localGrammarRunsAfterRequiredSlotsAreSatisfied() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of(
-                issue("I goes", "I go")
-        ));
-        SlotAssessments assessment = assessment(satisfied("ACTION", "I goes home"));
-
-        MissionDecision result = policy.resolve(prompt, "I goes home.", diagnosis, assessment);
-
-        assertThat(result.missionKind()).isEqualTo(MissionKind.GRAMMAR_FIX);
-    }
-
-    @Test
-    void completesWhenTopicGrammarAndDepthContractAreSatisfied() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of("REASON"), 1);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessment = assessment(
-                satisfied("ACTION", "I take a nap"),
-                satisfied("REASON", "because it helps me recharge")
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I go home because I am tired.",
+                List.of(step(
+                        LanguageIssueKind.GRAMMAR_LOCAL,
+                        "I go home because I am tired."
+                ))
         );
 
-        MissionDecision result = policy.resolve(
-                prompt,
-                "I take a nap because it helps me recharge.",
+        MissionDecision decision = policy.resolve(
+                prompt(List.of("ACTION", "REASON"), List.of(), 0),
+                "I goes home because I am tired.",
                 diagnosis,
-                assessment
-        );
-
-        assertThat(result.missionKind()).isEqualTo(MissionKind.COMPLETE);
-        assertThat(result.chosenSlot()).isNull();
-    }
-
-    @Test
-    void completesBroadOpinionAfterOneConcreteDepthSlot() {
-        PromptDto prompt = prompt(
-                List.of("OPINION"),
-                List.of("REASON", "EXAMPLE", "RESULT"),
-                1
-        );
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessment = assessment(
-                satisfied("OPINION", "Companies should protect user data"),
-                satisfied("REASON", "because privacy matters"),
-                missing("EXAMPLE"),
-                missing("RESULT")
-        );
-
-        MissionDecision result = policy.resolve(
-                prompt,
-                "Companies should protect user data because privacy matters.",
-                diagnosis,
-                assessment
-        );
-
-        assertThat(result.missionKind()).isEqualTo(MissionKind.COMPLETE);
-        assertThat(result.missingSlots()).isEmpty();
-    }
-
-    @Test
-    void genericDepthDoesNotSatisfyLoweredOpinionContract() {
-        PromptDto prompt = prompt(
-                List.of("OPINION"),
-                List.of("REASON", "EXAMPLE", "RESULT"),
-                1
-        );
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessment = assessment(
-                satisfied("OPINION", "Companies should act responsibly"),
-                generic("REASON", "because it is important"),
-                missing("EXAMPLE"),
-                missing("RESULT")
-        );
-
-        MissionDecision result = policy.resolve(
-                prompt,
-                "Companies should act responsibly because it is important.",
-                diagnosis,
-                assessment
-        );
-
-        assertThat(result.missionKind()).isEqualTo(MissionKind.SLOT);
-        assertThat(result.chosenSlot()).isEqualTo("REASON");
-    }
-
-    @Test
-    void derivesGenericWhenEvidenceAndSupportArePresent() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue(
-                        "something",
-                        List.of(support("ACTION"))
+                assessment(
+                        satisfied("ACTION", "goes home"),
+                        satisfied("REASON", "because I am tired")
                 )
-        ));
+        );
 
-        MissionDecision result = policy.resolve(prompt, "I do something.", diagnosis, assessments);
+        assertThat(decision.missionKind()).isEqualTo(MissionKind.LANGUAGE_FIX);
+    }
 
-        assertThat(result.missionKind()).isEqualTo(MissionKind.SLOT);
-        assertThat(result.slotAssessments().get("ACTION").derivedStatus())
+    @Test
+    void acceptsUpToTwentyFiveLanguageCorrections() {
+        RevisionCase revisionCase = revisionCase(25);
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                revisionCase.revised(),
+                revisionCase.steps()
+        );
+
+        LearningContractResolution resolution = policy.resolveContract(
+                prompt(List.of("ACTION"), List.of(), 0),
+                revisionCase.original(),
+                diagnosis,
+                assessment(satisfied("ACTION", "item0"))
+        );
+
+        assertThat(resolution.languageCorrections()).hasSize(25);
+    }
+
+    @Test
+    void rejectsMoreThanTwentyFiveLanguageCorrections() {
+        RevisionCase revisionCase = revisionCase(26);
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                revisionCase.revised(),
+                revisionCase.steps()
+        );
+
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION"), List.of(), 0),
+                revisionCase.original(),
+                diagnosis,
+                assessment(satisfied("ACTION", "item0"))
+        ))
+                .isInstanceOf(FeedbackContractException.class)
+                .hasMessageContaining("at most 25");
+    }
+
+    @Test
+    void restoresSlotEvidenceFromThePositionedLanguageDiff() {
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.COMPLETE,
+                "I usually wash the dishes.",
+                List.of(step(
+                        LanguageIssueKind.GRAMMAR_LOCAL,
+                        "I usually wash the dishes."
+                ))
+        );
+
+        LearningContractResolution resolution = policy.resolveContract(
+                prompt(List.of("ACTION"), List.of(), 0),
+                "I usually washes the dishes.",
+                diagnosis,
+                assessment(satisfied("ACTION", "wash the dishes"))
+        );
+
+        assertThat(resolution.decision().slotAssessments().get("ACTION").evidence())
+                .isEqualTo("washes the dishes");
+    }
+
+    @Test
+    void derivesGenericMissingAndSatisfiedSlotStates() {
+        String answer = "I do something because it is useful.";
+        MissionDecision decision = policy.resolve(
+                prompt(List.of("ACTION", "REASON"), List.of("DETAIL"), 1),
+                answer,
+                diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
+                assessment(
+                        generic("ACTION", "something"),
+                        satisfied("REASON", "because it is useful"),
+                        missing("DETAIL")
+                )
+        );
+
+        assertThat(decision.slotAssessments().get("ACTION").derivedStatus())
                 .isEqualTo(SlotAssessmentStatus.GENERIC);
-    }
-
-    @Test
-    void derivesSatisfiedWhenEvidenceIsPresentWithoutSupport() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue("go home", List.of())
-        ));
-
-        MissionDecision result = policy.resolve(prompt, "I go home.", diagnosis, assessments);
-
-        assertThat(result.missionKind()).isEqualTo(MissionKind.COMPLETE);
-        assertThat(result.slotAssessments().get("ACTION").derivedStatus())
+        assertThat(decision.slotAssessments().get("REASON").derivedStatus())
                 .isEqualTo(SlotAssessmentStatus.SATISFIED);
-    }
-
-    @Test
-    void derivesMissingWhenEvidenceIsAbsentAndSupportIsPresent() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue(null, List.of(support("ACTION")))
-        ));
-
-        MissionDecision result = policy.resolve(prompt, "I go home.", diagnosis, assessments);
-
-        assertThat(result.missionKind()).isEqualTo(MissionKind.SLOT);
-        assertThat(result.slotAssessments().get("ACTION").derivedStatus())
+        assertThat(decision.slotAssessments().get("DETAIL").derivedStatus())
                 .isEqualTo(SlotAssessmentStatus.MISSING);
     }
 
     @Test
     void rejectsAssessmentWithoutEvidenceOrSupport() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue(null, List.of())
-        ));
+        String answer = "I walk.";
 
-        assertThatThrownBy(() -> policy.resolve(prompt, "I go home.", diagnosis, assessments))
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
+                assessment(Map.entry("ACTION", new SlotAssessmentValue(null, List.of())))
+        ))
                 .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("must contain evidence, or exactly one support item");
-    }
-
-    @Test
-    void rejectsMoreThanOneSupportItem() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue(
-                        "something",
-                        List.of(support("ACTION"), support("ACTION"))
-                )
-        ));
-
-        assertThatThrownBy(() -> policy.resolve(prompt, "I do something.", diagnosis, assessments))
-                .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("must contain evidence, or exactly one support item");
+                .hasMessageContaining("evidence");
     }
 
     @Test
     void rejectsEvidenceThatDoesNotQuoteTheLearnerAnswer() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue("invented action", List.of())
-        ));
-
-        assertThatThrownBy(() -> policy.resolve(prompt, "I go home.", diagnosis, assessments))
-                .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("requires evidence from the learner answer");
-    }
-
-    @Test
-    void restoresEvidenceOnlyByReversingAKnownGrammarCorrection() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(
-                TopicRelevance.ON_TOPIC,
-                List.of(issue("washes", "wash"))
-        );
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue("wash the dishes", List.of())
-        ));
-
-        MissionDecision result = policy.resolve(
-                prompt,
-                "After dinner, I usually washes the dishes because it helps me reset.",
-                diagnosis,
-                assessments
-        );
-
-        assertThat(result.missionKind()).isEqualTo(MissionKind.GRAMMAR_FIX);
-        assertThat(result.slotAssessments().get("ACTION").evidence())
-                .isEqualTo("washes the dishes");
-    }
-
-    @Test
-    void preservesGenericSupportWhenRestoringGrammarCorrectedEvidence() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(
-                TopicRelevance.ON_TOPIC,
-                List.of(issue("does", "do"))
-        );
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue("do something", List.of(support("ACTION")))
-        ));
-
-        MissionDecision result = policy.resolve(
-                prompt,
-                "I usually does something.",
-                diagnosis,
-                assessments
-        );
-
-        SlotAssessmentValue restored = result.slotAssessments().get("ACTION");
-        assertThat(result.missionKind()).isEqualTo(MissionKind.SLOT);
-        assertThat(restored.evidence()).isEqualTo("does something");
-        assertThat(restored.derivedStatus()).isEqualTo(SlotAssessmentStatus.GENERIC);
-        assertThat(restored.support()).hasSize(1);
-    }
-
-    @Test
-    void rejectsEvidenceWhenGrammarReversalDoesNotProduceAnExactOriginalSpan() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(
-                TopicRelevance.ON_TOPIC,
-                List.of(issue("washes", "wash"))
-        );
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue("wash the plates", List.of())
-        ));
+        String answer = "I walk.";
 
         assertThatThrownBy(() -> policy.resolve(
-                prompt,
-                "After dinner, I usually washes the dishes.",
-                diagnosis,
-                assessments
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
+                assessment(satisfied("ACTION", "take a walk"))
         ))
                 .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("requires evidence from the learner answer");
-    }
-
-    @Test
-    void rejectsEvidenceWhenMultipleGrammarReversalsCouldMatchTheOriginal() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(
-                TopicRelevance.ON_TOPIC,
-                List.of(
-                        issue("is", "are"),
-                        issue("am", "are")
-                )
-        );
-        SlotAssessments assessments = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue("are", List.of())
-        ));
-
-        assertThatThrownBy(() -> policy.resolve(
-                prompt,
-                "He is tired, and I am ready.",
-                diagnosis,
-                assessments
-        ))
-                .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("requires evidence from the learner answer");
+                .hasMessageContaining("evidence from the learner answer");
     }
 
     @Test
     void rejectsIncompleteScaffoldInsteadOfInventingBackendFallback() {
-        PromptDto prompt = prompt(List.of("ACTION"), List.of(), 0);
-        FeedbackDiagnosisResult diagnosis = diagnosis(TopicRelevance.ON_TOPIC, List.of());
+        String answer = "It is nice.";
         SlotFeedbackSupport incomplete = new SlotFeedbackSupport(
-                "행동 말하기", "행동이 빠졌어요.", "행동을 넣어 보세요.",
-                "I usually take a walk.", "I usually ____.", "저는 보통 ____해요.",
+                "행동 말하기",
+                "행동이 빠졌어요.",
+                "행동을 넣어 보세요.",
+                "I usually take a walk.",
+                "I usually ____.",
+                "저는 보통 ____해요.",
                 List.of(new FeedbackSuggestedPhraseDto("take a walk", "산책하다")),
                 "행동 한 가지"
         );
-        SlotAssessments assessment = new SlotAssessments(Map.of(
-                "ACTION", new SlotAssessmentValue(null, List.of(incomplete))
-        ));
 
-        assertThatThrownBy(() -> policy.resolve(prompt, "It is nice.", diagnosis, assessment))
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
+                assessment(Map.entry("ACTION", new SlotAssessmentValue(null, List.of(incomplete))))
+        ))
                 .isInstanceOf(FeedbackContractException.class)
                 .hasMessageContaining("Incomplete slot support");
     }
 
     private PromptDto prompt(List<String> required, List<String> optional, int minimumDepth) {
         Map<String, PromptSlotContractDto> slotContracts = new LinkedHashMap<>();
-        List<String> configuredSlots = new java.util.ArrayList<>(required);
+        List<String> configuredSlots = new ArrayList<>(required);
         configuredSlots.addAll(optional);
         configuredSlots.forEach(slot -> slotContracts.put(
                 slot,
@@ -621,41 +545,43 @@ class FeedbackLearningContractPolicyTest {
 
     private FeedbackDiagnosisResult diagnosis(
             TopicRelevance topic,
-            List<DiagnosedGrammarIssue> issues
+            StructureStatus structure,
+            String revisedAnswer,
+            List<LanguageRevisionStep> revisionSteps
     ) {
         return new FeedbackDiagnosisResult(
                 new TopicAssessment(topic, "판정 근거"),
-                structureAssessment(StructureStatus.COMPLETE),
-                issues
+                new StructureAssessment(structure),
+                new LanguageAssessment(revisionSteps)
         );
     }
 
-    private DiagnosedGrammarIssue issue(String original, String revised) {
-        return issue(GrammarImpact.LOCAL, original, revised);
-    }
-
-    private DiagnosedGrammarIssue issue(GrammarImpact impact, String original, String revised) {
-        return new DiagnosedGrammarIssue(
-                impact,
-                "GRAMMAR",
-                original,
-                revised,
-                "문법을 고쳐요.",
-                "표현을 바꿔 보세요."
+    private LanguageRevisionStep step(LanguageIssueKind kind, String answerAfter) {
+        return new LanguageRevisionStep(
+                kind,
+                "LANGUAGE",
+                answerAfter,
+                "이 변경이 필요한 이유예요.",
+                "표시된 부분을 고쳐 보세요."
         );
     }
 
-    private StructureAssessment structureAssessment(StructureStatus status, StructureRepair... repairs) {
-        return new StructureAssessment(status, List.of(repairs));
-    }
-
-    private StructureRepair structureRepair(String original, String corrected) {
-        return new StructureRepair(
-                original,
-                corrected,
-                "주어와 서술어가 있는 문장으로 완성해야 해요.",
-                "질문의 틀을 활용해 완전한 문장으로 바꿔 보세요."
-        );
+    private RevisionCase revisionCase(int count) {
+        StringBuilder original = new StringBuilder();
+        for (int index = 0; index < count; index++) {
+            original.append("item").append(index).append(" anchor").append(index).append(' ');
+        }
+        String originalAnswer = original.toString().trim();
+        String revisedAnswer = originalAnswer;
+        List<LanguageRevisionStep> steps = new ArrayList<>();
+        for (int index = 0; index < count; index++) {
+            revisedAnswer = revisedAnswer.replace(
+                    "item" + index + " ",
+                    "fixed" + index + " "
+            );
+            steps.add(step(LanguageIssueKind.GRAMMAR_LOCAL, revisedAnswer));
+        }
+        return new RevisionCase(originalAnswer, revisedAnswer, List.copyOf(steps));
     }
 
     private Map.Entry<String, SlotAssessmentValue> satisfied(String slot, String evidence) {
@@ -693,5 +619,12 @@ class FeedbackLearningContractPolicyTest {
                 ),
                 "실제 내용을 한 가지 써 주세요."
         );
+    }
+
+    private record RevisionCase(
+            String original,
+            String revised,
+            List<LanguageRevisionStep> steps
+    ) {
     }
 }

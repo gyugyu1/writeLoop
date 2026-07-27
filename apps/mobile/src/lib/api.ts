@@ -31,6 +31,7 @@ import type {
   DeleteAccountRequest,
   Feedback,
   FeedbackRequest,
+  FeedbackSessionStatus,
   HistorySession,
   LoginRequest,
   MobilePlatform,
@@ -46,6 +47,7 @@ import type {
   PendingSocialRegistration,
   PromptHint,
   Prompt,
+  RefinementExpression,
   SavedExpression,
   SaveExpressionRequest,
   SaveWritingDraftRequest,
@@ -81,6 +83,61 @@ const PROMPT_HINTS_CACHE_TTL_MS = 60_000;
 
 let promptsCache: { expiresAt: number; value: Prompt[] } | null = null;
 const promptHintsCache = new Map<string, { expiresAt: number; value: PromptHint[] }>();
+
+type RawRefinementExpression = RefinementExpression & {
+  guidance?: string | null;
+  example?: string | null;
+};
+
+function normalizeRefinementExpression(
+  item: RawRefinementExpression | null | undefined
+): RefinementExpression | null {
+  if (!item?.expression?.trim()) {
+    return null;
+  }
+  return {
+    ...item,
+    expression: item.expression.trim(),
+    guidanceKo: item.guidanceKo ?? item.guidance ?? null,
+    exampleEn: item.exampleEn ?? item.example ?? null
+  };
+}
+
+function normalizeFeedbackPayload(feedback: Feedback): Feedback {
+  const refinementExpressions = (feedback.refinementExpressions ?? [])
+    .map((item) => normalizeRefinementExpression(item as RawRefinementExpression))
+    .filter((item): item is RefinementExpression => item !== null);
+  const visibleFeedback = feedback.visibleFeedback
+    ? {
+        ...feedback.visibleFeedback,
+        refinementExpressions: (feedback.visibleFeedback.refinementExpressions ?? [])
+          .map((item) => normalizeRefinementExpression(item as RawRefinementExpression))
+          .filter((item): item is RefinementExpression => item !== null)
+      }
+    : feedback.visibleFeedback;
+  return {
+    ...feedback,
+    refinementExpressions,
+    visibleFeedback
+  };
+}
+
+function normalizeHistorySessions(sessions: HistorySession[]): HistorySession[] {
+  return sessions.map((session) => ({
+    ...session,
+    attempts: session.attempts.map((attempt) => ({
+      ...attempt,
+      visibleFeedback: attempt.visibleFeedback
+        ? {
+            ...attempt.visibleFeedback,
+            refinementExpressions: (attempt.visibleFeedback.refinementExpressions ?? [])
+              .map((item) => normalizeRefinementExpression(item as RawRefinementExpression))
+              .filter((item): item is RefinementExpression => item !== null)
+          }
+        : attempt.visibleFeedback
+    }))
+  }));
+}
 
 function resolveFetchTimeoutMs(url: string) {
   if (url.includes("/api/feedback")) {
@@ -1454,7 +1511,7 @@ export async function getAnswerHistory(): Promise<HistorySession[]> {
     throw await parseApiError(response, "작문 기록을 불러오지 못했어요.");
   }
 
-  return (await response.json()) as HistorySession[];
+  return normalizeHistorySessions((await response.json()) as HistorySession[]);
 }
 
 export async function getCommonMistakes(): Promise<CommonMistake[]> {
@@ -1673,7 +1730,29 @@ export async function submitFeedback(request: FeedbackRequest): Promise<Feedback
     throw await parseApiError(response, "피드백을 생성하지 못했어요.");
   }
 
-  return (await response.json()) as Feedback;
+  return normalizeFeedbackPayload((await response.json()) as Feedback);
+}
+
+export async function completeFeedbackSession(
+  sessionId: string,
+  guestId?: string
+): Promise<FeedbackSessionStatus> {
+  const tokenSession = await getStoredTokenSession();
+  const response = await apiFetch(`/api/feedback/${encodeURIComponent(sessionId)}/complete`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      guestId: tokenSession?.accessToken ? undefined : guestId
+    })
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "답변 루프를 완료하지 못했어요.");
+  }
+
+  return (await response.json()) as FeedbackSessionStatus;
 }
 
 export async function getDiaryEntries(): Promise<DiaryEntry[]> {

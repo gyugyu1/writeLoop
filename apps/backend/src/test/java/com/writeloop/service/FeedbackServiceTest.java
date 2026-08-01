@@ -36,7 +36,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -150,6 +149,11 @@ class FeedbackServiceTest {
         assertThat(logCaptor.getValue().isRetryAttempted()).isFalse();
         assertThat(logCaptor.getValue().getContractRetrySucceeded()).isNull();
         assertThat(logCaptor.getValue().getContractFinalErrorReason()).isNull();
+        assertThat(logCaptor.getValue().getLlmInputTokens()).isEqualTo(100L);
+        assertThat(logCaptor.getValue().getLlmCachedInputTokens()).isEqualTo(20L);
+        assertThat(logCaptor.getValue().getLlmOutputTokens()).isEqualTo(30L);
+        assertThat(logCaptor.getValue().getLlmReasoningTokens()).isEqualTo(10L);
+        assertThat(logCaptor.getValue().getLlmTotalTokens()).isEqualTo(130L);
         JsonNode diagnosisPayload = objectMapper.readTree(logCaptor.getValue().getDiagnosisPayloadJson());
         assertThat(diagnosisPayload.has("grammarImpact")).isFalse();
         assertThat(diagnosisPayload.has("utteranceForm")).isFalse();
@@ -180,12 +184,12 @@ class FeedbackServiceTest {
                 "study English",
                 "review words with flashcards",
                 "Name one method you actually use.",
-                "I review words with flashcards.",
                 "I use [a study method] to remember words.",
                 "나는 단어를 기억하기 위해 [학습 방법]을 사용해요.",
                 List.of(new FeedbackSuggestedPhraseDto("use flashcards", "플래시카드를 사용하다")),
                 "The answer includes one concrete study method.",
-                "DETAIL"
+                "DETAIL",
+                List.of()
         );
         FeedbackResponseDto internal = feedback(prompt, false)
                 .withLoopExperience(null, coachMove, null, null, null);
@@ -201,7 +205,6 @@ class FeedbackServiceTest {
                 "I use [a study method] to remember words."
         );
         assertThat(visibleCoachMove.suggestedPhrases()).hasSize(1);
-        assertThat(visibleCoachMove.exampleEn()).isNull();
         assertThat(visibleCoachMove.successCheck()).isNull();
 
         ArgumentCaptor<AnswerAttemptEntity> attemptCaptor = ArgumentCaptor.forClass(AnswerAttemptEntity.class);
@@ -209,14 +212,12 @@ class FeedbackServiceTest {
         JsonNode visibleSnapshot = objectMapper.readTree(
                 attemptCaptor.getValue().getVisibleFeedbackSnapshotJson()
         );
-        assertThat(visibleSnapshot.path("coachMove").has("exampleEn")).isFalse();
         assertThat(visibleSnapshot.path("coachMove").has("successCheck")).isFalse();
 
         JsonNode internalPayload = objectMapper.readTree(
                 attemptCaptor.getValue().getFeedbackPayloadJson()
         );
-        assertThat(internalPayload.path("coachMove").path("exampleEn").asText())
-                .isEqualTo("I review words with flashcards.");
+        assertThat(internalPayload.path("coachMove").has("exampleEn")).isFalse();
         assertThat(internalPayload.path("coachMove").path("successCheck").asText())
                 .isEqualTo("The answer includes one concrete study method.");
     }
@@ -272,7 +273,7 @@ class FeedbackServiceTest {
         when(llmFeedbackClient.isConfigured()).thenReturn(true);
         when(answerSessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
         when(llmFeedbackClient.review(
-                any(PromptDto.class), anyString(), anyList(), anyInt(), nullable(String.class), nullable(String.class)
+                any(PromptDto.class), anyString(), anyList(), anyInt()
         )).thenReturn(internal);
         when(llmFeedbackClient.isAuthoritativeFeedback(internal)).thenReturn(true);
         when(llmFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(null);
@@ -290,6 +291,19 @@ class FeedbackServiceTest {
     void storesFailedLlmExecutionIndependentlyWithoutSavingAnAnswerAttempt() {
         PromptDto prompt = prompt();
         AnswerSessionEntity session = session(prompt, "session-failed-diagnosis");
+        AnswerAttemptEntity previousAttempt = new AnswerAttemptEntity(
+                session.getId(),
+                1,
+                com.writeloop.persistence.AttemptType.INITIAL,
+                "I went home.",
+                null,
+                "Previous feedback",
+                "[]",
+                "[]",
+                "",
+                "",
+                null
+        );
         FeedbackExecutionTrace trace = new FeedbackExecutionTrace(
                 "openai",
                 "test-model",
@@ -310,8 +324,11 @@ class FeedbackServiceTest {
         when(promptService.findById(prompt.id())).thenReturn(prompt);
         when(llmFeedbackClient.isConfigured()).thenReturn(true);
         when(answerSessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
+        when(answerAttemptRepository.countBySessionId(session.getId())).thenReturn(1);
+        when(answerAttemptRepository.findBySessionIdAndAttemptNo(session.getId(), 1))
+                .thenReturn(Optional.of(previousAttempt));
         when(llmFeedbackClient.review(
-                any(PromptDto.class), anyString(), anyList(), anyInt(), nullable(String.class), nullable(String.class)
+                any(PromptDto.class), anyString(), anyList(), anyInt()
         )).thenThrow(new IllegalStateException("feedback failed"));
         when(llmFeedbackClient.takeLastExecutionTrace()).thenReturn(trace);
 
@@ -325,6 +342,7 @@ class FeedbackServiceTest {
         verify(diagnosisLogRecorder).recordFailure(eventCaptor.capture());
         assertThat(eventCaptor.getValue().executionTrace()).isEqualTo(trace);
         assertThat(eventCaptor.getValue().learnerAnswer()).isEqualTo("I goes home.");
+        assertThat(eventCaptor.getValue().previousAnswer()).isEqualTo("I went home.");
         verify(answerAttemptRepository, never()).save(any());
         verify(diagnosisLogRepository, never()).save(any());
     }
@@ -462,12 +480,15 @@ class FeedbackServiceTest {
         when(llmFeedbackClient.isConfigured()).thenReturn(true);
         when(answerSessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
         when(llmFeedbackClient.review(
-                any(PromptDto.class), anyString(), anyList(), anyInt(), nullable(String.class), nullable(String.class)
+                any(PromptDto.class), anyString(), anyList(), anyInt()
         )).thenReturn(feedback);
         when(llmFeedbackClient.isAuthoritativeFeedback(feedback)).thenReturn(true);
         when(llmFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(snapshot);
         when(llmFeedbackClient.takeLastExecutionTrace())
-                .thenReturn(FeedbackExecutionTrace.successful(snapshot));
+                .thenReturn(FeedbackExecutionTrace.successful(
+                        snapshot,
+                        new FeedbackTokenUsage(100L, 20L, 30L, 10L, 130L)
+                ));
     }
 
     private PromptDto prompt() {
@@ -513,7 +534,6 @@ class FeedbackServiceTest {
                 "I usually take a walk after work.",
                 "I usually take a walk after work.",
                 complete ? null : "Add one detail.",
-                List.of(),
                 null,
                 null,
                 null,
@@ -538,7 +558,6 @@ class FeedbackServiceTest {
         );
         GeneratedSections sections = new GeneratedSections(
                 List.of("The main action is clear."),
-                List.of(),
                 List.of(),
                 "I usually take a walk after work.",
                 "I usually take a walk after work.",

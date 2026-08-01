@@ -32,22 +32,9 @@ class GeminiFeedbackEngine implements FeedbackLlmEngine {
             PromptDto prompt,
             String answer,
             List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer
+            int attemptIndex
     ) {
-        return delegate.review(prompt, answer, hints, attemptIndex, previousAnswer);
-    }
-
-    @Override
-    public FeedbackResponseDto review(
-            PromptDto prompt,
-            String answer,
-            List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer,
-            String previousCoachingSummary
-    ) {
-        return delegate.review(prompt, answer, hints, attemptIndex, previousAnswer, previousCoachingSummary);
+        return delegate.review(prompt, answer, hints, attemptIndex);
     }
 
     @Override

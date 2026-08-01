@@ -148,6 +148,21 @@ public class FeedbackDiagnosisLogEntity {
     @Column(name = "elapsed_ms")
     private Long elapsedMs;
 
+    @Column(name = "llm_input_tokens")
+    private Long llmInputTokens;
+
+    @Column(name = "llm_cached_input_tokens")
+    private Long llmCachedInputTokens;
+
+    @Column(name = "llm_output_tokens")
+    private Long llmOutputTokens;
+
+    @Column(name = "llm_reasoning_tokens")
+    private Long llmReasoningTokens;
+
+    @Column(name = "llm_total_tokens")
+    private Long llmTotalTokens;
+
     @Column(name = "diagnosis_payload_json", columnDefinition = "JSON")
     private String diagnosisPayloadJson;
 

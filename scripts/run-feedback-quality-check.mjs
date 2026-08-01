@@ -533,7 +533,6 @@ function buildPayloadSnapshot(payload) {
       before: limitText(payload?.coachMove?.before, 800),
       after: limitText(payload?.coachMove?.after, 800),
       instruction: limitText(payload?.coachMove?.instruction, 800),
-      exampleEn: limitText(payload?.coachMove?.exampleEn, 800),
       skeletonEn: limitText(payload?.coachMove?.skeletonEn, 800),
       skeletonKo: limitText(payload?.coachMove?.skeletonKo, 800),
       suggestedPhrases: sliceArray(payload?.coachMove?.suggestedPhrases, 6).map((item) => compactObject({
@@ -552,7 +551,6 @@ function buildPayloadSnapshot(payload) {
     rewriteWorkspace: compactObject({
       seedText: limitText(payload?.rewriteWorkspace?.seedText, 1200),
       starterText: limitText(payload?.rewriteWorkspace?.starterText, 800),
-      targetHint: limitText(payload?.rewriteWorkspace?.targetHint, 800),
       enabled: payload?.rewriteWorkspace?.enabled ?? null
     }),
     completion: compactObject({
@@ -594,7 +592,9 @@ function buildPayloadSnapshot(payload) {
         reason: limitText(suggestion?.reason, 800)
       }))
     }),
-    refinementExpressions: sliceArray(payload?.refinementExpressions, 5).map((expression) => compactObject({
+    refinementExpressions: (Array.isArray(payload?.refinementExpressions)
+      ? payload.refinementExpressions
+      : []).map((expression) => compactObject({
       expression: limitText(expression?.expression, 300),
       meaningKo: limitText(expression?.meaningKo, 300),
       usageTipKo: limitText(expression?.usageTipKo, 500),

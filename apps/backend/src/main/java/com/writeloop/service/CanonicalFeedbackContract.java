@@ -3,7 +3,6 @@ package com.writeloop.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
@@ -90,7 +89,7 @@ final class CanonicalFeedbackContract {
               as a grammar correction. If useful, offer the latter only as an optional refinementExpression.
             - Real errors such as "Companies should protects workers" -> "Companies should protect workers" and
               "I am live in Seoul" -> "I live in Seoul" use GRAMMAR_LOCAL.
-            - code names the exact error category. reasonKo and instructionKo must explain every change made by that step in concise Korean.
+            - reasonKo must explain every change made by that step in concise Korean.
 
             Slot rules:
             - slotAssessments has exactly the fixed keys supplied by the response schema. Do not omit, add, or rename keys.
@@ -136,15 +135,26 @@ final class CanonicalFeedbackContract {
             - skeletonKo must be a Korean-language scaffold containing Hangul, not an English scaffold copied from skeletonEn.
               Translate the fixed wording into Korean and preserve the blank placeholder.
             - suggestedPhrases must contain at least two immediately usable English choices with Korean meanings.
-            - exampleEn must demonstrate how to answer the target slot without pretending to know the learner's real facts.
 
             Content rules:
             - strengths contains at most one specific, honest strength in Korean.
             - modelAnswer is a useful reference answer to the original question. Do not copy it from the learner answer mechanically.
             - modelAnswerKo is the faithful Korean translation of modelAnswer.
-            - refinementExpressions are optional alternatives for grammatically acceptable wording and never block completion.
+            - Always return at least two refinementExpressions. They are optional for the learner to use and never block completion,
+              but they are required output so a complete answer still receives useful ways to broaden its expression.
+            - First compose modelAnswer, then compare it with the learner answer and select short, reusable expressions that can enrich
+              the learner's existing meaning without adding new facts. An expression may come from modelAnswer only when it is compatible
+              with the learner's stated meaning and facts.
+            - The recommendations must cover different purposes. Include at least:
+              1. one useful vocabulary, collocation, or phrasal expression;
+              2. one sentence frame, connector, emphasis, contrast, reason, result, or detail-building expression.
+              Add further expressions whenever they provide a genuinely different, useful way to enrich this answer; do not stop at two
+              because of an arbitrary count limit.
+            - Do not recommend wording the learner already used, near-duplicates, an entire model answer, or an expression that requires
+              the learner to claim an unstated experience, time, place, reason, feeling, or result.
+            - Keep each expression appropriate for the question difficulty. exampleEn must show how the expression can be used with the
+              learner's existing meaning.
             - Do not repeat a language revision step in refinementExpressions or describe an optional refinement as a required correction.
-            - usedExpressions should include only prompt hints that the learner actually used.
             """;
 
     private final ObjectMapper objectMapper;
@@ -161,10 +171,7 @@ final class CanonicalFeedbackContract {
     String userPrompt(
             PromptDto prompt,
             String answer,
-            List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer,
-            String previousCoachingSummary
+            List<PromptHintDto> hints
     ) throws JsonProcessingException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("question", Map.of(
@@ -178,9 +185,6 @@ final class CanonicalFeedbackContract {
         payload.put("questionContract", policy.promptContract(prompt));
         payload.put("learnerAnswer", value(answer));
         payload.put("promptHints", hints == null ? List.of() : hints);
-        payload.put("attemptIndex", Math.max(1, attemptIndex));
-        payload.put("previousAnswer", value(previousAnswer));
-        payload.put("previousCoachingSummary", value(previousCoachingSummary));
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
     }
 
@@ -223,27 +227,17 @@ final class CanonicalFeedbackContract {
                                 "GRAMMAR_BLOCKING",
                                 "GRAMMAR_LOCAL"
                         )),
-                        "code", stringSchema(),
                         "answerAfter", stringSchema(),
-                        "reasonKo", stringSchema(),
-                        "instructionKo", stringSchema()
+                        "reasonKo", stringSchema()
                 )), 0, 25)
         )));
         properties.put("strengths", arraySchema(stringSchema(), 0, 1));
-        properties.put("usedExpressions", arraySchema(objectSchema(Map.of(
-                "expression", stringSchema(),
-                "matchedText", stringSchema(),
-                "meaningKo", stringSchema(),
-                "exampleEn", stringSchema(),
-                "usageTip", stringSchema()
-        )), 0, 3));
         properties.put("refinementExpressions", arraySchema(objectSchema(Map.of(
                 "expression", stringSchema(),
                 "meaningKo", stringSchema(),
                 "guidanceKo", stringSchema(),
-                "exampleEn", stringSchema(),
-                "exampleKo", stringSchema()
-        )), 0, 3));
+                "exampleEn", stringSchema()
+        )), 2));
         Map<String, Object> slotAssessmentProperties = new LinkedHashMap<>();
         for (String slot : slots) {
             slotAssessmentProperties.put(slot, objectSchema(Map.of(
@@ -269,10 +263,8 @@ final class CanonicalFeedbackContract {
         for (JsonNode item : languageNode.path("revisionSteps")) {
             revisionSteps.add(new LanguageRevisionStep(
                     text(item, "kind"),
-                    text(item, "code"),
                     text(item, "answerAfter"),
-                    text(item, "reasonKo"),
-                    text(item, "instructionKo")
+                    text(item, "reasonKo")
             ));
         }
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
@@ -296,33 +288,18 @@ final class CanonicalFeedbackContract {
 
         List<String> strengths = new ArrayList<>();
         root.path("strengths").forEach(item -> strengths.add(item.asText("")));
-        List<CoachExpressionUsageDto> usedExpressions = new ArrayList<>();
-        for (JsonNode item : root.path("usedExpressions")) {
-            usedExpressions.add(new CoachExpressionUsageDto(
-                    text(item, "expression"),
-                    true,
-                    "LLM_MATCH",
-                    text(item, "matchedText"),
-                    "PROMPT_HINT",
-                    text(item, "meaningKo"),
-                    text(item, "exampleEn"),
-                    text(item, "usageTip")
-            ));
-        }
         List<RefinementExpressionDto> refinements = new ArrayList<>();
         for (JsonNode item : root.path("refinementExpressions")) {
             refinements.add(new RefinementExpressionDto(
                     text(item, "expression"),
                     text(item, "guidanceKo"),
                     text(item, "exampleEn"),
-                    text(item, "exampleKo"),
                     text(item, "meaningKo")
             ));
         }
         GeneratedContent content = new GeneratedContent(
                 strengths,
                 refinements,
-                usedExpressions,
                 text(root, "modelAnswer"),
                 text(root, "modelAnswerKo")
         );
@@ -338,11 +315,9 @@ final class CanonicalFeedbackContract {
                 text(item, "title"),
                 text(item, "whyKo"),
                 text(item, "instructionKo"),
-                text(item, "exampleEn"),
                 text(item, "skeletonEn"),
                 text(item, "skeletonKo"),
-                phrases,
-                text(item, "targetHintKo")
+                phrases
         );
     }
 
@@ -370,14 +345,12 @@ final class CanonicalFeedbackContract {
                 "title", stringSchema(),
                 "whyKo", stringSchema(),
                 "instructionKo", stringSchema(),
-                "exampleEn", stringSchema(),
                 "skeletonEn", stringSchema(),
                 "skeletonKo", stringSchema(),
                 "suggestedPhrases", arraySchema(objectSchema(Map.of(
                         "phrase", stringSchema(),
                         "meaningKo", stringSchema()
-                )), 2, 4),
-                "targetHintKo", stringSchema()
+                )), 2, 4)
         ));
     }
 
@@ -405,6 +378,14 @@ final class CanonicalFeedbackContract {
         schema.put("items", items);
         schema.put("minItems", minItems);
         schema.put("maxItems", maxItems);
+        return schema;
+    }
+
+    private static Map<String, Object> arraySchema(Object items, int minItems) {
+        Map<String, Object> schema = new LinkedHashMap<>();
+        schema.put("type", "array");
+        schema.put("items", items);
+        schema.put("minItems", minItems);
         return schema;
     }
 

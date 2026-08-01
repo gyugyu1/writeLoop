@@ -12,110 +12,13 @@ public record FeedbackCoachMissionDto(
         String revisedText,
         String whyKo,
         String instructionKo,
-        String exampleEn,
         String skeletonEn,
         String skeletonKo,
         List<FeedbackSuggestedPhraseDto> suggestedPhrases,
         String placeholderEn,
-        String targetHintKo,
         String successCheckKo,
         List<FeedbackLanguageCorrectionDto> languageCorrections
 ) {
-    public FeedbackCoachMissionDto(
-            String missionType,
-            String title,
-            String originalText,
-            String revisedText,
-            String whyKo,
-            String instructionKo,
-            String exampleEn,
-            String placeholderEn,
-            String targetHintKo,
-            String successCheckKo
-    ) {
-        this(
-                missionType,
-                title,
-                originalText,
-                revisedText,
-                whyKo,
-                instructionKo,
-                exampleEn,
-                firstNonBlank(placeholderEn, revisedText, exampleEn),
-                null,
-                List.of(),
-                placeholderEn,
-                targetHintKo,
-                successCheckKo,
-                List.of()
-        );
-    }
-
-    public FeedbackCoachMissionDto(
-            String missionType,
-            String title,
-            String originalText,
-            String revisedText,
-            String whyKo,
-            String instructionKo,
-            String exampleEn,
-            String skeletonEn,
-            List<FeedbackSuggestedPhraseDto> suggestedPhrases,
-            String placeholderEn,
-            String targetHintKo,
-            String successCheckKo
-    ) {
-        this(
-                missionType,
-                title,
-                originalText,
-                revisedText,
-                whyKo,
-                instructionKo,
-                exampleEn,
-                skeletonEn,
-                null,
-                suggestedPhrases,
-                placeholderEn,
-                targetHintKo,
-                successCheckKo,
-                List.of()
-        );
-    }
-
-    public FeedbackCoachMissionDto(
-            String missionType,
-            String title,
-            String originalText,
-            String revisedText,
-            String whyKo,
-            String instructionKo,
-            String exampleEn,
-            String skeletonEn,
-            String skeletonKo,
-            List<FeedbackSuggestedPhraseDto> suggestedPhrases,
-            String placeholderEn,
-            String targetHintKo,
-            String successCheckKo
-    ) {
-        this(
-                missionType,
-                title,
-                originalText,
-                revisedText,
-                whyKo,
-                instructionKo,
-                exampleEn,
-                skeletonEn,
-                skeletonKo,
-                suggestedPhrases,
-                placeholderEn,
-                targetHintKo,
-                successCheckKo,
-                List.of()
-        );
-    }
-
     public FeedbackCoachMissionDto {
         missionType = normalize(missionType);
         title = normalize(title);
@@ -123,12 +26,10 @@ public record FeedbackCoachMissionDto(
         revisedText = normalize(revisedText);
         whyKo = normalize(whyKo);
         instructionKo = normalize(instructionKo);
-        exampleEn = normalize(exampleEn);
         skeletonEn = normalize(skeletonEn);
         skeletonKo = normalize(skeletonKo);
         suggestedPhrases = normalizePhrases(suggestedPhrases);
         placeholderEn = normalize(placeholderEn);
-        targetHintKo = normalize(targetHintKo);
         successCheckKo = normalize(successCheckKo);
         languageCorrections = normalizeLanguageCorrections(languageCorrections);
     }
@@ -149,7 +50,6 @@ public record FeedbackCoachMissionDto(
                 hasComparisonPair ? originalText : null,
                 hasComparisonPair ? revisedText : null,
                 instructionKo,
-                directCorrection ? null : exampleEn,
                 directCorrection ? null : skeletonEn,
                 directCorrection ? null : skeletonKo,
                 directCorrection ? List.of() : suggestedPhrases,
@@ -163,7 +63,6 @@ public record FeedbackCoachMissionDto(
         return new FeedbackRewriteWorkspaceDto(
                 seedText,
                 firstNonBlank(placeholderEn, skeletonEn, revisedText),
-                targetHintKo,
                 true
         );
     }

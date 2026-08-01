@@ -15,8 +15,50 @@ record FeedbackExecutionTrace(
         boolean finalSuccess,
         String originalContractErrorReason,
         String finalErrorReason,
+        FeedbackTokenUsage tokenUsage,
         long elapsedMs
 ) {
+
+    FeedbackExecutionTrace {
+        tokenUsage = tokenUsage == null ? FeedbackTokenUsage.empty() : tokenUsage;
+    }
+
+    FeedbackExecutionTrace(
+            String provider,
+            String model,
+            String reasoningEffort,
+            Integer thinkingBudget,
+            Integer initialResponseStatusCode,
+            String initialResponseBodyJson,
+            Integer retryResponseStatusCode,
+            String retryResponseBodyJson,
+            boolean contractViolationDetected,
+            boolean retryAttempted,
+            Boolean retrySucceeded,
+            boolean finalSuccess,
+            String originalContractErrorReason,
+            String finalErrorReason,
+            long elapsedMs
+    ) {
+        this(
+                provider,
+                model,
+                reasoningEffort,
+                thinkingBudget,
+                initialResponseStatusCode,
+                initialResponseBodyJson,
+                retryResponseStatusCode,
+                retryResponseBodyJson,
+                contractViolationDetected,
+                retryAttempted,
+                retrySucceeded,
+                finalSuccess,
+                originalContractErrorReason,
+                finalErrorReason,
+                FeedbackTokenUsage.empty(),
+                elapsedMs
+        );
+    }
 
     FeedbackExecutionTrace asFailure(String errorReason) {
         return new FeedbackExecutionTrace(
@@ -34,11 +76,19 @@ record FeedbackExecutionTrace(
                 false,
                 originalContractErrorReason,
                 errorReason,
+                tokenUsage,
                 elapsedMs
         );
     }
 
     static FeedbackExecutionTrace successful(FeedbackAnalysisSnapshot snapshot) {
+        return successful(snapshot, FeedbackTokenUsage.empty());
+    }
+
+    static FeedbackExecutionTrace successful(
+            FeedbackAnalysisSnapshot snapshot,
+            FeedbackTokenUsage tokenUsage
+    ) {
         FeedbackContractRetryTrace retry = snapshot.contractRetry();
         return new FeedbackExecutionTrace(
                 snapshot.provider(),
@@ -55,6 +105,7 @@ record FeedbackExecutionTrace(
                 true,
                 retry.originalErrorReason(),
                 null,
+                tokenUsage,
                 0L
         );
     }

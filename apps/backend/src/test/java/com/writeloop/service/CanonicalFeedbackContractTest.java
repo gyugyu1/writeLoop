@@ -30,7 +30,6 @@ class CanonicalFeedbackContractTest {
                 "structureAssessment",
                 "languageAssessment",
                 "strengths",
-                "usedExpressions",
                 "refinementExpressions",
                 "slotAssessments",
                 "modelAnswer",
@@ -52,8 +51,39 @@ class CanonicalFeedbackContractTest {
                 .path("items").path("properties").path("kind").path("enum"))
                 .extracting(JsonNode::asText)
                 .containsExactly("STRUCTURE", "GRAMMAR_BLOCKING", "GRAMMAR_LOCAL");
+        assertThat(languageAssessment.path("properties").path("revisionSteps")
+                .path("items").path("required"))
+                .extracting(JsonNode::asText)
+                .containsExactlyInAnyOrder("kind", "answerAfter", "reasonKo");
+        assertThat(languageAssessment.path("properties").path("revisionSteps")
+                .path("items").path("properties").has("code")).isFalse();
+        assertThat(languageAssessment.path("properties").path("revisionSteps")
+                .path("items").path("properties").has("instructionKo")).isFalse();
         assertThat(languageAssessment.path("properties").has("revisedAnswer")).isFalse();
         assertThat(languageAssessment.path("properties").has("issues")).isFalse();
+        JsonNode refinementItem = properties.path("refinementExpressions").path("items");
+        assertThat(refinementItem.path("required"))
+                .extracting(JsonNode::asText)
+                .containsExactlyInAnyOrder("expression", "meaningKo", "guidanceKo", "exampleEn");
+        assertThat(refinementItem.path("properties").has("exampleKo")).isFalse();
+        JsonNode slotSupportItem = properties.path("slotAssessments")
+                .path("properties")
+                .path("ACTION")
+                .path("properties")
+                .path("support")
+                .path("items");
+        assertThat(slotSupportItem.path("required"))
+                .extracting(JsonNode::asText)
+                .containsExactlyInAnyOrder(
+                        "title",
+                        "whyKo",
+                        "instructionKo",
+                        "skeletonEn",
+                        "skeletonKo",
+                        "suggestedPhrases"
+                );
+        assertThat(slotSupportItem.path("properties").has("exampleEn")).isFalse();
+        assertThat(slotSupportItem.path("properties").has("targetHintKo")).isFalse();
         assertThat(schema.path("required")).hasSize(names.size());
     }
 
@@ -74,7 +104,24 @@ class CanonicalFeedbackContractTest {
                 .contains("If it can, do not revise it")
                 .contains("practice a five-minute conversation")
                 .contains("optional alternative in refinementExpressions")
-                .contains("refinementExpressions are optional alternatives");
+                .contains("They are optional for the learner to use and never block completion");
+    }
+
+    @Test
+    void schemaAndPromptRequireAtLeastTwoDiverseRefinementExpressionsWithoutMaximum() {
+        JsonNode refinementExpressions = objectMapper.valueToTree(contract.schema(prompt()))
+                .path("properties")
+                .path("refinementExpressions");
+
+        assertThat(refinementExpressions.path("minItems").asInt()).isEqualTo(2);
+        assertThat(refinementExpressions.has("maxItems")).isFalse();
+        assertThat(contract.developerPrompt())
+                .contains("Always return at least two refinementExpressions")
+                .contains("one useful vocabulary, collocation, or phrasal expression")
+                .contains("one sentence frame, connector, emphasis, contrast, reason, result, or detail-building expression")
+                .contains("do not stop at two")
+                .contains("without adding new facts")
+                .contains("Do not recommend wording the learner already used");
     }
 
     @Test
@@ -111,10 +158,7 @@ class CanonicalFeedbackContractTest {
         JsonNode payload = objectMapper.readTree(contract.userPrompt(
                 prompt(),
                 "I take a walk.",
-                List.of(),
-                1,
-                null,
-                null
+                List.of()
         ));
 
         assertThat(payload.path("learnerAnswer").asText()).isEqualTo("I take a walk.");
@@ -125,6 +169,9 @@ class CanonicalFeedbackContractTest {
         assertThat(payload.path("questionContract").path("slotContracts").path("REASON")
                 .path("semanticRole").asText())
                 .isEqualTo("The learner's reason for the usual action.");
+        assertThat(payload.has("attemptIndex")).isFalse();
+        assertThat(payload.has("previousAnswer")).isFalse();
+        assertThat(payload.has("previousCoachingSummary")).isFalse();
         assertThat(payload.has("missionDecision")).isFalse();
     }
 
@@ -133,20 +180,15 @@ class CanonicalFeedbackContractTest {
         String originalPrompt = contract.userPrompt(
                 prompt(),
                 "i take phill to stay focus.",
-                List.of(),
-                1,
-                null,
-                null
+                List.of()
         );
         String rejectedOutput = """
                 {
                   "languageAssessment": {
                     "revisionSteps": [{
                       "kind": "GRAMMAR_LOCAL",
-                      "code": "SPELLING",
                       "answerAfter": "I take a pill to stay focused.",
-                      "reasonKo": "철자를 고쳐야 합니다.",
-                      "instructionKo": "철자를 바로잡아 보세요."
+                      "reasonKo": "철자를 고쳐야 합니다."
                     }]
                   }
                 }
@@ -177,10 +219,8 @@ class CanonicalFeedbackContractTest {
                 "languageAssessment": {
                   "revisionSteps": [{
                     "kind": "GRAMMAR_LOCAL",
-                    "code": "SUBJECT_VERB",
                     "answerAfter": "I go home because I am tired.",
-                    "reasonKo": "I 뒤에는 동사원형이 필요해요.",
-                    "instructionKo": "goes를 go로 고치세요."
+                    "reasonKo": "I 뒤에는 동사원형이 필요해요."
                   }]
                 },
                 """));
@@ -202,10 +242,8 @@ class CanonicalFeedbackContractTest {
                   "revisionSteps": [
                     {
                       "kind": "GRAMMAR_BLOCKING",
-                      "code": "WORD_ORDER",
                       "answerAfter": "I do not work today.",
-                      "reasonKo": "어순 때문에 의미가 막혀요.",
-                      "instructionKo": "부정문 어순을 고치세요."
+                      "reasonKo": "어순 때문에 의미가 막혀요."
                     }
                   ]
                 },
@@ -223,14 +261,11 @@ class CanonicalFeedbackContractTest {
                   "languageAssessment": {
                     "revisionSteps": [{
                       "kind": "STRUCTURE",
-                      "code": "MISSING_SUBJECT_PREDICATE",
                       "answerAfter": "After work, I usually eat noodles.",
-                      "reasonKo": "주어와 동사가 필요해요.",
-                      "instructionKo": "주어와 동사를 넣어 문장을 완성하세요."
+                      "reasonKo": "주어와 동사가 필요해요."
                     }]
                   },
                   "strengths": [],
-                  "usedExpressions": [],
                   "refinementExpressions": [],
                   "slotAssessments": {
                     "ACTION": {"evidence": "noodles", "support": []},
@@ -240,14 +275,12 @@ class CanonicalFeedbackContractTest {
                         "title": "이유 더하기",
                         "whyKo": "이유가 필요해요.",
                         "instructionKo": "구체적인 이유를 쓰세요.",
-                        "exampleEn": "I eat noodles because they are quick.",
                         "skeletonEn": "I eat noodles because ____.",
                         "skeletonKo": "저는 ____ 때문에 국수를 먹어요.",
                         "suggestedPhrases": [
                           {"phrase": "they are quick", "meaningKo": "빨리 준비돼요"},
                           {"phrase": "I like the taste", "meaningKo": "맛을 좋아해요"}
-                        ],
-                        "targetHintKo": "이유 한 가지"
+                        ]
                       }]
                     }
                   },
@@ -268,7 +301,6 @@ class CanonicalFeedbackContractTest {
                   "structureAssessment": {"status": "COMPLETE"},
                   %s
                   "strengths": [],
-                  "usedExpressions": [],
                   "refinementExpressions": [],
                   "slotAssessments": {},
                   "modelAnswer": "I go home because I am tired.",

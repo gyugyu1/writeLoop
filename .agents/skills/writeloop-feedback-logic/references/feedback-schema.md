@@ -17,6 +17,13 @@ value contains:
   question.
 - `satisfiedWhen`: a paraphrase-tolerant semantic condition for fulfillment.
 
+Question-answer diagnosis is stateless. The LLM input contains the current
+`learnerAnswer`, question metadata, slot contract, and prompt hints only. It
+must not contain `previousAnswer`, `previousCoachingSummary`, or `attemptIndex`.
+The backend may continue storing `previous_answer` in
+`feedback_diagnosis_logs` for operational analysis, but that value is never an
+LLM diagnosis input.
+
 The English question-specific fields stored as `semantic_role_en` and
 `satisfied_when_en` are authoritative. Korean counterparts are retained in the
 database for human review but are not sent as decision criteria to the LLM.
@@ -38,7 +45,7 @@ The LLM output has exactly these top-level fields:
   - This object does not carry repair text. The full revision lives only in `languageAssessment`.
 - `languageAssessment`
   - `revisionSteps` contains zero to 25 cumulative full-answer correction steps.
-  - Each step contains `kind`, `code`, `answerAfter`, `reasonKo`, and `instructionKo`.
+  - Each step contains only `kind`, `answerAfter`, and `reasonKo`.
   - `answerAfter` is the complete learner answer after applying that step, never a fragment, patch, example, or model answer.
   - `kind` is `STRUCTURE`, `GRAMMAR_BLOCKING`, or `GRAMMAR_LOCAL`.
   - The first step starts from the untouched learner answer. Every later step starts from the prior `answerAfter` and preserves every earlier correction exactly.
@@ -56,10 +63,9 @@ The LLM output has exactly these top-level fields:
   - Non-empty learner-answer evidence and exactly one support item -> the backend derives `GENERIC`.
   - Empty evidence and exactly one support item -> the backend derives `MISSING`.
   - Any other evidence/support shape is invalid and must be rejected.
-  - Each support includes `title`, `whyKo`, `instructionKo`, `exampleEn`, `skeletonEn`, `skeletonKo`, `targetHintKo`.
+  - Each support includes `title`, `whyKo`, `instructionKo`, `skeletonEn`, and `skeletonKo`.
   - `suggestedPhrases` contains 2-4 usable English phrases with Korean meanings.
 - `strengths`
-- `usedExpressions`
 - `refinementExpressions`
 - `modelAnswer`
 - `modelAnswerKo`
@@ -100,6 +106,10 @@ The backend validates the mechanical contract, computes present/missing slots fr
 7. otherwise -> `COMPLETE`
 
 Optional naturalness alternatives belong only in `refinementExpressions` and do not block completion.
+The LLM must still return at least two items, with no arbitrary maximum: include one
+vocabulary/collocation expression and one sentence-frame/connector expression, then add other
+genuinely distinct useful options. All must preserve the learner's stated facts and meaning,
+must not duplicate wording already used by the learner, and must not be near-duplicates of each other.
 
 Only backend-derived `SATISFIED` counts as present. Backend-derived `GENERIC` remains unresolved, and the backend selects that same slot rather than inventing a different target.
 
@@ -127,6 +137,9 @@ LLM feedback executions.
   `diagnosis_response_body_json` and `regeneration_response_body_json`.
 - Contract detection, retry outcome, original error, final error, provider
   configuration, and elapsed time are stored on the same row.
+- Provider-reported input, cached-input, output, reasoning, and total tokens
+  are stored on the same row. When one contract retry occurs, each value is
+  the sum of the initial and retry calls; unavailable provider fields stay null.
 - A successful row can reference `answer_attempt_id`; a failed row has no answer
   attempt because no user-visible feedback was created.
 - Failed rows are saved in an independent transaction so the calling feedback
@@ -173,7 +186,8 @@ Do not write new metadata with `MAIN_ANSWER`, `ACTIVITY`, `TIME_OR_PLACE`, or `S
 - When one step has several low-level diff spans, the row uses the smallest contiguous source/revised envelope covering them all.
 - Mobile and web show the first four correction rows initially. Any remaining rows stay stored and are available through an expand/collapse control.
 - `revisedAnswer` applies exactly the listed corrections and no hidden fixes. Errors outside the 25-item technical cap remain untouched and are diagnosed again on the learner's next submission.
-- `refinementExpressions` remain optional add-ons for grammatically acceptable alternative wording.
+- `refinementExpressions` contain at least two generated add-ons, with no arbitrary maximum, for grammatically acceptable alternative wording.
+  Their use is optional for the learner even though their presence is required in the LLM output.
 - `modelAnswer` and `modelAnswerKo` are visible reference content, not completion authorities.
 - Question-answer feedback does not expose a numeric score.
 

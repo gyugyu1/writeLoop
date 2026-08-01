@@ -64,30 +64,18 @@ public class GeminiFeedbackClient {
     }
 
     public FeedbackResponseDto review(PromptDto prompt, String answer) {
-        return review(prompt, answer, List.of(), 1, null, null);
+        return review(prompt, answer, List.of(), 1);
     }
 
     public FeedbackResponseDto review(PromptDto prompt, String answer, List<PromptHintDto> hints) {
-        return review(prompt, answer, hints, 1, null, null);
+        return review(prompt, answer, hints, 1);
     }
 
     public FeedbackResponseDto review(
             PromptDto prompt,
             String answer,
             List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer
-    ) {
-        return review(prompt, answer, hints, attemptIndex, previousAnswer, null);
-    }
-
-    public FeedbackResponseDto review(
-            PromptDto prompt,
-            String answer,
-            List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer,
-            String previousCoachingSummary
+            int attemptIndex
     ) {
         latestAnalysisSnapshot.remove();
         latestExecutionTrace.remove();
@@ -107,18 +95,21 @@ public class GeminiFeedbackClient {
         String initialStructuredText = null;
         String retryProviderBody = null;
         String retryStructuredText = null;
+        FeedbackTokenUsage initialTokenUsage = FeedbackTokenUsage.empty();
+        FeedbackTokenUsage retryTokenUsage = FeedbackTokenUsage.empty();
         try {
             String userPrompt = contract.userPrompt(
                     prompt,
                     answer,
-                    hints,
-                    attemptIndex,
-                    previousAnswer,
-                    previousCoachingSummary
+                    hints
             );
             ProviderResponse initialResponse = requestCanonicalFeedback(prompt, userPrompt);
             initialStatusCode = initialResponse.statusCode();
             initialProviderBody = initialResponse.body();
+            initialTokenUsage = FeedbackTokenUsage.fromGeminiResponse(
+                    objectMapper,
+                    initialProviderBody
+            );
             requireSuccessfulResponse(initialResponse);
 
             AssembledFeedback assembled;
@@ -143,6 +134,10 @@ public class GeminiFeedbackClient {
                 ProviderResponse retryResponse = requestCanonicalFeedback(prompt, retryPrompt);
                 retryStatusCode = retryResponse.statusCode();
                 retryProviderBody = retryResponse.body();
+                retryTokenUsage = FeedbackTokenUsage.fromGeminiResponse(
+                        objectMapper,
+                        retryProviderBody
+                );
                 requireSuccessfulResponse(retryResponse);
                 retryStructuredText = extractCanonicalText(retryResponse.body());
                 assembled = assemble(prompt, answer, attemptIndex, retryStructuredText);
@@ -203,6 +198,7 @@ public class GeminiFeedbackClient {
                     finalSuccess,
                     originalContractError == null ? null : originalContractError.getMessage(),
                     finalException == null ? null : finalException.getMessage(),
+                    initialTokenUsage.plus(retryTokenUsage),
                     (System.nanoTime() - startedAt) / 1_000_000
             ));
         }
@@ -232,7 +228,6 @@ public class GeminiFeedbackClient {
                 feedback.modelAnswer(),
                 feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
-                feedback.usedExpressions(),
                 feedback.ui(),
                 feedback.loop(),
                 feedback.coachMove(),

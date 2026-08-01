@@ -17,17 +17,7 @@ interface FeedbackLlmEngine {
             PromptDto prompt,
             String answer,
             List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer
-    );
-
-    FeedbackResponseDto review(
-            PromptDto prompt,
-            String answer,
-            List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer,
-            String previousCoachingSummary
+            int attemptIndex
     );
 
     boolean isAuthoritativeFeedback(FeedbackResponseDto feedback);

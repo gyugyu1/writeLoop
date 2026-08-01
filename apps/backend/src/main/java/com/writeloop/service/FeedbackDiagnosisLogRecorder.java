@@ -33,6 +33,7 @@ public class FeedbackDiagnosisLogRecorder {
 
         PromptDto prompt = event.prompt();
         FeedbackExecutionTrace trace = event.executionTrace();
+        FeedbackTokenUsage tokenUsage = trace.tokenUsage();
         repository.saveAndFlush(FeedbackDiagnosisLogEntity.builder()
                 .executionStatus(FeedbackDiagnosisExecutionStatus.FAILED)
                 .answerAttemptId(null)
@@ -70,6 +71,11 @@ public class FeedbackDiagnosisLogRecorder {
                 .contractOriginalErrorReason(normalize(trace.originalContractErrorReason()))
                 .contractFinalErrorReason(normalize(trace.finalErrorReason()))
                 .elapsedMs(trace.elapsedMs())
+                .llmInputTokens(tokenUsage.inputTokens())
+                .llmCachedInputTokens(tokenUsage.cachedInputTokens())
+                .llmOutputTokens(tokenUsage.outputTokens())
+                .llmReasoningTokens(tokenUsage.reasoningTokens())
+                .llmTotalTokens(tokenUsage.totalTokens())
                 .build());
     }
 

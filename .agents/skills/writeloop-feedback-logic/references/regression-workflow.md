@@ -41,8 +41,8 @@ For each sample, ask:
 
 - Did `coachMission.missionType` match the real learner need?
 - Is the top mission immediately rewriteable?
-- Does it include `exampleEn` when asking for added content?
-- Does the first `fixPoint` support the same mission?
+- Does a content mission include matching English/Korean skeletons and usable phrase choices?
+- Do the visible correction rows support the same language mission?
 - Are optional expressions useful and non-duplicative?
 - Is `modelAnswer` consistent with the mission?
 

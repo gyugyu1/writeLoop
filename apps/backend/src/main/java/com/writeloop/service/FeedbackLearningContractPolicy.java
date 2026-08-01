@@ -426,7 +426,7 @@ final class FeedbackLearningContractPolicy {
         }
         if (steps.stream().anyMatch(step -> !step.isComplete())) {
             throw languageRevisionViolation(
-                    "Every revision step requires kind, code, answerAfter, reasonKo, and instructionKo"
+                    "Every revision step requires kind, answerAfter, and reasonKo"
             );
         }
 

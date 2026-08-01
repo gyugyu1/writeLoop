@@ -37,19 +37,13 @@ public class LlmFeedbackClient {
         return delegate().isConfigured();
     }
 
-    public FeedbackResponseDto review(PromptDto prompt, String answer, List<PromptHintDto> hints, int attemptIndex, String previousAnswer) {
-        return delegate().review(prompt, answer, hints, attemptIndex, previousAnswer);
-    }
-
     public FeedbackResponseDto review(
             PromptDto prompt,
             String answer,
             List<PromptHintDto> hints,
-            int attemptIndex,
-            String previousAnswer,
-            String previousCoachingSummary
+            int attemptIndex
     ) {
-        return delegate().review(prompt, answer, hints, attemptIndex, previousAnswer, previousCoachingSummary);
+        return delegate().review(prompt, answer, hints, attemptIndex);
     }
 
     public boolean isAuthoritativeFeedback(FeedbackResponseDto feedback) {

@@ -17,7 +17,7 @@ Every visible section must support that one mission:
 - `coachMission`: one immediate action assembled by the backend for the confirmed target.
 - `coachMove`: mobile/web top mission card derived from `coachMission`.
 - `coachMove.languageCorrections`: all validated explained changes for a `LANGUAGE_FIX`, capped at 25.
-- `refinementExpressions`: optional expression add-ons.
+- `refinementExpressions`: at least two generated expression add-ons, with no arbitrary maximum, that remain optional for the learner.
 - `rewriteWorkspace`: rewrite input seeded from the mission.
 - `modelAnswer`: quiet reference only, not the teaching plan.
 - `visibleFeedback`: the exact exposed snapshot retained for answer history.
@@ -83,8 +83,10 @@ When changing feedback logic:
 7. Allow at most 25 validated correction spans. Store all of them, show the first four by default, and place the remainder behind an expand/collapse control.
 8. The public `revisedAnswer` may apply only changes represented by those correction rows. Do not silently fix additional errors.
 9. Do not invent fallback teaching content when the LLM contract is incomplete. Language-step violations are unavailable without retry; retryable whole-response or slot-contract violations may be retried once.
-10. Keep reusable phrases and optional starters in `refinementExpressions`.
-   Grammar issues are reserved for actual `LOCAL` or `BLOCKING` errors; route optional naturalness alternatives exclusively to `refinementExpressions`.
+10. Return at least two reusable, non-duplicative `refinementExpressions` with no arbitrary maximum: include a
+    vocabulary/collocation option and a sentence-frame/connector option, then add other genuinely distinct useful options.
+    All must preserve the learner's facts and meaning. They remain optional for the learner.
+    Grammar issues are reserved for actual `LOCAL` or `BLOCKING` errors; route optional naturalness alternatives exclusively to `refinementExpressions`.
 11. Do not hide or rewrite `modelAnswer`; expose it as a quiet reference and evaluate quality through regression tests.
 
 ## Quality Rubric

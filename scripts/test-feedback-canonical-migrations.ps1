@@ -72,6 +72,7 @@ INSERT INTO answer_attempts(score, feedback_payload_json) VALUES (
     $contractRetryMigration = Get-Content -Raw (Join-Path $RepoRoot "infra/mysql/schema/096-add-feedback-contract-retry-observability.sql")
     $visibleFeedbackMigration = Get-Content -Raw (Join-Path $RepoRoot "infra/mysql/schema/097-add-visible-feedback-attempt-lifecycle.sql")
     $unifiedDiagnosisMigration = Get-Content -Raw (Join-Path $RepoRoot "infra/mysql/schema/098-unify-feedback-diagnosis-logs.sql")
+    $tokenUsageMigration = Get-Content -Raw (Join-Path $RepoRoot "infra/mysql/schema/099-add-feedback-token-usage.sql")
     Invoke-TestMySql $diagnosisBaseMigration | Out-Null
     Invoke-TestMySql $diagnosisResponseBodyMigration | Out-Null
     Invoke-TestMySql @"
@@ -158,6 +159,8 @@ INSERT INTO feedback_contract_execution_logs (
 "@ | Out-Null
     Invoke-TestMySql $unifiedDiagnosisMigration | Out-Null
     Invoke-TestMySql $unifiedDiagnosisMigration | Out-Null
+    Invoke-TestMySql $tokenUsageMigration | Out-Null
+    Invoke-TestMySql $tokenUsageMigration | Out-Null
 
     $topicRows = Invoke-TestMySql @"
 SELECT COALESCE(diagnosis_topic_relevance, 'NULL')
@@ -232,6 +235,30 @@ ORDER BY COLUMN_NAME;
         "thinking_budget:int:YES"
     ) $executionColumns)) {
         throw "feedback_diagnosis_logs unified execution columns are incomplete"
+    }
+
+    $tokenUsageColumns = @(Invoke-TestMySql @"
+SELECT CONCAT(COLUMN_NAME, ':', DATA_TYPE, ':', IS_NULLABLE)
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA=DATABASE()
+  AND TABLE_NAME='feedback_diagnosis_logs'
+  AND COLUMN_NAME IN (
+    'llm_input_tokens',
+    'llm_cached_input_tokens',
+    'llm_output_tokens',
+    'llm_reasoning_tokens',
+    'llm_total_tokens'
+  )
+ORDER BY COLUMN_NAME;
+"@)
+    if ((Compare-Object @(
+        "llm_cached_input_tokens:bigint:YES",
+        "llm_input_tokens:bigint:YES",
+        "llm_output_tokens:bigint:YES",
+        "llm_reasoning_tokens:bigint:YES",
+        "llm_total_tokens:bigint:YES"
+    ) $tokenUsageColumns)) {
+        throw "feedback_diagnosis_logs token usage columns are incomplete"
     }
 
     $legacyDiagnosisColumnCount = @(Invoke-TestMySql @"
@@ -388,7 +415,7 @@ WHERE id=1;
     }
 
     Invoke-TestMySql "INSERT INTO answer_attempts(score) VALUES (NULL);" | Out-Null
-    Write-Output "Unified diagnosis, retry, and visible feedback migrations passed syntax and idempotency checks."
+    Write-Output "Unified diagnosis, retry, token usage, and visible feedback migrations passed syntax and idempotency checks."
 } finally {
     docker rm -f $container 2>$null | Out-Null
 }

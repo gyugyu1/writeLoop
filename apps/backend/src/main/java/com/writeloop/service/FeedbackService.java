@@ -98,7 +98,6 @@ public class FeedbackService {
 
         int attemptNo = answerAttemptRepository.countBySessionId(session.getId()) + 1;
         String previousAnswer = findPreviousAnswer(session.getId(), attemptNo);
-        String previousCoachingSummary = buildPreviousCoachingSummary(session.getId());
         AttemptType attemptType = resolveAttemptType(request);
         List<PromptHintDto> hints = promptService.findHintsByPromptId(prompt.id());
 
@@ -110,9 +109,7 @@ public class FeedbackService {
                         prompt,
                         answer,
                         hints,
-                        attemptNo,
-                        previousAnswer,
-                        previousCoachingSummary
+                        attemptNo
                 );
             } catch (RuntimeException exception) {
                 saveFailedDiagnosisLog(
@@ -275,7 +272,6 @@ public class FeedbackService {
                 feedback.modelAnswer(),
                 feedback.modelAnswerKo(),
                 feedback.rewriteChallenge(),
-                feedback.usedExpressions(),
                 feedback.ui(),
                 feedback.loop(),
                 feedback.coachMove(),
@@ -328,7 +324,6 @@ public class FeedbackService {
                 coachMove.before(),
                 coachMove.after(),
                 coachMove.instruction(),
-                null,
                 coachMove.skeletonEn(),
                 coachMove.skeletonKo(),
                 coachMove.suggestedPhrases(),
@@ -499,31 +494,6 @@ public class FeedbackService {
                 .orElse(null);
     }
 
-    private String buildPreviousCoachingSummary(String sessionId) {
-        List<AnswerAttemptEntity> attempts = answerAttemptRepository.findBySessionIdOrderByAttemptNoAsc(sessionId);
-        if (attempts.isEmpty()) {
-            return null;
-        }
-        StringBuilder summary = new StringBuilder();
-        attempts.stream().skip(Math.max(0, attempts.size() - 4)).forEach(attempt -> summary
-                .append("Attempt ")
-                .append(attempt.getAttemptNo())
-                .append(": answer=")
-                .append(compact(attempt.getAnswerText()))
-                .append("; feedback=")
-                .append(compact(attempt.getFeedbackSummary()))
-                .append('\n'));
-        return summary.toString().trim();
-    }
-
-    private String compact(String value) {
-        if (value == null) {
-            return "";
-        }
-        String compact = value.replaceAll("\\s+", " ").trim();
-        return compact.length() <= 240 ? compact : compact.substring(0, 240);
-    }
-
     private AnswerAttemptEntity saveAttempt(
             AnswerSessionEntity session,
             AttemptType attemptType,
@@ -574,6 +544,7 @@ public class FeedbackService {
         }
         try {
             FeedbackDiagnosisResult diagnosis = snapshot.diagnosis();
+            FeedbackTokenUsage tokenUsage = executionTrace.tokenUsage();
             FeedbackDiagnosisLogEntity entity = FeedbackDiagnosisLogEntity.builder()
                     .executionStatus(FeedbackDiagnosisExecutionStatus.SUCCESS)
                     .answerAttemptId(attempt == null ? null : attempt.getId())
@@ -613,6 +584,11 @@ public class FeedbackService {
                             .filter(step -> step.kind() != LanguageIssueKind.STRUCTURE)
                             .count())
                     .elapsedMs(executionTrace.elapsedMs())
+                    .llmInputTokens(tokenUsage.inputTokens())
+                    .llmCachedInputTokens(tokenUsage.cachedInputTokens())
+                    .llmOutputTokens(tokenUsage.outputTokens())
+                    .llmReasoningTokens(tokenUsage.reasoningTokens())
+                    .llmTotalTokens(tokenUsage.totalTokens())
                     .diagnosisPayloadJson(objectMapper.writeValueAsString(diagnosis))
                     .finalSectionsJson(objectMapper.writeValueAsString(snapshot.finalSections()))
                     .build();

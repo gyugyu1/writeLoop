@@ -23,7 +23,6 @@ public record FeedbackResponseDto(
         String modelAnswer,
         String modelAnswerKo,
         String rewriteChallenge,
-        List<CoachExpressionUsageDto> usedExpressions,
         FeedbackUiDto ui,
         FeedbackLoopDto loop,
         FeedbackCoachMoveDto coachMove,
@@ -38,7 +37,6 @@ public record FeedbackResponseDto(
         inlineFeedback = inlineFeedback == null ? List.of() : List.copyOf(inlineFeedback);
         grammarFeedback = grammarFeedback == null ? List.of() : List.copyOf(grammarFeedback);
         refinementExpressions = refinementExpressions == null ? List.of() : List.copyOf(refinementExpressions);
-        usedExpressions = usedExpressions == null ? List.of() : List.copyOf(usedExpressions);
     }
 
     public FeedbackResponseDto(
@@ -57,7 +55,6 @@ public record FeedbackResponseDto(
             String modelAnswer,
             String modelAnswerKo,
             String rewriteChallenge,
-            List<CoachExpressionUsageDto> usedExpressions,
             FeedbackUiDto ui,
             FeedbackLoopDto loop,
             FeedbackCoachMoveDto coachMove,
@@ -81,7 +78,6 @@ public record FeedbackResponseDto(
                 modelAnswer,
                 modelAnswerKo,
                 rewriteChallenge,
-                usedExpressions,
                 ui,
                 loop,
                 coachMove,
@@ -109,7 +105,6 @@ public record FeedbackResponseDto(
                 modelAnswer,
                 modelAnswerKo,
                 rewriteChallenge,
-                usedExpressions,
                 nextUi,
                 loop,
                 coachMove,
@@ -143,7 +138,6 @@ public record FeedbackResponseDto(
                 modelAnswer,
                 modelAnswerKo,
                 rewriteChallenge,
-                usedExpressions,
                 ui,
                 nextLoop,
                 nextCoachMove,
@@ -171,7 +165,6 @@ public record FeedbackResponseDto(
                 modelAnswer,
                 modelAnswerKo,
                 rewriteChallenge,
-                usedExpressions,
                 ui,
                 loop,
                 coachMove,

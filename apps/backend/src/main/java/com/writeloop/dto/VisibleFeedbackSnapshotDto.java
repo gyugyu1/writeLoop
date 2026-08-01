@@ -21,7 +21,7 @@ public record VisibleFeedbackSnapshotDto(
         strength = normalize(strength);
         refinementExpressions = refinementExpressions == null
                 ? List.of()
-                : refinementExpressions.stream().filter(value -> value != null).limit(2).toList();
+                : refinementExpressions.stream().filter(value -> value != null).toList();
         modelAnswer = normalize(modelAnswer);
         modelAnswerKo = normalize(modelAnswerKo);
     }

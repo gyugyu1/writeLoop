@@ -17,13 +17,12 @@ class FeedbackCoachMissionDtoTest {
                 null,
                 "장점만 있어서 반대쪽도 필요해요.",
                 "아쉬운 점을 하나 붙여 보세요.",
-                "One drawback is that it can be expensive.",
                 "One drawback is ____.",
                 "한 가지 아쉬운 점은 ____예요.",
                 List.of(),
                 "One drawback is ____.",
-                "장점 뒤에 붙여 보세요.",
-                null
+                null,
+                List.of()
         );
 
         FeedbackCoachMoveDto coachMove = mission.toCoachMove("DISADVANTAGE");

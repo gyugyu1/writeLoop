@@ -84,6 +84,9 @@ class OpenAiFeedbackClientTest {
                     .doesNotContain("\"REASON\"");
             assertThat(trace.retryResponseBodyJson())
                     .contains("\"REASON\"");
+            assertThat(trace.tokenUsage()).isEqualTo(
+                    new FeedbackTokenUsage(210L, 45L, 70L, 25L, 280L)
+            );
         }
     }
 
@@ -111,6 +114,9 @@ class OpenAiFeedbackClientTest {
                     .doesNotContain("\"REASON\"");
             assertThat(trace.finalErrorReason())
                     .contains("Every configured slot must be assessed exactly once");
+            assertThat(trace.tokenUsage()).isEqualTo(
+                    new FeedbackTokenUsage(210L, 45L, 70L, 25L, 280L)
+            );
         }
     }
 
@@ -135,6 +141,9 @@ class OpenAiFeedbackClientTest {
             assertThat(trace.retryAttempted()).isFalse();
             assertThat(trace.finalErrorReason())
                     .contains("Every revision step must change");
+            assertThat(trace.tokenUsage()).isEqualTo(
+                    new FeedbackTokenUsage(100L, 20L, 30L, 10L, 130L)
+            );
         }
     }
 
@@ -202,10 +211,8 @@ class OpenAiFeedbackClientTest {
                 ? """
                     [{
                       "kind": "GRAMMAR_LOCAL",
-                      "code": "SUBJECT_VERB_AGREEMENT",
                       "answerAfter": "I go home because I am tired.",
-                      "reasonKo": "주어 I 뒤에는 동사 원형을 써야 해요.",
-                      "instructionKo": "goes를 go로 바꿔 보세요."
+                      "reasonKo": "주어 I 뒤에는 동사 원형을 써야 해요."
                     }]
                     """
                 : "[]";
@@ -223,7 +230,6 @@ class OpenAiFeedbackClientTest {
                     "revisionSteps": %s
                   },
                   "strengths": [],
-                  "usedExpressions": [],
                   "refinementExpressions": [],
                   "slotAssessments": {
                     "ACTION": {"evidence": "goes home", "support": []}%s
@@ -252,7 +258,25 @@ class OpenAiFeedbackClientTest {
             requests.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             int index = requestCount.getAndIncrement();
             String output = outputs.get(Math.min(index, outputs.size() - 1));
-            byte[] body = objectMapper.writeValueAsBytes(Map.of("output_text", output));
+            Map<String, Object> usage = index == 0
+                    ? Map.of(
+                            "input_tokens", 100,
+                            "input_tokens_details", Map.of("cached_tokens", 20),
+                            "output_tokens", 30,
+                            "output_tokens_details", Map.of("reasoning_tokens", 10),
+                            "total_tokens", 130
+                    )
+                    : Map.of(
+                            "input_tokens", 110,
+                            "input_tokens_details", Map.of("cached_tokens", 25),
+                            "output_tokens", 40,
+                            "output_tokens_details", Map.of("reasoning_tokens", 15),
+                            "total_tokens", 150
+                    );
+            byte[] body = objectMapper.writeValueAsBytes(Map.of(
+                    "output_text", output,
+                    "usage", usage
+            ));
             exchange.getResponseHeaders().set("content-type", "application/json");
             exchange.sendResponseHeaders(200, body.length);
             exchange.getResponseBody().write(body);

@@ -40,6 +40,7 @@ class FeedbackDiagnosisLogRecorderTest {
                 false,
                 "Initial contract failure",
                 "Final contract failure",
+                new FeedbackTokenUsage(210L, 45L, 70L, 25L, 280L),
                 812L
         );
 
@@ -70,6 +71,11 @@ class FeedbackDiagnosisLogRecorderTest {
         assertThat(saved.getContractOriginalErrorReason()).isEqualTo("Initial contract failure");
         assertThat(saved.getContractFinalErrorReason()).isEqualTo("Final contract failure");
         assertThat(saved.getElapsedMs()).isEqualTo(812L);
+        assertThat(saved.getLlmInputTokens()).isEqualTo(210L);
+        assertThat(saved.getLlmCachedInputTokens()).isEqualTo(45L);
+        assertThat(saved.getLlmOutputTokens()).isEqualTo(70L);
+        assertThat(saved.getLlmReasoningTokens()).isEqualTo(25L);
+        assertThat(saved.getLlmTotalTokens()).isEqualTo(280L);
     }
 
     @Test

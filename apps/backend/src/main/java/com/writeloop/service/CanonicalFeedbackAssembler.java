@@ -81,7 +81,6 @@ final class CanonicalFeedbackAssembler {
         GeneratedSections finalSections = new GeneratedSections(
                 generated.strengths(),
                 generated.refinementExpressions(),
-                generated.usedExpressions(),
                 generated.modelAnswer(),
                 generated.modelAnswerKo(),
                 decision,
@@ -117,7 +116,6 @@ final class CanonicalFeedbackAssembler {
                 generated.modelAnswer(),
                 generated.modelAnswerKo(),
                 coachMission == null ? null : coachMission.instructionKo(),
-                generated.usedExpressions(),
                 ui,
                 null,
                 coachMove,
@@ -151,11 +149,9 @@ final class CanonicalFeedbackAssembler {
                     null,
                     "위 교정들을 반영해 문장 전체를 다시 써 보세요.",
                     revisedAnswer,
-                    revisedAnswer,
                     null,
                     List.of(),
                     revisedAnswer,
-                    "교정 내용을 반영해 전체 문장을 다시 써 보세요.",
                     "표시된 교정이 모두 문장에 반영되면 돼요.",
                     languageCorrections
             );

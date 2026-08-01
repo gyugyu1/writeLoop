@@ -491,11 +491,9 @@ class FeedbackLearningContractPolicyTest {
                 "행동 말하기",
                 "행동이 빠졌어요.",
                 "행동을 넣어 보세요.",
-                "I usually take a walk.",
                 "I usually ____.",
                 "저는 보통 ____해요.",
-                List.of(new FeedbackSuggestedPhraseDto("take a walk", "산책하다")),
-                "행동 한 가지"
+                List.of(new FeedbackSuggestedPhraseDto("take a walk", "산책하다"))
         );
 
         assertThatThrownBy(() -> policy.resolve(
@@ -559,10 +557,8 @@ class FeedbackLearningContractPolicyTest {
     private LanguageRevisionStep step(LanguageIssueKind kind, String answerAfter) {
         return new LanguageRevisionStep(
                 kind,
-                "LANGUAGE",
                 answerAfter,
-                "이 변경이 필요한 이유예요.",
-                "표시된 부분을 고쳐 보세요."
+                "이 변경이 필요한 이유예요."
         );
     }
 
@@ -610,14 +606,12 @@ class FeedbackLearningContractPolicyTest {
                 slot + " 보강하기",
                 "이 내용을 구체화하면 답이 또렷해져요.",
                 "실제 내용을 한 가지 넣어 보세요.",
-                "I usually take a walk after dinner.",
                 "I usually ____.",
                 "저는 보통 ____해요.",
                 List.of(
                         new FeedbackSuggestedPhraseDto("take a walk", "산책하다"),
                         new FeedbackSuggestedPhraseDto("after dinner", "저녁 식사 후에")
-                ),
-                "실제 내용을 한 가지 써 주세요."
+                )
         );
     }
 

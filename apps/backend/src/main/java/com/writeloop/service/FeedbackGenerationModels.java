@@ -1,6 +1,5 @@
 package com.writeloop.service;
 
-import com.writeloop.dto.CoachExpressionUsageDto;
 import com.writeloop.dto.FeedbackCoachMissionDto;
 import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.RefinementExpressionDto;
@@ -88,39 +87,26 @@ enum LanguageIssueKind {
 
 record LanguageRevisionStep(
         LanguageIssueKind kind,
-        String code,
         String answerAfter,
-        String reasonKo,
-        String instructionKo
+        String reasonKo
 ) {
     LanguageRevisionStep(
             String kind,
-            String code,
             String answerAfter,
-            String reasonKo,
-            String instructionKo
+            String reasonKo
     ) {
-        this(LanguageIssueKind.fromCode(kind), code, answerAfter, reasonKo, instructionKo);
+        this(LanguageIssueKind.fromCode(kind), answerAfter, reasonKo);
     }
 
     LanguageRevisionStep {
-        code = normalizeCode(code);
         answerAfter = normalize(answerAfter);
         reasonKo = normalize(reasonKo);
-        instructionKo = normalize(instructionKo);
     }
 
     boolean isComplete() {
         return kind != null
-                && code != null
                 && answerAfter != null
-                && reasonKo != null
-                && instructionKo != null;
-    }
-
-    private static String normalizeCode(String value) {
-        String normalized = normalize(value);
-        return normalized == null ? null : normalized.toUpperCase(Locale.ROOT).replace('-', '_');
+                && reasonKo != null;
     }
 
     private static String normalize(String value) {
@@ -240,17 +226,14 @@ record SlotFeedbackSupport(
         String title,
         String whyKo,
         String instructionKo,
-        String exampleEn,
         String skeletonEn,
         String skeletonKo,
-        List<FeedbackSuggestedPhraseDto> suggestedPhrases,
-        String targetHintKo
+        List<FeedbackSuggestedPhraseDto> suggestedPhrases
 ) {
     SlotFeedbackSupport {
         title = normalize(title);
         whyKo = normalize(whyKo);
         instructionKo = normalize(instructionKo);
-        exampleEn = normalize(exampleEn);
         skeletonEn = normalize(skeletonEn);
         skeletonKo = normalize(skeletonKo);
         suggestedPhrases = suggestedPhrases == null
@@ -260,18 +243,15 @@ record SlotFeedbackSupport(
                 .distinct()
                 .limit(4)
                 .toList();
-        targetHintKo = normalize(targetHintKo);
     }
 
     boolean isComplete() {
         return title != null
                 && whyKo != null
                 && instructionKo != null
-                && exampleEn != null
                 && skeletonEn != null
                 && skeletonKo != null
-                && suggestedPhrases.size() >= 2
-                && targetHintKo != null;
+                && suggestedPhrases.size() >= 2;
     }
 
     FeedbackCoachMissionDto toCoachMission(String missionType) {
@@ -282,13 +262,12 @@ record SlotFeedbackSupport(
                 null,
                 whyKo,
                 instructionKo,
-                exampleEn,
                 skeletonEn,
                 skeletonKo,
                 suggestedPhrases,
                 skeletonEn,
-                targetHintKo,
-                null
+                null,
+                List.of()
         );
     }
 
@@ -361,7 +340,6 @@ record MissionDecision(
 record GeneratedContent(
         List<String> strengths,
         List<RefinementExpressionDto> refinementExpressions,
-        List<CoachExpressionUsageDto> usedExpressions,
         String modelAnswer,
         String modelAnswerKo
 ) {
@@ -369,10 +347,7 @@ record GeneratedContent(
         strengths = strengths == null ? List.of() : strengths.stream().filter(value -> value != null).limit(1).toList();
         refinementExpressions = refinementExpressions == null
                 ? List.of()
-                : refinementExpressions.stream().filter(value -> value != null).limit(3).toList();
-        usedExpressions = usedExpressions == null
-                ? List.of()
-                : usedExpressions.stream().filter(value -> value != null).limit(3).toList();
+                : refinementExpressions.stream().filter(value -> value != null).toList();
         modelAnswer = normalize(modelAnswer);
         modelAnswerKo = normalize(modelAnswerKo);
     }
@@ -385,7 +360,6 @@ record GeneratedContent(
 record GeneratedSections(
         List<String> strengths,
         List<RefinementExpressionDto> refinementExpressions,
-        List<CoachExpressionUsageDto> usedExpressions,
         String modelAnswer,
         String modelAnswerKo,
         MissionDecision missionDecision,
@@ -395,10 +369,7 @@ record GeneratedSections(
         strengths = strengths == null ? List.of() : strengths.stream().filter(value -> value != null).limit(1).toList();
         refinementExpressions = refinementExpressions == null
                 ? List.of()
-                : refinementExpressions.stream().filter(value -> value != null).limit(3).toList();
-        usedExpressions = usedExpressions == null
-                ? List.of()
-                : usedExpressions.stream().filter(value -> value != null).limit(3).toList();
+                : refinementExpressions.stream().filter(value -> value != null).toList();
         modelAnswer = normalize(modelAnswer);
         modelAnswerKo = normalize(modelAnswerKo);
     }

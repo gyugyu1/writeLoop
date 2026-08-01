@@ -52,7 +52,6 @@ class CanonicalFeedbackAssemblerTest {
                         StructureStatus.COMPLETE,
                         List.of(languageStep(
                                 LanguageIssueKind.GRAMMAR_LOCAL,
-                                "SUBJECT_VERB",
                                 "I go home."
                         ))
                 ),
@@ -88,7 +87,6 @@ class CanonicalFeedbackAssemblerTest {
                         StructureStatus.COMPLETE,
                         List.of(languageStep(
                                 LanguageIssueKind.GRAMMAR_LOCAL,
-                                "CAPITALIZATION",
                                 revised
                         ))
                 ),
@@ -124,17 +122,14 @@ class CanonicalFeedbackAssemblerTest {
                         List.of(
                                 languageStep(
                                         LanguageIssueKind.STRUCTURE,
-                                        "MISSING_SUBJECT",
                                         "After work, I go home because work no today, and she eat rice."
                                 ),
                                 languageStep(
                                         LanguageIssueKind.GRAMMAR_BLOCKING,
-                                        "WORD_ORDER",
                                         "After work, I go home because I do not work today, and she eat rice."
                                 ),
                                 languageStep(
                                         LanguageIssueKind.GRAMMAR_LOCAL,
-                                        "SUBJECT_VERB",
                                         revised
                                 )
                         )
@@ -165,37 +160,30 @@ class CanonicalFeedbackAssemblerTest {
         List<LanguageRevisionStep> revisionSteps = List.of(
                 languageStep(
                         LanguageIssueKind.GRAMMAR_LOCAL,
-                        "CAPITALIZATION",
                         "I keep hav anchor appl bridge banan middle eat later thre near pear."
                 ),
                 languageStep(
                         LanguageIssueKind.GRAMMAR_LOCAL,
-                        "SPELLING",
                         "I keep have anchor appl bridge banan middle eat later thre near pear."
                 ),
                 languageStep(
                         LanguageIssueKind.GRAMMAR_LOCAL,
-                        "SPELLING",
                         "I keep have anchor apple bridge banan middle eat later thre near pear."
                 ),
                 languageStep(
                         LanguageIssueKind.GRAMMAR_LOCAL,
-                        "NUMBER",
                         "I keep have anchor apple bridge bananas middle eat later thre near pear."
                 ),
                 languageStep(
                         LanguageIssueKind.GRAMMAR_LOCAL,
-                        "SUBJECT_VERB",
                         "I keep have anchor apple bridge bananas middle eats later thre near pear."
                 ),
                 languageStep(
                         LanguageIssueKind.GRAMMAR_LOCAL,
-                        "SPELLING",
                         "I keep have anchor apple bridge bananas middle eats later three near pear."
                 ),
                 languageStep(
                         LanguageIssueKind.GRAMMAR_LOCAL,
-                        "NUMBER",
                         revised
                 )
         );
@@ -226,7 +214,6 @@ class CanonicalFeedbackAssemblerTest {
                         StructureStatus.COMPLETE,
                         List.of(languageStep(
                                 LanguageIssueKind.GRAMMAR_LOCAL,
-                                "SUBJECT_VERB",
                                 "I go home."
                         ))
                 ),
@@ -258,7 +245,6 @@ class CanonicalFeedbackAssemblerTest {
                 "practice having a five-minute conversation",
                 "원문도 맞고, 이렇게도 말할 수 있어요.",
                 "I practice having a five-minute conversation every evening.",
-                "저는 매일 저녁 5분 동안 대화하는 연습을 해요.",
                 "5분 동안 대화하는 연습을 하다"
         );
         String answer = "I practice a five-minute conversation every evening.";
@@ -296,7 +282,6 @@ class CanonicalFeedbackAssemblerTest {
                 new GeneratedContent(
                         List.of(),
                         refinements,
-                        List.of(),
                         modelAnswer,
                         "Reference translation"
                 ),
@@ -318,15 +303,12 @@ class CanonicalFeedbackAssemblerTest {
 
     private LanguageRevisionStep languageStep(
             LanguageIssueKind kind,
-            String code,
             String answerAfter
     ) {
         return new LanguageRevisionStep(
                 kind,
-                code,
                 answerAfter,
-                "이 변경이 필요한 이유예요.",
-                "표시된 부분을 고쳐 보세요."
+                "이 변경이 필요한 이유예요."
         );
     }
 
@@ -335,14 +317,12 @@ class CanonicalFeedbackAssemblerTest {
                 "이유를 더해 보세요",
                 "구체적인 이유가 필요해요.",
                 "실제 경험에서 이유 하나를 더하세요.",
-                "I take a walk because it helps me relax.",
                 "I take a walk because ____.",
                 "나는 ____ 때문에 산책해요.",
                 List.of(
                         new FeedbackSuggestedPhraseDto("it helps me relax", "긴장을 풀어 줘요"),
                         new FeedbackSuggestedPhraseDto("I need fresh air", "신선한 공기가 필요해요")
-                ),
-                "구체적인 이유 하나를 쓰세요."
+                )
         );
     }
 

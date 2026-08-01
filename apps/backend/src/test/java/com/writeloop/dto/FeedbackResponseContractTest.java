@@ -29,13 +29,11 @@ class FeedbackResponseContractTest {
                         "after that",
                         "Use this to connect the next action.",
                         "After that, I rested.",
-                        "그 후에",
                         "그 후에"
                 )),
                 "I went home and rested.",
                 "집에 가서 쉬었어요.",
                 "Try one focused rewrite.",
-                List.of(),
                 new FeedbackUiDto(
                         null,
                         List.of(),
@@ -52,7 +50,6 @@ class FeedbackResponseContractTest {
                         "Use past tense for yesterday.",
                         null,
                         null,
-                        null,
                         List.of(),
                         "The verb is in past tense.",
                         null,
@@ -64,7 +61,7 @@ class FeedbackResponseContractTest {
                                 "Use past tense for a finished event."
                         ))
                 ),
-                new FeedbackRewriteWorkspaceDto("I go home.", "I went ____.", "Change the verb.", true),
+                new FeedbackRewriteWorkspaceDto("I go home.", "I went ____.", true),
                 null,
                 null
         );
@@ -83,6 +80,9 @@ class FeedbackResponseContractTest {
         assertThat(root.has("score")).isFalse();
         assertThat(root.has("corrections")).isFalse();
         assertThat(root.has("grammarFeedback")).isFalse();
+        assertThat(root.has("usedExpressions")).isFalse();
+        assertThat(root.path("coachMove").has("exampleEn")).isFalse();
+        assertThat(root.path("rewriteWorkspace").has("targetTextHint")).isFalse();
 
         JsonNode ui = root.path("ui");
         assertThat(ui.has("fixPoints")).isFalse();

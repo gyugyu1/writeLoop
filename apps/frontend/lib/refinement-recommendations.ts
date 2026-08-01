@@ -39,14 +39,12 @@ export function filterSuggestedRefinementExpressions<T extends RefinementExpress
       meaningKo?: string | null;
       guidanceKo?: string | null;
       exampleEn?: string | null;
-      exampleKo?: string | null;
     };
     if (
       PLACEHOLDER_PATTERN.test(candidate.expression ?? "") ||
       PLACEHOLDER_PATTERN.test(candidate.meaningKo ?? "") ||
       PLACEHOLDER_PATTERN.test(candidate.guidanceKo ?? "") ||
-      PLACEHOLDER_PATTERN.test(candidate.exampleEn ?? "") ||
-      PLACEHOLDER_PATTERN.test(candidate.exampleKo ?? "")
+      PLACEHOLDER_PATTERN.test(candidate.exampleEn ?? "")
     ) {
       return false;
     }

@@ -836,7 +836,7 @@ function renderWritingHistoryVisibleFeedback(attempt: HistorySession["attempts"]
   }
 
   const coachMove = snapshot.coachMove;
-  const expressions = (snapshot.refinementExpressions ?? []).slice(0, 2);
+  const expressions = snapshot.refinementExpressions ?? [];
   const allLanguageCorrections = coachMove?.languageCorrections ?? [];
   const areAllLanguageCorrectionsVisible =
     expandedLanguageCorrectionAttempts[attempt.id] ?? false;

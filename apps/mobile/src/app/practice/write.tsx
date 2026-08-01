@@ -21,7 +21,10 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import { VisiblePracticeFeedbackContent } from "@/components/visible-practice-feedback-content";
-import FeedbackLoadingOverlay from "@/components/feedback-loading-overlay";
+import FeedbackLoadingOverlay, {
+  INITIAL_FEEDBACK_LOADING_STAGES,
+  REWRITE_FEEDBACK_LOADING_STAGES
+} from "@/components/feedback-loading-overlay";
 import {
   ApiError,
   deleteWritingDraft,
@@ -471,47 +474,9 @@ export default function PracticeWriteScreen() {
     () => (draftStatusMessage ? toDraftStatusBadgeLabel(draftStatusMessage) : ""),
     [draftStatusMessage]
   );
-  const feedbackLoadingStages = useMemo(
-    () =>
-      feedback
-        ? [
-            {
-              title: "다시 쓴 답변을 읽고 있어요",
-              message: "이전 피드백이 얼마나 반영됐는지 살펴보는 중이에요. 잠시만 기다려 주세요."
-            },
-            {
-              title: "문장 흐름을 비교하고 있어요",
-              message: "좋아진 부분과 더 다듬을 부분을 차근차근 보고 있어요."
-            },
-            {
-              title: "더 자연스러운 표현을 고르고 있어요",
-              message: "답을 더 매끄럽게 만들어 줄 표현을 정리하고 있어요."
-            },
-            {
-              title: "다음 다시쓰기 힌트를 만들고 있어요",
-              message: "한 번 더 써 볼 때 바로 쓸 수 있는 팁까지 챙기고 있어요."
-            }
-          ]
-        : [
-            {
-              title: "피드백을 만들고 있어요",
-              message: "답변을 바탕으로 맞춤 피드백을 정리하고 있어요. 잠시만 기다려 주세요."
-            },
-            {
-              title: "문장을 찬찬히 읽고 있어요",
-              message: "잘한 점과 먼저 고칠 점을 나눠 보고 있어요."
-            },
-            {
-              title: "더 자연스러운 표현을 찾고 있어요",
-              message: "바로 써먹을 수 있는 표현도 함께 고르고 있어요."
-            },
-            {
-              title: "표현을 하나 더 보탤 아이디어를 만들고 있어요",
-              message: "다음 다시쓰기에서 써 볼 힌트까지 챙기고 있어요."
-            }
-          ],
-    [feedback]
-  );
+  const feedbackLoadingStages = feedback
+    ? REWRITE_FEEDBACK_LOADING_STAGES
+    : INITIAL_FEEDBACK_LOADING_STAGES;
   const previousFeedbackState = useMemo(() => {
     if (!selectedPrompt || !feedback || !rewriteSeedAnswer.trim()) {
       return null;
@@ -545,7 +510,6 @@ export default function PracticeWriteScreen() {
   );
   const rewriteCoachBody = pickFirstNonEmpty(
     feedback?.coachMove?.instruction,
-    feedback?.rewriteWorkspace?.targetTextHint,
     feedback?.completionMessage,
     feedback?.summary,
     "방금 받은 피드백을 반영해 다시 써 보세요."

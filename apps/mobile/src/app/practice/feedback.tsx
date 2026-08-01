@@ -18,6 +18,9 @@ import {
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import FeedbackLoadingOverlay, {
+  REWRITE_FEEDBACK_LOADING_STAGES
+} from "@/components/feedback-loading-overlay";
 import {
   ApiError,
   completeFeedbackSession,
@@ -84,7 +87,7 @@ function normalizeCompletionRefinementPhrase(value?: RefinementExpression | null
 
   return {
     phrase,
-    meaningKo: pickFirstNonEmpty(value.meaningKo, value.exampleKo),
+    meaningKo: trimText(value.meaningKo),
     guidanceKo: trimText(value.guidanceKo),
     exampleEn: trimText(value.exampleEn)
   };
@@ -113,7 +116,7 @@ function buildCompletionRefinementPhrases(expressions?: RefinementExpression[] |
     phrases.push(phrase);
   }
 
-  return phrases.slice(0, 2);
+  return phrases;
 }
 
 function renderFeedbackExpressionSaveIcon(saved: boolean, saving: boolean) {
@@ -158,7 +161,6 @@ function hasCoachMove(coachMove?: FeedbackCoachMove | null) {
       trimText(coachMove?.before) ||
       trimText(coachMove?.after) ||
       trimText(coachMove?.instruction) ||
-      trimText(coachMove?.exampleEn) ||
       trimText(coachMove?.skeletonEn) ||
       (Array.isArray(coachMove?.languageCorrections) &&
         coachMove.languageCorrections.length > 0) ||
@@ -398,7 +400,6 @@ export default function PracticeFeedbackScreen() {
   );
   const coachInstruction = pickFirstNonEmpty(
     coachMove?.instruction,
-    rewriteWorkspace?.targetTextHint,
     feedback?.rewriteChallenge,
     "의미는 유지하고 오늘의 한 가지 코치만 반영해 다시 써보세요."
   );
@@ -1099,6 +1100,15 @@ export default function PracticeFeedbackScreen() {
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
+      <FeedbackLoadingOverlay
+        visible={isSubmittingRewrite}
+        title={REWRITE_FEEDBACK_LOADING_STAGES[0]?.title ?? "피드백을 만들고 있어요"}
+        message={
+          REWRITE_FEEDBACK_LOADING_STAGES[0]?.message ??
+          "답변을 바탕으로 맞춤 피드백을 정리하고 있어요. 잠시만 기다려 주세요."
+        }
+        stages={REWRITE_FEEDBACK_LOADING_STAGES}
+      />
     </SafeAreaView>
   );
 }

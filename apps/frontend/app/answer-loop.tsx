@@ -196,7 +196,6 @@ function hasCoachMove(coachMove?: FeedbackCoachMove | null) {
       trimNullable(coachMove?.before) ||
       trimNullable(coachMove?.after) ||
       trimNullable(coachMove?.instruction) ||
-      trimNullable(coachMove?.exampleEn) ||
       trimNullable(coachMove?.skeletonEn) ||
       (Array.isArray(coachMove?.languageCorrections) &&
         coachMove.languageCorrections.length > 0) ||
@@ -1909,7 +1908,6 @@ export function AnswerLoop() {
     allLanguageCorrections.length - 4
   );
   const isLanguageFix = trimNullable(coachMove?.focusType)?.toUpperCase() === "LANGUAGE_FIX";
-  const rewriteWorkspace = feedback?.rewriteWorkspace ?? null;
   const isLoopReadyToFinish =
     visibleFeedback?.state === "READY_TO_FINISH" ||
     Boolean(feedback?.loopComplete) ||
@@ -1920,7 +1918,7 @@ export function AnswerLoop() {
     visibleFeedback?.refinementExpressions ?? feedback?.refinementExpressions,
     lastSubmittedAnswer,
     feedback?.revisedAnswer
-  ).slice(0, 2);
+  );
   const visibleModelAnswer = pickFirstNonEmpty(visibleFeedback?.modelAnswer, feedback?.modelAnswer);
   const visibleModelAnswerKo = pickFirstNonEmpty(
     visibleFeedback?.modelAnswerKo,
@@ -1940,7 +1938,6 @@ export function AnswerLoop() {
   );
   const coachInstruction = pickFirstNonEmpty(
     coachMove?.instruction,
-    rewriteWorkspace?.targetTextHint,
     feedback?.rewriteChallenge,
     isLoopReadyToFinish
       ? "이미 충분히 좋아요. 원하면 표현 하나만 가볍게 다듬어 보세요."

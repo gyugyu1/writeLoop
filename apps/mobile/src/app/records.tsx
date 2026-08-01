@@ -547,11 +547,6 @@ function buildHistoryFeedback(session: HistorySession, attempt: HistoryAttempt):
     inlineFeedback: null,
     revisedAnswer: null,
     refinementExpressions: visibleFeedback?.refinementExpressions ?? [],
-    usedExpressions:
-      attempt.usedExpressions?.map((expression) => ({
-        expression: expression.expression,
-        matchedText: expression.matchedText ?? null
-      })) ?? [],
     modelAnswer: visibleFeedback?.modelAnswer ?? "",
     modelAnswerKo: visibleFeedback?.modelAnswerKo ?? null,
     rewriteChallenge:
@@ -597,7 +592,7 @@ function HistoryVisibleFeedback({ attempt }: { attempt: HistoryAttempt }) {
   }
 
   const coachMove = snapshot.coachMove;
-  const expressions = (snapshot.refinementExpressions ?? []).slice(0, 2);
+  const expressions = snapshot.refinementExpressions ?? [];
   const allLanguageCorrections = coachMove?.languageCorrections ?? [];
   const languageCorrections = areAllLanguageCorrectionsVisible
     ? allLanguageCorrections

@@ -106,15 +106,6 @@ export interface CoachUsageCheckResponse {
   relatedPromptIds: string[];
 }
 
-export interface FeedbackUsedExpression {
-  expression: string;
-  matchedText?: string | null;
-  meaningKo?: string | null;
-  exampleEn?: string | null;
-  usageTip?: string | null;
-  tags?: ExpressionTag[] | null;
-}
-
 export interface DailyPromptRecommendation {
   recommendedDate: string;
   difficulty: DailyDifficulty;
@@ -314,7 +305,6 @@ export interface FeedbackCoachMove {
   before?: string | null;
   after?: string | null;
   instruction?: string | null;
-  exampleEn?: string | null;
   skeletonEn?: string | null;
   skeletonKo?: string | null;
   suggestedPhrases?: (string | { phrase?: string | null; meaningKo?: string | null })[] | null;
@@ -326,7 +316,6 @@ export interface FeedbackCoachMove {
 export interface FeedbackRewriteWorkspace {
   seedText?: string | null;
   placeholder?: string | null;
-  targetTextHint?: string | null;
   lockMeaning?: boolean | null;
 }
 
@@ -376,7 +365,6 @@ export interface RefinementExpression {
   meaningType?: RefinementMeaningType | null;
   guidanceKo?: string | null;
   exampleEn?: string | null;
-  exampleKo?: string | null;
   exampleSource?: RefinementExampleSource | null;
   displayable?: boolean | null;
   qualityFlags?: string[] | null;
@@ -404,7 +392,6 @@ export interface Feedback {
   inlineFeedback: FeedbackInlineSegment[] | null;
   revisedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
-  usedExpressions?: FeedbackUsedExpression[] | null;
   modelAnswer: string;
   modelAnswerKo?: string | null;
   rewriteChallenge: string;
@@ -568,7 +555,6 @@ export interface StoredFeedback {
   inlineFeedback: FeedbackInlineSegment[] | null;
   revisedAnswer: string | null;
   refinementExpressions?: RefinementExpression[] | null;
-  usedExpressions?: FeedbackUsedExpression[] | null;
   modelAnswer: string;
   modelAnswerKo?: string | null;
   rewriteChallenge: string;

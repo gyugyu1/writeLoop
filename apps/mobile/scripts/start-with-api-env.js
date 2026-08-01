@@ -2,7 +2,10 @@ const { existsSync } = require("node:fs");
 const { join } = require("node:path");
 const { spawn, spawnSync } = require("node:child_process");
 
-const mode = process.argv[2] ?? "local";
+const requestedArgs = process.argv.slice(2);
+const helpRequested = requestedArgs.includes("--help") || requestedArgs.includes("-h");
+const mode = requestedArgs.find((argument) => !argument.startsWith("--")) ?? "local";
+const clearCache = requestedArgs.includes("--clear");
 
 const modes = {
   local: {
@@ -11,7 +14,7 @@ const modes = {
     adbReversePorts: [
       [8081, 8081]
     ],
-    expoArgs: ["expo", "start", "--dev-client", "--localhost", "--clear"],
+    expoArgs: ["expo", "start", "--dev-client", "--localhost"],
     env: {
       EXPO_PUBLIC_API_BASE_URL: "http://localhost:8080",
       EXPO_PUBLIC_API_BASE_URL_ANDROID: "http://10.0.2.2:8080",
@@ -24,7 +27,7 @@ const modes = {
     adbReversePorts: [
       [8081, 8081]
     ],
-    expoArgs: ["expo", "start", "--dev-client", "--localhost", "--clear"],
+    expoArgs: ["expo", "start", "--dev-client", "--localhost"],
     env: {
       EXPO_PUBLIC_API_BASE_URL: "http://localhost",
       EXPO_PUBLIC_API_BASE_URL_ANDROID: "http://10.0.2.2",
@@ -38,7 +41,7 @@ const modes = {
       [8080, 80],
       [8081, 8081]
     ],
-    expoArgs: ["expo", "start", "--dev-client", "--localhost", "--clear"],
+    expoArgs: ["expo", "start", "--dev-client", "--localhost"],
     env: {
       EXPO_PUBLIC_API_BASE_URL: "http://localhost:8080",
       EXPO_PUBLIC_API_BASE_URL_ANDROID: "http://localhost:8080",
@@ -51,7 +54,7 @@ const modes = {
     adbReversePorts: [
       [8081, 8081]
     ],
-    expoArgs: ["expo", "start", "--dev-client", "--localhost", "--clear"],
+    expoArgs: ["expo", "start", "--dev-client", "--localhost"],
     env: {
       EXPO_PUBLIC_API_BASE_URL: "https://api.writeloop.kr",
       EXPO_PUBLIC_API_BASE_URL_ANDROID: "https://api.writeloop.kr",
@@ -60,18 +63,21 @@ const modes = {
   }
 };
 
-if (mode === "--help" || mode === "-h" || !modes[mode]) {
-  console.log("Usage: node scripts/start-with-api-env.js <local|local-nginx|device-nginx|prod>");
+if (helpRequested || !modes[mode]) {
+  console.log("Usage: node scripts/start-with-api-env.js <local|local-nginx|device-nginx|prod> [--clear]");
   console.log("");
   console.log("local       Android emulator -> http://10.0.2.2:8080");
   console.log("local-nginx Android emulator -> http://10.0.2.2");
   console.log("device-nginx Android physical device over USB -> http://localhost:8080");
   console.log("prod        Android/iOS -> https://api.writeloop.kr");
-  process.exit(mode === "--help" || mode === "-h" ? 0 : 1);
+  process.exit(helpRequested ? 0 : 1);
 }
 
 const selected = modes[mode];
-const expoArgs = selected.expoArgs ?? ["expo", "start", "--dev-client", "--lan", "--clear"];
+const expoArgs = [...(selected.expoArgs ?? ["expo", "start", "--dev-client", "--lan"])];
+if (clearCache) {
+  expoArgs.push("--clear");
+}
 
 function resolveAdbCommand() {
   const executable = process.platform === "win32" ? "adb.exe" : "adb";

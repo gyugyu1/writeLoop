@@ -13,6 +13,7 @@
     "lint:frontend": "npm run lint --workspace @english-learning/frontend",
     "mobile:rn:start": "npm --prefix apps/mobile run start",
     "mobile:rn:start:android-studio": "npm --prefix apps/mobile run start:android-studio",
+    "mobile:rn:start:android-studio:clear": "npm --prefix apps/mobile run start:android-studio:clear",
     "mobile:rn:start:tunnel": "npm --prefix apps/mobile run start:tunnel",
     "mobile:rn:android": "npm --prefix apps/mobile run android",
     "mobile:rn:android:emulator": "npm --prefix apps/mobile run android:emulator",

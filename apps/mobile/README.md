@@ -89,6 +89,12 @@ npm run start:android-studio
 
 This script starts the dev-client Metro server and points the Android emulator at the local Docker/Nginx API on `http://10.0.2.2`.
 
+The normal command reuses Metro's cache. If Metro is running but the emulator stays on a black screen because the JavaScript bundle is not completing, stop the existing Metro process and restart once with:
+
+```bash
+npm run start:android-studio:clear
+```
+
 If Spring Boot is running directly on the host at port `8080` instead of through Docker/Nginx, use:
 
 ```bash

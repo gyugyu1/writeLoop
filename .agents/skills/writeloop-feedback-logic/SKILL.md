@@ -79,7 +79,7 @@ When changing feedback logic:
 3. Keep the backend decision, `coachMission`, `coachMove`, `languageCorrections`, `revisedAnswer`, and rewrite UI aligned.
 4. For content missions, require complete support for the exact target slot: English/Korean skeletons and at least two phrase choices.
 5. Diff each cumulative `answerAfter` against the previous complete answer; never ask the LLM to identify a change by an ambiguous source substring.
-6. Require steps in structure, blocking grammar, local grammar order, then left to right. Later steps must preserve earlier corrections, and overlapping repairs must be merged into the earlier step.
+6. Require steps in structure, blocking grammar, then local grammar order. Prefer left-to-right order within the same kind, but treat preservation of earlier corrections as the safety invariant. Validate individual diff ranges rather than rejecting a safe cumulative answer solely for same-kind position order.
 7. Allow at most 25 validated correction spans. Store all of them, show the first four by default, and place the remainder behind an expand/collapse control.
 8. The public `revisedAnswer` may apply only changes represented by those correction rows. Do not silently fix additional errors.
 9. Do not invent fallback teaching content when the LLM contract is incomplete. Language-step violations are unavailable without retry; retryable whole-response or slot-contract violations may be retried once.

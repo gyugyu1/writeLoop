@@ -448,7 +448,6 @@ final class FeedbackLearningContractPolicy {
         List<ProtectedRevisionRange> protectedRanges = new ArrayList<>();
         String currentAnswer = sourceAnswer;
         int previousPriority = -1;
-        int lastStartWithinKind = -1;
 
         for (int index = 0; index < steps.size(); index++) {
             LanguageRevisionStep step = steps.get(index);
@@ -458,15 +457,15 @@ final class FeedbackLearningContractPolicy {
                         "Revision steps must be ordered STRUCTURE, GRAMMAR_BLOCKING, then GRAMMAR_LOCAL"
                 );
             }
-            if (priority != previousPriority) {
-                lastStartWithinKind = -1;
-            }
-
-            FeedbackRevisionDiff stepDiff = FeedbackRevisionDiffSupport.compare(
+            FeedbackRevisionDiff displayDiff = FeedbackRevisionDiffSupport.compare(
                     currentAnswer,
                     step.answerAfter()
             );
-            if (stepDiff.edits().isEmpty()) {
+            FeedbackRevisionDiff validationDiff = FeedbackRevisionDiffSupport.compareForValidation(
+                    currentAnswer,
+                    step.answerAfter()
+            );
+            if (validationDiff.edits().isEmpty()) {
                 throw languageRevisionViolation(
                         "Every revision step must change the complete answer from the previous step"
                 );
@@ -474,28 +473,25 @@ final class FeedbackLearningContractPolicy {
             LanguageRevisionEdit combinedEdit = FeedbackRevisionDiffSupport.enclosingEdit(
                     currentAnswer,
                     step.answerAfter(),
-                    stepDiff
+                    displayDiff
             );
-            if (lastStartWithinKind >= 0 && combinedEdit.sourceStart() < lastStartWithinKind) {
-                throw languageRevisionViolation(
-                        "Revision steps of the same kind must follow learner-answer source order"
-                );
-            }
-            if (protectedRanges.stream().anyMatch(range -> overlaps(range, combinedEdit))) {
+            if (protectedRanges.stream().anyMatch(range -> validationDiff.edits().stream()
+                    .anyMatch(edit -> overlaps(range, edit)))) {
                 throw languageRevisionViolation(
                         "A later revision step cannot change or revert text corrected by an earlier step"
                 );
             }
 
-            protectedRanges = advanceProtectedRanges(protectedRanges, combinedEdit);
-            protectedRanges.add(new ProtectedRevisionRange(
-                    combinedEdit.revisedStart(),
-                    combinedEdit.revisedEnd()
-            ));
+            protectedRanges = advanceProtectedRanges(protectedRanges, validationDiff.edits());
+            for (LanguageRevisionEdit edit : validationDiff.edits()) {
+                protectedRanges.add(new ProtectedRevisionRange(
+                        edit.revisedStart(),
+                        edit.revisedEnd()
+                ));
+            }
             corrections.add(new ValidatedLanguageCorrection(step, combinedEdit, index));
             currentAnswer = step.answerAfter();
             previousPriority = priority;
-            lastStartWithinKind = combinedEdit.revisedStart();
         }
 
         boolean hasStructureStep = steps.stream()
@@ -543,21 +539,19 @@ final class FeedbackLearningContractPolicy {
 
     private List<ProtectedRevisionRange> advanceProtectedRanges(
             List<ProtectedRevisionRange> ranges,
-            LanguageRevisionEdit edit
+            List<LanguageRevisionEdit> edits
     ) {
-        int sourceLength = edit.sourceEnd() - edit.sourceStart();
-        int revisedLength = edit.revisedEnd() - edit.revisedStart();
-        int delta = revisedLength - sourceLength;
         List<ProtectedRevisionRange> advanced = new ArrayList<>();
         for (ProtectedRevisionRange range : ranges) {
-            if (range.end() <= edit.sourceStart()) {
-                advanced.add(range);
-            } else if (range.start() >= edit.sourceEnd()) {
-                advanced.add(new ProtectedRevisionRange(
-                        range.start() + delta,
-                        range.end() + delta
-                ));
-            }
+            int delta = edits.stream()
+                    .filter(edit -> edit.sourceEnd() <= range.start())
+                    .mapToInt(edit -> (edit.revisedEnd() - edit.revisedStart())
+                            - (edit.sourceEnd() - edit.sourceStart()))
+                    .sum();
+            advanced.add(new ProtectedRevisionRange(
+                    range.start() + delta,
+                    range.end() + delta
+            ));
         }
         return advanced;
     }

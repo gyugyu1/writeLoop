@@ -174,7 +174,7 @@ class FeedbackLearningContractPolicyTest {
     }
 
     @Test
-    void rejectsLanguageStepsThatMoveBackwardsWithinTheSameKind() {
+    void acceptsLanguageStepsThatMoveBackwardsWithinTheSameKindWhenCorrectionsArePreserved() {
         String answer = "i go hom.";
         FeedbackDiagnosisResult diagnosis = diagnosis(
                 TopicRelevance.ON_TOPIC,
@@ -186,16 +186,49 @@ class FeedbackLearningContractPolicyTest {
                 )
         );
 
-        assertThatThrownBy(() -> policy.resolve(
+        LearningContractResolution resolution = policy.resolveContract(
                 prompt(List.of("ACTION"), List.of(), 0),
                 answer,
                 diagnosis,
                 assessment(satisfied("ACTION", "go"))
-        ))
-                .isInstanceOfSatisfying(FeedbackContractException.class, exception -> {
-                    assertThat(exception.retryable()).isFalse();
-                    assertThat(exception).hasMessageContaining("source order");
-                });
+        );
+
+        assertThat(resolution.revisedAnswer()).isEqualTo("I go home.");
+        assertThat(resolution.languageCorrections()).hasSize(2);
+        assertThat(resolution.languageCorrections().get(0).edit().sourceStart())
+                .isGreaterThan(resolution.languageCorrections().get(1).edit().sourceStart());
+    }
+
+    @Test
+    void acceptsRainyDayCorrectionsAroundEarlierStructureAndGrammarRepairs() {
+        String answer = "I like to drink makgeolli on rainy Day. "
+                + "Because it is korea traditional to drink makgeolli on rainy Day.";
+        String structureRevision = "I like to drink makgeolli on rainy Day "
+                + "because it is korea traditional to drink makgeolli on rainy Day.";
+        String traditionRevision = "I like to drink makgeolli on rainy Day "
+                + "because it is a Korean tradition to drink makgeolli on rainy Day.";
+        String finalRevision = "I like to drink makgeolli on rainy days "
+                + "because it is a Korean tradition to drink makgeolli on rainy days.";
+        FeedbackDiagnosisResult diagnosis = diagnosis(
+                TopicRelevance.ON_TOPIC,
+                StructureStatus.FRAGMENT,
+                finalRevision,
+                List.of(
+                        step(LanguageIssueKind.STRUCTURE, structureRevision),
+                        step(LanguageIssueKind.GRAMMAR_LOCAL, traditionRevision),
+                        step(LanguageIssueKind.GRAMMAR_LOCAL, finalRevision)
+                )
+        );
+
+        LearningContractResolution resolution = policy.resolveContract(
+                prompt(List.of("ACTION"), List.of(), 0),
+                answer,
+                diagnosis,
+                assessment(satisfied("ACTION", "drink makgeolli"))
+        );
+
+        assertThat(resolution.revisedAnswer()).isEqualTo(finalRevision);
+        assertThat(resolution.languageCorrections()).hasSize(3);
     }
 
     @Test

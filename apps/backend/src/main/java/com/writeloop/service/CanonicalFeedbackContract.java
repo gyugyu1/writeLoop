@@ -74,7 +74,8 @@ final class CanonicalFeedbackContract {
             - Example: "I'm like eat" -> "I like eating" is one step even though "like" itself stays unchanged.
             - Unrelated errors, even inside one sentence, require separate cumulative steps.
             - Order steps by kind: STRUCTURE, then GRAMMAR_BLOCKING, then GRAMMAR_LOCAL.
-              Within the same kind, order steps from left to right in the current answer.
+              Within the same kind, prefer left-to-right order for readability, but never reorder a correction
+              in a way that changes or reverts an earlier answerAfter.
             - Use kind STRUCTURE only for a change required to turn a fragment or broken clause connection into a complete sentence.
             - Use kind GRAMMAR_BLOCKING when a real grammar problem prevents reliable understanding.
             - Use kind GRAMMAR_LOCAL when meaning is clear but the wording is grammatically unacceptable in standard English.

@@ -49,8 +49,8 @@ The LLM output has exactly these top-level fields:
   - `answerAfter` is the complete learner answer after applying that step, never a fragment, patch, example, or model answer.
   - `kind` is `STRUCTURE`, `GRAMMAR_BLOCKING`, or `GRAMMAR_LOCAL`.
   - The first step starts from the untouched learner answer. Every later step starts from the prior `answerAfter` and preserves every earlier correction exactly.
-  - Steps are ordered by `STRUCTURE`, `GRAMMAR_BLOCKING`, and `GRAMMAR_LOCAL`, then left to right within the same kind.
-  - One step may contain multiple low-level diff spans only when they form one local construction with one teaching explanation. The backend exposes their smallest contiguous envelope as one correction card.
+  - Steps are ordered by `STRUCTURE`, `GRAMMAR_BLOCKING`, and `GRAMMAR_LOCAL`. Left-to-right order within the same kind is preferred for readability but is not a validity condition when all earlier corrections remain preserved.
+  - One step may contain multiple low-level diff spans only when they form one local construction with one teaching explanation. The backend validates every actual diff span independently and may expose their smallest contiguous envelope as one correction card.
   - Unrelated corrections require separate cumulative steps. Overlapping corrections are merged into the earlier, higher-priority step.
   - If more than 25 correction groups are possible, apply and explain only the first 25 and leave unselected errors unchanged.
   - If no language correction is needed, return an empty `revisionSteps` array.

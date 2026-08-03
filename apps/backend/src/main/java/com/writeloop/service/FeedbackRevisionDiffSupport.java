@@ -11,6 +11,18 @@ final class FeedbackRevisionDiffSupport {
     }
 
     static FeedbackRevisionDiff compare(String original, String revised) {
+        return compare(original, revised, false);
+    }
+
+    static FeedbackRevisionDiff compareForValidation(String original, String revised) {
+        return compare(original, revised, true);
+    }
+
+    private static FeedbackRevisionDiff compare(
+            String original,
+            String revised,
+            boolean splitPunctuation
+    ) {
         String before = original == null ? "" : original;
         String after = revised == null ? "" : revised;
         if (before.equals(after)) {
@@ -20,8 +32,12 @@ final class FeedbackRevisionDiffSupport {
             return new FeedbackRevisionDiff(List.of(), segments);
         }
 
-        List<RevisionToken> beforeTokens = tokenize(before);
-        List<RevisionToken> afterTokens = tokenize(after);
+        List<RevisionToken> beforeTokens = splitPunctuation
+                ? tokenizeForValidation(before)
+                : tokenize(before);
+        List<RevisionToken> afterTokens = splitPunctuation
+                ? tokenizeForValidation(after)
+                : tokenize(after);
         int[][] distances = editDistances(beforeTokens, afterTokens);
         List<DiffOperation> operations = operations(beforeTokens, afterTokens, distances);
         return assemble(operations);
@@ -74,6 +90,46 @@ final class FeedbackRevisionDiffSupport {
             tokens.add(new RevisionToken(value.substring(start, index), start, index));
         }
         return List.copyOf(tokens);
+    }
+
+    private static List<RevisionToken> tokenizeForValidation(String value) {
+        if (value.isEmpty()) {
+            return List.of();
+        }
+
+        List<RevisionToken> tokens = new ArrayList<>();
+        int index = 0;
+        while (index < value.length()) {
+            int start = index;
+            char current = value.charAt(index);
+            if (Character.isWhitespace(current)) {
+                while (index < value.length() && Character.isWhitespace(value.charAt(index))) {
+                    index++;
+                }
+            } else if (isWordPart(current)) {
+                while (index < value.length() && isWordPart(value.charAt(index))) {
+                    index++;
+                }
+            } else {
+                while (index < value.length()
+                        && !Character.isWhitespace(value.charAt(index))
+                        && !isWordPart(value.charAt(index))) {
+                    index++;
+                }
+            }
+            tokens.add(new RevisionToken(value.substring(start, index), start, index));
+        }
+        return List.copyOf(tokens);
+    }
+
+    private static boolean isWordPart(char value) {
+        return Character.isLetterOrDigit(value)
+                || value == '_'
+                || value == '\''
+                || value == '\u2019'
+                || value == '-'
+                || value == '\u2010'
+                || value == '\u2011';
     }
 
     private static int[][] editDistances(

@@ -32,7 +32,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
     OpenAiNowInEnglishCoachFeedbackClient(
             ObjectMapper objectMapper,
             @Value("${openai.api-key:}") String apiKey,
-            @Value("${openai.now-coach-feedback-model:${openai.coach-model:${OPENAI_COACH_MODEL:${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-5-mini}}}}}") String model,
+            @Value("${openai.now-coach-feedback-model:${openai.coach-model:${OPENAI_COACH_MODEL:${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-5.6-luna}}}}}") String model,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
             @Value("${openai.now-coach-feedback-reasoning-effort:${openai.coach-reasoning-effort:${OPENAI_COACH_REASONING_EFFORT:${OPENAI_FEEDBACK_REASONING_EFFORT:low}}}}") String reasoningEffort,
             @Value("${openai.now-coach-feedback-request-timeout-seconds:${openai.coach-request-timeout-seconds:${OPENAI_COACH_REQUEST_TIMEOUT_SECONDS:${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:45}}}}") int requestTimeoutSeconds

@@ -16,6 +16,8 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3306/writeloop?useSSL=false&allowPublicKeyRetrieval=true&connectionTimeZone=Asia/Seoul&forceConnectionTimeZoneToSession=true}
     username: ${SPRING_DATASOURCE_USERNAME:writeloop}
     password: ${SPRING_DATASOURCE_PASSWORD:writeloop}
+    hikari:
+      connection-init-sql: SET time_zone = '+09:00'
   jackson:
     time-zone: Asia/Seoul
   data:
@@ -42,6 +44,8 @@ spring:
         format_sql: true
         jdbc:
           time_zone: Asia/Seoul
+        type:
+          preferred_instant_jdbc_type: TIMESTAMP
 
 llm:
   feedback-provider: ${LLM_FEEDBACK_PROVIDER:gemini}

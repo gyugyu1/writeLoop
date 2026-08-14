@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
+import ProblemReportLink from "@/components/problem-report-link";
 import {
   deleteSavedExpression,
   getSavedExpressions,
@@ -446,7 +447,12 @@ function YesterdayReflectionCard({
           </Text>
         )}
 
-        {aiReflectionError ? <Text style={styles.reflectionAiError}>{aiReflectionError}</Text> : null}
+        {aiReflectionError ? (
+          <View>
+            <Text style={styles.reflectionAiError}>{aiReflectionError}</Text>
+            <ProblemReportLink source="now_reflection" errorCode="NOW_REFLECTION_ERROR" />
+          </View>
+        ) : null}
       </View>
 
       <Pressable style={styles.reflectionButton} onPress={onWriteToday}>
@@ -533,7 +539,12 @@ function InstantCoachFeedbackCard({
         </Text>
       )}
 
-      {error ? <Text style={styles.instantCoachError}>{error}</Text> : null}
+      {error ? (
+        <View>
+          <Text style={styles.instantCoachError}>{error}</Text>
+          <ProblemReportLink source="now_coach" errorCode="NOW_COACH_ERROR" />
+        </View>
+      ) : null}
 
       {!isLoading ? (
         <View style={styles.instantCoachActions}>

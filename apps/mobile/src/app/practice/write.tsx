@@ -20,6 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ModalSafeAreaView from "@/components/modal-safe-area-view";
+import ProblemReportLink from "@/components/problem-report-link";
 import { VisiblePracticeFeedbackContent } from "@/components/visible-practice-feedback-content";
 import FeedbackLoadingOverlay, {
   INITIAL_FEEDBACK_LOADING_STAGES,
@@ -1532,7 +1533,12 @@ export default function PracticeWriteScreen() {
                     </View>
                   </View>
 
-                  {error ? <Text style={styles.errorText}>{error}</Text> : null}
+                  {error ? (
+                    <View>
+                      <Text style={styles.errorText}>{error}</Text>
+                      <ProblemReportLink source="practice_write" errorCode="PRACTICE_SCREEN_ERROR" />
+                    </View>
+                  ) : null}
 
                   <Pressable
                     style={[styles.submitButton, isSubmitting && styles.disabledButton]}

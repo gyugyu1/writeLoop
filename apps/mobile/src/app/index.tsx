@@ -1,4 +1,5 @@
 import { Redirect, router, type Href } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "@react-navigation/native";
 import {
@@ -10,9 +11,14 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  useWindowDimensions,
   View
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import HomeFeatureTutorial, {
+  HOME_TUTORIAL_STEP_COUNT,
+  type HomeTutorialSpotlight
+} from "@/components/home-feature-tutorial";
 import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
@@ -28,6 +34,12 @@ import {
 import { difficultyDeck, getDifficultyMeta } from "@/lib/difficulty";
 import { clearIncompleteLoop, getIncompleteLoop, type IncompleteLoopState } from "@/lib/incomplete-loop";
 import { buildLoginHref } from "@/lib/login-redirect";
+import { useAppOverlayStatus } from "@/lib/app-overlay-status";
+import {
+  completeHomeTutorial,
+  consumeHomeTutorialReplay,
+  hasCompletedHomeTutorial
+} from "@/lib/home-tutorial";
 import { useSession } from "@/lib/session";
 import { hydratePracticeFeedbackState } from "@/lib/practice-feedback-state";
 import { getStreakMascotStage } from "@/lib/streak-mascot";
@@ -112,6 +124,36 @@ const HOME_GUIDE_STEPS: HomeGuideStep[] = [
     body: "피드백에서 잘한 점과 다음 루프 제안을 보고 한 번 더 다듬으면 실력이 훨씬 빨리 붙어요."
   }
 ];
+
+type MeasurableTutorialTarget = {
+  measureInWindow: (
+    callback: (x: number, y: number, width: number, height: number) => void
+  ) => void;
+};
+
+function measureTutorialTarget(target: MeasurableTutorialTarget | null) {
+  return new Promise<HomeTutorialSpotlight | null>((resolve) => {
+    if (!target) {
+      resolve(null);
+      return;
+    }
+
+    target.measureInWindow((x, y, width, height) => {
+      if (width <= 0 || height <= 0) {
+        resolve(null);
+        return;
+      }
+
+      resolve({ x, y, width, height });
+    });
+  });
+}
+
+function waitForTutorialLayout(durationMs: number) {
+  return new Promise<void>((resolve) => {
+    setTimeout(resolve, durationMs);
+  });
+}
 
 function formatWeekDay(date: Date) {
   return WEEKDAY_LABELS[date.getDay()] ?? "";
@@ -350,6 +392,8 @@ function buildWeekChips(todayStatus: TodayWritingStatus | null): WeekDayChip[] {
 
 export default function HomeScreen() {
   const { currentUser, isHydrating, refreshSession } = useSession();
+  const { appUpdateNoticePhase } = useAppOverlayStatus();
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [incompleteLoop, setIncompleteLoop] = useState<IncompleteLoopState | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -372,10 +416,25 @@ export default function HomeScreen() {
   const [isDiaryCalendarLoading, setIsDiaryCalendarLoading] = useState(false);
   const [diaryCalendarError, setDiaryCalendarError] = useState("");
   const [nowInEnglishSummary, setNowInEnglishSummary] = useState<NowInEnglishSummary | null>(null);
+  const [isInitialHomeLoadComplete, setIsInitialHomeLoadComplete] = useState(false);
+  const [isHomeTutorialRequested, setIsHomeTutorialRequested] = useState(false);
+  const [isHomeTutorialVisible, setIsHomeTutorialVisible] = useState(false);
+  const [homeTutorialStepIndex, setHomeTutorialStepIndex] = useState(0);
+  const [homeTutorialSpotlight, setHomeTutorialSpotlight] =
+    useState<HomeTutorialSpotlight | null>(null);
+  const [isHomeTutorialPositioning, setIsHomeTutorialPositioning] = useState(false);
   const featuredRecommendationRequestIdRef = useRef(0);
   const homeSnapshotRequestIdRef = useRef(0);
   const diaryCalendarLoadPromiseRef = useRef<Promise<void> | null>(null);
   const hasCompletedInitialHomeLoadRef = useRef(false);
+  const homeScrollRef = useRef<ScrollView | null>(null);
+  const homeScrollViewportRef = useRef<View | null>(null);
+  const homeScrollOffsetRef = useRef(0);
+  const nowEnglishTutorialSectionRef = useRef<View | null>(null);
+  const featuredTutorialSectionRef = useRef<View | null>(null);
+  const difficultyTutorialSectionRef = useRef<View | null>(null);
+  const diaryTutorialSectionRef = useRef<View | null>(null);
+  const tutorialPositionRequestIdRef = useRef(0);
   const historyRoute: Href = currentUser ? "/records" : buildLoginHref("/records");
   const diaryOverviewRoute: Href = currentUser ? "/diary" : buildLoginHref("/diary");
   const featuredRecommendationDifficulty = incompleteLoop?.difficulty ?? "I";
@@ -387,6 +446,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     hasCompletedInitialHomeLoadRef.current = false;
+    setIsInitialHomeLoadComplete(false);
   }, [currentUser?.id]);
 
   const displayedStreakDays = Math.max(todayStatus?.streakDays ?? 0, todayStatus?.completed ? 1 : 0);
@@ -632,6 +692,7 @@ export default function HomeScreen() {
         setIsFeaturedRecommendationLoading(false);
         setIsDiaryCalendarLoading(false);
         hasCompletedInitialHomeLoadRef.current = false;
+        setIsInitialHomeLoadComplete(false);
         return;
       }
 
@@ -672,6 +733,7 @@ export default function HomeScreen() {
           setIsDiaryCalendarLoading(false);
           setIsFeaturedRecommendationLoading(false);
           hasCompletedInitialHomeLoadRef.current = true;
+          setIsInitialHomeLoadComplete(true);
         }
       }
     },
@@ -688,6 +750,7 @@ export default function HomeScreen() {
   useEffect(() => {
     if (!currentUser) {
       hasCompletedInitialHomeLoadRef.current = false;
+      setIsInitialHomeLoadComplete(false);
       setTodayStatus(null);
       setStatusError("");
       setFeaturedRecommendation(null);
@@ -795,6 +858,173 @@ export default function HomeScreen() {
       void loadNowInEnglishSummary();
     }, [loadDiaryEntries, loadNowInEnglishSummary])
   );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!currentUser) {
+        return;
+      }
+
+      let cancelled = false;
+      const resolveTutorialRequest = async () => {
+        try {
+          const shouldReplay = await consumeHomeTutorialReplay();
+          const hasCompleted = shouldReplay ? true : await hasCompletedHomeTutorial();
+          if (!cancelled && (shouldReplay || !hasCompleted)) {
+            setIsHomeTutorialRequested(true);
+          }
+        } catch {
+          // 저장소를 읽지 못해도 홈 진입 자체는 막지 않습니다.
+        }
+      };
+
+      void resolveTutorialRequest();
+
+      return () => {
+        cancelled = true;
+      };
+    }, [currentUser])
+  );
+
+  const positionHomeTutorialStep = useCallback(
+    async (stepIndex: number, animated: boolean) => {
+      const requestId = tutorialPositionRequestIdRef.current + 1;
+      tutorialPositionRequestIdRef.current = requestId;
+      setIsHomeTutorialPositioning(true);
+      setHomeTutorialSpotlight(null);
+
+      for (let attempt = 0; attempt < 6; attempt += 1) {
+        const target =
+          stepIndex === 0
+            ? nowEnglishTutorialSectionRef.current
+            : stepIndex === 1
+              ? featuredTutorialSectionRef.current
+              : stepIndex === 2
+                ? difficultyTutorialSectionRef.current
+                : diaryTutorialSectionRef.current;
+        const [scrollRect, targetRect] = await Promise.all([
+          measureTutorialTarget(homeScrollViewportRef.current),
+          measureTutorialTarget(target)
+        ]);
+
+        if (tutorialPositionRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        if (!scrollRect || !targetRect) {
+          await waitForTutorialLayout(100);
+          continue;
+        }
+
+        const targetTopInContent =
+          homeScrollOffsetRef.current + targetRect.y - scrollRect.y;
+        const desiredTopInset = Math.max(18, Math.min(64, windowHeight * 0.06));
+        homeScrollRef.current?.scrollTo({
+          y: Math.max(0, targetTopInContent - desiredTopInset),
+          animated
+        });
+
+        await waitForTutorialLayout(animated ? 520 : 120);
+        const measuredTarget = await measureTutorialTarget(target);
+        if (tutorialPositionRequestIdRef.current !== requestId) {
+          return;
+        }
+        if (!measuredTarget) {
+          continue;
+        }
+
+        const horizontalPadding = 7;
+        const topPadding = 7;
+        const bottomPadding = 16;
+        const edgeMargin = 8;
+        const left = Math.max(edgeMargin, measuredTarget.x - horizontalPadding);
+        const top = Math.max(edgeMargin, measuredTarget.y - topPadding);
+        const right = Math.min(
+          windowWidth - edgeMargin,
+          measuredTarget.x + measuredTarget.width + horizontalPadding
+        );
+        const bottom = Math.min(
+          windowHeight - edgeMargin,
+          measuredTarget.y + measuredTarget.height + bottomPadding
+        );
+
+        setHomeTutorialSpotlight({
+          x: left,
+          y: top,
+          width: Math.max(1, right - left),
+          height: Math.max(1, bottom - top)
+        });
+        setIsHomeTutorialPositioning(false);
+        return;
+      }
+
+      if (tutorialPositionRequestIdRef.current === requestId) {
+        setIsHomeTutorialPositioning(false);
+        setIsHomeTutorialVisible(false);
+        setIsHomeTutorialRequested(false);
+      }
+    }, [windowHeight, windowWidth]
+  );
+
+  useEffect(() => {
+    if (
+      !isHomeTutorialRequested ||
+      isHomeTutorialVisible ||
+      !isInitialHomeLoadComplete ||
+      isFeaturedRecommendationLoading ||
+      appUpdateNoticePhase !== "settled" ||
+      isCalendarOpen ||
+      isGuideOpen
+    ) {
+      return;
+    }
+
+    const timerId = setTimeout(() => {
+      setHomeTutorialStepIndex(0);
+      setIsHomeTutorialVisible(true);
+      void positionHomeTutorialStep(0, false);
+    }, 180);
+
+    return () => {
+      clearTimeout(timerId);
+    };
+  }, [
+    appUpdateNoticePhase,
+    isCalendarOpen,
+    isFeaturedRecommendationLoading,
+    isGuideOpen,
+    isHomeTutorialRequested,
+    isHomeTutorialVisible,
+    isInitialHomeLoadComplete,
+    positionHomeTutorialStep
+  ]);
+
+  useEffect(
+    () => () => {
+      tutorialPositionRequestIdRef.current += 1;
+    },
+    []
+  );
+
+  const handleCloseHomeTutorial = useCallback(() => {
+    tutorialPositionRequestIdRef.current += 1;
+    setIsHomeTutorialVisible(false);
+    setIsHomeTutorialRequested(false);
+    setIsHomeTutorialPositioning(false);
+    setHomeTutorialSpotlight(null);
+    void completeHomeTutorial().catch(() => undefined);
+  }, []);
+
+  const handleAdvanceHomeTutorial = useCallback(() => {
+    if (homeTutorialStepIndex >= HOME_TUTORIAL_STEP_COUNT - 1) {
+      handleCloseHomeTutorial();
+      return;
+    }
+
+    const nextStepIndex = homeTutorialStepIndex + 1;
+    setHomeTutorialStepIndex(nextStepIndex);
+    void positionHomeTutorialStep(nextStepIndex, true);
+  }, [handleCloseHomeTutorial, homeTutorialStepIndex, positionHomeTutorialStep]);
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
@@ -1040,10 +1270,38 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
       <View style={styles.screen}>
-        <ScrollView
-        contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />}
-      >
+        <View ref={homeScrollViewportRef} collapsable={false} style={styles.homeScrollViewport}>
+          <ScrollView
+            ref={homeScrollRef}
+            contentContainerStyle={styles.content}
+            onScroll={(event) => {
+              homeScrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+            }}
+            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />}
+            removeClippedSubviews={false}
+            scrollEventThrottle={16}
+          >
+        <View style={styles.homeUtilityRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="라이트루프에 의견 보내기"
+            onPress={() =>
+              router.push({
+                pathname: "/support-feedback",
+                params: { source: "home" }
+              } as never)
+            }
+            style={styles.feedbackEntryButton}
+          >
+            <SymbolView
+              name={{ ios: "bubble.left", android: "chat_bubble", web: "chat_bubble" }}
+              size={17}
+              weight="semibold"
+              tintColor="#352D26"
+            />
+            <Text style={styles.feedbackEntryButtonText}>의견 보내기</Text>
+          </Pressable>
+        </View>
         <View style={styles.statusPanel}>
           <Pressable style={styles.statusPanelMain} onPress={() => router.push(historyRoute)}>
           <View style={styles.statusLead}>
@@ -1108,7 +1366,11 @@ export default function HomeScreen() {
         ) : null}
         </View>
 
-        <View style={styles.nowEnglishSection}>
+        <View
+          ref={nowEnglishTutorialSectionRef}
+          collapsable={false}
+          style={styles.nowEnglishSection}
+        >
           <MobileScreenHeader title="지금 영어로" />
           <View style={styles.nowEnglishHero}>
             <Text style={styles.nowEnglishBody}>{NOW_IN_ENGLISH_NOTIFICATION_BODY}</Text>
@@ -1151,7 +1413,11 @@ export default function HomeScreen() {
           />
         </View>
 
-        <View style={styles.featuredRecommendationSection}>
+        <View
+          ref={featuredTutorialSectionRef}
+          collapsable={false}
+          style={styles.featuredRecommendationSection}
+        >
           <View style={styles.featuredRecommendationHeader}>
             <Text style={styles.featuredRecommendationLabel}>오늘의 추천 질문</Text>
             <View
@@ -1180,37 +1446,37 @@ export default function HomeScreen() {
             </View>
           ) : featuredRecommendationPrompt ? (
             <Pressable style={styles.featuredRecommendationCard} onPress={handleStartFeaturedPrompt}>
-              <Text style={styles.featuredRecommendationQuestion}>
-                {featuredRecommendationPrompt.questionEn}
-              </Text>
-              {isFeaturedRecommendationTranslationVisible ? (
-                <Text style={styles.featuredRecommendationTranslation}>
-                  {featuredRecommendationPrompt.questionKo}
+                <Text style={styles.featuredRecommendationQuestion}>
+                  {featuredRecommendationPrompt.questionEn}
                 </Text>
-              ) : null}
-              {featuredRecommendationItem?.reasonText ? (
-                <Text style={styles.featuredRecommendationReason}>
-                  {featuredRecommendationItem.reasonText}
-                </Text>
-              ) : null}
-              <View style={styles.featuredRecommendationFooter}>
-                <Text style={styles.featuredRecommendationMeta}>
-                  {featuredRecommendationPrompt.topic}
-                </Text>
-                <View style={styles.featuredRecommendationActions}>
-                  <Pressable
-                    style={styles.featuredRecommendationTranslationButton}
-                    onPress={(event) => {
-                      event.stopPropagation();
-                      setIsFeaturedRecommendationTranslationVisible((current) => !current);
-                    }}
-                  >
-                    <Text style={styles.featuredRecommendationTranslationButtonText}>
-                      {isFeaturedRecommendationTranslationVisible ? "해석 숨기기" : "해석 보기"}
-                    </Text>
-                  </Pressable>
+                {isFeaturedRecommendationTranslationVisible ? (
+                  <Text style={styles.featuredRecommendationTranslation}>
+                    {featuredRecommendationPrompt.questionKo}
+                  </Text>
+                ) : null}
+                {featuredRecommendationItem?.reasonText ? (
+                  <Text style={styles.featuredRecommendationReason}>
+                    {featuredRecommendationItem.reasonText}
+                  </Text>
+                ) : null}
+                <View style={styles.featuredRecommendationFooter}>
+                  <Text style={styles.featuredRecommendationMeta}>
+                    {featuredRecommendationPrompt.topic}
+                  </Text>
+                  <View style={styles.featuredRecommendationActions}>
+                    <Pressable
+                      style={styles.featuredRecommendationTranslationButton}
+                      onPress={(event) => {
+                        event.stopPropagation();
+                        setIsFeaturedRecommendationTranslationVisible((current) => !current);
+                      }}
+                    >
+                      <Text style={styles.featuredRecommendationTranslationButtonText}>
+                        {isFeaturedRecommendationTranslationVisible ? "해석 숨기기" : "해석 보기"}
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
-              </View>
             </Pressable>
           ) : (
             <View style={styles.featuredRecommendationFallbackCard}>
@@ -1221,24 +1487,38 @@ export default function HomeScreen() {
           )}
         </View>
 
-        <View style={styles.stageSection}>
-          {difficultyDeck.map((item) => {
-            return (
-              <Pressable
-                key={item.difficulty}
-                style={styles.difficultyCard}
-                onPress={() => handleStart(item.difficulty)}
-              >
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <Text style={styles.cardDescription}>{item.subtitle}</Text>
-              </Pressable>
-            );
-          })}
+        <View
+          ref={difficultyTutorialSectionRef}
+          collapsable={false}
+          style={styles.difficultyTutorialSection}
+        >
+          <View style={styles.difficultyChoiceHeader}>
+            <Text style={styles.difficultyChoiceTitle}>난이도별 질문</Text>
+            <Text style={styles.difficultyChoiceDescription}>내 수준에 맞게 골라 보세요.</Text>
+          </View>
+          <View style={styles.stageSection}>
+            {difficultyDeck.map((item) => {
+              return (
+                <Pressable
+                  key={item.difficulty}
+                  style={styles.difficultyCard}
+                  onPress={() => handleStart(item.difficulty)}
+                >
+                  <Text style={styles.cardTitle}>{item.title}</Text>
+                  <Text style={styles.cardDescription}>{item.subtitle}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </View>
 
         <View style={styles.sectionDivider} />
 
-        <View style={styles.homeDiarySection}>
+        <View
+          ref={diaryTutorialSectionRef}
+          collapsable={false}
+          style={styles.homeDiarySection}
+        >
           <MobileScreenHeader
             title="영어일기"
             rightAccessory={
@@ -1328,7 +1608,8 @@ export default function HomeScreen() {
             </Pressable>
           </View>
         </View>
-      </ScrollView>
+          </ScrollView>
+        </View>
         <MobileNavBar activeTab="home" />
       </View>
 
@@ -1530,6 +1811,15 @@ export default function HomeScreen() {
           </ScrollView>
         </ModalSafeAreaView>
       </Modal>
+
+      <HomeFeatureTutorial
+        visible={isHomeTutorialVisible}
+        stepIndex={homeTutorialStepIndex}
+        spotlight={homeTutorialSpotlight}
+        isPositioning={isHomeTutorialPositioning}
+        onNext={handleAdvanceHomeTutorial}
+        onSkip={handleCloseHomeTutorial}
+      />
     </SafeAreaView>
   );
 }
@@ -1540,6 +1830,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F2EB"
   },
   screen: {
+    flex: 1
+  },
+  homeScrollViewport: {
     flex: 1
   },
   homeLoadingState: {
@@ -1553,6 +1846,28 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     paddingBottom: MOBILE_NAV_BOTTOM_SPACING + 4,
     gap: 20
+  },
+  homeUtilityRow: {
+    paddingTop: 4,
+    flexDirection: "row",
+    justifyContent: "flex-end"
+  },
+  feedbackEntryButton: {
+    minHeight: 42,
+    paddingHorizontal: 15,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#E2D1BF",
+    backgroundColor: "#FFFDFC"
+  },
+  feedbackEntryButtonText: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#352D26"
   },
   heroSection: {
     display: "none",
@@ -2065,6 +2380,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "800",
     color: "#7C6545"
+  },
+  difficultyTutorialSection: {
+    gap: 14
+  },
+  difficultyChoiceHeader: {
+    gap: 3
+  },
+  difficultyChoiceTitle: {
+    fontSize: 24,
+    lineHeight: 30,
+    fontWeight: "900",
+    color: "#232128",
+    letterSpacing: -0.9
+  },
+  difficultyChoiceDescription: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "700",
+    color: "#7A6A59"
   },
   weekRowButton: {
     marginTop: 18

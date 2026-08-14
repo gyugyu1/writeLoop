@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "@/lib/session";
 import AppUpdateNotice from "@/components/app-update-notice";
+import { AppOverlayStatusProvider } from "@/lib/app-overlay-status";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -51,16 +52,18 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <View style={styles.root}>
         <SessionProvider>
-          <StatusBar style="dark" />
-          <AppUpdateNotice />
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                backgroundColor: "#F7F1E8"
-              }
-            }}
-          />
+          <AppOverlayStatusProvider>
+            <StatusBar style="dark" />
+            <AppUpdateNotice />
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: "#F7F1E8"
+                }
+              }}
+            />
+          </AppOverlayStatusProvider>
         </SessionProvider>
       </View>
     </SafeAreaProvider>

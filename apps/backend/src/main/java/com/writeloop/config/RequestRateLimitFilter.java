@@ -107,6 +107,16 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
                         "피드백 요청이 너무 빨라요. 잠시 후 다시 받아 주세요."
                 ),
                 new RateLimitPolicy(
+                        "user-feedback",
+                        "POST",
+                        Set.of("/api/user-feedback"),
+                        feedbackMaxRequests,
+                        Duration.ofSeconds(Math.max(feedbackWindowSeconds, 1)),
+                        KeyMode.USER_OR_IP,
+                        false,
+                        "의견 전송이 너무 잦아요. 잠시 후 다시 보내 주세요."
+                ),
+                new RateLimitPolicy(
                         "diary-feedback",
                         "POST",
                         Set.of(),

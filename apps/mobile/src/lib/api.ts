@@ -57,6 +57,8 @@ import type {
   TodayWritingStatus,
   TokenAuthResponse,
   UpdateProfileRequest,
+  UserFeedbackRequest,
+  UserFeedbackResponse,
   WritingDraft,
   WritingDraftType
 } from "./types";
@@ -615,6 +617,24 @@ export async function getAppVersionStatus(
   }
 
   return (await response.json()) as AppVersionStatus;
+}
+
+export async function submitUserFeedback(
+  request: UserFeedbackRequest
+): Promise<UserFeedbackResponse> {
+  const response = await apiFetch("/api/user-feedback", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "의견을 보내지 못했어요. 잠시 후 다시 시도해 주세요.");
+  }
+
+  return (await response.json()) as UserFeedbackResponse;
 }
 
 function createApiError(message: string, status: number, code?: string) {

@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { InteractionManager, Modal, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import { getAppVersionStatus } from "@/lib/api";
+import { useAppOverlayStatus } from "@/lib/app-overlay-status";
 import type { AppVersionStatus, MobilePlatform } from "@/lib/types";
 
 const DISMISSED_UPDATE_PREFIX = "writeloop_dismissed_update";
@@ -31,6 +32,7 @@ function getDismissedUpdateKey(platform: MobilePlatform, latestVersion: string) 
 }
 
 export default function AppUpdateNotice() {
+  const { setAppUpdateNoticePhase } = useAppOverlayStatus();
   const [versionStatus, setVersionStatus] = useState<AppVersionStatus | null>(null);
   const [visible, setVisible] = useState(false);
   const [openingStore, setOpeningStore] = useState(false);
@@ -38,13 +40,18 @@ export default function AppUpdateNotice() {
   useEffect(() => {
     let mounted = true;
     let interactionTask: ReturnType<typeof InteractionManager.runAfterInteractions> | null = null;
+    setAppUpdateNoticePhase("checking");
 
     async function checkVersion() {
       const platform = getMobilePlatform();
       if (!platform) {
+        if (mounted) {
+          setAppUpdateNoticePhase("settled");
+        }
         return;
       }
 
+      let willShowNotice = false;
       try {
         const currentVersion = getRuntimeVersion();
         const status = await getAppVersionStatus(platform, currentVersion);
@@ -63,8 +70,14 @@ export default function AppUpdateNotice() {
 
         setVersionStatus(status);
         setVisible(true);
+        willShowNotice = true;
+        setAppUpdateNoticePhase("visible");
       } catch {
         // 버전 확인 실패가 앱 진입을 막지 않도록 조용히 무시합니다.
+      } finally {
+        if (mounted && !willShowNotice) {
+          setAppUpdateNoticePhase("settled");
+        }
       }
     }
 
@@ -79,7 +92,7 @@ export default function AppUpdateNotice() {
       clearTimeout(timerId);
       interactionTask?.cancel();
     };
-  }, []);
+  }, [setAppUpdateNoticePhase]);
 
   async function handleDismiss() {
     if (!versionStatus || versionStatus.forceUpdate) {
@@ -96,6 +109,7 @@ export default function AppUpdateNotice() {
       }
     } finally {
       setVisible(false);
+      setAppUpdateNoticePhase("settled");
     }
   }
 

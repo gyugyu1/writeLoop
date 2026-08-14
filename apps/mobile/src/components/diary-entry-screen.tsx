@@ -18,6 +18,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import FeedbackLoadingOverlay from "@/components/feedback-loading-overlay";
 import ModalSafeAreaView from "@/components/modal-safe-area-view";
+import ProblemReportLink from "@/components/problem-report-link";
 import {
   createDiaryEntry,
   deleteDiaryEntry,
@@ -1098,7 +1099,12 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
             </View>
           ) : null}
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? (
+            <View>
+              <Text style={styles.errorText}>{error}</Text>
+              <ProblemReportLink source="diary_entry" errorCode="DIARY_SCREEN_ERROR" />
+            </View>
+          ) : null}
 
           {entryId ? (
             <View style={styles.deleteArea}>

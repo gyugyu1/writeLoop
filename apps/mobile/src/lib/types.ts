@@ -305,6 +305,25 @@ export interface AppVersionStatus {
   storeUrl?: string | null;
 }
 
+export type UserFeedbackCategory = "BUG" | "IDEA" | "OTHER";
+
+export interface UserFeedbackRequest {
+  category: UserFeedbackCategory;
+  message: string;
+  contactEmail?: string;
+  sourceScreen?: string;
+  appVersion?: string;
+  platform?: string;
+  osVersion?: string;
+  deviceModel?: string;
+  errorCode?: string;
+}
+
+export interface UserFeedbackResponse {
+  id: number;
+  accepted: boolean;
+}
+
 export interface SaveExpressionRequest {
   expression: string;
   meaningKo?: string;

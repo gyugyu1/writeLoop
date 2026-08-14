@@ -17,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import { deleteAccount, updateProfile } from "@/lib/api";
+import { requestHomeTutorialReplay } from "@/lib/home-tutorial";
 import { useSession } from "@/lib/session";
 import type { AuthUser } from "@/lib/types";
 
@@ -53,6 +54,8 @@ export default function MeScreen() {
   const [deleteError, setDeleteError] = useState("");
   const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isOpeningHomeTutorial, setIsOpeningHomeTutorial] = useState(false);
+  const [homeTutorialError, setHomeTutorialError] = useState("");
 
   useEffect(() => {
     setProfileDisplayName(currentUser?.displayName ?? "");
@@ -155,6 +158,18 @@ export default function MeScreen() {
     }
   }
 
+  async function handleReplayHomeTutorial() {
+    try {
+      setIsOpeningHomeTutorial(true);
+      setHomeTutorialError("");
+      await requestHomeTutorialReplay();
+      router.replace("/");
+    } catch {
+      setHomeTutorialError("홈 사용법을 준비하지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setIsOpeningHomeTutorial(false);
+    }
+  }
+
   async function handleDeleteAccount() {
     if (!currentUser) {
       return;
@@ -225,6 +240,18 @@ export default function MeScreen() {
                 </Text>
                 <Pressable style={styles.primaryButton} onPress={() => router.push("/login")}>
                   <Text style={styles.primaryButtonText}>로그인하러 가기</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() =>
+                    router.push({
+                      pathname: "/support-feedback",
+                      params: { source: "me_guest" }
+                    } as never)
+                  }
+                  style={styles.supportButton}
+                >
+                  <Text style={styles.supportButtonText}>의견·문제 보내기</Text>
                 </Pressable>
               </View>
             ) : (
@@ -332,6 +359,40 @@ export default function MeScreen() {
 
                   {profileNotice ? <Text style={styles.noticeText}>{profileNotice}</Text> : null}
                   {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
+                </View>
+
+                <View style={styles.sectionCard}>
+                  <Text style={styles.sectionTitle}>도움말과 의견</Text>
+                  <Text style={styles.sectionBody}>
+                    지금 영어로, 질문 답변, 영어일기를 홈 화면에서 차례로 다시 살펴볼 수 있어요.
+                  </Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={isOpeningHomeTutorial}
+                    onPress={() => void handleReplayHomeTutorial()}
+                    style={[styles.primaryButton, isOpeningHomeTutorial && styles.disabledButton]}
+                  >
+                    {isOpeningHomeTutorial ? (
+                      <ActivityIndicator color="#232128" />
+                    ) : (
+                      <Text style={styles.primaryButtonText}>홈 사용법 다시 보기</Text>
+                    )}
+                  </Pressable>
+                  {homeTutorialError ? <Text style={styles.errorText}>{homeTutorialError}</Text> : null}
+                  <View style={styles.supportDivider} />
+                  <Text style={styles.supportLead}>불편한 점이나 바라는 기능이 있나요?</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() =>
+                      router.push({
+                        pathname: "/support-feedback",
+                        params: { source: "me" }
+                      } as never)
+                    }
+                    style={styles.supportButton}
+                  >
+                    <Text style={styles.supportButtonText}>의견·문제 보내기</Text>
+                  </Pressable>
                 </View>
 
                 {currentUser.admin ? (
@@ -569,6 +630,31 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "900",
     color: "#232128"
+  },
+  supportDivider: {
+    height: 1,
+    marginVertical: 2,
+    backgroundColor: "#E9DDD0"
+  },
+  supportLead: {
+    fontSize: 14,
+    lineHeight: 21,
+    fontWeight: "700",
+    color: "#756757"
+  },
+  supportButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 22,
+    borderWidth: 1.5,
+    borderColor: "#DDA75F",
+    paddingVertical: 15,
+    backgroundColor: "#FFFDFC"
+  },
+  supportButtonText: {
+    fontSize: 16,
+    fontWeight: "900",
+    color: "#8A5517"
   },
   disabledButton: {
     opacity: 0.72

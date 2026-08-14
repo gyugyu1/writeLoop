@@ -25,6 +25,7 @@
     "production": {
       "android": {
         "applicationId": "kr.writeloop",
+        "serviceAccountKeyPath": "../../env_files/google-play-service-account.json",
         "track": "internal",
         "releaseStatus": "completed"
       },

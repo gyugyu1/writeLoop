@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -18,6 +19,7 @@ public class FeedbackTimingRecorder {
 
     private static final String TYPE_ANSWER = "ANSWER";
     private static final String TYPE_DIARY = "DIARY";
+    private static final String TYPE_NOW_IN_ENGLISH = "NOW_IN_ENGLISH";
     private static final String SCOPE_SERVICE = "SERVICE";
     private static final String SCOPE_LLM = "LLM";
     private static final String SCOPE_POLICY = "POLICY";
@@ -32,6 +34,10 @@ public class FeedbackTimingRecorder {
 
     public void beginDiaryTrace(Long userId, String entryId, Integer attemptNo) {
         CURRENT_CONTEXT.set(TimingContext.diary(userId, entryId, attemptNo));
+    }
+
+    public void beginNowInEnglishTrace(Long userId, String operation) {
+        CURRENT_CONTEXT.set(TimingContext.nowInEnglish(userId, operation));
     }
 
     public void setAnswerAttemptId(Long answerAttemptId) {
@@ -108,6 +114,22 @@ public class FeedbackTimingRecorder {
                 exceptionClass, elapsedMs, null);
     }
 
+    public void recordNowInEnglishLlmPhase(
+            String phase,
+            String provider,
+            String model,
+            String reasoningEffort,
+            Boolean success,
+            Integer statusCode,
+            String exceptionClass,
+            long elapsedMs,
+            Map<String, ?> metadata
+    ) {
+        TimingContext context = contextOrStandalone(TYPE_NOW_IN_ENGLISH);
+        record(context, SCOPE_LLM, phase, provider, model, reasoningEffort, null, success, statusCode,
+                exceptionClass, elapsedMs, metadata);
+    }
+
     private void recordCurrent(
             String phaseScope,
             String phase,
@@ -165,7 +187,7 @@ public class FeedbackTimingRecorder {
                     .statusCode(statusCode)
                     .exceptionClass(normalize(exceptionClass))
                     .elapsedMs(Math.max(0L, elapsedMs))
-                    .metadataJson(toJson(metadata))
+                    .metadataJson(toJson(withContextMetadata(context, metadata)))
                     .build());
         } catch (RuntimeException exception) {
             log.warn("Failed to persist feedback timing log phase={} traceId={}", phase, context.traceId, exception);
@@ -191,6 +213,18 @@ public class FeedbackTimingRecorder {
         }
     }
 
+    private Map<String, ?> withContextMetadata(TimingContext context, Map<String, ?> metadata) {
+        if (context.operation == null || context.operation.isBlank()) {
+            return metadata;
+        }
+        Map<String, Object> combined = new LinkedHashMap<>();
+        if (metadata != null) {
+            combined.putAll(metadata);
+        }
+        combined.put("operation", context.operation);
+        return combined;
+    }
+
     private static String normalize(String value) {
         return value == null || value.isBlank() ? null : value.trim();
     }
@@ -206,6 +240,7 @@ public class FeedbackTimingRecorder {
         private Long answerAttemptId;
         private Long diaryAttemptId;
         private Integer attemptNo;
+        private String operation;
 
         private TimingContext(String traceId, String feedbackType) {
             this.traceId = traceId;
@@ -233,6 +268,13 @@ public class FeedbackTimingRecorder {
             context.userId = userId;
             context.diaryEntryId = normalize(entryId);
             context.attemptNo = attemptNo;
+            return context;
+        }
+
+        private static TimingContext nowInEnglish(Long userId, String operation) {
+            TimingContext context = new TimingContext(UUID.randomUUID().toString(), TYPE_NOW_IN_ENGLISH);
+            context.userId = userId;
+            context.operation = normalize(operation);
             return context;
         }
     }

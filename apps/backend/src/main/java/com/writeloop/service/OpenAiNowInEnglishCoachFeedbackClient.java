@@ -22,6 +22,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
     private static final int MAX_LOG_RESPONSE_BODY_LENGTH = 4000;
 
     private final ObjectMapper objectMapper;
+    private final FeedbackTimingRecorder feedbackTimingRecorder;
     private final HttpClient httpClient;
     private final String apiKey;
     private final String model;
@@ -31,6 +32,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
 
     OpenAiNowInEnglishCoachFeedbackClient(
             ObjectMapper objectMapper,
+            FeedbackTimingRecorder feedbackTimingRecorder,
             @Value("${openai.api-key:}") String apiKey,
             @Value("${openai.now-coach-feedback-model:${openai.coach-model:${OPENAI_COACH_MODEL:${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-5.6-luna}}}}}") String model,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
@@ -38,6 +40,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
             @Value("${openai.now-coach-feedback-request-timeout-seconds:${openai.coach-request-timeout-seconds:${OPENAI_COACH_REQUEST_TIMEOUT_SECONDS:${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:45}}}}") int requestTimeoutSeconds
     ) {
         this.objectMapper = objectMapper;
+        this.feedbackTimingRecorder = feedbackTimingRecorder;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(20))
                 .build();
@@ -81,16 +84,16 @@ class OpenAiNowInEnglishCoachFeedbackClient {
             String outputText = OpenAiStructuredOutputSupport.extractStructuredOutputText(objectMapper, response.body());
             NowInEnglishCoachFeedbackResponseDto feedback =
                     objectMapper.readValue(outputText, NowInEnglishCoachFeedbackResponseDto.class);
-            logTiming(statusCode, true, null, startedAtNanos);
+            logTiming(statusCode, true, null, startedAtNanos, text.length());
             return feedback;
         } catch (IOException | InterruptedException exception) {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            logTiming(statusCode, false, exception, startedAtNanos);
+            logTiming(statusCode, false, exception, startedAtNanos, text.length());
             throw new IllegalStateException("OpenAI now coach feedback request failed", exception);
         } catch (RuntimeException exception) {
-            logTiming(statusCode, false, exception, startedAtNanos);
+            logTiming(statusCode, false, exception, startedAtNanos, text.length());
             throw exception;
         }
     }
@@ -164,8 +167,21 @@ class OpenAiNowInEnglishCoachFeedbackClient {
             Integer statusCode,
             boolean success,
             Throwable exception,
-            long startedAtNanos
+            long startedAtNanos,
+            int inputChars
     ) {
+        long elapsedMs = (System.nanoTime() - startedAtNanos) / 1_000_000;
+        feedbackTimingRecorder.recordNowInEnglishLlmPhase(
+                "coach_feedback",
+                "openai",
+                model,
+                reasoningEffort,
+                success,
+                statusCode,
+                exception == null ? null : exception.getClass().getName(),
+                elapsedMs,
+                Map.of("inputChars", Math.max(0, inputChars))
+        );
         LOGGER.info(
                 "Now-in-English coach feedback LLM timing provider=openai model={} reasoningEffort={} success={} status={} exceptionClass={} elapsedMs={}",
                 model,
@@ -173,7 +189,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
                 success,
                 statusCode,
                 exception == null ? null : exception.getClass().getName(),
-                (System.nanoTime() - startedAtNanos) / 1_000_000
+                elapsedMs
         );
     }
 

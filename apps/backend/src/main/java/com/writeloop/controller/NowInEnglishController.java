@@ -78,9 +78,10 @@ public class NowInEnglishController {
     @PostMapping("/coach-feedback")
     @ResponseStatus(HttpStatus.OK)
     public NowInEnglishCoachFeedbackResponseDto coachFeedback(
-            @RequestBody NowInEnglishCoachFeedbackRequestDto request
+            @RequestBody NowInEnglishCoachFeedbackRequestDto request,
+            HttpServletRequest httpRequest
     ) {
-        return coachFeedbackService.review(request);
+        return coachFeedbackService.review(authService.getCurrentUserIdOrNull(httpRequest), request);
     }
 
     @GetMapping("/reflection/{dateKey}")

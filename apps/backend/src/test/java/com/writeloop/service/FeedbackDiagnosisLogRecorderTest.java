@@ -40,6 +40,11 @@ class FeedbackDiagnosisLogRecorderTest {
                 false,
                 "Initial contract failure",
                 "Final contract failure",
+                FeedbackProviderRetryTrace.attempted(
+                        503,
+                        "{\"error\":{\"code\":\"server_is_overloaded\"}}",
+                        false
+                ),
                 new FeedbackTokenUsage(210L, 45L, 70L, 25L, 280L),
                 812L
         );
@@ -70,6 +75,11 @@ class FeedbackDiagnosisLogRecorderTest {
                 .isEqualTo("\"not-json retry output\"");
         assertThat(saved.getContractOriginalErrorReason()).isEqualTo("Initial contract failure");
         assertThat(saved.getContractFinalErrorReason()).isEqualTo("Final contract failure");
+        assertThat(saved.isProviderRetryAttempted()).isTrue();
+        assertThat(saved.getProviderRetrySucceeded()).isFalse();
+        assertThat(saved.getProviderInitialFailureStatusCode()).isEqualTo(503);
+        assertThat(saved.getProviderInitialFailureBodyJson())
+                .isEqualTo("{\"error\":{\"code\":\"server_is_overloaded\"}}");
         assertThat(saved.getElapsedMs()).isEqualTo(812L);
         assertThat(saved.getLlmInputTokens()).isEqualTo(210L);
         assertThat(saved.getLlmCachedInputTokens()).isEqualTo(45L);

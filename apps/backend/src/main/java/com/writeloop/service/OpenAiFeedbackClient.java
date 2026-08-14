@@ -19,12 +19,15 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class OpenAiFeedbackClient {
 
     static final String INTERNAL_AUTHORITATIVE_SESSION_ID = "__OPENAI_CANONICAL_FINAL__";
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenAiFeedbackClient.class);
+    private static final Set<Integer> TRANSIENT_PROVIDER_STATUS_CODES = Set.of(502, 503, 504);
+    private static final long TRANSIENT_PROVIDER_RETRY_DELAY_MS = 500L;
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -97,6 +100,7 @@ public class OpenAiFeedbackClient {
         String retryStructuredText = null;
         FeedbackTokenUsage initialTokenUsage = FeedbackTokenUsage.empty();
         FeedbackTokenUsage retryTokenUsage = FeedbackTokenUsage.empty();
+        FeedbackProviderRetryTrace providerRetry = FeedbackProviderRetryTrace.notAttempted();
         try {
             String userPrompt = contract.userPrompt(
                     prompt,
@@ -110,6 +114,35 @@ public class OpenAiFeedbackClient {
                     objectMapper,
                     initialProviderBody
             );
+            if (isTransientProviderFailure(initialResponse)) {
+                Integer initialFailureStatusCode = initialResponse.statusCode();
+                String initialFailureBody = initialResponse.body();
+                providerRetry = FeedbackProviderRetryTrace.attempted(
+                        initialFailureStatusCode,
+                        initialFailureBody,
+                        false
+                );
+                LOGGER.warn(
+                        "OpenAI returned transient HTTP {}; retrying canonical feedback once after {} ms",
+                        initialFailureStatusCode,
+                        TRANSIENT_PROVIDER_RETRY_DELAY_MS
+                );
+                Thread.sleep(TRANSIENT_PROVIDER_RETRY_DELAY_MS);
+
+                ProviderResponse providerRetryResponse = requestCanonicalFeedback(prompt, userPrompt);
+                initialResponse = providerRetryResponse;
+                initialStatusCode = providerRetryResponse.statusCode();
+                initialProviderBody = providerRetryResponse.body();
+                initialTokenUsage = initialTokenUsage.plus(FeedbackTokenUsage.fromOpenAiResponse(
+                        objectMapper,
+                        initialProviderBody
+                ));
+                providerRetry = FeedbackProviderRetryTrace.attempted(
+                        initialFailureStatusCode,
+                        initialFailureBody,
+                        isSuccessfulResponse(providerRetryResponse)
+                );
+            }
             requireSuccessfulResponse(initialResponse);
 
             AssembledFeedback assembled;
@@ -138,6 +171,35 @@ public class OpenAiFeedbackClient {
                         objectMapper,
                         retryProviderBody
                 );
+                if (!providerRetry.attempted() && isTransientProviderFailure(retryResponse)) {
+                    Integer initialFailureStatusCode = retryResponse.statusCode();
+                    String initialFailureBody = retryResponse.body();
+                    providerRetry = FeedbackProviderRetryTrace.attempted(
+                            initialFailureStatusCode,
+                            initialFailureBody,
+                            false
+                    );
+                    LOGGER.warn(
+                            "OpenAI returned transient HTTP {} during contract retry; retrying once after {} ms",
+                            initialFailureStatusCode,
+                            TRANSIENT_PROVIDER_RETRY_DELAY_MS
+                    );
+                    Thread.sleep(TRANSIENT_PROVIDER_RETRY_DELAY_MS);
+
+                    ProviderResponse providerRetryResponse = requestCanonicalFeedback(prompt, retryPrompt);
+                    retryResponse = providerRetryResponse;
+                    retryStatusCode = providerRetryResponse.statusCode();
+                    retryProviderBody = providerRetryResponse.body();
+                    retryTokenUsage = retryTokenUsage.plus(FeedbackTokenUsage.fromOpenAiResponse(
+                            objectMapper,
+                            retryProviderBody
+                    ));
+                    providerRetry = FeedbackProviderRetryTrace.attempted(
+                            initialFailureStatusCode,
+                            initialFailureBody,
+                            isSuccessfulResponse(providerRetryResponse)
+                    );
+                }
                 requireSuccessfulResponse(retryResponse);
                 retryStructuredText = extractCanonicalText(retryResponse.body());
                 assembled = assemble(prompt, answer, attemptIndex, retryStructuredText);
@@ -198,6 +260,7 @@ public class OpenAiFeedbackClient {
                     finalSuccess,
                     originalContractError == null ? null : originalContractError.getMessage(),
                     finalException == null ? null : finalException.getMessage(),
+                    providerRetry,
                     initialTokenUsage.plus(retryTokenUsage),
                     (System.nanoTime() - startedAt) / 1_000_000
             ));
@@ -289,9 +352,17 @@ public class OpenAiFeedbackClient {
     }
 
     private void requireSuccessfulResponse(ProviderResponse response) {
-        if (response.statusCode() < 200 || response.statusCode() >= 300) {
+        if (!isSuccessfulResponse(response)) {
             throw new IllegalStateException("OpenAI returned HTTP " + response.statusCode());
         }
+    }
+
+    private boolean isTransientProviderFailure(ProviderResponse response) {
+        return TRANSIENT_PROVIDER_STATUS_CODES.contains(response.statusCode());
+    }
+
+    private boolean isSuccessfulResponse(ProviderResponse response) {
+        return response.statusCode() >= 200 && response.statusCode() < 300;
     }
 
     private String extractCanonicalText(String responseBody) {

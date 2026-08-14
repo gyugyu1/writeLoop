@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -42,6 +43,7 @@ public class NowInEnglishReflectionService {
     private final OpenAiNowInEnglishReflectionClient openAiClient;
     private final NowInEnglishEntryRepository nowInEnglishEntryRepository;
     private final NowInEnglishReflectionRepository nowInEnglishReflectionRepository;
+    private final FeedbackTimingRecorder feedbackTimingRecorder;
 
     @Transactional(readOnly = true)
     public Optional<NowInEnglishReflectionResponseDto> getSavedReflection(Long userId, String rawDateKey) {
@@ -52,45 +54,71 @@ public class NowInEnglishReflectionService {
     }
 
     public NowInEnglishReflectionResponseDto reflectAndStore(Long userId, NowInEnglishReflectionRequestDto request) {
-        String dateKey = normalizeDateKey(request == null ? null : request.dateKey());
-        LocalDate reflectionDate = LocalDate.parse(dateKey);
-        List<NowInEnglishReflectionEntryDto> entries = loadStoredEntries(userId, reflectionDate);
-        String entrySignature = buildEntrySignature(entries);
-        boolean forceRefresh = request != null && Boolean.TRUE.equals(request.forceRefresh());
+        long totalStartedAtNanos = System.nanoTime();
+        feedbackTimingRecorder.beginNowInEnglishTrace(userId, "REFLECTION");
+        try {
+            long prepareStartedAtNanos = System.nanoTime();
+            String dateKey = normalizeDateKey(request == null ? null : request.dateKey());
+            LocalDate reflectionDate = LocalDate.parse(dateKey);
+            List<NowInEnglishReflectionEntryDto> entries = loadStoredEntries(userId, reflectionDate);
+            String entrySignature = buildEntrySignature(entries);
+            boolean forceRefresh = request != null && Boolean.TRUE.equals(request.forceRefresh());
 
-        Optional<NowInEnglishReflectionEntity> existingReflection =
-                nowInEnglishReflectionRepository.findByUserIdAndReflectionDate(userId, reflectionDate);
-        if (!forceRefresh && existingReflection
-                .filter(reflection -> entrySignature.equals(reflection.getEntrySignature()))
-                .isPresent()) {
-            return toDto(existingReflection.get());
+            Optional<NowInEnglishReflectionEntity> existingReflection =
+                    nowInEnglishReflectionRepository.findByUserIdAndReflectionDate(userId, reflectionDate);
+            feedbackTimingRecorder.recordServicePhase("prepare", elapsedMs(prepareStartedAtNanos));
+            if (!forceRefresh && existingReflection
+                    .filter(reflection -> entrySignature.equals(reflection.getEntrySignature()))
+                    .isPresent()) {
+                feedbackTimingRecorder.recordPolicyEvent("cache_hit", Map.of(
+                        "dateKey", dateKey,
+                        "entryCount", entries.size()
+                ));
+                return toDto(existingReflection.get());
+            }
+
+            NowInEnglishReflectionResponseDto response = reflect(dateKey, entries);
+            long persistStartedAtNanos = System.nanoTime();
+            NowInEnglishReflectionEntity reflection = nowInEnglishReflectionRepository
+                    .findByUserIdAndReflectionDate(userId, reflectionDate)
+                    .orElseGet(() -> new NowInEnglishReflectionEntity(userId, reflectionDate));
+            reflection.updateReflection(
+                    entries.size(),
+                    entrySignature,
+                    response.headlineKo(),
+                    response.summaryKo(),
+                    writeJson(response.highlightsKo()),
+                    response.patternKo(),
+                    response.gentleCorrectionKo(),
+                    response.nextActionKo(),
+                    response.nextActionExampleEn(),
+                    writeJson(response.expressions()),
+                    response.closingKo()
+            );
+            NowInEnglishReflectionResponseDto savedResponse =
+                    toDto(nowInEnglishReflectionRepository.save(reflection));
+            feedbackTimingRecorder.recordServicePhase("persist", elapsedMs(persistStartedAtNanos));
+            return savedResponse;
+        } finally {
+            feedbackTimingRecorder.recordServicePhase("total", elapsedMs(totalStartedAtNanos));
+            feedbackTimingRecorder.clearTrace();
         }
-
-        NowInEnglishReflectionResponseDto response = reflect(dateKey, entries);
-        NowInEnglishReflectionEntity reflection = nowInEnglishReflectionRepository
-                .findByUserIdAndReflectionDate(userId, reflectionDate)
-                .orElseGet(() -> new NowInEnglishReflectionEntity(userId, reflectionDate));
-        reflection.updateReflection(
-                entries.size(),
-                entrySignature,
-                response.headlineKo(),
-                response.summaryKo(),
-                writeJson(response.highlightsKo()),
-                response.patternKo(),
-                response.gentleCorrectionKo(),
-                response.nextActionKo(),
-                response.nextActionExampleEn(),
-                writeJson(response.expressions()),
-                response.closingKo()
-        );
-        return toDto(nowInEnglishReflectionRepository.save(reflection));
     }
 
-    @Transactional(readOnly = true)
     public NowInEnglishReflectionResponseDto reflect(NowInEnglishReflectionRequestDto request) {
-        String dateKey = normalizeDateKey(request == null ? null : request.dateKey());
-        List<NowInEnglishReflectionEntryDto> entries = normalizeEntries(request == null ? null : request.entries());
-        return reflect(dateKey, entries);
+        long totalStartedAtNanos = System.nanoTime();
+        feedbackTimingRecorder.beginNowInEnglishTrace(null, "REFLECTION");
+        try {
+            long prepareStartedAtNanos = System.nanoTime();
+            String dateKey = normalizeDateKey(request == null ? null : request.dateKey());
+            List<NowInEnglishReflectionEntryDto> entries =
+                    normalizeEntries(request == null ? null : request.entries());
+            feedbackTimingRecorder.recordServicePhase("prepare", elapsedMs(prepareStartedAtNanos));
+            return reflect(dateKey, entries);
+        } finally {
+            feedbackTimingRecorder.recordServicePhase("total", elapsedMs(totalStartedAtNanos));
+            feedbackTimingRecorder.clearTrace();
+        }
     }
 
     private NowInEnglishReflectionResponseDto reflect(String dateKey, List<NowInEnglishReflectionEntryDto> entries) {
@@ -98,6 +126,12 @@ public class NowInEnglishReflectionService {
             try {
                 return normalizeResponse(openAiClient.reflect(dateKey, entries), dateKey, entries);
             } catch (RuntimeException exception) {
+                feedbackTimingRecorder.recordPolicyEvent("fallback", Map.of(
+                        "reason", "llm_failure",
+                        "exceptionClass", exception.getClass().getName(),
+                        "dateKey", dateKey,
+                        "entryCount", entries.size()
+                ));
                 LOGGER.warn(
                         "Now-in-English reflection fell back to deterministic response dateKey={} entryCount={} exceptionClass={}",
                         dateKey,
@@ -105,9 +139,19 @@ public class NowInEnglishReflectionService {
                         exception.getClass().getName()
                 );
             }
+        } else {
+            feedbackTimingRecorder.recordPolicyEvent("fallback", Map.of(
+                    "reason", "provider_not_configured",
+                    "dateKey", dateKey,
+                    "entryCount", entries.size()
+            ));
         }
 
         return fallbackReflection(dateKey, entries);
+    }
+
+    private long elapsedMs(long startedAtNanos) {
+        return (System.nanoTime() - startedAtNanos) / 1_000_000;
     }
 
     private String normalizeDateKey(String value) {

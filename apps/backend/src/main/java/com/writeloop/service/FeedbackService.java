@@ -545,6 +545,7 @@ public class FeedbackService {
         try {
             FeedbackDiagnosisResult diagnosis = snapshot.diagnosis();
             FeedbackTokenUsage tokenUsage = executionTrace.tokenUsage();
+            FeedbackProviderRetryTrace providerRetry = executionTrace.providerRetry();
             FeedbackDiagnosisLogEntity entity = FeedbackDiagnosisLogEntity.builder()
                     .executionStatus(FeedbackDiagnosisExecutionStatus.SUCCESS)
                     .answerAttemptId(attempt == null ? null : attempt.getId())
@@ -569,6 +570,10 @@ public class FeedbackService {
                     .llmModel(snapshot.model())
                     .reasoningEffort(executionTrace.reasoningEffort())
                     .thinkingBudget(executionTrace.thinkingBudget())
+                    .providerRetryAttempted(providerRetry.attempted())
+                    .providerRetrySucceeded(providerRetry.succeeded())
+                    .providerInitialFailureStatusCode(providerRetry.initialFailureStatusCode())
+                    .providerInitialFailureBodyJson(toJsonDocument(providerRetry.initialFailureBodyJson()))
                     .diagnosisResponseStatusCode(executionTrace.initialResponseStatusCode())
                     .regenerationResponseStatusCode(executionTrace.retryResponseStatusCode())
                     .diagnosisResponseBodyJson(executionTrace.initialResponseBodyJson())
@@ -651,6 +656,18 @@ public class FeedbackService {
 
     private String emptyToNull(String value) {
         return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String toJsonDocument(String value) throws JsonProcessingException {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            objectMapper.readTree(value);
+            return value.trim();
+        } catch (JsonProcessingException ignored) {
+            return objectMapper.writeValueAsString(value);
+        }
     }
 
     private String firstNonBlank(String... values) {

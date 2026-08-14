@@ -34,6 +34,7 @@ public class FeedbackDiagnosisLogRecorder {
         PromptDto prompt = event.prompt();
         FeedbackExecutionTrace trace = event.executionTrace();
         FeedbackTokenUsage tokenUsage = trace.tokenUsage();
+        FeedbackProviderRetryTrace providerRetry = trace.providerRetry();
         repository.saveAndFlush(FeedbackDiagnosisLogEntity.builder()
                 .executionStatus(FeedbackDiagnosisExecutionStatus.FAILED)
                 .answerAttemptId(null)
@@ -61,6 +62,10 @@ public class FeedbackDiagnosisLogRecorder {
                 .llmModel(normalize(trace.model()))
                 .reasoningEffort(normalize(trace.reasoningEffort()))
                 .thinkingBudget(trace.thinkingBudget())
+                .providerRetryAttempted(providerRetry.attempted())
+                .providerRetrySucceeded(providerRetry.succeeded())
+                .providerInitialFailureStatusCode(providerRetry.initialFailureStatusCode())
+                .providerInitialFailureBodyJson(toJsonDocument(providerRetry.initialFailureBodyJson()))
                 .diagnosisResponseStatusCode(trace.initialResponseStatusCode())
                 .regenerationResponseStatusCode(trace.retryResponseStatusCode())
                 .diagnosisResponseBodyJson(toJsonDocument(trace.initialResponseBodyJson()))

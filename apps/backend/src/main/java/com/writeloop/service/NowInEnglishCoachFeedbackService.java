@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -17,26 +18,52 @@ public class NowInEnglishCoachFeedbackService {
     private static final int MAX_TEXT_LENGTH = 500;
 
     private final OpenAiNowInEnglishCoachFeedbackClient openAiClient;
+    private final FeedbackTimingRecorder feedbackTimingRecorder;
 
-    public NowInEnglishCoachFeedbackResponseDto review(NowInEnglishCoachFeedbackRequestDto request) {
-        String text = truncate(normalizeText(request == null ? null : request.text()), MAX_TEXT_LENGTH);
-        if (text.isBlank()) {
-            throw new IllegalArgumentException("text is required");
-        }
-
-        String createdAt = truncate(normalizeText(request == null ? null : request.createdAt()), 80);
-        if (openAiClient.isConfigured()) {
-            try {
-                return normalizeResponse(openAiClient.review(text, createdAt), text);
-            } catch (RuntimeException exception) {
-                LOGGER.warn(
-                        "Now-in-English coach feedback fell back to deterministic response exceptionClass={}",
-                        exception.getClass().getName()
-                );
+    public NowInEnglishCoachFeedbackResponseDto review(
+            Long userId,
+            NowInEnglishCoachFeedbackRequestDto request
+    ) {
+        long totalStartedAtNanos = System.nanoTime();
+        feedbackTimingRecorder.beginNowInEnglishTrace(userId, "COACH_FEEDBACK");
+        try {
+            long prepareStartedAtNanos = System.nanoTime();
+            String text = truncate(normalizeText(request == null ? null : request.text()), MAX_TEXT_LENGTH);
+            if (text.isBlank()) {
+                throw new IllegalArgumentException("text is required");
             }
-        }
 
-        return fallbackFeedback(text);
+            String createdAt = truncate(normalizeText(request == null ? null : request.createdAt()), 80);
+            feedbackTimingRecorder.recordServicePhase("prepare", elapsedMs(prepareStartedAtNanos));
+
+            if (openAiClient.isConfigured()) {
+                try {
+                    return normalizeResponse(openAiClient.review(text, createdAt), text);
+                } catch (RuntimeException exception) {
+                    feedbackTimingRecorder.recordPolicyEvent("fallback", Map.of(
+                            "reason", "llm_failure",
+                            "exceptionClass", exception.getClass().getName()
+                    ));
+                    LOGGER.warn(
+                            "Now-in-English coach feedback fell back to deterministic response exceptionClass={}",
+                            exception.getClass().getName()
+                    );
+                }
+            } else {
+                feedbackTimingRecorder.recordPolicyEvent("fallback", Map.of(
+                        "reason", "provider_not_configured"
+                ));
+            }
+
+            return fallbackFeedback(text);
+        } finally {
+            feedbackTimingRecorder.recordServicePhase("total", elapsedMs(totalStartedAtNanos));
+            feedbackTimingRecorder.clearTrace();
+        }
+    }
+
+    private long elapsedMs(long startedAtNanos) {
+        return (System.nanoTime() - startedAtNanos) / 1_000_000;
     }
 
     private NowInEnglishCoachFeedbackResponseDto normalizeResponse(

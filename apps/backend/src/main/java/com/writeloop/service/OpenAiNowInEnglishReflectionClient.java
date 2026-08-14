@@ -24,6 +24,7 @@ class OpenAiNowInEnglishReflectionClient {
     private static final int MAX_LOG_RESPONSE_BODY_LENGTH = 4000;
 
     private final ObjectMapper objectMapper;
+    private final FeedbackTimingRecorder feedbackTimingRecorder;
     private final HttpClient httpClient;
     private final String apiKey;
     private final String model;
@@ -33,6 +34,7 @@ class OpenAiNowInEnglishReflectionClient {
 
     OpenAiNowInEnglishReflectionClient(
             ObjectMapper objectMapper,
+            FeedbackTimingRecorder feedbackTimingRecorder,
             @Value("${openai.api-key:}") String apiKey,
             @Value("${openai.now-reflection-model:${openai.coach-model:${OPENAI_COACH_MODEL:${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-5.6-luna}}}}}") String model,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
@@ -40,6 +42,7 @@ class OpenAiNowInEnglishReflectionClient {
             @Value("${openai.now-reflection-request-timeout-seconds:${openai.coach-request-timeout-seconds:${OPENAI_COACH_REQUEST_TIMEOUT_SECONDS:${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:60}}}}") int requestTimeoutSeconds
     ) {
         this.objectMapper = objectMapper;
+        this.feedbackTimingRecorder = feedbackTimingRecorder;
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(20))
                 .build();
@@ -211,6 +214,21 @@ class OpenAiNowInEnglishReflectionClient {
             Throwable exception,
             long startedAtNanos
     ) {
+        long elapsedMs = (System.nanoTime() - startedAtNanos) / 1_000_000;
+        feedbackTimingRecorder.recordNowInEnglishLlmPhase(
+                "reflection",
+                "openai",
+                model,
+                reasoningEffort,
+                success,
+                statusCode,
+                exception == null ? null : exception.getClass().getName(),
+                elapsedMs,
+                Map.of(
+                        "dateKey", dateKey,
+                        "entryCount", entryCount
+                )
+        );
         LOGGER.info(
                 "Now-in-English reflection LLM timing provider=openai dateKey={} entryCount={} model={} reasoningEffort={} success={} status={} exceptionClass={} elapsedMs={}",
                 dateKey,
@@ -220,7 +238,7 @@ class OpenAiNowInEnglishReflectionClient {
                 success,
                 statusCode,
                 exception == null ? null : exception.getClass().getName(),
-                (System.nanoTime() - startedAtNanos) / 1_000_000
+                elapsedMs
         );
     }
 

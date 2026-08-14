@@ -48,6 +48,79 @@ class OpenAiFeedbackClientTest {
     }
 
     @Test
+    void retriesOneTransientProviderFailureAndReturnsTheRecoveredFeedback() throws Exception {
+        try (TestResponseServer server = new TestResponseServer(
+                new int[]{503, 200},
+                providerError("server_is_overloaded"),
+                validContractOutput()
+        )) {
+            OpenAiFeedbackClient client = client("test-key", server.url());
+
+            FeedbackResponseDto feedback = client.review(prompt(), "I goes home because I am tired.");
+
+            assertThat(feedback.sessionId()).isEqualTo(OpenAiFeedbackClient.INTERNAL_AUTHORITATIVE_SESSION_ID);
+            assertThat(server.requestCount()).isEqualTo(2);
+            assertThat(server.requestUserPrompt(1)).isEqualTo(server.requestUserPrompt(0));
+
+            FeedbackExecutionTrace trace = client.takeLastExecutionTrace();
+            assertThat(trace.finalSuccess()).isTrue();
+            assertThat(trace.initialResponseStatusCode()).isEqualTo(200);
+            assertThat(trace.retryAttempted()).isFalse();
+            assertThat(trace.providerRetry().attempted()).isTrue();
+            assertThat(trace.providerRetry().succeeded()).isTrue();
+            assertThat(trace.providerRetry().initialFailureStatusCode()).isEqualTo(503);
+            assertThat(trace.providerRetry().initialFailureBodyJson())
+                    .contains("server_is_overloaded");
+            assertThat(trace.tokenUsage()).isEqualTo(
+                    new FeedbackTokenUsage(110L, 25L, 40L, 15L, 150L)
+            );
+        }
+    }
+
+    @Test
+    void stopsAfterOneTransientProviderRetryWhenTheSecondResponseStillFails() throws Exception {
+        try (TestResponseServer server = new TestResponseServer(
+                new int[]{503, 503},
+                providerError("server_is_overloaded"),
+                providerError("server_is_overloaded")
+        )) {
+            OpenAiFeedbackClient client = client("test-key", server.url());
+
+            assertThatThrownBy(() -> client.review(prompt(), "I goes home because I am tired."))
+                    .isInstanceOfSatisfying(ApiException.class, exception ->
+                            assertThat(exception.getCode()).isEqualTo("FEEDBACK_GENERATION_UNAVAILABLE"));
+
+            assertThat(server.requestCount()).isEqualTo(2);
+            FeedbackExecutionTrace trace = client.takeLastExecutionTrace();
+            assertThat(trace.finalSuccess()).isFalse();
+            assertThat(trace.initialResponseStatusCode()).isEqualTo(503);
+            assertThat(trace.providerRetry().attempted()).isTrue();
+            assertThat(trace.providerRetry().succeeded()).isFalse();
+            assertThat(trace.finalErrorReason()).isEqualTo("OpenAI returned HTTP 503");
+        }
+    }
+
+    @Test
+    void doesNotRetryNonTransientProviderFailures() throws Exception {
+        try (TestResponseServer server = new TestResponseServer(
+                new int[]{400, 200},
+                providerError("invalid_request_error"),
+                validContractOutput()
+        )) {
+            OpenAiFeedbackClient client = client("test-key", server.url());
+
+            assertThatThrownBy(() -> client.review(prompt(), "I goes home because I am tired."))
+                    .isInstanceOfSatisfying(ApiException.class, exception ->
+                            assertThat(exception.getCode()).isEqualTo("FEEDBACK_GENERATION_UNAVAILABLE"));
+
+            assertThat(server.requestCount()).isEqualTo(1);
+            FeedbackExecutionTrace trace = client.takeLastExecutionTrace();
+            assertThat(trace.initialResponseStatusCode()).isEqualTo(400);
+            assertThat(trace.providerRetry().attempted()).isFalse();
+        }
+    }
+
+    @Test
     void retriesOneContractViolationWithItsReasonAndKeepsTheRetryTrace() throws Exception {
         try (TestResponseServer server = new TestResponseServer(
                 invalidContractOutput(),
@@ -117,6 +190,31 @@ class OpenAiFeedbackClientTest {
             assertThat(trace.tokenUsage()).isEqualTo(
                     new FeedbackTokenUsage(210L, 45L, 70L, 25L, 280L)
             );
+        }
+    }
+
+    @Test
+    void keepsProviderAndContractRetriesIndependent() throws Exception {
+        try (TestResponseServer server = new TestResponseServer(
+                new int[]{200, 503, 200},
+                invalidContractOutput(),
+                providerError("server_is_overloaded"),
+                validContractOutput()
+        )) {
+            OpenAiFeedbackClient client = client("test-key", server.url());
+
+            FeedbackResponseDto feedback = client.review(prompt(), "I goes home because I am tired.");
+
+            assertThat(feedback.sessionId()).isEqualTo(OpenAiFeedbackClient.INTERNAL_AUTHORITATIVE_SESSION_ID);
+            assertThat(server.requestCount()).isEqualTo(3);
+            FeedbackExecutionTrace trace = client.takeLastExecutionTrace();
+            assertThat(trace.contractViolationDetected()).isTrue();
+            assertThat(trace.retryAttempted()).isTrue();
+            assertThat(trace.retrySucceeded()).isTrue();
+            assertThat(trace.providerRetry().attempted()).isTrue();
+            assertThat(trace.providerRetry().succeeded()).isTrue();
+            assertThat(trace.providerRetry().initialFailureStatusCode()).isEqualTo(503);
+            assertThat(trace.finalSuccess()).isTrue();
         }
     }
 
@@ -206,6 +304,12 @@ class OpenAiFeedbackClientTest {
         return canonicalOutput(true);
     }
 
+    private String providerError(String code) {
+        return """
+                {"error":{"code":"%s","type":"service_unavailable_error","message":"Provider failure"}}
+                """.formatted(code).trim();
+    }
+
     private String canonicalOutput(boolean includeReasonSlot) {
         String revisionSteps = includeReasonSlot
                 ? """
@@ -244,11 +348,23 @@ class OpenAiFeedbackClientTest {
 
         private final HttpServer server;
         private final List<String> outputs;
+        private final int[] statusCodes;
         private final List<String> requests = new ArrayList<>();
         private final AtomicInteger requestCount = new AtomicInteger();
 
         private TestResponseServer(String... outputs) throws IOException {
+            this(null, outputs);
+        }
+
+        private TestResponseServer(int[] statusCodes, String... outputs) throws IOException {
             this.outputs = List.of(outputs);
+            if (statusCodes != null && statusCodes.length != outputs.length) {
+                throw new IllegalArgumentException("Every test output must have one status code");
+            }
+            this.statusCodes = new int[outputs.length];
+            for (int index = 0; index < outputs.length; index++) {
+                this.statusCodes[index] = statusCodes == null ? 200 : statusCodes[index];
+            }
             this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
             this.server.createContext("/v1/responses", this::handle);
             this.server.start();
@@ -257,7 +373,9 @@ class OpenAiFeedbackClientTest {
         private void handle(HttpExchange exchange) throws IOException {
             requests.add(new String(exchange.getRequestBody().readAllBytes(), StandardCharsets.UTF_8));
             int index = requestCount.getAndIncrement();
-            String output = outputs.get(Math.min(index, outputs.size() - 1));
+            int responseIndex = Math.min(index, outputs.size() - 1);
+            int statusCode = statusCodes[responseIndex];
+            String output = outputs.get(responseIndex);
             Map<String, Object> usage = index == 0
                     ? Map.of(
                             "input_tokens", 100,
@@ -273,12 +391,14 @@ class OpenAiFeedbackClientTest {
                             "output_tokens_details", Map.of("reasoning_tokens", 15),
                             "total_tokens", 150
                     );
-            byte[] body = objectMapper.writeValueAsBytes(Map.of(
-                    "output_text", output,
-                    "usage", usage
-            ));
+            byte[] body = statusCode >= 200 && statusCode < 300
+                    ? objectMapper.writeValueAsBytes(Map.of(
+                            "output_text", output,
+                            "usage", usage
+                    ))
+                    : output.getBytes(StandardCharsets.UTF_8);
             exchange.getResponseHeaders().set("content-type", "application/json");
-            exchange.sendResponseHeaders(200, body.length);
+            exchange.sendResponseHeaders(statusCode, body.length);
             exchange.getResponseBody().write(body);
             exchange.close();
         }

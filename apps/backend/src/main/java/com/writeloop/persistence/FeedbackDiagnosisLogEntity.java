@@ -109,6 +109,18 @@ public class FeedbackDiagnosisLogEntity {
     @Column(name = "thinking_budget")
     private Integer thinkingBudget;
 
+    @Column(name = "provider_retry_attempted", nullable = false)
+    private boolean providerRetryAttempted;
+
+    @Column(name = "provider_retry_succeeded")
+    private Boolean providerRetrySucceeded;
+
+    @Column(name = "provider_initial_failure_status_code")
+    private Integer providerInitialFailureStatusCode;
+
+    @Column(name = "provider_initial_failure_body_json", columnDefinition = "JSON")
+    private String providerInitialFailureBodyJson;
+
     @Column(name = "diagnosis_response_status_code")
     private Integer diagnosisResponseStatusCode;
 

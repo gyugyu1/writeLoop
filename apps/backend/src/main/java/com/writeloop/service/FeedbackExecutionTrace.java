@@ -15,12 +15,55 @@ record FeedbackExecutionTrace(
         boolean finalSuccess,
         String originalContractErrorReason,
         String finalErrorReason,
+        FeedbackProviderRetryTrace providerRetry,
         FeedbackTokenUsage tokenUsage,
         long elapsedMs
 ) {
 
     FeedbackExecutionTrace {
+        providerRetry = providerRetry == null
+                ? FeedbackProviderRetryTrace.notAttempted()
+                : providerRetry;
         tokenUsage = tokenUsage == null ? FeedbackTokenUsage.empty() : tokenUsage;
+    }
+
+    FeedbackExecutionTrace(
+            String provider,
+            String model,
+            String reasoningEffort,
+            Integer thinkingBudget,
+            Integer initialResponseStatusCode,
+            String initialResponseBodyJson,
+            Integer retryResponseStatusCode,
+            String retryResponseBodyJson,
+            boolean contractViolationDetected,
+            boolean retryAttempted,
+            Boolean retrySucceeded,
+            boolean finalSuccess,
+            String originalContractErrorReason,
+            String finalErrorReason,
+            FeedbackTokenUsage tokenUsage,
+            long elapsedMs
+    ) {
+        this(
+                provider,
+                model,
+                reasoningEffort,
+                thinkingBudget,
+                initialResponseStatusCode,
+                initialResponseBodyJson,
+                retryResponseStatusCode,
+                retryResponseBodyJson,
+                contractViolationDetected,
+                retryAttempted,
+                retrySucceeded,
+                finalSuccess,
+                originalContractErrorReason,
+                finalErrorReason,
+                FeedbackProviderRetryTrace.notAttempted(),
+                tokenUsage,
+                elapsedMs
+        );
     }
 
     FeedbackExecutionTrace(
@@ -55,6 +98,7 @@ record FeedbackExecutionTrace(
                 finalSuccess,
                 originalContractErrorReason,
                 finalErrorReason,
+                FeedbackProviderRetryTrace.notAttempted(),
                 FeedbackTokenUsage.empty(),
                 elapsedMs
         );
@@ -76,6 +120,7 @@ record FeedbackExecutionTrace(
                 false,
                 originalContractErrorReason,
                 errorReason,
+                providerRetry,
                 tokenUsage,
                 elapsedMs
         );
@@ -105,6 +150,7 @@ record FeedbackExecutionTrace(
                 true,
                 retry.originalErrorReason(),
                 null,
+                FeedbackProviderRetryTrace.notAttempted(),
                 tokenUsage,
                 0L
         );

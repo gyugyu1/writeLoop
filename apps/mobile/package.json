@@ -1,7 +1,7 @@
 {
   "name": "@writeloop/mobile",
   "main": "expo-router/entry",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "scripts": {
     "start": "expo start",
     "start:tunnel": "expo start --tunnel",

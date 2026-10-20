@@ -32,3 +32,8 @@ tmp_*
 .tmp-next-dev.log
 .tmp-next-dev.err.log
 *.tsbuildinfo
+
+# VS Code: 개인 설정은 제외하고, 공유할 확장 추천과 실행 설정만 관리한다.
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json

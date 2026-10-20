@@ -36,8 +36,8 @@ import sys
 
 MIGRATION_DIR = "infra/mysql/schema"
 MIGRATION_RE = re.compile(r"^infra/mysql/schema/(\d{3})-[^/]+\.sql$")
-# 061번은 이 검사가 생기기 전부터 파일이 두 개였으므로 중복 검사에서 제외한다.
-KNOWN_DUPLICATE_NUMBERS = {"061"}
+# 중복 검사에서 제외할 번호. 예전에 중복이던 061번은 한 파일로 합쳐 지금은 없다.
+KNOWN_DUPLICATE_NUMBERS = set()
 
 CONFIG_FILE_RE = re.compile(
     r"(^|/)(application[^/]*\.(ya?ml|properties)|docker-compose[^/]*\.ya?ml|\.env[^/]*)$",

@@ -183,7 +183,10 @@ export function evaluatePayload(testCase, payload) {
 
   if (!loopComplete) {
     requireNonBlank(payload?.coachMove?.focus, "missing_coach_focus", "coachMove.focus is blank", failures);
-    requireNonBlank(payload?.coachMove?.why, "missing_coach_reason", "coachMove.why is blank", failures);
+    // LANGUAGE_FIX carries its reasons on each languageCorrections row (checked below), not on coachMove.why.
+    if (missionKind !== "LANGUAGE_FIX") {
+      requireNonBlank(payload?.coachMove?.why, "missing_coach_reason", "coachMove.why is blank", failures);
+    }
     requireNonBlank(payload?.coachMove?.instruction, "missing_coach_instruction", "coachMove.instruction is blank", failures);
 
     if (!KNOWN_MISSION_KINDS.has(missionKind)) {

@@ -35,11 +35,28 @@ keyword or entity. If any configured slot lacks complete question-specific
 metadata, feedback generation is unavailable; the backend must not fall back
 to the common definition alone.
 
-The LLM output has exactly these top-level fields:
+The LLM output has exactly these top-level fields, in this order. With Structured Outputs the model
+generates keys in schema order, so the order is part of the contract: diagnose first, then write
+reference content after the decisions it depends on.
+
+1. `topicAssessment` (`reasonKo`, then `status`)
+2. `structureAssessment`
+3. `languageAssessment`
+4. `slotAssessments` (per slot: `evidence`, then `support`)
+5. `modelAnswer`
+6. `modelAnswerKo`
+7. `refinementExpressions` (chosen by comparing the already written `modelAnswer` with the learner answer)
+8. `strengths`
+
+Build every LLM schema and prompt payload with `OrderedMaps` or `LinkedHashMap`. Never use `Map.of`,
+`Map.ofEntries`, `Map.copyOf`, or `Set.of` there: their iteration order changes on every JVM start, which
+silently changes the generation order on every deploy. `LlmRequestDeterminismTest` enforces this.
+
+Field details:
 
 - `topicAssessment`
+  - `reasonKo`: concise evidence for the topic judgment, written before the status
   - `status`: `ON_TOPIC` or `OFF_TOPIC`
-  - `reasonKo`: concise evidence for the topic judgment
 - `structureAssessment`
   - `status` is `COMPLETE` when every answer-bearing segment forms an independent sentence, otherwise `FRAGMENT`.
   - This object does not carry repair text. The full revision lives only in `languageAssessment`.

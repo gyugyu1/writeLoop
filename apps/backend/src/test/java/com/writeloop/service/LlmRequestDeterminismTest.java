@@ -56,14 +56,14 @@ class LlmRequestDeterminismTest {
                 "topicAssessment",
                 "structureAssessment",
                 "languageAssessment",
-                "strengths",
-                "refinementExpressions",
                 "slotAssessments",
                 "modelAnswer",
-                "modelAnswerKo"
+                "modelAnswerKo",
+                "refinementExpressions",
+                "strengths"
         );
         assertThat(keys(properties.path("topicAssessment").path("properties")))
-                .containsExactly("status", "reasonKo");
+                .containsExactly("reasonKo", "status");
         assertThat(keys(properties.path("languageAssessment").path("properties")
                 .path("revisionSteps").path("items").path("properties")))
                 .containsExactly("kind", "answerAfter", "reasonKo");
@@ -129,7 +129,7 @@ class LlmRequestDeterminismTest {
         JsonNode schema = objectMapper.readTree(body).path("text").path("format").path("schema");
 
         assertThat(keys(schema.path("properties").path("topicAssessment").path("properties")))
-                .containsExactly("status", "reasonKo");
+                .containsExactly("reasonKo", "status");
         assertThat(keys(schema.path("properties").path("slotAssessments").path("properties")
                 .path("ACTION").path("properties")))
                 .containsExactly("evidence", "support");

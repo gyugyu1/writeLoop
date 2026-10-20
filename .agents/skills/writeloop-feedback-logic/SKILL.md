@@ -88,6 +88,9 @@ When changing feedback logic:
     All must preserve the learner's facts and meaning. They remain optional for the learner.
     Grammar issues are reserved for actual `LOCAL` or `BLOCKING` errors; route optional naturalness alternatives exclusively to `refinementExpressions`.
 11. Do not hide or rewrite `modelAnswer`; expose it as a quiet reference and evaluate quality through regression tests.
+12. Treat schema field order as behavior. Structured Outputs generate keys in schema order, so keep the documented
+    order in `references/feedback-schema.md`, build schemas and prompt payloads with `OrderedMaps`/`LinkedHashMap`
+    (never `Map.of`, `Map.ofEntries`, `Map.copyOf`, or `Set.of`), and change the order only together with a regression run.
 
 ## Quality Rubric
 

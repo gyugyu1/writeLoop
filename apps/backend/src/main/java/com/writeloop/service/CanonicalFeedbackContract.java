@@ -20,12 +20,16 @@ final class CanonicalFeedbackContract {
             You are WriteLoop's English writing coach and diagnostic engine.
             Return only data that satisfies the supplied JSON schema.
 
-            Diagnose in this exact order:
-            1. Decide topicAssessment.status before grammar or slot assessment.
-            2. Diagnose structureAssessment.status.
-            3. Produce zero to 25 cumulative languageAssessment.revisionSteps.
-            4. Assess every configured slot exactly once in the fixed-key slotAssessments object.
-            5. Keep each slot's evidence and teaching support together under that slot key.
+            Fill the response in the schema's field order. Each field may rely only on what you have already written:
+            1. topicAssessment: write reasonKo first, then decide status from that reason, before grammar or slot assessment.
+            2. structureAssessment.status.
+            3. languageAssessment.revisionSteps: zero to 25 cumulative steps.
+            4. slotAssessments: assess every configured slot exactly once in the fixed-key object.
+               For each slot, write evidence first, then decide whether support is needed.
+               Keep each slot's evidence and teaching support together under that slot key.
+            5. modelAnswer, then modelAnswerKo.
+            6. refinementExpressions, selected by comparing the modelAnswer you already wrote with the learner answer.
+            7. strengths.
 
             Authority boundaries:
             - You diagnose topic relevance, sentence structure, cumulative full-answer revision steps,
@@ -144,9 +148,9 @@ final class CanonicalFeedbackContract {
             - modelAnswerKo is the faithful Korean translation of modelAnswer.
             - Always return at least two refinementExpressions. They are optional for the learner to use and never block completion,
               but they are required output so a complete answer still receives useful ways to broaden its expression.
-            - First compose modelAnswer, then compare it with the learner answer and select short, reusable expressions that can enrich
-              the learner's existing meaning without adding new facts. An expression may come from modelAnswer only when it is compatible
-              with the learner's stated meaning and facts.
+            - modelAnswer is written before refinementExpressions. Compare that modelAnswer with the learner answer and select short,
+              reusable expressions that can enrich the learner's existing meaning without adding new facts. An expression may come from
+              modelAnswer only when it is compatible with the learner's stated meaning and facts.
             - The recommendations must cover different purposes. Include at least:
               1. one useful vocabulary, collocation, or phrasal expression;
               2. one sentence frame, connector, emphasis, contrast, reason, result, or detail-building expression.
@@ -214,10 +218,12 @@ final class CanonicalFeedbackContract {
 
     Map<String, Object> schema(PromptDto prompt) {
         List<String> slots = policy.allowedSlots(prompt);
+        // 구조화 출력은 이 키 순서대로 생성된다. 근거를 쓴 뒤 판정하고, 진단을 마친 뒤 학습 자료를 쓰도록 순서를 정했다.
+        // 순서를 바꾸면 모델 동작이 달라지므로 회귀 테스트와 함께 바꾼다.
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("topicAssessment", objectSchema(OrderedMaps.of(
-                "status", enumString(List.of("ON_TOPIC", "OFF_TOPIC")),
-                "reasonKo", stringSchema()
+                "reasonKo", stringSchema(),
+                "status", enumString(List.of("ON_TOPIC", "OFF_TOPIC"))
         )));
         properties.put("structureAssessment", objectSchema(OrderedMaps.of(
                 "status", enumString(List.of("COMPLETE", "FRAGMENT"))
@@ -233,13 +239,6 @@ final class CanonicalFeedbackContract {
                         "reasonKo", stringSchema()
                 )), 0, 25)
         )));
-        properties.put("strengths", arraySchema(stringSchema(), 0, 1));
-        properties.put("refinementExpressions", arraySchema(objectSchema(OrderedMaps.of(
-                "expression", stringSchema(),
-                "meaningKo", stringSchema(),
-                "guidanceKo", stringSchema(),
-                "exampleEn", stringSchema()
-        )), 2));
         Map<String, Object> slotAssessmentProperties = new LinkedHashMap<>();
         for (String slot : slots) {
             slotAssessmentProperties.put(slot, objectSchema(OrderedMaps.of(
@@ -250,6 +249,13 @@ final class CanonicalFeedbackContract {
         properties.put("slotAssessments", objectSchema(slotAssessmentProperties));
         properties.put("modelAnswer", stringSchema());
         properties.put("modelAnswerKo", stringSchema());
+        properties.put("refinementExpressions", arraySchema(objectSchema(OrderedMaps.of(
+                "expression", stringSchema(),
+                "meaningKo", stringSchema(),
+                "guidanceKo", stringSchema(),
+                "exampleEn", stringSchema()
+        )), 2));
+        properties.put("strengths", arraySchema(stringSchema(), 0, 1));
         return objectSchema(properties);
     }
 

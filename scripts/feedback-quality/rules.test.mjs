@@ -211,6 +211,23 @@ test("language missions reject more than 25 correction rows", () => {
   assert.ok(result.failures.some((failure) => failure.code === "invalid_language_correction_count"));
 });
 
+test("language missions explain each correction row instead of coachMove.why", () => {
+  const languageResult = evaluatePayload(
+    {
+      ...baseCase,
+      answer: "At the gym.",
+      expectedMissionKinds: ["LANGUAGE_FIX"],
+      expectedTargetSlots: []
+    },
+    languagePayload({ coachMove: { why: null } })
+  );
+  const slotResult = evaluatePayload(baseCase, slotPayload({ why: "" }));
+
+  assert.equal(languageResult.pass, true);
+  assert.equal(slotResult.pass, false);
+  assert.ok(slotResult.failures.some((failure) => failure.code === "missing_coach_reason"));
+});
+
 test("explicit continue cases reject early completion", () => {
   const result = evaluatePayload(baseCase, { loopComplete: true, ui: {} });
 

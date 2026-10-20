@@ -1,0 +1,40 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/writeloop_guard.py\" pre-edit",
+            "timeout": 15,
+            "statusMessage": "WriteLoop 마이그레이션·DDL 설정 검사"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/writeloop_guard.py\" pre-shell",
+            "timeout": 15,
+            "statusMessage": "WriteLoop 운영 명령 검사"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/writeloop_guard.py\" stop",
+            "timeout": 30,
+            "statusMessage": "WriteLoop 스키마 마이그레이션 누락 검사"
+          }
+        ]
+      }
+    ]
+  }
+}

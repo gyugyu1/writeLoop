@@ -39,7 +39,7 @@ public class AppleIdentityTokenService {
     @Value("${app.oauth.apple.jwks-uri:https://appleid.apple.com/auth/keys}")
     private String jwksUri;
 
-    public AppleUserProfile verify(String identityToken, String fallbackEmail, String fallbackDisplayName) {
+    public AppleUserProfile verify(String identityToken, String fallbackDisplayName) {
         if (identityToken == null || identityToken.isBlank()) {
             throw invalidAppleToken();
         }
@@ -60,10 +60,7 @@ public class AppleIdentityTokenService {
             validateClaims(claims);
 
             String providerUserId = claims.getSubject();
-            String email = firstNonBlank(
-                    claims.getStringClaim("email"),
-                    fallbackEmail
-            );
+            String email = resolveVerifiedEmail(claims);
             String displayName = firstNonBlank(fallbackDisplayName, "Apple user");
 
             return new AppleUserProfile(providerUserId, email, displayName);
@@ -114,6 +111,22 @@ public class AppleIdentityTokenService {
         if (expirationTime == null || expirationTime.toInstant().isBefore(Instant.now())) {
             throw invalidAppleToken();
         }
+    }
+
+    // 서명된 토큰의 email만 신뢰한다. 요청 본문의 email은 위조할 수 있으므로 계정 이메일로 쓰지 않는다.
+    // 토큰에 email이 없으면 빈 값을 반환하고, 가입 시 Apple 사용자 ID 기반의 대체 이메일이 사용된다.
+    static String resolveVerifiedEmail(JWTClaimsSet claims) throws java.text.ParseException {
+        String email = claims.getStringClaim("email");
+        if (email == null || email.isBlank()) {
+            return "";
+        }
+
+        Object emailVerified = claims.getClaim("email_verified");
+        if (emailVerified != null && !Boolean.parseBoolean(String.valueOf(emailVerified))) {
+            return "";
+        }
+
+        return email.trim();
     }
 
     private String firstNonBlank(String... values) {

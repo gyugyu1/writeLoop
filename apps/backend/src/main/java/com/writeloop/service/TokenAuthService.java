@@ -49,7 +49,6 @@ public class TokenAuthService {
     public TokenAuthResponseDto loginWithApple(AppleTokenLoginRequestDto request) {
         AppleIdentityTokenService.AppleUserProfile profile = appleIdentityTokenService.verify(
                 request == null ? null : request.identityToken(),
-                request == null ? null : request.email(),
                 request == null ? null : request.fullName()
         );
         UserEntity user = authService.authenticateAppleUser(

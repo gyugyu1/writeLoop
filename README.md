@@ -491,7 +491,9 @@ npm run dev:frontend
 
 ### JPA와 SQL의 관계
 
-개발 설정에는 `spring.jpa.hibernate.ddl-auto=update`가 있지만, 이것만으로 질문 데이터, 슬롯 계약, 운영 보정 이력을 완전하게 만들 수는 없습니다. **정식 스키마와 데이터 변경의 권위값은 번호가 붙은 SQL 파일**입니다.
+**정식 스키마와 데이터 변경의 권위값은 번호가 붙은 SQL 파일**입니다. 백엔드는 로컬과 운영 모두 `spring.jpa.hibernate.ddl-auto=validate`로 실행되어 테이블을 직접 만들거나 바꾸지 않고, 엔티티와 DB 구조가 다르면 기동을 중단합니다. 따라서 새 마이그레이션은 DB에 먼저 적용한 뒤 그 마이그레이션을 사용하는 백엔드를 실행하거나 배포합니다.
+
+꼭 필요할 때만 `SPRING_JPA_HIBERNATE_DDL_AUTO` 환경변수로 이 값을 바꿀 수 있습니다. `update`로 실행하면 Hibernate가 SQL 파일과 다른 구조를 만들 수 있으므로 공유 DB에는 사용하지 않습니다.
 
 백엔드 시작 시 `PromptSeedConfig`가 기본 카탈로그와 일부 시드 질문을 보정하지만, 전체 활성 질문과 수동 검토 메타데이터는 SQL 마이그레이션에 의존합니다.
 

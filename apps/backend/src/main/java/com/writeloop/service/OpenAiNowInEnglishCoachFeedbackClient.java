@@ -2,6 +2,7 @@ package com.writeloop.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.NowInEnglishCoachFeedbackResponseDto;
+import com.writeloop.util.OrderedMaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -156,7 +157,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
     }
 
     private Map<String, Object> stringSchema() {
-        return Map.of("type", "string");
+        return OrderedMaps.of("type", "string");
     }
 
     private String normalizeText(String value) {
@@ -180,7 +181,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
                 statusCode,
                 exception == null ? null : exception.getClass().getName(),
                 elapsedMs,
-                Map.of("inputChars", Math.max(0, inputChars))
+                OrderedMaps.of("inputChars", Math.max(0, inputChars))
         );
         LOGGER.info(
                 "Now-in-English coach feedback LLM timing provider=openai model={} reasoningEffort={} success={} status={} exceptionClass={} elapsedMs={}",

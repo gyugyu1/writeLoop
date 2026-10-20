@@ -1,5 +1,6 @@
 package com.writeloop.service;
 
+import com.writeloop.util.OrderedMaps;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpHeaders;
@@ -36,14 +37,14 @@ final class GeminiStructuredOutputSupport {
         generationConfig.put("responseMimeType", "application/json");
         generationConfig.put("responseJsonSchema", schema);
         if (thinkingBudget != null) {
-            generationConfig.put("thinkingConfig", Map.of("thinkingBudget", thinkingBudget));
+            generationConfig.put("thinkingConfig", OrderedMaps.of("thinkingBudget", thinkingBudget));
         }
 
-        Map<String, Object> payload = Map.of(
+        Map<String, Object> payload = OrderedMaps.of(
                 "contents", List.of(
-                        Map.of(
+                        OrderedMaps.of(
                                 "parts", List.of(
-                                        Map.of("text", promptText)
+                                        OrderedMaps.of("text", promptText)
                                 )
                         )
                 ),

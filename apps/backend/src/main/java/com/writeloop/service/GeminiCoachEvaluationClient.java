@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.persistence.CoachEvaluationStatus;
 import com.writeloop.persistence.CoachInteractionEntity;
+import com.writeloop.util.OrderedMaps;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -71,16 +72,16 @@ public class GeminiCoachEvaluationClient {
     }
 
     private String buildRequestBody(CoachInteractionEntity interaction) throws IOException {
-        Map<String, Object> schema = Map.of(
+        Map<String, Object> schema = OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
-                        "evaluationStatus", Map.of(
+                "properties", OrderedMaps.of(
+                        "evaluationStatus", OrderedMaps.of(
                                 "type", "string",
                                 "enum", List.of("APPROPRIATE", "INAPPROPRIATE", "NEEDS_REVIEW")
                         ),
-                        "score", Map.of("type", "integer"),
-                        "verdict", Map.of(
+                        "score", OrderedMaps.of("type", "integer"),
+                        "verdict", OrderedMaps.of(
                                 "type", "string",
                                 "enum", List.of(
                                         "MEANING_MATCH",
@@ -92,12 +93,12 @@ public class GeminiCoachEvaluationClient {
                                         "INSUFFICIENT_CONTEXT"
                                 )
                         ),
-                        "summary", Map.of("type", "string"),
-                        "issues", Map.of(
+                        "summary", OrderedMaps.of("type", "string"),
+                        "issues", OrderedMaps.of(
                                 "type", "array",
-                                "items", Map.of("type", "string")
+                                "items", OrderedMaps.of("type", "string")
                         ),
-                        "improvementAction", Map.of("type", "string")
+                        "improvementAction", OrderedMaps.of("type", "string")
                 ),
                 "required", List.of("evaluationStatus", "score", "verdict", "summary", "issues", "improvementAction")
         );

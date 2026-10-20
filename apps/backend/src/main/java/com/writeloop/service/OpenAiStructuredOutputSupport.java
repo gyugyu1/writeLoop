@@ -1,5 +1,6 @@
 package com.writeloop.service;
 
+import com.writeloop.util.OrderedMaps;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.HttpHeaders;
@@ -63,20 +64,20 @@ final class OpenAiStructuredOutputSupport {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("model", model);
         payload.put("input", input);
-        payload.put("text", Map.of("format", format));
+        payload.put("text", OrderedMaps.of("format", format));
 
         if (reasoningEffort != null && !reasoningEffort.isBlank()) {
-            payload.put("reasoning", Map.of("effort", reasoningEffort.trim()));
+            payload.put("reasoning", OrderedMaps.of("effort", reasoningEffort.trim()));
         }
 
         return objectMapper.writeValueAsString(payload);
     }
 
     private static Map<String, Object> message(String role, String text) {
-        return Map.of(
+        return OrderedMaps.of(
                 "role", role,
                 "content", List.of(
-                        Map.of(
+                        OrderedMaps.of(
                                 "type", "input_text",
                                 "text", text == null ? "" : text
                         )

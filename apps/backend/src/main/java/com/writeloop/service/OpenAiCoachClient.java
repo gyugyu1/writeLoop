@@ -8,6 +8,7 @@ import com.writeloop.dto.CoachSelfDiscoveredCandidateDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.util.ExpressionTagSupport;
+import com.writeloop.util.OrderedMaps;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -138,24 +139,24 @@ public class OpenAiCoachClient implements CoachLlmEngine {
     private String buildRequestBody(PromptDto prompt, String userQuestion, List<PromptHintDto> hints)
             throws IOException {
         Map<String, Object> expressionTagsSchema = ExpressionTagSupport.jsonSchema();
-        Map<String, Object> schema = Map.of(
+        Map<String, Object> schema = OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
-                        "coachReply", Map.of("type", "string"),
-                        "expressions", Map.of(
+                "properties", OrderedMaps.of(
+                        "coachReply", OrderedMaps.of("type", "string"),
+                        "expressions", OrderedMaps.of(
                                 "type", "array",
                                 "minItems", 3,
                                 "maxItems", 5,
-                                "items", Map.of(
+                                "items", OrderedMaps.of(
                                         "type", "object",
                                         "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "expression", Map.of("type", "string"),
-                                                "meaningKo", Map.of("type", "string"),
-                                                "usageTip", Map.of("type", "string"),
-                                                "example", Map.of("type", "string"),
-                                                "sourceHintType", Map.of("type", "string"),
+                                        "properties", OrderedMaps.of(
+                                                "expression", OrderedMaps.of("type", "string"),
+                                                "meaningKo", OrderedMaps.of("type", "string"),
+                                                "usageTip", OrderedMaps.of("type", "string"),
+                                                "example", OrderedMaps.of("type", "string"),
+                                                "sourceHintType", OrderedMaps.of("type", "string"),
                                                 "tags", expressionTagsSchema
                                         ),
                                         "required", List.of(
@@ -261,11 +262,11 @@ public class OpenAiCoachClient implements CoachLlmEngine {
             CoachQueryAnalyzer.MeaningSlot slot,
             String sourceText
     ) throws IOException {
-        Map<String, Object> schema = Map.of(
+        Map<String, Object> schema = OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
-                        "englishText", Map.of("type", "string")
+                "properties", OrderedMaps.of(
+                        "englishText", OrderedMaps.of("type", "string")
                 ),
                 "required", List.of("englishText")
         );
@@ -315,20 +316,20 @@ public class OpenAiCoachClient implements CoachLlmEngine {
             List<String> recommendedExpressions,
             List<String> preservedSegments
     ) throws IOException {
-        Map<String, Object> schema = Map.of(
+        Map<String, Object> schema = OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
-                        "candidates", Map.of(
+                "properties", OrderedMaps.of(
+                        "candidates", OrderedMaps.of(
                                 "type", "array",
                                 "maxItems", 3,
-                                "items", Map.of(
+                                "items", OrderedMaps.of(
                                         "type", "object",
                                         "additionalProperties", false,
-                                        "properties", Map.of(
-                                                "matchedSpan", Map.of("type", "string"),
-                                                "usageTip", Map.of("type", "string"),
-                                                "confidence", Map.of(
+                                        "properties", OrderedMaps.of(
+                                                "matchedSpan", OrderedMaps.of("type", "string"),
+                                                "usageTip", OrderedMaps.of("type", "string"),
+                                                "confidence", OrderedMaps.of(
                                                         "type", "string",
                                                         "enum", List.of("HIGH", "MEDIUM", "LOW")
                                                 )

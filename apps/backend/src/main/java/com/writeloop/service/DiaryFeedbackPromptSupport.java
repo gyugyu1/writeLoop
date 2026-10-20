@@ -1,5 +1,6 @@
 package com.writeloop.service;
 
+import com.writeloop.util.OrderedMaps;
 import java.util.List;
 import java.util.Map;
 
@@ -76,17 +77,17 @@ final class DiaryFeedbackPromptSupport {
     }
 
     static Map<String, Object> jsonSchema() {
-        Map<String, Object> stringSchema = Map.of("type", "string");
+        Map<String, Object> stringSchema = OrderedMaps.of("type", "string");
         Map<String, Object> nullableStringSchema = stringSchema;
-        Map<String, Object> stringArraySchema = Map.of(
+        Map<String, Object> stringArraySchema = OrderedMaps.of(
                 "type", "array",
                 "items", stringSchema
         );
 
-        Map<String, Object> fixPointSchema = Map.of(
+        Map<String, Object> fixPointSchema = OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
+                "properties", OrderedMaps.of(
                         "kind", stringSchema,
                         "title", stringSchema,
                         "originalText", nullableStringSchema,
@@ -97,10 +98,10 @@ final class DiaryFeedbackPromptSupport {
                 "required", List.of("kind", "title", "originalText", "revisedText", "reasonKo", "exampleEn")
         );
 
-        Map<String, Object> expressionSchema = Map.of(
+        Map<String, Object> expressionSchema = OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
+                "properties", OrderedMaps.of(
                         "expression", stringSchema,
                         "meaningKo", stringSchema,
                         "exampleEn", nullableStringSchema,
@@ -110,10 +111,10 @@ final class DiaryFeedbackPromptSupport {
                 "required", List.of("expression", "meaningKo", "exampleEn", "usageTipKo", "tags")
         );
 
-        Map<String, Object> rewriteIdeaSchema = Map.of(
+        Map<String, Object> rewriteIdeaSchema = OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
+                "properties", OrderedMaps.of(
                         "title", stringSchema,
                         "meaningKo", nullableStringSchema,
                         "noteKo", stringSchema,
@@ -122,10 +123,10 @@ final class DiaryFeedbackPromptSupport {
                 "required", List.of("title", "meaningKo", "noteKo", "exampleEn")
         );
 
-        Map<String, Object> diaryFlowSchema = Map.of(
+        Map<String, Object> diaryFlowSchema = OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
+                "properties", OrderedMaps.of(
                         "timeFlow", stringSchema,
                         "emotion", stringSchema,
                         "detail", stringSchema,
@@ -136,10 +137,10 @@ final class DiaryFeedbackPromptSupport {
                 "required", List.of("timeFlow", "emotion", "detail", "reflection", "commentKo", "connectionTips")
         );
 
-        Map<String, Object> missionSchema = Map.of(
+        Map<String, Object> missionSchema = OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.of(
+                "properties", OrderedMaps.of(
                         "focus", stringSchema,
                         "titleKo", stringSchema,
                         "instructionKo", stringSchema,
@@ -148,16 +149,16 @@ final class DiaryFeedbackPromptSupport {
                 "required", List.of("focus", "titleKo", "instructionKo", "starterEn")
         );
 
-        return Map.of(
+        return OrderedMaps.of(
                 "type", "object",
                 "additionalProperties", false,
-                "properties", Map.ofEntries(
+                "properties", OrderedMaps.ofEntries(
                         Map.entry("schemaVersion", stringSchema),
                         Map.entry("entryId", stringSchema),
-                        Map.entry("attemptNo", Map.of("type", "integer")),
-                        Map.entry("score", Map.of("type", "integer", "minimum", 0, "maximum", 100)),
-                        Map.entry("finishable", Map.of("type", "boolean")),
-                        Map.entry("diaryAnswerBand", Map.of("type", "string", "enum", List.of(
+                        Map.entry("attemptNo", OrderedMaps.of("type", "integer")),
+                        Map.entry("score", OrderedMaps.of("type", "integer", "minimum", 0, "maximum", 100)),
+                        Map.entry("finishable", OrderedMaps.of("type", "boolean")),
+                        Map.entry("diaryAnswerBand", OrderedMaps.of("type", "string", "enum", List.of(
                                 "DIARY_TOO_SHORT",
                                 "DIARY_NOT_ENGLISH",
                                 "DIARY_GRAMMAR_BLOCKING",
@@ -170,11 +171,11 @@ final class DiaryFeedbackPromptSupport {
                         Map.entry("correctedDiary", nullableStringSchema),
                         Map.entry("modelDiary", nullableStringSchema),
                         Map.entry("modelDiaryKo", nullableStringSchema),
-                        Map.entry("fixPoints", Map.of("type", "array", "items", fixPointSchema)),
+                        Map.entry("fixPoints", OrderedMaps.of("type", "array", "items", fixPointSchema)),
                         Map.entry("diaryFlow", diaryFlowSchema),
-                        Map.entry("rewriteIdeas", Map.of("type", "array", "items", rewriteIdeaSchema)),
-                        Map.entry("usedDiaryExpressions", Map.of("type", "array", "items", expressionSchema)),
-                        Map.entry("diaryExpressions", Map.of("type", "array", "items", expressionSchema)),
+                        Map.entry("rewriteIdeas", OrderedMaps.of("type", "array", "items", rewriteIdeaSchema)),
+                        Map.entry("usedDiaryExpressions", OrderedMaps.of("type", "array", "items", expressionSchema)),
+                        Map.entry("diaryExpressions", OrderedMaps.of("type", "array", "items", expressionSchema)),
                         Map.entry("nextDiaryMission", missionSchema),
                         Map.entry("safetyFlags", stringArraySchema)
                 ),

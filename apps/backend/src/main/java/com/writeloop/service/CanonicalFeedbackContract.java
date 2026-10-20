@@ -7,6 +7,7 @@ import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.RefinementExpressionDto;
+import com.writeloop.util.OrderedMaps;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -175,7 +176,7 @@ final class CanonicalFeedbackContract {
             List<PromptHintDto> hints
     ) throws JsonProcessingException {
         Map<String, Object> payload = new LinkedHashMap<>();
-        payload.put("question", Map.of(
+        payload.put("question", OrderedMaps.of(
                 "id", value(prompt == null ? null : prompt.id()),
                 "difficulty", value(prompt == null ? null : prompt.difficulty()),
                 "questionEn", value(prompt == null ? null : prompt.questionEn()),
@@ -196,7 +197,7 @@ final class CanonicalFeedbackContract {
     ) throws JsonProcessingException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("requestType", "CANONICAL_CONTRACT_RETRY");
-        payload.put("retryInstruction", Map.of(
+        payload.put("retryInstruction", OrderedMaps.of(
                 "validationError", value(limit(validationError, 2_000)),
                 "requiredAction", """
                         Re-evaluate the original input and return one complete canonical JSON response.
@@ -214,15 +215,15 @@ final class CanonicalFeedbackContract {
     Map<String, Object> schema(PromptDto prompt) {
         List<String> slots = policy.allowedSlots(prompt);
         Map<String, Object> properties = new LinkedHashMap<>();
-        properties.put("topicAssessment", objectSchema(Map.of(
+        properties.put("topicAssessment", objectSchema(OrderedMaps.of(
                 "status", enumString(List.of("ON_TOPIC", "OFF_TOPIC")),
                 "reasonKo", stringSchema()
         )));
-        properties.put("structureAssessment", objectSchema(Map.of(
+        properties.put("structureAssessment", objectSchema(OrderedMaps.of(
                 "status", enumString(List.of("COMPLETE", "FRAGMENT"))
         )));
-        properties.put("languageAssessment", objectSchema(Map.of(
-                "revisionSteps", arraySchema(objectSchema(Map.of(
+        properties.put("languageAssessment", objectSchema(OrderedMaps.of(
+                "revisionSteps", arraySchema(objectSchema(OrderedMaps.of(
                         "kind", enumString(List.of(
                                 "STRUCTURE",
                                 "GRAMMAR_BLOCKING",
@@ -233,7 +234,7 @@ final class CanonicalFeedbackContract {
                 )), 0, 25)
         )));
         properties.put("strengths", arraySchema(stringSchema(), 0, 1));
-        properties.put("refinementExpressions", arraySchema(objectSchema(Map.of(
+        properties.put("refinementExpressions", arraySchema(objectSchema(OrderedMaps.of(
                 "expression", stringSchema(),
                 "meaningKo", stringSchema(),
                 "guidanceKo", stringSchema(),
@@ -241,7 +242,7 @@ final class CanonicalFeedbackContract {
         )), 2));
         Map<String, Object> slotAssessmentProperties = new LinkedHashMap<>();
         for (String slot : slots) {
-            slotAssessmentProperties.put(slot, objectSchema(Map.of(
+            slotAssessmentProperties.put(slot, objectSchema(OrderedMaps.of(
                     "evidence", stringSchema(),
                     "support", arraySchema(slotSupportSchema(), 0, 1)
             )));
@@ -342,13 +343,13 @@ final class CanonicalFeedbackContract {
     }
 
     private static Map<String, Object> slotSupportSchema() {
-        return objectSchema(Map.of(
+        return objectSchema(OrderedMaps.of(
                 "title", stringSchema(),
                 "whyKo", stringSchema(),
                 "instructionKo", stringSchema(),
                 "skeletonEn", stringSchema(),
                 "skeletonKo", stringSchema(),
-                "suggestedPhrases", arraySchema(objectSchema(Map.of(
+                "suggestedPhrases", arraySchema(objectSchema(OrderedMaps.of(
                         "phrase", stringSchema(),
                         "meaningKo", stringSchema()
                 )), 2, 4)
@@ -366,11 +367,11 @@ final class CanonicalFeedbackContract {
     }
 
     private static Map<String, Object> stringSchema() {
-        return Map.of("type", "string");
+        return OrderedMaps.of("type", "string");
     }
 
     private static Map<String, Object> enumString(List<String> values) {
-        return Map.of("type", "string", "enum", values);
+        return OrderedMaps.of("type", "string", "enum", values);
     }
 
     private static Map<String, Object> arraySchema(Object items, int minItems, int maxItems) {

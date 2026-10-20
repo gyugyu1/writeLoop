@@ -3,6 +3,7 @@ package com.writeloop.service;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptSlotContractDto;
 import com.writeloop.dto.PromptTaskMetaDto;
+import com.writeloop.util.OrderedMaps;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -140,12 +141,12 @@ final class FeedbackLearningContractPolicy {
                         "Question-specific task metadata is missing: " + prompt.id()
                 );
             }
-            return Map.of(
+            return OrderedMaps.of(
                     "answerMode", "GENERAL_DESCRIPTION",
                     "requiredSlots", List.of(),
                     "depthSlots", List.of(),
                     "minimumDepthSlots", 0,
-                    "slotContracts", Map.of()
+                    "slotContracts", OrderedMaps.of()
             );
         }
 
@@ -183,7 +184,7 @@ final class FeedbackLearningContractPolicy {
             slotContract.put("definition", definition);
             slotContract.put("semanticRole", configured.semanticRoleEn());
             slotContract.put("satisfiedWhen", configured.satisfiedWhenEn());
-            slotContracts.put(slot, Map.copyOf(slotContract));
+            slotContracts.put(slot, OrderedMaps.copyOf(slotContract));
         }
 
         Map<String, Object> contract = new LinkedHashMap<>();
@@ -194,7 +195,7 @@ final class FeedbackLearningContractPolicy {
         contract.put("expectedTense", taskMeta.expectedTense());
         contract.put("expectedPov", taskMeta.expectedPov());
         contract.put("slotContracts", slotContracts);
-        return Map.copyOf(contract);
+        return OrderedMaps.copyOf(contract);
     }
 
     List<String> allowedSlots(PromptDto prompt) {
@@ -214,12 +215,12 @@ final class FeedbackLearningContractPolicy {
             SlotAssessments assessments,
             List<ValidatedLanguageCorrection> languageCorrections
     ) {
-        Map<String, SlotAssessmentValue> proposed = assessments == null ? Map.of() : assessments.values();
+        Map<String, SlotAssessmentValue> proposed = assessments == null ? OrderedMaps.of() : assessments.values();
         if (allowedSlots.isEmpty()) {
             if (!proposed.isEmpty()) {
                 throw new FeedbackContractException("Slot data was returned without a slot contract");
             }
-            return new ContractAssessment(Map.of());
+            return new ContractAssessment(OrderedMaps.of());
         }
 
         Map<String, SlotAssessmentValue> assessmentsBySlot = new LinkedHashMap<>();

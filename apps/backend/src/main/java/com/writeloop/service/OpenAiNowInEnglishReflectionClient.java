@@ -3,6 +3,7 @@ package com.writeloop.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.NowInEnglishReflectionEntryDto;
 import com.writeloop.dto.NowInEnglishReflectionResponseDto;
+import com.writeloop.util.OrderedMaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -163,7 +164,7 @@ class OpenAiNowInEnglishReflectionClient {
         Map<String, Object> root = objectSchema();
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("dateKey", stringSchema());
-        properties.put("entryCount", Map.of("type", "integer"));
+        properties.put("entryCount", OrderedMaps.of("type", "integer"));
         properties.put("headlineKo", stringSchema());
         properties.put("summaryKo", stringSchema());
         properties.put("highlightsKo", arraySchema(stringSchema()));
@@ -203,7 +204,7 @@ class OpenAiNowInEnglishReflectionClient {
     }
 
     private Map<String, Object> stringSchema() {
-        return Map.of("type", "string");
+        return OrderedMaps.of("type", "string");
     }
 
     private void logTiming(
@@ -224,7 +225,7 @@ class OpenAiNowInEnglishReflectionClient {
                 statusCode,
                 exception == null ? null : exception.getClass().getName(),
                 elapsedMs,
-                Map.of(
+                OrderedMaps.of(
                         "dateKey", dateKey,
                         "entryCount", entryCount
                 )

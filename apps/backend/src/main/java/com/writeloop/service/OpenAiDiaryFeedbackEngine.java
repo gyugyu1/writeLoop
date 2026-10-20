@@ -32,7 +32,7 @@ class OpenAiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
     OpenAiDiaryFeedbackEngine(
             ObjectMapper objectMapper,
             @Value("${openai.api-key:}") String apiKey,
-            @Value("${openai.diary-model:${openai.feedback-model:${OPENAI_MODEL:gpt-5-mini}}}") String model,
+            @Value("${openai.diary-model:${openai.feedback-model:${OPENAI_MODEL:gpt-6-luna}}}") String model,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
             @Value("${openai.diary-reasoning-effort:${openai.feedback-reasoning-effort:}}") String reasoningEffort,
             @Value("${openai.diary-request-timeout-seconds:${openai.feedback-request-timeout-seconds:120}}") int requestTimeoutSeconds

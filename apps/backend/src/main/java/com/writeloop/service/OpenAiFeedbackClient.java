@@ -47,7 +47,7 @@ public class OpenAiFeedbackClient {
     public OpenAiFeedbackClient(
             ObjectMapper objectMapper,
             @Value("${openai.api-key:}") String apiKey,
-            @Value("${openai.feedback-model:${OPENAI_MODEL:gpt-5-mini}}") String model,
+            @Value("${openai.feedback-model:${OPENAI_MODEL:gpt-6-luna}}") String model,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
             @Value("${openai.feedback-reasoning-effort:}") String reasoningEffort,
             @Value("${openai.feedback-request-timeout-seconds:120}") int requestTimeoutSeconds

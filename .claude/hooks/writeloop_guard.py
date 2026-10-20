@@ -1,18 +1,31 @@
-"""WriteLoop Claude Code hook guard.
+"""WriteLoop Claude Code 훅 검사 스크립트.
 
-Modes (first CLI argument):
-  pre-edit   PreToolUse on Edit/Write/MultiEdit/NotebookEdit
-             (1) deny edits to migration files already pushed to origin/main
-             (2) deny writing ddl-auto=update/create into config files
-  pre-shell  PreToolUse on Bash/PowerShell
-             (3) ask for confirmation on commands that may change production;
-                 deny them in modes where nobody sees the prompt (auto, bypass)
-  stop       Stop
-             (4) block finishing when entity schema changes lack a new migration,
-                 when migration numbers collide, or when pushed migrations were modified
+Claude Code가 이 저장소에서 작업할 때 DB 스키마와 운영 환경을 지키는 규칙을 자동으로 적용한다.
+.claude/settings.json에 등록되어 있으며, 첫 번째 인자로 실행 시점(모드)을 받는다.
 
-The hook reads the event JSON from stdin and writes a JSON decision to stdout.
-Any internal error is reported as a warning and never blocks work.
+모드
+  pre-edit   파일을 수정하기 직전 (PreToolUse: Edit/Write/MultiEdit/NotebookEdit)
+             (1) origin/main에 이미 올라간 마이그레이션 SQL(infra/mysql/schema/NNN-*.sql) 수정을 막는다.
+                 운영 DB에 적용됐을 수 있으므로 변경은 다음 번호의 새 파일로 작성해야 한다.
+             (2) 설정 파일(application*.yml, docker-compose*.yml, .env*)에
+                 ddl-auto update/create 를 쓰는 것을 막는다. Hibernate 자동 DDL은 SQL 파일과
+                 다른 테이블 구조를 만들기 때문이다.
+  pre-shell  셸 명령을 실행하기 직전 (PreToolUse: Bash/PowerShell)
+             (3) 운영 서버·DB(api.writeloop.kr, RDS 주소, was-key.pem)를 바꿀 수 있는 명령을 찾는다.
+                 기본 모드처럼 사람이 승인할 수 있으면 승인 창을 띄우고,
+                 자동·권한 우회 모드처럼 승인 창이 뜨지 않으면 실행을 막는다.
+                 조회만 하는 명령은 그대로 통과시킨다.
+  stop       답변을 끝내려 할 때 (Stop)
+             (4) origin/main 이후 바뀐 내용(작업 트리, 스테이징, push하지 않은 커밋)을 검사한다.
+                 엔티티 구조(@Column, @Table, 필드 등)가 바뀌었는데 새 마이그레이션 SQL이 없거나,
+                 새 마이그레이션 번호가 기존 번호와 겹치거나, 공유된 마이그레이션이 수정되면
+                 종료를 막고 이유를 전달한다. 같은 답변에서 두 번째 종료 시도는 통과시킨다.
+
+동작 방식
+  - 훅 입력 JSON을 표준 입력으로 받고, 판정 JSON을 표준 출력으로 낸다. 문제가 없으면 아무것도 출력하지 않는다.
+  - 스크립트 자체에 오류가 나면 경고만 표시하고 작업은 막지 않는다.
+  - Claude Code의 작업에만 적용되며, 사람이 직접 하는 편집이나 커밋은 검사하지 않는다.
+  - 잠시 끄려면 Claude Code의 /hooks 메뉴를 사용한다.
 """
 
 import json
@@ -23,7 +36,7 @@ import sys
 
 MIGRATION_DIR = "infra/mysql/schema"
 MIGRATION_RE = re.compile(r"^infra/mysql/schema/(\d{3})-[^/]+\.sql$")
-# 061 was duplicated before this guard existed; keep it as a known exception.
+# 061번은 이 검사가 생기기 전부터 파일이 두 개였으므로 중복 검사에서 제외한다.
 KNOWN_DUPLICATE_NUMBERS = {"061"}
 
 CONFIG_FILE_RE = re.compile(
@@ -202,7 +215,7 @@ def handle_pre_shell(event):
 
 
 def changed_entries(root, base):
-    """Return {path: status} for changes between base and the working tree, plus untracked files."""
+    """기준 커밋과 작업 트리 사이의 변경 파일과 추적되지 않는 새 파일을 {경로: 상태(A/M/D)}로 돌려준다."""
     entries = {}
     _, out = git(root, "diff", "--name-status", "--no-renames", base, "--")
     for line in out.splitlines():

@@ -1,6 +1,9 @@
 package com.writeloop.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -49,4 +52,8 @@ public interface PromptRecommendationExposureRepository extends JpaRepository<Pr
             LocalDate endDate,
             String difficulty
     );
+
+    @Modifying
+    @Query("delete from PromptRecommendationExposureEntity e where e.userId = :userId")
+    int purgeByUserId(@Param("userId") Long userId);
 }

@@ -1,6 +1,9 @@
 package com.writeloop.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
@@ -51,4 +54,8 @@ public interface AnswerSessionRepository extends JpaRepository<AnswerSessionEnti
     List<AnswerSessionEntity> findTop40ByUserIdOrderByCreatedAtDesc(Long userId);
 
     List<AnswerSessionEntity> findTop40ByGuestIdOrderByCreatedAtDesc(String guestId);
+
+    @Modifying
+    @Query("delete from AnswerSessionEntity e where e.userId = :userId")
+    int purgeByUserId(@Param("userId") Long userId);
 }

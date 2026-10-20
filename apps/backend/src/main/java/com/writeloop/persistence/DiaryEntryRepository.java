@@ -1,6 +1,7 @@
 package com.writeloop.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -22,4 +23,8 @@ public interface DiaryEntryRepository extends JpaRepository<DiaryEntryEntity, St
             order by e.entryDate desc, e.createdAt desc
             """)
     List<DiaryCalendarEntryProjection> findCalendarEntriesByUserId(@Param("userId") Long userId);
+
+    @Modifying
+    @Query("delete from DiaryEntryEntity e where e.userId = :userId")
+    int purgeByUserId(@Param("userId") Long userId);
 }

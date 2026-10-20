@@ -134,6 +134,15 @@ public class DraftService {
         untrackDraftKey(userId, draftKey);
     }
 
+    public void deleteAllDrafts(Long userId) {
+        String indexKey = buildIndexKey(userId);
+        Set<String> trackedDraftKeys = redisTemplate.opsForSet().members(indexKey);
+        if (trackedDraftKeys != null && !trackedDraftKeys.isEmpty()) {
+            redisTemplate.delete(trackedDraftKeys);
+        }
+        redisTemplate.delete(indexKey);
+    }
+
     private String buildKey(Long userId, String promptId, WritingDraftTypeDto draftType) {
         return "draft:user:%d:prompt:%s:%s".formatted(userId, promptId, draftType.name());
     }

@@ -3,17 +3,14 @@ package com.writeloop.service;
 import com.writeloop.dto.AuthNoticeDto;
 import com.writeloop.dto.AuthResponseDto;
 import com.writeloop.dto.CompleteSocialRegistrationRequestDto;
+import com.writeloop.dto.DeleteAccountRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.PasswordResetAvailabilityDto;
 import com.writeloop.dto.SendPasswordResetCodeRequestDto;
 import com.writeloop.dto.VerifyPasswordResetCodeRequestDto;
 import com.writeloop.exception.ApiException;
-import com.writeloop.persistence.AnswerAttemptRepository;
-import com.writeloop.persistence.AnswerSessionRepository;
-import com.writeloop.persistence.CoachInteractionRepository;
 import com.writeloop.persistence.EmailVerificationTokenRepository;
 import com.writeloop.persistence.PasswordResetTokenRepository;
-import com.writeloop.persistence.SavedExpressionRepository;
 import com.writeloop.persistence.UserEntity;
 import com.writeloop.persistence.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,6 +20,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -36,8 +34,10 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -49,22 +49,13 @@ class AuthServiceTest {
     private UserRepository userRepository;
 
     @Mock
-    private AnswerSessionRepository answerSessionRepository;
-
-    @Mock
-    private AnswerAttemptRepository answerAttemptRepository;
-
-    @Mock
-    private CoachInteractionRepository coachInteractionRepository;
+    private AccountDataPurgeService accountDataPurgeService;
 
     @Mock
     private EmailVerificationTokenRepository emailVerificationTokenRepository;
 
     @Mock
     private PasswordResetTokenRepository passwordResetTokenRepository;
-
-    @Mock
-    private SavedExpressionRepository savedExpressionRepository;
 
     @Mock
     private PasswordEncoder passwordEncoder;
@@ -108,12 +99,9 @@ class AuthServiceTest {
     void setUp() {
         authService = new AuthService(
                 userRepository,
-                answerSessionRepository,
-                answerAttemptRepository,
-                coachInteractionRepository,
+                accountDataPurgeService,
                 emailVerificationTokenRepository,
                 passwordResetTokenRepository,
-                savedExpressionRepository,
                 passwordEncoder,
                 verificationMailService,
                 rememberLoginService,
@@ -257,5 +245,49 @@ class AuthServiceTest {
 
         assertThat(finishResponse.getRedirectedUrl())
                 .isEqualTo("writeloop://auth/callback?code=mobile-code&state=mobile-state-123456");
+    }
+
+    @Test
+    void deleteAccount_purges_user_data_before_deleting_user() {
+        UserEntity user = new UserEntity("user@example.com", "encoded-password", "Writer");
+        ReflectionTestUtils.setField(user, "id", 7L);
+        MockHttpSession accountSession = new MockHttpSession();
+        accountSession.setAttribute(AuthService.SESSION_USER_ID, 7L);
+
+        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("password123", "encoded-password")).thenReturn(true);
+
+        authService.deleteAccount(
+                new DeleteAccountRequestDto("탈퇴", "password123"),
+                accountSession,
+                httpRequest,
+                httpResponse
+        );
+
+        InOrder deletionOrder = inOrder(accountDataPurgeService, userRepository);
+        deletionOrder.verify(accountDataPurgeService).purgeUserData(7L);
+        deletionOrder.verify(userRepository).delete(user);
+        assertThat(accountSession.isInvalid()).isTrue();
+    }
+
+    @Test
+    void deleteAccount_keeps_data_when_password_is_wrong() {
+        UserEntity user = new UserEntity("user@example.com", "encoded-password", "Writer");
+        ReflectionTestUtils.setField(user, "id", 7L);
+        MockHttpSession accountSession = new MockHttpSession();
+        accountSession.setAttribute(AuthService.SESSION_USER_ID, 7L);
+
+        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrong-password", "encoded-password")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.deleteAccount(
+                new DeleteAccountRequestDto("탈퇴", "wrong-password"),
+                accountSession,
+                httpRequest,
+                httpResponse
+        )).isInstanceOf(ApiException.class);
+
+        verifyNoInteractions(accountDataPurgeService);
+        verify(userRepository, never()).delete(user);
     }
 }

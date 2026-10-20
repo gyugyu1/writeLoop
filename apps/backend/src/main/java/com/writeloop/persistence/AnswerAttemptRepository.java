@@ -1,6 +1,7 @@
 package com.writeloop.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -43,5 +44,14 @@ public interface AnswerAttemptRepository extends JpaRepository<AnswerAttemptEnti
             """)
     long countDistinctSessionsByUserId(@Param("userId") Long userId);
 
-    void deleteBySessionIdIn(List<String> sessionIds);
+    @Modifying
+    @Query("""
+            delete from AnswerAttemptEntity a
+            where a.sessionId in (
+                select s.id
+                from AnswerSessionEntity s
+                where s.userId = :userId
+            )
+            """)
+    int purgeByUserId(@Param("userId") Long userId);
 }

@@ -19,13 +19,8 @@ import com.writeloop.dto.VerifyEmailRequestDto;
 import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.EmailVerificationTokenEntity;
 import com.writeloop.persistence.EmailVerificationTokenRepository;
-import com.writeloop.persistence.AnswerAttemptRepository;
-import com.writeloop.persistence.AnswerSessionEntity;
-import com.writeloop.persistence.AnswerSessionRepository;
-import com.writeloop.persistence.CoachInteractionRepository;
 import com.writeloop.persistence.PasswordResetTokenEntity;
 import com.writeloop.persistence.PasswordResetTokenRepository;
-import com.writeloop.persistence.SavedExpressionRepository;
 import com.writeloop.persistence.UserEntity;
 import com.writeloop.persistence.UserRepository;
 import com.writeloop.service.PendingSocialRegistrationService.PendingSocialRegistrationSession;
@@ -78,12 +73,9 @@ public class AuthService {
     private static final String PASSWORD_RESET_GENERIC_NOTICE_MESSAGE = "입력한 이메일로 계정이 확인되면 비밀번호 재설정 코드를 보내드릴게요.";
 
     private final UserRepository userRepository;
-    private final AnswerSessionRepository answerSessionRepository;
-    private final AnswerAttemptRepository answerAttemptRepository;
-    private final CoachInteractionRepository coachInteractionRepository;
+    private final AccountDataPurgeService accountDataPurgeService;
     private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
-    private final SavedExpressionRepository savedExpressionRepository;
     private final PasswordEncoder passwordEncoder;
     private final VerificationMailService verificationMailService;
     private final RememberLoginService rememberLoginService;
@@ -598,24 +590,7 @@ public class AuthService {
             }
         }
 
-        var sessions = answerSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        var sessionIds = sessions.stream()
-                .map(AnswerSessionEntity::getId)
-                .toList();
-
-        if (!sessionIds.isEmpty()) {
-            answerAttemptRepository.deleteBySessionIdIn(sessionIds);
-        }
-        if (!sessions.isEmpty()) {
-            answerSessionRepository.deleteAll(sessions);
-        }
-
-        coachInteractionRepository.deleteAllByUserId(userId);
-        savedExpressionRepository.deleteAllByUserId(userId);
-        emailVerificationTokenRepository.deleteAllByUserId(userId);
-        passwordResetTokenRepository.deleteAllByUserId(userId);
-        rememberLoginService.revokeAllForUser(userId);
-        refreshTokenService.revokeAllForUser(userId);
+        accountDataPurgeService.purgeUserData(userId);
         userRepository.delete(user);
 
         rememberLoginService.clearRememberedLogin(httpRequest, httpResponse);

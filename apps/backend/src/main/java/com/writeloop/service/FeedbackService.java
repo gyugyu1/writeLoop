@@ -511,12 +511,7 @@ public class FeedbackService {
                     attemptNo,
                     attemptType,
                     answer,
-                    null,
                     firstNonBlank(feedback.summary(), "피드백이 생성됐어요."),
-                    objectMapper.writeValueAsString(feedback.strengths()),
-                    objectMapper.writeValueAsString(feedback.corrections()),
-                    firstNonBlank(feedback.modelAnswer(), feedback.revisedAnswer(), ""),
-                    firstNonBlank(feedback.rewriteChallenge(), feedback.summary(), ""),
                     objectMapper.writeValueAsString(feedback),
                     submissionId,
                     visibleFeedbackJson

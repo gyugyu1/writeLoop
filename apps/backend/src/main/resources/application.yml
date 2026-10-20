@@ -37,7 +37,8 @@ spring:
             enable: ${SPRING_MAIL_SMTP_STARTTLS_ENABLE:true}
   jpa:
     hibernate:
-      ddl-auto: update
+      # 스키마 변경은 infra/mysql/schema의 번호 SQL로만 한다. 엔티티와 DB가 다르면 기동을 중단한다.
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
     open-in-view: false
     properties:
       hibernate:

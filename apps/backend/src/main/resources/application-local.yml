@@ -2,6 +2,10 @@ spring:
   config:
     activate:
       on-profile: local
+  jpa:
+    hibernate:
+      # 로컬 개발 편의용. 운영과 같은 구조로 확인하려면 SPRING_JPA_HIBERNATE_DDL_AUTO=validate로 실행한다.
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:update}
 
 server:
   servlet:

@@ -46,23 +46,8 @@ public class AnswerAttemptEntity {
     @Column(name = "answer_text", nullable = false, columnDefinition = "TEXT")
     private String answerText;
 
-    @Column
-    private Integer score;
-
     @Column(name = "feedback_summary", nullable = false, columnDefinition = "TEXT")
     private String feedbackSummary;
-
-    @Column(name = "strengths_json", nullable = false, columnDefinition = "JSON")
-    private String strengthsJson;
-
-    @Column(name = "corrections_json", nullable = false, columnDefinition = "JSON")
-    private String correctionsJson;
-
-    @Column(name = "model_answer", nullable = false, columnDefinition = "TEXT")
-    private String modelAnswer;
-
-    @Column(name = "rewrite_challenge", nullable = false, columnDefinition = "TEXT")
-    private String rewriteChallenge;
 
     @Column(name = "feedback_payload_json", columnDefinition = "JSON")
     private String feedbackPayloadJson;
@@ -81,12 +66,7 @@ public class AnswerAttemptEntity {
             Integer attemptNo,
             AttemptType attemptType,
             String answerText,
-            Integer score,
             String feedbackSummary,
-            String strengthsJson,
-            String correctionsJson,
-            String modelAnswer,
-            String rewriteChallenge,
             String feedbackPayloadJson,
             String submissionId,
             String visibleFeedbackSnapshotJson
@@ -95,12 +75,7 @@ public class AnswerAttemptEntity {
         this.attemptNo = attemptNo;
         this.attemptType = attemptType;
         this.answerText = answerText;
-        this.score = score;
         this.feedbackSummary = feedbackSummary;
-        this.strengthsJson = strengthsJson;
-        this.correctionsJson = correctionsJson;
-        this.modelAnswer = modelAnswer;
-        this.rewriteChallenge = rewriteChallenge;
         this.feedbackPayloadJson = feedbackPayloadJson;
         this.submissionId = submissionId;
         this.visibleFeedbackSnapshotJson = visibleFeedbackSnapshotJson;
@@ -111,12 +86,7 @@ public class AnswerAttemptEntity {
             Integer attemptNo,
             AttemptType attemptType,
             String answerText,
-            Integer score,
             String feedbackSummary,
-            String strengthsJson,
-            String correctionsJson,
-            String modelAnswer,
-            String rewriteChallenge,
             String feedbackPayloadJson
     ) {
         this(
@@ -124,12 +94,7 @@ public class AnswerAttemptEntity {
                 attemptNo,
                 attemptType,
                 answerText,
-                score,
                 feedbackSummary,
-                strengthsJson,
-                correctionsJson,
-                modelAnswer,
-                rewriteChallenge,
                 feedbackPayloadJson,
                 null,
                 null

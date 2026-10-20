@@ -105,12 +105,7 @@ class TodayQuestionRecommendationServiceTest {
                         1,
                         AttemptType.INITIAL,
                         "I relax at home.",
-                        82,
                         "good",
-                        "[]",
-                        "[]",
-                        "Model answer",
-                        "Rewrite challenge",
                         null
                 )));
         when(savedExpressionRepository.findTop50ByUserIdOrderByLastSavedAtDesc(7L)).thenReturn(List.of());

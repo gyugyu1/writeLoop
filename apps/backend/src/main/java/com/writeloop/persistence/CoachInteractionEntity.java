@@ -72,9 +72,6 @@ public class CoachInteractionEntity {
     @Column(name = "prompt_tip", nullable = false, columnDefinition = "TEXT")
     private String promptTip;
 
-    @Column(name = "prompt_hints_json", nullable = false, columnDefinition = "JSON")
-    private String promptHintsJson;
-
     @Column(name = "user_question", nullable = false, columnDefinition = "TEXT")
     private String userQuestion;
 
@@ -152,7 +149,6 @@ public class CoachInteractionEntity {
             String promptQuestionEn,
             String promptQuestionKo,
             String promptTip,
-            String promptHintsJson,
             String userQuestion,
             String normalizedQuestion,
             String answerSnapshot,
@@ -175,7 +171,6 @@ public class CoachInteractionEntity {
         this.promptQuestionEn = promptQuestionEn;
         this.promptQuestionKo = promptQuestionKo;
         this.promptTip = promptTip;
-        this.promptHintsJson = promptHintsJson;
         this.userQuestion = userQuestion;
         this.normalizedQuestion = normalizedQuestion;
         this.answerSnapshot = answerSnapshot;

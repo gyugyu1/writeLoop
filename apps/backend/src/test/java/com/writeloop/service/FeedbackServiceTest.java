@@ -136,7 +136,6 @@ class FeedbackServiceTest {
         ArgumentCaptor<AnswerAttemptEntity> attemptCaptor = ArgumentCaptor.forClass(AnswerAttemptEntity.class);
         verify(answerAttemptRepository).save(attemptCaptor.capture());
         AnswerAttemptEntity savedAttempt = attemptCaptor.getValue();
-        assertThat(savedAttempt.getScore()).isNull();
         assertThat(objectMapper.readTree(savedAttempt.getFeedbackPayloadJson()).has("score")).isFalse();
 
         ArgumentCaptor<FeedbackDiagnosisLogEntity> logCaptor = ArgumentCaptor.forClass(FeedbackDiagnosisLogEntity.class);
@@ -296,12 +295,7 @@ class FeedbackServiceTest {
                 1,
                 com.writeloop.persistence.AttemptType.INITIAL,
                 "I went home.",
-                null,
                 "Previous feedback",
-                "[]",
-                "[]",
-                "",
-                "",
                 null
         );
         FeedbackExecutionTrace trace = new FeedbackExecutionTrace(
@@ -368,12 +362,7 @@ class FeedbackServiceTest {
                 1,
                 com.writeloop.persistence.AttemptType.INITIAL,
                 "I take a walk.",
-                null,
                 "Add one relevant detail.",
-                "[]",
-                "[]",
-                "",
-                "Add one detail.",
                 objectMapper.writeValueAsString(storedFeedback),
                 "submission-idempotent",
                 objectMapper.writeValueAsString(storedFeedback.visibleFeedback())
@@ -449,12 +438,7 @@ class FeedbackServiceTest {
                 1,
                 com.writeloop.persistence.AttemptType.INITIAL,
                 "I usually take a walk after work.",
-                null,
                 "Ready",
-                "[]",
-                "[]",
-                readyFeedback.modelAnswer(),
-                "",
                 objectMapper.writeValueAsString(readyFeedback),
                 "submission-ready",
                 objectMapper.writeValueAsString(readyFeedback.visibleFeedback())

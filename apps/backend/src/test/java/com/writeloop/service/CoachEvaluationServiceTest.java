@@ -70,7 +70,6 @@ class CoachEvaluationServiceTest {
                 "What skill do you want to improve?",
                 "어떤 기술을 키우고 싶나요?",
                 "Use one clear plan.",
-                "[]",
                 "스페인어를 배우고 싶다고 말하고 싶어",
                 "스페인어를 배우고 싶다고 말하고 싶어",
                 null,

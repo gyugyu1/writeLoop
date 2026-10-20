@@ -280,7 +280,6 @@ public class CoachService {
         String interactionId = persistCoachInteraction(
                 request,
                 prompt,
-                hints,
                 currentUserId,
                 httpSessionId,
                 analysis,
@@ -725,7 +724,6 @@ public class CoachService {
     private String persistCoachInteraction(
             CoachHelpRequestDto request,
             PromptDto prompt,
-            List<PromptHintDto> hints,
             Long currentUserId,
             String httpSessionId,
             CoachQueryAnalyzer.CoachQueryAnalysis analysis,
@@ -735,7 +733,6 @@ public class CoachService {
     ) {
         String interactionId = UUID.randomUUID().toString();
         String analysisPayloadJson = writeJson(buildAnalysisPayload(analysis, effectiveLookupSpec));
-        String promptHintsJson = writeJson(hints);
         String expressionsJson = writeJson(buildResult.expressions());
         String meaningFamily = effectiveLookupSpec == null ? null : effectiveLookupSpec.frame().family().name();
         AttemptType attemptContextType = normalizeAttemptContextType(request.attemptType());
@@ -752,7 +749,6 @@ public class CoachService {
                 prompt.questionEn(),
                 prompt.questionKo(),
                 prompt.tip(),
-                promptHintsJson,
                 request.question().trim(),
                 analysis.normalizedQuestion(),
                 blankToNull(answerSnapshot),

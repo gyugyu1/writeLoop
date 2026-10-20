@@ -376,12 +376,7 @@ class CoachServiceTest {
                 1,
                 AttemptType.INITIAL,
                 "One reason is that it helps me focus.",
-                88,
                 "Good job",
-                "[]",
-                "[]",
-                "Model answer",
-                "Rewrite challenge",
                 "{}"
         );
         when(answerAttemptRepository.findBySessionIdAndAttemptNo("session-1", 1)).thenReturn(Optional.of(attempt));
@@ -487,12 +482,7 @@ class CoachServiceTest {
                 1,
                 AttemptType.INITIAL,
                 "I want to learn Spanish this year.",
-                90,
                 "Good job",
-                "[]",
-                "[]",
-                "Model answer",
-                "Rewrite it with one more detail.",
                 new ObjectMapper().writeValueAsString(feedbackPayload)
         );
         when(answerAttemptRepository.findBySessionIdAndAttemptNo("session-3", 1)).thenReturn(Optional.of(attempt));
@@ -662,12 +652,7 @@ class CoachServiceTest {
                 1,
                 AttemptType.INITIAL,
                 "Online conversations feel less awkward now.",
-                92,
                 "Nice point",
-                "[]",
-                "[]",
-                "Model answer",
-                "Add one supporting detail.",
                 new ObjectMapper().writeValueAsString(feedbackPayload)
         );
         when(answerAttemptRepository.findBySessionIdAndAttemptNo("session-5", 1)).thenReturn(Optional.of(attempt));
@@ -1572,12 +1557,7 @@ class CoachServiceTest {
                 1,
                 AttemptType.INITIAL,
                 "I want to learn Spanish this year.",
-                88,
                 "Good",
-                "[]",
-                "[]",
-                "model answer",
-                "rewrite",
                 "{}"
         );
         CoachInteractionEntity interaction = new CoachInteractionEntity(
@@ -1592,7 +1572,6 @@ class CoachServiceTest {
                 prompt.questionEn(),
                 prompt.questionKo(),
                 prompt.tip(),
-                "[]",
                 "스페인어를 배우고 싶다고 말하고 싶어",
                 "스페인어를 배우고 싶다고 말하고 싶어",
                 "I want to improve my language skills.",

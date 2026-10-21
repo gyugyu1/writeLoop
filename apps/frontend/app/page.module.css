@@ -4771,6 +4771,22 @@
   letter-spacing: -0.07em;
 }
 
+.enrichmentEyebrow {
+  color: #a56a1c;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.enrichmentHeadline {
+  margin: -12px 0 0;
+  color: #23222a;
+  font-family: var(--font-primary);
+  font-size: clamp(1.5rem, 3.6vw, 2.4rem);
+  font-weight: 900;
+  line-height: 1.25;
+  letter-spacing: -0.05em;
+}
+
 .coachMoveBody,
 .coachMoveInstructionBox,
 .coachMoveWhyBox,

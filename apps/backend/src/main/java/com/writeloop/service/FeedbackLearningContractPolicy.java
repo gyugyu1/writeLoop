@@ -127,10 +127,21 @@ final class FeedbackLearningContractPolicy {
             );
         }
         return resolution(
-                decision(MissionKind.COMPLETE, presentSlots, List.of(), null, verified),
+                decision(MissionKind.COMPLETE, presentSlots, List.of(), null, verified)
+                        .withEnrichment(enrichment(verified, depthSlots)),
                 diagnosis,
                 languageRevision
         );
+    }
+
+    // 완성된 답변에만 붙는 선택 제안이다. 형식이 맞지 않으면 재시도하지 않고 버려 본 흐름을 막지 않는다.
+    private MissionSupport enrichment(ContractAssessment assessment, List<String> depthSlots) {
+        MissionSupport proposed = assessment.enrichmentSupport();
+        if (proposed == null || !depthSlots.contains(proposed.slot()) || !proposed.support().isComplete()) {
+            return null;
+        }
+        SlotAssessmentValue value = assessment.values().get(proposed.slot());
+        return value == null || value.isSatisfied() ? null : proposed;
     }
 
     Map<String, Object> promptContract(PromptDto prompt) {
@@ -198,6 +209,18 @@ final class FeedbackLearningContractPolicy {
         return OrderedMaps.copyOf(contract);
     }
 
+    List<String> depthSlots(PromptDto prompt) {
+        PromptTaskMetaDto taskMeta = prompt == null ? null : prompt.taskMeta();
+        if (taskMeta == null) {
+            return List.of();
+        }
+        List<String> requiredSlots = mappedSlots(taskMeta.requiredSlots(), taskMeta.answerMode());
+        return mappedSlots(taskMeta.optionalSlots(), taskMeta.answerMode()).stream()
+                .filter(slot -> !requiredSlots.contains(slot))
+                .distinct()
+                .toList();
+    }
+
     List<String> allowedSlots(PromptDto prompt) {
         PromptTaskMetaDto taskMeta = prompt == null ? null : prompt.taskMeta();
         if (taskMeta == null) {
@@ -217,11 +240,12 @@ final class FeedbackLearningContractPolicy {
     ) {
         Map<String, SlotAssessmentValue> proposed = assessments == null ? OrderedMaps.of() : assessments.values();
         MissionSupport proposedSupport = assessments == null ? null : assessments.missionSupport();
+        MissionSupport proposedEnrichment = assessments == null ? null : assessments.enrichmentSupport();
         if (allowedSlots.isEmpty()) {
             if (!proposed.isEmpty() || proposedSupport != null) {
                 throw new FeedbackContractException("Slot data was returned without a slot contract");
             }
-            return new ContractAssessment(OrderedMaps.of(), null);
+            return new ContractAssessment(OrderedMaps.of(), null, null);
         }
 
         Map<String, SlotAssessmentValue> assessmentsBySlot = new LinkedHashMap<>();
@@ -280,9 +304,17 @@ final class FeedbackLearningContractPolicy {
             }
             missionSupport = new MissionSupport(supportSlot, proposedSupport.support());
         }
+        MissionSupport enrichmentSupport = null;
+        if (proposedEnrichment != null) {
+            String enrichmentSlot = FeedbackSlotCatalog.normalizeSlot(proposedEnrichment.slot(), answerMode);
+            enrichmentSupport = enrichmentSlot == null || !allowedSlots.contains(enrichmentSlot)
+                    ? null
+                    : new MissionSupport(enrichmentSlot, proposedEnrichment.support());
+        }
         return new ContractAssessment(
                 Collections.unmodifiableMap(new LinkedHashMap<>(assessmentsBySlot)),
-                missionSupport
+                missionSupport,
+                enrichmentSupport
         );
     }
 
@@ -395,7 +427,8 @@ final class FeedbackLearningContractPolicy {
                 missingSlots,
                 chosenSlot,
                 assessment.values(),
-                chosenSupport
+                chosenSupport,
+                null
         );
     }
 
@@ -617,7 +650,8 @@ final class FeedbackLearningContractPolicy {
 
     private record ContractAssessment(
             Map<String, SlotAssessmentValue> values,
-            MissionSupport missionSupport
+            MissionSupport missionSupport,
+            MissionSupport enrichmentSupport
     ) {
     }
 

@@ -324,6 +324,8 @@ export interface FeedbackCompletion {
   improvedPoint?: string | null;
   encouragement?: string | null;
   nextTinyGoal?: string | null;
+  // 완성 답변에만 오는 선택 제안: 선택 슬롯 하나를 더해 답을 풍부하게 만드는 문장 틀과 표현
+  enrichment?: FeedbackCoachMove | null;
 }
 
 export interface FeedbackRevealLater {

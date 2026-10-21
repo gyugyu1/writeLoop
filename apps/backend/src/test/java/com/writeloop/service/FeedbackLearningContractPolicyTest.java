@@ -573,6 +573,55 @@ class FeedbackLearningContractPolicyTest {
     }
 
     @Test
+    void completeAnswerKeepsEnrichmentForAnUnresolvedDepthSlot() {
+        String answer = "I walk after dinner.";
+        Map<String, SlotAssessmentValue> values = new LinkedHashMap<>();
+        values.put("ACTION", new SlotAssessmentValue("walk", SlotAssessmentStatus.SATISFIED));
+        values.put("PLACE", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING));
+        values.put("FEELING", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING));
+
+        MissionDecision decision = policy.resolve(
+                prompt(List.of("ACTION"), List.of("PLACE", "FEELING"), 0),
+                answer,
+                diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
+                new SlotAssessments(values, null, new MissionSupport("PLACE", support("PLACE")))
+        );
+
+        assertThat(decision.missionKind()).isEqualTo(MissionKind.COMPLETE);
+        assertThat(decision.enrichment()).isNotNull();
+        assertThat(decision.enrichment().slot()).isEqualTo("PLACE");
+    }
+
+    @Test
+    void dropsEnrichmentThatIsNotAnUnresolvedDepthSlotOfACompleteAnswer() {
+        String answer = "I walk in the park after dinner.";
+        PromptDto prompt = prompt(List.of("ACTION"), List.of("PLACE", "FEELING"), 0);
+        Map<String, SlotAssessmentValue> values = new LinkedHashMap<>();
+        values.put("ACTION", new SlotAssessmentValue("walk", SlotAssessmentStatus.SATISFIED));
+        values.put("PLACE", new SlotAssessmentValue("in the park", SlotAssessmentStatus.SATISFIED));
+        values.put("FEELING", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING));
+        FeedbackDiagnosisResult complete = diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of());
+
+        MissionDecision satisfiedTarget = policy.resolve(prompt, answer, complete,
+                new SlotAssessments(values, null, new MissionSupport("PLACE", support("PLACE"))));
+        MissionDecision requiredTarget = policy.resolve(prompt, answer, complete,
+                new SlotAssessments(values, null, new MissionSupport("ACTION", support("ACTION"))));
+
+        Map<String, SlotAssessmentValue> unfinished = new LinkedHashMap<>(values);
+        unfinished.put("ACTION", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING));
+        MissionDecision slotMission = policy.resolve(prompt, answer, complete, new SlotAssessments(
+                unfinished,
+                new MissionSupport("ACTION", support("ACTION")),
+                new MissionSupport("FEELING", support("FEELING"))
+        ));
+
+        assertThat(satisfiedTarget.enrichment()).isNull();
+        assertThat(requiredTarget.enrichment()).isNull();
+        assertThat(slotMission.missionKind()).isEqualTo(MissionKind.SLOT);
+        assertThat(slotMission.enrichment()).isNull();
+    }
+
+    @Test
     void rejectsEvidenceThatDoesNotQuoteTheLearnerAnswer() {
         String answer = "I walk.";
 

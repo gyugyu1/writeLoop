@@ -1,5 +1,6 @@
 package com.writeloop.service;
 
+import com.writeloop.dto.FeedbackCoachMoveDto;
 import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptTaskMetaDto;
@@ -279,7 +280,7 @@ class CanonicalFeedbackAssemblerTest {
             List<RefinementExpressionDto> refinements,
             Map<String, SlotAssessmentValue> slotAssessments
     ) {
-        return output(diagnosis, modelAnswer, refinements, slotAssessments, null);
+        return output(diagnosis, modelAnswer, refinements, slotAssessments, null, null);
     }
 
     private CanonicalLlmOutput output(
@@ -289,6 +290,17 @@ class CanonicalFeedbackAssemblerTest {
             Map<String, SlotAssessmentValue> slotAssessments,
             MissionSupport missionSupport
     ) {
+        return output(diagnosis, modelAnswer, refinements, slotAssessments, missionSupport, null);
+    }
+
+    private CanonicalLlmOutput output(
+            FeedbackDiagnosisResult diagnosis,
+            String modelAnswer,
+            List<RefinementExpressionDto> refinements,
+            Map<String, SlotAssessmentValue> slotAssessments,
+            MissionSupport missionSupport,
+            MissionSupport enrichmentSupport
+    ) {
         return new CanonicalLlmOutput(
                 diagnosis,
                 new GeneratedContent(
@@ -297,7 +309,7 @@ class CanonicalFeedbackAssemblerTest {
                         modelAnswer,
                         "Reference translation"
                 ),
-                new SlotAssessments(slotAssessments, missionSupport)
+                new SlotAssessments(slotAssessments, missionSupport, enrichmentSupport)
         );
     }
 
@@ -350,6 +362,63 @@ class CanonicalFeedbackAssemblerTest {
                 "",
                 null,
                 new PromptTaskMetaDto("ROUTINE", List.of("ACTION"), List.of(), null, null, 0)
+        );
+    }
+
+    @Test
+    void completeAnswerCarriesOneEnrichmentSuggestionInTheCompletion() {
+        CanonicalLlmOutput output = output(
+                diagnosis("I take a walk after dinner.", StructureStatus.COMPLETE, List.of()),
+                "I usually take a walk in the park after dinner.",
+                List.of(),
+                Map.of(
+                        "ACTION", new SlotAssessmentValue("take a walk", SlotAssessmentStatus.SATISFIED),
+                        "PLACE", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING)
+                ),
+                null,
+                new MissionSupport("PLACE", new SlotFeedbackSupport(
+                        "장소를 넣어 더 풍부하게 써 보세요",
+                        "어디에서 산책하는지 넣으면 장면이 더 또렷해져요.",
+                        "산책하는 장소를 한 곳 덧붙여 보세요.",
+                        "I take a walk ____ after dinner.",
+                        "저는 저녁 식사 후에 ____에서 산책해요.",
+                        List.of(
+                                new FeedbackSuggestedPhraseDto("in the park", "공원에서"),
+                                new FeedbackSuggestedPhraseDto("around my neighborhood", "동네 주변을")
+                        )
+                ))
+        );
+
+        AssembledFeedback assembled = assembler.assemble(
+                "internal",
+                enrichmentPrompt(),
+                "I take a walk after dinner.",
+                1,
+                output
+        );
+
+        assertThat(assembled.response().loopComplete()).isTrue();
+        assertThat(assembled.response().coachMove()).isNull();
+        FeedbackCoachMoveDto enrichment = assembled.response().completion().enrichment();
+        assertThat(enrichment.focusType()).isEqualTo("ENRICHMENT");
+        assertThat(enrichment.targetSlot()).isEqualTo("PLACE");
+        assertThat(enrichment.focus()).isEqualTo("장소를 넣어 더 풍부하게 써 보세요");
+        assertThat(enrichment.skeletonEn()).isEqualTo("I take a walk ____ after dinner.");
+        assertThat(enrichment.suggestedPhrases()).hasSize(2);
+    }
+
+    private PromptDto enrichmentPrompt() {
+        return new PromptDto(
+                "prompt-4",
+                "Daily life",
+                "Daily life",
+                "Routine",
+                "A",
+                "What do you usually do after dinner?",
+                "저녁 식사 후에 보통 무엇을 하나요?",
+                "",
+                null,
+                new PromptTaskMetaDto("ROUTINE", List.of("ACTION"), List.of("PLACE"), null, null, 0)
         );
     }
 

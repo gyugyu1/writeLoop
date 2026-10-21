@@ -3,6 +3,8 @@ package com.writeloop.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.PromptDto;
+import com.writeloop.dto.PromptHintDto;
+import com.writeloop.dto.PromptHintItemDto;
 import com.writeloop.dto.PromptSlotContractDto;
 import com.writeloop.dto.PromptTaskMetaDto;
 import org.junit.jupiter.api.Test;
@@ -33,9 +35,14 @@ class CanonicalFeedbackContractTest {
                 "refinementExpressions",
                 "slotAssessments",
                 "missionSupport",
+                "enrichmentSupport",
                 "modelAnswer",
                 "modelAnswerKo"
         );
+        assertThat(properties.path("enrichmentSupport").path("items").path("properties")
+                .path("slot").path("enum"))
+                .extracting(JsonNode::asText)
+                .containsExactly("REASON");
         assertThat(properties.has("grammarIssues")).isFalse();
         assertThat(properties.has("correctedAnswer")).isFalse();
         assertThat(properties.has("missionDecision")).isFalse();
@@ -177,6 +184,41 @@ class CanonicalFeedbackContractTest {
         assertThat(payload.has("previousAnswer")).isFalse();
         assertThat(payload.has("previousCoachingSummary")).isFalse();
         assertThat(payload.has("missionDecision")).isFalse();
+    }
+
+    @Test
+    void userPromptSendsOnlyTheReadableHintContent() throws Exception {
+        JsonNode payload = objectMapper.readTree(contract.userPrompt(
+                prompt(),
+                "I take a walk.",
+                List.of(new PromptHintDto(
+                        "hint-1",
+                        "prompt-1",
+                        "VOCAB_PHRASE",
+                        "Useful phrases",
+                        1,
+                        List.of(new PromptHintItemDto(
+                                "item-1", "hint-1", "PHRASE", "take a walk", "산책하다", "tip", "I take a walk.", "walk", 1
+                        ))
+                ))
+        ));
+
+        JsonNode hint = payload.path("promptHints").get(0);
+        assertThat(hint.path("type").asText()).isEqualTo("VOCAB_PHRASE");
+        assertThat(hint.has("id")).isFalse();
+        assertThat(hint.has("displayOrder")).isFalse();
+        assertThat(hint.path("items").get(0).path("content").asText()).isEqualTo("take a walk");
+        assertThat(hint.path("items").get(0).has("hintId")).isFalse();
+    }
+
+    @Test
+    void promptExplainsDifficultyHintsAndEnrichment() {
+        String prompt = contract.developerPrompt();
+
+        assertThat(prompt).contains("question.difficulty is the learner's level: I = beginner");
+        assertThat(prompt).contains("promptHints are the hints the learner could see while writing");
+        assertThat(prompt).contains("never count as slot evidence");
+        assertThat(prompt).contains("Enrichment support rules:");
     }
 
     @Test

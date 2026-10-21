@@ -58,6 +58,7 @@ class LlmRequestDeterminismTest {
                 "languageAssessment",
                 "slotAssessments",
                 "missionSupport",
+                "enrichmentSupport",
                 "modelAnswer",
                 "modelAnswerKo",
                 "refinementExpressions",

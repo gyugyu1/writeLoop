@@ -234,12 +234,17 @@ public class FeedbackService {
                 complete ? "루프 완료하기" : "다시 써보기",
                 null
         );
+        FeedbackCoachMoveDto enrichment = feedback.completion() == null ? null : feedback.completion().enrichment();
         FeedbackCompletionDto completion = complete
                 ? new FeedbackCompletionDto(
                 firstNonBlank(feedback.completionMessage(), loop.headline()),
                 firstNonBlank(feedback.summary(), "질문의 핵심을 충분히 담았어요."),
                 "지금 답변으로 루프를 마쳐도 좋아요.",
-                "다음 질문에서도 구체적인 내용을 한 가지 넣어 보세요."
+                firstNonBlank(
+                        enrichment == null ? null : enrichment.focus(),
+                        "다음 질문에서도 구체적인 내용을 한 가지 넣어 보세요."
+                ),
+                enrichment
         )
                 : null;
         FeedbackRevealLaterDto revealLater = new FeedbackRevealLaterDto(

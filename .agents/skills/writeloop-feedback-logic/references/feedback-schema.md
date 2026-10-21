@@ -44,10 +44,11 @@ reference content after the decisions it depends on.
 3. `languageAssessment`
 4. `slotAssessments` (per slot: `evidence`, then `verdict`)
 5. `missionSupport` (zero or one item, for the slot the selection order picks)
-6. `modelAnswer`
-7. `modelAnswerKo`
-8. `refinementExpressions` (chosen by comparing the already written `modelAnswer` with the learner answer)
-9. `strengths`
+6. `enrichmentSupport` (zero or one item, only for a complete answer)
+7. `modelAnswer`
+8. `modelAnswerKo`
+9. `refinementExpressions` (chosen by comparing the already written `modelAnswer` with the learner answer)
+10. `strengths`
 
 Build every LLM schema and prompt payload with `OrderedMaps` or `LinkedHashMap`. Never use `Map.of`,
 `Map.ofEntries`, `Map.copyOf`, or `Set.of` there: their iteration order changes on every JVM start, which
@@ -90,6 +91,16 @@ Field details:
     6. Otherwise no slot.
   - The item includes `slot`, `title`, `whyKo`, `instructionKo`, `skeletonEn`, `skeletonKo`, and `suggestedPhrases` (2-4 usable English phrases with Korean meanings).
   - If the backend chooses a `SLOT` or `TASK_RESET` mission and `missionSupport` is empty, incomplete, or teaches a different slot, the response is a retryable contract violation. Support returned when the backend chooses no slot mission is ignored.
+- `enrichmentSupport`
+  - Zero or one item with the same fields as `missionSupport`. The LLM writes it only when the selection order reaches "otherwise no slot" (a complete answer), for the first depth slot whose verdict is not `SATISFIED`.
+  - It is an optional challenge ("장소를 넣어 더 풍부하게 써 보세요"): a `GENERIC` depth slot asks for specific wording, a `MISSING` one asks for one new detail, and the skeleton keeps that detail as a blank.
+  - The backend exposes it as `completion.enrichment` only when the decision is `COMPLETE` and the slot is an unresolved depth slot with complete support. Anything else is dropped silently; it never causes a retry.
+  - Depth slots stay in the contract even when `minimumDepthSlots` is 0 because this suggestion uses them.
+
+The user prompt also carries:
+
+- `question.difficulty`: `I` beginner, `A` easy, `B` intermediate, `C` challenge. The developer prompt explains the codes so modelAnswer, skeletons, phrases, and refinements match the level.
+- `promptHints`: only `type`, `title`, and item `content`/`meaningKo`. They are what the learner could see while writing; they never count as slot evidence.
 - `strengths`
 - `refinementExpressions`
 - `modelAnswer`
@@ -214,6 +225,7 @@ Do not write new metadata with `MAIN_ANSWER`, `ACTIVITY`, `TIME_OR_PLACE`, or `S
 - `refinementExpressions` contain at least two generated add-ons, with no arbitrary maximum, for grammatically acceptable alternative wording.
   Their use is optional for the learner even though their presence is required in the LLM output.
 - `modelAnswer` and `modelAnswerKo` are visible reference content, not completion authorities.
+- `completion.enrichment` uses the coach-move shape (`focus`, `focusType: ENRICHMENT`, `why`, `instruction`, `skeletonEn`, `skeletonKo`, `suggestedPhrases`, `targetSlot`). Mobile and web show it as an optional "더 풍부하게 써 보기" card on the completion screen; finishing the loop never requires it.
 - Question-answer feedback does not expose a numeric score.
 
 Retired diagnosis columns were removed from the operational table. Historical

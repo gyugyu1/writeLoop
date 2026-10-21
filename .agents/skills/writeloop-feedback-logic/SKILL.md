@@ -20,6 +20,8 @@ Every visible section must support that one mission:
 - `refinementExpressions`: at least two generated expression add-ons, with no arbitrary maximum, that remain optional for the learner.
 - `rewriteWorkspace`: rewrite input seeded from the mission.
 - `modelAnswer`: quiet reference only, not the teaching plan.
+- `completion.enrichment`: on complete answers only, one optional "더 풍부하게 써 보기" suggestion for an unresolved depth slot.
+  It never blocks completion and an invalid suggestion is dropped without a retry.
 - `visibleFeedback`: the exact exposed snapshot retained for answer history.
 
 ## First Files To Inspect

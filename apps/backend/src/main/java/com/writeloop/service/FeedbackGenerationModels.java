@@ -290,7 +290,8 @@ record MissionSupport(
 
 record SlotAssessments(
         Map<String, SlotAssessmentValue> values,
-        MissionSupport missionSupport
+        MissionSupport missionSupport,
+        MissionSupport enrichmentSupport
 ) {
     SlotAssessments {
         Map<String, SlotAssessmentValue> normalized = new LinkedHashMap<>();
@@ -305,10 +306,17 @@ record SlotAssessments(
         if (missionSupport != null && (missionSupport.slot() == null || missionSupport.support() == null)) {
             missionSupport = null;
         }
+        if (enrichmentSupport != null && (enrichmentSupport.slot() == null || enrichmentSupport.support() == null)) {
+            enrichmentSupport = null;
+        }
     }
 
     SlotAssessments(Map<String, SlotAssessmentValue> values) {
-        this(values, null);
+        this(values, null, null);
+    }
+
+    SlotAssessments(Map<String, SlotAssessmentValue> values, MissionSupport missionSupport) {
+        this(values, missionSupport, null);
     }
 }
 
@@ -318,7 +326,8 @@ record MissionDecision(
         List<String> missingSlots,
         String chosenSlot,
         Map<String, SlotAssessmentValue> slotAssessments,
-        SlotFeedbackSupport chosenSupport
+        SlotFeedbackSupport chosenSupport,
+        MissionSupport enrichment
 ) {
     MissionDecision {
         presentSlots = normalizeSlots(presentSlots);
@@ -331,6 +340,18 @@ record MissionDecision(
 
     boolean isComplete() {
         return missionKind == MissionKind.COMPLETE;
+    }
+
+    MissionDecision withEnrichment(MissionSupport nextEnrichment) {
+        return new MissionDecision(
+                missionKind,
+                presentSlots,
+                missingSlots,
+                chosenSlot,
+                slotAssessments,
+                chosenSupport,
+                nextEnrichment
+        );
     }
 
     private static List<String> normalizeSlots(List<String> values) {

@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.FeedbackSuggestedPhraseDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
+import com.writeloop.dto.PromptHintItemDto;
 import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.util.OrderedMaps;
 
@@ -27,9 +28,20 @@ final class CanonicalFeedbackContract {
             4. slotAssessments: assess every configured slot exactly once in the fixed-key object.
                For each slot, write evidence first, then decide verdict from that evidence.
             5. missionSupport: teaching support for at most one slot, chosen by the selection order below.
-            6. modelAnswer, then modelAnswerKo.
-            7. refinementExpressions, selected by comparing the modelAnswer you already wrote with the learner answer.
-            8. strengths.
+            6. enrichmentSupport: an optional challenge for at most one depth slot, only when the answer is already complete.
+            7. modelAnswer, then modelAnswerKo.
+            8. refinementExpressions, selected by comparing the modelAnswer you already wrote with the learner answer.
+            9. strengths.
+
+            Input metadata:
+            - question.difficulty is the learner's level: I = beginner (one or two very short sentences, basic words),
+              A = easy (simple sentences), B = intermediate (reasons and examples), C = challenge (comparison, contrast,
+              and richer linking). Match modelAnswer length and vocabulary, skeletons, suggestedPhrases, and
+              refinementExpressions to this level.
+            - promptHints are the hints the learner could see while writing: starter sentences, words, phrases, structures,
+              details, and linkers. They are not part of the learner answer and never count as slot evidence.
+              Prefer their wording in suggestedPhrases when it fits the target slot, and do not recommend a hint the learner
+              already used as a refinementExpression.
 
             Authority boundaries:
             - You diagnose topic relevance, sentence structure, cumulative full-answer revision steps,
@@ -147,6 +159,18 @@ final class CanonicalFeedbackContract {
             - When a slot is picked, return exactly one missionSupport item whose slot is that slot code. When no slot is picked,
               return an empty missionSupport array. Never write support for any other slot.
             - The support must teach that exact slot, not a broader category.
+
+            Enrichment support rules:
+            - enrichmentSupport is an optional challenge shown only after the learner has a complete answer. It never blocks completion.
+            - Write it only when the selection order above reached step 6. Then pick the first questionContract.depthSlots slot
+              whose verdict is not SATISFIED and return exactly one item for it. In every other case, and when every depth slot
+              is SATISFIED, return an empty enrichmentSupport array.
+            - Write it as an invitation to add that one detail to the complete answer, for example the title
+              "장소를 넣어 더 풍부하게 써 보세요". Never ask the learner to fix anything else.
+            - For a GENERIC depth slot, invite the learner to make that vague wording specific instead of adding a new detail.
+            - Leave the new detail as a blank placeholder in skeletonEn and skeletonKo; never invent learner facts.
+
+            Support content rules for both missionSupport and enrichmentSupport:
             - skeletonEn and skeletonKo are both required and must align in meaning.
             - skeletonKo must be a Korean-language scaffold containing Hangul, not an English scaffold copied from skeletonEn.
               Translate the fixed wording into Korean and preserve the blank placeholder.
@@ -200,8 +224,39 @@ final class CanonicalFeedbackContract {
         ));
         payload.put("questionContract", policy.promptContract(prompt));
         payload.put("learnerAnswer", value(answer));
-        payload.put("promptHints", hints == null ? List.of() : hints);
+        payload.put("promptHints", promptHints(hints));
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
+    }
+
+    // 힌트는 LLM이 읽을 내용(종류, 제목, 표현과 뜻)만 보낸다. id나 표시 순서 같은 내부 필드는 판단에 쓰이지 않는다.
+    private List<Map<String, Object>> promptHints(List<PromptHintDto> hints) {
+        List<Map<String, Object>> compact = new ArrayList<>();
+        if (hints == null) {
+            return compact;
+        }
+        for (PromptHintDto hint : hints) {
+            if (hint == null || hint.items() == null) {
+                continue;
+            }
+            List<Map<String, Object>> items = new ArrayList<>();
+            for (PromptHintItemDto item : hint.items()) {
+                if (item == null || item.content() == null || item.content().isBlank()) {
+                    continue;
+                }
+                items.add(OrderedMaps.of(
+                        "content", item.content().trim(),
+                        "meaningKo", value(item.meaningKo()).trim()
+                ));
+            }
+            if (!items.isEmpty()) {
+                compact.add(OrderedMaps.of(
+                        "type", value(hint.hintType()),
+                        "title", value(hint.title()),
+                        "items", items
+                ));
+            }
+        }
+        return compact;
     }
 
     String contractRetryPrompt(
@@ -264,6 +319,13 @@ final class CanonicalFeedbackContract {
                 0,
                 slots.isEmpty() ? 0 : 1
         ));
+        // 완성 답변에만 붙는 "더 풍부하게 써 보기" 제안. 선택 슬롯 하나만 대상으로 한다.
+        List<String> depthSlots = policy.depthSlots(prompt);
+        properties.put("enrichmentSupport", arraySchema(
+                missionSupportSchema(depthSlots.isEmpty() ? stringSchema() : enumString(depthSlots)),
+                0,
+                depthSlots.isEmpty() ? 0 : 1
+        ));
         properties.put("modelAnswer", stringSchema());
         properties.put("modelAnswerKo", stringSchema());
         properties.put("refinementExpressions", arraySchema(objectSchema(OrderedMaps.of(
@@ -314,6 +376,11 @@ final class CanonicalFeedbackContract {
         for (JsonNode supportItem : missionSupportItems) {
             missionSupport = new MissionSupport(text(supportItem, "slot"), parseSlotSupport(supportItem));
         }
+        MissionSupport enrichmentSupport = null;
+        JsonNode enrichmentItem = root.path("enrichmentSupport").path(0);
+        if (enrichmentItem.isObject()) {
+            enrichmentSupport = new MissionSupport(text(enrichmentItem, "slot"), parseSlotSupport(enrichmentItem));
+        }
 
         List<String> strengths = new ArrayList<>();
         root.path("strengths").forEach(item -> strengths.add(item.asText("")));
@@ -332,7 +399,11 @@ final class CanonicalFeedbackContract {
                 text(root, "modelAnswer"),
                 text(root, "modelAnswerKo")
         );
-        return new CanonicalLlmOutput(diagnosis, content, new SlotAssessments(slotAssessments, missionSupport));
+        return new CanonicalLlmOutput(
+                diagnosis,
+                content,
+                new SlotAssessments(slotAssessments, missionSupport, enrichmentSupport)
+        );
     }
 
     private SlotFeedbackSupport parseSlotSupport(JsonNode item) {

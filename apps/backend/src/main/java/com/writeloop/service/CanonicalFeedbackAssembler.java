@@ -3,6 +3,7 @@ package com.writeloop.service;
 import com.writeloop.dto.CorrectionDto;
 import com.writeloop.dto.FeedbackCoachMissionDto;
 import com.writeloop.dto.FeedbackCoachMoveDto;
+import com.writeloop.dto.FeedbackCompletionDto;
 import com.writeloop.dto.FeedbackLanguageCorrectionDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackRewriteWorkspaceDto;
@@ -14,6 +15,9 @@ import com.writeloop.dto.PromptDto;
 import java.util.List;
 
 final class CanonicalFeedbackAssembler {
+
+    // 완성 화면의 "더 풍부하게 써 보기" 제안. 미션 종류가 아니라 선택 제안이라는 표시로 쓴다.
+    static final String ENRICHMENT_MISSION_TYPE = "ENRICHMENT";
 
     private final FeedbackLearningContractPolicy policy = new FeedbackLearningContractPolicy();
 
@@ -99,6 +103,14 @@ final class CanonicalFeedbackAssembler {
                 complete ? completionMessage : "한 가지만 더 다듬어 볼게요."
         );
         FeedbackUiDto ui = new FeedbackUiDto(null, List.of(), null, null);
+        FeedbackCoachMoveDto enrichment = complete && decision.enrichment() != null
+                ? decision.enrichment().support()
+                .toCoachMission(ENRICHMENT_MISSION_TYPE)
+                .toCoachMove(decision.enrichment().slot())
+                : null;
+        FeedbackCompletionDto completion = enrichment == null
+                ? null
+                : new FeedbackCompletionDto(null, null, null, null, enrichment);
 
         FeedbackResponseDto response = new FeedbackResponseDto(
                 prompt == null ? null : prompt.id(),
@@ -120,7 +132,7 @@ final class CanonicalFeedbackAssembler {
                 null,
                 coachMove,
                 rewriteWorkspace,
-                null,
+                completion,
                 null
         );
         return new AssembledFeedback(response, diagnosis, finalSections);

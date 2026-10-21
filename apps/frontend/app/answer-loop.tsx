@@ -1924,6 +1924,14 @@ export function AnswerLoop() {
     visibleFeedback?.modelAnswerKo,
     feedback?.modelAnswerKo
   );
+  const enrichment = isLoopReadyToFinish
+    ? (visibleFeedback?.completion ?? feedback?.completion)?.enrichment ?? null
+    : null;
+  const hasEnrichment = Boolean(trimNullable(enrichment?.focus) && trimNullable(enrichment?.skeletonEn));
+  const enrichmentPhrases =
+    hasEnrichment && Array.isArray(enrichment?.suggestedPhrases)
+      ? enrichment.suggestedPhrases.map(normalizeSuggestedPhrase).filter((phrase) => phrase !== null).slice(0, 4)
+      : [];
   const shouldShowCoachMoveCard = !isLoopReadyToFinish && hasCoachMove(coachMove);
   const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
   const shouldShowCorrectionReasonLabel = isDirectCorrectionCoachMove(coachMove);
@@ -3632,7 +3640,11 @@ export function AnswerLoop() {
         supportText: feedback.loopComplete
           ? "원하면 한 번 더 다듬어 볼 수 있어요."
           : "위 starter를 바탕으로 바로 다시 써 볼 수 있어요.",
-        rewriteCtaLabel: feedback.loopComplete ? "그래도 더 다듬어서 써보기" : "다시 써보기",
+        rewriteCtaLabel: feedback.loopComplete
+          ? hasEnrichment
+            ? "이 내용 넣어서 다시 써 보기"
+            : "그래도 더 다듬어서 써보기"
+          : "다시 써보기",
         finishCtaLabel: feedback.loopComplete ? "오늘 루프 완료하고 도장 받기" : null,
         cancelCtaLabel: "답변 취소"
       }
@@ -3814,6 +3826,50 @@ export function AnswerLoop() {
     );
   }
 
+  function renderEnrichmentSection() {
+    if (!hasEnrichment) {
+      return null;
+    }
+
+    return (
+      <section className={styles.coachMoveCard}>
+        <span className={styles.enrichmentEyebrow}>더 풍부하게 써 보기 · 선택</span>
+        <h2 className={styles.enrichmentHeadline}>{enrichment?.focus}</h2>
+        {trimNullable(enrichment?.why) ? (
+          <div className={styles.coachMoveWhyBox}>
+            <p className={styles.coachMoveWhy}>{enrichment?.why}</p>
+          </div>
+        ) : null}
+        <div className={styles.coachMoveInstructionBox}>
+          <span className={styles.coachMoveInstructionLabel}>다시 쓸 때</span>
+          {trimNullable(enrichment?.instruction) ? (
+            <p className={styles.coachMoveInstruction}>{enrichment?.instruction}</p>
+          ) : null}
+          <div className={styles.coachMoveSkeletonBox}>
+            <span className={styles.coachMoveSkeletonLabel}>문장 틀</span>
+            <p className={styles.coachMoveSkeleton}>{enrichment?.skeletonEn}</p>
+            {trimNullable(enrichment?.skeletonKo) ? (
+              <p className={styles.coachMoveSkeletonMeaning}>{enrichment?.skeletonKo}</p>
+            ) : null}
+          </div>
+          {enrichmentPhrases.length > 0 ? (
+            <div className={styles.coachMovePhraseBox}>
+              <span className={styles.coachMovePhraseLabel}>넣어볼 표현</span>
+              <div className={styles.coachMovePhraseList}>
+                {enrichmentPhrases.map((phrase, index) => (
+                  <span key={`${phrase.phrase}-${index}`} className={styles.coachMovePhraseChip}>
+                    <strong>{phrase.phrase}</strong>
+                    {phrase.meaningKo ? <small>{phrase.meaningKo}</small> : null}
+                  </span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </section>
+    );
+  }
+
   function renderVisibleFeedbackSummary() {
     if (!feedback) {
       return null;
@@ -3829,6 +3885,8 @@ export function AnswerLoop() {
         ) : null}
 
         {renderCoachMoveSection()}
+
+        {renderEnrichmentSection()}
 
         {isLoopReadyToFinish && completionRefinementExpressions.length > 0 ? (
           <section className={styles.visibleExpressionCard}>

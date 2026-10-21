@@ -366,7 +366,17 @@ export default function PracticeFeedbackScreen() {
         visibleFeedback?.refinementExpressions ?? feedback?.refinementExpressions
       )
     : [];
-  const shouldShowCompletionRewriteChoice = isLoopReadyToFinish;
+  const enrichment = isLoopReadyToFinish ? completion?.enrichment ?? null : null;
+  const hasEnrichment = Boolean(trimText(enrichment?.focus) && trimText(enrichment?.skeletonEn));
+  const enrichmentPhrases =
+    hasEnrichment && Array.isArray(enrichment?.suggestedPhrases)
+      ? enrichment.suggestedPhrases
+          .map(normalizeSuggestedPhrase)
+          .filter((phrase) => phrase !== null)
+          .slice(0, 4)
+      : [];
+  // 제안 카드에 자체 다시쓰기 버튼이 있으므로, 제안이 있으면 일반 다시쓰기 버튼은 숨긴다.
+  const shouldShowCompletionRewriteChoice = isLoopReadyToFinish && !hasEnrichment;
   const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
   const shouldShowCorrectionReasonLabel = isDirectCorrectionCoachMove(coachMove);
   const shouldShowInlineRewriteWorkspace =
@@ -418,7 +428,9 @@ export default function PracticeFeedbackScreen() {
     ? "피드백 받는 중..."
     : REWRITE_FEEDBACK_BUTTON_LABEL;
   const inlineRewriteHelpText = isLoopReadyToFinish
-    ? "이미 충분히 좋아요. 원하면 표현 하나만 가볍게 다듬어 보세요."
+    ? hasEnrichment
+      ? "지금 답변은 그대로 두고, 위 제안처럼 내용 한 가지만 더해 보세요."
+      : "이미 충분히 좋아요. 원하면 표현 하나만 가볍게 다듬어 보세요."
     : "전체를 완벽하게 바꾸려 하지 말고, 위 코치 포인트 하나만 반영하면 돼요.";
 
   useEffect(() => {
@@ -606,6 +618,50 @@ export default function PracticeFeedbackScreen() {
     }
 
     handleBackToQuestions();
+  }
+
+  function renderSuggestedPhraseChip(
+    phrase: { phrase: string; meaningKo?: string | null },
+    index: number
+  ) {
+    const normalizedPhraseKey = normalizeExpressionKey(phrase.phrase);
+    const isPhraseSaved = Boolean(savedExpressionIdsByKey[normalizedPhraseKey]);
+    const isPhraseSaving = savingExpressionKeys.includes(normalizedPhraseKey);
+
+    return (
+      <Pressable
+        key={`${phrase.phrase}-${index}`}
+        style={[styles.coachMovePhraseChip, isPhraseSaved && styles.coachMovePhraseChipSaved]}
+        onPress={() =>
+          handleToggleFeedbackExpression(
+            phrase.phrase,
+            "COACH_RECOMMENDATION",
+            phrase.meaningKo || undefined,
+            undefined,
+            "문장틀에 넣어볼 수 있는 표현이에요.",
+            ["넣어볼 표현"]
+          )
+        }
+        disabled={isPhraseSaving}
+        accessibilityRole="button"
+        accessibilityLabel={isPhraseSaved ? "표현 저장 취소" : "표현 저장"}
+      >
+        <View style={styles.coachMovePhraseContent}>
+          <Text style={styles.coachMovePhraseText}>{phrase.phrase}</Text>
+          {phrase.meaningKo ? (
+            <Text style={styles.coachMovePhraseMeaning}>{phrase.meaningKo}</Text>
+          ) : null}
+        </View>
+        <View
+          style={[
+            styles.coachMovePhraseSaveButton,
+            isPhraseSaved && styles.coachMovePhraseSaveButtonSaved
+          ]}
+        >
+          {renderFeedbackExpressionSaveIcon(isPhraseSaved, isPhraseSaving)}
+        </View>
+      </Pressable>
+    );
   }
 
   function handleOpenCompletionRewrite() {
@@ -877,49 +933,7 @@ export default function PracticeFeedbackScreen() {
                     <View style={styles.coachMovePhraseBox}>
                       <Text style={styles.coachMovePhraseLabel}>넣어볼 표현</Text>
                       <View style={styles.coachMovePhraseList}>
-                        {coachSuggestedPhrases.map((phrase, index) => {
-                          const normalizedPhraseKey = normalizeExpressionKey(phrase.phrase);
-                          const isPhraseSaved = Boolean(savedExpressionIdsByKey[normalizedPhraseKey]);
-                          const isPhraseSaving = savingExpressionKeys.includes(normalizedPhraseKey);
-
-                          return (
-                            <Pressable
-                              key={`${phrase.phrase}-${index}`}
-                              style={[
-                                styles.coachMovePhraseChip,
-                                isPhraseSaved && styles.coachMovePhraseChipSaved
-                              ]}
-                              onPress={() =>
-                                handleToggleFeedbackExpression(
-                                  phrase.phrase,
-                                  "COACH_RECOMMENDATION",
-                                  phrase.meaningKo || undefined,
-                                  undefined,
-                                  "문장틀에 넣어볼 수 있는 표현이에요.",
-                                  ["넣어볼 표현"]
-                                )
-                              }
-                              disabled={isPhraseSaving}
-                              accessibilityRole="button"
-                              accessibilityLabel={isPhraseSaved ? "표현 저장 취소" : "표현 저장"}
-                            >
-                              <View style={styles.coachMovePhraseContent}>
-                                <Text style={styles.coachMovePhraseText}>{phrase.phrase}</Text>
-                                {phrase.meaningKo ? (
-                                  <Text style={styles.coachMovePhraseMeaning}>{phrase.meaningKo}</Text>
-                                ) : null}
-                              </View>
-                              <View
-                                style={[
-                                  styles.coachMovePhraseSaveButton,
-                                  isPhraseSaved && styles.coachMovePhraseSaveButtonSaved
-                                ]}
-                              >
-                                {renderFeedbackExpressionSaveIcon(isPhraseSaved, isPhraseSaving)}
-                              </View>
-                            </Pressable>
-                          );
-                        })}
+                        {coachSuggestedPhrases.map(renderSuggestedPhraseChip)}
                       </View>
                     </View>
                   ) : null}
@@ -981,6 +995,44 @@ export default function PracticeFeedbackScreen() {
                         <Image source={completionMascotImage} style={styles.completionMascot} />
                       </View>
                     </View>
+                  </View>
+                ) : null}
+
+                {hasEnrichment ? (
+                  <View style={styles.coachMoveCard}>
+                    <Text style={styles.enrichmentEyebrow}>더 풍부하게 써 보기 · 선택</Text>
+                    <Text style={styles.enrichmentHeadline}>{enrichment?.focus}</Text>
+                    {trimText(enrichment?.why) ? (
+                      <View style={styles.coachMoveWhyBox}>
+                        <Text style={styles.coachMoveWhy}>{enrichment?.why}</Text>
+                      </View>
+                    ) : null}
+                    <View style={styles.coachMoveInstructionBox}>
+                      <Text style={styles.coachMoveInstructionLabel}>다시 쓸 때</Text>
+                      {trimText(enrichment?.instruction) ? (
+                        <Text style={styles.coachMoveInstruction}>{enrichment?.instruction}</Text>
+                      ) : null}
+                      <View style={styles.coachMoveSkeletonBox}>
+                        <Text style={styles.coachMoveSkeletonLabel}>문장 틀</Text>
+                        <Text style={styles.coachMoveSkeleton}>{enrichment?.skeletonEn}</Text>
+                        {trimText(enrichment?.skeletonKo) ? (
+                          <Text style={styles.coachMoveSkeletonMeaning}>{enrichment?.skeletonKo}</Text>
+                        ) : null}
+                      </View>
+                      {enrichmentPhrases.length > 0 ? (
+                        <View style={styles.coachMovePhraseBox}>
+                          <Text style={styles.coachMovePhraseLabel}>넣어볼 표현</Text>
+                          <View style={styles.coachMovePhraseList}>
+                            {enrichmentPhrases.map(renderSuggestedPhraseChip)}
+                          </View>
+                        </View>
+                      ) : null}
+                    </View>
+                    {!isCompletionRewriteOpen ? (
+                      <Pressable style={styles.secondaryButton} onPress={handleOpenCompletionRewrite}>
+                        <Text style={styles.secondaryButtonText}>이 내용 넣어서 다시 써 보기</Text>
+                      </Pressable>
+                    ) : null}
                   </View>
                 ) : null}
 
@@ -1305,6 +1357,20 @@ const styles = StyleSheet.create({
     lineHeight: 36,
     fontWeight: "900",
     letterSpacing: -1.4,
+    color: "#232128"
+  },
+  enrichmentEyebrow: {
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+    color: "#A56A1C"
+  },
+  enrichmentHeadline: {
+    marginTop: -8,
+    fontSize: 22,
+    lineHeight: 30,
+    fontWeight: "900",
+    letterSpacing: -0.8,
     color: "#232128"
   },
   coachMoveBody: {

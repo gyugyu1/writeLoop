@@ -18,10 +18,8 @@ import com.writeloop.persistence.SessionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -119,7 +117,8 @@ class TodayQuestionRecommendationServiceTest {
         assertThat(recommendation.prompts()).extracting("id")
                 .contains("prompt-a-2", "prompt-a-3");
         assertThat(recommendation.featured().reasonCode()).isNotBlank();
-        verify(promptRecommendationExposureRepository, atLeastOnce()).save(any(PromptRecommendationExposureEntity.class));
+        verify(promptRecommendationExposureRepository, atLeastOnce()).insertIfAbsent(
+                any(), eq(7L), any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test
@@ -215,12 +214,19 @@ class TodayQuestionRecommendationServiceTest {
         FeaturedDailyPromptDto recommendation = recommendationService.recommendFeatured(DailyDifficultyDto.A, 21L, null);
 
         assertThat(recommendation.featured()).isNotNull();
-        ArgumentCaptor<PromptRecommendationExposureEntity> exposureCaptor =
-                ArgumentCaptor.forClass(PromptRecommendationExposureEntity.class);
-        verify(promptRecommendationExposureRepository).save(exposureCaptor.capture());
+        verify(promptRecommendationExposureRepository).insertIfAbsent(
+                any(LocalDate.class),
+                eq(21L),
+                any(),
+                eq("A"),
+                eq(recommendation.featured().prompt().id()),
+                eq("PREPICK_FEATURED"),
+                any(),
+                any(),
+                any()
+        );
+        verify(promptRecommendationExposureRepository, never()).save(any(PromptRecommendationExposureEntity.class));
         verify(promptRecommendationExposureRepository, never()).saveAll(any());
-        assertThat(exposureCaptor.getValue().getSlotType()).isEqualTo("PREPICK_FEATURED");
-        assertThat(exposureCaptor.getValue().getPromptId()).isEqualTo(recommendation.featured().prompt().id());
     }
 
     @Test
@@ -481,7 +487,7 @@ class TodayQuestionRecommendationServiceTest {
     }
 
     @Test
-    void recommend_recovers_when_same_day_insert_hits_unique_constraint() {
+    void recommend_keeps_exposure_that_a_concurrent_request_already_inserted() {
         PromptEntity promptOne = prompt("prompt-a-15", "Routine", "Lunch Break", "A");
         PromptRecommendationExposureEntity existingExposure = new PromptRecommendationExposureEntity(
                 LocalDate.now(),
@@ -510,14 +516,17 @@ class TodayQuestionRecommendationServiceTest {
                 .findByUserIdAndPromptIdAndRecommendedDateOrderByShownAtAsc(eq(41L), eq("prompt-a-15"), any(LocalDate.class)))
                 .thenReturn(List.of())
                 .thenReturn(List.of(existingExposure));
-        when(promptRecommendationExposureRepository.save(any(PromptRecommendationExposureEntity.class)))
-                .thenThrow(new DataIntegrityViolationException("duplicate daily exposure"))
-                .thenReturn(existingExposure);
+        // 동시 요청이 먼저 행을 넣었으므로 이 요청의 insert는 아무 행도 만들지 않는다.
+        when(promptRecommendationExposureRepository.insertIfAbsent(
+                any(), any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(0);
 
         DailyPromptRecommendationDto recommendation = recommendationService.recommend(DailyDifficultyDto.A, 41L, null);
 
         assertThat(recommendation.prompts()).extracting("id").containsExactly("prompt-a-15");
-        verify(promptRecommendationExposureRepository, times(2)).save(any(PromptRecommendationExposureEntity.class));
+        verify(promptRecommendationExposureRepository).insertIfAbsent(
+                any(LocalDate.class), eq(41L), any(), eq("A"), eq("prompt-a-15"), any(), any(), any(), any());
+        assertThat(existingExposure.getSlotType()).isEqualTo("FEATURED");
     }
 
     private PromptEntity prompt(String id, String topicCategory, String topicDetail, String difficulty) {

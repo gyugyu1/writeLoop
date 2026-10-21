@@ -43,6 +43,8 @@ import java.util.Set;
 public class TodayQuestionRecommendationService {
 
     private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
+    private static final String EXPOSURE_WRITE_LOCK_PREFIX = "wl-reco-exposure:";
+    private static final int EXPOSURE_WRITE_LOCK_TIMEOUT_SECONDS = 5;
     private static final int MAX_RECOMMENDATIONS = 3;
     private static final String SLOT_FEATURED = "FEATURED";
     private static final String SLOT_PREPICK_FEATURED = "PREPICK_FEATURED";
@@ -100,7 +102,8 @@ public class TodayQuestionRecommendationService {
             );
 
             phaseStartedAtNanos = System.nanoTime();
-            saveExposureLogs(computation.today(), difficulty, currentUserId, guestId, computation.items());
+            withExposureWriteLock(currentUserId, guestId, () ->
+                    saveExposureLogs(computation.today(), difficulty, currentUserId, guestId, computation.items()));
             promptRecommendationTimingRecorder.recordPhase(
                     "save_exposures",
                     elapsedMs(phaseStartedAtNanos),
@@ -153,14 +156,14 @@ public class TodayQuestionRecommendationService {
 
             phaseStartedAtNanos = System.nanoTime();
             if (computation.featured() != null) {
-                saveExposureLog(
+                withExposureWriteLock(currentUserId, guestId, () -> saveExposureLog(
                         computation.today(),
                         difficulty,
                         currentUserId,
                         guestId,
                         computation.featured(),
                         "PREPICK_FEATURED"
-                );
+                ));
             }
             promptRecommendationTimingRecorder.recordPhase(
                     "save_featured_exposure",
@@ -1511,7 +1514,7 @@ public class TodayQuestionRecommendationService {
                     guestId
             ).orElse(null);
             if (exposure == null) {
-                exposure = new PromptRecommendationExposureEntity(
+                insertExposureIfAbsent(
                         today,
                         currentUserId,
                         guestId,
@@ -1521,7 +1524,6 @@ public class TodayQuestionRecommendationService {
                         item.reasonCode(),
                         item.score()
                 );
-                persistExposure(today, currentUserId, guestId, exposure);
                 continue;
             }
 
@@ -1557,7 +1559,7 @@ public class TodayQuestionRecommendationService {
                 guestId
         ).orElse(null);
         if (exposure == null) {
-            persistExposure(today, currentUserId, guestId, new PromptRecommendationExposureEntity(
+            insertExposureIfAbsent(
                     today,
                     currentUserId,
                     guestId,
@@ -1566,7 +1568,7 @@ public class TodayQuestionRecommendationService {
                     slotType,
                     item.reasonCode(),
                     item.score()
-            ));
+            );
             return;
         }
 
@@ -1580,6 +1582,64 @@ public class TodayQuestionRecommendationService {
         )) {
             persistExposure(today, currentUserId, guestId, exposure);
         }
+    }
+
+    // 같은 사용자의 추천 요청이 동시에 노출 행을 넣으면, 같은 유니크 키를 기다리던 트랜잭션끼리 잠금을 올리다 교착 상태가 된다.
+    // 이름 잠금으로 같은 사용자의 노출 쓰기를 한 번에 하나씩 실행한다. 잠금을 못 얻으면 그냥 진행한다.
+    private void withExposureWriteLock(Long currentUserId, String guestId, Runnable writes) {
+        if (!hasExposureSubject(currentUserId, guestId)) {
+            return;
+        }
+        String lockName = currentUserId != null
+                ? EXPOSURE_WRITE_LOCK_PREFIX + "user:" + currentUserId
+                : EXPOSURE_WRITE_LOCK_PREFIX + "guest:" + Integer.toHexString(guestId.hashCode());
+        boolean locked = Long.valueOf(1L).equals(
+                promptRecommendationExposureRepository.acquireWriteLock(lockName, EXPOSURE_WRITE_LOCK_TIMEOUT_SECONDS)
+        );
+        try {
+            writes.run();
+        } finally {
+            if (locked) {
+                promptRecommendationExposureRepository.releaseWriteLock(lockName);
+            }
+        }
+    }
+
+    // 홈 화면처럼 같은 사용자의 추천 요청이 동시에 들어오면 모두 "행 없음"을 보고 같은 행을 넣으려 한다.
+    // 엔티티 save로 넣으면 진 쪽이 유니크 키 위반 뒤 세션이 깨져 500이 되므로, DB에서 원자적으로 넣고 이미 있으면 메타데이터만 합친다.
+    // 다른 트랜잭션이 막 커밋한 행은 현재 트랜잭션의 읽기 스냅숏에 안 보일 수 있는데, 그때는 그 요청이 기록한 행을 그대로 둔다.
+    private void insertExposureIfAbsent(
+            LocalDate today,
+            Long currentUserId,
+            String guestId,
+            String difficulty,
+            String promptId,
+            String slotType,
+            String reasonCode,
+            Integer score
+    ) {
+        Instant shownAt = Instant.now();
+        promptRecommendationExposureRepository.insertIfAbsent(
+                today,
+                currentUserId,
+                guestId,
+                difficulty,
+                promptId,
+                slotType,
+                reasonCode,
+                score,
+                shownAt
+        );
+        findOrStabilizePromptExposureForToday(today, promptId, currentUserId, guestId)
+                .filter(exposure -> mergeRecommendationMetadata(
+                        exposure,
+                        difficulty,
+                        slotType,
+                        reasonCode,
+                        score,
+                        shownAt
+                ))
+                .ifPresent(exposure -> persistExposure(today, currentUserId, guestId, exposure));
     }
 
     private void persistExposure(

@@ -23,9 +23,10 @@ class CanonicalFeedbackAssemblerTest {
                 "I usually take a walk after work because it helps me relax.",
                 List.of(),
                 Map.of(
-                        "ACTION", new SlotAssessmentValue("take a walk", List.of()),
-                        "REASON", new SlotAssessmentValue(null, List.of(reasonSupport))
-                )
+                        "ACTION", new SlotAssessmentValue("take a walk", SlotAssessmentStatus.SATISFIED),
+                        "REASON", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING)
+                ),
+                new MissionSupport("REASON", reasonSupport)
         );
 
         AssembledFeedback assembled = assembler.assemble(
@@ -57,7 +58,7 @@ class CanonicalFeedbackAssemblerTest {
                 ),
                 "I go home after work.",
                 List.of(),
-                Map.of("ACTION", new SlotAssessmentValue("goes home", List.of()))
+                Map.of("ACTION", new SlotAssessmentValue("goes home", SlotAssessmentStatus.SATISFIED))
         );
 
         AssembledFeedback assembled = assembler.assemble(
@@ -92,7 +93,7 @@ class CanonicalFeedbackAssemblerTest {
                 ),
                 revised,
                 List.of(),
-                Map.of("ACTION", new SlotAssessmentValue("drink makgeolli", List.of()))
+                Map.of("ACTION", new SlotAssessmentValue("drink makgeolli", SlotAssessmentStatus.SATISFIED))
         );
 
         AssembledFeedback assembled = assembler.assemble(
@@ -136,7 +137,7 @@ class CanonicalFeedbackAssemblerTest {
                 ),
                 revised,
                 List.of(),
-                Map.of("ACTION", new SlotAssessmentValue("go home", List.of()))
+                Map.of("ACTION", new SlotAssessmentValue("go home", SlotAssessmentStatus.SATISFIED))
         );
 
         AssembledFeedback assembled = assembler.assemble(
@@ -191,7 +192,7 @@ class CanonicalFeedbackAssemblerTest {
                 diagnosis(revised, StructureStatus.COMPLETE, revisionSteps),
                 revised,
                 List.of(),
-                Map.of("ACTION", new SlotAssessmentValue("eat later", List.of()))
+                Map.of("ACTION", new SlotAssessmentValue("eat later", SlotAssessmentStatus.SATISFIED))
         );
 
         AssembledFeedback assembled = assembler.assemble(
@@ -220,9 +221,10 @@ class CanonicalFeedbackAssemblerTest {
                 "I go home because I need to rest.",
                 List.of(),
                 Map.of(
-                        "ACTION", new SlotAssessmentValue("goes home", List.of()),
-                        "REASON", new SlotAssessmentValue(null, List.of(support()))
-                )
+                        "ACTION", new SlotAssessmentValue("goes home", SlotAssessmentStatus.SATISFIED),
+                        "REASON", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING)
+                ),
+                new MissionSupport("REASON", support())
         );
 
         AssembledFeedback assembled = assembler.assemble(
@@ -254,7 +256,7 @@ class CanonicalFeedbackAssemblerTest {
                 List.of(refinement),
                 Map.of(
                         "ACTION",
-                        new SlotAssessmentValue("practice a five-minute conversation", List.of())
+                        new SlotAssessmentValue("practice a five-minute conversation", SlotAssessmentStatus.SATISFIED)
                 )
         );
 
@@ -277,6 +279,16 @@ class CanonicalFeedbackAssemblerTest {
             List<RefinementExpressionDto> refinements,
             Map<String, SlotAssessmentValue> slotAssessments
     ) {
+        return output(diagnosis, modelAnswer, refinements, slotAssessments, null);
+    }
+
+    private CanonicalLlmOutput output(
+            FeedbackDiagnosisResult diagnosis,
+            String modelAnswer,
+            List<RefinementExpressionDto> refinements,
+            Map<String, SlotAssessmentValue> slotAssessments,
+            MissionSupport missionSupport
+    ) {
         return new CanonicalLlmOutput(
                 diagnosis,
                 new GeneratedContent(
@@ -285,7 +297,7 @@ class CanonicalFeedbackAssemblerTest {
                         modelAnswer,
                         "Reference translation"
                 ),
-                new SlotAssessments(slotAssessments)
+                new SlotAssessments(slotAssessments, missionSupport)
         );
     }
 

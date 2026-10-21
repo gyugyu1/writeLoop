@@ -42,11 +42,12 @@ reference content after the decisions it depends on.
 1. `topicAssessment` (`reasonKo`, then `status`)
 2. `structureAssessment`
 3. `languageAssessment`
-4. `slotAssessments` (per slot: `evidence`, then `support`)
-5. `modelAnswer`
-6. `modelAnswerKo`
-7. `refinementExpressions` (chosen by comparing the already written `modelAnswer` with the learner answer)
-8. `strengths`
+4. `slotAssessments` (per slot: `evidence`, then `verdict`)
+5. `missionSupport` (zero or one item, for the slot the selection order picks)
+6. `modelAnswer`
+7. `modelAnswerKo`
+8. `refinementExpressions` (chosen by comparing the already written `modelAnswer` with the learner answer)
+9. `strengths`
 
 Build every LLM schema and prompt payload with `OrderedMaps` or `LinkedHashMap`. Never use `Map.of`,
 `Map.ofEntries`, `Map.copyOf`, or `Set.of` there: their iteration order changes on every JVM start, which
@@ -74,14 +75,21 @@ Field details:
   - Grammatically acceptable wording must not be revised merely because another version is more natural, common, concise, or specific.
 - `slotAssessments`
   - A fixed-key object with exactly one property for every canonical slot in the question contract.
-  - Each slot value contains only `evidence` and a `support` array; the nested value does not repeat the slot code or return a status.
+  - Each slot value contains only `evidence` and `verdict`; it never carries teaching support.
   - Evidence must quote the untouched learner answer. If a language correction overlaps the evidence, keep the learner's original wording here; corrected text belongs only in `languageAssessment.revisionSteps`.
-  - Non-empty learner-answer evidence and zero support items -> the backend derives `SATISFIED`.
-  - Non-empty learner-answer evidence and exactly one support item -> the backend derives `GENERIC`.
-  - Empty evidence and exactly one support item -> the backend derives `MISSING`.
-  - Any other evidence/support shape is invalid and must be rejected.
-  - Each support includes `title`, `whyKo`, `instructionKo`, `skeletonEn`, and `skeletonKo`.
-  - `suggestedPhrases` contains 2-4 usable English phrases with Korean meanings.
+  - `SATISFIED` and `GENERIC` require non-empty learner-answer evidence; otherwise the response is rejected.
+  - `MISSING` evidence is ignored: the backend clears it instead of retrying.
+  - A missing or unknown verdict is rejected.
+- `missionSupport`
+  - Zero or one item. The learner sees support for one slot at most, so the LLM writes it only for the slot picked by this order (the same order the backend uses):
+    1. `OFF_TOPIC` -> the first required slot, or the first depth slot when there is no required slot.
+    2. `FRAGMENT` or any `GRAMMAR_BLOCKING` step -> no slot.
+    3. The first required slot that is not `SATISFIED`.
+    4. Any `GRAMMAR_LOCAL` step -> no slot.
+    5. When `minimumDepthSlots` > 0 and too few depth slots are `SATISFIED` -> the first depth slot that is not `SATISFIED`.
+    6. Otherwise no slot.
+  - The item includes `slot`, `title`, `whyKo`, `instructionKo`, `skeletonEn`, `skeletonKo`, and `suggestedPhrases` (2-4 usable English phrases with Korean meanings).
+  - If the backend chooses a `SLOT` or `TASK_RESET` mission and `missionSupport` is empty, incomplete, or teaches a different slot, the response is a retryable contract violation. Support returned when the backend chooses no slot mission is ignored.
 - `strengths`
 - `refinementExpressions`
 - `modelAnswer`
@@ -108,7 +116,7 @@ Do not add LLM fields for backend decisions or duplicate diagnoses:
 - `presentSlots`
 - `missingSlots`
 - `fixPoints`
-- `slotAssessments.<slot>.status`
+- `slotAssessments.<slot>.support` (teaching support lives only in `missionSupport`)
 
 ## Backend Decision
 
@@ -128,7 +136,7 @@ vocabulary/collocation expression and one sentence-frame/connector expression, t
 genuinely distinct useful options. All must preserve the learner's stated facts and meaning,
 must not duplicate wording already used by the learner, and must not be near-duplicates of each other.
 
-Only backend-derived `SATISFIED` counts as present. Backend-derived `GENERIC` remains unresolved, and the backend selects that same slot rather than inventing a different target.
+Only `SATISFIED` counts as present. `GENERIC` remains unresolved, and the backend selects that same slot rather than inventing a different target.
 
 The backend then derives:
 
@@ -141,7 +149,7 @@ The backend then derives:
 - `rewriteWorkspace`
 - `loopComplete`
 
-If slot evidence differs from the learner answer only because it quotes text from a cumulative revision step, the backend may walk the validated steps backward and restore it only when one unambiguous original span results. It never uses fuzzy matching or invents evidence. Slot/support violations remain eligible for one whole-response contract retry. Invalid language-step ordering, overlap, preservation, or completeness is rejected immediately without retry or backend-authored teaching content.
+If slot evidence differs from the learner answer only because it quotes text from a cumulative revision step, the backend may walk the validated steps backward and restore it only when one unambiguous original span results. It never uses fuzzy matching or invents evidence. Slot and `missionSupport` violations remain eligible for one whole-response contract retry. Invalid language-step ordering, overlap, preservation, or completeness is rejected immediately without retry or backend-authored teaching content.
 
 ## Diagnosis Persistence
 

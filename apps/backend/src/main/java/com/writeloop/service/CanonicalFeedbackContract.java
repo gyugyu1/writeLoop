@@ -25,25 +25,26 @@ final class CanonicalFeedbackContract {
             2. structureAssessment.status.
             3. languageAssessment.revisionSteps: zero to 25 cumulative steps.
             4. slotAssessments: assess every configured slot exactly once in the fixed-key object.
-               For each slot, write evidence first, then decide whether support is needed.
-               Keep each slot's evidence and teaching support together under that slot key.
-            5. modelAnswer, then modelAnswerKo.
-            6. refinementExpressions, selected by comparing the modelAnswer you already wrote with the learner answer.
-            7. strengths.
+               For each slot, write evidence first, then decide verdict from that evidence.
+            5. missionSupport: teaching support for at most one slot, chosen by the selection order below.
+            6. modelAnswer, then modelAnswerKo.
+            7. refinementExpressions, selected by comparing the modelAnswer you already wrote with the learner answer.
+            8. strengths.
 
             Authority boundaries:
             - You diagnose topic relevance, sentence structure, cumulative full-answer revision steps,
-              slot evidence, and slot teaching support.
-            - Do not return a slot status or decide completion, mission type, target slot, action type, score, or UI layout.
+              slot evidence and verdicts, and write teaching support for the one slot the selection order picks.
+            - Do not decide completion, mission type, action type, score, or UI layout.
             - Do not return a separate revisedAnswer or issues array. The backend derives the final revised answer and
               visible correction cards from revisionSteps.
-            - The backend derives slot status and all final decision values from your output and the question metadata.
+            - The backend recomputes the mission from your diagnosis and the question metadata, and rejects a missionSupport
+              that teaches a different slot.
 
             Topic rules:
             - ON_TOPIC means the answer directly addresses the question or clearly contributes relevant information.
             - OFF_TOPIC means the answer is about a different subject and cannot be repaired by adding one requested detail.
             - A short but relevant answer is ON_TOPIC. A grammatically broken but relevant answer is ON_TOPIC.
-            - When status is OFF_TOPIC, use the MISSING shape for every configured slot: empty evidence and exactly one support item.
+            - When status is OFF_TOPIC, set every configured slot to empty evidence and verdict MISSING.
               Unrelated facts never satisfy question slots.
             - When status is OFF_TOPIC, return COMPLETE and an empty languageAssessment.revisionSteps array.
 
@@ -99,7 +100,7 @@ final class CanonicalFeedbackContract {
 
             Slot rules:
             - slotAssessments has exactly the fixed keys supplied by the response schema. Do not omit, add, or rename keys.
-            - Never return a status field inside a slot assessment. The backend derives it from evidence and support.
+            - verdict is SATISFIED, GENERIC, or MISSING. Decide it only from the evidence you just wrote.
             - Judge each slot using the original question together with all three values in questionContract.slotContracts:
               definition is the shared slot meaning, semanticRole is this question's exact relationship, and satisfiedWhen is the
               paraphrase-tolerant fulfillment criterion. All three must be satisfied.
@@ -111,8 +112,7 @@ final class CanonicalFeedbackContract {
             - Inherit only fixed context that the question supplies. Never treat the value a question asks the learner to provide as already supplied.
             - A grammatical sentence, a matching keyword, or a mentioned entity does not satisfy a slot unless the answer expresses
               the question-specific semantic relationship.
-            - For concrete, learnable slot information, return a non-empty exact learner-answer substring in evidence and an empty support array.
-              The backend derives SATISFIED.
+            - For concrete, learnable slot information, return a non-empty exact learner-answer substring in evidence and verdict SATISFIED.
             - Evidence must be the smallest exact learner-answer span that, when interpreted together with the original question, proves the
               slot relationship. It must remain a literal learner-answer substring; never paraphrase or invent evidence.
             - Copy slot evidence from the untouched learner answer before applying any language correction. When a language change overlaps
@@ -123,20 +123,30 @@ final class CanonicalFeedbackContract {
               For "Where do you live?", the question does not supply a PLACE value, so the learner answer must still identify one.
             - Concrete information may be brief. It is SATISFIED when the evidence itself gives a distinguishable answer to that slot.
             - For vague slot information, such as something, somehow, more, some problems, life changed, differently, nice, or good, return a
-              non-empty exact learner-answer substring in evidence and exactly one support item. The backend derives GENERIC.
-            - When wording attempts the slot but only uses a placeholder, circular evaluation, or unspecified manner, use the GENERIC shape,
+              non-empty exact learner-answer substring in evidence and verdict GENERIC.
+            - When wording attempts the slot but only uses a placeholder, circular evaluation, or unspecified manner, use GENERIC,
               not MISSING. Use MISSING only when the answer contains no information attempting that slot.
             - Specificity contrasts:
               * REASON: "because it is nice" is GENERIC; "because blue reminds me of the ocean" is SATISFIED.
               * PLACE: "a nice area" is GENERIC; "western Seoul near a park" is SATISFIED.
               * BEFORE_STATE: "used to meet differently" is GENERIC; "used to meet in person" is SATISFIED.
-            - When the answer provides no information for the slot, return an empty evidence string and exactly one support item.
-              The backend derives MISSING.
+            - When the answer provides no information for the slot, return an empty evidence string and verdict MISSING.
             - Do not invent or rename slots. Use only the slots in questionContract.
 
-            Slot support rules:
-            - Put support inside the same slotAssessments entry; never return a separate slot list or repeat the slot code.
-            - Each support must teach that exact slot, not a broader category.
+            Mission support rules:
+            - The learner sees teaching support for one slot only, so write it for exactly the slot the backend will teach.
+              Pick it with this order, using only what you have already written:
+              1. topicAssessment.status is OFF_TOPIC: the first questionContract.requiredSlots slot,
+                 or the first depthSlots slot when requiredSlots is empty.
+              2. structureAssessment.status is FRAGMENT, or any revision step has kind GRAMMAR_BLOCKING: no slot.
+              3. The first requiredSlots slot whose verdict is not SATISFIED.
+              4. Any revision step has kind GRAMMAR_LOCAL: no slot.
+              5. minimumDepthSlots is greater than 0 and fewer than minimumDepthSlots depthSlots slots are SATISFIED:
+                 the first depthSlots slot whose verdict is not SATISFIED.
+              6. Otherwise: no slot.
+            - When a slot is picked, return exactly one missionSupport item whose slot is that slot code. When no slot is picked,
+              return an empty missionSupport array. Never write support for any other slot.
+            - The support must teach that exact slot, not a broader category.
             - skeletonEn and skeletonKo are both required and must align in meaning.
             - skeletonKo must be a Korean-language scaffold containing Hangul, not an English scaffold copied from skeletonEn.
               Translate the fixed wording into Korean and preserve the blank placeholder.
@@ -209,6 +219,7 @@ final class CanonicalFeedbackContract {
                         Every languageAssessment.revisionSteps item must contain one cumulative complete answerAfter.
                         Preserve every earlier correction exactly in each later answerAfter.
                         All slot evidence values must be copied exactly from the untouched learner answer.
+                        missionSupport must teach only the slot picked by the selection order, or be empty.
                         """
         ));
         payload.put("originalInput", jsonValueOrText(originalUserPrompt));
@@ -243,10 +254,16 @@ final class CanonicalFeedbackContract {
         for (String slot : slots) {
             slotAssessmentProperties.put(slot, objectSchema(OrderedMaps.of(
                     "evidence", stringSchema(),
-                    "support", arraySchema(slotSupportSchema(), 0, 1)
+                    "verdict", enumString(List.of("SATISFIED", "GENERIC", "MISSING"))
             )));
         }
         properties.put("slotAssessments", objectSchema(slotAssessmentProperties));
+        // 지원 내용은 미션으로 보여 줄 슬롯 하나에만 쓴다. 슬롯마다 쓰게 하면 출력 대부분이 버려진다.
+        properties.put("missionSupport", arraySchema(
+                missionSupportSchema(slots.isEmpty() ? stringSchema() : enumString(slots)),
+                0,
+                slots.isEmpty() ? 0 : 1
+        ));
         properties.put("modelAnswer", stringSchema());
         properties.put("modelAnswerKo", stringSchema());
         properties.put("refinementExpressions", arraySchema(objectSchema(OrderedMaps.of(
@@ -284,15 +301,19 @@ final class CanonicalFeedbackContract {
         Map<String, SlotAssessmentValue> slotAssessments = new LinkedHashMap<>();
         root.path("slotAssessments").fields().forEachRemaining(entry -> {
             JsonNode item = entry.getValue();
-            List<SlotFeedbackSupport> support = new ArrayList<>();
-            for (JsonNode supportItem : item.path("support")) {
-                support.add(parseSlotSupport(supportItem));
-            }
             slotAssessments.put(entry.getKey(), new SlotAssessmentValue(
                     text(item, "evidence"),
-                    support
+                    SlotAssessmentStatus.fromCode(text(item, "verdict"))
             ));
         });
+        MissionSupport missionSupport = null;
+        JsonNode missionSupportItems = root.path("missionSupport");
+        if (missionSupportItems.size() > 1) {
+            throw new FeedbackContractException("missionSupport must contain at most one item");
+        }
+        for (JsonNode supportItem : missionSupportItems) {
+            missionSupport = new MissionSupport(text(supportItem, "slot"), parseSlotSupport(supportItem));
+        }
 
         List<String> strengths = new ArrayList<>();
         root.path("strengths").forEach(item -> strengths.add(item.asText("")));
@@ -311,7 +332,7 @@ final class CanonicalFeedbackContract {
                 text(root, "modelAnswer"),
                 text(root, "modelAnswerKo")
         );
-        return new CanonicalLlmOutput(diagnosis, content, new SlotAssessments(slotAssessments));
+        return new CanonicalLlmOutput(diagnosis, content, new SlotAssessments(slotAssessments, missionSupport));
     }
 
     private SlotFeedbackSupport parseSlotSupport(JsonNode item) {
@@ -348,8 +369,9 @@ final class CanonicalFeedbackContract {
         return value.substring(0, maxLength);
     }
 
-    private static Map<String, Object> slotSupportSchema() {
+    private static Map<String, Object> missionSupportSchema(Map<String, Object> slotSchema) {
         return objectSchema(OrderedMaps.of(
+                "slot", slotSchema,
                 "title", stringSchema(),
                 "whyKo", stringSchema(),
                 "instructionKo", stringSchema(),

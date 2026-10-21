@@ -59,7 +59,7 @@ final class FeedbackLearningContractPolicy {
         );
         if (diagnosis.topicRelevance() == TopicRelevance.OFF_TOPIC
                 && verified.values().values().stream()
-                .anyMatch(item -> item.derivedStatus() != SlotAssessmentStatus.MISSING)) {
+                .anyMatch(item -> item.status() != SlotAssessmentStatus.MISSING)) {
             throw new FeedbackContractException("OFF_TOPIC answers cannot satisfy question slots");
         }
         List<String> presentSlots = verified.values().entrySet().stream()
@@ -216,11 +216,12 @@ final class FeedbackLearningContractPolicy {
             List<ValidatedLanguageCorrection> languageCorrections
     ) {
         Map<String, SlotAssessmentValue> proposed = assessments == null ? OrderedMaps.of() : assessments.values();
+        MissionSupport proposedSupport = assessments == null ? null : assessments.missionSupport();
         if (allowedSlots.isEmpty()) {
-            if (!proposed.isEmpty()) {
+            if (!proposed.isEmpty() || proposedSupport != null) {
                 throw new FeedbackContractException("Slot data was returned without a slot contract");
             }
-            return new ContractAssessment(OrderedMaps.of());
+            return new ContractAssessment(OrderedMaps.of(), null);
         }
 
         Map<String, SlotAssessmentValue> assessmentsBySlot = new LinkedHashMap<>();
@@ -242,11 +243,9 @@ final class FeedbackLearningContractPolicy {
         for (Map.Entry<String, SlotAssessmentValue> entry : assessmentsBySlot.entrySet()) {
             String slot = entry.getKey();
             SlotAssessmentValue item = entry.getValue();
-            SlotAssessmentStatus status = item.derivedStatus();
+            SlotAssessmentStatus status = item.status();
             if (status == null) {
-                throw new FeedbackContractException(
-                        "Slot assessment must contain evidence, or exactly one support item: " + slot
-                );
+                throw new FeedbackContractException("Slot assessment must contain a verdict: " + slot);
             }
             switch (status) {
                 case SATISFIED -> {
@@ -268,12 +267,23 @@ final class FeedbackLearningContractPolicy {
                     );
                     entry.setValue(restored);
                     requireQuotedEvidence(slot, normalizeText(restored.evidence()), normalizedAnswer);
-                    requireOneCompleteSupport(slot, restored.support());
                 }
-                case MISSING -> requireOneCompleteSupport(slot, item.support());
+                // 없음 판정의 근거는 쓰이지 않으므로, 모델이 실수로 적었더라도 재시도 없이 비운다.
+                case MISSING -> entry.setValue(new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING));
             }
         }
-        return new ContractAssessment(Collections.unmodifiableMap(new LinkedHashMap<>(assessmentsBySlot)));
+        MissionSupport missionSupport = null;
+        if (proposedSupport != null) {
+            String supportSlot = FeedbackSlotCatalog.normalizeSlot(proposedSupport.slot(), answerMode);
+            if (supportSlot == null || !allowedSlots.contains(supportSlot)) {
+                throw new FeedbackContractException("Unexpected missionSupport slot: " + proposedSupport.slot());
+            }
+            missionSupport = new MissionSupport(supportSlot, proposedSupport.support());
+        }
+        return new ContractAssessment(
+                Collections.unmodifiableMap(new LinkedHashMap<>(assessmentsBySlot)),
+                missionSupport
+        );
     }
 
     private SlotAssessmentValue restoreLanguageCorrectedEvidence(
@@ -321,7 +331,7 @@ final class FeedbackLearningContractPolicy {
         if (exactOriginalSpans.size() != 1) {
             return assessment;
         }
-        return new SlotAssessmentValue(exactOriginalSpans.get(0), assessment.support());
+        return new SlotAssessmentValue(exactOriginalSpans.get(0), assessment.status());
     }
 
     private int occurrenceCount(String value, String target) {
@@ -357,20 +367,6 @@ final class FeedbackLearningContractPolicy {
         }
     }
 
-    private void requireOneCompleteSupport(
-            String slot,
-            List<SlotFeedbackSupport> support
-    ) {
-        if (support.size() != 1) {
-            throw new FeedbackContractException(
-                    "An unresolved slot requires exactly one support item: " + slot
-            );
-        }
-        if (!support.get(0).isComplete()) {
-            throw new FeedbackContractException("Incomplete slot support: " + slot);
-        }
-    }
-
     private MissionDecision decision(
             MissionKind kind,
             List<String> presentSlots,
@@ -378,19 +374,28 @@ final class FeedbackLearningContractPolicy {
             String chosenSlot,
         ContractAssessment assessment
     ) {
+        SlotFeedbackSupport chosenSupport = null;
         if ((kind == MissionKind.SLOT || kind == MissionKind.TASK_RESET) && chosenSlot != null) {
-            SlotAssessmentValue chosenAssessment = assessment.values().get(chosenSlot);
-            boolean hasSupport = chosenAssessment != null && chosenAssessment.support().size() == 1;
-            if (!hasSupport) {
-                throw new FeedbackContractException("The chosen slot has no teaching support: " + chosenSlot);
+            // 모델은 공개된 선택 규칙으로 지원 내용을 한 슬롯에만 쓴다. 백엔드가 고른 슬롯과 다르면 계약 위반으로 한 번 재시도한다.
+            MissionSupport missionSupport = assessment.missionSupport();
+            if (missionSupport == null || !chosenSlot.equals(missionSupport.slot())) {
+                throw new FeedbackContractException(
+                        "missionSupport must teach the chosen slot " + chosenSlot
+                                + " (returned: " + (missionSupport == null ? "none" : missionSupport.slot()) + ")"
+                );
             }
+            if (!missionSupport.support().isComplete()) {
+                throw new FeedbackContractException("Incomplete mission support: " + chosenSlot);
+            }
+            chosenSupport = missionSupport.support();
         }
         return new MissionDecision(
                 kind,
                 presentSlots,
                 missingSlots,
                 chosenSlot,
-                assessment.values()
+                assessment.values(),
+                chosenSupport
         );
     }
 
@@ -611,7 +616,8 @@ final class FeedbackLearningContractPolicy {
     }
 
     private record ContractAssessment(
-            Map<String, SlotAssessmentValue> values
+            Map<String, SlotAssessmentValue> values,
+            MissionSupport missionSupport
     ) {
     }
 

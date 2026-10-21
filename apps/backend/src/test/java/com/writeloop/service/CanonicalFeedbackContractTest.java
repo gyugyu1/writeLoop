@@ -32,6 +32,7 @@ class CanonicalFeedbackContractTest {
                 "strengths",
                 "refinementExpressions",
                 "slotAssessments",
+                "missionSupport",
                 "modelAnswer",
                 "modelAnswerKo"
         );
@@ -66,15 +67,15 @@ class CanonicalFeedbackContractTest {
                 .extracting(JsonNode::asText)
                 .containsExactlyInAnyOrder("expression", "meaningKo", "guidanceKo", "exampleEn");
         assertThat(refinementItem.path("properties").has("exampleKo")).isFalse();
-        JsonNode slotSupportItem = properties.path("slotAssessments")
-                .path("properties")
-                .path("ACTION")
-                .path("properties")
-                .path("support")
-                .path("items");
+        JsonNode slotSupportItem = properties.path("missionSupport").path("items");
+        assertThat(properties.path("missionSupport").path("maxItems").asInt()).isEqualTo(1);
+        assertThat(slotSupportItem.path("properties").path("slot").path("enum"))
+                .extracting(JsonNode::asText)
+                .containsExactly("ACTION", "REASON");
         assertThat(slotSupportItem.path("required"))
                 .extracting(JsonNode::asText)
                 .containsExactlyInAnyOrder(
+                        "slot",
                         "title",
                         "whyKo",
                         "instructionKo",
@@ -145,11 +146,14 @@ class CanonicalFeedbackContractTest {
                 .containsExactlyInAnyOrder("ACTION", "REASON");
         assertThat(slotAssessments.path("properties").path("ACTION").path("required"))
                 .extracting(JsonNode::asText)
-                .containsExactlyInAnyOrder("evidence", "support");
+                .containsExactlyInAnyOrder("evidence", "verdict");
         assertThat(slotAssessments.path("properties").path("ACTION")
-                .path("properties").has("status")).isFalse();
-        assertThat(slotAssessments.path("properties").path("REASON")
-                .path("properties").path("support").path("items").path("properties")
+                .path("properties").path("verdict").path("enum"))
+                .extracting(JsonNode::asText)
+                .containsExactly("SATISFIED", "GENERIC", "MISSING");
+        assertThat(slotAssessments.path("properties").path("ACTION")
+                .path("properties").has("support")).isFalse();
+        assertThat(properties.path("missionSupport").path("items").path("properties")
                 .path("suggestedPhrases").path("minItems").asInt()).isEqualTo(2);
     }
 
@@ -268,22 +272,21 @@ class CanonicalFeedbackContractTest {
                   "strengths": [],
                   "refinementExpressions": [],
                   "slotAssessments": {
-                    "ACTION": {"evidence": "noodles", "support": []},
-                    "REASON": {
-                      "evidence": "",
-                      "support": [{
-                        "title": "이유 더하기",
-                        "whyKo": "이유가 필요해요.",
-                        "instructionKo": "구체적인 이유를 쓰세요.",
-                        "skeletonEn": "I eat noodles because ____.",
-                        "skeletonKo": "저는 ____ 때문에 국수를 먹어요.",
-                        "suggestedPhrases": [
-                          {"phrase": "they are quick", "meaningKo": "빨리 준비돼요"},
-                          {"phrase": "I like the taste", "meaningKo": "맛을 좋아해요"}
-                        ]
-                      }]
-                    }
+                    "ACTION": {"evidence": "noodles", "verdict": "SATISFIED"},
+                    "REASON": {"evidence": "", "verdict": "MISSING"}
                   },
+                  "missionSupport": [{
+                    "slot": "REASON",
+                    "title": "이유 더하기",
+                    "whyKo": "이유가 필요해요.",
+                    "instructionKo": "구체적인 이유를 쓰세요.",
+                    "skeletonEn": "I eat noodles because ____.",
+                    "skeletonKo": "저는 ____ 때문에 국수를 먹어요.",
+                    "suggestedPhrases": [
+                      {"phrase": "they are quick", "meaningKo": "빨리 준비돼요"},
+                      {"phrase": "I like the taste", "meaningKo": "맛을 좋아해요"}
+                    ]
+                  }],
                   "modelAnswer": "After work, I usually eat noodles because they are quick.",
                   "modelAnswerKo": "퇴근 후에는 빨리 준비할 수 있어서 보통 국수를 먹어요."
                 }
@@ -292,6 +295,10 @@ class CanonicalFeedbackContractTest {
         assertThat(output.diagnosis().structureAssessment().status()).isEqualTo(StructureStatus.FRAGMENT);
         assertThat(output.diagnosis().languageAssessment().revisionSteps()).singleElement()
                 .satisfies(step -> assertThat(step.kind()).isEqualTo(LanguageIssueKind.STRUCTURE));
+        assertThat(output.slotAssessments().values().get("REASON").status())
+                .isEqualTo(SlotAssessmentStatus.MISSING);
+        assertThat(output.slotAssessments().missionSupport().slot()).isEqualTo("REASON");
+        assertThat(output.slotAssessments().missionSupport().support().isComplete()).isTrue();
     }
 
     private String canonicalJson(String languageAssessment) {

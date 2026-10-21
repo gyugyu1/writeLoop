@@ -71,7 +71,8 @@ class FeedbackSlotCatalogTest {
                 List.of(),
                 missingSlots,
                 chosenSlot,
-                Map.of()
+                Map.of(),
+                null
         );
     }
 }

@@ -481,26 +481,95 @@ class FeedbackLearningContractPolicyTest {
                 )
         );
 
-        assertThat(decision.slotAssessments().get("ACTION").derivedStatus())
+        assertThat(decision.slotAssessments().get("ACTION").status())
                 .isEqualTo(SlotAssessmentStatus.GENERIC);
-        assertThat(decision.slotAssessments().get("REASON").derivedStatus())
+        assertThat(decision.slotAssessments().get("REASON").status())
                 .isEqualTo(SlotAssessmentStatus.SATISFIED);
-        assertThat(decision.slotAssessments().get("DETAIL").derivedStatus())
+        assertThat(decision.slotAssessments().get("DETAIL").status())
                 .isEqualTo(SlotAssessmentStatus.MISSING);
     }
 
     @Test
-    void rejectsAssessmentWithoutEvidenceOrSupport() {
+    void rejectsAssessmentWithoutAVerdict() {
         String answer = "I walk.";
 
         assertThatThrownBy(() -> policy.resolve(
                 prompt(List.of("ACTION"), List.of(), 0),
                 answer,
                 diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
-                assessment(Map.entry("ACTION", new SlotAssessmentValue(null, List.of())))
+                assessment(Map.entry("ACTION", new SlotAssessmentValue("walk", null)))
         ))
                 .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("evidence");
+                .hasMessageContaining("verdict");
+    }
+
+    @Test
+    void dropsEvidenceFromAMissingVerdictWithoutRetrying() {
+        String answer = "I walk because it is good.";
+        MissionDecision decision = policy.resolve(
+                prompt(List.of("ACTION", "REASON"), List.of(), 0),
+                answer,
+                diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
+                assessment(
+                        satisfied("ACTION", "walk"),
+                        Map.entry("REASON", new SlotAssessmentValue("it is good", SlotAssessmentStatus.MISSING))
+                )
+        );
+
+        assertThat(decision.chosenSlot()).isEqualTo("REASON");
+        assertThat(decision.slotAssessments().get("REASON").evidence()).isNull();
+    }
+
+    @Test
+    void rejectsMissionSupportThatTeachesADifferentSlot() {
+        String answer = "I walk.";
+        Map<String, SlotAssessmentValue> values = new LinkedHashMap<>();
+        values.put("ACTION", new SlotAssessmentValue("walk", SlotAssessmentStatus.SATISFIED));
+        values.put("REASON", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING));
+
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION", "REASON"), List.of(), 0),
+                answer,
+                diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
+                new SlotAssessments(values, new MissionSupport("ACTION", support("ACTION")))
+        ))
+                .isInstanceOf(FeedbackContractException.class)
+                .hasMessageContaining("missionSupport must teach the chosen slot REASON (returned: ACTION)");
+    }
+
+    @Test
+    void rejectsASlotMissionWithoutMissionSupport() {
+        String answer = "I walk.";
+        Map<String, SlotAssessmentValue> values = new LinkedHashMap<>();
+        values.put("ACTION", new SlotAssessmentValue("walk", SlotAssessmentStatus.SATISFIED));
+        values.put("REASON", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING));
+
+        assertThatThrownBy(() -> policy.resolve(
+                prompt(List.of("ACTION", "REASON"), List.of(), 0),
+                answer,
+                diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
+                new SlotAssessments(values, null)
+        ))
+                .isInstanceOf(FeedbackContractException.class)
+                .hasMessageContaining("(returned: none)");
+    }
+
+    @Test
+    void ignoresMissionSupportWhenNoSlotMissionIsChosen() {
+        String answer = "I walk.";
+        Map<String, SlotAssessmentValue> values = new LinkedHashMap<>();
+        values.put("ACTION", new SlotAssessmentValue("walk", SlotAssessmentStatus.SATISFIED));
+        values.put("DETAIL", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING));
+
+        MissionDecision decision = policy.resolve(
+                prompt(List.of("ACTION"), List.of("DETAIL"), 0),
+                answer,
+                diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
+                new SlotAssessments(values, new MissionSupport("DETAIL", support("DETAIL")))
+        );
+
+        assertThat(decision.missionKind()).isEqualTo(MissionKind.COMPLETE);
+        assertThat(decision.chosenSupport()).isNull();
     }
 
     @Test
@@ -533,10 +602,13 @@ class FeedbackLearningContractPolicyTest {
                 prompt(List.of("ACTION"), List.of(), 0),
                 answer,
                 diagnosis(TopicRelevance.ON_TOPIC, StructureStatus.COMPLETE, answer, List.of()),
-                assessment(Map.entry("ACTION", new SlotAssessmentValue(null, List.of(incomplete))))
+                new SlotAssessments(
+                        Map.of("ACTION", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING)),
+                        new MissionSupport("ACTION", incomplete)
+                )
         ))
                 .isInstanceOf(FeedbackContractException.class)
-                .hasMessageContaining("Incomplete slot support");
+                .hasMessageContaining("Incomplete mission support");
     }
 
     private PromptDto prompt(List<String> required, List<String> optional, int minimumDepth) {
@@ -614,24 +686,33 @@ class FeedbackLearningContractPolicyTest {
     }
 
     private Map.Entry<String, SlotAssessmentValue> satisfied(String slot, String evidence) {
-        return Map.entry(slot, new SlotAssessmentValue(evidence, List.of()));
+        return Map.entry(slot, new SlotAssessmentValue(evidence, SlotAssessmentStatus.SATISFIED));
     }
 
     private Map.Entry<String, SlotAssessmentValue> generic(String slot, String evidence) {
-        return Map.entry(slot, new SlotAssessmentValue(evidence, List.of(support(slot))));
+        return Map.entry(slot, new SlotAssessmentValue(evidence, SlotAssessmentStatus.GENERIC));
     }
 
     private Map.Entry<String, SlotAssessmentValue> missing(String slot) {
-        return Map.entry(slot, new SlotAssessmentValue(null, List.of(support(slot))));
+        return Map.entry(slot, new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING));
     }
 
+    // 모델이 선택 규칙대로 쓴 것처럼, 첫 번째 미충족 슬롯에 지원 내용을 붙인다.
+    // 이 테스트들의 슬롯 순서는 필수 슬롯이 앞에 오므로 백엔드가 고르는 슬롯과 같다.
     @SafeVarargs
     private final SlotAssessments assessment(Map.Entry<String, SlotAssessmentValue>... entries) {
         Map<String, SlotAssessmentValue> values = new LinkedHashMap<>();
+        String firstUnresolved = null;
         for (Map.Entry<String, SlotAssessmentValue> entry : entries) {
             values.put(entry.getKey(), entry.getValue());
+            if (firstUnresolved == null && !entry.getValue().isSatisfied()) {
+                firstUnresolved = entry.getKey();
+            }
         }
-        return new SlotAssessments(values);
+        return new SlotAssessments(
+                values,
+                firstUnresolved == null ? null : new MissionSupport(firstUnresolved, support(firstUnresolved))
+        );
     }
 
     private SlotFeedbackSupport support(String slot) {

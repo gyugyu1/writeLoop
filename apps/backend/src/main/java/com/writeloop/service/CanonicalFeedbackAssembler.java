@@ -160,13 +160,10 @@ final class CanonicalFeedbackAssembler {
     }
 
     private SlotFeedbackSupport supportFor(MissionDecision decision, String slot) {
-        if (slot == null) {
+        if (slot == null || !slot.equals(decision.chosenSlot())) {
             return null;
         }
-        SlotAssessmentValue assessment = decision.slotAssessments().get(slot);
-        return assessment == null || assessment.support().isEmpty()
-                ? null
-                : assessment.support().get(0);
+        return decision.chosenSupport();
     }
 
     private List<FeedbackLanguageCorrectionDto> buildLanguageCorrections(

@@ -350,7 +350,7 @@ class OpenAiFeedbackClientTest {
         String reasonSlot = includeReasonSlot
                 ? """
                     ,
-                    "REASON": {"evidence": "because I am tired", "support": []}
+                    "REASON": {"evidence": "because I am tired", "verdict": "SATISFIED"}
                     """
                 : "";
         return """
@@ -363,8 +363,9 @@ class OpenAiFeedbackClientTest {
                   "strengths": [],
                   "refinementExpressions": [],
                   "slotAssessments": {
-                    "ACTION": {"evidence": "goes home", "support": []}%s
+                    "ACTION": {"evidence": "goes home", "verdict": "SATISFIED"}%s
                   },
+                  "missionSupport": [],
                   "modelAnswer": "I go home because I am tired.",
                   "modelAnswerKo": "저는 피곤해서 집에 가요."
                 }

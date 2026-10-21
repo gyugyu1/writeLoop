@@ -9,7 +9,7 @@ Use this skill to modify, debug, or evaluate the WriteLoop question-answer feedb
 
 ## Core Principle
 
-Treat `topicAssessment.status` as the sole topic-relevance authority and the backend-confirmed canonical `targetSlot` as the source of truth for content feedback. The LLM returns one fixed-key `slotAssessments` object whose canonical slot keys contain only `evidence` and `support`; it does not choose slot status, the target, or completion. The backend derives `SATISFIED` from evidence plus no support, `GENERIC` from evidence plus one support item, and `MISSING` from no evidence plus one support item. Only derived `SATISFIED` slots count as present. Never encode off-topic state again in `answerBand`, `taskCompletion`, or a separate `onTopic` field.
+Treat `topicAssessment.status` as the sole topic-relevance authority and the backend-confirmed canonical `targetSlot` as the source of truth for content feedback. The LLM returns one fixed-key `slotAssessments` object whose canonical slot keys contain only `evidence` and `verdict` (`SATISFIED`, `GENERIC`, `MISSING`), plus a top-level `missionSupport` with teaching support for at most one slot. It does not choose the mission, the target, or completion: it writes support only for the slot the published selection order picks, and the backend recomputes the decision and rejects support for any other slot. Only `SATISFIED` slots count as present. Never encode off-topic state again in `answerBand`, `taskCompletion`, or a separate `onTopic` field.
 
 Judge each slot from the original question plus `questionContract.slotContracts`: the shared `definition`, question-specific `semanticRole`, and question-specific `satisfiedWhen`. The English question-specific metadata is authoritative. Never fall back to only the shared definition when a question-specific contract is missing.
 
@@ -77,7 +77,8 @@ When changing feedback logic:
 2. Keep LLM authority limited to topic relevance, `structureAssessment.status`, cumulative full-answer `languageAssessment.revisionSteps`,
    canonical `slotAssessments`, and reference content.
 3. Keep the backend decision, `coachMission`, `coachMove`, `languageCorrections`, `revisedAnswer`, and rewrite UI aligned.
-4. For content missions, require complete support for the exact target slot: English/Korean skeletons and at least two phrase choices.
+4. For content missions, require complete `missionSupport` for the exact target slot: English/Korean skeletons and at least two phrase choices.
+   Never ask the LLM for support on slots the learner will not see; support for every unresolved slot was about 60% of output tokens.
 5. Diff each cumulative `answerAfter` against the previous complete answer; never ask the LLM to identify a change by an ambiguous source substring.
 6. Require steps in structure, blocking grammar, then local grammar order. Prefer left-to-right order within the same kind, but treat preservation of earlier corrections as the safety invariant. Validate individual diff ranges rather than rejecting a safe cumulative answer solely for same-kind position order.
 7. Allow at most 25 validated correction spans. Store all of them, show the first four by default, and place the remainder behind an expand/collapse control.
@@ -101,7 +102,7 @@ The short version:
 - Apply priority in this order: off-topic, fragment structure, blocking grammar, required slot, local grammar, depth slot, complete. Fragment and either grammar level are exposed as `LANGUAGE_FIX`.
 - Treat `structureAssessment.status=FRAGMENT` as a structure problem only; complete but short or content-thin sentences stay `COMPLETE` and use slot feedback.
 - Treat backend-derived `GENERIC` as unresolved and teach the same slot instead of selecting another detail slot.
-- Never add `status` inside an LLM `slotAssessments` value; status is derived exclusively from the validated `evidence/support` shape.
+- Keep the backend selection order and the `missionSupport` selection order in the developer prompt identical; a mismatch is a retryable contract violation.
 - Never classify grammatically acceptable wording as a grammar issue merely because another expression is more idiomatic, common, concise, or specific.
 - Use `TASK_RESET` for non-English, romanized Korean, meaningless, or off-topic answers.
 - Always provide an example, bilingual skeleton, and at least two phrases when the learner is asked to add content.

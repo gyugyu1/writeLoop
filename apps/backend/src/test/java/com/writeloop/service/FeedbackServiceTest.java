@@ -538,7 +538,8 @@ class FeedbackServiceTest {
                 List.of(),
                 complete ? List.of() : List.of("REASON"),
                 complete ? null : "REASON",
-                Map.of()
+                Map.of(),
+                null
         );
         GeneratedSections sections = new GeneratedSections(
                 List.of("The main action is clear."),

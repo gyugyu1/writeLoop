@@ -186,35 +186,31 @@ record FeedbackDiagnosisResult(
 enum SlotAssessmentStatus {
     SATISFIED,
     GENERIC,
-    MISSING
+    MISSING;
+
+    static SlotAssessmentStatus fromCode(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return valueOf(value.trim().toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return null;
+        }
+    }
 }
 
+// LLM이 슬롯마다 근거와 판정만 돌려준다. 학습 지원 내용은 미션으로 보여 줄 슬롯 하나에만 MissionSupport로 따로 받는다.
 record SlotAssessmentValue(
         String evidence,
-        List<SlotFeedbackSupport> support
+        SlotAssessmentStatus status
 ) {
     SlotAssessmentValue {
         evidence = normalize(evidence);
-        support = support == null
-                ? List.of()
-                : support.stream().filter(item -> item != null).toList();
-    }
-
-    SlotAssessmentStatus derivedStatus() {
-        if (evidence != null && support.isEmpty()) {
-            return SlotAssessmentStatus.SATISFIED;
-        }
-        if (evidence != null && support.size() == 1) {
-            return SlotAssessmentStatus.GENERIC;
-        }
-        if (evidence == null && support.size() == 1) {
-            return SlotAssessmentStatus.MISSING;
-        }
-        return null;
     }
 
     boolean isSatisfied() {
-        return derivedStatus() == SlotAssessmentStatus.SATISFIED;
+        return status == SlotAssessmentStatus.SATISFIED;
     }
 
     private static String normalize(String value) {
@@ -283,8 +279,18 @@ enum MissionKind {
     COMPLETE
 }
 
+record MissionSupport(
+        String slot,
+        SlotFeedbackSupport support
+) {
+    MissionSupport {
+        slot = slot == null || slot.isBlank() ? null : slot.trim();
+    }
+}
+
 record SlotAssessments(
-        Map<String, SlotAssessmentValue> values
+        Map<String, SlotAssessmentValue> values,
+        MissionSupport missionSupport
 ) {
     SlotAssessments {
         Map<String, SlotAssessmentValue> normalized = new LinkedHashMap<>();
@@ -296,6 +302,13 @@ record SlotAssessments(
             });
         }
         values = Collections.unmodifiableMap(normalized);
+        if (missionSupport != null && (missionSupport.slot() == null || missionSupport.support() == null)) {
+            missionSupport = null;
+        }
+    }
+
+    SlotAssessments(Map<String, SlotAssessmentValue> values) {
+        this(values, null);
     }
 }
 
@@ -304,7 +317,8 @@ record MissionDecision(
         List<String> presentSlots,
         List<String> missingSlots,
         String chosenSlot,
-        Map<String, SlotAssessmentValue> slotAssessments
+        Map<String, SlotAssessmentValue> slotAssessments,
+        SlotFeedbackSupport chosenSupport
 ) {
     MissionDecision {
         presentSlots = normalizeSlots(presentSlots);

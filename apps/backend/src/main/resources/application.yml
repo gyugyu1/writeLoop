@@ -75,6 +75,8 @@ openai:
   coach-request-timeout-seconds: ${OPENAI_COACH_REQUEST_TIMEOUT_SECONDS:${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:120}}
   feedback-reasoning-effort: ${OPENAI_FEEDBACK_REASONING_EFFORT:}
   feedback-request-timeout-seconds: ${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:120}
+  # 문장 피드백 OpenAI 호출 한 번의 제한. 시간 초과는 한 번 재시도하므로 두 번 합쳐도 앱 제한(90초) 안에 들어와야 한다.
+  feedback-attempt-timeout-seconds: ${OPENAI_FEEDBACK_ATTEMPT_TIMEOUT_SECONDS:40}
   api-url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}
 
 app:

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Set;
@@ -28,6 +29,8 @@ public class OpenAiFeedbackClient {
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenAiFeedbackClient.class);
     private static final Set<Integer> TRANSIENT_PROVIDER_STATUS_CODES = Set.of(502, 503, 504);
     private static final long TRANSIENT_PROVIDER_RETRY_DELAY_MS = 500L;
+    // 응답 없이 시간 초과된 호출을 기록하는 상태 코드. OpenAI가 보낸 값이 아니라 서버가 붙인 값이다.
+    private static final int CLIENT_TIMEOUT_STATUS_CODE = 504;
 
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -50,7 +53,7 @@ public class OpenAiFeedbackClient {
             @Value("${openai.feedback-model:${OPENAI_MODEL:gpt-6-luna}}") String model,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
             @Value("${openai.feedback-reasoning-effort:}") String reasoningEffort,
-            @Value("${openai.feedback-request-timeout-seconds:120}") int requestTimeoutSeconds
+            @Value("${openai.feedback-attempt-timeout-seconds:40}") int requestTimeoutSeconds
     ) {
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build();
@@ -347,8 +350,18 @@ public class OpenAiFeedbackClient {
                 requestBody,
                 requestTimeoutSeconds
         );
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        return new ProviderResponse(response.statusCode(), response.body());
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            return new ProviderResponse(response.statusCode(), response.body());
+        } catch (HttpTimeoutException exception) {
+            // OpenAI가 가끔 응답 없이 멈춘다. 앱은 90초에 요청을 끊으므로, 호출 한 번을 짧게 끊고
+            // 일시적 게이트웨이 오류(504)와 같은 경로로 한 번 재시도해 그 안에 결과를 돌려준다.
+            return new ProviderResponse(
+                    CLIENT_TIMEOUT_STATUS_CODE,
+                    "{\"error\":{\"type\":\"client_timeout\",\"message\":\"No OpenAI response within "
+                            + requestTimeoutSeconds + " seconds\"}}"
+            );
+        }
     }
 
     private void requireSuccessfulResponse(ProviderResponse response) {

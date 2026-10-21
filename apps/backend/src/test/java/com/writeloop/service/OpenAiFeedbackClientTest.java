@@ -16,6 +16,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -97,6 +98,28 @@ class OpenAiFeedbackClientTest {
             assertThat(trace.providerRetry().attempted()).isTrue();
             assertThat(trace.providerRetry().succeeded()).isFalse();
             assertThat(trace.finalErrorReason()).isEqualTo("OpenAI returned HTTP 503");
+        }
+    }
+
+    @Test
+    void retriesOnceWhenTheProviderDoesNotAnswerBeforeTheAttemptTimeout() throws Exception {
+        try (TestResponseServer server = new TestResponseServer(
+                new int[]{STALLED_RESPONSE, 200},
+                validContractOutput(),
+                validContractOutput()
+        )) {
+            OpenAiFeedbackClient client = client("test-key", server.url(), 1);
+
+            FeedbackResponseDto feedback = client.review(prompt(), "I goes home because I am tired.");
+
+            assertThat(feedback.sessionId()).isEqualTo(OpenAiFeedbackClient.INTERNAL_AUTHORITATIVE_SESSION_ID);
+            assertThat(server.requestCount()).isEqualTo(2);
+            FeedbackExecutionTrace trace = client.takeLastExecutionTrace();
+            assertThat(trace.finalSuccess()).isTrue();
+            assertThat(trace.providerRetry().attempted()).isTrue();
+            assertThat(trace.providerRetry().succeeded()).isTrue();
+            assertThat(trace.providerRetry().initialFailureStatusCode()).isEqualTo(504);
+            assertThat(trace.providerRetry().initialFailureBodyJson()).contains("client_timeout");
         }
     }
 
@@ -250,13 +273,17 @@ class OpenAiFeedbackClientTest {
     }
 
     private OpenAiFeedbackClient client(String apiKey, String apiUrl) {
+        return client(apiKey, apiUrl, 5);
+    }
+
+    private OpenAiFeedbackClient client(String apiKey, String apiUrl, int attemptTimeoutSeconds) {
         return new OpenAiFeedbackClient(
                 objectMapper,
                 apiKey,
                 "gpt-test",
                 apiUrl,
                 "",
-                5
+                attemptTimeoutSeconds
         );
     }
 
@@ -344,6 +371,9 @@ class OpenAiFeedbackClientTest {
                 """.formatted(revisionSteps, reasonSlot);
     }
 
+    // 이 상태 코드를 받은 요청은 클라이언트 시간 제한보다 오래 응답하지 않는다.
+    private static final int STALLED_RESPONSE = -1;
+
     private final class TestResponseServer implements AutoCloseable {
 
         private final HttpServer server;
@@ -367,6 +397,8 @@ class OpenAiFeedbackClientTest {
             }
             this.server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
             this.server.createContext("/v1/responses", this::handle);
+            // 멈춘 요청을 처리하는 동안에도 재시도 요청에 응답하도록 요청마다 스레드를 쓴다.
+            this.server.setExecutor(Executors.newCachedThreadPool());
             this.server.start();
         }
 
@@ -375,6 +407,15 @@ class OpenAiFeedbackClientTest {
             int index = requestCount.getAndIncrement();
             int responseIndex = Math.min(index, outputs.size() - 1);
             int statusCode = statusCodes[responseIndex];
+            if (statusCode == STALLED_RESPONSE) {
+                try {
+                    Thread.sleep(3000);
+                } catch (InterruptedException exception) {
+                    Thread.currentThread().interrupt();
+                }
+                exchange.close();
+                return;
+            }
             String output = outputs.get(responseIndex);
             Map<String, Object> usage = index == 0
                     ? Map.of(

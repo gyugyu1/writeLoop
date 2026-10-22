@@ -8,8 +8,10 @@ import com.writeloop.dto.SocialTokenExchangeRequestDto;
 import com.writeloop.dto.TokenAuthResponseDto;
 import com.writeloop.dto.TokenLogoutRequestDto;
 import com.writeloop.dto.TokenRefreshRequestDto;
+import com.writeloop.dto.UpdateProfileRequestDto;
 import com.writeloop.persistence.UserEntity;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,6 +29,17 @@ public class TokenAuthService {
         UserEntity user = authService.authenticateLocalUser(request);
         authService.recordSuccessfulLogin(user);
         return issueTokens(user);
+    }
+
+    // 모바일이 비밀번호를 바꿀 때 쓴다. 비밀번호를 바꾸면 모든 기기의 로그인 유지 토큰을 폐기하므로,
+    // 지금 이 기기에는 새 토큰 쌍을 돌려줘 로그인이 이어지게 한다. 다른 기기는 다시 로그인해야 한다.
+    public TokenAuthResponseDto updateProfile(
+            UpdateProfileRequestDto request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        AuthResponseDto updatedUser = authService.updateProfile(request, httpRequest, httpResponse);
+        return issueTokens(authService.findUserEntity(updatedUser.id()));
     }
 
     public TokenAuthResponseDto refresh(TokenRefreshRequestDto request) {

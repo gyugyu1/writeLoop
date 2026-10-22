@@ -119,6 +119,17 @@ public class AuthController {
         tokenAuthService.logout(request);
     }
 
+    // 모바일 비밀번호 변경. 이 기기의 새 토큰 쌍을 함께 돌려준다.
+    @PostMapping("/token/profile")
+    @ResponseStatus(HttpStatus.OK)
+    public TokenAuthResponseDto updateProfileWithTokens(
+            @RequestBody UpdateProfileRequestDto request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse httpResponse
+    ) {
+        return tokenAuthService.updateProfile(request, httpRequest, httpResponse);
+    }
+
     @PostMapping("/verify-email")
     @ResponseStatus(HttpStatus.OK)
     public AuthResponseDto verifyEmail(

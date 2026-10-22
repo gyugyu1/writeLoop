@@ -1106,6 +1106,25 @@ export async function completeRegistration(
 }
 
 export async function updateProfile(request: UpdateProfileRequest): Promise<AuthUser> {
+  // 비밀번호를 바꾸면 서버가 모든 기기의 로그인 유지 토큰을 폐기한다. 그래서 이 기기의 새 토큰을 받아 저장한다.
+  if (request.newPassword?.trim()) {
+    const tokenResponse = await apiFetch("/api/auth/token/profile", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(request)
+    });
+
+    if (!tokenResponse.ok) {
+      throw await parseApiError(tokenResponse, "프로필 설정을 저장하지 못했어요.");
+    }
+
+    const payload = (await tokenResponse.json()) as TokenAuthResponse;
+    await writeTokenSession(payload);
+    return payload.user;
+  }
+
   const response = await apiFetch("/api/auth/profile", {
     method: "POST",
     headers: {

@@ -180,7 +180,7 @@ AI 요청의 성공·실패, 계약 재시도, 제공자 재시도, 입력·출�
                        │
 ┌──────────────────────▼──────────────────────────────┐
 │ LLM 제공자                                           │
-│ Gemini 또는 OpenAI, 환경변수로 기능별 선택           │
+│ OpenAI Responses API                                 │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -191,7 +191,7 @@ AI 요청의 성공·실패, 계약 재시도, 제공자 재시도, 입력·출�
 | 백엔드 | Java 21, Spring Boot 3.4, Spring Data JPA | REST API와 도메인 정책 |
 | 데이터 | MySQL 8 | 사용자, 질문, 답변, 피드백, 일기 영속화 |
 | 단기 상태 | Redis 7 | 분산 요청 제한과 임시 상태 |
-| AI | Gemini API, OpenAI Responses API | 작문·일기·코치 피드백 |
+| AI | OpenAI Responses API | 작문·일기·코치 피드백 |
 | 인프라 | Docker Compose, Nginx, EAS | 로컬 통합 실행, 프록시, 모바일 빌드·제출 |
 
 라이트루프는 현재 LangChain이나 별도 RAG 프레임워크를 사용하지 않습니다. 백엔드의 전용 LLM 클라이언트가 구조화 출력 계약과 검증 정책을 직접 관리합니다.
@@ -265,20 +265,10 @@ SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/writeloop?useSSL=fa
 SPRING_DATASOURCE_USERNAME=writeloop_user
 SPRING_DATASOURCE_PASSWORD=로컬_DB_비밀번호
 
-LLM_FEEDBACK_PROVIDER=gemini
-LLM_COACH_PROVIDER=gemini
-GEMINI_API_KEY=발급받은_API_키
-```
-
-OpenAI를 사용하려면 제공자와 키를 바꿉니다.
-
-```dotenv
-LLM_FEEDBACK_PROVIDER=openai
-LLM_COACH_PROVIDER=openai
 OPENAI_API_KEY=발급받은_API_키
 ```
 
-별도의 일기 제공자를 지정하지 않으면 일기 피드백도 `LLM_FEEDBACK_PROVIDER` 값을 상속합니다.
+LLM은 OpenAI만 사용합니다([ADR-0017](docs/decisions/0017-remove-gemini.md)). 문장 피드백, 영어일기, 코치, Now in English 모두 같은 키를 씁니다.
 
 API 키가 없어도 서버의 일부 기능은 실행할 수 있지만, 선택한 제공자가 필요한 AI 피드백은 사용할 수 없거나 제한된 로컬 대체 응답으로 동작할 수 있습니다.
 
@@ -380,7 +370,7 @@ $env:SPRING_DATASOURCE_USERNAME = "writeloop_user"
 $env:SPRING_DATASOURCE_PASSWORD = "로컬_DB_비밀번호"
 $env:SPRING_DATA_REDIS_HOST = "localhost"
 $env:SPRING_DATA_REDIS_PORT = "6379"
-$env:GEMINI_API_KEY = "발급받은_API_키"
+$env:OPENAI_API_KEY = "발급받은_API_키"
 
 Set-Location apps/backend
 .\gradlew.bat bootRun
@@ -443,18 +433,11 @@ npm run dev:frontend
 
 | 변수 | 설명 |
 |---|---|
-| `LLM_FEEDBACK_PROVIDER` | 질문 답변 피드백 제공자, `gemini` 또는 `openai` |
-| `LLM_DIARY_FEEDBACK_PROVIDER` | 영어일기 피드백 제공자 |
-| `LLM_COACH_PROVIDER` | AI 코치 제공자 |
-| `GEMINI_API_KEY` | Gemini API 키 |
-| `GEMINI_FEEDBACK_MODEL` | 질문 답변 피드백 모델 |
-| `GEMINI_DIARY_MODEL` | 일기 피드백 모델 |
-| `GEMINI_COACH_MODEL` | 코치 모델 |
 | `OPENAI_API_KEY` | OpenAI API 키 |
 | `OPENAI_FEEDBACK_MODEL` | 질문 답변 피드백 모델 |
 | `OPENAI_DIARY_MODEL` | 일기 피드백 모델 |
 | `OPENAI_COACH_MODEL` | 코치 모델 |
-| `*_REQUEST_TIMEOUT_SECONDS` | 기능별 LLM 요청 제한시간 |
+| `OPENAI_*_TIMEOUT_SECONDS`, `OPENAI_*_BUDGET_SECONDS` | 기능별 LLM 호출 제한시간과 요청 전체 마감(앱 제한보다 짧게, ADR-0016) |
 
 모델 이름과 추론 설정은 배포 환경변수로 바뀔 수 있습니다. 특정 모델이 운영에 사용된다고 코드 기본값만 보고 단정하지 말고, 실제 배포 환경을 함께 확인합니다.
 
@@ -589,8 +572,7 @@ npm run feedback:quality -- --suite smoke --base-url http://localhost:8080
 | 웹 API와 타입 | `apps/frontend/lib/api.ts`, `apps/frontend/lib/types.ts` |
 | REST 엔드포인트 | `apps/backend/src/main/java/com/writeloop/controller` |
 | 피드백 우선순위와 저장 | `FeedbackService.java` |
-| OpenAI 계약과 프롬프트 | `OpenAiFeedbackClient.java` |
-| Gemini 계약과 프롬프트 | `GeminiFeedbackClient.java` |
+| OpenAI 호출과 재시도 | `OpenAiFeedbackClient.java` |
 | canonical 출력 검증 | `CanonicalFeedbackContract.java` |
 | 질문 슬롯 메타데이터 | `PromptTaskMetaSupport.java`, `infra/mysql/schema` |
 | 일기 피드백 | `DiaryService.java`, LLM diary client·engine 파일 |

@@ -31,7 +31,6 @@ Read these before changing behavior:
 - `apps/backend/src/main/java/com/writeloop/service/FeedbackLearningContractPolicy.java`
 - `apps/backend/src/main/java/com/writeloop/service/CanonicalFeedbackAssembler.java`
 - `apps/backend/src/main/java/com/writeloop/service/OpenAiFeedbackClient.java`
-- `apps/backend/src/main/java/com/writeloop/service/GeminiFeedbackClient.java`
 - `apps/backend/src/main/java/com/writeloop/dto/FeedbackCoachMissionDto.java`
 - `apps/backend/src/main/java/com/writeloop/dto/FeedbackCoachMoveDto.java`
 - `apps/backend/src/main/java/com/writeloop/dto/FeedbackLanguageCorrectionDto.java`
@@ -75,7 +74,7 @@ Current replacements:
 ## Editing Rules
 
 When changing feedback logic:
-1. Update the common canonical schema and parser together; OpenAI and Gemini must use the same contract.
+1. Update the canonical schema and parser together. OpenAI is the only provider (ADR-0017).
 2. Keep LLM authority limited to topic relevance, `structureAssessment.status`, cumulative full-answer `languageAssessment.revisionSteps`,
    canonical `slotAssessments`, and reference content.
 3. Keep the backend decision, `coachMission`, `coachMove`, `languageCorrections`, `revisedAnswer`, and rewrite UI aligned.

@@ -14,7 +14,7 @@
 
 | 경로 | 내용 |
 |---|---|
-| `apps/backend` | Spring Boot 3.4, Java 21, JPA, MySQL 8, Redis. LLM 호출(OpenAI 기본, Gemini 대체)이 여기 있다 |
+| `apps/backend` | Spring Boot 3.4, Java 21, JPA, MySQL 8, Redis. LLM은 OpenAI만 쓴다(ADR-0017) |
 | `apps/frontend` | Next.js 정적 웹(`@english-learning/frontend`). 주 화면은 `app/answer-loop.tsx` |
 | `apps/mobile` | Expo / React Native 앱(`@writeloop/mobile`). 피드백 화면은 `src/app/practice/feedback.tsx` |
 | `apps/backend/src/main/resources/db/migration` | Flyway 마이그레이션(`V번호__설명.sql`). 백엔드가 시작할 때 자동 적용 |

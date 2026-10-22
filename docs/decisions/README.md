@@ -30,3 +30,4 @@ WriteLoop의 중요한 결정과 그 이유를 [MADR 4.0](https://adr.github.io/
 | [0014](0014-social-login-verified-email-only.md) | 모든 소셜 로그인은 제공자가 인증한 이메일만 사용 | accepted | 2026-10-22 |
 | [0015](0015-build-images-in-ci-and-deploy-from-ghcr.md) | 이미지는 CI에서 빌드해 GHCR에 올리고, 서버는 받아서 실행만 | accepted | 2026-10-22 |
 | [0016](0016-llm-request-deadline-outside-transaction.md) | LLM 호출은 요청 단위 마감 안에서, DB 트랜잭션 밖에서 | accepted | 2026-10-23 |
+| [0017](0017-remove-gemini.md) | Gemini 코드와 설정을 지우고 LLM 제공자는 OpenAI 하나로 | accepted | 2026-10-23 |

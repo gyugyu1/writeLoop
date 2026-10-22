@@ -1,6 +1,6 @@
 # Current Feedback Schema
 
-This document describes the canonical question-answer feedback contract shared by OpenAI and Gemini.
+This document describes the canonical question-answer feedback contract. OpenAI is the only provider (ADR-0017).
 
 ## Authority Boundary
 

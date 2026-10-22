@@ -290,6 +290,8 @@ export interface UpdateProfileRequest {
 export interface DeleteAccountRequest {
   confirmationText: string;
   currentPassword?: string;
+  // Apple 로그인 계정이 탈퇴할 때 Apple 로그인을 다시 받아 얻는 일회용 코드. 서버가 Apple 토큰을 해지한다.
+  appleAuthorizationCode?: string;
 }
 
 export interface AppVersionStatus {

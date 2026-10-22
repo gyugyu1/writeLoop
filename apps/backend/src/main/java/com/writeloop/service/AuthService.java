@@ -91,6 +91,7 @@ public class AuthService {
     private final GoogleOAuthService googleOAuthService;
     private final KakaoOAuthService kakaoOAuthService;
     private final RequestRateLimiter requestRateLimiter;
+    private final AppleTokenRevocationService appleTokenRevocationService;
 
     @Value("${app.frontend-base-url:}")
     private String frontendBaseUrl;
@@ -583,6 +584,14 @@ public class AuthService {
                         "현재 비밀번호가 올바르지 않아요."
                 );
             }
+        }
+
+        // Apple 로그인 계정은 앱이 Apple 재인증 코드를 보내면 Apple 토큰부터 해지한다. 해지에 실패하면 탈퇴하지 않는다.
+        // 코드가 없으면(예전 앱, Apple 로그인이 없는 기기) 지금처럼 해지 없이 탈퇴한다.
+        if ("APPLE".equalsIgnoreCase(user.getSocialProvider())
+                && request.appleAuthorizationCode() != null
+                && !request.appleAuthorizationCode().isBlank()) {
+            appleTokenRevocationService.revokeWithAuthorizationCode(request.appleAuthorizationCode().trim());
         }
 
         accountDataPurgeService.purgeUserData(userId);

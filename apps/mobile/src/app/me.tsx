@@ -1,3 +1,4 @@
+import * as AppleAuthentication from "expo-apple-authentication";
 import Constants from "expo-constants";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -189,9 +190,30 @@ export default function MeScreen() {
       setIsDeletingAccount(true);
       setDeleteError("");
 
+      // Apple 로그인 계정은 Apple 확인을 한 번 더 받아, 서버가 Apple 토큰을 해지한 뒤 탈퇴하게 한다.
+      let appleAuthorizationCode: string | undefined;
+      const isAppleAccount = (currentUser.socialProvider ?? "").trim().toUpperCase() === "APPLE";
+      if (isAppleAccount && Platform.OS === "ios" && (await AppleAuthentication.isAvailableAsync())) {
+        try {
+          const credential = await AppleAuthentication.signInAsync({ requestedScopes: [] });
+          appleAuthorizationCode = credential.authorizationCode ?? undefined;
+        } catch (appleError) {
+          const errorCode = typeof appleError === "object" && appleError !== null
+            ? (appleError as { code?: string }).code
+            : null;
+          setDeleteError(
+            errorCode === "ERR_REQUEST_CANCELED"
+              ? "Apple 확인을 취소해서 탈퇴하지 않았어요."
+              : "Apple 확인을 완료하지 못했어요. 잠시 후 다시 시도해 주세요."
+          );
+          return;
+        }
+      }
+
       await deleteAccount({
         confirmationText: deleteConfirmationText.trim(),
-        currentPassword: deletePassword.trim() || undefined
+        currentPassword: deletePassword.trim() || undefined,
+        appleAuthorizationCode
       });
 
       await signOut();

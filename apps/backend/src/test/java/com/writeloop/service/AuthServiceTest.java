@@ -26,6 +26,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
@@ -91,6 +92,9 @@ class AuthServiceTest {
     private KakaoOAuthService kakaoOAuthService;
 
     @Mock
+    private AppleTokenRevocationService appleTokenRevocationService;
+
+    @Mock
     private HttpSession session;
 
     @Mock
@@ -117,7 +121,8 @@ class AuthServiceTest {
                 naverOAuthService,
                 googleOAuthService,
                 kakaoOAuthService,
-                new RequestRateLimiter(Clock.systemUTC(), Duration.ofHours(1))
+                new RequestRateLimiter(Clock.systemUTC(), Duration.ofHours(1)),
+                appleTokenRevocationService
         );
         ReflectionTestUtils.setField(authService, "adminEmails", "");
         lenient().when(httpRequest.getSession(true)).thenReturn(session);
@@ -350,6 +355,50 @@ class AuthServiceTest {
         InOrder deletionOrder = inOrder(accountDataPurgeService, userRepository);
         deletionOrder.verify(accountDataPurgeService).purgeUserData(7L);
         deletionOrder.verify(userRepository).delete(user);
+    }
+
+    @Test
+    void deleteAccount_revokes_apple_tokens_before_deleting_an_apple_user() {
+        UserEntity user = new UserEntity("apple@example.com", "encoded-password", "Writer");
+        ReflectionTestUtils.setField(user, "id", 8L);
+        ReflectionTestUtils.setField(user, "socialProvider", "APPLE");
+        MockHttpSession accountSession = new MockHttpSession();
+        accountSession.setAttribute(AuthService.SESSION_USER_ID, 8L);
+        when(userRepository.findById(8L)).thenReturn(Optional.of(user));
+
+        authService.deleteAccount(
+                new DeleteAccountRequestDto("탈퇴", null, "apple-authorization-code"),
+                accountSession,
+                new MockHttpServletRequest(),
+                new MockHttpServletResponse()
+        );
+
+        InOrder deletionOrder = inOrder(appleTokenRevocationService, accountDataPurgeService, userRepository);
+        deletionOrder.verify(appleTokenRevocationService).revokeWithAuthorizationCode("apple-authorization-code");
+        deletionOrder.verify(accountDataPurgeService).purgeUserData(8L);
+        deletionOrder.verify(userRepository).delete(user);
+    }
+
+    @Test
+    void deleteAccount_keeps_the_apple_user_when_token_revocation_fails() {
+        UserEntity user = new UserEntity("apple@example.com", "encoded-password", "Writer");
+        ReflectionTestUtils.setField(user, "id", 8L);
+        ReflectionTestUtils.setField(user, "socialProvider", "APPLE");
+        MockHttpSession accountSession = new MockHttpSession();
+        accountSession.setAttribute(AuthService.SESSION_USER_ID, 8L);
+        when(userRepository.findById(8L)).thenReturn(Optional.of(user));
+        org.mockito.Mockito.doThrow(new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "APPLE_REVOKE_UNAVAILABLE", "retry"))
+                .when(appleTokenRevocationService).revokeWithAuthorizationCode("apple-authorization-code");
+
+        assertThatThrownBy(() -> authService.deleteAccount(
+                new DeleteAccountRequestDto("탈퇴", null, "apple-authorization-code"),
+                accountSession,
+                new MockHttpServletRequest(),
+                new MockHttpServletResponse()
+        )).isInstanceOf(ApiException.class);
+
+        verifyNoInteractions(accountDataPurgeService);
+        verify(userRepository, never()).delete(user);
     }
 
     @Test

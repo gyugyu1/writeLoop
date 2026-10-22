@@ -199,3 +199,10 @@ app:
       audience: ${APPLE_CLIENT_ID:kr.writeloop}
       issuer: ${APPLE_ISSUER:https://appleid.apple.com}
       jwks-uri: ${APPLE_JWKS_URI:https://appleid.apple.com/auth/keys}
+      # 회원 탈퇴 때 Apple 토큰 해지에 쓰는 Sign in with Apple 키. 비어 있으면 해지를 건너뛴다.
+      # private-key는 .p8 파일 내용이다. 환경변수에는 줄바꿈을 \n으로 바꿔 한 줄로 넣는다.
+      team-id: ${APPLE_TEAM_ID:}
+      key-id: ${APPLE_KEY_ID:}
+      private-key: ${APPLE_PRIVATE_KEY:}
+      token-uri: ${APPLE_TOKEN_URI:https://appleid.apple.com/auth/token}
+      revoke-uri: ${APPLE_REVOKE_URI:https://appleid.apple.com/auth/revoke}

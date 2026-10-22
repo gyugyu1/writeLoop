@@ -4,37 +4,22 @@ import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
+// 문장 피드백 LLM 입구. 제공자는 OpenAI 하나다(ADR-0005, ADR-0017).
 @Service
 public class LlmFeedbackClient {
 
-    private final Map<String, FeedbackLlmEngine> enginesByProvider;
-    private final String configuredProvider;
+    private final FeedbackLlmEngine engine;
 
-    public LlmFeedbackClient(
-            List<FeedbackLlmEngine> engines,
-            @Value("${llm.feedback-provider:gemini}") String configuredProvider
-    ) {
-        Map<String, FeedbackLlmEngine> mapping = new LinkedHashMap<>();
-        for (FeedbackLlmEngine engine : engines) {
-            if (engine == null || engine.provider() == null || engine.provider().isBlank()) {
-                continue;
-            }
-            mapping.put(engine.provider().trim().toLowerCase(Locale.ROOT), engine);
-        }
-        this.enginesByProvider = Map.copyOf(mapping);
-        this.configuredProvider = configuredProvider == null ? "gemini" : configuredProvider.trim().toLowerCase(Locale.ROOT);
+    public LlmFeedbackClient(FeedbackLlmEngine engine) {
+        this.engine = engine;
     }
 
     public boolean isConfigured() {
-        return delegate().isConfigured();
+        return engine.isConfigured();
     }
 
     public FeedbackResponseDto review(
@@ -43,48 +28,30 @@ public class LlmFeedbackClient {
             List<PromptHintDto> hints,
             int attemptIndex
     ) {
-        return delegate().review(prompt, answer, hints, attemptIndex);
+        return engine.review(prompt, answer, hints, attemptIndex);
     }
 
     public boolean isAuthoritativeFeedback(FeedbackResponseDto feedback) {
-        return delegate().isAuthoritativeFeedback(feedback);
+        return engine.isAuthoritativeFeedback(feedback);
     }
 
     public FeedbackResponseDto clearInternalMetadata(FeedbackResponseDto feedback) {
-        return delegate().clearInternalMetadata(feedback);
+        return engine.clearInternalMetadata(feedback);
     }
 
     FeedbackAnalysisSnapshot takeLastAnalysisSnapshot() {
-        return delegate().takeLastAnalysisSnapshot();
+        return engine.takeLastAnalysisSnapshot();
     }
 
     FeedbackExecutionTrace takeLastExecutionTrace() {
-        return delegate().takeLastExecutionTrace();
+        return engine.takeLastExecutionTrace();
     }
 
     public List<InlineFeedbackSegmentDto> buildInlineFeedbackFromRevisedAnswer(String learnerAnswer, String revisedAnswer) {
-        return delegate().buildInlineFeedbackFromRevisedAnswer(learnerAnswer, revisedAnswer);
+        return engine.buildInlineFeedbackFromRevisedAnswer(learnerAnswer, revisedAnswer);
     }
 
     public List<InlineFeedbackSegmentDto> buildPreciseInlineFeedback(String learnerAnswer, String revisedAnswer) {
-        return delegate().buildPreciseInlineFeedback(learnerAnswer, revisedAnswer);
-    }
-
-    private FeedbackLlmEngine delegate() {
-        FeedbackLlmEngine configured = enginesByProvider.get(configuredProvider);
-        if (configured != null) {
-            return configured;
-        }
-
-        FeedbackLlmEngine defaultEngine = enginesByProvider.get("gemini");
-        if (defaultEngine != null) {
-            return defaultEngine;
-        }
-
-        if (!enginesByProvider.isEmpty()) {
-            return enginesByProvider.values().iterator().next();
-        }
-
-        throw new IllegalStateException("No feedback LLM engines are registered");
+        return engine.buildPreciseInlineFeedback(learnerAnswer, revisedAnswer);
     }
 }

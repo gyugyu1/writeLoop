@@ -46,26 +46,6 @@ class FeedbackTokenUsageTest {
     }
 
     @Test
-    void extractsGeminiUsageMetadata() {
-        FeedbackTokenUsage usage = FeedbackTokenUsage.fromGeminiResponse(
-                objectMapper,
-                """
-                {
-                  "usageMetadata": {
-                    "promptTokenCount": 90,
-                    "cachedContentTokenCount": 15,
-                    "candidatesTokenCount": 25,
-                    "thoughtsTokenCount": 8,
-                    "totalTokenCount": 115
-                  }
-                }
-                """
-        );
-
-        assertThat(usage).isEqualTo(new FeedbackTokenUsage(90L, 15L, 25L, 8L, 115L));
-    }
-
-    @Test
     void leavesUnavailableUsageValuesNull() {
         FeedbackTokenUsage usage = FeedbackTokenUsage.fromOpenAiResponse(
                 objectMapper,

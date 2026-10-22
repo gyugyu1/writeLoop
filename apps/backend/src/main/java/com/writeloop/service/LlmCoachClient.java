@@ -4,45 +4,30 @@ import com.writeloop.dto.CoachHelpResponseDto;
 import com.writeloop.dto.CoachSelfDiscoveredCandidateDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 
+// 코치 LLM 입구. 제공자는 OpenAI 하나다(ADR-0005, ADR-0017).
 @Service
 public class LlmCoachClient {
 
-    private final Map<String, CoachLlmEngine> enginesByProvider;
-    private final String configuredProvider;
+    private final CoachLlmEngine engine;
 
-    public LlmCoachClient(
-            List<CoachLlmEngine> engines,
-            @Value("${llm.coach-provider:${llm.feedback-provider:gemini}}") String configuredProvider
-    ) {
-        Map<String, CoachLlmEngine> mapping = new LinkedHashMap<>();
-        for (CoachLlmEngine engine : engines) {
-            if (engine == null || engine.provider() == null || engine.provider().isBlank()) {
-                continue;
-            }
-            mapping.put(engine.provider().trim().toLowerCase(Locale.ROOT), engine);
-        }
-        this.enginesByProvider = Map.copyOf(mapping);
-        this.configuredProvider = configuredProvider == null ? "gemini" : configuredProvider.trim().toLowerCase(Locale.ROOT);
+    public LlmCoachClient(CoachLlmEngine engine) {
+        this.engine = engine;
     }
 
     public boolean isConfigured() {
-        return delegate().isConfigured();
+        return engine.isConfigured();
     }
 
     public String configuredModel() {
-        return delegate().configuredModel();
+        return engine.configuredModel();
     }
 
     public CoachHelpResponseDto help(PromptDto prompt, String userQuestion, List<PromptHintDto> hints) {
-        return delegate().help(prompt, userQuestion, hints);
+        return engine.help(prompt, userQuestion, hints);
     }
 
     public String translateMeaningSlot(
@@ -52,7 +37,7 @@ public class LlmCoachClient {
             CoachQueryAnalyzer.MeaningSlot slot,
             String sourceText
     ) {
-        return delegate().translateMeaningSlot(prompt, userQuestion, family, slot, sourceText);
+        return engine.translateMeaningSlot(prompt, userQuestion, family, slot, sourceText);
     }
 
     public List<CoachSelfDiscoveredCandidateDto> extractSelfDiscoveredExpressions(
@@ -61,24 +46,6 @@ public class LlmCoachClient {
             List<String> recommendedExpressions,
             List<String> preservedSegments
     ) {
-        return delegate().extractSelfDiscoveredExpressions(prompt, answer, recommendedExpressions, preservedSegments);
-    }
-
-    private CoachLlmEngine delegate() {
-        CoachLlmEngine configured = enginesByProvider.get(configuredProvider);
-        if (configured != null) {
-            return configured;
-        }
-
-        CoachLlmEngine defaultEngine = enginesByProvider.get("gemini");
-        if (defaultEngine != null) {
-            return defaultEngine;
-        }
-
-        if (!enginesByProvider.isEmpty()) {
-            return enginesByProvider.values().iterator().next();
-        }
-
-        throw new IllegalStateException("No coach LLM engines are registered");
+        return engine.extractSelfDiscoveredExpressions(prompt, answer, recommendedExpressions, preservedSegments);
     }
 }

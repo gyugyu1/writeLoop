@@ -31,11 +31,8 @@ class LlmRequestDeterminismTest {
             "CanonicalFeedbackContract.java",
             "FeedbackLearningContractPolicy.java",
             "OpenAiStructuredOutputSupport.java",
-            "GeminiStructuredOutputSupport.java",
             "DiaryFeedbackPromptSupport.java",
             "OpenAiCoachClient.java",
-            "GeminiCoachClient.java",
-            "GeminiCoachEvaluationClient.java",
             "OpenAiNowInEnglishCoachFeedbackClient.java",
             "OpenAiNowInEnglishReflectionClient.java"
     );

@@ -33,20 +33,6 @@ record FeedbackTokenUsage(
         );
     }
 
-    static FeedbackTokenUsage fromGeminiResponse(ObjectMapper objectMapper, String responseBody) {
-        JsonNode usage = usageNode(objectMapper, responseBody, "usageMetadata");
-        if (usage == null) {
-            return empty();
-        }
-        return new FeedbackTokenUsage(
-                nonNegativeLong(usage.path("promptTokenCount")),
-                nonNegativeLong(usage.path("cachedContentTokenCount")),
-                nonNegativeLong(usage.path("candidatesTokenCount")),
-                nonNegativeLong(usage.path("thoughtsTokenCount")),
-                nonNegativeLong(usage.path("totalTokenCount"))
-        );
-    }
-
     FeedbackTokenUsage plus(FeedbackTokenUsage other) {
         if (other == null) {
             return this;

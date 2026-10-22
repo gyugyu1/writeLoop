@@ -66,22 +66,6 @@ spring:
         type:
           preferred_instant_jdbc_type: TIMESTAMP
 
-llm:
-  feedback-provider: ${LLM_FEEDBACK_PROVIDER:gemini}
-  diary-feedback-provider: ${LLM_DIARY_FEEDBACK_PROVIDER:${LLM_FEEDBACK_PROVIDER:gemini}}
-  coach-provider: ${LLM_COACH_PROVIDER:${LLM_FEEDBACK_PROVIDER:gemini}}
-
-gemini:
-  api-key: ${GEMINI_API_KEY:}
-  feedback-model: ${GEMINI_FEEDBACK_MODEL:${GEMINI_MODEL:gemini-3-flash-preview}}
-  diary-model: ${GEMINI_DIARY_MODEL:${GEMINI_FEEDBACK_MODEL:${GEMINI_MODEL:gemini-3-flash-preview}}}
-  diary-thinking-budget: ${GEMINI_DIARY_THINKING_BUDGET:${GEMINI_FEEDBACK_THINKING_BUDGET:16000}}
-  diary-request-timeout-seconds: ${GEMINI_DIARY_REQUEST_TIMEOUT_SECONDS:${GEMINI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:120}}
-  feedback-thinking-budget: ${GEMINI_FEEDBACK_THINKING_BUDGET:16000}
-  feedback-request-timeout-seconds: ${GEMINI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:120}
-  coach-model: ${GEMINI_COACH_MODEL:${GEMINI_MODEL:gemini-3.1-flash-lite-preview}}
-  api-url: ${GEMINI_API_URL:https://generativelanguage.googleapis.com/v1beta/models}
-
 openai:
   api-key: ${OPENAI_API_KEY:}
   feedback-model: ${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-6-luna}}
@@ -170,9 +154,6 @@ app:
     optional-message-ko: ${APP_VERSION_OPTIONAL_MESSAGE_KO:더 안정적인 학습 경험을 위해 최신 버전으로 업데이트해 주세요.}
     forced-message-ko: ${APP_VERSION_FORCED_MESSAGE_KO:현재 버전에서는 일부 기능이 원활하지 않을 수 있어요. 업데이트 후 이용해 주세요.}
     release-notes-ko: ${APP_VERSION_RELEASE_NOTES_KO:안정성 개선과 사용성 개선이 포함되어 있어요.}
-  coach-evaluation:
-    scheduled-enabled: ${APP_COACH_EVALUATION_SCHEDULED_ENABLED:false}
-    fixed-delay-ms: ${APP_COACH_EVALUATION_FIXED_DELAY_MS:900000}
   oauth:
     google:
       client-id: ${GOOGLE_CLIENT_ID:}

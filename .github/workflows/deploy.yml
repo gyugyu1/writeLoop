@@ -1,0 +1,65 @@
+# 운영 서버에 SSH로 접속해 GHCR의 이미지로 배포한다.
+# CI가 main push 뒤 자동으로 호출하고, 롤백이나 재배포는 Actions 화면에서 커밋 SHA를 넣어 직접 실행한다.
+# 필요한 저장소 시크릿: PROD_SSH_KEY(서버 접속용 SSH 개인 키)
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "배포할 커밋 SHA (CI가 GHCR에 올린 이미지가 있어야 한다)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  PROD_HOST: api.writeloop.kr
+  PROD_USER: ubuntu
+
+jobs:
+  deploy:
+    name: 운영 서버 배포
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    steps:
+      - name: SSH 키 준비
+        env:
+          PROD_SSH_KEY: ${{ secrets.PROD_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$PROD_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$PROD_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: 저장소를 배포 커밋으로 맞추고 배포 스크립트 실행
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHA: ${{ inputs.sha }}
+        # 토큰은 명령줄에 넣지 않고 표준 입력으로 넘긴다(서버의 프로세스 목록에 남지 않게).
+        run: |
+          printf '%s\n' "$GHCR_TOKEN" | ssh -i ~/.ssh/deploy_key "$PROD_USER@$PROD_HOST" \
+            "set -euo pipefail
+             read -r GHCR_TOKEN
+             export GHCR_TOKEN GHCR_USER='$GHCR_USER'
+             cd /home/ubuntu/writeLoop
+             git fetch -q origin
+             git reset -q --hard '$SHA'
+             bash scripts/ops/deploy.sh '$SHA'"
+
+      - name: SSH 키 삭제
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

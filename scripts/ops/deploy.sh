@@ -10,7 +10,8 @@
 #   2) GHCR에서 이 커밋의 이미지를 받아 :latest로 태그한다. docker-compose.yml은 :latest를 실행한다.
 #   3) 백엔드·프론트엔드를 재시작하고 백엔드 기동(Flyway 포함)과 프론트엔드 상태를 확인한다.
 #   4) 지난 배포 이후 nginx 설정이 바뀌었으면 nginx를 다시 만든다.
-#   5) 배포한 커밋을 기록하고, 공개 주소로 응답을 확인한다.
+#   5) 배포한 커밋을 기록하고, 이번·직전 커밋 이미지만 남긴 뒤 공개 주소로 응답을 확인한다.
+#      더 예전 커밋은 GHCR에 남아 있어서, 그 SHA로 배포하면 다시 받는다.
 set -euo pipefail
 
 SHA="${1:?usage: deploy.sh <git-sha>}"
@@ -91,6 +92,18 @@ fi
 
 # 5) 기록과 확인
 echo "$SHA" > "$STATE_FILE"
+# 서버 디스크가 차지 않게 이번·직전 커밋 이미지만 남긴다. 직전 커밋은 서버에서 바로 되돌릴 때 쓴다.
+for service in backend frontend; do
+  repo="$REGISTRY/writeloop-$service"
+  for tag in $(sudo -n docker images "$repo" --format '{{.Tag}}'); do
+    case "$tag" in
+      latest | "<none>" | "$SHA") continue ;;
+    esac
+    if [ -n "$PREVIOUS_SHA" ] && [ "$tag" = "$PREVIOUS_SHA" ]; then continue; fi
+    sudo -n docker rmi "$repo:$tag" >/dev/null || true
+    echo "removed old image: writeloop-$service:${tag:0:7}"
+  done
+done
 sudo -n docker image prune -f >/dev/null || true
 curl -fsS -o /dev/null --max-time 20 https://api.writeloop.kr/api/prompts
 curl -fsS -o /dev/null --max-time 20 https://writeloop.kr/

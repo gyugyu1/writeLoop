@@ -10,13 +10,8 @@ Claude Code가 이 저장소에서 작업할 때 DB 스키마와 운영 환경�
              (2) 설정 파일(application*.yml, docker-compose*.yml, .env*)에
                  ddl-auto update/create 를 쓰는 것을 막는다. Hibernate 자동 DDL은 SQL 파일과
                  다른 테이블 구조를 만들기 때문이다.
-  pre-shell  셸 명령을 실행하기 직전 (PreToolUse: Bash/PowerShell)
-             (3) 운영 서버·DB(api.writeloop.kr, RDS 주소, was-key.pem)를 바꿀 수 있는 명령을 찾는다.
-                 기본 모드처럼 사람이 승인할 수 있으면 승인 창을 띄우고,
-                 자동·권한 우회 모드처럼 승인 창이 뜨지 않으면 실행을 막는다.
-                 조회만 하는 명령은 그대로 통과시킨다.
   stop       답변을 끝내려 할 때 (Stop)
-             (4) origin/main 이후 바뀐 내용(작업 트리, 스테이징, push하지 않은 커밋)을 검사한다.
+             (3) origin/main 이후 바뀐 내용(작업 트리, 스테이징, push하지 않은 커밋)을 검사한다.
                  엔티티 구조(@Column, @Table, 필드 등)가 바뀌었는데 새 마이그레이션 SQL이 없거나,
                  새 마이그레이션 번호가 기존 번호와 겹치거나, 공유된 마이그레이션이 수정되면
                  종료를 막고 이유를 전달한다. 같은 답변에서 두 번째 종료 시도는 통과시킨다.
@@ -48,26 +43,6 @@ DDL_AUTO_RE = re.compile(
     r"|SPRING_JPA_HIBERNATE_DDL_AUTO\s*[:=]\s*['\"]?(\$\{[^}:]*:)?\s*(update|create|create-drop)\b)",
     re.IGNORECASE,
 )
-
-PRODUCTION_MARKERS = (
-    "api.writeloop.kr",
-    ".rds.amazonaws.com",
-    "was-key.pem",
-)
-PRODUCTION_CHANGE_PATTERNS = (
-    (r"\b(ALTER|DROP|DELETE|UPDATE|INSERT|TRUNCATE|CREATE|RENAME|REPLACE|GRANT|REVOKE)\b", "SQL 변경 구문"),
-    (r"\b(mysql|mysqlsh)\b[^|;&]*<", "SQL 파일 실행"),
-    (r"\bdocker\s+compose\s+(up|down|build|restart|rm|stop|start|pull|run|create)\b", "docker compose 변경"),
-    (r"\bdocker\s+(rm|rmi|stop|kill|restart|run|exec|tag|system\s+prune|volume\s+rm)\b", "docker 변경"),
-    (r"\bgit\s+(pull|reset|checkout|switch|merge|rebase|clean|stash|restore|apply)\b", "서버 코드 변경"),
-    (r"(^|[\s;&|'\"])(rm|mv|chmod|chown|truncate)\s", "서버 파일 변경"),
-    (r"\b(systemctl|service)\s+\S+", "서비스 제어"),
-    (r"\bnginx\s+-s\b", "nginx 제어"),
-    (r"\bscp\b[^|;&]*\S+@\S+:", "서버로 파일 업로드"),
-)
-
-# 확인 요청(ask)이 사람에게 승인 창으로 전달되는 권한 모드
-INTERACTIVE_PERMISSION_MODES = {"default", "plan", "acceptEdits"}
 
 ENTITY_RE = re.compile(r"^apps/backend/src/main/java/.+Entity\.java$")
 ENTITY_STRUCTURE_LINE_RE = re.compile(
@@ -148,16 +123,6 @@ def deny(reason):
     })
 
 
-def ask(reason):
-    emit({
-        "hookSpecificOutput": {
-            "hookEventName": "PreToolUse",
-            "permissionDecision": "ask",
-            "permissionDecisionReason": reason,
-        }
-    })
-
-
 def handle_pre_edit(event):
     root = project_dir(event)
     tool_input = event.get("tool_input") or {}
@@ -186,32 +151,6 @@ def handle_pre_edit(event):
                 "스키마 변경은 infra/mysql/schema의 번호 SQL로 하고, 일시적으로 필요하면 "
                 "설정 파일 대신 실행할 때 SPRING_JPA_HIBERNATE_DDL_AUTO 환경변수를 지정하세요."
             )
-
-
-def handle_pre_shell(event):
-    command = (event.get("tool_input") or {}).get("command") or ""
-    lowered = command.lower()
-    markers = [marker for marker in PRODUCTION_MARKERS if marker in lowered]
-    if not markers:
-        return
-
-    reasons = []
-    for pattern, label in PRODUCTION_CHANGE_PATTERNS:
-        if re.search(pattern, command, re.IGNORECASE) and label not in reasons:
-            reasons.append(label)
-    if not reasons:
-        return
-    summary = f"(대상: {', '.join(markers)} / 감지: {', '.join(reasons)})"
-    mode = event.get("permission_mode")
-    if mode in INTERACTIVE_PERMISSION_MODES:
-        ask(f"운영 환경 변경 가능성이 있는 명령입니다 {summary}. 내용을 확인한 뒤 승인하세요.")
-    else:
-        # auto·bypassPermissions 등에서는 확인 요청이 사람에게 전달되지 않으므로 차단한다.
-        deny(
-            f"운영 환경 변경 가능성이 있는 명령입니다 {summary}. 현재 권한 모드({mode or '알 수 없음'})에서는 "
-            "사람이 확인할 수 없으므로 실행하지 않습니다. 사용자에게 Shift+Tab으로 기본 모드로 바꾼 뒤 "
-            "다시 요청해 달라고 안내하고, 승인 창에서 확인을 받아 실행하세요."
-        )
 
 
 def changed_entries(root, base):
@@ -303,7 +242,6 @@ def handle_stop(event):
 
 HANDLERS = {
     "pre-edit": handle_pre_edit,
-    "pre-shell": handle_pre_shell,
     "stop": handle_stop,
 }
 

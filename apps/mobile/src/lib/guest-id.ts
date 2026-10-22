@@ -34,6 +34,12 @@ async function getOrCreateInstallationId() {
   return next;
 }
 
+// 이 기기에서 게스트로 쓴 적이 있으면 그 guestId를, 없으면 null을 돌려준다(새로 만들지 않는다).
+export async function getExistingGuestId() {
+  const existing = await SecureStore.getItemAsync(GUEST_ID_KEY);
+  return isValidGuestId(existing) ? existing.toLowerCase() : null;
+}
+
 export async function getOrCreateGuestId() {
   const existing = await SecureStore.getItemAsync(GUEST_ID_KEY);
   if (isValidGuestId(existing)) {

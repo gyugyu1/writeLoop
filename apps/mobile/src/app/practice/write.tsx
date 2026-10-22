@@ -767,6 +767,15 @@ export default function PracticeWriteScreen() {
         setError(
           "게스트는 질문 1개와 다시쓰기 1회까지만 체험할 수 있어요. 이어서 학습하려면 로그인해 주세요."
         );
+        // 로그인하면 이 루프와 쓰던 글을 그대로 이어받는다.
+        Alert.alert(
+          "로그인하고 이어서 써 보세요",
+          "로그인하면 지금 쓰던 답변을 그대로 이어서 쓸 수 있어요.",
+          [
+            { text: "나중에", style: "cancel" },
+            { text: "로그인하기", onPress: () => router.push("/login") }
+          ]
+        );
         return;
       }
 

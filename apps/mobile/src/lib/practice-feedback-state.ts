@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { getActiveStorageOwnerScope, isGuestStorageOwnerScope } from "./storage-owner";
+import { getActiveStorageOwnerScope, resolveStoredOwnership } from "./storage-owner";
 import type { DailyDifficulty, Feedback, Prompt } from "./types";
 
 export type PracticeFeedbackState = {
@@ -80,14 +80,18 @@ export async function hydratePracticeFeedbackState(
 
   try {
     const parsedValue = JSON.parse(rawValue) as StoredPracticeFeedbackState | PracticeFeedbackState;
-    const resolvedState =
-      "state" in parsedValue && typeof parsedValue.ownerScope === "string"
-        ? parsedValue.ownerScope === ownerScope
-          ? parsedValue.state
-          : null
-        : isGuestStorageOwnerScope(ownerScope)
-          ? (parsedValue as PracticeFeedbackState)
-          : null;
+    const isScoped = "state" in parsedValue && typeof parsedValue.ownerScope === "string";
+    const storedState = isScoped
+      ? (parsedValue as StoredPracticeFeedbackState).state
+      : (parsedValue as PracticeFeedbackState);
+    const ownership = resolveStoredOwnership(
+      isScoped ? (parsedValue as StoredPracticeFeedbackState).ownerScope : null,
+      ownerScope
+    );
+    const resolvedState = ownership === "other" ? null : storedState;
+    if (ownership === "claim") {
+      savePracticeFeedbackState(storedState);
+    }
 
     practiceFeedbackState = resolvedState;
     return matchesRequestedState(resolvedState, difficulty, promptId) ? resolvedState : null;

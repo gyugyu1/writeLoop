@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { getActiveStorageOwnerScope, isGuestStorageOwnerScope } from "./storage-owner";
+import { getActiveStorageOwnerScope, resolveStoredOwnership } from "./storage-owner";
 import { normalizeDailyDifficulty } from "./practice";
 import type { WritingDraft, WritingDraftType } from "./types";
 
@@ -54,15 +54,21 @@ export async function getLocalWritingDraft(
 
   try {
     const parsedValue = JSON.parse(raw) as StoredWritingDraft | WritingDraft;
-    if ("draft" in parsedValue && typeof parsedValue.ownerScope === "string") {
-      return parsedValue.ownerScope === ownerScope
-        ? normalizeWritingDraft(parsedValue.draft)
-        : null;
+    const isScoped = "draft" in parsedValue && typeof parsedValue.ownerScope === "string";
+    const storedDraft = isScoped
+      ? (parsedValue as StoredWritingDraft).draft
+      : (parsedValue as WritingDraft);
+    const ownership = resolveStoredOwnership(
+      isScoped ? (parsedValue as StoredWritingDraft).ownerScope : null,
+      ownerScope
+    );
+    if (ownership === "other") {
+      return null;
     }
-
-    return isGuestStorageOwnerScope(ownerScope)
-      ? normalizeWritingDraft(parsedValue as WritingDraft)
-      : null;
+    if (ownership === "claim") {
+      await saveLocalWritingDraft(storedDraft);
+    }
+    return normalizeWritingDraft(storedDraft);
   } catch {
     await deleteLocalWritingDraft(promptId, draftType);
     return null;

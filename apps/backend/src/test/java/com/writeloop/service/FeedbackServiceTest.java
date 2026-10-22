@@ -572,6 +572,51 @@ class FeedbackServiceTest {
         verify(promptService).recordDailyPromptComplete(prompt.id(), 7L, null, session.getId());
     }
 
+    @Test
+    void finishingAGuestSessionAfterLoginRecordsCompletionForTheUser() throws Exception {
+        PromptDto prompt = prompt();
+        String guestId = "guest-1234567890abcdef12";
+        AnswerSessionEntity guestSession = new AnswerSessionEntity(
+                "session-guest-ready",
+                prompt.id(),
+                guestId,
+                null,
+                SessionStatus.READY_TO_FINISH
+        );
+        FeedbackResponseDto readyFeedback = feedback(prompt, true)
+                .withVisibleFeedback(new com.writeloop.dto.VisibleFeedbackSnapshotDto(
+                        1,
+                        com.writeloop.dto.VisibleFeedbackState.READY_TO_FINISH,
+                        "The main action is clear.",
+                        null,
+                        null,
+                        List.of(),
+                        "I usually take a walk after work.",
+                        "퇴근 후에는 보통 산책해요.",
+                        false
+                ));
+        AnswerAttemptEntity latestAttempt = new AnswerAttemptEntity(
+                guestSession.getId(),
+                1,
+                com.writeloop.persistence.AttemptType.INITIAL,
+                "I usually take a walk after work.",
+                "Ready",
+                objectMapper.writeValueAsString(readyFeedback),
+                "submission-guest-ready",
+                objectMapper.writeValueAsString(readyFeedback.visibleFeedback())
+        );
+        when(answerSessionRepository.findById(guestSession.getId())).thenReturn(Optional.of(guestSession));
+        when(answerAttemptRepository.findFirstBySessionIdOrderByAttemptNoDesc(guestSession.getId()))
+                .thenReturn(Optional.of(latestAttempt));
+
+        // 게스트로 시작한 루프를 로그인한 뒤 완료한다. 앱은 토큰과 함께 이 기기의 guestId를 보낸다.
+        service.finish(guestSession.getId(), new FeedbackFinishRequestDto(guestId), 7L);
+
+        assertThat(guestSession.getUserId()).isEqualTo(7L);
+        assertThat(guestSession.getGuestId()).isNull();
+        verify(promptService).recordDailyPromptComplete(prompt.id(), 7L, null, guestSession.getId());
+    }
+
     private void stubSuccessfulReview(
             PromptDto prompt,
             AnswerSessionEntity session,

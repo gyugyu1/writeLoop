@@ -1,5 +1,5 @@
 import * as SecureStore from "expo-secure-store";
-import { getActiveStorageOwnerScope, isGuestStorageOwnerScope } from "./storage-owner";
+import { getActiveStorageOwnerScope, resolveStoredOwnership } from "./storage-owner";
 import { normalizeDailyDifficulty } from "./practice";
 import type { DailyDifficulty, Prompt, WritingDraftType } from "./types";
 
@@ -63,15 +63,21 @@ export async function getIncompleteLoop(): Promise<IncompleteLoopState | null> {
 
   try {
     const parsedValue = JSON.parse(rawValue) as StoredIncompleteLoopState | IncompleteLoopState;
-    if ("state" in parsedValue && typeof parsedValue.ownerScope === "string") {
-      return parsedValue.ownerScope === ownerScope
-        ? normalizeIncompleteLoopState(parsedValue.state)
-        : null;
+    const isScoped = "state" in parsedValue && typeof parsedValue.ownerScope === "string";
+    const storedState = isScoped
+      ? (parsedValue as StoredIncompleteLoopState).state
+      : (parsedValue as IncompleteLoopState);
+    const ownership = resolveStoredOwnership(
+      isScoped ? (parsedValue as StoredIncompleteLoopState).ownerScope : null,
+      ownerScope
+    );
+    if (ownership === "other") {
+      return null;
     }
-
-    return isGuestStorageOwnerScope(ownerScope)
-      ? normalizeIncompleteLoopState(parsedValue as IncompleteLoopState)
-      : null;
+    if (ownership === "claim") {
+      await saveIncompleteLoop(storedState);
+    }
+    return normalizeIncompleteLoopState(storedState);
   } catch {
     await clearIncompleteLoop();
     return null;

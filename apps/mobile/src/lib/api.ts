@@ -2,6 +2,7 @@ import * as Linking from "expo-linking";
 import * as SecureStore from "expo-secure-store";
 import * as WebBrowser from "expo-web-browser";
 import { apiBaseUrl } from "./env";
+import { getExistingGuestId } from "./guest-id";
 import { normalizeDailyDifficulty } from "./practice";
 import type {
   AdminPrompt,
@@ -1730,13 +1731,12 @@ export async function getSavedNowInEnglishReflection(
 }
 
 export async function submitFeedback(request: FeedbackRequest): Promise<Feedback> {
-  const tokenSession = await getStoredTokenSession();
-  const feedbackRequest = tokenSession?.accessToken
-    ? {
-        ...request,
-        guestId: undefined
-      }
-    : request;
+  // 로그인 전에 게스트로 시작한 세션은 guestId가 있어야 서버가 이 사용자에게 넘겨준다.
+  // 그래서 로그인 상태에서도 이 기기의 guestId를 함께 보낸다. 사용자 세션에서는 서버가 guestId를 보지 않는다.
+  const feedbackRequest = {
+    ...request,
+    guestId: request.guestId ?? (await getExistingGuestId()) ?? undefined
+  };
 
   const response = await apiFetch("/api/feedback", {
     method: "POST",
@@ -1757,14 +1757,14 @@ export async function completeFeedbackSession(
   sessionId: string,
   guestId?: string
 ): Promise<FeedbackSessionStatus> {
-  const tokenSession = await getStoredTokenSession();
+  // submitFeedback과 같은 이유로 로그인 상태에서도 이 기기의 guestId를 함께 보낸다.
   const response = await apiFetch(`/api/feedback/${encodeURIComponent(sessionId)}/complete`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      guestId: tokenSession?.accessToken ? undefined : guestId
+      guestId: guestId ?? (await getExistingGuestId()) ?? undefined
     })
   });
 

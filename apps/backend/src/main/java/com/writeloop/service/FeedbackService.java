@@ -293,6 +293,10 @@ public class FeedbackService {
     ) {
         String guestId = GuestIdentitySupport.normalizeGuestId(request == null ? null : request.guestId());
         AnswerSessionEntity session = findOwnedSession(sessionId, currentUserId, guestId);
+        // 게스트로 시작하고 로그인한 뒤 완료하면, 완료 기록이 사용자에게 남도록 세션을 넘긴다(피드백 요청과 같다).
+        if (currentUserId != null && session.getUserId() == null) {
+            session.assignToUser(currentUserId);
+        }
         if (session.getStatus() == SessionStatus.COMPLETED) {
             return new FeedbackSessionStatusDto(session.getId(), SessionStatus.COMPLETED.name());
         }

@@ -29,3 +29,4 @@ WriteLoop의 중요한 결정과 그 이유를 [MADR 4.0](https://adr.github.io/
 | [0013](0013-adopt-flyway-with-production-baseline.md) | DB 마이그레이션을 Flyway로 관리, 운영 덤프를 기준선(V107)으로 | accepted | 2026-10-22 |
 | [0014](0014-social-login-verified-email-only.md) | 모든 소셜 로그인은 제공자가 인증한 이메일만 사용 | accepted | 2026-10-22 |
 | [0015](0015-build-images-in-ci-and-deploy-from-ghcr.md) | 이미지는 CI에서 빌드해 GHCR에 올리고, 서버는 받아서 실행만 | accepted | 2026-10-22 |
+| [0016](0016-llm-request-deadline-outside-transaction.md) | LLM 호출은 요청 단위 마감 안에서, DB 트랜잭션 밖에서 | accepted | 2026-10-23 |

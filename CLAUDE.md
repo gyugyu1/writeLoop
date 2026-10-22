@@ -52,7 +52,8 @@
 - 구조화 출력은 스키마의 키 순서대로 생성된다. 순서는 동작에 영향을 주므로, 순서를 바꿀 때는 회귀 테스트를 함께 돌린다.
 - LLM 스키마와 프롬프트는 `OrderedMaps`나 `LinkedHashMap`으로 만든다. `Map.of`, `Map.ofEntries`, `Map.copyOf`, `Set.of`는 JVM을 시작할 때마다 순서가 바뀐다. `LlmRequestDeterminismTest`가 검사한다.
 - 화면에 쓰지 않는 내용을 LLM에 생성시키지 않는다. 출력 토큰이 곧 응답 시간이고 비용이다.
-- 서버 시간 제한은 앱 시간 제한보다 짧아야 한다. 앱은 피드백·일기 90초, 코치·Now in English 45초에서 끊는다.
+- 서버 시간 제한은 앱 시간 제한보다 짧아야 한다. 앱은 피드백·일기 90초, 코치·Now in English 45초에서 끊고, nginx는 85초에서 끊는다.
+- LLM 호출은 요청 단위 마감(`LlmRequestDeadline.within`) 안에서, DB 트랜잭션 밖에서 한다(ADR-0016). OpenAI 호출은 `OpenAiStructuredOutputSupport.buildResponsesRequest`를 거쳐야 마감을 따른다.
 - 문장 피드백(`CanonicalFeedbackContract`, `FeedbackLearningContractPolicy`, `CanonicalFeedbackAssembler`)을 바꾸기 전에 `.agents/skills/writeloop-feedback-logic/SKILL.md`와 `references/feedback-schema.md`를 읽고, 바꾼 뒤에는 두 문서를 함께 갱신한다.
 
 ### 설정

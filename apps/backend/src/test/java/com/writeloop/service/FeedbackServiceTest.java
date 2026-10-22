@@ -22,9 +22,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.Map;
@@ -36,6 +42,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -64,16 +71,19 @@ class FeedbackServiceTest {
     private FeedbackDiagnosisLogRecorder diagnosisLogRecorder;
 
     private FeedbackService service;
+    private RecordingTransactionManager transactionManager;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
     void setUp() {
+        transactionManager = new RecordingTransactionManager();
         service = new FeedbackService(
                 promptService,
                 llmFeedbackClient,
                 answerSessionRepository,
                 answerAttemptRepository,
-                objectMapper
+                objectMapper,
+                new TransactionTemplate(transactionManager)
         );
         ReflectionTestUtils.setField(service, "feedbackDiagnosisLogRepository", diagnosisLogRepository);
         ReflectionTestUtils.setField(service, "feedbackDiagnosisLogRecorder", diagnosisLogRecorder);
@@ -261,6 +271,114 @@ class FeedbackServiceTest {
         assertThat(saved.getRegenerationResponseBodyJson()).isEqualTo("{\"result\":\"accepted\"}");
         assertThat(saved.getDiagnosisResponseStatusCode()).isEqualTo(200);
         assertThat(saved.getRegenerationResponseStatusCode()).isEqualTo(200);
+    }
+
+    @Test
+    void callsLlmOutsideOfDatabaseTransaction() {
+        PromptDto prompt = prompt();
+        AnswerSessionEntity session = session(prompt, "session-outside-transaction");
+        FeedbackResponseDto internal = feedback(prompt, false);
+        List<Boolean> transactionActiveDuringLlm = new java.util.ArrayList<>();
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(llmFeedbackClient.isConfigured()).thenReturn(true);
+        when(answerSessionRepository.findById(session.getId())).thenReturn(Optional.of(session));
+        when(llmFeedbackClient.review(any(PromptDto.class), anyString(), anyList(), anyInt()))
+                .thenAnswer(invocation -> {
+                    transactionActiveDuringLlm.add(transactionManager.inTransaction());
+                    return internal;
+                });
+        when(llmFeedbackClient.isAuthoritativeFeedback(internal)).thenReturn(true);
+        when(llmFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(snapshot(false));
+
+        service.review(
+                new FeedbackRequestDto(prompt.id(), "I take a walk.", session.getId(), "INITIAL", null),
+                7L
+        );
+
+        assertThat(transactionActiveDuringLlm).containsExactly(false);
+        // 준비와 저장, 두 번의 짧은 트랜잭션
+        assertThat(transactionManager.committedTransactions()).isEqualTo(2);
+        verify(answerAttemptRepository).save(any());
+    }
+
+    @Test
+    void doesNotCreateNewSessionWhenLlmFails() {
+        PromptDto prompt = prompt();
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(llmFeedbackClient.isConfigured()).thenReturn(true);
+        when(llmFeedbackClient.review(any(PromptDto.class), anyString(), anyList(), anyInt()))
+                .thenThrow(new IllegalStateException("feedback failed"));
+
+        assertThatThrownBy(() -> service.review(
+                new FeedbackRequestDto(prompt.id(), "I take a walk.", null, "INITIAL", "guest-1234567890abcdef12"),
+                null
+        )).isInstanceOf(IllegalStateException.class);
+
+        // 빈 세션이 남으면 게스트가 다시 시도할 때 질문 수 제한에 걸린다.
+        verify(answerSessionRepository, never()).save(any());
+        verify(answerAttemptRepository, never()).save(any());
+    }
+
+    @Test
+    void savesNewSessionBeforeItsFirstAttempt() {
+        PromptDto prompt = prompt();
+        FeedbackResponseDto internal = feedback(prompt, false);
+        FeedbackAnalysisSnapshot snapshot = snapshot(false);
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(llmFeedbackClient.isConfigured()).thenReturn(true);
+        when(llmFeedbackClient.review(any(PromptDto.class), anyString(), anyList(), anyInt())).thenReturn(internal);
+        when(llmFeedbackClient.isAuthoritativeFeedback(internal)).thenReturn(true);
+        when(llmFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(snapshot);
+
+        FeedbackResponseDto response = service.review(
+                new FeedbackRequestDto(prompt.id(), "I take a walk.", null, "INITIAL", null),
+                7L
+        );
+
+        InOrder saveOrder = inOrder(answerSessionRepository, answerAttemptRepository);
+        saveOrder.verify(answerSessionRepository).save(any(AnswerSessionEntity.class));
+        saveOrder.verify(answerAttemptRepository).save(any(AnswerAttemptEntity.class));
+        assertThat(response.sessionId()).isNotBlank();
+        assertThat(response.attemptNo()).isEqualTo(1);
+    }
+
+    @Test
+    void returnsAttemptSavedByConcurrentSameSubmissionWhileWaitingForLlm() throws Exception {
+        PromptDto prompt = prompt();
+        AnswerSessionEntity session = session(prompt, "session-concurrent-submission");
+        FeedbackResponseDto internal = feedback(prompt, false);
+        stubSuccessfulReview(prompt, session, internal, snapshot(false));
+        FeedbackResponseDto storedFeedback = feedback(prompt, false);
+        AnswerAttemptEntity storedAttempt = new AnswerAttemptEntity(
+                session.getId(),
+                1,
+                com.writeloop.persistence.AttemptType.INITIAL,
+                "I take a walk.",
+                "Add one relevant detail.",
+                objectMapper.writeValueAsString(storedFeedback),
+                "submission-concurrent",
+                null
+        );
+        // 준비 단계에서는 아직 없고, LLM을 기다리는 동안 같은 제출이 먼저 저장됐다.
+        when(answerAttemptRepository.findBySessionIdAndSubmissionId(session.getId(), "submission-concurrent"))
+                .thenReturn(Optional.empty())
+                .thenReturn(Optional.of(storedAttempt));
+
+        FeedbackResponseDto response = service.review(
+                new FeedbackRequestDto(
+                        prompt.id(),
+                        "I take a walk.",
+                        session.getId(),
+                        "INITIAL",
+                        null,
+                        "submission-concurrent"
+                ),
+                7L
+        );
+
+        assertThat(response.summary()).isEqualTo(storedFeedback.summary());
+        verify(answerAttemptRepository, never()).save(any());
+        verify(diagnosisLogRepository, never()).save(any());
     }
 
     @Test
@@ -499,6 +617,37 @@ class FeedbackServiceTest {
 
     private AnswerSessionEntity session(PromptDto prompt, String id) {
         return new AnswerSessionEntity(id, prompt.id(), null, 7L, SessionStatus.IN_PROGRESS);
+    }
+
+    // 실제 DB 없이 트랜잭션 경계만 기록한다. LLM 호출이 트랜잭션 밖에서 일어나는지 확인할 때 쓴다.
+    private static final class RecordingTransactionManager implements PlatformTransactionManager {
+        private int activeTransactions;
+        private int committedTransactions;
+
+        @Override
+        public TransactionStatus getTransaction(TransactionDefinition definition) {
+            activeTransactions += 1;
+            return new SimpleTransactionStatus();
+        }
+
+        @Override
+        public void commit(TransactionStatus status) {
+            activeTransactions -= 1;
+            committedTransactions += 1;
+        }
+
+        @Override
+        public void rollback(TransactionStatus status) {
+            activeTransactions -= 1;
+        }
+
+        boolean inTransaction() {
+            return activeTransactions > 0;
+        }
+
+        int committedTransactions() {
+            return committedTransactions;
+        }
     }
 
     private FeedbackResponseDto feedback(PromptDto prompt, boolean complete) {

@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 import java.util.UUID;
@@ -46,6 +47,7 @@ public class FeedbackService {
     private final AnswerSessionRepository answerSessionRepository;
     private final AnswerAttemptRepository answerAttemptRepository;
     private final ObjectMapper objectMapper;
+    private final TransactionTemplate transactionTemplate;
 
     @Autowired(required = false)
     private FeedbackDiagnosisLogRepository feedbackDiagnosisLogRepository;
@@ -61,45 +63,36 @@ public class FeedbackService {
             LlmFeedbackClient llmFeedbackClient,
             AnswerSessionRepository answerSessionRepository,
             AnswerAttemptRepository answerAttemptRepository,
-            ObjectMapper objectMapper
+            ObjectMapper objectMapper,
+            TransactionTemplate transactionTemplate
     ) {
         this.promptService = promptService;
         this.llmFeedbackClient = llmFeedbackClient;
         this.answerSessionRepository = answerSessionRepository;
         this.answerAttemptRepository = answerAttemptRepository;
         this.objectMapper = objectMapper;
+        this.transactionTemplate = transactionTemplate;
     }
 
-    @Transactional
+    // LLM 호출(보통 십수 초, 길면 80초)을 DB 트랜잭션 밖에서 해서, 기다리는 동안 DB 연결을 붙잡지 않는다.
+    // 준비(검증·조회)와 저장은 각각 짧은 트랜잭션이다. 새 세션은 LLM이 성공한 뒤 저장 단계에서 만든다.
+    // 그래야 LLM이 실패해도 빈 세션이 남지 않는다(게스트 질문 수 제한에 걸리지 않는다).
     public FeedbackResponseDto review(FeedbackRequestDto request, Long currentUserId) {
         long startedAt = System.nanoTime();
-        PromptDto prompt = promptService.findById(request.promptId());
-        String answer = request.answer() == null ? "" : request.answer().trim();
-        if (answer.length() > MAX_FEEDBACK_ANSWER_CHARS) {
-            throw new ApiException(
-                    HttpStatus.BAD_REQUEST,
-                    "ANSWER_TOO_LONG",
-                    "답변은 4,000자 이하로 작성해 주세요."
-            );
+        ReviewPreparation preparation = transactionTemplate.execute(
+                status -> prepareReview(request, currentUserId)
+        );
+        if (preparation.storedResponse() != null) {
+            return preparation.storedResponse();
         }
-        boolean hasExistingSession = request.sessionId() != null && !request.sessionId().isBlank();
-        if (!hasExistingSession) {
-            assertFeedbackProviderConfigured();
-        }
-        AnswerSessionEntity session = resolveSession(request, prompt.id(), currentUserId);
-        String submissionId = normalizeSubmissionId(request.submissionId());
-        FeedbackResponseDto existingResponse = findIdempotentResponse(session.getId(), submissionId);
-        if (existingResponse != null) {
-            return existingResponse;
-        }
-        assertFeedbackProviderConfigured();
-        assertSubmissionAllowed(session);
-        enforceGuestAttemptLimit(session, currentUserId);
 
-        int attemptNo = answerAttemptRepository.countBySessionId(session.getId()) + 1;
-        String previousAnswer = findPreviousAnswer(session.getId(), attemptNo);
-        AttemptType attemptType = resolveAttemptType(request);
-        List<PromptHintDto> hints = promptService.findHintsByPromptId(prompt.id());
+        PromptDto prompt = preparation.prompt();
+        AnswerSessionEntity session = preparation.session();
+        String answer = preparation.answer();
+        int attemptNo = preparation.attemptNo();
+        String previousAnswer = preparation.previousAnswer();
+        AttemptType attemptType = preparation.attemptType();
+        List<PromptHintDto> hints = preparation.hints();
 
         beginTiming(currentUserId, request.guestId(), prompt.id(), session.getId(), attemptNo);
         try {
@@ -147,34 +140,21 @@ public class FeedbackService {
                 );
             }
 
-            FeedbackResponseDto feedback = attachLoopExperience(
+            FeedbackResponseDto shapedFeedback = attachLoopExperience(
                     llmFeedbackClient.clearInternalMetadata(internalFeedback)
             );
-            feedback = withSession(feedback, session.getId(), attemptNo);
-            feedback = feedback.withVisibleFeedback(buildVisibleFeedback(feedback));
-            AnswerAttemptEntity savedAttempt = saveAttempt(
-                    session,
-                    attemptType,
-                    attemptNo,
-                    answer,
-                    feedback,
-                    submissionId
+            shapedFeedback = withSession(shapedFeedback, session.getId(), attemptNo);
+            FeedbackResponseDto feedback = shapedFeedback.withVisibleFeedback(buildVisibleFeedback(shapedFeedback));
+            PersistedReview persisted = transactionTemplate.execute(
+                    status -> persistReview(preparation, feedback, currentUserId, request.guestId())
             );
-            if (attemptNo == 1) {
-                promptService.recordDailyPromptStart(
-                        prompt.id(),
-                        currentUserId,
-                        request.guestId(),
-                        session.getId()
-                );
+            if (persisted.storedResponse() != null) {
+                return persisted.storedResponse();
             }
-            session.setStatus(feedback.loopComplete()
-                    ? SessionStatus.READY_TO_FINISH
-                    : SessionStatus.IN_PROGRESS);
-            answerSessionRepository.save(session);
+            // 진단 로그는 답변 저장과 따로 저장한다. 로그 저장이 실패해도 학습자의 답변은 남는다.
             saveDiagnosisLog(
-                    session,
-                    savedAttempt,
+                    persisted.session(),
+                    persisted.attempt(),
                     attemptType,
                     attemptNo,
                     prompt,
@@ -191,6 +171,118 @@ public class FeedbackService {
         } finally {
             clearTiming();
         }
+    }
+
+    private ReviewPreparation prepareReview(FeedbackRequestDto request, Long currentUserId) {
+        PromptDto prompt = promptService.findById(request.promptId());
+        String answer = request.answer() == null ? "" : request.answer().trim();
+        if (answer.length() > MAX_FEEDBACK_ANSWER_CHARS) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST,
+                    "ANSWER_TOO_LONG",
+                    "답변은 4,000자 이하로 작성해 주세요."
+            );
+        }
+        boolean hasExistingSession = request.sessionId() != null && !request.sessionId().isBlank();
+        if (!hasExistingSession) {
+            assertFeedbackProviderConfigured();
+        }
+        AnswerSessionEntity session = resolveSession(request, prompt.id(), currentUserId);
+        String submissionId = normalizeSubmissionId(request.submissionId());
+        FeedbackResponseDto existingResponse = findIdempotentResponse(session.getId(), submissionId);
+        if (existingResponse != null) {
+            return ReviewPreparation.stored(existingResponse);
+        }
+        assertFeedbackProviderConfigured();
+        assertSubmissionAllowed(session);
+        enforceGuestAttemptLimit(session, currentUserId);
+
+        int attemptNo = answerAttemptRepository.countBySessionId(session.getId()) + 1;
+        return new ReviewPreparation(
+                prompt,
+                answer,
+                session,
+                !hasExistingSession,
+                submissionId,
+                attemptNo,
+                findPreviousAnswer(session.getId(), attemptNo),
+                resolveAttemptType(request),
+                promptService.findHintsByPromptId(prompt.id()),
+                null
+        );
+    }
+
+    private PersistedReview persistReview(
+            ReviewPreparation preparation,
+            FeedbackResponseDto feedback,
+            Long currentUserId,
+            String guestId
+    ) {
+        AnswerSessionEntity session;
+        if (preparation.newSession()) {
+            session = answerSessionRepository.save(preparation.session());
+        } else {
+            // LLM을 기다리는 동안 같은 제출이 먼저 저장됐거나 세션이 완료됐을 수 있어 다시 확인한다.
+            session = answerSessionRepository.findById(preparation.session().getId())
+                    .orElseThrow(() -> new ApiException(
+                            HttpStatus.NOT_FOUND,
+                            "ANSWER_SESSION_NOT_FOUND",
+                            "답변 세션을 찾을 수 없어요."
+                    ));
+            FeedbackResponseDto storedResponse = findIdempotentResponse(session.getId(), preparation.submissionId());
+            if (storedResponse != null) {
+                return new PersistedReview(session, null, storedResponse);
+            }
+            assertSubmissionAllowed(session);
+        }
+
+        AnswerAttemptEntity savedAttempt = saveAttempt(
+                session,
+                preparation.attemptType(),
+                preparation.attemptNo(),
+                preparation.answer(),
+                feedback,
+                preparation.submissionId()
+        );
+        if (preparation.attemptNo() == 1) {
+            promptService.recordDailyPromptStart(
+                    preparation.prompt().id(),
+                    currentUserId,
+                    guestId,
+                    session.getId()
+            );
+        }
+        session.setStatus(feedback.loopComplete()
+                ? SessionStatus.READY_TO_FINISH
+                : SessionStatus.IN_PROGRESS);
+        answerSessionRepository.save(session);
+        return new PersistedReview(session, savedAttempt, null);
+    }
+
+    // 준비 트랜잭션의 결과. storedResponse가 있으면 같은 제출이 이미 저장된 것이라 LLM을 부르지 않는다.
+    private record ReviewPreparation(
+            PromptDto prompt,
+            String answer,
+            AnswerSessionEntity session,
+            boolean newSession,
+            String submissionId,
+            int attemptNo,
+            String previousAnswer,
+            AttemptType attemptType,
+            List<PromptHintDto> hints,
+            FeedbackResponseDto storedResponse
+    ) {
+        static ReviewPreparation stored(FeedbackResponseDto storedResponse) {
+            return new ReviewPreparation(null, null, null, false, null, 0, null, null, List.of(), storedResponse);
+        }
+    }
+
+    // 저장 트랜잭션의 결과. storedResponse가 있으면 LLM을 기다리는 동안 같은 제출이 먼저 저장된 것이다.
+    private record PersistedReview(
+            AnswerSessionEntity session,
+            AnswerAttemptEntity attempt,
+            FeedbackResponseDto storedResponse
+    ) {
     }
 
     @Transactional
@@ -357,14 +449,14 @@ public class FeedbackService {
         if (currentUserId == null && guestId != null && answerSessionRepository.countByGuestId(guestId) >= 1) {
             throw new GuestLimitExceededException();
         }
-        AnswerSessionEntity session = new AnswerSessionEntity(
+        // 새 세션은 아직 저장하지 않는다. LLM이 성공하면 persistReview가 저장한다.
+        return new AnswerSessionEntity(
                 UUID.randomUUID().toString(),
                 promptId,
                 currentUserId == null ? guestId : null,
                 currentUserId,
                 SessionStatus.IN_PROGRESS
         );
-        return answerSessionRepository.save(session);
     }
 
     private AnswerSessionEntity findOwnedSession(String sessionId, Long currentUserId, String guestId) {

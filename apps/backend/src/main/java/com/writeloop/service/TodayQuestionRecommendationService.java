@@ -740,11 +740,14 @@ public class TodayQuestionRecommendationService {
             boolean alreadyRetried
     ) {
         try {
-            if (changed) {
-                promptRecommendationExposureRepository.save(canonical);
-            }
+            // 중복 행을 먼저 지워 DB에 반영한다. Hibernate는 flush할 때 UPDATE를 DELETE보다 먼저 보내므로,
+            // 게스트 행을 회원 행으로 바꾸는 UPDATE가 아직 남은 회원 행과 유니크 키에서 충돌한다.
             if (!duplicatesToDelete.isEmpty()) {
                 promptRecommendationExposureRepository.deleteAll(duplicatesToDelete);
+                promptRecommendationExposureRepository.flush();
+            }
+            if (changed) {
+                promptRecommendationExposureRepository.save(canonical);
             }
             return java.util.Optional.of(canonical);
         } catch (DataIntegrityViolationException exception) {

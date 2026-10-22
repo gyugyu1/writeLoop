@@ -18,6 +18,7 @@ import com.writeloop.persistence.SessionStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,6 +33,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -458,6 +460,51 @@ class TodayQuestionRecommendationServiceTest {
         assertThat(guestExposure.getGuestId()).isNull();
         assertThat(guestExposure.getStartedSessionId()).isEqualTo("session-19");
         verify(promptRecommendationExposureRepository, times(2)).save(guestExposure);
+    }
+
+    @Test
+    void recordStart_deletes_user_duplicate_before_claiming_guest_exposure() {
+        String guestId = "guest-0011223344556677aa";
+        PromptRecommendationExposureEntity guestExposure = new PromptRecommendationExposureEntity(
+                LocalDate.now(KOREA_ZONE),
+                null,
+                guestId,
+                "A",
+                "prompt-a-16",
+                "PREPICK_FEATURED",
+                "QUICK_START",
+                78
+        );
+        PromptRecommendationExposureEntity userExposure = new PromptRecommendationExposureEntity(
+                LocalDate.now(KOREA_ZONE),
+                23L,
+                null,
+                "A",
+                "prompt-a-16",
+                "FEATURED",
+                "STREAK_KEEPER",
+                90
+        );
+        forceShownAt(guestExposure, Instant.now().minus(2, ChronoUnit.HOURS));
+        forceShownAt(userExposure, Instant.now().minus(1, ChronoUnit.HOURS));
+
+        when(promptRecommendationExposureRepository
+                .findByUserIdAndPromptIdAndRecommendedDateOrderByShownAtAsc(eq(23L), eq("prompt-a-16"), any(LocalDate.class)))
+                .thenReturn(List.of(userExposure));
+        when(promptRecommendationExposureRepository
+                .findByGuestIdAndPromptIdAndRecommendedDateOrderByShownAtAsc(eq(guestId), eq("prompt-a-16"), any(LocalDate.class)))
+                .thenReturn(List.of(guestExposure));
+
+        recommendationService.recordStart("prompt-a-16", 23L, guestId, "session-23");
+
+        assertThat(guestExposure.getUserId()).isEqualTo(23L);
+        assertThat(guestExposure.getGuestId()).isNull();
+        // 남는 회원 행이 먼저 지워지고 DB에 반영된 뒤에 게스트 행의 소유자를 바꿔 저장해야 유니크 키에 걸리지 않는다.
+        // 저장은 정리 때와 시작 기록 때 두 번이며, 둘 다 flush 뒤여야 한다.
+        InOrder writeOrder = inOrder(promptRecommendationExposureRepository);
+        writeOrder.verify(promptRecommendationExposureRepository).deleteAll(List.of(userExposure));
+        writeOrder.verify(promptRecommendationExposureRepository).flush();
+        writeOrder.verify(promptRecommendationExposureRepository, times(2)).save(guestExposure);
     }
 
     @Test

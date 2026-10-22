@@ -74,6 +74,7 @@
   - `deploy.sh`가 DB 백업, 이미지 받기, 재시작, 기동 확인을 한다. Flyway 마이그레이션은 백엔드가 기동할 때 적용된다.
   - 재배포·롤백은 Actions의 `Deploy` 워크플로를 커밋 SHA로 직접 실행한다. CI가 이미지를 올린 커밋만 된다.
   - 운영 서버에서 `docker compose build`나 `up --build`를 하지 않는다. 메모리가 모자라 서버가 멈춘다(2026-10-22 장애).
+  - `deploy.sh`는 Redis를 다시 만들지 않는다. 모바일 로그인 유지 토큰이 Redis에만 있으니 Redis 볼륨을 지우지 않고, Redis 설정 변경은 README 절차로 직접 적용한다.
   - 운영 DB 조회는 서버에서 `bash scripts/ops/prod-db.sh mysql writeloop -e "..."`로 한다.
 - 모바일 앱은 서버 배포와 별도로 스토어에 배포해야 반영된다. 스토어 빌드 전 버전 규칙은 피드백 로직 스킬 문서의 "Mobile Store Build Guardrail"을 따른다.
 

@@ -665,7 +665,8 @@ docker compose ps
 3. [`deploy.yml`](.github/workflows/deploy.yml)이 SSH로 서버에 접속해 저장소를 그 커밋으로 맞추고 [`scripts/ops/deploy.sh`](scripts/ops/deploy.sh)를 실행합니다.
    - 운영 DB를 `~/db-backups`에 백업합니다.
    - 이미지를 받아 백엔드·프론트엔드를 다시 시작합니다. Flyway 마이그레이션은 백엔드가 기동할 때 적용됩니다.
-   - 백엔드 기동과 프론트엔드 상태를 확인하고, `infra/nginx`가 바뀌었으면 nginx를 다시 만듭니다.
+   - 백엔드 기동과 헬스체크(`/health`: DB·Redis 연결), 프론트엔드 상태를 확인하고, `infra/nginx`가 바뀌었으면 nginx를 다시 만듭니다.
+   - 백엔드는 종료 신호를 받으면 진행 중인 요청을 최대 90초까지 마친 뒤 멈춥니다(`stop_grace_period: 100s`).
    - 서버에는 이번·직전 커밋 이미지만 남기고 나머지는 지웁니다. 더 예전 이미지는 GHCR에 남아 있습니다.
    - 공개 주소의 응답을 확인합니다.
 
@@ -679,6 +680,18 @@ GitHub의 Actions → `Deploy` → `Run workflow`에 배포할 커밋 SHA를 넣
 
 - 백엔드가 뜨지 않으면 배포 작업이 실패로 끝나고, 로그 끝부분과 이번 배포 전 백업 파일 경로를 출력합니다. 자동으로 되돌리지는 않습니다.
 - 이전 SHA로 `Deploy`를 다시 실행해 되돌립니다. 마이그레이션이 DB를 바꿨다면 출력된 백업으로 복구합니다.
+
+### Redis
+
+모바일 로그인 유지 토큰(refresh token)은 Redis에만 저장됩니다. Redis 데이터는 `writeloop-redis-data` 볼륨에 있고 AOF로 매초 기록되므로, 컨테이너를 다시 만들어도 남습니다. 볼륨을 지우면(`docker compose down -v` 등) 모바일 사용자가 모두 로그아웃되니 주의하세요.
+
+배포 스크립트는 Redis를 다시 만들지 않습니다. `docker-compose.yml`의 Redis 설정을 바꿨다면, 배포가 끝난 뒤 서버에서 직접 적용합니다.
+
+```bash
+cd /home/ubuntu/writeLoop
+sudo docker compose up -d --no-deps writeloop-redis
+sudo docker exec writeLoop-redis redis-cli DBSIZE   # 키 수가 그대로인지 확인
+```
 
 ### 필요한 GitHub 설정
 

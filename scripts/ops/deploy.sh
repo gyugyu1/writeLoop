@@ -8,7 +8,8 @@
 # 순서
 #   1) 운영 DB 백업. 백엔드가 기동할 때 Flyway가 마이그레이션을 적용하므로 반드시 먼저 한다.
 #   2) GHCR에서 이 커밋의 이미지를 받아 :latest로 태그한다. docker-compose.yml은 :latest를 실행한다.
-#   3) 백엔드·프론트엔드를 재시작하고 백엔드 기동(Flyway 포함)과 프론트엔드 상태를 확인한다.
+#   3) 백엔드·프론트엔드를 재시작하고 백엔드 기동(Flyway 포함), 백엔드 헬스체크(DB·Redis), 프론트엔드 상태를 확인한다.
+#      Redis는 다시 만들지 않는다(로그인 유지 토큰 보존). Redis 설정 변경은 README의 절차로 직접 적용한다.
 #   4) 지난 배포 이후 nginx 설정이 바뀌었으면 nginx를 다시 만든다.
 #   5) 배포한 커밋을 기록하고, 이번·직전 커밋 이미지만 남긴 뒤 공개 주소로 응답을 확인한다.
 #      더 예전 커밋은 GHCR에 남아 있어서, 그 SHA로 배포하면 다시 받는다.
@@ -72,6 +73,22 @@ if [ "$RESULT" != "started" ]; then
   exit 1
 fi
 echo "backend started after $(( $(date +%s) - START ))s"
+
+# 헬스체크(/health)는 DB와 Redis 연결까지 확인한다. 첫 검사는 기동 후 최대 30초 뒤에 돈다.
+BACKEND_HEALTH=starting
+for _ in $(seq 1 30); do
+  BACKEND_HEALTH="$(sudo -n docker inspect -f '{{.State.Health.Status}}' writeLoop-backend 2>/dev/null || echo none)"
+  if [ "$BACKEND_HEALTH" = "healthy" ] || [ "$BACKEND_HEALTH" = "unhealthy" ] || [ "$BACKEND_HEALTH" = "none" ]; then break; fi
+  sleep 3
+done
+if [ "$BACKEND_HEALTH" != "healthy" ]; then
+  echo "backend health is $BACKEND_HEALTH; /health response:" >&2
+  sudo -n docker exec writeLoop-backend curl -sS --max-time 4 http://127.0.0.1:8080/health >&2 || true
+  echo >&2
+  echo "DB backup before this deploy: $BACKUP" >&2
+  exit 1
+fi
+echo "backend healthy"
 
 for _ in $(seq 1 30); do
   if [ "$(sudo -n docker inspect -f '{{.State.Health.Status}}' writeLoop-frontend 2>/dev/null)" = "healthy" ]; then

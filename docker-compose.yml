@@ -3,6 +3,11 @@ services:
     image: redis:7-alpine
     container_name: writeLoop-redis
     restart: unless-stopped
+    # 모바일 로그인 유지 토큰은 Redis에만 있다. 컨테이너를 다시 만들어도 남도록 이름 있는 볼륨에 두고 매초 AOF로 기록한다.
+    # 배포 스크립트는 Redis를 다시 만들지 않는다. 이 설정을 바꾸면 README의 Redis 절차로 직접 적용한다.
+    command: ["redis-server", "--appendonly", "yes", "--appendfsync", "everysec"]
+    volumes:
+      - writeloop-redis-data:/data
 
   writeloop-backend:
     # 운영은 CI가 GHCR에 올린 이미지를 받아 :latest로 태그해 실행한다(scripts/ops/deploy.sh). 로컬은 build로 만든다.
@@ -12,6 +17,14 @@ services:
       dockerfile: Dockerfile
     container_name: writeLoop-backend
     restart: unless-stopped
+    # 종료 신호 뒤 진행 중인 요청을 마칠 시간. application.yml의 timeout-per-shutdown-phase(90s)보다 길어야 한다.
+    stop_grace_period: 100s
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -o /dev/null --max-time 4 http://127.0.0.1:8080/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
     depends_on:
       - writeloop-redis
     environment:
@@ -124,3 +137,6 @@ services:
     volumes:
       - ./${NGINX_CONF_PATH:-infra/nginx/dev.conf}:/etc/nginx/conf.d/default.conf:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
+
+volumes:
+  writeloop-redis-data:

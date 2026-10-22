@@ -5,15 +5,17 @@ Claude Code가 이 저장소에서 작업할 때 DB 스키마와 운영 환경�
 
 모드
   pre-edit   파일을 수정하기 직전 (PreToolUse: Edit/Write/MultiEdit/NotebookEdit)
-             (1) origin/main에 이미 올라간 마이그레이션 SQL(infra/mysql/schema/NNN-*.sql) 수정을 막는다.
-                 운영 DB에 적용됐을 수 있으므로 변경은 다음 번호의 새 파일로 작성해야 한다.
+             (1) 마이그레이션 SQL을 지킨다.
+                 - Flyway 마이그레이션(apps/backend/src/main/resources/db/migration/V번호__설명.sql) 중
+                   origin/main에 이미 올라간 파일은 수정을 막는다. 적용된 DB의 체크섬과 어긋나기 때문이다.
+                 - 예전 폴더(infra/mysql/schema)는 107번에서 동결했으므로 새 파일 추가와 수정을 모두 막는다.
              (2) 설정 파일(application*.yml, docker-compose*.yml, .env*)에
                  ddl-auto update/create 를 쓰는 것을 막는다. Hibernate 자동 DDL은 SQL 파일과
                  다른 테이블 구조를 만들기 때문이다.
   stop       답변을 끝내려 할 때 (Stop)
              (3) origin/main 이후 바뀐 내용(작업 트리, 스테이징, push하지 않은 커밋)을 검사한다.
-                 엔티티 구조(@Column, @Table, 필드 등)가 바뀌었는데 새 마이그레이션 SQL이 없거나,
-                 새 마이그레이션 번호가 기존 번호와 겹치거나, 공유된 마이그레이션이 수정되면
+                 엔티티 구조(@Column, @Table, 필드 등)가 바뀌었는데 새 Flyway 마이그레이션이 없거나,
+                 새 마이그레이션 버전이 기존 버전과 겹치거나, 공유된 마이그레이션이 수정되면
                  종료를 막고 이유를 전달한다. 같은 답변에서 두 번째 종료 시도는 통과시킨다.
 
 동작 방식
@@ -29,9 +31,12 @@ import re
 import subprocess
 import sys
 
-MIGRATION_DIR = "infra/mysql/schema"
-MIGRATION_RE = re.compile(r"^infra/mysql/schema/(\d{3})-[^/]+\.sql$")
-# 중복 검사에서 제외할 번호. 예전에 중복이던 061번은 한 파일로 합쳐 지금은 없다.
+# Flyway 마이그레이션 폴더. 새 스키마 변경은 여기에 V번호__설명.sql로 추가한다(docs/decisions/0013).
+MIGRATION_DIR = "apps/backend/src/main/resources/db/migration"
+MIGRATION_RE = re.compile(r"^apps/backend/src/main/resources/db/migration/V(\d+)__[^/]+\.sql$")
+# 107번까지 손으로 적용하던 예전 폴더. Flyway 도입과 함께 동결했다.
+LEGACY_MIGRATION_RE = re.compile(r"^infra/mysql/schema/[^/]+\.sql$")
+# 중복 검사에서 제외할 버전.
 KNOWN_DUPLICATE_NUMBERS = set()
 
 CONFIG_FILE_RE = re.compile(
@@ -130,13 +135,21 @@ def handle_pre_edit(event):
     if not rel:
         return
 
-    # (1) 이미 공유된 마이그레이션 수정 금지
+    # (1) 동결한 예전 마이그레이션 폴더
+    if LEGACY_MIGRATION_RE.match(rel):
+        deny(
+            f"{rel}: infra/mysql/schema는 107번에서 동결했습니다. "
+            f"새 스키마 변경은 {MIGRATION_DIR}에 다음 버전의 V번호__설명.sql로 추가하세요."
+        )
+        return
+
+    # (1) 이미 공유된 Flyway 마이그레이션 수정 금지
     if MIGRATION_RE.match(rel):
         ref = shared_ref(root)
         if ref and git(root, "cat-file", "-e", f"{ref}:{rel}")[0] == 0:
             deny(
                 f"이미 {ref}에 올라간 마이그레이션({rel})은 수정할 수 없습니다. "
-                "운영 DB에 적용됐을 수 있으므로 변경 사항은 다음 번호의 새 마이그레이션 파일로 작성하세요."
+                "적용된 DB의 Flyway 체크섬과 어긋나므로 변경 사항은 다음 버전의 새 마이그레이션 파일로 작성하세요."
             )
             return
 
@@ -148,7 +161,7 @@ def handle_pre_edit(event):
             deny(
                 f"{rel}에 '{match.group(0).strip()}'를 쓸 수 없습니다. "
                 "Hibernate 자동 DDL은 SQL 파일과 다른 테이블 구조를 만듭니다. "
-                "스키마 변경은 infra/mysql/schema의 번호 SQL로 하고, 일시적으로 필요하면 "
+                f"스키마 변경은 {MIGRATION_DIR}의 Flyway 마이그레이션으로 하고, 일시적으로 필요하면 "
                 "설정 파일 대신 실행할 때 SPRING_JPA_HIBERNATE_DDL_AUTO 환경변수를 지정하세요."
             )
 
@@ -197,7 +210,10 @@ def handle_stop(event):
     problems = []
 
     new_migrations = [p for p, s in entries.items() if s == "A" and MIGRATION_RE.match(p)]
-    modified_migrations = [p for p, s in entries.items() if s in ("M", "D") and MIGRATION_RE.match(p)]
+    modified_migrations = [
+        p for p, s in entries.items()
+        if (s in ("M", "D") and MIGRATION_RE.match(p)) or LEGACY_MIGRATION_RE.match(p)
+    ]
 
     # (4-a) 엔티티 구조 변경에 마이그레이션 누락
     entity_details = []
@@ -210,30 +226,30 @@ def handle_stop(event):
     if entity_details and not new_migrations:
         detail = "; ".join(f"{os.path.basename(p)}: {' | '.join(lines)}" for p, lines in entity_details)
         problems.append(
-            "엔티티 구조가 바뀌었지만 새 마이그레이션 SQL이 없습니다 "
-            f"({detail}). infra/mysql/schema에 다음 번호의 SQL을 추가하거나, "
+            "엔티티 구조가 바뀌었지만 새 Flyway 마이그레이션이 없습니다 "
+            f"({detail}). {MIGRATION_DIR}에 다음 버전의 V번호__설명.sql을 추가하거나, "
             "스키마 변경이 아닌 이유를 답변에 설명하세요."
         )
 
-    # (4-b) 마이그레이션 번호 중복
+    # (4-b) 마이그레이션 버전 중복. Flyway는 V108과 V0108을 같은 버전으로 보므로 숫자로 비교한다.
     numbers = {}
     schema_dir = os.path.join(root, MIGRATION_DIR)
     if os.path.isdir(schema_dir):
         for name in os.listdir(schema_dir):
             match = MIGRATION_RE.match(f"{MIGRATION_DIR}/{name}")
             if match:
-                numbers.setdefault(match.group(1), []).append(name)
+                numbers.setdefault(int(match.group(1)), []).append(name)
     for path in new_migrations:
-        number = MIGRATION_RE.match(path).group(1)
+        number = int(MIGRATION_RE.match(path).group(1))
         files = numbers.get(number, [])
         if len(files) > 1 and number not in KNOWN_DUPLICATE_NUMBERS:
-            problems.append(f"마이그레이션 번호 {number}가 중복됩니다: {', '.join(sorted(files))}.")
+            problems.append(f"마이그레이션 버전 {number}가 중복됩니다: {', '.join(sorted(files))}.")
 
     # (4-c) 공유된 마이그레이션 수정
     for path in sorted(modified_migrations):
         problems.append(
-            f"이미 공유된 마이그레이션 {path}가 수정되거나 삭제됐습니다. "
-            "되돌리고 변경 사항은 새 번호의 마이그레이션으로 작성하세요."
+            f"이미 공유되거나 동결된 마이그레이션 {path}가 바뀌었습니다. "
+            f"되돌리고 변경 사항은 {MIGRATION_DIR}에 새 버전의 마이그레이션으로 작성하세요."
         )
 
     if problems:

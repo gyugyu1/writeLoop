@@ -216,7 +216,7 @@ WriteLoop/
 │  │  └─ assets/               # 아이콘, 폰트, 이미지
 │  └─ frontend/                # Next.js 웹 앱
 ├─ infra/
-│  ├─ mysql/schema/            # 번호순 SQL 스키마·데이터 마이그레이션
+│  ├─ mysql/schema/            # 예전 번호순 SQL 마이그레이션 001~107 (동결, 기록용)
 │  └─ nginx/                   # 개발·운영 Nginx 설정
 ├─ scripts/
 │  ├─ feedback-quality/        # LLM 회귀 테스트 케이스와 판정 규칙
@@ -300,18 +300,13 @@ FLUSH PRIVILEGES;
 
 `'%'` 호스트 권한은 Docker 컨테이너에서 호스트 MySQL로 접속하기 위한 **로컬 개발 예시**입니다. 운영 DB에서는 실제 애플리케이션 호스트만 허용해야 합니다.
 
-새 DB에는 `infra/mysql/schema`의 SQL을 파일명 순서대로 적용합니다. MySQL CLI가 설치된 PowerShell 예시는 다음과 같습니다.
+DB는 기본 문자셋을 맞춰 빈 상태로만 만들어 둡니다. 테이블과 기준 데이터(질문, 힌트, 과제 메타데이터)는 백엔드가 처음 시작할 때 Flyway가 `V107__baseline.sql`부터 자동으로 만듭니다.
 
-```powershell
-$env:MYSQL_PWD = "로컬_DB_비밀번호"
-Get-ChildItem .\infra\mysql\schema\*.sql |
-  Sort-Object Name |
-  ForEach-Object { Get-Content -Raw -Encoding UTF8 $_.FullName } |
-  mysql --default-character-set=utf8mb4 -h 127.0.0.1 -u writeloop_user writeloop
-Remove-Item Env:MYSQL_PWD
+```sql
+CREATE DATABASE writeloop DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-이 명령은 **비어 있는 로컬 DB를 처음 구성할 때** 사용합니다. 이미 데이터가 있는 DB에는 적용되지 않은 번호의 SQL만 백업 후 반영해야 합니다.
+`infra/mysql/schema`의 SQL을 빈 DB에 순서대로 실행하면 운영과 같은 구조가 나오지 않으므로 사용하지 않습니다(`docs/decisions/0013`).
 
 ### 4. Docker 통합 환경을 실행합니다
 
@@ -482,26 +477,26 @@ npm run dev:frontend
 
 ### 기본 원칙
 
-- SQL 파일은 `infra/mysql/schema`에 `001-...sql` 형식으로 추가합니다.
-- 번호는 기존 마지막 번호 다음을 사용합니다.
-- 운영 반영 전 DB 백업을 확보합니다.
-- 가능하면 재실행해도 결과가 같은 멱등 마이그레이션으로 작성합니다.
-- 스키마 변경과 이를 사용하는 백엔드는 배포 순서를 함께 검토합니다.
+- 스키마와 데이터 변경은 [Flyway](https://documentation.red-gate.com/flyway) 마이그레이션으로만 합니다.
+- 파일은 `apps/backend/src/main/resources/db/migration`에 `V109__설명.sql`처럼 다음 버전 번호로 추가합니다.
+- 이미 push한 마이그레이션은 고치지 않습니다. Flyway가 체크섬으로 변경을 감지해 기동을 막습니다.
+- 운영 DB에 적용될 변경은 배포 전에 백업을 확보합니다.
 - MySQL 세션 시간대는 `+09:00`, 애플리케이션 시간대는 `Asia/Seoul`을 사용합니다.
 
-### JPA와 SQL의 관계
+### Flyway와 JPA의 관계
 
-**정식 스키마와 데이터 변경의 권위값은 번호가 붙은 SQL 파일**입니다. 백엔드는 로컬과 운영 모두 `spring.jpa.hibernate.ddl-auto=validate`로 실행되어 테이블을 직접 만들거나 바꾸지 않고, 엔티티와 DB 구조가 다르면 기동을 중단합니다. 따라서 새 마이그레이션은 DB에 먼저 적용한 뒤 그 마이그레이션을 사용하는 백엔드를 실행하거나 배포합니다.
+백엔드가 시작하면 Flyway가 JPA보다 먼저 실행되어, `flyway_schema_history`에 없는 버전만 순서대로 적용하고 기록합니다. 이어서 JPA가 `spring.jpa.hibernate.ddl-auto=validate`로 엔티티와 DB 구조를 검사합니다. 다르면 기동을 중단합니다. 그래서 엔티티를 바꿀 때는 같은 커밋에 마이그레이션을 함께 추가합니다.
 
-꼭 필요할 때만 `SPRING_JPA_HIBERNATE_DDL_AUTO` 환경변수로 이 값을 바꿀 수 있습니다. `update`로 실행하면 Hibernate가 SQL 파일과 다른 구조를 만들 수 있으므로 공유 DB에는 사용하지 않습니다.
+꼭 필요할 때만 `SPRING_JPA_HIBERNATE_DDL_AUTO` 환경변수로 검증 방식을 바꿀 수 있습니다. `update`는 Hibernate가 마이그레이션과 다른 구조를 만들므로 공유 DB에는 쓰지 않습니다.
 
-백엔드 시작 시 `PromptSeedConfig`가 기본 카탈로그와 일부 시드 질문을 보정하지만, 전체 활성 질문과 수동 검토 메타데이터는 SQL 마이그레이션에 의존합니다.
+백엔드 시작 시 `PromptSeedConfig`가 기본 카탈로그와 일부 시드 질문을 보정합니다. 전체 활성 질문과 수동 검토 메타데이터는 기준선 `V107__baseline.sql`과 이후 마이그레이션에 들어 있습니다.
 
-### 기존 DB에 반영할 때
+### 기준선과 예전 마이그레이션
 
-예를 들어 운영 DB가 `099`까지 반영되어 있다면 `100`, `101`, `102`만 순서대로 적용합니다. 이미 데이터가 있는 DB에 전체 SQL을 처음부터 다시 실행하지 않습니다.
-
-현재 적용 상태는 배포 이력과 실제 테이블·컬럼을 함께 확인해야 합니다. 일부 오래된 마이그레이션은 별도의 마이그레이션 이력 테이블이 없으므로 파일 번호만으로 자동 판정되지 않습니다.
+- `infra/mysql/schema/001~107`은 Flyway 도입 전 손으로 적용하던 파일입니다. 기록용으로만 남기고 더 추가하지 않습니다.
+- 이미 있던 DB(운영·로컬)는 처음 Flyway가 실행될 때 `107`로 기준선 표시만 하고, `108`부터 적용합니다.
+- 빈 DB는 `V107__baseline.sql`(2026-10-22 운영 DB의 구조와 기준 데이터 덤프)부터 실행합니다.
+- 배포 전후로 나눠야 하는 변경(예: 컬럼 삭제)은 두 번의 배포로 나눕니다. 먼저 새 코드와 호환되는 변경을 배포하고, 다음 배포에서 정리 마이그레이션을 넣습니다.
 
 ## 테스트와 품질 검증
 
@@ -663,7 +658,8 @@ docker compose ps
 
 ### 공통
 
-- 필요한 SQL 마이그레이션을 DB에 먼저 적용했는가
+- 새 마이그레이션이 `db/migration`에 있고, 빈 DB와 기존 DB 모두에서 백엔드가 기동하는가
+- 운영 DB 백업을 확보했는가(Flyway는 배포 후 첫 기동 때 마이그레이션을 적용한다)
 - 운영 환경변수와 비밀값이 배포 서버에 설정됐는가
 - 백엔드 테스트와 모바일 lint/typecheck가 통과했는가
 - LLM smoke 회귀 테스트가 목표 제공자·모델에서 통과했는가

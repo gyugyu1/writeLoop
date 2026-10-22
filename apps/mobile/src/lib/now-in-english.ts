@@ -73,8 +73,6 @@ export type NowInEnglishAiReflection = {
   expressions: NowInEnglishAiReflectionExpression[];
   closingKo: string;
   createdAt: string;
-  // 서버의 대체 회고. 캐시하지 않는다(예전 버전에서 저장한 항목에는 없다).
-  fallback?: boolean;
 };
 
 export type NowInEnglishReminderSettings = {

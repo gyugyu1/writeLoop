@@ -2,9 +2,11 @@ package com.writeloop.service;
 
 import com.writeloop.dto.NowInEnglishCoachFeedbackRequestDto;
 import com.writeloop.dto.NowInEnglishCoachFeedbackResponseDto;
+import com.writeloop.exception.ApiException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Locale;
@@ -36,26 +38,32 @@ public class NowInEnglishCoachFeedbackService {
             String createdAt = truncate(normalizeText(request == null ? null : request.createdAt()), 80);
             feedbackTimingRecorder.recordServicePhase("prepare", elapsedMs(prepareStartedAtNanos));
 
-            if (openAiClient.isConfigured()) {
-                try {
-                    return normalizeResponse(openAiClient.review(text, createdAt), text);
-                } catch (RuntimeException exception) {
-                    feedbackTimingRecorder.recordPolicyEvent("fallback", Map.of(
-                            "reason", "llm_failure",
-                            "exceptionClass", exception.getClass().getName()
-                    ));
-                    LOGGER.warn(
-                            "Now-in-English coach feedback fell back to deterministic response exceptionClass={}",
-                            exception.getClass().getName()
-                    );
-                }
-            } else {
-                feedbackTimingRecorder.recordPolicyEvent("fallback", Map.of(
+            // LLM이 실패하면 고정 칭찬 문구를 AI 피드백처럼 보여 주지 않고 안내를 돌려준다.
+            // 문장은 /entries로 이미 저장됐고, 앱은 이 안내를 코치 카드에 보여 준다.
+            if (!openAiClient.isConfigured()) {
+                feedbackTimingRecorder.recordPolicyEvent("unavailable", Map.of(
                         "reason", "provider_not_configured"
                 ));
+                throw coachFeedbackUnavailable();
             }
-
-            return fallbackFeedback(text);
+            NowInEnglishCoachFeedbackResponseDto response;
+            try {
+                response = openAiClient.review(text, createdAt);
+            } catch (RuntimeException exception) {
+                feedbackTimingRecorder.recordPolicyEvent("unavailable", Map.of(
+                        "reason", "llm_failure",
+                        "exceptionClass", exception.getClass().getName()
+                ));
+                LOGGER.warn(
+                        "Now-in-English coach feedback is unavailable exceptionClass={}",
+                        exception.getClass().getName()
+                );
+                throw coachFeedbackUnavailable();
+            }
+            if (response == null) {
+                throw coachFeedbackUnavailable();
+            }
+            return normalizeResponse(response, text);
         } finally {
             feedbackTimingRecorder.recordServicePhase("total", elapsedMs(totalStartedAtNanos));
             feedbackTimingRecorder.clearTrace();
@@ -66,14 +74,20 @@ public class NowInEnglishCoachFeedbackService {
         return (System.nanoTime() - startedAtNanos) / 1_000_000;
     }
 
+    private ApiException coachFeedbackUnavailable() {
+        return new ApiException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "NOW_COACH_FEEDBACK_UNAVAILABLE",
+                "문장은 저장됐어요. AI 코치가 지금 응답하지 않아요. 잠시 후 다시 시도해 주세요."
+        );
+    }
+
     private NowInEnglishCoachFeedbackResponseDto normalizeResponse(
             NowInEnglishCoachFeedbackResponseDto response,
             String originalText
     ) {
+        // LLM 응답에서 비어 있는 칸만 기본 문구로 채운다.
         NowInEnglishCoachFeedbackResponseDto fallback = fallbackFeedback(originalText);
-        if (response == null) {
-            return fallback;
-        }
 
         String suggestionEn = truncate(response.suggestionEn(), 180);
         boolean hasDistinctSuggestion = hasDistinctSuggestion(originalText, suggestionEn);

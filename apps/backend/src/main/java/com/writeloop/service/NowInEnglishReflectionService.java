@@ -7,6 +7,7 @@ import com.writeloop.dto.NowInEnglishReflectionEntryDto;
 import com.writeloop.dto.NowInEnglishReflectionExpressionDto;
 import com.writeloop.dto.NowInEnglishReflectionRequestDto;
 import com.writeloop.dto.NowInEnglishReflectionResponseDto;
+import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.NowInEnglishEntryEntity;
 import com.writeloop.persistence.NowInEnglishEntryRepository;
 import com.writeloop.persistence.NowInEnglishReflectionEntity;
@@ -14,6 +15,7 @@ import com.writeloop.persistence.NowInEnglishReflectionRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,6 +55,7 @@ public class NowInEnglishReflectionService {
         String dateKey = normalizeDateKey(rawDateKey);
         LocalDate reflectionDate = LocalDate.parse(dateKey);
         return nowInEnglishReflectionRepository.findByUserIdAndReflectionDate(userId, reflectionDate)
+                .filter(reflection -> !isStoredFallback(reflection))
                 .map(this::toDto);
     }
 
@@ -82,10 +85,6 @@ public class NowInEnglishReflectionService {
             }
 
             NowInEnglishReflectionResponseDto response = reflect(dateKey, entries);
-            if (response.fallback()) {
-                // 대체 회고는 저장하지 않는다. 저장하면 다음 요청이 캐시로 받아 그날 회고가 고정 문구로 남는다.
-                return response;
-            }
             long persistStartedAtNanos = System.nanoTime();
             NowInEnglishReflectionEntity reflection = nowInEnglishReflectionRepository
                     .findByUserIdAndReflectionDate(userId, reflectionDate)
@@ -129,33 +128,46 @@ public class NowInEnglishReflectionService {
         }
     }
 
+    // LLM이 실패하면 고정 문구 회고를 AI 회고처럼 보여 주지 않고 안내를 돌려준다. 아무것도 저장하지 않으므로
+    // 앱은 어제 쓴 문장과 이 안내를 보여 주고, 다음에 화면을 열 때 다시 요청한다.
     private NowInEnglishReflectionResponseDto reflect(String dateKey, List<NowInEnglishReflectionEntryDto> entries) {
-        if (openAiClient.isConfigured()) {
-            try {
-                return normalizeResponse(openAiClient.reflect(dateKey, entries), dateKey, entries);
-            } catch (RuntimeException exception) {
-                feedbackTimingRecorder.recordPolicyEvent("fallback", Map.of(
-                        "reason", "llm_failure",
-                        "exceptionClass", exception.getClass().getName(),
-                        "dateKey", dateKey,
-                        "entryCount", entries.size()
-                ));
-                LOGGER.warn(
-                        "Now-in-English reflection fell back to deterministic response dateKey={} entryCount={} exceptionClass={}",
-                        dateKey,
-                        entries.size(),
-                        exception.getClass().getName()
-                );
-            }
-        } else {
-            feedbackTimingRecorder.recordPolicyEvent("fallback", Map.of(
+        if (!openAiClient.isConfigured()) {
+            feedbackTimingRecorder.recordPolicyEvent("unavailable", Map.of(
                     "reason", "provider_not_configured",
                     "dateKey", dateKey,
                     "entryCount", entries.size()
             ));
+            throw reflectionUnavailable();
         }
+        try {
+            NowInEnglishReflectionResponseDto response = openAiClient.reflect(dateKey, entries);
+            if (response == null) {
+                throw new IllegalStateException("OpenAI now reflection returned no result");
+            }
+            return normalizeResponse(response, dateKey, entries);
+        } catch (RuntimeException exception) {
+            feedbackTimingRecorder.recordPolicyEvent("unavailable", Map.of(
+                    "reason", "llm_failure",
+                    "exceptionClass", exception.getClass().getName(),
+                    "dateKey", dateKey,
+                    "entryCount", entries.size()
+            ));
+            LOGGER.warn(
+                    "Now-in-English reflection is unavailable dateKey={} entryCount={} exceptionClass={}",
+                    dateKey,
+                    entries.size(),
+                    exception.getClass().getName()
+            );
+            throw reflectionUnavailable();
+        }
+    }
 
-        return fallbackReflection(dateKey, entries);
+    private ApiException reflectionUnavailable() {
+        return new ApiException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "NOW_REFLECTION_UNAVAILABLE",
+                "지금은 AI 회고를 만들 수 없어요. 잠시 후 다시 열어 주세요."
+        );
     }
 
     private long elapsedMs(long startedAtNanos) {
@@ -265,10 +277,8 @@ public class NowInEnglishReflectionService {
             String dateKey,
             List<NowInEnglishReflectionEntryDto> entries
     ) {
+        // LLM 응답에서 비어 있는 칸만 기본 문구로 채운다.
         NowInEnglishReflectionResponseDto fallback = fallbackReflection(dateKey, entries);
-        if (response == null) {
-            return fallback;
-        }
 
         List<String> highlights = response.highlightsKo().isEmpty()
                 ? fallback.highlightsKo()
@@ -296,8 +306,7 @@ public class NowInEnglishReflectionService {
                 firstNonBlank(truncate(response.nextActionKo(), 140), fallback.nextActionKo()),
                 firstNonBlank(truncate(response.nextActionExampleEn(), 160), fallback.nextActionExampleEn()),
                 expressions,
-                firstNonBlank(truncate(response.closingKo(), 90), fallback.closingKo()),
-                false
+                firstNonBlank(truncate(response.closingKo(), 90), fallback.closingKo())
         );
     }
 
@@ -346,12 +355,12 @@ public class NowInEnglishReflectionService {
                                 "I want to rest because I feel tired."
                         )
                 ),
-                "완벽하게 쓰기보다 한 순간만 영어로 잡아보세요.",
-                true
+                "완벽하게 쓰기보다 한 순간만 영어로 잡아보세요."
         );
     }
 
-    // 이 수정 전에는 대체 회고도 저장했다. 저장된 고정 문구 회고는 캐시로 쓰지 않고 다시 만든다.
+    // 2026-10-23 이전에는 LLM이 실패하면 고정 문구 회고를 만들어 저장했다.
+    // 저장된 고정 문구 회고는 없는 것으로 보고 다시 만든다.
     private boolean isStoredFallback(NowInEnglishReflectionEntity reflection) {
         return FALLBACK_HEADLINE_KO.equals(reflection.getHeadlineKo())
                 && FALLBACK_SUMMARY_KO.equals(reflection.getSummaryKo());
@@ -373,8 +382,7 @@ public class NowInEnglishReflectionService {
                 reflection.getNextActionKo(),
                 reflection.getNextActionExampleEn(),
                 readExpressions(reflection.getExpressionsJson()),
-                reflection.getClosingKo(),
-                isStoredFallback(reflection)
+                reflection.getClosingKo()
         );
     }
 

@@ -458,8 +458,6 @@ export interface NowInEnglishReflectionResponse {
   nextActionExampleEn: string;
   expressions: NowInEnglishReflectionExpression[];
   closingKo: string;
-  // LLM 호출이 실패해 서버가 고정 문구로 만든 회고. 기기에 캐시하지 않고 다음에 다시 요청한다.
-  fallback: boolean;
 }
 
 export interface CommonMistake {

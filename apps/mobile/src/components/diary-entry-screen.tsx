@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  AppState,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -34,6 +35,7 @@ import {
   buildInlineFeedbackSegments,
   type RenderedInlineFeedbackSegment
 } from "@/lib/inline-feedback";
+import { deleteDiaryDraft, getDiaryDraft, saveDiaryDraft, type DiaryDraft } from "@/lib/diary-drafts";
 import { buildLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
 import type {
@@ -51,6 +53,13 @@ type DiaryEntryScreenProps = {
 };
 
 type DiaryStep = "write" | "feedback" | "rewrite";
+
+// 임시 저장에서 비교하는 편집 내용. 서버에 저장된 상태(새 일기는 빈 상태)와 같으면 저장할 필요가 없다.
+type DiaryEditableState = Pick<DiaryDraft, "entryDate" | "title" | "moodTags" | "content" | "rewriteText">;
+
+function buildDiaryEditableSignature(state: DiaryEditableState) {
+  return JSON.stringify([state.entryDate, state.title, state.moodTags, state.content, state.rewriteText]);
+}
 
 const DIARY_COACH_PROMPT_ID = "diary-free-writing";
 const MOOD_OPTIONS = [
@@ -552,6 +561,10 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
   const [savingCoachExpressionKeys, setSavingCoachExpressionKeys] = useState<string[]>([]);
   const [savedExpressionIdsByKey, setSavedExpressionIdsByKey] = useState<Record<string, number>>({});
   const [savingExpressionKeys, setSavingExpressionKeys] = useState<string[]>([]);
+  // 임시 저장: 서버에 저장된 상태의 서명, 화면을 떠날 때 저장할 최신 임시본, 불러오기를 마쳤는지
+  const savedSignatureRef = useRef("");
+  const latestDraftRef = useRef<DiaryDraft | null>(null);
+  const isDraftReadyRef = useRef(false);
 
   const activeText = step === "rewrite" ? rewriteText : content;
   const wordCount = useMemo(() => countWords(activeText), [activeText]);
@@ -576,6 +589,13 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
     async function loadEntry() {
       if (!initialEntryId) {
         setIsLoading(false);
+        const today = todayDateKey();
+        await prepareDiaryDraft(
+          "",
+          { entryDate: today, title: buildDefaultDiaryTitle(today), moodTags: [], content: "", rewriteText: "" },
+          false,
+          () => cancelled
+        );
         return;
       }
 
@@ -605,6 +625,20 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
         setIsReadOnly(!entry.draft);
         setIsReadOnlyFeedbackOpen(false);
         setStep(!entry.draft ? "write" : latestFeedback ? "feedback" : "write");
+        if (entry.draft) {
+          await prepareDiaryDraft(
+            entry.entryId,
+            {
+              entryDate: loadedDate,
+              title: loadedTitle || buildDefaultDiaryTitle(loadedDate),
+              moodTags: getDiaryMoodTags(entry),
+              content: entry.content ?? "",
+              rewriteText: latestText || entry.content || ""
+            },
+            Boolean(latestFeedback),
+            () => cancelled
+          );
+        }
       } catch (caughtError) {
         if (!cancelled) {
           setError(caughtError instanceof Error ? caughtError.message : "일기를 불러오지 못했어요.");
@@ -653,6 +687,110 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
     };
   }, [currentUser]);
 
+  // 쓰는 동안 잠깐 멈추면 기기에 임시 저장한다. 서버에 저장된 상태와 같아지면 임시본을 지운다.
+  useEffect(() => {
+    if (isLoading || isReadOnly || !isDraftReadyRef.current) {
+      return undefined;
+    }
+
+    const draft: DiaryDraft = {
+      entryId,
+      entryDate,
+      title,
+      moodTags: selectedMoodTags,
+      content,
+      rewriteText,
+      step: step === "rewrite" ? "rewrite" : "write",
+      updatedAt: new Date().toISOString()
+    };
+    const hasUnsavedChanges = buildDiaryEditableSignature(draft) !== savedSignatureRef.current;
+    latestDraftRef.current = hasUnsavedChanges ? draft : null;
+    const timer = setTimeout(() => {
+      if (hasUnsavedChanges) {
+        void saveDiaryDraft(draft).catch(() => undefined);
+      } else {
+        void deleteDiaryDraft(entryId).catch(() => undefined);
+      }
+    }, 800);
+    return () => clearTimeout(timer);
+  }, [entryId, entryDate, title, selectedMoodTags, content, rewriteText, step, isLoading, isReadOnly]);
+
+  // 앱이 백그라운드로 가거나 화면을 떠날 때는 기다리지 않고 바로 저장한다.
+  useEffect(() => {
+    function flushDiaryDraft() {
+      const draft = latestDraftRef.current;
+      if (draft) {
+        void saveDiaryDraft(draft).catch(() => undefined);
+      }
+    }
+
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState !== "active") {
+        flushDiaryDraft();
+      }
+    });
+    return () => {
+      subscription.remove();
+      flushDiaryDraft();
+    };
+  }, []);
+
+  // 서버에 저장된 상태를 기준으로 잡고, 이 기기에 저장하지 않은 임시본이 있으면 이어서 쓸지 묻는다.
+  async function prepareDiaryDraft(
+    draftEntryId: string,
+    savedState: DiaryEditableState,
+    canRewrite: boolean,
+    isCancelled: () => boolean
+  ) {
+    savedSignatureRef.current = buildDiaryEditableSignature(savedState);
+    const draft = await getDiaryDraft(draftEntryId).catch(() => null);
+    if (isCancelled()) {
+      return;
+    }
+    if (!draft || buildDiaryEditableSignature(draft) === savedSignatureRef.current) {
+      if (draft) {
+        void deleteDiaryDraft(draftEntryId).catch(() => undefined);
+      }
+      isDraftReadyRef.current = true;
+      return;
+    }
+
+    Alert.alert(
+      "저장하지 않은 일기가 있어요",
+      "이 기기에 임시 저장된 내용을 이어서 쓸까요?",
+      [
+        {
+          text: "버리기",
+          style: "destructive",
+          onPress: () => {
+            void deleteDiaryDraft(draftEntryId).catch(() => undefined);
+            isDraftReadyRef.current = true;
+          }
+        },
+        {
+          text: "이어서 쓰기",
+          onPress: () => {
+            isDraftReadyRef.current = true;
+            setEntryDate(draft.entryDate);
+            setTitle(draft.title);
+            setSelectedMoodTags(draft.moodTags);
+            setContent(draft.content);
+            setRewriteText(draft.rewriteText);
+            setStep(draft.step === "rewrite" && canRewrite ? "rewrite" : "write");
+          }
+        }
+      ],
+      { cancelable: false }
+    );
+  }
+
+  // 서버에 저장한 뒤 기준점을 새로 잡고 임시본을 지운다.
+  function markDiarySaved(savedEntryId: string, savedState: DiaryEditableState) {
+    savedSignatureRef.current = buildDiaryEditableSignature(savedState);
+    latestDraftRef.current = null;
+    void deleteDiaryDraft(savedEntryId).catch(() => undefined);
+  }
+
   function handleEntryDateChange(nextDate: string) {
     const previousDefaultTitle = buildDefaultDiaryTitle(entryDate);
     const shouldFollowDateTitle = !title.trim() || title.trim() === previousDefaultTitle;
@@ -681,14 +819,28 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
 
     const created = await createDiaryEntry(payload);
     setEntryId(created.entryId);
+    // 새 일기로 쓰던 임시본은 이제 이 일기의 것이다. 이후 임시본은 새 entryId로 저장한다.
+    void deleteDiaryDraft("").catch(() => undefined);
     return created;
+  }
+
+  function currentEditableState(overrides: Partial<DiaryEditableState> = {}): DiaryEditableState {
+    return {
+      entryDate,
+      title,
+      moodTags: selectedMoodTags,
+      content,
+      rewriteText,
+      ...overrides
+    };
   }
 
   async function handleSaveDraft() {
     try {
       setIsSaving(true);
       setError("");
-      await saveEntry(content, true);
+      const saved = await saveEntry(content, true);
+      markDiarySaved(saved.entryId, currentEditableState());
       Alert.alert("저장됐어요", "영어일기 초안을 저장했어요.");
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : "일기를 저장하지 못했어요.";
@@ -719,6 +871,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
       setFeedback(nextFeedback);
       setRewriteText(targetText);
       setStep("feedback");
+      markDiarySaved(saved.entryId, currentEditableState({ content: targetText, rewriteText: targetText }));
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : "일기 피드백을 받지 못했어요.";
       setError(message);
@@ -741,6 +894,14 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
     setIsReadOnlyFeedbackOpen(false);
     setStep("write");
     setError("");
+    latestDraftRef.current = null;
+    isDraftReadyRef.current = false;
+    void prepareDiaryDraft(
+      "",
+      { entryDate: nextDate, title: buildDefaultDiaryTitle(nextDate), moodTags: [], content: "", rewriteText: "" },
+      false,
+      () => false
+    );
     router.replace("/diary/write");
   }
 
@@ -868,6 +1029,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
       setIsCompleting(true);
       setError("");
       const completedEntry = await saveEntry(finalText, false);
+      markDiarySaved(completedEntry.entryId, currentEditableState({ content: finalText }));
       setContent(finalText);
       setIsReadOnly(true);
       setIsReadOnlyFeedbackOpen(false);
@@ -902,6 +1064,8 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
       setIsDeleting(true);
       setError("");
       await deleteDiaryEntry(entryId);
+      latestDraftRef.current = null;
+      void deleteDiaryDraft(entryId).catch(() => undefined);
       router.replace("/diary" as never);
     } catch (caughtError) {
       const message = caughtError instanceof Error ? caughtError.message : "일기를 삭제하지 못했어요.";

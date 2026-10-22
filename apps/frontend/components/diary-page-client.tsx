@@ -105,6 +105,29 @@ function buildEntryViewState(entry: DiaryEntry, sourceEntries: DiaryEntry[]) {
   };
 }
 
+type DiaryFormState = {
+  entryDate: string;
+  title: string;
+  mood: string;
+  content: string;
+  rewriteText: string;
+};
+
+// 저장하지 않은 수정이 있는지 비교할 때 쓰는 편집 내용 서명
+function buildDiaryFormSignature(state: DiaryFormState) {
+  return JSON.stringify([state.entryDate, state.title, state.mood, state.content, state.rewriteText]);
+}
+
+function buildEntryFormSignature(viewState: ReturnType<typeof buildEntryViewState>) {
+  return buildDiaryFormSignature({
+    entryDate: viewState.entry.entryDate || todayDateKey(),
+    title: viewState.entry.title ?? "",
+    mood: viewState.entry.mood ?? "",
+    content: viewState.entry.content ?? "",
+    rewriteText: viewState.rewriteText
+  });
+}
+
 function buildLoginHref() {
   return `/login?returnTo=${encodeURIComponent("/diary")}`;
 }
@@ -268,6 +291,26 @@ export function DiaryPageClient() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  // 선택한 일기의 저장된 상태. 지금 편집 내용과 다르면 저장하지 않은 수정이 있는 것이다.
+  const [savedFormSignature, setSavedFormSignature] = useState(() =>
+    buildDiaryFormSignature({ entryDate: todayDateKey(), title: "", mood: "", content: "", rewriteText: "" })
+  );
+  const hasUnsavedChanges =
+    !isLoading &&
+    buildDiaryFormSignature({ entryDate, title, mood, content, rewriteText }) !== savedFormSignature;
+
+  // 저장하지 않은 내용이 있으면 탭을 닫거나 새로고침하기 전에 브라우저가 확인한다.
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return undefined;
+    }
+    function warnBeforeLeaving(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = "";
+    }
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+  }, [hasUnsavedChanges]);
 
   const activeText = step === "rewrite" ? rewriteText : content;
   const wordCount = useMemo(() => countWords(activeText), [activeText]);
@@ -311,6 +354,7 @@ export function DiaryPageClient() {
           setStep(nextState.step);
           setError("");
           setNotice("");
+          setSavedFormSignature(buildEntryFormSignature(nextState));
         }
       } catch (caughtError) {
         if (!cancelled) {
@@ -341,6 +385,9 @@ export function DiaryPageClient() {
     setStep("write");
     setError("");
     setNotice("");
+    setSavedFormSignature(
+      buildDiaryFormSignature({ entryDate: todayDateKey(), title: "", mood: "", content: "", rewriteText: "" })
+    );
   }
 
   function selectEntry(entry: DiaryEntry, sourceEntries = entries) {
@@ -356,6 +403,19 @@ export function DiaryPageClient() {
     setStep(nextState.step);
     setError("");
     setNotice("");
+    setSavedFormSignature(buildEntryFormSignature(nextState));
+  }
+
+  // 목록에서 다른 일기를 누를 때. 저장하지 않은 내용이 있으면 덮어쓰기 전에 묻는다.
+  function handleSelectEntry(entry: DiaryEntry) {
+    if (
+      entry.entryId !== selectedEntryId &&
+      hasUnsavedChanges &&
+      !window.confirm("저장하지 않은 내용이 있어요. 다른 일기를 열면 지금 쓰던 내용이 사라져요. 열까요?")
+    ) {
+      return;
+    }
+    selectEntry(entry);
   }
 
   async function reloadEntries(nextSelectedEntryId = selectedEntryId) {
@@ -425,16 +485,19 @@ export function DiaryPageClient() {
         attemptType: nextAttemptType
       });
       await reloadEntries(saved.entryId);
-      setSelectedEntryId(saved.entryId);
-      setContent(targetText);
-      setFeedback(nextFeedback);
-      setRewriteText(
+      const nextRewriteText =
         nextFeedback.nextDiaryMission?.starterEn
           ?? nextFeedback.correctedDiary
           ?? nextFeedback.modelDiary
-          ?? targetText
-      );
+          ?? targetText;
+      setSelectedEntryId(saved.entryId);
+      setContent(targetText);
+      setFeedback(nextFeedback);
+      setRewriteText(nextRewriteText);
       setStep("feedback");
+      setSavedFormSignature(
+        buildDiaryFormSignature({ entryDate, title, mood, content: targetText, rewriteText: nextRewriteText })
+      );
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "영어일기 피드백을 받지 못했어요.");
     } finally {
@@ -525,7 +588,7 @@ export function DiaryPageClient() {
                     key={entry.entryId}
                     className={selected ? styles.entryListItemActive : styles.entryListItem}
                     type="button"
-                    onClick={() => selectEntry(entry)}
+                    onClick={() => handleSelectEntry(entry)}
                   >
                     <span>{formatDisplayDate(entry.entryDate) || "날짜 없음"}</span>
                     <strong>{entry.title || entry.content.slice(0, 38) || "제목 없는 일기"}</strong>

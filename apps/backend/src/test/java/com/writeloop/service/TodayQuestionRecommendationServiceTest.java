@@ -23,6 +23,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +39,9 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TodayQuestionRecommendationServiceTest {
+
+    // 서비스는 "오늘"을 한국 시간으로 계산한다. 실행 환경 시간대(CI는 UTC)와 섞이지 않게 같은 기준을 쓴다.
+    private static final ZoneId KOREA_ZONE = ZoneId.of("Asia/Seoul");
 
     @Mock
     private PromptRepository promptRepository;
@@ -179,7 +183,7 @@ class TodayQuestionRecommendationServiceTest {
         when(savedExpressionRepository.findTop50ByUserIdOrderByLastSavedAtDesc(9L)).thenReturn(List.of());
         when(promptRecommendationExposureRepository.findByUserIdAndRecommendedDateGreaterThanEqualOrderByShownAtDesc(any(), any()))
                 .thenReturn(List.of(new PromptRecommendationExposureEntity(
-                        java.time.LocalDate.now(),
+                        LocalDate.now(KOREA_ZONE),
                         9L,
                         null,
                         "A",
@@ -250,7 +254,7 @@ class TodayQuestionRecommendationServiceTest {
         FeaturedDailyPromptDto featuredRecommendation =
                 recommendationService.recommendFeatured(DailyDifficultyDto.A, 25L, null);
         exposures.add(new PromptRecommendationExposureEntity(
-                LocalDate.now(),
+                LocalDate.now(KOREA_ZONE),
                 25L,
                 null,
                 "A",
@@ -295,7 +299,7 @@ class TodayQuestionRecommendationServiceTest {
         FeaturedDailyPromptDto featuredRecommendation =
                 recommendationService.recommendFeatured(DailyDifficultyDto.A, 31L, null);
         exposures.add(new PromptRecommendationExposureEntity(
-                LocalDate.now(),
+                LocalDate.now(KOREA_ZONE),
                 31L,
                 null,
                 "A",
@@ -343,7 +347,7 @@ class TodayQuestionRecommendationServiceTest {
     @Test
     void recordClick_updatesCanonicalExposureForToday() {
         PromptRecommendationExposureEntity exposure = new PromptRecommendationExposureEntity(
-                LocalDate.now(),
+                LocalDate.now(KOREA_ZONE),
                 11L,
                 null,
                 "A",
@@ -365,7 +369,7 @@ class TodayQuestionRecommendationServiceTest {
     @Test
     void recordStartAndComplete_fillSessionTrackingFields() {
         PromptRecommendationExposureEntity exposure = new PromptRecommendationExposureEntity(
-                LocalDate.now(),
+                LocalDate.now(KOREA_ZONE),
                 15L,
                 null,
                 "A",
@@ -390,7 +394,7 @@ class TodayQuestionRecommendationServiceTest {
     @Test
     void recordStart_dedupes_same_day_duplicate_exposures_before_tracking() {
         PromptRecommendationExposureEntity earlierExposure = new PromptRecommendationExposureEntity(
-                LocalDate.now(),
+                LocalDate.now(KOREA_ZONE),
                 17L,
                 null,
                 "A",
@@ -400,7 +404,7 @@ class TodayQuestionRecommendationServiceTest {
                 80
         );
         PromptRecommendationExposureEntity laterExposure = new PromptRecommendationExposureEntity(
-                LocalDate.now(),
+                LocalDate.now(KOREA_ZONE),
                 17L,
                 null,
                 "A",
@@ -431,7 +435,7 @@ class TodayQuestionRecommendationServiceTest {
     void recordStart_claims_guest_exposure_for_authenticated_user_handoff() {
         String guestId = "guest-1234567890abcdef12";
         PromptRecommendationExposureEntity guestExposure = new PromptRecommendationExposureEntity(
-                LocalDate.now(),
+                LocalDate.now(KOREA_ZONE),
                 null,
                 guestId,
                 "A",
@@ -460,7 +464,7 @@ class TodayQuestionRecommendationServiceTest {
     void recordStart_doesNotDeleteSameExposureReturnedByUserAndGuestLookup() {
         String guestId = "guest-abcdef123456789012";
         PromptRecommendationExposureEntity exposure = new PromptRecommendationExposureEntity(
-                LocalDate.now(),
+                LocalDate.now(KOREA_ZONE),
                 21L,
                 guestId,
                 "A",
@@ -490,7 +494,7 @@ class TodayQuestionRecommendationServiceTest {
     void recommend_keeps_exposure_that_a_concurrent_request_already_inserted() {
         PromptEntity promptOne = prompt("prompt-a-15", "Routine", "Lunch Break", "A");
         PromptRecommendationExposureEntity existingExposure = new PromptRecommendationExposureEntity(
-                LocalDate.now(),
+                LocalDate.now(KOREA_ZONE),
                 41L,
                 null,
                 "A",
@@ -564,9 +568,16 @@ class TodayQuestionRecommendationServiceTest {
                 userId,
                 SessionStatus.COMPLETED
         );
-        forceCreatedAt(session, Instant.now().minus(2, ChronoUnit.HOURS));
-        forceUpdatedAt(session, Instant.now().minus(1, ChronoUnit.HOURS));
+        // 한국 시간 자정 직후에 돌려도 "오늘"에 남도록 오늘 0시보다 앞서지 않게 한다.
+        Instant now = Instant.now();
+        Instant startOfToday = LocalDate.now(KOREA_ZONE).atStartOfDay(KOREA_ZONE).toInstant();
+        forceCreatedAt(session, latest(startOfToday, now.minus(2, ChronoUnit.HOURS)));
+        forceUpdatedAt(session, latest(startOfToday, now.minus(1, ChronoUnit.HOURS)));
         return session;
+    }
+
+    private static Instant latest(Instant first, Instant second) {
+        return first.isAfter(second) ? first : second;
     }
 
     private void forceCreatedAt(AnswerSessionEntity session, Instant createdAt) {

@@ -41,7 +41,7 @@ public class OpenAiCoachClient implements CoachLlmEngine {
             @Value("${openai.coach-model:${OPENAI_COACH_MODEL:${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-6-luna}}}}") String model,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
             @Value("${openai.coach-reasoning-effort:${OPENAI_COACH_REASONING_EFFORT:${OPENAI_FEEDBACK_REASONING_EFFORT:}}}") String reasoningEffort,
-            @Value("${openai.coach-request-timeout-seconds:${OPENAI_COACH_REQUEST_TIMEOUT_SECONDS:${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:120}}}") int requestTimeoutSeconds
+            @Value("${openai.coach-request-timeout-seconds:40}") int requestTimeoutSeconds
     ) {
         this.objectMapper = objectMapper;
         this.coachQueryAnalyzer = coachQueryAnalyzer;

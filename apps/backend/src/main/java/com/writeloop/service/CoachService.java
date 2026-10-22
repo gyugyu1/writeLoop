@@ -25,10 +25,12 @@ import com.writeloop.persistence.CoachInteractionEntity;
 import com.writeloop.persistence.CoachInteractionRepository;
 import com.writeloop.persistence.CoachResponseSource;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.text.Normalizer;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -151,11 +153,23 @@ public class CoachService {
     private final CoachQueryAnalyzer coachQueryAnalyzer;
     private final Map<String, CoachQueryAnalyzer.TranslationResult> slotTranslationCache = new ConcurrentHashMap<>();
 
+    // 코치 요청 하나가 LLM 호출 전체(슬롯 번역, 코치 응답, 다운그레이드 재시도)에 쓸 수 있는 시간.
+    // 앱은 45초에서 끊으므로 그 전에 결과나 대체 응답을 돌려준다. 0이면 마감 없이 호출마다의 제한만 쓴다.
+    @Value("${openai.coach-request-budget-seconds:40}")
+    private int requestBudgetSeconds;
+
     public CoachHelpResponseDto help(CoachHelpRequestDto request) {
         return help(request, null, null);
     }
 
     public CoachHelpResponseDto help(CoachHelpRequestDto request, Long currentUserId, String httpSessionId) {
+        return LlmRequestDeadline.within(
+                Duration.ofSeconds(requestBudgetSeconds),
+                () -> helpWithinBudget(request, currentUserId, httpSessionId)
+        );
+    }
+
+    private CoachHelpResponseDto helpWithinBudget(CoachHelpRequestDto request, Long currentUserId, String httpSessionId) {
         PromptDto prompt = requirePrompt(request.promptId());
         String userQuestion = request.question() == null ? "" : request.question().trim();
         String answerSnapshot = request.answer() == null ? "" : request.answer().trim();

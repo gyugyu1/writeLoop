@@ -124,6 +124,27 @@ class OpenAiFeedbackClientTest {
     }
 
     @Test
+    void skipsTheTimeoutRetryWhenTheRequestDeadlineIsTooClose() throws Exception {
+        try (TestResponseServer server = new TestResponseServer(
+                new int[]{STALLED_RESPONSE, 200},
+                validContractOutput(),
+                validContractOutput()
+        )) {
+            // 첫 호출이 1초 뒤 시간 초과되고 재시도 전 0.5초를 쉬면 마감(6초)까지 4.5초가 남는다.
+            // 최소 시도 시간(5초)보다 짧아 재시도하지 않는다.
+            OpenAiFeedbackClient client = client("test-key", server.url(), 1, 6);
+
+            assertThatThrownBy(() -> client.review(prompt(), "I goes home because I am tired."))
+                    .isInstanceOf(ApiException.class);
+
+            assertThat(server.requestCount()).isEqualTo(1);
+            FeedbackExecutionTrace trace = client.takeLastExecutionTrace();
+            assertThat(trace.finalSuccess()).isFalse();
+            assertThat(trace.finalErrorReason()).contains("deadline");
+        }
+    }
+
+    @Test
     void doesNotRetryNonTransientProviderFailures() throws Exception {
         try (TestResponseServer server = new TestResponseServer(
                 new int[]{400, 200},
@@ -277,13 +298,23 @@ class OpenAiFeedbackClientTest {
     }
 
     private OpenAiFeedbackClient client(String apiKey, String apiUrl, int attemptTimeoutSeconds) {
+        return client(apiKey, apiUrl, attemptTimeoutSeconds, 80);
+    }
+
+    private OpenAiFeedbackClient client(
+            String apiKey,
+            String apiUrl,
+            int attemptTimeoutSeconds,
+            int requestBudgetSeconds
+    ) {
         return new OpenAiFeedbackClient(
                 objectMapper,
                 apiKey,
                 "gpt-test",
                 apiUrl,
                 "",
-                attemptTimeoutSeconds
+                attemptTimeoutSeconds,
+                requestBudgetSeconds
         );
     }
 

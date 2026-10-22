@@ -83,14 +83,22 @@ openai:
   feedback-model: ${OPENAI_FEEDBACK_MODEL:${OPENAI_MODEL:gpt-6-luna}}
   diary-model: ${OPENAI_DIARY_MODEL:${OPENAI_MODEL:gpt-6-luna}}
   diary-reasoning-effort: ${OPENAI_DIARY_REASONING_EFFORT:${OPENAI_FEEDBACK_REASONING_EFFORT:}}
-  diary-request-timeout-seconds: ${OPENAI_DIARY_REQUEST_TIMEOUT_SECONDS:${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:120}}
+  # 시간 제한은 앱보다 짧아야 서버의 대체 응답이나 오류 안내가 앱에 닿는다.
+  # 앱: 문장 피드백·영어일기 90초, 코치·Now in English 45초. nginx는 85초에서 끊는다.
+  # 영어일기는 호출 한 번이고 재시도가 없다.
+  diary-request-timeout-seconds: ${OPENAI_DIARY_REQUEST_TIMEOUT_SECONDS:75}
   coach-model: ${OPENAI_COACH_MODEL:${OPENAI_MODEL:gpt-6-luna}}
   coach-reasoning-effort: ${OPENAI_COACH_REASONING_EFFORT:${OPENAI_FEEDBACK_REASONING_EFFORT:}}
-  coach-request-timeout-seconds: ${OPENAI_COACH_REQUEST_TIMEOUT_SECONDS:${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:120}}
+  # 코치 호출 한 번의 제한과, 코치 요청 하나가 모든 호출(슬롯 번역, 재시도 포함)에 쓸 수 있는 시간
+  coach-request-timeout-seconds: ${OPENAI_COACH_REQUEST_TIMEOUT_SECONDS:40}
+  coach-request-budget-seconds: ${OPENAI_COACH_REQUEST_BUDGET_SECONDS:40}
+  # Now in English 코치 피드백과 하루 회고. 각각 호출 한 번이다.
+  now-coach-feedback-request-timeout-seconds: ${OPENAI_NOW_COACH_FEEDBACK_REQUEST_TIMEOUT_SECONDS:40}
+  now-reflection-request-timeout-seconds: ${OPENAI_NOW_REFLECTION_REQUEST_TIMEOUT_SECONDS:40}
   feedback-reasoning-effort: ${OPENAI_FEEDBACK_REASONING_EFFORT:}
-  feedback-request-timeout-seconds: ${OPENAI_FEEDBACK_REQUEST_TIMEOUT_SECONDS:120}
-  # 문장 피드백 OpenAI 호출 한 번의 제한. 시간 초과는 한 번 재시도하므로 두 번 합쳐도 앱 제한(90초) 안에 들어와야 한다.
+  # 문장 피드백 호출 한 번의 제한과, 일시 오류·계약 위반 재시도를 포함한 요청 전체의 마감
   feedback-attempt-timeout-seconds: ${OPENAI_FEEDBACK_ATTEMPT_TIMEOUT_SECONDS:40}
+  feedback-request-budget-seconds: ${OPENAI_FEEDBACK_REQUEST_BUDGET_SECONDS:80}
   api-url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}
 
 app:

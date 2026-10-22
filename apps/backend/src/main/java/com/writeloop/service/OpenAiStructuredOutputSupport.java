@@ -93,7 +93,8 @@ final class OpenAiStructuredOutputSupport {
     ) {
         return HttpRequest.newBuilder()
                 .uri(resolveResponsesUri(apiUrl))
-                .timeout(Duration.ofSeconds(requestTimeoutSeconds))
+                // 요청 단위 마감(LlmRequestDeadline)이 열려 있으면 남은 시간 안에서만 기다린다.
+                .timeout(LlmRequestDeadline.attemptTimeout(Duration.ofSeconds(requestTimeoutSeconds)))
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + apiKey)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .POST(HttpRequest.BodyPublishers.ofString(requestBody))

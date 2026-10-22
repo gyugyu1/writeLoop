@@ -39,6 +39,7 @@ public class OpenAiFeedbackClient {
     private final String apiUrl;
     private final String reasoningEffort;
     private final int requestTimeoutSeconds;
+    private final int requestBudgetSeconds;
     private final CanonicalFeedbackContract contract;
     private final CanonicalFeedbackAssembler assembler = new CanonicalFeedbackAssembler();
     private final ThreadLocal<FeedbackAnalysisSnapshot> latestAnalysisSnapshot = new ThreadLocal<>();
@@ -53,7 +54,8 @@ public class OpenAiFeedbackClient {
             @Value("${openai.feedback-model:${OPENAI_MODEL:gpt-6-luna}}") String model,
             @Value("${openai.api-url:https://api.openai.com/v1/responses}") String apiUrl,
             @Value("${openai.feedback-reasoning-effort:}") String reasoningEffort,
-            @Value("${openai.feedback-attempt-timeout-seconds:40}") int requestTimeoutSeconds
+            @Value("${openai.feedback-attempt-timeout-seconds:40}") int requestTimeoutSeconds,
+            @Value("${openai.feedback-request-budget-seconds:80}") int requestBudgetSeconds
     ) {
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(20)).build();
@@ -62,6 +64,7 @@ public class OpenAiFeedbackClient {
         this.apiUrl = apiUrl;
         this.reasoningEffort = reasoningEffort;
         this.requestTimeoutSeconds = requestTimeoutSeconds;
+        this.requestBudgetSeconds = requestBudgetSeconds;
         this.contract = new CanonicalFeedbackContract(objectMapper);
     }
 
@@ -77,7 +80,21 @@ public class OpenAiFeedbackClient {
         return review(prompt, answer, hints, 1);
     }
 
+    // 첫 호출, 일시 오류 재시도, 계약 위반 재시도가 모두 이 요청의 마감(기본 80초) 안에서 나눠 쓴다.
+    // 앱은 90초에서 끊으므로, 마감이 가까우면 재시도하지 않고 오류를 돌려준다.
     public FeedbackResponseDto review(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptIndex
+    ) {
+        return LlmRequestDeadline.within(
+                Duration.ofSeconds(requestBudgetSeconds),
+                () -> reviewWithinBudget(prompt, answer, hints, attemptIndex)
+        );
+    }
+
+    private FeedbackResponseDto reviewWithinBudget(
             PromptDto prompt,
             String answer,
             List<PromptHintDto> hints,

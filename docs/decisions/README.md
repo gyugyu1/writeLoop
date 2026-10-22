@@ -27,3 +27,4 @@ WriteLoop의 중요한 결정과 그 이유를 [MADR 4.0](https://adr.github.io/
 | [0011](0011-keep-optional-slots-and-enrichment-suggestion.md) | 선택 슬롯 유지 + 완성 답변 "더 풍부하게 써 보기" 제안 | accepted | 2026-10-22 |
 | [0012](0012-allow-production-access-in-any-permission-mode.md) | 운영 서버·DB 접근을 권한 모드와 관계없이 허용 | accepted | 2026-10-22 |
 | [0013](0013-adopt-flyway-with-production-baseline.md) | DB 마이그레이션을 Flyway로 관리, 운영 덤프를 기준선(V107)으로 | accepted | 2026-10-22 |
+| [0014](0014-social-login-verified-email-only.md) | 모든 소셜 로그인은 제공자가 인증한 이메일만 사용 | accepted | 2026-10-22 |

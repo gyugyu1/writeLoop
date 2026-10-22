@@ -122,7 +122,7 @@ public class GoogleOAuthService {
 
         JsonNode root = objectMapper.readTree(response.body());
         String providerUserId = root.path("sub").asText("");
-        String email = root.path("email").asText("");
+        String email = resolveVerifiedEmail(root);
         String displayName = root.path("name").asText("");
 
         if (providerUserId.isBlank()) {
@@ -130,6 +130,17 @@ public class GoogleOAuthService {
         }
 
         return new GoogleUserProfile(providerUserId, email, displayName);
+    }
+
+    // Google이 인증했다고 확인한 이메일만 계정 이메일로 쓴다. email_verified는 불리언 또는 문자열로 올 수 있다.
+    // 인증되지 않았으면 빈 값을 돌려 대체 이메일로 가입하게 한다.
+    static String resolveVerifiedEmail(JsonNode profile) {
+        if (profile == null) {
+            return "";
+        }
+        JsonNode verified = profile.path("email_verified");
+        boolean emailVerified = verified.isBoolean() ? verified.asBoolean() : "true".equalsIgnoreCase(verified.asText(""));
+        return emailVerified ? profile.path("email").asText("") : "";
     }
 
     private String encode(String value) {

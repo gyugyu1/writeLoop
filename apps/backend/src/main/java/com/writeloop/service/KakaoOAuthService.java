@@ -120,7 +120,7 @@ public class KakaoOAuthService {
         JsonNode root = objectMapper.readTree(response.body());
         String providerUserId = root.path("id").asText("");
         JsonNode account = root.path("kakao_account");
-        String email = account.path("email").asText("");
+        String email = resolveVerifiedEmail(account);
         String displayName = account.path("profile").path("nickname").asText("");
 
         if (providerUserId.isBlank()) {
@@ -128,6 +128,17 @@ public class KakaoOAuthService {
         }
 
         return new KakaoUserProfile(providerUserId, email, displayName);
+    }
+
+    // 카카오가 유효하고 인증됐다고 확인한 이메일만 계정 이메일로 쓴다. 인증되지 않은 이메일을 쓰면
+    // 아직 가입하지 않은 다른 사람의 이메일로 가입할 수 있다. 없으면 빈 값을 돌려 대체 이메일로 가입하게 한다.
+    static String resolveVerifiedEmail(JsonNode kakaoAccount) {
+        if (kakaoAccount == null
+                || !kakaoAccount.path("is_email_valid").asBoolean(false)
+                || !kakaoAccount.path("is_email_verified").asBoolean(false)) {
+            return "";
+        }
+        return kakaoAccount.path("email").asText("");
     }
 
     private String encode(String value) {

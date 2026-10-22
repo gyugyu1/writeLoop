@@ -257,7 +257,8 @@ function normalizeNowInEnglishReflectionResponse(
         usageTip: expression.usageTip ?? "",
         example: expression.example ?? ""
       })),
-    closingKo: payload.closingKo || ""
+    closingKo: payload.closingKo || "",
+    fallback: payload.fallback === true
   };
 }
 

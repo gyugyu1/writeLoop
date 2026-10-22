@@ -13,7 +13,9 @@ public record NowInEnglishReflectionResponseDto(
         String nextActionKo,
         String nextActionExampleEn,
         List<NowInEnglishReflectionExpressionDto> expressions,
-        String closingKo
+        String closingKo,
+        // LLM 호출이 실패해 서버가 고정 문구로 만든 회고. 저장하거나 캐시하지 않는다.
+        boolean fallback
 ) {
     public NowInEnglishReflectionResponseDto {
         dateKey = normalize(dateKey);

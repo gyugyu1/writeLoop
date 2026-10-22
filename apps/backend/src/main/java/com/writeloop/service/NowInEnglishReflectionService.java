@@ -38,6 +38,9 @@ public class NowInEnglishReflectionService {
     private static final int MAX_ENTRIES = 30;
     private static final int MAX_ENTRY_LENGTH = 500;
     private static final int MAX_TOTAL_TEXT_LENGTH = 6000;
+    private static final String FALLBACK_HEADLINE_KO = "이 날의 영어 조각";
+    private static final String FALLBACK_SUMMARY_KO =
+            "이 날 남긴 짧은 문장들이 하루의 작은 흐름처럼 남아 있어요. 다음에는 그중 한 장면을 조금 더 길게 이어 써보면 좋아요.";
 
     private final ObjectMapper objectMapper;
     private final OpenAiNowInEnglishReflectionClient openAiClient;
@@ -69,6 +72,7 @@ public class NowInEnglishReflectionService {
             feedbackTimingRecorder.recordServicePhase("prepare", elapsedMs(prepareStartedAtNanos));
             if (!forceRefresh && existingReflection
                     .filter(reflection -> entrySignature.equals(reflection.getEntrySignature()))
+                    .filter(reflection -> !isStoredFallback(reflection))
                     .isPresent()) {
                 feedbackTimingRecorder.recordPolicyEvent("cache_hit", Map.of(
                         "dateKey", dateKey,
@@ -78,6 +82,10 @@ public class NowInEnglishReflectionService {
             }
 
             NowInEnglishReflectionResponseDto response = reflect(dateKey, entries);
+            if (response.fallback()) {
+                // 대체 회고는 저장하지 않는다. 저장하면 다음 요청이 캐시로 받아 그날 회고가 고정 문구로 남는다.
+                return response;
+            }
             long persistStartedAtNanos = System.nanoTime();
             NowInEnglishReflectionEntity reflection = nowInEnglishReflectionRepository
                     .findByUserIdAndReflectionDate(userId, reflectionDate)
@@ -288,7 +296,8 @@ public class NowInEnglishReflectionService {
                 firstNonBlank(truncate(response.nextActionKo(), 140), fallback.nextActionKo()),
                 firstNonBlank(truncate(response.nextActionExampleEn(), 160), fallback.nextActionExampleEn()),
                 expressions,
-                firstNonBlank(truncate(response.closingKo(), 90), fallback.closingKo())
+                firstNonBlank(truncate(response.closingKo(), 90), fallback.closingKo()),
+                false
         );
     }
 
@@ -304,8 +313,8 @@ public class NowInEnglishReflectionService {
         return new NowInEnglishReflectionResponseDto(
                 dateKey,
                 entries.size(),
-                "이 날의 영어 조각",
-                "이 날 남긴 짧은 문장들이 하루의 작은 흐름처럼 남아 있어요. 다음에는 그중 한 장면을 조금 더 길게 이어 써보면 좋아요.",
+                FALLBACK_HEADLINE_KO,
+                FALLBACK_SUMMARY_KO,
                 List.of(
                         entries.size() + "개의 순간을 영어로 붙잡아 두었어요.",
                         representative.isBlank()
@@ -337,8 +346,15 @@ public class NowInEnglishReflectionService {
                                 "I want to rest because I feel tired."
                         )
                 ),
-                "완벽하게 쓰기보다 한 순간만 영어로 잡아보세요."
+                "완벽하게 쓰기보다 한 순간만 영어로 잡아보세요.",
+                true
         );
+    }
+
+    // 이 수정 전에는 대체 회고도 저장했다. 저장된 고정 문구 회고는 캐시로 쓰지 않고 다시 만든다.
+    private boolean isStoredFallback(NowInEnglishReflectionEntity reflection) {
+        return FALLBACK_HEADLINE_KO.equals(reflection.getHeadlineKo())
+                && FALLBACK_SUMMARY_KO.equals(reflection.getSummaryKo());
     }
 
     private String firstNonBlank(String value, String fallback) {
@@ -357,7 +373,8 @@ public class NowInEnglishReflectionService {
                 reflection.getNextActionKo(),
                 reflection.getNextActionExampleEn(),
                 readExpressions(reflection.getExpressionsJson()),
-                reflection.getClosingKo()
+                reflection.getClosingKo(),
+                isStoredFallback(reflection)
         );
     }
 

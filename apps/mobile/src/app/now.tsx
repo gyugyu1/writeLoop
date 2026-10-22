@@ -859,7 +859,7 @@ export default function NowInEnglishScreen() {
 
         if (!forceRefresh) {
           const cachedReflection = await getNowInEnglishAiReflection(reflectionDateKey);
-          if (cachedReflection?.entrySignature === yesterdayEntrySignature) {
+          if (cachedReflection?.entrySignature === yesterdayEntrySignature && !cachedReflection.fallback) {
             setYesterdayAiReflection(cachedReflection);
             return;
           }
@@ -879,7 +879,10 @@ export default function NowInEnglishScreen() {
           createdAt: new Date().toISOString()
         };
 
-        await saveNowInEnglishAiReflection(nextReflection);
+        // 대체 회고를 캐시하면 그날 내내 고정 문구가 남으므로, 보여 주기만 하고 다음에 다시 요청한다.
+        if (!response.fallback) {
+          await saveNowInEnglishAiReflection(nextReflection);
+        }
         setYesterdayAiReflection(nextReflection);
       } catch (error) {
         const cachedReflection = await getNowInEnglishAiReflection(reflectionDateKey);

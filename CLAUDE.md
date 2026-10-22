@@ -6,6 +6,7 @@
 
 - 사용자에게는 항상 한국어로 답한다. 도구 출력이나 하위 에이전트 보고가 영어여도 마찬가지다.
 - 커밋과 푸시는 사용자가 요청할 때만 한다. 커밋 메시지는 한국어로 쓰고, 기존 형식(`fix:`, `feat:`, `refactor:`, `chore:`)을 따르며, 논리 단위로 나눈다.
+- main에 push하면 CI가 통과한 뒤 운영에 자동 배포된다(ADR-0015). 운영에 내보내지 않을 작업은 브랜치에 push한다.
 
 ## 구조
 
@@ -17,6 +18,8 @@
 | `apps/backend/src/main/resources/db/migration` | Flyway 마이그레이션(`V번호__설명.sql`). 백엔드가 시작할 때 자동 적용 |
 | `infra/mysql/schema` | Flyway 도입 전 마이그레이션 001~107. 동결, 기록용 |
 | `infra/nginx` | 운영·개발 nginx 설정 |
+| `.github/workflows` | CI(`ci.yml`: 테스트·이미지 빌드)와 운영 배포(`deploy.yml`) |
+| `scripts/ops` | 운영 서버에서 실행하는 배포(`deploy.sh`)와 운영 DB 접속(`prod-db.sh`) 스크립트 |
 | `scripts/feedback-quality` | 문장 피드백 회귀 테스트 케이스와 채점 규칙 |
 | `.agents/skills/writeloop-feedback-logic` | 문장 피드백 계약과 품질 기준 문서 |
 | `docs/` | 날짜가 붙은 조사·회귀 보고서 |
@@ -66,9 +69,12 @@
 - 운영 서버 접속과 운영 DB 조회는 권한 모드와 관계없이 할 수 있다(2026-10-22, ADR-0012).
 - 배포, 마이그레이션 적용, 설정 변경처럼 운영을 바꾸는 작업은 사용자가 요청했을 때 하고, DB를 바꾸기 전에는 백업한다.
 - `env_files/`, `.env`, `*.pem`, 서비스 계정 JSON 같은 비밀 파일은 내용을 출력하지도, 읽지도 않는다. 필요하면 변수 이름만 확인한다.
-- 배포:
-  - 운영 서버에서 `git pull` 후 `docker compose up -d --build`로 한다.
-  - 마이그레이션은 배포 전후 순서를 확인해 직접 적용하고, 적용 전에 백업한다.
+- 배포(ADR-0015):
+  - main push → GitHub Actions가 테스트하고 이미지를 GHCR에 올린 뒤, `deploy.yml`이 서버에서 `scripts/ops/deploy.sh`를 실행한다.
+  - `deploy.sh`가 DB 백업, 이미지 받기, 재시작, 기동 확인을 한다. Flyway 마이그레이션은 백엔드가 기동할 때 적용된다.
+  - 재배포·롤백은 Actions의 `Deploy` 워크플로를 커밋 SHA로 직접 실행한다. CI가 이미지를 올린 커밋만 된다.
+  - 운영 서버에서 `docker compose build`나 `up --build`를 하지 않는다. 메모리가 모자라 서버가 멈춘다(2026-10-22 장애).
+  - 운영 DB 조회는 서버에서 `bash scripts/ops/prod-db.sh mysql writeloop -e "..."`로 한다.
 - 모바일 앱은 서버 배포와 별도로 스토어에 배포해야 반영된다. 스토어 빌드 전 버전 규칙은 피드백 로직 스킬 문서의 "Mobile Store Build Guardrail"을 따른다.
 
 ## 참고 문서
@@ -76,5 +82,4 @@
 - 결정 기록(ADR, MADR 형식): `docs/decisions/`.
   - 기존 결정을 뒤집기 전에 해당 ADR의 이유를 먼저 읽는다.
   - 새로 중요한 결정을 하면 `adr-template.md`로 새 ADR을 쓰고 `README.md` 목록에 추가한다.
-- 현재 개선 과제와 우선순위: `docs/writeloop-improvement-review-2026-10-22.ko.md`
 - 문장 피드백 회귀 결과와 과거 판단: `docs/writeloop-feedback-*` 보고서

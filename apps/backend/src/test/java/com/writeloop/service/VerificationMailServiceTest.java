@@ -61,4 +61,17 @@ class VerificationMailServiceTest {
 
         verify(mailSender, never()).send(org.mockito.ArgumentMatchers.any(MimeMessage.class));
     }
+
+    @Test
+    void maskEmail_keeps_only_the_first_letter_and_domain_for_logs() {
+        assertThat(VerificationMailService.maskEmail("user@example.com")).isEqualTo("u***@example.com");
+        assertThat(VerificationMailService.maskEmail(" a@b.kr ")).isEqualTo("a***@b.kr");
+    }
+
+    @Test
+    void maskEmail_hides_values_that_are_not_emails() {
+        assertThat(VerificationMailService.maskEmail("not-an-email")).isEqualTo("***");
+        assertThat(VerificationMailService.maskEmail("@example.com")).isEqualTo("***");
+        assertThat(VerificationMailService.maskEmail(null)).isEqualTo("(empty)");
+    }
 }

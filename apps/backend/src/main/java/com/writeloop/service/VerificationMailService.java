@@ -67,13 +67,13 @@ public class VerificationMailService {
             String mailType
     ) {
         if (smtpHost == null || smtpHost.isBlank()) {
-            log.info("Skipping {} email to {} because SMTP is not configured.", mailType, email);
+            log.info("Skipping {} email to {} because SMTP is not configured.", mailType, maskEmail(email));
             return;
         }
 
         JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
         if (mailSender == null) {
-            log.warn("Skipping {} email to {} because JavaMailSender is unavailable.", mailType, email);
+            log.warn("Skipping {} email to {} because JavaMailSender is unavailable.", mailType, maskEmail(email));
             return;
         }
 
@@ -86,8 +86,21 @@ public class VerificationMailService {
             helper.setText(text, false);
             mailSender.send(message);
         } catch (Exception exception) {
-            log.warn("Failed to send {} email to {}.", mailType, email, exception);
+            log.warn("Failed to send {} email to {}.", mailType, maskEmail(email), exception);
         }
+    }
+
+    // 로그에 받는 사람 이메일을 그대로 남기지 않는다. 앞 글자와 도메인만 남긴다(user@example.com → u***@example.com).
+    static String maskEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return "(empty)";
+        }
+        String trimmed = email.trim();
+        int at = trimmed.indexOf('@');
+        if (at <= 0) {
+            return "***";
+        }
+        return trimmed.charAt(0) + "***" + trimmed.substring(at);
     }
 
     private void applyFrom(MimeMessageHelper helper) throws Exception {

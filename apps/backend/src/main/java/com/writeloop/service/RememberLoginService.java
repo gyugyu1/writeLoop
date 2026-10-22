@@ -36,10 +36,12 @@ public class RememberLoginService {
     @Value("${app.auth.remember-me-days:30}")
     private long rememberMeDays;
 
-    @Value("${APP_SESSION_COOKIE_SAME_SITE:Lax}")
+    // 세션 쿠키와 같은 설정을 쓴다. 예전에는 환경변수를 기본값 false로 따로 읽어,
+    // 운영에서 세션 쿠키는 Secure인데 로그인 유지 쿠키만 Secure 없이 나갔다.
+    @Value("${server.servlet.session.cookie.same-site:Lax}")
     private String sameSite;
 
-    @Value("${APP_SESSION_COOKIE_SECURE:false}")
+    @Value("${server.servlet.session.cookie.secure:true}")
     private boolean secureCookie;
 
     public void rememberUser(Long userId, HttpServletResponse response) {

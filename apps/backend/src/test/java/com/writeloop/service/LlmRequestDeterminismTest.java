@@ -145,7 +145,8 @@ class LlmRequestDeterminismTest {
     void llmRequestStructuresContainNoRandomOrderMaps() {
         assertNoRandomOrderCollections(contract.schema(prompt()), "canonicalSchema");
         assertNoRandomOrderCollections(policy.promptContract(prompt()), "questionContract");
-        assertNoRandomOrderCollections(DiaryFeedbackPromptSupport.jsonSchema(), "diarySchema");
+        assertNoRandomOrderCollections(DiaryFeedbackPromptSupport.jsonSchema(false), "diarySchema");
+        assertNoRandomOrderCollections(DiaryFeedbackPromptSupport.jsonSchema(true), "diarySchemaWithFullDiaries");
     }
 
     @Test

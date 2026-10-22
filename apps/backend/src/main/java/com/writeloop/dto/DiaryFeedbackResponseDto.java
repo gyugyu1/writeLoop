@@ -80,6 +80,34 @@ public record DiaryFeedbackResponseDto(
         );
     }
 
+    // 완료 가능 여부는 LLM이 정하지 않고, 등급을 보고 서버가 정한다.
+    public DiaryFeedbackResponseDto withFinishableFromBand() {
+        return new DiaryFeedbackResponseDto(
+                schemaVersion,
+                entryId,
+                attemptNo,
+                score,
+                isFinishableBand(diaryAnswerBand),
+                diaryAnswerBand,
+                summaryKo,
+                strengths,
+                correctedDiary,
+                modelDiary,
+                modelDiaryKo,
+                fixPoints,
+                diaryFlow,
+                rewriteIdeas,
+                usedDiaryExpressions,
+                diaryExpressions,
+                nextDiaryMission,
+                safetyFlags
+        );
+    }
+
+    public static boolean isFinishableBand(DiaryAnswerBand band) {
+        return band == DiaryAnswerBand.DIARY_CLEAR_BASIC || band == DiaryAnswerBand.DIARY_NATURAL_COMPLETE;
+    }
+
     private static String normalize(String value) {
         return value == null ? "" : value.trim();
     }

@@ -72,7 +72,7 @@ class GeminiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
             String requestBody = GeminiStructuredOutputSupport.buildGenerateContentRequestBody(
                     objectMapper,
                     DiaryFeedbackPromptSupport.buildPrompt(context),
-                    DiaryFeedbackPromptSupport.jsonSchema(),
+                    DiaryFeedbackPromptSupport.jsonSchema(context.includeFullDiaries()),
                     thinkingBudget
             );
             HttpRequest request = GeminiStructuredOutputSupport.buildGenerateContentRequest(

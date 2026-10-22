@@ -10,13 +10,12 @@ import com.writeloop.dto.DiaryCalendarDayDto;
 import com.writeloop.dto.DiaryCalendarSummaryDto;
 import com.writeloop.dto.DiaryCorrectionPointDto;
 import com.writeloop.dto.DiaryEntryDto;
-import com.writeloop.dto.DiaryExpressionDto;
 import com.writeloop.dto.DiaryFeedbackRequestDto;
 import com.writeloop.dto.DiaryFeedbackResponseDto;
 import com.writeloop.dto.DiaryFlowDto;
 import com.writeloop.dto.DiaryMissionDto;
-import com.writeloop.dto.DiaryRewriteIdeaDto;
 import com.writeloop.dto.UpdateDiaryEntryRequestDto;
+import com.writeloop.exception.ApiException;
 import com.writeloop.persistence.DiaryAttemptEntity;
 import com.writeloop.persistence.DiaryAttemptRepository;
 import com.writeloop.persistence.DiaryCalendarEntryProjection;
@@ -173,9 +172,10 @@ public class DiaryService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Diary text is required for feedback");
         }
 
-        if (!diaryText.equals(normalizeContent(entry.getContent())) || entry.isDraft()) {
+        // 쓴 일기는 피드백 결과와 관계없이 먼저 저장한다. 제출 상태(draft=false)는 피드백을 받은 뒤에 바꾼다.
+        // LLM이 실패했을 때 일기가 제출 상태로 잠기지 않게 하려는 것이다.
+        if (!diaryText.equals(normalizeContent(entry.getContent()))) {
             entry.setContent(diaryText);
-            entry.setDraft(false);
             diaryEntryRepository.save(entry);
         }
 
@@ -188,9 +188,20 @@ public class DiaryService {
         logDiaryFeedbackTiming("prepare", entryId, attemptNo, phaseStartedAtNanos);
 
         phaseStartedAtNanos = System.nanoTime();
-        DiaryFeedbackResponseDto feedback = reviewDiaryEntry(entry, diaryText, attemptNo, previousText)
-                .withIdentity(entryId, attemptNo);
+        DiaryFeedbackResponseDto feedback = reviewDiaryEntry(
+                entry,
+                diaryText,
+                attemptNo,
+                previousText,
+                request != null && request.wantsFullDiaries()
+        )
+                .withIdentity(entryId, attemptNo)
+                .withFinishableFromBand();
         logDiaryFeedbackTiming("llm_feedback", entryId, attemptNo, phaseStartedAtNanos);
+        if (entry.isDraft()) {
+            entry.setDraft(false);
+            diaryEntryRepository.save(entry);
+        }
 
         phaseStartedAtNanos = System.nanoTime();
         DiaryAttemptEntity savedAttempt = diaryAttemptRepository.save(new DiaryAttemptEntity(
@@ -200,8 +211,8 @@ public class DiaryService {
                 feedback.score(),
                 feedback.diaryAnswerBand().name(),
                 feedback.schemaVersion(),
-                resolveFeedbackProvider(feedback),
-                resolveFeedbackModel(feedback),
+                resolveFeedbackProvider(),
+                resolveFeedbackModel(),
                 safeText(feedback.summaryKo()),
                 toJsonString(feedback.strengths()),
                 toJsonString(feedback.fixPoints()),
@@ -256,11 +267,14 @@ public class DiaryService {
         return (System.nanoTime() - startedAtNanos) / 1_000_000;
     }
 
+    // LLM이 실패하면 단어 수로 점수를 매긴 고정 문구 피드백을 만들지 않고 안내 오류를 돌려준다.
+    // 쓴 일기는 이미 저장됐고 시도도 저장하지 않으므로, 학습자는 그대로 다시 요청할 수 있다.
     private DiaryFeedbackResponseDto reviewDiaryEntry(
             DiaryEntryEntity entry,
             String diaryText,
             int attemptNo,
-            String previousText
+            String previousText,
+            boolean includeFullDiaries
     ) {
         DiaryFeedbackPromptContext context = new DiaryFeedbackPromptContext(
                 entry.getId(),
@@ -269,97 +283,26 @@ public class DiaryService {
                 entry.getEntryDate(),
                 entry.getMood(),
                 diaryText,
-                previousText
+                previousText,
+                includeFullDiaries
         );
 
-        if (diaryFeedbackClient.isConfigured()) {
-            try {
-                return diaryFeedbackClient.review(context);
-            } catch (RuntimeException exception) {
-                log.warn("Diary feedback LLM failed for entry {}. Falling back to local diary feedback.",
-                        entry.getId(), exception);
-            }
+        if (!diaryFeedbackClient.isConfigured()) {
+            throw diaryFeedbackUnavailable();
         }
-        return buildFallbackFeedback(entry.getId(), diaryText, attemptNo);
+        try {
+            return diaryFeedbackClient.review(context);
+        } catch (RuntimeException exception) {
+            log.warn("Diary feedback LLM failed for entry {}", entry.getId(), exception);
+            throw diaryFeedbackUnavailable();
+        }
     }
 
-    private DiaryFeedbackResponseDto buildFallbackFeedback(String entryId, String diaryText, int attemptNo) {
-        int wordCount = countWords(diaryText);
-        DiaryAnswerBand answerBand = resolveFallbackAnswerBand(diaryText, wordCount);
-        int score = Math.max(20, Math.min(92, 52 + Math.min(wordCount, 25)));
-        boolean finishable = answerBand == DiaryAnswerBand.DIARY_CLEAR_BASIC
-                || answerBand == DiaryAnswerBand.DIARY_NATURAL_COMPLETE;
-        String summary = switch (answerBand) {
-            case DIARY_TOO_SHORT -> "아직 일기로 보기에는 짧아요. 오늘 한 일과 기분을 한 문장씩 더 붙여보면 좋아요.";
-            case DIARY_NOT_ENGLISH -> "영어 문장이 충분하지 않아요. 오늘 있었던 일을 쉬운 영어 한두 문장으로 먼저 바꿔보세요.";
-            case DIARY_FLOW_THIN -> "핵심 내용은 보이지만 시간 흐름이나 감정이 조금 더 들어가면 일기답게 좋아져요.";
-            default -> "일기의 흐름이 잘 보입니다. 몇 군데 표현만 더 자연스럽게 다듬으면 좋아요.";
-        };
-        List<String> strengths = wordCount < 8
-                ? List.of("오늘의 내용을 영어로 시작한 점이 좋아요.")
-                : List.of("하루에 있었던 일을 직접 영어로 정리했어요.", "문장의 기본 의미가 잘 전달돼요.");
-        List<DiaryCorrectionPointDto> fixPoints = wordCount < 8
-                ? List.of(new DiaryCorrectionPointDto(
-                "DETAIL",
-                "일기 내용 늘리기",
-                diaryText,
-                diaryText,
-                "일기는 사건, 기분, 결과 중 한 가지를 더 붙이면 훨씬 자연스러워져요.",
-                "Today, I stayed home and felt relaxed."
-        ))
-                : List.of();
-
-        return new DiaryFeedbackResponseDto(
-                DIARY_SCHEMA_VERSION,
-                entryId,
-                attemptNo,
-                score,
-                finishable,
-                answerBand,
-                summary,
-                strengths,
-                diaryText,
-                diaryText,
-                "",
-                fixPoints,
-                new DiaryFlowDto(
-                        "오늘 있었던 일을 시간 순서로 조금 더 이어보세요.",
-                        "그때 느낀 감정을 한 단어라도 넣어보세요.",
-                        "장소, 사람, 이유 중 하나를 더하면 장면이 선명해져요.",
-                        "마지막에 배운 점이나 내일 하고 싶은 일을 붙이면 일기답게 마무리돼요.",
-                        "일기에서는 사건만 나열하기보다 감정과 결과가 함께 있으면 더 자연스러워요.",
-                        List.of("After that", "Then", "When I got home")
-                ),
-                List.of(new DiaryRewriteIdeaDto(
-                        "감정 한 문장 더하기",
-                        "그 후에 조금 나아졌어요.",
-                        "오늘 일어난 일 뒤에 느낀 점을 붙여보세요.",
-                        "I felt tired, but I was happy to finish my day."
-                )),
-                List.of(),
-                List.of(
-                        new DiaryExpressionDto(
-                                "After that",
-                                "그 후에",
-                                "After that, I went home and rested.",
-                                "일기에서 다음 일을 이어 말할 때 좋아요.",
-                                List.of("시간 흐름", "일기 표현")
-                        ),
-                        new DiaryExpressionDto(
-                                "I felt",
-                                "나는 ~하게 느꼈다",
-                                "I felt tired but happy.",
-                                "하루의 감정을 짧게 말할 때 쓸 수 있어요.",
-                                List.of("감정 표현", "일기 표현")
-                        )
-                ),
-                new DiaryMissionDto(
-                        "DETAIL",
-                        "디테일 한 문장 추가",
-                        "오늘 있었던 일 뒤에 기분이나 이유를 한 문장 더 붙여 다시 써보세요.",
-                        "After that, I felt..."
-                ),
-                List.of("LOCAL_FALLBACK")
+    private ApiException diaryFeedbackUnavailable() {
+        return new ApiException(
+                HttpStatus.SERVICE_UNAVAILABLE,
+                "DIARY_FEEDBACK_UNAVAILABLE",
+                "지금은 일기 피드백을 만들 수 없어요. 쓴 일기는 저장됐으니 잠시 후 다시 요청해 주세요."
         );
     }
 
@@ -532,32 +475,20 @@ public class DiaryService {
         }
     }
 
-    private String resolveFeedbackProvider(DiaryFeedbackResponseDto feedback) {
-        if (usesLocalFallback(feedback)) {
-            return "local-fallback";
-        }
+    private String resolveFeedbackProvider() {
         try {
-            return diaryFeedbackClient.isConfigured() ? diaryFeedbackClient.provider() : "local-fallback";
-        } catch (RuntimeException exception) {
-            return "local-fallback";
-        }
-    }
-
-    private String resolveFeedbackModel(DiaryFeedbackResponseDto feedback) {
-        if (usesLocalFallback(feedback)) {
-            return null;
-        }
-        try {
-            return diaryFeedbackClient.isConfigured() ? diaryFeedbackClient.model() : null;
+            return diaryFeedbackClient.provider();
         } catch (RuntimeException exception) {
             return null;
         }
     }
 
-    private boolean usesLocalFallback(DiaryFeedbackResponseDto feedback) {
-        return feedback != null
-                && feedback.safetyFlags() != null
-                && feedback.safetyFlags().stream().anyMatch("LOCAL_FALLBACK"::equals);
+    private String resolveFeedbackModel() {
+        try {
+            return diaryFeedbackClient.model();
+        } catch (RuntimeException exception) {
+            return null;
+        }
     }
 
     private static final class DiaryCalendarDayAccumulator {
@@ -582,19 +513,6 @@ public class DiaryService {
         }
     }
 
-    private DiaryAnswerBand resolveFallbackAnswerBand(String diaryText, int wordCount) {
-        if (wordCount < 4) {
-            return DiaryAnswerBand.DIARY_TOO_SHORT;
-        }
-        if (!containsAsciiLetter(diaryText)) {
-            return DiaryAnswerBand.DIARY_NOT_ENGLISH;
-        }
-        if (wordCount < 16) {
-            return DiaryAnswerBand.DIARY_FLOW_THIN;
-        }
-        return DiaryAnswerBand.DIARY_CLEAR_BASIC;
-    }
-
     private DiaryAnswerBand parseDiaryAnswerBand(String value) {
         if (value == null || value.isBlank()) {
             return DiaryAnswerBand.DIARY_CLEAR_BASIC;
@@ -605,11 +523,6 @@ public class DiaryService {
         } catch (IllegalArgumentException exception) {
             return DiaryAnswerBand.DIARY_CLEAR_BASIC;
         }
-    }
-
-    private boolean containsAsciiLetter(String value) {
-        return value != null && value.chars().anyMatch(character ->
-                (character >= 'A' && character <= 'Z') || (character >= 'a' && character <= 'z'));
     }
 
     private String safeText(String value) {
@@ -657,16 +570,5 @@ public class DiaryService {
             }
         }
         return "";
-    }
-
-    private int countWords(String value) {
-        if (value == null) {
-            return 0;
-        }
-        String normalized = value.trim();
-        if (normalized.isBlank()) {
-            return 0;
-        }
-        return normalized.split("\\s+").length;
     }
 }

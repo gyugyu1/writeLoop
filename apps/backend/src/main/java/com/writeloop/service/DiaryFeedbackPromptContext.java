@@ -9,6 +9,8 @@ record DiaryFeedbackPromptContext(
         LocalDate entryDate,
         String mood,
         String diaryText,
-        String previousDiaryText
+        String previousDiaryText,
+        // 교정 일기·모범 일기·모범 일기 번역을 생성할지(웹 요청만 true)
+        boolean includeFullDiaries
 ) {
 }

@@ -963,7 +963,8 @@ export async function requestDiaryFeedback(
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify(request)
+    // 웹 일기 화면은 교정 일기·모범 일기·번역을 보여 주므로 함께 생성해 달라고 요청한다(모바일은 요청하지 않는다).
+    body: JSON.stringify({ ...request, includeFullDiaries: true })
   });
 
   if (!response.ok) {

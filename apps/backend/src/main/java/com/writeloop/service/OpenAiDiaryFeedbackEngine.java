@@ -74,7 +74,7 @@ class OpenAiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
                     model,
                     DiaryFeedbackPromptSupport.buildPrompt(context),
                     "diary_feedback_response",
-                    DiaryFeedbackPromptSupport.jsonSchema(),
+                    DiaryFeedbackPromptSupport.jsonSchema(context.includeFullDiaries()),
                     reasoningEffort
             );
             HttpRequest request = OpenAiStructuredOutputSupport.buildResponsesRequest(

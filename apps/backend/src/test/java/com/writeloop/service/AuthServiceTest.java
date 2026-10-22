@@ -330,6 +330,29 @@ class AuthServiceTest {
     }
 
     @Test
+    void deleteAccount_accepts_access_token_user_without_session_login() {
+        UserEntity user = new UserEntity("user@example.com", "encoded-password", "Writer");
+        ReflectionTestUtils.setField(user, "id", 7L);
+        MockHttpServletRequest tokenRequest = new MockHttpServletRequest();
+        tokenRequest.setAttribute(AuthService.REQUEST_USER_ID_ATTRIBUTE, 7L);
+        MockHttpSession emptySession = new MockHttpSession();
+
+        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("password123", "encoded-password")).thenReturn(true);
+
+        authService.deleteAccount(
+                new DeleteAccountRequestDto("탈퇴", "password123"),
+                emptySession,
+                tokenRequest,
+                new MockHttpServletResponse()
+        );
+
+        InOrder deletionOrder = inOrder(accountDataPurgeService, userRepository);
+        deletionOrder.verify(accountDataPurgeService).purgeUserData(7L);
+        deletionOrder.verify(userRepository).delete(user);
+    }
+
+    @Test
     void deleteAccount_keeps_data_when_password_is_wrong() {
         UserEntity user = new UserEntity("user@example.com", "encoded-password", "Writer");
         ReflectionTestUtils.setField(user, "id", 7L);

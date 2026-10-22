@@ -551,7 +551,8 @@ public class AuthService {
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse
     ) {
-        Long userId = getCurrentUserId(session);
+        // \uBAA8\uBC14\uC77C\uC740 \uC138\uC158 \uC5C6\uC774 \uC561\uC138\uC2A4 \uD1A0\uD070\uC73C\uB85C \uB85C\uADF8\uC778\uD558\uBBC0\uB85C \uD1A0\uD070 \uC0AC\uC6A9\uC790\uB3C4 \uD568\uAED8 \uD655\uC778\uD55C\uB2E4.
+        Long userId = getCurrentUserIdOrNull(httpRequest, session);
         if (userId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "\uB85C\uADF8\uC778\uC774 \uD544\uC694\uD574\uC694.");
         }

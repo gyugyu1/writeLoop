@@ -1102,6 +1102,8 @@ export function AnswerLoop() {
     useState(false);
   const [selectedPromptId, setSelectedPromptId] = useState("");
   const [sessionId, setSessionId] = useState("");
+  // 서버에서 완료한 세션. 완료 화면에서 피드백을 다시 볼 때 다시쓰기를 막는다(서버가 409로 거부).
+  const [completedSessionId, setCompletedSessionId] = useState("");
   const [guestId, setGuestId] = useState("");
   const [guestSessionId, setGuestSessionId] = useState("");
   const [guestPromptId, setGuestPromptId] = useState("");
@@ -1913,6 +1915,7 @@ export function AnswerLoop() {
     Boolean(feedback?.loopComplete) ||
     loopExperience?.nextAction === "finish" ||
     loopExperience?.status === "READY_TO_FINISH";
+  const isSessionCompleted = Boolean(sessionId) && completedSessionId === sessionId;
   const visibleStrength = pickFirstNonEmpty(visibleFeedback?.strength, feedback?.strengths?.[0]);
   const completionRefinementExpressions = filterSuggestedRefinementExpressions(
     visibleFeedback?.refinementExpressions ?? feedback?.refinementExpressions,
@@ -2477,11 +2480,16 @@ export function AnswerLoop() {
     if (!sessionId || isFinishingLoop) {
       return;
     }
+    if (isSessionCompleted) {
+      setStep("complete");
+      return;
+    }
 
     try {
       setIsFinishingLoop(true);
       setError("");
       await completeFeedbackSession(sessionId, guestId || undefined);
+      setCompletedSessionId(sessionId);
       if (selectedPromptId) {
         clearVisibleIncompleteLoop(selectedPromptId);
       }
@@ -3866,6 +3874,9 @@ export function AnswerLoop() {
             </div>
           ) : null}
         </div>
+        {isSessionCompleted ? (
+          <p className={styles.coachMoveWhy}>이 질문은 완료했어요. 다음 답변에서 이 내용을 넣어 써 보세요.</p>
+        ) : null}
       </section>
     );
   }
@@ -4101,7 +4112,7 @@ export function AnswerLoop() {
 
   function renderFeedbackStep() {
     const resolvedLoopStatus = resolveLoopStatus();
-    const showRewriteCta = Boolean(feedback);
+    const showRewriteCta = Boolean(feedback) && !isSessionCompleted;
     const showFinishCta = isLoopReadyToFinish;
     const completionHeadline =
       visibleFeedback?.completion?.headline ??
@@ -4151,7 +4162,9 @@ export function AnswerLoop() {
               >
                 {isFinishingLoop
                   ? "완료하는 중..."
-                  : resolvedLoopStatus?.finishCtaLabel ?? "루프 완료하기"}
+                  : isSessionCompleted
+                    ? "완료 화면으로 돌아가기"
+                    : resolvedLoopStatus?.finishCtaLabel ?? "루프 완료하기"}
               </button>
             ) : null}
             {showRewriteCta ? (

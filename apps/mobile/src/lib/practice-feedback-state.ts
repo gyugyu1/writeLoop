@@ -8,6 +8,8 @@ export type PracticeFeedbackState = {
   initialAnswer?: string;
   answer: string;
   feedback: Feedback;
+  // 서버에서 루프를 완료한 뒤 true. 완료한 세션은 다시 제출할 수 없다(409).
+  sessionCompleted?: boolean;
 };
 
 const PRACTICE_FEEDBACK_STATE_KEY = "writeloop_practice_feedback_state";

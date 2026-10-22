@@ -375,18 +375,25 @@ export default function PracticeFeedbackScreen() {
           .filter((phrase) => phrase !== null)
           .slice(0, 4)
       : [];
+  // 완료 화면에서 "마지막 피드백 다시 보기"로 돌아온 경우. 서버가 다시쓰기를 거부하므로 쓰기 버튼을 숨긴다.
+  const isSessionCompleted = Boolean(feedbackState?.sessionCompleted);
   // 제안 카드에 자체 다시쓰기 버튼이 있으므로, 제안이 있으면 일반 다시쓰기 버튼은 숨긴다.
-  const shouldShowCompletionRewriteChoice = isLoopReadyToFinish && !hasEnrichment;
+  const shouldShowCompletionRewriteChoice =
+    isLoopReadyToFinish && !hasEnrichment && !isSessionCompleted;
   const shouldShowCoachMoveComparison = isCoachMoveComparison(coachMove);
   const shouldShowCorrectionReasonLabel = isDirectCorrectionCoachMove(coachMove);
   const shouldShowInlineRewriteWorkspace =
-    Boolean(feedbackState) && (!isLoopReadyToFinish || isCompletionRewriteOpen);
+    Boolean(feedbackState) &&
+    !isSessionCompleted &&
+    (!isLoopReadyToFinish || isCompletionRewriteOpen);
   const rewriteButtonLabel = REWRITE_OPEN_BUTTON_LABEL;
-  const finishButtonLabel = pickFirstNonEmpty(
-    loopExperience?.nextAction === "finish" ? loopExperience?.nextActionLabel : null,
-    loopStatus?.finishCtaLabel,
-    feedback?.loopComplete ? "루프 완료하기" : ""
-  );
+  const finishButtonLabel = isSessionCompleted
+    ? "완료 화면으로 돌아가기"
+    : pickFirstNonEmpty(
+        loopExperience?.nextAction === "finish" ? loopExperience?.nextActionLabel : null,
+        loopStatus?.finishCtaLabel,
+        feedback?.loopComplete ? "루프 완료하기" : ""
+      );
   const shouldShowFinishButton = Boolean(finishButtonLabel);
   const shouldShowCompletionFooter = shouldShowFinishButton;
   const completionHeadline = isLoopReadyToFinish
@@ -739,6 +746,9 @@ export default function PracticeFeedbackScreen() {
       const resolvedUser = currentUser ?? (await refreshSession().catch(() => null));
       const guestId = resolvedUser ? undefined : await getOrCreateGuestId();
       await completeFeedbackSession(feedbackState.feedback.sessionId, guestId || undefined);
+      const completedState = { ...feedbackState, sessionCompleted: true };
+      savePracticeFeedbackState(completedState);
+      setFeedbackState(completedState);
       router.push({
         pathname: "/practice/complete",
         params: {
@@ -1028,7 +1038,11 @@ export default function PracticeFeedbackScreen() {
                         </View>
                       ) : null}
                     </View>
-                    {!isCompletionRewriteOpen ? (
+                    {isSessionCompleted ? (
+                      <Text style={styles.coachMoveWhy}>
+                        이 질문은 완료했어요. 다음 답변에서 이 내용을 넣어 써 보세요.
+                      </Text>
+                    ) : !isCompletionRewriteOpen ? (
                       <Pressable style={styles.secondaryButton} onPress={handleOpenCompletionRewrite}>
                         <Text style={styles.secondaryButtonText}>이 내용 넣어서 다시 써 보기</Text>
                       </Pressable>

@@ -107,6 +107,39 @@ class RequestRateLimitFilterTest {
     }
 
     @Test
+    void forged_forwarded_for_values_cannot_bypass_the_login_ip_limit() throws Exception {
+        MutableClock clock = new MutableClock(Instant.parse("2026-04-15T00:00:00Z"));
+        RequestRateLimiter limiter = new RequestRateLimiter(clock, Duration.ofHours(1));
+        RequestRateLimitFilter filter = buildFilter(limiter, 1, 5, 60, 6, 20, 60, 120);
+
+        // nginx를 거친 요청: 클라이언트가 X-Forwarded-For 앞쪽 값을 매번 바꿔도 실제 IP는 같다.
+        MockHttpServletRequest firstRequest = loginRequest("172.18.0.5");
+        firstRequest.addHeader("X-Real-IP", "203.0.113.30");
+        firstRequest.addHeader("X-Forwarded-For", "198.51.100.1, 203.0.113.30");
+        MockHttpServletRequest forgedRequest = loginRequest("172.18.0.5");
+        forgedRequest.addHeader("X-Real-IP", "203.0.113.30");
+        forgedRequest.addHeader("X-Forwarded-For", "198.51.100.2, 203.0.113.30");
+
+        assertThat(filterOnce(filter, firstRequest).getStatus()).isEqualTo(200);
+        assertThat(filterOnce(filter, forgedRequest).getStatus()).isEqualTo(429);
+    }
+
+    @Test
+    void without_real_ip_the_last_forwarded_for_hop_identifies_the_client() throws Exception {
+        MutableClock clock = new MutableClock(Instant.parse("2026-04-15T00:00:00Z"));
+        RequestRateLimiter limiter = new RequestRateLimiter(clock, Duration.ofHours(1));
+        RequestRateLimitFilter filter = buildFilter(limiter, 1, 5, 60, 6, 20, 60, 120);
+
+        MockHttpServletRequest firstRequest = loginRequest("172.18.0.5");
+        firstRequest.addHeader("X-Forwarded-For", "198.51.100.1, 203.0.113.40");
+        MockHttpServletRequest forgedRequest = loginRequest("172.18.0.5");
+        forgedRequest.addHeader("X-Forwarded-For", "198.51.100.2, 203.0.113.40");
+
+        assertThat(filterOnce(filter, firstRequest).getStatus()).isEqualTo(200);
+        assertThat(filterOnce(filter, forgedRequest).getStatus()).isEqualTo(429);
+    }
+
+    @Test
     void limits_email_verification_by_client_ip() throws Exception {
         MutableClock clock = new MutableClock(Instant.parse("2026-04-15T00:00:00Z"));
         RequestRateLimiter limiter = new RequestRateLimiter(clock, Duration.ofHours(1));

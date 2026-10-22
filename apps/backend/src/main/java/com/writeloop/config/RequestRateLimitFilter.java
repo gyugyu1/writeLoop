@@ -73,12 +73,15 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
                         "auth-email",
                         "POST",
                         Set.of(
+                                "/api/auth/register",
                                 "/api/auth/register/send-code",
+                                "/api/auth/register/complete",
                                 "/api/auth/verify-email",
                                 "/api/auth/resend-verification",
                                 "/api/auth/password-reset/check-email",
                                 "/api/auth/password-reset/send-code",
-                                "/api/auth/password-reset/verify-code"
+                                "/api/auth/password-reset/verify-code",
+                                "/api/auth/password-reset/complete"
                         ),
                         emailMaxRequests,
                         Duration.ofSeconds(Math.max(emailWindowSeconds, 1)),
@@ -291,20 +294,24 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
         return null;
     }
 
+    // nginx는 X-Real-IP를 실제 접속 IP($remote_addr)로 덮어쓴다. X-Forwarded-For의 앞쪽 값은 클라이언트가
+    // 마음대로 넣을 수 있어서, 요청마다 값을 바꾸면 IP 기준 제한을 우회할 수 있다. 그래서 X-Real-IP를 먼저 쓰고,
+    // 없을 때만 우리 프록시가 덧붙인 X-Forwarded-For의 마지막 값을 쓴다.
     private String resolveClientIp(HttpServletRequest request) {
         String remoteAddr = trimToNull(request == null ? null : request.getRemoteAddr());
         if (isTrustedProxyHop(remoteAddr)) {
-            String forwardedFor = trimToNull(request.getHeader("X-Forwarded-For"));
-            if (forwardedFor != null) {
-                String firstHop = forwardedFor.split(",")[0].trim();
-                if (!firstHop.isEmpty()) {
-                    return firstHop;
-                }
-            }
-
             String realIp = trimToNull(request.getHeader("X-Real-IP"));
             if (realIp != null) {
                 return realIp;
+            }
+
+            String forwardedFor = trimToNull(request.getHeader("X-Forwarded-For"));
+            if (forwardedFor != null) {
+                String[] hops = forwardedFor.split(",");
+                String lastHop = hops[hops.length - 1].trim();
+                if (!lastHop.isEmpty()) {
+                    return lastHop;
+                }
             }
         }
         return remoteAddr == null ? "unknown" : remoteAddr;

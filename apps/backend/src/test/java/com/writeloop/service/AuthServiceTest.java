@@ -7,9 +7,12 @@ import com.writeloop.dto.DeleteAccountRequestDto;
 import com.writeloop.dto.LoginRequestDto;
 import com.writeloop.dto.PasswordResetAvailabilityDto;
 import com.writeloop.dto.SendPasswordResetCodeRequestDto;
+import com.writeloop.dto.SendRegistrationCodeRequestDto;
 import com.writeloop.dto.VerifyPasswordResetCodeRequestDto;
 import com.writeloop.exception.ApiException;
+import com.writeloop.persistence.EmailVerificationTokenEntity;
 import com.writeloop.persistence.EmailVerificationTokenRepository;
+import com.writeloop.persistence.PasswordResetTokenEntity;
 import com.writeloop.persistence.PasswordResetTokenRepository;
 import com.writeloop.persistence.UserEntity;
 import com.writeloop.persistence.UserRepository;
@@ -29,7 +32,10 @@ import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -110,7 +116,8 @@ class AuthServiceTest {
                 pendingSocialRegistrationService,
                 naverOAuthService,
                 googleOAuthService,
-                kakaoOAuthService
+                kakaoOAuthService,
+                new RequestRateLimiter(Clock.systemUTC(), Duration.ofHours(1))
         );
         ReflectionTestUtils.setField(authService, "adminEmails", "");
         lenient().when(httpRequest.getSession(true)).thenReturn(session);
@@ -167,6 +174,58 @@ class AuthServiceTest {
         assertThat(response.email()).isEqualTo("missing@example.com");
         assertThat(response.message()).isEqualTo("입력한 이메일로 계정이 확인되면 비밀번호 재설정 코드를 보내드릴게요.");
         verifyNoInteractions(verificationMailService);
+    }
+
+    @Test
+    void wrong_password_reset_codes_invalidate_the_active_code_after_five_failures() {
+        UserEntity user = new UserEntity("user@example.com", "encoded-password", "Writer");
+        user.markEmailVerified();
+        PasswordResetTokenEntity activeToken = new PasswordResetTokenEntity(
+                7L, "user@example.com", "654321", Instant.now().plusSeconds(180)
+        );
+        ReflectionTestUtils.setField(activeToken, "id", 41L);
+        when(userRepository.findByEmail("user@example.com")).thenReturn(Optional.of(user));
+        when(passwordResetTokenRepository.findFirstByEmailAndResetCodeAndUsedAtIsNullOrderByCreatedAtDesc(
+                "user@example.com", "123456"
+        )).thenReturn(Optional.empty());
+        when(passwordResetTokenRepository.findAllByEmailAndUsedAtIsNull("user@example.com"))
+                .thenReturn(List.of(activeToken));
+
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            assertThatThrownBy(() -> authService.verifyPasswordResetCode(
+                    new VerifyPasswordResetCodeRequestDto("user@example.com", "123456")
+            ))
+                    .isInstanceOf(ApiException.class)
+                    .extracting("code")
+                    .isEqualTo("INVALID_PASSWORD_RESET_CODE");
+        }
+        assertThat(activeToken.getUsedAt()).isNull();
+
+        assertThatThrownBy(() -> authService.verifyPasswordResetCode(
+                new VerifyPasswordResetCodeRequestDto("user@example.com", "123456")
+        ))
+                .isInstanceOf(ApiException.class)
+                .extracting("code")
+                .isEqualTo("VERIFICATION_CODE_ATTEMPTS_EXCEEDED");
+        assertThat(activeToken.getUsedAt()).isNotNull();
+        verify(passwordResetTokenRepository).saveAll(List.of(activeToken));
+    }
+
+    @Test
+    void issuing_a_new_registration_code_invalidates_older_unused_codes() {
+        UserEntity pendingUser = new UserEntity("new@example.com", "encoded-password", "new");
+        EmailVerificationTokenEntity olderToken = new EmailVerificationTokenEntity(
+                9L, "new@example.com", "111111", Instant.now().plusSeconds(120)
+        );
+        when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.of(pendingUser));
+        when(emailVerificationTokenRepository.findAllByEmailAndUsedAtIsNull("new@example.com"))
+                .thenReturn(List.of(olderToken));
+
+        authService.sendRegistrationCode(new SendRegistrationCodeRequestDto("new@example.com"));
+
+        assertThat(olderToken.getUsedAt()).isNotNull();
+        verify(emailVerificationTokenRepository).saveAll(List.of(olderToken));
+        verify(verificationMailService).sendVerificationCode(org.mockito.ArgumentMatchers.eq("new@example.com"), anyString());
     }
 
     @Test

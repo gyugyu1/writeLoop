@@ -2,6 +2,7 @@ package com.writeloop.persistence;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface EmailVerificationTokenRepository extends JpaRepository<EmailVerificationTokenEntity, Long> {
@@ -12,6 +13,8 @@ public interface EmailVerificationTokenRepository extends JpaRepository<EmailVer
     );
 
     Optional<EmailVerificationTokenEntity> findTopByEmailAndUsedAtIsNullOrderByCreatedAtDesc(String email);
+
+    List<EmailVerificationTokenEntity> findAllByEmailAndUsedAtIsNull(String email);
 
     void deleteAllByUserId(Long userId);
 }

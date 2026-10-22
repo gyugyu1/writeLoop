@@ -41,7 +41,9 @@ import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -55,6 +57,9 @@ public class AuthService {
     public static final String SESSION_USER_ID = "AUTH_USER_ID";
     public static final String REQUEST_USER_ID_ATTRIBUTE = "AUTH_REQUEST_USER_ID";
     private static final Duration VERIFICATION_CODE_TTL = Duration.ofMinutes(3);
+    // 인증 코드는 6자리라 틀린 횟수를 세지 않으면 계속 추측해서 맞힐 수 있다.
+    // 발급한 코드 하나당 5번까지 틀릴 수 있고, 6번째로 틀리면 그 이메일의 남은 코드를 모두 무효로 만든다.
+    private static final int MAX_VERIFICATION_CODE_FAILURES = 5;
     private static final String SESSION_NAVER_STATE = "NAVER_OAUTH_STATE";
     private static final String SESSION_NAVER_RETURN_TO = "NAVER_OAUTH_RETURN_TO";
     private static final String SESSION_NAVER_REMEMBER_ME = "NAVER_OAUTH_REMEMBER_ME";
@@ -85,6 +90,7 @@ public class AuthService {
     private final NaverOAuthService naverOAuthService;
     private final GoogleOAuthService googleOAuthService;
     private final KakaoOAuthService kakaoOAuthService;
+    private final RequestRateLimiter requestRateLimiter;
 
     @Value("${app.frontend-base-url:}")
     private String frontendBaseUrl;
@@ -160,13 +166,7 @@ public class AuthService {
             throw new ApiException(HttpStatus.BAD_REQUEST, "EMAIL_ALREADY_VERIFIED", "이미 이메일 인증이 완료된 계정이에요.");
         }
 
-        EmailVerificationTokenEntity token = emailVerificationTokenRepository
-                .findFirstByEmailAndVerificationCodeAndUsedAtIsNullOrderByCreatedAtDesc(email, code)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.BAD_REQUEST,
-                        "INVALID_VERIFICATION_CODE",
-                        "인증코드가 올바르지 않아요."
-                ));
+        EmailVerificationTokenEntity token = findEmailVerificationToken(email, code, "인증코드가 올바르지 않아요.");
 
         if (token.isExpired()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "VERIFICATION_CODE_EXPIRED", "인증코드가 만료됐어요. 다시 받아 주세요.");
@@ -224,13 +224,7 @@ public class AuthService {
         UserEntity user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "USER_NOT_FOUND", "가입한 사용자를 찾을 수 없어요."));
 
-        EmailVerificationTokenEntity token = emailVerificationTokenRepository
-                .findFirstByEmailAndVerificationCodeAndUsedAtIsNullOrderByCreatedAtDesc(email, code)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.BAD_REQUEST,
-                        "INVALID_VERIFICATION_CODE",
-                        "인증 코드가 올바르지 않아요."
-                ));
+        EmailVerificationTokenEntity token = findEmailVerificationToken(email, code, "인증 코드가 올바르지 않아요.");
 
         if (token.isExpired()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "VERIFICATION_CODE_EXPIRED", "인증 코드가 만료됐어요. 다시 받아 주세요.");
@@ -1264,13 +1258,75 @@ public class AuthService {
     }
 
     private PasswordResetTokenEntity findValidPasswordResetToken(String email, String code) {
-        return passwordResetTokenRepository
-                .findFirstByEmailAndResetCodeAndUsedAtIsNullOrderByCreatedAtDesc(email, code)
-                .orElseThrow(() -> new ApiException(
-                        HttpStatus.BAD_REQUEST,
-                        "INVALID_PASSWORD_RESET_CODE",
-                        "재설정 코드가 올바르지 않아요."
-                ));
+        Optional<PasswordResetTokenEntity> token = passwordResetTokenRepository
+                .findFirstByEmailAndResetCodeAndUsedAtIsNullOrderByCreatedAtDesc(email, code);
+        if (token.isPresent()) {
+            return token.get();
+        }
+        List<PasswordResetTokenEntity> activeTokens = passwordResetTokenRepository.findAllByEmailAndUsedAtIsNull(email);
+        Long latestTokenId = activeTokens.stream()
+                .map(PasswordResetTokenEntity::getId)
+                .filter(Objects::nonNull)
+                .max(Long::compare)
+                .orElse(null);
+        recordVerificationCodeFailure("password-reset", latestTokenId, () -> markTokensUsed(activeTokens));
+        throw new ApiException(
+                HttpStatus.BAD_REQUEST,
+                "INVALID_PASSWORD_RESET_CODE",
+                "재설정 코드가 올바르지 않아요."
+        );
+    }
+
+    private EmailVerificationTokenEntity findEmailVerificationToken(String email, String code, String invalidMessage) {
+        Optional<EmailVerificationTokenEntity> token = emailVerificationTokenRepository
+                .findFirstByEmailAndVerificationCodeAndUsedAtIsNullOrderByCreatedAtDesc(email, code);
+        if (token.isPresent()) {
+            return token.get();
+        }
+        Long latestTokenId = emailVerificationTokenRepository
+                .findTopByEmailAndUsedAtIsNullOrderByCreatedAtDesc(email)
+                .map(EmailVerificationTokenEntity::getId)
+                .orElse(null);
+        recordVerificationCodeFailure("email", latestTokenId, () -> invalidateEmailVerificationCodes(email));
+        throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_VERIFICATION_CODE", invalidMessage);
+    }
+
+    // 틀린 횟수는 가장 최근에 발급한 코드 단위로 센다. 새 코드를 받으면 횟수도 새로 시작한다.
+    private void recordVerificationCodeFailure(String purpose, Long latestTokenId, Runnable invalidateActiveCodes) {
+        if (latestTokenId == null) {
+            return;
+        }
+        RequestRateLimiter.RateLimitDecision decision = requestRateLimiter.tryConsume(
+                "verification-code-failure:" + purpose,
+                String.valueOf(latestTokenId),
+                MAX_VERIFICATION_CODE_FAILURES,
+                VERIFICATION_CODE_TTL.plusMinutes(1)
+        );
+        if (!decision.allowed()) {
+            invalidateActiveCodes.run();
+            throw new ApiException(
+                    HttpStatus.TOO_MANY_REQUESTS,
+                    "VERIFICATION_CODE_ATTEMPTS_EXCEEDED",
+                    "인증 코드를 여러 번 틀렸어요. 새 코드를 받아 주세요."
+            );
+        }
+    }
+
+    private void invalidateEmailVerificationCodes(String email) {
+        List<EmailVerificationTokenEntity> activeTokens = emailVerificationTokenRepository.findAllByEmailAndUsedAtIsNull(email);
+        if (activeTokens.isEmpty()) {
+            return;
+        }
+        activeTokens.forEach(EmailVerificationTokenEntity::markUsed);
+        emailVerificationTokenRepository.saveAll(activeTokens);
+    }
+
+    private void markTokensUsed(List<PasswordResetTokenEntity> activeTokens) {
+        if (activeTokens.isEmpty()) {
+            return;
+        }
+        activeTokens.forEach(PasswordResetTokenEntity::markUsed);
+        passwordResetTokenRepository.saveAll(activeTokens);
     }
 
     private void issuePasswordResetCode(UserEntity user) {
@@ -1295,6 +1351,8 @@ public class AuthService {
     }
 
     private void issueVerificationCode(UserEntity user) {
+        // 예전 코드가 살아 있으면 맞힐 수 있는 코드가 여러 개가 되므로, 새 코드를 보내기 전에 무효로 만든다.
+        invalidateEmailVerificationCodes(user.getEmail());
         String code = generateVerificationCode();
         EmailVerificationTokenEntity token = new EmailVerificationTokenEntity(
                 user.getId(),

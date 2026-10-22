@@ -80,6 +80,13 @@
 
 ## 참고 문서
 
+- 작업 목록: `docs/private/backlog.md`.
+  - `docs/private/`는 비공개 저장소 `gyugyu1/writeloop-private`의 clone이다. 이 공개 저장소는 `.gitignore`로 무시한다.
+  - 폴더가 없으면 저장소 루트에서 `git clone https://github.com/gyugyu1/writeloop-private.git docs/private`로 받는다.
+  - 이 폴더의 내용은 공개되는 파일(ADR, README, 이 저장소의 커밋 메시지)에 옮겨 적지 않는다.
+  - 작업을 시작하기 전에 `docs/private`에서 `git pull`하고 읽는다. 항목을 끝내면 체크하고 날짜와 커밋을 적어 "최근 완료"로 옮긴 뒤, 그 폴더에서 커밋하고 push한다.
+  - 작업 중 새로 발견한 문제나 남은 일은 우선순위에 맞춰 추가한다.
+  - 같은 폴더의 개선점 보고서(`writeloop-improvement-review-2026-10-22.ko.md`)에 항목별 근거가 있다.
 - 결정 기록(ADR, MADR 형식): `docs/decisions/`.
   - 기존 결정을 뒤집기 전에 해당 ADR의 이유를 먼저 읽는다.
   - 새로 중요한 결정을 하면 `adr-template.md`로 새 ADR을 쓰고 `README.md` 목록에 추가한다.

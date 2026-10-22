@@ -21,6 +21,8 @@ yarn-error.log*
 pnpm-debug.log*
 metro-dev.log
 env_files/
+# 비공개 작업 목록과 민감한 조사 보고서. 공개 저장소에 올리지 않는다.
+docs/private/
 .artifacts/
 /artifacts/
 .codex_logs/

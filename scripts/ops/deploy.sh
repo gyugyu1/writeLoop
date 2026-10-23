@@ -10,7 +10,7 @@
 #   2) GHCR에서 이 커밋의 이미지를 받아 :latest로 태그한다. docker-compose.yml은 :latest를 실행한다.
 #   3) 백엔드·프론트엔드를 재시작하고 백엔드 기동(Flyway 포함), 백엔드 헬스체크(DB·Redis), 프론트엔드 상태를 확인한다.
 #      Redis는 다시 만들지 않는다(로그인 유지 토큰 보존). Redis 설정 변경은 README의 절차로 직접 적용한다.
-#   4) 지난 배포 이후 nginx 설정이나 이미지가 바뀌었으면 nginx를 다시 만든다.
+#   4) 지난 배포 이후 nginx 설정 파일이나 compose의 nginx 설정이 바뀌었으면 nginx를 다시 만든다.
 #   5) 배포한 커밋을 기록하고, 이번·직전 커밋 이미지만 남긴 뒤 공개 주소로 응답을 확인한다.
 #      더 예전 커밋은 GHCR에 남아 있어서, 그 SHA로 배포하면 다시 받는다.
 set -euo pipefail
@@ -98,13 +98,12 @@ for _ in $(seq 1 30); do
   sleep 3
 done
 
-# 4) nginx 설정이나 이미지가 바뀌었으면 nginx를 다시 만든다. 설정 파일은 bind mount라 재생성해야 새 파일을 읽는다.
-NGINX_IMAGE="$(sudo -n docker compose config --images | grep "^nginx:" || true)"
-RUNNING_NGINX_IMAGE="$(sudo -n docker inspect -f '{{.Config.Image}}' writeLoop-nginx 2>/dev/null || true)"
+# 4) nginx 설정 파일이 바뀌었으면 nginx를 다시 만든다. 설정 파일은 bind mount라 재생성해야 새 파일을 읽는다.
+#    파일이 그대로여도 compose의 nginx 설정(이미지, 로그 등)이 바뀌었으면 compose가 알아서 다시 만들고, 아니면 그대로 둔다.
 if [ -n "$PREVIOUS_SHA" ] && git cat-file -e "${PREVIOUS_SHA}^{commit}" 2>/dev/null \
-    && git diff --quiet "$PREVIOUS_SHA" "$SHA" -- infra/nginx \
-    && [ "$NGINX_IMAGE" = "$RUNNING_NGINX_IMAGE" ]; then
-  echo "nginx config unchanged"
+    && git diff --quiet "$PREVIOUS_SHA" "$SHA" -- infra/nginx; then
+  sudo -n docker compose up -d --no-deps writeloop-nginx
+  echo "nginx config file unchanged"
 else
   sudo -n docker compose up -d --no-deps --force-recreate writeloop-nginx
   echo "nginx recreated"

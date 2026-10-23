@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Animated, Easing, Image, StyleSheet, Text, View } from "react-native";
+import { AccessibilityInfo, Animated, Easing, Image, StyleSheet, Text, View } from "react-native";
 
 export type FeedbackLoadingStage = {
   title: string;
@@ -189,6 +189,16 @@ export default function FeedbackLoadingOverlay({
     };
   }, [dotProgressValues, haloOpacity, haloScale, mascotTranslateY, visible]);
 
+  // 화면 낭독기에도 지금 단계를 알린다. 단계가 바뀔 때마다 한 번씩 읽는다.
+  const announcedStageTitle = visible
+    ? effectiveStages[Math.min(activeStageIndex, effectiveStages.length - 1)]?.title
+    : undefined;
+  useEffect(() => {
+    if (announcedStageTitle) {
+      AccessibilityInfo.announceForAccessibility(announcedStageTitle);
+    }
+  }, [announcedStageTitle]);
+
   if (!visible) {
     return null;
   }
@@ -196,7 +206,13 @@ export default function FeedbackLoadingOverlay({
   const activeStage = effectiveStages[Math.min(activeStageIndex, effectiveStages.length - 1)];
 
   return (
-    <View style={styles.overlay}>
+    <View
+      style={styles.overlay}
+      accessibilityViewIsModal
+      accessible
+      accessibilityRole="progressbar"
+      accessibilityLabel={`${activeStage.title}. ${activeStage.message}`}
+    >
       <View style={styles.card}>
         <View style={styles.illustrationFrame}>
           <Animated.View

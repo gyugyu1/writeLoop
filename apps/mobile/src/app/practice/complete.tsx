@@ -486,7 +486,10 @@ export default function PracticeCompleteScreen() {
     let cancelled = false;
     setIsHydratingFeedbackState(true);
 
-    void hydratePracticeFeedbackState(requestedDifficulty, requestedPromptId).then((nextState) => {
+    // 저장된 상태를 읽지 못해도 로딩을 끝낸다. 상태가 없으면 화면이 빈 상태 안내를 보여 준다.
+    void hydratePracticeFeedbackState(requestedDifficulty, requestedPromptId)
+      .catch(() => null)
+      .then((nextState) => {
       if (cancelled) {
         return;
       }

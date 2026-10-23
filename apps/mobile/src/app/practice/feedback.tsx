@@ -30,6 +30,8 @@ import {
   submitFeedback
 } from "@/lib/api";
 import { getOrCreateGuestId } from "@/lib/guest-id";
+import { filterSuggestedRefinementExpressions } from "@/lib/refinement-recommendations";
+import { deleteLocalWritingDraft, getLocalWritingDraft, saveLocalWritingDraft } from "@/lib/writing-drafts";
 import {
   buildInlineFeedbackSegments,
   type RenderedInlineFeedbackSegment
@@ -324,6 +326,9 @@ export default function PracticeFeedbackScreen() {
   const [isModelAnswerOpen, setIsModelAnswerOpen] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [rewriteDraft, setRewriteDraft] = useState(() => feedbackState?.answer ?? "");
+  const [isRewriteDraftRestored, setIsRewriteDraftRestored] = useState(false);
+  // 학습자가 직접 고친 뒤에만 임시저장한다. 화면을 열 때 채운 처음 글은 저장하지 않는다.
+  const hasEditedRewriteRef = useRef(false);
   const [rewriteError, setRewriteError] = useState("");
   const [isSubmittingRewrite, setIsSubmittingRewrite] = useState(false);
   const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
@@ -363,7 +368,11 @@ export default function PracticeFeedbackScreen() {
   const shouldShowCoachMoveCard = !isLoopReadyToFinish && hasCoachMove(coachMove);
   const completionRefinementPhrases = isLoopReadyToFinish
     ? buildCompletionRefinementPhrases(
-        visibleFeedback?.refinementExpressions ?? feedback?.refinementExpressions
+        filterSuggestedRefinementExpressions(
+          visibleFeedback?.refinementExpressions ?? feedback?.refinementExpressions,
+          feedbackState?.answer,
+          feedback?.revisedAnswer
+        )
       )
     : [];
   const enrichment = isLoopReadyToFinish ? completion?.enrichment ?? null : null;
@@ -455,7 +464,10 @@ export default function PracticeFeedbackScreen() {
     let cancelled = false;
     setIsHydratingFeedbackState(true);
 
-    void hydratePracticeFeedbackState(requestedDifficulty, requestedPromptId).then((nextState) => {
+    // 저장된 상태를 읽지 못해도 로딩을 끝낸다. 상태가 없으면 화면이 빈 상태 안내를 보여 준다.
+    void hydratePracticeFeedbackState(requestedDifficulty, requestedPromptId)
+      .catch(() => null)
+      .then((nextState) => {
       if (cancelled) {
         return;
       }
@@ -521,6 +533,65 @@ export default function PracticeFeedbackScreen() {
     feedbackState?.feedback.rewriteWorkspace?.seedText,
     feedbackState?.prompt.id
   ]);
+
+  // 다시쓰기 입력은 이 기기에 임시저장한다(쓰기 화면과 같은 REWRITE 임시저장). 앱이 꺼지거나 화면을 나갔다 와도 쓰던 글을 되살린다.
+  const rewriteDraftPromptId = feedbackState?.prompt.id ?? "";
+  const rewriteDraftSessionId = feedbackState?.feedback.sessionId ?? "";
+  const rewriteDraftSeed = feedbackState?.answer ?? "";
+
+  useEffect(() => {
+    hasEditedRewriteRef.current = false;
+    setIsRewriteDraftRestored(false);
+    if (!rewriteDraftPromptId || !rewriteDraftSessionId) {
+      return;
+    }
+
+    let cancelled = false;
+    void getLocalWritingDraft(rewriteDraftPromptId, "REWRITE")
+      .catch(() => null)
+      .then((draft) => {
+        if (cancelled || hasEditedRewriteRef.current || !draft || draft.sessionId !== rewriteDraftSessionId) {
+          return;
+        }
+        const restoredText = draft.rewrite.trim();
+        if (restoredText && restoredText !== rewriteDraftSeed.trim()) {
+          setRewriteDraft(draft.rewrite);
+          setIsRewriteDraftRestored(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [rewriteDraftPromptId, rewriteDraftSessionId, rewriteDraftSeed]);
+
+  useEffect(() => {
+    if (!hasEditedRewriteRef.current || !rewriteDraftPromptId || !rewriteDraftSessionId) {
+      return;
+    }
+
+    const text = rewriteDraft;
+    const timer = setTimeout(() => {
+      if (!text.trim()) {
+        void deleteLocalWritingDraft(rewriteDraftPromptId, "REWRITE").catch(() => undefined);
+        return;
+      }
+      void saveLocalWritingDraft({
+        promptId: rewriteDraftPromptId,
+        draftType: "REWRITE",
+        selectedDifficulty: requestedDifficulty,
+        sessionId: rewriteDraftSessionId,
+        answer: rewriteDraftSeed,
+        rewrite: text,
+        lastSubmittedAnswer: rewriteDraftSeed,
+        feedback: null,
+        step: "rewrite",
+        updatedAt: new Date().toISOString()
+      }).catch(() => undefined);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [rewriteDraft, rewriteDraftPromptId, rewriteDraftSessionId, rewriteDraftSeed, requestedDifficulty]);
 
   useEffect(() => {
     if (!isCompletionRewriteOpen || inlineRewriteY == null) {
@@ -651,7 +722,8 @@ export default function PracticeFeedbackScreen() {
         }
         disabled={isPhraseSaving}
         accessibilityRole="button"
-        accessibilityLabel={isPhraseSaved ? "표현 저장 취소" : "표현 저장"}
+        accessibilityLabel={isPhraseSaved ? `${phrase.phrase} 저장 취소` : `${phrase.phrase} 저장`}
+        accessibilityState={{ disabled: isPhraseSaving, selected: isPhraseSaved }}
       >
         <View style={styles.coachMovePhraseContent}>
           <Text style={styles.coachMovePhraseText}>{phrase.phrase}</Text>
@@ -714,6 +786,8 @@ export default function PracticeFeedbackScreen() {
       };
 
       savePracticeFeedbackState(nextState);
+      hasEditedRewriteRef.current = false;
+      void deleteLocalWritingDraft(feedbackState.prompt.id, "REWRITE").catch(() => undefined);
       setFeedbackState(nextState);
       rewriteSubmissionIdRef.current = null;
       requestAnimationFrame(() => {
@@ -971,6 +1045,8 @@ export default function PracticeFeedbackScreen() {
                     value={rewriteDraft}
                     onChangeText={(value) => {
                       setRewriteDraft(value);
+                      hasEditedRewriteRef.current = true;
+                      setIsRewriteDraftRestored(false);
                       rewriteSubmissionIdRef.current = null;
                       if (rewriteError) {
                         setRewriteError("");
@@ -984,6 +1060,9 @@ export default function PracticeFeedbackScreen() {
                     )}
                     placeholderTextColor="#B7A58F"
                   />
+                  {isRewriteDraftRestored ? (
+                    <Text style={styles.inlineRewriteHelp}>이전에 쓰던 다시쓰기를 불러왔어요.</Text>
+                  ) : null}
                   {rewriteError ? (
                     <Text style={styles.inlineRewriteError}>{rewriteError}</Text>
                   ) : null}
@@ -994,6 +1073,8 @@ export default function PracticeFeedbackScreen() {
                     ]}
                     onPress={() => void handleSubmitInlineRewrite()}
                     disabled={isSubmittingRewrite}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: isSubmittingRewrite, busy: isSubmittingRewrite }}
                   >
                     <Text style={styles.primaryButtonText}>{inlineRewriteSubmitLabel}</Text>
                   </Pressable>
@@ -1052,7 +1133,11 @@ export default function PracticeFeedbackScreen() {
                         이 질문은 완료했어요. 다음 답변에서 이 내용을 넣어 써 보세요.
                       </Text>
                     ) : !isCompletionRewriteOpen ? (
-                      <Pressable style={styles.secondaryButton} onPress={handleOpenCompletionRewrite}>
+                      <Pressable
+                        accessibilityRole="button"
+                        style={styles.secondaryButton}
+                        onPress={handleOpenCompletionRewrite}
+                      >
                         <Text style={styles.secondaryButtonText}>이 내용 넣어서 다시 써 보기</Text>
                       </Pressable>
                     ) : null}
@@ -1087,7 +1172,8 @@ export default function PracticeFeedbackScreen() {
                             }
                             disabled={isPhraseSaving}
                             accessibilityRole="button"
-                            accessibilityLabel={isPhraseSaved ? "표현 저장 취소" : "표현 저장"}
+                            accessibilityLabel={isPhraseSaved ? `${phrase.phrase} 저장 취소` : `${phrase.phrase} 저장`}
+                            accessibilityState={{ disabled: isPhraseSaving, selected: isPhraseSaved }}
                           >
                             <View style={styles.coachMovePhraseContent}>
                               <Text style={styles.coachMovePhraseText}>{phrase.phrase}</Text>
@@ -1117,6 +1203,7 @@ export default function PracticeFeedbackScreen() {
                       onPress={() => setIsModelAnswerOpen((current) => !current)}
                       accessibilityRole="button"
                       accessibilityLabel={isModelAnswerOpen ? "모범답안 접기" : "모범답안 펼치기"}
+                      accessibilityState={{ expanded: isModelAnswerOpen }}
                     >
                       <View>
                         <Text style={styles.modelAnswerEyebrow}>참고용</Text>
@@ -1140,7 +1227,11 @@ export default function PracticeFeedbackScreen() {
                 {isLoopReadyToFinish ? (
                   <>
                     {shouldShowCompletionRewriteChoice && !isCompletionRewriteOpen ? (
-                      <Pressable style={styles.secondaryButton} onPress={handleOpenCompletionRewrite}>
+                      <Pressable
+                        accessibilityRole="button"
+                        style={styles.secondaryButton}
+                        onPress={handleOpenCompletionRewrite}
+                      >
                         <Text style={styles.secondaryButtonText}>{rewriteButtonLabel}</Text>
                       </Pressable>
                     ) : null}
@@ -1149,6 +1240,8 @@ export default function PracticeFeedbackScreen() {
                     style={[styles.primaryButton, isFinishing && styles.primaryButtonDisabled]}
                     onPress={() => void handleFinishLoop()}
                     disabled={isFinishing}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: isFinishing, busy: isFinishing }}
                   >
                     <Text style={styles.primaryButtonText}>
                       {isFinishing
@@ -1167,7 +1260,7 @@ export default function PracticeFeedbackScreen() {
               <Text style={styles.emptyStateBody}>
                 방금 작성한 피드백이 초기화되었을 수 있어요. 질문 목록으로 돌아가 다시 시작해 주세요.
               </Text>
-              <Pressable style={styles.primaryButton} onPress={handleBackToQuestions}>
+              <Pressable accessibilityRole="button" style={styles.primaryButton} onPress={handleBackToQuestions}>
                 <Text style={styles.primaryButtonText}>질문 목록으로 돌아가기</Text>
               </Pressable>
             </View>

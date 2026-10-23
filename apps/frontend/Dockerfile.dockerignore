@@ -1,0 +1,12 @@
+# 이 Dockerfile의 빌드 컨텍스트는 저장소 루트다. 웹 빌드에 필요한 파일만 넣는다.
+*
+!package.json
+!package-lock.json
+!apps/frontend
+apps/frontend/node_modules
+apps/frontend/.next
+apps/frontend/out
+apps/frontend/tsconfig.tsbuildinfo
+apps/frontend/.env
+apps/frontend/.env.*
+apps/frontend/npm-debug.log*

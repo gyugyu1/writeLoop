@@ -104,8 +104,8 @@ services:
   writeloop-frontend:
     image: ghcr.io/gyugyu1/writeloop-frontend:latest
     build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/frontend/Dockerfile
       args:
         NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://api.localtest.me}
     container_name: writeLoop-frontend

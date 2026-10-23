@@ -19,7 +19,7 @@ const LEGAL_DOCUMENTS: Record<LegalDocumentId, LegalDocument> = {
     id: "privacy-policy",
     title: "개인정보처리방침",
     subtitle: "WriteLoop가 어떤 개인정보를 왜 처리하는지 안내합니다.",
-    effectiveDate: "2026.04.11",
+    effectiveDate: "2026.10.23",
     sections: [
       {
         title: "0. 적용 대상 및 개발자 정보",
@@ -67,7 +67,7 @@ const LEGAL_DOCUMENTS: Record<LegalDocumentId, LegalDocument> = {
           "AI 피드백 및 AI 코치 기능 제공을 위해 외부 AI 서비스 사업자를 이용할 수 있습니다."
         ],
         bullets: [
-          "이전받는 자: Google LLC (Gemini API), OpenAI, L.L.C. (OpenAI API)",
+          "이전받는 자: OpenAI, L.L.C. (OpenAI API)",
           "이전 국가: 미국",
           "이전 항목: 사용자가 입력한 영어 문장, 다시쓰기 답변, AI 코치 질문, 피드백 생성에 필요한 최소 문맥 정보",
           "이전 목적: AI 피드백 및 AI 코치 응답 생성",
@@ -115,7 +115,8 @@ const LEGAL_DOCUMENTS: Record<LegalDocumentId, LegalDocument> = {
       {
         title: "11. 처리방침 변경",
         paragraphs: [
-          "본 방침은 관련 법령, 서비스 내용 또는 내부 정책에 따라 변경될 수 있으며, 중요한 변경이 있는 경우 앱 또는 관련 페이지를 통해 안내합니다."
+          "본 방침은 관련 법령, 서비스 내용 또는 내부 정책에 따라 변경될 수 있으며, 중요한 변경이 있는 경우 앱 또는 관련 페이지를 통해 안내합니다.",
+          "2026.10.23 개정: 국외 이전받는 자에서 Google LLC(Gemini API)를 삭제했습니다. 더 이상 이 서비스로 개인정보를 보내지 않습니다."
         ]
       }
     ]

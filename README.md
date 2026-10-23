@@ -711,7 +711,8 @@ Sentry에서 프로젝트를 두 개 만듭니다. 백엔드는 Spring Boot, 모
 |---|---|
 | 운영 서버 `.env` | `SENTRY_DSN`(백엔드 프로젝트 DSN). 넣은 뒤 백엔드를 다시 만든다 |
 | `apps/mobile/eas.json`의 `production.env` | `EXPO_PUBLIC_SENTRY_DSN`(모바일 프로젝트 DSN). 앱에 들어가는 공개 값이다 |
-| EAS 환경 변수(`eas env:create`, secret) | `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`. 스토어 빌드 때 소스맵을 올린다 |
+| `apps/mobile/eas.json`의 `production.env` | `SENTRY_ORG`(`writeloop-9f`), `SENTRY_PROJECT`(`writeloop-mobile`). 소스맵을 올릴 곳 |
+| EAS 환경 변수(expo.dev > 프로젝트 > Environment variables, production, Secret) | `SENTRY_AUTH_TOKEN`(Sentry Organization Token). 스토어 빌드 때 소스맵을 올린다 |
 
 - DSN이 비어 있으면 백엔드와 앱 모두 아무것도 보내지 않습니다. 로컬과 개발 빌드도 보내지 않습니다.
 - 소스맵 업로드에 실패해도 빌드는 계속됩니다(`SENTRY_ALLOW_FAILURE`). 그때는 앱 오류 위치가 압축된 코드로 보입니다.

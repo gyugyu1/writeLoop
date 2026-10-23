@@ -75,6 +75,8 @@ type NowEnglishRecordGroup = {
 };
 
 const INITIAL_VISIBLE_DATE_GROUPS = 5;
+// 기록은 한 번에 이만큼씩 받는다. 끝까지 받았는지는 받은 개수로 안다.
+const HISTORY_PAGE_SIZE = 30;
 const TAG_PRACTICE_EXPRESSION_LIMIT = 5;
 const CALENDAR_WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -1526,6 +1528,8 @@ export default function RecordsScreen() {
   const [activeTab, setActiveTab] = useState<RecordsContentTab>(requestedTab);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [history, setHistory] = useState<HistorySession[]>([]);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [isLoadingMoreHistory, setIsLoadingMoreHistory] = useState(false);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [savedExpressions, setSavedExpressions] = useState<SavedExpression[]>([]);
   const [isSavedExpressionsLoading, setIsSavedExpressionsLoading] = useState(false);
@@ -1721,10 +1725,11 @@ export default function RecordsScreen() {
       setIsHistoryLoading(true);
       setHistoryError("");
       const [historyResponse, status] = await Promise.all([
-        getAnswerHistory(),
+        getAnswerHistory({ limit: HISTORY_PAGE_SIZE }),
         getTodayWritingStatus().catch(() => null)
       ]);
       setHistory(historyResponse);
+      setHasMoreHistory(historyResponse.length >= HISTORY_PAGE_SIZE);
       setTodayStatus(status);
     } catch (caughtError) {
       setHistoryError(
@@ -1734,6 +1739,33 @@ export default function RecordsScreen() {
       setIsHistoryLoading(false);
     }
   }, []);
+
+  const oldestCreatedAt = history.reduce<string | null>(
+    (oldest, session) => (!oldest || session.createdAt < oldest ? session.createdAt : oldest),
+    null
+  );
+
+  const loadMoreHistory = useCallback(async () => {
+    if (!oldestCreatedAt || isLoadingMoreHistory) {
+      return;
+    }
+    try {
+      setIsLoadingMoreHistory(true);
+      const nextPage = await getAnswerHistory({ limit: HISTORY_PAGE_SIZE, before: oldestCreatedAt });
+      setHistory((current) => {
+        const knownIds = new Set(current.map((session) => session.sessionId));
+        return [...current, ...nextPage.filter((session) => !knownIds.has(session.sessionId))];
+      });
+      setHasMoreHistory(nextPage.length >= HISTORY_PAGE_SIZE);
+      setShowAllDateGroups(true);
+    } catch (caughtError) {
+      setHistoryError(
+        caughtError instanceof Error ? caughtError.message : "이전 기록을 불러오지 못했어요."
+      );
+    } finally {
+      setIsLoadingMoreHistory(false);
+    }
+  }, [isLoadingMoreHistory, oldestCreatedAt]);
 
   const loadSavedExpressions = useCallback(async () => {
     try {
@@ -2218,7 +2250,7 @@ export default function RecordsScreen() {
                         <Text style={styles.metricLabel}>연속 루프</Text>
                       </View>
                       <View style={styles.metricCard}>
-                        <Text style={styles.metricValue}>{history.length}</Text>
+                        <Text style={styles.metricValue}>{todayStatus?.totalAnswerSessions ?? history.length}</Text>
                         <Text style={styles.metricLabel}>질문 기록</Text>
                       </View>
                       <View style={styles.metricCard}>
@@ -2309,7 +2341,9 @@ export default function RecordsScreen() {
                     <View style={styles.sectionHeaderRow}>
                       <View style={styles.sectionHeaderCopy}>
                         <Text style={styles.sectionTitle}>날짜별 기록</Text>
-                        <Text style={styles.sectionMeta}>{history.length}개의 질문</Text>
+                        <Text style={styles.sectionMeta}>
+                          {todayStatus?.totalAnswerSessions ?? history.length}개의 질문
+                        </Text>
                       </View>
                       <Pressable style={styles.calendarOpenButton} onPress={handleOpenCalendar}>
                         <Text style={styles.calendarOpenButtonText}>달력</Text>
@@ -2419,6 +2453,19 @@ export default function RecordsScreen() {
                         {showAllDateGroups
                           ? "최근 기록만 보기"
                           : `전체 보기${hiddenDateGroupCount > 0 ? ` (${hiddenDateGroupCount}일 더)` : ""}`}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                  {hasMoreHistory ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: isLoadingMoreHistory, busy: isLoadingMoreHistory }}
+                      disabled={isLoadingMoreHistory}
+                      style={styles.showMoreButton}
+                      onPress={() => void loadMoreHistory()}
+                    >
+                      <Text style={styles.showMoreButtonText}>
+                        {isLoadingMoreHistory ? "불러오는 중" : "이전 기록 더 보기"}
                       </Text>
                     </Pressable>
                   ) : null}

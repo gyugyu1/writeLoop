@@ -28,6 +28,9 @@ import styles from "./auth-page.module.css";
 
 type MyPageTab = "account" | "writing";
 type WritingContentTab = "history" | "expressions";
+
+// 기록은 한 번에 이만큼씩 받는다. 끝까지 받았는지는 받은 개수로 안다.
+const HISTORY_PAGE_SIZE = 30;
 const TAG_PRACTICE_EXPRESSION_LIMIT = 5;
 
 function formatHistoryDateKey(dateTime: string) {
@@ -456,6 +459,8 @@ export function MyPageClient() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null | undefined>(undefined);
   const [todayStatus, setTodayStatus] = useState<TodayWritingStatus | null>(null);
   const [history, setHistory] = useState<HistorySession[]>([]);
+  const [hasMoreHistory, setHasMoreHistory] = useState(false);
+  const [isLoadingMoreHistory, setIsLoadingMoreHistory] = useState(false);
   const [savedExpressions, setSavedExpressions] = useState<SavedExpression[]>([]);
   const [isHistoryLoading, setIsHistoryLoading] = useState(true);
   const [isSavedExpressionsLoading, setIsSavedExpressionsLoading] = useState(true);
@@ -540,7 +545,7 @@ export function MyPageClient() {
 
         const [statusResult, sessionsResult, savedExpressionsResult] = await Promise.allSettled([
           getTodayWritingStatus(),
-          getAnswerHistory(),
+          getAnswerHistory({ limit: HISTORY_PAGE_SIZE }),
           getSavedExpressions()
         ]);
 
@@ -556,6 +561,7 @@ export function MyPageClient() {
 
         if (sessionsResult.status === "fulfilled") {
           setHistory(sessionsResult.value);
+          setHasMoreHistory(sessionsResult.value.length >= HISTORY_PAGE_SIZE);
           setHistoryError("");
         } else {
           setHistory([]);
@@ -626,6 +632,30 @@ export function MyPageClient() {
       return accumulator;
     }, {});
   }, [history]);
+
+  const oldestCreatedAt = history.reduce<string | null>(
+    (oldest, session) => (!oldest || session.createdAt < oldest ? session.createdAt : oldest),
+    null
+  );
+
+  async function loadMoreHistory() {
+    if (!oldestCreatedAt || isLoadingMoreHistory) {
+      return;
+    }
+    try {
+      setIsLoadingMoreHistory(true);
+      const nextPage = await getAnswerHistory({ limit: HISTORY_PAGE_SIZE, before: oldestCreatedAt });
+      setHistory((current) => {
+        const knownIds = new Set(current.map((session) => session.sessionId));
+        return [...current, ...nextPage.filter((session) => !knownIds.has(session.sessionId))];
+      });
+      setHasMoreHistory(nextPage.length >= HISTORY_PAGE_SIZE);
+    } catch {
+      setHistoryError("이전 기록을 불러오지 못했어요.");
+    } finally {
+      setIsLoadingMoreHistory(false);
+    }
+  }
 
   const historyDates = useMemo(
     () => Object.keys(historyByDate).sort((left, right) => right.localeCompare(left)),
@@ -1650,7 +1680,7 @@ function renderWritingHistoryExpandedContent(
               <p>연속 루프</p>
             </article>
             <article className={styles.writingProfileMetricCard}>
-              <span>{history.length}</span>
+              <span>{todayStatus?.totalAnswerSessions ?? history.length}</span>
               <p>질문 기록</p>
             </article>
             <article className={styles.writingProfileMetricCard}>
@@ -1682,7 +1712,7 @@ function renderWritingHistoryExpandedContent(
             <div className={styles.writingPanelHeader}>
               <div>
                 <h2>날짜별 기록</h2>
-                <p>{history.length}개의 질문</p>
+                <p>{todayStatus?.totalAnswerSessions ?? history.length}개의 질문</p>
               </div>
             </div>
 
@@ -1763,6 +1793,16 @@ function renderWritingHistoryExpandedContent(
               </div>
             )}
 
+            {hasMoreHistory ? (
+              <button
+                type="button"
+                className={styles.ghostButton}
+                disabled={isLoadingMoreHistory}
+                onClick={() => void loadMoreHistory()}
+              >
+                {isLoadingMoreHistory ? "불러오는 중" : "이전 기록 더 보기"}
+              </button>
+            ) : null}
             {historyError ? <p className={styles.error}>{historyError}</p> : null}
           </section>
         ) : (

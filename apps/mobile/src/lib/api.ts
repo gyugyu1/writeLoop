@@ -1539,8 +1539,20 @@ export async function getMonthWritingStatus(year: number, month: number): Promis
   return (await response.json()) as MonthWritingStatus;
 }
 
-export async function getAnswerHistory(): Promise<HistorySession[]> {
-  const response = await apiFetch("/api/history");
+// 기록은 최근 순으로 한 페이지씩 받는다. before는 앞 페이지 마지막 세션의 createdAt이다.
+export async function getAnswerHistory(options?: {
+  limit?: number;
+  before?: string | null;
+}): Promise<HistorySession[]> {
+  const query = new URLSearchParams();
+  if (options?.limit) {
+    query.set("limit", String(options.limit));
+  }
+  if (options?.before) {
+    query.set("before", options.before);
+  }
+  const suffix = query.toString() ? `?${query.toString()}` : "";
+  const response = await apiFetch(`/api/history${suffix}`);
 
   if (response.status === 401) {
     return [];

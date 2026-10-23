@@ -44,4 +44,4 @@ Chosen option: "원자적 INSERT + 사용자별 이름 잠금", because 실제 M
 ## More Information
 
 * 커밋: `58b7634`
-* 남은 문제: 게스트 기록을 사용자 기록으로 합치는 경로(`claimAuthenticatedUser`)는 아직 같은 종류의 500 위험이 있다. `docs/writeloop-improvement-review-2026-10-22.ko.md` 3.2
+* 남은 문제: 게스트 기록을 사용자 기록으로 합치는 경로(`claimAuthenticatedUser`)는 아직 같은 종류의 500 위험이 있다. [개선점 조사 요약](../reports/project/writeloop-improvement-review-2026-10-22.ko.md) 3.2

@@ -90,4 +90,5 @@
 
 | 문서 | 내용 |
 |---|---|
+| [writeloop-improvement-review-2026-10-22.ko.md](reports/project/writeloop-improvement-review-2026-10-22.ko.md) | 개선점 조사(2026-10) 항목별 처리 상태. ADR이 절 번호를 가리킨다 |
 | [writeloop-project-review-2026-09-05.ko.md](reports/project/writeloop-project-review-2026-09-05.ko.md) | 코드·성능·보안 점검(2026-09). 여기 적힌 문제 중 일부는 이후 고쳤다 |

@@ -39,4 +39,4 @@ Chosen option: "호출당 40초 + 시간 초과 1회 재시도", because 흔한 
 ## More Information
 
 * 커밋: `6f968c2`
-* 후속 과제: `docs/writeloop-improvement-review-2026-10-22.ko.md` 2.1(기능별 전체 시간 예산, nginx 85초)
+* 후속 과제: [개선점 조사 요약](../reports/project/writeloop-improvement-review-2026-10-22.ko.md) 2.1(기능별 전체 시간 예산, nginx 85초)

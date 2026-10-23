@@ -33,7 +33,7 @@ Chosen option: "판정 유지 + 완성 답변 제안", because 선택 슬롯을 
 
 * Good, because 완성 답변 25건에서 모델이 26번 중 24번 제안을 썼고, 백엔드가 모두 통과시켰다. 예: "공원의 구체적인 특징을 더해 보세요", "지연이 생기는 때를 덧붙여 보세요".
 * Bad, because 선택 슬롯 판정 비용(요청당 출력 약 60토큰)은 계속 든다.
-* Bad, because 모바일 카드는 스토어 배포 후에야 보인다. 완료한 루프를 다시 열면 다시쓰기 버튼이 보이고 409가 나는 문제를 먼저 고쳐야 한다(`docs/writeloop-improvement-review-2026-10-22.ko.md` 4.3).
+* Bad, because 모바일 카드는 스토어 배포 후에야 보인다. 완료한 루프를 다시 열면 다시쓰기 버튼이 보이고 409가 나는 문제를 먼저 고쳐야 한다([개선점 조사 요약](../reports/project/writeloop-improvement-review-2026-10-22.ko.md) 4.3).
 
 ### Confirmation
 

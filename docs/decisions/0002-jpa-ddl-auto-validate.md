@@ -46,4 +46,4 @@ Chosen option: "모든 환경 validate + 번호 붙은 SQL 마이그레이션", 
 ## More Information
 
 * 커밋: `c7a1f1a`(104~107 마이그레이션과 기본값 변경), `536066f`(로컬도 validate)
-* 후속 과제: 적용 이력 관리(Flyway 검토). `docs/writeloop-improvement-review-2026-10-22.ko.md` 5.2
+* 후속 과제: 적용 이력 관리(Flyway 검토). [개선점 조사 요약](../reports/project/writeloop-improvement-review-2026-10-22.ko.md) 5.2

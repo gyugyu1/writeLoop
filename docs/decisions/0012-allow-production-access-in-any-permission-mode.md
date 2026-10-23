@@ -49,4 +49,4 @@ Chosen option: "운영 명령 훅 제거", because 사용자가 모드 전환의
 ## More Information
 
 * 훅 추가: `52961f5`. 이 결정으로 `pre-shell` 검사를 제거했다.
-* 비밀 파일(`env_files/`, `.env`, `*.pem`) 읽기 차단은 별도 과제로 남아 있다(`docs/writeloop-improvement-review-2026-10-22.ko.md` 1.5).
+* 비밀 파일(`env_files/`, `.env`, `*.pem`) 읽기 차단은 별도 과제로 남아 있다([개선점 조사 요약](../reports/project/writeloop-improvement-review-2026-10-22.ko.md) 1.5).

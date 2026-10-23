@@ -46,4 +46,4 @@ Chosen option: "삭제 전용 서비스가 명시적으로 삭제", because 외�
 ## More Information
 
 * 커밋: `cbaf93c`. 이미 탈퇴한 사용자 데이터 정리는 마이그레이션 `103`.
-* 알려진 문제: 모바일(토큰 인증)에서는 탈퇴 요청이 401로 실패한다. `docs/writeloop-improvement-review-2026-10-22.ko.md` 1.1
+* 알려진 문제: 모바일(토큰 인증)에서는 탈퇴 요청이 401로 실패한다. [개선점 조사 요약](../reports/project/writeloop-improvement-review-2026-10-22.ko.md) 1.1

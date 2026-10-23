@@ -27,7 +27,7 @@ Chosen option: "`OrderedMaps` + 테스트 가드", because 누가 다시 `Map.of
 ### Consequences
 
 * Good, because 스키마·프롬프트·요청 본문의 키 순서가 코드에 선언한 순서로 고정된다.
-* Bad, because 테스트가 검사하는 파일 목록 밖에서는 여전히 실수할 수 있다. 예: `util/ExpressionTagSupport`가 코치 스키마에 `Map.of`를 쓴다(`docs/writeloop-improvement-review-2026-10-22.ko.md` 2.6).
+* Bad, because 테스트가 검사하는 파일 목록 밖에서는 여전히 실수할 수 있다. 예: `util/ExpressionTagSupport`가 코치 스키마에 `Map.of`를 쓴다([개선점 조사 요약](../reports/project/writeloop-improvement-review-2026-10-22.ko.md) 2.6).
 
 ### Confirmation
 

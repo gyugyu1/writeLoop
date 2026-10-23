@@ -31,3 +31,4 @@ WriteLoop의 중요한 결정과 그 이유를 [MADR 4.0](https://adr.github.io/
 | [0015](0015-build-images-in-ci-and-deploy-from-ghcr.md) | 이미지는 CI에서 빌드해 GHCR에 올리고, 서버는 받아서 실행만 | accepted | 2026-10-22 |
 | [0016](0016-llm-request-deadline-outside-transaction.md) | LLM 호출은 요청 단위 마감 안에서, DB 트랜잭션 밖에서 | accepted | 2026-10-23 |
 | [0017](0017-remove-gemini.md) | Gemini 코드와 설정을 지우고 LLM 제공자는 OpenAI 하나로 | accepted | 2026-10-23 |
+| [0018](0018-monitor-uptime-externally-and-track-errors-with-sentry.md) | 가동 상태는 외부 감시, 오류는 Sentry로 추적하고 학습자 입력은 보내지 않음 | accepted | 2026-10-23 |

@@ -449,10 +449,11 @@ npm run dev:frontend
 | `EXPO_PUBLIC_API_BASE_URL` | Expo 공통 API 주소 |
 | `EXPO_PUBLIC_API_BASE_URL_ANDROID` | Android 전용 API 주소 |
 | `EXPO_PUBLIC_API_BASE_URL_IOS` | iOS 전용 API 주소 |
+| `EXPO_PUBLIC_SENTRY_DSN` | 모바일 오류 추적(Sentry) DSN. 비어 있으면 보내지 않음 |
 
 ### 선택 기능
 
-메일 발송과 Google·Kakao·Naver·Apple 로그인은 관련 환경변수가 있을 때 활성화됩니다. 로컬에서 해당 기능을 사용하지 않는다면 값을 비워 둘 수 있습니다.
+메일 발송, Google·Kakao·Naver·Apple 로그인, 오류 추적(`SENTRY_DSN`)은 관련 환경변수가 있을 때 활성화됩니다. 로컬에서 해당 기능을 사용하지 않는다면 값을 비워 둘 수 있습니다.
 
 운영 비밀값은 `.env`, `eas.json`, 소스 코드 또는 문서에 직접 넣지 않습니다. 저장소의 `.gitignore`는 `.env*`를 제외하며 예제 파일만 추적합니다.
 
@@ -688,6 +689,35 @@ sudo docker exec writeLoop-redis redis-cli DBSIZE   # 키 수가 그대로인지
 - 새 환경변수를 운영 서버 `.env`와 `docker-compose.yml`의 `environment:`에 모두 추가했는가
 - LLM 피드백을 바꿨다면 smoke 회귀 테스트가 목표 제공자·모델에서 통과했는가
 - 배포 후 Actions 실행 결과와 운영 주요 화면을 확인했는가
+
+### 모니터링
+
+가동 상태는 외부 감시 서비스가, 오류는 Sentry가 모읍니다(ADR-0018). 학습자가 쓴 문장, 이메일, IP는 Sentry로 보내지 않습니다.
+
+**가동 감시(UptimeRobot 등)**
+
+| 주소 | 확인하는 것 |
+|---|---|
+| `https://api.writeloop.kr/health` | 백엔드, DB, Redis. 하나라도 안 되면 503 |
+| `https://writeloop.kr/healthz` | 웹 |
+
+5분 간격 HTTP(S) 감시로 등록하고 알림 받을 곳(이메일, 앱 푸시)을 정합니다. 코드 설정은 없습니다.
+
+**Sentry**
+
+Sentry에서 프로젝트를 두 개 만듭니다. 백엔드는 Spring Boot, 모바일은 React Native를 고릅니다.
+
+| 어디에 | 무엇을 |
+|---|---|
+| 운영 서버 `.env` | `SENTRY_DSN`(백엔드 프로젝트 DSN). 넣은 뒤 백엔드를 다시 만든다 |
+| `apps/mobile/eas.json`의 `production.env` | `EXPO_PUBLIC_SENTRY_DSN`(모바일 프로젝트 DSN). 앱에 들어가는 공개 값이다 |
+| EAS 환경 변수(`eas env:create`, secret) | `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`. 스토어 빌드 때 소스맵을 올린다 |
+
+- DSN이 비어 있으면 백엔드와 앱 모두 아무것도 보내지 않습니다. 로컬과 개발 빌드도 보내지 않습니다.
+- 소스맵 업로드에 실패해도 빌드는 계속됩니다(`SENTRY_ALLOW_FAILURE`). 그때는 앱 오류 위치가 압축된 코드로 보입니다.
+- 앱 오류 수집을 처음 넣은 빌드부터 스토어의 개인정보 항목을 고칩니다.
+  - App Store Connect > 앱 개인정보 보호: 진단 > 충돌 데이터, 기타 진단 데이터. 사용자와 연결 안 됨, 추적 안 함, 목적은 앱 기능.
+  - Google Play Console > 데이터 보안: 앱 정보 및 성능 > 비정상 종료 로그, 진단. 수집함, 공유 안 함, 전송 중 암호화.
 
 ### 모바일
 

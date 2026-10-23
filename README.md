@@ -720,6 +720,29 @@ Sentry에서 프로젝트를 두 개 만듭니다. 백엔드는 Spring Boot, 모
   - App Store Connect > 앱 개인정보 보호: 진단 > 충돌 데이터, 기타 진단 데이터. 사용자와 연결 안 됨, 추적 안 함, 목적은 앱 기능.
   - Google Play Console > 데이터 보안: 앱 정보 및 성능 > 비정상 종료 로그, 진단. 수집함, 공유 안 함, 전송 중 암호화.
 
+**서버 로그**
+
+백엔드 로그는 Docker 볼륨 `writeloop_writeloop-backend-logs`의 `backend.log`에 남습니다. 배포로 컨테이너를 다시 만들어도 지워지지 않고, 20MB마다 나눠 14일(최대 1GB)까지 둡니다. 컨테이너 화면 로그(`docker logs`)는 배포 때마다 지워집니다.
+
+```bash
+sudo docker exec writeLoop-backend tail -n 200 /app/logs/backend.log
+sudo docker exec writeLoop-backend sh -c 'ls -lh /app/logs'   # 지난 파일은 backend.log.날짜.번호.gz
+```
+
+**기능별 LLM 토큰**
+
+`feedback_timing_logs`의 LLM 단계 행(`phase_scope = 'LLM'`)에 호출마다 토큰이 남습니다. 문장 피드백(`ANSWER`), 영어일기(`DIARY`), Now in English(`NOW_IN_ENGLISH`), 코치(`COACH`)를 구분합니다.
+
+```sql
+SELECT feedback_type, DATE(created_at) AS day, COUNT(*) AS calls,
+       SUM(llm_input_tokens) AS input_tokens, SUM(llm_cached_input_tokens) AS cached_input_tokens,
+       SUM(llm_output_tokens) AS output_tokens, SUM(success = 0) AS failed
+FROM feedback_timing_logs
+WHERE phase_scope = 'LLM' AND created_at >= NOW() - INTERVAL 7 DAY
+GROUP BY feedback_type, day
+ORDER BY day DESC, feedback_type;
+```
+
 ### 모바일
 
 모바일 앱의 식별자는 iOS와 Android 모두 `kr.writeloop`입니다. 버전 정보는 `apps/mobile/app.json`, 빌드·제출 프로필은 `apps/mobile/eas.json`에서 관리합니다.

@@ -89,6 +89,19 @@ openai:
   feedback-request-budget-seconds: ${OPENAI_FEEDBACK_REQUEST_BUDGET_SECONDS:80}
   api-url: ${OPENAI_API_URL:https://api.openai.com/v1/responses}
 
+# 오류 추적(ADR-0018). DSN이 비어 있으면 아무것도 보내지 않는다(로컬, 테스트).
+# 학습자 입력과 개인정보는 보내지 않는다: 요청 본문, IP, 쿠키, 사용자 정보를 빼고 오류 종류와 위치만 보낸다.
+sentry:
+  dsn: ${SENTRY_DSN:}
+  environment: ${SENTRY_ENVIRONMENT:production}
+  # 이미지를 만든 커밋. CI가 이미지에 넣는다(apps/backend/Dockerfile).
+  release: ${SENTRY_RELEASE:local}
+  send-default-pii: false
+  max-request-body-size: none
+  logging:
+    minimum-event-level: error
+    minimum-breadcrumb-level: warn
+
 app:
   frontend-base-url: ${APP_FRONTEND_BASE_URL:}
   cors:

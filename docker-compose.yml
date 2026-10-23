@@ -100,6 +100,9 @@ services:
       APPLE_TEAM_ID: ${APPLE_TEAM_ID:-}
       APPLE_KEY_ID: ${APPLE_KEY_ID:-}
       APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+      # 오류 추적(Sentry). 비어 있으면 보내지 않는다. 배포 버전(SENTRY_RELEASE)은 이미지에 들어 있어 여기 적지 않는다.
+      SENTRY_DSN: ${SENTRY_DSN:-}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
 
   writeloop-frontend:
     image: ghcr.io/gyugyu1/writeloop-frontend:latest

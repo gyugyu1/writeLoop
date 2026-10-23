@@ -105,6 +105,8 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: apps/backend
+          build-args: |
+            SENTRY_RELEASE=${{ github.sha }}
           platforms: linux/amd64
           push: true
           tags: |

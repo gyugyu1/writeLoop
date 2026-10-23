@@ -27,6 +27,8 @@ dependencies {
     implementation("com.nimbusds:nimbus-jose-jwt:9.47")
     implementation("org.springframework.security:spring-security-core")
     implementation("org.springframework.security:spring-security-crypto")
+    implementation("io.sentry:sentry-spring-boot-starter-jakarta:8.60.0")
+    implementation("io.sentry:sentry-logback:8.60.0")
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
     runtimeOnly("com.mysql:mysql-connector-j")

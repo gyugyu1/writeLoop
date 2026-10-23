@@ -751,7 +751,7 @@ meaning lookup에서도:
 
 자세한 self-discovered 로직은 별도 문서:
 
-- `docs/coach-used-expression-extraction.md`
+- `docs/guides/coach-used-expression-extraction.md`
 
 를 참고하면 됩니다.
 

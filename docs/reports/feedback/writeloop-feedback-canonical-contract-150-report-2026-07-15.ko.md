@@ -228,7 +228,7 @@ After grocery shopping, I goes home and put the cold food away because it need r
 - 테스트 케이스: `scripts/feedback-quality/cases.completion-gate-150-v2.json`
 - 전체 원시 결과: `.codex_logs/feedback-completion-gate-150-canonical-2026-07-15/latest.json`
 - 집계 결과: `.codex_logs/feedback-completion-gate-150-canonical-2026-07-15/summary.json`
-- 이전 v2 정답표 검토: `docs/writeloop-feedback-completion-gate-150-v2-oracle-review-2026-07-15.ko.md`
+- 이전 v2 정답표 검토: `docs/reports/feedback/writeloop-feedback-completion-gate-150-v2-oracle-review-2026-07-15.ko.md`
 
 원시 결과와 집계 결과의 `pass` 값은 정답표 수정 전인 `121/150`을 보존한다. 수정된 canonical 정답표로 동일한 저장 응답을 재채점한 최종 결과는 `128/150`이다.
 

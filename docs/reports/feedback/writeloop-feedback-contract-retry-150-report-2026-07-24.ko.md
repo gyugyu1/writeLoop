@@ -110,7 +110,7 @@
 
 ## 5. 직전 150건과 비교
 
-직전 비교 대상은 `docs/writeloop-feedback-grammar-evidence-restoration-150-report-2026-07-23.ko.md`의 146/150 결과다. 두 실행은 같은 `cases.completion-gate-150-v3.json`을 사용했다.
+직전 비교 대상은 `docs/reports/feedback/writeloop-feedback-grammar-evidence-restoration-150-report-2026-07-23.ko.md`의 146/150 결과다. 두 실행은 같은 `cases.completion-gate-150-v3.json`을 사용했다.
 
 | 비교 결과 | 건수 |
 |---|---:|
@@ -301,7 +301,7 @@
 - 실패 3건 진단 재실행: `.codex_logs/feedback-contract-retry-150-credited-2026-07-24/diagnostic-failures/latest.json`
 - 진단 입력: `.codex_logs/feedback-contract-retry-150-credited-2026-07-24/diagnostic-failures/cases.json`
 - 테스트 세트: `scripts/feedback-quality/cases.completion-gate-150-v3.json`
-- 직전 비교 보고서: `docs/writeloop-feedback-grammar-evidence-restoration-150-report-2026-07-23.ko.md`
+- 직전 비교 보고서: `docs/reports/feedback/writeloop-feedback-grammar-evidence-restoration-150-report-2026-07-23.ko.md`
 
 재현 명령은 다음과 같다.
 

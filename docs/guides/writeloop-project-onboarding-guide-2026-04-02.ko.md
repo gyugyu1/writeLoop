@@ -1063,11 +1063,11 @@ Frontend는 "상태를 많이 들고 있는 단일 큰 루프 화면"과 "계정
 
 아래 문서들이 이미 repo 안에 있습니다.
 
-- `docs/answer-loop-explained.md`
-- `docs/coach-ai-backend-flow.md`
-- `docs/feedback-answer-profile-section-policy-2026-03-31.ko.md`
-- `docs/feedback-grammar-source-of-truth-2026-03-30.ko.md`
-- `docs/refinement-root-cause-fix-2026-03-31.ko.md`
+- `docs/guides/answer-loop-explained.md`
+- `docs/guides/coach-ai-backend-flow.md`
+- `docs/reports/feedback/feedback-answer-profile-section-policy-2026-03-31.ko.md`
+- `docs/reports/feedback/feedback-grammar-source-of-truth-2026-03-30.ko.md`
+- `docs/reports/feedback/refinement-root-cause-fix-2026-03-31.ko.md`
 
 추천 순서:
 

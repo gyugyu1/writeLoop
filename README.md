@@ -709,15 +709,17 @@ npm run eas:submit:ios
 
 ## 추가 문서
 
+전체 목록과 폴더 구조(결정 기록 `decisions/`, 설명서 `guides/`, 보고서 `reports/`)는 [`docs/README.md`](docs/README.md)에 있습니다. 자주 보는 문서는 이렇습니다.
+
 | 문서 | 내용 |
 |---|---|
-| [`writeloop-project-onboarding-guide-2026-04-02.ko.md`](docs/writeloop-project-onboarding-guide-2026-04-02.ko.md) | 코드 중심의 상세 온보딩 가이드 |
-| [`writeloop-tech-stack-architecture-for-diagram-2026-04-22.ko.md`](docs/writeloop-tech-stack-architecture-for-diagram-2026-04-22.ko.md) | 기술 스택과 배포 구조 |
-| [`answer-loop-explained.md`](docs/answer-loop-explained.md) | 답변 루프 개념 |
-| [`english-feedback-flow.md`](docs/english-feedback-flow.md) | 영어 피드백 처리 흐름 |
-| [`diary-feedback-logic-report-2026-04-23.ko.md`](docs/diary-feedback-logic-report-2026-04-23.ko.md) | 일기 피드백 로직 |
-| [`writeloop-feedback-contract-retry-150-report-2026-07-24.ko.md`](docs/writeloop-feedback-contract-retry-150-report-2026-07-24.ko.md) | canonical 계약과 재시도 회귀 결과 |
-| [`writeloop-active-prompt-manual-review-2026-07-23.ko.md`](docs/writeloop-active-prompt-manual-review-2026-07-23.ko.md) | 활성 질문 수동 검토 결과 |
-| [`backend-security-deployment-checklist-2026-04-15.ko.md`](docs/backend-security-deployment-checklist-2026-04-15.ko.md) | 백엔드 보안·배포 체크리스트 |
+| [`writeloop-project-onboarding-guide-2026-04-02.ko.md`](docs/guides/writeloop-project-onboarding-guide-2026-04-02.ko.md) | 코드 중심의 상세 온보딩 가이드 |
+| [`writeloop-tech-stack-architecture-for-diagram-2026-04-22.ko.md`](docs/guides/writeloop-tech-stack-architecture-for-diagram-2026-04-22.ko.md) | 기술 스택과 배포 구조 |
+| [`answer-loop-explained.md`](docs/guides/answer-loop-explained.md) | 답변 루프 개념 |
+| [`english-feedback-flow.md`](docs/guides/english-feedback-flow.md) | 영어 피드백 처리 흐름 |
+| [`diary-feedback-logic-report-2026-04-23.ko.md`](docs/reports/diary/diary-feedback-logic-report-2026-04-23.ko.md) | 일기 피드백 로직 |
+| [`writeloop-feedback-contract-retry-150-report-2026-07-24.ko.md`](docs/reports/feedback/writeloop-feedback-contract-retry-150-report-2026-07-24.ko.md) | canonical 계약과 재시도 회귀 결과 |
+| [`writeloop-active-prompt-manual-review-2026-07-23.ko.md`](docs/reports/prompts/writeloop-active-prompt-manual-review-2026-07-23.ko.md) | 활성 질문 수동 검토 결과 |
+| [`backend-security-deployment-checklist-2026-04-15.ko.md`](docs/guides/backend-security-deployment-checklist-2026-04-15.ko.md) | 백엔드 보안·배포 체크리스트 |
 
-문서는 특정 시점의 설계와 실험 결과를 기록합니다. README와 문서가 현재 코드와 다르면 실행 코드, `application.yml`, 최신 번호의 SQL, 최신 회귀 보고서를 우선 확인하고 문서도 함께 갱신해 주세요.
+문서는 특정 시점의 설계와 실험 결과를 기록합니다. README와 문서가 현재 코드와 다르면 실행 코드, `application.yml`, 최신 Flyway 마이그레이션, 최신 회귀 보고서를 우선 확인하고 문서도 함께 갱신해 주세요.

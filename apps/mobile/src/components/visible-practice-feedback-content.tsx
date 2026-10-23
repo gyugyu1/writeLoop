@@ -1,22 +1,75 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import type { PracticeFeedbackState } from "@/lib/practice-feedback-state";
+import { filterSuggestedRefinementExpressions } from "@/lib/refinement-recommendations";
+import type { FeedbackCoachMove, VisibleFeedbackSnapshot } from "@/lib/types";
 
+// 그때 화면에 보였던 피드백(스냅샷)을 다시 그린다. 기록 화면과 다시쓰기 화면의 "이전 피드백"이 함께 쓴다.
+// 추천 표현은 실제 피드백 화면과 같은 규칙으로 고른다(숨김 표시, 자리표시자, 이미 쓴 표현 제외).
 type VisiblePracticeFeedbackContentProps = {
-  feedbackState: PracticeFeedbackState;
+  snapshot?: VisibleFeedbackSnapshot | null;
+  learnerAnswer?: string | null;
+};
+
+type Phrase = {
+  phrase: string;
+  meaningKo: string;
 };
 
 function trimText(value?: string | null) {
   return value?.trim() ?? "";
 }
 
+function toPhrases(phrases: FeedbackCoachMove["suggestedPhrases"]): Phrase[] {
+  return (phrases ?? [])
+    .map((phrase) =>
+      typeof phrase === "string"
+        ? { phrase: phrase.trim(), meaningKo: "" }
+        : { phrase: trimText(phrase?.phrase), meaningKo: trimText(phrase?.meaningKo) }
+    )
+    .filter((phrase) => phrase.phrase !== "");
+}
+
+function PhraseList({ phrases }: { phrases: Phrase[] }) {
+  if (phrases.length === 0) {
+    return null;
+  }
+  return (
+    <View style={styles.expressionList}>
+      {phrases.map((phrase) => (
+        <View
+          key={phrase.phrase}
+          accessible
+          accessibilityLabel={phrase.meaningKo ? `${phrase.phrase}, ${phrase.meaningKo}` : phrase.phrase}
+          style={styles.expressionChip}
+        >
+          <Text style={styles.expressionText}>{phrase.phrase}</Text>
+          {phrase.meaningKo ? <Text style={styles.expressionMeaning}>{phrase.meaningKo}</Text> : null}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function Skeleton({ move }: { move: FeedbackCoachMove }) {
+  if (!trimText(move.skeletonEn)) {
+    return null;
+  }
+  return (
+    <View style={styles.instruction}>
+      <Text style={styles.eyebrow}>문장 틀</Text>
+      <Text style={styles.body}>{move.skeletonEn}</Text>
+      {trimText(move.skeletonKo) ? <Text style={styles.expressionMeaning}>{move.skeletonKo}</Text> : null}
+    </View>
+  );
+}
+
 export function VisiblePracticeFeedbackContent({
-  feedbackState
+  snapshot,
+  learnerAnswer
 }: VisiblePracticeFeedbackContentProps) {
   const [isModelAnswerOpen, setIsModelAnswerOpen] = useState(false);
   const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
     useState(false);
-  const snapshot = feedbackState.feedback.visibleFeedback;
 
   if (!snapshot) {
     return (
@@ -29,7 +82,11 @@ export function VisiblePracticeFeedbackContent({
   }
 
   const coachMove = snapshot.coachMove;
-  const expressions = snapshot.refinementExpressions ?? [];
+  const expressions = filterSuggestedRefinementExpressions(snapshot.refinementExpressions, learnerAnswer)
+    .map((expression) => ({ phrase: trimText(expression.expression), meaningKo: trimText(expression.meaningKo) }))
+    .filter((expression) => expression.phrase !== "");
+  const enrichment = snapshot.completion?.enrichment ?? null;
+  const hasEnrichment = Boolean(trimText(enrichment?.focus) && trimText(enrichment?.skeletonEn));
   const allLanguageCorrections = coachMove?.languageCorrections ?? [];
   const languageCorrections = areAllLanguageCorrectionsVisible
     ? allLanguageCorrections
@@ -115,6 +172,8 @@ export function VisiblePracticeFeedbackContent({
               <Text style={styles.body}>{coachMove.instruction}</Text>
             </View>
           ) : null}
+          <Skeleton move={coachMove} />
+          <PhraseList phrases={toPhrases(coachMove.suggestedPhrases)} />
         </View>
       ) : null}
 
@@ -127,23 +186,13 @@ export function VisiblePracticeFeedbackContent({
               "이 답변으로 루프를 마칠 수 있어요."}
           </Text>
 
-          {expressions.length > 0 ? (
-            <View style={styles.expressionList}>
-              {expressions.map((expression) => (
-                <View key={expression.expression} style={styles.expressionChip}>
-                  <Text style={styles.expressionText}>{expression.expression}</Text>
-                  {trimText(expression.meaningKo) ? (
-                    <Text style={styles.expressionMeaning}>{expression.meaningKo}</Text>
-                  ) : null}
-                </View>
-              ))}
-            </View>
-          ) : null}
+          <PhraseList phrases={expressions} />
 
           {trimText(snapshot.modelAnswer) ? (
             <View style={styles.modelAnswer}>
               <Pressable
                 accessibilityRole="button"
+                accessibilityState={{ expanded: isModelAnswerOpen }}
                 onPress={() => setIsModelAnswerOpen((current) => !current)}
               >
                 <Text style={styles.modelAnswerToggle}>
@@ -160,6 +209,22 @@ export function VisiblePracticeFeedbackContent({
               ) : null}
             </View>
           ) : null}
+        </View>
+      ) : null}
+
+      {snapshot.state === "READY_TO_FINISH" && enrichment && hasEnrichment ? (
+        <View style={styles.coachCard}>
+          <Text style={styles.eyebrow}>더 풍부하게 써 보기 · 선택</Text>
+          <Text style={styles.title}>{enrichment.focus}</Text>
+          {trimText(enrichment.why) ? <Text style={styles.body}>{enrichment.why}</Text> : null}
+          {trimText(enrichment.instruction) ? (
+            <View style={styles.instruction}>
+              <Text style={styles.eyebrow}>다시 쓸 때</Text>
+              <Text style={styles.body}>{enrichment.instruction}</Text>
+            </View>
+          ) : null}
+          <Skeleton move={enrichment} />
+          <PhraseList phrases={toPhrases(enrichment.suggestedPhrases).slice(0, 4)} />
         </View>
       ) : null}
     </View>

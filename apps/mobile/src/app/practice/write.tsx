@@ -1552,7 +1552,10 @@ export default function PracticeWriteScreen() {
               showsVerticalScrollIndicator={false}
             >
               {previousFeedbackState ? (
-                <VisiblePracticeFeedbackContent feedbackState={previousFeedbackState} />
+                <VisiblePracticeFeedbackContent
+                  snapshot={previousFeedbackState.feedback.visibleFeedback}
+                  learnerAnswer={previousFeedbackState.answer}
+                />
               ) : (
                 <View style={styles.feedbackModalEmptyCard}>
                   <Text style={styles.feedbackModalEmptyTitle}>이전 피드백을 찾지 못했어요</Text>

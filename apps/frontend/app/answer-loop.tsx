@@ -2881,7 +2881,13 @@ export function AnswerLoop() {
           return;
         }
 
-        setError("지금은 피드백을 생성할 수 없어요.");
+        // 서버가 준 안내(답변 길이, 요청 제한, 중복 제출, 일시 장애)를 그대로 보여 준다.
+        // 서버 메시지가 없거나(네트워크 오류 등) 영어 기본 문구뿐이면 일반 안내를 보여 준다.
+        setError(
+          caughtError instanceof ApiError && caughtError.message && caughtError.message !== "Failed to submit feedback"
+            ? caughtError.message
+            : "지금은 피드백을 생성할 수 없어요. 잠시 후 다시 시도해 주세요."
+        );
       })
       .finally(() => {
         setIsSubmitting(false);
@@ -3820,12 +3826,33 @@ export function AnswerLoop() {
             <div className={styles.coachMovePhraseBox}>
               <span className={styles.coachMovePhraseLabel}>넣어볼 표현</span>
               <div className={styles.coachMovePhraseList}>
-                {coachSuggestedPhrases.map((phrase, index) => (
-                  <span key={`${phrase.phrase}-${index}`} className={styles.coachMovePhraseChip}>
-                    <strong>{phrase.phrase}</strong>
-                    {phrase.meaningKo ? <small>{phrase.meaningKo}</small> : null}
-                  </span>
-                ))}
+                {coachSuggestedPhrases.map((phrase, index) => {
+                  const saved = isExpressionSaved(phrase.phrase);
+                  const saving = isExpressionSaving(phrase.phrase);
+                  return (
+                    <button
+                      key={`${phrase.phrase}-${index}`}
+                      type="button"
+                      className={`${styles.coachMovePhraseChip} ${saved ? styles.coachMovePhraseChipSaved : ""}`}
+                      aria-label={saved ? `${phrase.phrase} 저장 취소` : `${phrase.phrase} 저장`}
+                      aria-pressed={saved}
+                      onClick={() =>
+                        void handleToggleSavedExpression({
+                          expression: phrase.phrase,
+                          meaningKo: phrase.meaningKo,
+                          usageTipKo: "문장틀에 넣어볼 수 있는 표현이에요.",
+                          tags: ["넣어볼 표현"],
+                          sourceType: "COACH_RECOMMENDATION"
+                        })
+                      }
+                      disabled={saving}
+                    >
+                      <strong>{phrase.phrase}</strong>
+                      {phrase.meaningKo ? <small>{phrase.meaningKo}</small> : null}
+                      <em>{saving ? "저장 중" : saved ? "저장됨" : "저장"}</em>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : null}
@@ -3864,12 +3891,33 @@ export function AnswerLoop() {
             <div className={styles.coachMovePhraseBox}>
               <span className={styles.coachMovePhraseLabel}>넣어볼 표현</span>
               <div className={styles.coachMovePhraseList}>
-                {enrichmentPhrases.map((phrase, index) => (
-                  <span key={`${phrase.phrase}-${index}`} className={styles.coachMovePhraseChip}>
-                    <strong>{phrase.phrase}</strong>
-                    {phrase.meaningKo ? <small>{phrase.meaningKo}</small> : null}
-                  </span>
-                ))}
+                {enrichmentPhrases.map((phrase, index) => {
+                  const saved = isExpressionSaved(phrase.phrase);
+                  const saving = isExpressionSaving(phrase.phrase);
+                  return (
+                    <button
+                      key={`${phrase.phrase}-${index}`}
+                      type="button"
+                      className={`${styles.coachMovePhraseChip} ${saved ? styles.coachMovePhraseChipSaved : ""}`}
+                      aria-label={saved ? `${phrase.phrase} 저장 취소` : `${phrase.phrase} 저장`}
+                      aria-pressed={saved}
+                      onClick={() =>
+                        void handleToggleSavedExpression({
+                          expression: phrase.phrase,
+                          meaningKo: phrase.meaningKo,
+                          usageTipKo: "문장틀에 넣어볼 수 있는 표현이에요.",
+                          tags: ["넣어볼 표현"],
+                          sourceType: "COACH_RECOMMENDATION"
+                        })
+                      }
+                      disabled={saving}
+                    >
+                      <strong>{phrase.phrase}</strong>
+                      {phrase.meaningKo ? <small>{phrase.meaningKo}</small> : null}
+                      <em>{saving ? "저장 중" : saved ? "저장됨" : "저장"}</em>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : null}

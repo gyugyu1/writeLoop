@@ -4987,22 +4987,48 @@
 
 .coachMovePhraseChip {
   display: inline-grid;
-  gap: 2px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
   max-width: 100%;
   padding: 9px 12px;
   border-radius: 999px;
   background: #fff3dc;
   color: #8f5c16;
   border: 1px solid rgba(226, 165, 84, 0.22);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.coachMovePhraseChip:disabled {
+  cursor: progress;
+}
+
+.coachMovePhraseChip em {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  color: #a46612;
+  font-size: 0.74rem;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.coachMovePhraseChipSaved {
+  border-color: rgba(61, 130, 76, 0.34);
+  background: #f2f8f1;
 }
 
 .coachMovePhraseChip strong {
+  grid-column: 1;
   font-size: 0.9rem;
   font-weight: 900;
   line-height: 1.2;
 }
 
 .coachMovePhraseChip small {
+  grid-column: 1;
   color: #856b4a;
   font-size: 0.78rem;
   font-weight: 700;

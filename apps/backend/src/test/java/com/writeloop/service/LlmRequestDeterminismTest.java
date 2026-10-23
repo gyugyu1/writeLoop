@@ -26,15 +26,18 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class LlmRequestDeterminismTest {
 
-    private static final Path SERVICE_SOURCE_DIR = Path.of("src/main/java/com/writeloop/service");
+    private static final Path MAIN_SOURCE_DIR = Path.of("src/main/java/com/writeloop");
+    // LLM 요청을 만드는 코드와, 순서가 결과를 바꾸는 코치 질의 분석 표
     private static final List<String> LLM_REQUEST_BUILDER_SOURCES = List.of(
-            "CanonicalFeedbackContract.java",
-            "FeedbackLearningContractPolicy.java",
-            "OpenAiStructuredOutputSupport.java",
-            "DiaryFeedbackPromptSupport.java",
-            "OpenAiCoachClient.java",
-            "OpenAiNowInEnglishCoachFeedbackClient.java",
-            "OpenAiNowInEnglishReflectionClient.java"
+            "service/CanonicalFeedbackContract.java",
+            "service/FeedbackLearningContractPolicy.java",
+            "service/OpenAiStructuredOutputSupport.java",
+            "service/DiaryFeedbackPromptSupport.java",
+            "service/OpenAiCoachClient.java",
+            "service/CoachQueryAnalyzer.java",
+            "service/OpenAiNowInEnglishCoachFeedbackClient.java",
+            "service/OpenAiNowInEnglishReflectionClient.java",
+            "util/ExpressionTagSupport.java"
     );
     // java.util.Map.of(처럼 패키지 이름을 붙인 호출도 잡는다. OrderedMaps.of(나 LinkedHashMap 등은 잡지 않는다.
     // objectSchema처럼 결과를 LinkedHashMap으로 옮겨 담는 코드는 구조 검사로 알 수 없으므로, 이 소스 검사가 최종 방어선이다.
@@ -149,7 +152,7 @@ class LlmRequestDeterminismTest {
     @Test
     void llmRequestBuildersDoNotUseRandomOrderFactories() throws Exception {
         for (String fileName : LLM_REQUEST_BUILDER_SOURCES) {
-            String source = Files.readString(SERVICE_SOURCE_DIR.resolve(fileName), StandardCharsets.UTF_8);
+            String source = Files.readString(MAIN_SOURCE_DIR.resolve(fileName), StandardCharsets.UTF_8);
             Matcher matcher = RANDOM_ORDER_FACTORY.matcher(source);
             boolean found = matcher.find();
             assertThat(found)

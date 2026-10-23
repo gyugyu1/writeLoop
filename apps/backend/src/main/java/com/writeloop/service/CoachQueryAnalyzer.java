@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import java.text.Normalizer;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
@@ -24,7 +25,7 @@ class CoachQueryAnalyzer {
             "(?:\\uBC30\\uC6B0\\S*|\\uBC30\\uC6CC\\S*|\\uC775\\uD788\\S*|\\uC775\\uD600\\S*|\\uC5F0\\uC2B5\\S*|learn\\S*)"
     );
 
-    private static final Map<String, String> LEARN_TARGET_TRANSLATIONS = Map.ofEntries(
+    private static final Map<String, String> LEARN_TARGET_TRANSLATIONS = longestKeyFirst(
             Map.entry("\uC720\uB3C4", "judo"),
             Map.entry("\uD0DC\uAD8C\uB3C4", "taekwondo"),
             Map.entry("\uAC80\uB3C4", "kendo"),
@@ -45,7 +46,7 @@ class CoachQueryAnalyzer {
             Map.entry("\uD14C\uB2C8\uC2A4", "tennis")
     );
 
-    private static final Map<String, String> VISIT_TARGET_TRANSLATIONS = Map.ofEntries(
+    private static final Map<String, String> VISIT_TARGET_TRANSLATIONS = longestKeyFirst(
             Map.entry("\uBA54\uC774\uB4DC\uCE74\uD398", "maid cafe"),
             Map.entry("\uBC15\uBB3C\uAD00", "museum"),
             Map.entry("\uCD95\uC81C", "festival"),
@@ -59,7 +60,7 @@ class CoachQueryAnalyzer {
             Map.entry("\uACF3", "place")
     );
 
-    private static final Map<String, String> GROWTH_TARGET_TRANSLATIONS = Map.ofEntries(
+    private static final Map<String, String> GROWTH_TARGET_TRANSLATIONS = longestKeyFirst(
             Map.entry("근력", "strength"),
             Map.entry("체력", "stamina"),
             Map.entry("지구력", "endurance"),
@@ -75,7 +76,7 @@ class CoachQueryAnalyzer {
             Map.entry("발음", "pronunciation")
     );
 
-    private static final Map<String, String> REDUCE_TARGET_TRANSLATIONS = Map.ofEntries(
+    private static final Map<String, String> REDUCE_TARGET_TRANSLATIONS = longestKeyFirst(
             Map.entry("스트레스", "stress"),
             Map.entry("불안", "anxiety"),
             Map.entry("걱정", "worry"),
@@ -87,6 +88,17 @@ class CoachQueryAnalyzer {
             Map.entry("피로", "fatigue"),
             Map.entry("압박감", "pressure")
     );
+
+    // 표에서 질문에 들어 있는 첫 키를 고른다. 키가 겹치면(실력, 영어 실력) 긴 키가 먼저 맞아야 하고,
+    // Map.ofEntries는 JVM을 시작할 때마다 순서가 바뀌어 배포마다 결과가 달라졌다.
+    @SafeVarargs
+    private static Map<String, String> longestKeyFirst(Map.Entry<String, String>... entries) {
+        Map<String, String> ordered = new LinkedHashMap<>();
+        java.util.Arrays.stream(entries)
+                .sorted(java.util.Comparator.comparingInt((Map.Entry<String, String> entry) -> entry.getKey().length()).reversed())
+                .forEach(entry -> ordered.put(entry.getKey(), entry.getValue()));
+        return java.util.Collections.unmodifiableMap(ordered);
+    }
 
     enum QueryMode {
         WRITING_SUPPORT,

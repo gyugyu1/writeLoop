@@ -71,7 +71,7 @@ public final class ExpressionTagSupport {
             "future_plan"
     );
 
-    private static final Set<String> ALLOWED_TAG_SET = Set.copyOf(ALLOWED_TAGS);
+    private static final Set<String> ALLOWED_TAG_SET = java.util.Collections.unmodifiableSet(new LinkedHashSet<>(ALLOWED_TAGS));
     private static final Map<String, String> ALIAS_TO_TAG = buildAliasMap();
 
     private ExpressionTagSupport() {
@@ -82,11 +82,11 @@ public final class ExpressionTagSupport {
     }
 
     public static Map<String, Object> jsonSchema() {
-        return Map.of(
+        return OrderedMaps.of(
                 "type", "array",
                 "minItems", 2,
                 "maxItems", 6,
-                "items", Map.of(
+                "items", OrderedMaps.of(
                         "type", "string",
                         "enum", ALLOWED_TAGS
                 )
@@ -351,7 +351,7 @@ public final class ExpressionTagSupport {
         register(aliases, "present_habit", "present", "current_habit");
         register(aliases, "past_experience", "past", "experience");
         register(aliases, "future_plan", "future", "plan", "goal");
-        return Map.copyOf(aliases);
+        return java.util.Collections.unmodifiableMap(aliases);
     }
 
     private static void register(Map<String, String> aliases, String canonicalTag, String... aliasValues) {

@@ -16,6 +16,31 @@ public interface AnswerAttemptRepository extends JpaRepository<AnswerAttemptEnti
 
     Optional<AnswerAttemptEntity> findBySessionIdAndSubmissionId(String sessionId, String submissionId);
 
+    // 첫 답변의 재시도 확인. 첫 제출은 세션 id가 없어서 소유자 + 질문 + 제출 id로 찾는다.
+    @Query("""
+            select a
+            from AnswerSessionEntity s, AnswerAttemptEntity a
+            where s.userId = :userId and s.promptId = :promptId
+              and a.sessionId = s.id and a.submissionId = :submissionId
+            """)
+    List<AnswerAttemptEntity> findUserSubmissions(
+            @Param("userId") Long userId,
+            @Param("promptId") String promptId,
+            @Param("submissionId") String submissionId
+    );
+
+    @Query("""
+            select a
+            from AnswerSessionEntity s, AnswerAttemptEntity a
+            where s.userId is null and s.guestId = :guestId and s.promptId = :promptId
+              and a.sessionId = s.id and a.submissionId = :submissionId
+            """)
+    List<AnswerAttemptEntity> findGuestSubmissions(
+            @Param("guestId") String guestId,
+            @Param("promptId") String promptId,
+            @Param("submissionId") String submissionId
+    );
+
     Optional<AnswerAttemptEntity> findFirstBySessionIdOrderByAttemptNoDesc(String sessionId);
 
     List<AnswerAttemptEntity> findBySessionIdOrderByAttemptNoAsc(String sessionId);

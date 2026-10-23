@@ -33,14 +33,23 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 @Service
 public class FeedbackService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FeedbackService.class);
     private static final int MAX_FEEDBACK_ANSWER_CHARS = 4_000;
+    // 처리 중인 같은 제출을 기다리는 시간. 요청 마감(80초)보다 조금 길고 앱 제한(90초)보다 짧다.
+    private static final Duration IN_FLIGHT_WAIT = Duration.ofSeconds(85);
 
     private final PromptService promptService;
     private final LlmFeedbackClient llmFeedbackClient;
@@ -48,6 +57,7 @@ public class FeedbackService {
     private final AnswerAttemptRepository answerAttemptRepository;
     private final ObjectMapper objectMapper;
     private final TransactionTemplate transactionTemplate;
+    private final ConcurrentMap<String, CompletableFuture<FeedbackResponseDto>> inFlightReviews = new ConcurrentHashMap<>();
 
     @Autowired(required = false)
     private FeedbackDiagnosisLogRepository feedbackDiagnosisLogRepository;
@@ -74,10 +84,55 @@ public class FeedbackService {
         this.transactionTemplate = transactionTemplate;
     }
 
+    // 같은 제출이 아직 처리 중일 때 다시 오면(앱이 연결을 잃고 다시 보낸 경우) LLM을 한 번 더 부르지 않고 첫 요청의 결과를 기다린다.
+    // 첫 요청이 실패하면 기다리던 요청이 직접 처리한다. 백엔드가 한 대라서 이 서버 안에서만 확인하면 된다.
+    public FeedbackResponseDto review(FeedbackRequestDto request, Long currentUserId) {
+        String key = inFlightKey(request, currentUserId);
+        if (key == null) {
+            return reviewOnce(request, currentUserId);
+        }
+        CompletableFuture<FeedbackResponseDto> mine = new CompletableFuture<>();
+        CompletableFuture<FeedbackResponseDto> running = inFlightReviews.putIfAbsent(key, mine);
+        if (running != null) {
+            FeedbackResponseDto joined = awaitInFlight(running);
+            return joined != null ? joined : reviewOnce(request, currentUserId);
+        }
+        try {
+            FeedbackResponseDto response = reviewOnce(request, currentUserId);
+            mine.complete(response);
+            return response;
+        } catch (RuntimeException exception) {
+            mine.completeExceptionally(exception);
+            throw exception;
+        } finally {
+            inFlightReviews.remove(key, mine);
+        }
+    }
+
+    private String inFlightKey(FeedbackRequestDto request, Long currentUserId) {
+        String submissionId = request.submissionId() == null ? "" : request.submissionId().trim();
+        if (submissionId.isEmpty()) {
+            return null;
+        }
+        String owner = currentUserId != null ? "user:" + currentUserId : "guest:" + request.guestId();
+        return owner + "|" + request.promptId() + "|" + submissionId;
+    }
+
+    private FeedbackResponseDto awaitInFlight(CompletableFuture<FeedbackResponseDto> running) {
+        try {
+            return running.get(IN_FLIGHT_WAIT.toMillis(), TimeUnit.MILLISECONDS);
+        } catch (InterruptedException exception) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException | TimeoutException exception) {
+            return null;
+        }
+    }
+
     // LLM 호출(보통 십수 초, 길면 80초)을 DB 트랜잭션 밖에서 해서, 기다리는 동안 DB 연결을 붙잡지 않는다.
     // 준비(검증·조회)와 저장은 각각 짧은 트랜잭션이다. 새 세션은 LLM이 성공한 뒤 저장 단계에서 만든다.
     // 그래야 LLM이 실패해도 빈 세션이 남지 않는다(게스트 질문 수 제한에 걸리지 않는다).
-    public FeedbackResponseDto review(FeedbackRequestDto request, Long currentUserId) {
+    private FeedbackResponseDto reviewOnce(FeedbackRequestDto request, Long currentUserId) {
         long startedAt = System.nanoTime();
         ReviewPreparation preparation = transactionTemplate.execute(
                 status -> prepareReview(request, currentUserId)
@@ -184,11 +239,20 @@ public class FeedbackService {
             );
         }
         boolean hasExistingSession = request.sessionId() != null && !request.sessionId().isBlank();
+        String submissionId = normalizeSubmissionId(request.submissionId());
+        // 앱이 보낸 제출 id만 재시도 확인에 쓴다. 없으면 서버가 새로 만든 id라 이전 제출과 겹칠 수 없다.
+        String clientSubmissionId = request.submissionId() == null || request.submissionId().isBlank() ? null : submissionId;
         if (!hasExistingSession) {
+            // 게스트 질문 수 제한보다 먼저 본다. 첫 답변이 저장됐는데 응답만 못 받은 게스트도 결과를 받아야 한다.
+            FeedbackResponseDto firstSubmission = findFirstSubmissionResponse(
+                    prompt.id(), currentUserId, request.guestId(), clientSubmissionId
+            );
+            if (firstSubmission != null) {
+                return ReviewPreparation.stored(firstSubmission);
+            }
             assertFeedbackProviderConfigured();
         }
         AnswerSessionEntity session = resolveSession(request, prompt.id(), currentUserId);
-        String submissionId = normalizeSubmissionId(request.submissionId());
         FeedbackResponseDto existingResponse = findIdempotentResponse(session.getId(), submissionId);
         if (existingResponse != null) {
             return ReviewPreparation.stored(existingResponse);
@@ -204,6 +268,7 @@ public class FeedbackService {
                 session,
                 !hasExistingSession,
                 submissionId,
+                clientSubmissionId,
                 attemptNo,
                 findPreviousAnswer(session.getId(), attemptNo),
                 resolveAttemptType(request),
@@ -220,6 +285,13 @@ public class FeedbackService {
     ) {
         AnswerSessionEntity session;
         if (preparation.newSession()) {
+            // LLM을 기다리는 동안 같은 첫 제출이 먼저 저장됐으면 세션을 하나 더 만들지 않는다.
+            FeedbackResponseDto storedResponse = findFirstSubmissionResponse(
+                    preparation.prompt().id(), currentUserId, guestId, preparation.clientSubmissionId()
+            );
+            if (storedResponse != null) {
+                return new PersistedReview(null, null, storedResponse);
+            }
             session = answerSessionRepository.save(preparation.session());
         } else {
             // LLM을 기다리는 동안 같은 제출이 먼저 저장됐거나 세션이 완료됐을 수 있어 다시 확인한다.
@@ -266,6 +338,7 @@ public class FeedbackService {
             AnswerSessionEntity session,
             boolean newSession,
             String submissionId,
+            String clientSubmissionId,
             int attemptNo,
             String previousAnswer,
             AttemptType attemptType,
@@ -273,7 +346,7 @@ public class FeedbackService {
             FeedbackResponseDto storedResponse
     ) {
         static ReviewPreparation stored(FeedbackResponseDto storedResponse) {
-            return new ReviewPreparation(null, null, null, false, null, 0, null, null, List.of(), storedResponse);
+            return new ReviewPreparation(null, null, null, false, null, null, 0, null, null, List.of(), storedResponse);
         }
     }
 
@@ -525,6 +598,27 @@ public class FeedbackService {
             );
         }
         return normalized;
+    }
+
+    private FeedbackResponseDto findFirstSubmissionResponse(
+            String promptId,
+            Long currentUserId,
+            String guestId,
+            String submissionId
+    ) {
+        if (submissionId == null) {
+            return null;
+        }
+        String normalizedGuestId = GuestIdentitySupport.normalizeGuestId(guestId);
+        List<AnswerAttemptEntity> attempts;
+        if (currentUserId != null) {
+            attempts = answerAttemptRepository.findUserSubmissions(currentUserId, promptId, submissionId);
+        } else if (normalizedGuestId != null) {
+            attempts = answerAttemptRepository.findGuestSubmissions(normalizedGuestId, promptId, submissionId);
+        } else {
+            return null;
+        }
+        return attempts.stream().findFirst().map(this::readStoredFeedback).orElse(null);
     }
 
     private FeedbackResponseDto findIdempotentResponse(String sessionId, String submissionId) {

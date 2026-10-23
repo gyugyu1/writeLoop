@@ -511,6 +511,123 @@ class FeedbackServiceTest {
     }
 
     @Test
+    void returnsStoredFirstAnswerForRepeatedFirstSubmissionWithoutCallingLlm() throws Exception {
+        PromptDto prompt = prompt();
+        FeedbackResponseDto storedFeedback = feedback(prompt, false);
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(answerAttemptRepository.findUserSubmissions(7L, prompt.id(), "submission-first"))
+                .thenReturn(List.of(storedAttempt("session-first", storedFeedback, "submission-first")));
+
+        // 첫 답변은 세션 id 없이 다시 온다(응답을 받지 못한 앱이 같은 제출 id로 다시 보냄).
+        FeedbackResponseDto response = service.review(
+                new FeedbackRequestDto(prompt.id(), "I take a walk.", null, "INITIAL", null, "submission-first"),
+                7L
+        );
+
+        assertThat(response.summary()).isEqualTo(storedFeedback.summary());
+        verifyNoInteractions(llmFeedbackClient);
+        verify(answerSessionRepository, never()).save(any());
+        verify(answerAttemptRepository, never()).save(any());
+    }
+
+    @Test
+    void returnsStoredFirstAnswerToAGuestBeforeTheGuestLimit() throws Exception {
+        PromptDto prompt = prompt();
+        String guestId = "guest-0123456789abcdefghij";
+        FeedbackResponseDto storedFeedback = feedback(prompt, false);
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        lenient().when(answerSessionRepository.countByGuestId(guestId)).thenReturn(1L);
+        when(answerAttemptRepository.findGuestSubmissions(guestId, prompt.id(), "submission-guest"))
+                .thenReturn(List.of(storedAttempt("session-guest", storedFeedback, "submission-guest")));
+
+        FeedbackResponseDto response = service.review(
+                new FeedbackRequestDto(prompt.id(), "I take a walk.", null, "INITIAL", guestId, "submission-guest"),
+                null
+        );
+
+        // 이미 질문 하나를 쓴 게스트라도, 같은 첫 제출이면 한도 안내 대신 저장된 결과를 받는다.
+        assertThat(response.summary()).isEqualTo(storedFeedback.summary());
+        verifyNoInteractions(llmFeedbackClient);
+    }
+
+    @Test
+    void doesNotCreateASecondSessionWhenTheSameFirstSubmissionWasSavedWhileWaiting() throws Exception {
+        PromptDto prompt = prompt();
+        FeedbackResponseDto internal = feedback(prompt, false);
+        FeedbackResponseDto storedFeedback = feedback(prompt, false);
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(llmFeedbackClient.isConfigured()).thenReturn(true);
+        when(llmFeedbackClient.review(any(PromptDto.class), anyString(), anyList(), anyInt())).thenReturn(internal);
+        when(llmFeedbackClient.isAuthoritativeFeedback(internal)).thenReturn(true);
+        when(llmFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(snapshot(false));
+        when(answerAttemptRepository.findUserSubmissions(7L, prompt.id(), "submission-race"))
+                .thenReturn(List.of())
+                .thenReturn(List.of(storedAttempt("session-race", storedFeedback, "submission-race")));
+
+        FeedbackResponseDto response = service.review(
+                new FeedbackRequestDto(prompt.id(), "I take a walk.", null, "INITIAL", null, "submission-race"),
+                7L
+        );
+
+        assertThat(response.sessionId()).isEqualTo(storedFeedback.sessionId());
+        verify(answerSessionRepository, never()).save(any());
+        verify(answerAttemptRepository, never()).save(any());
+    }
+
+    @Test
+    void waitsForTheSameSubmissionInProgressInsteadOfCallingLlmAgain() throws Exception {
+        PromptDto prompt = prompt();
+        FeedbackResponseDto internal = feedback(prompt, false);
+        when(promptService.findById(prompt.id())).thenReturn(prompt);
+        when(llmFeedbackClient.isConfigured()).thenReturn(true);
+        when(llmFeedbackClient.isAuthoritativeFeedback(internal)).thenReturn(true);
+        when(llmFeedbackClient.takeLastAnalysisSnapshot()).thenReturn(snapshot(false));
+        java.util.concurrent.CountDownLatch llmStarted = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.CountDownLatch releaseLlm = new java.util.concurrent.CountDownLatch(1);
+        when(llmFeedbackClient.review(any(PromptDto.class), anyString(), anyList(), anyInt())).thenAnswer(invocation -> {
+            llmStarted.countDown();
+            releaseLlm.await(5, java.util.concurrent.TimeUnit.SECONDS);
+            return internal;
+        });
+        FeedbackRequestDto request =
+                new FeedbackRequestDto(prompt.id(), "I take a walk.", null, "INITIAL", null, "submission-inflight");
+
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            java.util.concurrent.Future<FeedbackResponseDto> first = executor.submit(() -> service.review(request, 7L));
+            assertThat(llmStarted.await(5, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+            java.util.concurrent.Future<FeedbackResponseDto> retry = executor.submit(() -> service.review(request, 7L));
+            Thread.sleep(200);
+            releaseLlm.countDown();
+
+            FeedbackResponseDto firstResponse = first.get(5, java.util.concurrent.TimeUnit.SECONDS);
+            FeedbackResponseDto retryResponse = retry.get(5, java.util.concurrent.TimeUnit.SECONDS);
+
+            assertThat(retryResponse.sessionId()).isEqualTo(firstResponse.sessionId());
+            verify(llmFeedbackClient, org.mockito.Mockito.times(1))
+                    .review(any(PromptDto.class), anyString(), anyList(), anyInt());
+            // 첫 요청만 답변을 저장한다. 기다린 요청은 저장하지 않는다.
+            verify(answerAttemptRepository, org.mockito.Mockito.times(1)).save(any(AnswerAttemptEntity.class));
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private AnswerAttemptEntity storedAttempt(String sessionId, FeedbackResponseDto feedback, String submissionId)
+            throws Exception {
+        return new AnswerAttemptEntity(
+                sessionId,
+                1,
+                com.writeloop.persistence.AttemptType.INITIAL,
+                "I take a walk.",
+                "Add one relevant detail.",
+                objectMapper.writeValueAsString(feedback),
+                submissionId,
+                null
+        );
+    }
+
+    @Test
     void keepsBackendDerivedCompletionReadyUntilUserFinishes() {
         PromptDto prompt = prompt();
         AnswerSessionEntity session = session(prompt, "session-3");

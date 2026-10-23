@@ -18,7 +18,8 @@
         "EXPO_PUBLIC_API_BASE_URL": "https://api.writeloop.kr",
         "EXPO_PUBLIC_API_BASE_URL_ANDROID": "https://api.writeloop.kr",
         "EXPO_PUBLIC_API_BASE_URL_IOS": "https://api.writeloop.kr",
-        "SENTRY_ALLOW_FAILURE": "true"
+        "SENTRY_ALLOW_FAILURE": "true",
+        "EXPO_PUBLIC_SENTRY_DSN": "https://91cb339808eb249c0b231eb6bfecfb0a@o4512305989091328.ingest.us.sentry.io/4512306031165440"
       }
     }
   },

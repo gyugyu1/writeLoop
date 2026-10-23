@@ -743,11 +743,11 @@ function delay(ms: number) {
 
 function normalizeNetworkError(error: unknown) {
   if (error instanceof Error && error.name === "AbortError") {
-    return new Error("서버 연결이 지연되고 있어요. 네트워크나 API 주소를 확인해 주세요.");
+    return new Error("서버 응답이 평소보다 늦어지고 있어요. 잠시 후 다시 시도해 주세요.");
   }
 
   if (error instanceof TypeError) {
-    return new Error("서버에 연결하지 못했어요. 네트워크나 API 주소를 확인해 주세요.");
+    return new Error("서버에 연결하지 못했어요. 인터넷 연결을 확인하고 다시 시도해 주세요.");
   }
 
   return error;

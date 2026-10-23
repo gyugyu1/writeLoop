@@ -11,6 +11,15 @@ ENV TZ=Asia/Seoul
 # 오류 추적(Sentry)에 표시할 배포 버전. CI가 커밋 SHA를 넣는다.
 ARG SENTRY_RELEASE=local
 ENV SENTRY_RELEASE=${SENTRY_RELEASE}
+# 운영 DB(RDS)의 인증서를 확인하려고 AWS RDS 인증서 묶음을 JVM 신뢰 저장소에 넣는다.
+# JDBC URL의 sslMode=VERIFY_IDENTITY가 이 저장소로 서버 인증서와 호스트 이름을 확인한다.
+ADD https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem /tmp/rds-global-bundle.pem
+RUN cd /tmp \
+    && awk '/-----BEGIN CERTIFICATE-----/ { n++ } { print > ("rds-ca-" n ".pem") }' rds-global-bundle.pem \
+    && for cert in rds-ca-*.pem; do \
+         keytool -importcert -noprompt -cacerts -storepass changeit -alias "aws-${cert%.pem}" -file "$cert" > /dev/null; \
+       done \
+    && rm -f /tmp/rds-global-bundle.pem /tmp/rds-ca-*.pem
 # root가 아닌 사용자로 실행한다. 로그 볼륨(/app/logs)은 처음 만들 때 이 디렉터리의 소유자를 물려받는다.
 RUN groupadd --system writeloop \
     && useradd --system --gid writeloop --home-dir /app --shell /usr/sbin/nologin writeloop \

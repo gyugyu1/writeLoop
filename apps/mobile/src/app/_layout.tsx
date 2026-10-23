@@ -8,6 +8,9 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { SessionProvider } from "@/lib/session";
 import AppUpdateNotice from "@/components/app-update-notice";
 import { AppOverlayStatusProvider } from "@/lib/app-overlay-status";
+import { initSentry, wrapWithSentry } from "@/lib/sentry";
+
+initSentry();
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -22,7 +25,7 @@ void SplashScreen.hideAsync().catch(() => {
   // The native splash can already be gone during fast refresh.
 });
 
-export default function RootLayout() {
+function RootLayout() {
   useEffect(() => {
     void SplashScreen.hideAsync().catch(() => {
       // The native splash can already be gone during fast refresh.
@@ -76,3 +79,5 @@ const styles = StyleSheet.create({
     backgroundColor: "#F7F1E8"
   }
 });
+
+export default wrapWithSentry(RootLayout);

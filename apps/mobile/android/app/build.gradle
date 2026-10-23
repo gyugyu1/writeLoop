@@ -114,6 +114,9 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// Sentry: 릴리스 빌드 때 소스맵을 Sentry에 올린다. SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT 환경 변수를 쓴다(ADR-0018).
+apply from: new File(["node", "--print", "require('path').dirname(require.resolve('@sentry/react-native/package.json'))"].execute().text.trim(), "sentry.gradle")
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 

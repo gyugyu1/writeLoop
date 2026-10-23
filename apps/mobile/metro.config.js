@@ -1,6 +1,8 @@
-const { getDefaultConfig } = require("expo/metro-config");
+// Sentry가 소스맵에 디버그 ID를 넣어 앱 오류 위치를 원래 코드로 보여 준다(ADR-0018).
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 
-const config = getDefaultConfig(__dirname);
+// 화면 녹화(replay)는 쓰지 않으므로 번들에서 뺀다.
+const config = getSentryExpoConfig(__dirname, { includeWebReplay: false });
 const defaultEnhanceMiddleware = config.server?.enhanceMiddleware;
 
 config.server = {

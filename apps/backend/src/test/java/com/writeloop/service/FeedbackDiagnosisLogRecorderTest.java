@@ -29,7 +29,6 @@ class FeedbackDiagnosisLogRecorderTest {
                 "openai",
                 "gpt-test",
                 "medium",
-                null,
                 200,
                 "{\"original\":\"invalid\"}",
                 200,

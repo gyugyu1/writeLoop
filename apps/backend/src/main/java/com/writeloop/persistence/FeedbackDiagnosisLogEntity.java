@@ -106,9 +106,6 @@ public class FeedbackDiagnosisLogEntity {
     @Column(name = "reasoning_effort", length = 24)
     private String reasoningEffort;
 
-    @Column(name = "thinking_budget")
-    private Integer thinkingBudget;
-
     @Column(name = "provider_retry_attempted", nullable = false)
     private boolean providerRetryAttempted;
 

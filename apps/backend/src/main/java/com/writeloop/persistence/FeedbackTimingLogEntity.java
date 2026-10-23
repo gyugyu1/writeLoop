@@ -83,9 +83,6 @@ public class FeedbackTimingLogEntity {
     @Column(name = "reasoning_effort", length = 32)
     private String reasoningEffort;
 
-    @Column(name = "thinking_budget")
-    private Integer thinkingBudget;
-
     @Column
     private Boolean success;
 
@@ -94,6 +91,22 @@ public class FeedbackTimingLogEntity {
 
     @Column(name = "exception_class")
     private String exceptionClass;
+
+    // LLM 단계 행에만 채운다. 기능별 LLM 비용(토큰)을 보려는 것이다.
+    @Column(name = "llm_input_tokens")
+    private Long llmInputTokens;
+
+    @Column(name = "llm_cached_input_tokens")
+    private Long llmCachedInputTokens;
+
+    @Column(name = "llm_output_tokens")
+    private Long llmOutputTokens;
+
+    @Column(name = "llm_reasoning_tokens")
+    private Long llmReasoningTokens;
+
+    @Column(name = "llm_total_tokens")
+    private Long llmTotalTokens;
 
     @Column(name = "elapsed_ms", nullable = false)
     private Long elapsedMs;

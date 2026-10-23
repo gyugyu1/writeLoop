@@ -20,6 +20,7 @@ public class FeedbackTimingRecorder {
     private static final String TYPE_ANSWER = "ANSWER";
     private static final String TYPE_DIARY = "DIARY";
     private static final String TYPE_NOW_IN_ENGLISH = "NOW_IN_ENGLISH";
+    private static final String TYPE_COACH = "COACH";
     private static final String SCOPE_SERVICE = "SERVICE";
     private static final String SCOPE_LLM = "LLM";
     private static final String SCOPE_POLICY = "POLICY";
@@ -73,7 +74,7 @@ public class FeedbackTimingRecorder {
             String provider,
             String model,
             String reasoningEffort,
-            Integer thinkingBudget,
+            FeedbackTokenUsage tokenUsage,
             Boolean success,
             Integer statusCode,
             String exceptionClass,
@@ -86,7 +87,7 @@ public class FeedbackTimingRecorder {
         if (context.attemptNo == null) {
             context.attemptNo = attemptNo;
         }
-        record(context, SCOPE_LLM, phase, provider, model, reasoningEffort, thinkingBudget, success, statusCode,
+        record(context, SCOPE_LLM, phase, provider, model, reasoningEffort, tokenUsage, success, statusCode,
                 exceptionClass, elapsedMs, null);
     }
 
@@ -97,7 +98,7 @@ public class FeedbackTimingRecorder {
             String provider,
             String model,
             String reasoningEffort,
-            Integer thinkingBudget,
+            FeedbackTokenUsage tokenUsage,
             Boolean success,
             Integer statusCode,
             String exceptionClass,
@@ -110,7 +111,7 @@ public class FeedbackTimingRecorder {
         if (context.attemptNo == null) {
             context.attemptNo = attemptNo;
         }
-        record(context, SCOPE_LLM, phase, provider, model, reasoningEffort, thinkingBudget, success, statusCode,
+        record(context, SCOPE_LLM, phase, provider, model, reasoningEffort, tokenUsage, success, statusCode,
                 exceptionClass, elapsedMs, null);
     }
 
@@ -119,6 +120,7 @@ public class FeedbackTimingRecorder {
             String provider,
             String model,
             String reasoningEffort,
+            FeedbackTokenUsage tokenUsage,
             Boolean success,
             Integer statusCode,
             String exceptionClass,
@@ -126,8 +128,28 @@ public class FeedbackTimingRecorder {
             Map<String, ?> metadata
     ) {
         TimingContext context = contextOrStandalone(TYPE_NOW_IN_ENGLISH);
-        record(context, SCOPE_LLM, phase, provider, model, reasoningEffort, null, success, statusCode,
+        record(context, SCOPE_LLM, phase, provider, model, reasoningEffort, tokenUsage, success, statusCode,
                 exceptionClass, elapsedMs, metadata);
+    }
+
+    // 코치는 요청 하나에 LLM 호출이 여러 번일 수 있어(슬롯 번역, 재시도) 호출마다 따로 남긴다.
+    public void recordCoachLlmPhase(
+            String phase,
+            String promptId,
+            String model,
+            String reasoningEffort,
+            FeedbackTokenUsage tokenUsage,
+            Boolean success,
+            Integer statusCode,
+            String exceptionClass,
+            long elapsedMs
+    ) {
+        TimingContext context = contextOrStandalone(TYPE_COACH);
+        if (context.promptId == null || context.promptId.isBlank()) {
+            context.promptId = normalize(promptId);
+        }
+        record(context, SCOPE_LLM, phase, "openai", model, reasoningEffort, tokenUsage, success, statusCode,
+                exceptionClass, elapsedMs, null);
     }
 
     private void recordCurrent(
@@ -136,7 +158,7 @@ public class FeedbackTimingRecorder {
             String provider,
             String model,
             String reasoningEffort,
-            Integer thinkingBudget,
+            FeedbackTokenUsage tokenUsage,
             Boolean success,
             Integer statusCode,
             String exceptionClass,
@@ -147,7 +169,7 @@ public class FeedbackTimingRecorder {
         if (context == null) {
             return;
         }
-        record(context, phaseScope, phase, provider, model, reasoningEffort, thinkingBudget, success, statusCode,
+        record(context, phaseScope, phase, provider, model, reasoningEffort, tokenUsage, success, statusCode,
                 exceptionClass, elapsedMs, metadata);
     }
 
@@ -158,7 +180,7 @@ public class FeedbackTimingRecorder {
             String provider,
             String model,
             String reasoningEffort,
-            Integer thinkingBudget,
+            FeedbackTokenUsage tokenUsage,
             Boolean success,
             Integer statusCode,
             String exceptionClass,
@@ -182,7 +204,11 @@ public class FeedbackTimingRecorder {
                     .provider(normalize(provider))
                     .model(normalize(model))
                     .reasoningEffort(normalize(reasoningEffort))
-                    .thinkingBudget(thinkingBudget)
+                    .llmInputTokens(tokenUsage == null ? null : tokenUsage.inputTokens())
+                    .llmCachedInputTokens(tokenUsage == null ? null : tokenUsage.cachedInputTokens())
+                    .llmOutputTokens(tokenUsage == null ? null : tokenUsage.outputTokens())
+                    .llmReasoningTokens(tokenUsage == null ? null : tokenUsage.reasoningTokens())
+                    .llmTotalTokens(tokenUsage == null ? null : tokenUsage.totalTokens())
                     .success(success)
                     .statusCode(statusCode)
                     .exceptionClass(normalize(exceptionClass))

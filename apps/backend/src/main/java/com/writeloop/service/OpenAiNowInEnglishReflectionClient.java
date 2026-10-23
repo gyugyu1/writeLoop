@@ -64,6 +64,7 @@ class OpenAiNowInEnglishReflectionClient {
     ) {
         long startedAtNanos = System.nanoTime();
         Integer statusCode = null;
+        FeedbackTokenUsage tokenUsage = null;
         try {
             String requestBody = OpenAiStructuredOutputSupport.buildResponsesRequestBody(
                     objectMapper,
@@ -82,6 +83,7 @@ class OpenAiNowInEnglishReflectionClient {
             );
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             statusCode = response.statusCode();
+            tokenUsage = FeedbackTokenUsage.fromOpenAiResponse(objectMapper, response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 LOGGER.warn("OpenAI now reflection failed status={} body={}", response.statusCode(), truncate(response.body()));
                 throw new IllegalStateException("OpenAI now reflection request failed with status " + response.statusCode());
@@ -90,16 +92,16 @@ class OpenAiNowInEnglishReflectionClient {
             String outputText = OpenAiStructuredOutputSupport.extractStructuredOutputText(objectMapper, response.body());
             NowInEnglishReflectionResponseDto reflection =
                     objectMapper.readValue(outputText, NowInEnglishReflectionResponseDto.class);
-            logTiming(dateKey, entries.size(), statusCode, true, null, startedAtNanos);
+            logTiming(tokenUsage, dateKey, entries.size(), statusCode, true, null, startedAtNanos);
             return reflection;
         } catch (IOException | InterruptedException exception) {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            logTiming(dateKey, entries.size(), statusCode, false, exception, startedAtNanos);
+            logTiming(tokenUsage, dateKey, entries.size(), statusCode, false, exception, startedAtNanos);
             throw new IllegalStateException("OpenAI now reflection request failed", exception);
         } catch (RuntimeException exception) {
-            logTiming(dateKey, entries.size(), statusCode, false, exception, startedAtNanos);
+            logTiming(tokenUsage, dateKey, entries.size(), statusCode, false, exception, startedAtNanos);
             throw exception;
         }
     }
@@ -208,6 +210,7 @@ class OpenAiNowInEnglishReflectionClient {
     }
 
     private void logTiming(
+            FeedbackTokenUsage tokenUsage,
             String dateKey,
             int entryCount,
             Integer statusCode,
@@ -221,6 +224,7 @@ class OpenAiNowInEnglishReflectionClient {
                 "openai",
                 model,
                 reasoningEffort,
+                tokenUsage,
                 success,
                 statusCode,
                 exception == null ? null : exception.getClass().getName(),

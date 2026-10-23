@@ -68,6 +68,7 @@ class OpenAiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
         long startedAtNanos = System.nanoTime();
         boolean timingLogged = false;
         Integer statusCode = null;
+        FeedbackTokenUsage tokenUsage = null;
         try {
             String requestBody = OpenAiStructuredOutputSupport.buildResponsesRequestBody(
                     objectMapper,
@@ -85,8 +86,9 @@ class OpenAiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
             );
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             statusCode = response.statusCode();
+            tokenUsage = FeedbackTokenUsage.fromOpenAiResponse(objectMapper, response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                logTiming(context, response.statusCode(), false, null, startedAtNanos);
+                logTiming(context, tokenUsage, response.statusCode(), false, null, startedAtNanos);
                 timingLogged = true;
                 LOGGER.warn("OpenAI diary feedback failed status={} body={}", response.statusCode(), truncate(response.body()));
                 throw new IllegalStateException("OpenAI diary feedback request failed with status " + response.statusCode());
@@ -94,12 +96,12 @@ class OpenAiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
             String outputText = OpenAiStructuredOutputSupport.extractStructuredOutputText(objectMapper, response.body());
             DiaryFeedbackResponseDto feedback = objectMapper.readValue(outputText, DiaryFeedbackResponseDto.class)
                     .withIdentity(context.entryId(), context.attemptNo());
-            logTiming(context, statusCode, true, null, startedAtNanos);
+            logTiming(context, tokenUsage, statusCode, true, null, startedAtNanos);
             timingLogged = true;
             return feedback;
         } catch (Exception exception) {
             if (!timingLogged) {
-                logTiming(context, statusCode, false, exception, startedAtNanos);
+                logTiming(context, tokenUsage, statusCode, false, exception, startedAtNanos);
             }
             throw new IllegalStateException("OpenAI diary feedback request failed", exception);
         }
@@ -107,6 +109,7 @@ class OpenAiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
 
     private void logTiming(
             DiaryFeedbackPromptContext context,
+            FeedbackTokenUsage tokenUsage,
             Integer statusCode,
             boolean success,
             Throwable exception,
@@ -132,7 +135,7 @@ class OpenAiDiaryFeedbackEngine implements DiaryFeedbackLlmEngine {
                     "openai",
                     model,
                     reasoningEffort,
-                    null,
+                    tokenUsage,
                     success,
                     statusCode,
                     exception == null ? null : exception.getClass().getName(),

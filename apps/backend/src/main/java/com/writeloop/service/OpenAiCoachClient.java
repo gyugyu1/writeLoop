@@ -9,6 +9,7 @@ import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.util.ExpressionTagSupport;
 import com.writeloop.util.OrderedMaps;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -33,6 +34,8 @@ public class OpenAiCoachClient implements CoachLlmEngine {
     private final String apiUrl;
     private final String reasoningEffort;
     private final int requestTimeoutSeconds;
+    @Autowired(required = false)
+    private FeedbackTimingRecorder feedbackTimingRecorder;
 
     public OpenAiCoachClient(
             ObjectMapper objectMapper,
@@ -73,7 +76,7 @@ public class OpenAiCoachClient implements CoachLlmEngine {
     @Override
     public CoachHelpResponseDto help(PromptDto prompt, String userQuestion, List<PromptHintDto> hints) {
         try {
-            String responseBody = sendResponsesRequest(buildRequestBody(prompt, userQuestion, hints));
+            String responseBody = sendResponsesRequest(buildRequestBody(prompt, userQuestion, hints), "coach_help", prompt.id());
             return parseResponse(prompt.id(), userQuestion, responseBody);
         } catch (IOException | InterruptedException exception) {
             if (exception instanceof InterruptedException) {
@@ -97,7 +100,9 @@ public class OpenAiCoachClient implements CoachLlmEngine {
 
         try {
             String responseBody = sendResponsesRequest(
-                    buildSlotTranslationRequestBody(prompt, userQuestion, family, slot, sourceText)
+                    buildSlotTranslationRequestBody(prompt, userQuestion, family, slot, sourceText),
+                    "slot_translation",
+                    prompt == null ? null : prompt.id()
             );
             return parseSlotTranslationResponse(responseBody);
         } catch (IOException | InterruptedException exception) {
@@ -123,7 +128,9 @@ public class OpenAiCoachClient implements CoachLlmEngine {
 
         try {
             String responseBody = sendResponsesRequest(
-                    buildSelfDiscoveredExtractionRequestBody(prompt, answer, recommendedExpressions, preservedSegments)
+                    buildSelfDiscoveredExtractionRequestBody(prompt, answer, recommendedExpressions, preservedSegments),
+                    "self_discovered_extraction",
+                    prompt == null ? null : prompt.id()
             );
             return parseSelfDiscoveredExtractionResponse(responseBody);
         } catch (IOException | InterruptedException exception) {
@@ -403,7 +410,8 @@ public class OpenAiCoachClient implements CoachLlmEngine {
         );
     }
 
-    private String sendResponsesRequest(String requestBody) throws IOException, InterruptedException {
+    private String sendResponsesRequest(String requestBody, String phase, String promptId)
+            throws IOException, InterruptedException {
         HttpRequest request = OpenAiStructuredOutputSupport.buildResponsesRequest(
                 apiUrl,
                 apiKey,
@@ -411,11 +419,36 @@ public class OpenAiCoachClient implements CoachLlmEngine {
                 requestTimeoutSeconds
         );
 
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() >= 400) {
-            throw new IllegalStateException("OpenAI coach API request failed with status " + response.statusCode());
+        long startedAtNanos = System.nanoTime();
+        Integer statusCode = null;
+        FeedbackTokenUsage tokenUsage = null;
+        Throwable failure = null;
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            statusCode = response.statusCode();
+            tokenUsage = FeedbackTokenUsage.fromOpenAiResponse(objectMapper, response.body());
+            if (response.statusCode() >= 400) {
+                throw new IllegalStateException("OpenAI coach API request failed with status " + response.statusCode());
+            }
+            return response.body();
+        } catch (IOException | InterruptedException | RuntimeException exception) {
+            failure = exception;
+            throw exception;
+        } finally {
+            if (feedbackTimingRecorder != null) {
+                feedbackTimingRecorder.recordCoachLlmPhase(
+                        phase,
+                        promptId,
+                        model,
+                        reasoningEffort,
+                        tokenUsage,
+                        failure == null,
+                        statusCode,
+                        failure == null ? null : failure.getClass().getName(),
+                        (System.nanoTime() - startedAtNanos) / 1_000_000
+                );
+            }
         }
-        return response.body();
     }
 
     private String extractStructuredOutputText(String body) throws IOException {

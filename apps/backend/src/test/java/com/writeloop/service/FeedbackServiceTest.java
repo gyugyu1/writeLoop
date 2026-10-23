@@ -420,7 +420,6 @@ class FeedbackServiceTest {
                 "openai",
                 "test-model",
                 "medium",
-                null,
                 200,
                 "{\"result\":\"rejected\"}",
                 200,

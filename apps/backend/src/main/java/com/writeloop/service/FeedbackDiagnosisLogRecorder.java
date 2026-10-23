@@ -61,7 +61,6 @@ public class FeedbackDiagnosisLogRecorder {
                 .llmProvider(value(trace.provider()))
                 .llmModel(normalize(trace.model()))
                 .reasoningEffort(normalize(trace.reasoningEffort()))
-                .thinkingBudget(trace.thinkingBudget())
                 .providerRetryAttempted(providerRetry.attempted())
                 .providerRetrySucceeded(providerRetry.succeeded())
                 .providerInitialFailureStatusCode(providerRetry.initialFailureStatusCode())

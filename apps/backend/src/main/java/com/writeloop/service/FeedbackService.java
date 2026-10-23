@@ -759,7 +759,6 @@ public class FeedbackService {
                     .llmProvider(snapshot.provider())
                     .llmModel(snapshot.model())
                     .reasoningEffort(executionTrace.reasoningEffort())
-                    .thinkingBudget(executionTrace.thinkingBudget())
                     .providerRetryAttempted(providerRetry.attempted())
                     .providerRetrySucceeded(providerRetry.succeeded())
                     .providerInitialFailureStatusCode(providerRetry.initialFailureStatusCode())

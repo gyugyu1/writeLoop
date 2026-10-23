@@ -249,19 +249,19 @@ public class OpenAiFeedbackClient {
                     retryTrace
             ));
             finalSuccess = true;
-            recordTiming(prompt, attemptIndex, true, finalStatusCode, null, startedAt);
+            recordTiming(prompt, attemptIndex, initialTokenUsage.plus(retryTokenUsage), true, finalStatusCode, null, startedAt);
             return assembled.response();
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             finalException = exception;
             Integer finalStatusCode = retryStatusCode == null ? initialStatusCode : retryStatusCode;
-            recordTiming(prompt, attemptIndex, false, finalStatusCode, exception, startedAt);
+            recordTiming(prompt, attemptIndex, initialTokenUsage.plus(retryTokenUsage), false, finalStatusCode, exception, startedAt);
             LOGGER.warn("OpenAI feedback request was interrupted", exception);
             throw feedbackGenerationUnavailable();
         } catch (Exception exception) {
             finalException = exception;
             Integer finalStatusCode = retryStatusCode == null ? initialStatusCode : retryStatusCode;
-            recordTiming(prompt, attemptIndex, false, finalStatusCode, exception, startedAt);
+            recordTiming(prompt, attemptIndex, initialTokenUsage.plus(retryTokenUsage), false, finalStatusCode, exception, startedAt);
             LOGGER.warn("OpenAI canonical feedback failed", exception);
             throw feedbackGenerationUnavailable();
         } finally {
@@ -269,7 +269,6 @@ public class OpenAiFeedbackClient {
                     "openai",
                     model,
                     reasoningEffort,
-                    null,
                     initialStatusCode,
                     preferredOutput(initialStructuredText, initialProviderBody),
                     retryStatusCode,
@@ -439,6 +438,7 @@ public class OpenAiFeedbackClient {
     private void recordTiming(
             PromptDto prompt,
             int attemptIndex,
+            FeedbackTokenUsage tokenUsage,
             boolean success,
             Integer statusCode,
             Exception exception,
@@ -454,7 +454,7 @@ public class OpenAiFeedbackClient {
                 "openai",
                 model,
                 reasoningEffort,
-                null,
+                tokenUsage,
                 success,
                 statusCode,
                 exception == null ? null : exception.getClass().getSimpleName(),

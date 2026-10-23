@@ -59,6 +59,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
     NowInEnglishCoachFeedbackResponseDto review(String text, String createdAt) {
         long startedAtNanos = System.nanoTime();
         Integer statusCode = null;
+        FeedbackTokenUsage tokenUsage = null;
         try {
             String requestBody = OpenAiStructuredOutputSupport.buildResponsesRequestBody(
                     objectMapper,
@@ -77,6 +78,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
             );
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             statusCode = response.statusCode();
+            tokenUsage = FeedbackTokenUsage.fromOpenAiResponse(objectMapper, response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 LOGGER.warn("OpenAI now coach feedback failed status={} body={}", response.statusCode(), truncate(response.body()));
                 throw new IllegalStateException("OpenAI now coach feedback request failed with status " + response.statusCode());
@@ -85,16 +87,16 @@ class OpenAiNowInEnglishCoachFeedbackClient {
             String outputText = OpenAiStructuredOutputSupport.extractStructuredOutputText(objectMapper, response.body());
             NowInEnglishCoachFeedbackResponseDto feedback =
                     objectMapper.readValue(outputText, NowInEnglishCoachFeedbackResponseDto.class);
-            logTiming(statusCode, true, null, startedAtNanos, text.length());
+            logTiming(tokenUsage, statusCode, true, null, startedAtNanos, text.length());
             return feedback;
         } catch (IOException | InterruptedException exception) {
             if (exception instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }
-            logTiming(statusCode, false, exception, startedAtNanos, text.length());
+            logTiming(tokenUsage, statusCode, false, exception, startedAtNanos, text.length());
             throw new IllegalStateException("OpenAI now coach feedback request failed", exception);
         } catch (RuntimeException exception) {
-            logTiming(statusCode, false, exception, startedAtNanos, text.length());
+            logTiming(tokenUsage, statusCode, false, exception, startedAtNanos, text.length());
             throw exception;
         }
     }
@@ -165,6 +167,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
     }
 
     private void logTiming(
+            FeedbackTokenUsage tokenUsage,
             Integer statusCode,
             boolean success,
             Throwable exception,
@@ -177,6 +180,7 @@ class OpenAiNowInEnglishCoachFeedbackClient {
                 "openai",
                 model,
                 reasoningEffort,
+                tokenUsage,
                 success,
                 statusCode,
                 exception == null ? null : exception.getClass().getName(),

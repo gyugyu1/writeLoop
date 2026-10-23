@@ -1,4 +1,5 @@
 import type {
+  AdminFeedbackMetrics,
   AdminPromptRecommendationMetrics,
   AdminPrompt,
   AdminPromptHint,
@@ -1428,6 +1429,30 @@ export async function getAdminPromptRecommendationMetrics(params?: {
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to load prompt recommendation metrics");
+  }
+
+  return response.json();
+}
+
+export async function getAdminFeedbackMetrics(params?: {
+  startDate?: string;
+  endDate?: string;
+}): Promise<AdminFeedbackMetrics> {
+  const query = new URLSearchParams();
+  if (params?.startDate) {
+    query.set("startDate", params.startDate);
+  }
+  if (params?.endDate) {
+    query.set("endDate", params.endDate);
+  }
+  const queryString = query.toString();
+  const response = await fetch(`${API_BASE}/api/admin/feedback-metrics${queryString ? `?${queryString}` : ""}`, {
+    cache: "no-store",
+    credentials: "include"
+  });
+
+  if (!response.ok) {
+    throw await parseApiError(response, "AI 피드백 지표를 불러오지 못했어요.");
   }
 
   return response.json();

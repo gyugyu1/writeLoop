@@ -8,6 +8,7 @@ import type {
   AdminPrompt,
   AdminPromptHint,
   AdminPromptHintRequest,
+  AdminFeedbackMetrics,
   AdminPromptRecommendationMetrics,
   AdminPromptRequest,
   AdminPromptTopicCatalogEntry,
@@ -1255,6 +1256,27 @@ export async function getAdminPromptRecommendationMetrics(params?: {
   }
 
   return (await response.json()) as AdminPromptRecommendationMetrics;
+}
+
+export async function getAdminFeedbackMetrics(params?: {
+  startDate?: string;
+  endDate?: string;
+}): Promise<AdminFeedbackMetrics> {
+  const query = new URLSearchParams();
+  if (params?.startDate) {
+    query.set("startDate", params.startDate);
+  }
+  if (params?.endDate) {
+    query.set("endDate", params.endDate);
+  }
+  const queryString = query.toString();
+  const response = await apiFetch(`/api/admin/feedback-metrics${queryString ? `?${queryString}` : ""}`);
+
+  if (!response.ok) {
+    throw await parseApiError(response, "AI 피드백 지표를 불러오지 못했어요.");
+  }
+
+  return (await response.json()) as AdminFeedbackMetrics;
 }
 
 export async function createAdminPrompt(request: AdminPromptRequest): Promise<AdminPrompt> {

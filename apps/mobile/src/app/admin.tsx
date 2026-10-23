@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
+import { AdminFeedbackMetricsCard } from "@/components/admin-feedback-metrics-card";
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import {
   createAdminPrompt,
@@ -904,6 +905,8 @@ export default function AdminScreen() {
                   </View>
                 )}
               </View>
+
+              <AdminFeedbackMetricsCard />
 
               <View style={styles.sectionCard}>
                 <View style={styles.sectionHeaderRow}>

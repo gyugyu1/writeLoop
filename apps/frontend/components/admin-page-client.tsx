@@ -25,6 +25,7 @@ import type {
   PromptCoachProfile,
   PromptDifficulty
 } from "../lib/types";
+import { AdminFeedbackMetricsSection } from "./admin-feedback-metrics";
 import authStyles from "./auth-page.module.css";
 import styles from "./admin-page.module.css";
 
@@ -774,6 +775,8 @@ export function AdminPageClient() {
             </div>
           ) : null}
         </section>
+
+        <AdminFeedbackMetricsSection />
 
         <section ref={createSectionRef} className={styles.createCard}>
           <div className={styles.createHeader}>

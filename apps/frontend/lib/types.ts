@@ -749,3 +749,28 @@ export interface HistorySession {
   attempts: HistoryAttempt[];
 }
 
+
+// 관리자 AI 피드백 지표. 기능별 LLM 호출 수, 실패율, 응답 시간, 토큰(토큰은 2026-10-24부터 기록).
+export interface AdminFeedbackMetricsItem {
+  feedbackType: string;
+  calls: number;
+  failedCalls: number;
+  failureRate: number;
+  p50ElapsedMs: number | null;
+  p95ElapsedMs: number | null;
+  callsWithTokens: number;
+  inputTokens: number;
+  cachedInputTokens: number;
+  outputTokens: number;
+}
+
+export interface AdminFeedbackMetrics {
+  startDate: string;
+  endDate: string;
+  totalCalls: number;
+  totalFailedCalls: number;
+  failureRate: number;
+  answerContractRetries: number;
+  answerProviderRetries: number;
+  items: AdminFeedbackMetricsItem[];
+}

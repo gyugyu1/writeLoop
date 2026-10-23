@@ -21,6 +21,7 @@ import com.writeloop.persistence.PromptEntity;
 import com.writeloop.persistence.PromptRepository;
 import com.writeloop.persistence.SessionStatus;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Limit;
 import org.springframework.stereotype.Service;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -54,8 +55,21 @@ public class AnswerHistoryService {
     private final PromptRepository promptRepository;
     private final ObjectMapper objectMapper;
 
+    // 기록은 최근 순으로 한 번에 최대 MAX_HISTORY_PAGE_SIZE개만 읽는다. 지금까지는 사용자의 모든 세션과 시도를 피드백 내용까지 읽었다.
+    // limit 없이 부르는 예전 앱도 최근 MAX_HISTORY_PAGE_SIZE개까지 받는다.
+    static final int MAX_HISTORY_PAGE_SIZE = 100;
+    private static final int RECENT_SESSIONS_FOR_COMMON_MISTAKES = 100;
+    private static final int STREAK_LOOKBACK_DAYS = 400;
+
     public List<AnswerHistorySessionDto> getHistory(Long userId) {
-        List<AnswerSessionEntity> sessions = answerSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        return getHistory(userId, null, null);
+    }
+
+    public List<AnswerHistorySessionDto> getHistory(Long userId, Integer limit, Instant before) {
+        int pageSize = limit == null ? MAX_HISTORY_PAGE_SIZE : Math.max(1, Math.min(limit, MAX_HISTORY_PAGE_SIZE));
+        List<AnswerSessionEntity> sessions = before == null
+                ? answerSessionRepository.findByUserIdOrderByCreatedAtDesc(userId, Limit.of(pageSize))
+                : answerSessionRepository.findByUserIdAndCreatedAtLessThanOrderByCreatedAtDesc(userId, before, Limit.of(pageSize));
         if (sessions.isEmpty()) {
             return Collections.emptyList();
         }
@@ -184,7 +198,10 @@ public class AnswerHistoryService {
     }
 
     public List<CommonMistakeDto> getCommonMistakes(Long userId) {
-        List<AnswerSessionEntity> sessions = answerSessionRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<AnswerSessionEntity> sessions = answerSessionRepository.findByUserIdOrderByCreatedAtDesc(
+                userId,
+                Limit.of(RECENT_SESSIONS_FOR_COMMON_MISTAKES)
+        );
         if (sessions.isEmpty()) {
             return Collections.emptyList();
         }
@@ -229,31 +246,34 @@ public class AnswerHistoryService {
                 .toList();
     }
 
+    // 완료 세션 전체를 읽지 않고, 최근 STREAK_LOOKBACK_DAYS일의 완료 시각만 읽는다.
+    // 연속 기록이 그 경계까지 이어지면 기간을 두 배로 넓혀 다시 센다.
     private long calculateStreakDays(Long userId, LocalDate today) {
-        List<AnswerSessionEntity> completedSessions = answerSessionRepository
-                .findByUserIdAndStatusOrderByUpdatedAtDesc(userId, SessionStatus.COMPLETED);
+        for (long lookbackDays = STREAK_LOOKBACK_DAYS; ; lookbackDays *= 2) {
+            LocalDate windowStart = today.minusDays(lookbackDays);
+            Set<LocalDate> completedDates = answerSessionRepository
+                    .findUpdatedAtByUserIdAndStatusSince(
+                            userId,
+                            SessionStatus.COMPLETED,
+                            windowStart.atStartOfDay(KOREA_ZONE).toInstant()
+                    )
+                    .stream()
+                    .map(updatedAt -> updatedAt.atZone(KOREA_ZONE).toLocalDate())
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+            if (completedDates.isEmpty()) {
+                return 0;
+            }
 
-        if (completedSessions.isEmpty()) {
-            return 0;
+            LocalDate cursor = completedDates.contains(today) ? today : today.minusDays(1);
+            long streak = 0;
+            while (completedDates.contains(cursor)) {
+                streak += 1;
+                cursor = cursor.minusDays(1);
+            }
+            if (cursor.isAfter(windowStart)) {
+                return streak;
+            }
         }
-
-        Set<LocalDate> completedDates = completedSessions.stream()
-                .map(session -> session.getUpdatedAt().atZone(KOREA_ZONE).toLocalDate())
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
-        if (completedDates.isEmpty()) {
-            return 0;
-        }
-
-        LocalDate cursor = completedDates.contains(today) ? today : today.minusDays(1);
-        long streak = 0;
-
-        while (completedDates.contains(cursor)) {
-            streak += 1;
-            cursor = cursor.minusDays(1);
-        }
-
-        return streak;
     }
 
     private static final class DayAggregate {

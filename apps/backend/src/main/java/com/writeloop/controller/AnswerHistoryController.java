@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 @RestController
@@ -28,13 +30,17 @@ public class AnswerHistoryController {
 
     @GetMapping
     @ResponseStatus(HttpStatus.OK)
-    public List<AnswerHistorySessionDto> getHistory(HttpServletRequest request) {
+    public List<AnswerHistorySessionDto> getHistory(
+            @RequestParam(required = false) Integer limit,
+            @RequestParam(required = false) String before,
+            HttpServletRequest request
+    ) {
         Long currentUserId = authService.getCurrentUserIdOrNull(request);
         if (currentUserId == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요해요.");
         }
 
-        return answerHistoryService.getHistory(currentUserId);
+        return answerHistoryService.getHistory(currentUserId, limit, parseBefore(before));
     }
 
     @GetMapping("/today-status")
@@ -72,5 +78,17 @@ public class AnswerHistoryController {
         }
 
         return answerHistoryService.getCommonMistakes(currentUserId);
+    }
+
+    // 기록 페이지의 기준 시각. 앞 페이지 마지막 세션의 createdAt(ISO-8601)을 그대로 받는다.
+    private static Instant parseBefore(String before) {
+        if (before == null || before.isBlank()) {
+            return null;
+        }
+        try {
+            return Instant.parse(before.trim());
+        } catch (DateTimeParseException exception) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "before는 ISO-8601 시각이어야 해요.");
+        }
     }
 }

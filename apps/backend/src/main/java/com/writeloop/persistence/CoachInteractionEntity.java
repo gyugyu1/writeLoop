@@ -23,7 +23,6 @@ import java.time.Instant;
         indexes = {
                 @Index(name = "idx_coach_interactions_prompt_created", columnList = "prompt_id, created_at"),
                 @Index(name = "idx_coach_interactions_user_created", columnList = "user_id, created_at"),
-                @Index(name = "idx_coach_interactions_eval_status_created", columnList = "evaluation_status, created_at"),
                 @Index(name = "idx_coach_interactions_answer_session", columnList = "answer_session_id")
         }
 )
@@ -109,28 +108,6 @@ public class CoachInteractionEntity {
     @Column(name = "used_expressions_json", columnDefinition = "JSON")
     private String usedExpressionsJson;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "evaluation_status", nullable = false, length = 32)
-    private CoachEvaluationStatus evaluationStatus;
-
-    @Column(name = "evaluation_score")
-    private Integer evaluationScore;
-
-    @Column(name = "evaluation_verdict", length = 48)
-    private String evaluationVerdict;
-
-    @Column(name = "evaluation_summary", columnDefinition = "TEXT")
-    private String evaluationSummary;
-
-    @Column(name = "evaluation_model", length = 64)
-    private String evaluationModel;
-
-    @Column(name = "evaluation_payload_json", columnDefinition = "JSON")
-    private String evaluationPayloadJson;
-
-    @Column(name = "evaluated_at")
-    private Instant evaluatedAt;
-
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -181,7 +158,6 @@ public class CoachInteractionEntity {
         this.expressionsJson = expressionsJson;
         this.responseSource = responseSource;
         this.responseModel = responseModel;
-        this.evaluationStatus = CoachEvaluationStatus.NOT_EVALUATED;
     }
 
     @PrePersist
@@ -189,9 +165,6 @@ public class CoachInteractionEntity {
         Instant now = Instant.now();
         createdAt = now;
         updatedAt = now;
-        if (evaluationStatus == null) {
-            evaluationStatus = CoachEvaluationStatus.NOT_EVALUATED;
-        }
     }
 
     @PreUpdate
@@ -211,23 +184,5 @@ public class CoachInteractionEntity {
         this.answerAttemptNo = answerAttemptNo;
         this.usedExpressionsJson = usedExpressionsJson;
         this.usagePayloadJson = usagePayloadJson;
-    }
-
-    public void updateEvaluation(
-            CoachEvaluationStatus evaluationStatus,
-            Integer evaluationScore,
-            String evaluationVerdict,
-            String evaluationSummary,
-            String evaluationModel,
-            String evaluationPayloadJson,
-            Instant evaluatedAt
-    ) {
-        this.evaluationStatus = evaluationStatus;
-        this.evaluationScore = evaluationScore;
-        this.evaluationVerdict = evaluationVerdict;
-        this.evaluationSummary = evaluationSummary;
-        this.evaluationModel = evaluationModel;
-        this.evaluationPayloadJson = evaluationPayloadJson;
-        this.evaluatedAt = evaluatedAt;
     }
 }

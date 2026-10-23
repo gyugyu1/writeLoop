@@ -25,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -45,6 +46,7 @@ import java.util.stream.Collectors;
 public class DiaryService {
 
     private static final String DIARY_SCHEMA_VERSION = "diary-feedback-v1";
+    private static final int MAX_ATTEMPT_SAVE_TRIES = 3;
     private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {
     };
     private static final TypeReference<List<DiaryCorrectionPointDto>> DIARY_CORRECTION_LIST_TYPE =
@@ -204,7 +206,52 @@ public class DiaryService {
         }
 
         phaseStartedAtNanos = System.nanoTime();
-        DiaryAttemptEntity savedAttempt = diaryAttemptRepository.save(new DiaryAttemptEntity(
+        DiaryFeedbackResponseDto response = persistAttempt(entryId, diaryText, feedback, attemptNo);
+        logDiaryFeedbackTiming("persist", entryId, attemptNo, phaseStartedAtNanos);
+        logDiaryFeedbackTiming("total", entryId, attemptNo, totalStartedAtNanos);
+        return response;
+        } finally {
+            clearDiaryTimingTrace();
+        }
+    }
+
+    // 시도 번호는 저장할 때 다시 정한다. 앱이 시간 초과로 끊은 뒤 다시 보내면 첫 요청이 아직 돌고 있어서,
+    // LLM을 부르기 전에 정한 번호를 그 요청이 먼저 쓸 수 있다(uq_diary_attempts_entry_attempt_no).
+    // 겹친 요청이 같은 일기로 먼저 저장했으면 하나 더 저장하지 않고 그 시도를 돌려준다.
+    private DiaryFeedbackResponseDto persistAttempt(
+            String entryId,
+            String diaryText,
+            DiaryFeedbackResponseDto feedback,
+            int plannedAttemptNo
+    ) {
+        for (int tries = 0; tries < MAX_ATTEMPT_SAVE_TRIES; tries++) {
+            int attemptNo = Math.max(plannedAttemptNo, diaryAttemptRepository.countByEntryId(entryId) + 1);
+            if (attemptNo > plannedAttemptNo) {
+                Optional<DiaryFeedbackResponseDto> concurrent = diaryAttemptRepository
+                        .findByEntryIdAndAttemptNo(entryId, attemptNo - 1)
+                        .filter(saved -> diaryText.equals(saved.getDiaryText()))
+                        .flatMap(this::readFeedbackPayload);
+                if (concurrent.isPresent()) {
+                    return concurrent.get();
+                }
+            }
+            try {
+                DiaryAttemptEntity savedAttempt = diaryAttemptRepository.save(newAttempt(entryId, attemptNo, diaryText, feedback));
+                setDiaryTimingAttemptId(savedAttempt.getId());
+                return feedback.withIdentity(entryId, savedAttempt.getAttemptNo());
+            } catch (DataIntegrityViolationException exception) {
+                log.info("Diary attempt number {} for entry {} was taken by a concurrent request; retrying", attemptNo, entryId);
+            }
+        }
+        throw new ApiException(
+                HttpStatus.CONFLICT,
+                "DIARY_FEEDBACK_CONFLICT",
+                "다른 요청과 겹쳐 피드백을 저장하지 못했어요. 잠시 후 다시 시도해 주세요."
+        );
+    }
+
+    private DiaryAttemptEntity newAttempt(String entryId, int attemptNo, String diaryText, DiaryFeedbackResponseDto feedback) {
+        return new DiaryAttemptEntity(
                 entryId,
                 attemptNo,
                 diaryText,
@@ -219,16 +266,7 @@ public class DiaryService {
                 safeText(firstNonBlank(feedback.modelDiary(), feedback.correctedDiary(), diaryText)),
                 safeText(feedback.nextDiaryMission().instructionKo()),
                 toJsonString(feedback)
-        ));
-        setDiaryTimingAttemptId(savedAttempt.getId());
-        logDiaryFeedbackTiming("persist", entryId, attemptNo, phaseStartedAtNanos);
-
-        DiaryFeedbackResponseDto response = feedback.withIdentity(entryId, savedAttempt.getAttemptNo());
-        logDiaryFeedbackTiming("total", entryId, attemptNo, totalStartedAtNanos);
-        return response;
-        } finally {
-            clearDiaryTimingTrace();
-        }
+        );
     }
 
     private void beginDiaryTimingTrace(Long userId, String entryId, int attemptNo) {

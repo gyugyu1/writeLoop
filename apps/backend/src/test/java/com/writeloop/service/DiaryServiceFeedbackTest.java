@@ -5,6 +5,7 @@ import com.writeloop.dto.DiaryAnswerBand;
 import com.writeloop.dto.DiaryFeedbackRequestDto;
 import com.writeloop.dto.DiaryFeedbackResponseDto;
 import com.writeloop.exception.ApiException;
+import com.writeloop.persistence.DiaryAttemptEntity;
 import com.writeloop.persistence.DiaryAttemptRepository;
 import com.writeloop.persistence.DiaryEntryEntity;
 import com.writeloop.persistence.DiaryEntryRepository;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -26,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -123,6 +126,74 @@ class DiaryServiceFeedbackTest {
                 ArgumentCaptor.forClass(DiaryFeedbackPromptContext.class);
         verify(diaryFeedbackClient).review(contextCaptor.capture());
         assertThat(contextCaptor.getValue().includeFullDiaries()).isFalse();
+    }
+
+    @Test
+    void returnsTheConcurrentAttemptWhenTheSameDiaryWasSavedFirst() throws Exception {
+        String diaryText = "I walked to the park. It was raining.";
+        when(diaryFeedbackClient.isConfigured()).thenReturn(true);
+        when(diaryFeedbackClient.review(any())).thenReturn(llmFeedback(DiaryAnswerBand.DIARY_FLOW_THIN));
+        // 시도 번호를 정할 때와 처음 저장할 때는 0개, 겹친 요청이 먼저 저장한 뒤에는 1개다.
+        when(diaryAttemptRepository.countByEntryId(ENTRY_ID)).thenReturn(0, 0, 1);
+        when(diaryAttemptRepository.save(any())).thenThrow(new DataIntegrityViolationException("uq_diary_attempts_entry_attempt_no"));
+        DiaryFeedbackResponseDto firstFeedback = llmFeedback(DiaryAnswerBand.DIARY_CLEAR_BASIC)
+                .withIdentity(ENTRY_ID, 1)
+                .withFinishableFromBand();
+        when(diaryAttemptRepository.findByEntryIdAndAttemptNo(ENTRY_ID, 1))
+                .thenReturn(Optional.of(savedAttempt(1, diaryText, new ObjectMapper().writeValueAsString(firstFeedback))));
+
+        DiaryFeedbackResponseDto response = service.generateFeedback(
+                USER_ID,
+                ENTRY_ID,
+                new DiaryFeedbackRequestDto(diaryText, "INITIAL")
+        );
+
+        // 같은 일기를 하나 더 저장하지 않고, 먼저 저장된 시도를 돌려준다.
+        assertThat(response.attemptNo()).isEqualTo(1);
+        assertThat(response.diaryAnswerBand()).isEqualTo(DiaryAnswerBand.DIARY_CLEAR_BASIC);
+        verify(diaryAttemptRepository, times(1)).save(any());
+    }
+
+    @Test
+    void savesWithTheNextNumberWhenADifferentDiaryTookTheNumber() {
+        when(diaryFeedbackClient.isConfigured()).thenReturn(true);
+        when(diaryFeedbackClient.review(any())).thenReturn(llmFeedback(DiaryAnswerBand.DIARY_FLOW_THIN));
+        when(diaryAttemptRepository.countByEntryId(ENTRY_ID)).thenReturn(0, 0, 1);
+        when(diaryAttemptRepository.save(any()))
+                .thenThrow(new DataIntegrityViolationException("uq_diary_attempts_entry_attempt_no"))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(diaryAttemptRepository.findByEntryIdAndAttemptNo(ENTRY_ID, 1))
+                .thenReturn(Optional.of(savedAttempt(1, "I stayed home.", "{}")));
+
+        DiaryFeedbackResponseDto response = service.generateFeedback(
+                USER_ID,
+                ENTRY_ID,
+                new DiaryFeedbackRequestDto("I walked to the park. It was raining.", "INITIAL")
+        );
+
+        assertThat(response.attemptNo()).isEqualTo(2);
+        ArgumentCaptor<DiaryAttemptEntity> attemptCaptor = ArgumentCaptor.forClass(DiaryAttemptEntity.class);
+        verify(diaryAttemptRepository, times(2)).save(attemptCaptor.capture());
+        assertThat(attemptCaptor.getAllValues()).extracting(DiaryAttemptEntity::getAttemptNo).containsExactly(1, 2);
+    }
+
+    private DiaryAttemptEntity savedAttempt(int attemptNo, String diaryText, String payloadJson) {
+        return new DiaryAttemptEntity(
+                ENTRY_ID,
+                attemptNo,
+                diaryText,
+                80,
+                DiaryAnswerBand.DIARY_CLEAR_BASIC.name(),
+                "diary-feedback-v1",
+                "openai",
+                "gpt-6-luna",
+                "",
+                "[]",
+                "[]",
+                diaryText,
+                "",
+                payloadJson
+        );
     }
 
     // LLM은 finishable·schemaVersion·entryId·attemptNo를 만들지 않는다(기본값으로 들어온다).

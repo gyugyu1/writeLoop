@@ -1772,37 +1772,6 @@ public class TodayQuestionRecommendationService {
         );
     }
 
-    private String translateReasonTextLegacy(String englishText) {
-        return switch (englishText) {
-            case "Recent loops stopped mid-way, so this is a safer question to restart your rhythm without extra pressure." ->
-                    "최근 루프를 중간에 멈춘 적이 있어서, 오늘은 부담 없이 다시 흐름을 찾기 좋은 질문을 골랐어요.";
-            case "This question fits the expressions you recently saved, so it is a good chance to reuse what you learned in a new answer." ->
-                    "최근 저장한 표현과 잘 이어지는 질문이라, 배운 표현을 새로운 답변 안에서 다시 써보기 좋아요.";
-            case "Your recent answers were on the shorter side, and this prompt gets better fast when you add just one clear reason." ->
-                    "최근 답변이 짧은 편이라, 이번 질문은 이유 한 줄만 더해도 답이 확실히 좋아지기 쉬워요.";
-            case "Time or place phrases fit naturally here, so it is an easy question for practicing expressions like usually, after lunch, or at home." ->
-                    "시간이나 장소 표현이 자연스럽게 붙는 질문이라 usually, after lunch, at home 같은 표현을 다시 써보기 좋아요.";
-            case "You have not written on this topic recently, so it should feel fresher and easier to start today." ->
-                    "최근에 쓰지 않았던 주제라 오늘은 더 신선한 감각으로 시작하기 좋아요.";
-            case "Your recent completion flow looks steady, and this is a strong low-friction question for keeping that streak alive today." ->
-                    "최근 완주 흐름이 안정적이라, 오늘도 그 리듬을 이어가기 좋은 부담 적은 질문을 골랐어요.";
-            case "This prompt lets you go half a step further by adding detail or an example without feeling like a full difficulty jump." ->
-                    "난이도를 크게 올리지 않고도 디테일이나 예시를 반 걸음 더 붙여볼 수 있는 질문이에요.";
-            case "One short example fits naturally in this question, so your answer can become richer without getting much longer." ->
-                    "짧은 예시 한 줄만 더해도 답이 자연스럽게 풍부해지는 질문이에요.";
-            case "This prompt gives you a clearer way to open the first sentence, so you can start writing before overthinking it." ->
-                    "첫 문장을 여는 방식이 비교적 분명해서 너무 오래 고민하지 않고 바로 쓰기 좋아요.";
-            case "You have been writing in a similar lane recently, so this question helps widen the rhythm with a different category." ->
-                    "최근 비슷한 결의 질문이 이어졌어서, 오늘은 다른 카테고리로 흐름을 넓혀 보기 좋아요.";
-            case "This question still works even with a short answer, which makes it a good option for days when you want to begin without pressure." ->
-                    "짧게 답해도 성립하는 질문이라, 오늘 가볍게 시작하고 싶을 때 잘 맞아요.";
-            case "This prompt tends to produce reusable phrases and connectors, so it is a good one for collecting expressions after you write." ->
-                    "답을 쓰면서 건질 만한 표현이나 연결 표현이 잘 나오는 편이라 표현 저장까지 이어가기 좋아요.";
-            default ->
-                    "익숙한 표현을 조금 다른 문맥으로 옮겨 써보기에 좋은 질문이라 활용 연습에 잘 맞아요.";
-        };
-    }
-
     private String translateReasonText(String englishText) {
         return switch (englishText) {
             case "Recent loops stopped mid-way, so this is a safer question to restart your rhythm without extra pressure." ->

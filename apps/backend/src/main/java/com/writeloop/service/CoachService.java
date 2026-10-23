@@ -52,8 +52,6 @@ import java.util.regex.Pattern;
 public class CoachService {
 
     private static final String DIARY_FREE_WRITING_PROMPT_ID = "diary-free-writing";
-    private static final Pattern QUOTED_PHRASE_PATTERN = Pattern.compile("\"([^\"]+)\"");
-    private static final Pattern ENGLISH_PHRASE_PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9' -]{2,}");
     private static final Pattern NON_WORD_PATTERN = Pattern.compile("[^\\p{L}\\p{N}\\s']");
     private static final Pattern SELF_DISCOVERED_CLAUSE_BREAK_PATTERN = Pattern.compile(
             "\\b(?:because|since|so|which|while|although)\\b",
@@ -87,23 +85,6 @@ public class CoachService {
             "there", "these", "they", "this", "those", "to", "too", "use", "very",
             "want", "was", "we", "were", "what", "when", "which", "while", "will",
             "with", "would", "you", "your"
-    );
-    private static final Map<String, String> LEARN_TARGET_TRANSLATIONS = Map.ofEntries(
-            Map.entry("\uC720\uB3C4", "judo"),
-            Map.entry("\uD0DC\uAD8C\uB3C4", "taekwondo"),
-            Map.entry("\uAC80\uB3C4", "kendo"),
-            Map.entry("\uC218\uC601", "swimming"),
-            Map.entry("\uD53C\uC544\uB178", "piano"),
-            Map.entry("\uAE30\uD0C0", "guitar"),
-            Map.entry("\uCF54\uB529", "coding"),
-            Map.entry("\uD504\uB85C\uADF8\uB798\uBC0D", "programming"),
-            Map.entry("\uC601\uC5B4", "English"),
-            Map.entry("\uC77C\uBCF8\uC5B4", "Japanese"),
-            Map.entry("\uC911\uAD6D\uC5B4", "Chinese"),
-            Map.entry("\uC694\uB9AC", "cooking"),
-            Map.entry("\uCD95\uAD6C", "soccer"),
-            Map.entry("\uB18D\uAD6C", "basketball"),
-            Map.entry("\uD14C\uB2C8\uC2A4", "tennis")
     );
     private static final List<ExpressionTopicBundle> EXPRESSION_TOPIC_BUNDLES = List.of(
             new ExpressionTopicBundle(
@@ -2133,34 +2114,6 @@ public class CoachService {
         };
     }
 
-    private String normalizedHintMeaning(String hintType) {
-        String normalizedHintType = hintType == null ? "" : hintType.trim().toUpperCase(Locale.ROOT);
-        return switch (normalizedHintType) {
-            case "STARTER" -> "답변을 자연스럽게 시작할 때 쓰기 좋은 표현이에요.";
-            case "VOCAB_WORD" -> "이 주제에서 바로 가져다 쓸 수 있는 핵심 단어예요.";
-            case "VOCAB_PHRASE" -> "이 주제에서 바로 활용할 수 있는 표현이에요.";
-            case "STRUCTURE" -> "답변의 틀을 잡아 주는 표현이에요.";
-            case "DETAIL" -> "내용을 더 구체적으로 만드는 데 도움이 되는 표현이에요.";
-            case "LINKER" -> "문장과 문장을 자연스럽게 이어 주는 표현이에요.";
-            case "BALANCE" -> "장단점을 균형 있게 말할 때 도움이 되는 표현이에요.";
-            default -> "답변을 자연스럽게 만드는 데 도움이 되는 표현이에요.";
-        };
-    }
-
-    private String normalizedHintUsageTip(String hintType) {
-        String normalizedHintType = hintType == null ? "" : hintType.trim().toUpperCase(Locale.ROOT);
-        return switch (normalizedHintType) {
-            case "STARTER" -> "첫 문장을 시작할 때 바로 붙여 써 보세요.";
-            case "VOCAB_WORD" -> "문장 안에 자연스럽게 끼워 넣어 활용해 보세요.";
-            case "VOCAB_PHRASE" -> "표현을 통째로 가져와 문장에 붙여 써 보세요.";
-            case "STRUCTURE" -> "이유나 예시를 덧붙이면 더 자연스럽게 쓸 수 있어요.";
-            case "DETAIL" -> "짧은 답변에 구체적인 정보나 예시를 더할 때 활용해 보세요.";
-            case "LINKER" -> "이유, 예시, 추가 설명을 연결할 때 쓰기 좋아요.";
-            case "BALANCE" -> "한쪽만 말하지 말고 반대 관점도 함께 덧붙이면 좋아요.";
-            default -> "다음 답변에서 다시 써 보면 좋은 표현이에요.";
-        };
-    }
-
     private String cleanHintMeaning(String hintType) {
         String normalizedHintType = hintType == null ? "" : hintType.trim().toUpperCase(Locale.ROOT);
         return switch (normalizedHintType) {
@@ -2199,20 +2152,6 @@ public class CoachService {
             case "BALANCE" -> "On the other hand, ...";
             default -> "";
         };
-    }
-
-    private String extractEnglishFragment(String content) {
-        Matcher matcher = QUOTED_PHRASE_PATTERN.matcher(content == null ? "" : content);
-        if (matcher.find()) {
-            return normalizeText(matcher.group(1));
-        }
-
-        Matcher englishMatcher = ENGLISH_PHRASE_PATTERN.matcher(content == null ? "" : content);
-        if (englishMatcher.find()) {
-            return normalizeText(englishMatcher.group());
-        }
-
-        return "";
     }
 
     private String buildExampleForPhrase(String expression) {
@@ -2297,11 +2236,6 @@ public class CoachService {
             return "질문에 바로 붙여 쓸 수 있는 시작 표현을 먼저 골라뒀어요.";
         }
         return "지금 질문에 바로 써 볼 수 있는 표현을 골라봤어요. 하나만 골라도 충분히 도움이 될 거예요.";
-    }
-
-    private String buildTopicCoachReply(ExpressionTopicBundle topicBundle) {
-        return topicBundle.labelKo() + "을(를) 말할 때 바로 가져다 쓸 수 있는 표현을 중심으로 골랐어요. "
-                + "비슷해 보여도 쓰임이 조금씩 다르니 예문까지 같이 보고 골라보세요.";
     }
 
     private List<CoachExpressionDto> filterExpressionsByIntent(
@@ -2737,176 +2671,6 @@ public class CoachService {
                         "COACH"
                 )
         );
-    }
-
-    private boolean looksLikeMeetFriendsLookup(String question) {
-        return question != null
-                && question.matches(".*(\\uCE5C\\uAD6C|friend|friends).*(\\uB9CC\\uB098|\\uB9CC\\uB0A0|\\uB9CC\\uB09C|\\uC5B4\\uC6B8|\\uB180|meet|see|hang out|catch up|get together).*");
-    }
-
-    private boolean isMeetFriendsMeaning(String normalizedTarget) {
-        if (normalizedTarget.isBlank()) {
-            return false;
-        }
-
-        boolean hasFriend = containsAny(
-                normalizedTarget,
-                "\uCE5C\uAD6C", "friend", "friends", "buddy", "buddies"
-        );
-        boolean hasMeet = containsAny(
-                normalizedTarget,
-                "\uB9CC\uB098", "\uB9CC\uB0A0", "\uB9CC\uB0A8", "\uC5B4\uC6B8", "\uB180", "\uBCF4\uB7EC", "\uBCF4\uB2E4",
-                "meet", "see", "hang out", "catch up", "get together"
-        );
-
-        return hasFriend && hasMeet;
-    }
-
-    private boolean looksLikeLearningMeaning(String normalizedTarget) {
-        if (normalizedTarget.isBlank()) {
-            return false;
-        }
-
-        return containsAny(
-                normalizedTarget,
-                "\uBC30\uC6B0\uACE0 \uC2F6", "\uBC30\uC6B0\uACE0", "\uBC30\uC6B0\uB2E4",
-                "want to learn", "learn", "start learning"
-        );
-    }
-
-    private String resolveLearnTargetTranslation(String normalizedTarget) {
-        String candidate = normalizedTarget
-                .replace("\uBC30\uC6B0\uACE0 \uC2F6\uB2E4\uACE0", " ")
-                .replace("\uBC30\uC6B0\uACE0 \uC2F6\uC5B4\uC11C", " ")
-                .replace("\uBC30\uC6B0\uACE0 \uC2F6\uC5B4", " ")
-                .replace("\uBC30\uC6B0\uACE0 \uC2F6", " ")
-                .replace("\uBC30\uC6B0\uACE0", " ")
-                .replace("\uBC30\uC6B0\uB2E4", " ")
-                .replace("want to learn", " ")
-                .replace("start learning", " ")
-                .replace("learn", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
-
-        candidate = candidate
-                .replaceAll("(\uC744|\uB97C|\uC740|\uB294|\uC774|\uAC00|\uACFC|\uC640)$", "")
-                .replaceAll("\\s+", " ")
-                .trim();
-
-        for (Map.Entry<String, String> entry : LEARN_TARGET_TRANSLATIONS.entrySet()) {
-            if (candidate.contains(entry.getKey())) {
-                return entry.getValue();
-            }
-        }
-
-        Matcher englishMatcher = ENGLISH_PHRASE_PATTERN.matcher(candidate);
-        if (englishMatcher.find()) {
-            return englishMatcher.group().trim();
-        }
-
-        return "";
-    }
-
-    private String extractMeaningLookupTarget(String userQuestion) {
-        String normalized = normalizeText(userQuestion);
-        if (normalized.isBlank()) {
-            return "";
-        }
-
-        String extracted = normalized
-                .replace("\uC601\uC5B4\uB85C", " ")
-                .replace("\uD45C\uD604", " ")
-                .replace("\uB9D0\uD558\uACE0 \uC2F6\uC5B4", " ")
-                .replace("\uB9D0\uD558\uACE0 \uC2F6", " ")
-                .replace("\uC5B4\uB5BB\uAC8C \uB9D0", " ")
-                .replace("\uBB50\uB77C\uACE0", " ")
-                .replace("\uB77C\uACE0 \uB9D0", " ")
-                .replace("\uB77C\uACE0 \uD558\uACE0", " ")
-                .replace("\uB2E8\uC5B4", " ")
-                .replace("how do i say", " ")
-                .replace("want to say", " ")
-                .replace("expression", " ")
-                .replace("phrase", " ")
-                .replace("word", " ")
-                .replace("\uB73B\uC774 \uBB50\uC57C", " ")
-                .replace("\uB73B\uC774 \uBB54\uC9C0", " ")
-                .replace("\uBB34\uC2A8 \uB73B", " ")
-                .replace("\uB73B", " ")
-                .replace("\uC758\uBBF8", " ")
-                .replace("what is the meaning of", " ")
-                .replace("what does", " ")
-                .replace("meaning", " ")
-                .replace("means", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
-
-        extracted = extracted.replaceAll("\\bmean\\b", " ").replaceAll("\\s+", " ").trim();
-        return extracted.isBlank() ? normalized : extracted;
-    }
-
-    private ExpressionTopicBundle resolveExpressionTopic(String userQuestion) {
-        if (userQuestion == null || userQuestion.isBlank()) {
-            return null;
-        }
-
-        String normalized = normalizeText(userQuestion);
-        if (!isMeaningLookupQuestion(normalized)) {
-            return null;
-        }
-
-        for (ExpressionTopicBundle bundle : EXPRESSION_TOPIC_BUNDLES) {
-            for (String keyword : bundle.keywords()) {
-                if (normalized.contains(keyword)) {
-                    return bundle;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    private boolean isMeaningLookupQuestion(String normalizedQuestion) {
-        if (containsAny(
-                normalizedQuestion,
-                "\uC601\uC5B4\uB85C", "\uB9D0\uD558\uACE0 \uC2F6\uC5B4", "\uB9D0\uD558\uACE0 \uC2F6",
-                "\uC5B4\uB5BB\uAC8C \uB9D0", "\uBB50\uB77C\uACE0", "\uB77C\uACE0 \uB9D0", "\uB77C\uACE0 \uD558\uACE0", "\uB2E8\uC5B4",
-                "how do i say", "want to say")) {
-            return true;
-        }
-
-        if (containsAny(
-                normalizedQuestion,
-                "\uB73B", "\uC758\uBBF8", "\uBB34\uC2A8 \uB73B", "\uB73B\uC774 \uBB50\uC57C", "\uB73B\uC774 \uBB54\uC9C0",
-                "meaning", "what does", "means", "mean")) {
-            return true;
-        }
-
-        if (containsAny(normalizedQuestion, "\uD45C\uD604", "\uB2E8\uC5B4", "expression", "phrase", "word")
-                && inferCategories(normalizedQuestion).isEmpty()) {
-            return true;
-        }
-
-        if (containsAny(
-                normalizedQuestion,
-                "\uAD6C\uC870", "\uD750\uB984", "\uC21C\uC11C", "\uBB50\uBD80\uD130", "\uC2DC\uC791",
-                "structure", "flow", "order", "how should i start", "what to write first")) {
-            return false;
-        }
-
-        return normalizedQuestion.split("\\s+").length <= 2
-                && normalizedQuestion.matches(".*[\\uAC00-\\uD7A3].*");
-    }
-
-    private boolean looksLikeExpressionLookup(String normalizedQuestion) {
-        if (containsAny(
-                normalizedQuestion,
-                "영어로", "표현", "말하고 싶", "어떻게 말", "뭐라고", "라고 말", "라고 하고", "단어",
-                "how do i say", "want to say", "expression", "phrase", "word")) {
-            return true;
-        }
-
-        return normalizedQuestion.split("\\s+").length <= 2
-                && normalizedQuestion.matches(".*[가-힣].*");
     }
 
     private String buildUsageReply(List<CoachExpressionUsageDto> usedExpressions, List<CoachExpressionUsageDto> unusedExpressions) {

@@ -308,10 +308,6 @@ public class AnswerHistoryService {
         return value != null && !value.trim().isEmpty();
     }
 
-    private String nullSafe(String value) {
-        return value == null ? "" : value;
-    }
-
     private MistakeCategory categorizeCorrection(String issue, String suggestion) {
         String normalized = normalize(issue + " " + suggestion);
 

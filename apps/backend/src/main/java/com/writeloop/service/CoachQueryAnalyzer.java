@@ -902,61 +902,6 @@ class CoachQueryAnalyzer {
         );
     }
 
-    private boolean hasIdeaSupportCue(String normalizedQuestion, String compactQuestion) {
-        boolean hasIdeaNoun = containsAny(
-                normalizedQuestion,
-                "\uC774\uC720", "\uADFC\uAC70", "\uC608\uC2DC", "\uC544\uC774\uB514\uC5B4", "\uD3EC\uC778\uD2B8", "\uC18C\uC7AC",
-                "reason", "reasons", "example", "examples", "idea", "ideas", "point", "points"
-        );
-        boolean hasIdeaQuestionForm = containsAny(
-                normalizedQuestion,
-                "\uBB50\uAC00 \uC788\uC744\uAE4C", "\uBB50\uAC00 \uC788\uC744\uC9C0", "\uBB50\uAC00 \uC88B\uC744\uAE4C",
-                "\uBB34\uC2A8 \uC774\uC720", "\uC5B4\uB5A4 \uC774\uC720", "\uBB34\uC2A8 \uC608\uC2DC", "\uC5B4\uB5A4 \uC608\uC2DC",
-                "\uB2F5\uC73C\uB85C \uC4F8 \uB9CC\uD55C", "\uB4E4 \uC218 \uC788\uC744\uAE4C", "\uC4F8 \uC218 \uC788\uB294 \uC774\uC720\uAC00",
-                "\uC4F8 \uC218 \uC788\uB294 \uC608\uC2DC\uAC00", "\uC0DD\uAC01\uD574 \uBCFC", "\uD3EC\uC778\uD2B8\uAC00 \uBB50",
-                "what reasons", "what ideas", "what points", "what examples",
-                "what could i say", "what can i say", "ideas for this question", "reasons i can use"
-        ) || containsAny(
-                compactQuestion,
-                "\uBB50\uAC00\uC788\uC744\uAE4C", "\uBB50\uAC00\uC88B\uC744\uAE4C", "\uBB34\uC2A8\uC774\uC720", "\uC5B4\uB5A4\uC774\uC720",
-                "\uBB34\uC2A8\uC608\uC2DC", "\uC5B4\uB5A4\uC608\uC2DC", "\uC774\uC720\uAC00\uBB50", "\uC608\uC2DC\uAC00\uBB50",
-                "\uD3EC\uC778\uD2B8\uAC00\uBB50", "\uC4F8\uC218\uC788\uB294\uC774\uC720\uAC00", "\uC4F8\uC218\uC788\uB294\uC608\uC2DC\uAC00"
-        );
-
-        hasIdeaNoun = hasIdeaNoun || containsAny(normalizedQuestion, "사례", "내용", "case", "cases");
-        hasIdeaQuestionForm = hasIdeaQuestionForm
-                || containsAny(normalizedQuestion, "뭐가 있어", "들 수 있어", "추천할 만한", "알려줄 만한")
-                || containsAny(compactQuestion, "뭐가있어", "들수있어");
-
-        boolean hasIdeaContextCue = containsAny(
-                normalizedQuestion,
-                "이 질문", "답에", "넣을", "넣으면", "쓸 만한", "들 수", "아이디어", "포인트", "사례"
-        );
-        boolean hasIdeaRequestVerb = containsAny(
-                normalizedQuestion,
-                "알려줘", "추천해줘", "추천해 줘", "추천 좀", "정리해줘", "뽑아줘", "줄래", "줘",
-                "show me", "give me", "suggest", "brainstorm"
-        ) || containsAny(
-                compactQuestion,
-                "알려줘", "추천해줘", "추천좀", "정리해줘", "뽑아줘"
-        );
-
-        return hasIdeaNoun
-                && (hasIdeaQuestionForm || hasIdeaRequestVerb || hasIdeaContextCue)
-                && !looksLikePhraseSupportRequest(normalizedQuestion, compactQuestion);
-    }
-
-    private boolean looksLikePhraseSupportRequest(String normalizedQuestion, String compactQuestion) {
-        return containsAny(
-                normalizedQuestion,
-                "표현", "문장", "영어로", "어떻게 말", "어떻게 표현", "스타터", "첫 문장", "연결 표현",
-                "expression", "phrase", "sentence", "how do i say", "how to say", "starter"
-        ) || containsAny(
-                compactQuestion,
-                "표현", "문장", "영어로", "어떻게말", "어떻게표현", "첫문장", "연결표현"
-        );
-    }
-
     private boolean hasHybridCompanionCue(String normalizedQuestion, String compactQuestion) {
         return containsAny(
                 normalizedQuestion,

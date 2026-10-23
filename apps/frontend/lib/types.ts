@@ -159,13 +159,6 @@ export interface HistoryMonthStatus {
   days: MonthStatusDay[];
 }
 
-export interface CommonMistake {
-  issue: string;
-  displayLabel: string;
-  count: number;
-  latestSuggestion: string;
-}
-
 export type SavedExpressionSourceType =
   | "USED_EXPRESSION"
   | "COACH_RECOMMENDATION"
@@ -670,10 +663,6 @@ export interface LoginRequest {
   email: string;
   password: string;
   rememberMe?: boolean;
-}
-
-export interface RegisterRequest extends LoginRequest {
-  displayName: string;
 }
 
 export interface SendRegistrationCodeRequest {

@@ -10,7 +10,6 @@ import type {
   CoachHelpResponse,
   CoachUsageCheckRequest,
   CoachUsageCheckResponse,
-  CommonMistake,
   CompleteRegistrationRequest,
   CompleteSocialRegistrationRequest,
   DeleteAccountRequest,
@@ -33,7 +32,6 @@ import type {
   LoginRequest,
   PromptHint,
   Prompt,
-  RegisterRequest,
   ResetPasswordRequest,
   SavedExpression,
   SaveExpressionRequest,
@@ -857,28 +855,6 @@ export async function getDiaryEntries(): Promise<DiaryEntry[]> {
   return (payload ?? []).map((entry) => normalizeDiaryEntryPayload(entry));
 }
 
-export async function getDiaryEntry(entryId: string): Promise<DiaryEntry | null> {
-  const normalizedEntryId = entryId.trim();
-  if (!normalizedEntryId) {
-    return null;
-  }
-
-  const response = await fetch(`${API_BASE}/api/diary/entries/${encodeURIComponent(normalizedEntryId)}`, {
-    cache: "no-store",
-    credentials: "include"
-  });
-
-  if (response.status === 401 || response.status === 404) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw await parseApiError(response, "Failed to load diary entry");
-  }
-
-  return normalizeDiaryEntryPayload((await response.json()) as Parameters<typeof normalizeDiaryEntryPayload>[0]);
-}
-
 export async function createDiaryEntry(request: DiaryEntryRequest): Promise<DiaryEntry> {
   const response = await fetch(`${API_BASE}/api/diary/entries`, {
     method: "POST",
@@ -1008,23 +984,6 @@ export async function login(request: LoginRequest): Promise<AuthUser> {
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to log in");
-  }
-
-  return response.json();
-}
-
-export async function register(request: RegisterRequest): Promise<AuthNotice> {
-  const response = await fetch(`${API_BASE}/api/auth/register`, {
-    method: "POST",
-    credentials: "include",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(request)
-  });
-
-  if (!response.ok) {
-    throw await parseApiError(response, "Failed to register");
   }
 
   return response.json();
@@ -1299,19 +1258,6 @@ export async function getMonthStatus(year: number, month: number): Promise<Histo
 
   if (!response.ok) {
     throw await parseApiError(response, "Failed to load month status");
-  }
-
-  return response.json();
-}
-
-export async function getCommonMistakes(): Promise<CommonMistake[]> {
-  const response = await fetch(`${API_BASE}/api/history/common-mistakes`, {
-    cache: "no-store",
-    credentials: "include"
-  });
-
-  if (!response.ok) {
-    throw await parseApiError(response, "Failed to load common mistakes");
   }
 
   return response.json();

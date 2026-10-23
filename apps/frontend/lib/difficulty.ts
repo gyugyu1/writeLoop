@@ -29,13 +29,6 @@ export function getDifficultyLabel(difficulty: DailyDifficulty | PromptDifficult
   }
 }
 
-export function isPromptCompatibleWithDailyDifficulty(
-  promptDifficulty: PromptDifficulty | null | undefined,
-  selectedDifficulty: DailyDifficulty
-) {
-  return normalizeDailyDifficulty(promptDifficulty, selectedDifficulty) === selectedDifficulty;
-}
-
 export function resolvePracticeDifficulty(
   selectedDifficulty: DailyDifficulty,
   promptDifficulty: PromptDifficulty | null | undefined

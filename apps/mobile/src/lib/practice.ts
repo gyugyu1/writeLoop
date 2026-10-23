@@ -47,14 +47,6 @@ export function getPromptCategoryKey(prompt: Prompt | null | undefined) {
   return prompt?.id ?? "";
 }
 
-export function countDistinctPromptCategories(prompts: Prompt[]) {
-  return new Set(
-    prompts
-      .map((prompt) => getPromptCategoryKey(prompt))
-      .filter((categoryKey) => categoryKey !== "")
-  ).size;
-}
-
 export function buildDistinctCategoryPromptSelection(
   primaryCandidates: Prompt[],
   fallbackCandidates: Prompt[],

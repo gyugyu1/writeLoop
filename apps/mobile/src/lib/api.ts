@@ -19,7 +19,6 @@ import type {
   CoachHelpResponse,
   CompleteSocialRegistrationRequest,
   CompleteRegistrationRequest,
-  CommonMistake,
   DailyDifficulty,
   DiaryCalendarSummary,
   DailyPromptRecommendation,
@@ -1554,20 +1553,6 @@ export async function getAnswerHistory(): Promise<HistorySession[]> {
   return normalizeHistorySessions((await response.json()) as HistorySession[]);
 }
 
-export async function getCommonMistakes(): Promise<CommonMistake[]> {
-  const response = await apiFetch("/api/history/common-mistakes");
-
-  if (response.status === 401) {
-    return [];
-  }
-
-  if (!response.ok) {
-    throw await parseApiError(response, "자주 고친 포인트를 불러오지 못했어요.");
-  }
-
-  return (await response.json()) as CommonMistake[];
-}
-
 export async function requestCoachHelp(request: CoachHelpRequest): Promise<CoachHelpResponse> {
   const response = await apiFetch("/api/coach/help", {
     method: "POST",
@@ -1726,26 +1711,6 @@ export async function requestNowInEnglishReflection(
     (await response.json()) as Partial<NowInEnglishReflectionResponse>,
     request.dateKey,
     request.entries.length
-  );
-}
-
-export async function getSavedNowInEnglishReflection(
-  dateKey: string
-): Promise<NowInEnglishReflectionResponse | null> {
-  const response = await apiFetch(`/api/now-in-english/reflection/${encodeURIComponent(dateKey)}`);
-
-  if (response.status === 401 || response.status === 404) {
-    return null;
-  }
-
-  if (!response.ok) {
-    throw await parseApiError(response, "영어 조각 회고를 불러오지 못했어요.");
-  }
-
-  return normalizeNowInEnglishReflectionResponse(
-    (await response.json()) as Partial<NowInEnglishReflectionResponse>,
-    dateKey,
-    0
   );
 }
 

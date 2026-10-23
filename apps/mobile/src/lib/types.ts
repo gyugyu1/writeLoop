@@ -462,13 +462,6 @@ export interface NowInEnglishReflectionResponse {
   closingKo: string;
 }
 
-export interface CommonMistake {
-  issue: string;
-  displayLabel: string;
-  count: number;
-  latestSuggestion: string;
-}
-
 export interface HistoryUsedExpression {
   expression: string;
   matchType?: string | null;

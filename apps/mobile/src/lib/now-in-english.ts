@@ -8,7 +8,6 @@ import {
   syncNowInEnglishEntries
 } from "./api";
 
-export const NOW_IN_ENGLISH_TITLE = "지금 영어로";
 export const NOW_IN_ENGLISH_NOTIFICATION_BODY =
   "지금 뭐하고 있나요?, 무슨 생각하고 있나요?";
 

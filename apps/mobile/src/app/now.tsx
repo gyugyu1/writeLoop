@@ -845,6 +845,12 @@ export default function NowInEnglishScreen() {
     inputRef.current?.focus();
   }
 
+  // 회고를 받는 사이 보는 날짜가 바뀌면 늦게 온 응답을 버린다. 다른 날짜의 회고가 화면에 남지 않게 한다.
+  const shownReflectionDateKeyRef = useRef(reflectionDateKey);
+  useEffect(() => {
+    shownReflectionDateKeyRef.current = reflectionDateKey;
+  }, [reflectionDateKey]);
+
   const loadOrCreateYesterdayAiReflection = useCallback(
     async (forceRefresh = false) => {
       if (!reflectionDateKey || yesterdayEntries.length === 0 || !yesterdayEntrySignature) {
@@ -853,6 +859,8 @@ export default function NowInEnglishScreen() {
         return;
       }
 
+      const requestedDateKey = reflectionDateKey;
+      const isStillShown = () => shownReflectionDateKeyRef.current === requestedDateKey;
       try {
         setIsLoadingYesterdayAiReflection(true);
         setYesterdayAiReflectionError("");
@@ -860,7 +868,9 @@ export default function NowInEnglishScreen() {
         if (!forceRefresh) {
           const cachedReflection = await getNowInEnglishAiReflection(reflectionDateKey);
           if (cachedReflection?.entrySignature === yesterdayEntrySignature) {
-            setYesterdayAiReflection(cachedReflection);
+            if (isStillShown()) {
+              setYesterdayAiReflection(cachedReflection);
+            }
             return;
           }
         }
@@ -880,15 +890,22 @@ export default function NowInEnglishScreen() {
         };
 
         await saveNowInEnglishAiReflection(nextReflection);
-        setYesterdayAiReflection(nextReflection);
+        if (isStillShown()) {
+          setYesterdayAiReflection(nextReflection);
+        }
       } catch (error) {
         const cachedReflection = await getNowInEnglishAiReflection(reflectionDateKey);
+        if (!isStillShown()) {
+          return;
+        }
         if (cachedReflection?.entrySignature === yesterdayEntrySignature) {
           setYesterdayAiReflection(cachedReflection);
         }
         setYesterdayAiReflectionError(error instanceof Error ? error.message : "AI 회고를 불러오지 못했어요.");
       } finally {
-        setIsLoadingYesterdayAiReflection(false);
+        if (isStillShown()) {
+          setIsLoadingYesterdayAiReflection(false);
+        }
       }
     },
     [yesterdayEntries, yesterdayEntrySignature, reflectionDateKey]

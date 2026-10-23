@@ -43,7 +43,10 @@ final class DiaryFeedbackPromptSupport {
                 - Write fixPoints and diaryFlow first, then decide diaryAnswerBand and score from that analysis.
                 - All fields are required. Use an empty string when a text field does not apply.
                 - strengths must be 1 to 3 short Korean comments.
-                - fixPoints should contain the most useful required corrections, usually 1 to 5 items.
+                - fixPoints: one item per sentence that needs a fix. originalText quotes that one sentence exactly, and revisedText is the fixed sentence.
+                  Do not combine several sentences into one item. When more than five sentences need fixes, keep the five most useful.
+                  In revisedText, change only what is wrong. Keep the learner's words and meaning; do not add actions, feelings, or details.
+                - fixPoints.kind: GRAMMAR (tense, articles, agreement, prepositions, capitalization), WORD_CHOICE, NATURALNESS (correct but awkward), FLOW (connectors and order), SENTENCE_FORM (fragments or a missing subject or verb).
                 - rewriteIdeas.title and rewriteIdeas.meaningKo must be Korean. The title should be a short Korean action label, such as "감정 문장 붙이기" or "작은 다짐 더하기".
                 - rewriteIdeas.exampleEn is the only rewriteIdeas field where an English rewrite sentence should appear.
                 - Only use the rewriteIdeas fields defined in the schema.
@@ -98,7 +101,13 @@ final class DiaryFeedbackPromptSupport {
                 "type", "object",
                 "additionalProperties", false,
                 "properties", OrderedMaps.of(
-                        "kind", stringSchema,
+                        "kind", OrderedMaps.of("type", "string", "enum", List.of(
+                                "GRAMMAR",
+                                "WORD_CHOICE",
+                                "NATURALNESS",
+                                "FLOW",
+                                "SENTENCE_FORM"
+                        )),
                         "title", stringSchema,
                         "originalText", nullableStringSchema,
                         "revisedText", nullableStringSchema,

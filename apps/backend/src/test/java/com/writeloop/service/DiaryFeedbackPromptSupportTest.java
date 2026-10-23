@@ -39,6 +39,16 @@ class DiaryFeedbackPromptSupportTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
+    void limitsFixPointKindsToAFixedSet() {
+        Map<String, Object> properties = (Map<String, Object>) DiaryFeedbackPromptSupport.jsonSchema(false).get("properties");
+        Map<String, Object> fixPointItem = (Map<String, Object>) ((Map<String, Object>) properties.get("fixPoints")).get("items");
+        Map<String, Object> kind = (Map<String, Object>) ((Map<String, Object>) fixPointItem.get("properties")).get("kind");
+
+        assertThat(kind.get("enum")).isEqualTo(List.of("GRAMMAR", "WORD_CHOICE", "NATURALNESS", "FLOW", "SENTENCE_FORM"));
+    }
+
+    @Test
     void requiresEveryGeneratedField() {
         Map<String, Object> schema = DiaryFeedbackPromptSupport.jsonSchema(false);
 

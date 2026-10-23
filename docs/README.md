@@ -75,6 +75,7 @@
 
 | 문서 | 내용 |
 |---|---|
+| [diary-feedback-schema-order-live-check-2026-10-23.ko.md](reports/diary/diary-feedback-schema-order-live-check-2026-10-23.ko.md) | 생성 순서 변경 후 실제 LLM 확인(교정 포인트 문장별 분리, kind 고정) |
 | [diary-feedback-logic-report-2026-04-23.ko.md](reports/diary/diary-feedback-logic-report-2026-04-23.ko.md) | 영어일기 피드백 로직(2026-04 시점) |
 
 ### prompts — 질문 데이터 검토

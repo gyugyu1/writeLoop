@@ -694,14 +694,14 @@ sudo docker exec writeLoop-redis redis-cli DBSIZE   # 키 수가 그대로인지
 
 가동 상태는 외부 감시 서비스가, 오류는 Sentry가 모읍니다(ADR-0018). 학습자가 쓴 문장, 이메일, IP는 Sentry로 보내지 않습니다.
 
-**가동 감시(UptimeRobot 등)**
+**가동 감시(Better Stack)**
 
 | 주소 | 확인하는 것 |
 |---|---|
 | `https://api.writeloop.kr/health` | 백엔드, DB, Redis. 하나라도 안 되면 503 |
 | `https://writeloop.kr/healthz` | 웹 |
 
-5분 간격 HTTP(S) 감시로 등록하고 알림 받을 곳(이메일, 앱 푸시)을 정합니다. 코드 설정은 없습니다.
+3분 간격으로 확인하고 이메일과 앱 푸시로 알립니다. 배포 때 백엔드가 잠깐 멈추므로 확인 대기(Confirmation period)를 백엔드 3분, 웹 1분으로 두고, 도메인에 IPv6 주소가 없어 IPv4로만 확인합니다. 한국 번호로는 전화 알림을 받을 수 없습니다(2026-10 기준). 코드 설정은 없습니다.
 
 **Sentry**
 

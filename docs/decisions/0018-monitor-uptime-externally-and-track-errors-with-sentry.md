@@ -19,15 +19,15 @@ decision-makers: gyuwon
 
 ## Considered Options
 
-* 외부 가동 감시(UptimeRobot) + Sentry
+* 외부 가동 감시(Better Stack, UptimeRobot, StatusCake 무료 요금제) + Sentry
 * Uptime Kuma, GlitchTip을 운영 서버에 직접 설치
 * 서버 로그만 보고 필요할 때 확인
 
 ## Decision Outcome
 
-Chosen option: "외부 가동 감시(UptimeRobot) + Sentry", because 무료 요금제로 충분하고 코드 수정이 적다. 직접 설치하면 운영 서버 메모리를 쓰고, 서버가 멈출 때 감시 도구도 같이 멈춘다.
+Chosen option: "외부 가동 감시(Better Stack) + Sentry", because 무료 요금제로 충분하고 코드 수정이 적다. 가동 감시 서비스는 주소만 등록하므로 나중에 바꾸기 쉽다. 세 서비스 모두 무료 요금제를 개인·취미용으로 소개해서, 상업적으로 운영하게 되면 요금제를 다시 본다. 직접 설치하면 운영 서버 메모리를 쓰고, 서버가 멈출 때 감시 도구도 같이 멈춘다.
 
-* 가동 감시: `https://api.writeloop.kr/health`(DB·Redis까지 확인)와 `https://writeloop.kr/healthz`를 5분마다 확인한다. 코드 변경은 없고 계정에서 설정한다.
+* 가동 감시: `https://api.writeloop.kr/health`(DB·Redis까지 확인)와 `https://writeloop.kr/healthz`를 3분마다 확인한다. 배포 때 백엔드가 잠깐 멈추므로 백엔드는 3분, 웹은 1분 동안 계속 실패할 때만 알린다. 도메인에 IPv6 주소가 없어 IPv4로만 확인한다. 코드 변경은 없고 계정에서 설정한다.
 * 백엔드: `sentry-spring-boot-starter-jakarta`와 `sentry-logback`.
   * 처리하지 못한 예외와 ERROR 로그만 보낸다. 사용자 쪽 원인인 4xx는 보내지 않는다(`SentryConfig`).
   * `send-default-pii: false`, `max-request-body-size: none`: 요청 본문, IP, 쿠키, 사용자 정보를 보내지 않는다.

@@ -6,11 +6,17 @@ import com.writeloop.persistence.FeedbackTimingLogEntity;
 import com.writeloop.persistence.FeedbackTimingLogRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -94,5 +100,21 @@ class FeedbackTimingRecorderTest {
         assertThat(log.getProvider()).isEqualTo("openai");
         assertThat(log.getLlmTotalTokens()).isEqualTo(1_150L);
         assertThat(log.getSuccess()).isTrue();
+    }
+    @Test
+    void savesLogsInTheirOwnTransactionAndSwallowsLogFailures() {
+        FeedbackTimingLogRepository repository = mock(FeedbackTimingLogRepository.class);
+        when(repository.save(any())).thenThrow(new IllegalStateException("Data too long for column guest_id"));
+        PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+        ArgumentCaptor<TransactionDefinition> definition = ArgumentCaptor.forClass(TransactionDefinition.class);
+        when(transactionManager.getTransaction(definition.capture())).thenReturn(new SimpleTransactionStatus());
+        FeedbackTimingRecorder recorder = new FeedbackTimingRecorder(repository, new ObjectMapper());
+        recorder.useIndependentTransactions(transactionManager);
+
+        // 로그 저장이 실패해도 호출한 쪽으로 예외가 가지 않고, 본 트랜잭션과 다른 트랜잭션에서 저장한다.
+        assertThatCode(() -> recorder.recordCoachLlmPhase("coach_help", "prompt-a-1", "gpt-6-luna", "medium",
+                null, true, 200, null, 10L)).doesNotThrowAnyException();
+        assertThat(definition.getValue().getPropagationBehavior())
+                .isEqualTo(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 }

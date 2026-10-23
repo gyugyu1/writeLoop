@@ -6,7 +6,11 @@ import com.writeloop.persistence.FeedbackTimingLogEntity;
 import com.writeloop.persistence.FeedbackTimingLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,6 +21,7 @@ import java.util.UUID;
 @Slf4j
 public class FeedbackTimingRecorder {
 
+    private static final int MAX_GUEST_ID_LENGTH = 64;
     private static final String TYPE_ANSWER = "ANSWER";
     private static final String TYPE_DIARY = "DIARY";
     private static final String TYPE_NOW_IN_ENGLISH = "NOW_IN_ENGLISH";
@@ -28,6 +33,16 @@ public class FeedbackTimingRecorder {
 
     private final FeedbackTimingLogRepository feedbackTimingLogRepository;
     private final ObjectMapper objectMapper;
+    private TransactionTemplate independentTransaction;
+
+    // 로그는 호출한 쪽과 다른 트랜잭션에 저장한다. 같은 트랜잭션이면 로그 INSERT 하나가 실패해도
+    // 본 트랜잭션이 롤백 전용이 되어, 이미 끝난 요청이 커밋할 때 500으로 바뀐다.
+    @Autowired(required = false)
+    void useIndependentTransactions(PlatformTransactionManager transactionManager) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        independentTransaction = template;
+    }
 
     public void beginAnswerTrace(Long userId, String guestId, String promptId, String sessionId, Integer attemptNo) {
         CURRENT_CONTEXT.set(TimingContext.answer(userId, guestId, promptId, sessionId, attemptNo));
@@ -188,13 +203,13 @@ public class FeedbackTimingRecorder {
             Map<String, ?> metadata
     ) {
         try {
-            feedbackTimingLogRepository.save(FeedbackTimingLogEntity.builder()
+            saveIndependently(() -> feedbackTimingLogRepository.save(FeedbackTimingLogEntity.builder()
                     .traceId(context.traceId)
                     .feedbackType(context.feedbackType)
                     .phaseScope(normalize(phaseScope))
                     .phase(normalize(phase))
                     .userId(context.userId)
-                    .guestId(context.guestId)
+                    .guestId(limit(context.guestId, MAX_GUEST_ID_LENGTH))
                     .promptId(context.promptId)
                     .diaryEntryId(context.diaryEntryId)
                     .sessionId(context.sessionId)
@@ -214,7 +229,7 @@ public class FeedbackTimingRecorder {
                     .exceptionClass(normalize(exceptionClass))
                     .elapsedMs(Math.max(0L, elapsedMs))
                     .metadataJson(toJson(withContextMetadata(context, metadata)))
-                    .build());
+                    .build()));
         } catch (RuntimeException exception) {
             log.warn("Failed to persist feedback timing log phase={} traceId={}", phase, context.traceId, exception);
         }
@@ -226,6 +241,19 @@ public class FeedbackTimingRecorder {
             return context;
         }
         return new TimingContext(UUID.randomUUID().toString(), feedbackType);
+    }
+
+    private void saveIndependently(Runnable save) {
+        if (independentTransaction == null) {
+            save.run();
+            return;
+        }
+        independentTransaction.executeWithoutResult(status -> save.run());
+    }
+
+    // 게스트 id는 126자까지 허용하지만 로그 열은 64자다.
+    private static String limit(String value, int maxLength) {
+        return value == null || value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 
     private String toJson(Map<String, ?> metadata) {

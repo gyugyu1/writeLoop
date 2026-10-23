@@ -7,7 +7,11 @@ import com.writeloop.persistence.PromptRecommendationTimingLogEntity;
 import com.writeloop.persistence.PromptRecommendationTimingLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Map;
 import java.util.UUID;
@@ -17,10 +21,21 @@ import java.util.UUID;
 @Slf4j
 public class PromptRecommendationTimingRecorder {
 
+    private static final int MAX_GUEST_ID_LENGTH = 64;
     private static final ThreadLocal<TimingContext> CURRENT_CONTEXT = new ThreadLocal<>();
 
     private final PromptRecommendationTimingLogRepository promptRecommendationTimingLogRepository;
     private final ObjectMapper objectMapper;
+    private TransactionTemplate independentTransaction;
+
+    // 로그는 호출한 쪽과 다른 트랜잭션에 저장한다. 같은 트랜잭션이면 로그 INSERT 하나가 실패해도
+    // 본 트랜잭션이 롤백 전용이 되어, 이미 끝난 요청이 커밋할 때 500으로 바뀐다.
+    @Autowired(required = false)
+    void useIndependentTransactions(PlatformTransactionManager transactionManager) {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+        independentTransaction = template;
+    }
 
     public void beginTrace(
             String endpointType,
@@ -61,20 +76,20 @@ public class PromptRecommendationTimingRecorder {
         }
 
         try {
-            promptRecommendationTimingLogRepository.save(PromptRecommendationTimingLogEntity.builder()
+            saveIndependently(() -> promptRecommendationTimingLogRepository.save(PromptRecommendationTimingLogEntity.builder()
                     .traceId(context.traceId)
                     .endpointType(context.endpointType)
                     .phase(normalize(phase))
                     .difficulty(context.difficulty)
                     .userId(context.userId)
-                    .guestId(context.guestId)
+                    .guestId(limit(context.guestId, MAX_GUEST_ID_LENGTH))
                     .excludeCount(context.excludeCount)
                     .candidateCount(candidateCount)
                     .resultCount(resultCount)
                     .fallbackUsed(fallbackUsed)
                     .elapsedMs(Math.max(0L, elapsedMs))
                     .metadataJson(toJson(metadata))
-                    .build());
+                    .build()));
         } catch (RuntimeException exception) {
             log.warn(
                     "Failed to persist prompt recommendation timing log phase={} traceId={}",
@@ -83,6 +98,19 @@ public class PromptRecommendationTimingRecorder {
                     exception
             );
         }
+    }
+
+    private void saveIndependently(Runnable save) {
+        if (independentTransaction == null) {
+            save.run();
+            return;
+        }
+        independentTransaction.executeWithoutResult(status -> save.run());
+    }
+
+    // 게스트 id는 126자까지 허용하지만 로그 열은 64자다.
+    private static String limit(String value, int maxLength) {
+        return value == null || value.length() <= maxLength ? value : value.substring(0, maxLength);
     }
 
     private String toJson(Map<String, ?> metadata) {

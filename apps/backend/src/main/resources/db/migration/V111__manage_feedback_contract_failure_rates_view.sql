@@ -1,6 +1,7 @@
--- 문장 피드백 계약 실패율 집계 뷰. Flyway 이전(infra/mysql/schema)에 운영에서 만들어져 기준선(V107)에 빠져 있었다.
--- V110이 thinking_budget 열을 지우자 이 뷰가 깨졌고, 깨진 뷰 때문에 배포 전 DB 백업(mysqldump)이 실패했다(2026-10-24).
--- 운영에서는 thinking_budget을 뺀 정의로 먼저 고쳤고, 이 마이그레이션으로 Flyway가 관리하게 한다(빈 DB에도 만든다).
+-- 문장 피드백 계약 실패율 집계 뷰(infra/mysql/schema/098에서 만들었고 기준선 V107에도 있다).
+-- 이 뷰가 thinking_budget 열을 참조해서, V110이 그 열을 지우자 뷰가 깨졌다. 깨진 뷰 때문에 배포 전 DB 백업(mysqldump)이
+-- 실패해 배포가 멈췄다(2026-10-24). 운영은 thinking_budget을 뺀 같은 정의로 먼저 고쳤고, 이 마이그레이션이 그 정의를 기록한다.
+-- 빈 DB에서도 V107이 만든 뷰가 V110 뒤에 깨진 상태로 남으므로 여기서 다시 만든다.
 
 CREATE OR REPLACE VIEW feedback_contract_failure_rates AS
 SELECT

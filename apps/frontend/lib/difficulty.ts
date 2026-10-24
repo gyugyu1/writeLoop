@@ -35,3 +35,7 @@ export function resolvePracticeDifficulty(
 ): DailyDifficulty {
   return normalizeDailyDifficulty(promptDifficulty, selectedDifficulty);
 }
+
+export function isDailyDifficulty(value?: string | null): value is DailyDifficulty {
+  return value === "I" || value === "A" || value === "B" || value === "C";
+}

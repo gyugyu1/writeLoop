@@ -49,7 +49,7 @@ import {
 } from "../lib/incomplete-loop";
 import { buildCoachQuickQuestions } from "../lib/coach-quick-questions";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
-import { getDifficultyLabel, resolvePracticeDifficulty } from "../lib/difficulty";
+import { getDifficultyLabel, isDailyDifficulty, resolvePracticeDifficulty } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import { getFeedbackSlotUiCopy } from "../lib/feedback-slot-ui";
 import { getOrCreateGuestId } from "../lib/guest-id";
@@ -63,20 +63,25 @@ import type {
   CoachHelpResponse,
   CoachUsageCheckResponse,
   Feedback,
-  FeedbackCoachMove,
   FeedbackLoopStatus,
   HistoryMonthStatus,
   HomeDraftSnapshot,
   HomeFlowStep,
   Prompt,
   PromptHint,
-  SavedExpression,
   SavedExpressionSourceType,
   TodayWritingStatus,
   WritingDraft,
   WritingDraftType
 } from "../lib/types";
 import { StreakSparkleEffect } from "../components/streak-sparkle-effect";
+import { trimNullable, pickFirstNonEmpty, countWords } from "../lib/text";
+import { normalizeSuggestedPhrase, hasCoachMove, isCoachMoveComparison, isDirectCorrectionCoachMove, canBuildCoachMoveDiff } from "../lib/coach-move";
+import { normalizeSavedExpressionKey, normalizeExpressionTagList, buildSavedExpressionIdMap } from "../lib/saved-expressions";
+import { buildRelatedPromptRecommendations } from "../lib/prompt-recommendations";
+import { parseLocalDate, addDays, formatDateKey, WEEKDAY_LABELS, buildWelcomeWeek, MonthView, buildMonthCalendar, createMonthView, addMonthsToView, isSameMonthView, getMonthStatusDayStyle } from "../lib/writing-calendar";
+import { WritingGuideHintItem, getWritingGuide } from "../lib/writing-guide";
+import { getIncompleteLoopCopy, formatIncompleteLoopSavedAt } from "../lib/incomplete-loop-copy";
 import styles from "./page.module.css";
 
 const GUEST_SESSION_ID_KEY = "writeloop_guest_session_id";
@@ -89,11 +94,6 @@ function createSubmissionId() {
 
 type Step = "pick" | "answer" | "feedback" | "rewrite" | "complete";
 type PickFlowScreen = "difficulty" | "prompt";
-type WritingGuideHintItem = {
-  id: string;
-  content: string;
-  meaningKo?: string | null;
-};
 type DifficultyStageIconName = "auto_stories" | "menu_book" | "psychology";
 
 type PracticeExpressionHint = {
@@ -101,13 +101,6 @@ type PracticeExpressionHint = {
   tag?: string | null;
   tagLabel?: string | null;
   expressions: string[];
-};
-type IncompleteLoopCopy = {
-  title: string;
-  body: string;
-  ctaLabel: string;
-  badgeLabel: string;
-  icon: string;
 };
 const EXPRESSION_SLOT_LABELS: Record<string, string> = {
   action: "동사",
@@ -154,160 +147,6 @@ const EXPRESSION_SLOT_LABELS: Record<string, string> = {
   verbs: "동사"
 };
 
-
-const COACH_MOVE_DIFF_MAX_CHARS = 700;
-const COACH_MOVE_DIFF_MAX_TOKENS = 140;
-
-function trimNullable(value?: string | null) {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
-
-function pickFirstNonEmpty(...values: Array<string | null | undefined>) {
-  for (const value of values) {
-    const trimmed = trimNullable(value);
-    if (trimmed) {
-      return trimmed;
-    }
-  }
-  return null;
-}
-
-function normalizeSuggestedPhrase(value: unknown) {
-  if (typeof value === "string") {
-    const phrase = trimNullable(value);
-    return phrase ? { phrase, meaningKo: "" } : null;
-  }
-
-  if (value && typeof value === "object") {
-    const candidate = value as { phrase?: unknown; meaningKo?: unknown };
-    const phrase = typeof candidate.phrase === "string" ? trimNullable(candidate.phrase) : null;
-    const meaningKo = typeof candidate.meaningKo === "string" ? trimNullable(candidate.meaningKo) : "";
-    return phrase ? { phrase, meaningKo } : null;
-  }
-
-  return null;
-}
-
-function hasCoachMove(coachMove?: FeedbackCoachMove | null) {
-  return Boolean(
-    trimNullable(coachMove?.focus) ||
-      trimNullable(coachMove?.why) ||
-      trimNullable(coachMove?.before) ||
-      trimNullable(coachMove?.after) ||
-      trimNullable(coachMove?.instruction) ||
-      trimNullable(coachMove?.skeletonEn) ||
-      (Array.isArray(coachMove?.languageCorrections) &&
-        coachMove.languageCorrections.length > 0) ||
-      (Array.isArray(coachMove?.suggestedPhrases) &&
-        coachMove.suggestedPhrases.some((phrase) => normalizeSuggestedPhrase(phrase)))
-  );
-}
-
-function isCoachMoveComparison(coachMove?: FeedbackCoachMove | null) {
-  const before = trimNullable(coachMove?.before);
-  const after = trimNullable(coachMove?.after);
-  if (!before || !after) {
-    return false;
-  }
-
-  const focusType = trimNullable(coachMove?.focusType)?.toUpperCase();
-  if (!focusType) {
-    return true;
-  }
-
-  return [
-    "MICRO_FIX",
-    "LANGUAGE_FIX",
-    "STRUCTURE_FIX",
-    "GRAMMAR",
-    "GRAMMAR_FIX",
-    "LOCAL_GRAMMAR",
-    "FIX_LOCAL_GRAMMAR",
-    "BLOCKING_GRAMMAR",
-    "FIX_BLOCKING_GRAMMAR",
-    "EXPRESSION",
-    "EXPRESSION_POLISH"
-  ].includes(focusType);
-}
-
-function isDirectCorrectionCoachMove(coachMove?: FeedbackCoachMove | null) {
-  const focusType = trimNullable(coachMove?.focusType)?.toUpperCase();
-  return [
-    "MICRO_FIX",
-    "LANGUAGE_FIX",
-    "STRUCTURE_FIX",
-    "GRAMMAR",
-    "GRAMMAR_FIX",
-    "LOCAL_GRAMMAR",
-    "FIX_LOCAL_GRAMMAR",
-    "BLOCKING_GRAMMAR",
-    "FIX_BLOCKING_GRAMMAR",
-    "EXPRESSION",
-    "EXPRESSION_POLISH"
-  ].includes(focusType ?? "");
-}
-
-function countDiffTokens(text: string) {
-  return text.match(/[A-Za-z0-9']+|[^\sA-Za-z0-9']+|\s+/g)?.length ?? 0;
-}
-
-function countComparableWords(text: string) {
-  return text.match(/[A-Za-z0-9]+(?:'[A-Za-z0-9]+)?/g)?.length ?? 0;
-}
-
-function isCoachMoveDiffScopeAligned(original: string, revised: string) {
-  const originalWords = countComparableWords(original);
-  const revisedWords = countComparableWords(revised);
-  if (!originalWords || !revisedWords) {
-    return true;
-  }
-
-  const shorter = Math.min(originalWords, revisedWords);
-  const longer = Math.max(originalWords, revisedWords);
-  const wordDelta = longer - shorter;
-
-  // Phrase-vs-sentence comparisons create misleading highlights.
-  return wordDelta <= 3 || longer / shorter <= 1.45;
-}
-
-function canBuildCoachMoveDiff(original: string, revised: string) {
-  return (
-    original.length + revised.length <= COACH_MOVE_DIFF_MAX_CHARS &&
-    countDiffTokens(original) + countDiffTokens(revised) <= COACH_MOVE_DIFF_MAX_TOKENS &&
-    isCoachMoveDiffScopeAligned(original, revised)
-  );
-}
-
-
-function normalizeSavedExpressionKey(value?: string | null) {
-  return value?.trim().replace(/\s+/g, " ").toLowerCase() ?? "";
-}
-
-function normalizeExpressionTagList(tags?: string[] | null) {
-  if (!Array.isArray(tags)) {
-    return [];
-  }
-
-  return Array.from(
-    new Set(tags.map((tag) => tag.trim().toLowerCase()).filter(Boolean))
-  );
-}
-
-function buildSavedExpressionIdMap(savedExpressions: SavedExpression[]) {
-  return savedExpressions.reduce<Record<string, number>>((accumulator, item) => {
-    const key = normalizeSavedExpressionKey(item.expression);
-    if (key) {
-      accumulator[key] = item.id;
-    }
-    return accumulator;
-  }, {});
-}
-
-function isDailyDifficulty(value?: string | null): value is DailyDifficulty {
-  return value === "I" || value === "A" || value === "B" || value === "C";
-}
-
 function parsePracticeExpressionsParam(value: string | null) {
   if (!value) {
     return [];
@@ -328,7 +167,6 @@ function parsePracticeExpressionsParam(value: string | null) {
     return [];
   }
 }
-
 
 function renderLocalizedExpression(expression: string) {
   const parts: ReactNode[] = [];
@@ -381,342 +219,6 @@ function renderWritingGuideHintCard(hint: WritingGuideHintItem) {
   );
 }
 
-function normalizePromptCategory(value: string | null | undefined) {
-  return (value ?? "").trim().toUpperCase();
-}
-
-function normalizePromptTopicKey(value: string | null | undefined) {
-  return (value ?? "").trim().toUpperCase();
-}
-
-function getPromptCategoryKey(prompt: Prompt | null | undefined) {
-  return (
-    normalizePromptTopicKey(prompt?.topicCategory) ||
-    normalizePromptTopicKey(prompt?.topic) ||
-    (prompt?.id ?? "")
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function countDistinctPromptCategories(prompts: Prompt[]) {
-  return new Set(
-    prompts
-      .map((prompt) => getPromptCategoryKey(prompt))
-      .filter((categoryKey) => categoryKey !== "")
-  ).size;
-}
-
-function getPromptCoachCategories(prompt: Prompt | null | undefined) {
-  if (!prompt?.coachProfile) {
-    return [];
-  }
-
-  const categories = [
-    prompt.coachProfile.primaryCategory,
-    ...(prompt.coachProfile.secondaryCategories ?? [])
-  ]
-    .map(normalizePromptCategory)
-    .filter((category) => category !== "" && category !== "GENERAL");
-
-  return Array.from(new Set(categories));
-}
-
-function getPromptCoachCategoryOverlapScore(
-  currentPrompt: Prompt | null | undefined,
-  candidate: Prompt | null | undefined
-) {
-  if (!currentPrompt || !candidate) {
-    return 0;
-  }
-
-  const currentCategories = getPromptCoachCategories(currentPrompt);
-  if (currentCategories.length === 0) {
-    return 0;
-  }
-
-  const candidateCategories = new Set(getPromptCoachCategories(candidate));
-  let score = 0;
-
-  currentCategories.forEach((category, index) => {
-    if (candidateCategories.has(category)) {
-      score += index === 0 ? 3 : 1;
-    }
-  });
-
-  return score;
-}
-
-function getPromptTopicMatch(
-  currentPrompt: Prompt | null | undefined,
-  candidate: Prompt | null | undefined
-) {
-  const currentCategory = normalizePromptTopicKey(currentPrompt?.topicCategory);
-  const candidateCategory = normalizePromptTopicKey(candidate?.topicCategory);
-  const currentDetail = normalizePromptTopicKey(currentPrompt?.topicDetail);
-  const candidateDetail = normalizePromptTopicKey(candidate?.topicDetail);
-
-  const sameCategory = currentCategory !== "" && currentCategory === candidateCategory;
-  const sameTopicDetail =
-    sameCategory && currentDetail !== "" && currentDetail === candidateDetail;
-
-  return {
-    sameCategory,
-    sameTopicDetail
-  };
-}
-
-function buildRelatedPromptRecommendations(
-  currentPrompt: Prompt | null | undefined,
-  candidates: Prompt[],
-  selectedPromptId: string
-) {
-  const uniqueCandidates = candidates.filter(
-    (candidate, index) =>
-      candidate.id !== selectedPromptId &&
-      candidates.findIndex((item) => item.id === candidate.id) === index
-  );
-
-  if (!currentPrompt) {
-    return uniqueCandidates.slice(0, 3);
-  }
-
-  const rankedCandidates = uniqueCandidates
-    .map((prompt, index) => {
-      const topicMatch = getPromptTopicMatch(currentPrompt, prompt);
-      const coachCategoryScore = getPromptCoachCategoryOverlapScore(currentPrompt, prompt);
-      const sameDifficulty = prompt.difficulty === currentPrompt.difficulty;
-      const priority =
-        (topicMatch.sameTopicDetail ? 1_000 : 0) +
-        (topicMatch.sameCategory ? 100 : 0) +
-        (sameDifficulty ? 10 : 0) +
-        coachCategoryScore;
-
-      return {
-        prompt,
-        index,
-        sameDifficulty,
-        coachCategoryScore,
-        ...topicMatch,
-        priority
-      };
-    })
-    .sort((left, right) => {
-      if (right.priority !== left.priority) {
-        return right.priority - left.priority;
-      }
-      return left.index - right.index;
-    });
-
-  const sameTopicDetail = rankedCandidates.filter((candidate) => candidate.sameTopicDetail);
-  const sameCategory = rankedCandidates.filter(
-    (candidate) => candidate.sameCategory && !candidate.sameTopicDetail
-  );
-  const others = rankedCandidates.filter((candidate) => !candidate.sameCategory);
-
-  const selected: Prompt[] = [];
-  const selectedIds = new Set<string>();
-
-  const addCandidate = (candidate?: (typeof rankedCandidates)[number]) => {
-    if (!candidate || selectedIds.has(candidate.prompt.id) || selected.length >= 3) {
-      return;
-    }
-    selected.push(candidate.prompt);
-    selectedIds.add(candidate.prompt.id);
-  };
-
-  addCandidate(sameTopicDetail[0]);
-  addCandidate(sameCategory[0]);
-
-  [...sameTopicDetail, ...sameCategory, ...others].forEach((candidate) => addCandidate(candidate));
-
-  return selected.slice(0, 3);
-}
-
-const PROMPT_DIVERSITY_STOPWORDS = new Set([
-  "about",
-  "after",
-  "and",
-  "are",
-  "because",
-  "describe",
-  "does",
-  "during",
-  "each",
-  "english",
-  "every",
-  "explain",
-  "favorite",
-  "from",
-  "have",
-  "how",
-  "important",
-  "into",
-  "like",
-  "make",
-  "matters",
-  "one",
-  "reach",
-  "related",
-  "tell",
-  "that",
-  "the",
-  "their",
-  "them",
-  "there",
-  "they",
-  "this",
-  "usually",
-  "want",
-  "what",
-  "when",
-  "which",
-  "why",
-  "with",
-  "year",
-  "you",
-  "your"
-]);
-
-function extractPromptDiversityTokens(prompt: Prompt | null | undefined) {
-  if (!prompt) {
-    return [];
-  }
-
-  const rawText = [
-    prompt.topic,
-    prompt.topicCategory,
-    prompt.topicDetail,
-    prompt.questionEn
-  ]
-    .filter((value): value is string => Boolean(value?.trim()))
-    .join(" ")
-    .toLowerCase();
-
-  const tokens = rawText
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter(
-      (token) => token.length >= 3 && !PROMPT_DIVERSITY_STOPWORDS.has(token)
-    );
-
-  return Array.from(new Set(tokens));
-}
-
-function getPromptSharedTokenCount(
-  currentPrompt: Prompt | null | undefined,
-  candidate: Prompt | null | undefined
-) {
-  if (!currentPrompt || !candidate) {
-    return 0;
-  }
-
-  const currentTokens = new Set(extractPromptDiversityTokens(currentPrompt));
-  let sharedCount = 0;
-
-  for (const token of extractPromptDiversityTokens(candidate)) {
-    if (currentTokens.has(token)) {
-      sharedCount += 1;
-    }
-  }
-
-  return sharedCount;
-}
-
-function calculatePromptOverlapPenalty(
-  currentPrompt: Prompt | null | undefined,
-  candidate: Prompt | null | undefined
-) {
-  if (!currentPrompt || !candidate) {
-    return 0;
-  }
-
-  const topicMatch = getPromptTopicMatch(currentPrompt, candidate);
-  const coachCategoryScore = getPromptCoachCategoryOverlapScore(currentPrompt, candidate);
-  const sharedTokenCount = getPromptSharedTokenCount(currentPrompt, candidate);
-  const sameTopic =
-    normalizePromptTopicKey(currentPrompt.topic) !== "" &&
-    normalizePromptTopicKey(currentPrompt.topic) === normalizePromptTopicKey(candidate.topic);
-
-  return (
-    (sameTopic ? 8_000 : 0) +
-    (topicMatch.sameTopicDetail ? 4_000 : 0) +
-    (topicMatch.sameCategory ? 1_000 : 0) +
-    coachCategoryScore * 180 +
-    sharedTokenCount * 55
-  );
-}
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function pickLeastOverlappingPromptSet(
-  currentPrompts: Prompt[],
-  candidates: Prompt[],
-  seenPromptIds: Iterable<string>,
-  desiredCount: number
-) {
-  const currentPromptIds = new Set(currentPrompts.map((prompt) => prompt.id));
-  const uniqueCandidates = candidates.filter(
-    (candidate, index) =>
-      !currentPromptIds.has(candidate.id) &&
-      candidates.findIndex((item) => item.id === candidate.id) === index
-  );
-
-  if (uniqueCandidates.length < desiredCount) {
-    return [];
-  }
-
-  const selected: Prompt[] = [];
-  const seenSet = new Set(seenPromptIds);
-  const selectedCategoryKeys = new Set<string>();
-  const remaining = [...uniqueCandidates];
-
-  while (selected.length < desiredCount && remaining.length > 0) {
-    const eligibleCandidates = remaining.filter(
-      (candidate) => !selectedCategoryKeys.has(getPromptCategoryKey(candidate))
-    );
-
-    if (eligibleCandidates.length === 0) {
-      break;
-    }
-
-    const anchorPrompts = [...currentPrompts, ...selected];
-    const nextPrompt =
-      eligibleCandidates
-        .map((candidate, index) => ({
-          candidate,
-          index,
-          seenPenalty: seenSet.has(candidate.id) ? 1 : 0,
-          overlapPenalty: anchorPrompts.reduce(
-            (sum, anchorPrompt) => sum + calculatePromptOverlapPenalty(anchorPrompt, candidate),
-            0
-          )
-        }))
-        .sort((left, right) => {
-          if (left.seenPenalty !== right.seenPenalty) {
-            return left.seenPenalty - right.seenPenalty;
-          }
-
-          if (left.overlapPenalty !== right.overlapPenalty) {
-            return left.overlapPenalty - right.overlapPenalty;
-          }
-
-          return left.index - right.index;
-        })[0]?.candidate ?? null;
-
-    if (!nextPrompt) {
-      break;
-    }
-
-    selected.push(nextPrompt);
-    selectedCategoryKeys.add(getPromptCategoryKey(nextPrompt));
-    const nextPromptIndex = remaining.findIndex((prompt) => prompt.id === nextPrompt.id);
-    if (nextPromptIndex >= 0) {
-      remaining.splice(nextPromptIndex, 1);
-    }
-  }
-
-  return selected.length === desiredCount ? selected : [];
-}
-
 const DIFFICULTY_OPTIONS: Array<{
   value: DailyDifficulty;
   label: string;
@@ -760,336 +262,6 @@ const DIFFICULTY_OPTIONS: Array<{
     duration: "8-12분"
   }
 ];
-
-type WritingGuide = {
-  title: string;
-  description: string;
-  sentenceRange: [number, number];
-  wordRange: [number, number];
-  starter: string;
-  checklist: Array<{
-    title: string;
-    description: string;
-  }>;
-};
-
-function countWords(text: string) {
-  return text.trim() ? text.trim().split(/\s+/).length : 0;
-}
-
-function getIncompleteLoopCopy(step: IncompleteLoopStep): IncompleteLoopCopy {
-  switch (step) {
-    case "feedback":
-      return {
-        title: "받아둔 피드백이 남아 있어요",
-        body: "코치가 남긴 포인트를 확인하고 다음 루프로 자연스럽게 이어가 볼 수 있어요.",
-        ctaLabel: "피드백 이어보기",
-        badgeLabel: "FEEDBACK",
-        icon: "chat"
-      };
-    case "rewrite":
-      return {
-        title: "다시쓰기 초안이 남아 있어요",
-        body: "방금 다듬던 문장을 이어서 마무리하고 한 번 더 정리해 볼 수 있어요.",
-        ctaLabel: "다시 쓰러 가기",
-        badgeLabel: "REWRITE",
-        icon: "edit_note"
-      };
-    case "answer":
-    default:
-      return {
-        title: "작성하던 초안이 남아 있어요",
-        body: "멈춘 지점부터 바로 이어서 쓰고 오늘의 루프를 계속 진행할 수 있어요.",
-        ctaLabel: "이어서 쓰기",
-        badgeLabel: "DRAFT",
-        icon: "edit"
-      };
-  }
-}
-
-function formatIncompleteLoopSavedAt(updatedAt: string) {
-  const savedAt = new Date(updatedAt);
-  if (Number.isNaN(savedAt.getTime())) {
-    return "";
-  }
-
-  return savedAt.toLocaleTimeString("ko-KR", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-}
-
-function parseLocalDate(dateString: string) {
-  const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(year, (month ?? 1) - 1, day ?? 1);
-}
-
-function addDays(baseDate: Date, days: number) {
-  const nextDate = new Date(baseDate);
-  nextDate.setDate(nextDate.getDate() + days);
-  return nextDate;
-}
-
-function formatDateKey(date: Date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
-const WEEKDAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
-
-function buildWelcomeWeek(todayStatus: TodayWritingStatus | null, completedDateKeys: string[]) {
-  const today = todayStatus ? parseLocalDate(todayStatus.date) : new Date();
-  const todayKey = formatDateKey(today);
-  const completedKeys = new Set<string>(completedDateKeys);
-
-  if (completedKeys.size === 0 && todayStatus && todayStatus.streakDays > 0) {
-    const streakEndDate = todayStatus.completed ? today : addDays(today, -1);
-    for (let offset = 0; offset < todayStatus.streakDays; offset += 1) {
-      completedKeys.add(formatDateKey(addDays(streakEndDate, -offset)));
-    }
-  }
-
-  return Array.from({ length: 7 }, (_, index) => {
-    const date = addDays(today, index - 6);
-    const dateKey = formatDateKey(date);
-    return {
-      key: dateKey,
-      label: WEEKDAY_LABELS[date.getDay()] ?? "",
-      isToday: dateKey === todayKey,
-      isCompleted: completedKeys.has(dateKey)
-    };
-  });
-}
-
-type MonthCalendarCell = {
-  key: string;
-  dayNumber: number;
-  status: {
-    started: boolean;
-    completed: boolean;
-    startedSessions: number;
-    completedSessions: number;
-    isToday: boolean;
-  } | null;
-  isFuture: boolean;
-};
-
-type MonthView = {
-  year: number;
-  month: number;
-};
-
-function buildMonthCalendar(
-  monthStatus: HistoryMonthStatus | null,
-  monthView: MonthView | null,
-  referenceDateString?: string | null
-) {
-  const referenceDate = referenceDateString ? parseLocalDate(referenceDateString) : new Date();
-  const year = monthStatus?.year ?? monthView?.year ?? referenceDate.getFullYear();
-  const month = monthStatus?.month ?? monthView?.month ?? referenceDate.getMonth() + 1;
-  const monthStart = new Date(year, month - 1, 1);
-  const daysInMonth = new Date(year, month, 0).getDate();
-  const todayKey = formatDateKey(referenceDate);
-  const dayMap = new Map((monthStatus?.days ?? []).map((day) => [day.date, day]));
-  const cells: Array<MonthCalendarCell | null> = Array.from({ length: monthStart.getDay() }, () => null);
-
-  for (let dayNumber = 1; dayNumber <= daysInMonth; dayNumber += 1) {
-    const date = new Date(year, month - 1, dayNumber);
-    const key = formatDateKey(date);
-    const status = dayMap.get(key) ?? null;
-
-    cells.push({
-      key,
-      dayNumber,
-      status,
-      isFuture: key > todayKey
-    });
-  }
-
-  return {
-    year,
-    month,
-    monthLabel: new Intl.DateTimeFormat("ko-KR", { year: "numeric", month: "long" }).format(monthStart),
-    streakDays: monthStatus?.streakDays ?? 0,
-    cells
-  };
-}
-
-function createMonthView(date: Date): MonthView {
-  return {
-    year: date.getFullYear(),
-    month: date.getMonth() + 1
-  };
-}
-
-function addMonthsToView(view: MonthView, delta: number): MonthView {
-  const date = new Date(view.year, view.month - 1 + delta, 1);
-  return createMonthView(date);
-}
-
-function isSameMonthView(left: MonthView, right: MonthView) {
-  return left.year === right.year && left.month === right.month;
-}
-
-function getMonthStatusDayStyle(cell: MonthCalendarCell): CSSProperties | undefined {
-  if (cell.status?.completed) {
-    const count = Math.max(cell.status.completedSessions, 1);
-    const clampedCount = Math.min(count, 5);
-    const backgroundAlpha = Math.min(0.18 + clampedCount * 0.09, 0.6);
-    const borderAlpha = Math.min(0.24 + clampedCount * 0.12, 0.78);
-    const numberColor =
-      clampedCount >= 4 ? "#6e2904" : clampedCount === 3 ? "#7b3510" : clampedCount === 2 ? "#8c4617" : "#9d5a25";
-    const stateColor =
-      clampedCount >= 4 ? "#7a3410" : clampedCount === 3 ? "#8a4218" : clampedCount === 2 ? "#9a5425" : "#9f6b3b";
-
-    return {
-      "--month-status-day-bg": `rgba(229, 106, 31, ${backgroundAlpha})`,
-      "--month-status-day-border": `rgba(229, 106, 31, ${borderAlpha})`,
-      "--month-status-day-number-color": numberColor,
-      "--month-status-day-state-color": stateColor
-    } as CSSProperties;
-  }
-
-  if (cell.status?.started) {
-    const count = Math.max(cell.status.startedSessions, 1);
-    const background =
-      count >= 3
-        ? "rgba(255, 196, 94, 0.34)"
-        : count === 2
-          ? "rgba(255, 208, 123, 0.24)"
-          : "rgba(255, 229, 179, 0.18)";
-    const border =
-      count >= 3
-        ? "rgba(217, 132, 35, 0.44)"
-        : count === 2
-          ? "rgba(217, 132, 35, 0.32)"
-          : "rgba(217, 132, 35, 0.22)";
-
-    return {
-      "--month-status-day-bg": background,
-      "--month-status-day-border": border
-    } as CSSProperties;
-  }
-
-  return undefined;
-}
-
-function getWritingGuide(difficulty: DailyDifficulty, starterHint?: string | null): WritingGuide {
-  switch (difficulty) {
-    case "I":
-      return {
-        title: "짧게라도 바로 영어로 시작해 보세요.",
-        description: "한두 문장만 써도 충분해요. 먼저 영어로 답하는 감각을 만드는 데 집중해 보세요.",
-        sentenceRange: [1, 2],
-        wordRange: [10, 25],
-        starter: starterHint ?? "I usually ...",
-        checklist: [
-          {
-            title: "질문에 바로 답하기",
-            description: "질문에서 묻는 핵심만 골라 아주 짧게 먼저 적어보세요."
-          },
-          {
-            title: "이유 한 줄 붙이기",
-            description: "because 뒤에 짧은 이유를 한 문장만 더하면 답이 훨씬 자연스러워져요."
-          },
-          {
-            title: "쉬운 표현으로 끝내기",
-            description: "어려운 문장보다 내가 바로 쓸 수 있는 표현으로 마무리하는 게 더 중요해요."
-          }
-        ]
-      };
-    case "A":
-      return {
-        title: "완벽하지 않아도 일단 쓰는 것!",
-        description: "",
-        sentenceRange: [2, 3],
-        wordRange: [20, 40],
-        starter: starterHint ?? "I think ... because ...",
-        checklist: [
-          {
-            title: "의견 한 줄 쓰기",
-            description: "먼저 내 생각을 짧고 분명하게 적어보세요."
-          },
-          {
-            title: "이유 하나 붙이기",
-            description: "왜 그렇게 생각하는지 한 문장만 더해도 충분해요."
-          },
-          {
-            title: "짧은 예시 더하기",
-            description: "내 경험이나 간단한 상황을 하나 넣으면 더 자연스러워져요."
-          }
-        ]
-      };
-    case "B":
-      return {
-        title: "의견, 이유, 예시를 한 흐름으로 묶어보세요.",
-        description: "한 문장씩 차근차근 이어 쓰면 훨씬 안정적인 답변이 돼요.",
-        sentenceRange: [3, 4],
-        wordRange: [35, 60],
-        starter: starterHint ?? "In my opinion, ... One reason is that ...",
-        checklist: [
-          {
-            title: "내 입장 먼저 밝히기",
-            description: "질문에 대한 내 생각을 첫 문장에 분명히 적어보세요."
-          },
-          {
-            title: "이유 하나 설명하기",
-            description: "왜 그런지 구체적인 이유를 한두 문장으로 이어가세요."
-          },
-          {
-            title: "예시나 경험 추가하기",
-            description: "짧은 사례를 붙이면 답변이 더 설득력 있어져요."
-          }
-        ]
-      };
-    case "C":
-      return {
-        title: "주장과 근거를 구조적으로 풀어보세요.",
-        description: "길게 쓰기보다 흐름이 보이게 정리하면 훨씬 강한 답변이 돼요.",
-        sentenceRange: [4, 6],
-        wordRange: [55, 90],
-        starter: starterHint ?? "I believe ... because ... For example, ...",
-        checklist: [
-          {
-            title: "주장을 먼저 세우기",
-            description: "답변의 중심 생각을 첫 문장에 분명하게 잡아주세요."
-          },
-          {
-            title: "근거를 두텁게 만들기",
-            description: "이유를 한 문장으로 끝내지 말고 한 번 더 풀어보세요."
-          },
-          {
-            title: "예시나 비교 넣기",
-            description: "구체적인 사례나 다른 관점을 덧붙이면 답변이 깊어져요."
-          }
-        ]
-      };
-    default:
-      return {
-        title: "완벽하지 않아도 일단 쓰는 것!",
-        description: "",
-        sentenceRange: [2, 3],
-        wordRange: [20, 40],
-        starter: starterHint ?? "I think ... because ...",
-        checklist: [
-          {
-            title: "의견 먼저 쓰기",
-            description: "내 생각을 한 문장으로 먼저 적어보세요."
-          },
-          {
-            title: "이유 하나 붙이기",
-            description: "왜 그렇게 생각하는지 한 줄을 이어보세요."
-          },
-          {
-            title: "예시 하나 더하기",
-            description: "짧은 경험이나 상황을 덧붙여 답변을 완성해 보세요."
-          }
-        ]
-      };
-  }
-}
 
 export function AnswerLoop() {
   const router = useRouter();
@@ -3637,7 +2809,6 @@ export function AnswerLoop() {
     });
   }, [scrollRewriteFeedbackIntoView]);
 
-
   function resolveLoopStatus(): FeedbackLoopStatus | null {
     if (!feedback) {
       return null;
@@ -3664,7 +2835,6 @@ export function AnswerLoop() {
       }
     );
   }
-
 
   function renderCoachMoveDiffSegment(
     segment: RenderedInlineFeedbackSegment,
@@ -4001,7 +3171,6 @@ export function AnswerLoop() {
       </div>
     );
   }
-
 
   function renderHelpSheet() {
     if (!showHelpSheet || !isMobileViewport || (step !== "answer" && step !== "rewrite")) {

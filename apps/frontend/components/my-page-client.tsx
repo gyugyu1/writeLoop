@@ -13,7 +13,7 @@ import {
   updateProfile
 } from "../lib/api";
 import { clearHomeDraftForLogin } from "../lib/auth-flow";
-import { getDifficultyLabel, normalizeDailyDifficulty } from "../lib/difficulty";
+import { getDifficultyLabel, isDailyDifficulty, normalizeDailyDifficulty } from "../lib/difficulty";
 import { clearAllLocalWritingDrafts } from "../lib/home-writing-drafts";
 import { clearAllIncompleteLoops, saveIncompleteLoop } from "../lib/incomplete-loop";
 import type {
@@ -397,10 +397,6 @@ function getSavedExpressionPromptText(savedExpression: SavedExpression) {
 
 function trimSavedExpressionLookupValue(value?: string | null) {
   return value?.trim() ?? "";
-}
-
-function isDailyDifficulty(value?: string | null): value is DailyDifficulty {
-  return value === "I" || value === "A" || value === "B" || value === "C";
 }
 
 function resolveSavedExpressionPracticeTarget(

@@ -491,6 +491,16 @@ Set-Location apps/backend
 .\gradlew.bat test
 ```
 
+### 마이그레이션 확인
+
+마이그레이션을 추가하면 Docker로 확인합니다. 임시 MySQL 8.4·Redis 컨테이너에서 빈 DB(`V107__baseline.sql`부터)와 기존 DB(기준선 107) 양쪽으로 백엔드를 띄우고, 뷰가 조회되는지와 배포 전 백업(`mysqldump`, 운영 배포와 같은 클라이언트와 옵션)이 성공하는지 봅니다. 개발용 DB와 운영 DB에는 접속하지 않고, 끝나면 컨테이너를 지웁니다.
+
+```bash
+bash scripts/dev/check-db-migrations.sh --out <결과 폴더> [--tables 테이블1,테이블2]
+```
+
+결과 폴더의 `summary.txt`에 단계별 OK/FAIL이 남습니다. 운영 배포는 마이그레이션 전에 백업하므로, 마이그레이션이 뷰를 깨뜨리면 그 배포는 통과하고 다음 배포의 백업에서 실패합니다(2026-10-24). 그래서 백업까지 확인합니다.
+
 ### 모바일 정적 검사
 
 ```powershell

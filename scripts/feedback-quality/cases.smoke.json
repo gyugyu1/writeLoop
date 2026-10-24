@@ -2,9 +2,9 @@
   {
     "name": "thin evening routine should ask for a specific add-on",
     "category": "CONTENT_THIN",
-    "promptId": "prompt-routine-2093",
-    "promptQuestionIncludesAny": ["play music at home"],
-    "answer": "Before I play music at home, I put my bag down. Then I turn on music. That is all.",
+    "promptId": "prompt-routine-1116",
+    "promptQuestionIncludesAny": ["weekend evenings"],
+    "answer": "On weekend evenings, I eat dinner and then watch TV. Watching TV helps me the most. That is all.",
     "expectedFocusTypes": ["DETAIL", "RESULT", "FEELING", "SITUATION"],
     "forbiddenFocusTypes": ["EXPRESSION_POLISH"],
     "mustContainAny": {
@@ -26,11 +26,11 @@
     "badBehavior": "Do not only polish a small phrase while ignoring thin content."
   },
   {
-    "name": "weekday breakfast with generic reason",
+    "name": "perfect breakfast with generic reason",
     "category": "GENERIC_REASON",
-    "promptId": "prompt-preference-1101",
-    "promptQuestionIncludesAny": ["weekday breakfast"],
-    "answer": "I usually choose toast for breakfast when I am busy. I like it because it is delicious.",
+    "promptId": "prompt-intro-v2-0397",
+    "promptQuestionIncludesAny": ["perfect breakfast"],
+    "answer": "I would eat toast for my perfect breakfast. I like it because it is delicious.",
     "expectedFocusTypes": ["REASON", "DETAIL", "EXAMPLE"],
     "forbiddenFocusTypes": ["GRAMMAR_FIX", "EXPRESSION_POLISH"],
     "mustContainAny": {

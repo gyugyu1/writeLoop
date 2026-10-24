@@ -1,4 +1,4 @@
 infra/letsencrypt/**/*.sh text eol=lf
 scripts/ops/*.sh text eol=lf
-scripts/dev/*.sh text eol=lf
+scripts/dev/**/*.sh text eol=lf
 apps/backend/gradlew text eol=lf

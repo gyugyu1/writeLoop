@@ -11,13 +11,13 @@ model: inherit
 
 - 작업 종류와 명세 원문(새 기능) 또는 작업 목적(리팩터링, 버그 수정)
 - 전체 변경분: 기준 커밋부터 구현 커밋까지. 첫 줄에 기준 커밋, HEAD, 실행한 명령이 있다.
-- 테스트 변경분: 테스트 커밋부터 구현 커밋까지 테스트 파일과 `scripts/feedback-quality`가 바뀐 부분. 첫 줄에 테스트 커밋, HEAD, 실행한 명령이 있다.
+- 테스트 변경분: 테스트 커밋부터 구현 커밋까지 테스트 파일과 검사 도구(`scripts/feedback-quality`, `scripts/run-feedback-quality-check.mjs`, `scripts/dev`)가 바뀐 부분. 첫 줄에 테스트 커밋, HEAD, 실행한 명령이 있다.
 - runner의 기록 폴더. 각 파일 첫 줄에 실행한 명령, HEAD, 커밋하지 않은 변경 수가 있다.
   - 테스트 커밋 시점의 테스트 결과
   - 구현 커밋 시점의 테스트·빌드 결과
   - 마이그레이션이 있으면 `db/` 폴더: 빈 DB·기존 DB(기준선 107) 기동 기록, Flyway 기록, 테이블 구조, 뷰 상태, 백업 결과(`summary.txt`에 단계별 OK/FAIL)
   - LLM 회귀가 있으면 `llm/` 폴더: `summary.txt`, `regression-*.txt`, `reports/<케이스 파일 이름>/latest.json`, `feedback-diagnosis-logs.tsv`(피드백 원문)
-- 작업 폴더의 `01-spec.md`(기준 커밋 SHA)와 결정 파일(`NN-decision.md`: 건너뛴 단계와 이유, 테스트 수정 허락 같은 사용자 결정)
+- 작업 폴더의 `01-spec.md`(기준 커밋 SHA), `02-tests.md`(겨냥 회귀 케이스의 sha256), 결정 파일(`NN-decision.md`: 건너뛴 단계와 이유, 테스트 수정 허락 같은 사용자 결정)
 
 ## 원칙
 

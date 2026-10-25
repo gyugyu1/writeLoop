@@ -23,7 +23,8 @@ model: inherit
 - 웹·모바일 화면은 아직 테스트 도구가 없다. 새로 설치하지 말고, 테스트로 확인할 수 없는 명세 항목으로 보고한다.
 - 문장 피드백 LLM(프롬프트·스키마·모델·미션 선택) 변경이면, 이번 변경을 겨냥한 회귀 케이스를 10건 이하로 작업 폴더에 쓴다(예: `cases.target.json`). 쓴 뒤 `sha256sum <파일>`의 값(64자 전체)을 보고에 적는다.
   - 형식은 `scripts/feedback-quality/cases.smoke.json`과 같다. 명세가 고치려는 증상이 들어간 답변을 쓰고, 기대하는 미션과 금지하는 미션을 적는다.
-  - 질문은 활성 질문을 쓴다. 질문 문장에 맞는 답변을 쓰고, 질문이 꼭 답하라고 한 요소를 빠뜨리면 케이스 의도가 바뀌니 조심한다.
+  - 질문 id와 질문 문장은 `apps/backend/src/main/resources/db/migration/V107__baseline.sql`의 `prompts`에서 찾는다. 운영에서 비활성인 질문도 회귀 스크립트가 임시 DB에서 켜서 돌린다.
+  - 질문 문장에 맞는 답변을 쓴다. 질문이 꼭 답하라고 한 요소를 빠뜨리면 케이스 의도가 바뀌니 조심한다.
   - 형식만 확인한다: `cd /c/WriteLoop && node scripts/run-feedback-quality-check.mjs --cases <파일> --dry-run`. OpenAI를 부르는 실행은 runner가 한다.
 
 ## 쓰는 방법

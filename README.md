@@ -496,7 +496,7 @@ Set-Location apps/backend
 마이그레이션을 추가하면 Docker로 확인합니다. 임시 MySQL 8.4·Redis 컨테이너에서 빈 DB(`V107__baseline.sql`부터)와 기존 DB(기준선 107) 양쪽으로 백엔드를 띄우고, 뷰가 조회되는지와 배포 전 백업(`mysqldump`, 운영 배포와 같은 클라이언트와 옵션)이 성공하는지 봅니다. 개발용 DB와 운영 DB에는 접속하지 않고, 끝나면 컨테이너를 지웁니다.
 
 ```bash
-bash scripts/dev/check-db-migrations.sh --out <결과 폴더> [--tables 테이블1,테이블2]
+bash scripts/dev/check-db-migrations.sh --out <저장소 밖 결과 폴더> [--tables 테이블1,테이블2]
 ```
 
 결과 폴더의 `summary.txt`에 단계별 OK/FAIL이 남습니다. 운영 배포는 마이그레이션 전에 백업하므로, 마이그레이션이 뷰를 깨뜨리면 그 배포는 통과하고 다음 배포의 백업에서 실패합니다(2026-10-24). 그래서 백업까지 확인합니다.
@@ -534,9 +534,9 @@ npm run build:frontend
 
 ```bash
 # 비용 없이 케이스 형식과 예상 호출 수만 확인
-bash scripts/dev/run-llm-smoke.sh --out <결과 폴더> --dry-run
+bash scripts/dev/run-llm-smoke.sh --out <저장소 밖 결과 폴더> --dry-run
 # 실제 실행(OpenAI 호출 비용 발생). 겨냥 케이스 파일을 더할 수 있습니다
-bash scripts/dev/run-llm-smoke.sh --out <결과 폴더> [--cases <케이스 파일>]
+bash scripts/dev/run-llm-smoke.sh --out <저장소 밖 결과 폴더> [--cases <케이스 파일>]
 ```
 
 결과 폴더에 채점 리포트(케이스 파일마다 `reports/<케이스 파일 이름>/latest.json`)와 피드백 원문(`feedback-diagnosis-logs.tsv`)이 남고, `summary.txt`에 케이스 파일 해시와 실제로 쓴 모델이 남습니다. 요청 하나에 OpenAI 호출이 재시도까지 1~3번 생길 수 있습니다. 케이스가 쓰는 질문 중 운영에서 비활성화된 질문은 임시 DB에서만 활성화합니다(비활성 질문으로 요청하면 백엔드가 다른 질문으로 바꿔 평가가 어긋납니다).

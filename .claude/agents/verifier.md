@@ -24,7 +24,7 @@ model: inherit
   - 구현 커밋 시점의 테스트·빌드 결과
   - 마이그레이션이 있으면 `db/` 폴더: 빈 DB·기존 DB(기준선 107) 기동 기록, Flyway 기록, 테이블 구조, 뷰 상태, 백업 결과(`summary.txt`에 단계별 OK/FAIL)
   - LLM 회귀가 있으면 `llm/` 폴더: `summary.txt`, `reports/<케이스 파일 이름>/latest.json`, `feedback-diagnosis-logs.tsv`(피드백 원문). `regression-*.txt`(실행 출력)는 그 컴퓨터에만 있다. 없으면 `summary.txt`와 `latest.json`으로 보고, 그것 때문에 미확인으로 보고하지 않는다
-- `01-spec.md`(작업 종류, 입력 원문, 기준 커밋 SHA), `02-cases-target.json`(겨냥 회귀 케이스), `02-tests.md`(겨냥 회귀 케이스의 sha256), 결정 파일(`NN-decision.md`: 건너뛴 단계와 이유, 테스트 수정 허락 같은 사용자 결정)
+- `01-main-spec.md`(작업 종류, 입력 원문, 기준 커밋 SHA), `-cases-target.json`으로 끝나는 파일(겨냥 회귀 케이스), `-tests.md`로 끝나는 파일(테스트 보고와 겨냥 회귀 케이스의 sha256. 작성한 쪽은 `test-writer`나 `main`), 결정 파일(`NN-main-decision.md`: 건너뛴 단계와 이유, 테스트 수정 허락 같은 사용자 결정)
 - 폴더에 있어야 할 파일(변경분, runner 기록, 명세)이 없으면 그 항목을 미확인으로 보고한다.
 
 ## 원칙
@@ -61,7 +61,7 @@ model: inherit
   - 응답 enum에 새 값을 더했으면, 옛 앱이 그 값을 받았을 때 어떻게 처리하는지 모바일 코드에서 찾아본다.
 - LLM 회귀가 있으면:
   - 원본 리포트와 피드백 원문을 읽는다. 겨냥 케이스가 이번 변경의 목표대로 나왔는가, 6건 세트에서 새로 나빠진 곳이 있는가.
-  - runner `summary.txt`의 겨냥 케이스 sha256(64자 전체)이 `02-tests.md`에 적힌 값과 같은가. 다르면 구현 뒤에 케이스가 바뀐 것이다.
+  - runner `summary.txt`의 겨냥 케이스 sha256(64자 전체)이 `-tests.md`로 끝나는 테스트 보고에 적힌 값과 같은가. 다르면 구현 뒤에 케이스가 바뀐 것이다.
   - `summary.txt`의 "models used"가 이번 변경이 의도한 모델·추론 레벨인가.
   - 6건 세트의 알려진 실패 유형 셋(`.claude/CLAUDE.md`의 "변경 종류별로 더 할 것")은 따로 표시하고, 그 밖의 실패만 문제로 본다.
   - 회귀가 필요한 변경(문장 피드백 LLM의 프롬프트·스키마·모델, 스키마 키 순서)인데 회귀 기록이 없으면 "실행 필요"로 보고한다.

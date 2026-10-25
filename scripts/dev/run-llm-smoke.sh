@@ -26,8 +26,13 @@ while [ $# -gt 0 ]; do
   esac
 done
 [ -n "$OUT" ] || { echo "--out is required" >&2; exit 2; }
+seen=" "
 for c in "${CASES[@]}"; do
   [ -f "$c" ] || { echo "cases file not found: $c" >&2; exit 2; }
+  # 결과 파일 이름을 케이스 파일 이름으로 정하므로, 이름이 겹치면 결과가 섞인다.
+  n=$(basename "$c" .json)
+  case "$seen" in *" $n "*) echo "cases file name is used twice: $n" >&2; exit 2 ;; esac
+  seen="$seen$n "
 done
 
 HEAD_SHA=$(git -C "$ROOT" rev-parse HEAD)
@@ -47,7 +52,8 @@ for c in "${CASES[@]}"; do
   f="$OUT/dry-run-$name.txt"
   header "dry run: node scripts/run-feedback-quality-check.mjs --cases $c --dry-run" > "$f"
   if (cd "$ROOT" && node scripts/run-feedback-quality-check.mjs --cases "$c" --dry-run) >> "$f" 2>&1; then
-    result OK "cases valid ($name): $(grep -o '= [0-9]* execution' "$f" | grep -o '[0-9]*') execution(s)"
+    # 케이스 파일이 나중에 바뀌었는지 대조할 수 있게 해시를 남긴다.
+    result OK "cases valid ($name): $(grep -o '= [0-9]* execution' "$f" | grep -o '[0-9]*') request(s), sha256 $(sha256sum "$c" | cut -d' ' -f1)"
   else
     result FAIL "cases invalid ($name): see dry-run-$name.txt"
     exit 1
@@ -88,7 +94,7 @@ else
   result FAIL "activate case prompts: see activated-prompts.txt"
   exit 1
 fi
-stop_backend
+stop_backend || exit 1
 if ! start_backend llm openai; then
   exit 1
 fi
@@ -99,7 +105,7 @@ for c in "${CASES[@]}"; do
   f="$OUT/regression-$name.txt"
   header "regression: node scripts/run-feedback-quality-check.mjs --cases $c --base-url http://127.0.0.1:$APP_PORT --concurrency 1 --include-pass-payloads" > "$f"
   if (cd "$ROOT" && node scripts/run-feedback-quality-check.mjs --cases "$c" --base-url "http://127.0.0.1:$APP_PORT" \
-      --report-dir "$OUT/reports" --concurrency 1 --include-pass-payloads) >> "$f" 2>&1; then
+      --report-dir "$OUT/reports/$name" --concurrency 1 --include-pass-payloads) >> "$f" 2>&1; then
     result OK "regression ($name): $(grep -o 'passed: [0-9]*/[0-9]*' "$f" | tail -1)"
   elif grep -q "preflight failed\|validation failed" "$f"; then
     result FAIL "regression ($name): cases or prompts do not match, nothing was sent; see regression-$name.txt"
@@ -115,6 +121,12 @@ if MSYS_NO_PATHCONV=1 docker exec "$DB" mysql -uroot -B writeloop -e "SELECT * F
   result OK "feedback diagnosis logs saved: $(docker exec "$DB" mysql -uroot -N writeloop -e "SELECT COUNT(*) FROM feedback_diagnosis_logs" | tr -d '\r') row(s)"
 else
   result FAIL "feedback diagnosis logs: see feedback-diagnosis-logs.tsv"
+fi
+# 실제로 쓴 모델과 추론 레벨(.env 값은 읽어 출력하지 않고, 백엔드가 남긴 기록에서 가져온다).
+if models=$(docker exec "$DB" mysql -uroot -N writeloop -e "SELECT CONCAT(llm_model, ' / ', IFNULL(reasoning_effort, '-'), ' x', COUNT(*)) FROM feedback_diagnosis_logs GROUP BY llm_model, reasoning_effort" 2>&1); then
+  result OK "models used: $(echo "$models" | tr -d '\r' | paste -sd ';' -)"
+else
+  result FAIL "models used: query failed: $models"
 fi
 stop_backend
 

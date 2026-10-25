@@ -30,30 +30,32 @@ resolve_out_dir() {
   case "$OUT/" in "$ROOT"/*) rmdir "$OUT" 2>/dev/null; echo "--out must be outside the repository: $OUT" >&2; exit 2 ;; esac
 }
 
+# 백엔드를 끈다. 포트가 비지 않으면 FAIL을 남기고 1을 돌려준다. 끝낼지는 부른 쪽이 정한다.
 stop_backend() {
   [ -n "$BACKEND_PID" ] || return 0
   kill "$BACKEND_PID" 2>/dev/null
-  wait "$BACKEND_PID" 2>/dev/null
-  BACKEND_PID=""
   # Windows에서는 kill이 java 프로세스까지 닿지 않을 수 있어, 이 스크립트가 띄운 포트의 프로세스를 끈다.
-  # 시작 전에 이 포트가 비어 있는 것을 확인했으므로 다른 프로세스는 아니다.
+  # 시작 전에 이 포트가 비어 있는 것을 확인했으므로 다른 프로세스는 아니다. wait보다 먼저 해야 wait에서 멈추지 않는다.
   if command -v taskkill >/dev/null 2>&1; then
     for pid in $(netstat -ano 2>/dev/null | grep ":$APP_PORT .*LISTENING" | awk '{print $NF}' | sort -u); do
       taskkill //PID "$pid" //F >/dev/null 2>&1
     done
   fi
+  wait "$BACKEND_PID" 2>/dev/null
+  BACKEND_PID=""
   # 다음 기동이 남은 프로세스의 /health에 속지 않도록 포트가 빌 때까지 기다린다.
   for _ in $(seq 1 30); do
     port_in_use "$APP_PORT" || return 0
     sleep 1
   done
   result FAIL "backend on port $APP_PORT did not stop"
-  exit 1
+  return 1
 }
 remove_containers() {
   docker rm -f "$DB" "$REDIS" >/dev/null 2>&1
   docker network rm "$NET" >/dev/null 2>&1
 }
+# EXIT trap. 백엔드가 멈추지 않아도 컨테이너는 지운다.
 cleanup() {
   stop_backend
   remove_containers
@@ -61,6 +63,13 @@ cleanup() {
 
 # 포트가 비어 있어야 다른 프로세스에 붙거나 그 프로세스를 끄지 않는다.
 check_ports_free() {
+  # 다른 확인이 돌고 있으면 그 컨테이너를 지우지 않고 바로 멈춘다. 멈춰 있는 이전 컨테이너만 지운다.
+  if [ -n "$(docker ps -q --filter "name=^wl-check-" 2>/dev/null)" ]; then
+    result FAIL "another scripts/dev check is running (wl-check-* containers are up)"
+    # 종료 정리(trap)가 그 실행의 컨테이너를 지우지 않게 끈다.
+    trap - EXIT
+    exit 1
+  fi
   remove_containers
   local p
   for p in $DB_PORT $REDIS_PORT $APP_PORT; do

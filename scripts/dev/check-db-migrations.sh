@@ -123,7 +123,7 @@ if start_backend empty; then
   record_db empty
   [ -n "$API" ] && call_api
 fi
-stop_backend
+stop_backend || exit 1
 
 # 기존 DB: Flyway 기록 없이 V107 구조만 넣는다. Flyway 도입 전 DB와 같은 상태라,
 # 기동하면 107로 기준선을 표시하고 108 이후를 한꺼번에 적용한다.

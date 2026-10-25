@@ -48,9 +48,6 @@ resolve_out_dir() {
       rel_lc=$(printf '%s/' "$rel" | tr '[:upper:]' '[:lower:]')
       if [ -z "$rel" ]; then
         reason="--out must not be the repository itself: $OUT"
-      elif [ "${rel_lc#docs/private/}" != "$rel_lc" ]; then
-        # 예전 위치. git이 계속 무시하므로 아래 검사는 통과하지만, 결과가 작업 폴더와 떨어진 옛 사본에 남는다.
-        reason="docs/private moved to private/ (2026-10-25); use private/work/...: $OUT"
       elif [ "${rel_lc#private/}" != "$rel_lc" ] && [ ! -d "$ROOT/private/.git" ]; then
         # private를 clone하기 전에 이 폴더를 만들면, 나중에 clone이 빈 폴더가 아니라며 실패한다.
         reason="private is not cloned yet; clone it first (see .claude/CLAUDE.md): $OUT"

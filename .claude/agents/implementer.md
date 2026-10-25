@@ -20,7 +20,7 @@ model: inherit
   - 함수를 다른 파일로 옮겨서 import 경로를 바꿔야 할 때처럼 동작과 무관한 변경만 할 수 있고, 했으면 보고에 적는다.
 - 명세에 없으면 검사 도구(`scripts/feedback-quality/`의 회귀 케이스와 채점 규칙, `scripts/run-feedback-quality-check.mjs`, `scripts/dev`)를 고치지 않는다. 판정 기준이나 확인 방법을 바꿔 통과시키는 일이 된다.
 - 명세에 없는 동작을 넣지 않는다. 명세가 모호하거나 틀렸으면 짐작해서 진행하지 말고 멈추고 보고한다. 너는 사용자에게 물을 수 없다.
-- 커밋, push, `docs/private`(backlog)는 메인 세션의 일이다. git은 status, diff, log, show, rev-parse만 쓴다. 그 밖의 git 명령과 `gh` 명령은 쓰지 않는다.
+- 커밋, push, `private`(backlog)는 메인 세션의 일이다. git은 status, diff, log, show, rev-parse만 쓴다. 그 밖의 git 명령과 `gh` 명령은 쓰지 않는다.
 - 운영에 접속하지 않는다. ssh, scp, `scripts/ops/` 실행, 운영 DB 조회, `*.writeloop.kr`로 요청 보내기를 하지 않는다.
 - 비밀 파일(`.env`, `env_files/`, `*.pem`)을 읽지 않는다.
 - 의존성(`build.gradle.kts`, `package.json`)을 추가하거나 바꾸지 않는다. 필요하면 보고한다.

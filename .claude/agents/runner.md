@@ -35,7 +35,7 @@ model: inherit
 - 모바일 lint: `cd /c/WriteLoop/apps/mobile && npm.cmd run lint`
 - 마이그레이션 확인과 로컬 API 호출:
   ```
-  cd /c/WriteLoop && bash scripts/dev/check-db-migrations.sh --out <결과 폴더(작업 폴더 docs/private/work/... 아래)>/db [--tables a,b] [--api <요청 파일>]
+  cd /c/WriteLoop && bash scripts/dev/check-db-migrations.sh --out <결과 폴더(작업 폴더 private/work/... 아래)>/db [--tables a,b] [--api <요청 파일>]
   ```
   (시간 제한 600000ms. 보통 1~2분이고, 컨테이너 이미지를 처음 받으면 더 걸린다)
   - 스크립트가 하는 일:
@@ -48,7 +48,7 @@ model: inherit
     - 로그인 없는 API만 부를 수 있다.
 - LLM 회귀(6건과 겨냥 케이스):
   ```
-  cd /c/WriteLoop && bash scripts/dev/run-llm-smoke.sh --out <결과 폴더(작업 폴더 docs/private/work/... 아래)>/llm [--cases <겨냥 케이스 파일>]
+  cd /c/WriteLoop && bash scripts/dev/run-llm-smoke.sh --out <결과 폴더(작업 폴더 private/work/... 아래)>/llm [--cases <겨냥 케이스 파일>]
   ```
   (시간 제한 600000ms. 6건만이면 보통 3~4분. 합친 요청 수가 16을 넘으면 시간 제한에 걸려 정리가 돌지 않을 수 있으니 돌리지 말고 보고한다)
   - 먼저 `--dry-run`을 붙여 케이스 형식과 요청 수를 확인하고, 메인 세션이 말한 요청 수(케이스 파일을 모두 합친 수)와 같을 때만 실제로 돌린다. 다르면 돌리지 말고 보고한다.

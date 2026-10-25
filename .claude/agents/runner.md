@@ -22,7 +22,7 @@ model: inherit
 - 결과 저장 폴더는 메인 세션이 준 작업 폴더 아래 절대경로다. 항목마다 파일 하나를 만든다(`backend-test.txt` 등).
 - 각 파일 첫 줄에 실행한 명령, `git rev-parse HEAD`, `git status --short`의 줄 수를 적는다.
 - 출력은 자르지 않고 저장한다. 보고에는 요약만 쓴다.
-- 결과 폴더 바로 아래에 `summary.txt`를 쓴다. 첫 줄에 `git rev-parse HEAD`와 `git status --short`의 줄 수, 그 아래에 항목마다 통과·실패와 기록 파일 이름을 한 줄씩 적는다. 원본 기록은 git에 들어가지 않으므로, 다른 컴퓨터에서는 이 파일이 실행 결과와 커밋 번호의 유일한 기록이다.
+- 결과 폴더 바로 아래에 `summary.txt`를 쓴다. 첫 줄에 `git rev-parse HEAD`와 `git status --short`의 줄 수, 그 아래에 항목마다 통과·실패와 기록 파일 이름을 한 줄씩 적는다. 원본 기록은 대부분 git에 들어가지 않는다(LLM 회귀의 `latest.json`·`feedback-diagnosis-logs.tsv`와 스크립트의 `summary.txt`는 예외). 다른 컴퓨터에서는 이 파일로 항목별 결과와 커밋 번호를 본다.
 
 ## 항목별 실행 방법
 

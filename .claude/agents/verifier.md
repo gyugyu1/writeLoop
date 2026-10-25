@@ -23,7 +23,7 @@ model: inherit
   - 테스트 커밋 시점의 테스트 결과
   - 구현 커밋 시점의 테스트·빌드 결과
   - 마이그레이션이 있으면 `db/` 폴더: 빈 DB·기존 DB(기준선 107) 기동 기록, Flyway 기록, 테이블 구조, 뷰 상태, 백업 결과(`summary.txt`에 단계별 OK/FAIL)
-  - LLM 회귀가 있으면 `llm/` 폴더: `summary.txt`, `regression-*.txt`, `reports/<케이스 파일 이름>/latest.json`, `feedback-diagnosis-logs.tsv`(피드백 원문)
+  - LLM 회귀가 있으면 `llm/` 폴더: `summary.txt`, `reports/<케이스 파일 이름>/latest.json`, `feedback-diagnosis-logs.tsv`(피드백 원문). `regression-*.txt`(실행 출력)는 그 컴퓨터에만 있다. 없으면 `summary.txt`와 `latest.json`으로 보고, 그것 때문에 미확인으로 보고하지 않는다
 - `01-spec.md`(작업 종류, 입력 원문, 기준 커밋 SHA), `02-cases-target.json`(겨냥 회귀 케이스), `02-tests.md`(겨냥 회귀 케이스의 sha256), 결정 파일(`NN-decision.md`: 건너뛴 단계와 이유, 테스트 수정 허락 같은 사용자 결정)
 - 폴더에 있어야 할 파일(변경분, runner 기록, 명세)이 없으면 그 항목을 미확인으로 보고한다.
 

@@ -24,7 +24,7 @@ sql() { MSYS_NO_PATHCONV=1 docker exec "$DB" mysql -uroot -t writeloop -e "$1"; 
 port_in_use() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
 # 결과 폴더를 절대경로로 바꾼다. 저장소 안에서 git이 추적하는 곳이면 결과 파일이 "커밋하지 않은 변경"으로 잡혀
-# 기록이 어긋나므로 거부한다. git이 무시하는 폴더(docs/private 등)는 괜찮다.
+# 기록이 어긋나므로 거부한다. git이 무시하는 폴더(private 등)는 괜찮다.
 resolve_out_dir() {
   # 거부할 때 이번에 새로 만든 폴더만 지우도록, 아직 없는 가장 위 폴더를 기억해 둔다.
   local probe="$OUT" created_top=""
@@ -48,9 +48,12 @@ resolve_out_dir() {
       rel_lc=$(printf '%s/' "$rel" | tr '[:upper:]' '[:lower:]')
       if [ -z "$rel" ]; then
         reason="--out must not be the repository itself: $OUT"
-      elif [ "${rel_lc#docs/private/}" != "$rel_lc" ] && [ ! -d "$ROOT/docs/private/.git" ]; then
-        # docs/private를 clone하기 전에 이 폴더를 만들면, 나중에 clone이 빈 폴더가 아니라며 실패한다.
-        reason="docs/private is not cloned yet; clone it first (see .claude/CLAUDE.md): $OUT"
+      elif [ "${rel_lc#docs/private/}" != "$rel_lc" ]; then
+        # 예전 위치. git이 계속 무시하므로 아래 검사는 통과하지만, 결과가 작업 폴더와 떨어진 옛 사본에 남는다.
+        reason="docs/private moved to private/ (2026-10-25); use private/work/...: $OUT"
+      elif [ "${rel_lc#private/}" != "$rel_lc" ] && [ ! -d "$ROOT/private/.git" ]; then
+        # private를 clone하기 전에 이 폴더를 만들면, 나중에 clone이 빈 폴더가 아니라며 실패한다.
+        reason="private is not cloned yet; clone it first (see .claude/CLAUDE.md): $OUT"
       elif ! git -C "$ROOT" check-ignore -q -- "$rel/"; then
         reason="--out must be outside the repository or in a git-ignored folder: $OUT"
       fi

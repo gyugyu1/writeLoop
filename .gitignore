@@ -21,7 +21,9 @@ yarn-error.log*
 pnpm-debug.log*
 metro-dev.log
 env_files/
-# 비공개 작업 목록과 민감한 조사 보고서. 공개 저장소에 올리지 않는다.
+# 비공개 저장소(작업 목록, 조사 보고서, 작업 기록)의 clone. 공개 저장소에 올리지 않는다.
+/private/
+# 예전 위치(2026-10-25에 루트 private/로 옮김). 다른 컴퓨터에 옛 clone이 남아 있어도 올라가지 않게 계속 뺀다.
 docs/private/
 .artifacts/
 /artifacts/

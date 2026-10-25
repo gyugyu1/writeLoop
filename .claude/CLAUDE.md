@@ -29,7 +29,7 @@
 | `scripts/feedback-quality` | 문장 피드백 회귀 테스트 케이스와 채점 규칙 |
 | `.agents/skills/writeloop-feedback-logic` | 문장 피드백 계약과 품질 기준 문서 |
 | `docs/` | `decisions/`(ADR), `guides/`(구조·동작 설명), `reports/<주제>/`(날짜가 붙은 실험·회귀·점검 보고서). 규칙은 `docs/README.md` |
-| `private/` | 비공개 저장소의 clone(작업 목록, 비공개 보고서, 작업 폴더). 이 저장소는 `.gitignore`로 무시한다. 구조는 `private/README.md` |
+| `private/` | 비공개 저장소의 clone(작업 목록, 비공개 보고서, 작업 폴더). 공개 저장소는 `.gitignore`로 무시한다. 구조는 `private/README.md` |
 
 ## 확인 명령 (Windows)
 
@@ -270,7 +270,6 @@ push는 위 규칙대로 요청받았을 때만 한다.
 
 - 작업 목록: `private/backlog.md`.
   - 저장소 루트의 `private/`는 비공개 저장소 `gyugyu1/writeloop-private`의 clone이다. 이 공개 저장소는 `.gitignore`로 무시한다.
-  - 2026-10-25에 `docs/private/`에서 옮겼다(사용자 결정). 다른 컴퓨터에 옛 clone(`docs/private/`)이 있으면, 거기에 push하지 않은 커밋이 없는지(`git -C docs/private log origin/main..HEAD`) 확인한 뒤 지우고 루트에 새로 clone한다. 옛 위치도 `.gitignore`로 계속 무시하고, 확인 스크립트는 그 아래를 `--out`으로 받지 않는다.
   - 폴더가 없으면 저장소 루트에서 `git clone https://github.com/gyugyu1/writeloop-private.git private`로 받는다.
   - 이 폴더의 내용은 공개되는 파일(ADR, README, 이 저장소의 커밋 메시지)에 옮겨 적지 않는다.
   - 작업을 시작하기 전에 `private`에서 `git pull`하고 읽는다. 항목을 끝내면 체크하고 날짜와 커밋을 적어 "최근 완료"로 옮긴 뒤, 그 폴더에서 커밋한다(push는 위 규칙대로 요청받았을 때).

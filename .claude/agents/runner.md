@@ -22,6 +22,7 @@ model: inherit
 - 결과 저장 폴더는 메인 세션이 준 작업 폴더 아래 절대경로다. 항목마다 파일 하나를 만든다(`backend-test.txt` 등).
 - 각 파일 첫 줄에 실행한 명령, `git rev-parse HEAD`, `git status --short`의 줄 수를 적는다.
 - 출력은 자르지 않고 저장한다. 보고에는 요약만 쓴다.
+- 결과 폴더 바로 아래에 `summary.txt`를 쓴다. 첫 줄에 `git rev-parse HEAD`와 `git status --short`의 줄 수, 그 아래에 항목마다 통과·실패와 기록 파일 이름을 한 줄씩 적는다. 원본 기록은 git에 들어가지 않으므로, 다른 컴퓨터에서는 이 파일이 실행 결과와 커밋 번호의 유일한 기록이다.
 
 ## 항목별 실행 방법
 
@@ -34,7 +35,7 @@ model: inherit
 - 모바일 lint: `cd /c/WriteLoop/apps/mobile && npm.cmd run lint`
 - 마이그레이션 확인과 로컬 API 호출:
   ```
-  cd /c/WriteLoop && bash scripts/dev/check-db-migrations.sh --out <결과 폴더(작업 폴더 아래, 저장소 밖)>/db [--tables a,b] [--api <요청 파일>]
+  cd /c/WriteLoop && bash scripts/dev/check-db-migrations.sh --out <결과 폴더(작업 폴더 docs/private/work/... 아래)>/db [--tables a,b] [--api <요청 파일>]
   ```
   (시간 제한 600000ms. 보통 1~2분이고, 컨테이너 이미지를 처음 받으면 더 걸린다)
   - 스크립트가 하는 일:
@@ -47,7 +48,7 @@ model: inherit
     - 로그인 없는 API만 부를 수 있다.
 - LLM 회귀(6건과 겨냥 케이스):
   ```
-  cd /c/WriteLoop && bash scripts/dev/run-llm-smoke.sh --out <결과 폴더(작업 폴더 아래, 저장소 밖)>/llm [--cases <겨냥 케이스 파일>]
+  cd /c/WriteLoop && bash scripts/dev/run-llm-smoke.sh --out <결과 폴더(작업 폴더 docs/private/work/... 아래)>/llm [--cases <겨냥 케이스 파일>]
   ```
   (시간 제한 600000ms. 6건만이면 보통 3~4분. 합친 요청 수가 16을 넘으면 시간 제한에 걸려 정리가 돌지 않을 수 있으니 돌리지 말고 보고한다)
   - 먼저 `--dry-run`을 붙여 케이스 형식과 요청 수를 확인하고, 메인 세션이 말한 요청 수(케이스 파일을 모두 합친 수)와 같을 때만 실제로 돌린다. 다르면 돌리지 말고 보고한다.

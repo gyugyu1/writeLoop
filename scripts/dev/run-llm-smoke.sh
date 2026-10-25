@@ -4,7 +4,7 @@
 # OpenAI 키는 이 스크립트가 저장소 루트 .env에서 꺼내 백엔드 프로세스에만 넘긴다. 값은 출력하거나 파일에 남기지 않는다.
 # OpenAI를 실제로 호출하므로 비용이 든다. 돌리기 전에 사용자에게 예상 호출 수를 알리고 승인받는다.
 #
-#   bash scripts/dev/run-llm-smoke.sh --out <저장소 밖 결과 폴더> [--cases <케이스 파일>]... [--dry-run]
+#   bash scripts/dev/run-llm-smoke.sh --out <저장소 밖이나 git이 무시하는 결과 폴더> [--cases <케이스 파일>]... [--dry-run]
 #
 # --cases    기본 세트(scripts/feedback-quality/cases.smoke.json) 뒤에 더 돌릴 케이스 파일. 여러 번 줄 수 있다.
 # --dry-run  케이스 형식과 예상 호출 수만 확인하고 OpenAI는 부르지 않는다.
@@ -12,7 +12,7 @@
 # 컨테이너 이름과 포트가 고정이라 scripts/dev의 확인 스크립트는 한 번에 하나만 돌린다.
 set -uo pipefail
 
-ROOT=$(cd "$(dirname "$0")/../.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd -P)
 INVOCATION="$0 $*"
 OUT=""
 DRY_RUN=""

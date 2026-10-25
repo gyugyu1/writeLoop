@@ -3,7 +3,7 @@
 # Flyway 기록, 테이블 구조, 뷰가 쓰는 테이블과 뷰 조회 결과, 운영 배포와 같은 방식의 백업(mysqldump) 결과를 파일로 남긴다.
 # 운영 DB와 개발용 로컬 DB에는 접속하지 않고, 비밀 파일도 읽지 않는다. OpenAI 키는 넘기지 않는다.
 #
-#   bash scripts/dev/check-db-migrations.sh --out <저장소 밖 결과 폴더> [--tables a,b] [--api <요청 파일>]
+#   bash scripts/dev/check-db-migrations.sh --out <저장소 밖이나 git이 무시하는 결과 폴더> [--tables a,b] [--api <요청 파일>]
 #
 # --tables  마이그레이션이 바꾼 테이블. SHOW CREATE TABLE을 남긴다.
 # --api     한 줄에 "METHOD PATH [JSON 본문]". #으로 시작하는 줄은 건너뛴다. 로그인 없는 API만 부를 수 있다.
@@ -12,7 +12,7 @@
 # 컨테이너 이름과 포트가 고정이라 scripts/dev의 확인 스크립트는 한 번에 하나만 돌린다.
 set -uo pipefail
 
-ROOT=$(cd "$(dirname "$0")/../.." && pwd)
+ROOT=$(cd "$(dirname "$0")/../.." && pwd -P)
 INVOCATION="$0 $*"
 OUT=""
 TABLES=""

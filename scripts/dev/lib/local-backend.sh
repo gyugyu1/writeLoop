@@ -23,11 +23,53 @@ result() {
 sql() { MSYS_NO_PATHCONV=1 docker exec "$DB" mysql -uroot -t writeloop -e "$1"; }
 port_in_use() { (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 
-# 결과 폴더를 절대경로로 바꾼다. 저장소 안이면 그 자체가 "커밋하지 않은 변경"으로 잡혀 기록이 어긋나므로 거부한다.
+# 결과 폴더를 절대경로로 바꾼다. 저장소 안에서 git이 추적하는 곳이면 결과 파일이 "커밋하지 않은 변경"으로 잡혀
+# 기록이 어긋나므로 거부한다. git이 무시하는 폴더(docs/private 등)는 괜찮다.
 resolve_out_dir() {
+  # 거부할 때 이번에 새로 만든 폴더만 지우도록, 아직 없는 가장 위 폴더를 기억해 둔다.
+  local probe="$OUT" created_top=""
+  while [ ! -e "$probe" ]; do
+    created_top="$probe"
+    probe=$(dirname "$probe")
+  done
   mkdir -p "$OUT" || exit 2
-  OUT=$(cd "$OUT" && pwd)
-  case "$OUT/" in "$ROOT"/*) rmdir "$OUT" 2>/dev/null; echo "--out must be outside the repository: $OUT" >&2; exit 2 ;; esac
+  [ -n "$created_top" ] && created_top=$(cd "$created_top" && pwd -P)
+  OUT=$(cd "$OUT" && pwd -P)
+
+  local reason=""
+  # Windows 경로는 대소문자를 가리지 않으므로 소문자로 비교한다.
+  local out_lc root_lc rel rel_lc
+  out_lc=$(printf '%s/' "$OUT" | tr '[:upper:]' '[:lower:]')
+  root_lc=$(printf '%s/' "$ROOT" | tr '[:upper:]' '[:lower:]')
+  case "$out_lc" in
+    "$root_lc"*)
+      rel=${OUT:${#ROOT}}
+      rel=${rel#/}
+      rel_lc=$(printf '%s/' "$rel" | tr '[:upper:]' '[:lower:]')
+      if [ -z "$rel" ]; then
+        reason="--out must not be the repository itself: $OUT"
+      elif [ "${rel_lc#docs/private/}" != "$rel_lc" ] && [ ! -d "$ROOT/docs/private/.git" ]; then
+        # docs/private를 clone하기 전에 이 폴더를 만들면, 나중에 clone이 빈 폴더가 아니라며 실패한다.
+        reason="docs/private is not cloned yet; clone it first (see .claude/CLAUDE.md): $OUT"
+      elif ! git -C "$ROOT" check-ignore -q -- "$rel/"; then
+        reason="--out must be outside the repository or in a git-ignored folder: $OUT"
+      fi
+      ;;
+  esac
+  if [ -n "$reason" ]; then
+    if [ -n "$created_top" ]; then
+      local d="$OUT"
+      # 새로 만든 가장 위 폴더(created_top)와 그 아래만 지운다. 경로에 ..가 있어도 원래 있던 폴더는 건드리지 않는다.
+      while :; do
+        case "$d/" in "$created_top"/*) ;; *) break ;; esac
+        rmdir "$d" 2>/dev/null || break
+        [ "$d" = "$created_top" ] && break
+        d=$(dirname "$d")
+      done
+    fi
+    echo "$reason" >&2
+    exit 2
+  fi
 }
 
 # 백엔드를 끈다. 포트가 비지 않으면 FAIL을 남기고 1을 돌려준다. 끝낼지는 부른 쪽이 정한다.

@@ -228,6 +228,19 @@ expect "status: origin/main이 있으면 push 안 된 커밋 수" "$(echo "$OUT"
 run status --all
 expect "status --all: 전부 보인다" "$(echo "$OUT" | grep -qF "001-2026-01-01-f1"; echo $?)" "out=$OUT"
 
+# 아래는 026 19-main-decision.md에서 더한 테스트(없는 폴더는 오류로 끝나고 아무것도 내거나 만들지 않는다)
+before_root=$(ls -A "$R" | wc -l)
+before_work=$(ls "$R/private/work" | wc -l)
+run next private/work/없는폴더
+expect "next: 없는 폴더는 거부하고 번호를 내지 않음" \
+  "$([ "$RC" != 0 ] && ! echo "$OUT" | grep -qE '^[0-9]{2}$'; echo $?)" "rc=$RC out=$OUT"
+run new 자식 --parent private/work/없는폴더
+expect "new --parent: 없는 부모 폴더는 거부하고 아무것도 만들지 않음" \
+  "$([ "$RC" != 0 ] && ! echo "$OUT" | grep -q '01-자식' && [ "$(ls -A "$R" | wc -l)" = "$before_root" ] && [ "$(ls "$R/private/work" | wc -l)" = "$before_work" ]; echo $?)" "rc=$RC out=$OUT"
+run diff private/work/없는폴더
+expect "diff: 없는 폴더는 거부하고 아무것도 만들지 않음" \
+  "$([ "$RC" != 0 ] && ! echo "$OUT" | grep -q 'main-diff' && [ "$(ls "$R/private/work" | wc -l)" = "$before_work" ]; echo $?)" "rc=$RC out=$OUT"
+
 echo
 echo "PASS $PASS FAIL $FAIL"
 [ "$FAIL" = 0 ]

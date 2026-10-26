@@ -82,7 +82,7 @@ jobs:
   db-migration-check:
     name: 마이그레이션 확인
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-java@v6
@@ -91,6 +91,8 @@ jobs:
           java-version: "21"
           cache: gradle
       - name: 마이그레이션 확인
+        # 단계에 시간 제한을 두면 시간 초과가 이 단계의 실패가 되어 아래 보관 단계가 확실히 돈다.
+        timeout-minutes: 20
         run: |
           chmod +x apps/backend/gradlew
           bash scripts/dev/check-db-migrations.sh --out "$RUNNER_TEMP/db-check"

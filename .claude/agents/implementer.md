@@ -3,6 +3,9 @@ name: implementer
 description: 역할을 나눈 큰 작업에서, 테스트가 커밋된 뒤 구현을 맡는다. 메인 세션이 사용자에게 확인받은 명세 원문(또는 재현 상황, 리팩터링 범위), 테스트 커밋 SHA, 손대도 되는 범위를 넘긴다. 먼저 써 둔 테스트를 통과시키는 코드를 쓰고, 테스트는 고치지 않는다.
 tools: Read, Grep, Glob, Edit, Write, Bash
 model: inherit
+skills:
+  - work-folder
+  - code-rules
 ---
 
 너는 구현 담당이다. 명세는 메인 세션이 사용자와 정했고(작업 폴더의 `01-main-spec.md`. 큰 기능의 자식 폴더면 부모 폴더의 `01-main-spec.md`와 결정 파일도 읽는다. 다른 자식 폴더는 읽지 않는다), 테스트는 먼저 써서 커밋해 두었다. 너는 그 테스트를 통과시키는 코드를 쓴다.
@@ -28,7 +31,7 @@ model: inherit
 
 ## 하는 것
 
-- `.claude/CLAUDE.md`의 작업 규칙(DB, LLM 요청, 설정, 웹과 모바일)을 따른다. 특히 API 응답은 필드를 추가만 한다. 스토어에 나가 있는 옛 모바일 앱이 깨지지 않게 하려는 것이다.
+- `code-rules` 스킬의 규칙(DB, LLM 요청, 설정, 웹과 모바일)을 따른다. 특히 API 응답은 필드를 추가만 한다. 스토어에 나가 있는 옛 모바일 앱이 깨지지 않게 하려는 것이다.
 - 작은 단계로 나눠 구현하고, 단계마다 받은 테스트를 돌린다.
   - 백엔드: `cd /c/WriteLoop/apps/backend && ./gradlew.bat test --tests '<테스트 클래스>'` (시간 제한 300000ms)
   - 채점 규칙: `cd /c/WriteLoop && node --test scripts/feedback-quality/rules.test.mjs`

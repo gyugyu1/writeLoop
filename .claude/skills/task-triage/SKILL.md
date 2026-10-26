@@ -14,7 +14,7 @@ description: WriteLoop에서 질문·설명·조사가 아닌 변경 작업(코�
 - 작업 지침(`.claude/CLAUDE.md`, `.claude/agents/*.md`, `.claude/skills/*/SKILL.md`)을 바꾸면 작업 지침 변경이다. 아래 2·3을 정하지 않고 `instruction-change`를 따른다.
 - 작업 지침과 다른 파일을 함께 바꾸면 두 작업으로 나눈다. 작업 지침은 작업 지침 변경으로, 나머지는 아래 2·3으로 정한다.
   - 다만 지침이 가리키는 안내 파일(`private/README.md`, `private/.gitignore`, `docs/README.md`처럼 지침 규칙을 설명하거나 따르는 파일)을 지침과 함께 고칠 때는 지침 변경에 넣어 한 번에 검토한다.
-  - `private/backlog.md`의 항목 정리와 작업 폴더(`private/work/`)의 파일은 다른 파일로 치지 않는다.
+  - `private/backlog.md`의 항목 추가·정리와 작업 폴더(`private/work/`)의 파일은 다른 파일로 치지 않는다.
 
 ## 2. 작업 종류
 

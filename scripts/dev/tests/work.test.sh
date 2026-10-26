@@ -168,9 +168,32 @@ expect "diff 지침: 변경분 이름은 NN-main-diff.txt" "$([ "$RC" = 0 ] && [
 expect "diff 지침: .claude의 바뀐 파일" "$(grep -q "skills/a/SKILL.md" "$F" && grep -q "+skill-changed" "$F"; echo $?)"
 expect "diff 지침: .claude의 새 파일(git add -N)" "$(grep -q "skills/b/SKILL.md" "$F" && grep -q "+new-skill" "$F"; echo $?)"
 expect "diff 지침: --guide로 준 공개 안내 파일" "$(grep -q "+docs-changed" "$F"; echo $?)"
-expect "diff 지침: 안내 파일이 아닌 변경은 넣지 않음" "$(! grep -q "outside-guide" "$F"; echo $?)"
+expect "diff 지침: 안내 파일이 아닌 변경은 넣지 않음" "$([ -f "$F" ] && ! grep -q "outside-guide" "$F"; echo $?)"
 expect "diff 지침: 비공개 안내 파일을 머리줄과 함께 이어 붙임" \
   "$(grep -q "+private-readme-changed" "$F" && grep "비공개 저장소" "$F" | grep -qF "$PBASE"; echo $?)"
+
+# 아래는 08-main-decision.md에서 더한 테스트(잘못된 인자는 오류로 끝내고 파일을 만들지 않는다)
+count_diff() { ls "$1" | grep -c diff; }
+n=$(count_diff "$R/$DI")
+run diff "$DI" --guide docs/없는파일.md
+expect "diff 지침: 어디에도 없는 --guide 경로는 거부" "$([ "$RC" != 0 ] && [ "$(count_diff "$R/$DI")" = "$n" ]; echo $?)" "rc=$RC out=$OUT"
+run diff "$DI" --guide private/없는파일.md
+expect "diff 지침: 비공개 저장소에 없는 --guide 경로는 거부" "$([ "$RC" != 0 ] && [ "$(count_diff "$R/$DI")" = "$n" ]; echo $?)" "rc=$RC out=$OUT"
+
+mkdir -p "$R/private/work/002-2026-01-01-지침-비공개기준없음"
+echo "기준 커밋: $(short "$R")" > "$R/private/work/002-2026-01-01-지침-비공개기준없음/01-main-purpose.md"
+run diff private/work/002-2026-01-01-지침-비공개기준없음 --guide private/README.md
+expect "diff 지침: 01에 비공개 기준 커밋이 없는데 비공개 안내 파일을 주면 거부" \
+  "$([ "$RC" != 0 ] && ! ls "$R/private/work/002-2026-01-01-지침-비공개기준없음" | grep -q diff; echo $?)" "rc=$RC out=$OUT"
+
+run new 기능
+DN="private/work/003-$TODAY-기능"
+run diff "$DN" --guide docs/README.md
+expect "diff: 지침이 아닌 폴더에 --guide를 주면 거부" "$([ "$RC" != 0 ] && [ "$(count_diff "$R/$DN")" = 0 ]; echo $?)" "rc=$RC out=$OUT"
+
+before=$(ls "$R/$DN" | wc -l)
+run new 자식 --instr --parent "$DN"
+expect "new: --instr와 --parent를 함께 주면 거부" "$([ "$RC" != 0 ] && [ "$(ls "$R/$DN" | wc -l)" = "$before" ]; echo $?)" "rc=$RC out=$OUT"
 
 # ---------------------------------------------------------------- status
 R=$TMP/r3
@@ -185,6 +208,25 @@ expect "status: origin이 없으면 push 안 된 커밋 수는 알 수 없음" "
 R=$TMP/r1
 run status --all
 expect "status: 자식 폴더도 보인다" "$(echo "$OUT" | grep -qF "04-목록"; echo $?)" "out=$OUT"
+
+# 아래는 08-main-decision.md에서 더한 테스트
+R=$TMP/r5
+make_repo "$R"
+for i in 1 2 3 4 5 6 7; do mkdir -p "$R/private/work/00$i-2026-01-01-f$i"; done
+touch "$R/private/work/007-2026-01-01-f7/01-a.md" "$R/private/work/007-2026-01-01-f7/02-b.md" "$R/private/work/007-2026-01-01-f7/03-c.md"
+g init -q --bare "$TMP/remote.git"
+g -C "$R" remote add origin "$TMP/remote.git"
+g -C "$R" push -q origin main
+echo x >> "$R/docs/README.md" && g -C "$R" commit -q -am one
+echo y >> "$R/docs/README.md" && g -C "$R" commit -q -am two
+g -C "$R" fetch -q origin
+run status
+expect "status: --all 없이는 최근 5개만" \
+  "$(echo "$OUT" | grep -qF "003-2026-01-01-f3" && echo "$OUT" | grep -qF "007-2026-01-01-f7" && ! echo "$OUT" | grep -qF "002-2026-01-01-f2" && ! echo "$OUT" | grep -qF "001-2026-01-01-f1"; echo $?)" "out=$OUT"
+expect "status: 폴더별 파일 수" "$(echo "$OUT" | grep -F "007-2026-01-01-f7" | grep -q "3개"; echo $?)" "out=$OUT"
+expect "status: origin/main이 있으면 push 안 된 커밋 수" "$(echo "$OUT" | grep -q "^  공개 저장소: 2개"; echo $?)" "out=$OUT"
+run status --all
+expect "status --all: 전부 보인다" "$(echo "$OUT" | grep -qF "001-2026-01-01-f1"; echo $?)" "out=$OUT"
 
 echo
 echo "PASS $PASS FAIL $FAIL"

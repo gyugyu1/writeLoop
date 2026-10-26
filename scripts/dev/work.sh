@@ -30,7 +30,7 @@ WORK="$PRIV/work"
 TEST_PATHS=(apps/backend/src/test scripts/feedback-quality scripts/run-feedback-quality-check.mjs scripts/dev)
 
 die() { echo "work.sh: $*" >&2; exit 2; }
-usage() { sed -n '4,7p' "$0" | sed 's/^# *//'; }
+usage() { sed -n '5,8p' "$0" | sed 's/^# *//'; }
 
 need_private() {
   [ -d "$PRIV/.git" ] || die "private is not cloned: $PRIV (git clone https://github.com/gyugyu1/writeloop-private.git private)"
@@ -104,6 +104,8 @@ cmd_new() {
     esac
   done
   [ -n "$name" ] || { usage >&2; exit 2; }
+  # 자식 폴더는 부모 작업의 일부라 지침 폴더로 따로 만들지 않는다. 함께 주면 한쪽이 조용히 무시되므로 막는다.
+  [ "$instr" = 1 ] && [ -n "$parent" ] && die "--instr and --parent cannot be used together"
   case "$name" in */* | *\\*) die "name must not contain a slash: $name" ;; esac
   # private/.gitignore가 NN-runner-로 시작하는 폴더를 runner 원본 기록으로 보고 커밋에서 뺀다.
   is_runner_name "$name" && die "name must not start with NN-runner-: $name"
@@ -199,6 +201,13 @@ cmd_diff() {
       [ -n "$PBASE" ] || die "private base commit ('비공개 저장소 첫 변경 전 HEAD:') not found in 01 file"
       git -C "$PRIV" rev-parse --verify -q "$PBASE^{commit}" > /dev/null || die "private base commit not found: $PBASE"
     fi
+    # 잘못 적은 경로는 git diff가 빈 결과로 조용히 넘어가므로, 작업 트리에도 기준 커밋에도 없으면 막는다.
+    for g in "${pub[@]}"; do
+      [ -e "$ROOT/$g" ] || git -C "$ROOT" cat-file -e "$BASE:$g" 2> /dev/null || die "--guide path not found: $g"
+    done
+    for g in "${priv[@]}"; do
+      [ -e "$PRIV/$g" ] || git -C "$PRIV" cat-file -e "$PBASE:$g" 2> /dev/null || die "--guide path not found: private/$g"
+    done
     add_intent "$ROOT" .claude "${pub[@]}"
     out="$d/$no-main-diff.txt"
     {
@@ -217,7 +226,9 @@ cmd_diff() {
     return
   fi
 
-  # 일반 작업. 테스트 커밋은 번호가 가장 큰 -runner-test 기록의 summary.txt 첫 줄에서 읽는다.
+  # 일반 작업. 안내 파일은 지침 작업에만 쓴다(일반 작업의 변경분은 기준 커밋부터 HEAD까지 전부다).
+  [ ${#guides[@]} = 0 ] || die "--guide is only for instruction folders (지침-)"
+  # 테스트 커밋은 번호가 가장 큰 -runner-test 기록의 summary.txt 첫 줄에서 읽는다.
   local tdir tc=""
   tdir=$(ls -d "$d"/[0-9][0-9]-runner-test*/ 2>/dev/null | sort | tail -1)
   if [ -n "$tdir" ]; then

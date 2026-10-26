@@ -32,7 +32,8 @@ decision-makers: gyuwon
 Chosen option: "GitHub Actions 빌드 + GHCR + main push 후 자동 배포", because 서버가 빌드하지 않고, 테스트를 통과한 커밋만 배포되며, 공개 저장소라 Actions와 GHCR를 무료로 쓸 수 있기 때문이다. 스왑만 추가하면 빌드는 끝나도 매우 느려지고 실행 중인 서비스도 함께 느려진다. 개발 PC 빌드는 사람마다 결과가 다를 수 있고, 테스트를 건너뛰기 쉽다.
 
 * `.github/workflows/ci.yml`
-  * PR과 main push에서 백엔드 테스트, 웹 빌드, 모바일 타입 검사, 피드백 채점 규칙 테스트를 돌린다.
+  * PR과 main push에서 백엔드 테스트, 웹 빌드, 모바일 타입 검사·lint, 피드백 채점 규칙 테스트를 돌린다.
+  * 같은 때 마이그레이션 확인(`scripts/dev/check-db-migrations.sh`: 임시 MySQL에서 빈 DB와 기존 DB 양쪽으로 기동, 뷰 조회, 백업)과 설정 문법 검사(actionlint, `scripts/ops/*.sh`의 `bash -n`)도 돌린다(2026-10-27 추가).
   * 문서만 바꾼 커밋(`docs/**`, `*.md`, `.claude/**`)은 돌리지 않는다.
   * main push에서 모두 통과하면 `ghcr.io/gyugyu1/writeloop-backend`, `writeloop-frontend` 이미지를 커밋 SHA와 `latest` 태그로 올린다.
   * 이어서 `deploy.yml`을 호출한다.

@@ -95,7 +95,8 @@ jobs:
           chmod +x apps/backend/gradlew
           bash scripts/dev/check-db-migrations.sh --out "$RUNNER_TEMP/db-check"
       - name: 실패한 확인 기록 보관
-        if: failure()
+        # 시간 제한에 걸려 작업이 취소된 경우에도 남긴다.
+        if: failure() || cancelled()
         uses: actions/upload-artifact@v7
         with:
           name: db-migration-check

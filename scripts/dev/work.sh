@@ -36,7 +36,7 @@ need_private() {
   [ -d "$PRIV/.git" ] || die "private is not cloned: $PRIV (git clone https://github.com/gyugyu1/writeloop-private.git private)"
 }
 
-# 폴더 인자를 절대경로로 바꾼다.
+# 폴더 인자를 절대경로로 바꾼다. $(...) 안에서 부르면 die가 서브셸만 끝내므로 부른 쪽에서 || exit 2로 받는다.
 abs_dir() {
   local d=$1
   case "$d" in /* | [A-Za-z]:*) ;; *) d="$ROOT/$d" ;; esac
@@ -118,7 +118,7 @@ cmd_new() {
 
   if [ -n "$parent" ]; then
     local pd child
-    pd=$(abs_dir "$parent")
+    pd=$(abs_dir "$parent") || exit 2
     child="$(next_no "$pd")-$name"
     is_runner_name "$child" && die "child folder name would start with NN-runner-: $child"
     dir="$pd/$child"
@@ -148,7 +148,9 @@ cmd_new() {
 
 cmd_next() {
   [ $# = 1 ] || { usage >&2; exit 2; }
-  next_no "$(abs_dir "$1")"
+  local d
+  d=$(abs_dir "$1") || exit 2
+  next_no "$d"
   echo
 }
 
@@ -177,7 +179,7 @@ add_intent() {
 cmd_diff() {
   [ $# -ge 1 ] || { usage >&2; exit 2; }
   local d guides=()
-  d=$(abs_dir "$1")
+  d=$(abs_dir "$1") || exit 2
   shift
   while [ $# -gt 0 ]; do
     case "$1" in

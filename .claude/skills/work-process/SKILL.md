@@ -51,7 +51,7 @@ push는 CLAUDE.md의 "대화 규칙"대로 요청받았을 때만 한다.
   - CI에 없는 확인(LLM 회귀, 로컬 API 호출, compose·Claude 설정의 문법, 가능하면 nginx 문법)은 해당하면 꼭 `runner`로 돌린다.
   - 환경 문제(Docker 꺼짐, 포트 사용 중, 빌드 폴더 잠금)로 실행하지 못하면, 원인을 사용자에게 알리고 해결한 뒤 다시 돌린다. 실행하지 못한 확인을 통과로 보고하지 않는다.
 - `verifier`: 읽기만 한다. 파일을 하나씩 고르지 않고 작업 폴더 경로를 넘긴다. 메인 세션이 고르다 빠뜨리는 파일이 없게 하려는 것이다.
-  - 넘기기 전에 메인 세션이 변경분 두 개를 만들어 폴더에 둔다.
+  - 넘기기 전에 메인 세션이 `bash scripts/dev/work.sh diff <작업 폴더>`로 변경분 두 개를 만들어 폴더에 둔다. 테스트 커밋은 번호가 가장 큰 `-runner-test` 기록의 `summary.txt` 첫 줄에서 읽으므로, 테스트 커밋 시점의 runner 결과 폴더는 `NN-runner-test…/`로 짓는다.
     - 전체 변경분(`NN-main-diff-all.txt`): `git diff <기준 커밋>..HEAD`. 첫 줄에 기준 커밋, HEAD, 명령을 적는다.
     - 테스트 변경분(`NN-main-diff-tests.txt`): `git diff <테스트 커밋>..HEAD -- apps/backend/src/test scripts/feedback-quality scripts/run-feedback-quality-check.mjs scripts/dev`. 첫 줄에 테스트 커밋, HEAD, 명령을 적는다. 테스트 커밋이 없는 작업(커밋 순서 1·2번을 건너뛴 경우)은 만들지 않는다.
   - `verifier`는 폴더의 파일을 번호 순서로 모두 읽되, 구현 쪽의 설명(`-impl.md`)은 읽지 않는다. 코드는 변경분과 저장소에서 직접 읽는다.

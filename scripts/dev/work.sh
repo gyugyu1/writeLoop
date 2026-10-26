@@ -4,7 +4,7 @@
 #
 #   bash scripts/dev/work.sh new <이름> [--instr] [--parent <폴더>]
 #   bash scripts/dev/work.sh next <폴더>
-#   bash scripts/dev/work.sh diff <폴더> [--guide <경로>]...
+#   bash scripts/dev/work.sh diff <폴더> [--guide <경로>]... [--drop-guide <경로>]... [--no-guides] [--head <커밋>]
 #   bash scripts/dev/work.sh status [--all]
 #
 # new     private/work/에 <다음 세 자리 순번>-<오늘 날짜>-<이름>/ 폴더와 01 뼈대를 만들고 경로를 출력한다.
@@ -13,8 +13,12 @@
 #         --parent 그 폴더 안에 <다음 두 자리 번호>-<이름>/ 자식 폴더를 만든다(첫 줄은 부모 경로).
 # next    폴더의 다음 두 자리 번호를 출력한다.
 # diff    01의 기준 커밋으로 변경분 파일을 다음 번호로 만든다.
-#         일반 작업: NN-main-diff-all.txt(기준..HEAD). -runner-test 기록이 있으면 NN-main-diff-tests.txt도.
-#         지침 작업: NN-main-diff.txt(기준 커밋부터 커밋하지 않은 변경까지, .claude와 --guide 경로).
+#         일반 작업: NN-main-diff-all.txt(기준..끝 커밋). -runner-test 기록이 있으면 NN-main-diff-tests.txt(테스트 커밋..끝 커밋)도.
+#                    끝 커밋은 --head, 없으면 구현 기록(-runner-test가 아닌 것)이 있을 때 번호가 가장 큰 runner 기록
+#                    summary.txt의 커밋, 구현 기록이 아직 없으면 HEAD.
+#         지침 작업: NN-main-diff.txt(기준 커밋부터 커밋하지 않은 변경까지, .claude와 안내 파일).
+#                    둘째 줄에 안내 파일 목록, 그 아래 기준 커밋 뒤 커밋 목록을 적는다. 다음 diff는 앞 목록을 다시 쓰고
+#                    --guide를 더하고 --drop-guide를 뺀다. 목록을 잃었을 수 있으면(검토 보고만 있음) --guide나 --no-guides가 필요하다.
 #                    .claude와 안내 파일의 새 파일은 git add -N 한다. private/ 안의 안내 파일은 비공개 저장소 diff를 이어 붙인다.
 # status  최근 작업 폴더 5개(--all이면 전부)의 파일 수와 마지막 파일, 커밋하지 않은 작업 폴더 파일, push 안 된 커밋 수.
 #
@@ -176,80 +180,154 @@ add_intent() {
   done < <(git -C "$repo" ls-files -z --others --exclude-standard -- "$@")
 }
 
+is_instr() { [[ $(basename "$1") =~ ^[0-9]{3}-[0-9]{4}-[0-9]{2}-[0-9]{2}-지침- ]]; }
+
+# 커밋 목록을 두 칸 들여 쓴다. 비면 "  없음".
+indent_log() { if [ -n "$1" ]; then echo "$1" | sed 's/^/  /'; else echo "  없음"; fi; }
+
 cmd_diff() {
   [ $# -ge 1 ] || { usage >&2; exit 2; }
-  local d guides=()
+  local d guides=() drops=() no_guides=0 endarg=""
   d=$(abs_dir "$1") || exit 2
   shift
   while [ $# -gt 0 ]; do
     case "$1" in
       --guide) [ -n "${2:-}" ] || die "--guide needs a path"; guides+=("$2"); shift 2 ;;
+      --drop-guide) [ -n "${2:-}" ] || die "--drop-guide needs a path"; drops+=("$2"); shift 2 ;;
+      --no-guides) no_guides=1; shift ;;
+      --head) [ -n "${2:-}" ] || die "--head needs a commit"; endarg=$2; shift 2 ;;
       *) die "unknown argument: $1" ;;
     esac
   done
   read_base "$d"
-
-  local no head
+  local no
   no=$(next_no "$d")
-  head=$(git -C "$ROOT" rev-parse --short HEAD)
-
-  if [[ $(basename "$d") =~ ^[0-9]{3}-[0-9]{4}-[0-9]{2}-[0-9]{2}-지침- ]]; then
-    local pub=() priv=() g out
-    for g in "${guides[@]}"; do
-      case "$g" in private/*) priv+=("${g#private/}") ;; *) pub+=("$g") ;; esac
-    done
-    if [ ${#priv[@]} -gt 0 ]; then
-      need_private
-      [ -n "$PBASE" ] || die "private base commit ('비공개 저장소 첫 변경 전 HEAD:') not found in 01 file"
-      git -C "$PRIV" rev-parse --verify -q "$PBASE^{commit}" > /dev/null || die "private base commit not found: $PBASE"
-    fi
-    # 잘못 적은 경로는 git diff가 빈 결과로 조용히 넘어가므로, 작업 트리에도 기준 커밋에도 없으면 막는다.
-    for g in "${pub[@]}"; do
-      [ -e "$ROOT/$g" ] || git -C "$ROOT" cat-file -e "$BASE:$g" 2> /dev/null || die "--guide path not found: $g"
-    done
-    for g in "${priv[@]}"; do
-      [ -e "$PRIV/$g" ] || git -C "$PRIV" cat-file -e "$PBASE:$g" 2> /dev/null || die "--guide path not found: private/$g"
-    done
-    add_intent "$ROOT" .claude "${pub[@]}"
-    out="$d/$no-main-diff.txt"
-    {
-      echo "기준 커밋: $BASE / HEAD: $head / 명령: git diff $BASE -- .claude${pub[*]:+ ${pub[*]}} (커밋하지 않은 변경 포함, 새 파일은 git add -N 뒤)"
-      git -C "$ROOT" diff "$BASE" -- .claude "${pub[@]}"
-    } > "$out"
-    if [ ${#priv[@]} -gt 0 ]; then
-      add_intent "$PRIV" "${priv[@]}"
-      {
-        echo
-        echo "비공개 저장소 기준 커밋: $PBASE / 명령: git -C private diff $PBASE -- ${priv[*]}"
-        git -C "$PRIV" diff "$PBASE" -- "${priv[@]}"
-      } >> "$out"
-    fi
-    rel "$out"
-    return
+  if is_instr "$d"; then
+    # 지침 변경분은 커밋하지 않은 변경까지 담으므로 끝 커밋이 없다.
+    [ -z "$endarg" ] || die "--head is only for non-instruction folders"
+    instr_diff "$d" "$no"
+  else
+    # 안내 파일은 지침 작업에만 쓴다(일반 작업의 변경분은 기준 커밋부터 끝 커밋까지 전부다).
+    { [ ${#guides[@]} = 0 ] && [ ${#drops[@]} = 0 ] && [ "$no_guides" = 0 ]; } ||
+      die "--guide, --drop-guide, --no-guides are only for instruction folders (지침-)"
+    work_diff "$d" "$no"
   fi
+}
 
-  # 일반 작업. 안내 파일은 지침 작업에만 쓴다(일반 작업의 변경분은 기준 커밋부터 HEAD까지 전부다).
-  [ ${#guides[@]} = 0 ] || die "--guide is only for instruction folders (지침-)"
-  # 테스트 커밋은 번호가 가장 큰 -runner-test 기록의 summary.txt 첫 줄에서 읽는다.
-  local tdir tc=""
-  tdir=$(ls -d "$d"/[0-9][0-9]-runner-test*/ 2>/dev/null | sort | tail -1)
-  if [ -n "$tdir" ]; then
-    [ -f "$tdir/summary.txt" ] || die "no summary.txt in $(rel "${tdir%/}")"
-    tc=$(head -1 "$tdir/summary.txt" | grep -oE '[0-9a-f]{40}' | head -1)
-    [ -n "$tc" ] || die "no commit in the first line of $(rel "$tdir")summary.txt"
+# 지침 작업 변경분. 안내 파일 목록은 둘째 줄에 적고, 다음 diff 때 가장 최근 변경분의 둘째 줄에서 다시 읽는다.
+# 변경분 파일은 커밋되지 않아 다른 컴퓨터에는 없다. 검토 보고는 있는데 읽을 목록이 없으면 목록을 잃었을 수 있으므로
+# --guide를 다시 주거나 --no-guides로 없다고 밝혀야 만든다.
+instr_diff() {
+  local d=$1 no=$2 prev line g x keep found list=() pub=() priv=() out log
+  [ "$no_guides" = 1 ] && [ ${#guides[@]} -gt 0 ] && die "--no-guides cannot be used with --guide"
+  prev=$(ls "$d"/[0-9][0-9]-main-diff.txt 2> /dev/null | sort | tail -1)
+  line=""
+  [ -n "$prev" ] && line=$(sed -n 2p "$prev")
+  if [ "$no_guides" = 1 ]; then
+    list=()
+  elif [[ $line == "안내 파일: "* ]]; then
+    [ "$line" = "안내 파일: 없음" ] || read -r -a list <<< "${line#안내 파일: }"
+  elif ls "$d"/*-instruction-reviewer-review.md > /dev/null 2>&1 && [ ${#guides[@]} = 0 ]; then
+    die "the guide list may be lost (a review exists but no previous diff with '안내 파일:' on line 2). Give --guide <path>... again, or --no-guides"
   fi
-  local all="$d/$no-main-diff-all.txt"
+  for g in "${guides[@]}"; do
+    found=0
+    for x in "${list[@]}"; do [ "$x" = "$g" ] && found=1; done
+    [ "$found" = 1 ] || list+=("$g")
+  done
+  for g in "${drops[@]}"; do
+    keep=() found=0
+    for x in "${list[@]}"; do if [ "$x" = "$g" ]; then found=1; else keep+=("$x"); fi; done
+    [ "$found" = 1 ] || die "--drop-guide path is not in the guide list: $g"
+    list=("${keep[@]}")
+  done
+  for g in "${list[@]}"; do
+    case "$g" in private/*) priv+=("${g#private/}") ;; *) pub+=("$g") ;; esac
+  done
+  if [ ${#priv[@]} -gt 0 ]; then
+    need_private
+    [ -n "$PBASE" ] || die "private base commit ('비공개 저장소 첫 변경 전 HEAD:') not found in 01 file"
+    git -C "$PRIV" rev-parse --verify -q "$PBASE^{commit}" > /dev/null || die "private base commit not found: $PBASE"
+  fi
+  # 잘못 적은 경로는 git diff가 빈 결과로 조용히 넘어가므로, 작업 트리에도 기준 커밋에도 없으면 막는다.
+  for g in "${pub[@]}"; do
+    [ -e "$ROOT/$g" ] || git -C "$ROOT" cat-file -e "$BASE:$g" 2> /dev/null || die "--guide path not found: $g"
+  done
+  for g in "${priv[@]}"; do
+    [ -e "$PRIV/$g" ] || git -C "$PRIV" cat-file -e "$PBASE:$g" 2> /dev/null || die "--guide path not found: private/$g"
+  done
+
+  add_intent "$ROOT" .claude "${pub[@]}"
+  out="$d/$no-main-diff.txt"
+  log=$(git -C "$ROOT" log --oneline "$BASE..HEAD" -- .claude "${pub[@]}")
   {
-    echo "기준 커밋: $BASE / HEAD: $head / 명령: git diff $BASE..HEAD"
-    git -C "$ROOT" diff "$BASE..HEAD"
+    echo "기준 커밋: $BASE / HEAD: $(git -C "$ROOT" rev-parse --short HEAD) / 명령: git diff $BASE -- .claude${pub[*]:+ ${pub[*]}} (커밋하지 않은 변경 포함, 새 파일은 git add -N 뒤)"
+    if [ ${#list[@]} -gt 0 ]; then echo "안내 파일: ${list[*]}"; else echo "안내 파일: 없음"; fi
+    echo "기준 커밋 뒤 커밋:"
+    indent_log "$log"
+    git -C "$ROOT" diff "$BASE" -- .claude "${pub[@]}"
+  } > "$out"
+  if [ ${#priv[@]} -gt 0 ]; then
+    add_intent "$PRIV" "${priv[@]}"
+    log=$(git -C "$PRIV" log --oneline "$PBASE..HEAD" -- "${priv[@]}")
+    {
+      echo
+      echo "비공개 저장소 기준 커밋: $PBASE / 명령: git -C private diff $PBASE -- ${priv[*]}"
+      echo "비공개 기준 커밋 뒤 커밋:"
+      indent_log "$log"
+      git -C "$PRIV" diff "$PBASE" -- "${priv[@]}"
+    } >> "$out"
+  fi
+  rel "$out"
+}
+
+# runner 결과 폴더 summary.txt 첫 줄의 40자리 커밋
+summary_commit() {
+  local r=${1%/} c
+  [ -f "$r/summary.txt" ] || die "no summary.txt in $(rel "$r")"
+  c=$(head -1 "$r/summary.txt" | grep -oE '[0-9a-f]{40}' | head -1)
+  [ -n "$c" ] || die "no commit in the first line of $(rel "$r")/summary.txt"
+  git -C "$ROOT" cat-file -e "$c^{commit}" 2> /dev/null || die "commit in $(rel "$r")/summary.txt not found: $c"
+  echo "$c"
+}
+
+# 일반 작업 변경분. 끝 커밋은 --head, 없으면 구현 기록이 있을 때 번호가 가장 큰 runner 기록의 커밋, 그 전에는 HEAD.
+# 다른 작업의 커밋이 뒤에 쌓여도 변경분이 runner 기록과 같은 코드를 가리키게 하려는 것이다.
+work_diff() {
+  local d=$1 no=$2 end rdir tdir tc="" es all tests tshort
+  if [ -n "$endarg" ]; then
+    end=$(git -C "$ROOT" rev-parse --verify -q "$endarg^{commit}") || die "--head is not a commit: $endarg"
+  else
+    # 구현 기록(-runner-test가 아닌 기록)이 생긴 뒤에만 runner 기록에서 정한다. 그 뒤에 테스트를 더했으면
+    # 그 테스트 기록이 가장 최근이므로 종류와 관계없이 번호가 가장 큰 기록을 쓴다.
+    rdir=""
+    if ls -d "$d"/[0-9][0-9]-runner-*/ 2> /dev/null | grep -qv -- '-runner-test'; then
+      rdir=$(ls -d "$d"/[0-9][0-9]-runner-*/ 2> /dev/null | sort | tail -1)
+    fi
+    if [ -n "$rdir" ]; then
+      end=$(summary_commit "$rdir") || exit 2
+    else
+      end=$(git -C "$ROOT" rev-parse HEAD)
+    fi
+  fi
+  es=$(git -C "$ROOT" rev-parse --short "$end")
+  # 테스트 커밋은 번호가 가장 큰 -runner-test 기록의 summary.txt 첫 줄에서 읽는다.
+  tdir=$(ls -d "$d"/[0-9][0-9]-runner-test*/ 2> /dev/null | sort | tail -1)
+  if [ -n "$tdir" ]; then
+    tc=$(summary_commit "$tdir") || exit 2
+  fi
+  all="$d/$no-main-diff-all.txt"
+  {
+    echo "기준 커밋: $BASE / HEAD: $es / 명령: git diff $BASE..$es"
+    git -C "$ROOT" diff "$BASE..$end"
   } > "$all"
   rel "$all"
   if [ -n "$tc" ]; then
-    local tests="$d/$no-main-diff-tests.txt" tshort
+    tests="$d/$no-main-diff-tests.txt"
     tshort=$(git -C "$ROOT" rev-parse --short "$tc")
     {
-      echo "테스트 커밋: $tshort / HEAD: $head / 명령: git diff $tshort..HEAD -- ${TEST_PATHS[*]}"
-      git -C "$ROOT" diff "$tc..HEAD" -- "${TEST_PATHS[@]}"
+      echo "테스트 커밋: $tshort / HEAD: $es / 명령: git diff $tshort..$es -- ${TEST_PATHS[*]}"
+      git -C "$ROOT" diff "$tc..$end" -- "${TEST_PATHS[@]}"
     } > "$tests"
     rel "$tests"
   fi

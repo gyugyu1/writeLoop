@@ -20,7 +20,7 @@
 | `apps/backend/src/main/resources/db/migration` | Flyway 마이그레이션(`V번호__설명.sql`). 백엔드가 시작할 때 자동 적용 |
 | `infra/mysql/schema` | Flyway 도입 전 마이그레이션 001~107. 동결, 기록용 |
 | `infra/nginx` | 운영·개발 nginx 설정 |
-| `.github/workflows` | CI(`ci.yml`: 테스트·이미지 빌드)와 운영 배포(`deploy.yml`) |
+| `.github/workflows` | CI(`ci.yml`: 테스트·빌드·마이그레이션 확인·설정 문법 검사·이미지 빌드)와 운영 배포(`deploy.yml`) |
 | `scripts/ops` | 운영 서버에서 실행하는 배포(`deploy.sh`)와 운영 DB 접속(`prod-db.sh`) 스크립트 |
 | `scripts/feedback-quality` | 문장 피드백 회귀 테스트 케이스와 채점 규칙 |
 | `.agents/skills/writeloop-feedback-logic` | 문장 피드백 계약과 품질 기준 문서 |

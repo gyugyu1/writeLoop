@@ -1,4 +1,19 @@
 {
+  "permissions": {
+    "ask": [
+      "Bash(git push)",
+      "Bash(git push *)",
+      "Bash(git -C * push)",
+      "Bash(git -C * push *)"
+    ],
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.local)",
+      "Read(./env_files/**)",
+      "Read(**/*.pem)",
+      "Read(**/*.p8)"
+    ]
+  },
   "hooks": {
     "PreToolUse": [
       {

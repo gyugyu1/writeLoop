@@ -4,14 +4,23 @@
       "Bash(git push)",
       "Bash(git push *)",
       "Bash(git -C * push)",
-      "Bash(git -C * push *)"
+      "Bash(git -C * push *)",
+      "PowerShell(git push)",
+      "PowerShell(git push *)",
+      "PowerShell(git -C * push)",
+      "PowerShell(git -C * push *)"
     ],
     "deny": [
       "Read(**/.env)",
       "Read(**/.env.local)",
+      "Read(**/.env.dev)",
+      "Read(**/.env.prod)",
+      "Read(**/.env.production)",
       "Read(./env_files/**)",
+      "Read(./apps/mobile/android/keystore.properties)",
       "Read(**/*.pem)",
-      "Read(**/*.p8)"
+      "Read(**/*.p8)",
+      "Read(**/*.jks)"
     ]
   },
   "hooks": {

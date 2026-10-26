@@ -21,7 +21,6 @@ description: WriteLoop 운영 배포와 장애 대응. 사용자가 "푸시해"�
   - `deploy.sh`가 DB 백업, 이미지 받기, 재시작, 기동 확인을 한다. Flyway 마이그레이션은 백엔드가 기동할 때 적용된다.
   - 재배포·롤백은 Actions의 `Deploy` 워크플로를 커밋 SHA로 직접 실행한다. CI가 이미지를 올린 커밋만 된다.
   - `deploy.sh`는 Redis를 다시 만들지 않는다. 모바일 로그인 유지 토큰이 Redis에만 있으니 Redis 볼륨을 지우지 않고, Redis 설정 변경은 README 절차로 직접 적용한다.
-  - 운영 DB 조회는 서버에서 `bash scripts/ops/prod-db.sh mysql writeloop -e "..."`로 한다.
 - 장애 대응:
   - 먼저 운영 로그와 DB를 조회해 원인을 확인한다. 사용자에게 선택지(직전 SHA로 롤백, 수정 배포, 운영 DB 직접 조치)와 각각의 위험을 알리고, 사용자가 고른 뒤 조치한다.
   - 롤백해도 DB는 돌아가지 않는다. 롤백 전에 그 사이 적용된 마이그레이션이 롤백할 코드와 맞는지 본다. 열을 지운 뒤라면 이전 코드는 `ddl-auto: validate`에 걸려 뜨지 않는다.

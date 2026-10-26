@@ -241,6 +241,108 @@ run diff private/work/없는폴더
 expect "diff: 없는 폴더는 거부하고 아무것도 만들지 않음" \
   "$([ "$RC" != 0 ] && ! echo "$OUT" | grep -q 'main-diff' && [ "$(ls "$R/private/work" | wc -l)" = "$before_work" ]; echo $?)" "rc=$RC out=$OUT"
 
+# ================================================================ 028: 안내 파일 기억, 끝 커밋, 끼어든 커밋 목록
+latest_diff() { ls "$1"/[0-9][0-9]-main-diff.txt 2>/dev/null | sort | tail -1; }
+count_d() { ls "$1" | grep -c "main-diff"; }
+
+# ---------------------------------------------------------------- 안내 파일 기억 (지침 작업)
+R=$TMP/r6
+make_repo "$R"
+run new 기억 --instr
+DG="$R/private/work/001-$TODAY-지침-기억"
+run diff "private/work/001-$TODAY-지침-기억"
+F=$(latest_diff "$DG")
+expect "diff 지침: 안내 파일이 없으면 둘째 줄 '안내 파일: 없음'" "$([ "$RC" = 0 ] && sed -n 2p "$F" | grep -qx "안내 파일: 없음"; echo $?)" "rc=$RC line2=$(sed -n 2p "$F" 2>/dev/null)"
+expect "diff 지침: 끼어든 커밋이 없으면 '없음'" "$(grep -A1 "^기준 커밋 뒤 커밋:" "$F" | grep -q "^  없음"; echo $?)" "file=$(head -5 "$F" 2>/dev/null)"
+
+echo docs-changed >> "$R/docs/README.md"
+run diff "private/work/001-$TODAY-지침-기억" --guide docs/README.md
+F=$(latest_diff "$DG")
+expect "diff 지침: 준 안내 파일을 둘째 줄에 적음" "$([ "$RC" = 0 ] && sed -n 2p "$F" | grep -qx "안내 파일: docs/README.md"; echo $?)" "rc=$RC line2=$(sed -n 2p "$F" 2>/dev/null)"
+
+n=$(count_d "$DG")
+run diff "private/work/001-$TODAY-지침-기억"
+F=$(latest_diff "$DG")
+expect "diff 지침: --guide 없이 다시 만들면 앞 목록을 다시 씀" \
+  "$([ "$RC" = 0 ] && [ "$(count_d "$DG")" = $((n + 1)) ] && sed -n 2p "$F" | grep -qx "안내 파일: docs/README.md" && grep -q "+docs-changed" "$F"; echo $?)" "rc=$RC line2=$(sed -n 2p "$F" 2>/dev/null)"
+
+echo private-changed >> "$R/private/README.md"
+run diff "private/work/001-$TODAY-지침-기억" --guide private/README.md
+F=$(latest_diff "$DG")
+expect "diff 지침: 새 --guide는 앞 목록 뒤에 더함(비공개는 private/ 경로)" \
+  "$([ "$RC" = 0 ] && sed -n 2p "$F" | grep -qx "안내 파일: docs/README.md private/README.md" && grep -q "+private-changed" "$F" && grep -q "+docs-changed" "$F"; echo $?)" "rc=$RC line2=$(sed -n 2p "$F" 2>/dev/null)"
+
+run diff "private/work/001-$TODAY-지침-기억" --guide docs/README.md
+F=$(latest_diff "$DG")
+expect "diff 지침: 이미 있는 --guide는 한 번만" "$([ "$RC" = 0 ] && sed -n 2p "$F" | grep -qx "안내 파일: docs/README.md private/README.md"; echo $?)" "rc=$RC line2=$(sed -n 2p "$F" 2>/dev/null)"
+
+run diff "private/work/001-$TODAY-지침-기억" --drop-guide docs/README.md
+F=$(latest_diff "$DG")
+expect "diff 지침: --drop-guide로 목록에서 뺌" \
+  "$([ "$RC" = 0 ] && sed -n 2p "$F" | grep -qx "안내 파일: private/README.md" && ! grep -q "+docs-changed" "$F" && grep -q "+private-changed" "$F"; echo $?)" "rc=$RC line2=$(sed -n 2p "$F" 2>/dev/null)"
+
+n=$(count_d "$DG")
+run diff "private/work/001-$TODAY-지침-기억" --drop-guide docs/없는.md
+expect "diff 지침: 목록에 없는 --drop-guide는 거부" "$([ "$RC" != 0 ] && [ "$(count_d "$DG")" = "$n" ]; echo $?)" "rc=$RC out=$OUT"
+
+# 다른 컴퓨터처럼 변경분 파일이 없고 검토 보고만 있는 경우
+run new 이어서 --instr
+DL="$R/private/work/002-$TODAY-지침-이어서"
+echo "# 검토" > "$DL/03-instruction-reviewer-review.md"
+run diff "private/work/002-$TODAY-지침-이어서"
+expect "diff 지침: 검토 보고는 있는데 앞 변경분이 없으면 거부" "$([ "$RC" != 0 ] && [ "$(count_d "$DL")" = 0 ]; echo $?)" "rc=$RC out=$OUT"
+run diff "private/work/002-$TODAY-지침-이어서" --no-guides
+expect "diff 지침: --no-guides면 안내 파일 없이 만듦" "$([ "$RC" = 0 ] && sed -n 2p "$(latest_diff "$DL")" | grep -qx "안내 파일: 없음"; echo $?)" "rc=$RC out=$OUT"
+run new 이어서2 --instr
+DL2="$R/private/work/003-$TODAY-지침-이어서2"
+echo "# 검토" > "$DL2/02-instruction-reviewer-review.md"
+run diff "private/work/003-$TODAY-지침-이어서2" --guide docs/README.md
+expect "diff 지침: 목록을 잃었어도 --guide를 다시 주면 만듦" "$([ "$RC" = 0 ] && sed -n 2p "$(latest_diff "$DL2")" | grep -qx "안내 파일: docs/README.md"; echo $?)" "rc=$RC out=$OUT"
+
+# ---------------------------------------------------------------- 끼어든 커밋 목록 (지침 작업)
+run new 목록 --instr
+DK="$R/private/work/004-$TODAY-지침-목록"
+echo other-work >> "$R/.claude/skills/a/SKILL.md"
+g -C "$R" commit -q -am "다른 작업의 지침 커밋"
+echo priv-commit >> "$R/private/README.md"
+g -C "$R/private" commit -q -am "비공개 안내 커밋"
+run diff "private/work/004-$TODAY-지침-목록" --guide private/README.md
+F=$(latest_diff "$DK")
+expect "diff 지침: 기준 커밋 뒤 지침 커밋 목록" "$([ "$RC" = 0 ] && grep -A3 "^기준 커밋 뒤 커밋:" "$F" | grep -q "다른 작업의 지침 커밋"; echo $?)" "rc=$RC file=$(head -6 "$F" 2>/dev/null)"
+expect "diff 지침: 비공개 기준 커밋 뒤 커밋 목록" "$(grep -A3 "^비공개 기준 커밋 뒤 커밋:" "$F" | grep -q "비공개 안내 커밋"; echo $?)" "file=$(cat "$F" 2>/dev/null | head -40)"
+n=$(count_d "$DK")
+run diff "private/work/004-$TODAY-지침-목록" --head HEAD
+expect "diff 지침: --head는 거부" "$([ "$RC" != 0 ] && [ "$(count_d "$DK")" = "$n" ]; echo $?)" "rc=$RC out=$OUT"
+
+# ---------------------------------------------------------------- 끝 커밋 (일반 작업)
+R=$TMP/r7
+make_repo "$R"
+run new 끝커밋
+DE="private/work/001-$TODAY-끝커밋"
+echo t1 >> "$R/apps/backend/src/test/ATest.java"; g -C "$R" commit -q -am "test"
+TC=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DE/02-runner-test"; echo "HEAD=$TC" > "$R/$DE/02-runner-test/summary.txt"
+echo impl >> "$R/apps/backend/src/main/A.java"; echo t2 >> "$R/apps/backend/src/test/ATest.java"; g -C "$R" commit -q -am "impl"
+IC=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DE/03-runner-impl"; echo "HEAD: $IC | status 0" > "$R/$DE/03-runner-impl/summary.txt"
+echo later >> "$R/docs/README.md"; echo later-test >> "$R/apps/backend/src/test/ATest.java"; g -C "$R" commit -q -am "다른 작업"
+run diff "$DE"
+ALL="$R/$DE/04-main-diff-all.txt"; TST="$R/$DE/04-main-diff-tests.txt"
+expect "diff: 끝 커밋은 가장 최근 runner 기록의 커밋" \
+  "$([ "$RC" = 0 ] && head -1 "$ALL" | grep -qF "HEAD: ${IC:0:7}" && grep -q "+impl" "$ALL" && ! grep -q "+later" "$ALL"; echo $?)" "rc=$RC first=$(head -1 "$ALL" 2>/dev/null)"
+expect "diff: 테스트 변경분도 같은 끝 커밋까지" \
+  "$(head -1 "$TST" | grep -qF "HEAD: ${IC:0:7}" && grep -q "+t2" "$TST" && ! grep -q "+later-test" "$TST"; echo $?)" "first=$(head -1 "$TST" 2>/dev/null)"
+
+run diff "$DE" --head "$TC"
+ALL="$R/$DE/05-main-diff-all.txt"
+expect "diff: --head로 끝 커밋을 정함" "$([ "$RC" = 0 ] && head -1 "$ALL" | grep -qF "HEAD: ${TC:0:7}" && ! grep -q "+impl" "$ALL"; echo $?)" "rc=$RC first=$(head -1 "$ALL" 2>/dev/null)"
+n=$(count_d "$R/$DE")
+run diff "$DE" --head 없는커밋
+expect "diff: 커밋이 아닌 --head는 거부" "$([ "$RC" != 0 ] && [ "$(count_d "$R/$DE")" = "$n" ]; echo $?)" "rc=$RC out=$OUT"
+mkdir -p "$R/$DE/06-runner-fix"
+run diff "$DE"
+expect "diff: 끝 커밋을 읽을 runner 기록에 summary.txt가 없으면 거부" "$([ "$RC" != 0 ] && [ "$(count_d "$R/$DE")" = "$n" ]; echo $?)" "rc=$RC out=$OUT"
+
 echo
 echo "PASS $PASS FAIL $FAIL"
 [ "$FAIL" = 0 ]

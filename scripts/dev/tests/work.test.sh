@@ -411,6 +411,24 @@ run diff "private/work/003-$TODAY-지침-공백" --guide "docs/a b.md"
 expect "diff 지침: 공백이 든 --guide 경로는 있는 파일이어도 거부" \
   "$([ "$RC" != 0 ] && [ "$(count_d "$DS")" = 0 ] && echo "$OUT" | grep -qi "space"; echo $?)" "rc=$RC out=$OUT"
 
+# ================================================================ 028 다시 검증(16) 의심 1
+# ---------------------------------------------------------------- 작업 폴더 이름에 -runner-test가 들어 있어도 구현 기록을 알아봄
+R=$TMP/r11
+make_repo "$R"
+run new runner-test-정리
+DR="private/work/001-$TODAY-runner-test-정리"
+echo t1 >> "$R/apps/backend/src/test/ATest.java"; g -C "$R" commit -q -am "test"
+TC=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DR/02-runner-test"; echo "HEAD=$TC" > "$R/$DR/02-runner-test/summary.txt"
+echo impl >> "$R/apps/backend/src/main/A.java"; g -C "$R" commit -q -am "impl"
+IC=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DR/03-runner-impl"; echo "HEAD=$IC" > "$R/$DR/03-runner-impl/summary.txt"
+echo later >> "$R/docs/README.md"; g -C "$R" commit -q -am "다른 작업"
+run diff "$DR"
+ALL="$R/$DR/04-main-diff-all.txt"
+expect "diff: 작업 폴더 이름에 -runner-test가 있어도 끝 커밋은 runner 기록의 커밋" \
+  "$([ "$RC" = 0 ] && head -1 "$ALL" | grep -qF "HEAD: ${IC:0:7}" && ! grep -q "+later" "$ALL"; echo $?)" "rc=$RC first=$(head -1 "$ALL" 2>/dev/null)"
+
 echo
 echo "PASS $PASS FAIL $FAIL"
 [ "$FAIL" = 0 ]

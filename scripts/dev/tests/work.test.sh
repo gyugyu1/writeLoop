@@ -343,6 +343,74 @@ mkdir -p "$R/$DE/06-runner-fix"
 run diff "$DE"
 expect "diff: 끝 커밋을 읽을 runner 기록에 summary.txt가 없으면 거부" "$([ "$RC" != 0 ] && [ "$(count_d "$R/$DE")" = "$n" ]; echo $?)" "rc=$RC out=$OUT"
 
+# ================================================================ 028 검증 뒤 결정(10-main-decision)
+# ---------------------------------------------------------------- 구현 기록 뒤에 테스트를 더한 경우의 끝 커밋
+R=$TMP/r8
+make_repo "$R"
+run new 테스트더함
+DT="private/work/001-$TODAY-테스트더함"
+echo t1 >> "$R/apps/backend/src/test/ATest.java"; g -C "$R" commit -q -am "test"
+TC=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DT/02-runner-test"; echo "HEAD=$TC" > "$R/$DT/02-runner-test/summary.txt"
+echo impl >> "$R/apps/backend/src/main/A.java"; g -C "$R" commit -q -am "impl"
+IC=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DT/03-runner-impl"; echo "HEAD=$IC" > "$R/$DT/03-runner-impl/summary.txt"
+echo t3 >> "$R/apps/backend/src/test/ATest.java"; g -C "$R" commit -q -am "test2"
+T2=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DT/04-runner-test2"; echo "HEAD=$T2" > "$R/$DT/04-runner-test2/summary.txt"
+echo later >> "$R/docs/README.md"; g -C "$R" commit -q -am "다른 작업"
+run diff "$DT"
+ALL="$R/$DT/05-main-diff-all.txt"; TST="$R/$DT/05-main-diff-tests.txt"
+expect "diff: 구현 기록 뒤에 테스트 기록이 있으면 끝 커밋은 그 테스트 기록의 커밋" \
+  "$([ "$RC" = 0 ] && head -1 "$ALL" | grep -qF "HEAD: ${T2:0:7}" && grep -q "+t3" "$ALL" && ! grep -q "+later" "$ALL"; echo $?)" "rc=$RC first=$(head -1 "$ALL" 2>/dev/null)"
+expect "diff: 그때 테스트 변경분은 그 테스트 커밋부터 같은 커밋까지라 비어 있음" \
+  "$(head -1 "$TST" | grep -qF "테스트 커밋: ${T2:0:7} / HEAD: ${T2:0:7}" && [ "$(wc -l < "$TST")" = 1 ]; echo $?)" "file=$(cat "$TST" 2>/dev/null | head -5)"
+
+mkdir -p "$R/$DT/06-runner-fix"; echo "결과만 있음 PASS 1" > "$R/$DT/06-runner-fix/summary.txt"
+n=$(count_d "$R/$DT")
+run diff "$DT"
+expect "diff: 끝 커밋을 읽을 runner 기록 첫 줄에 커밋이 없으면 거부" "$([ "$RC" != 0 ] && [ "$(count_d "$R/$DT")" = "$n" ]; echo $?)" "rc=$RC out=$OUT"
+
+# ---------------------------------------------------------------- 끼어든 커밋 목록이 상관없는 커밋을 뺌
+R=$TMP/r9
+make_repo "$R"
+run new 거름 --instr
+DF="$R/private/work/001-$TODAY-지침-거름"
+echo app-only >> "$R/apps/backend/src/main/A.java"; g -C "$R" commit -q -am "앱만 바꾼 커밋"
+echo instr >> "$R/.claude/skills/a/SKILL.md"; g -C "$R" commit -q -am "지침만 바꾼 커밋"
+echo other > "$R/private/other.md"; g -C "$R/private" add other.md; g -C "$R/private" commit -q -m "비공개 다른 파일 커밋"
+run diff "private/work/001-$TODAY-지침-거름" --guide private/README.md
+F=$(latest_diff "$DF")
+expect "diff 지침: 끼어든 커밋 목록은 .claude·안내 파일과 상관없는 커밋을 뺌" \
+  "$([ "$RC" = 0 ] && grep -q "지침만 바꾼 커밋" "$F" && ! grep -q "앱만 바꾼 커밋" "$F"; echo $?)" "rc=$RC file=$(head -6 "$F" 2>/dev/null)"
+expect "diff 지침: 비공개 쪽도 안내 파일과 상관없는 커밋은 빼고, 없으면 '없음'" \
+  "$(grep -A1 "^비공개 기준 커밋 뒤 커밋:" "$F" | grep -q "^  없음" && ! grep -q "비공개 다른 파일 커밋" "$F"; echo $?)" "file=$(cat "$F" 2>/dev/null | head -40)"
+
+# ---------------------------------------------------------------- 앞 목록이 있으면 --no-guides 거부
+R=$TMP/r10
+make_repo "$R"
+run new 목록지킴 --instr
+DN="$R/private/work/001-$TODAY-지침-목록지킴"
+run diff "private/work/001-$TODAY-지침-목록지킴" --guide docs/README.md
+n=$(count_d "$DN")
+run diff "private/work/001-$TODAY-지침-목록지킴" --no-guides
+expect "diff 지침: 앞 변경분에 안내 파일 목록이 있으면 --no-guides는 거부하고 --drop-guide를 안내" \
+  "$([ "$RC" != 0 ] && [ "$(count_d "$DN")" = "$n" ] && echo "$OUT" | grep -q -- "--drop-guide"; echo $?)" "rc=$RC out=$OUT"
+run new 빈목록 --instr
+DN2="$R/private/work/002-$TODAY-지침-빈목록"
+run diff "private/work/002-$TODAY-지침-빈목록"
+run diff "private/work/002-$TODAY-지침-빈목록" --no-guides
+expect "diff 지침: 앞 목록이 '없음'이면 --no-guides를 받아들임" \
+  "$([ "$RC" = 0 ] && [ "$(count_d "$DN2")" = 2 ] && sed -n 2p "$(latest_diff "$DN2")" | grep -qx "안내 파일: 없음"; echo $?)" "rc=$RC out=$OUT"
+
+# ---------------------------------------------------------------- 공백이 든 --guide 경로 거부
+echo spaced > "$R/docs/a b.md"; g -C "$R" add "docs/a b.md"; g -C "$R" commit -q -m "공백 이름 파일"
+run new 공백 --instr
+DS="$R/private/work/003-$TODAY-지침-공백"
+run diff "private/work/003-$TODAY-지침-공백" --guide "docs/a b.md"
+expect "diff 지침: 공백이 든 --guide 경로는 있는 파일이어도 거부" \
+  "$([ "$RC" != 0 ] && [ "$(count_d "$DS")" = 0 ] && echo "$OUT" | grep -qi "space"; echo $?)" "rc=$RC out=$OUT"
+
 echo
 echo "PASS $PASS FAIL $FAIL"
 [ "$FAIL" = 0 ]

@@ -27,12 +27,12 @@ description: WriteLoop 작업 폴더(private/work/) 규칙. 중간 규모 이상
   - 자식 폴더 이름은 `NN-<한국어 작은 기능 이름>/`(두 자리 번호)이다. 이 번호는 부모 폴더의 파일 번호와 한 순번으로 매긴다(예: `01-main-spec.md`, `02-main-decision.md`, `03-목록/`, `04-필터/`). 그 안에서 명세 → 테스트 → 구현 → 검증을 한 바퀴 돈다. 파일 번호는 자식 폴더 안에서 01부터 매긴다.
   - 자식 폴더의 `01-main-spec.md` 첫 줄에는 부모 폴더 경로와, 부모의 나누는 계획 중 어느 항목인지 적는다(예: `부모: private/work/012-2026-10-26-저장표현-검색/ · 계획 ① 목록`). test-writer가 테스트할 범위를 이 항목으로 안다.
   - 자식 폴더 이름은 `NN-runner-`로 시작하지 않는다. `private/.gitignore`가 그 이름을 runner 결과 폴더로 보고 원본 기록처럼 뺀다.
-  - 에이전트에는 자식 폴더 경로를 넘긴다. test-writer, implementer, verifier는 자식 폴더와 함께 부모 폴더의 파일(다른 자식 폴더는 빼고)도 읽는다.
+  - 에이전트에는 자식 폴더 경로를 넘긴다. test-writer, verifier는 자식 폴더와 함께 부모 폴더의 파일(다른 자식 폴더는 빼고)도 읽는다.
   - 그 밖의 작업은 폴더 하나로 한다.
 - 이름 규칙(2026-10-25 사용자 결정):
   - 작업 폴더: `<순번>-<날짜>-<한국어 이름>/`. 순번은 세 자리이고, 날짜와 관계없이 전체 작업에 이어서 매긴다. 새 폴더는 `private/work/`에서 가장 큰 순번 다음 번호를 쓴다. 지침 변경은 `<순번>-<날짜>-지침-<한국어 이름>/`이다. 예: `011-2026-10-25-지침-작업폴더-이름규칙/`.
-  - 안의 파일과 runner 결과 폴더: `<순번>-<작성한 쪽>-<종류>.<확장자>`. 이 순번은 작업 폴더 안의 두 자리 번호다(작업 폴더의 세 자리 순번과 다르다. `private/.gitignore`가 두 자리 번호로 runner 폴더를 가린다). 작성한 쪽은 `main`(메인 세션), `test-writer`, `implementer`, `runner`, `verifier`, `instruction-reviewer`다. 예: `01-main-spec.md`, `02-test-writer-tests.md`, `03-runner-test/`, `04-implementer-impl.md`, `07-verifier-verify.md`, `03-instruction-reviewer-review.md`, `NN-main-decision.md`.
-  - 중간 규모처럼 메인 세션이 테스트나 구현을 맡으면 작성한 쪽은 `main`이다(예: `02-main-tests.md`, `04-main-impl.md`). 검토·검증 보고는 메인 세션이 저장해도 작성한 쪽은 그 검토자다.
+  - 안의 파일과 runner 결과 폴더: `<순번>-<작성한 쪽>-<종류>.<확장자>`. 이 순번은 작업 폴더 안의 두 자리 번호다(작업 폴더의 세 자리 순번과 다르다. `private/.gitignore`가 두 자리 번호로 runner 폴더를 가린다). 작성한 쪽은 `main`(메인 세션), `test-writer`, `runner`, `verifier`, `instruction-reviewer`다. 예: `01-main-spec.md`, `02-test-writer-tests.md`, `03-runner-test/`, `04-main-impl.md`, `07-verifier-verify.md`, `03-instruction-reviewer-review.md`, `NN-main-decision.md`.
+  - 구현은 늘 메인 세션이 하므로 구현 설명의 작성한 쪽은 `main`이다(예: `04-main-impl.md`). 중간 규모처럼 메인 세션이 테스트를 쓰면 테스트 보고도 `main`이다(예: `02-main-tests.md`). 검토·검증 보고는 메인 세션이 저장해도 작성한 쪽은 그 검토자다.
   - runner 결과 폴더 안의 파일(`summary.txt` 등)은 스크립트가 정한 이름 그대로 둔다. 큰 기능의 자식 폴더 이름은 위 자식 폴더 규칙을 따른다.
 - 공통 상태 파일은 두지 않는다. 폴더의 파일 목록이 곧 진행 상태다.
 - 작업 폴더는 지우지 않는다. 정리는 사용자가 직접 한다(2026-10-25 사용자 결정).
@@ -41,7 +41,7 @@ description: WriteLoop 작업 폴더(private/work/) 규칙. 중간 규모 이상
   - `02-<작성한 쪽>-tests.md`(테스트를 쓴 쪽. 예: `02-test-writer-tests.md`, 중간 규모는 `02-main-tests.md`): 만든 테스트, 가정한 것, 겨냥 회귀 케이스의 sha256
   - `02-<작성한 쪽>-cases-target.json`(테스트를 쓴 쪽): 문장 피드백 LLM을 바꿀 때의 겨냥 회귀 케이스
   - `03-runner-test/`(`runner`): 테스트 커밋 시점 기록. 각 파일 첫 줄의 HEAD가 테스트 커밋이다
-  - `04-implementer-impl.md`(구현한 쪽): 명세를 어떻게 해석해 무엇을 바꿨는지. `verifier`는 읽지 않는다
+  - `04-main-impl.md`(메인 세션): 명세를 어떻게 해석해 무엇을 바꿨는지. `verifier`는 읽지 않는다
   - `05-runner-impl/`(`runner`): 구현 커밋 시점 기록
   - `06-main-diff-all.txt`, `06-main-diff-tests.txt`(메인 세션): `verifier`에 넘기는 변경분
   - `07-verifier-verify.md`(`verifier`)
@@ -52,7 +52,7 @@ description: WriteLoop 작업 폴더(private/work/) 규칙. 중간 규모 이상
   - 검토자가 붙인 표시(`verifier`의 "명세를 바꿈", `instruction-reviewer`의 [정한 내용을 바꿈])는 물어야 할 것의 최소한이다. 표시가 붙은 지적은 메인 세션이 판단을 뒤집지 않고 묻는다. 표시가 없어도 메인 세션이 보기에 정한 내용을 바꾸면 묻는다.
   - 물어서 받은 답은 다음 번호의 `NN-main-decision.md`로 남긴다.
 - 구현 쪽의 설명 파일은 처음 구현이든 고친 것이든 이름을 `-impl.md`로 끝낸다(2026-10-25 사용자 결정). `verifier`가 읽지 않을 파일을 이름 하나로 가리기 위해서다. 처음 구현인지 고친 것인지는 번호와 바로 앞의 검증 보고로 안다.
-- 한 번 쓴 파일은 고치지 않는다. 고친 뒤 다시 돌면 다음 번호로 이어 붙인다(예: `08-implementer-impl.md`, `09-runner-fix/`, `10-main-diff-all.txt`, `10-main-diff-tests.txt`, `11-verifier-verify.md`). 다시 검증할 때도 새 커밋 기준으로 변경분을 다시 만든다.
+- 한 번 쓴 파일은 고치지 않는다. 고친 뒤 다시 돌면 다음 번호로 이어 붙인다(예: `08-main-impl.md`, `09-runner-fix/`, `10-main-diff-all.txt`, `10-main-diff-tests.txt`, `11-verifier-verify.md`). 다시 검증할 때도 새 커밋 기준으로 변경분을 다시 만든다.
 - 각자 자기 파일만 쓴다. `verifier`는 파일을 쓸 수 없으니 메인 세션이 그 보고를 그대로 저장한다.
 - 다음 에이전트에는 내용을 옮겨 말하지 않고 파일 경로를 넘긴다. 명세는 `01-main-spec.md`를 넘긴다.
 - 새 세션이거나 대화가 요약됐으면 `bash scripts/dev/work.sh status`로 최근 작업 폴더의 마지막 파일과 커밋하지 않은 파일을 보고(이어 할 폴더가 최근 5개에 없으면 `status --all`로 본다), 이어 할 폴더의 파일을 번호 순서로 읽고 이어서 한다. `status`는 보여 주기만 하고, 끝났는지는 메인 세션이 판단한다. 명세를 기억으로 다시 쓰지 않는다.

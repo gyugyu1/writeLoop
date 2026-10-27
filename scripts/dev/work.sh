@@ -19,6 +19,7 @@
 #         지침 작업: NN-main-diff.txt(기준 커밋부터 커밋하지 않은 변경까지, .claude와 안내 파일).
 #                    둘째 줄에 안내 파일 목록, 그 아래 기준 커밋 뒤 커밋 목록을 적는다. 다음 diff는 앞 목록을 다시 쓰고
 #                    --guide를 더하고 --drop-guide를 뺀다. 목록을 잃었을 수 있으면(검토 보고만 있음) --guide나 --no-guides가 필요하다.
+#                    앞 목록이 남아 있으면 --no-guides는 거부한다(빼려면 --drop-guide). 공백이 든 --guide 경로는 거부한다.
 #                    .claude와 안내 파일의 새 파일은 git add -N 한다. private/ 안의 안내 파일은 비공개 저장소 diff를 이어 붙인다.
 # status  최근 작업 폴더 5개(--all이면 전부)의 파일 수와 마지막 파일, 커밋하지 않은 작업 폴더 파일, push 안 된 커밋 수.
 #
@@ -220,10 +221,17 @@ cmd_diff() {
 instr_diff() {
   local d=$1 no=$2 prev line g x keep found list=() pub=() priv=() out log
   [ "$no_guides" = 1 ] && [ ${#guides[@]} -gt 0 ] && die "--no-guides cannot be used with --guide"
+  # 목록은 둘째 줄에 공백으로 나눠 적으므로, 공백이 든 경로는 다음 diff에서 쪼개진다.
+  for g in "${guides[@]}"; do
+    [[ $g =~ [[:space:]] ]] && die "--guide path must not contain spaces: $g"
+  done
   prev=$(ls "$d"/[0-9][0-9]-main-diff.txt 2> /dev/null | sort | tail -1)
   line=""
   [ -n "$prev" ] && line=$(sed -n 2p "$prev")
   if [ "$no_guides" = 1 ]; then
+    # --no-guides는 목록을 잃었을 때 안내 파일이 없다고 밝히는 용도다. 앞 목록이 남아 있으면 실수로 비우지 않게 막는다.
+    [[ $line == "안내 파일: "* ]] && [ "$line" != "안내 파일: 없음" ] &&
+      die "the previous diff has a guide list (${line#안내 파일: }). Use --drop-guide <path> to remove a guide; --no-guides is only for a lost list"
     list=()
   elif [[ $line == "안내 파일: "* ]]; then
     [ "$line" = "안내 파일: 없음" ] || read -r -a list <<< "${line#안내 파일: }"

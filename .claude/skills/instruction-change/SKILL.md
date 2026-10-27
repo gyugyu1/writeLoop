@@ -1,10 +1,13 @@
 ---
 name: instruction-change
-description: WriteLoop 작업 지침(.claude/CLAUDE.md, .claude/agents/*.md, .claude/skills/*/SKILL.md)을 바꿀 때 읽는다. instruction-reviewer 검토 절차, 검토 보고의 칸별 처리, 추천을 사용자에게 보이고 고르게 하는 규칙, 보고 시점, 검토 자료를 남기는 법이 있다.
+description: WriteLoop 작업 지침(.claude/CLAUDE.md, .claude/agents/*.md, .claude/skills/*/SKILL.md)을 바꿀 때 읽는다. 지금은 검토 없이 바로 반영한다(2026-10-28 사용자 결정). 사용자가 검토를 요청하면 따를 instruction-reviewer 검토 절차, 검토 보고의 칸별 처리, 추천을 사용자에게 보이고 고르게 하는 규칙, 보고 시점, 검토 자료를 남기는 법이 있다.
 ---
 
 # 작업 지침 변경
 
+- **지금은 검토 없이 바로 반영한다(2026-10-28 사용자 결정: 빠르게 진행).** 메인 세션이 고치고 바로 커밋한다. 작업 폴더, 변경분, `instruction-reviewer` 검토는 하지 않는다.
+  - 그대로 지키는 것: 사용자와 정한 내용을 바꾸는 변경은 먼저 묻는다. 지침에 새 명령을 적었으면 한 번 실제로 돌려 본다.
+  - 사용자가 검토를 요청하면 아래 절차를 따른다.
 - 작업 지침(`.claude/CLAUDE.md`, `.claude/agents/*.md`, `.claude/skills/*/SKILL.md`) 변경은 `work-process` 스킬의 공정을 따르지 않는다.
   - 규칙이나 절차가 바뀌면 메인 세션이 고치고 `instruction-reviewer`에 검토를 맡긴다. 변경분(`bash scripts/dev/work.sh diff <작업 폴더> [--guide <안내 파일>]...`로 만든다. 새로 만든 파일의 `git add -N`도 이 명령이 한다), 변경의 목적, "사용자와 이미 정한 내용" 목록을 작업 폴더에 두고 폴더 경로를 넘긴다.
   - 검토 보고의 칸마다 이렇게 한다.

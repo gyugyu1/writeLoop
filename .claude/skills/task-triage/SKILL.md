@@ -44,7 +44,7 @@ description: WriteLoop에서 질문·설명·조사가 아닌 변경 작업(코�
 
 | 분류 | 읽을 스킬 |
 |---|---|
-| 작업 지침 변경 | `instruction-change`, `work-folder` |
+| 작업 지침 변경 | `instruction-change`(검토를 요청받아 작업 폴더를 쓸 때만 `work-folder`도) |
 | 작은 수정 | 없음. 혼자 하고 커밋한다 |
 | 중간, 큰 작업 | `work-process`, `work-folder` |
 | 중간·큰 작업 중 `apps/` 아래나 운영 설정(`docker-compose*.yml`, `application*.yml`, `infra/nginx`)이 바뀌면 | `code-rules`도 |

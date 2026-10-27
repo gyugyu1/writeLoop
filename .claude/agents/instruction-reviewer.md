@@ -1,6 +1,6 @@
 ---
 name: instruction-reviewer
-description: 작업 지침(.claude/CLAUDE.md, .claude/agents/*.md, .claude/skills/*/SKILL.md)의 규칙이나 절차를 바꾼 뒤 메인 세션이 호출한다. 메인 세션은 변경분, 변경의 목적, "사용자와 이미 정한 내용" 목록을 둔 작업 폴더의 경로를 넘긴다. 읽기만 하고 문제와 더 나은 방안을 보고한다.
+description: 작업 지침(.claude/CLAUDE.md, .claude/agents/*.md, .claude/skills/*/SKILL.md)의 규칙이나 절차를 바꾼 뒤, 사용자가 검토를 요청하면 메인 세션이 호출한다. 메인 세션은 변경분, 변경의 목적, "사용자와 이미 정한 내용" 목록을 둔 작업 폴더의 경로를 넘긴다. 읽기만 하고 문제와 더 나은 방안을 보고한다.
 tools: Read, Grep, Glob
 model: inherit
 ---

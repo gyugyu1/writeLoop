@@ -302,16 +302,19 @@ summary_commit() {
 # 일반 작업 변경분. 끝 커밋은 --head, 없으면 구현 기록이 있을 때 번호가 가장 큰 runner 기록의 커밋, 그 전에는 HEAD.
 # 다른 작업의 커밋이 뒤에 쌓여도 변경분이 runner 기록과 같은 코드를 가리키게 하려는 것이다.
 work_diff() {
-  local d=$1 no=$2 end rdir tdir tc="" es all tests tshort
+  local d=$1 no=$2 end r rdir tdir tc="" impl=0 es all tests tshort
   if [ -n "$endarg" ]; then
     end=$(git -C "$ROOT" rev-parse --verify -q "$endarg^{commit}") || die "--head is not a commit: $endarg"
   else
     # 구현 기록(-runner-test가 아닌 기록)이 생긴 뒤에만 runner 기록에서 정한다. 그 뒤에 테스트를 더했으면
     # 그 테스트 기록이 가장 최근이므로 종류와 관계없이 번호가 가장 큰 기록을 쓴다.
+    # 작업 폴더 이름이나 저장소 경로에 -runner-test가 들어 있을 수 있으므로 runner 폴더 이름만 본다.
+    for r in "$d"/[0-9][0-9]-runner-*/; do
+      [ -d "$r" ] || continue
+      case $(basename "$r") in [0-9][0-9]-runner-test*) ;; *) impl=1 ;; esac
+    done
     rdir=""
-    if ls -d "$d"/[0-9][0-9]-runner-*/ 2> /dev/null | grep -qv -- '-runner-test'; then
-      rdir=$(ls -d "$d"/[0-9][0-9]-runner-*/ 2> /dev/null | sort | tail -1)
-    fi
+    [ "$impl" = 1 ] && rdir=$(ls -d "$d"/[0-9][0-9]-runner-*/ 2> /dev/null | sort | tail -1)
     if [ -n "$rdir" ]; then
       end=$(summary_commit "$rdir") || exit 2
     else

@@ -85,7 +85,7 @@ skills:
 
 항목별 실행 방법:
 
-- 백엔드 테스트: `cd /c/WriteLoop/apps/backend && ./gradlew test --no-daemon` (시간 제한 600000ms). Bash에서는 `gradlew.bat`이 아니라 `./gradlew`를 쓴다. Git Bash에서 `gradlew.bat`은 테스트가 실패해도 종료 코드 0을 돌려준다(2026-10-29 확인). 통합 테스트가 Docker를 쓰므로 먼저 `bash scripts/dev/ensure-docker.sh`를 돌린다. 자기 테스트만 돌릴 때는 `--tests '<테스트 클래스>'`를 붙인다. 실패 상세는 `build/test-results/test/TEST-*.xml`에 있다.
+- 백엔드 테스트: `cd /c/WriteLoop/apps/backend && ./gradlew test --no-daemon --rerun` (시간 제한 600000ms). `--rerun`이 없으면 앞 실행의 결과가 남아 있을 때 Gradle이 테스트를 돌리지 않고 넘어간다(`:test UP-TO-DATE`, 2026-10-29 확인). Bash에서는 `gradlew.bat`이 아니라 `./gradlew`를 쓴다. Git Bash에서 `gradlew.bat`은 테스트가 실패해도 종료 코드 0을 돌려준다(2026-10-29 확인). 통합 테스트가 Docker를 쓰므로 먼저 `bash scripts/dev/ensure-docker.sh`를 돌린다. 자기 테스트만 돌릴 때는 `--tests '<테스트 클래스>'`를 붙인다. 실패 상세는 `build/test-results/test/TEST-*.xml`에 있다.
 - 채점 규칙 테스트: `cd /c/WriteLoop && node --test scripts/feedback-quality/rules.test.mjs`
 - 웹 빌드: `cd /c/WriteLoop && npm.cmd run build --workspace @english-learning/frontend`
 - 모바일 타입 검사: `cd /c/WriteLoop/apps/mobile && npm.cmd run typecheck`

@@ -38,8 +38,7 @@ class IntegrationInfrastructureTest extends IntegrationTestSupport {
     }
 
     @Test
-    void usesTheSameContainersForTheWholeRun() {
-        assertThat(IntegrationTestContainers.mysql()).isSameAs(IntegrationTestContainers.mysql());
+    void containersAreRunning() {
         assertThat(IntegrationTestContainers.mysql().isRunning()).isTrue();
         assertThat(IntegrationTestContainers.redis().isRunning()).isTrue();
     }

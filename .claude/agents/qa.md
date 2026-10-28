@@ -22,7 +22,7 @@ skills:
 
 ## 하지 않는 것
 
-- 운영 코드(`apps/backend/src/main`, 웹·모바일 화면 코드), 설정, 의존성(`build.gradle.kts`, `package.json`), 검사 도구(`scripts/feedback-quality/`의 회귀 케이스와 `rules.mjs`, `scripts/run-feedback-quality-check.mjs`, `scripts/dev`)를 고치지 않는다. 운영 코드를 바꿔야 테스트를 쓸 수 있으면 고치지 말고 보고한다.
+- 운영 코드(`apps/backend/src/main`, 웹·모바일 화면 코드), 설정, 의존성(`build.gradle.kts`, `package.json`), 검사 도구(`scripts/feedback-quality/`의 회귀 케이스와 `rules.mjs`, `scripts/run-feedback-quality-check.mjs`, `scripts/dev`)를 고치지 않는다(자기 테스트 파일은 뺀다). 운영 코드를 바꿔야 테스트를 쓸 수 있으면 고치지 말고 보고한다.
 - 쓰는 것은 자기 테스트(아래 "테스트 쓰는 법"), 작업 폴더의 자기 파일(보고, 실행 기록 폴더, 겨냥 회귀 케이스), `work.sh diff`가 만드는 변경분뿐이다. 빌드 산출물(`build/`, `.next/` 등)이 바뀌는 것은 괜찮다.
 - 메인 세션이 쓴 테스트와 이번 작업 전부터 있던 테스트는 고치지 않는다. 자기 테스트도 커밋된 뒤에는, 사용자가 고치기로 정했다고 결정 파일(`NN-main-decision.md`)에 적혀 있을 때만 고친다.
 - 실행 결과는 거르지 않는다. "이 실패는 괜찮다"고 빼지 않고 전부 기록하고, 판단은 보고에 따로 적는다. 실패해도 코드를 고치지 않는다.
@@ -127,10 +127,11 @@ skills:
 - 메인 세션의 테스트와 섞이지 않게 자기 테스트는 이름으로 가린다.
   - 백엔드: `apps/backend/src/test/java` 아래 대상 클래스와 같은 패키지에, 클래스 이름을 `SpecTest`로 끝낸다(예: `MissionSelectorSpecTest`). 메인 세션의 테스트 클래스에 메서드를 더하지 않는다.
   - 채점 규칙: CI가 `scripts/feedback-quality/rules.test.mjs` 하나만 돌리므로 그 파일에 쓰되, 테스트 이름을 `[spec] `으로 시작한다.
+  - 검사 스크립트(`scripts/dev`): `scripts/dev/tests/` 아래 이름이 `.spec.test.sh`로 끝나는 새 파일에 쓴다. 기존 `work.test.sh`처럼 임시 폴더와 가짜 명령(PATH 앞에 둔 가짜 `docker` 등)으로 시험하고, 실제 Docker나 운영을 건드리지 않는다. 실행은 `bash <파일>`이다.
   - 웹·모바일 화면은 아직 테스트 도구가 없다. 새로 설치하지 말고, 시나리오에 "사용자가 직접 볼 것"으로 남긴다.
 - 기존 테스트 관례를 따른다.
   - JUnit 5, AssertJ, Mockito(`mock(...)`)를 쓴다.
-  - Spring 컨텍스트(`@SpringBootTest` 등)나 DB, Redis를 띄우는 테스트는 만들지 않는다. 지금 그런 테스트는 없고, 띄울 환경도 없다.
+  - 실제 MySQL·Redis를 쓰는 통합 테스트(`@SpringBootTest`)는 저장소에 있는 통합 테스트 기반을 써서만 쓴다. 기반(컨테이너 설정, 공통 부모 클래스)을 새로 만들거나 고치지 않는다. 기반이 없으면 쓰지 않고 테스트로 확인할 수 없는 항목으로 보고한다.
 - LLM은 둘 중 하나로 대신한다.
   - 인터페이스를 mock한다(`CoachBatchAuditTest`의 `LlmCoachClient`).
   - `OpenAiFeedbackClientTest`처럼 `com.sun.net.httpserver.HttpServer`로 가짜 서버를 띄우고 `"test-key"`를 넣는다.

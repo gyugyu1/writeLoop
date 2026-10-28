@@ -113,6 +113,7 @@ call_api() {
 }
 
 header "check-db-migrations: $INVOCATION" > "$SUMMARY"
+ensure_docker
 check_ports_free
 build_jar
 start_containers

@@ -67,6 +67,7 @@ if [ ! -f "$ROOT/.env" ] || ! grep -q '^OPENAI_API_KEY=.' "$ROOT/.env"; then
   exit 1
 fi
 trap cleanup EXIT
+ensure_docker
 check_ports_free
 build_jar
 start_containers

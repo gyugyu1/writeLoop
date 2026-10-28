@@ -103,6 +103,17 @@ cleanup() {
   remove_containers
 }
 
+# Docker가 꺼져 있으면 켠다(scripts/dev/ensure-docker.sh). 켜지 못하면 FAIL을 남기고 끝낸다.
+ensure_docker() {
+  local msg
+  if msg=$(bash "$ROOT/scripts/dev/ensure-docker.sh"); then
+    result OK "$msg"
+  else
+    result FAIL "$msg"
+    exit 1
+  fi
+}
+
 # 포트가 비어 있어야 다른 프로세스에 붙거나 그 프로세스를 끄지 않는다.
 check_ports_free() {
   # 다른 확인이 돌고 있으면 그 컨테이너를 지우지 않고 바로 멈춘다. 멈춰 있는 이전 컨테이너만 지운다.

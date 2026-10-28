@@ -85,7 +85,7 @@ skills:
 
 항목별 실행 방법:
 
-- 백엔드 테스트: `cd /c/WriteLoop/apps/backend && ./gradlew.bat test --no-daemon` (시간 제한 600000ms). 자기 테스트만 돌릴 때는 `--tests '<테스트 클래스>'`를 붙인다. 실패 상세는 `build/test-results/test/TEST-*.xml`에 있다.
+- 백엔드 테스트: `cd /c/WriteLoop/apps/backend && ./gradlew test --no-daemon` (시간 제한 600000ms). Bash에서는 `gradlew.bat`이 아니라 `./gradlew`를 쓴다. Git Bash에서 `gradlew.bat`은 테스트가 실패해도 종료 코드 0을 돌려준다(2026-10-29 확인). 통합 테스트가 Docker를 쓰므로 먼저 `bash scripts/dev/ensure-docker.sh`를 돌린다. 자기 테스트만 돌릴 때는 `--tests '<테스트 클래스>'`를 붙인다. 실패 상세는 `build/test-results/test/TEST-*.xml`에 있다.
 - 채점 규칙 테스트: `cd /c/WriteLoop && node --test scripts/feedback-quality/rules.test.mjs`
 - 웹 빌드: `cd /c/WriteLoop && npm.cmd run build --workspace @english-learning/frontend`
 - 모바일 타입 검사: `cd /c/WriteLoop/apps/mobile && npm.cmd run typecheck`
@@ -136,7 +136,7 @@ skills:
   - 인터페이스를 mock한다(`CoachBatchAuditTest`의 `LlmCoachClient`).
   - `OpenAiFeedbackClientTest`처럼 `com.sun.net.httpserver.HttpServer`로 가짜 서버를 띄우고 `"test-key"`를 넣는다.
 - 기대값을 느슨하게 잡아 아무 결과나 통과하게 만들지 않는다. 명세가 "결과는 3"이면 `isEqualTo(3)`이어야 한다.
-- 백엔드 테스트 하나를 돌릴 때: `cd /c/WriteLoop/apps/backend && ./gradlew.bat test --tests '<테스트 클래스>'`. 첫 컴파일이 오래 걸리니 시간 제한을 넉넉히(300000ms) 준다.
+- 백엔드 테스트 하나를 돌릴 때: `cd /c/WriteLoop/apps/backend && ./gradlew test --tests '<테스트 클래스>'`. 첫 컴파일이 오래 걸리니 시간 제한을 넉넉히(300000ms) 준다.
 
 ## 확인할 것(4단계)
 

@@ -690,22 +690,6 @@ public class TodayQuestionRecommendationService {
         }
 
         PromptRecommendationExposureEntity canonical = exposures.get(0);
-        boolean changed = false;
-        changed |= canonical.claimAuthenticatedUser(currentUserId);
-
-        if (exposures.size() == 1) {
-            return saveCanonicalAfterStabilization(
-                    today,
-                    promptId,
-                    currentUserId,
-                    guestId,
-                    canonical,
-                    changed,
-                    List.of(),
-                    alreadyRetried
-            );
-        }
-
         List<PromptRecommendationExposureEntity> duplicatesToDelete = new ArrayList<>();
 
         for (int index = 1; index < exposures.size(); index += 1) {
@@ -713,7 +697,6 @@ public class TodayQuestionRecommendationService {
             if (isSameExposure(canonical, duplicate)) {
                 continue;
             }
-            changed |= mergeDuplicateExposure(canonical, duplicate);
             duplicatesToDelete.add(duplicate);
         }
 
@@ -723,7 +706,6 @@ public class TodayQuestionRecommendationService {
                 currentUserId,
                 guestId,
                 canonical,
-                changed,
                 duplicatesToDelete,
                 alreadyRetried
         );
@@ -735,16 +717,20 @@ public class TodayQuestionRecommendationService {
             Long currentUserId,
             String guestId,
             PromptRecommendationExposureEntity canonical,
-            boolean changed,
             List<PromptRecommendationExposureEntity> duplicatesToDelete,
             boolean alreadyRetried
     ) {
         try {
-            // 중복 행을 먼저 지워 DB에 반영한다. Hibernate는 flush할 때 UPDATE를 DELETE보다 먼저 보내므로,
-            // 게스트 행을 회원 행으로 바꾸는 UPDATE가 아직 남은 회원 행과 유니크 키에서 충돌한다.
+            // 중복 행을 먼저 지워 DB에 반영한 뒤에 남길 행을 바꾼다. 남길 행을 먼저 바꿔 두면 이 flush가 그 UPDATE도
+            // 함께 보내는데, Hibernate는 UPDATE를 DELETE보다 먼저 보내므로 게스트 행을 회원 것으로 바꾸는 UPDATE가
+            // 아직 남은 회원 행과 유니크 키에서 충돌한다. 지운 행의 값은 메모리에 남아 있어 합칠 수 있다.
             if (!duplicatesToDelete.isEmpty()) {
                 promptRecommendationExposureRepository.deleteAll(duplicatesToDelete);
                 promptRecommendationExposureRepository.flush();
+            }
+            boolean changed = canonical.claimAuthenticatedUser(currentUserId);
+            for (PromptRecommendationExposureEntity duplicate : duplicatesToDelete) {
+                changed |= mergeDuplicateExposure(canonical, duplicate);
             }
             if (changed) {
                 promptRecommendationExposureRepository.save(canonical);

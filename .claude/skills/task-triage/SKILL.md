@@ -37,7 +37,7 @@ description: WriteLoop에서 질문·설명·조사가 아닌 변경 작업(코�
   - 운영 설정(`infra/nginx`, `docker-compose*.yml`, `.github/workflows`, `scripts/ops`, `application*.yml`)
   - 의존성
   - 채점 규칙과 검사 도구(`scripts/feedback-quality`, `scripts/run-feedback-quality-check.mjs`, `scripts/dev`), Claude 설정(`.claude/hooks`, `.claude/settings.json`)
-- 큰 작업(여러 화면에 걸친 기능, 큰 리팩터링): 테스트를 `test-writer`에 맡길지 사용자에게 먼저 묻는다. 에이전트를 더 쓰면 비용이 든다. 구현은 규모와 관계없이 메인 세션이 한다(2026-10-28 사용자 결정).
+- 큰 작업(여러 화면에 걸친 기능, 큰 리팩터링): 작은 기능으로 나눠 하나씩 돈다(`work-process`). 구현은 규모와 관계없이 메인 세션이 하고, 기대 결과·실행 기록·검증은 `verifier`가 한다(2026-10-28 사용자 결정).
 - 작업 중에 바뀌는 곳이 늘어 규모나 종류가 달라지면, 다시 정하고 사용자에게 다시 확인받는다.
 
 ## 4. 다음에 읽을 스킬

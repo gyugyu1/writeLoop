@@ -131,7 +131,8 @@ skills:
   - 웹·모바일 화면은 아직 테스트 도구가 없다. 새로 설치하지 말고, 시나리오에 "사용자가 직접 볼 것"으로 남긴다.
 - 기존 테스트 관례를 따른다.
   - JUnit 5, AssertJ, Mockito(`mock(...)`)를 쓴다.
-  - 실제 MySQL·Redis를 쓰는 통합 테스트(`@SpringBootTest`)는 저장소에 있는 통합 테스트 기반을 써서만 쓴다. 기반(컨테이너 설정, 공통 부모 클래스)을 새로 만들거나 고치지 않는다. 기반이 없으면 쓰지 않고 테스트로 확인할 수 없는 항목으로 보고한다.
+  - 실제 MySQL·Redis를 쓰는 통합 테스트는 `com.writeloop.support.IntegrationTestSupport`를 상속해서 쓴다(실제 HTTP는 `rest`, DB 준비·확인은 `jdbc`). 기반(`support` 패키지의 컨테이너 설정, 부모 클래스)은 고치지 않는다.
+  - 통합 테스트는 DB와 Redis를 함께 쓰고 기반이 테스트 사이에 되돌리지 않는다. 테스트 메서드마다 고유한 데이터(이메일, guestId, Redis 키)를 만들고 자기 데이터만 확인한다. 기준 데이터(마이그레이션이 넣은 질문 등)를 바꾸면 테스트 끝에 되돌린다.
 - LLM은 둘 중 하나로 대신한다.
   - 인터페이스를 mock한다(`CoachBatchAuditTest`의 `LlmCoachClient`).
   - `OpenAiFeedbackClientTest`처럼 `com.sun.net.httpserver.HttpServer`로 가짜 서버를 띄우고 `"test-key"`를 넣는다.

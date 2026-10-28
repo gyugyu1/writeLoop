@@ -17,6 +17,9 @@ repositories {
     mavenCentral()
 }
 
+// Spring Boot 3.4.3이 정한 1.20.x는 Docker Engine 29의 최소 API 버전에 맞지 않는다. CI 러너의 Docker가 올라가도 통합 테스트가 뜨게 한다.
+extra["testcontainers.version"] = "1.21.4"
+
 dependencies {
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-data-redis")
@@ -35,8 +38,16 @@ dependencies {
     testCompileOnly("org.projectlombok:lombok")
     testAnnotationProcessor("org.projectlombok:lombok")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // 통합 테스트(com.writeloop.support.IntegrationTestSupport): 실제 MySQL·Redis 컨테이너를 띄운다. Docker가 필요하다.
+    testImplementation("org.testcontainers:mysql")
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+    // 실패 원인을 콘솔에서 바로 보게 한다(예: Docker가 꺼져 통합 테스트가 실패할 때 켜는 방법). 스택은 결과 보고서에 있다.
+    testLogging {
+        events("failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = false
+    }
 }

@@ -4,10 +4,13 @@
 # OpenAI 키는 이 스크립트가 저장소 루트 .env에서 꺼내 백엔드 프로세스에만 넘긴다. 값은 출력하거나 파일에 남기지 않는다.
 # OpenAI를 실제로 호출하므로 비용이 든다. 돌리기 전에 사용자에게 예상 호출 수를 알리고 승인받는다.
 #
-#   bash scripts/dev/run-llm-smoke.sh --out <저장소 밖이나 git이 무시하는 결과 폴더> [--cases <케이스 파일>]... [--dry-run]
+#   bash scripts/dev/run-llm-smoke.sh --out <저장소 밖이나 git이 무시하는 결과 폴더> --expect-requests <승인받은 요청 수> [--cases <케이스 파일>]...
+#   bash scripts/dev/run-llm-smoke.sh --out <결과 폴더> [--cases <케이스 파일>]... --dry-run
 #
 # --cases    기본 세트(scripts/feedback-quality/cases.smoke.json) 뒤에 더 돌릴 케이스 파일. 여러 번 줄 수 있다.
 # --dry-run  케이스 형식과 예상 호출 수만 확인하고 OpenAI는 부르지 않는다.
+# --expect-requests  사용자에게 승인받은 요청 수(케이스 파일을 모두 합친 수). 실제로 돌릴 때는 반드시 준다.
+#            케이스에서 센 요청 수가 이 값과 다르면 OpenAI를 부르지 않고 FAIL로 끝난다.
 # 결과 폴더의 summary.txt에 단계별 OK/FAIL이 있다. 하나라도 실패하면 종료 코드가 1이다.
 # 컨테이너 이름과 포트가 고정이라 scripts/dev의 확인 스크립트는 한 번에 하나만 돌린다.
 set -uo pipefail
@@ -16,16 +19,23 @@ ROOT=$(cd "$(dirname "$0")/../.." && pwd -P)
 INVOCATION="$0 $*"
 OUT=""
 DRY_RUN=""
+EXPECT=""
 CASES=("$ROOT/scripts/feedback-quality/cases.smoke.json")
 while [ $# -gt 0 ]; do
   case "$1" in
     --out) OUT=$2; shift 2 ;;
     --cases) CASES+=("$2"); shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
+    --expect-requests) EXPECT=${2:-}; shift 2 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done
 [ -n "$OUT" ] || { echo "--out is required" >&2; exit 2; }
+# 승인받은 요청 수 없이 OpenAI를 부르지 않는다(비용).
+if [ -z "$DRY_RUN" ]; then
+  [ -n "$EXPECT" ] || { echo "--expect-requests <approved requests> is required (or use --dry-run to count them)" >&2; exit 2; }
+  [[ $EXPECT =~ ^[0-9]+$ ]] || { echo "--expect-requests needs a number: $EXPECT" >&2; exit 2; }
+fi
 seen=" "
 for c in "${CASES[@]}"; do
   [ -f "$c" ] || { echo "cases file not found: $c" >&2; exit 2; }
@@ -47,19 +57,27 @@ for v in $(compgen -e | grep -E '^WRITELOOP_FEEDBACK_'); do unset "$v"; done
 header "run-llm-smoke: $INVOCATION" > "$SUMMARY"
 
 # 1) 케이스 형식과 예상 호출 수
+TOTAL=0
 for c in "${CASES[@]}"; do
   name=$(basename "$c" .json)
   f="$OUT/dry-run-$name.txt"
   header "dry run: node scripts/run-feedback-quality-check.mjs --cases $c --dry-run" > "$f"
   if (cd "$ROOT" && node scripts/run-feedback-quality-check.mjs --cases "$c" --dry-run) >> "$f" 2>&1; then
     # 케이스 파일이 나중에 바뀌었는지 대조할 수 있게 해시를 남긴다.
-    result OK "cases valid ($name): $(grep -o '= [0-9]* execution' "$f" | grep -o '[0-9]*') request(s), sha256 $(sha256sum "$c" | cut -d' ' -f1)"
+    n=$(grep -o '= [0-9]* execution' "$f" | grep -o '[0-9]*')
+    TOTAL=$((TOTAL + ${n:-0}))
+    result OK "cases valid ($name): $n request(s), sha256 $(sha256sum "$c" | cut -d' ' -f1)"
   else
     result FAIL "cases invalid ($name): see dry-run-$name.txt"
     exit 1
   fi
 done
 [ -n "$DRY_RUN" ] && exit $FAILED
+if [ "$TOTAL" != "$EXPECT" ]; then
+  result FAIL "requests: the cases have $TOTAL, but $EXPECT were approved (--expect-requests); OpenAI was not called"
+  exit 1
+fi
+result OK "requests: $TOTAL, as approved"
 
 # 2) 백엔드: 빈 DB(V107 기준 데이터에 질문 목록이 들어 있다)와 .env의 OpenAI 설정
 if [ ! -f "$ROOT/.env" ] || ! grep -q '^OPENAI_API_KEY=.' "$ROOT/.env"; then

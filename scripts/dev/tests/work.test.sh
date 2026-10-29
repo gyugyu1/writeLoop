@@ -429,6 +429,97 @@ ALL="$R/$DR/04-main-diff-all.txt"
 expect "diff: 작업 폴더 이름에 -runner-test가 있어도 끝 커밋은 runner 기록의 커밋" \
   "$([ "$RC" = 0 ] && head -1 "$ALL" | grep -qF "HEAD: ${IC:0:7}" && ! grep -q "+later" "$ALL"; echo $?)" "rc=$RC first=$(head -1 "$ALL" 2>/dev/null)"
 
+# ================================================================ 034 실행 기록 도구(메인 세션의 테스트)
+# ---------------------------------------------------------------- run
+# 가짜 gradlew와 ensure-docker.sh: 부른 인자를 파일에 남기고 FAKE_*_RC로 종료 코드를 정한다.
+R=$TMP/r12
+make_repo "$R"
+printf '#!/usr/bin/env bash\necho "$*" >> "%s"\nexit ${FAKE_GRADLE_RC:-0}\n' "$TMP/r12-gradle-calls" > "$R/apps/backend/gradlew"
+mkdir -p "$R/scripts/dev"
+printf '#!/usr/bin/env bash\nif [ "${FAKE_DOCKER_RC:-0}" = 0 ]; then echo "docker: already running"; else echo "docker: FAIL fake"; fi\nexit ${FAKE_DOCKER_RC:-0}\n' > "$R/scripts/dev/ensure-docker.sh"
+g -C "$R" add -A && g -C "$R" commit -q -m tools
+run new 실행
+DX="private/work/001-$TODAY-실행"
+calls() { cat "$TMP/r12-gradle-calls" 2>/dev/null; }
+
+echo dirty >> "$R/apps/backend/src/main/A.java"
+run run "$DX" --name impl
+expect "run: 커밋하지 않은 변경이 있으면 거부하고 기록 폴더를 만들지 않는다" \
+  "$([ "$RC" = 2 ] && ! ls -d "$R/$DX"/[0-9][0-9]-runner-* > /dev/null 2>&1; echo $?)" "rc=$RC out=$OUT"
+g -C "$R" checkout -q -- apps/backend/src/main/A.java
+
+echo impl >> "$R/apps/backend/src/main/A.java"; g -C "$R" commit -q -am impl
+H=$(git -C "$R" rev-parse HEAD)
+run run "$DX" --name impl
+S="$R/$DX/02-runner-impl/summary.txt"
+expect "run: 백엔드가 바뀌면 Docker를 켜고 backend-test를 돌려 다음 번호 기록에 남긴다" \
+  "$([ "$RC" = 0 ] && [ "$(head -1 "$S")" = "HEAD $H | uncommitted 0" ] && grep -qx "OK docker: already running" "$S" && grep -qx "OK backend-test backend-test.txt" "$S"; echo $?)" "rc=$RC out=$OUT"
+expect "run: backend-test는 ./gradlew test --no-daemon --rerun이고 기록 첫 줄에 명령·HEAD가 있다" \
+  "$(calls | grep -qx "test --no-daemon --rerun" && head -1 "$R/$DX/02-runner-impl/backend-test.txt" | grep -qF "bash ./gradlew test --no-daemon --rerun | HEAD $H | uncommitted 0"; echo $?)" "calls=$(calls)"
+
+FAKE_GRADLE_RC=1 run run "$DX" --name fix
+expect "run: 항목이 실패하면 FAIL을 적고 종료 코드 1" \
+  "$([ "$RC" = 1 ] && grep -qx "FAIL backend-test backend-test.txt" "$R/$DX/03-runner-fix/summary.txt"; echo $?)" "rc=$RC out=$OUT"
+
+rm -f "$TMP/r12-gradle-calls"
+FAKE_DOCKER_RC=1 run run "$DX" --name nodocker
+expect "run: Docker를 켜지 못하면 Docker 항목을 돌리지 않고 FAIL" \
+  "$([ "$RC" = 1 ] && grep -q "^FAIL docker:" "$R/$DX/04-runner-nodocker/summary.txt" && grep -q "^FAIL backend-test not run" "$R/$DX/04-runner-nodocker/summary.txt" && [ -z "$(calls)" ]; echo $?)" "rc=$RC calls=$(calls)"
+
+mkdir -p "$R/weird"; echo w > "$R/weird/file.txt"; echo more >> "$R/docs/README.md"
+g -C "$R" add -A && g -C "$R" commit -q -m "기타"
+run run "$DX" --name note
+S="$R/$DX/05-runner-note/summary.txt"
+expect "run: 표에 없는 경로는 NOTE unmatched, 문서는 아무것도 적지 않는다" \
+  "$([ "$RC" = 0 ] && grep -qx "NOTE unmatched weird/file.txt" "$S" && ! grep -q "docs/README.md" "$S"; echo $?)" "rc=$RC out=$OUT"
+
+echo f > "$R/apps/backend/src/main/FooFeedbackService.java"; g -C "$R" add -A && g -C "$R" commit -q -m feedback
+run run "$DX" --name llm
+expect "run: 문장 피드백 파일이 바뀌었는데 승인이 없으면 NEEDS llm-smoke와 종료 코드 3" \
+  "$([ "$RC" = 3 ] && grep -q "^NEEDS llm-smoke " "$R/$DX/06-runner-llm/summary.txt"; echo $?)" "rc=$RC out=$OUT"
+
+run run "$DX" --name x --only rules-test --tests FooTest
+expect "run: backend-test를 돌리지 않는데 --tests를 주면 거부" "$([ "$RC" = 2 ]; echo $?)" "rc=$RC out=$OUT"
+run run "$DX" --name x --only nope
+expect "run: --only에 없는 항목은 거부" "$([ "$RC" = 2 ] && echo "$OUT" | grep -q "unknown item"; echo $?)" "rc=$RC out=$OUT"
+run run "$DX" --name Bad_Name
+expect "run: 이름은 소문자·숫자·-만" "$([ "$RC" = 2 ]; echo $?)" "rc=$RC out=$OUT"
+
+mkdir "$R/.git/work-run.lock"; echo $$ > "$R/.git/work-run.lock/pid"
+run run "$DX" --name locked
+expect "run: 살아 있는 프로세스가 잡은 잠금이 있으면 거부" \
+  "$([ "$RC" = 2 ] && echo "$OUT" | grep -q "another work.sh run" && ! [ -d "$R/$DX/07-runner-locked" ]; echo $?)" "rc=$RC out=$OUT"
+echo 999999 > "$R/.git/work-run.lock/pid"
+run run "$DX" --name stale --only backend-test
+expect "run: 잡은 프로세스가 없는 잠금은 치우고 돌린다, 끝나면 잠금을 푼다" \
+  "$([ "$RC" = 0 ] && [ -d "$R/$DX/07-runner-stale" ] && ! [ -e "$R/.git/work-run.lock" ]; echo $?)" "rc=$RC out=$OUT"
+
+# ---------------------------------------------------------------- check
+gd() { GIT_COMMITTER_DATE="$1" GIT_AUTHOR_DATE="$1" g "${@:2}"; }
+R=$TMP/r13
+make_repo "$R"
+run new 대조
+DC="private/work/001-$TODAY-대조"
+# 시나리오보다 먼저 지침만 바꾼 공개 커밋이 끼어도 구현 커밋과 비교한다(034 결정 M).
+echo guide >> "$R/.claude/skills/a/SKILL.md"; gd "2025-12-31T23:00:00" -C "$R" commit -q -am "지침"
+echo scenario > "$R/$DC/02-qa-scenarios.md"
+gd "2026-01-01T00:00:00" -C "$R/private" add -A && gd "2026-01-01T00:00:00" -C "$R/private" commit -q -m scen
+echo impl >> "$R/apps/backend/src/main/A.java"; gd "2026-01-01T01:00:00" -C "$R" commit -q -am impl
+H=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DC/03-runner-impl"; echo "HEAD $H | uncommitted 0" > "$R/$DC/03-runner-impl/summary.txt"
+echo "기준 커밋: x / HEAD: ${H:0:7} / 명령: git diff" > "$R/$DC/04-main-diff-all.txt"
+run check "$DC"
+expect "check: 시나리오가 (지침 커밋을 뺀) 첫 구현 커밋보다 먼저 한 번만 커밋, 기록 깨끗, 기록 커밋 = 변경분 HEAD면 모두 OK" \
+  "$([ "$RC" = 0 ] && ! echo "$OUT" | grep -q "^FAIL" && [ "$(echo "$OUT" | grep -c "^OK")" = 3 ] && echo "$OUT" | grep -q "first implementation commit ${H:0:7}"; echo $?)" "rc=$RC out=$OUT"
+
+echo changed >> "$R/$DC/02-qa-scenarios.md"; gd "2026-01-01T02:00:00" -C "$R/private" commit -q -am scen2
+mkdir -p "$R/$DC/05-runner-fix"; echo "HEAD $H | uncommitted 1" > "$R/$DC/05-runner-fix/summary.txt"
+mkdir -p "$R/$DC/06-runner-empty"
+run check "$DC"
+expect "check: 시나리오를 다시 고쳤거나, 기록에 커밋하지 않은 변경이 있으면 FAIL과 종료 코드 1" \
+  "$([ "$RC" = 1 ] && echo "$OUT" | grep -q "^FAIL 02-qa-scenarios.md: changed after" && echo "$OUT" | grep -q "^FAIL 05-runner-fix: uncommitted 1"; echo $?)" "rc=$RC out=$OUT"
+expect "check: summary.txt가 없는 실행 기록 폴더는 NOTE" "$(echo "$OUT" | grep -qx "NOTE 06-runner-empty: no summary.txt"; echo $?)" "out=$OUT"
+
 echo
 echo "PASS $PASS FAIL $FAIL"
 [ "$FAIL" = 0 ]

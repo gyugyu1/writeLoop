@@ -12,6 +12,7 @@ APP_PORT=18080
 SERVER_IMAGE=mysql:8.4.8
 FAILED=0
 BACKEND_PID=""
+CHECK_LOCK=""
 JAR=""
 
 header() { echo "# $1 | HEAD $HEAD_SHA | uncommitted $DIRTY"; }
@@ -101,6 +102,38 @@ remove_containers() {
 cleanup() {
   stop_backend
   remove_containers
+  release_check_lock
+}
+
+# 확인 스크립트들의 잠금. 컨테이너 이름과 포트가 같아 한 번에 하나만 돌아야 한다. 컨테이너가 아직 없을 때(jar 빌드 중)도
+# 다른 실행을 알아보려고 mkdir 잠금을 쓴다(mkdir은 원자적이다). 저장소의 .git 안에 두고, pid 파일로 잡은 프로세스를 안다.
+acquire_check_lock() {
+  local g pid
+  if g=$(git -C "$ROOT" rev-parse --git-common-dir 2>/dev/null); then
+    case "$g" in /* | [A-Za-z]:*) ;; *) g="$ROOT/$g" ;; esac
+  else
+    g=${TMPDIR:-/tmp}
+  fi
+  CHECK_LOCK="$g/wl-check.lock"
+  if ! mkdir "$CHECK_LOCK" 2>/dev/null; then
+    pid=$(cat "$CHECK_LOCK/pid" 2>/dev/null)
+    # 잡은 프로세스가 이미 없으면(남은 잠금) 치우고 다시 잡는다. pid 파일이 아직 없으면 방금 잡은 참일 수 있다.
+    if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null && rm -rf "$CHECK_LOCK" && mkdir "$CHECK_LOCK" 2>/dev/null; then
+      :
+    else
+      CHECK_LOCK=""
+      result FAIL "another scripts/dev check is running (pid ${pid:-?})"
+      # 종료 정리(trap)가 그 실행의 컨테이너와 잠금을 지우지 않게 끈다.
+      trap - EXIT
+      exit 1
+    fi
+  fi
+  echo $$ > "$CHECK_LOCK/pid"
+}
+release_check_lock() {
+  [ -n "$CHECK_LOCK" ] || return 0
+  [ "$(cat "$CHECK_LOCK/pid" 2>/dev/null)" = "$$" ] && rm -rf "$CHECK_LOCK"
+  CHECK_LOCK=""
 }
 
 # Docker가 꺼져 있으면 켠다(scripts/dev/ensure-docker.sh). 켜지 못하면 FAIL을 남기고 끝낸다.
@@ -116,6 +149,7 @@ ensure_docker() {
 
 # 포트가 비어 있어야 다른 프로세스에 붙거나 그 프로세스를 끄지 않는다.
 check_ports_free() {
+  acquire_check_lock
   # 다른 확인이 돌고 있으면 그 컨테이너를 지우지 않고 바로 멈춘다. 멈춰 있는 이전 컨테이너만 지운다.
   if [ -n "$(docker ps -q --filter "name=^wl-check-" 2>/dev/null)" ]; then
     result FAIL "another scripts/dev check is running (wl-check-* containers are up)"
@@ -132,11 +166,10 @@ check_ports_free() {
 
 # 백엔드 jar. 예전 jar로 띄우지 않도록 지우고 새로 만든다.
 build_jar() {
-  local gradle
   rm -f "$ROOT"/apps/backend/build/libs/*.jar
-  if [ -n "${WINDIR:-}" ]; then gradle=./gradlew.bat; else gradle=./gradlew; fi
-  header "bootJar: $gradle bootJar --no-daemon -q" > "$OUT/build.txt"
-  if (cd "$ROOT/apps/backend" && $gradle bootJar --no-daemon -q) >> "$OUT/build.txt" 2>&1; then
+  # Git Bash에서 gradlew.bat은 빌드가 실패해도 종료 코드 0을 돌려주므로 어디서나 ./gradlew를 bash로 부른다.
+  header "bootJar: bash ./gradlew bootJar --no-daemon -q" > "$OUT/build.txt"
+  if (cd "$ROOT/apps/backend" && bash ./gradlew bootJar --no-daemon -q) >> "$OUT/build.txt" 2>&1; then
     result OK "bootJar"
   else
     result FAIL "bootJar: see build.txt"

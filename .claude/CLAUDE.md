@@ -31,6 +31,7 @@
 
 - 백엔드 테스트: `apps/backend`에서 `.\gradlew.bat test`(Docker 필요: 통합 테스트가 MySQL·Redis 컨테이너를 띄운다. 꺼져 있으면 `bash scripts/dev/ensure-docker.sh`나 `docker desktop start`로 켠다). Git Bash에서는 `./gradlew test`를 쓴다(`gradlew.bat`은 실패해도 종료 코드 0)
 - 모바일 타입 검사: `apps/mobile`에서 `npm.cmd run typecheck`
+- 웹 테스트: 저장소 루트에서 `npm.cmd run test --workspace @english-learning/frontend`(Vitest, 테스트는 `apps/frontend/tests/`)
 - 웹 빌드: 저장소 루트에서 `npm.cmd run build --workspace @english-learning/frontend`
 - 채점 규칙 테스트: `node --test scripts/feedback-quality/rules.test.mjs`
 - 마이그레이션 확인(Docker 필요): `bash scripts/dev/check-db-migrations.sh --out <결과 폴더>`(저장소 밖이나 git이 무시하는 폴더. 작업 중에는 작업 폴더 아래)

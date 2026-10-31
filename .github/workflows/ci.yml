@@ -59,6 +59,8 @@ jobs:
           node-version: "24"
           cache: npm
       - run: npm ci
+      - name: 웹 테스트
+        run: npm run test --workspace @english-learning/frontend
       - run: npm run build --workspace @english-learning/frontend
 
   mobile-typecheck:

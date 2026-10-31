@@ -618,6 +618,58 @@ PATH="$B15:$NO_NETSTAT" run run "$DN" --name nonetstat --only db-check
 expect "run: netstat이 없으면 NOTE cleanup 줄, 종료 코드는 0 그대로" \
   "$([ "$RC" = 0 ] && grep -qx "NOTE cleanup: netstat not found; port 18080 not checked" "$(last_sum)"; echo $?)" "rc=$RC out=$OUT"
 
+# ================================================================ 037 웹 테스트 기반(메인 세션의 테스트)
+# ---------------------------------------------------------------- run: web-test
+# 가짜 npm·npm.cmd: 부른 인자를 남기고, test면 FAKE_NPM_TEST_RC를 종료 코드로 쓴다.
+# Windows의 work.sh는 npm.cmd를 부르고 cmd.exe가 돌리므로, npm.cmd는 bash로 가짜를 부르는 배치 파일로 만든다.
+R=$TMP/r22
+make_repo "$R"
+run new 웹테스트
+DW="private/work/001-$TODAY-웹테스트"
+B22="$TMP/bin22"
+NPM_CALLS="$TMP/r22-npm-calls"
+mkdir -p "$B22"
+printf '#!/usr/bin/env bash\necho "$*" >> "%s"\n[ "$2" = test ] && exit ${FAKE_NPM_TEST_RC:-0}\nexit 0\n' "$NPM_CALLS" > "$B22/npm-fake.sh"
+printf '#!/usr/bin/env bash\nexec bash "$(dirname "$0")/npm-fake.sh" "$@"\n' > "$B22/npm"
+BASH_W=$(cygpath -w "$(command -v bash)" 2> /dev/null || command -v bash)
+printf '@"%s" "%%~dp0npm-fake.sh" %%*\r\n@exit /b %%ERRORLEVEL%%\r\n' "$BASH_W" > "$B22/npm.cmd"
+chmod +x "$B22/npm-fake.sh" "$B22/npm" "$B22/npm.cmd"
+mkdir -p "$R/apps/frontend/app"; echo page > "$R/apps/frontend/app/page.tsx"
+g -C "$R" add -A && g -C "$R" commit -q -m web
+
+PATH="$B22:$PATH" run run "$DW" --name impl
+S="$R/$DW/02-runner-impl/summary.txt"
+expect "run: 웹이 바뀌면 web-test와 web-build를 고르고 web-test를 먼저 돌린다" \
+  "$([ "$RC" = 0 ] && grep -qx "OK web-test web-test.txt" "$S" && grep -qx "OK web-build web-build.txt" "$S" && [ "$(head -1 "$NPM_CALLS" | tr -d '\r')" = "run test --workspace @english-learning/frontend" ]; echo $?)" "rc=$RC out=$OUT calls=$(cat "$NPM_CALLS" 2>/dev/null)"
+expect "run: web-test 기록 첫 줄에 명령과 HEAD" \
+  "$(head -1 "$R/$DW/02-runner-impl/web-test.txt" | grep -qE "^# npm(\.cmd)? run test --workspace @english-learning/frontend \| HEAD $(git -C "$R" rev-parse HEAD) "; echo $?)" "$(head -1 "$R/$DW/02-runner-impl/web-test.txt" 2>/dev/null)"
+
+: > "$NPM_CALLS"
+FAKE_NPM_TEST_RC=1 PATH="$B22:$PATH" run run "$DW" --name fix --only web-test
+expect "run: --only web-test이고 테스트가 실패하면 FAIL web-test, 종료 코드 1" \
+  "$([ "$RC" = 1 ] && grep -qx "FAIL web-test web-test.txt" "$R/$DW/03-runner-fix/summary.txt" && ! grep -q web-build "$R/$DW/03-runner-fix/summary.txt" && grep -q "run test" "$NPM_CALLS"; echo $?)" "rc=$RC out=$OUT calls=$(cat "$NPM_CALLS" 2>/dev/null)"
+
+# ---------------------------------------------------------------- check·diff: 웹 테스트 경로(apps/frontend/tests)
+R=$TMP/r23
+make_repo "$R"
+run new 웹리팩터링
+DF="private/work/001-$TODAY-웹리팩터링"
+mkdir -p "$R/apps/frontend/tests" "$R/apps/frontend/app"
+echo spec > "$R/apps/frontend/tests/loop.spec.test.tsx"; g -C "$R" add -A && g -C "$R" commit -q -m "test: 지금 동작"
+T=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DF/02-runner-test"; echo "HEAD $T | uncommitted 0" > "$R/$DF/02-runner-test/summary.txt"
+run check "$DF"
+expect "check: 고치기 전 기록 앞에 웹 테스트만 바뀌었으면 OK" \
+  "$(echo "$OUT" | grep -qx "OK 02-runner-test: only test paths changed before the pre-fix record"; echo $?)" "rc=$RC out=$OUT"
+
+echo page > "$R/apps/frontend/app/page.tsx"; echo more >> "$R/apps/frontend/tests/loop.spec.test.tsx"
+g -C "$R" add -A && g -C "$R" commit -q -m "refactor: 나눔"
+I=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DF/03-runner-impl"; echo "HEAD $I | uncommitted 0" > "$R/$DF/03-runner-impl/summary.txt"
+run diff "$DF"
+expect "diff: 테스트 커밋 뒤에 바뀐 웹 테스트가 테스트 변경분에 나온다" \
+  "$([ "$RC" = 0 ] && grep -q "apps/frontend/tests/loop.spec.test.tsx" "$R/$DF/04-main-diff-tests.txt" && ! grep -q "apps/frontend/app/page.tsx" "$R/$DF/04-main-diff-tests.txt"; echo $?)" "rc=$RC out=$OUT"
+
 echo
 echo "PASS $PASS FAIL $FAIL"
 [ "$FAIL" = 0 ]

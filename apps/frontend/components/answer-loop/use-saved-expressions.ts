@@ -163,3 +163,5 @@ export function useSavedExpressions({
     clearMessages
   };
 }
+
+export type SavedExpressionsState = ReturnType<typeof useSavedExpressions>;

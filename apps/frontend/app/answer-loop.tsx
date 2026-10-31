@@ -13,7 +13,6 @@ import {
   type ReactNode
 } from "react";
 import {
-  checkCoachExpressionUsage,
   ApiError,
   completeFeedbackSession,
   deleteWritingDraft,
@@ -26,7 +25,6 @@ import {
   getTodayWritingStatus,
   getWritingDraft,
   saveWritingDraft,
-  requestCoachHelp,
   submitFeedback,
   trackDailyPromptClick
 } from "../lib/api";
@@ -44,21 +42,17 @@ import {
   type IncompleteLoopState,
   type IncompleteLoopStep
 } from "../lib/incomplete-loop";
-import { buildCoachQuickQuestions } from "../lib/coach-quick-questions";
 import { filterSuggestedRefinementExpressions } from "../lib/refinement-recommendations";
 import { getDifficultyLabel, isDailyDifficulty, resolvePracticeDifficulty } from "../lib/difficulty";
 import { getFeedbackLevelInfo } from "../lib/feedback-level";
 import { getFeedbackSlotUiCopy } from "../lib/feedback-slot-ui";
 import { getOrCreateGuestId } from "../lib/guest-id";
 import { buildInlineFeedbackSegments, type RenderedInlineFeedbackSegment } from "../lib/inline-feedback";
-import { buildLocalCoachHelp, buildLocalCoachUsage } from "../lib/coach";
 import type {
   AuthUser,
   DailyDifficulty,
   DailyPromptRecommendation,
   FeaturedDailyPromptRecommendation,
-  CoachHelpResponse,
-  CoachUsageCheckResponse,
   Feedback,
   FeedbackLoopStatus,
   HomeDraftSnapshot,
@@ -72,6 +66,8 @@ import type {
 import { MonthStatusModal } from "../components/answer-loop/month-status-modal";
 import { useMonthStatus } from "../components/answer-loop/use-month-status";
 import { useSavedExpressions } from "../components/answer-loop/use-saved-expressions";
+import { CoachAssistantModal } from "../components/answer-loop/coach-assistant-modal";
+import { useCoachAssistant } from "../components/answer-loop/use-coach-assistant";
 import { trimNullable, pickFirstNonEmpty, countWords } from "../lib/text";
 import { normalizeSuggestedPhrase, hasCoachMove, isCoachMoveComparison, isDirectCorrectionCoachMove, canBuildCoachMoveDiff } from "../lib/coach-move";
 import { buildRelatedPromptRecommendations } from "../lib/prompt-recommendations";
@@ -296,18 +292,13 @@ export function AnswerLoop() {
   const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
     useState(false);
   const [showAnswerTranslation, setShowAnswerTranslation] = useState(false);
-  const [showCoachAssistant, setShowCoachAssistant] = useState(false);
   const [showHelpSheet, setShowHelpSheet] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const rewriteFeedbackPanelRef = useRef<HTMLElement | null>(null);
   const [hints, setHints] = useState<PromptHint[]>([]);
   const [isLoadingHints, setIsLoadingHints] = useState(false);
-  const [coachQuestion, setCoachQuestion] = useState("");
-  const [coachHelp, setCoachHelp] = useState<CoachHelpResponse | null>(null);
-  const [coachHelpError, setCoachHelpError] = useState("");
-  const [isLoadingCoachHelp, setIsLoadingCoachHelp] = useState(false);
-  const [coachUsage, setCoachUsage] = useState<CoachUsageCheckResponse | null>(null);
-  const [, setIsCheckingCoachUsage] = useState(false);
+  const coach = useCoachAssistant();
+  const closeCoachAssistant = coach.close;
   const [practiceExpressionHint, setPracticeExpressionHint] = useState<PracticeExpressionHint | null>(null);
   const [didRestoreDraft, setDidRestoreDraft] = useState(false);
   const [didAttemptPersistedDraftRestore, setDidAttemptPersistedDraftRestore] = useState(false);
@@ -320,8 +311,6 @@ export function AnswerLoop() {
   const [isFinishingLoop, setIsFinishingLoop] = useState(false);
   const celebrationCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const mobileComposerBarRef = useRef<HTMLDivElement | null>(null);
-  const coachPromptInputRef = useRef<HTMLTextAreaElement | null>(null);
-  const coachDialogCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const helpSheetCloseButtonRef = useRef<HTMLButtonElement | null>(null);
   const knownPersistedDraftKeysRef = useRef<Set<string>>(new Set());
   const pendingSubmissionRef = useRef<{
@@ -434,11 +423,11 @@ export function AnswerLoop() {
     setStep(draft.step);
     setPickFlowScreen("prompt");
     setShowLoginWall(false);
-    setShowCoachAssistant(false);
+    closeCoachAssistant();
     setError("");
     setShowRewriteFeedback(false);
     setShowAnswerTranslation(false);
-  }, [currentUser, didRestoreDraft]);
+  }, [closeCoachAssistant, currentUser, didRestoreDraft]);
 
   useEffect(() => {
     if (isResolvingCurrentUser) {
@@ -577,36 +566,6 @@ export function AnswerLoop() {
   }, []);
 
   const monthStatusModal = useMonthStatus(currentUser, todayStatus);
-
-  useEffect(() => {
-    if (!showCoachAssistant || typeof document === "undefined" || typeof window === "undefined") {
-      return;
-    }
-
-    const previousActiveElement = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setShowCoachAssistant(false);
-      }
-    };
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-    window.requestAnimationFrame(() => {
-      coachPromptInputRef.current?.focus();
-    });
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-      if (previousActiveElement && typeof previousActiveElement.focus === "function") {
-        window.requestAnimationFrame(() => {
-          previousActiveElement.focus();
-        });
-      }
-    };
-  }, [showCoachAssistant]);
 
   useEffect(() => {
     if (
@@ -906,10 +865,6 @@ export function AnswerLoop() {
     };
   }, [feedbackLoadingStages, isSubmitting]);
   const answerWordCount = useMemo(() => countWords(answer), [answer]);
-  const coachQuickQuestions = useMemo(
-    () => buildCoachQuickQuestions(selectedPrompt),
-    [selectedPrompt]
-  );
   const rewriteWordCount = useMemo(() => countWords(rewrite), [rewrite]);
   const welcomeWeekDays = useMemo(
     () => buildWelcomeWeek(todayStatus, welcomeCompletedDateKeys),
@@ -931,7 +886,7 @@ export function AnswerLoop() {
     [mobileComposerBarHeight]
   );
   const coachRelatedPrompts = useMemo(() => {
-    const sourceIds = coachUsage?.relatedPromptIds ?? [];
+    const sourceIds = coach.usage?.relatedPromptIds ?? [];
     const sourcePrompts = allPrompts.length > 0 ? allPrompts : prompts;
     const related = sourceIds
       .map((promptId) => promptById.get(promptId) ?? sourcePrompts.find((prompt) => prompt.id === promptId))
@@ -952,7 +907,7 @@ export function AnswerLoop() {
     }
 
     return buildRelatedPromptRecommendations(selectedPrompt, sourcePrompts, selectedPromptId);
-  }, [allPrompts, coachUsage?.relatedPromptIds, promptById, prompts, selectedPrompt, selectedPromptId]);
+  }, [allPrompts, coach.usage?.relatedPromptIds, promptById, prompts, selectedPrompt, selectedPromptId]);
   const completionRelatedPrompts = useMemo(
     () => coachRelatedPrompts.slice(0, 3),
     [coachRelatedPrompts]
@@ -1197,14 +1152,14 @@ export function AnswerLoop() {
     setStep(draft.step as Step);
     setPickFlowScreen("prompt");
     setShowLoginWall(false);
-    setShowCoachAssistant(false);
+    closeCoachAssistant();
     setShowHelpSheet(false);
     setError("");
     setShowRewriteFeedback(false);
     setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setDraftStatusMessage(message);
-  }, []);
+  }, [closeCoachAssistant]);
 
   const buildHomeDraft = useCallback((): HomeDraftSnapshot => {
     return {
@@ -1327,14 +1282,8 @@ export function AnswerLoop() {
   }, [currentUser?.id]);
 
   function clearCoachState() {
-    setShowCoachAssistant(false);
+    coach.reset();
     setShowHelpSheet(false);
-    setCoachQuestion("");
-    setCoachHelp(null);
-    setCoachHelpError("");
-    setCoachUsage(null);
-    setIsLoadingCoachHelp(false);
-    setIsCheckingCoachUsage(false);
   }
 
   function appendExpressionToCurrentDraft(expression: string) {
@@ -1765,11 +1714,11 @@ export function AnswerLoop() {
     }
 
     setError("");
-    setShowCoachAssistant(false);
+    coach.close();
     setShowHelpSheet(false);
     setIsSubmitting(true);
 
-    const coachHelpSnapshot = coachHelp;
+    const coachHelpSnapshot = coach.help;
     const promptSnapshot = selectedPrompt;
     const promptPoolSnapshot = allPrompts.length > 0 ? allPrompts : prompts;
     const trimmedAnswer = nextAnswer.trim();
@@ -1817,41 +1766,17 @@ export function AnswerLoop() {
 
         setShowLoginWall(false);
 
-        if (coachHelpSnapshot && promptSnapshot && coachHelpSnapshot.expressions.length > 0) {
-          setIsCheckingCoachUsage(true);
-          void (async () => {
-            try {
-              const usageRequest = {
-                promptId: selectedPromptId,
-                answer: trimmedAnswer,
-                sessionId: result.sessionId,
-                guestId: guestId || undefined,
-                attemptNo: result.attemptNo,
-                attemptType: mode,
-                expressions: coachHelpSnapshot.expressions,
-                interactionId: coachHelpSnapshot.interactionId
-              };
-
-              let usageResult: CoachUsageCheckResponse;
-              try {
-                usageResult = await checkCoachExpressionUsage(usageRequest);
-              } catch {
-                usageResult = buildLocalCoachUsage(
-                  promptSnapshot,
-                  trimmedAnswer,
-                  coachHelpSnapshot.expressions,
-                  promptPoolSnapshot
-                );
-              }
-
-              setCoachUsage(usageResult);
-            } finally {
-              setIsCheckingCoachUsage(false);
-            }
-          })();
-        } else {
-          setCoachUsage(null);
-        }
+        coach.checkUsageAfterSubmit({
+          coachHelpSnapshot,
+          promptSnapshot,
+          promptPoolSnapshot,
+          promptId: selectedPromptId,
+          answer: trimmedAnswer,
+          sessionId: result.sessionId,
+          guestId,
+          attemptNo: result.attemptNo,
+          attemptType: mode
+        });
       })
       .catch((caughtError: unknown) => {
         if (caughtError instanceof ApiError && caughtError.code === "GUEST_LIMIT_REACHED") {
@@ -2322,7 +2247,7 @@ export function AnswerLoop() {
             <span className={styles.composerWordCount}>{wordCount}단어</span>
           </div>
           <div className={styles.coachTriggerDock}>
-            {!showCoachAssistant && !value.trim() ? (
+            {!coach.isOpen && !value.trim() ? (
               <div className={styles.coachTriggerBubble}>
                 <span>표현이 막히면</span>
                 <span>AI 코치에게 물어봐요.</span>
@@ -2333,8 +2258,8 @@ export function AnswerLoop() {
               className={styles.coachTriggerButton}
               aria-label="AI 코치 열기"
               aria-haspopup="dialog"
-              aria-expanded={showCoachAssistant}
-              onClick={() => setShowCoachAssistant(true)}
+              aria-expanded={coach.isOpen}
+              onClick={() => coach.open()}
             >
               <Image
                 src="/coach/mascote-face.png"
@@ -2419,161 +2344,6 @@ export function AnswerLoop() {
             </button>
           ))}
         </div>
-      </section>
-    );
-  }
-
-  async function handleCoachQuestionSubmit() {
-    if (!selectedPrompt) {
-      setCoachHelpError("질문을 먼저 선택해 주세요.");
-      return;
-    }
-
-    const question = coachQuestion.trim();
-    if (!question) {
-      setCoachHelpError("AI에게 물어볼 표현 질문을 입력해 주세요.");
-      return;
-    }
-
-    setIsLoadingCoachHelp(true);
-    setCoachHelpError("");
-    setCoachUsage(null);
-
-    try {
-      const request = {
-        promptId: selectedPrompt.id,
-        question,
-        sessionId: sessionId || undefined,
-        answer: (step === "rewrite" ? rewrite : answer).trim() || undefined,
-        attemptType: step === "rewrite" ? ("REWRITE" as const) : ("INITIAL" as const)
-      };
-
-      let result: CoachHelpResponse;
-      try {
-        result = await requestCoachHelp(request);
-      } catch {
-        result = buildLocalCoachHelp(selectedPrompt, question);
-      }
-
-      setCoachHelp(result);
-    } catch {
-      setCoachHelpError("표현 코치를 불러오지 못했어요.");
-    } finally {
-      setIsLoadingCoachHelp(false);
-    }
-  }
-
-  function renderCoachAssistantPanel({ inDialog = false }: { inDialog?: boolean } = {}) {
-    return (
-      <section className={`${styles.coachPanel} ${inDialog ? styles.coachPanelDialog : ""}`}>
-        <div className={styles.coachPanelHeader}>
-          <div>
-            <span className={styles.coachEyebrow}>AI 코치</span>
-            <strong id={inDialog ? "coach-assistant-title" : undefined}>
-              AI에게 표현 물어보기
-            </strong>
-            <p>
-              사용자가 질문을 하면, 바로 쓸 수 있는 표현과 짧은 예문을 추천해 드려요.
-            </p>
-          </div>
-        </div>
-
-        <div className={styles.coachPromptArea}>
-          <textarea
-            ref={coachPromptInputRef}
-            className={styles.coachPromptInput}
-            value={coachQuestion}
-            onChange={(event) => setCoachQuestion(event.target.value)}
-            placeholder={'예: "근력을 키우고 싶다"를 어떻게 말해?'}
-            rows={2}
-          />
-          <div className={styles.coachQuickActions}>
-            {coachQuickQuestions.map((question) => (
-              <button
-                key={question}
-                type="button"
-                className={styles.coachQuickChip}
-                onClick={() => setCoachQuestion(question)}
-              >
-                {question}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.coachActionRow}>
-          <button
-            type="button"
-            className={styles.coachPrimaryButton}
-            onClick={() => void handleCoachQuestionSubmit()}
-            disabled={isLoadingCoachHelp || !selectedPrompt}
-          >
-            {isLoadingCoachHelp ? "표현을 고르는 중..." : "표현 추천받기"}
-          </button>
-          <span className={styles.coachActionMeta}>
-            표현을 그대로 붙이지 말고, 내 문장 안에서 직접 풀어 써보세요.
-          </span>
-        </div>
-
-        {coachHelpError ? <p className={styles.coachError}>{coachHelpError}</p> : null}
-        {savedExpressions.error ? <p className={styles.coachError}>{savedExpressions.error}</p> : null}
-        {savedExpressions.notice ? <p className={styles.coachNotice}>{savedExpressions.notice}</p> : null}
-
-        {coachHelp ? (
-          <div className={styles.coachResult}>
-            <div className={styles.coachReplyCard}>
-              <span className={styles.coachReplyBadge}>코치 답변</span>
-              <p>{coachHelp.coachReply}</p>
-            </div>
-            <div className={styles.coachExpressionList}>
-              {coachHelp.expressions.map((expression) => (
-                <article key={expression.id} className={styles.coachExpressionCard}>
-                  <div className={styles.coachExpressionTop}>
-                    <strong>{expression.expression}</strong>
-                    <span>{expression.meaningKo}</span>
-                  </div>
-                  <p>{expression.usageTip}</p>
-                  <small>{expression.example}</small>
-                  <div className={styles.coachExpressionActionRow}>
-                    <button
-                      type="button"
-                      className={styles.coachExpressionGhostButton}
-                      onClick={() => appendExpressionToCurrentDraft(expression.expression)}
-                    >
-                      문장에 넣기
-                    </button>
-                    <button
-                      type="button"
-                      className={
-                        savedExpressions.isSaved(expression.expression)
-                          ? styles.coachExpressionSaveButtonActive
-                          : styles.coachExpressionSaveButton
-                      }
-                      onClick={() =>
-                        void savedExpressions.toggle({
-                          expression: expression.expression,
-                          meaningKo: expression.meaningKo,
-                          exampleEn: expression.example,
-                          usageTipKo: expression.usageTip,
-                          tags: expression.tags,
-                          sourceType: "COACH_RECOMMENDATION",
-                          coachInteractionId: coachHelp.interactionId
-                        })
-                      }
-                      disabled={savedExpressions.isSaving(expression.expression)}
-                    >
-                      {savedExpressions.isSaving(expression.expression)
-                        ? "저장 중"
-                        : savedExpressions.isSaved(expression.expression)
-                          ? "저장됨"
-                          : "저장"}
-                    </button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </section>
     );
   }
@@ -3413,35 +3183,6 @@ export function AnswerLoop() {
     );
   }
 
-  function renderCoachAssistantModal() {
-    if (!showCoachAssistant || (step !== "answer" && step !== "rewrite")) {
-      return null;
-    }
-
-    return (
-      <div className={styles.coachOverlay} onClick={() => setShowCoachAssistant(false)}>
-        <section
-          className={styles.coachDialog}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="coach-assistant-title"
-          onClick={(event) => event.stopPropagation()}
-        >
-          <button
-            ref={coachDialogCloseButtonRef}
-            type="button"
-            className={styles.coachDialogClose}
-            aria-label="AI 코치 닫기"
-            onClick={() => setShowCoachAssistant(false)}
-          >
-            ×
-          </button>
-          {renderCoachAssistantPanel({ inDialog: true })}
-        </section>
-      </div>
-    );
-  }
-
   return (
     <main className={styles.main}>
       {showLoginWall ? (
@@ -3528,7 +3269,14 @@ export function AnswerLoop() {
       {step === "complete" && renderCompleteStep()}
       {renderFeedbackLoadingOverlay()}
       {renderHelpSheet()}
-      {renderCoachAssistantModal()}
+      <CoachAssistantModal
+        coach={coach}
+        isAvailable={step === "answer" || step === "rewrite"}
+        selectedPrompt={selectedPrompt}
+        savedExpressions={savedExpressions}
+        onSubmitQuestion={() => coach.submitQuestion({ selectedPrompt, sessionId, step, answer, rewrite })}
+        onInsertExpression={appendExpressionToCurrentDraft}
+      />
       <MonthStatusModal
         monthStatus={monthStatusModal}
         onSelectDate={(dateKey) => router.push(`/me?tab=writing&date=${dateKey}`)}

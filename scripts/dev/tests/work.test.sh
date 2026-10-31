@@ -531,6 +531,93 @@ expect "check: 시나리오를 다시 고쳤거나, 기록에 커밋하지 않�
   "$([ "$RC" = 1 ] && echo "$OUT" | grep -q "^FAIL 02-qa-scenarios.md: changed after" && echo "$OUT" | grep -q "^FAIL 05-runner-fix: uncommitted 1"; echo $?)" "rc=$RC out=$OUT"
 expect "check: summary.txt가 없는 실행 기록 폴더는 NOTE" "$(echo "$OUT" | grep -qx "NOTE 06-runner-empty: no summary.txt"; echo $?)" "out=$OUT"
 
+# ================================================================ 035 실행 기록 대조 보강(메인 세션의 테스트)
+# ---------------------------------------------------------------- check: 고치기 전 기록보다 먼저 바뀐 경로
+R=$TMP/r20
+make_repo "$R"
+run new 고치기전
+DP="private/work/001-$TODAY-고치기전"
+echo guide >> "$R/.claude/skills/a/SKILL.md"; g -C "$R" commit -q -am "지침"
+echo spec >> "$R/apps/backend/src/test/ATest.java"; g -C "$R" commit -q -am "test: 재현"
+T=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DP/02-runner-test"; echo "HEAD $T | uncommitted 0" > "$R/$DP/02-runner-test/summary.txt"
+run check "$DP"
+expect "check: 고치기 전 기록 앞에 테스트·지침만 바뀌었으면 OK" \
+  "$([ "$RC" = 0 ] && echo "$OUT" | grep -qx "OK 02-runner-test: only test paths changed before the pre-fix record"; echo $?)" "rc=$RC out=$OUT"
+
+run new 늦은기록
+DL="private/work/002-$TODAY-늦은기록"
+echo spec2 >> "$R/apps/backend/src/test/ATest.java"; g -C "$R" commit -q -am "test: 재현"
+echo fix >> "$R/apps/backend/src/main/A.java"; g -C "$R" commit -q -am "fix: 구현"
+L=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DL/02-runner-test"; echo "HEAD $L | uncommitted 0" > "$R/$DL/02-runner-test/summary.txt"
+run check "$DL"
+expect "check: 고치기 전 기록 앞에 운영 코드가 바뀌었으면 그 경로만 적어 FAIL, 종료 코드 1" \
+  "$([ "$RC" = 1 ] && echo "$OUT" | grep -qx "FAIL 02-runner-test: non-test paths changed before the pre-fix record: apps/backend/src/main/A.java"; echo $?)" "rc=$RC out=$OUT"
+
+echo "HEAD=$L | git status --short 줄 수=0" > "$R/$DL/02-runner-test/summary.txt"
+run check "$DL"
+expect "check: 옛 형식 기록이면 이 확인을 하지 않는다" "$(! echo "$OUT" | grep -q "pre-fix record"; echo $?)" "out=$OUT"
+
+echo "HEAD $L | uncommitted 0" > "$R/$DL/02-runner-test/summary.txt"
+echo scenario > "$R/$DL/01-qa-scenarios.md"
+run check "$DL"
+expect "check: 새 기능(시나리오가 있음)이면 이 확인을 하지 않는다" "$(! echo "$OUT" | grep -q "pre-fix record"; echo $?)" "out=$OUT"
+rm -f "$R/$DL/01-qa-scenarios.md"
+
+echo "HEAD 0123456789abcdef0123456789abcdef01234567 | uncommitted 0" > "$R/$DL/02-runner-test/summary.txt"
+run check "$DL"
+expect "check: 기록의 커밋이 저장소에 없으면 FAIL" \
+  "$([ "$RC" = 1 ] && echo "$OUT" | grep -qx "FAIL 02-runner-test: commit 0123456 not found"; echo $?)" "rc=$RC out=$OUT"
+
+# ---------------------------------------------------------------- run: 임시 컨테이너와 18080 정리 확인
+# 가짜 docker는 FAKE_PS를 ps 출력으로, FAKE_PS_RC를 종료 코드로 쓴다. 가짜 netstat은 FAKE_NETSTAT을 출력한다.
+R=$TMP/r21
+make_repo "$R"
+mkdir -p "$R/scripts/dev"
+printf '#!/usr/bin/env bash\necho "docker: already running"\n' > "$R/scripts/dev/ensure-docker.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$R/scripts/dev/check-db-migrations.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$R/apps/backend/gradlew"
+g -C "$R" add -A && g -C "$R" commit -q -m tools
+run new 정리
+DN="private/work/001-$TODAY-정리"
+B15="$TMP/bin15"
+mkdir -p "$B15"
+printf '#!/usr/bin/env bash\nif [ "$1" = ps ]; then printf "%%b" "${FAKE_PS:-}"; exit ${FAKE_PS_RC:-0}; fi\nexit 0\n' > "$B15/docker"
+printf '#!/usr/bin/env bash\nprintf "%%b" "${FAKE_NETSTAT:-}"\n' > "$B15/netstat"
+chmod +x "$B15/docker" "$B15/netstat"
+last_sum() { ls -d "$R/$DN"/[0-9][0-9]-runner-*/ | sort | tail -1 | sed 's|/$|/summary.txt|'; }
+
+PATH="$B15:$PATH" run run "$DN" --name clean --only db-check
+expect "run: 마이그레이션 확인 뒤 남은 것이 없으면 cleanup 줄 없이 종료 코드 0" \
+  "$([ "$RC" = 0 ] && ! grep -q cleanup "$(last_sum)"; echo $?)" "rc=$RC out=$OUT"
+
+FAKE_PS='other\nwl-check-mysql\nwl-check-redis\n' FAKE_NETSTAT='  TCP    0.0.0.0:18080   0.0.0.0:0   LISTENING   4321\r\n' \
+  PATH="$B15:$PATH" run run "$DN" --name left --only db-check
+expect "run: 남은 컨테이너와 18080 프로세스를 FAIL cleanup 한 줄에 적고 종료 코드 1" \
+  "$([ "$RC" = 1 ] && grep -qx "FAIL cleanup: wl-check-mysql wl-check-redis; port 18080 LISTENING pid 4321" "$(last_sum)"; echo $?)" "rc=$RC out=$OUT"
+
+FAKE_PS_RC=1 PATH="$B15:$PATH" run run "$DN" --name psfail --only db-check
+expect "run: docker ps가 실패하면 FAIL cleanup: docker ps failed" \
+  "$([ "$RC" = 1 ] && grep -qx "FAIL cleanup: docker ps failed" "$(last_sum)"; echo $?)" "rc=$RC out=$OUT"
+
+FAKE_PS='wl-check-mysql\n' PATH="$B15:$PATH" run run "$DN" --name nodb --only backend-test
+expect "run: 마이그레이션 확인·LLM 회귀를 돌리지 않았으면 정리 확인을 하지 않는다" \
+  "$([ "$RC" = 0 ] && ! grep -q cleanup "$(last_sum)"; echo $?)" "rc=$RC out=$OUT"
+
+# netstat이 있는 폴더를 뺀 PATH
+NO_NETSTAT=""
+IFS=: read -r -a DIRS15 <<< "$PATH"
+for d in "${DIRS15[@]}"; do
+  [ -n "$d" ] || continue
+  { [ -e "$d/netstat" ] || [ -e "$d/netstat.exe" ] || [ -e "$d/NETSTAT.EXE" ]; } && continue
+  NO_NETSTAT="${NO_NETSTAT:+$NO_NETSTAT:}$d"
+done
+rm -f "$B15/netstat"
+PATH="$B15:$NO_NETSTAT" run run "$DN" --name nonetstat --only db-check
+expect "run: netstat이 없으면 NOTE cleanup 줄, 종료 코드는 0 그대로" \
+  "$([ "$RC" = 0 ] && grep -qx "NOTE cleanup: netstat not found; port 18080 not checked" "$(last_sum)"; echo $?)" "rc=$RC out=$OUT"
+
 echo
 echo "PASS $PASS FAIL $FAIL"
 [ "$FAIL" = 0 ]

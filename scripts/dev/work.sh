@@ -27,8 +27,10 @@
 # run     실행 기록 도구. 커밋하지 않은 변경이 있거나 다른 run이 돌고 있으면 거부한다. 기준 커밋부터 HEAD까지 바뀐 경로로
 #         돌릴 항목을 고르고(--only면 그 항목만), 다음 번호의 NN-runner-<이름>/에 항목별 기록과 summary.txt를 남긴다.
 #         Docker가 필요한 항목이 있으면 먼저 ensure-docker.sh로 켠다. LLM 회귀는 --llm-approved를 줄 때만 돌린다.
+#         마이그레이션 확인이나 LLM 회귀를 돌렸으면 끝에 wl-check- 컨테이너와 18080 포트가 남았는지 보고, 남았으면 FAIL cleanup.
 #         종료 코드: 모두 OK 0, FAIL이 있으면 1, FAIL 없이 NEEDS(돌리지 않은 필요 확인)가 있으면 3, 쓰임 잘못 2.
-# check   기록 대조: qa 시나리오·겨냥 케이스가 첫 공개 커밋보다 먼저 한 번만 커밋됐는지, 겨냥 케이스 sha256이 보고·기록과
+# check   기록 대조: qa 시나리오·겨냥 케이스가 첫 공개 커밋보다 먼저 한 번만 커밋됐는지, 기존 코드 흐름의 고치기 전 기록
+#         (NN-runner-test)보다 먼저 테스트·문서 밖의 경로가 바뀌지 않았는지, 겨냥 케이스 sha256이 보고·기록과
 #         같은지, 실행 기록마다 커밋하지 않은 변경이 0인지, 가장 큰 실행 기록의 커밋이 가장 최근 변경분의 HEAD인지.
 #         한 줄씩 OK/FAIL/NOTE를 출력하고 FAIL이 있으면 종료 코드 1.
 #
@@ -429,6 +431,14 @@ path_items() {
   esac
 }
 
+# 테스트 경로. check가 고치기 전 기록보다 먼저 바뀌어도 되는 경로로 본다(문서·지침과 함께).
+test_path() {
+  case "$1" in
+    apps/backend/src/test/* | scripts/dev/tests/* | scripts/feedback-quality/rules.test.mjs) return 0 ;;
+  esac
+  return 1
+}
+
 # 문장 피드백 LLM이 바뀌었을 수 있는 경로. LLM 회귀는 비용과 사용자 승인 때문에 경로로 돌리지 않고 NEEDS로만 알린다.
 llm_path() {
   case "$1" in
@@ -537,6 +547,27 @@ run_item() {
   return $rc
 }
 
+# 임시 컨테이너와 백엔드가 남았는지 본다. 남았으면 FAIL 줄을 출력하고 1을 돌려준다. netstat이 없으면 NOTE 줄을 더한다.
+# 깨끗하면 아무것도 출력하지 않는다. 컨테이너 이름은 줄 어디에 있든 wl-check-로 시작하는 낱말을 찾는다.
+run_cleanup_check() {
+  local out left="" names pids note=""
+  if out=$(docker ps -a --format '{{.Names}}' 2>&1); then
+    names=$(echo "$out" | grep -oE '(^|[[:space:]])wl-check-[^[:space:]]*' | tr -d ' \t\r' | sort -u | tr '\n' ' ' | sed 's/ $//')
+    left=$names
+  else
+    left="docker ps failed"
+  fi
+  if command -v netstat > /dev/null 2>&1; then
+    pids=$(netstat -ano 2> /dev/null | grep ":18080 .*LISTENING" | awk '{print $NF}' | tr -d '\r' | sort -u | tr '\n' ' ' | sed 's/ $//')
+    [ -n "$pids" ] && left="${left:+$left; }port 18080 LISTENING pid $pids"
+  else
+    note="NOTE cleanup: netstat not found; port 18080 not checked"
+  fi
+  [ -n "$left" ] && echo "FAIL cleanup: $left"
+  [ -n "$note" ] && echo "$note"
+  [ -z "$left" ]
+}
+
 cmd_run() {
   [ $# -ge 1 ] || { usage >&2; exit 2; }
   local d name="" only="" tables="" api="" t it p its x
@@ -618,7 +649,7 @@ cmd_run() {
   mkdir "$RUN_DIR" || die "cannot create $RUN_DIR"
   RUN_HEAD=$(git -C "$ROOT" rev-parse HEAD)
   RUN_DIRTY=$(git -C "$ROOT" status --short | wc -l | tr -d ' ')
-  local summary="$RUN_DIR/summary.txt" failed=0 docker_ok=1 need_docker=0 msg
+  local summary="$RUN_DIR/summary.txt" failed=0 docker_ok=1 need_docker=0 msg local_backend=0
   echo "HEAD $RUN_HEAD | uncommitted $RUN_DIRTY" > "$summary"
 
   for it in $selected; do case "$DOCKER_ITEMS" in *" $it "*) need_docker=1 ;; esac; done
@@ -640,6 +671,7 @@ cmd_run() {
       continue
     fi
     echo "running $it ..."
+    case "$it" in db-check | llm-smoke) local_backend=1 ;; esac
     if run_item "$it" "$RUN_DIR/$it.txt"; then
       echo "OK $it $it.txt" >> "$summary"
     else
@@ -647,6 +679,12 @@ cmd_run() {
       failed=1
     fi
   done
+  # 마이그레이션 확인과 LLM 회귀는 임시 컨테이너(wl-check-*)와 백엔드(18080)를 띄운다. 스크립트가 끝날 때 지우지만,
+  # 남았으면 다음 확인이 "다른 확인이 돌고 있다"로 멈추므로 여기서 본다. 깨끗하면 줄을 남기지 않는다. 지우지는 않는다.
+  if [ "$local_backend" = 1 ]; then
+    if msg=$(run_cleanup_check); then :; else failed=1; fi
+    [ -n "$msg" ] && echo "$msg" >> "$summary"
+  fi
   for x in "${needs[@]}" "${notes[@]}"; do echo "$x" >> "$summary"; done
 
   rel "$RUN_DIR"
@@ -704,6 +742,35 @@ cmd_check() {
       say FAIL "$(basename "$f"): committed ${pc:0:7} $piso, not before the first implementation commit ${fc:0:7} $fiso"
     fi
   done
+
+  # 고치기 전 기록(기존 코드 흐름의 NN-runner-test)은 고치기 전 코드에서 돌아야 한다. 기준 커밋부터 그 기록의
+  # 커밋까지 테스트·문서 밖의 경로가 바뀌었으면 구현이 먼저 들어간 것이다. 새 기능(시나리오가 있음)은 구현 뒤에
+  # 테스트 기록을 남기므로 보지 않는다. work.sh run 형식이 아닌 옛 기록도 보지 않는다.
+  local h bad
+  if ! ls "$d"/[0-9][0-9]-qa-scenarios.md > /dev/null 2>&1; then
+    for rdir in "$d"/[0-9][0-9]-runner-test/; do
+      [ -f "$rdir/summary.txt" ] || continue
+      rn=$(basename "$rdir")
+      h=$(head -1 "$rdir/summary.txt" | tr -d '\r' | sed -nE 's/^HEAD ([0-9a-f]{40}) \| uncommitted [0-9]+$/\1/p')
+      [ -n "$h" ] || continue
+      if ! git -C "$ROOT" cat-file -e "$h^{commit}" 2> /dev/null; then
+        say FAIL "$rn: commit ${h:0:7} not found"
+        continue
+      fi
+      bad=()
+      while IFS= read -r p; do
+        [ -n "$p" ] || continue
+        test_path "$p" && continue
+        [ "$(path_items "$p")" = - ] && continue
+        bad+=("$p")
+      done < <(git -C "$ROOT" -c core.quotepath=false diff --no-renames --name-only "$BASE" "$h")
+      if [ ${#bad[@]} = 0 ]; then
+        say OK "$rn: only test paths changed before the pre-fix record"
+      else
+        say FAIL "$rn: non-test paths changed before the pre-fix record: ${bad[*]}"
+      fi
+    done
+  fi
 
   # 겨냥 케이스 sha256: 지금 파일 = 1단계 보고에 적은 값 = 실행 기록에 남은 값
   for f in "$d"/[0-9][0-9]-qa-cases-target.json; do

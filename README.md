@@ -669,6 +669,7 @@ docker compose ps
 
 1. `main`에 push하면 [`ci.yml`](.github/workflows/ci.yml)이 백엔드 테스트, 웹 빌드, 모바일 타입 검사, 피드백 채점 규칙 테스트를 실행합니다. 문서만 바꾼 커밋은 건너뜁니다.
 2. 모두 통과하면 백엔드·프론트엔드 이미지를 `ghcr.io/gyugyu1/writeloop-{backend,frontend}`에 커밋 SHA와 `latest` 태그로 올립니다.
+   - 다만 마지막으로 운영 배포에 성공한 커밋 뒤로 개발 도구(`scripts/dev`)·채점 규칙·모바일(`apps/mobile`)·문서만 바뀌었으면, 검사만 하고 이미지와 배포(3번)는 건너뜁니다. 판단은 [`scripts/dev/deploy-needed.sh`](scripts/dev/deploy-needed.sh)가 하고, 결과와 이유는 CI 실행 요약의 "배포 필요 판단"에 남습니다(ADR-0015).
 3. [`deploy.yml`](.github/workflows/deploy.yml)이 SSH로 서버에 접속해 저장소를 그 커밋으로 맞추고 [`scripts/ops/deploy.sh`](scripts/ops/deploy.sh)를 실행합니다.
    - 운영 DB를 `~/db-backups`에 백업합니다.
    - 이미지를 받아 백엔드·프론트엔드를 다시 시작합니다. Flyway 마이그레이션은 백엔드가 기동할 때 적용됩니다.
@@ -683,7 +684,7 @@ PR에서는 1번 검사만 실행하고 배포하지 않습니다. 운영에 내
 
 ### 재배포와 롤백
 
-GitHub의 Actions → `Deploy` → `Run workflow`에 배포할 커밋 SHA를 넣어 실행합니다. CI가 이미지를 올린 커밋만 배포할 수 있습니다. 서버에 없는 예전 이미지는 GHCR에서 다시 받습니다(공개 이미지라 저장 비용이 없습니다).
+GitHub의 Actions → `Deploy` → `Run workflow`에 배포할 커밋 SHA를 넣어 실행합니다. CI가 이미지를 올린 커밋만 배포할 수 있습니다(배포를 건너뛴 커밋은 이미지가 없으니, 그 앞의 배포된 커밋을 넣습니다. 앱 코드는 같습니다). 서버에 없는 예전 이미지는 GHCR에서 다시 받습니다(공개 이미지라 저장 비용이 없습니다).
 
 - 백엔드가 뜨지 않으면 배포 작업이 실패로 끝나고, 로그 끝부분과 이번 배포 전 백업 파일 경로를 출력합니다. 자동으로 되돌리지는 않습니다.
 - 이전 SHA로 `Deploy`를 다시 실행해 되돌립니다. 마이그레이션이 DB를 바꿨다면 출력된 백업으로 복구합니다.

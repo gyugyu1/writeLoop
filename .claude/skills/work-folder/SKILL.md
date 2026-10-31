@@ -33,7 +33,7 @@ description: WriteLoop 작업 폴더(private/work/) 규칙. 중간 규모 이상
   - 작업 폴더: `<순번>-<날짜>-<한국어 이름>/`. 순번은 세 자리이고, 날짜와 관계없이 전체 작업에 이어서 매긴다. 새 폴더는 `private/work/`에서 가장 큰 순번 다음 번호를 쓴다. 지침 변경은 `<순번>-<날짜>-지침-<한국어 이름>/`이다. 예: `011-2026-10-25-지침-작업폴더-이름규칙/`.
   - 안의 파일과 실행 기록 폴더: `<순번>-<작성한 쪽>-<종류>.<확장자>`. 이 순번은 작업 폴더 안의 두 자리 번호다(작업 폴더의 세 자리 순번과 다르다. `private/.gitignore`가 두 자리 번호로 실행 기록 폴더를 가린다). 작성한 쪽은 `main`(메인 세션), `qa`, `instruction-reviewer`다. 예: `01-main-spec.md`, `02-qa-scenarios.md`, `03-runner-test/`, `04-main-impl.md`, `07-qa-verify.md`, `03-instruction-reviewer-review.md`, `NN-main-decision.md`.
   - 2026-10-28 전 작업 폴더의 `-verifier-` 파일은 같은 역할의 옛 이름이다(`-runner-` 폴더는 그때 `runner` 에이전트가 만들었다).
-  - 실행 기록 폴더는 `qa`가 만들지만 이름은 `NN-runner-<무엇>/`이다. `private/.gitignore`와 `work.sh`가 이 이름으로 원본 기록과 테스트 커밋을 가려낸다. 변경분 `NN-main-diff-*.txt`도 `qa`가 `work.sh diff`로 만들지만 스크립트가 붙이는 이름 그대로 둔다.
+  - 실행 기록 폴더는 `qa`가 `work.sh run --name <무엇>`으로 만들고, 이름은 `NN-runner-<무엇>/`이다. `private/.gitignore`와 `work.sh`가 이 이름으로 원본 기록과 테스트 커밋을 가려낸다. 변경분 `NN-main-diff-*.txt`도 `qa`가 `work.sh diff`로 만들지만 스크립트가 붙이는 이름 그대로 둔다.
   - 구현은 늘 메인 세션이 하므로 구현 설명의 작성한 쪽은 `main`이다(예: `04-main-impl.md`). 메인 세션이 구현과 함께 쓴 테스트는 따로 보고하지 않고 구현 설명에 적는다. 지침 검토 보고는 메인 세션이 저장해도 작성한 쪽은 `instruction-reviewer`다.
   - 실행 기록 폴더 안의 파일(`summary.txt` 등)은 스크립트가 정한 이름 그대로 둔다. 큰 기능의 자식 폴더 이름은 위 자식 폴더 규칙을 따른다.
 - 공통 상태 파일은 두지 않는다. 폴더의 파일 목록이 곧 진행 상태다.

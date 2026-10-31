@@ -34,9 +34,9 @@
 - 웹 빌드: 저장소 루트에서 `npm.cmd run build --workspace @english-learning/frontend`
 - 채점 규칙 테스트: `node --test scripts/feedback-quality/rules.test.mjs`
 - 마이그레이션 확인(Docker 필요): `bash scripts/dev/check-db-migrations.sh --out <결과 폴더>`(저장소 밖이나 git이 무시하는 폴더. 작업 중에는 작업 폴더 아래)
-- 문장 피드백 회귀(6건, Docker 필요): `bash scripts/dev/run-llm-smoke.sh --out <결과 폴더> [--cases <겨냥 케이스 파일>]`(결과 폴더 조건은 바로 위 마이그레이션 확인과 같다)
+- 문장 피드백 회귀(6건, Docker 필요): `bash scripts/dev/run-llm-smoke.sh --out <결과 폴더> --expect-requests <승인받은 요청 수> [--cases <겨냥 케이스 파일>]`(결과 폴더 조건은 바로 위 마이그레이션 확인과 같다). 작업 폴더에서는 `qa`가 `work.sh run --llm-approved <요청 수>`로 돌린다
   - 임시 DB로 백엔드를 띄우고 `cases.smoke.json`을 실제 OpenAI로 돌린다. 키는 스크립트가 `.env`에서 꺼내 백엔드에만 넘긴다.
-  - OpenAI를 실제로 호출하므로 비용이 든다. 돌리기 전에 `--dry-run`으로 요청 수를 보고, "요청 수(요청당 OpenAI 1~3회, 재시도 포함)"로 사용자에게 알려 승인받는다.
+  - OpenAI를 실제로 호출하므로 비용이 든다. 돌리기 전에 `--dry-run`으로 요청 수를 보고, "요청 수(요청당 OpenAI 1~3회, 재시도 포함)"로 사용자에게 알려 승인받는다. 승인받은 수를 `--expect-requests`로 주며, 케이스의 요청 수와 다르면 스크립트가 OpenAI를 부르지 않고 멈춘다.
   - 리포트는 케이스 파일마다 `reports/<케이스 파일 이름>/latest.json`에 남는다. `completion` 필드는 줄여서 저장하므로, 스크립트가 피드백 원문(`feedback_diagnosis_logs`)을 결과 폴더에 따로 남긴다.
 
 ## 작업 규칙

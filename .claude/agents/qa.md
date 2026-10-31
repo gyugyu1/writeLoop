@@ -29,7 +29,7 @@ skills:
 - 커밋, push, `private`(backlog)는 메인 세션의 일이다. git은 status, diff, log, show, rev-parse만 쓴다(`git -C <private 폴더>` 포함). 그 밖의 git 명령과 `gh` 명령은 쓰지 않는다.
 - 운영에 접속하지 않는다. ssh, scp, `scripts/ops/` 실행, 운영 DB 조회, `*.writeloop.kr`이나 운영 서버로 요청 보내기를 하지 않는다. 모든 실행은 로컬에서 한다.
 - 비밀 파일(`.env`, `env_files/`, `*.pem`)을 읽지 않는다. 개발용 로컬 DB(호스트의 3306)에 접속하지 않는다. DB 확인은 아래 스크립트의 임시 컨테이너로만 한다.
-- OpenAI를 부르는 실행은 메인 세션이 "사용자 승인을 받았다"와 요청 수를 명시했을 때 `scripts/dev/run-llm-smoke.sh`로만 한다. 키는 스크립트가 다룬다. 키가 드러날 수 있는 명령(`env`, `printenv`, `set -x`, `bash -x`, `docker inspect`, `docker compose config`를 `-q` 없이)을 쓰지 않는다. OpenAI를 실제로 부르는 테스트는 만들지 않는다.
+- OpenAI를 부르는 실행은 메인 세션이 "사용자 승인을 받았다"와 요청 수를 명시했을 때 `work.sh run --llm-approved <요청 수>`로만 한다(안에서 `scripts/dev/run-llm-smoke.sh --expect-requests`를 부른다). 키는 스크립트가 다룬다. 키가 드러날 수 있는 명령(`env`, `printenv`, `set -x`, `bash -x`, `docker inspect`, `docker compose config`를 `-q` 없이)을 쓰지 않는다. OpenAI를 실제로 부르는 테스트는 만들지 않는다.
 
 ## 단계
 
@@ -57,7 +57,7 @@ skills:
 
 ### 2. 테스트 커밋 시점 실행(버그 수정·리팩터링)
 
-메인 세션이 1단계의 테스트를 커밋한 뒤 부른다. 자기 테스트만 돌려 `NN-runner-test/`에 기록한다(아래 "실행과 기록"). 버그 수정은 실패, 리팩터링은 통과가 맞다. 결과가 예상대로인지, 버그 수정이면 실패 메시지가 버그 증상과 같은지(테스트 준비 코드의 실수처럼 엉뚱한 이유로 실패하지 않았는지)를 답으로 돌려준다.
+메인 세션이 1단계의 테스트를 커밋한 뒤 부른다. `work.sh run <작업 폴더> --name test --only <항목>`으로 자기 테스트만 돌려 기록한다(아래 "실행과 기록". 백엔드면 `--only backend-test --tests '<자기 테스트 클래스>'`). 버그 수정은 실패, 리팩터링은 통과가 맞다. 결과가 예상대로인지, 버그 수정이면 실패 메시지가 버그 증상과 같은지(테스트 준비 코드의 실수처럼 엉뚱한 이유로 실패하지 않았는지)를 답으로 돌려준다.
 
 ### 3. 시나리오를 테스트로 옮기기(새 기능, 구현 커밋 뒤)
 
@@ -70,57 +70,29 @@ skills:
 
 메인 세션이 구현(새 기능은 3단계 테스트까지)을 커밋한 뒤 부른다.
 
-1. 바뀐 영역의 확인을 실행해 기록한다(아래 "실행과 기록"). 기록 폴더 이름은 새 기능의 첫 실행이면 `NN-runner-test/`(3단계 테스트의 커밋 시점 기록), 버그 수정·리팩터링의 첫 실행이면 `NN-runner-impl/`, 고친 뒤면 `NN-runner-fix/`다.
+1. `work.sh run <작업 폴더> --name <이름>`으로 실행 기록을 남긴다(아래 "실행과 기록"). 이름은 새 기능의 첫 실행이면 `test`(3단계 테스트의 커밋 시점 기록), 버그 수정·리팩터링의 첫 실행이면 `impl`, 고친 뒤면 `fix`다.
 2. `bash scripts/dev/work.sh diff <작업 폴더>`로 변경분을 만든다. 끝 커밋은 방금 남긴 기록의 커밋이 된다.
-3. 아래 "확인할 것"대로 읽고, 보고를 `NN-qa-verify.md`로 쓴다.
+3. `bash scripts/dev/work.sh check <작업 폴더>`로 기록을 대조한다(변경분을 만든 뒤에 돌린다. 가장 큰 기록의 커밋을 가장 최근 변경분과 대조한다).
+4. 아래 "확인할 것"대로 읽고, 보고를 `NN-qa-verify.md`로 쓴다.
 
 ## 실행과 기록
 
-- 실행하기 전에 `git status --short`가 비어 있는지 본다. 비어 있지 않으면 실행하지 말고 보고한다. 커밋 번호 하나로 어떤 코드를 돌린 기록인지 정해지게 하려는 것이다.
-- 기록 폴더는 작업 폴더(자식 폴더를 받았으면 그 자식 폴더) 바로 아래에 실행마다 새로 만들고, 이름은 반드시 `NN-runner-<무엇>/`(두 자리 번호)이다. 이름의 `runner`는 "실행 기록"이라는 뜻으로 남긴 것이다. `private/.gitignore`와 `scripts/dev/work.sh`가 이 이름으로 원본 기록과 테스트 커밋을 가려낸다.
-- 항목마다 파일 하나를 만든다(`backend-test.txt` 등). 각 파일 첫 줄에 실행한 명령, `git rev-parse HEAD`, `git status --short`의 줄 수를 적는다. 출력은 자르지 않고 저장한다. 보고에는 요약만 쓴다.
-- 기록 폴더 바로 아래에 `summary.txt`를 쓴다. 첫 줄에 `git rev-parse HEAD`와 `git status --short`의 줄 수, 그 아래에 항목마다 통과·실패와 기록 파일 이름을 한 줄씩 적는다. 원본 기록은 대부분 git에 들어가지 않는다(LLM 회귀의 `latest.json`·`feedback-diagnosis-logs.tsv`와 스크립트의 `summary.txt`는 예외). 다른 컴퓨터에서는 이 파일로 항목별 결과와 커밋 번호를 본다.
-- 무엇을 돌릴지는 바뀐 영역(`git diff --stat <기준 커밋>..HEAD`)과 `work-process`의 에이전트 절과 "변경 종류별로 더 할 것"으로 정한다. 메인 세션이 돌린 결과는 기록으로 치지 않고 직접 돌린다.
-- 각 항목은 따로 실행하고 따로 기록한다. 앞 항목이 실패해도 나머지를 실행한다.
+공식 실행 기록은 `work.sh run`으로만 남긴다. 돌릴 확인 고르기(바뀐 경로), 커밋하지 않은 변경이 있으면 거부, 기록 폴더(`NN-runner-<이름>/`)와 항목별 기록 파일·`summary.txt`, Docker 켜기, 백엔드 테스트의 `./gradlew --rerun`을 도구가 한다(2026-10-31, 034).
 
-항목별 실행 방법:
+```
+cd /c/WriteLoop && bash scripts/dev/work.sh run <작업 폴더> --name <이름> [--only <항목>[,<항목>...]] [--tests <패턴>]... [--db-tables <a,b>] [--db-api <요청 파일>] [--llm-approved <요청 수>] [--llm-cases <파일>]...
+```
 
-- 백엔드 테스트: `cd /c/WriteLoop/apps/backend && ./gradlew test --no-daemon --rerun` (시간 제한 600000ms). `--rerun`이 없으면 앞 실행의 결과가 남아 있을 때 Gradle이 테스트를 돌리지 않고 넘어간다(`:test UP-TO-DATE`, 2026-10-29 확인). Bash에서는 `gradlew.bat`이 아니라 `./gradlew`를 쓴다. Git Bash에서 `gradlew.bat`은 테스트가 실패해도 종료 코드 0을 돌려준다(2026-10-29 확인). 통합 테스트가 Docker를 쓰므로 먼저 `bash scripts/dev/ensure-docker.sh`를 돌린다. 자기 테스트만 돌릴 때는 `--tests '<테스트 클래스>'`를 붙인다. 실패 상세는 `build/test-results/test/TEST-*.xml`에 있다.
-- 채점 규칙 테스트: `cd /c/WriteLoop && node --test scripts/feedback-quality/rules.test.mjs`
-- 웹 빌드: `cd /c/WriteLoop && npm.cmd run build --workspace @english-learning/frontend`
-- 모바일 타입 검사: `cd /c/WriteLoop/apps/mobile && npm.cmd run typecheck`
-- 모바일 lint: `cd /c/WriteLoop/apps/mobile && npm.cmd run lint`
-- 마이그레이션 확인과 로컬 API 호출:
-  ```
-  cd /c/WriteLoop && bash scripts/dev/check-db-migrations.sh --out <기록 폴더>/db [--tables a,b] [--api <요청 파일>]
-  ```
-  (시간 제한 600000ms. 보통 1~2분이고, 컨테이너 이미지를 처음 받으면 더 걸린다)
-  - 스크립트가 하는 일:
-    - 임시 MySQL·Redis 컨테이너를 띄운다.
-    - 빈 DB와 기존 DB(기준선 107) 각각에서 백엔드를 띄운다.
-    - Flyway 기록, 테이블 구조, 뷰 상태, 운영 배포와 같은 방식의 백업 결과를 남긴다.
-    - 끝나면 컨테이너와 백엔드를 정리한다.
-  - `--tables`에는 이번 마이그레이션이 바꾼 테이블을 변경분에서 찾아 넣는다.
-  - `--api`로 넘긴 요청은 빈 DB로 띄운 백엔드에 보내고 요청과 응답을 `api.txt`에 남긴다.
-    - 요청 파일은 한 줄에 `METHOD PATH [JSON 본문]` 형식이다. 명세의 API 중 로그인 없는 것을 골라 기록 폴더에 저장해서 넘긴다.
-    - 로그인 없는 API만 부를 수 있다.
-- LLM 회귀(6건과 겨냥 케이스):
-  ```
-  cd /c/WriteLoop && bash scripts/dev/run-llm-smoke.sh --out <기록 폴더>/llm [--cases <겨냥 케이스 파일>]
-  ```
-  (시간 제한 600000ms. 6건만이면 보통 3~4분. 합친 요청 수가 16을 넘으면 시간 제한에 걸려 정리가 돌지 않을 수 있으니 돌리지 말고 보고한다)
-  - 먼저 `--dry-run`을 붙여 케이스 형식과 요청 수를 확인하고, 메인 세션이 말한 요청 수(케이스 파일을 모두 합친 수)와 같을 때만 실제로 돌린다. 다르면 돌리지 말고 보고한다.
-  - 리포트(`reports/<케이스 파일 이름>/latest.json`)와 피드백 원문(`feedback-diagnosis-logs.tsv`)이 기록 폴더에 남는다. `summary.txt`에 케이스 파일 sha256과 실제로 쓴 모델이 남는다.
-- 설정 문법 검사(운영 설정이 바뀌었을 때):
-  - compose: `cd /c/WriteLoop && docker compose config -q`
-  - 운영 스크립트: `cd /c/WriteLoop && for f in scripts/ops/*.sh; do bash -n "$f" || echo "FAIL $f"; done`
-  - 워크플로: `cd /c/WriteLoop && MSYS_NO_PATHCONV=1 docker run --rm -v "$(pwd -W)":/repo -w /repo rhysd/actionlint:1.7.7 -no-color`
-  - nginx: 메인 세션이 명령을 준 경우에만 돌린다. 인증서 경로 때문에 로컬에서 바로 검사되지 않을 수 있다.
-- Claude 설정 검사(`.claude/hooks`, `.claude/settings.json`이 바뀌었을 때): `cd /c/WriteLoop && python -c "import ast, sys; [ast.parse(open(p, encoding='utf-8').read(), p) for p in sys.argv[1:]]" .claude/hooks/*.py && node -e "for (const f of ['.claude/settings.json']) JSON.parse(require('fs').readFileSync(f, 'utf8'))"`
-- 백엔드 기동 확인(`application*.yml`이나 빈 구성이 바뀌었을 때): 마이그레이션 확인과 같은 `check-db-migrations.sh`를 돌린다. 빈 DB와 기존 DB 기동 결과가 그 확인이다.
-- `scripts/dev`의 두 스크립트는 컨테이너 이름과 포트(3307, 6380, 18080)가 같아 한 번에 하나만 돌린다. 다른 확인이 돌고 있거나 포트가 이미 쓰이고 있으면 스크립트가 FAIL로 끝난다. 그대로 보고한다.
-- 스크립트를 돌렸으면 정리가 끝났는지 본다: `docker ps -a`에 `wl-check-`가 없고, `netstat -ano`에 18080을 LISTENING하는 프로세스가 없는지.
-- 실행하지 못한 항목(Docker 꺼짐, 포트 충돌, 도구 없음 등)은 이유와 함께 보고한다. 통과로 적지 않는다.
+- 시간 제한은 600000ms다. 마이그레이션 확인이나 LLM 회귀가 들어가 더 걸릴 것 같으면 백그라운드로 돌리고 끝난 뒤 `summary.txt`를 읽는다.
+- 항목은 도구가 기준 커밋부터 바뀐 경로로 고른다(`scripts/dev/work.sh`의 `path_items`). 2단계처럼 일부만 돌릴 때는 `--only`를 준다(`backend-test`, `db-check`, `rules-test`, `script-tests`, `web-build`, `mobile-typecheck`, `mobile-lint`, `actionlint`, `ops-syntax`, `compose-config`, `claude-config`).
+- 마이그레이션이 바뀌었으면 `--db-tables`에 바꾼 테이블을 변경분에서 찾아 준다. 로컬 API 호출이 필요하면 명세의 로그인 없는 API를 한 줄에 `METHOD PATH [JSON 본문]`으로 적은 요청 파일을 작업 폴더에 두고 `--db-api`로 준다.
+- LLM 회귀는 메인 세션이 "사용자 승인을 받았다"와 요청 수를 명시했을 때만 `--llm-approved <요청 수>`(겨냥 케이스는 `--llm-cases <파일>`)를 준다. 도구가 `run-llm-smoke.sh --expect-requests`로 넘기고, 케이스의 요청 수가 다르면 OpenAI를 부르지 않고 FAIL로 끝난다. 합친 요청 수가 16을 넘으면 시간 제한에 걸리니 돌리지 말고 보고한다.
+- `summary.txt`를 읽고 판단한다. FAIL은 그 항목의 기록 파일을 열어 원인을 본다. `NEEDS`(돌리지 않았지만 필요할 수 있는 확인: LLM 회귀, nginx)와 `NOTE unmatched`(경로 표에 없는 경로)는 보고에 적고, 필요한 확인이면 메인 세션에 알린다.
+- 종료 코드: 0 모두 OK, 1 FAIL이 있음, 3 FAIL 없이 NEEDS가 있음, 2 거부(커밋하지 않은 변경, 다른 run이 도는 중, 옵션 잘못). 거부되면 기록 폴더가 생기지 않는다.
+- 도구가 돌리지 않는 확인: nginx 문법은 메인 세션이 명령을 준 경우에만 손으로 돌린다(인증서 경로 때문에 로컬에서 바로 검사되지 않을 수 있다). 손으로 돌린 확인은 공식 기록이 아니므로 보고에 명령과 결과를 적는다.
+- 실행하지 못한 항목(Docker를 켜지 못함, 포트 충돌, 도구 없음 등)은 FAIL로 남는다. 통과로 적지 않고 원인을 보고한다.
+- 마이그레이션 확인이나 LLM 회귀를 돌렸으면 정리가 끝났는지 본다: `docker ps -a`에 `wl-check-`가 없고, `netstat -ano`에 18080을 LISTENING하는 프로세스가 없는지.
+- 메인 세션이 구현 중에 돌린 결과는 기록으로 치지 않는다.
 
 ## 테스트 쓰는 법
 
@@ -137,18 +109,18 @@ skills:
   - 인터페이스를 mock한다(`CoachBatchAuditTest`의 `LlmCoachClient`).
   - `OpenAiFeedbackClientTest`처럼 `com.sun.net.httpserver.HttpServer`로 가짜 서버를 띄우고 `"test-key"`를 넣는다.
 - 기대값을 느슨하게 잡아 아무 결과나 통과하게 만들지 않는다. 명세가 "결과는 3"이면 `isEqualTo(3)`이어야 한다.
-- 백엔드 테스트 하나를 돌릴 때: `cd /c/WriteLoop/apps/backend && ./gradlew test --tests '<테스트 클래스>'`. 첫 컴파일이 오래 걸리니 시간 제한을 넉넉히(300000ms) 준다.
+- 테스트를 쓰는 중에 하나만 돌려 볼 때(기록 아님): `cd /c/WriteLoop/apps/backend && ./gradlew test --rerun --tests '<테스트 클래스>'`. 통합 테스트면 먼저 `bash scripts/dev/ensure-docker.sh`를 돌린다. 첫 컴파일이 오래 걸리니 시간 제한을 넉넉히(300000ms) 준다.
 
 ## 확인할 것(4단계)
 
-- 실행 기록이 맞는 코드로 돌린 것인지 본다. 다시 검증하거나 앞 기록과 함께 판단할 때 특히 본다.
-  - 번호가 가장 큰 실행 기록의 HEAD는 가장 최근 전체 변경분의 HEAD와 같아야 한다.
+- 기록 대조는 `work.sh check` 결과로 본다. FAIL 줄은 확실한 문제로 보고한다.
+  - 시나리오와 겨냥 회귀 케이스가 `private`에 한 번만, 첫 구현 커밋(문서·지침만 바꾼 커밋은 뺀다)보다 먼저 커밋됐는가.
+  - 겨냥 케이스 sha256이 1단계 보고와 LLM 실행 기록에 남은 값과 같은가.
+  - 실행 기록마다 커밋하지 않은 변경이 0인가. 번호가 가장 큰 실행 기록의 커밋이 가장 최근 전체 변경분의 HEAD와 같은가.
+- `work.sh check`가 보지 않는 것은 직접 본다.
+  - 테스트 커밋 시점 기록(`-runner-test/`)의 HEAD가 테스트 커밋과 같은가.
   - 구현 기록 뒤에 테스트를 더한 기록(`-runner-test…/`)이 가장 크면, 구현 기록 뒤에 테스트 파일만 바뀌었는지 보고, 그 테스트 기록과 앞 구현 기록을 합쳐 지금 코드의 확인이 빠짐없는지 본다.
-  - 테스트 커밋 시점 기록(`-runner-test/`)의 HEAD는 테스트 커밋과 같아야 한다.
-  - 위에서 본 기록 모두 커밋하지 않은 변경 수가 0이어야 한다.
-  - 다르면 다른 코드로 돌린 기록이므로 미확인으로 보고한다.
-- 기대 결과가 구현 전에 고정됐는가.
-  - 새 기능의 시나리오 파일과 겨냥 회귀 케이스는 `private`에 한 번만 커밋됐고(`git -C <private 폴더> log --format='%H %cI' -- <파일>`), 그 시각이 이번 작업의 첫 구현 커밋(`git log --reverse --format='%H %cI' <기준 커밋>..<끝 커밋>`에서 찾는다)보다 앞서야 한다. 아니면 확실한 문제로 보고한다.
+  - 다른 코드로 돌린 기록이면 미확인으로 보고한다.
   - 3단계 테스트의 기대값이 시나리오와 같은가.
 - 바뀐 줄만 보지 않는다. 바뀐 함수를 부르는 곳과 영향을 받는 곳도 찾아 읽는다.
 - 작업 종류별:

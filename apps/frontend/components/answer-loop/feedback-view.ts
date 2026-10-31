@@ -97,32 +97,32 @@ export function deriveFeedbackView({
       ? coachMove.suggestedPhrases.map(normalizeSuggestedPhrase).filter((phrase) => phrase !== null).slice(0, 6)
       : [];
 
-    function resolveLoopStatus(): FeedbackLoopStatus | null {
-      if (!feedback) {
-        return null;
-      }
-
-      return (
-        feedback.ui?.loopStatus ?? {
-          badge: feedback.loopComplete ? "루프 완료 가능" : "다시 써보기 추천",
-          headline:
-            feedback.completionMessage?.trim() ??
-            (feedback.loopComplete
-              ? "지금 단계에서 마무리해도 괜찮아요."
-              : "지금은 한 가지만 먼저 고쳐서 다시 써 보세요."),
-          supportText: feedback.loopComplete
-            ? "원하면 한 번 더 다듬어 볼 수 있어요."
-            : "위 starter를 바탕으로 바로 다시 써 볼 수 있어요.",
-          rewriteCtaLabel: feedback.loopComplete
-            ? hasEnrichment
-              ? "이 내용 넣어서 다시 써 보기"
-              : "그래도 더 다듬어서 써보기"
-            : "다시 써보기",
-          finishCtaLabel: feedback.loopComplete ? "오늘 루프 완료하고 도장 받기" : null,
-          cancelCtaLabel: "답변 취소"
-        }
-      );
+  function resolveLoopStatus(): FeedbackLoopStatus | null {
+    if (!feedback) {
+      return null;
     }
+
+    return (
+      feedback.ui?.loopStatus ?? {
+        badge: feedback.loopComplete ? "루프 완료 가능" : "다시 써보기 추천",
+        headline:
+          feedback.completionMessage?.trim() ??
+          (feedback.loopComplete
+            ? "지금 단계에서 마무리해도 괜찮아요."
+            : "지금은 한 가지만 먼저 고쳐서 다시 써 보세요."),
+        supportText: feedback.loopComplete
+          ? "원하면 한 번 더 다듬어 볼 수 있어요."
+          : "위 starter를 바탕으로 바로 다시 써 볼 수 있어요.",
+        rewriteCtaLabel: feedback.loopComplete
+          ? hasEnrichment
+            ? "이 내용 넣어서 다시 써 보기"
+            : "그래도 더 다듬어서 써보기"
+          : "다시 써보기",
+        finishCtaLabel: feedback.loopComplete ? "오늘 루프 완료하고 도장 받기" : null,
+        cancelCtaLabel: "답변 취소"
+      }
+    );
+  }
 
   return {
     feedbackLevel,

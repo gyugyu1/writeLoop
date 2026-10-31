@@ -13,6 +13,9 @@ description: WriteLoop 운영 배포와 장애 대응. 사용자가 "푸시해"�
 - 실패하는 테스트 커밋만 있고 구현이 없는 상태로는 push하지 않는다.
 - 마이그레이션이 든 커밋은 마이그레이션 확인이 모두 OK가 되기 전에는 push하지 않는다.
 - 문서만 바뀐 push(`docs/**`, `**/*.md`, `.claude/**`)는 CI와 배포가 돌지 않는다.
+- 마지막 운영 배포 뒤로 개발 도구(`scripts/dev`)·채점 규칙(`scripts/feedback-quality`, `scripts/run-feedback-quality-check.mjs`)·모바일(`apps/mobile`)·문서만 바뀌었으면 CI는 돌고 이미지·배포는 건너뛴다(ADR-0015).
+  - push 전에 배포가 도는지 알린다. 미리 보기: `bash scripts/dev/deploy-needed.sh "$(bash scripts/dev/last-deployed-sha.sh gyugyu1/writeLoop)" <push할 커밋>`.
+  - push 뒤에는 CI 로그의 "배포 필요 판단" 줄(`base=… deploy=… (이유)`)과 이미지·배포 job의 skipped를 보고 보고한다. 배포를 건너뛰었으면 Flyway·`/health` 확인은 하지 않는다.
 
 ## 운영 서버 접속과 push 뒤 확인
 
@@ -26,7 +29,7 @@ description: WriteLoop 운영 배포와 장애 대응. 사용자가 "푸시해"�
 - 배포(ADR-0015):
   - main push → GitHub Actions가 테스트하고 이미지를 GHCR에 올린 뒤, `deploy.yml`이 서버에서 `scripts/ops/deploy.sh`를 실행한다.
   - `deploy.sh`가 DB 백업, 이미지 받기, 재시작, 기동 확인을 한다. Flyway 마이그레이션은 백엔드가 기동할 때 적용된다.
-  - 재배포·롤백은 Actions의 `Deploy` 워크플로를 커밋 SHA로 직접 실행한다. CI가 이미지를 올린 커밋만 된다.
+  - 재배포·롤백은 Actions의 `Deploy` 워크플로를 커밋 SHA로 직접 실행한다. CI가 이미지를 올린 커밋만 된다. 배포를 건너뛴 커밋은 이미지가 없으니 그 앞의 배포된 커밋을 쓴다.
   - `deploy.sh`는 Redis를 다시 만들지 않는다. 모바일 로그인 유지 토큰이 Redis에만 있으니 Redis 볼륨을 지우지 않고, Redis 설정 변경은 README 절차로 직접 적용한다.
 - 장애 대응:
   - 먼저 운영 로그와 DB를 조회해 원인을 확인한다. 사용자에게 선택지(직전 SHA로 롤백, 수정 배포, 운영 DB 직접 조치)와 각각의 위험을 알리고, 사용자가 고른 뒤 조치한다.

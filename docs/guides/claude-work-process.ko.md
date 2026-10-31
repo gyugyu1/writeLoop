@@ -152,7 +152,7 @@ qa의 테스트는 이름으로 가린다: 백엔드는 `...SpecTest`, 채점 �
 | 권한 설정(`.claude/settings.json`) | push는 승인을 받고, 비밀 파일은 읽지 못한다 |
 | `scripts/dev/work.sh` | `new`(작업 폴더), `next`(다음 번호), `diff`(변경분), `status`(진행 상태), `run`(바뀐 경로로 검사를 골라 실행하고 기록), `check`(기록 대조) |
 | `scripts/dev/ensure-docker.sh` | Docker가 꺼져 있으면 켠다. 실행 도구와 확인 스크립트가 알아서 부른다 |
-| CI(`.github/workflows/ci.yml`) | push 뒤 테스트(실제 DB 통합 테스트 포함), 빌드, 마이그레이션 확인, 문법 검사를 돌리고, 모두 통과해야 운영에 배포한다 |
+| CI(`.github/workflows/ci.yml`) | push 뒤 테스트(실제 DB 통합 테스트 포함), 빌드, 마이그레이션 확인, 문법 검사를 돌리고, 모두 통과해야 운영에 배포한다. 마지막 배포 뒤로 개발 도구·채점 규칙·모바일·문서만 바뀌었으면 배포는 건너뛴다 |
 
 ## 7. 사용자에게 묻는 때
 

@@ -535,8 +535,9 @@ npm run build:frontend
 ```bash
 # 비용 없이 케이스 형식과 예상 호출 수만 확인
 bash scripts/dev/run-llm-smoke.sh --out <저장소 밖이나 git이 무시하는 결과 폴더> --dry-run
-# 실제 실행(OpenAI 호출 비용 발생). 겨냥 케이스 파일을 더할 수 있습니다
-bash scripts/dev/run-llm-smoke.sh --out <저장소 밖이나 git이 무시하는 결과 폴더> [--cases <케이스 파일>]
+# 실제 실행(OpenAI 호출 비용 발생). 위에서 센 요청 수를 승인받아 --expect-requests로 줍니다. 수가 다르면 OpenAI를 부르지 않고 멈춥니다.
+# 겨냥 케이스 파일을 더할 수 있습니다(요청 수는 모든 케이스 파일을 합친 수)
+bash scripts/dev/run-llm-smoke.sh --out <저장소 밖이나 git이 무시하는 결과 폴더> --expect-requests <승인받은 요청 수> [--cases <케이스 파일>]
 ```
 
 결과 폴더에 채점 리포트(케이스 파일마다 `reports/<케이스 파일 이름>/latest.json`)와 피드백 원문(`feedback-diagnosis-logs.tsv`)이 남고, `summary.txt`에 케이스 파일 해시와 실제로 쓴 모델이 남습니다. 요청 하나에 OpenAI 호출이 재시도까지 1~3번 생길 수 있습니다. 케이스가 쓰는 질문 중 운영에서 비활성화된 질문은 임시 DB에서만 활성화합니다(비활성 질문으로 요청하면 백엔드가 다른 질문으로 바꿔 평가가 어긋납니다).

@@ -83,10 +83,12 @@ EOF
 }
 
 # $1 스크립트 이름, $2 사례 폴더. 종료 코드는 RC, summary.txt는 $2/out/summary.txt.
+# run-llm-smoke.sh는 실제로 돌릴 때 승인받은 요청 수가 있어야 하므로 가짜 node가 내는 6을 준다(034 결정 T).
 run_script() {
-  local script=$1 dir=$2
+  local script=$1 dir=$2 extra=()
+  [ "$script" = run-llm-smoke.sh ] && extra=(--expect-requests 6)
   (cd "$dir/root" && FAKE_DOCKER_DIR="$dir" PATH="$dir/bin:$SAFE_PATH" \
-    timeout 300 bash "$dir/root/scripts/dev/$script" --out "$dir/out") > "$dir/run.txt" 2>&1
+    timeout 300 bash "$dir/root/scripts/dev/$script" --out "$dir/out" "${extra[@]}") > "$dir/run.txt" 2>&1
   RC=$?
 }
 

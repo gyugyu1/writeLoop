@@ -22,6 +22,8 @@ describe("AppDownloadPrompt", () => {
   });
 
   it("잠시 뒤 안내가 뜨고, 웹으로 계속하기를 누르면 닫히며 닫은 시각을 남긴다", async () => {
+    const closedAt = new Date("2026-10-31T09:00:00Z");
+    vi.setSystemTime(closedAt);
     render(<AppDownloadPrompt />);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 
@@ -31,12 +33,14 @@ describe("AppDownloadPrompt", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
     // Testing Library는 조작 뒤 setTimeout(0)을 기다리는데, Vitest의 가짜 타이머에서는 그 타이머가 돌지 않아 멈춘다.
-    // 그래서 조작은 진짜 타이머로 한다.
+    // 그래서 조작은 진짜 타이머로 하되, 닫은 시각을 정확히 보려고 시계만 고정한다(타이머는 진짜로 돈다).
     vi.useRealTimers();
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(closedAt);
     const user = userEvent.setup();
     await user.click(screen.getByRole("button", { name: "웹으로 계속하기" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    expect(window.localStorage.getItem(DISMISSED_STORAGE_KEY)).not.toBeNull();
+    expect(window.localStorage.getItem(DISMISSED_STORAGE_KEY)).toBe(String(closedAt.getTime()));
   });
 
   it("하루 안에 닫았으면 다시 뜨지 않는다", () => {

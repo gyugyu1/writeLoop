@@ -26,7 +26,7 @@ while [ $# -gt 0 ]; do
     --out) OUT=$2; shift 2 ;;
     --cases) CASES+=("$2"); shift 2 ;;
     --dry-run) DRY_RUN=1; shift ;;
-    --expect-requests) EXPECT=${2:-}; shift 2 ;;
+    --expect-requests) [ -n "${2:-}" ] || { echo "--expect-requests needs a value" >&2; exit 2; }; EXPECT=$2; shift 2 ;;
     *) echo "unknown argument: $1" >&2; exit 2 ;;
   esac
 done

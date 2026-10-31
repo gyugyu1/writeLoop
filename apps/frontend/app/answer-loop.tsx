@@ -67,7 +67,7 @@ import { MonthStatusModal } from "../components/answer-loop/month-status-modal";
 import { useMonthStatus } from "../components/answer-loop/use-month-status";
 import { useSavedExpressions } from "../components/answer-loop/use-saved-expressions";
 import { CoachAssistantModal } from "../components/answer-loop/coach-assistant-modal";
-import { useCoachAssistant } from "../components/answer-loop/use-coach-assistant";
+import { useCoachAssistant, useCoachAssistantDialogEffect } from "../components/answer-loop/use-coach-assistant";
 import { trimNullable, pickFirstNonEmpty, countWords } from "../lib/text";
 import { normalizeSuggestedPhrase, hasCoachMove, isCoachMoveComparison, isDirectCorrectionCoachMove, canBuildCoachMoveDiff } from "../lib/coach-move";
 import { buildRelatedPromptRecommendations } from "../lib/prompt-recommendations";
@@ -566,6 +566,7 @@ export function AnswerLoop() {
   }, []);
 
   const monthStatusModal = useMonthStatus(currentUser, todayStatus);
+  useCoachAssistantDialogEffect(coach);
 
   useEffect(() => {
     if (

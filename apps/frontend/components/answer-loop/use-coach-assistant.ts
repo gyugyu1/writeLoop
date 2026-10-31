@@ -9,6 +9,7 @@ type CoachStep = "pick" | "answer" | "feedback" | "rewrite" | "complete";
 
 // 웹 주 화면의 AI 코치 도우미(표현 물어보기). 코치 창 열림, 질문, 코치 응답, 답 제출 뒤 코치 표현 사용량을 맡는다.
 // 창을 닫거나 비우는 일은 다른 흐름(질문 바꾸기, 초안 복구, 답 제출 등)도 하므로 close·reset을 함께 준다.
+// 코치 창이 열린 동안의 Escape·스크롤 잠금·포커스는 useCoachAssistantDialogEffect가 따로 맡는다.
 export function useCoachAssistant() {
   const [showCoachAssistant, setShowCoachAssistant] = useState(false);
   const [coachQuestion, setCoachQuestion] = useState("");
@@ -19,36 +20,6 @@ export function useCoachAssistant() {
   const [, setIsCheckingCoachUsage] = useState(false);
   const promptInputRef = useRef<HTMLTextAreaElement | null>(null);
   const dialogCloseButtonRef = useRef<HTMLButtonElement | null>(null);
-
-  useEffect(() => {
-    if (!showCoachAssistant || typeof document === "undefined" || typeof window === "undefined") {
-      return;
-    }
-
-    const previousActiveElement = document.activeElement as HTMLElement | null;
-    const previousOverflow = document.body.style.overflow;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setShowCoachAssistant(false);
-      }
-    };
-
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-    window.requestAnimationFrame(() => {
-      promptInputRef.current?.focus();
-    });
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
-      if (previousActiveElement && typeof previousActiveElement.focus === "function") {
-        window.requestAnimationFrame(() => {
-          previousActiveElement.focus();
-        });
-      }
-    };
-  }, [showCoachAssistant]);
 
   // 효과와 콜백의 의존성에 넣어도 다시 실행되지 않게 고정한다.
   const open = useCallback(() => setShowCoachAssistant(true), []);
@@ -196,3 +167,43 @@ export function useCoachAssistant() {
 }
 
 export type CoachAssistantState = ReturnType<typeof useCoachAssistant>;
+
+// 코치 창이 열린 동안의 Escape 닫기·본문 스크롤 잠금·질문 입력칸 포커스·닫힌 뒤 포커스 되돌리기.
+// 다른 창(월 학습 현황, 도움말 등)도 본문 스크롤을 잠그고 되돌리므로, 효과의 실행 순서가 바뀌면 함께 닫힐 때
+// 되돌리는 값이 달라질 수 있다. 그래서 상태 훅과 떼어, AnswerLoop에서 예전 효과 자리(월 학습 현황 훅 다음)에 부른다.
+export function useCoachAssistantDialogEffect({
+  isOpen,
+  close,
+  promptInputRef
+}: Pick<CoachAssistantState, "isOpen" | "close" | "promptInputRef">) {
+  useEffect(() => {
+    if (!isOpen || typeof document === "undefined" || typeof window === "undefined") {
+      return;
+    }
+
+    const previousActiveElement = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        close();
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+    window.requestAnimationFrame(() => {
+      promptInputRef.current?.focus();
+    });
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+      if (previousActiveElement && typeof previousActiveElement.focus === "function") {
+        window.requestAnimationFrame(() => {
+          previousActiveElement.focus();
+        });
+      }
+    };
+    // close·promptInputRef는 렌더마다 같은 값이라, 예전처럼 열림이 바뀔 때만 다시 돈다.
+  }, [isOpen, close, promptInputRef]);
+}

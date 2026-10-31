@@ -40,7 +40,7 @@ Chosen option: "GitHub Actions 빌드 + GHCR + main push 후 자동 배포", bec
   * 다만 마지막으로 운영 배포에 성공한 커밋 뒤로 바뀐 경로가 모두 배포와 무관하면(문서, `scripts/dev/`, `scripts/feedback-quality/`, `scripts/run-feedback-quality-check.mjs`, `apps/mobile/`) 테스트·검사만 돌리고 이미지와 배포는 건너뛴다(2026-10-31 추가). 운영 이미지에는 `apps/backend`와 `package*.json`·`apps/frontend`만 들어가므로, 개발 도구만 고쳐도 DB 백업과 재시작이 일어나던 것을 없앤다.
     * 비교 시작은 GitHub `production` 환경의 배포 기록에서 마지막으로 성공한 배포의 커밋이다. 직전 push와 비교하면, 앞 push가 CI 실패·취소·배포 실패로 배포되지 않았을 때 그 앱 변경이 CI는 통과한 채 빠진다.
     * 비교 시작은 `scripts/dev/last-deployed-sha.sh`가 찾고, 판단은 `scripts/dev/deploy-needed.sh`가 한다. 마지막 성공 배포를 찾지 못하거나 판단이 실패하면 배포한다. 판단 job이 스크립트를 부르기 전에 실패하면 CI 실행이 실패로 끝나고 배포는 돌지 않는다.
-    * 이 경로들도 CI 검사는 돈다(마이그레이션 확인이 `scripts/dev/check-db-migrations.sh`를 쓴다).
+    * 이 경로들도 CI 검사는 돈다(마이그레이션 확인이 `scripts/dev/check-db-migrations.sh`를 쓴다). 판단 스크립트의 테스트(`scripts/dev/tests/deploy-needed.test.sh`)도 설정 문법 검사 job에서 돌아, 목록을 잘못 넓히는 변경이 그 push에서 실패로 드러난다.
     * 수동 `Deploy`로 롤백한 뒤에는 개발 도구만 바뀐 push로 최신 코드가 다시 올라가지 않을 수 있다. 다음 앱 변경 push에서 배포된다.
 * `.github/workflows/deploy.yml`
   * 저장소 시크릿의 SSH 키로 운영 서버에 접속한다.

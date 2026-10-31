@@ -119,6 +119,10 @@ jobs:
           failed=0
           for f in scripts/ops/*.sh; do bash -n "$f" || { echo "FAIL $f"; failed=1; }; done
           exit $failed
+      # 배포와 무관한 경로 목록을 잘못 넓히면, 그 push는 scripts/dev만 바뀌어 배포를 건너뛰고 뒤의 앱 변경이
+      # 조용히 배포되지 않는다. 판단 스크립트를 바꾸는 push에서 바로 잡히게 여기서 시험한다.
+      - name: 배포 판단 스크립트 테스트
+        run: bash scripts/dev/tests/deploy-needed.test.sh
 
   feedback-rules-test:
     name: 피드백 채점 규칙 테스트

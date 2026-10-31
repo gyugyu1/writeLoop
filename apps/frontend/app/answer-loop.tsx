@@ -16,7 +16,6 @@ import {
   checkCoachExpressionUsage,
   ApiError,
   completeFeedbackSession,
-  deleteSavedExpression,
   deleteWritingDraft,
   getFeaturedDailyPrompt,
   getCurrentUser,
@@ -24,10 +23,8 @@ import {
   getMonthStatus,
   getPrompts,
   getPromptHints,
-  getSavedExpressions,
   getTodayWritingStatus,
   getWritingDraft,
-  saveExpression,
   saveWritingDraft,
   requestCoachHelp,
   submitFeedback,
@@ -68,16 +65,15 @@ import type {
   HomeFlowStep,
   Prompt,
   PromptHint,
-  SavedExpressionSourceType,
   TodayWritingStatus,
   WritingDraft,
   WritingDraftType
 } from "../lib/types";
 import { MonthStatusModal } from "../components/answer-loop/month-status-modal";
 import { useMonthStatus } from "../components/answer-loop/use-month-status";
+import { useSavedExpressions } from "../components/answer-loop/use-saved-expressions";
 import { trimNullable, pickFirstNonEmpty, countWords } from "../lib/text";
 import { normalizeSuggestedPhrase, hasCoachMove, isCoachMoveComparison, isDirectCorrectionCoachMove, canBuildCoachMoveDiff } from "../lib/coach-move";
-import { normalizeSavedExpressionKey, normalizeExpressionTagList, buildSavedExpressionIdMap } from "../lib/saved-expressions";
 import { buildRelatedPromptRecommendations } from "../lib/prompt-recommendations";
 import { parseLocalDate, addDays, formatDateKey, buildWelcomeWeek, MonthView, createMonthView } from "../lib/writing-calendar";
 import { WritingGuideHintItem, getWritingGuide } from "../lib/writing-guide";
@@ -312,10 +308,6 @@ export function AnswerLoop() {
   const [isLoadingCoachHelp, setIsLoadingCoachHelp] = useState(false);
   const [coachUsage, setCoachUsage] = useState<CoachUsageCheckResponse | null>(null);
   const [, setIsCheckingCoachUsage] = useState(false);
-  const [savedExpressionIdsByKey, setSavedExpressionIdsByKey] = useState<Record<string, number>>({});
-  const [savingExpressionKeys, setSavingExpressionKeys] = useState<string[]>([]);
-  const [expressionSaveNotice, setExpressionSaveNotice] = useState("");
-  const [expressionSaveError, setExpressionSaveError] = useState("");
   const [practiceExpressionHint, setPracticeExpressionHint] = useState<PracticeExpressionHint | null>(null);
   const [didRestoreDraft, setDidRestoreDraft] = useState(false);
   const [didAttemptPersistedDraftRestore, setDidAttemptPersistedDraftRestore] = useState(false);
@@ -447,34 +439,6 @@ export function AnswerLoop() {
     setShowRewriteFeedback(false);
     setShowAnswerTranslation(false);
   }, [currentUser, didRestoreDraft]);
-
-  useEffect(() => {
-    if (!currentUser) {
-      setSavedExpressionIdsByKey({});
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadSavedExpressionIds() {
-      try {
-        const savedExpressions = await getSavedExpressions();
-        if (!cancelled) {
-          setSavedExpressionIdsByKey(buildSavedExpressionIdMap(savedExpressions));
-        }
-      } catch {
-        if (!cancelled) {
-          setSavedExpressionIdsByKey({});
-        }
-      }
-    }
-
-    void loadSavedExpressionIds();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentUser]);
 
   useEffect(() => {
     if (isResolvingCurrentUser) {
@@ -822,6 +786,15 @@ export function AnswerLoop() {
       null,
     [allPrompts, prompts, selectedPromptId]
   );
+  const savedExpressions = useSavedExpressions({
+    currentUser,
+    saveContext: {
+      promptId: selectedPromptId || selectedPrompt?.id,
+      answerSessionId: feedback?.sessionId || sessionId || undefined,
+      answerAttemptNo: feedback?.attemptNo
+    },
+    onLoginRequired: () => setShowLoginWall(true)
+  });
   const promptById = useMemo(() => {
     return new Map(allPrompts.map((prompt) => [prompt.id, prompt] as const));
   }, [allPrompts]);
@@ -1364,14 +1337,6 @@ export function AnswerLoop() {
     setIsCheckingCoachUsage(false);
   }
 
-  function isExpressionSaved(expression: string) {
-    return Boolean(savedExpressionIdsByKey[normalizeSavedExpressionKey(expression)]);
-  }
-
-  function isExpressionSaving(expression: string) {
-    return savingExpressionKeys.includes(normalizeSavedExpressionKey(expression));
-  }
-
   function appendExpressionToCurrentDraft(expression: string) {
     const trimmedExpression = expression.trim();
     if (!trimmedExpression) {
@@ -1384,84 +1349,6 @@ export function AnswerLoop() {
     }
 
     setAnswer((current) => (current.trim() ? `${current.trimEnd()} ${trimmedExpression}` : trimmedExpression));
-  }
-
-  async function handleToggleSavedExpression({
-    expression,
-    meaningKo,
-    exampleEn,
-    usageTipKo,
-    tags,
-    sourceType,
-    coachInteractionId
-  }: {
-    expression: string;
-    meaningKo?: string | null;
-    exampleEn?: string | null;
-    usageTipKo?: string | null;
-    tags?: string[] | null;
-    sourceType: SavedExpressionSourceType;
-    coachInteractionId?: string | null;
-  }) {
-    const trimmedExpression = expression.trim();
-    const key = normalizeSavedExpressionKey(trimmedExpression);
-    if (!key) {
-      return;
-    }
-
-    if (!currentUser) {
-      setShowLoginWall(true);
-      setExpressionSaveError("표현 저장은 로그인 후 사용할 수 있어요.");
-      setExpressionSaveNotice("");
-      return;
-    }
-
-    if (savingExpressionKeys.includes(key)) {
-      return;
-    }
-
-    const existingSavedExpressionId = savedExpressionIdsByKey[key];
-    setSavingExpressionKeys((current) => [...current, key]);
-    setExpressionSaveError("");
-    setExpressionSaveNotice("");
-
-    try {
-      if (existingSavedExpressionId) {
-        await deleteSavedExpression(existingSavedExpressionId);
-        setSavedExpressionIdsByKey((current) => {
-          const next = { ...current };
-          delete next[key];
-          return next;
-        });
-        setExpressionSaveNotice("저장을 취소했어요.");
-        return;
-      }
-
-      const savedExpression = await saveExpression({
-        expression: trimmedExpression,
-        meaningKo: trimNullable(meaningKo) ?? undefined,
-        exampleEn: trimNullable(exampleEn) ?? undefined,
-        usageTipKo: trimNullable(usageTipKo) ?? undefined,
-        tags: normalizeExpressionTagList(tags),
-        sourceType,
-        promptId: selectedPromptId || selectedPrompt?.id,
-        answerSessionId: feedback?.sessionId || sessionId || undefined,
-        answerAttemptNo: feedback?.attemptNo,
-        coachInteractionId: trimNullable(coachInteractionId) ?? undefined
-      });
-
-      setSavedExpressionIdsByKey((current) => ({
-        ...current,
-        [key]: savedExpression.id
-      }));
-      setExpressionSaveNotice("표현을 저장했어요.");
-    } catch (caughtError) {
-      setExpressionSaveError(
-        caughtError instanceof Error ? caughtError.message : "표현을 저장하지 못했어요."
-      );
-    } finally {
-      setSavingExpressionKeys((current) => current.filter((item) => item !== key));
-    }
   }
 
   const restorePersistedDraft = useCallback(async (
@@ -1495,8 +1382,7 @@ export function AnswerLoop() {
     setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setDraftStatusMessage("");
-    setExpressionSaveNotice("");
-    setExpressionSaveError("");
+    savedExpressions.clearMessages();
     setPracticeExpressionHint(null);
     setStep("answer");
   }
@@ -1629,8 +1515,7 @@ export function AnswerLoop() {
     setShowPreviousRewriteAnswer(false);
     setShowAnswerTranslation(false);
     setDraftStatusMessage("");
-    setExpressionSaveNotice("");
-    setExpressionSaveError("");
+    savedExpressions.clearMessages();
     setPracticeExpressionHint(null);
     setPickFlowScreen("prompt");
     setStep("pick");
@@ -2631,8 +2516,8 @@ export function AnswerLoop() {
         </div>
 
         {coachHelpError ? <p className={styles.coachError}>{coachHelpError}</p> : null}
-        {expressionSaveError ? <p className={styles.coachError}>{expressionSaveError}</p> : null}
-        {expressionSaveNotice ? <p className={styles.coachNotice}>{expressionSaveNotice}</p> : null}
+        {savedExpressions.error ? <p className={styles.coachError}>{savedExpressions.error}</p> : null}
+        {savedExpressions.notice ? <p className={styles.coachNotice}>{savedExpressions.notice}</p> : null}
 
         {coachHelp ? (
           <div className={styles.coachResult}>
@@ -2660,12 +2545,12 @@ export function AnswerLoop() {
                     <button
                       type="button"
                       className={
-                        isExpressionSaved(expression.expression)
+                        savedExpressions.isSaved(expression.expression)
                           ? styles.coachExpressionSaveButtonActive
                           : styles.coachExpressionSaveButton
                       }
                       onClick={() =>
-                        void handleToggleSavedExpression({
+                        void savedExpressions.toggle({
                           expression: expression.expression,
                           meaningKo: expression.meaningKo,
                           exampleEn: expression.example,
@@ -2675,11 +2560,11 @@ export function AnswerLoop() {
                           coachInteractionId: coachHelp.interactionId
                         })
                       }
-                      disabled={isExpressionSaving(expression.expression)}
+                      disabled={savedExpressions.isSaving(expression.expression)}
                     >
-                      {isExpressionSaving(expression.expression)
+                      {savedExpressions.isSaving(expression.expression)
                         ? "저장 중"
-                        : isExpressionSaved(expression.expression)
+                        : savedExpressions.isSaved(expression.expression)
                           ? "저장됨"
                           : "저장"}
                     </button>
@@ -2910,8 +2795,8 @@ export function AnswerLoop() {
               <span className={styles.coachMovePhraseLabel}>넣어볼 표현</span>
               <div className={styles.coachMovePhraseList}>
                 {coachSuggestedPhrases.map((phrase, index) => {
-                  const saved = isExpressionSaved(phrase.phrase);
-                  const saving = isExpressionSaving(phrase.phrase);
+                  const saved = savedExpressions.isSaved(phrase.phrase);
+                  const saving = savedExpressions.isSaving(phrase.phrase);
                   return (
                     <button
                       key={`${phrase.phrase}-${index}`}
@@ -2920,7 +2805,7 @@ export function AnswerLoop() {
                       aria-label={saved ? `${phrase.phrase} 저장 취소` : `${phrase.phrase} 저장`}
                       aria-pressed={saved}
                       onClick={() =>
-                        void handleToggleSavedExpression({
+                        void savedExpressions.toggle({
                           expression: phrase.phrase,
                           meaningKo: phrase.meaningKo,
                           usageTipKo: "문장틀에 넣어볼 수 있는 표현이에요.",
@@ -2975,8 +2860,8 @@ export function AnswerLoop() {
               <span className={styles.coachMovePhraseLabel}>넣어볼 표현</span>
               <div className={styles.coachMovePhraseList}>
                 {enrichmentPhrases.map((phrase, index) => {
-                  const saved = isExpressionSaved(phrase.phrase);
-                  const saving = isExpressionSaving(phrase.phrase);
+                  const saved = savedExpressions.isSaved(phrase.phrase);
+                  const saving = savedExpressions.isSaving(phrase.phrase);
                   return (
                     <button
                       key={`${phrase.phrase}-${index}`}
@@ -2985,7 +2870,7 @@ export function AnswerLoop() {
                       aria-label={saved ? `${phrase.phrase} 저장 취소` : `${phrase.phrase} 저장`}
                       aria-pressed={saved}
                       onClick={() =>
-                        void handleToggleSavedExpression({
+                        void savedExpressions.toggle({
                           expression: phrase.phrase,
                           meaningKo: phrase.meaningKo,
                           usageTipKo: "문장틀에 넣어볼 수 있는 표현이에요.",
@@ -3035,8 +2920,8 @@ export function AnswerLoop() {
             <span className={styles.visibleExpressionLabel}>가볍게 넣어볼 표현</span>
             <div className={styles.visibleExpressionList}>
               {completionRefinementExpressions.map((expression) => {
-                const saved = isExpressionSaved(expression.expression);
-                const saving = isExpressionSaving(expression.expression);
+                const saved = savedExpressions.isSaved(expression.expression);
+                const saving = savedExpressions.isSaving(expression.expression);
                 return (
                   <button
                     key={expression.expression}
@@ -3045,7 +2930,7 @@ export function AnswerLoop() {
                       saved ? styles.visibleExpressionChipSaved : ""
                     }`}
                     onClick={() =>
-                      void handleToggleSavedExpression({
+                      void savedExpressions.toggle({
                         expression: expression.expression,
                         meaningKo: expression.meaningKo,
                         exampleEn: expression.exampleEn,

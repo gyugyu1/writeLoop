@@ -45,7 +45,7 @@ change scripts/dev/a.sh apps/backend/src/main/A.java
 expect "백엔드가 하나라도 섞이면 deploy=true와 그 경로" \
   "$([ "$(first)" = deploy=true ] && echo "$OUT" | sed -n 2p | grep -qF apps/backend/src/main/A.java && ! echo "$OUT" | grep -qF scripts/dev/a.sh; echo $?)" "$OUT"
 
-for f in apps/frontend/app/page.tsx package-lock.json docker-compose.yml infra/nginx/a.conf scripts/ops/deploy.sh .github/workflows/ci.yml apps/mobile-web/x.ts scripts/other.mjs; do
+for f in apps/frontend/app/page.tsx package.json package-lock.json apps/backend/build.gradle.kts apps/backend/Dockerfile apps/frontend/Dockerfile docker-compose.yml infra/nginx/a.conf scripts/ops/deploy.sh .github/workflows/ci.yml apps/mobile-web/x.ts scripts/other.mjs; do
   change "$f"
   expect "$f가 바뀌면 deploy=true" "$([ "$(first)" = deploy=true ]; echo $?)" "$OUT"
 done

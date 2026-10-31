@@ -725,7 +725,7 @@ run_ci() {
   CRC=$?
   OUTV=$(grep -E "^${OUTNAME}=" "$TMP/gh_output" | tail -1 | cut -d= -f2-)
 }
-# 인자: 이름, 기대 출력(true/false), [summary:<문자열>] [summary-nonempty]
+# 인자: 이름, 기대 출력(true/false), [summary:<문자열>] [reason:<이유 줄>](reason은 기대한 이유 줄이 비면 그것만으로 실패)
 ci_expect() {
   local name=$1 want=$2 a why=""
   shift 2
@@ -734,7 +734,13 @@ ci_expect() {
   for a in "$@"; do
     case "$a" in
       summary:*) grep -qF -- "${a#summary:}" "$TMP/summary" || why+=" summary-missing '${a#summary:}'" ;;
-      summary-nonempty) [ -s "$TMP/summary" ] || why+=" summary-empty" ;;
+      reason:*)
+        if [ -z "${a#reason:}" ]; then
+          why+=" expected-reason-empty"
+        else
+          grep -qF -- "${a#reason:}" "$TMP/summary" || why+=" summary-missing-reason '${a#reason:}'"
+        fi
+        ;;
     esac
   done
   [ -z "$(gh_problem)" ] || why+=" fake-gh: $(gh_problem)"
@@ -752,25 +758,28 @@ write_fx "13 $KS production in_progress,failure" "12 $K2 production in_progress,
 run_ci; ci_expect "Q1·CI4·CI7 판단 단계: 마지막 성공 배포(K2)부터 판단, 불필요" false "summary:$(reason_of "$K2" "$K3")"
 write_fx "11 $K1 production success"
 run_ci; ci_expect "CI7 판단 단계: 필요일 때 출력과 실행 요약의 이유" true "summary:$(reason_of "$K1" "$K3")"
-# 아래는 잘못 K2를 시작 커밋으로 쓰면 불필요가 되는 배포 기록이다.
+# 아래는 잘못 K2를 시작 커밋으로 쓰면 불필요가 되는 배포 기록이다. 실행 요약에는 판단 스크립트가 낸 이유 줄(시나리오 04 CI7)이
+# 있어야 한다. 시작 커밋을 찾지 못하면 판단 단계는 빈 시작 커밋으로, Q11은 저장소에 없는 시작 커밋으로 스크립트를 부른다.
+NOBASE_REASON=$(reason_of "" "$K3")
+NOPE_REASON=$(reason_of "$NOPE" "$K3")
 write_fx
-run_ci; ci_expect "Q6·CI5 배포 기록이 없음 → 필요" true summary-nonempty
+run_ci; ci_expect "Q6·CI5 배포 기록이 없음 → 필요" true "reason:$NOBASE_REASON"
 write_fx "12 $K2 production failure" "11 $K2 production in_progress"
-run_ci; ci_expect "Q7·CI5 success인 배포가 없음 → 필요" true summary-nonempty
+run_ci; ci_expect "Q7·CI5 success인 배포가 없음 → 필요" true "reason:$NOBASE_REASON"
 write_fx "11 $K2 production success,inactive"
-run_ci; ci_expect "Q8·CI5 가장 최근 상태가 inactive뿐 → 필요" true summary-nonempty
+run_ci; ci_expect "Q8·CI5 가장 최근 상태가 inactive뿐 → 필요" true "reason:$NOBASE_REASON"
 FX_EXTRA='"listError":500'
 write_fx "11 $K2 production success"
-run_ci; ci_expect "Q9a·CI6 배포 목록 조회 실패(HTTP 500) → 필요, 단계는 성공" true summary-nonempty
+run_ci; ci_expect "Q9a·CI6 배포 목록 조회 실패(HTTP 500) → 필요, 단계는 성공" true "reason:$NOBASE_REASON"
 FX_EXTRA='"listRaw":"<html>oops</html>"'
 write_fx "11 $K2 production success"
-run_ci; ci_expect "Q9b·CI6 응답이 JSON이 아님 → 필요, 단계는 성공" true summary-nonempty
+run_ci; ci_expect "Q9b·CI6 응답이 JSON이 아님 → 필요, 단계는 성공" true "reason:$NOBASE_REASON"
 FX_EXTRA='"statusError":[11]'
 write_fx "11 $K2 production success"
-run_ci; ci_expect "Q9c·CI6 상태 조회 실패 → 필요, 단계는 성공" true summary-nonempty
+run_ci; ci_expect "Q9c·CI6 상태 조회 실패 → 필요, 단계는 성공" true "reason:$NOBASE_REASON"
 FX_EXTRA=""
 write_fx "11 $NOPE production success"
-run_ci; ci_expect "Q11 시작 커밋이 저장소에 없음 → 필요" true summary-nonempty
+run_ci; ci_expect "Q11 시작 커밋이 저장소에 없음 → 필요" true "reason:$NOPE_REASON"
 
 # CI8: 판단 스크립트를 가짜로 바꿔 실패·빈 출력·다른 글을 낸다(배포 기록은 K2가 success).
 write_fx "11 $K2 production success"

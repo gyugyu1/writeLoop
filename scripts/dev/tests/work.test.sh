@@ -464,7 +464,7 @@ expect "run: 항목이 실패하면 FAIL을 적고 종료 코드 1" \
 rm -f "$TMP/r12-gradle-calls"
 FAKE_DOCKER_RC=1 run run "$DX" --name nodocker
 expect "run: Docker를 켜지 못하면 Docker 항목을 돌리지 않고 FAIL" \
-  "$([ "$RC" = 1 ] && grep -q "^FAIL docker:" "$R/$DX/04-runner-nodocker/summary.txt" && grep -q "^FAIL backend-test not run" "$R/$DX/04-runner-nodocker/summary.txt" && [ -z "$(calls)" ]; echo $?)" "rc=$RC calls=$(calls)"
+  "$([ "$RC" = 1 ] && grep -q "^FAIL docker:" "$R/$DX/04-runner-nodocker/summary.txt" && grep -qx "FAIL backend-test backend-test.txt" "$R/$DX/04-runner-nodocker/summary.txt" && grep -q "^not run: docker is not available" "$R/$DX/04-runner-nodocker/backend-test.txt" && [ -z "$(calls)" ]; echo $?)" "rc=$RC calls=$(calls)"
 
 mkdir -p "$R/weird"; echo w > "$R/weird/file.txt"; echo more >> "$R/docs/README.md"
 g -C "$R" add -A && g -C "$R" commit -q -m "기타"
@@ -493,6 +493,17 @@ echo 999999 > "$R/.git/work-run.lock/pid"
 run run "$DX" --name stale --only backend-test
 expect "run: 잡은 프로세스가 없는 잠금은 치우고 돌린다, 끝나면 잠금을 푼다" \
   "$([ "$RC" = 0 ] && [ -d "$R/$DX/07-runner-stale" ] && ! [ -e "$R/.git/work-run.lock" ]; echo $?)" "rc=$RC out=$OUT"
+
+R=$TMP/r14
+make_repo "$R"
+mkdir -p "$R/scripts/feedback-quality"; echo x > "$R/scripts/feedback-quality/x.mjs"
+g -C "$R" add -A && g -C "$R" commit -q -m rules
+run new 이동
+mkdir -p "$R/tools"; g -C "$R" mv scripts/feedback-quality/x.mjs tools/x.mjs; g -C "$R" commit -q -m move
+run run "private/work/001-$TODAY-이동" --name mv
+S="$R/private/work/001-$TODAY-이동/02-runner-mv/summary.txt"
+expect "run: 다른 영역으로 옮긴 파일은 옛 경로의 확인도 고른다(--no-renames)" \
+  "$(grep -q " rules-test " "$S" && grep -qx "NOTE unmatched tools/x.mjs" "$S"; echo $?)" "rc=$RC out=$OUT"
 
 # ---------------------------------------------------------------- check
 gd() { GIT_COMMITTER_DATE="$1" GIT_AUTHOR_DATE="$1" g "${@:2}"; }

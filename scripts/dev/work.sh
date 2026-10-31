@@ -595,7 +595,8 @@ cmd_run() {
         *) for it in $its; do case "$selected" in *" $it "*) ;; *) selected+="$it " ;; esac; done ;;
       esac
       llm_path "$p" && llm_files+=("$p")
-    done < <(git -C "$ROOT" -c core.quotepath=false diff --name-only "$BASE..HEAD")
+    # --no-renames: 다른 영역으로 옮긴 파일은 옛 경로(지운 쪽)도 나오게 해, 옛 영역의 확인도 고른다.
+    done < <(git -C "$ROOT" -c core.quotepath=false diff --no-renames --name-only "$BASE..HEAD")
     [ "$nginx" = 1 ] && needs+=("NEEDS nginx-syntax infra/nginx changed; nginx -t is not run automatically")
     [ -z "$RUN_APPROVED" ] && [ ${#llm_files[@]} -gt 0 ] &&
       needs+=("NEEDS llm-smoke sentence feedback LLM may have changed (${llm_files[*]}); run with --llm-approved <requests> after user approval")
@@ -633,7 +634,9 @@ cmd_run() {
   for it in "${RUN_ITEMS[@]}"; do
     case "$selected" in *" $it "*) ;; *) continue ;; esac
     if [ "$docker_ok" = 0 ] && [[ $DOCKER_ITEMS == *" $it "* ]]; then
-      echo "FAIL $it not run: docker is not available" >> "$summary"
+      # 돌리지 않았어도 summary는 FAIL <항목> <기록 파일> 모양으로 두고, 기록 파일에 이유를 적는다.
+      { echo "# not run | HEAD $RUN_HEAD | uncommitted $RUN_DIRTY"; echo "not run: docker is not available (see the docker line in summary.txt)"; } > "$RUN_DIR/$it.txt"
+      echo "FAIL $it $it.txt" >> "$summary"
       continue
     fi
     echo "running $it ..."

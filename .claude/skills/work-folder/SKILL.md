@@ -48,10 +48,11 @@ description: WriteLoop 작업 폴더(private/work/) 규칙. 중간 규모 이상
   - 버그 수정·리팩터링·기능 변경:
     - `02-qa-tests.md`(`qa`): 재현 테스트나 지금 동작 테스트(겨냥 회귀 케이스가 있으면 `02-qa-cases-target.json`과 그 sha256)
     - `03-runner-test/`(`qa`): 테스트 커밋 시점 기록. 각 파일 첫 줄의 HEAD가 테스트 커밋이다
-    - `04-main-impl.md`(메인 세션)
-    - `05-runner-impl/`(`qa`): 구현 커밋 시점 기록
-    - `06-main-diff-all.txt`, `06-main-diff-tests.txt`(`qa`가 `work.sh diff`로)
-    - `07-qa-verify.md`(`qa`)
+    - `04-qa-pretest.md`(`qa`): 고치기 전 기록의 판정(테스트마다 기대 결과, 실제 결과, 실패 메시지 핵심)
+    - `05-main-impl.md`(메인 세션)
+    - `06-runner-impl/`(`qa`): 구현 커밋 시점 기록
+    - `07-main-diff-all.txt`, `07-main-diff-tests.txt`(`qa`가 `work.sh diff`로)
+    - `08-qa-verify.md`(`qa`)
 - 중간에 생긴 사용자 결정(비용 승인, 테스트 수정 허락)이나 단계를 건너뛴 이유는, 그 시점의 다음 번호로 메인 세션이 `NN-main-decision.md`를 남긴다. 결정 파일에는 사용자 결정, 대상, 사용자에게 보인 이유만 적는다. 구현에 관한 설명은 `-impl.md`에 둔다(`qa`가 결정 파일은 읽는다).
 - `qa`나 `instruction-reviewer`의 지적을 고치는 방법이 사용자와 정한 내용을 바꾸면, 고치기 전에 사용자에게 묻는다. 지적이 맞아도 그렇다(2026-10-25, 검토의 제안을 따라 정한 설계와 다른 공통 상태 파일을 넣었다가 되돌린 일).
   - 정한 내용: 사용자에게 확인받은 명세(이번 작업의 `01-main-spec.md` 포함), 결정 파일, 지침 검토의 `01-main-purpose.md`에 적은 정한 내용, 이번 작업 전부터 있던 지침(`.claude/CLAUDE.md`, `.claude/agents/*.md`, `.claude/skills/*/SKILL.md`)의 규칙(날짜가 없는 것 포함)

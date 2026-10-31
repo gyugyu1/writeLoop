@@ -51,7 +51,7 @@ flowchart TD
     NF1 --> NF2["메인: 시나리오를 private에 커밋<br/>구현 커밋보다 먼저"]
     NF2 --> IMPL
     BF1 --> BF2["메인: 테스트 커밋 test:"]
-    BF2 --> BF3["qa 2단계: work.sh run --name test<br/>고치기 전 기록<br/>기대 결과는 qa.md의 표"]
+    BF2 --> BF3["qa 2단계: work.sh run --name test<br/>고치기 전 기록과 판정 NN-qa-pretest.md<br/>기대 결과는 qa.md의 표"]
     BF3 --> IMPL["메인: 구현과 자기 테스트, 커밋<br/>구현 설명 NN-main-impl.md"]
     IMPL --> NEW{새 기능인가}
     NEW -->|예| Q3["qa 3단계: 시나리오를 테스트 코드로<br/>메인: test: 커밋"]
@@ -118,7 +118,7 @@ sequenceDiagram
     M->>Q: 2단계
     Q->>T: run --name test --only ...
     T-->>Q: 고치기 전 기록
-    Q-->>M: 고치기 전 기록이 qa.md의 표대로인지
+    Q-->>M: 고치기 전 기록이 qa.md의 표대로인지(판정 파일)
     Note over M: 고침 → 커밋
     M->>Q2: 4단계
     Q2->>T: run, diff, check
@@ -134,7 +134,7 @@ sequenceDiagram
 | 2 | 메인 | 작업 폴더, 명세 | `work-process`, `work-folder`, (`code-rules`) | `01-main-spec.md` | 비공개(사용자 확인 뒤) |
 | 3 | qa | 기대 결과 정하기 | `qa.md`, `code-rules` | `02-qa-scenarios.md` 또는 `02-qa-tests.md`와 테스트 코드, 겨냥 회귀 케이스 | 메인이 커밋 |
 | 4 | 메인 | 사용자 결정 기록 | `work-folder` | `NN-main-decision.md` | 비공개 |
-| 5 | qa | (버그·리팩터링·기능 변경) 고치기 전 실행 | `qa.md` | `NN-runner-test/` | 메인이 비공개 커밋 |
+| 5 | qa | (버그·리팩터링·기능 변경) 고치기 전 실행과 판정 | `qa.md` | `NN-runner-test/`, `NN-qa-pretest.md` | 메인이 비공개 커밋 |
 | 6 | 메인 | 구현 | `work-process`, `code-rules` | 코드, `NN-main-impl.md`(qa는 읽지 않음) | 공개, 비공개 |
 | 7 | qa | (새 기능) 시나리오를 테스트로 | `qa.md` | 테스트 코드, `NN-qa-tests.md` | 메인이 `test:` 커밋 |
 | 8 | 새 qa | 실행, 대조, 검토, 판정 | `qa.md`, `code-rules` | `NN-runner-*/`, `NN-main-diff-*.txt`, `NN-qa-verify.md` | 메인이 비공개 커밋 |
@@ -142,7 +142,7 @@ sequenceDiagram
 | 10 | 메인 | backlog, 최종 보고 | — | `private/backlog.md` | 비공개 |
 | 11 | 메인 | push와 배포 확인 | `deploy-ops` | — | push(사용자가 요청할 때만) |
 
-qa의 테스트는 이름으로 가린다: 백엔드는 `...SpecTest`, 채점 규칙은 `[spec] ...`, 검사 스크립트는 `...spec.test.sh`. 메인은 이 테스트를 고치지 않는다.
+qa의 테스트는 이름으로 가린다: 백엔드는 `...SpecTest`, 채점 규칙은 `[spec] ...`, 검사 스크립트는 `...spec.test.sh`. 메인은 이 테스트를 고치지 않는다. 예외로 구현 때문에 바뀐 이름·import·패키지 경로를 따라가는 수정만 구현 커밋에서 하고, 4단계 qa가 그 변경이 그것뿐인지 본다.
 
 ## 6. 늘 돌아가는 도구
 

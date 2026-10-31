@@ -414,9 +414,9 @@ sel_case c3 0 "backend-test db-check" apps/backend/src/main/resources/applicatio
 sel_case c4a 0 "rules-test" scripts/feedback-quality/rules.mjs
 sel_case c4b 0 "rules-test" scripts/run-feedback-quality-check.mjs
 sel_case c5 0 "script-tests" scripts/dev/tests/a.test.sh
-sel_case c6a 0 "web-build" apps/frontend/app/page.tsx
-sel_case c6b 0 "web-build" package.json
-sel_case c6c 0 "web-build" package-lock.json
+sel_case c6a 0 "web-build web-test" apps/frontend/app/page.tsx
+sel_case c6b 0 "web-build web-test" package.json
+sel_case c6c 0 "web-build web-test" package-lock.json
 sel_case c7a 0 "mobile-typecheck mobile-lint" apps/mobile/src/app/a.tsx
 sel_case c7b 0 "mobile-typecheck mobile-lint" apps/mobile/package.json
 sel_case c8 0 "actionlint" .github/workflows/ci.yml
@@ -449,8 +449,8 @@ load
 expect "C15: 기준 커밋 전부터 있던 백엔드 파일을 지우면 종료 코드 0" "$([ "$RC" = 0 ]; echo $?)" "$(show)"
 expect "C15: 고른 항목이 정확히 [backend-test]" "$([ "$(items)" = backend-test ]; echo $?)" "items=[$(items)] $(show)"
 
-sel_case c16 0 "backend-test rules-test web-build ops-syntax" "$B/UserService.java" scripts/feedback-quality/rules.mjs apps/frontend/app/page.tsx scripts/ops/deploy.sh docs/a.md
-expect "C16: 항목마다 줄 하나" "$([ "$(grep -E '^(OK|FAIL) ' "$SUM" | grep -cv '^[A-Z]* docker:')" = 4 ]; echo $?)" "$(show)"
+sel_case c16 0 "backend-test rules-test web-build web-test ops-syntax" "$B/UserService.java" scripts/feedback-quality/rules.mjs apps/frontend/app/page.tsx scripts/ops/deploy.sh docs/a.md
+expect "C16: 항목마다 줄 하나" "$([ "$(grep -E '^(OK|FAIL) ' "$SUM" | grep -cv '^[A-Z]* docker:')" = 5 ]; echo $?)" "$(show)"
 
 # ---------------------------------------------------------------- D2, D4, D6 (C16 실행의 기록)
 HEADC=$(git -C "$R" rev-parse HEAD)
@@ -759,7 +759,7 @@ expect "Q7(G10): 대소문자가 다르면(feedbackmission) NEEDS llm-smoke 없�
 sel_case g11 3 "backend-test" "$B/MissionA.java" "$B/FeedbackB.java"
 expect "Q7(G11): 여러 파일이면 NEEDS llm-smoke 한 줄에 모두" \
   "$([ "$(grep -cE '^NEEDS llm-smoke' "$SUM")" = 1 ] && needs_llm_has MissionA.java && needs_llm_has FeedbackB.java; echo $?)" "$(show)"
-sel_case g12 0 "web-build" apps/frontend/FeedbackView.tsx
+sel_case g12 0 "web-build web-test" apps/frontend/FeedbackView.tsx
 expect "Q7(G12): 백엔드 밖(apps/frontend)이면 NEEDS llm-smoke 없음" "$(no_needs_llm; echo $?)" "$(show)"
 
 # 03-main-decision Q4

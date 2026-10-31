@@ -14,7 +14,7 @@ description: WriteLoop 운영 배포와 장애 대응. 사용자가 "푸시해"�
 - 마이그레이션이 든 커밋은 마이그레이션 확인이 모두 OK가 되기 전에는 push하지 않는다.
 - 문서만 바뀐 push(`docs/**`, `**/*.md`, `.claude/**`)는 CI와 배포가 돌지 않는다.
 - 마지막 운영 배포 뒤로 개발 도구(`scripts/dev`)·채점 규칙(`scripts/feedback-quality`, `scripts/run-feedback-quality-check.mjs`)·모바일(`apps/mobile`)·문서만 바뀌었으면 CI는 돌고 이미지·배포는 건너뛴다(ADR-0015).
-  - push 전에 배포가 도는지 알린다. 미리 보기: `bash scripts/dev/deploy-needed.sh "$(bash scripts/dev/last-deployed-sha.sh gyugyu1/writeLoop)" <push할 커밋>`.
+  - push 전에 배포가 도는지 알린다. 미리 보기: `bash scripts/dev/deploy-needed.sh "$(bash scripts/dev/last-deployed-sha.sh gyugyu1/writeLoop)" <push할 커밋>`. 이유가 `no base commit to compare`이면 이 PC의 `gh` 조회가 실패한 것이라(CI는 따로 조회한다) "배포가 돈다"로 알리지 말고 미리 보기를 못 했다고 알린다.
   - push 뒤에는 CI 로그의 "배포 필요 판단" 줄(`base=… deploy=… (이유)`)과 이미지·배포 job의 skipped를 보고 보고한다. 배포를 건너뛰었으면 Flyway·`/health` 확인은 하지 않는다.
 
 ## 운영 서버 접속과 push 뒤 확인

@@ -82,7 +82,6 @@ function createSubmissionId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-
 function parsePracticeExpressionsParam(value: string | null) {
   if (!value) {
     return [];

@@ -56,7 +56,6 @@ const EXPRESSION_SLOT_LABELS: Record<string, string> = {
   verbs: "동사"
 };
 
-
 function renderLocalizedExpression(expression: string) {
   const parts: ReactNode[] = [];
   const pattern = /\[([A-Za-z]+)\]/g;
@@ -95,7 +94,6 @@ function renderLocalizedExpression(expression: string) {
   return parts;
 }
 
-
 function renderWritingGuideHintCard(hint: WritingGuideHintItem) {
   const meaningKo = hint.meaningKo?.trim();
 
@@ -108,8 +106,6 @@ function renderWritingGuideHintCard(hint: WritingGuideHintItem) {
     </article>
   );
 }
-
-
 
 function toDraftStatusBadgeLabel(message: string) {
   const normalized = message.trim();
@@ -591,19 +587,48 @@ export function AnswerStep({
   vocabularyWordHintItems: WritingGuideHintItem[];
 }) {
   function renderWritingComposer(args: WritingComposerArgs) {
-    return <WritingComposer {...args} coach={coach} isMobileViewport={isMobileViewport} selectedPrompt={selectedPrompt} setShowAnswerTranslation={setShowAnswerTranslation} setShowHelpSheet={setShowHelpSheet} showAnswerTranslation={showAnswerTranslation} showHelpSheet={showHelpSheet} />;
+    return (
+      <WritingComposer
+        {...args}
+        coach={coach}
+        isMobileViewport={isMobileViewport}
+        selectedPrompt={selectedPrompt}
+        setShowAnswerTranslation={setShowAnswerTranslation}
+        setShowHelpSheet={setShowHelpSheet}
+        showAnswerTranslation={showAnswerTranslation}
+        showHelpSheet={showHelpSheet}
+      />
+    );
   }
 
   function renderMobileComposerBar(args: MobileComposerBarArgs) {
-    return <MobileComposerBar {...args} mobileComposerBarRef={mobileComposerBarRef} />;
+    return (
+      <MobileComposerBar
+        {...args}
+        mobileComposerBarRef={mobileComposerBarRef}
+      />
+    );
   }
 
   function renderPracticeExpressionHintCard() {
-    return <PracticeExpressionHintCard appendExpressionToCurrentDraft={appendExpressionToCurrentDraft} feedback={feedback} practiceExpressionHint={practiceExpressionHint} />;
+    return (
+      <PracticeExpressionHintCard
+        appendExpressionToCurrentDraft={appendExpressionToCurrentDraft}
+        feedback={feedback}
+        practiceExpressionHint={practiceExpressionHint}
+      />
+    );
   }
 
   function renderWritingGuideSummary() {
-    return <WritingGuideSummary answerGuide={answerGuide} isLoadingHints={isLoadingHints} vocabularyPhraseHintItems={vocabularyPhraseHintItems} vocabularyWordHintItems={vocabularyWordHintItems} />;
+    return (
+      <WritingGuideSummary
+        answerGuide={answerGuide}
+        isLoadingHints={isLoadingHints}
+        vocabularyPhraseHintItems={vocabularyPhraseHintItems}
+        vocabularyWordHintItems={vocabularyWordHintItems}
+      />
+    );
   }
 
   function renderAnswerStep() {
@@ -703,11 +728,29 @@ export function RewriteStep({
   vocabularyWordHintItems: WritingGuideHintItem[];
 }) {
   function renderWritingComposer(args: WritingComposerArgs) {
-    return <WritingComposer {...args} coach={coach} isMobileViewport={isMobileViewport} selectedPrompt={selectedPrompt} setShowAnswerTranslation={setShowAnswerTranslation} setShowHelpSheet={setShowHelpSheet} showAnswerTranslation={showAnswerTranslation} showHelpSheet={showHelpSheet} />;
+    return (
+      <WritingComposer
+        {...args}
+        coach={coach}
+        isMobileViewport={isMobileViewport}
+        selectedPrompt={selectedPrompt}
+        setShowAnswerTranslation={setShowAnswerTranslation}
+        setShowHelpSheet={setShowHelpSheet}
+        showAnswerTranslation={showAnswerTranslation}
+        showHelpSheet={showHelpSheet}
+      />
+    );
   }
 
   function renderWritingGuideSummary() {
-    return <WritingGuideSummary answerGuide={answerGuide} isLoadingHints={isLoadingHints} vocabularyPhraseHintItems={vocabularyPhraseHintItems} vocabularyWordHintItems={vocabularyWordHintItems} />;
+    return (
+      <WritingGuideSummary
+        answerGuide={answerGuide}
+        isLoadingHints={isLoadingHints}
+        vocabularyPhraseHintItems={vocabularyPhraseHintItems}
+        vocabularyWordHintItems={vocabularyWordHintItems}
+      />
+    );
   }
 
   function renderRewriteStep() {

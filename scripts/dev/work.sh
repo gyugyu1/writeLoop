@@ -706,7 +706,9 @@ cmd_check() {
   for f in "$d"/[0-9][0-9]-qa-cases-target.json; do
     [ -f "$f" ] || continue
     cur=$(sha256sum "$f" | cut -d' ' -f1)
-    if cat "$d"/[0-9][0-9]-qa-scenarios.md "$d"/[0-9][0-9]-qa-tests.md 2> /dev/null | grep -q "$cur"; then
+    # 보고는 둘 중 하나만 있을 수 있다(버그 수정은 -qa-tests.md뿐). cat으로 이으면 없는 파일 때문에 pipefail로
+    # 실패하므로 grep에 파일을 바로 준다. -s는 없는 파일 오류를 숨기고, -q는 찾으면 오류가 있어도 0이다.
+    if grep -qsF "$cur" -- "$d"/[0-9][0-9]-qa-scenarios.md "$d"/[0-9][0-9]-qa-tests.md; then
       say OK "$(basename "$f"): sha256 $cur is in the phase-1 report"
     else
       say FAIL "$(basename "$f"): sha256 $cur is not in -qa-scenarios.md or -qa-tests.md"

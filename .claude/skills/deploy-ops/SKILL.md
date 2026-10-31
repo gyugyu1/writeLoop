@@ -14,6 +14,13 @@ description: WriteLoop 운영 배포와 장애 대응. 사용자가 "푸시해"�
 - 마이그레이션이 든 커밋은 마이그레이션 확인이 모두 OK가 되기 전에는 push하지 않는다.
 - 문서만 바뀐 push(`docs/**`, `**/*.md`, `.claude/**`)는 CI와 배포가 돌지 않는다.
 
+## 운영 서버 접속과 push 뒤 확인
+
+- 접속: `ssh -i C:/WriteLoop/env_files/was-key.pem -o BatchMode=yes -o ConnectTimeout=15 ubuntu@api.writeloop.kr '<명령>'`. 키 파일은 경로로만 쓰고 내용을 읽거나 출력하지 않는다. 메인 세션만 접속한다(CLAUDE.md).
+- CI와 배포: `gh run list --limit 3`으로 실행 번호를 보고 `gh run watch <번호> --exit-status`로 끝까지 본다(오래 걸리니 백그라운드로). 운영 배포는 CI 워크플로 안의 "운영 배포" job으로 이어서 돈다.
+- Flyway와 기동: 서버에서 `sudo -n docker logs --since 30m writeLoop-backend 2>&1 | grep -iE "flyway|Successfully validated|is up to date|Migrating schema|Started WriteLoop|ERROR"`.
+- 헬스: `curl -sS https://api.writeloop.kr/health`(DB·Redis가 모두 `up`이어야 한다). 웹은 `https://writeloop.kr/healthz`.
+
 ## 배포와 장애
 
 - 배포(ADR-0015):

@@ -21,5 +21,8 @@
     "mobile:rn:lint": "npm --prefix apps/mobile run lint",
     "mobile:rn:typecheck": "npm --prefix apps/mobile run typecheck",
     "feedback:quality": "node scripts/run-feedback-quality-check.mjs"
+  },
+  "overrides": {
+    "postcss": "8.5.32"
   }
 }

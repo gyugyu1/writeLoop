@@ -387,7 +387,10 @@ async function letPressActFinish() {
 
 // 기다림 화면(FeedbackLoadingOverlay)은 보이는 동안 2.3초마다 안내 문구(접근성 이름)를 다음 단계로 바꾼다(setInterval).
 // 그 문구를 단언하는 테스트는 setInterval만 가짜 시계에 두어, 실행이 느려도 단언 전에 문구가 바뀌지 않게 한다.
-// 다른 시간(setTimeout, requestAnimationFrame, Date 등)은 진짜 그대로다. afterEach의 jest.useRealTimers()가 되돌린다.
+// 다른 시간(setTimeout, requestAnimationFrame, Date 등)은 진짜 그대로다. 다만 RNTL의 waitFor는 진짜 시계에서
+// 50ms마다 다시 확인할 때 전역 setInterval을 쓰므로, setInterval이 가짜인 동안 waitFor는 처음 한 번만 확인한다.
+// 그래서 이 도우미를 쓰는 테스트는 기다림 화면이 사라진 뒤(회전 타이머가 정리된 뒤) jest.useRealTimers()로
+// 진짜 시계로 되돌린 다음 waitFor를 쓴다. 테스트가 그 전에 끝나거나 실패해도 afterEach의 jest.useRealTimers()가 되돌린다.
 function freezeLoadingCopyRotation() {
   jest.useFakeTimers({
     doNotFake: [
@@ -1080,6 +1083,8 @@ describe("[spec] 다시 쓰기 칸", () => {
     await act(async () => {
       pending.resolve(nextFeedback);
     });
+    // 기다림 화면이 사라져 회전 타이머가 정리됐다. 아래 waitFor가 다시 확인할 수 있게 진짜 시계로 되돌린다.
+    jest.useRealTimers();
 
     expect(screen.getByText("두 번째 시도의 잘한 점")).toBeOnTheScreen();
     expect(screen.queryByRole("progressbar")).toBeNull();

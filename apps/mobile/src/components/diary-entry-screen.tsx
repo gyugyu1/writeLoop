@@ -29,7 +29,6 @@ import {
   type DiaryStep,
   type DiaryEditableState,
   buildDiaryEditableSignature,
-  DIARY_COACH_PROMPT_ID,
   todayDateKey,
   countWords,
   getLatestFeedback,
@@ -38,25 +37,21 @@ import {
   buildDefaultDiaryTitle,
   normalizeExpressionKey,
   normalizeMoodTags,
-  getDiaryMoodTags,
-  buildSavedExpressionIdMap
+  getDiaryMoodTags
 } from "@/components/diary-entry/diary-entry-helpers";
 import { styles } from "@/components/diary-entry/diary-entry-styles";
+import { useDiaryCoach } from "@/components/diary-entry/use-diary-coach";
+import { useDiaryExpressions } from "@/components/diary-entry/use-diary-expressions";
 import {
   createDiaryEntry,
   deleteDiaryEntry,
-  deleteSavedExpression,
   getDiaryEntry,
-  getSavedExpressions,
-  requestCoachHelp,
   requestDiaryFeedback,
-  saveExpression,
   updateDiaryEntry
 } from "@/lib/api";
 import { deleteDiaryDraft, getDiaryDraft, saveDiaryDraft, type DiaryDraft } from "@/lib/diary-drafts";
-import { buildLoginHref } from "@/lib/login-redirect";
 import { useSession } from "@/lib/session";
-import type { CoachExpression, CoachHelpResponse, DiaryFeedback } from "@/lib/types";
+import type { DiaryFeedback } from "@/lib/types";
 
 export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntryScreenProps) {
   const { currentUser, isHydrating } = useSession();
@@ -80,14 +75,6 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
   const [isCompleting, setIsCompleting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCoachOpen, setIsCoachOpen] = useState(false);
-  const [coachQuestion, setCoachQuestion] = useState("");
-  const [coachHelp, setCoachHelp] = useState<CoachHelpResponse | null>(null);
-  const [coachHelpError, setCoachHelpError] = useState("");
-  const [isLoadingCoachHelp, setIsLoadingCoachHelp] = useState(false);
-  const [savedCoachExpressionKeys, setSavedCoachExpressionKeys] = useState<string[]>([]);
-  const [savingCoachExpressionKeys, setSavingCoachExpressionKeys] = useState<string[]>([]);
-  const [savedExpressionIdsByKey, setSavedExpressionIdsByKey] = useState<Record<string, number>>({});
-  const [savingExpressionKeys, setSavingExpressionKeys] = useState<string[]>([]);
   // 임시 저장: 서버에 저장된 상태의 서명, 화면을 떠날 때 저장할 최신 임시본, 불러오기를 마쳤는지
   const savedSignatureRef = useRef("");
   const latestDraftRef = useRef<DiaryDraft | null>(null);
@@ -100,15 +87,21 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
   const displayTitle = title.trim() || defaultTitle;
   const displayMoodTags = useMemo(() => normalizeMoodTags(selectedMoodTags), [selectedMoodTags]);
   const readOnlyWordCount = useMemo(() => countWords(content), [content]);
-  const diaryCoachQuickQuestions = useMemo(
-    () => [
-      "오늘 일기에 어울리는 표현 3개 알려줘.",
-      "내 감정을 자연스럽게 쓰는 문장을 알려줘.",
-      "마무리 문장을 어떻게 쓰면 좋을까?",
-      "이 일기 문장을 조금 더 자연스럽게 만들고 싶어."
-    ],
-    []
-  );
+  const {
+    coachHelp,
+    coachHelpError,
+    coachQuestion,
+    diaryCoachQuickQuestions,
+    handleRequestCoachHelp,
+    isLoadingCoachHelp,
+    setCoachHelp,
+    setCoachHelpError,
+    setCoachQuestion
+  } = useDiaryCoach({
+    activeText,
+    setIsCoachOpen,
+    step
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -184,35 +177,17 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
     };
   }, [initialEntryId]);
 
-  useEffect(() => {
-    if (!currentUser) {
-      setSavedExpressionIdsByKey({});
-      setSavingExpressionKeys([]);
-      setSavedCoachExpressionKeys([]);
-      setSavingCoachExpressionKeys([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    void getSavedExpressions()
-      .then((savedExpressions) => {
-        if (!cancelled) {
-          setSavedExpressionIdsByKey(buildSavedExpressionIdMap(savedExpressions));
-          setSavedCoachExpressionKeys(savedExpressions.map((item) => normalizeExpressionKey(item.expression)));
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setSavedExpressionIdsByKey({});
-          setSavedCoachExpressionKeys([]);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentUser]);
+  const {
+    handleSaveCoachExpression,
+    handleToggleDiaryExpression,
+    savedCoachExpressionKeys,
+    savedExpressionIdsByKey,
+    savingCoachExpressionKeys,
+    savingExpressionKeys
+  } = useDiaryExpressions({
+    currentUser,
+    initialEntryId
+  });
 
   // 쓰는 동안 잠깐 멈추면 기기에 임시 저장한다. 서버에 저장된 상태와 같아지면 임시본을 지운다.
   useEffect(() => {
@@ -473,74 +448,6 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
     }, 80);
   }
 
-  async function handleRequestCoachHelp(questionOverride?: string) {
-    const nextQuestion = (questionOverride ?? coachQuestion).trim();
-    if (!nextQuestion) {
-      setCoachHelpError("코치에게 물어볼 내용을 먼저 적어 주세요.");
-      setIsCoachOpen(true);
-      return;
-    }
-
-    try {
-      setIsCoachOpen(true);
-      setIsLoadingCoachHelp(true);
-      setCoachHelp(null);
-      setCoachHelpError("");
-      const nextCoachHelp = await requestCoachHelp({
-        promptId: DIARY_COACH_PROMPT_ID,
-        question: nextQuestion,
-        answer: activeText.trim() || undefined,
-        attemptType: step === "rewrite" ? "REWRITE" : "INITIAL"
-      });
-      setCoachQuestion(nextQuestion);
-      setCoachHelp(nextCoachHelp);
-    } catch (caughtError) {
-      setCoachHelpError(caughtError instanceof Error ? caughtError.message : "AI 코치를 불러오지 못했어요.");
-    } finally {
-      setIsLoadingCoachHelp(false);
-    }
-  }
-
-  async function handleSaveCoachExpression(expression: CoachExpression) {
-    const normalizedKey = normalizeExpressionKey(expression.expression);
-    if (!normalizedKey || savedCoachExpressionKeys.includes(normalizedKey) || savingCoachExpressionKeys.includes(normalizedKey)) {
-      return;
-    }
-
-    if (!currentUser) {
-      Alert.alert("로그인이 필요해요", "표현 저장은 로그인 후 사용할 수 있어요.", [
-        { text: "취소", style: "cancel" },
-        { text: "로그인하기", onPress: () => router.push(buildLoginHref("/diary/write")) }
-      ]);
-      return;
-    }
-
-    try {
-      setSavingCoachExpressionKeys((current) =>
-        current.includes(normalizedKey) ? current : [...current, normalizedKey]
-      );
-      const savedExpression = await saveExpression({
-        expression: expression.expression,
-        meaningKo: expression.meaningKo,
-        usageTipKo: expression.usageTip,
-        exampleEn: expression.example,
-        tags: expression.tags ?? undefined,
-        sourceType: "DIARY_EXPRESSION"
-      });
-      setSavedCoachExpressionKeys((current) =>
-        current.includes(normalizedKey) ? current : [...current, normalizedKey]
-      );
-      setSavedExpressionIdsByKey((current) => ({ ...current, [normalizedKey]: savedExpression.id }));
-    } catch (caughtError) {
-      Alert.alert(
-        "표현 저장에 실패했어요",
-        caughtError instanceof Error ? caughtError.message : "잠시 후 다시 시도해 주세요."
-      );
-    } finally {
-      setSavingCoachExpressionKeys((current) => current.filter((item) => item !== normalizedKey));
-    }
-  }
-
   async function handleCompleteDiary() {
     if (isCompleting) {
       return;
@@ -619,71 +526,6 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
         onPress: () => void performDeleteEntry()
       }
     ]);
-  }
-
-  async function handleToggleDiaryExpression(
-    expression: string,
-    meaningKo?: string | null,
-    exampleEn?: string | null,
-    usageTip?: string | null,
-    tags?: string[] | null
-  ) {
-    const normalizedKey = normalizeExpressionKey(expression);
-    if (!normalizedKey) {
-      return;
-    }
-
-    if (!currentUser) {
-      Alert.alert("로그인이 필요해요", "표현 저장은 로그인 후 사용할 수 있어요.", [
-        { text: "취소", style: "cancel" },
-        {
-          text: "로그인하기",
-          onPress: () => router.push(buildLoginHref(initialEntryId ? `/diary/${initialEntryId}` : "/diary"))
-        }
-      ]);
-      return;
-    }
-
-    if (savingExpressionKeys.includes(normalizedKey)) {
-      return;
-    }
-
-    const savedExpressionId = savedExpressionIdsByKey[normalizedKey];
-    setSavingExpressionKeys((current) =>
-      current.includes(normalizedKey) ? current : [...current, normalizedKey]
-    );
-
-    try {
-      if (savedExpressionId) {
-        await deleteSavedExpression(savedExpressionId);
-        setSavedExpressionIdsByKey((current) => {
-          const next = { ...current };
-          delete next[normalizedKey];
-          return next;
-        });
-        return;
-      }
-
-      const savedExpression = await saveExpression({
-        expression,
-        meaningKo: meaningKo ?? undefined,
-        exampleEn: exampleEn ?? undefined,
-        usageTipKo: usageTip ?? undefined,
-        tags: tags?.length ? tags : undefined,
-        sourceType: "DIARY_EXPRESSION"
-      });
-      setSavedExpressionIdsByKey((current) => ({
-        ...current,
-        [normalizedKey]: savedExpression.id
-      }));
-    } catch (caughtError) {
-      Alert.alert(
-        "표현 저장에 실패했어요",
-        caughtError instanceof Error ? caughtError.message : "잠시 후 다시 시도해 주세요."
-      );
-    } finally {
-      setSavingExpressionKeys((current) => current.filter((item) => item !== normalizedKey));
-    }
   }
 
   if (isHydrating || isLoading) {

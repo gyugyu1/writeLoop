@@ -155,6 +155,7 @@ export default function PracticeWriteScreen() {
   const latestAnswerRef = useRef("");
   const latestSelectedPromptRef = useRef<Prompt | null>(null);
   const draftAutosaveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingDraftSavesRef = useRef(new Set<Promise<void>>());
   const pendingSubmissionRef = useRef<{ answer: string; submissionId: string } | null>(null);
 
   const selectedPrompt = useMemo(() => {
@@ -509,6 +510,7 @@ export default function PracticeWriteScreen() {
       });
       setIsDraftPersistencePaused(true);
       cancelDraftAutosave();
+      await waitForPendingDraftSaves();
       await clearPersistedDraft(selectedPrompt.id, activeDraftType);
       setDraftStatusMessage("");
       setFeedback(nextFeedback);
@@ -619,6 +621,24 @@ export default function PracticeWriteScreen() {
     }
   }, []);
 
+  // 진행 중인 임시저장(서버·이 기기 초안, 이어 쓰기 상태)을 모아 둔다.
+  // 작문 취소·제출은 이 저장이 끝난 뒤 지워야, 늦게 끝난 저장이 지운 것을 다시 남기지 않는다.
+  const trackDraftSave = useCallback((save: Promise<void>) => {
+    const tracked = save
+      .catch(() => undefined)
+      .finally(() => {
+        pendingDraftSavesRef.current.delete(tracked);
+      });
+    pendingDraftSavesRef.current.add(tracked);
+    return tracked;
+  }, []);
+
+  const waitForPendingDraftSaves = useCallback(async () => {
+    while (pendingDraftSavesRef.current.size > 0) {
+      await Promise.all(pendingDraftSavesRef.current);
+    }
+  }, []);
+
   async function cancelCurrentWriting() {
     if (!selectedPrompt) {
       handleBackToQuestions();
@@ -630,6 +650,7 @@ export default function PracticeWriteScreen() {
     Keyboard.dismiss();
 
     try {
+      await waitForPendingDraftSaves();
       await clearPersistedDraft(selectedPrompt.id, activeDraftType);
       await clearIncompleteLoopForPrompt(selectedPrompt.id);
     } finally {
@@ -809,8 +830,8 @@ export default function PracticeWriteScreen() {
 
   const flushPendingDraft = useCallback(async () => {
     cancelDraftAutosave();
-    await persistDraftSnapshot(latestAnswerRef.current, latestSelectedPromptRef.current, false);
-  }, [cancelDraftAutosave, persistDraftSnapshot]);
+    await trackDraftSave(persistDraftSnapshot(latestAnswerRef.current, latestSelectedPromptRef.current, false));
+  }, [cancelDraftAutosave, persistDraftSnapshot, trackDraftSave]);
 
   useEffect(() => {
     latestAnswerRef.current = answer;
@@ -915,7 +936,7 @@ export default function PracticeWriteScreen() {
         }
       };
 
-      void persist();
+      void trackDraftSave(persist());
     }, 900);
     draftAutosaveTimeoutRef.current = timeoutId;
 
@@ -941,7 +962,8 @@ export default function PracticeWriteScreen() {
     requestedDifficulty,
     rewriteSeedAnswer,
     saveIncompleteLoopSnapshot,
-    selectedPrompt
+    selectedPrompt,
+    trackDraftSave
   ]);
 
   // 화면을 떠날 때(언마운트) 한 번만, 그때의 최신 저장 함수로 쓰던 답을 저장한다.

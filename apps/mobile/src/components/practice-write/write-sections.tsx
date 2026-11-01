@@ -47,6 +47,7 @@ type ComposerCardProps = Pick<
   | "handleOpenLatestFeedback"
   | "handleSubmit"
   | "isAnswerLocked"
+  | "isCancellingWriting"
   | "isCoachOpen"
   | "isSubmitting"
   | "primaryActionLabel"
@@ -203,6 +204,7 @@ export function ComposerCard({
   handleOpenLatestFeedback,
   handleSubmit,
   isAnswerLocked,
+  isCancellingWriting,
   isCoachOpen,
   isSubmitting,
   primaryActionLabel,
@@ -243,7 +245,7 @@ export function ComposerCard({
           placeholderTextColor="#AE9A87"
           value={answer}
           onChangeText={handleAnswerChange}
-          editable={!isAnswerLocked}
+          editable={!isAnswerLocked && !isCancellingWriting}
         />
 
         <View pointerEvents="box-none" style={styles.composerFooterRow}>
@@ -295,7 +297,7 @@ export function ComposerCard({
       ) : null}
 
       <Pressable
-        style={[styles.submitButton, isSubmitting && styles.disabledButton]}
+        style={[styles.submitButton, (isSubmitting || isCancellingWriting) && styles.disabledButton]}
         onPress={() => {
           if (canViewLatestFeedback) {
             handleOpenLatestFeedback();
@@ -304,7 +306,7 @@ export function ComposerCard({
 
           void handleSubmit();
         }}
-        disabled={isSubmitting}
+        disabled={isSubmitting || isCancellingWriting}
       >
         {isSubmitting ? (
           <ActivityIndicator color="#2E2416" />
@@ -314,13 +316,17 @@ export function ComposerCard({
       </Pressable>
       {!isAnswerLocked ? (
         <Pressable
-          style={[styles.cancelWritingButton, isSubmitting && styles.disabledButton]}
+          style={[styles.cancelWritingButton, (isSubmitting || isCancellingWriting) && styles.disabledButton]}
           onPress={handleCancelWriting}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isCancellingWriting}
           accessibilityRole="button"
           accessibilityLabel="작문 취소"
         >
-          <Text style={styles.cancelWritingButtonText}>작문 취소</Text>
+          {isCancellingWriting ? (
+            <ActivityIndicator color="#8F5D35" />
+          ) : (
+            <Text style={styles.cancelWritingButtonText}>작문 취소</Text>
+          )}
         </Pressable>
       ) : null}
     </View>

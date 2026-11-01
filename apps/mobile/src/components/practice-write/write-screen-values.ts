@@ -24,6 +24,7 @@ export type WriteScreenValues = ReturnType<typeof useWriteCoach> & {
   handleOpenLatestFeedback: () => void;
   handleSubmit: () => Promise<void>;
   isAnswerLocked: boolean;
+  isCancellingWriting: boolean;
   isCoachOpen: boolean;
   isGuideOpen: boolean;
   isLoadingPromptHints: boolean;

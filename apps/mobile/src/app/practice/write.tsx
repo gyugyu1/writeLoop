@@ -144,6 +144,10 @@ export default function PracticeWriteScreen() {
   const [isPreviousFeedbackOpen, setIsPreviousFeedbackOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // 작문 취소가 도는 동안(진행 중인 저장과 지우기를 기다리는 동안) 버튼·답 칸·코치 넣기를 막는다.
+  // 다시 그리기 전에 들어온 누르기도 막으려고 ref로도 둔다.
+  const [isCancellingWriting, setIsCancellingWriting] = useState(false);
+  const isCancellingWritingRef = useRef(false);
   const [promptHints, setPromptHints] = useState<PromptHint[]>([]);
   const [isLoadingPromptHints, setIsLoadingPromptHints] = useState(false);
   const [rewriteSeedAnswer, setRewriteSeedAnswer] = useState("");
@@ -468,6 +472,10 @@ export default function PracticeWriteScreen() {
   }, [selectedPrompt?.id, setSavedCoachExpressionKeys, setSavingCoachExpressionKeys]);
 
   async function handleSubmit() {
+    if (isCancellingWritingRef.current) {
+      return;
+    }
+
     if (!selectedPrompt) {
       setError(getPromptNotFoundMessage());
       return;
@@ -567,6 +575,10 @@ export default function PracticeWriteScreen() {
   }
 
   function appendCoachExpression(expression: string) {
+    if (isCancellingWritingRef.current) {
+      return;
+    }
+
     setIsDraftPersistencePaused(false);
     setAnswer((current) => {
       if (!current.trim()) {
@@ -645,6 +657,13 @@ export default function PracticeWriteScreen() {
       return;
     }
 
+    if (isCancellingWritingRef.current) {
+      return;
+    }
+
+    // 질문 목록으로 돌아가면 이 화면이 사라지므로 다시 풀지 않는다.
+    isCancellingWritingRef.current = true;
+    setIsCancellingWriting(true);
     setIsDraftPersistencePaused(true);
     cancelDraftAutosave();
     Keyboard.dismiss();
@@ -662,6 +681,10 @@ export default function PracticeWriteScreen() {
   }
 
   function handleCancelWriting() {
+    if (isCancellingWritingRef.current) {
+      return;
+    }
+
     if (!selectedPrompt) {
       handleBackToQuestions();
       return;
@@ -993,6 +1016,10 @@ export default function PracticeWriteScreen() {
   }, [flushPendingDraft]);
 
   const handleAnswerChange = useCallback((nextValue: string) => {
+    if (isCancellingWritingRef.current) {
+      return;
+    }
+
     setIsDraftPersistencePaused(false);
     latestAnswerRef.current = nextValue;
     setAnswer(nextValue);
@@ -1049,6 +1076,7 @@ export default function PracticeWriteScreen() {
                   handleOpenLatestFeedback={handleOpenLatestFeedback}
                   handleSubmit={handleSubmit}
                   isAnswerLocked={isAnswerLocked}
+                  isCancellingWriting={isCancellingWriting}
                   isCoachOpen={isCoachOpen}
                   isSubmitting={isSubmitting}
                   primaryActionLabel={primaryActionLabel}

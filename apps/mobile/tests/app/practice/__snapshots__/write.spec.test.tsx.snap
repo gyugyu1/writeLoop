@@ -1,0 +1,6137 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`[spec] 화면 구조 [spec] AI 코치 창(답변: 하나는 저장됨, 하나는 저장 중) 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "paddingBottom": 0,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "flex-start",
+            "flexDirection": "row",
+            "gap": 12,
+            "justifyContent": "space-between",
+            "paddingBottom": 14,
+            "paddingHorizontal": 20,
+            "paddingTop": 12,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "flex": 1,
+              "gap": 4,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#232128",
+                "fontSize": 28,
+                "fontWeight": "900",
+                "letterSpacing": -1.2,
+                "lineHeight": 34,
+              }
+            }
+          >
+            표현 추천 받기
+          </Text>
+        </View>
+        <View
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessible={true}
+          style={
+            {
+              "borderRadius": 999,
+              "paddingHorizontal": 4,
+              "paddingVertical": 6,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#7C6545",
+                "fontSize": 14,
+                "fontWeight": "800",
+              }
+            }
+          >
+            닫기
+          </Text>
+        </View>
+      </View>
+      <View
+        style={
+          {
+            "backgroundColor": "#FFF9F2",
+            "borderBottomWidth": 0,
+            "borderColor": "#E8DACB",
+            "borderTopLeftRadius": 32,
+            "borderTopRightRadius": 32,
+            "borderWidth": 1,
+            "elevation": 8,
+            "flex": 1,
+            "overflow": "hidden",
+            "shadowColor": "#000000",
+            "shadowOffset": {
+              "height": -4,
+              "width": 0,
+            },
+            "shadowOpacity": 0.08,
+            "shadowRadius": 14,
+          }
+        }
+      >
+        <RCTScrollView
+          contentContainerStyle={
+            {
+              "paddingBottom": 28,
+              "paddingHorizontal": 20,
+              "paddingTop": 20,
+            }
+          }
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          style={
+            {
+              "flex": 1,
+            }
+          }
+        >
+          <View>
+            <View
+              style={
+                {
+                  "gap": 14,
+                }
+              }
+            >
+              <TextInput
+                multiline={true}
+                placeholder="예: "근력을 키우고 싶다"를 어떻게 말해?"
+                placeholderTextColor="#AE9A87"
+                style={
+                  {
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E7D7C4",
+                    "borderRadius": 18,
+                    "borderWidth": 1,
+                    "color": "#232128",
+                    "fontSize": 15,
+                    "minHeight": 88,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 14,
+                  }
+                }
+                textAlignVertical="top"
+                value="근력을 키우고 싶다"
+              />
+              <View
+                style={
+                  {
+                    "flexDirection": "row",
+                    "flexWrap": "wrap",
+                    "gap": 8,
+                  }
+                }
+              >
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    Morning 주제에 어울리는 표현 3개 알려줘.
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    첫 문장을 어떻게 시작하면 좋을까?
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    이유를 자연스럽게 붙이는 표현을 알려줘.
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    마무리 문장을 어떻게 쓰면 좋을까?
+                  </Text>
+                </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": false,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#FFD08A",
+                    "borderRadius": 18,
+                    "justifyContent": "center",
+                    "paddingVertical": 14,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#5A3A00",
+                      "fontSize": 15,
+                      "fontWeight": "900",
+                    }
+                  }
+                >
+                  표현 추천받기
+                </Text>
+              </View>
+              <Text
+                style={
+                  {
+                    "color": "#7A6B58",
+                    "fontSize": 13,
+                    "lineHeight": 20,
+                  }
+                }
+              >
+                표현을 그대로 붙이지 말고, 내 문장 안에서 자연스럽게 풀어 써 보세요.
+              </Text>
+              <View
+                style={
+                  {
+                    "gap": 12,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E7D7C4",
+                      "borderRadius": 20,
+                      "borderWidth": 1,
+                      "gap": 8,
+                      "padding": 16,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "alignSelf": "flex-start",
+                        "backgroundColor": "#FFF0D7",
+                        "borderRadius": 999,
+                        "color": "#A76518",
+                        "fontSize": 12,
+                        "fontWeight": "900",
+                        "paddingHorizontal": 10,
+                        "paddingVertical": 6,
+                      }
+                    }
+                  >
+                    코치 답변
+                  </Text>
+                  <Text
+                    style={
+                      {
+                        "color": "#2F2A23",
+                        "fontSize": 15,
+                        "lineHeight": 23,
+                      }
+                    }
+                  >
+                    운동 목표는 이렇게 말해 보세요.
+                  </Text>
+                </View>
+                <View
+                  style={
+                    {
+                      "gap": 10,
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "backgroundColor": "#FFFFFF",
+                        "borderColor": "#E7D7C4",
+                        "borderRadius": 20,
+                        "borderWidth": 1,
+                        "gap": 8,
+                        "padding": 16,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "gap": 4,
+                        }
+                      }
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#2A2620",
+                            "fontSize": 17,
+                            "fontWeight": "900",
+                            "lineHeight": 24,
+                          }
+                        }
+                      >
+                        build muscle
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#8C7355",
+                            "fontSize": 13,
+                            "lineHeight": 19,
+                          }
+                        }
+                      >
+                        근육을 키우다
+                      </Text>
+                    </View>
+                    <Text
+                      style={
+                        {
+                          "color": "#5D5143",
+                          "fontSize": 14,
+                          "lineHeight": 21,
+                        }
+                      }
+                    >
+                      운동 목표를 말할 때 써요.
+                    </Text>
+                    <Text
+                      style={
+                        {
+                          "color": "#8A775E",
+                          "fontSize": 13,
+                          "lineHeight": 20,
+                        }
+                      }
+                    >
+                      I want to build muscle.
+                    </Text>
+                    <View
+                      style={
+                        {
+                          "flexDirection": "row",
+                          "gap": 10,
+                          "marginTop": 4,
+                        }
+                      }
+                    >
+                      <View
+                        accessibilityState={
+                          {
+                            "busy": undefined,
+                            "checked": undefined,
+                            "disabled": undefined,
+                            "expanded": undefined,
+                            "selected": undefined,
+                          }
+                        }
+                        accessible={true}
+                        style={
+                          {
+                            "alignItems": "center",
+                            "backgroundColor": "#FFF4E2",
+                            "borderColor": "#EBCB97",
+                            "borderRadius": 16,
+                            "borderWidth": 1,
+                            "flex": 1,
+                            "justifyContent": "center",
+                            "paddingVertical": 12,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            {
+                              "color": "#8A5A19",
+                              "fontSize": 13,
+                              "fontWeight": "900",
+                            }
+                          }
+                        >
+                          문장에 넣기
+                        </Text>
+                      </View>
+                      <View
+                        accessibilityState={
+                          {
+                            "busy": undefined,
+                            "checked": undefined,
+                            "disabled": true,
+                            "expanded": undefined,
+                            "selected": undefined,
+                          }
+                        }
+                        accessible={true}
+                        style={
+                          {
+                            "alignItems": "center",
+                            "backgroundColor": "#EAF7ED",
+                            "borderColor": "#AFD2B7",
+                            "borderRadius": 16,
+                            "borderWidth": 1,
+                            "justifyContent": "center",
+                            "paddingHorizontal": 16,
+                            "paddingVertical": 12,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            {
+                              "color": "#2F7A46",
+                              "fontSize": 13,
+                              "fontWeight": "900",
+                            }
+                          }
+                        >
+                          저장됨
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                  <View
+                    style={
+                      {
+                        "backgroundColor": "#FFFFFF",
+                        "borderColor": "#E7D7C4",
+                        "borderRadius": 20,
+                        "borderWidth": 1,
+                        "gap": 8,
+                        "padding": 16,
+                      }
+                    }
+                  >
+                    <View
+                      style={
+                        {
+                          "gap": 4,
+                        }
+                      }
+                    >
+                      <Text
+                        style={
+                          {
+                            "color": "#2A2620",
+                            "fontSize": 17,
+                            "fontWeight": "900",
+                            "lineHeight": 24,
+                          }
+                        }
+                      >
+                        stay in shape
+                      </Text>
+                      <Text
+                        style={
+                          {
+                            "color": "#8C7355",
+                            "fontSize": 13,
+                            "lineHeight": 19,
+                          }
+                        }
+                      >
+                        몸매를 유지하다
+                      </Text>
+                    </View>
+                    <Text
+                      style={
+                        {
+                          "color": "#5D5143",
+                          "fontSize": 14,
+                          "lineHeight": 21,
+                        }
+                      }
+                    >
+                      건강 습관을 말할 때 써요.
+                    </Text>
+                    <Text
+                      style={
+                        {
+                          "color": "#8A775E",
+                          "fontSize": 13,
+                          "lineHeight": 20,
+                        }
+                      }
+                    >
+                      I run to stay in shape.
+                    </Text>
+                    <View
+                      style={
+                        {
+                          "flexDirection": "row",
+                          "gap": 10,
+                          "marginTop": 4,
+                        }
+                      }
+                    >
+                      <View
+                        accessibilityState={
+                          {
+                            "busy": undefined,
+                            "checked": undefined,
+                            "disabled": undefined,
+                            "expanded": undefined,
+                            "selected": undefined,
+                          }
+                        }
+                        accessible={true}
+                        style={
+                          {
+                            "alignItems": "center",
+                            "backgroundColor": "#FFF4E2",
+                            "borderColor": "#EBCB97",
+                            "borderRadius": 16,
+                            "borderWidth": 1,
+                            "flex": 1,
+                            "justifyContent": "center",
+                            "paddingVertical": 12,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            {
+                              "color": "#8A5A19",
+                              "fontSize": 13,
+                              "fontWeight": "900",
+                            }
+                          }
+                        >
+                          문장에 넣기
+                        </Text>
+                      </View>
+                      <View
+                        accessibilityState={
+                          {
+                            "busy": undefined,
+                            "checked": undefined,
+                            "disabled": true,
+                            "expanded": undefined,
+                            "selected": undefined,
+                          }
+                        }
+                        accessible={true}
+                        style={
+                          {
+                            "alignItems": "center",
+                            "backgroundColor": "#FFFBF4",
+                            "borderColor": "#E3C39B",
+                            "borderRadius": 16,
+                            "borderWidth": 1,
+                            "justifyContent": "center",
+                            "paddingHorizontal": 16,
+                            "paddingVertical": 12,
+                          }
+                        }
+                      >
+                        <Text
+                          style={
+                            {
+                              "color": "#8A5A19",
+                              "fontSize": 13,
+                              "fontWeight": "900",
+                            }
+                          }
+                        >
+                          저장 중
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </View>
+        </RCTScrollView>
+      </View>
+    </View>
+  </View>
+</Modal>
+`;
+
+exports[`[spec] 화면 구조 [spec] AI 코치 창(묻는 중) 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "paddingBottom": 0,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "flex-start",
+            "flexDirection": "row",
+            "gap": 12,
+            "justifyContent": "space-between",
+            "paddingBottom": 14,
+            "paddingHorizontal": 20,
+            "paddingTop": 12,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "flex": 1,
+              "gap": 4,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#232128",
+                "fontSize": 28,
+                "fontWeight": "900",
+                "letterSpacing": -1.2,
+                "lineHeight": 34,
+              }
+            }
+          >
+            표현 추천 받기
+          </Text>
+        </View>
+        <View
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessible={true}
+          style={
+            {
+              "borderRadius": 999,
+              "paddingHorizontal": 4,
+              "paddingVertical": 6,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#7C6545",
+                "fontSize": 14,
+                "fontWeight": "800",
+              }
+            }
+          >
+            닫기
+          </Text>
+        </View>
+      </View>
+      <View
+        style={
+          {
+            "backgroundColor": "#FFF9F2",
+            "borderBottomWidth": 0,
+            "borderColor": "#E8DACB",
+            "borderTopLeftRadius": 32,
+            "borderTopRightRadius": 32,
+            "borderWidth": 1,
+            "elevation": 8,
+            "flex": 1,
+            "overflow": "hidden",
+            "shadowColor": "#000000",
+            "shadowOffset": {
+              "height": -4,
+              "width": 0,
+            },
+            "shadowOpacity": 0.08,
+            "shadowRadius": 14,
+          }
+        }
+      >
+        <RCTScrollView
+          contentContainerStyle={
+            {
+              "paddingBottom": 28,
+              "paddingHorizontal": 20,
+              "paddingTop": 20,
+            }
+          }
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          style={
+            {
+              "flex": 1,
+            }
+          }
+        >
+          <View>
+            <View
+              style={
+                {
+                  "gap": 14,
+                }
+              }
+            >
+              <TextInput
+                multiline={true}
+                placeholder="예: "근력을 키우고 싶다"를 어떻게 말해?"
+                placeholderTextColor="#AE9A87"
+                style={
+                  {
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E7D7C4",
+                    "borderRadius": 18,
+                    "borderWidth": 1,
+                    "color": "#232128",
+                    "fontSize": 15,
+                    "minHeight": 88,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 14,
+                  }
+                }
+                textAlignVertical="top"
+                value="근력을 키우고 싶다"
+              />
+              <View
+                style={
+                  {
+                    "flexDirection": "row",
+                    "flexWrap": "wrap",
+                    "gap": 8,
+                  }
+                }
+              >
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    Morning 주제에 어울리는 표현 3개 알려줘.
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    첫 문장을 어떻게 시작하면 좋을까?
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    이유를 자연스럽게 붙이는 표현을 알려줘.
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    마무리 문장을 어떻게 쓰면 좋을까?
+                  </Text>
+                </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": true,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#FFD08A",
+                    "borderRadius": 18,
+                    "justifyContent": "center",
+                    "opacity": 0.7,
+                    "paddingVertical": 14,
+                  }
+                }
+              >
+                <ActivityIndicator
+                  color="#2E2416"
+                />
+              </View>
+              <Text
+                style={
+                  {
+                    "color": "#7A6B58",
+                    "fontSize": 13,
+                    "lineHeight": 20,
+                  }
+                }
+              >
+                표현을 그대로 붙이지 말고, 내 문장 안에서 자연스럽게 풀어 써 보세요.
+              </Text>
+            </View>
+          </View>
+        </RCTScrollView>
+      </View>
+    </View>
+  </View>
+</Modal>
+`;
+
+exports[`[spec] 화면 구조 [spec] AI 코치 창(오류) 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "paddingBottom": 0,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "flex-start",
+            "flexDirection": "row",
+            "gap": 12,
+            "justifyContent": "space-between",
+            "paddingBottom": 14,
+            "paddingHorizontal": 20,
+            "paddingTop": 12,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "flex": 1,
+              "gap": 4,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#232128",
+                "fontSize": 28,
+                "fontWeight": "900",
+                "letterSpacing": -1.2,
+                "lineHeight": 34,
+              }
+            }
+          >
+            표현 추천 받기
+          </Text>
+        </View>
+        <View
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessible={true}
+          style={
+            {
+              "borderRadius": 999,
+              "paddingHorizontal": 4,
+              "paddingVertical": 6,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#7C6545",
+                "fontSize": 14,
+                "fontWeight": "800",
+              }
+            }
+          >
+            닫기
+          </Text>
+        </View>
+      </View>
+      <View
+        style={
+          {
+            "backgroundColor": "#FFF9F2",
+            "borderBottomWidth": 0,
+            "borderColor": "#E8DACB",
+            "borderTopLeftRadius": 32,
+            "borderTopRightRadius": 32,
+            "borderWidth": 1,
+            "elevation": 8,
+            "flex": 1,
+            "overflow": "hidden",
+            "shadowColor": "#000000",
+            "shadowOffset": {
+              "height": -4,
+              "width": 0,
+            },
+            "shadowOpacity": 0.08,
+            "shadowRadius": 14,
+          }
+        }
+      >
+        <RCTScrollView
+          contentContainerStyle={
+            {
+              "paddingBottom": 28,
+              "paddingHorizontal": 20,
+              "paddingTop": 20,
+            }
+          }
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          style={
+            {
+              "flex": 1,
+            }
+          }
+        >
+          <View>
+            <View
+              style={
+                {
+                  "gap": 14,
+                }
+              }
+            >
+              <TextInput
+                multiline={true}
+                placeholder="예: "근력을 키우고 싶다"를 어떻게 말해?"
+                placeholderTextColor="#AE9A87"
+                style={
+                  {
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E7D7C4",
+                    "borderRadius": 18,
+                    "borderWidth": 1,
+                    "color": "#232128",
+                    "fontSize": 15,
+                    "minHeight": 88,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 14,
+                  }
+                }
+                textAlignVertical="top"
+                value="근력을 키우고 싶다"
+              />
+              <View
+                style={
+                  {
+                    "flexDirection": "row",
+                    "flexWrap": "wrap",
+                    "gap": 8,
+                  }
+                }
+              >
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    Morning 주제에 어울리는 표현 3개 알려줘.
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    첫 문장을 어떻게 시작하면 좋을까?
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    이유를 자연스럽게 붙이는 표현을 알려줘.
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    마무리 문장을 어떻게 쓰면 좋을까?
+                  </Text>
+                </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": false,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#FFD08A",
+                    "borderRadius": 18,
+                    "justifyContent": "center",
+                    "paddingVertical": 14,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#5A3A00",
+                      "fontSize": 15,
+                      "fontWeight": "900",
+                    }
+                  }
+                >
+                  표현 추천받기
+                </Text>
+              </View>
+              <Text
+                style={
+                  {
+                    "color": "#7A6B58",
+                    "fontSize": 13,
+                    "lineHeight": 20,
+                  }
+                }
+              >
+                표현을 그대로 붙이지 말고, 내 문장 안에서 자연스럽게 풀어 써 보세요.
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#B34A2B",
+                    "fontSize": 14,
+                    "lineHeight": 21,
+                  }
+                }
+              >
+                코치가 바빠요
+              </Text>
+            </View>
+          </View>
+        </RCTScrollView>
+      </View>
+    </View>
+  </View>
+</Modal>
+`;
+
+exports[`[spec] 화면 구조 [spec] AI 코치 창(처음) 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "flex": 1,
+          "paddingBottom": 0,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "flex-start",
+            "flexDirection": "row",
+            "gap": 12,
+            "justifyContent": "space-between",
+            "paddingBottom": 14,
+            "paddingHorizontal": 20,
+            "paddingTop": 12,
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "flex": 1,
+              "gap": 4,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#232128",
+                "fontSize": 28,
+                "fontWeight": "900",
+                "letterSpacing": -1.2,
+                "lineHeight": 34,
+              }
+            }
+          >
+            표현 추천 받기
+          </Text>
+        </View>
+        <View
+          accessibilityState={
+            {
+              "busy": undefined,
+              "checked": undefined,
+              "disabled": undefined,
+              "expanded": undefined,
+              "selected": undefined,
+            }
+          }
+          accessible={true}
+          style={
+            {
+              "borderRadius": 999,
+              "paddingHorizontal": 4,
+              "paddingVertical": 6,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#7C6545",
+                "fontSize": 14,
+                "fontWeight": "800",
+              }
+            }
+          >
+            닫기
+          </Text>
+        </View>
+      </View>
+      <View
+        style={
+          {
+            "backgroundColor": "#FFF9F2",
+            "borderBottomWidth": 0,
+            "borderColor": "#E8DACB",
+            "borderTopLeftRadius": 32,
+            "borderTopRightRadius": 32,
+            "borderWidth": 1,
+            "elevation": 8,
+            "flex": 1,
+            "overflow": "hidden",
+            "shadowColor": "#000000",
+            "shadowOffset": {
+              "height": -4,
+              "width": 0,
+            },
+            "shadowOpacity": 0.08,
+            "shadowRadius": 14,
+          }
+        }
+      >
+        <RCTScrollView
+          contentContainerStyle={
+            {
+              "paddingBottom": 28,
+              "paddingHorizontal": 20,
+              "paddingTop": 20,
+            }
+          }
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          style={
+            {
+              "flex": 1,
+            }
+          }
+        >
+          <View>
+            <View
+              style={
+                {
+                  "gap": 14,
+                }
+              }
+            >
+              <TextInput
+                multiline={true}
+                placeholder="예: "근력을 키우고 싶다"를 어떻게 말해?"
+                placeholderTextColor="#AE9A87"
+                style={
+                  {
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E7D7C4",
+                    "borderRadius": 18,
+                    "borderWidth": 1,
+                    "color": "#232128",
+                    "fontSize": 15,
+                    "minHeight": 88,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 14,
+                  }
+                }
+                textAlignVertical="top"
+                value=""
+              />
+              <View
+                style={
+                  {
+                    "flexDirection": "row",
+                    "flexWrap": "wrap",
+                    "gap": 8,
+                  }
+                }
+              >
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    Morning 주제에 어울리는 표현 3개 알려줘.
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    첫 문장을 어떻게 시작하면 좋을까?
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    이유를 자연스럽게 붙이는 표현을 알려줘.
+                  </Text>
+                </View>
+                <View
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#E0D0BC",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 9,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#6D5A45",
+                        "fontSize": 13,
+                        "fontWeight": "700",
+                      }
+                    }
+                  >
+                    마무리 문장을 어떻게 쓰면 좋을까?
+                  </Text>
+                </View>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": false,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignItems": "center",
+                    "backgroundColor": "#FFD08A",
+                    "borderRadius": 18,
+                    "justifyContent": "center",
+                    "paddingVertical": 14,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#5A3A00",
+                      "fontSize": 15,
+                      "fontWeight": "900",
+                    }
+                  }
+                >
+                  표현 추천받기
+                </Text>
+              </View>
+              <Text
+                style={
+                  {
+                    "color": "#7A6B58",
+                    "fontSize": 13,
+                    "lineHeight": 20,
+                  }
+                }
+              >
+                표현을 그대로 붙이지 말고, 내 문장 안에서 자연스럽게 풀어 써 보세요.
+              </Text>
+            </View>
+          </View>
+        </RCTScrollView>
+      </View>
+    </View>
+  </View>
+</Modal>
+`;
+
+exports[`[spec] 화면 구조 [spec] 불러오는 중 화면 1`] = `
+<RNCSafeAreaView
+  style={
+    {
+      "backgroundColor": "#F7F2EB",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+        "paddingBottom": 0,
+      }
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 18,
+          "paddingBottom": 32,
+          "paddingHorizontal": 20,
+          "paddingTop": 8,
+        }
+      }
+      keyboardDismissMode="interactive"
+      keyboardShouldPersistTaps="handled"
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="뒤로가기"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessible={true}
+            style={
+              {
+                "alignItems": "center",
+                "height": 42,
+                "justifyContent": "center",
+                "width": 42,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#4A4033",
+                  "fontSize": 28,
+                  "fontWeight": "700",
+                  "lineHeight": 28,
+                }
+              }
+            >
+              &lt;
+            </Text>
+          </View>
+          <Text
+            style={
+              {
+                "color": "#2F312D",
+                "fontSize": 18,
+                "fontWeight": "900",
+                "letterSpacing": -0.4,
+              }
+            }
+          >
+            작문
+          </Text>
+          <View
+            style={
+              {
+                "height": 42,
+                "width": 42,
+              }
+            }
+          />
+        </View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "justifyContent": "center",
+              "paddingVertical": 48,
+            }
+          }
+        >
+          <ActivityIndicator
+            color="#E38B12"
+          />
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RNCSafeAreaView>
+`;
+
+exports[`[spec] 화면 구조 [spec] 이어 쓰는 다시 쓰기 화면(이 기기에 저장됨 배지, 제출 오류와 문제 보내기) 1`] = `
+<RNCSafeAreaView
+  style={
+    {
+      "backgroundColor": "#F7F2EB",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+        "paddingBottom": 0,
+      }
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 18,
+          "paddingBottom": 32,
+          "paddingHorizontal": 20,
+          "paddingTop": 8,
+        }
+      }
+      keyboardDismissMode="interactive"
+      keyboardShouldPersistTaps="handled"
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="뒤로가기"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessible={true}
+            style={
+              {
+                "alignItems": "center",
+                "height": 42,
+                "justifyContent": "center",
+                "width": 42,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#4A4033",
+                  "fontSize": 28,
+                  "fontWeight": "700",
+                  "lineHeight": 28,
+                }
+              }
+            >
+              &lt;
+            </Text>
+          </View>
+          <Text
+            style={
+              {
+                "color": "#2F312D",
+                "fontSize": 18,
+                "fontWeight": "900",
+                "letterSpacing": -0.4,
+              }
+            }
+          >
+            작문
+          </Text>
+          <View
+            style={
+              {
+                "height": 42,
+                "width": 42,
+              }
+            }
+          />
+        </View>
+        <View
+          style={
+            {
+              "backgroundColor": "transparent",
+              "borderRadius": 0,
+              "borderWidth": 0,
+              "gap": 16,
+              "padding": 0,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "transparent",
+                "borderRadius": 0,
+                "borderWidth": 0,
+                "gap": 10,
+                "padding": 0,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#2B2620",
+                  "fontSize": 24,
+                  "fontWeight": "800",
+                  "lineHeight": 32,
+                }
+              }
+            >
+              What do you usually do in the morning?
+            </Text>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "alignSelf": "flex-start",
+                  "flexDirection": "row",
+                  "flexWrap": "wrap",
+                  "gap": 10,
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  이전 피드백 보기
+                </Text>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  가이드 보기
+                </Text>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  해석 보기
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#EEE0CF",
+                "height": 1,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "backgroundColor": "transparent",
+                "borderRadius": 0,
+                "borderWidth": 0,
+                "gap": 16,
+                "padding": 0,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "backgroundColor": "#FFF8EA",
+                  "borderColor": "#E8D6BE",
+                  "borderRadius": 22,
+                  "borderWidth": 1,
+                  "gap": 8,
+                  "paddingHorizontal": 16,
+                  "paddingVertical": 15,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#A56B1F",
+                    "fontSize": 11,
+                    "fontWeight": "900",
+                    "letterSpacing": 1.1,
+                  }
+                }
+              >
+                오늘의 한 가지 적용
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#2F2A24",
+                    "fontSize": 18,
+                    "fontWeight": "900",
+                    "lineHeight": 25,
+                  }
+                }
+              >
+                이유를 한 문장 더해 보세요
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#5B4B39",
+                    "fontSize": 14,
+                    "lineHeight": 21,
+                  }
+                }
+              >
+                because로 이유를 붙여 다시 써 보세요.
+              </Text>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E2CEB3",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 12,
+                    "paddingVertical": 9,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#755E42",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  이전 피드백 보기
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "display": "none",
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "backgroundColor": "#FFF9F2",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  가이드 보기
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "backgroundColor": "#FFFFFF",
+                  "borderColor": "#E7D7C4",
+                  "borderRadius": 24,
+                  "borderWidth": 1,
+                  "minHeight": 252,
+                  "position": "relative",
+                }
+              }
+            >
+              <TextInput
+                editable={true}
+                multiline={true}
+                placeholder="영어로 답안을 써 보세요."
+                placeholderTextColor="#AE9A87"
+                style={
+                  {
+                    "color": "#232128",
+                    "fontSize": 16,
+                    "minHeight": 252,
+                    "paddingBottom": 92,
+                    "paddingHorizontal": 16,
+                    "paddingTop": 16,
+                  }
+                }
+                textAlignVertical="top"
+                value="I wake up early because I have class."
+              />
+              <View
+                pointerEvents="box-none"
+                style={
+                  {
+                    "alignItems": "flex-end",
+                    "bottom": 14,
+                    "flexDirection": "row",
+                    "gap": 12,
+                    "justifyContent": "space-between",
+                    "left": 14,
+                    "minHeight": 60,
+                    "position": "absolute",
+                    "right": 14,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flex": 1,
+                      "flexDirection": "row",
+                      "flexWrap": "wrap",
+                      "gap": 8,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "backgroundColor": "#FFF3DA",
+                        "borderRadius": 999,
+                        "color": "#8E652E",
+                        "fontSize": 12,
+                        "fontWeight": "800",
+                        "overflow": "hidden",
+                        "paddingHorizontal": 10,
+                        "paddingVertical": 6,
+                      }
+                    }
+                  >
+                    이 기기에 저장됨
+                  </Text>
+                  <Text
+                    style={
+                      {
+                        "backgroundColor": "#F7EFE6",
+                        "borderRadius": 999,
+                        "color": "#7A6853",
+                        "fontSize": 12,
+                        "fontWeight": "800",
+                        "overflow": "hidden",
+                        "paddingHorizontal": 10,
+                        "paddingVertical": 6,
+                      }
+                    }
+                  >
+                    8
+                    단어
+                  </Text>
+                </View>
+                <View
+                  accessibilityHint="표현 추천 패널을 엽니다."
+                  accessibilityLabel="AI 코치 열기"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "alignItems": "flex-end",
+                      "justifyContent": "flex-end",
+                      "minHeight": 54,
+                      "minWidth": 54,
+                      "position": "relative",
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "borderRadius": 999,
+                        "elevation": 5,
+                        "height": 54,
+                        "overflow": "hidden",
+                        "shadowColor": "#C1761E",
+                        "shadowOffset": {
+                          "height": 8,
+                          "width": 0,
+                        },
+                        "shadowOpacity": 0.18,
+                        "shadowRadius": 12,
+                        "width": 54,
+                      }
+                    }
+                  >
+                    <Image
+                      source={
+                        {
+                          "testUri": "../../../assets/images/coach-mascote-face.png",
+                        }
+                      }
+                      style={
+                        {
+                          "backgroundColor": "rgba(255, 255, 255, 0.96)",
+                          "borderColor": "rgba(193, 118, 30, 0.72)",
+                          "borderRadius": 999,
+                          "borderWidth": 2,
+                          "height": "100%",
+                          "width": "100%",
+                        }
+                      }
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+            <View>
+              <Text
+                style={
+                  {
+                    "color": "#B34A2B",
+                    "fontSize": 14,
+                    "lineHeight": 21,
+                  }
+                }
+              >
+                서버가 바빠요
+              </Text>
+              <View
+                accessibilityLabel="반복되는 문제 보내기"
+                accessibilityRole="button"
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "paddingVertical": 7,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#9B5C17",
+                      "fontSize": 13,
+                      "fontWeight": "900",
+                      "lineHeight": 19,
+                      "textDecorationLine": "underline",
+                    }
+                  }
+                >
+                  문제가 반복되나요? 문제 보내기
+                </Text>
+              </View>
+            </View>
+            <View
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": false,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessible={true}
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#E38B12",
+                  "borderRadius": 22,
+                  "justifyContent": "center",
+                  "paddingVertical": 16,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#2E2416",
+                    "fontSize": 16,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                다시 쓴 답변 제출하기
+              </Text>
+            </View>
+            <View
+              accessibilityLabel="작문 취소"
+              accessibilityRole="button"
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": false,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessible={true}
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#FFFCF7",
+                  "borderColor": "#E4CDB4",
+                  "borderRadius": 22,
+                  "borderWidth": 1,
+                  "justifyContent": "center",
+                  "paddingVertical": 15,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#8F5D35",
+                    "fontSize": 15,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                작문 취소
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RNCSafeAreaView>
+`;
+
+exports[`[spec] 화면 구조 [spec] 이전 피드백 창(그때 보인 피드백) 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "gap": 12,
+          "justifyContent": "space-between",
+          "paddingBottom": 14,
+          "paddingHorizontal": 20,
+          "paddingTop": 12,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "gap": 4,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#232128",
+              "fontSize": 28,
+              "fontWeight": "900",
+              "letterSpacing": -1.2,
+              "lineHeight": 34,
+            }
+          }
+        >
+          이전 피드백 보기
+        </Text>
+      </View>
+      <View
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessible={true}
+        style={
+          {
+            "borderRadius": 999,
+            "paddingHorizontal": 4,
+            "paddingVertical": 6,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#7C6545",
+              "fontSize": 14,
+              "fontWeight": "800",
+            }
+          }
+        >
+          닫기
+        </Text>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "backgroundColor": "#FFF9F2",
+          "borderBottomWidth": 0,
+          "borderColor": "#E8DACB",
+          "borderTopLeftRadius": 32,
+          "borderTopRightRadius": 32,
+          "borderWidth": 1,
+          "elevation": 8,
+          "flex": 1,
+          "overflow": "hidden",
+          "shadowColor": "#000000",
+          "shadowOffset": {
+            "height": -4,
+            "width": 0,
+          },
+          "shadowOpacity": 0.08,
+          "shadowRadius": 14,
+        }
+      }
+    >
+      <RCTScrollView
+        contentContainerStyle={
+          {
+            "paddingBottom": 28,
+            "paddingHorizontal": 20,
+            "paddingTop": 20,
+          }
+        }
+        showsVerticalScrollIndicator={false}
+        style={
+          {
+            "flex": 1,
+          }
+        }
+      >
+        <View>
+          <View
+            style={
+              {
+                "gap": 14,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "backgroundColor": "#fffefc",
+                  "borderColor": "#e9d9c6",
+                  "borderRadius": 24,
+                  "borderWidth": 1,
+                  "elevation": 2,
+                  "gap": 14,
+                  "padding": 20,
+                  "shadowColor": "#c58a43",
+                  "shadowOffset": {
+                    "height": 7,
+                    "width": 0,
+                  },
+                  "shadowOpacity": 0.08,
+                  "shadowRadius": 12,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#232128",
+                    "fontSize": 26,
+                    "fontWeight": "900",
+                    "letterSpacing": -1.2,
+                    "lineHeight": 34,
+                  }
+                }
+              >
+                잘한 점
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#564a3f",
+                    "fontSize": 16,
+                    "lineHeight": 24,
+                  }
+                }
+              >
+                아침 일과를 분명하게 말했어요.
+              </Text>
+            </View>
+            <View
+              style={
+                {
+                  "backgroundColor": "#fff8ef",
+                  "borderColor": "#e8b168",
+                  "borderRadius": 18,
+                  "borderWidth": 1,
+                  "gap": 12,
+                  "padding": 18,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#302820",
+                    "fontSize": 18,
+                    "fontWeight": "800",
+                    "lineHeight": 26,
+                  }
+                }
+              >
+                이유를 한 문장 더해 보세요
+              </Text>
+              <View
+                style={
+                  {
+                    "gap": 8,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#fae9e5",
+                      "borderRadius": 14,
+                      "gap": 5,
+                      "padding": 13,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#8b6138",
+                        "fontSize": 13,
+                        "fontWeight": "800",
+                      }
+                    }
+                  >
+                    지금
+                  </Text>
+                  <Text
+                    style={
+                      {
+                        "color": "#564a3f",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                      }
+                    }
+                  >
+                    I wake up early.
+                  </Text>
+                </View>
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#e8f4e9",
+                      "borderRadius": 14,
+                      "gap": 5,
+                      "padding": 13,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "color": "#8b6138",
+                        "fontSize": 13,
+                        "fontWeight": "800",
+                      }
+                    }
+                  >
+                    적용
+                  </Text>
+                  <Text
+                    style={
+                      {
+                        "color": "#564a3f",
+                        "fontSize": 16,
+                        "lineHeight": 24,
+                      }
+                    }
+                  >
+                    I wake up early because I have class.
+                  </Text>
+                </View>
+              </View>
+              <View
+                style={
+                  {
+                    "borderTopColor": "#ecd8bd",
+                    "borderTopWidth": 1,
+                    "gap": 7,
+                    "paddingTop": 12,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#9a5c16",
+                      "fontSize": 14,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  다시 쓸 때
+                </Text>
+                <Text
+                  style={
+                    {
+                      "color": "#564a3f",
+                      "fontSize": 16,
+                      "lineHeight": 24,
+                    }
+                  }
+                >
+                  because로 이유를 붙여 다시 써 보세요.
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </RCTScrollView>
+    </View>
+  </View>
+</Modal>
+`;
+
+exports[`[spec] 화면 구조 [spec] 이전 피드백 창(찾지 못함) 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "gap": 12,
+          "justifyContent": "space-between",
+          "paddingBottom": 14,
+          "paddingHorizontal": 20,
+          "paddingTop": 12,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "gap": 4,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#232128",
+              "fontSize": 28,
+              "fontWeight": "900",
+              "letterSpacing": -1.2,
+              "lineHeight": 34,
+            }
+          }
+        >
+          이전 피드백 보기
+        </Text>
+      </View>
+      <View
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessible={true}
+        style={
+          {
+            "borderRadius": 999,
+            "paddingHorizontal": 4,
+            "paddingVertical": 6,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#7C6545",
+              "fontSize": 14,
+              "fontWeight": "800",
+            }
+          }
+        >
+          닫기
+        </Text>
+      </View>
+    </View>
+    <View
+      style={
+        {
+          "backgroundColor": "#FFF9F2",
+          "borderBottomWidth": 0,
+          "borderColor": "#E8DACB",
+          "borderTopLeftRadius": 32,
+          "borderTopRightRadius": 32,
+          "borderWidth": 1,
+          "elevation": 8,
+          "flex": 1,
+          "overflow": "hidden",
+          "shadowColor": "#000000",
+          "shadowOffset": {
+            "height": -4,
+            "width": 0,
+          },
+          "shadowOpacity": 0.08,
+          "shadowRadius": 14,
+        }
+      }
+    >
+      <RCTScrollView
+        contentContainerStyle={
+          {
+            "paddingBottom": 28,
+            "paddingHorizontal": 20,
+            "paddingTop": 20,
+          }
+        }
+        showsVerticalScrollIndicator={false}
+        style={
+          {
+            "flex": 1,
+          }
+        }
+      >
+        <View>
+          <View
+            style={
+              {
+                "backgroundColor": "#FFFEFC",
+                "borderColor": "#E8DACB",
+                "borderRadius": 24,
+                "borderWidth": 1,
+                "gap": 10,
+                "padding": 18,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#232128",
+                  "fontSize": 18,
+                  "fontWeight": "900",
+                  "lineHeight": 24,
+                }
+              }
+            >
+              이전 피드백을 찾지 못했어요
+            </Text>
+            <Text
+              style={
+                {
+                  "color": "#6D6050",
+                  "fontSize": 14,
+                  "lineHeight": 21,
+                }
+              }
+            >
+              다시쓰기용 이전 피드백 정보가 초기화됐을 수 있어요. 질문 목록으로 돌아가 다시 시작해 주세요.
+            </Text>
+          </View>
+        </View>
+      </RCTScrollView>
+    </View>
+  </View>
+</Modal>
+`;
+
+exports[`[spec] 화면 구조 [spec] 임시저장 실패 배지 1`] = `
+<View
+  style={
+    {
+      "alignItems": "center",
+      "flex": 1,
+      "flexDirection": "row",
+      "flexWrap": "wrap",
+      "gap": 8,
+    }
+  }
+>
+  <Text
+    style={
+      {
+        "backgroundColor": "#FDE6DF",
+        "borderRadius": 999,
+        "color": "#B34A2B",
+        "fontSize": 12,
+        "fontWeight": "800",
+        "overflow": "hidden",
+        "paddingHorizontal": 10,
+        "paddingVertical": 6,
+      }
+    }
+  >
+    임시저장 실패
+  </Text>
+  <Text
+    style={
+      {
+        "backgroundColor": "#F7EFE6",
+        "borderRadius": 999,
+        "color": "#7A6853",
+        "fontSize": 12,
+        "fontWeight": "800",
+        "overflow": "hidden",
+        "paddingHorizontal": 10,
+        "paddingVertical": 6,
+      }
+    }
+  >
+    3
+    단어
+  </Text>
+</View>
+`;
+
+exports[`[spec] 화면 구조 [spec] 작성 가이드 창(스타터·추천 단어·추천 표현) 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "gap": 12,
+          "justifyContent": "space-between",
+          "paddingBottom": 14,
+          "paddingHorizontal": 20,
+          "paddingTop": 12,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "gap": 4,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#232128",
+              "fontSize": 28,
+              "fontWeight": "900",
+              "letterSpacing": -1.2,
+              "lineHeight": 34,
+            }
+          }
+        >
+          작성 가이드
+        </Text>
+      </View>
+      <View
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessible={true}
+        style={
+          {
+            "borderRadius": 999,
+            "paddingHorizontal": 4,
+            "paddingVertical": 6,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#7C6545",
+              "fontSize": 14,
+              "fontWeight": "800",
+            }
+          }
+        >
+          닫기
+        </Text>
+      </View>
+    </View>
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 14,
+          "paddingBottom": 28,
+          "paddingHorizontal": 20,
+          "paddingTop": 8,
+        }
+      }
+      showsVerticalScrollIndicator={false}
+      style={
+        {
+          "flex": 1,
+        }
+      }
+    >
+      <View>
+        <View
+          style={
+            {
+              "backgroundColor": "#FFFEFC",
+              "borderColor": "#E8DACB",
+              "borderRadius": 28,
+              "borderWidth": 1,
+              "gap": 8,
+              "padding": 20,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#A56B1F",
+                "fontSize": 13,
+                "fontWeight": "900",
+              }
+            }
+          >
+            최고의 팁!
+          </Text>
+          <Text
+            style={
+              {
+                "color": "#232128",
+                "fontSize": 22,
+                "fontWeight": "900",
+                "lineHeight": 30,
+              }
+            }
+          >
+            완벽하지 않아도 일단 쓰는 것!
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "gap": 8,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#8A6431",
+                "fontSize": 13,
+                "fontWeight": "800",
+              }
+            }
+          >
+            첫 문장 스타터
+          </Text>
+          <View
+            style={
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "#F0DFC8",
+                "borderRadius": 18,
+                "borderWidth": 1,
+                "paddingHorizontal": 14,
+                "paddingVertical": 12,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#2B2620",
+                  "fontSize": 18,
+                  "fontWeight": "900",
+                  "lineHeight": 26,
+                }
+              }
+            >
+              Every morning, I ...
+            </Text>
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "gap": 12,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "gap": 14,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "gap": 8,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#8A6431",
+                    "fontSize": 13,
+                    "fontWeight": "800",
+                  }
+                }
+              >
+                추천 단어
+              </Text>
+              <View
+                style={
+                  {
+                    "flexDirection": "row",
+                    "flexWrap": "wrap",
+                    "gap": 8,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignSelf": "flex-start",
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#F0DFC8",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "maxWidth": "100%",
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 8,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "fontSize": 14,
+                        "lineHeight": 19,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#2B2620",
+                          "fontSize": 14,
+                          "fontWeight": "800",
+                          "lineHeight": 19,
+                        }
+                      }
+                    >
+                      coffee
+                    </Text>
+                    <Text
+                      style={
+                        {
+                          "color": "#7A6A59",
+                          "fontSize": 12,
+                          "lineHeight": 17,
+                        }
+                      }
+                    >
+                       · 커피
+                    </Text>
+                  </Text>
+                </View>
+                <View
+                  style={
+                    {
+                      "alignSelf": "flex-start",
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#F0DFC8",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "maxWidth": "100%",
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 8,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "fontSize": 14,
+                        "lineHeight": 19,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#2B2620",
+                          "fontSize": 14,
+                          "fontWeight": "800",
+                          "lineHeight": 19,
+                        }
+                      }
+                    >
+                      relax
+                    </Text>
+                    <Text
+                      style={
+                        {
+                          "color": "#7A6A59",
+                          "fontSize": 12,
+                          "lineHeight": 17,
+                        }
+                      }
+                    >
+                       · 휴식을 취하다
+                    </Text>
+                  </Text>
+                </View>
+                <View
+                  style={
+                    {
+                      "alignSelf": "flex-start",
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#F0DFC8",
+                      "borderRadius": 999,
+                      "borderWidth": 1,
+                      "maxWidth": "100%",
+                      "paddingHorizontal": 12,
+                      "paddingVertical": 8,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "fontSize": 14,
+                        "lineHeight": 19,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#2B2620",
+                          "fontSize": 14,
+                          "fontWeight": "800",
+                          "lineHeight": 19,
+                        }
+                      }
+                    >
+                      alarm
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "gap": 8,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#8A6431",
+                    "fontSize": 13,
+                    "fontWeight": "800",
+                  }
+                }
+              >
+                추천 표현
+              </Text>
+              <View
+                style={
+                  {
+                    "gap": 10,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#F0DFC8",
+                      "borderRadius": 18,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 14,
+                      "paddingVertical": 12,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "fontSize": 15,
+                        "lineHeight": 22,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#2B2620",
+                          "fontSize": 15,
+                          "fontWeight": "800",
+                          "lineHeight": 22,
+                        }
+                      }
+                    >
+                      in the morning
+                    </Text>
+                    <Text
+                      style={
+                        {
+                          "color": "#7A6A59",
+                          "fontSize": 13,
+                          "lineHeight": 19,
+                        }
+                      }
+                    >
+                       · 아침에
+                    </Text>
+                  </Text>
+                </View>
+                <View
+                  style={
+                    {
+                      "backgroundColor": "#FFFFFF",
+                      "borderColor": "#F0DFC8",
+                      "borderRadius": 18,
+                      "borderWidth": 1,
+                      "paddingHorizontal": 14,
+                      "paddingVertical": 12,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "fontSize": 15,
+                        "lineHeight": 22,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#2B2620",
+                          "fontSize": 15,
+                          "fontWeight": "800",
+                          "lineHeight": 22,
+                        }
+                      }
+                    >
+                      get ready
+                    </Text>
+                    <Text
+                      style={
+                        {
+                          "color": "#7A6A59",
+                          "fontSize": 13,
+                          "lineHeight": 19,
+                        }
+                      }
+                    >
+                       · 준비하다
+                    </Text>
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</Modal>
+`;
+
+exports[`[spec] 화면 구조 [spec] 작성 가이드 창(추천 불러오는 중) 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "gap": 12,
+          "justifyContent": "space-between",
+          "paddingBottom": 14,
+          "paddingHorizontal": 20,
+          "paddingTop": 12,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "gap": 4,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#232128",
+              "fontSize": 28,
+              "fontWeight": "900",
+              "letterSpacing": -1.2,
+              "lineHeight": 34,
+            }
+          }
+        >
+          작성 가이드
+        </Text>
+      </View>
+      <View
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessible={true}
+        style={
+          {
+            "borderRadius": 999,
+            "paddingHorizontal": 4,
+            "paddingVertical": 6,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#7C6545",
+              "fontSize": 14,
+              "fontWeight": "800",
+            }
+          }
+        >
+          닫기
+        </Text>
+      </View>
+    </View>
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 14,
+          "paddingBottom": 28,
+          "paddingHorizontal": 20,
+          "paddingTop": 8,
+        }
+      }
+      showsVerticalScrollIndicator={false}
+      style={
+        {
+          "flex": 1,
+        }
+      }
+    >
+      <View>
+        <View
+          style={
+            {
+              "backgroundColor": "#FFFEFC",
+              "borderColor": "#E8DACB",
+              "borderRadius": 28,
+              "borderWidth": 1,
+              "gap": 8,
+              "padding": 20,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#A56B1F",
+                "fontSize": 13,
+                "fontWeight": "900",
+              }
+            }
+          >
+            최고의 팁!
+          </Text>
+          <Text
+            style={
+              {
+                "color": "#232128",
+                "fontSize": 22,
+                "fontWeight": "900",
+                "lineHeight": 30,
+              }
+            }
+          >
+            완벽하지 않아도 일단 쓰는 것!
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "gap": 8,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#8A6431",
+                "fontSize": 13,
+                "fontWeight": "800",
+              }
+            }
+          >
+            첫 문장 스타터
+          </Text>
+          <View
+            style={
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "#F0DFC8",
+                "borderRadius": 18,
+                "borderWidth": 1,
+                "paddingHorizontal": 14,
+                "paddingVertical": 12,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#2B2620",
+                  "fontSize": 18,
+                  "fontWeight": "900",
+                  "lineHeight": 26,
+                }
+              }
+            >
+              I think ... because ...
+            </Text>
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "gap": 12,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#8B7761",
+                "fontSize": 13,
+                "lineHeight": 20,
+              }
+            }
+          >
+            지금 추천 단어와 표현을 준비하고 있어요.
+          </Text>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</Modal>
+`;
+
+exports[`[spec] 화면 구조 [spec] 작성 가이드 창(추천 없음, B 난이도) 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "gap": 12,
+          "justifyContent": "space-between",
+          "paddingBottom": 14,
+          "paddingHorizontal": 20,
+          "paddingTop": 12,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+            "gap": 4,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#232128",
+              "fontSize": 28,
+              "fontWeight": "900",
+              "letterSpacing": -1.2,
+              "lineHeight": 34,
+            }
+          }
+        >
+          작성 가이드
+        </Text>
+      </View>
+      <View
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessible={true}
+        style={
+          {
+            "borderRadius": 999,
+            "paddingHorizontal": 4,
+            "paddingVertical": 6,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#7C6545",
+              "fontSize": 14,
+              "fontWeight": "800",
+            }
+          }
+        >
+          닫기
+        </Text>
+      </View>
+    </View>
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 14,
+          "paddingBottom": 28,
+          "paddingHorizontal": 20,
+          "paddingTop": 8,
+        }
+      }
+      showsVerticalScrollIndicator={false}
+      style={
+        {
+          "flex": 1,
+        }
+      }
+    >
+      <View>
+        <View
+          style={
+            {
+              "backgroundColor": "#FFFEFC",
+              "borderColor": "#E8DACB",
+              "borderRadius": 28,
+              "borderWidth": 1,
+              "gap": 8,
+              "padding": 20,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#A56B1F",
+                "fontSize": 13,
+                "fontWeight": "900",
+              }
+            }
+          >
+            최고의 팁!
+          </Text>
+          <Text
+            style={
+              {
+                "color": "#232128",
+                "fontSize": 22,
+                "fontWeight": "900",
+                "lineHeight": 30,
+              }
+            }
+          >
+            생각, 이유, 예시를 흐름 있게 적어 보세요.
+          </Text>
+          <Text
+            style={
+              {
+                "color": "#6D6050",
+                "fontSize": 15,
+                "lineHeight": 23,
+              }
+            }
+          >
+            한 문장씩 차근차근 이어 가면 답이 더 안정적으로 들려요.
+          </Text>
+        </View>
+        <View
+          style={
+            {
+              "gap": 8,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#8A6431",
+                "fontSize": 13,
+                "fontWeight": "800",
+              }
+            }
+          >
+            첫 문장 스타터
+          </Text>
+          <View
+            style={
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "#F0DFC8",
+                "borderRadius": 18,
+                "borderWidth": 1,
+                "paddingHorizontal": 14,
+                "paddingVertical": 12,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#2B2620",
+                  "fontSize": 18,
+                  "fontWeight": "900",
+                  "lineHeight": 26,
+                }
+              }
+            >
+              In my opinion, ... One reason is that ...
+            </Text>
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "gap": 12,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#8B7761",
+                "fontSize": 13,
+                "lineHeight": 20,
+              }
+            }
+          >
+            이 질문에는 아직 추천 단어와 표현이 없어요.
+          </Text>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</Modal>
+`;
+
+exports[`[spec] 화면 구조 [spec] 제출 중인 답 쓰기 카드 1`] = `
+<View
+  style={
+    {
+      "backgroundColor": "transparent",
+      "borderRadius": 0,
+      "borderWidth": 0,
+      "gap": 16,
+      "padding": 0,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "display": "none",
+      }
+    }
+  >
+    <View
+      accessibilityState={
+        {
+          "busy": undefined,
+          "checked": undefined,
+          "disabled": undefined,
+          "expanded": undefined,
+          "selected": undefined,
+        }
+      }
+      accessible={true}
+      style={
+        {
+          "backgroundColor": "#FFF9F2",
+          "borderColor": "#E0D0BC",
+          "borderRadius": 999,
+          "borderWidth": 1,
+          "paddingHorizontal": 14,
+          "paddingVertical": 10,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#7C6545",
+            "fontSize": 13,
+            "fontWeight": "800",
+          }
+        }
+      >
+        가이드 보기
+      </Text>
+    </View>
+  </View>
+  <View
+    style={
+      {
+        "backgroundColor": "#FFFFFF",
+        "borderColor": "#E7D7C4",
+        "borderRadius": 24,
+        "borderWidth": 1,
+        "minHeight": 252,
+        "position": "relative",
+      }
+    }
+  >
+    <TextInput
+      editable={true}
+      multiline={true}
+      placeholder="영어로 답안을 써 보세요."
+      placeholderTextColor="#AE9A87"
+      style={
+        {
+          "color": "#232128",
+          "fontSize": 16,
+          "minHeight": 252,
+          "paddingBottom": 92,
+          "paddingHorizontal": 16,
+          "paddingTop": 16,
+        }
+      }
+      textAlignVertical="top"
+      value="I drink coffee."
+    />
+    <View
+      pointerEvents="box-none"
+      style={
+        {
+          "alignItems": "flex-end",
+          "bottom": 14,
+          "flexDirection": "row",
+          "gap": 12,
+          "justifyContent": "space-between",
+          "left": 14,
+          "minHeight": 60,
+          "position": "absolute",
+          "right": 14,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "alignItems": "center",
+            "flex": 1,
+            "flexDirection": "row",
+            "flexWrap": "wrap",
+            "gap": 8,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "backgroundColor": "#F7EFE6",
+              "borderRadius": 999,
+              "color": "#7A6853",
+              "fontSize": 12,
+              "fontWeight": "800",
+              "overflow": "hidden",
+              "paddingHorizontal": 10,
+              "paddingVertical": 6,
+            }
+          }
+        >
+          3
+          단어
+        </Text>
+      </View>
+      <View
+        accessibilityHint="표현 추천 패널을 엽니다."
+        accessibilityLabel="AI 코치 열기"
+        accessibilityRole="button"
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessible={true}
+        style={
+          {
+            "alignItems": "flex-end",
+            "justifyContent": "flex-end",
+            "minHeight": 54,
+            "minWidth": 54,
+            "position": "relative",
+          }
+        }
+      >
+        <View
+          style={
+            {
+              "borderRadius": 999,
+              "elevation": 5,
+              "height": 54,
+              "overflow": "hidden",
+              "shadowColor": "#C1761E",
+              "shadowOffset": {
+                "height": 8,
+                "width": 0,
+              },
+              "shadowOpacity": 0.18,
+              "shadowRadius": 12,
+              "width": 54,
+            }
+          }
+        >
+          <Image
+            source={
+              {
+                "testUri": "../../../assets/images/coach-mascote-face.png",
+              }
+            }
+            style={
+              {
+                "backgroundColor": "rgba(255, 255, 255, 0.96)",
+                "borderColor": "rgba(193, 118, 30, 0.72)",
+                "borderRadius": 999,
+                "borderWidth": 2,
+                "height": "100%",
+                "width": "100%",
+              }
+            }
+          />
+        </View>
+      </View>
+    </View>
+  </View>
+  <View
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": true,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessible={true}
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#E38B12",
+        "borderRadius": 22,
+        "justifyContent": "center",
+        "opacity": 0.7,
+        "paddingVertical": 16,
+      }
+    }
+  >
+    <ActivityIndicator
+      color="#2E2416"
+    />
+  </View>
+  <View
+    accessibilityLabel="작문 취소"
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": true,
+        "expanded": undefined,
+        "selected": undefined,
+      }
+    }
+    accessible={true}
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFFCF7",
+        "borderColor": "#E4CDB4",
+        "borderRadius": 22,
+        "borderWidth": 1,
+        "justifyContent": "center",
+        "opacity": 0.7,
+        "paddingVertical": 15,
+      }
+    }
+  >
+    <Text
+      style={
+        {
+          "color": "#8F5D35",
+          "fontSize": 15,
+          "fontWeight": "900",
+        }
+      }
+    >
+      작문 취소
+    </Text>
+  </View>
+</View>
+`;
+
+exports[`[spec] 화면 구조 [spec] 제출한 뒤 잠긴 화면 1`] = `
+<RNCSafeAreaView
+  style={
+    {
+      "backgroundColor": "#F7F2EB",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+        "paddingBottom": 0,
+      }
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 18,
+          "paddingBottom": 32,
+          "paddingHorizontal": 20,
+          "paddingTop": 8,
+        }
+      }
+      keyboardDismissMode="interactive"
+      keyboardShouldPersistTaps="handled"
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="뒤로가기"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessible={true}
+            style={
+              {
+                "alignItems": "center",
+                "height": 42,
+                "justifyContent": "center",
+                "width": 42,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#4A4033",
+                  "fontSize": 28,
+                  "fontWeight": "700",
+                  "lineHeight": 28,
+                }
+              }
+            >
+              &lt;
+            </Text>
+          </View>
+          <Text
+            style={
+              {
+                "color": "#2F312D",
+                "fontSize": 18,
+                "fontWeight": "900",
+                "letterSpacing": -0.4,
+              }
+            }
+          >
+            작문
+          </Text>
+          <View
+            style={
+              {
+                "height": 42,
+                "width": 42,
+              }
+            }
+          />
+        </View>
+        <View
+          style={
+            {
+              "backgroundColor": "transparent",
+              "borderRadius": 0,
+              "borderWidth": 0,
+              "gap": 16,
+              "padding": 0,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "transparent",
+                "borderRadius": 0,
+                "borderWidth": 0,
+                "gap": 10,
+                "padding": 0,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#2B2620",
+                  "fontSize": 24,
+                  "fontWeight": "800",
+                  "lineHeight": 32,
+                }
+              }
+            >
+              What do you usually do in the morning?
+            </Text>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "alignSelf": "flex-start",
+                  "flexDirection": "row",
+                  "flexWrap": "wrap",
+                  "gap": 10,
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  피드백 보기
+                </Text>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  가이드 보기
+                </Text>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  해석 보기
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#EEE0CF",
+                "height": 1,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "backgroundColor": "transparent",
+                "borderRadius": 0,
+                "borderWidth": 0,
+                "gap": 16,
+                "padding": 0,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "backgroundColor": "#FFF8EA",
+                  "borderColor": "#E8D6BE",
+                  "borderRadius": 22,
+                  "borderWidth": 1,
+                  "gap": 8,
+                  "paddingHorizontal": 16,
+                  "paddingVertical": 15,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#A56B1F",
+                    "fontSize": 11,
+                    "fontWeight": "900",
+                    "letterSpacing": 1.1,
+                  }
+                }
+              >
+                오늘의 한 가지 적용
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#2F2A24",
+                    "fontSize": 18,
+                    "fontWeight": "900",
+                    "lineHeight": 25,
+                  }
+                }
+              >
+                시간 표현을 더해 보세요
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#5B4B39",
+                    "fontSize": 14,
+                    "lineHeight": 21,
+                  }
+                }
+              >
+                every morning을 넣어 다시 써 보세요.
+              </Text>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E2CEB3",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 12,
+                    "paddingVertical": 9,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#755E42",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  피드백 보기
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "display": "none",
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "backgroundColor": "#FFF9F2",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  가이드 보기
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "backgroundColor": "#FFFFFF",
+                  "borderColor": "#E7D7C4",
+                  "borderRadius": 24,
+                  "borderWidth": 1,
+                  "minHeight": 252,
+                  "position": "relative",
+                }
+              }
+            >
+              <TextInput
+                editable={false}
+                multiline={true}
+                placeholder="영어로 답안을 써 보세요."
+                placeholderTextColor="#AE9A87"
+                style={
+                  {
+                    "color": "#7B6B59",
+                    "fontSize": 16,
+                    "minHeight": 252,
+                    "paddingBottom": 92,
+                    "paddingHorizontal": 16,
+                    "paddingTop": 16,
+                  }
+                }
+                textAlignVertical="top"
+                value="I drink coffee."
+              />
+              <View
+                pointerEvents="box-none"
+                style={
+                  {
+                    "alignItems": "flex-end",
+                    "bottom": 14,
+                    "flexDirection": "row",
+                    "gap": 12,
+                    "justifyContent": "space-between",
+                    "left": 14,
+                    "minHeight": 60,
+                    "position": "absolute",
+                    "right": 14,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flex": 1,
+                      "flexDirection": "row",
+                      "flexWrap": "wrap",
+                      "gap": 8,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "backgroundColor": "#F7EFE6",
+                        "borderRadius": 999,
+                        "color": "#7A6853",
+                        "fontSize": 12,
+                        "fontWeight": "800",
+                        "overflow": "hidden",
+                        "paddingHorizontal": 10,
+                        "paddingVertical": 6,
+                      }
+                    }
+                  >
+                    3
+                    단어
+                  </Text>
+                </View>
+                <View
+                  accessibilityHint="표현 추천 패널을 엽니다."
+                  accessibilityLabel="AI 코치 열기"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "alignItems": "flex-end",
+                      "justifyContent": "flex-end",
+                      "minHeight": 54,
+                      "minWidth": 54,
+                      "position": "relative",
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "borderRadius": 999,
+                        "elevation": 5,
+                        "height": 54,
+                        "overflow": "hidden",
+                        "shadowColor": "#C1761E",
+                        "shadowOffset": {
+                          "height": 8,
+                          "width": 0,
+                        },
+                        "shadowOpacity": 0.18,
+                        "shadowRadius": 12,
+                        "width": 54,
+                      }
+                    }
+                  >
+                    <Image
+                      source={
+                        {
+                          "testUri": "../../../assets/images/coach-mascote-face.png",
+                        }
+                      }
+                      style={
+                        {
+                          "backgroundColor": "rgba(255, 255, 255, 0.96)",
+                          "borderColor": "rgba(193, 118, 30, 0.72)",
+                          "borderRadius": 999,
+                          "borderWidth": 2,
+                          "height": "100%",
+                          "width": "100%",
+                        }
+                      }
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+            <View
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": false,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessible={true}
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#E38B12",
+                  "borderRadius": 22,
+                  "justifyContent": "center",
+                  "paddingVertical": 16,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#2E2416",
+                    "fontSize": 16,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                피드백 보기
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RNCSafeAreaView>
+`;
+
+exports[`[spec] 화면 구조 [spec] 질문을 찾지 못한 화면 1`] = `
+<RNCSafeAreaView
+  style={
+    {
+      "backgroundColor": "#F7F2EB",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+        "paddingBottom": 0,
+      }
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 18,
+          "paddingBottom": 32,
+          "paddingHorizontal": 20,
+          "paddingTop": 8,
+        }
+      }
+      keyboardDismissMode="interactive"
+      keyboardShouldPersistTaps="handled"
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="뒤로가기"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessible={true}
+            style={
+              {
+                "alignItems": "center",
+                "height": 42,
+                "justifyContent": "center",
+                "width": 42,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#4A4033",
+                  "fontSize": 28,
+                  "fontWeight": "700",
+                  "lineHeight": 28,
+                }
+              }
+            >
+              &lt;
+            </Text>
+          </View>
+          <Text
+            style={
+              {
+                "color": "#2F312D",
+                "fontSize": 18,
+                "fontWeight": "900",
+                "letterSpacing": -0.4,
+              }
+            }
+          >
+            작문
+          </Text>
+          <View
+            style={
+              {
+                "height": 42,
+                "width": 42,
+              }
+            }
+          />
+        </View>
+        <View
+          style={
+            {
+              "backgroundColor": "#FFFEFC",
+              "borderColor": "#E8DACB",
+              "borderRadius": 28,
+              "borderWidth": 1,
+              "gap": 14,
+              "padding": 22,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#232128",
+                "fontSize": 24,
+                "fontWeight": "900",
+                "letterSpacing": -1,
+              }
+            }
+          >
+            질문을 다시 골라 주세요
+          </Text>
+          <Text
+            style={
+              {
+                "color": "#6D6050",
+                "fontSize": 15,
+                "lineHeight": 23,
+              }
+            }
+          >
+            선택한 질문을 찾지 못했어요. 질문 목록으로 돌아가 다시 선택하면 바로 이어서 쓸 수 있어요.
+          </Text>
+          <View
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessible={true}
+            style={
+              {
+                "alignItems": "center",
+                "backgroundColor": "#E38B12",
+                "borderRadius": 22,
+                "justifyContent": "center",
+                "paddingVertical": 16,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#2E2416",
+                  "fontSize": 16,
+                  "fontWeight": "900",
+                }
+              }
+            >
+              질문 목록으로 돌아가기
+            </Text>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RNCSafeAreaView>
+`;
+
+exports[`[spec] 화면 구조 [spec] 처음 쓰기 화면(빈 답, 말풍선) 1`] = `
+<RNCSafeAreaView
+  style={
+    {
+      "backgroundColor": "#F7F2EB",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+        "paddingBottom": 0,
+      }
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 18,
+          "paddingBottom": 32,
+          "paddingHorizontal": 20,
+          "paddingTop": 8,
+        }
+      }
+      keyboardDismissMode="interactive"
+      keyboardShouldPersistTaps="handled"
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="뒤로가기"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessible={true}
+            style={
+              {
+                "alignItems": "center",
+                "height": 42,
+                "justifyContent": "center",
+                "width": 42,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#4A4033",
+                  "fontSize": 28,
+                  "fontWeight": "700",
+                  "lineHeight": 28,
+                }
+              }
+            >
+              &lt;
+            </Text>
+          </View>
+          <Text
+            style={
+              {
+                "color": "#2F312D",
+                "fontSize": 18,
+                "fontWeight": "900",
+                "letterSpacing": -0.4,
+              }
+            }
+          >
+            작문
+          </Text>
+          <View
+            style={
+              {
+                "height": 42,
+                "width": 42,
+              }
+            }
+          />
+        </View>
+        <View
+          style={
+            {
+              "backgroundColor": "transparent",
+              "borderRadius": 0,
+              "borderWidth": 0,
+              "gap": 16,
+              "padding": 0,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "transparent",
+                "borderRadius": 0,
+                "borderWidth": 0,
+                "gap": 10,
+                "padding": 0,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#2B2620",
+                  "fontSize": 24,
+                  "fontWeight": "800",
+                  "lineHeight": 32,
+                }
+              }
+            >
+              What do you usually do in the morning?
+            </Text>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "alignSelf": "flex-start",
+                  "flexDirection": "row",
+                  "flexWrap": "wrap",
+                  "gap": 10,
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  가이드 보기
+                </Text>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  해석 보기
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#EEE0CF",
+                "height": 1,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "backgroundColor": "transparent",
+                "borderRadius": 0,
+                "borderWidth": 0,
+                "gap": 16,
+                "padding": 0,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "display": "none",
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "backgroundColor": "#FFF9F2",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  가이드 보기
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "backgroundColor": "#FFFFFF",
+                  "borderColor": "#E7D7C4",
+                  "borderRadius": 24,
+                  "borderWidth": 1,
+                  "minHeight": 252,
+                  "position": "relative",
+                }
+              }
+            >
+              <TextInput
+                editable={true}
+                multiline={true}
+                placeholder="영어로 답안을 써 보세요."
+                placeholderTextColor="#AE9A87"
+                style={
+                  {
+                    "color": "#232128",
+                    "fontSize": 16,
+                    "minHeight": 252,
+                    "paddingBottom": 92,
+                    "paddingHorizontal": 16,
+                    "paddingTop": 16,
+                  }
+                }
+                textAlignVertical="top"
+                value=""
+              />
+              <View
+                pointerEvents="box-none"
+                style={
+                  {
+                    "alignItems": "flex-end",
+                    "bottom": 14,
+                    "flexDirection": "row",
+                    "gap": 12,
+                    "justifyContent": "space-between",
+                    "left": 14,
+                    "minHeight": 60,
+                    "position": "absolute",
+                    "right": 14,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flex": 1,
+                      "flexDirection": "row",
+                      "flexWrap": "wrap",
+                      "gap": 8,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "backgroundColor": "#F7EFE6",
+                        "borderRadius": 999,
+                        "color": "#7A6853",
+                        "fontSize": 12,
+                        "fontWeight": "800",
+                        "overflow": "hidden",
+                        "paddingHorizontal": 10,
+                        "paddingVertical": 6,
+                      }
+                    }
+                  >
+                    0
+                    단어
+                  </Text>
+                </View>
+                <View
+                  accessibilityHint="표현 추천 패널을 엽니다."
+                  accessibilityLabel="AI 코치 열기"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "alignItems": "flex-end",
+                      "justifyContent": "flex-end",
+                      "minHeight": 54,
+                      "minWidth": 54,
+                      "paddingTop": 60,
+                      "position": "relative",
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "backgroundColor": "rgba(255, 253, 248, 0.98)",
+                        "borderColor": "#E6D6C1",
+                        "borderRadius": 18,
+                        "borderWidth": 1,
+                        "bottom": 62,
+                        "elevation": 4,
+                        "minWidth": 156,
+                        "paddingHorizontal": 12,
+                        "paddingVertical": 10,
+                        "position": "absolute",
+                        "right": 0,
+                        "shadowColor": "#C1761E",
+                        "shadowOffset": {
+                          "height": 8,
+                          "width": 0,
+                        },
+                        "shadowOpacity": 0.14,
+                        "shadowRadius": 12,
+                        "width": 156,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#7B5A35",
+                          "fontSize": 12,
+                          "fontWeight": "800",
+                          "lineHeight": 18,
+                          "textAlign": "left",
+                        }
+                      }
+                    >
+                      표현이 막히면 AI 코치에게 물어봐요.
+                    </Text>
+                    <View
+                      style={
+                        {
+                          "backgroundColor": "rgba(255, 253, 248, 0.98)",
+                          "borderBottomWidth": 1,
+                          "borderColor": "#E6D6C1",
+                          "borderRightWidth": 1,
+                          "bottom": -7,
+                          "height": 13,
+                          "position": "absolute",
+                          "right": 18,
+                          "transform": [
+                            {
+                              "rotate": "45deg",
+                            },
+                          ],
+                          "width": 13,
+                        }
+                      }
+                    />
+                  </View>
+                  <View
+                    style={
+                      {
+                        "borderRadius": 999,
+                        "elevation": 5,
+                        "height": 54,
+                        "overflow": "hidden",
+                        "shadowColor": "#C1761E",
+                        "shadowOffset": {
+                          "height": 8,
+                          "width": 0,
+                        },
+                        "shadowOpacity": 0.18,
+                        "shadowRadius": 12,
+                        "width": 54,
+                      }
+                    }
+                  >
+                    <Image
+                      source={
+                        {
+                          "testUri": "../../../assets/images/coach-mascote-face.png",
+                        }
+                      }
+                      style={
+                        {
+                          "backgroundColor": "rgba(255, 255, 255, 0.96)",
+                          "borderColor": "rgba(193, 118, 30, 0.72)",
+                          "borderRadius": 999,
+                          "borderWidth": 2,
+                          "height": "100%",
+                          "width": "100%",
+                        }
+                      }
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+            <View
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": false,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessible={true}
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#E38B12",
+                  "borderRadius": 22,
+                  "justifyContent": "center",
+                  "paddingVertical": 16,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#2E2416",
+                    "fontSize": 16,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                피드백 받기
+              </Text>
+            </View>
+            <View
+              accessibilityLabel="작문 취소"
+              accessibilityRole="button"
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": false,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessible={true}
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#FFFCF7",
+                  "borderColor": "#E4CDB4",
+                  "borderRadius": 22,
+                  "borderWidth": 1,
+                  "justifyContent": "center",
+                  "paddingVertical": 15,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#8F5D35",
+                    "fontSize": 15,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                작문 취소
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RNCSafeAreaView>
+`;
+
+exports[`[spec] 화면 구조 [spec] 태그 연습 화면(해석 펼침, 표현으로 채운 답) 1`] = `
+<RNCSafeAreaView
+  style={
+    {
+      "backgroundColor": "#F7F2EB",
+      "flex": 1,
+    }
+  }
+>
+  <View
+    style={
+      {
+        "flex": 1,
+        "paddingBottom": 0,
+      }
+    }
+  >
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 18,
+          "paddingBottom": 32,
+          "paddingHorizontal": 20,
+          "paddingTop": 8,
+        }
+      }
+      keyboardDismissMode="interactive"
+      keyboardShouldPersistTaps="handled"
+    >
+      <View>
+        <View
+          style={
+            {
+              "alignItems": "center",
+              "flexDirection": "row",
+              "justifyContent": "space-between",
+            }
+          }
+        >
+          <View
+            accessibilityLabel="뒤로가기"
+            accessibilityRole="button"
+            accessibilityState={
+              {
+                "busy": undefined,
+                "checked": undefined,
+                "disabled": undefined,
+                "expanded": undefined,
+                "selected": undefined,
+              }
+            }
+            accessible={true}
+            style={
+              {
+                "alignItems": "center",
+                "height": 42,
+                "justifyContent": "center",
+                "width": 42,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#4A4033",
+                  "fontSize": 28,
+                  "fontWeight": "700",
+                  "lineHeight": 28,
+                }
+              }
+            >
+              &lt;
+            </Text>
+          </View>
+          <Text
+            style={
+              {
+                "color": "#2F312D",
+                "fontSize": 18,
+                "fontWeight": "900",
+                "letterSpacing": -0.4,
+              }
+            }
+          >
+            작문
+          </Text>
+          <View
+            style={
+              {
+                "height": 42,
+                "width": 42,
+              }
+            }
+          />
+        </View>
+        <View
+          style={
+            {
+              "backgroundColor": "transparent",
+              "borderRadius": 0,
+              "borderWidth": 0,
+              "gap": 16,
+              "padding": 0,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "transparent",
+                "borderRadius": 0,
+                "borderWidth": 0,
+                "gap": 10,
+                "padding": 0,
+              }
+            }
+          >
+            <Text
+              style={
+                {
+                  "color": "#2B2620",
+                  "fontSize": 24,
+                  "fontWeight": "800",
+                  "lineHeight": 32,
+                }
+              }
+            >
+              What do you usually do in the morning?
+            </Text>
+            <Text
+              style={
+                {
+                  "color": "#756757",
+                  "fontSize": 15,
+                  "lineHeight": 22,
+                }
+              }
+            >
+              아침에 보통 무엇을 하나요?
+            </Text>
+            <View
+              style={
+                {
+                  "backgroundColor": "#FFF8EF",
+                  "borderColor": "#E8D8C5",
+                  "borderRadius": 18,
+                  "borderWidth": 1,
+                  "gap": 6,
+                  "paddingHorizontal": 14,
+                  "paddingVertical": 12,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#A56B1F",
+                    "fontSize": 11,
+                    "fontWeight": "900",
+                    "letterSpacing": 0.3,
+                  }
+                }
+              >
+                태그 연습
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#6B5A46",
+                    "fontSize": 13,
+                    "fontWeight": "700",
+                    "lineHeight": 19,
+                  }
+                }
+              >
+                일상 태그로 저장한 표현을 활용해 새 문장을 써보세요.
+              </Text>
+              <RCTScrollView
+                contentContainerStyle={
+                  {
+                    "flexDirection": "row",
+                    "gap": 8,
+                    "paddingRight": 12,
+                  }
+                }
+                horizontal={true}
+                showsHorizontalScrollIndicator={false}
+                style={
+                  {
+                    "flexGrow": 0,
+                  }
+                }
+              >
+                <View>
+                  <View
+                    style={
+                      {
+                        "backgroundColor": "#FFF1DC",
+                        "borderColor": "#E9AF63",
+                        "borderRadius": 999,
+                        "borderWidth": 1,
+                        "paddingHorizontal": 12,
+                        "paddingVertical": 8,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#2C2924",
+                          "fontSize": 15,
+                          "fontWeight": "900",
+                          "lineHeight": 21,
+                        }
+                      }
+                    >
+                      take a walk
+                    </Text>
+                  </View>
+                  <View
+                    style={
+                      {
+                        "backgroundColor": "#FFFDF9",
+                        "borderColor": "#E7D6C1",
+                        "borderRadius": 999,
+                        "borderWidth": 1,
+                        "paddingHorizontal": 12,
+                        "paddingVertical": 8,
+                      }
+                    }
+                  >
+                    <Text
+                      style={
+                        {
+                          "color": "#5F5244",
+                          "fontSize": 14,
+                          "fontWeight": "700",
+                          "lineHeight": 19,
+                        }
+                      }
+                    >
+                      read the news
+                    </Text>
+                  </View>
+                </View>
+              </RCTScrollView>
+            </View>
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "alignSelf": "flex-start",
+                  "flexDirection": "row",
+                  "flexWrap": "wrap",
+                  "gap": 10,
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  가이드 보기
+                </Text>
+              </View>
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "alignSelf": "flex-start",
+                    "backgroundColor": "#FFFFFF",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  해석 숨기기
+                </Text>
+              </View>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#EEE0CF",
+                "height": 1,
+              }
+            }
+          />
+          <View
+            style={
+              {
+                "backgroundColor": "transparent",
+                "borderRadius": 0,
+                "borderWidth": 0,
+                "gap": 16,
+                "padding": 0,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "display": "none",
+                }
+              }
+            >
+              <View
+                accessibilityState={
+                  {
+                    "busy": undefined,
+                    "checked": undefined,
+                    "disabled": undefined,
+                    "expanded": undefined,
+                    "selected": undefined,
+                  }
+                }
+                accessible={true}
+                style={
+                  {
+                    "backgroundColor": "#FFF9F2",
+                    "borderColor": "#E0D0BC",
+                    "borderRadius": 999,
+                    "borderWidth": 1,
+                    "paddingHorizontal": 14,
+                    "paddingVertical": 10,
+                  }
+                }
+              >
+                <Text
+                  style={
+                    {
+                      "color": "#7C6545",
+                      "fontSize": 13,
+                      "fontWeight": "800",
+                    }
+                  }
+                >
+                  가이드 보기
+                </Text>
+              </View>
+            </View>
+            <View
+              style={
+                {
+                  "backgroundColor": "#FFFFFF",
+                  "borderColor": "#E7D7C4",
+                  "borderRadius": 24,
+                  "borderWidth": 1,
+                  "minHeight": 252,
+                  "position": "relative",
+                }
+              }
+            >
+              <TextInput
+                editable={true}
+                multiline={true}
+                placeholder="영어로 답안을 써 보세요."
+                placeholderTextColor="#AE9A87"
+                style={
+                  {
+                    "color": "#232128",
+                    "fontSize": 16,
+                    "minHeight": 252,
+                    "paddingBottom": 92,
+                    "paddingHorizontal": 16,
+                    "paddingTop": 16,
+                  }
+                }
+                textAlignVertical="top"
+                value="take a walk"
+              />
+              <View
+                pointerEvents="box-none"
+                style={
+                  {
+                    "alignItems": "flex-end",
+                    "bottom": 14,
+                    "flexDirection": "row",
+                    "gap": 12,
+                    "justifyContent": "space-between",
+                    "left": 14,
+                    "minHeight": 60,
+                    "position": "absolute",
+                    "right": 14,
+                  }
+                }
+              >
+                <View
+                  style={
+                    {
+                      "alignItems": "center",
+                      "flex": 1,
+                      "flexDirection": "row",
+                      "flexWrap": "wrap",
+                      "gap": 8,
+                    }
+                  }
+                >
+                  <Text
+                    style={
+                      {
+                        "backgroundColor": "#F7EFE6",
+                        "borderRadius": 999,
+                        "color": "#7A6853",
+                        "fontSize": 12,
+                        "fontWeight": "800",
+                        "overflow": "hidden",
+                        "paddingHorizontal": 10,
+                        "paddingVertical": 6,
+                      }
+                    }
+                  >
+                    3
+                    단어
+                  </Text>
+                </View>
+                <View
+                  accessibilityHint="표현 추천 패널을 엽니다."
+                  accessibilityLabel="AI 코치 열기"
+                  accessibilityRole="button"
+                  accessibilityState={
+                    {
+                      "busy": undefined,
+                      "checked": undefined,
+                      "disabled": undefined,
+                      "expanded": undefined,
+                      "selected": undefined,
+                    }
+                  }
+                  accessible={true}
+                  style={
+                    {
+                      "alignItems": "flex-end",
+                      "justifyContent": "flex-end",
+                      "minHeight": 54,
+                      "minWidth": 54,
+                      "position": "relative",
+                    }
+                  }
+                >
+                  <View
+                    style={
+                      {
+                        "borderRadius": 999,
+                        "elevation": 5,
+                        "height": 54,
+                        "overflow": "hidden",
+                        "shadowColor": "#C1761E",
+                        "shadowOffset": {
+                          "height": 8,
+                          "width": 0,
+                        },
+                        "shadowOpacity": 0.18,
+                        "shadowRadius": 12,
+                        "width": 54,
+                      }
+                    }
+                  >
+                    <Image
+                      source={
+                        {
+                          "testUri": "../../../assets/images/coach-mascote-face.png",
+                        }
+                      }
+                      style={
+                        {
+                          "backgroundColor": "rgba(255, 255, 255, 0.96)",
+                          "borderColor": "rgba(193, 118, 30, 0.72)",
+                          "borderRadius": 999,
+                          "borderWidth": 2,
+                          "height": "100%",
+                          "width": "100%",
+                        }
+                      }
+                    />
+                  </View>
+                </View>
+              </View>
+            </View>
+            <View
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": false,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessible={true}
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#E38B12",
+                  "borderRadius": 22,
+                  "justifyContent": "center",
+                  "paddingVertical": 16,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#2E2416",
+                    "fontSize": 16,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                피드백 받기
+              </Text>
+            </View>
+            <View
+              accessibilityLabel="작문 취소"
+              accessibilityRole="button"
+              accessibilityState={
+                {
+                  "busy": undefined,
+                  "checked": undefined,
+                  "disabled": false,
+                  "expanded": undefined,
+                  "selected": undefined,
+                }
+              }
+              accessible={true}
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#FFFCF7",
+                  "borderColor": "#E4CDB4",
+                  "borderRadius": 22,
+                  "borderWidth": 1,
+                  "justifyContent": "center",
+                  "paddingVertical": 15,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#8F5D35",
+                    "fontSize": 15,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                작문 취소
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</RNCSafeAreaView>
+`;

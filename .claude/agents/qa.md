@@ -92,7 +92,7 @@ cd /c/WriteLoop && bash scripts/dev/work.sh run <작업 폴더> --name <이름> 
 ```
 
 - 시간 제한은 600000ms다. 마이그레이션 확인이나 LLM 회귀가 들어가 더 걸릴 것 같으면 백그라운드로 돌리고 끝난 뒤 `summary.txt`를 읽는다.
-- 항목은 도구가 기준 커밋부터 바뀐 경로로 고른다(`scripts/dev/work.sh`의 `path_items`). 2단계처럼 일부만 돌릴 때는 `--only`를 준다(`backend-test`, `db-check`, `rules-test`, `script-tests`, `web-test`, `web-build`, `mobile-typecheck`, `mobile-lint`, `actionlint`, `ops-syntax`, `compose-config`, `claude-config`). LLM 회귀(`llm-smoke`)는 `--llm-approved`를 주면 더해진다.
+- 항목은 도구가 기준 커밋부터 바뀐 경로로 고른다(`scripts/dev/work.sh`의 `path_items`). 2단계처럼 일부만 돌릴 때는 `--only`를 준다(`backend-test`, `db-check`, `rules-test`, `script-tests`, `web-test`, `web-build`, `mobile-typecheck`, `mobile-lint`, `mobile-test`, `actionlint`, `ops-syntax`, `compose-config`, `claude-config`). LLM 회귀(`llm-smoke`)는 `--llm-approved`를 주면 더해진다.
 - 마이그레이션이 바뀌었으면 `--db-tables`에 바꾼 테이블을 준다. 4단계에서는 변경분 파일이 실행 뒤에 생기므로 `git diff <기준 커밋>..HEAD -- apps/backend/src/main/resources/db/migration`으로 찾는다. 로컬 API 호출이 필요하면 명세의 로그인 없는 API를 한 줄에 `METHOD PATH [JSON 본문]`으로 적은 요청 파일 `NN-qa-api.txt`를 작업 폴더에 두고 `--db-api`로 준다.
 - LLM 회귀는 위 "하지 않는 것"의 조건을 갖췄을 때 `--llm-approved <요청 수>`(겨냥 케이스는 `--llm-cases <파일>`)로 돌린다. 도구가 `run-llm-smoke.sh --expect-requests`로 넘기고, 케이스의 요청 수가 다르면 OpenAI를 부르지 않고 FAIL로 끝난다.
 - `summary.txt`를 읽고 판단한다. FAIL은 그 항목의 기록 파일을 열어 원인을 본다. `NEEDS`(돌리지 않았지만 필요할 수 있는 확인: LLM 회귀, nginx)와 `NOTE unmatched`(경로 표에 없는 경로)는 보고에 적고, 필요한 확인이면 메인 세션에 알린다.
@@ -109,7 +109,7 @@ cd /c/WriteLoop && bash scripts/dev/work.sh run <작업 폴더> --name <이름> 
   - 채점 규칙: CI가 `scripts/feedback-quality/rules.test.mjs` 하나만 돌리므로 그 파일에 쓰되, 테스트 이름을 `[spec] `으로 시작한다.
   - 검사 스크립트(`scripts/dev`): `scripts/dev/tests/` 아래 이름이 `.spec.test.sh`로 끝나는 새 파일에 쓴다. 기존 `work.test.sh`처럼 임시 폴더와 가짜 명령(PATH 앞에 둔 가짜 `docker` 등)으로 시험하고, 실제 Docker나 운영을 건드리지 않는다. 실행은 `bash <파일>`이다.
   - 웹(`apps/frontend`): `apps/frontend/tests/` 아래 이름이 `.spec.test.ts`·`.spec.test.tsx`로 끝나는 파일에 Vitest와 Testing Library로 쓴다(메인 세션은 `.test.ts(x)`). 화면은 렌더하고 사용자처럼 조작한 뒤 화면이 바뀐 것을 단언한다. 네트워크(`lib/api.ts`)와 `next/image`·`next/navigation` 같은 Next.js 전용 모듈은 `vi.mock`으로 대신한다. Testing Library의 조작(`userEvent`)은 Vitest 가짜 타이머에서 멈추므로, 조작 전에 `vi.useRealTimers()`로 돌린다(시각만 고정하려면 `vi.useFakeTimers({ toFake: ["Date"] })`).
-  - 모바일 화면은 아직 테스트 도구가 없다. 새로 설치하지 말고, 시나리오에 "사용자가 직접 볼 것"으로 남긴다.
+  - 모바일(`apps/mobile`): `apps/mobile/tests/` 아래 이름이 `.spec.test.ts`·`.spec.test.tsx`로 끝나는 파일에 Jest(`jest-expo`)와 React Native Testing Library로 쓴다(메인 세션은 `.test.ts(x)`). `src/app/` 아래에는 두지 않는다(Expo Router가 화면으로 잡는다). 네트워크(`@/lib/api`), 라우터(`expo-router`), 기기 저장소(`expo-secure-store`, AsyncStorage) 같은 모듈은 `jest.mock`으로 대신하고, 안전 영역은 `jest.requireActual("react-native-safe-area-context/jest/mock").default`를 쓴다. Testing Library 14는 `render`와 `fireEvent`가 비동기라 `await`를 붙인다.
 - 기존 테스트 관례를 따른다.
   - JUnit 5, AssertJ, Mockito(`mock(...)`)를 쓴다.
   - 실제 MySQL·Redis를 쓰는 통합 테스트는 `com.writeloop.support.IntegrationTestSupport`를 상속해서 쓴다(실제 HTTP는 `rest`, DB 준비·확인은 `jdbc`). 기반(`support` 패키지의 컨테이너 설정, 부모 클래스)은 고치지 않는다.

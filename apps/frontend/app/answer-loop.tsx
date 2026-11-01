@@ -9,6 +9,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties
 } from "react";
 import {
@@ -53,13 +54,26 @@ import {
 import type { PracticeExpressionHint, Step } from "../components/answer-loop/types";
 import { countWords } from "../lib/text";
 import { buildRelatedPromptRecommendations } from "../lib/prompt-recommendations";
-import { parseLocalDate, addDays, formatDateKey, buildWelcomeWeek, MonthView, createMonthView } from "../lib/writing-calendar";
+import {
+  parseLocalDate,
+  addDays,
+  formatDateKey,
+  buildWelcomeWeek,
+  EMPTY_WELCOME_WEEK,
+  MonthView,
+  createMonthView
+} from "../lib/writing-calendar";
 import { getWritingGuide } from "../lib/writing-guide";
 import styles from "./page.module.css";
 
 const GUEST_SESSION_ID_KEY = "writeloop_guest_session_id";
 const GUEST_PROMPT_ID_KEY = "writeloop_guest_prompt_id";
 const HOME_RETURN_TO = "/";
+
+// useSyncExternalStore로 "브라우저가 화면을 이어받았는지"만 읽을 때 쓴다. 바뀔 일이 없어 구독하지 않는다.
+function subscribeNothing() {
+  return () => {};
+}
 
 function createSubmissionId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -701,9 +715,12 @@ export function AnswerLoop() {
   }, [feedbackLoadingStages, isSubmitting]);
   const answerWordCount = useMemo(() => countWords(answer), [answer]);
   const rewriteWordCount = useMemo(() => countWords(rewrite), [rewrite]);
+  // 첫 화면은 빌드 때 미리 그린다. 요일 줄을 그때의 날짜로 그리면 다른 날 연 브라우저와 어긋나
+  // hydration 오류가 나므로, 브라우저가 이어받기 전까지는 빈 칸으로 두고 이어받은 뒤 오늘 기준으로 채운다.
+  const isHydrated = useSyncExternalStore(subscribeNothing, () => true, () => false);
   const welcomeWeekDays = useMemo(
-    () => buildWelcomeWeek(todayStatus, welcomeCompletedDateKeys),
-    [todayStatus, welcomeCompletedDateKeys]
+    () => (isHydrated ? buildWelcomeWeek(todayStatus, welcomeCompletedDateKeys) : EMPTY_WELCOME_WEEK),
+    [isHydrated, todayStatus, welcomeCompletedDateKeys]
   );
   const mobileComposerBarStyle = useMemo(
     () =>

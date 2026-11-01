@@ -46,6 +46,14 @@ export function buildWelcomeWeek(todayStatus: TodayWritingStatus | null, complet
   });
 }
 
+// 날짜를 아직 정하지 않은 요일 줄(빌드 때 미리 그리는 첫 화면). 칸 크기는 채운 줄과 같다.
+export const EMPTY_WELCOME_WEEK: ReturnType<typeof buildWelcomeWeek> = Array.from({ length: 7 }, (_, index) => ({
+  key: `empty-${index}`,
+  label: "",
+  isToday: false,
+  isCompleted: false
+}));
+
 export type MonthCalendarCell = {
   key: string;
   dayNumber: number;

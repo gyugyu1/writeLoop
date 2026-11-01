@@ -447,6 +447,16 @@ async function wait(ms: number) {
   });
 }
 
+// 창(모바일 도움말 시트, 코치 창)을 열고 닫으면 앱은 다음 화면 프레임(requestAnimationFrame)에 포커스를 옮긴다
+// (열면 창 안으로, 닫으면 연 버튼으로). 그 프레임 전에 다음 조작을 하면 느린 컴퓨터에서 조작 도중 포커스가 넘어가
+// 키 입력이 엉뚱한 곳에 들어갈 수 있다. 그래서 다음 조작 전에 프레임 하나를 걸고 기다린다.
+// jsdom은 한 프레임의 콜백을 건 순서대로 부르므로, 이게 불리면 앱의 포커스 옮기기도 끝났다.
+async function waitForNextFrame() {
+  await act(async () => {
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+  });
+}
+
 // page.module.css의 클래스는 테스트에서 "_<이름>_<파일 해시>"로 나온다. 이 파일의 클래스는 "page:<이름>"으로 바꿔 읽기 쉽게 하고,
 // 다른 CSS 파일의 클래스는 그대로 둔다(다른 파일로 옮겨지면 해시가 달라져 드러난다).
 // 클래스 문자열 안의 빈칸 수와 순서는 화면에 영향이 없으므로 정렬해 비교한다.
@@ -1971,6 +1981,7 @@ describe("[spec] AnswerLoop 답 쓰기·다시 쓰기·도움말·완료 화면(
     await user.click(guideButton());
     let dialog = screen.getByRole("dialog", { name: "작성 가이드" });
     expect(byClass(dialog, styles.helpSheetEmpty).textContent).toBe(LOADING_HINTS);
+    await waitForNextFrame();
     await user.click(within(dialog).getByText("첫 문장 스타터"));
     expect(queryHelpDialog()).toBeInTheDocument();
     await user.click(dialog.parentElement as HTMLElement);
@@ -1980,10 +1991,12 @@ describe("[spec] AnswerLoop 답 쓰기·다시 쓰기·도움말·완료 화면(
     await act(async () => {
       hints.resolve([]);
     });
+    await waitForNextFrame();
     await user.click(guideButton());
     dialog = screen.getByRole("dialog", { name: "작성 가이드" });
     expect(byClass(dialog, styles.helpSheetEmpty).textContent).toBe(NO_HINTS);
     expect(document.body.style.overflow).toBe("hidden");
+    await waitForNextFrame();
     await user.keyboard("{Escape}");
     expect(queryHelpDialog()).toBeNull();
     expect(document.body.style.overflow).toBe("");
@@ -1996,6 +2009,7 @@ describe("[spec] AnswerLoop 답 쓰기·다시 쓰기·도움말·완료 화면(
 
     await user.click(guideButton());
     expect(document.body.style.overflow).toBe("hidden");
+    await waitForNextFrame();
     await user.click(screen.getByRole("button", { name: "AI 코치 열기" }));
     expect(mainChildren()).toEqual([
       ["SECTION", ["page:stage", "page:writingEditorStage"]],
@@ -2003,6 +2017,7 @@ describe("[spec] AnswerLoop 답 쓰기·다시 쓰기·도움말·완료 화면(
       ["DIV", ["page:coachOverlay"]]
     ]);
     expect(document.body.style.overflow).toBe("hidden");
+    await waitForNextFrame();
 
     await user.keyboard("{Escape}");
     expect(queryHelpDialog()).toBeNull();
@@ -2039,6 +2054,7 @@ describe("[spec] AnswerLoop 답 쓰기·다시 쓰기·도움말·완료 화면(
     expect(hintGroups(dialog)).toEqual(HINT_GROUPS_FULL);
     expect(querySummary()).toBeNull();
     expect(document.body.style.overflow).toBe("hidden");
+    await waitForNextFrame();
     await user.keyboard("{Escape}");
     expect(queryHelpDialog()).toBeNull();
     expect(document.body.style.overflow).toBe("");

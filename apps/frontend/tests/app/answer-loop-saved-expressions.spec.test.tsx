@@ -284,6 +284,15 @@ async function flush() {
   await act(async () => {});
 }
 
+// 창을 열고 닫으면 앱은 다음 화면 프레임(requestAnimationFrame)에 포커스를 옮긴다(열면 창 안으로, 닫으면 연 버튼으로).
+// 그 프레임 전에 다음 조작을 하면 느린 컴퓨터에서 타자 도중 포커스가 넘어가 입력이 엉뚱한 곳에 들어간다.
+// 그래서 다음 조작 전에 프레임 하나를 걸고 기다린다. jsdom은 한 프레임의 콜백을 건 순서대로 부르므로, 이게 불리면 앱의 포커스 옮기기도 끝났다.
+async function waitForNextFrame() {
+  await act(async () => {
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+  });
+}
+
 function classTokens(element: Element) {
   return (element.getAttribute("class") ?? "").split(/\s+/).filter(Boolean).sort();
 }
@@ -319,12 +328,14 @@ async function openPromptFromDifficulty(user: ReturnType<typeof userEvent.setup>
 
 async function openCoach(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "AI 코치 열기" }));
+  await waitForNextFrame();
   return screen.getByRole("dialog", { name: "AI에게 표현 물어보기" });
 }
 
 async function closeCoach(user: ReturnType<typeof userEvent.setup>) {
   await user.click(screen.getByRole("button", { name: "AI 코치 닫기" }));
   expect(screen.queryByRole("dialog", { name: "AI에게 표현 물어보기" })).not.toBeInTheDocument();
+  await waitForNextFrame();
 }
 
 async function askCoach(user: ReturnType<typeof userEvent.setup>, dialog: HTMLElement) {

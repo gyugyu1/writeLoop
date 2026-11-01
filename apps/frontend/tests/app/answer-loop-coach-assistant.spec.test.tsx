@@ -394,6 +394,17 @@ async function flush() {
   await act(async () => {});
 }
 
+// 창을 열고 닫으면 앱은 다음 화면 프레임(requestAnimationFrame)에 포커스를 옮긴다(열면 창 안으로, 닫으면 연 버튼으로).
+// 그 프레임 전에 다음 조작을 하면 느린 컴퓨터에서 타자 도중 포커스가 넘어가 입력이 엉뚱한 곳에 들어간다.
+// 그래서 다음 조작 전에 프레임 하나를 걸고 기다린다. jsdom은 한 프레임의 콜백을 건 순서대로 부르므로, 이게 불리면 앱의 포커스 옮기기도 끝났다.
+// openCoach·closeCoach는 포커스가 간 것을 직접 기다린다. 이 함수는 제출·질문 바꾸기·초안 복구처럼 다른 조작으로 창이 닫혀
+// 포커스를 돌려받을 버튼이 화면에서 사라졌을 수 있는 곳에 쓴다.
+async function waitForNextFrame() {
+  await act(async () => {
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+  });
+}
+
 // page.module.css의 클래스는 테스트에서 "_<이름>_<파일 해시>"로 나온다. 이 파일의 클래스는 "page:<이름>"으로 바꿔 읽기 쉽게 하고,
 // 다른 CSS 파일의 클래스는 그대로 둔다(다른 파일로 옮겨지면 해시가 달라져 드러난다).
 // 클래스 문자열 안의 빈칸 수와 순서는 화면에 영향이 없으므로 정렬해 비교한다.
@@ -1254,6 +1265,7 @@ describe("[spec] AnswerLoop 코치 도우미(지금 동작 기록)", () => {
     expect(document.body.style.overflow).toBe("");
     await flush();
     expect(api.checkCoachExpressionUsage).not.toHaveBeenCalled();
+    await waitForNextFrame();
 
     dialog = await openCoach(user);
     expect(coachInput(dialog).value).toBe("체력을 기르고 싶다");
@@ -1290,6 +1302,7 @@ describe("[spec] AnswerLoop 코치 도우미(지금 동작 기록)", () => {
         interactionId: "  coach-int-501  "
       }
     ]);
+    await waitForNextFrame();
 
     await user.click(screen.getByRole("button", { name: "다시 써보기" }));
     expect(queryDialog()).not.toBeInTheDocument();
@@ -1414,6 +1427,7 @@ describe("[spec] AnswerLoop 코치 도우미(지금 동작 기록)", () => {
     expect(queryDialog()).not.toBeInTheDocument();
     expect(triggerButton()).toHaveAttribute("aria-expanded", "false");
     expect(document.body.style.overflow).toBe("");
+    await waitForNextFrame();
     dialog = await openCoach(user);
     expectCoachEmpty(dialog);
     expect(quickChips(dialog)).toEqual(PROMPT_1_QUICK_QUESTIONS);
@@ -1471,6 +1485,7 @@ describe("[spec] AnswerLoop 코치 도우미(지금 동작 기록)", () => {
     // 난이도를 바꾸면 창이 닫혀(고르기 화면 그대로) 스크롤 잠금이 풀린다.
     await screen.findByText(PROMPT_A1.questionEn);
     expect(document.body.style.overflow).toBe("");
+    await waitForNextFrame();
     await user.click(screen.getByText(PROMPT_A1.questionEn));
     await screen.findByDisplayValue("I want to learn the guitar.");
 
@@ -1585,6 +1600,7 @@ describe("[spec] AnswerLoop 코치 도우미(지금 동작 기록)", () => {
     expect(queryDialog()).not.toBeInTheDocument();
     expect(triggerButton()).toHaveAttribute("aria-expanded", "false");
     expect(document.body.style.overflow).toBe("");
+    await waitForNextFrame();
 
     dialog = await openCoach(user);
     expect(coachInput(dialog).value).toBe("체력을 기르고 싶다");
@@ -1628,6 +1644,7 @@ describe("[spec] AnswerLoop 코치 도우미(지금 동작 기록)", () => {
     expect(queryDialog()).not.toBeInTheDocument();
     expect(triggerButton()).toHaveAttribute("aria-expanded", "false");
     expect(document.body.style.overflow).toBe("");
+    await waitForNextFrame();
 
     dialog = await openCoach(user);
     expect(coachInput(dialog).value).toBe("체력을 기르고 싶다");

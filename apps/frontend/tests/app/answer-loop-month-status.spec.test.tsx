@@ -156,6 +156,15 @@ async function flush() {
   await act(async () => {});
 }
 
+// 창을 열고 닫으면 앱은 다음 화면 프레임(requestAnimationFrame)에 포커스를 옮긴다(열면 창 안으로, 닫으면 연 버튼으로).
+// 그 프레임 전에 다음 조작을 하면 느린 컴퓨터에서 조작 도중 포커스가 넘어가 키 입력이 엉뚱한 곳에 들어갈 수 있다.
+// 그래서 다음 조작 전에 프레임 하나를 걸고 기다린다. jsdom은 한 프레임의 콜백을 건 순서대로 부르므로, 이게 불리면 앱의 포커스 옮기기도 끝났다.
+async function waitForNextFrame() {
+  await act(async () => {
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+  });
+}
+
 // 로그인한 사용자로 첫 화면을 렌더한다. 오늘 상태와 첫 화면 일주일 기록(getMonthStatus를 따로 부르는 다른 기능)이
 // 끝난 뒤 getMonthStatus 호출 기록을 비워서, 그 뒤의 호출은 모두 모달이 부른 것만 남게 한다.
 async function renderLoggedIn(today: TodayWritingStatus = TODAY) {
@@ -175,6 +184,7 @@ async function openLoadedDialog(user: ReturnType<typeof userEvent.setup>, openBu
   await user.click(openButton);
   const dialog = await screen.findByRole("dialog", { name: "학습 캘린더" });
   await within(dialog).findByLabelText(`${monthLabel} 달력`);
+  await waitForNextFrame();
   return dialog;
 }
 
@@ -1029,6 +1039,7 @@ describe("[spec] AnswerLoop 월 학습 현황 모달(지금 동작 기록)", () 
       </div>
     `);
 
+    await waitForNextFrame();
     await user.click(within(dialog).getByRole("button", { name: "이전 달 보기" }));
     await within(dialog).findByLabelText("2026년 3월 달력");
     expect(within(dialog).queryByText("달력을 불러오지 못했어요.")).not.toBeInTheDocument();
@@ -1234,6 +1245,7 @@ describe("[spec] AnswerLoop 월 학습 현황 모달(지금 동작 기록)", () 
     api.getMonthStatus.mockImplementationOnce(() => marchRequest.promise);
     await user.click(openButton);
     const dialog = screen.getByRole("dialog", { name: "학습 캘린더" });
+    await waitForNextFrame();
     await user.click(within(dialog).getByRole("button", { name: "이전 달 보기" }));
 
     // 4월 응답이 3월보다 먼저 와도 무시되고, 3월을 불러오는 중으로 남는다.
@@ -1284,6 +1296,7 @@ describe("[spec] AnswerLoop 월 학습 현황 모달(지금 동작 기록)", () 
     await within(dialog).findByLabelText("2026년 3월 달력");
     await user.click(within(dialog).getByRole("button", { name: "학습 캘린더 닫기" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitForNextFrame();
 
     dialog = await openLoadedDialog(user, openButton, "2026년 4월");
     expect(monthDisplay(dialog)).toEqual(["2026", "4"]);
@@ -1309,6 +1322,7 @@ describe("[spec] AnswerLoop 월 학습 현황 모달(지금 동작 기록)", () 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(openButton).toHaveAttribute("aria-expanded", "false");
     expect(document.body.style.overflow).toBe("");
+    await waitForNextFrame();
 
     dialog = await openLoadedDialog(user, openButton, "2026년 4월");
     await user.click(within(dialog).getByRole("button", { name: "2026년 4월 8일, 진행 중 기록 보기" }));
@@ -1317,6 +1331,7 @@ describe("[spec] AnswerLoop 월 학습 현황 모달(지금 동작 기록)", () 
       ["/me?tab=writing&date=2026-04-08"]
     ]);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    await waitForNextFrame();
 
     // 옮긴 달의 날도 그 날짜로 이동한다.
     dialog = await openLoadedDialog(user, openButton, "2026년 4월");

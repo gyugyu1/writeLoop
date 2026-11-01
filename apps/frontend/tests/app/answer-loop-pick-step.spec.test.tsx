@@ -300,6 +300,16 @@ async function flush() {
   await act(async () => {});
 }
 
+// 창(월 학습 현황, 모바일 도움말 시트)을 열고 닫으면 앱은 다음 화면 프레임(requestAnimationFrame)에 포커스를 옮긴다
+// (열면 창 안으로, 닫으면 연 버튼으로). 그 프레임 전에 다음 조작을 하면 느린 컴퓨터에서 조작 도중 포커스가 넘어가
+// 키 입력이 엉뚱한 곳에 들어갈 수 있다. 그래서 다음 조작 전에 프레임 하나를 걸고 기다린다.
+// jsdom은 한 프레임의 콜백을 건 순서대로 부르므로, 이게 불리면 앱의 포커스 옮기기도 끝났다.
+async function waitForNextFrame() {
+  await act(async () => {
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+  });
+}
+
 // page.module.css의 클래스는 테스트에서 "_<이름>_<파일 해시>"로 나온다. 이 파일의 클래스는 "page:<이름>"으로 바꿔 읽기 쉽게 하고,
 // 다른 CSS 파일의 클래스는 그대로 둔다(다른 파일로 옮겨지면 해시가 달라져 드러난다).
 // 클래스 문자열 안의 빈칸 수와 순서는 화면에 영향이 없으므로 정렬해 비교한다.
@@ -914,6 +924,7 @@ describe("[spec] AnswerLoop 질문 고르기 화면(지금 동작 기록)", () =
     expect(button).toHaveAttribute("aria-expanded", "true");
     await within(dialog).findByLabelText("2026년 4월 달력");
     expect(api.getMonthStatus.mock.calls).toEqual([[2026, 4]]);
+    await waitForNextFrame();
 
     await user.click(within(dialog).getByRole("button", { name: "학습 캘린더 닫기" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
@@ -1114,21 +1125,26 @@ describe("[spec] AnswerLoop 질문 고르기 화면(지금 동작 기록)", () =
     expect(document.body.style.overflow).toBe("hidden");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(document.getElementsByClassName(styles.helpOverlay)).toHaveLength(0);
+    await waitForNextFrame();
     await user.click(guideButton);
     expect(document.body.style.overflow).toBe("hidden");
     await user.keyboard("{Escape}");
     expect(document.body.style.overflow).toBe("");
+    await waitForNextFrame();
 
     // 켠 채 다른 난이도(쉬움)를 고르면 꺼진다.
     await user.click(guideButton);
     expect(document.body.style.overflow).toBe("hidden");
+    await waitForNextFrame();
     await openPromptList(user, "쉬움", P_A1);
     expect(document.body.style.overflow).toBe("");
+    await waitForNextFrame();
 
     // 난이도 화면으로 돌아가 켠 채 같은 난이도(쉬움)를 고르면 켜진 채 질문 목록이 열린다.
     await user.click(within(pickFlow()).getByRole("button", { name: "난이도 선택" }));
     await user.click(await screen.findByRole("button", { name: "가이드 보기" }));
     expect(document.body.style.overflow).toBe("hidden");
+    await waitForNextFrame();
     await openPromptList(user, "쉬움", P_A1);
     expect(screen.getByRole("heading", { name: "질문 선택" })).toBeInTheDocument();
     expect(document.body.style.overflow).toBe("hidden");

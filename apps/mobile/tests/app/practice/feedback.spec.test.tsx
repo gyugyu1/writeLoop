@@ -385,6 +385,29 @@ async function letPressActFinish() {
   await new Promise<void>((resolve) => setTimeout(resolve, 0));
 }
 
+// 기다림 화면(FeedbackLoadingOverlay)은 보이는 동안 2.3초마다 안내 문구(접근성 이름)를 다음 단계로 바꾼다(setInterval).
+// 그 문구를 단언하는 테스트는 setInterval만 가짜 시계에 두어, 실행이 느려도 단언 전에 문구가 바뀌지 않게 한다.
+// 다른 시간(setTimeout, requestAnimationFrame, Date 등)은 진짜 그대로다. afterEach의 jest.useRealTimers()가 되돌린다.
+function freezeLoadingCopyRotation() {
+  jest.useFakeTimers({
+    doNotFake: [
+      "Date",
+      "hrtime",
+      "nextTick",
+      "performance",
+      "queueMicrotask",
+      "requestAnimationFrame",
+      "cancelAnimationFrame",
+      "requestIdleCallback",
+      "cancelIdleCallback",
+      "setImmediate",
+      "clearImmediate",
+      "setTimeout",
+      "clearTimeout"
+    ]
+  });
+}
+
 beforeEach(() => {
   clearPracticeFeedbackState();
   setParams({ difficulty: "A", promptId: "prompt-1" });
@@ -1025,6 +1048,7 @@ describe("[spec] 다시 쓰기 칸", () => {
   });
 
   it("[spec] 로그인 사용자가 제출하면 제출 중 표시와 기다림 화면을 보이고, 성공하면 새 피드백으로 바뀌고 초안을 지운다", async () => {
+    freezeLoadingCopyRotation();
     const pending = deferred<Feedback>();
     jest.mocked(submitFeedback).mockReturnValue(pending.promise);
     await renderScreen(makeState(coachFeedback()));

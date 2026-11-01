@@ -662,4 +662,57 @@ describe("[spec] AnswerLoop 되살린 뒤 추천 목록을 다시 받아도 질�
     expect(listedQuestions()).toEqual([P3.questionEn, P4.questionEn]);
     expect(api.getDailyPrompts.mock.calls).toEqual([["I", GUEST_ID]]);
   });
+
+  // ---------------------------------------------------------------- 지킴(결정 10의 1, 구현 뒤에 더함. 테스트 커밋 시점에 통과)
+  // 결정 03의 1 둘째 문장: 전체 질문 목록(getPrompts)을 아직 불러오지 못했으면 선택한 질문을 바꾸지 않는다.
+  // 전체 질문 목록을 기다리게 둔 채 되살리고, 되살린 질문이 없는 추천 목록을 먼저 보낸 뒤 전체 질문 목록을 보낸다.
+
+  it("[spec] 지킴(결정 10-1): 전체 질문 목록이 아직 오지 않은 채 '이어서 쓰기'로 되살리고 되살린 질문이 없는 추천 목록이 먼저 와도, 전체 질문 목록이 온 뒤 화면 위의 질문은 되살린 질문이다", async () => {
+    storeGuestAnswerLoop();
+    const allPromptsRequest = deferred<Prompt[]>();
+    api.getPrompts.mockImplementation(() => allPromptsRequest.promise);
+    const daily = deferred<DailyPromptRecommendation>();
+    api.getDailyPrompts.mockImplementationOnce(() => daily.promise);
+    const user = await renderHome(false);
+
+    await user.click(screen.getByRole("button", { name: /이어서 쓰기/ }));
+    await screen.findByDisplayValue(GUEST_ANSWER);
+    expect(api.getDailyPrompts.mock.calls).toEqual([["I", GUEST_ID]]);
+    await deliver(daily, DAILY_SECOND);
+    expect(api.getPrompts).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      allPromptsRequest.resolve(ALL_PROMPTS);
+    });
+    await flush();
+    await flush();
+    expect(composerQuestion()).toBe(P2.questionEn);
+    expect(answerInput().value).toBe(GUEST_ANSWER);
+  });
+
+  it("[spec] 지킴(결정 10-1): 전체 질문 목록이 아직 오지 않은 채 로그인 뒤 로그인 전 초안이 되살아나고 되살린 질문이 없는 추천 목록이 먼저 와도, 전체 질문 목록이 온 뒤 화면 위의 질문은 로그인 전에 쓰던 질문이다", async () => {
+    window.sessionStorage.setItem(
+      LOGIN_DRAFT_KEY,
+      JSON.stringify(snapshotFor(P2, { step: "answer", answer: "Login answer." }))
+    );
+    const allPromptsRequest = deferred<Prompt[]>();
+    api.getPrompts.mockImplementation(() => allPromptsRequest.promise);
+    const daily = deferred<DailyPromptRecommendation>();
+    api.getDailyPrompts.mockImplementationOnce(() => daily.promise);
+    api.getCurrentUser.mockResolvedValue(USER);
+
+    render(<AnswerLoop />);
+    await screen.findByDisplayValue("Login answer.");
+    await waitFor(() => expect(api.getDailyPrompts.mock.calls).toEqual([["I", GUEST_ID]]));
+    await deliver(daily, DAILY_SECOND);
+    expect(api.getPrompts).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      allPromptsRequest.resolve(ALL_PROMPTS);
+    });
+    await flush();
+    await flush();
+    expect(composerQuestion()).toBe(P2.questionEn);
+    expect(answerInput().value).toBe("Login answer.");
+  });
 });

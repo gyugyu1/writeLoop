@@ -8,7 +8,7 @@ import type { AppVersionStatus } from "@/lib/types";
 // 컴포넌트 테스트가 도구에서 도는지 보이는 테스트. API와 기기 저장소는 가짜로 두고 지금 동작을 그대로 적는다.
 jest.mock("@/lib/api", () => ({ getAppVersionStatus: jest.fn() }));
 jest.mock("expo-secure-store", () => ({ getItemAsync: jest.fn(), setItemAsync: jest.fn() }));
-jest.mock("react-native-safe-area-context", () => require("react-native-safe-area-context/jest/mock").default);
+jest.mock("react-native-safe-area-context", () => jest.requireActual("react-native-safe-area-context/jest/mock").default);
 
 const status: AppVersionStatus = {
   platform: "ios",

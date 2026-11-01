@@ -944,11 +944,19 @@ export default function PracticeWriteScreen() {
     selectedPrompt
   ]);
 
+  // 화면을 떠날 때(언마운트) 한 번만, 그때의 최신 저장 함수로 쓰던 답을 저장한다.
+  // 저장 함수가 바뀔 때마다 돌게 두면 작문 취소·제출 직후 정리 단계에서 옛 함수가 쓰던 답을 다시 저장한다.
+  const flushPendingDraftRef = useRef(flushPendingDraft);
+  useEffect(() => {
+    flushPendingDraftRef.current = flushPendingDraft;
+  }, [flushPendingDraft]);
+  const flushLatestPendingDraft = useCallback(() => flushPendingDraftRef.current(), []);
+
   useEffect(() => {
     return () => {
-      void flushPendingDraft();
+      void flushLatestPendingDraft();
     };
-  }, [flushPendingDraft]);
+  }, [flushLatestPendingDraft]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextAppState) => {

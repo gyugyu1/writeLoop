@@ -670,6 +670,50 @@ run diff "$DF"
 expect "diff: 테스트 커밋 뒤에 바뀐 웹 테스트가 테스트 변경분에 나온다" \
   "$([ "$RC" = 0 ] && grep -q "apps/frontend/tests/loop.spec.test.tsx" "$R/$DF/04-main-diff-tests.txt" && ! grep -q "apps/frontend/app/page.tsx" "$R/$DF/04-main-diff-tests.txt"; echo $?)" "rc=$RC out=$OUT"
 
+# ================================================================ 039 모바일 테스트 기반(메인 세션의 테스트)
+# ---------------------------------------------------------------- run: mobile-test
+# 가짜 npm은 위 웹 테스트의 것(B22)을 그대로 쓴다. 모바일은 apps/mobile에서 npm run test(인자 "run test")다.
+R=$TMP/r24
+make_repo "$R"
+run new 모바일테스트
+DM="private/work/001-$TODAY-모바일테스트"
+mkdir -p "$R/apps/mobile/src/app"; echo screen > "$R/apps/mobile/src/app/index.tsx"
+g -C "$R" add -A && g -C "$R" commit -q -m mobile
+
+: > "$NPM_CALLS"
+PATH="$B22:$PATH" run run "$DM" --name impl
+S="$R/$DM/02-runner-impl/summary.txt"
+expect "run: 모바일이 바뀌면 mobile-typecheck, mobile-lint, mobile-test를 이 순서로 고른다" \
+  "$([ "$RC" = 0 ] && [ "$(grep -E '^(OK|FAIL) ' "$S" | awk '{print $2}' | tr '\n' ' ')" = "mobile-typecheck mobile-lint mobile-test " ] && [ "$(tail -1 "$NPM_CALLS" | tr -d '\r')" = "run test" ]; echo $?)" "rc=$RC out=$OUT sum=$(cat "$S" 2>/dev/null) calls=$(cat "$NPM_CALLS" 2>/dev/null)"
+expect "run: mobile-test 기록 첫 줄에 명령과 HEAD" \
+  "$(head -1 "$R/$DM/02-runner-impl/mobile-test.txt" | grep -qE "^# cd apps/mobile && npm(\.cmd)? run test \| HEAD $(git -C "$R" rev-parse HEAD) "; echo $?)" "$(head -1 "$R/$DM/02-runner-impl/mobile-test.txt" 2>/dev/null)"
+
+: > "$NPM_CALLS"
+FAKE_NPM_TEST_RC=1 PATH="$B22:$PATH" run run "$DM" --name fix --only mobile-test
+expect "run: --only mobile-test이고 테스트가 실패하면 FAIL mobile-test, 종료 코드 1" \
+  "$([ "$RC" = 1 ] && grep -qx "FAIL mobile-test mobile-test.txt" "$R/$DM/03-runner-fix/summary.txt" && ! grep -q mobile-lint "$R/$DM/03-runner-fix/summary.txt" && [ "$(tr -d '\r' < "$NPM_CALLS")" = "run test" ]; echo $?)" "rc=$RC out=$OUT calls=$(cat "$NPM_CALLS" 2>/dev/null)"
+
+# ---------------------------------------------------------------- check·diff: 모바일 테스트 경로(apps/mobile/tests)
+R=$TMP/r25
+make_repo "$R"
+run new 모바일리팩터링
+DF="private/work/001-$TODAY-모바일리팩터링"
+mkdir -p "$R/apps/mobile/tests" "$R/apps/mobile/src/app"
+echo spec > "$R/apps/mobile/tests/feedback.spec.test.tsx"; g -C "$R" add -A && g -C "$R" commit -q -m "test: 지금 동작"
+T=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DF/02-runner-test"; echo "HEAD $T | uncommitted 0" > "$R/$DF/02-runner-test/summary.txt"
+run check "$DF"
+expect "check: 고치기 전 기록 앞에 모바일 테스트만 바뀌었으면 OK" \
+  "$(echo "$OUT" | grep -qx "OK 02-runner-test: only test paths changed before the pre-fix record"; echo $?)" "rc=$RC out=$OUT"
+
+echo screen > "$R/apps/mobile/src/app/feedback.tsx"; echo more >> "$R/apps/mobile/tests/feedback.spec.test.tsx"
+g -C "$R" add -A && g -C "$R" commit -q -m "refactor: 나눔"
+I=$(git -C "$R" rev-parse HEAD)
+mkdir -p "$R/$DF/03-runner-impl"; echo "HEAD $I | uncommitted 0" > "$R/$DF/03-runner-impl/summary.txt"
+run diff "$DF"
+expect "diff: 테스트 커밋 뒤에 바뀐 모바일 테스트가 테스트 변경분에 나온다" \
+  "$([ "$RC" = 0 ] && grep -q "apps/mobile/tests/feedback.spec.test.tsx" "$R/$DF/04-main-diff-tests.txt" && ! grep -q "apps/mobile/src/app/feedback.tsx" "$R/$DF/04-main-diff-tests.txt"; echo $?)" "rc=$RC out=$OUT"
+
 echo
 echo "PASS $PASS FAIL $FAIL"
 [ "$FAIL" = 0 ]

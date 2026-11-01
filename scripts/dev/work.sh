@@ -43,7 +43,7 @@ ROOT=$(cd "$ROOT" && pwd -P) || exit 2
 PRIV="$ROOT/private"
 WORK="$PRIV/work"
 # 테스트 변경분 경로. 테스트 코드와 판정 기준(채점 규칙, 검사 도구)이 바뀐 곳을 보는 데 쓴다(qa.md의 "테스트가 바뀐 곳").
-TEST_PATHS=(apps/backend/src/test apps/frontend/tests scripts/feedback-quality scripts/run-feedback-quality-check.mjs scripts/dev)
+TEST_PATHS=(apps/backend/src/test apps/frontend/tests apps/mobile/tests scripts/feedback-quality scripts/run-feedback-quality-check.mjs scripts/dev)
 
 die() { echo "work.sh: $*" >&2; exit 2; }
 usage() { sed -n '5,10p' "$0" | sed 's/^# *//'; }
@@ -407,7 +407,7 @@ cmd_status() {
 # ---------------------------------------------------------------- run
 
 # run이 고르는 항목. 이 순서로 돌린다.
-RUN_ITEMS=(backend-test db-check rules-test script-tests web-test web-build mobile-typecheck mobile-lint actionlint ops-syntax compose-config claude-config llm-smoke)
+RUN_ITEMS=(backend-test db-check rules-test script-tests web-test web-build mobile-typecheck mobile-lint mobile-test actionlint ops-syntax compose-config claude-config llm-smoke)
 # Docker가 있어야 하는 항목
 DOCKER_ITEMS=" backend-test db-check llm-smoke actionlint "
 
@@ -421,7 +421,7 @@ path_items() {
     scripts/feedback-quality/* | scripts/run-feedback-quality-check.mjs) echo rules-test ;;
     scripts/dev/*) echo script-tests ;;
     apps/frontend/* | package.json | package-lock.json) echo "web-test web-build" ;;
-    apps/mobile/*) echo "mobile-typecheck mobile-lint" ;;
+    apps/mobile/*) echo "mobile-typecheck mobile-lint mobile-test" ;;
     .github/workflows/*) echo actionlint ;;
     scripts/ops/*) echo ops-syntax ;;
     docker-compose*.yml) echo compose-config ;;
@@ -434,7 +434,7 @@ path_items() {
 # 테스트 경로. check가 고치기 전 기록보다 먼저 바뀌어도 되는 경로로 본다(문서·지침과 함께).
 test_path() {
   case "$1" in
-    apps/backend/src/test/* | apps/frontend/tests/* | scripts/dev/tests/* | scripts/feedback-quality/rules.test.mjs) return 0 ;;
+    apps/backend/src/test/* | apps/frontend/tests/* | apps/mobile/tests/* | scripts/dev/tests/* | scripts/feedback-quality/rules.test.mjs) return 0 ;;
   esac
   return 1
 }
@@ -521,6 +521,10 @@ run_item() {
     mobile-lint)
       hdr "cd apps/mobile && $npm run lint"
       (cd "$ROOT/apps/mobile" && $npm run lint) >> "$f" 2>&1 || rc=1
+      ;;
+    mobile-test)
+      hdr "cd apps/mobile && $npm run test"
+      (cd "$ROOT/apps/mobile" && $npm run test) >> "$f" 2>&1 || rc=1
       ;;
     actionlint)
       hdr "docker run --rm -v <저장소>:/repo -w /repo rhysd/actionlint:1.7.7 -no-color"

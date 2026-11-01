@@ -79,6 +79,8 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
+      - name: 모바일 테스트
+        run: npm run test
 
   # 임시 MySQL·Redis 컨테이너에서 빈 DB와 기존 DB(기준선 107) 양쪽으로 마이그레이션을 적용해 백엔드를 띄우고,
   # 뷰 조회와 운영 배포와 같은 방식의 백업(mysqldump)까지 확인한다. 단위 테스트는 DB를 띄우지 않아서

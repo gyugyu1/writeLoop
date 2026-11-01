@@ -176,9 +176,9 @@ scenario D6
 commit_paths D6 apps/mobile/package.json
 wsh -- run "$D" --name impl
 load
-expect "D6: apps/mobile/package.json이면 항목이 정확히 [mobile-lint mobile-typecheck]" "$([ "$(items)" = "mobile-lint mobile-typecheck" ]; echo $?)" "items=[$(items)] $(show)"
+expect "D6: apps/mobile/package.json이면 항목이 정확히 [mobile-lint mobile-test mobile-typecheck]" "$([ "$(items)" = "mobile-lint mobile-test mobile-typecheck" ]; echo $?)" "items=[$(items)] $(show)"
 expect "D6: web-test 줄이 없다" "$(! grep -q ' web-test ' "$SUM"; echo $?)" "$(show)"
-expect "D6: run test가 불리지 않았다" "$(! npm_re 'args=run test'; echo $?)" "$(show)"
+expect "D6: 웹 테스트(run test --workspace)가 불리지 않았다" "$(! npm_re 'args=run test --workspace'; echo $?)" "$(show)"
 
 scenario D7a
 commit_paths D7a apps/backend/src/main/java/A.java

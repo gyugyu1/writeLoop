@@ -417,8 +417,8 @@ sel_case c5 0 "script-tests" scripts/dev/tests/a.test.sh
 sel_case c6a 0 "web-build web-test" apps/frontend/app/page.tsx
 sel_case c6b 0 "web-build web-test" package.json
 sel_case c6c 0 "web-build web-test" package-lock.json
-sel_case c7a 0 "mobile-typecheck mobile-lint" apps/mobile/src/app/a.tsx
-sel_case c7b 0 "mobile-typecheck mobile-lint" apps/mobile/package.json
+sel_case c7a 0 "mobile-typecheck mobile-lint mobile-test" apps/mobile/src/app/a.tsx
+sel_case c7b 0 "mobile-typecheck mobile-lint mobile-test" apps/mobile/package.json
 sel_case c8 0 "actionlint" .github/workflows/ci.yml
 expect "C8: summary에 OK docker: 로 시작하는 줄" "$(has_re '^OK docker: '; echo $?)" "$(show)"
 sel_case c9 0 "ops-syntax" scripts/ops/deploy.sh

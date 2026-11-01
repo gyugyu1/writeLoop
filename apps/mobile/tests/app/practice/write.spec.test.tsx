@@ -520,7 +520,7 @@ async function typeAnswer(text: string) {
   await fireEvent.changeText(answerInput(), text);
 }
 
-// 제출을 누르고, 제출 중 화면(임시저장 즉시 저장 포함)이 끝까지 돈 뒤에 서버 응답을 돌려준다.
+// 제출을 누르고, 제출 중 화면이 끝까지 돈 뒤에 서버 응답을 돌려준다.
 async function submitAndResolve(label: string, response: Feedback) {
   const pending = deferred<Feedback>();
   jest.mocked(submitFeedback).mockReturnValueOnce(pending.promise);
@@ -1477,16 +1477,13 @@ describe("[spec] 답 쓰기 카드", () => {
 
     expect(alertSpy).not.toHaveBeenCalled();
     expect(keyboardDismissSpy).toHaveBeenCalledTimes(1);
-    // 취소가 지우는 것과, 같은 순간 화면을 떠날 때처럼 한 번 더 도는 즉시 저장(빈 답이라 지우기)이 함께 부른다.
-    expect(deleteWritingDraft).toHaveBeenCalledTimes(2);
-    expect(deleteWritingDraft).toHaveBeenNthCalledWith(1, "prompt-1", "ANSWER");
-    expect(deleteWritingDraft).toHaveBeenNthCalledWith(2, "prompt-1", "ANSWER");
-    expect(deleteLocalWritingDraft).toHaveBeenCalledTimes(2);
-    expect(deleteLocalWritingDraft).toHaveBeenNthCalledWith(1, "prompt-1", "ANSWER");
-    expect(deleteLocalWritingDraft).toHaveBeenNthCalledWith(2, "prompt-1", "ANSWER");
-    expect(clearIncompleteLoopForPrompt).toHaveBeenCalledTimes(2);
+    // 취소가 지우는 것만 부른다. 화면을 떠날 때 저장은 저장 함수가 바뀌었다는 이유로 한 번 더 돌지 않는다(작업 041).
+    expect(deleteWritingDraft).toHaveBeenCalledTimes(1);
+    expect(deleteWritingDraft).toHaveBeenCalledWith("prompt-1", "ANSWER");
+    expect(deleteLocalWritingDraft).toHaveBeenCalledTimes(1);
+    expect(deleteLocalWritingDraft).toHaveBeenCalledWith("prompt-1", "ANSWER");
+    expect(clearIncompleteLoopForPrompt).toHaveBeenCalledTimes(1);
     expect(clearIncompleteLoopForPrompt).toHaveBeenCalledWith("prompt-1");
-    expect(clearIncompleteLoopForPrompt).toHaveBeenCalledWith("prompt-1", "answer");
     expect(saveWritingDraft).not.toHaveBeenCalled();
     expect(saveIncompleteLoop).not.toHaveBeenCalled();
     expect(router.replace).toHaveBeenCalledTimes(1);
@@ -1510,7 +1507,7 @@ describe("[spec] 답 쓰기 카드", () => {
     expect(answerInput()).toHaveDisplayValue("I drink coffee.");
   });
 
-  it("[spec] 작문 취소를 확정하면 초안과 이어 쓰기 상태를 지우고 답을 비운 뒤 질문 목록으로 간다(그 순간 쓰던 답이 서버에 한 번 더 저장된다)", async () => {
+  it("[spec] 작문 취소를 확정하면 초안과 이어 쓰기 상태를 지우고 답을 비운 뒤 질문 목록으로 가며, 쓰던 답을 다시 저장하지 않는다", async () => {
     await renderLoaded();
     await typeAnswer("I drink coffee.");
     await fireEvent.press(screen.getByRole("button", { name: "작문 취소" }));
@@ -1528,23 +1525,12 @@ describe("[spec] 답 쓰기 카드", () => {
     expect(router.replace).toHaveBeenCalledTimes(1);
     expect(router.replace).toHaveBeenCalledWith(LIST_ROUTE_A);
     expect(answerInput()).toHaveDisplayValue("");
-    // 지금 동작: 취소가 서버 초안을 지운 다음, 화면을 떠날 때처럼 도는 즉시 저장이 쓰던 답을 서버에 저장하고 이어 쓰기 상태를 남긴다.
-    expect(saveWritingDraft).toHaveBeenCalledTimes(1);
-    expect(saveWritingDraft).toHaveBeenCalledWith("prompt-1", answerPayload("I drink coffee."));
-    expect(jest.mocked(deleteWritingDraft).mock.invocationCallOrder[0]).toBeLessThan(
-      jest.mocked(saveWritingDraft).mock.invocationCallOrder[0]
-    );
-    expect(deleteLocalWritingDraft).toHaveBeenCalledTimes(2);
-    expect(saveIncompleteLoop).toHaveBeenCalledTimes(1);
-    expect(saveIncompleteLoop).toHaveBeenCalledWith({
-      promptId: "prompt-1",
-      difficulty: "A",
-      step: "answer",
-      draftType: "ANSWER",
-      sessionId: "",
-      updatedAt: DRAFT_SAVED_AT_2,
-      promptSnapshot
-    });
+    // 취소가 서버·이 기기 초안을 지운 뒤 쓰던 답을 다시 저장하지 않고, 이어 쓰기 상태도 남기지 않는다(작업 041).
+    expect(saveWritingDraft).not.toHaveBeenCalled();
+    expect(saveLocalWritingDraft).not.toHaveBeenCalled();
+    expect(deleteLocalWritingDraft).toHaveBeenCalledTimes(1);
+    expect(deleteLocalWritingDraft).toHaveBeenCalledWith("prompt-1", "ANSWER");
+    expect(saveIncompleteLoop).not.toHaveBeenCalled();
   });
 
   it("[spec] 답이 비어도 임시저장 배지가 있으면 작문 취소를 묻는다", async () => {
@@ -1827,7 +1813,7 @@ describe("[spec] 임시저장", () => {
     expect(clearIncompleteLoopForPrompt).not.toHaveBeenCalled();
   });
 
-  it("[spec] 제출을 누르면 제출 중으로 바뀌는 순간 쓰던 답을 배지 변화 없이 한 번 저장하고, 성공하면 초안을 지우며, 그 뒤에는 자동 저장하지 않는다", async () => {
+  it("[spec] 제출을 누르면 쓰던 답을 한 번 더 저장하지 않고, 성공하면 초안을 지우며, 그 뒤에는 자동 저장하지 않는다", async () => {
     setSessionUser(null);
     await renderLoaded();
     await typeAnswer("I drink coffee.");
@@ -1837,14 +1823,9 @@ describe("[spec] 임시저장", () => {
     await pressText(SUBMIT_INITIAL);
     await flushAsync();
 
-    expect(saveLocalWritingDraft).toHaveBeenCalledTimes(1);
-    expect(saveLocalWritingDraft).toHaveBeenCalledWith({
-      promptId: "prompt-1",
-      updatedAt: NOW.toISOString(),
-      ...answerPayload("I drink coffee.")
-    });
-    expect(saveIncompleteLoop).toHaveBeenCalledTimes(1);
-    expect(saveIncompleteLoop).toHaveBeenCalledWith(expect.objectContaining({ step: "answer", updatedAt: NOW.toISOString() }));
+    // 제출 중으로 바뀌어도 쓰던 답을 바로 저장하지 않는다(작업 041).
+    expect(saveLocalWritingDraft).not.toHaveBeenCalled();
+    expect(saveIncompleteLoop).not.toHaveBeenCalled();
     expect(deleteLocalWritingDraft).not.toHaveBeenCalled();
     expect(screen.queryByText(LOCAL_SAVED_BADGE, { includeHiddenElements: true })).toBeNull();
 
@@ -1856,13 +1837,13 @@ describe("[spec] 임시저장", () => {
     expect(deleteWritingDraft).not.toHaveBeenCalled();
     expect(deleteLocalWritingDraft).toHaveBeenCalledTimes(1);
     expect(deleteLocalWritingDraft).toHaveBeenCalledWith("prompt-1", "ANSWER");
-    expect(saveIncompleteLoop).toHaveBeenCalledTimes(2);
+    expect(saveIncompleteLoop).toHaveBeenCalledTimes(1);
     expect(saveIncompleteLoop).toHaveBeenLastCalledWith(expect.objectContaining({ step: "feedback", sessionId: "session-9" }));
 
     await advance(5000);
-    expect(saveLocalWritingDraft).toHaveBeenCalledTimes(1);
+    expect(saveLocalWritingDraft).not.toHaveBeenCalled();
     expect(deleteLocalWritingDraft).toHaveBeenCalledTimes(1);
-    expect(saveIncompleteLoop).toHaveBeenCalledTimes(2);
+    expect(saveIncompleteLoop).toHaveBeenCalledTimes(1);
   });
 
   it("[spec] 제출이 실패하면 다시 자동 저장한다", async () => {
@@ -1870,11 +1851,12 @@ describe("[spec] 임시저장", () => {
     await renderLoaded();
     await typeAnswer("I drink coffee.");
     await submitAndReject(SUBMIT_INITIAL, new Error("잠깐 실패"));
-    expect(saveLocalWritingDraft).toHaveBeenCalledTimes(1);
+    // 제출하는 동안에는 쓰던 답을 저장하지 않는다(작업 041).
+    expect(saveLocalWritingDraft).not.toHaveBeenCalled();
 
     await advance(900);
 
-    expect(saveLocalWritingDraft).toHaveBeenCalledTimes(2);
+    expect(saveLocalWritingDraft).toHaveBeenCalledTimes(1);
     expect(screen.getByText(LOCAL_SAVED_BADGE)).toBeOnTheScreen();
   });
 

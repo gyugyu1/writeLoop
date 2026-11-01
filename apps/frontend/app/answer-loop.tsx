@@ -454,6 +454,15 @@ export function AnswerLoop() {
     };
   }, [currentUser, currentUser?.id, guestId, isResolvingCurrentUser, pickFlowScreen, selectedDifficulty]);
 
+  // 추천 질문 목록이 도착했을 때 지금 단계와 전체 질문 목록을 읽으려고 둔다.
+  // 효과의 의존성에 넣으면 단계가 바뀔 때마다 목록을 다시 부르게 된다.
+  const stepRef = useRef(step);
+  const allPromptsRef = useRef(allPrompts);
+  useEffect(() => {
+    stepRef.current = step;
+    allPromptsRef.current = allPrompts;
+  }, [step, allPrompts]);
+
   useEffect(() => {
     let isMounted = true;
 
@@ -484,6 +493,16 @@ export function AnswerLoop() {
         setRevealedTranslations({});
         setSelectedPromptId((current) => {
           if (recommendation.prompts.some((prompt) => prompt.id === current)) {
+            return current;
+          }
+          // 답 쓰기·피드백·다시 쓰기·완료 화면에서는 이어 쓰던 질문을 그대로 둔다(그날 추천 목록에 없어도).
+          // 전체 질문 목록에도 없는 잘못된 질문이면 지금처럼 첫 질문을 고른다. 전체 목록을 아직 못 받았으면 두고 본다.
+          const knownPrompts = allPromptsRef.current;
+          if (
+            current &&
+            stepRef.current !== "pick" &&
+            (knownPrompts.length === 0 || knownPrompts.some((prompt) => prompt.id === current))
+          ) {
             return current;
           }
           return recommendation.prompts[0]?.id ?? "";

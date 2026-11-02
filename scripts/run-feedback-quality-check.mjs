@@ -554,9 +554,23 @@ function buildPayloadSnapshot(payload) {
       enabled: payload?.rewriteWorkspace?.enabled ?? null
     }),
     completion: compactObject({
-      title: limitText(payload?.completion?.title, 500),
-      message: limitText(payload?.completion?.message, 800),
-      nextActionLabel: limitText(payload?.completion?.nextActionLabel, 300)
+      headline: limitText(payload?.completion?.headline, 500),
+      improvedPoint: limitText(payload?.completion?.improvedPoint, 800),
+      encouragement: limitText(payload?.completion?.encouragement, 800),
+      nextTinyGoal: limitText(payload?.completion?.nextTinyGoal, 800),
+      enrichment: compactObject({
+        focus: limitText(payload?.completion?.enrichment?.focus, 500),
+        focusType: payload?.completion?.enrichment?.focusType ?? null,
+        targetSlot: payload?.completion?.enrichment?.targetSlot ?? null,
+        why: limitText(payload?.completion?.enrichment?.why, 800),
+        instruction: limitText(payload?.completion?.enrichment?.instruction, 800),
+        skeletonEn: limitText(payload?.completion?.enrichment?.skeletonEn, 800),
+        skeletonKo: limitText(payload?.completion?.enrichment?.skeletonKo, 800),
+        suggestedPhrases: sliceArray(payload?.completion?.enrichment?.suggestedPhrases, 6).map((item) => compactObject({
+          phrase: limitText(item?.phrase, 300),
+          meaningKo: limitText(item?.meaningKo, 300)
+        }))
+      })
     }),
     revealLater: compactObject({
       label: limitText(payload?.revealLater?.label, 300),

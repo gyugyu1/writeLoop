@@ -10,6 +10,7 @@ import com.writeloop.dto.FeedbackRewriteWorkspaceDto;
 import com.writeloop.dto.FeedbackUiDto;
 import com.writeloop.dto.GrammarFeedbackItemDto;
 import com.writeloop.dto.InlineFeedbackSegmentDto;
+import com.writeloop.dto.RefinementExpressionDto;
 import com.writeloop.dto.PromptDto;
 
 import java.util.List;
@@ -82,11 +83,24 @@ final class CanonicalFeedbackAssembler {
                 revisedAnswer,
                 languageCorrections
         );
+        // 모범 답안·해석·추천 표현은 완료 화면에서만 보인다. 완료면 반드시 있어야 하고(없으면 다시 시도),
+        // 완료가 아니면 모델이 써 왔어도 버린다.
+        boolean completeDecision = decision.isComplete();
+        if (completeDecision && (generated.modelAnswer() == null || generated.refinementExpressions().size() < 2)) {
+            throw new FeedbackContractException(
+                    "A complete answer requires modelAnswer and at least two refinementExpressions"
+            );
+        }
+        List<RefinementExpressionDto> refinementExpressions = completeDecision
+                ? generated.refinementExpressions()
+                : List.of();
+        String modelAnswer = completeDecision ? generated.modelAnswer() : null;
+        String modelAnswerKo = completeDecision ? generated.modelAnswerKo() : null;
         GeneratedSections finalSections = new GeneratedSections(
                 generated.strengths(),
-                generated.refinementExpressions(),
-                generated.modelAnswer(),
-                generated.modelAnswerKo(),
+                refinementExpressions,
+                modelAnswer,
+                modelAnswerKo,
                 decision,
                 coachMission
         );
@@ -124,9 +138,9 @@ final class CanonicalFeedbackAssembler {
                 inlineFeedback,
                 grammarFeedback,
                 revisedAnswer,
-                generated.refinementExpressions(),
-                generated.modelAnswer(),
-                generated.modelAnswerKo(),
+                refinementExpressions,
+                modelAnswer,
+                modelAnswerKo,
                 coachMission == null ? null : coachMission.instructionKo(),
                 ui,
                 null,

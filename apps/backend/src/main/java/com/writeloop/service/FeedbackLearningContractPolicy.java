@@ -209,28 +209,6 @@ final class FeedbackLearningContractPolicy {
         return OrderedMaps.copyOf(contract);
     }
 
-    List<String> depthSlots(PromptDto prompt) {
-        PromptTaskMetaDto taskMeta = prompt == null ? null : prompt.taskMeta();
-        if (taskMeta == null) {
-            return List.of();
-        }
-        List<String> requiredSlots = mappedSlots(taskMeta.requiredSlots(), taskMeta.answerMode());
-        return mappedSlots(taskMeta.optionalSlots(), taskMeta.answerMode()).stream()
-                .filter(slot -> !requiredSlots.contains(slot))
-                .distinct()
-                .toList();
-    }
-
-    List<String> allowedSlots(PromptDto prompt) {
-        PromptTaskMetaDto taskMeta = prompt == null ? null : prompt.taskMeta();
-        if (taskMeta == null) {
-            return List.of();
-        }
-        LinkedHashSet<String> slots = new LinkedHashSet<>(mappedSlots(taskMeta.requiredSlots(), taskMeta.answerMode()));
-        slots.addAll(mappedSlots(taskMeta.optionalSlots(), taskMeta.answerMode()));
-        return List.copyOf(slots);
-    }
-
     private ContractAssessment verifyAssessment(
             String learnerAnswer,
             String answerMode,

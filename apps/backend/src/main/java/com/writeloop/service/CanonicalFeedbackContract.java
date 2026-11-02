@@ -25,12 +25,14 @@ final class CanonicalFeedbackContract {
             1. topicAssessment: write reasonKo first, then decide status from that reason, before grammar or slot assessment.
             2. structureAssessment.status.
             3. languageAssessment.revisionSteps: zero to 25 cumulative steps.
-            4. slotAssessments: assess every configured slot exactly once in the fixed-key object.
-               For each slot, write evidence first, then decide verdict from that evidence.
+            4. slotAssessments: one item for every slot in questionContract.slotContracts, exactly once each.
+               For each item, write slot first, then evidence, then decide verdict from that evidence.
             5. missionSupport: teaching support for at most one slot, chosen by the selection order below.
             6. enrichmentSupport: an optional challenge for at most one depth slot, only when the answer is already complete.
-            7. modelAnswer, then modelAnswerKo.
-            8. refinementExpressions, selected by comparing the modelAnswer you already wrote with the learner answer.
+            7. modelAnswer, then modelAnswerKo, only when the answer is already complete (the selection order below reached step 6).
+               Otherwise return empty strings.
+            8. refinementExpressions, only under the same condition, selected by comparing the modelAnswer you already wrote with
+               the learner answer. Otherwise return an empty array.
             9. strengths.
 
             Input metadata:
@@ -111,7 +113,8 @@ final class CanonicalFeedbackContract {
             - reasonKo must explain every change made by that step in concise Korean.
 
             Slot rules:
-            - slotAssessments has exactly the fixed keys supplied by the response schema. Do not omit, add, or rename keys.
+            - slotAssessments contains exactly one item for every slot listed in questionContract.slotContracts and no other slot.
+              Do not omit, repeat, add, or rename slots. The schema lists every slot code the service knows; use only this question's.
             - verdict is SATISFIED, GENERIC, or MISSING. Decide it only from the evidence you just wrote.
             - Judge each slot using the original question together with all three values in questionContract.slotContracts:
               definition is the shared slot meaning, semanticRole is this question's exact relationship, and satisfiedWhen is the
@@ -178,9 +181,13 @@ final class CanonicalFeedbackContract {
 
             Content rules:
             - strengths contains at most one specific, honest strength in Korean.
+            - modelAnswer, modelAnswerKo, and refinementExpressions are shown only on the completion screen. Write them only when the
+              selection order above reached step 6 (the answer is complete), the same condition as enrichmentSupport. In every other
+              case return modelAnswer and modelAnswerKo as empty strings and refinementExpressions as an empty array.
             - modelAnswer is a useful reference answer to the original question. Do not copy it from the learner answer mechanically.
             - modelAnswerKo is the faithful Korean translation of modelAnswer.
-            - Always return at least two refinementExpressions. They are optional for the learner to use and never block completion,
+            - Always return at least two refinementExpressions for a complete answer.
+              They are optional for the learner to use and never block completion,
               but they are required output so a complete answer still receives useful ways to broaden its expression.
             - modelAnswer is written before refinementExpressions. Compare that modelAnswer with the learner answer and select short,
               reusable expressions that can enrich the learner's existing meaning without adding new facts. An expression may come from
@@ -223,8 +230,9 @@ final class CanonicalFeedbackContract {
                 "topicDetail", value(prompt == null ? null : prompt.topicDetail())
         ));
         payload.put("questionContract", policy.promptContract(prompt));
-        payload.put("learnerAnswer", value(answer));
+        // 학습자 답은 사람마다 달라 캐시가 여기서 끊긴다. 맨 뒤에 두어 같은 질문의 힌트까지 캐시되게 한다.
         payload.put("promptHints", promptHints(hints));
+        payload.put("learnerAnswer", value(answer));
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
     }
 
@@ -283,7 +291,9 @@ final class CanonicalFeedbackContract {
     }
 
     Map<String, Object> schema(PromptDto prompt) {
-        List<String> slots = policy.allowedSlots(prompt);
+        // 슬롯 선택지는 질문과 관계없이 전체 슬롯 코드다. 스키마가 모든 질문에서 같아야 그 뒤의 고정 개발자 프롬프트까지
+        // 프롬프트 캐시가 맞는다. 이 질문의 슬롯만 쓰는지는 백엔드가 검사한다(verifyAssessment).
+        List<String> slots = FeedbackSlotCatalog.canonicalSlots();
         // 구조화 출력은 이 키 순서대로 생성된다. 근거를 쓴 뒤 판정하고, 진단을 마친 뒤 학습 자료를 쓰도록 순서를 정했다.
         // 순서를 바꾸면 모델 동작이 달라지므로 회귀 테스트와 함께 바꾼다.
         Map<String, Object> properties = new LinkedHashMap<>();
@@ -305,27 +315,15 @@ final class CanonicalFeedbackContract {
                         "reasonKo", stringSchema()
                 )), 0, 25)
         )));
-        Map<String, Object> slotAssessmentProperties = new LinkedHashMap<>();
-        for (String slot : slots) {
-            slotAssessmentProperties.put(slot, objectSchema(OrderedMaps.of(
-                    "evidence", stringSchema(),
-                    "verdict", enumString(List.of("SATISFIED", "GENERIC", "MISSING"))
-            )));
-        }
-        properties.put("slotAssessments", objectSchema(slotAssessmentProperties));
+        properties.put("slotAssessments", arraySchema(objectSchema(OrderedMaps.of(
+                "slot", enumString(slots),
+                "evidence", stringSchema(),
+                "verdict", enumString(List.of("SATISFIED", "GENERIC", "MISSING"))
+        )), 0));
         // 지원 내용은 미션으로 보여 줄 슬롯 하나에만 쓴다. 슬롯마다 쓰게 하면 출력 대부분이 버려진다.
-        properties.put("missionSupport", arraySchema(
-                missionSupportSchema(slots.isEmpty() ? stringSchema() : enumString(slots)),
-                0,
-                slots.isEmpty() ? 0 : 1
-        ));
+        properties.put("missionSupport", arraySchema(missionSupportSchema(enumString(slots)), 0, 1));
         // 완성 답변에만 붙는 "더 풍부하게 써 보기" 제안. 선택 슬롯 하나만 대상으로 한다.
-        List<String> depthSlots = policy.depthSlots(prompt);
-        properties.put("enrichmentSupport", arraySchema(
-                missionSupportSchema(depthSlots.isEmpty() ? stringSchema() : enumString(depthSlots)),
-                0,
-                depthSlots.isEmpty() ? 0 : 1
-        ));
+        properties.put("enrichmentSupport", arraySchema(missionSupportSchema(enumString(slots)), 0, 1));
         properties.put("modelAnswer", stringSchema());
         properties.put("modelAnswerKo", stringSchema());
         properties.put("refinementExpressions", arraySchema(objectSchema(OrderedMaps.of(
@@ -333,7 +331,7 @@ final class CanonicalFeedbackContract {
                 "meaningKo", stringSchema(),
                 "guidanceKo", stringSchema(),
                 "exampleEn", stringSchema()
-        )), 2));
+        )), 0));
         properties.put("strengths", arraySchema(stringSchema(), 0, 1));
         return objectSchema(properties);
     }
@@ -361,13 +359,16 @@ final class CanonicalFeedbackContract {
         );
 
         Map<String, SlotAssessmentValue> slotAssessments = new LinkedHashMap<>();
-        root.path("slotAssessments").fields().forEachRemaining(entry -> {
-            JsonNode item = entry.getValue();
-            slotAssessments.put(entry.getKey(), new SlotAssessmentValue(
+        for (JsonNode item : root.path("slotAssessments")) {
+            String slot = text(item, "slot");
+            SlotAssessmentValue value = new SlotAssessmentValue(
                     text(item, "evidence"),
                     SlotAssessmentStatus.fromCode(text(item, "verdict"))
-            ));
-        });
+            );
+            if (slotAssessments.putIfAbsent(slot, value) != null) {
+                throw new FeedbackContractException("Duplicate slot assessment: " + slot);
+            }
+        }
         MissionSupport missionSupport = null;
         JsonNode missionSupportItems = root.path("missionSupport");
         if (missionSupportItems.size() > 1) {

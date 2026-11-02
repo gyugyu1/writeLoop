@@ -729,14 +729,25 @@ describe("[spec] 새 일기", () => {
 // ---------- 기존 일기 ----------
 
 describe("[spec] 기존 일기", () => {
-  it("[spec] 일기가 없으면 '일기를 찾을 수 없어요.'를 오늘 날짜의 편집 화면에 보이고 임시본은 보지 않는다", async () => {
+  // 작업 049(APP-ETC-102) 사용자 결정(049-03)으로 새 동작대로 고쳤다. 옛 단언(오늘 날짜의 편집 화면, 뒤로 버튼,
+  // 삭제 버튼이 보인다)을 "편집 화면 대신 불러오기 실패 화면(오류 문구·다시 시도·일기 목록으로)"으로 바꿨다.
+  it("[spec] 일기가 없으면 편집 화면 대신 '일기를 찾을 수 없어요.'와 '다시 시도'·'일기 목록으로'의 실패 화면을 보이고 임시본은 보지 않는다", async () => {
     await renderExisting(null);
 
     expect(screen.getByText("일기를 찾을 수 없어요.")).toBeOnTheScreen();
-    expect(dateInput().props.value).toBe(TODAY);
-    expect(titleInput().props.value).toBe(TODAY_TITLE);
-    expect(screen.getByRole("button", { name: "영어일기 기록으로 이동" })).toBeOnTheScreen();
-    expect(screen.getByRole("button", { name: "일기 삭제" })).toBeOnTheScreen();
+    expect(screen.getByText("다시 시도")).toBeOnTheScreen();
+    expect(screen.getByText("일기 목록으로")).toBeOnTheScreen();
+    expect(screen.queryByPlaceholderText(DATE_PLACEHOLDER)).toBeNull();
+    expect(screen.queryByDisplayValue(TODAY)).toBeNull();
+    expect(screen.queryByDisplayValue(TODAY_TITLE)).toBeNull();
+    expect(textInputs()).toHaveLength(0);
+    expect(screen.queryByText("<")).toBeNull();
+    expect(screen.queryByText("영어일기")).toBeNull();
+    expect(screen.queryByText("임시저장")).toBeNull();
+    expect(screen.queryByText("AI 피드백 받기")).toBeNull();
+    expect(screen.queryByRole("button", { name: "일기 삭제" })).toBeNull();
+    expect(screen.queryByText("일기 삭제")).toBeNull();
+    expect(screen.queryByRole("button", { name: "AI 코치 열기" })).toBeNull();
     expect(getDiaryDraft).not.toHaveBeenCalled();
     expect(screen.queryByText("문제가 반복되나요? 문제 보내기")).toBeNull();
   });

@@ -38,6 +38,12 @@ type DiaryReadOnlyContentProps = Pick<
   | "savingExpressionKeys"
   | "setIsReadOnlyFeedbackOpen"
 >;
+type DiaryLoadFailedStateProps = Pick<
+  DiaryEntryScreenValues,
+  | "error"
+  | "handleBackToDiaryList"
+  | "handleRetryLoadEntry"
+>;
 type DiaryDeleteAreaProps = Pick<
   DiaryEntryScreenValues,
   | "handleDeleteEntry"
@@ -124,6 +130,31 @@ export function DiaryLoginGate() {
         <Pressable style={styles.primaryButton} onPress={() => router.push(buildLoginHref("/diary/write"))}>
           <Text style={styles.primaryButtonText}>로그인하고 일기 쓰기</Text>
         </Pressable>
+      </View>
+    </SafeAreaView>
+  );
+}
+
+// 기존 일기를 불러오지 못했을 때: 오류 문구, 다시 시도, 일기 목록으로. 편집 화면을 보이지 않아
+// 불러오지 못한 일기를 빈 내용으로 덮어쓰지 않게 한다.
+export function DiaryLoadFailedState({
+  error,
+  handleBackToDiaryList,
+  handleRetryLoadEntry
+}: DiaryLoadFailedStateProps) {
+  return (
+    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
+      <View style={styles.loginGate}>
+        <Text style={styles.loginTitle}>일기를 열지 못했어요</Text>
+        <Text style={styles.loginBody}>{error}</Text>
+        <View style={styles.loadFailedActions}>
+          <Pressable accessibilityRole="button" style={styles.ghostButton} onPress={handleBackToDiaryList}>
+            <Text style={styles.ghostButtonText}>일기 목록으로</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" style={styles.primaryButton} onPress={handleRetryLoadEntry}>
+            <Text style={styles.primaryButtonText}>다시 시도</Text>
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );

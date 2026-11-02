@@ -38,6 +38,12 @@ export const styles = StyleSheet.create({
     textAlign: "center",
     color: "#756758"
   },
+  loadFailedActions: {
+    alignSelf: "stretch",
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 6
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",

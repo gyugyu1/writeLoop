@@ -20,6 +20,7 @@ export type DiaryEntryScreenValues = {
   entryDate: string;
   error: string;
   feedback: DiaryFeedback | null;
+  handleBackToDiaryList: () => void;
   handleCompleteDiary: () => Promise<void>;
   handleDeleteEntry: () => void;
   handleEntryDateChange: (nextDate: string) => void;
@@ -27,6 +28,7 @@ export type DiaryEntryScreenValues = {
   handleNewDiary: () => void;
   handleRequestCoachHelp: (questionOverride?: string) => Promise<void>;
   handleRequestFeedback: (nextAttemptType: "INITIAL" | "REWRITE") => Promise<void>;
+  handleRetryLoadEntry: () => void;
   handleSaveCoachExpression: (expression: CoachExpression) => Promise<void>;
   handleSaveDraft: () => Promise<void>;
   handleStartRewrite: () => void;

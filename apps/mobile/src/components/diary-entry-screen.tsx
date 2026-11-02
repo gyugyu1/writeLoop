@@ -18,6 +18,7 @@ import {
   DiaryEditorCard,
   DiaryEditorHeader,
   DiaryIntroCard,
+  DiaryLoadFailedState,
   DiaryLoadingState,
   DiaryLoginGate,
   DiaryMetaCard,
@@ -70,6 +71,10 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
   const [isReadOnlyFeedbackOpen, setIsReadOnlyFeedbackOpen] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(Boolean(initialEntryId));
+  // 기존 일기를 불러오지 못했는지와 다시 불러온 횟수. 실패하면 편집 화면 대신 실패 화면을 보여
+  // 불러오지 못한 일기를 빈 내용으로 덮어쓰지 않게 한다.
+  const [isLoadFailed, setIsLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCompleting, setIsCompleting] = useState(false);
@@ -128,6 +133,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
         }
         if (!entry) {
           setError("일기를 찾을 수 없어요.");
+          setIsLoadFailed(true);
           return;
         }
 
@@ -162,6 +168,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
       } catch (caughtError) {
         if (!cancelled) {
           setError(caughtError instanceof Error ? caughtError.message : "일기를 불러오지 못했어요.");
+          setIsLoadFailed(true);
         }
       } finally {
         if (!cancelled) {
@@ -175,7 +182,7 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
     return () => {
       cancelled = true;
     };
-  }, [initialEntryId]);
+  }, [initialEntryId, loadAttempt]);
 
   const {
     handleSaveCoachExpression,
@@ -489,6 +496,17 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
     router.replace("/");
   }
 
+  function handleRetryLoadEntry() {
+    setIsLoadFailed(false);
+    setError("");
+    setIsLoading(true);
+    setLoadAttempt((current) => current + 1);
+  }
+
+  function handleBackToDiaryList() {
+    router.replace("/diary" as never);
+  }
+
   async function performDeleteEntry() {
     if (!entryId || isDeleting) {
       return;
@@ -537,6 +555,16 @@ export default function DiaryEntryScreen({ initialEntryId = null }: DiaryEntrySc
   if (!currentUser) {
     return (
       <DiaryLoginGate />
+    );
+  }
+
+  if (isLoadFailed) {
+    return (
+      <DiaryLoadFailedState
+        error={error}
+        handleBackToDiaryList={handleBackToDiaryList}
+        handleRetryLoadEntry={handleRetryLoadEntry}
+      />
     );
   }
 

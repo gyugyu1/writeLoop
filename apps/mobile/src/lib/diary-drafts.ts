@@ -38,31 +38,48 @@ function isDiaryDraft(value: unknown): value is DiaryDraft {
   );
 }
 
-export async function saveDiaryDraft(draft: DiaryDraft) {
-  const ownerScope = await getActiveStorageOwnerScope();
-  await AsyncStorage.setItem(buildDiaryDraftKey(ownerScope, draft.entryId), JSON.stringify(draft));
+// 저장·읽기·지우기를 부른 순서대로 하나씩 실행한다. 화면은 이 함수들을 기다리지 않고 부르므로,
+// 먼저 부른 저장이 나중에 부른 지우기보다 늦게 끝나 지운 임시본이 되살아나지 않게 한다.
+// 화면이 바뀌어도 순서가 지켜지도록 모듈에 하나만 둔다.
+let pendingDraftOperation: Promise<unknown> = Promise.resolve();
+
+function runInCallOrder<T>(operation: () => Promise<T>): Promise<T> {
+  const result = pendingDraftOperation.then(operation);
+  pendingDraftOperation = result.catch(() => undefined);
+  return result;
 }
 
-export async function getDiaryDraft(entryId: string): Promise<DiaryDraft | null> {
-  const ownerScope = await getActiveStorageOwnerScope();
-  const key = buildDiaryDraftKey(ownerScope, entryId);
-  try {
-    const raw = await AsyncStorage.getItem(key);
-    if (!raw) {
-      return null;
-    }
-    const parsed: unknown = JSON.parse(raw);
-    if (isDiaryDraft(parsed)) {
-      return parsed;
-    }
-  } catch {
-    // 읽을 수 없는 임시본은 지운다.
-  }
-  await AsyncStorage.removeItem(key);
-  return null;
+export function saveDiaryDraft(draft: DiaryDraft) {
+  return runInCallOrder(async () => {
+    const ownerScope = await getActiveStorageOwnerScope();
+    await AsyncStorage.setItem(buildDiaryDraftKey(ownerScope, draft.entryId), JSON.stringify(draft));
+  });
 }
 
-export async function deleteDiaryDraft(entryId: string) {
-  const ownerScope = await getActiveStorageOwnerScope();
-  await AsyncStorage.removeItem(buildDiaryDraftKey(ownerScope, entryId));
+export function getDiaryDraft(entryId: string): Promise<DiaryDraft | null> {
+  return runInCallOrder(async () => {
+    const ownerScope = await getActiveStorageOwnerScope();
+    const key = buildDiaryDraftKey(ownerScope, entryId);
+    try {
+      const raw = await AsyncStorage.getItem(key);
+      if (!raw) {
+        return null;
+      }
+      const parsed: unknown = JSON.parse(raw);
+      if (isDiaryDraft(parsed)) {
+        return parsed;
+      }
+    } catch {
+      // 읽을 수 없는 임시본은 지운다.
+    }
+    await AsyncStorage.removeItem(key);
+    return null;
+  });
+}
+
+export function deleteDiaryDraft(entryId: string) {
+  return runInCallOrder(async () => {
+    const ownerScope = await getActiveStorageOwnerScope();
+    await AsyncStorage.removeItem(buildDiaryDraftKey(ownerScope, entryId));
+  });
 }

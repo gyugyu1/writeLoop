@@ -17,7 +17,7 @@ class CanonicalFeedbackAssemblerTest {
     private final CanonicalFeedbackAssembler assembler = new CanonicalFeedbackAssembler();
 
     @Test
-    void backendChoosesMissingSlotAndKeepsRawModelAnswerVisible() {
+    void backendChoosesMissingSlotAndDropsTheCompletionOnlyModelAnswer() {
         SlotFeedbackSupport reasonSupport = support();
         CanonicalLlmOutput output = output(
                 diagnosis("I take a walk.", StructureStatus.COMPLETE, List.of()),
@@ -42,8 +42,8 @@ class CanonicalFeedbackAssemblerTest {
         assertThat(assembled.sections().missionDecision().chosenSlot()).isEqualTo("REASON");
         assertThat(assembled.response().loopComplete()).isFalse();
         assertThat(assembled.response().coachMove().targetSlot()).isEqualTo("REASON");
-        assertThat(assembled.response().modelAnswer())
-                .isEqualTo("I usually take a walk after work because it helps me relax.");
+        assertThat(assembled.response().modelAnswer()).isNullOrEmpty();
+        assertThat(assembled.response().modelAnswerKo()).isNullOrEmpty();
     }
 
     @Test
@@ -250,11 +250,17 @@ class CanonicalFeedbackAssemblerTest {
                 "I practice having a five-minute conversation every evening.",
                 "5분 동안 대화하는 연습을 하다"
         );
+        RefinementExpressionDto secondRefinement = new RefinementExpressionDto(
+                "make it a habit",
+                "습관이라는 점을 드러낼 수 있어요.",
+                "I make it a habit to practice a five-minute conversation every evening.",
+                "습관으로 삼다"
+        );
         String answer = "I practice a five-minute conversation every evening.";
         CanonicalLlmOutput output = output(
                 diagnosis(answer, StructureStatus.COMPLETE, List.of()),
                 answer,
-                List.of(refinement),
+                List.of(refinement, secondRefinement),
                 Map.of(
                         "ACTION",
                         new SlotAssessmentValue("practice a five-minute conversation", SlotAssessmentStatus.SATISFIED)
@@ -271,7 +277,7 @@ class CanonicalFeedbackAssemblerTest {
 
         assertThat(assembled.sections().missionDecision().missionKind()).isEqualTo(MissionKind.COMPLETE);
         assertThat(assembled.response().loopComplete()).isTrue();
-        assertThat(assembled.response().refinementExpressions()).containsExactly(refinement);
+        assertThat(assembled.response().refinementExpressions()).containsExactly(refinement, secondRefinement);
     }
 
     private CanonicalLlmOutput output(
@@ -370,7 +376,20 @@ class CanonicalFeedbackAssemblerTest {
         CanonicalLlmOutput output = output(
                 diagnosis("I take a walk after dinner.", StructureStatus.COMPLETE, List.of()),
                 "I usually take a walk in the park after dinner.",
-                List.of(),
+                List.of(
+                        new RefinementExpressionDto(
+                                "take a stroll",
+                                "산책을 조금 더 여유 있게 표현할 수 있어요.",
+                                "I like to take a stroll after dinner.",
+                                "산책하다"
+                        ),
+                        new RefinementExpressionDto(
+                                "get some fresh air",
+                                "산책하는 이유를 자연스럽게 덧붙일 수 있어요.",
+                                "I take a walk after dinner to get some fresh air.",
+                                "바람을 쐬다"
+                        )
+                ),
                 Map.of(
                         "ACTION", new SlotAssessmentValue("take a walk", SlotAssessmentStatus.SATISFIED),
                         "PLACE", new SlotAssessmentValue(null, SlotAssessmentStatus.MISSING)

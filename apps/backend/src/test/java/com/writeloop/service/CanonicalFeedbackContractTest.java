@@ -17,6 +17,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CanonicalFeedbackContractTest {
 
+    // 작업 053 명세: 슬롯 선택지는 질문과 관계없이 전체 슬롯 코드 20개(표시 순서)다.
+    private static final List<String> ALL_SLOTS = List.of(
+            "ACTION", "CHOICE", "GOAL", "PROBLEM", "OPINION", "PLAN", "SOLUTION", "ADVANTAGE", "DISADVANTAGE",
+            "BEFORE_STATE", "NOW_STATE", "CHANGE_CAUSE", "ADDITIONAL_ACTION", "SPECIFIC_TIME", "PLACE", "REASON",
+            "DETAIL", "EXAMPLE", "FEELING", "RESULT"
+    );
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final CanonicalFeedbackContract contract = new CanonicalFeedbackContract(objectMapper);
 
@@ -42,7 +49,7 @@ class CanonicalFeedbackContractTest {
         assertThat(properties.path("enrichmentSupport").path("items").path("properties")
                 .path("slot").path("enum"))
                 .extracting(JsonNode::asText)
-                .containsExactly("REASON");
+                .containsExactlyElementsOf(ALL_SLOTS);
         assertThat(properties.has("grammarIssues")).isFalse();
         assertThat(properties.has("correctedAnswer")).isFalse();
         assertThat(properties.has("missionDecision")).isFalse();
@@ -78,7 +85,7 @@ class CanonicalFeedbackContractTest {
         assertThat(properties.path("missionSupport").path("maxItems").asInt()).isEqualTo(1);
         assertThat(slotSupportItem.path("properties").path("slot").path("enum"))
                 .extracting(JsonNode::asText)
-                .containsExactly("ACTION", "REASON");
+                .containsExactlyElementsOf(ALL_SLOTS);
         assertThat(slotSupportItem.path("required"))
                 .extracting(JsonNode::asText)
                 .containsExactlyInAnyOrder(
@@ -121,7 +128,7 @@ class CanonicalFeedbackContractTest {
                 .path("properties")
                 .path("refinementExpressions");
 
-        assertThat(refinementExpressions.path("minItems").asInt()).isEqualTo(2);
+        assertThat(refinementExpressions.path("minItems").asInt(-1)).isEqualTo(0);
         assertThat(refinementExpressions.has("maxItems")).isFalse();
         assertThat(contract.developerPrompt())
                 .contains("Always return at least two refinementExpressions")
@@ -148,18 +155,18 @@ class CanonicalFeedbackContractTest {
         JsonNode properties = objectMapper.valueToTree(contract.schema(prompt())).path("properties");
         JsonNode slotAssessments = properties.path("slotAssessments");
 
-        assertThat(slotAssessments.path("required"))
+        assertThat(slotAssessments.path("type").asText()).isEqualTo("array");
+        JsonNode slotAssessmentItem = slotAssessments.path("items");
+        assertThat(slotAssessmentItem.path("required"))
                 .extracting(JsonNode::asText)
-                .containsExactlyInAnyOrder("ACTION", "REASON");
-        assertThat(slotAssessments.path("properties").path("ACTION").path("required"))
+                .containsExactlyInAnyOrder("slot", "evidence", "verdict");
+        assertThat(slotAssessmentItem.path("properties").path("slot").path("enum"))
                 .extracting(JsonNode::asText)
-                .containsExactlyInAnyOrder("evidence", "verdict");
-        assertThat(slotAssessments.path("properties").path("ACTION")
-                .path("properties").path("verdict").path("enum"))
+                .containsExactlyElementsOf(ALL_SLOTS);
+        assertThat(slotAssessmentItem.path("properties").path("verdict").path("enum"))
                 .extracting(JsonNode::asText)
                 .containsExactly("SATISFIED", "GENERIC", "MISSING");
-        assertThat(slotAssessments.path("properties").path("ACTION")
-                .path("properties").has("support")).isFalse();
+        assertThat(slotAssessmentItem.path("properties").has("support")).isFalse();
         assertThat(properties.path("missionSupport").path("items").path("properties")
                 .path("suggestedPhrases").path("minItems").asInt()).isEqualTo(2);
     }
@@ -313,10 +320,10 @@ class CanonicalFeedbackContractTest {
                   },
                   "strengths": [],
                   "refinementExpressions": [],
-                  "slotAssessments": {
-                    "ACTION": {"evidence": "noodles", "verdict": "SATISFIED"},
-                    "REASON": {"evidence": "", "verdict": "MISSING"}
-                  },
+                  "slotAssessments": [
+                    {"slot": "ACTION", "evidence": "noodles", "verdict": "SATISFIED"},
+                    {"slot": "REASON", "evidence": "", "verdict": "MISSING"}
+                  ],
                   "missionSupport": [{
                     "slot": "REASON",
                     "title": "이유 더하기",
@@ -351,7 +358,7 @@ class CanonicalFeedbackContractTest {
                   %s
                   "strengths": [],
                   "refinementExpressions": [],
-                  "slotAssessments": {},
+                  "slotAssessments": [],
                   "modelAnswer": "I go home because I am tired.",
                   "modelAnswerKo": "피곤해서 집에 가요."
                 }

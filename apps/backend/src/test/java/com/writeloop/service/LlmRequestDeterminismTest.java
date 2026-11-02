@@ -72,10 +72,8 @@ class LlmRequestDeterminismTest {
         assertThat(keys(properties.path("refinementExpressions").path("items").path("properties")))
                 .containsExactly("expression", "meaningKo", "guidanceKo", "exampleEn");
 
-        JsonNode slots = properties.path("slotAssessments").path("properties");
-        assertThat(keys(slots)).containsExactly("ACTION", "REASON");
-        JsonNode slot = slots.path("ACTION").path("properties");
-        assertThat(keys(slot)).containsExactly("evidence", "verdict");
+        JsonNode slot = properties.path("slotAssessments").path("items").path("properties");
+        assertThat(keys(slot)).containsExactly("slot", "evidence", "verdict");
         JsonNode support = properties.path("missionSupport").path("items").path("properties");
         assertThat(keys(support)).containsExactly(
                 "slot",
@@ -94,7 +92,7 @@ class LlmRequestDeterminismTest {
     void canonicalUserPromptUsesDeclaredFieldOrder() throws Exception {
         JsonNode userPrompt = objectMapper.readTree(contract.userPrompt(prompt(), "I go home.", List.of()));
 
-        assertThat(keys(userPrompt)).containsExactly("question", "questionContract", "learnerAnswer", "promptHints");
+        assertThat(keys(userPrompt)).containsExactly("question", "questionContract", "promptHints", "learnerAnswer");
         assertThat(keys(userPrompt.path("question"))).containsExactly(
                 "id",
                 "difficulty",
@@ -133,9 +131,9 @@ class LlmRequestDeterminismTest {
 
         assertThat(keys(schema.path("properties").path("topicAssessment").path("properties")))
                 .containsExactly("reasonKo", "status");
-        assertThat(keys(schema.path("properties").path("slotAssessments").path("properties")
-                .path("ACTION").path("properties")))
-                .containsExactly("evidence", "verdict");
+        assertThat(keys(schema.path("properties").path("slotAssessments").path("items")
+                .path("properties")))
+                .containsExactly("slot", "evidence", "verdict");
         List<String> required = new ArrayList<>();
         schema.path("required").forEach(item -> required.add(item.asText()));
         assertThat(required).containsExactlyElementsOf(keys(schema.path("properties")));

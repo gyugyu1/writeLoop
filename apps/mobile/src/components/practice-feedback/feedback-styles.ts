@@ -328,6 +328,14 @@ export const styles = StyleSheet.create({
   languageCorrectionTogglePressed: {
     opacity: 0.72
   },
+  languageCorrectionReveal: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#DDBB8E",
+    backgroundColor: "#FFF9F0",
+    paddingHorizontal: 12,
+    paddingVertical: 4
+  },
   languageCorrectionToggleText: {
     color: "#8D5617",
     fontSize: 14,

@@ -4,11 +4,16 @@ import { filterSuggestedRefinementExpressions } from "@/lib/refinement-recommend
 import type { FeedbackCoachMove, VisibleFeedbackSnapshot } from "@/lib/types";
 
 // 그때 화면에 보였던 피드백(스냅샷)을 다시 그린다. 기록 화면과 다시쓰기 화면의 "이전 피드백"이 함께 쓴다.
+// 다시 쓰는 중(hideLanguageFixAnswers)에는 문장 교정 미션의 고친 표현과 고친 문장을 눌러야 보이게 가린다. 기록 화면은 다 보인다.
 // 추천 표현은 실제 피드백 화면과 같은 규칙으로 고른다(숨김 표시, 자리표시자, 이미 쓴 표현 제외).
 type VisiblePracticeFeedbackContentProps = {
   snapshot?: VisibleFeedbackSnapshot | null;
   learnerAnswer?: string | null;
+  hideLanguageFixAnswers?: boolean;
 };
+
+const LANGUAGE_FIX_INSTRUCTION =
+  "이유를 보고 표시된 곳을 직접 고쳐 보세요. 막히면 고친 표현을 눌러 확인해요.";
 
 type Phrase = {
   phrase: string;
@@ -65,11 +70,14 @@ function Skeleton({ move }: { move: FeedbackCoachMove }) {
 
 export function VisiblePracticeFeedbackContent({
   snapshot,
-  learnerAnswer
+  learnerAnswer,
+  hideLanguageFixAnswers = false
 }: VisiblePracticeFeedbackContentProps) {
   const [isModelAnswerOpen, setIsModelAnswerOpen] = useState(false);
   const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
     useState(false);
+  const [revealedLanguageCorrectionIndexes, setRevealedLanguageCorrectionIndexes] = useState<number[]>([]);
+  const [isRevisedSentenceRevealed, setIsRevisedSentenceRevealed] = useState(false);
 
   if (!snapshot) {
     return (
@@ -96,6 +104,7 @@ export function VisiblePracticeFeedbackContent({
     allLanguageCorrections.length - 4
   );
   const isLanguageFix = trimText(coachMove?.focusType).toUpperCase() === "LANGUAGE_FIX";
+  const shouldHideAnswers = hideLanguageFixAnswers && isLanguageFix;
 
   return (
     <View style={styles.stack}>
@@ -117,7 +126,18 @@ export function VisiblePracticeFeedbackContent({
                   <Text style={styles.body}>{coachMove.before}</Text>
                 </View>
               ) : null}
-              {trimText(coachMove.after) ? (
+              {trimText(coachMove.after) && shouldHideAnswers && !isRevisedSentenceRevealed ? (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setIsRevisedSentenceRevealed(true)}
+                  style={({ pressed }) => [
+                    styles.correctionToggle,
+                    pressed ? styles.correctionTogglePressed : null
+                  ]}
+                >
+                  <Text style={styles.correctionToggleText}>고친 문장 전체 보기</Text>
+                </Pressable>
+              ) : trimText(coachMove.after) ? (
                 <View style={styles.swapAfter}>
                   <Text style={styles.swapLabel}>
                     {isLanguageFix ? "이번에 고친 문장" : "적용"}
@@ -135,12 +155,35 @@ export function VisiblePracticeFeedbackContent({
                   style={styles.correctionItem}
                 >
                   <Text style={styles.correctionLabel}>{correction.label}</Text>
-                  {trimText(correction.before) || trimText(correction.after) ? (
+                  {!(trimText(correction.before) || trimText(correction.after)) ? null : shouldHideAnswers
+                    && trimText(correction.after)
+                    && !revealedLanguageCorrectionIndexes.includes(index) ? (
+                    <View style={styles.correctionHiddenRow}>
+                      {trimText(correction.before) ? (
+                        <Text style={styles.correctionSwap}>{`${correction.before} → `}</Text>
+                      ) : null}
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`${trimText(correction.before) || `교정 ${index + 1}`}의 고친 표현 보기`}
+                        onPress={() =>
+                          setRevealedLanguageCorrectionIndexes((current) =>
+                            current.includes(index) ? current : [...current, index]
+                          )
+                        }
+                        style={({ pressed }) => [
+                          styles.correctionReveal,
+                          pressed ? styles.correctionTogglePressed : null
+                        ]}
+                      >
+                        <Text style={styles.correctionToggleText}>고친 표현 보기</Text>
+                      </Pressable>
+                    </View>
+                  ) : (
                     <Text style={styles.correctionSwap}>
                       {trimText(correction.before) ? `${correction.before} → ` : ""}
                       {correction.after}
                     </Text>
-                  ) : null}
+                  )}
                   <Text style={styles.correctionReason}>{correction.reason}</Text>
                 </View>
               ))}
@@ -166,10 +209,12 @@ export function VisiblePracticeFeedbackContent({
             </View>
           ) : null}
           {trimText(coachMove.why) ? <Text style={styles.body}>{coachMove.why}</Text> : null}
-          {trimText(coachMove.instruction) ? (
+          {shouldHideAnswers || trimText(coachMove.instruction) ? (
             <View style={styles.instruction}>
               <Text style={styles.eyebrow}>다시 쓸 때</Text>
-              <Text style={styles.body}>{coachMove.instruction}</Text>
+              <Text style={styles.body}>
+                {shouldHideAnswers ? LANGUAGE_FIX_INSTRUCTION : coachMove.instruction}
+              </Text>
             </View>
           ) : null}
           <Skeleton move={coachMove} />
@@ -364,6 +409,20 @@ const styles = StyleSheet.create({
   },
   correctionTogglePressed: {
     opacity: 0.72
+  },
+  correctionHiddenRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: 6
+  },
+  correctionReveal: {
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "#dfbd91",
+    backgroundColor: "#fff9f0",
+    paddingHorizontal: 12,
+    paddingVertical: 4
   },
   correctionToggleText: {
     color: "#8d5617",

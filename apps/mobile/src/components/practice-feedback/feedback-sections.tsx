@@ -24,6 +24,10 @@ type CoachMoveCardProps = Pick<
   FeedbackScreenValues,
   | "areAllLanguageCorrectionsVisible"
   | "setAreAllLanguageCorrectionsVisible"
+  | "revealedLanguageCorrectionIndexes"
+  | "setRevealedLanguageCorrectionIndexes"
+  | "isRevisedSentenceRevealed"
+  | "setIsRevisedSentenceRevealed"
   | "savedExpressionIdsByKey"
   | "savingExpressionKeys"
   | "coachMove"
@@ -53,6 +57,7 @@ type InlineRewriteCardProps = Pick<
   | "setRewriteError"
   | "isSubmittingRewrite"
   | "rewriteWorkspace"
+  | "isLanguageFix"
   | "shouldShowInlineRewriteWorkspace"
   | "inlineRewriteSubmitLabel"
   | "inlineRewriteHelpText"
@@ -170,6 +175,10 @@ export function StrengthCard({
 export function CoachMoveCard({
   areAllLanguageCorrectionsVisible,
   setAreAllLanguageCorrectionsVisible,
+  revealedLanguageCorrectionIndexes,
+  setRevealedLanguageCorrectionIndexes,
+  isRevisedSentenceRevealed,
+  setIsRevisedSentenceRevealed,
   savedExpressionIdsByKey,
   savingExpressionKeys,
   coachMove,
@@ -206,7 +215,18 @@ export function CoachMoveCard({
                 </Text>
               </View>
             ) : null}
-            {trimText(coachMove?.after) ? (
+            {trimText(coachMove?.after) && isLanguageFix && !isRevisedSentenceRevealed ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setIsRevisedSentenceRevealed(true)}
+                style={({ pressed }) => [
+                  styles.languageCorrectionToggle,
+                  pressed ? styles.languageCorrectionTogglePressed : null
+                ]}
+              >
+                <Text style={styles.languageCorrectionToggleText}>고친 문장 전체 보기</Text>
+              </Pressable>
+            ) : trimText(coachMove?.after) ? (
               <View style={[styles.coachMoveSwapRow, styles.coachMoveAfterRow]}>
                 <Text style={styles.coachMoveSwapLabel}>
                   {isLanguageFix ? "이번에 고친 문장" : "적용"}
@@ -252,11 +272,28 @@ export function CoachMoveCard({
                       </Text>
                     ) : null}
                     <Text style={styles.languageCorrectionArrow}>→</Text>
-                    {trimText(correction.after) ? (
+                    {!trimText(correction.after) ? null : !isLanguageFix
+                      || revealedLanguageCorrectionIndexes.includes(index) ? (
                       <Text style={styles.languageCorrectionAfter}>
                         {correction.after}
                       </Text>
-                    ) : null}
+                    ) : (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel={`${trimText(correction.before) || `교정 ${index + 1}`}의 고친 표현 보기`}
+                        onPress={() =>
+                          setRevealedLanguageCorrectionIndexes((current) =>
+                            current.includes(index) ? current : [...current, index]
+                          )
+                        }
+                        style={({ pressed }) => [
+                          styles.languageCorrectionReveal,
+                          pressed ? styles.languageCorrectionTogglePressed : null
+                        ]}
+                      >
+                        <Text style={styles.languageCorrectionToggleText}>고친 표현 보기</Text>
+                      </Pressable>
+                    )}
                   </View>
                 ) : null}
                 <Text style={styles.languageCorrectionReason}>
@@ -352,6 +389,7 @@ export function InlineRewriteCard({
   setRewriteError,
   isSubmittingRewrite,
   rewriteWorkspace,
+  isLanguageFix,
   shouldShowInlineRewriteWorkspace,
   inlineRewriteSubmitLabel,
   inlineRewriteHelpText,
@@ -378,7 +416,8 @@ export function InlineRewriteCard({
         multiline
         textAlignVertical="top"
         placeholder={pickFirstNonEmpty(
-          rewriteWorkspace?.placeholder,
+          // 문장 교정 미션의 서버 자리 표시 문구는 고친 문장 전체라, 칸을 비우면 정답이 보이지 않게 쓰지 않는다.
+          isLanguageFix ? null : rewriteWorkspace?.placeholder,
           "코치 포인트를 반영해서 다시 써보세요."
         )}
         placeholderTextColor="#B7A58F"

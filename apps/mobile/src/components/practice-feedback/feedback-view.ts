@@ -14,6 +14,9 @@ import {
   trimText
 } from "./feedback-helpers";
 
+export const LANGUAGE_FIX_INSTRUCTION =
+  "이유를 보고 표시된 곳을 직접 고쳐 보세요. 막히면 고친 표현을 눌러 확인해요.";
+
 // 피드백 화면이 피드백 상태와 화면 상태로 계산하는 값. 화면은 렌더마다 이 함수를 부른다.
 export function derivePracticeFeedbackView({
   feedbackState,
@@ -112,7 +115,9 @@ export function derivePracticeFeedbackView({
     loopExperience?.headline,
     "오늘은 이것 하나만 적용해 볼게요."
   );
+  // 문장 교정 미션은 고친 표현을 가려 두므로, 정답을 옮겨 적으라는 서버 안내 대신 직접 고쳐 보라고 안내한다.
   const coachInstruction = pickFirstNonEmpty(
+    isLanguageFix ? LANGUAGE_FIX_INSTRUCTION : null,
     coachMove?.instruction,
     feedback?.rewriteChallenge,
     "의미는 유지하고 오늘의 한 가지 코치만 반영해 다시 써보세요."

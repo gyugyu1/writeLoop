@@ -25,6 +25,10 @@ export type FeedbackScreenValues = ReturnType<typeof derivePracticeFeedbackView>
     setInlineRewriteY: Setter<number | null>;
     areAllLanguageCorrectionsVisible: boolean;
     setAreAllLanguageCorrectionsVisible: Setter<boolean>;
+    revealedLanguageCorrectionIndexes: number[];
+    setRevealedLanguageCorrectionIndexes: Setter<number[]>;
+    isRevisedSentenceRevealed: boolean;
+    setIsRevisedSentenceRevealed: Setter<boolean>;
     handleHeaderBack: () => void;
     handleBackToQuestions: () => void;
     handleOpenCompletionRewrite: () => void;

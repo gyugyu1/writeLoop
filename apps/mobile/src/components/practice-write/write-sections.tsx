@@ -386,6 +386,7 @@ export function PreviousFeedbackModal({
               <VisiblePracticeFeedbackContent
                 snapshot={previousFeedbackState.feedback.visibleFeedback}
                 learnerAnswer={previousFeedbackState.answer}
+                hideLanguageFixAnswers
               />
             ) : (
               <View style={styles.feedbackModalEmptyCard}>

@@ -66,6 +66,9 @@ export default function PracticeFeedbackScreen() {
   const [isSubmittingRewrite, setIsSubmittingRewrite] = useState(false);
   const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
     useState(false);
+  // 문장 교정 미션에서 학습자가 눌러 연 교정 줄(번호)과 고친 문장 전체. 새 피드백을 받으면 다시 가린다.
+  const [revealedLanguageCorrectionIndexes, setRevealedLanguageCorrectionIndexes] = useState<number[]>([]);
+  const [isRevisedSentenceRevealed, setIsRevisedSentenceRevealed] = useState(false);
   const {
     feedback,
     coachMove,
@@ -108,6 +111,11 @@ export default function PracticeFeedbackScreen() {
   useEffect(() => {
     setAreAllLanguageCorrectionsVisible(false);
   }, [feedback?.attemptNo]);
+
+  useEffect(() => {
+    setRevealedLanguageCorrectionIndexes([]);
+    setIsRevisedSentenceRevealed(false);
+  }, [feedback?.attemptNo, feedback?.sessionId]);
 
   useEffect(() => {
     const inMemoryState = getPracticeFeedbackState(requestedDifficulty, requestedPromptId);
@@ -396,6 +404,10 @@ export default function PracticeFeedbackScreen() {
               <CoachMoveCard
                 areAllLanguageCorrectionsVisible={areAllLanguageCorrectionsVisible}
                 setAreAllLanguageCorrectionsVisible={setAreAllLanguageCorrectionsVisible}
+                revealedLanguageCorrectionIndexes={revealedLanguageCorrectionIndexes}
+                setRevealedLanguageCorrectionIndexes={setRevealedLanguageCorrectionIndexes}
+                isRevisedSentenceRevealed={isRevisedSentenceRevealed}
+                setIsRevisedSentenceRevealed={setIsRevisedSentenceRevealed}
                 savedExpressionIdsByKey={savedExpressionIdsByKey}
                 savingExpressionKeys={savingExpressionKeys}
                 coachMove={coachMove}
@@ -425,6 +437,7 @@ export default function PracticeFeedbackScreen() {
                 setRewriteError={setRewriteError}
                 isSubmittingRewrite={isSubmittingRewrite}
                 rewriteWorkspace={rewriteWorkspace}
+                isLanguageFix={isLanguageFix}
                 shouldShowInlineRewriteWorkspace={shouldShowInlineRewriteWorkspace}
                 inlineRewriteSubmitLabel={inlineRewriteSubmitLabel}
                 inlineRewriteHelpText={inlineRewriteHelpText}

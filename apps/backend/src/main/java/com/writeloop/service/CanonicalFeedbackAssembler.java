@@ -58,8 +58,8 @@ final class CanonicalFeedbackAssembler {
         List<GrammarFeedbackItemDto> grammarFeedback = languageMission
                 ? grammarCorrections.stream()
                 .map(correction -> new GrammarFeedbackItemDto(
-                        correction.edit().displayOriginalText(),
-                        correction.edit().displayRevisedText(),
+                        correction.displayBefore(),
+                        correction.displayAfter(),
                         correction.step().reasonKo()
                 ))
                 .toList()
@@ -186,8 +186,8 @@ final class CanonicalFeedbackAssembler {
                 .map(correction -> new FeedbackLanguageCorrectionDto(
                         correction.step().kind().name(),
                         displayLabel(correction.step().kind()),
-                        correction.edit().displayOriginalText(),
-                        correction.edit().displayRevisedText(),
+                        correction.displayBefore(),
+                        correction.displayAfter(),
                         correction.step().reasonKo()
                 ))
                 .toList();

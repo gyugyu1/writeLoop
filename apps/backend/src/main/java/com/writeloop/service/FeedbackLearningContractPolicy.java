@@ -528,7 +528,7 @@ final class FeedbackLearningContractPolicy {
                         edit.revisedEnd()
                 ));
             }
-            corrections.add(new ValidatedLanguageCorrection(step, combinedEdit, index));
+            corrections.add(new ValidatedLanguageCorrection(step, combinedEdit, index, currentAnswer));
             currentAnswer = step.answerAfter();
             previousPriority = priority;
         }
@@ -678,8 +678,17 @@ record LearningContractResolution(
 record ValidatedLanguageCorrection(
         LanguageRevisionStep step,
         LanguageRevisionEdit edit,
-        int stepIndex
+        int stepIndex,
+        // 이 단계를 적용하기 전의 전체 답. 화면에 보낼 교정 줄에 앞뒤 낱말을 붙일 때 쓴다.
+        String previousAnswer
 ) {
+    String displayBefore() {
+        return FeedbackRevisionDiffSupport.displayWithSurroundingWords(previousAnswer, step.answerAfter(), edit).before();
+    }
+
+    String displayAfter() {
+        return FeedbackRevisionDiffSupport.displayWithSurroundingWords(previousAnswer, step.answerAfter(), edit).after();
+    }
 }
 
 record ValidatedLanguageRevision(

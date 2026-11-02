@@ -66,6 +66,44 @@ final class FeedbackRevisionDiffSupport {
         );
     }
 
+    // 낱말만 넣거나 뺀 교정은 한쪽이 비어 "→ to"처럼 보인다. 바뀐 구간의 앞뒤 낱말을 하나씩 양쪽에 붙여
+    // "want build → want to build"처럼 어디에 들어가는지 보이게 한다. 양쪽이 다 있으면 그대로 둔다.
+    static LanguageRevisionDisplay displayWithSurroundingWords(
+            String original,
+            String revised,
+            LanguageRevisionEdit edit
+    ) {
+        String before = edit.displayOriginalText();
+        String after = edit.displayRevisedText();
+        if (!before.isEmpty() && !after.isEmpty()) {
+            return new LanguageRevisionDisplay(before, after);
+        }
+
+        return new LanguageRevisionDisplay(
+                withSurroundingWords(original == null ? "" : original, edit.sourceStart(), edit.sourceEnd()),
+                withSurroundingWords(revised == null ? "" : revised, edit.revisedStart(), edit.revisedEnd())
+        );
+    }
+
+    private static String withSurroundingWords(String text, int start, int end) {
+        int from = Math.max(0, Math.min(start, text.length()));
+        while (from > 0 && Character.isWhitespace(text.charAt(from - 1))) {
+            from--;
+        }
+        while (from > 0 && !Character.isWhitespace(text.charAt(from - 1))) {
+            from--;
+        }
+
+        int to = Math.max(from, Math.min(end, text.length()));
+        while (to < text.length() && Character.isWhitespace(text.charAt(to))) {
+            to++;
+        }
+        while (to < text.length() && !Character.isWhitespace(text.charAt(to))) {
+            to++;
+        }
+        return text.substring(from, to).trim();
+    }
+
     private static List<RevisionToken> tokenize(String value) {
         if (value.isEmpty()) {
             return List.of();
@@ -348,6 +386,12 @@ final class FeedbackRevisionDiffSupport {
 record FeedbackRevisionDiff(
         List<LanguageRevisionEdit> edits,
         List<InlineFeedbackSegmentDto> inlineSegments
+) {
+}
+
+record LanguageRevisionDisplay(
+        String before,
+        String after
 ) {
 }
 

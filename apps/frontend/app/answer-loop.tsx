@@ -136,6 +136,8 @@ export function AnswerLoop() {
   const [showPreviousRewriteAnswer, setShowPreviousRewriteAnswer] = useState(false);
   const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
     useState(false);
+  const [revealedLanguageCorrectionIndexes, setRevealedLanguageCorrectionIndexes] = useState<number[]>([]);
+  const [isRevisedSentenceRevealed, setIsRevisedSentenceRevealed] = useState(false);
   const [showAnswerTranslation, setShowAnswerTranslation] = useState(false);
   const [showHelpSheet, setShowHelpSheet] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
@@ -772,12 +774,22 @@ export function AnswerLoop() {
     view: feedbackView,
     savedExpressions,
     areAllLanguageCorrectionsVisible,
-    setAreAllLanguageCorrectionsVisible
+    setAreAllLanguageCorrectionsVisible,
+    revealedLanguageCorrectionIndexes,
+    setRevealedLanguageCorrectionIndexes,
+    isRevisedSentenceRevealed,
+    setIsRevisedSentenceRevealed
   };
   const streakDays = todayStatus?.streakDays ?? 0;
   useEffect(() => {
     setAreAllLanguageCorrectionsVisible(false);
   }, [feedback?.attemptNo]);
+
+  // 새 피드백(다시쓰기 뒤 다음 피드백, 다른 질문)을 받으면 문장 교정 미션의 고친 표현을 다시 가린다.
+  useEffect(() => {
+    setRevealedLanguageCorrectionIndexes([]);
+    setIsRevisedSentenceRevealed(false);
+  }, [feedback?.attemptNo, feedback?.sessionId]);
 
   useEffect(() => {
     if (step !== "complete") {

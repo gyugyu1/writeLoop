@@ -61,6 +61,11 @@ export type FeedbackSummaryProps = {
   savedExpressions: SavedExpressionsState;
   areAllLanguageCorrectionsVisible: boolean;
   setAreAllLanguageCorrectionsVisible: (updater: boolean | ((current: boolean) => boolean)) => void;
+  // 문장 교정 미션에서 학습자가 눌러 연 교정 줄(번호)과 고친 문장 전체. 새 피드백을 받으면 다시 가린다.
+  revealedLanguageCorrectionIndexes: number[];
+  setRevealedLanguageCorrectionIndexes: (updater: number[] | ((current: number[]) => number[])) => void;
+  isRevisedSentenceRevealed: boolean;
+  setIsRevisedSentenceRevealed: (value: boolean) => void;
 };
 
 // 피드백 요약: 잘한 점, 코치 피드백 구간, 보충 표현 구간, 마무리 표현, 모범 답안.
@@ -70,7 +75,11 @@ export function FeedbackSummary({
   view,
   savedExpressions,
   areAllLanguageCorrectionsVisible,
-  setAreAllLanguageCorrectionsVisible
+  setAreAllLanguageCorrectionsVisible,
+  revealedLanguageCorrectionIndexes,
+  setRevealedLanguageCorrectionIndexes,
+  isRevisedSentenceRevealed,
+  setIsRevisedSentenceRevealed
 }: FeedbackSummaryProps) {
   const {
     coachHeadline,
@@ -118,7 +127,15 @@ export function FeedbackSummary({
                     <p className={styles.coachMoveBefore}>{renderCoachMoveDiffText(before, after ?? "", "original")}</p>
                   </div>
                 ) : null}
-                {after ? (
+                {after && isLanguageFix && !isRevisedSentenceRevealed ? (
+                  <button
+                    type="button"
+                    className={styles.revisedSentenceReveal}
+                    onClick={() => setIsRevisedSentenceRevealed(true)}
+                  >
+                    고친 문장 전체 보기
+                  </button>
+                ) : after ? (
                   <div className={`${styles.coachMoveSwapRow} ${styles.coachMoveAfterRow}`}>
                     <span className={styles.coachMoveSwapLabel}>
                       {isLanguageFix ? "이번에 고친 문장" : "적용"}
@@ -153,9 +170,23 @@ export function FeedbackSummary({
                           <del>{correction.before}</del>
                         ) : null}
                         <span aria-hidden="true">→</span>
-                        {trimNullable(correction.after) ? (
+                        {!trimNullable(correction.after) ? null : !isLanguageFix
+                          || revealedLanguageCorrectionIndexes.includes(index) ? (
                           <strong>{correction.after}</strong>
-                        ) : null}
+                        ) : (
+                          <button
+                            type="button"
+                            className={styles.languageCorrectionReveal}
+                            aria-label={`${trimNullable(correction.before) ?? `교정 ${index + 1}`}의 고친 표현 보기`}
+                            onClick={() =>
+                              setRevealedLanguageCorrectionIndexes((current) =>
+                                current.includes(index) ? current : [...current, index]
+                              )
+                            }
+                          >
+                            고친 표현 보기
+                          </button>
+                        )}
                       </p>
                     ) : null}
                     <p className={styles.languageCorrectionReason}>{correction.reason}</p>

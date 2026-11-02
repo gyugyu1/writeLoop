@@ -12,6 +12,9 @@ import { getFeedbackSlotUiCopy } from "../../lib/feedback-slot-ui";
 import { filterSuggestedRefinementExpressions } from "../../lib/refinement-recommendations";
 import type { Feedback, FeedbackLoopStatus } from "../../lib/types";
 
+export const LANGUAGE_FIX_INSTRUCTION =
+  "이유를 보고 표시된 곳을 직접 고쳐 보세요. 막히면 고친 표현을 눌러 확인해요.";
+
 // 웹 주 화면의 피드백 응답에서 화면에 쓰는 값을 계산한다(순수 계산). 피드백 화면, 다시 쓰기 화면의 이전 피드백,
 // 완료 화면이 이 결과를 쓴다.
 export function deriveFeedbackView({
@@ -79,7 +82,9 @@ export function deriveFeedbackView({
       ? "좋아요. 지금 단계에서 마무리해도 충분해요."
       : "지금은 한 가지만 먼저 고쳐서 다시 써 보세요."
   );
+  // 문장 교정 미션은 고친 표현을 가려 두므로, 정답을 옮겨 적으라는 서버 안내 대신 직접 고쳐 보라고 안내한다.
   const coachInstruction = pickFirstNonEmpty(
+    isLanguageFix ? LANGUAGE_FIX_INSTRUCTION : null,
     coachMove?.instruction,
     feedback?.rewriteChallenge,
     isLoopReadyToFinish

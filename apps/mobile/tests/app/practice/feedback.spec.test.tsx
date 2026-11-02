@@ -5,7 +5,7 @@
 // 가짜로 두는 것: API(@/lib/api), 기기 저장소(expo-secure-store와 이 기기 임시저장 @/lib/writing-drafts, 저장된 피드백
 // 상태 불러오기, 게스트 아이디), 로그인 상태(@/lib/session), 라우터·내비게이션, 네이티브 모듈(expo-symbols, expo-crypto).
 // 메모리의 피드백 상태(getPracticeFeedbackState·savePracticeFeedbackState)는 실제 모듈을 쓴다.
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react-native";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react-native";
 import { useNavigation } from "@react-navigation/native";
 import { randomUUID } from "expo-crypto";
 import { router, useLocalSearchParams } from "expo-router";
@@ -315,6 +315,25 @@ function rewriteInput() {
   return screen.getByPlaceholderText(DEFAULT_PLACEHOLDER);
 }
 
+// ---------- 작업 052(문장 교정 미션 정답 가리기)에서 더한 값과 도우미 ----------
+// 문장 교정 미션의 교정 줄은 고친 표현을 처음에 가리고 줄마다 "고친 표현 보기" 버튼을 두며, 고친 문장 전체는
+// "고친 문장 전체 보기"를 눌러야 보인다. 안내는 서버 안내 대신 화면의 문장 교정 안내다.
+const LANGUAGE_FIX_REVEAL_ROW = /고친 표현 보기/;
+const LANGUAGE_FIX_REVEAL_SENTENCE = /고친 문장 전체 보기/;
+const LANGUAGE_FIX_INSTRUCTION = "이유를 보고 표시된 곳을 직접 고쳐 보세요. 막히면 고친 표현을 눌러 확인해요.";
+
+// 교정 한 줄의 칸: 이유 글자에서 위로 올라가며 배지 이름을 함께 담은 가장 가까운 요소.
+function correctionRowOf(label: string, reason: string): TestInstance {
+  let node: TestInstance | null = screen.getByText(reason);
+  while (node) {
+    if (within(node).queryAllByText(label).length > 0) {
+      return node;
+    }
+    node = node.parent;
+  }
+  throw new Error(`교정 줄을 찾지 못함: ${reason}`);
+}
+
 function lastAlertButtons() {
   const call = alertSpy.mock.calls.at(-1) as [string, string, { text: string; style?: string; onPress?: () => void }[]];
   return call[2];
@@ -378,6 +397,16 @@ function structureOf(node: TestInstance): StructureNode {
 
 function screenStructure() {
   return structureOf(screen.root!);
+}
+
+// structureOf와 같되 excluded 요소(와 그 아래)는 자리 표시 하나로 바꾼다(작업 052: 코치 카드를 따로 보려고 더함).
+function structureOutside(node: TestInstance, excluded: TestInstance): StructureNode {
+  if (node === excluded) {
+    return { $$typeof: TEST_JSON, type: "(코치 카드: 따로 확인)", props: {}, children: null };
+  }
+  const whole = structureOf(node);
+  const children = node.children.map((child) => (typeof child === "string" ? child : structureOutside(child, excluded)));
+  return { ...whole, children: children.length > 0 ? children : null };
 }
 
 // 기다리지 않고 누른 fireEvent는 안에서 act를 한 번 연다. 그 act가 끝날 때까지 act 밖에서 한 번 쉰다(act를 겹쳐 열지 않게).
@@ -672,21 +701,31 @@ describe("[spec] 코치 피드백 카드", () => {
     expect(screen.getByText("Yesterday, I ____.")).toBeOnTheScreen();
   });
 
-  it("[spec] 문법 고침(LANGUAGE_FIX)은 이번에 고친 문장과 왜 고치나요를 보이고, 문장 틀과 넣어볼 표현은 숨긴다", async () => {
+  // 작업 052에서 새 동작(고친 문장 전체는 눌러야 보이고, 안내는 화면의 문장 교정 안내)으로 고쳤다(03-main-decision.md 3번, 사용자 결정).
+  it("[spec] 문법 고침(LANGUAGE_FIX)은 지금 줄과 왜 고치나요를 보이고, 이번에 고친 문장은 고친 문장 전체 보기를 눌러야 보이며, 안내는 화면의 문장 교정 안내다. 문장 틀과 넣어볼 표현은 숨긴다", async () => {
     await renderScreen(makeState(coachFeedback(languageFixCoachMove)));
 
     expect(screen.getByText("시제를 맞춰 보세요")).toBeOnTheScreen();
     expect(screen.getByText("지금")).toBeOnTheScreen();
-    expect(screen.getByText("이번에 고친 문장")).toBeOnTheScreen();
+    expect(screen.getByText("I go to school yesterday.")).toBeOnTheScreen();
+    expect(screen.queryByText("I went to school yesterday.")).toBeNull();
+    expect(screen.getAllByRole("button", { name: LANGUAGE_FIX_REVEAL_SENTENCE })).toHaveLength(1);
     expect(screen.queryByText("적용")).toBeNull();
     expect(screen.getByText("왜 고치나요")).toBeOnTheScreen();
     expect(screen.getByText("어제 일이라 과거형을 써요.")).toBeOnTheScreen();
     expect(screen.getByText("다시 쓸 때")).toBeOnTheScreen();
-    expect(screen.getByText("고친 문장을 넣어 다시 써 보세요.")).toBeOnTheScreen();
+    expect(screen.getByText(LANGUAGE_FIX_INSTRUCTION)).toBeOnTheScreen();
+    expect(screen.queryByText("고친 문장을 넣어 다시 써 보세요.")).toBeNull();
     expect(screen.queryByText("문장 틀")).toBeNull();
     expect(screen.queryByText("Yesterday, I ____.")).toBeNull();
     expect(screen.queryByText("넣어볼 표현")).toBeNull();
     expect(screen.queryByRole("button", { name: "went to school 저장" })).toBeNull();
+
+    await fireEvent.press(screen.getByRole("button", { name: LANGUAGE_FIX_REVEAL_SENTENCE }));
+
+    expect(screen.getByText("이번에 고친 문장")).toBeOnTheScreen();
+    expect(screen.getByText("I went to school yesterday.")).toBeOnTheScreen();
+    expect(screen.queryByText("적용")).toBeNull();
   });
 
   it("[spec] 다른 바로 고침 종류(소문자 grammar_fix)도 비교와 왜 고치나요를 보이되 줄 이름은 적용이다", async () => {
@@ -727,17 +766,32 @@ describe("[spec] 코치 피드백 카드", () => {
     expect(rows[1].children).toEqual(["I like tea."]);
   });
 
-  it("[spec] 고친 표현은 4개까지 보이고, 교정 N개 더 보기로 모두 펼치고 추가 교정 접기로 다시 접는다", async () => {
+  // 작업 052에서 새 동작(고친 표현은 가려지고 줄마다 고친 표현 보기로 본다)으로 고쳤다(03-main-decision.md 3번, 사용자 결정).
+  it("[spec] 교정 줄은 4개까지 보이고(고친 표현은 가려져 줄마다 고친 표현 보기로 본다), 교정 N개 더 보기로 모두 펼치고 추가 교정 접기로 다시 접는다", async () => {
     await renderScreen(makeState(coachFeedback(languageFixCoachMove)));
 
     expect(screen.getByText("핵심 문법")).toBeOnTheScreen();
     expect(screen.getByText("I go")).toBeOnTheScreen();
-    expect(screen.getByText("I went")).toBeOnTheScreen();
+    expect(screen.queryByText("I went")).toBeNull();
     expect(screen.getByText("어제 일이라 과거형이 필요해요.")).toBeOnTheScreen();
     expect(screen.getByText("구조")).toBeOnTheScreen();
+    expect(screen.getByText("school yesterday")).toBeOnTheScreen();
+    expect(screen.queryByText("to school yesterday")).toBeNull();
     expect(screen.getByText("세부 문법 1")).toBeOnTheScreen();
+    expect(screen.getByText("a apple")).toBeOnTheScreen();
+    expect(screen.queryByText("an apple")).toBeNull();
     expect(screen.getByText("세부 문법 2")).toBeOnTheScreen();
-    expect(screen.getByText("the")).toBeOnTheScreen();
+    expect(screen.queryByText("the")).toBeNull();
+    // 보이는 네 줄은 모두 고친 표현이 있어 줄마다 고친 표현 보기 버튼이 하나씩 있다.
+    expect(screen.getAllByRole("button", { name: LANGUAGE_FIX_REVEAL_ROW })).toHaveLength(4);
+    [
+      ["핵심 문법", "어제 일이라 과거형이 필요해요."],
+      ["구조", "장소 앞에 to가 필요해요."],
+      ["세부 문법 1", "모음 앞에는 an을 써요."],
+      ["세부 문법 2", "정해진 대상이라 the를 붙여요."]
+    ].forEach(([label, reason]) =>
+      expect(within(correctionRowOf(label, reason)).getAllByRole("button", { name: LANGUAGE_FIX_REVEAL_ROW })).toHaveLength(1)
+    );
     expect(screen.queryByText("세부 문법 3")).toBeNull();
     expect(screen.queryByText("세부 문법 4")).toBeNull();
     expect(screen.getAllByText("→")).toHaveLength(4);
@@ -763,6 +817,19 @@ describe("[spec] 코치 피드백 카드", () => {
 
     expect(screen.queryByText("세부 문법 3")).toBeNull();
     expect(screen.getByRole("button", { name: "교정 2개 더 보기" })).toBeCollapsed();
+
+    // 첫 줄의 고친 표현 보기를 누르면 그 줄의 고친 표현만 보인다.
+    await fireEvent.press(
+      within(correctionRowOf("핵심 문법", "어제 일이라 과거형이 필요해요.")).getByRole("button", {
+        name: LANGUAGE_FIX_REVEAL_ROW
+      })
+    );
+    expect(
+      within(correctionRowOf("핵심 문법", "어제 일이라 과거형이 필요해요.")).getAllByText("I went", { exact: false }).length
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText("to school yesterday")).toBeNull();
+    expect(screen.queryByText("an apple")).toBeNull();
+    expect(screen.queryByText("the")).toBeNull();
   });
 
   it("[spec] 고친 표현이 4개 이하면 더 보기 버튼이 없다", async () => {
@@ -1777,6 +1844,10 @@ describe("[spec] 화면 구조", () => {
     expect(screenStructure()).toMatchSnapshot();
   });
 
+  // 작업 052에서 새 동작으로 고쳤다(03-main-decision.md 3번, 사용자 결정). 고치기 전에는 화면 전체 구조 하나를 찍었고,
+  // 그 안에 고친 문장 줄, 교정 줄의 고친 표현, 서버 안내가 처음부터 있었다. 가리는 칸의 모양(버튼 자리, 글자)은 명세에 없어,
+  // 코치 카드를 뺀 화면 구조(1)와 코치 카드 안에서 그대로여야 할 요소(제목, 지금 줄, 교정 줄의 배지·고치기 전 표현·화살표·이유,
+  // 접기 버튼, 이유 칸, 다시 쓸 때 이름표)의 구조(2)를 고치기 전 코드에서 찍고, 가린 부분은 단언으로 본다.
   it("[spec] 문법 고침 피드백 화면(교정 모두 펼침, 완료 말풍선 있음)", async () => {
     await renderScreen(
       makeState(
@@ -1787,7 +1858,33 @@ describe("[spec] 화면 구조", () => {
     );
     await fireEvent.press(screen.getByRole("button", { name: "교정 2개 더 보기" }));
 
-    expect(screenStructure()).toMatchSnapshot();
+    const coachCard = screen.getByText("시제를 맞춰 보세요").parent!;
+    expect(structureOutside(screen.root!, coachCard)).toMatchSnapshot();
+    expect({
+      headline: structureOf(screen.getByText("시제를 맞춰 보세요")),
+      originalRow: structureOf(screen.getByText("지금").parent!),
+      badges: sixCorrections.map((correction) => structureOf(screen.getByText(correction.label).parent!)),
+      befores: ["I go", "school yesterday", "a apple", "very"].map((text) => structureOf(screen.getByText(text))),
+      arrows: screen.getAllByText("→").map((arrow) => structureOf(arrow)),
+      reasons: sixCorrections.map((correction) => structureOf(screen.getByText(correction.reason))),
+      toggle: structureOf(screen.getByRole("button", { name: "추가 교정 접기" })),
+      whyBox: structureOf(screen.getByText("왜 고치나요").parent!),
+      instructionLabel: structureOf(screen.getByText("다시 쓸 때"))
+    }).toMatchSnapshot();
+
+    // 고친 표현과 고친 문장 전체는 가려져 있고, 고친 표현이 있는 줄마다 고친 표현 보기 버튼이 하나 있다. 안내는 화면의 문장 교정 안내다.
+    ["I went", "to school yesterday", "an apple", "the"].forEach((after) => expect(screen.queryByText(after)).toBeNull());
+    sixCorrections.slice(0, 4).forEach((correction) =>
+      expect(
+        within(correctionRowOf(correction.label, correction.reason)).getAllByRole("button", {
+          name: LANGUAGE_FIX_REVEAL_ROW
+        })
+      ).toHaveLength(1)
+    );
+    expect(screen.queryByText("I went to school yesterday.")).toBeNull();
+    expect(screen.getAllByRole("button", { name: LANGUAGE_FIX_REVEAL_SENTENCE })).toHaveLength(1);
+    expect(screen.getByText(LANGUAGE_FIX_INSTRUCTION)).toBeOnTheScreen();
+    expect(screen.queryByText("고친 문장을 넣어 다시 써 보세요.")).toBeNull();
   });
 
   it("[spec] 마칠 준비 화면(가볍게 넣어볼 표현 하나는 저장됨, 모범답안 펼침)", async () => {

@@ -607,6 +607,99 @@ function correctionToggle(card: Element) {
   return toggle ? { text: toggle.textContent, expanded: toggle.getAttribute("aria-expanded") } : null;
 }
 
+// ---------- 작업 052(문장 교정 미션 정답 가리기)에서 더한 도우미 ----------
+// 문장 교정 미션의 교정 줄은 고친 표현을 처음에 가리고 줄마다 "고친 표현 보기" 버튼을 두며, 고친 문장 전체는
+// "고친 문장 전체 보기"를 눌러야 보인다. 안내는 서버 안내 대신 화면의 문장 교정 안내다.
+// "보인다"는 화면에 그려진 글자(hidden 속성, display:none, visibility:hidden, 닫힌 details의 본문은 뺀다)로 본다.
+const REVEAL_ROW = /고친 표현 보기/;
+const REVEAL_SENTENCE = /고친 문장 전체 보기/;
+const LANGUAGE_FIX_INSTRUCTION = "이유를 보고 표시된 곳을 직접 고쳐 보세요. 막히면 고친 표현을 눌러 확인해요.";
+
+function isSelfRendered(element: Element) {
+  if (element instanceof HTMLElement && element.hidden) {
+    return false;
+  }
+  const style = window.getComputedStyle(element);
+  return style.display !== "none" && style.visibility !== "hidden";
+}
+
+function renderedChildren(element: Element) {
+  const children = Array.from(element.childNodes);
+  if (element.tagName === "DETAILS" && !(element as HTMLDetailsElement).open) {
+    return children.filter((child) => child instanceof Element && child.tagName === "SUMMARY");
+  }
+  return children;
+}
+
+function renderedText(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return node.textContent ?? "";
+  }
+  if (!(node instanceof Element) || !isSelfRendered(node)) {
+    return "";
+  }
+  return renderedChildren(node).map(renderedText).join("");
+}
+
+// 보이는 요소마다 그 요소에 그려진 글자(앞뒤 빈칸 제외).
+function renderedElementTexts(root: Element) {
+  const texts: string[] = [];
+  const walk = (node: Node) => {
+    if (!(node instanceof Element) || !isSelfRendered(node)) {
+      return;
+    }
+    texts.push(renderedText(node).trim());
+    renderedChildren(node).forEach(walk);
+  };
+  renderedChildren(root).forEach(walk);
+  return texts;
+}
+
+// 가려진 교정 줄의 기대값: 배지(글자·클래스), 고치기 전 표현(del), 보이는 화살표(aria-hidden "→") 수, 이유. 고친 표현은 없다.
+const HIDDEN_CORRECTION_VIEWS = CORRECTION_VIEWS.map((view) => ({
+  badge: view.badge,
+  before: view.swap?.find(([tag]) => tag === "DEL")?.[1] ?? null,
+  arrows: view.swap ? 1 : 0,
+  reason: view.reason
+}));
+
+function hiddenCorrectionItems(card: Element) {
+  return Array.from(card.getElementsByClassName(styles.languageCorrectionItem)).map((item) => {
+    const badge = item.children[0];
+    const del = item.querySelector("del");
+    return {
+      badge: [badge.textContent, classTokens(badge)],
+      before: del ? renderedText(del) : null,
+      arrows: Array.from(item.querySelectorAll('[aria-hidden="true"]')).filter((node) => renderedText(node) === "→")
+        .length,
+      reason: textOfClass(item, styles.languageCorrectionReason)
+    };
+  });
+}
+
+function correctionItemElements(card: Element) {
+  return Array.from(card.getElementsByClassName(styles.languageCorrectionItem)) as HTMLElement[];
+}
+
+// 고친 표현이 있는 줄(빈칸뿐인 고친 표현은 뺀다)은 고친 표현이 보이지 않고, 그 줄에 "고친 표현 보기" 버튼이 하나 있다.
+// 고친 표현이 없는 줄(뺄 말만 있거나 둘 다 없는 줄)의 버튼 여부는 명세에 없어 보지 않는다.
+function expectAftersHidden(card: Element, corrections: FeedbackLanguageCorrection[]) {
+  const items = correctionItemElements(card);
+  expect(items).toHaveLength(corrections.length);
+  corrections.forEach((correction, index) => {
+    const after = correction.after?.trim();
+    if (!after) {
+      return;
+    }
+    expect(renderedElementTexts(items[index]), correction.reason).not.toContain(after);
+    expect(within(items[index]).getAllByRole("button", { name: REVEAL_ROW }), correction.reason).toHaveLength(1);
+  });
+}
+
+function expectAfterShown(item: Element, after: string) {
+  expect(renderedElementTexts(item)).toContain(after);
+}
+
 function whyBox(card: Element) {
   const box = card.getElementsByClassName(styles.coachMoveWhyBox)[0];
   if (!box) {
@@ -1041,7 +1134,11 @@ describe("[spec] AnswerLoop 피드백 화면(지금 동작 기록)", () => {
     `);
   });
 
-  it("[spec] 직접 고치기(LANGUAGE_FIX): '지금'과 '이번에 고친 문장' 비교에 바뀐 부분이 표시되고, 이유에 '왜 고치나요'가 붙으며 문장 틀·넣어볼 표현은 없다. 고친 표현은 종류별 배지로 4개까지 보이고 '교정 N개 더 보기'로 모두 보며 '추가 교정 접기'로 다시 접는다. 문구·구조·클래스·aria가 지금과 같다(스냅숏)", async () => {
+  // 작업 052에서 새 동작(고친 표현과 고친 문장 전체를 처음에 가리고 눌러서 본다)으로 고쳤다(03-main-decision.md 3번, 사용자 결정).
+  // 고치기 전에는 고친 문장 줄·교정 줄의 고친 표현(strong)·서버 안내가 처음부터 보이는 것을 인라인 스냅숏 두 개로 찍었다.
+  // 가리는 칸의 모양(버튼 자리, 글자)은 명세에 없어 스냅숏 대신, 그대로여야 할 부분(비교 '지금' 줄, 배지 글자·클래스,
+  // 고치기 전 표현 del, aria-hidden 화살표, 이유, 접기 버튼, 이유 칸, '다시 쓸 때' 칸)을 같은 값으로 단언한다.
+  it("[spec] 직접 고치기(LANGUAGE_FIX): '지금' 줄은 바뀐 부분이 표시되어 처음부터 보이고 '이번에 고친 문장'은 '고친 문장 전체 보기'를 눌러야 지금처럼 보인다. 이유에 '왜 고치나요'가 붙으며 문장 틀·넣어볼 표현은 없고, 안내는 화면의 문장 교정 안내다. 교정 줄은 종류별 배지·고치기 전 표현·화살표·이유가 보이고 고친 표현은 가려져 줄마다 '고친 표현 보기'로 보며, 4개까지 보이고 '교정 N개 더 보기'로 모두 보며 '추가 교정 접기'로 다시 접는다", async () => {
     const user = await renderHome();
     await openPrompt(user);
     const section = await submitFirst(user, languageFix(1));
@@ -1050,37 +1147,46 @@ describe("[spec] AnswerLoop 피드백 화면(지금 동작 기록)", () => {
     expect(summaryParts(stack)).toEqual(["잘한 점", "코치 피드백"]);
     const coach = coachCard(stack);
     expect(textOfClass(coach, styles.coachMoveHeadline)).toBe("과거 시제로 고쳐 보세요.");
-    // 본문 안의 순서: 비교, 고친 표현 목록, 이유.
-    expect(Array.from(byClass(coach, styles.coachMoveBody).children).map((child) => classTokens(child))).toEqual([
-      ["page:coachMoveSwap"],
-      ["page:languageCorrectionList"],
-      ["page:coachMoveWhyBox"]
-    ]);
-    expect(swapRows(coach)).toEqual([
-      {
-        classes: ["page:coachMoveBeforeRow", "page:coachMoveSwapRow"],
-        label: "지금",
-        sentenceClasses: ["page:coachMoveBefore"],
-        text: "I go to school yesterday.",
-        pieces: [
-          ["I ", []],
-          ["go", ["page:coachMoveBeforeHighlight"]],
-          [" to school yesterday.", []]
-        ]
-      },
-      {
-        classes: ["page:coachMoveAfterRow", "page:coachMoveSwapRow"],
-        label: "이번에 고친 문장",
-        sentenceClasses: ["page:coachMoveAfter"],
-        text: "I went to school yesterday.",
-        pieces: [
-          ["I ", []],
-          ["went", ["page:coachMoveAfterHighlight"]],
-          [" to school yesterday.", []]
-        ]
-      }
-    ]);
-    expect(correctionItems(coach)).toEqual(CORRECTION_VIEWS.slice(0, 4));
+    // 본문 안의 순서: 비교, 고친 표현 목록, 이유. 가리기 버튼의 자리는 명세에 없어 이 세 칸의 순서만 본다.
+    expect(
+      Array.from(byClass(coach, styles.coachMoveBody).children)
+        .map((child) => classTokens(child))
+        .filter((tokens) =>
+          ["page:coachMoveSwap", "page:languageCorrectionList", "page:coachMoveWhyBox"].some((name) => tokens.includes(name))
+        )
+    ).toEqual([["page:coachMoveSwap"], ["page:languageCorrectionList"], ["page:coachMoveWhyBox"]]);
+    const originalRow = {
+      classes: ["page:coachMoveBeforeRow", "page:coachMoveSwapRow"],
+      label: "지금",
+      sentenceClasses: ["page:coachMoveBefore"],
+      text: "I go to school yesterday.",
+      pieces: [
+        ["I ", []],
+        ["go", ["page:coachMoveBeforeHighlight"]],
+        [" to school yesterday.", []]
+      ]
+    };
+    const revisedRow = {
+      classes: ["page:coachMoveAfterRow", "page:coachMoveSwapRow"],
+      label: "이번에 고친 문장",
+      sentenceClasses: ["page:coachMoveAfter"],
+      text: "I went to school yesterday.",
+      pieces: [
+        ["I ", []],
+        ["went", ["page:coachMoveAfterHighlight"]],
+        [" to school yesterday.", []]
+      ]
+    };
+    // '지금' 줄은 처음부터 지금과 같다.
+    expect(swapRows(coach)?.find((row) => row.label === "지금")).toEqual(originalRow);
+    expect(renderedText(coach)).toContain("I go to school yesterday.");
+    // 고친 문장 전체는 처음에 보이지 않고 '고친 문장 전체 보기' 버튼이 하나 있다.
+    expect(renderedText(coach)).not.toContain("I went to school yesterday.");
+    expect(within(coach).getAllByRole("button", { name: REVEAL_SENTENCE })).toHaveLength(1);
+
+    // 교정 줄: 배지·고치기 전 표현·화살표·이유는 지금과 같고 고친 표현은 가려져 있다.
+    expect(hiddenCorrectionItems(coach)).toEqual(HIDDEN_CORRECTION_VIEWS.slice(0, 4));
+    expectAftersHidden(coach, SIX_CORRECTIONS.slice(0, 4));
     expect(correctionToggle(coach)).toEqual({ text: "교정 2개 더 보기", expanded: "false" });
     expect(byClass(coach, styles.languageCorrectionList).lastElementChild).toBe(
       screen.getByRole("button", { name: "교정 2개 더 보기" })
@@ -1088,407 +1194,50 @@ describe("[spec] AnswerLoop 피드백 화면(지금 동작 기록)", () => {
     expect(whyBox(coach)).toEqual({ label: "왜 고치나요", text: "어제 한 일은 과거형으로 써야 자연스러워요." });
     expect(instructionBox(coach)).toEqual({
       label: "다시 쓸 때",
-      instruction: "고친 문장을 넣어 다시 써 보세요.",
+      instruction: LANGUAGE_FIX_INSTRUCTION,
       skeletonLabel: null,
       skeleton: null,
       skeletonKo: null,
       phraseLabel: null,
       phrases: []
     });
+    expect(renderedText(coach)).not.toContain("고친 문장을 넣어 다시 써 보세요.");
     expectTextsNotOnScreen(["Yesterday, I ___.", "어제 저는 ___했어요.", "철자를 다시 확인해 보세요."]);
-    expect(normalizeForSnapshot(coach)).toMatchInlineSnapshot(`
-      <section
-        class="page:coachMoveCard"
-      >
-        <h2
-          class="page:coachMoveHeadline"
-        >
-          과거 시제로 고쳐 보세요.
-        </h2>
-        <div
-          class="page:coachMoveBody"
-        >
-          <div
-            class="page:coachMoveSwap"
-          >
-            <div
-              class="page:coachMoveBeforeRow page:coachMoveSwapRow"
-            >
-              <span
-                class="page:coachMoveSwapLabel"
-              >
-                지금
-              </span>
-              <p
-                class="page:coachMoveBefore"
-              >
-                <span>
-                  I 
-                </span>
-                <span
-                  class="page:coachMoveBeforeHighlight"
-                >
-                  go
-                </span>
-                <span>
-                   to school yesterday.
-                </span>
-              </p>
-            </div>
-            <div
-              class="page:coachMoveAfterRow page:coachMoveSwapRow"
-            >
-              <span
-                class="page:coachMoveSwapLabel"
-              >
-                이번에 고친 문장
-              </span>
-              <p
-                class="page:coachMoveAfter"
-              >
-                <span>
-                  I 
-                </span>
-                <span
-                  class="page:coachMoveAfterHighlight"
-                >
-                  went
-                </span>
-                <span>
-                   to school yesterday.
-                </span>
-              </p>
-            </div>
-          </div>
-          <div
-            class="page:languageCorrectionList"
-          >
-            <article
-              class="page:languageCorrectionItem"
-            >
-              <span
-                class="page:languageCorrectionBadge page:languageCorrectionBadgeCore"
-              >
-                시제
-              </span>
-              <p
-                class="page:languageCorrectionSwap"
-              >
-                <del>
-                  go
-                </del>
-                <span
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-                <strong>
-                  went
-                </strong>
-              </p>
-              <p
-                class="page:languageCorrectionReason"
-              >
-                어제 일이라 과거형을 써요.
-              </p>
-            </article>
-            <article
-              class="page:languageCorrectionItem"
-            >
-              <span
-                class="page:languageCorrectionBadge page:languageCorrectionBadgeStructure"
-              >
-                문장 구조
-              </span>
-              <p
-                class="page:languageCorrectionSwap"
-              >
-                <del>
-                  Because tired.
-                </del>
-                <span
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-                <strong>
-                  Because I was tired.
-                </strong>
-              </p>
-              <p
-                class="page:languageCorrectionReason"
-              >
-                주어와 동사가 있어야 해요.
-              </p>
-            </article>
-            <article
-              class="page:languageCorrectionItem"
-            >
-              <span
-                class="page:languageCorrectionBadge page:languageCorrectionBadgeDetail"
-              >
-                관사
-              </span>
-              <p
-                class="page:languageCorrectionSwap"
-              >
-                <span
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-                <strong>
-                  a
-                </strong>
-              </p>
-              <p
-                class="page:languageCorrectionReason"
-              >
-                셀 수 있는 명사 앞에는 a를 써요.
-              </p>
-            </article>
-            <article
-              class="page:languageCorrectionItem"
-            >
-              <span
-                class="page:languageCorrectionBadge page:languageCorrectionBadgeDetail"
-              >
-                전치사
-              </span>
-              <p
-                class="page:languageCorrectionSwap"
-              >
-                <del>
-                  in
-                </del>
-                <span
-                  aria-hidden="true"
-                >
-                  →
-                </span>
-              </p>
-              <p
-                class="page:languageCorrectionReason"
-              >
-                여기서는 전치사가 필요 없어요.
-              </p>
-            </article>
-            <button
-              aria-expanded="false"
-              class="page:languageCorrectionToggle"
-              type="button"
-            >
-              교정 2개 더 보기
-            </button>
-          </div>
-          <div
-            class="page:coachMoveWhyBox"
-          >
-            <span
-              class="page:coachMoveWhyLabel"
-            >
-              왜 고치나요
-            </span>
-            <p
-              class="page:coachMoveWhy"
-            >
-              어제 한 일은 과거형으로 써야 자연스러워요.
-            </p>
-          </div>
-        </div>
-        <div
-          class="page:coachMoveInstructionBox"
-        >
-          <span
-            class="page:coachMoveInstructionLabel"
-          >
-            다시 쓸 때
-          </span>
-          <p
-            class="page:coachMoveInstruction"
-          >
-            고친 문장을 넣어 다시 써 보세요.
-          </p>
-        </div>
-      </section>
-    `);
 
     await user.click(screen.getByRole("button", { name: "교정 2개 더 보기" }));
-    expect(correctionItems(coach)).toEqual(CORRECTION_VIEWS);
+    expect(hiddenCorrectionItems(coach)).toEqual(HIDDEN_CORRECTION_VIEWS);
+    expectAftersHidden(coach, SIX_CORRECTIONS);
     expect(correctionToggle(coach)).toEqual({ text: "추가 교정 접기", expanded: "true" });
-    expect(normalizeForSnapshot(byClass(coach, styles.languageCorrectionList))).toMatchInlineSnapshot(`
-      <div
-        class="page:languageCorrectionList"
-      >
-        <article
-          class="page:languageCorrectionItem"
-        >
-          <span
-            class="page:languageCorrectionBadge page:languageCorrectionBadgeCore"
-          >
-            시제
-          </span>
-          <p
-            class="page:languageCorrectionSwap"
-          >
-            <del>
-              go
-            </del>
-            <span
-              aria-hidden="true"
-            >
-              →
-            </span>
-            <strong>
-              went
-            </strong>
-          </p>
-          <p
-            class="page:languageCorrectionReason"
-          >
-            어제 일이라 과거형을 써요.
-          </p>
-        </article>
-        <article
-          class="page:languageCorrectionItem"
-        >
-          <span
-            class="page:languageCorrectionBadge page:languageCorrectionBadgeStructure"
-          >
-            문장 구조
-          </span>
-          <p
-            class="page:languageCorrectionSwap"
-          >
-            <del>
-              Because tired.
-            </del>
-            <span
-              aria-hidden="true"
-            >
-              →
-            </span>
-            <strong>
-              Because I was tired.
-            </strong>
-          </p>
-          <p
-            class="page:languageCorrectionReason"
-          >
-            주어와 동사가 있어야 해요.
-          </p>
-        </article>
-        <article
-          class="page:languageCorrectionItem"
-        >
-          <span
-            class="page:languageCorrectionBadge page:languageCorrectionBadgeDetail"
-          >
-            관사
-          </span>
-          <p
-            class="page:languageCorrectionSwap"
-          >
-            <span
-              aria-hidden="true"
-            >
-              →
-            </span>
-            <strong>
-              a
-            </strong>
-          </p>
-          <p
-            class="page:languageCorrectionReason"
-          >
-            셀 수 있는 명사 앞에는 a를 써요.
-          </p>
-        </article>
-        <article
-          class="page:languageCorrectionItem"
-        >
-          <span
-            class="page:languageCorrectionBadge page:languageCorrectionBadgeDetail"
-          >
-            전치사
-          </span>
-          <p
-            class="page:languageCorrectionSwap"
-          >
-            <del>
-              in
-            </del>
-            <span
-              aria-hidden="true"
-            >
-              →
-            </span>
-          </p>
-          <p
-            class="page:languageCorrectionReason"
-          >
-            여기서는 전치사가 필요 없어요.
-          </p>
-        </article>
-        <article
-          class="page:languageCorrectionItem"
-        >
-          <span
-            class="page:languageCorrectionBadge page:languageCorrectionBadgeDetail"
-          >
-            철자
-          </span>
-          <p
-            class="page:languageCorrectionReason"
-          >
-            철자를 다시 확인해 보세요.
-          </p>
-        </article>
-        <article
-          class="page:languageCorrectionItem"
-        >
-          <span
-            class="page:languageCorrectionBadge page:languageCorrectionBadgeCore"
-          >
-            주어 동사 일치
-          </span>
-          <p
-            class="page:languageCorrectionSwap"
-          >
-            <del>
-              he go
-            </del>
-            <span
-              aria-hidden="true"
-            >
-              →
-            </span>
-            <strong>
-              he goes
-            </strong>
-          </p>
-          <p
-            class="page:languageCorrectionReason"
-          >
-            3인칭 단수 주어에는 -s를 붙여요.
-          </p>
-        </article>
-        <button
-          aria-expanded="true"
-          class="page:languageCorrectionToggle"
-          type="button"
-        >
-          추가 교정 접기
-        </button>
-      </div>
-    `);
+    expect(byClass(coach, styles.languageCorrectionList).lastElementChild).toBe(
+      screen.getByRole("button", { name: "추가 교정 접기" })
+    );
 
     await user.click(screen.getByRole("button", { name: "추가 교정 접기" }));
-    expect(correctionItems(coach)).toEqual(CORRECTION_VIEWS.slice(0, 4));
+    expect(hiddenCorrectionItems(coach)).toEqual(HIDDEN_CORRECTION_VIEWS.slice(0, 4));
+    expectAftersHidden(coach, SIX_CORRECTIONS.slice(0, 4));
     expect(correctionToggle(coach)).toEqual({ text: "교정 2개 더 보기", expanded: "false" });
+
+    // 첫 줄의 '고친 표현 보기'를 누르면 그 줄의 고친 표현만 보인다.
+    const firstItem = correctionItemElements(coach)[0];
+    await user.click(within(firstItem).getByRole("button", { name: REVEAL_ROW }));
+    expectAfterShown(correctionItemElements(coach)[0], "went");
+    expectAftersHidden(coach, [
+      { ...SIX_CORRECTIONS[0], after: null },
+      SIX_CORRECTIONS[1],
+      SIX_CORRECTIONS[2],
+      SIX_CORRECTIONS[3]
+    ]);
+    expect(renderedText(coach)).not.toContain("I went to school yesterday.");
+
+    // '고친 문장 전체 보기'를 누르면 '이번에 고친 문장' 줄이 지금처럼(바뀐 부분 표시) 보인다.
+    await user.click(within(coach).getByRole("button", { name: REVEAL_SENTENCE }));
+    expect(swapRows(coach)?.find((row) => row.label === "이번에 고친 문장")).toEqual(revisedRow);
+    expect(swapRows(coach)?.find((row) => row.label === "지금")).toEqual(originalRow);
+    expect(renderedText(coach)).toContain("I went to school yesterday.");
   });
 
-  it("[spec] 고친 표현을 펼친 상태는 다시 쓰기 화면의 피드백 요약에도 이어지고, 새 시도의 피드백에서는 다시 접혀 있다. 고친 표현이 4개 이하면 더 보기 버튼이 없다", async () => {
+  // 작업 052에서 새 동작으로 고쳤다(03-main-decision.md 1·3번, 사용자 결정): 다시 쓰는 화면의 이전 피드백도 문장 교정 미션의 고친 표현을 가린다.
+  it("[spec] 교정 목록을 펼친 상태는 다시 쓰기 화면의 피드백 요약에도 이어지고(고친 표현은 거기서도 가려져 있다), 새 시도의 피드백에서는 다시 접혀 있다. 고친 표현이 4개 이하면 더 보기 버튼이 없다", async () => {
     const user = await renderHome();
     await openPrompt(user);
     let section = await submitFirst(user, languageFix(1));
@@ -1499,18 +1248,21 @@ describe("[spec] AnswerLoop 피드백 화면(지금 동작 기록)", () => {
     const panel = byClass(document.body, styles.rewriteFeedbackPanel);
     await user.click(within(panel).getByRole("button", { name: "피드백 보기" }));
     const body = byClass(panel, styles.rewriteFeedbackBody);
-    expect(correctionItems(body)).toEqual(CORRECTION_VIEWS);
+    expect(hiddenCorrectionItems(body)).toEqual(HIDDEN_CORRECTION_VIEWS);
+    expectAftersHidden(body, SIX_CORRECTIONS);
     expect(correctionToggle(body)).toEqual({ text: "추가 교정 접기", expanded: "true" });
 
     api.submitFeedback.mockResolvedValueOnce(languageFix(2));
     await user.click(screen.getByRole("button", { name: "다시 쓴 답변 제출하기" }));
     await screen.findByText("2번째 시도");
     section = feedbackSection();
-    expect(correctionItems(section)).toEqual(CORRECTION_VIEWS.slice(0, 4));
+    expect(hiddenCorrectionItems(section)).toEqual(HIDDEN_CORRECTION_VIEWS.slice(0, 4));
+    expectAftersHidden(section, SIX_CORRECTIONS.slice(0, 4));
     expect(correctionToggle(section)).toEqual({ text: "교정 2개 더 보기", expanded: "false" });
 
     section = await rewriteAndSubmit(user, "다시 써보기", languageFix(3, SIX_CORRECTIONS.slice(0, 4)));
-    expect(correctionItems(section)).toEqual(CORRECTION_VIEWS.slice(0, 4));
+    expect(hiddenCorrectionItems(section)).toEqual(HIDDEN_CORRECTION_VIEWS.slice(0, 4));
+    expectAftersHidden(section, SIX_CORRECTIONS.slice(0, 4));
     expect(correctionToggle(section)).toBeNull();
     expect(screen.queryByRole("button", { name: /교정 .*더 보기/ })).not.toBeInTheDocument();
   });

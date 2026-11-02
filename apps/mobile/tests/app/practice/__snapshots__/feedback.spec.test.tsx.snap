@@ -1566,761 +1566,7 @@ exports[`[spec] 화면 구조 [spec] 문법 고침 피드백 화면(교정 모�
               아침 일과를 분명하게 말했어요.
             </Text>
           </View>
-          <View
-            style={
-              {
-                "backgroundColor": "#FFFEFC",
-                "borderColor": "#E9D9C6",
-                "borderRadius": 30,
-                "borderWidth": 1,
-                "elevation": 2,
-                "gap": 16,
-                "paddingHorizontal": 22,
-                "paddingVertical": 24,
-                "shadowColor": "#C58A43",
-                "shadowOffset": {
-                  "height": 8,
-                  "width": 0,
-                },
-                "shadowOpacity": 0.08,
-                "shadowRadius": 14,
-              }
-            }
-          >
-            <Text
-              style={
-                {
-                  "color": "#232128",
-                  "fontSize": 28,
-                  "fontWeight": "900",
-                  "letterSpacing": -1.4,
-                  "lineHeight": 36,
-                }
-              }
-            >
-              시제를 맞춰 보세요
-            </Text>
-            <View
-              style={
-                {
-                  "gap": 12,
-                }
-              }
-            >
-              <View
-                style={
-                  {
-                    "gap": 10,
-                  }
-                }
-              >
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#FDEDE9",
-                      "borderRadius": 20,
-                      "gap": 7,
-                      "paddingHorizontal": 16,
-                      "paddingVertical": 13,
-                    }
-                  }
-                >
-                  <Text
-                    style={
-                      {
-                        "color": "#8B6A45",
-                        "fontSize": 12,
-                        "fontWeight": "900",
-                        "lineHeight": 15,
-                      }
-                    }
-                  >
-                    지금
-                  </Text>
-                  <Text
-                    style={
-                      {
-                        "color": "#A23B2B",
-                        "fontSize": 16,
-                        "fontWeight": "800",
-                        "lineHeight": 24,
-                      }
-                    }
-                  >
-                    <Text>
-                      I 
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "backgroundColor": "#F8CFC7",
-                          "color": "#8F2F23",
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      go
-                    </Text>
-                    <Text>
-                       to school yesterday.
-                    </Text>
-                  </Text>
-                </View>
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#EAF7EA",
-                      "borderRadius": 20,
-                      "gap": 7,
-                      "paddingHorizontal": 16,
-                      "paddingVertical": 13,
-                    }
-                  }
-                >
-                  <Text
-                    style={
-                      {
-                        "color": "#8B6A45",
-                        "fontSize": 12,
-                        "fontWeight": "900",
-                        "lineHeight": 15,
-                      }
-                    }
-                  >
-                    이번에 고친 문장
-                  </Text>
-                  <Text
-                    style={
-                      {
-                        "color": "#1F6B35",
-                        "fontSize": 16,
-                        "fontWeight": "900",
-                        "lineHeight": 24,
-                      }
-                    }
-                  >
-                    <Text>
-                      I 
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "backgroundColor": "#BDEAC7",
-                          "color": "#145F2A",
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      went
-                    </Text>
-                    <Text>
-                       to school yesterday.
-                    </Text>
-                  </Text>
-                </View>
-              </View>
-              <View
-                style={
-                  {
-                    "gap": 10,
-                  }
-                }
-              >
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#FFFFFF",
-                      "borderColor": "#EADBC8",
-                      "borderRadius": 18,
-                      "borderWidth": 1,
-                      "gap": 9,
-                      "padding": 14,
-                    }
-                  }
-                >
-                  <View
-                    style={
-                      {
-                        "alignSelf": "flex-start",
-                        "backgroundColor": "#F8D8D1",
-                        "borderRadius": 999,
-                        "paddingHorizontal": 10,
-                        "paddingVertical": 5,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#47382B",
-                          "fontSize": 12,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      핵심 문법
-                    </Text>
-                  </View>
-                  <View
-                    style={
-                      {
-                        "alignItems": "center",
-                        "flexDirection": "row",
-                        "flexWrap": "wrap",
-                        "gap": 7,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#9B3B2E",
-                          "fontSize": 15,
-                          "fontWeight": "800",
-                          "lineHeight": 22,
-                          "textDecorationLine": "line-through",
-                        }
-                      }
-                    >
-                      I go
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "color": "#A67A48",
-                          "fontSize": 15,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      →
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "color": "#1F6B35",
-                          "fontSize": 15,
-                          "fontWeight": "900",
-                          "lineHeight": 22,
-                        }
-                      }
-                    >
-                      I went
-                    </Text>
-                  </View>
-                  <Text
-                    style={
-                      {
-                        "color": "#67594B",
-                        "fontSize": 14,
-                        "lineHeight": 21,
-                      }
-                    }
-                  >
-                    어제 일이라 과거형이 필요해요.
-                  </Text>
-                </View>
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#FFFFFF",
-                      "borderColor": "#EADBC8",
-                      "borderRadius": 18,
-                      "borderWidth": 1,
-                      "gap": 9,
-                      "padding": 14,
-                    }
-                  }
-                >
-                  <View
-                    style={
-                      {
-                        "alignSelf": "flex-start",
-                        "backgroundColor": "#F7E4C5",
-                        "borderRadius": 999,
-                        "paddingHorizontal": 10,
-                        "paddingVertical": 5,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#47382B",
-                          "fontSize": 12,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      구조
-                    </Text>
-                  </View>
-                  <View
-                    style={
-                      {
-                        "alignItems": "center",
-                        "flexDirection": "row",
-                        "flexWrap": "wrap",
-                        "gap": 7,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#9B3B2E",
-                          "fontSize": 15,
-                          "fontWeight": "800",
-                          "lineHeight": 22,
-                          "textDecorationLine": "line-through",
-                        }
-                      }
-                    >
-                      school yesterday
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "color": "#A67A48",
-                          "fontSize": 15,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      →
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "color": "#1F6B35",
-                          "fontSize": 15,
-                          "fontWeight": "900",
-                          "lineHeight": 22,
-                        }
-                      }
-                    >
-                      to school yesterday
-                    </Text>
-                  </View>
-                  <Text
-                    style={
-                      {
-                        "color": "#67594B",
-                        "fontSize": 14,
-                        "lineHeight": 21,
-                      }
-                    }
-                  >
-                    장소 앞에 to가 필요해요.
-                  </Text>
-                </View>
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#FFFFFF",
-                      "borderColor": "#EADBC8",
-                      "borderRadius": 18,
-                      "borderWidth": 1,
-                      "gap": 9,
-                      "padding": 14,
-                    }
-                  }
-                >
-                  <View
-                    style={
-                      {
-                        "alignSelf": "flex-start",
-                        "backgroundColor": "#DCEEE5",
-                        "borderRadius": 999,
-                        "paddingHorizontal": 10,
-                        "paddingVertical": 5,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#47382B",
-                          "fontSize": 12,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      세부 문법 1
-                    </Text>
-                  </View>
-                  <View
-                    style={
-                      {
-                        "alignItems": "center",
-                        "flexDirection": "row",
-                        "flexWrap": "wrap",
-                        "gap": 7,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#9B3B2E",
-                          "fontSize": 15,
-                          "fontWeight": "800",
-                          "lineHeight": 22,
-                          "textDecorationLine": "line-through",
-                        }
-                      }
-                    >
-                      a apple
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "color": "#A67A48",
-                          "fontSize": 15,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      →
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "color": "#1F6B35",
-                          "fontSize": 15,
-                          "fontWeight": "900",
-                          "lineHeight": 22,
-                        }
-                      }
-                    >
-                      an apple
-                    </Text>
-                  </View>
-                  <Text
-                    style={
-                      {
-                        "color": "#67594B",
-                        "fontSize": 14,
-                        "lineHeight": 21,
-                      }
-                    }
-                  >
-                    모음 앞에는 an을 써요.
-                  </Text>
-                </View>
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#FFFFFF",
-                      "borderColor": "#EADBC8",
-                      "borderRadius": 18,
-                      "borderWidth": 1,
-                      "gap": 9,
-                      "padding": 14,
-                    }
-                  }
-                >
-                  <View
-                    style={
-                      {
-                        "alignSelf": "flex-start",
-                        "backgroundColor": "#DCEEE5",
-                        "borderRadius": 999,
-                        "paddingHorizontal": 10,
-                        "paddingVertical": 5,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#47382B",
-                          "fontSize": 12,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      세부 문법 2
-                    </Text>
-                  </View>
-                  <View
-                    style={
-                      {
-                        "alignItems": "center",
-                        "flexDirection": "row",
-                        "flexWrap": "wrap",
-                        "gap": 7,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#A67A48",
-                          "fontSize": 15,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      →
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "color": "#1F6B35",
-                          "fontSize": 15,
-                          "fontWeight": "900",
-                          "lineHeight": 22,
-                        }
-                      }
-                    >
-                      the
-                    </Text>
-                  </View>
-                  <Text
-                    style={
-                      {
-                        "color": "#67594B",
-                        "fontSize": 14,
-                        "lineHeight": 21,
-                      }
-                    }
-                  >
-                    정해진 대상이라 the를 붙여요.
-                  </Text>
-                </View>
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#FFFFFF",
-                      "borderColor": "#EADBC8",
-                      "borderRadius": 18,
-                      "borderWidth": 1,
-                      "gap": 9,
-                      "padding": 14,
-                    }
-                  }
-                >
-                  <View
-                    style={
-                      {
-                        "alignSelf": "flex-start",
-                        "backgroundColor": "#DCEEE5",
-                        "borderRadius": 999,
-                        "paddingHorizontal": 10,
-                        "paddingVertical": 5,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#47382B",
-                          "fontSize": 12,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      세부 문법 3
-                    </Text>
-                  </View>
-                  <View
-                    style={
-                      {
-                        "alignItems": "center",
-                        "flexDirection": "row",
-                        "flexWrap": "wrap",
-                        "gap": 7,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#9B3B2E",
-                          "fontSize": 15,
-                          "fontWeight": "800",
-                          "lineHeight": 22,
-                          "textDecorationLine": "line-through",
-                        }
-                      }
-                    >
-                      very
-                    </Text>
-                    <Text
-                      style={
-                        {
-                          "color": "#A67A48",
-                          "fontSize": 15,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      →
-                    </Text>
-                  </View>
-                  <Text
-                    style={
-                      {
-                        "color": "#67594B",
-                        "fontSize": 14,
-                        "lineHeight": 21,
-                      }
-                    }
-                  >
-                    없어도 뜻이 같아요.
-                  </Text>
-                </View>
-                <View
-                  style={
-                    {
-                      "backgroundColor": "#FFFFFF",
-                      "borderColor": "#EADBC8",
-                      "borderRadius": 18,
-                      "borderWidth": 1,
-                      "gap": 9,
-                      "padding": 14,
-                    }
-                  }
-                >
-                  <View
-                    style={
-                      {
-                        "alignSelf": "flex-start",
-                        "backgroundColor": "#DCEEE5",
-                        "borderRadius": 999,
-                        "paddingHorizontal": 10,
-                        "paddingVertical": 5,
-                      }
-                    }
-                  >
-                    <Text
-                      style={
-                        {
-                          "color": "#47382B",
-                          "fontSize": 12,
-                          "fontWeight": "900",
-                        }
-                      }
-                    >
-                      세부 문법 4
-                    </Text>
-                  </View>
-                  <Text
-                    style={
-                      {
-                        "color": "#67594B",
-                        "fontSize": 14,
-                        "lineHeight": 21,
-                      }
-                    }
-                  >
-                    다섯째 교정의 이유예요.
-                  </Text>
-                </View>
-                <View
-                  accessibilityRole="button"
-                  accessibilityState={
-                    {
-                      "busy": undefined,
-                      "checked": undefined,
-                      "disabled": undefined,
-                      "expanded": true,
-                      "selected": undefined,
-                    }
-                  }
-                  style={
-                    {
-                      "alignItems": "center",
-                      "backgroundColor": "#FFF9F0",
-                      "borderColor": "#DDBB8E",
-                      "borderRadius": 16,
-                      "borderWidth": 1,
-                      "justifyContent": "center",
-                      "paddingHorizontal": 14,
-                      "paddingVertical": 12,
-                    }
-                  }
-                >
-                  <Text
-                    style={
-                      {
-                        "color": "#8D5617",
-                        "fontSize": 14,
-                        "fontWeight": "900",
-                      }
-                    }
-                  >
-                    추가 교정 접기
-                  </Text>
-                </View>
-              </View>
-              <View
-                style={
-                  {
-                    "gap": 6,
-                  }
-                }
-              >
-                <Text
-                  style={
-                    {
-                      "color": "#A46612",
-                      "fontSize": 13,
-                      "fontWeight": "900",
-                      "lineHeight": 16,
-                    }
-                  }
-                >
-                  왜 고치나요
-                </Text>
-                <Text
-                  style={
-                    {
-                      "color": "#6D6050",
-                      "fontSize": 15,
-                      "lineHeight": 24,
-                    }
-                  }
-                >
-                  어제 일이라 과거형을 써요.
-                </Text>
-              </View>
-            </View>
-            <View
-              style={
-                {
-                  "gap": 8,
-                  "paddingVertical": 2,
-                }
-              }
-            >
-              <Text
-                style={
-                  {
-                    "color": "#A46612",
-                    "fontSize": 13,
-                    "fontWeight": "900",
-                    "lineHeight": 16,
-                  }
-                }
-              >
-                다시 쓸 때
-              </Text>
-              <Text
-                style={
-                  {
-                    "color": "#3C342B",
-                    "fontSize": 16,
-                    "fontWeight": "800",
-                    "lineHeight": 25,
-                  }
-                }
-              >
-                고친 문장을 넣어 다시 써 보세요.
-              </Text>
-            </View>
-          </View>
+          <(코치 카드: 따로 확인) />
           <View
             onLayout="(있음)"
             style={
@@ -2497,6 +1743,474 @@ exports[`[spec] 화면 구조 [spec] 문법 고침 피드백 화면(교정 모�
     </View>
   </View>
 </RNCSafeAreaView>
+`;
+
+exports[`[spec] 화면 구조 [spec] 문법 고침 피드백 화면(교정 모두 펼침, 완료 말풍선 있음) 2`] = `
+{
+  "arrows": [
+    <Text
+      style={
+        {
+          "color": "#A67A48",
+          "fontSize": 15,
+          "fontWeight": "900",
+        }
+      }
+    >
+      →
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#A67A48",
+          "fontSize": 15,
+          "fontWeight": "900",
+        }
+      }
+    >
+      →
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#A67A48",
+          "fontSize": 15,
+          "fontWeight": "900",
+        }
+      }
+    >
+      →
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#A67A48",
+          "fontSize": 15,
+          "fontWeight": "900",
+        }
+      }
+    >
+      →
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#A67A48",
+          "fontSize": 15,
+          "fontWeight": "900",
+        }
+      }
+    >
+      →
+    </Text>,
+  ],
+  "badges": [
+    <View
+      style={
+        {
+          "alignSelf": "flex-start",
+          "backgroundColor": "#F8D8D1",
+          "borderRadius": 999,
+          "paddingHorizontal": 10,
+          "paddingVertical": 5,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#47382B",
+            "fontSize": 12,
+            "fontWeight": "900",
+          }
+        }
+      >
+        핵심 문법
+      </Text>
+    </View>,
+    <View
+      style={
+        {
+          "alignSelf": "flex-start",
+          "backgroundColor": "#F7E4C5",
+          "borderRadius": 999,
+          "paddingHorizontal": 10,
+          "paddingVertical": 5,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#47382B",
+            "fontSize": 12,
+            "fontWeight": "900",
+          }
+        }
+      >
+        구조
+      </Text>
+    </View>,
+    <View
+      style={
+        {
+          "alignSelf": "flex-start",
+          "backgroundColor": "#DCEEE5",
+          "borderRadius": 999,
+          "paddingHorizontal": 10,
+          "paddingVertical": 5,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#47382B",
+            "fontSize": 12,
+            "fontWeight": "900",
+          }
+        }
+      >
+        세부 문법 1
+      </Text>
+    </View>,
+    <View
+      style={
+        {
+          "alignSelf": "flex-start",
+          "backgroundColor": "#DCEEE5",
+          "borderRadius": 999,
+          "paddingHorizontal": 10,
+          "paddingVertical": 5,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#47382B",
+            "fontSize": 12,
+            "fontWeight": "900",
+          }
+        }
+      >
+        세부 문법 2
+      </Text>
+    </View>,
+    <View
+      style={
+        {
+          "alignSelf": "flex-start",
+          "backgroundColor": "#DCEEE5",
+          "borderRadius": 999,
+          "paddingHorizontal": 10,
+          "paddingVertical": 5,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#47382B",
+            "fontSize": 12,
+            "fontWeight": "900",
+          }
+        }
+      >
+        세부 문법 3
+      </Text>
+    </View>,
+    <View
+      style={
+        {
+          "alignSelf": "flex-start",
+          "backgroundColor": "#DCEEE5",
+          "borderRadius": 999,
+          "paddingHorizontal": 10,
+          "paddingVertical": 5,
+        }
+      }
+    >
+      <Text
+        style={
+          {
+            "color": "#47382B",
+            "fontSize": 12,
+            "fontWeight": "900",
+          }
+        }
+      >
+        세부 문법 4
+      </Text>
+    </View>,
+  ],
+  "befores": [
+    <Text
+      style={
+        {
+          "color": "#9B3B2E",
+          "fontSize": 15,
+          "fontWeight": "800",
+          "lineHeight": 22,
+          "textDecorationLine": "line-through",
+        }
+      }
+    >
+      I go
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#9B3B2E",
+          "fontSize": 15,
+          "fontWeight": "800",
+          "lineHeight": 22,
+          "textDecorationLine": "line-through",
+        }
+      }
+    >
+      school yesterday
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#9B3B2E",
+          "fontSize": 15,
+          "fontWeight": "800",
+          "lineHeight": 22,
+          "textDecorationLine": "line-through",
+        }
+      }
+    >
+      a apple
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#9B3B2E",
+          "fontSize": 15,
+          "fontWeight": "800",
+          "lineHeight": 22,
+          "textDecorationLine": "line-through",
+        }
+      }
+    >
+      very
+    </Text>,
+  ],
+  "headline": <Text
+    style={
+      {
+        "color": "#232128",
+        "fontSize": 28,
+        "fontWeight": "900",
+        "letterSpacing": -1.4,
+        "lineHeight": 36,
+      }
+    }
+  >
+    시제를 맞춰 보세요
+  </Text>,
+  "instructionLabel": <Text
+    style={
+      {
+        "color": "#A46612",
+        "fontSize": 13,
+        "fontWeight": "900",
+        "lineHeight": 16,
+      }
+    }
+  >
+    다시 쓸 때
+  </Text>,
+  "originalRow": <View
+    style={
+      {
+        "backgroundColor": "#FDEDE9",
+        "borderRadius": 20,
+        "gap": 7,
+        "paddingHorizontal": 16,
+        "paddingVertical": 13,
+      }
+    }
+  >
+    <Text
+      style={
+        {
+          "color": "#8B6A45",
+          "fontSize": 12,
+          "fontWeight": "900",
+          "lineHeight": 15,
+        }
+      }
+    >
+      지금
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#A23B2B",
+          "fontSize": 16,
+          "fontWeight": "800",
+          "lineHeight": 24,
+        }
+      }
+    >
+      <Text>
+        I 
+      </Text>
+      <Text
+        style={
+          {
+            "backgroundColor": "#F8CFC7",
+            "color": "#8F2F23",
+            "fontWeight": "900",
+          }
+        }
+      >
+        go
+      </Text>
+      <Text>
+         to school yesterday.
+      </Text>
+    </Text>
+  </View>,
+  "reasons": [
+    <Text
+      style={
+        {
+          "color": "#67594B",
+          "fontSize": 14,
+          "lineHeight": 21,
+        }
+      }
+    >
+      어제 일이라 과거형이 필요해요.
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#67594B",
+          "fontSize": 14,
+          "lineHeight": 21,
+        }
+      }
+    >
+      장소 앞에 to가 필요해요.
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#67594B",
+          "fontSize": 14,
+          "lineHeight": 21,
+        }
+      }
+    >
+      모음 앞에는 an을 써요.
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#67594B",
+          "fontSize": 14,
+          "lineHeight": 21,
+        }
+      }
+    >
+      정해진 대상이라 the를 붙여요.
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#67594B",
+          "fontSize": 14,
+          "lineHeight": 21,
+        }
+      }
+    >
+      없어도 뜻이 같아요.
+    </Text>,
+    <Text
+      style={
+        {
+          "color": "#67594B",
+          "fontSize": 14,
+          "lineHeight": 21,
+        }
+      }
+    >
+      다섯째 교정의 이유예요.
+    </Text>,
+  ],
+  "toggle": <View
+    accessibilityRole="button"
+    accessibilityState={
+      {
+        "busy": undefined,
+        "checked": undefined,
+        "disabled": undefined,
+        "expanded": true,
+        "selected": undefined,
+      }
+    }
+    style={
+      {
+        "alignItems": "center",
+        "backgroundColor": "#FFF9F0",
+        "borderColor": "#DDBB8E",
+        "borderRadius": 16,
+        "borderWidth": 1,
+        "justifyContent": "center",
+        "paddingHorizontal": 14,
+        "paddingVertical": 12,
+      }
+    }
+  >
+    <Text
+      style={
+        {
+          "color": "#8D5617",
+          "fontSize": 14,
+          "fontWeight": "900",
+        }
+      }
+    >
+      추가 교정 접기
+    </Text>
+  </View>,
+  "whyBox": <View
+    style={
+      {
+        "gap": 6,
+      }
+    }
+  >
+    <Text
+      style={
+        {
+          "color": "#A46612",
+          "fontSize": 13,
+          "fontWeight": "900",
+          "lineHeight": 16,
+        }
+      }
+    >
+      왜 고치나요
+    </Text>
+    <Text
+      style={
+        {
+          "color": "#6D6050",
+          "fontSize": 15,
+          "lineHeight": 24,
+        }
+      }
+    >
+      어제 일이라 과거형을 써요.
+    </Text>
+  </View>,
+}
 `;
 
 exports[`[spec] 화면 구조 [spec] 보충 표현 화면에서 이 내용 넣어서 다시 써 보기를 누른 뒤 1`] = `

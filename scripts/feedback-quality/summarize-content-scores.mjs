@@ -38,6 +38,16 @@ if (errors.length > 0) {
   for (const error of errors) console.error(`- ${error}`);
   process.exit(1);
 }
+// 비교할 파일도 요약을 찍기 전에 검사한다(틀리면 아무것도 찍지 않고 끝낸다).
+const before = options.compare ? await readScores(options.compare) : null;
+if (before) {
+  const compareErrors = validateScores(before, null);
+  if (compareErrors.length > 0) {
+    console.error(`--compare scores are invalid (${options.compare}):`);
+    for (const error of compareErrors) console.error(`- ${error}`);
+    process.exit(1);
+  }
+}
 
 console.log(`채점 ${scores.length}건 (${options.scores})`);
 console.log("\n== 항목별 평균 (해당 없음 제외)");
@@ -63,14 +73,7 @@ for (const key of RUBRIC_KEYS) {
   for (const entry of low) console.log(`  ${entry.scores[key]}  ${entry.id} — ${entry.notes?.[key] ?? ""}`);
 }
 
-if (options.compare) {
-  const before = await readScores(options.compare);
-  const compareErrors = validateScores(before, null);
-  if (compareErrors.length > 0) {
-    console.error(`--compare scores are invalid (${options.compare}):`);
-    for (const error of compareErrors) console.error(`- ${error}`);
-    process.exit(1);
-  }
+if (before) {
   const beforeById = new Map(before.map((entry) => [entry.id, entry]));
   console.log(`\n== 비교: ${options.compare}(앞) → ${options.scores}(뒤)`);
   for (const key of RUBRIC_KEYS) {
@@ -125,6 +128,16 @@ function validateScores(entries, reviewItems) {
     }
     for (const key of Object.keys(entry.scores)) {
       if (!RUBRIC_KEYS.includes(key)) errors.push(`${label}: unknown rubric key ${key}`);
+    }
+    // notes는 선택이지만, 있으면 같은 여섯 키만 쓴다.
+    if (entry.notes != null) {
+      if (typeof entry.notes !== "object" || Array.isArray(entry.notes)) {
+        errors.push(`${label}: notes must be an object`);
+      } else {
+        for (const key of Object.keys(entry.notes)) {
+          if (!RUBRIC_KEYS.includes(key)) errors.push(`${label}: unknown notes key ${key}`);
+        }
+      }
     }
     for (const key of RUBRIC_KEYS) {
       const value = entry.scores[key];

@@ -4,6 +4,8 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 import {
+  buildFollowUpStepCase,
+  countCaseRequests,
   evaluatePayload,
   normalizeText,
   resolveExpectedMissionKinds,
@@ -59,10 +61,13 @@ if (validation.failures.length > 0) {
   process.exit(1);
 }
 
+// 이어 쓴 답(followUps)이 있는 케이스는 한 번 실행에 요청을 여러 번 보낸다.
+const requestCount = baseCases.reduce((sum, testCase) => sum + countCaseRequests(testCase), 0) * repetitions;
+
 if (dryRun) {
   console.log(
     `Feedback quality cases are valid: ${baseCases.length} base case(s) x ${repetitions} repetition(s) `
-    + `= ${baseCases.length * repetitions} execution(s) from ${displayPath(casesPath)}`
+    + `= ${baseCases.length * repetitions} execution(s), ${requestCount} request(s) from ${displayPath(casesPath)}`
   );
   process.exit(0);
 }
@@ -89,7 +94,7 @@ const cases = repeatCases(baseCases, repetitions);
 const startedAt = new Date().toISOString();
 console.log(`Running feedback quality suite "${suite}" against ${baseUrl}`);
 console.log(
-  `Cases: ${baseCases.length} x ${repetitions} = ${cases.length}, `
+  `Cases: ${baseCases.length} x ${repetitions} = ${cases.length}, requests: ${requestCount}, `
   + `concurrency: ${concurrency}, timeoutMs: ${timeoutMs}`
 );
 
@@ -97,7 +102,19 @@ const results = await runPool(cases, concurrency, async (testCase, index) => {
   const startedAtMs = Date.now();
   try {
     const payload = await review(testCase, index);
-    const evaluation = evaluatePayload(testCase, payload);
+    const firstEvaluation = evaluatePayload(testCase, payload);
+    const followUpSteps = Array.isArray(testCase.followUps) && testCase.followUps.length > 0
+      ? await runFollowUps(testCase, index, payload, firstEvaluation, Date.now() - startedAtMs)
+      : null;
+    // 이어 쓴 답이 있으면 모든 단계가 통과해야 케이스가 통과다. 실패·경고에는 단계 번호를 붙인다.
+    const evaluation = followUpSteps
+      ? {
+        ...firstEvaluation,
+        pass: followUpSteps.every((step) => step.pass),
+        failures: followUpSteps.flatMap((step) => step.failures.map((failure) => ({ ...failure, step: step.step }))),
+        warnings: followUpSteps.flatMap((step) => step.warnings.map((warning) => ({ ...warning, step: step.step })))
+      }
+      : firstEvaluation;
     const elapsedMs = Date.now() - startedAtMs;
     const status = evaluation.pass ? "ok" : "not ok";
 
@@ -133,7 +150,8 @@ const results = await runPool(cases, concurrency, async (testCase, index) => {
       requiresScaffold: testCase.requiresScaffold === true,
       expectedBehavior: testCase.expectedBehavior ?? null,
       badBehavior: testCase.badBehavior ?? null,
-      actual: evaluation.pass && !includePassPayloads ? null : buildPayloadSnapshot(payload)
+      actual: evaluation.pass && !includePassPayloads ? null : buildPayloadSnapshot(payload),
+      ...(followUpSteps ? { steps: followUpSteps } : {})
     };
   } catch (error) {
     const elapsedMs = Date.now() - startedAtMs;
@@ -236,6 +254,89 @@ if (failed > 0) {
 }
 
 console.log(`\nFeedback quality check passed: ${passed}/${results.length}`);
+
+// 첫 답 응답의 sessionId로 이어 쓴 답을 차례로 보내고 단계마다 그 단계의 기대로 채점한다.
+// 요청이 실패하거나 sessionId가 없으면 뒤 단계를 보내지 않는다.
+async function runFollowUps(testCase, index, firstPayload, firstEvaluation, firstElapsedMs) {
+  const steps = [buildStepResult(1, testCase.answer, firstPayload, firstEvaluation, firstElapsedMs)];
+  let previousPayload = firstPayload;
+  for (const [followUpIndex, followUp] of testCase.followUps.entries()) {
+    const stepNumber = followUpIndex + 2;
+    const sessionId = previousPayload?.sessionId;
+    if (!isPresent(sessionId)) {
+      steps.push(buildStepFailure(
+        stepNumber,
+        followUp.answer,
+        "missing_session_id",
+        `step ${stepNumber - 1} response has no sessionId; later steps were not sent`
+      ));
+      break;
+    }
+    const stepCase = buildFollowUpStepCase(testCase, followUp);
+    const stepStartedAtMs = Date.now();
+    let stepPayload;
+    try {
+      stepPayload = await review(
+        { ...stepCase, attemptType: "REWRITE", sessionId, guestId: testCase.guestId },
+        index
+      );
+    } catch (error) {
+      steps.push(buildStepFailure(
+        stepNumber,
+        followUp.answer,
+        "request_failed",
+        error instanceof Error ? error.message : String(error)
+      ));
+      break;
+    }
+    const stepEvaluation = evaluatePayload(stepCase, stepPayload);
+    steps.push(buildStepResult(stepNumber, followUp.answer, stepPayload, stepEvaluation, Date.now() - stepStartedAtMs));
+    const stepStatus = stepEvaluation.pass ? "ok" : "not ok";
+    const stepTarget = stepEvaluation.targetSlot ? `/${stepEvaluation.targetSlot}` : "";
+    console.log(
+      `  ${stepStatus} step ${stepNumber}: ${stepEvaluation.missionKind ?? "(blank)"}${stepTarget}`
+      + ` previous=${stepPayload?.previousMissionResult?.status ?? "(none)"}`
+    );
+    previousPayload = stepPayload;
+  }
+  return steps;
+}
+
+function buildStepResult(step, answer, payload, evaluation, elapsedMs) {
+  return {
+    step,
+    answer,
+    elapsedMs,
+    missionKind: evaluation.missionKind,
+    targetSlot: evaluation.targetSlot,
+    loopComplete: evaluation.loopComplete,
+    previousMissionResult: payload?.previousMissionResult ?? null,
+    pass: evaluation.pass,
+    failures: evaluation.failures,
+    warnings: evaluation.warnings,
+    actual: evaluation.pass && !includePassPayloads ? null : buildPayloadSnapshot(payload)
+  };
+}
+
+function buildStepFailure(step, answer, code, message) {
+  return {
+    step,
+    answer,
+    elapsedMs: null,
+    missionKind: null,
+    targetSlot: null,
+    loopComplete: false,
+    previousMissionResult: null,
+    pass: false,
+    failures: [{ code, message }],
+    warnings: [],
+    actual: null
+  };
+}
+
+function isPresent(value) {
+  return typeof value === "string" && value.trim().length > 0;
+}
 
 async function review(testCase, index) {
   const controller = new AbortController();

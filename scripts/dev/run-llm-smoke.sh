@@ -64,7 +64,9 @@ for c in "${CASES[@]}"; do
   header "dry run: node scripts/run-feedback-quality-check.mjs --cases $c --dry-run" > "$f"
   if (cd "$ROOT" && node scripts/run-feedback-quality-check.mjs --cases "$c" --dry-run) >> "$f" 2>&1; then
     # 케이스 파일이 나중에 바뀌었는지 대조할 수 있게 해시를 남긴다.
-    n=$(grep -o '= [0-9]* execution' "$f" | grep -o '[0-9]*')
+    # 이어 쓴 답(followUps)이 있으면 실행 한 번에 요청이 여러 번이라 요청 수를 센다(없는 출력이면 실행 수).
+    n=$(grep -o '[0-9]* request(s)' "$f" | grep -o '[0-9]*')
+    [ -n "$n" ] || n=$(grep -o '= [0-9]* execution' "$f" | grep -o '[0-9]*')
     TOTAL=$((TOTAL + ${n:-0}))
     result OK "cases valid ($name): $n request(s), sha256 $(sha256sum "$c" | cut -d' ' -f1)"
   else

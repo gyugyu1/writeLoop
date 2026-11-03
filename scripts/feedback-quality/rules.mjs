@@ -359,6 +359,18 @@ export function evaluatePayload(testCase, payload) {
     }
   }
 
+  // 다시 쓴 답 단계에서만 쓴다: 바로 앞 시도의 미션을 이번 답이 해결했는지(previousMissionResult.status).
+  const expectedPreviousMissionStatuses = resolveExpectedPreviousMissionStatuses(testCase);
+  if (expectedPreviousMissionStatuses.length > 0) {
+    const actualStatus = payload?.previousMissionResult?.status ?? null;
+    if (!expectedPreviousMissionStatuses.includes(actualStatus)) {
+      failures.push({
+        code: "wrong_previous_mission_status",
+        message: `previousMissionResult.status ${actualStatus || "(none)"} is not one of ${expectedPreviousMissionStatuses.join(", ")}`
+      });
+    }
+  }
+
   const instructionLength = textOf(payload?.coachMove?.instruction).trim().length;
   const minimumInstructionChars = testCase.minimumInstructionChars ?? 12;
   if (instructionLength > 0 && instructionLength < minimumInstructionChars) {
@@ -380,6 +392,31 @@ export function evaluatePayload(testCase, payload) {
     fixPointCount: languageCorrections.length,
     hasComparison: hasCoachComparisonPair(payload),
     hasScaffold: hasContentScaffold(payload)
+  };
+}
+
+export const KNOWN_PREVIOUS_MISSION_STATUSES = new Set(["RESOLVED", "PARTIAL", "UNRESOLVED"]);
+
+export function resolveExpectedPreviousMissionStatuses(testCase) {
+  const value = testCase?.expectedPreviousMissionStatus;
+  if (value == null) {
+    return [];
+  }
+  return Array.isArray(value) ? value : [value];
+}
+
+// 케이스 하나가 보내는 요청 수: 첫 답 1 + 이어 쓴 답(followUps) 수.
+export function countCaseRequests(testCase) {
+  return 1 + (Array.isArray(testCase?.followUps) ? testCase.followUps.length : 0);
+}
+
+// 이어 쓴 답 단계를 채점할 때 쓰는 케이스. 첫 답의 기대·채점 설정을 물려받지 않고 그 단계에 적은 것만 쓴다.
+export function buildFollowUpStepCase(testCase, followUp) {
+  return {
+    ...followUp,
+    name: testCase.name,
+    promptId: testCase.promptId,
+    answer: followUp?.answer
   };
 }
 
@@ -441,9 +478,52 @@ export function validateCases(cases) {
         warnings.push(`${label}: forbiddenTargetSlots contains unknown canonical slot ${targetSlot}`);
       }
     }
+
+    if (testCase?.expectedPreviousMissionStatus != null) {
+      failures.push(`${label}: expectedPreviousMissionStatus belongs to followUps (the first answer has no previous mission)`);
+    }
+    if (testCase?.followUps != null) {
+      if (!Array.isArray(testCase.followUps)) {
+        failures.push(`${label}: followUps must be an array`);
+      } else {
+        testCase.followUps.forEach((followUp, followUpIndex) => {
+          validateFollowUp(`${label} followUps[${followUpIndex}]`, followUp, failures, warnings);
+        });
+      }
+    }
   });
 
   return { failures, warnings };
+}
+
+function validateFollowUp(label, followUp, failures, warnings) {
+  if (!isNonBlank(followUp?.answer)) {
+    failures.push(`${label}: answer is required`);
+  }
+  const expectedMissionKinds = resolveExpectedMissionKinds(followUp ?? {});
+  if (expectedMissionKinds.length === 0) {
+    failures.push(`${label}: expectedMissionKinds or legacy expectedFocusTypes must define at least one outcome`);
+  }
+  for (const missionKind of expectedMissionKinds) {
+    if (!KNOWN_MISSION_KINDS.has(missionKind)) {
+      failures.push(`${label}: unknown expected mission kind ${missionKind}`);
+    }
+  }
+  for (const missionKind of resolveForbiddenMissionKinds(followUp ?? {})) {
+    if (!KNOWN_MISSION_KINDS.has(missionKind)) {
+      failures.push(`${label}: unknown forbidden mission kind ${missionKind}`);
+    }
+  }
+  for (const targetSlot of [...(followUp?.expectedTargetSlots ?? []), ...(followUp?.forbiddenTargetSlots ?? [])]) {
+    if (!KNOWN_TARGET_SLOTS.has(targetSlot)) {
+      warnings.push(`${label}: target slots contain unknown canonical slot ${targetSlot}`);
+    }
+  }
+  for (const status of resolveExpectedPreviousMissionStatuses(followUp)) {
+    if (!KNOWN_PREVIOUS_MISSION_STATUSES.has(status)) {
+      failures.push(`${label}: unknown expectedPreviousMissionStatus ${status}`);
+    }
+  }
 }
 
 function legacyFocusToMissionKind(focusType) {

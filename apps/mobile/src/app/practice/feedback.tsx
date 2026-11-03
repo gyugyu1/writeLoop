@@ -25,6 +25,7 @@ import {
 } from "@/components/practice-feedback/feedback-sections";
 import { styles } from "@/components/practice-feedback/feedback-styles";
 import { derivePracticeFeedbackView } from "@/components/practice-feedback/feedback-view";
+import { useLanguageFixReveal } from "@/components/practice-feedback/use-language-fix-reveal";
 import { useFeedbackSavedExpressions } from "@/components/practice-feedback/use-feedback-saved-expressions";
 import { ApiError, completeFeedbackSession, submitFeedback } from "@/lib/api";
 import { getOrCreateGuestId } from "@/lib/guest-id";
@@ -66,9 +67,6 @@ export default function PracticeFeedbackScreen() {
   const [isSubmittingRewrite, setIsSubmittingRewrite] = useState(false);
   const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
     useState(false);
-  // 문장 교정 미션에서 학습자가 눌러 연 교정 줄(번호)과 고친 문장 전체. 새 피드백을 받으면 다시 가린다.
-  const [revealedLanguageCorrectionIndexes, setRevealedLanguageCorrectionIndexes] = useState<number[]>([]);
-  const [isRevisedSentenceRevealed, setIsRevisedSentenceRevealed] = useState(false);
   const {
     feedback,
     coachMove,
@@ -112,10 +110,12 @@ export default function PracticeFeedbackScreen() {
     setAreAllLanguageCorrectionsVisible(false);
   }, [feedback?.attemptNo]);
 
-  useEffect(() => {
-    setRevealedLanguageCorrectionIndexes([]);
-    setIsRevisedSentenceRevealed(false);
-  }, [feedback?.attemptNo, feedback?.sessionId]);
+  const {
+    revealedLanguageCorrectionIndexes,
+    setRevealedLanguageCorrectionIndexes,
+    isRevisedSentenceRevealed,
+    setIsRevisedSentenceRevealed
+  } = useLanguageFixReveal(`${feedback?.sessionId ?? ""}:${feedback?.attemptNo ?? ""}`);
 
   useEffect(() => {
     const inMemoryState = getPracticeFeedbackState(requestedDifficulty, requestedPromptId);

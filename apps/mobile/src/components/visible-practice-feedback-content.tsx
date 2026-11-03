@@ -164,7 +164,7 @@ export function VisiblePracticeFeedbackContent({
                       ) : null}
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel={`${trimText(correction.before) || `교정 ${index + 1}`}의 고친 표현 보기`}
+                        accessibilityLabel={`${index + 1}번째 교정${trimText(correction.before) ? ` ${trimText(correction.before)}` : ""}의 고친 표현 보기`}
                         onPress={() =>
                           setRevealedLanguageCorrectionIndexes((current) =>
                             current.includes(index) ? current : [...current, index]

@@ -174,6 +174,11 @@ export function PreviousMissionResultCard({ result }: { result?: PreviousMission
   }
   const isResolved = result.status === "RESOLVED";
   const isPartial = result.status === "PARTIAL";
+  const messageStatusStyle = isResolved
+    ? styles.previousMissionMessageResolved
+    : isPartial
+      ? styles.previousMissionMessagePartial
+      : null;
   return (
     <View
       style={[
@@ -186,15 +191,16 @@ export function PreviousMissionResultCard({ result }: { result?: PreviousMission
       <Text style={styles.previousMissionLabel}>
         {result.title ? `지난 미션: ${result.title}` : "지난 미션"}
       </Text>
-      <Text
-        style={[
-          styles.previousMissionMessage,
-          isResolved ? styles.previousMissionMessageResolved : null,
-          isPartial ? styles.previousMissionMessagePartial : null
-        ]}
-      >
-        {`${PREVIOUS_MISSION_STATUS_MARK[result.status] ?? "·"} ${result.message}`}
-      </Text>
+      <View style={styles.previousMissionMessageRow}>
+        <Text
+          style={[styles.previousMissionMessage, messageStatusStyle]}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+        >
+          {PREVIOUS_MISSION_STATUS_MARK[result.status] ?? "·"}
+        </Text>
+        <Text style={[styles.previousMissionMessage, messageStatusStyle]}>{result.message}</Text>
+      </View>
     </View>
   );
 }

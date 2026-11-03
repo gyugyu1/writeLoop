@@ -69,6 +69,11 @@ export const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#7A7672"
   },
+  previousMissionMessageRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6
+  },
   previousMissionMessage: {
     fontSize: 16,
     lineHeight: 23,

@@ -66,6 +66,8 @@ class LlmRequestDeterminismTest {
         );
         assertThat(keys(properties.path("topicAssessment").path("properties")))
                 .containsExactly("reasonKo", "status");
+        assertThat(keys(properties.path("structureAssessment").path("properties")))
+                .containsExactly("reason", "status");
         assertThat(keys(properties.path("languageAssessment").path("properties")
                 .path("revisionSteps").path("items").path("properties")))
                 .containsExactly("kind", "answerAfter", "reasonKo");
@@ -73,7 +75,7 @@ class LlmRequestDeterminismTest {
                 .containsExactly("expression", "meaningKo", "guidanceKo", "exampleEn");
 
         JsonNode slot = properties.path("slotAssessments").path("items").path("properties");
-        assertThat(keys(slot)).containsExactly("slot", "evidence", "verdict");
+        assertThat(keys(slot)).containsExactly("slot", "evidence", "reason", "verdict");
         JsonNode support = properties.path("missionSupport").path("items").path("properties");
         assertThat(keys(support)).containsExactly(
                 "slot",
@@ -131,9 +133,11 @@ class LlmRequestDeterminismTest {
 
         assertThat(keys(schema.path("properties").path("topicAssessment").path("properties")))
                 .containsExactly("reasonKo", "status");
+        assertThat(keys(schema.path("properties").path("structureAssessment").path("properties")))
+                .containsExactly("reason", "status");
         assertThat(keys(schema.path("properties").path("slotAssessments").path("items")
                 .path("properties")))
-                .containsExactly("slot", "evidence", "verdict");
+                .containsExactly("slot", "evidence", "reason", "verdict");
         List<String> required = new ArrayList<>();
         schema.path("required").forEach(item -> required.add(item.asText()));
         assertThat(required).containsExactlyElementsOf(keys(schema.path("properties")));

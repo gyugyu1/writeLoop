@@ -55,7 +55,7 @@ class CanonicalFeedbackContractTest {
         assertThat(properties.has("missionDecision")).isFalse();
         assertThat(properties.path("structureAssessment").path("required"))
                 .extracting(JsonNode::asText)
-                .containsExactly("status");
+                .containsExactly("reason", "status");
         JsonNode languageAssessment = properties.path("languageAssessment");
         assertThat(languageAssessment.path("required"))
                 .extracting(JsonNode::asText)
@@ -159,7 +159,7 @@ class CanonicalFeedbackContractTest {
         JsonNode slotAssessmentItem = slotAssessments.path("items");
         assertThat(slotAssessmentItem.path("required"))
                 .extracting(JsonNode::asText)
-                .containsExactlyInAnyOrder("slot", "evidence", "verdict");
+                .containsExactlyInAnyOrder("slot", "evidence", "reason", "verdict");
         assertThat(slotAssessmentItem.path("properties").path("slot").path("enum"))
                 .extracting(JsonNode::asText)
                 .containsExactlyElementsOf(ALL_SLOTS);

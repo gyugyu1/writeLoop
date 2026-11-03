@@ -59,10 +59,10 @@ class CanonicalFeedbackContractSpecTest {
         JsonNode item = slotAssessments.path("items");
         assertThat(item.path("type").asText()).isEqualTo("object");
         assertThat(item.path("additionalProperties").asBoolean(true)).isFalse();
-        assertThat(keys(item.path("properties"))).containsExactly("slot", "evidence", "verdict");
+        assertThat(keys(item.path("properties"))).containsExactly("slot", "evidence", "reason", "verdict");
         assertThat(item.path("required"))
                 .extracting(JsonNode::asText)
-                .containsExactlyInAnyOrder("slot", "evidence", "verdict");
+                .containsExactlyInAnyOrder("slot", "evidence", "reason", "verdict");
         assertThat(item.path("properties").path("slot").path("enum"))
                 .extracting(JsonNode::asText)
                 .containsExactlyElementsOf(ALL_SLOTS);
@@ -130,21 +130,34 @@ class CanonicalFeedbackContractSpecTest {
 
     // ---- 그대로 둘 동작 ----
 
+    // 작업 055 결정 1(03-main-decision.md)로 고침: 선택 순서의 앞 세 단계(주제 이탈, FRAGMENT·BLOCKING) 바로 뒤에
+    // 지난 미션 유지 단계(previousAttempt를 쓰는 단계)가 들어가고, 그 뒤는 지금 단계가 같은 문구·순서로 이어진다.
+    // 들어간 단계 때문에 뒤 단계의 번호는 바뀌므로 번호는 숫자인지만 본다.
     @Test
     void kept_developerPromptKeepsTheMissionSelectionOrder() {
-        String selectionOrder = String.join("\n",
+        String head = String.join("\n",
                 "  Pick it with this order, using only what you have already written:",
                 "  1. topicAssessment.status is OFF_TOPIC: the first questionContract.requiredSlots slot,",
                 "     or the first depthSlots slot when requiredSlots is empty.",
-                "  2. structureAssessment.status is FRAGMENT, or any revision step has kind GRAMMAR_BLOCKING: no slot.",
-                "  3. The first requiredSlots slot whose verdict is not SATISFIED.",
-                "  4. Any revision step has kind GRAMMAR_LOCAL: no slot.",
-                "  5. minimumDepthSlots is greater than 0 and fewer than minimumDepthSlots depthSlots slots are SATISFIED:",
-                "     the first depthSlots slot whose verdict is not SATISFIED.",
-                "  6. Otherwise: no slot."
+                "  2. structureAssessment.status is FRAGMENT, or any revision step has kind GRAMMAR_BLOCKING: no slot."
+        );
+        String number = "\n  \\d+\\. ";
+        java.util.regex.Pattern selectionOrder = java.util.regex.Pattern.compile(
+                java.util.regex.Pattern.quote(head)
+                        + number + "(?s:[^\\n]*(?:\\n(?!  \\d+\\. )[^\\n]*)*)"
+                        + number + java.util.regex.Pattern.quote("The first requiredSlots slot whose verdict is not SATISFIED.")
+                        + number + java.util.regex.Pattern.quote("Any revision step has kind GRAMMAR_LOCAL: no slot.")
+                        + number + java.util.regex.Pattern.quote(
+                        "minimumDepthSlots is greater than 0 and fewer than minimumDepthSlots depthSlots slots are SATISFIED:")
+                        + "\n     " + java.util.regex.Pattern.quote("the first depthSlots slot whose verdict is not SATISFIED.")
+                        + number + java.util.regex.Pattern.quote("Otherwise: no slot.")
         );
 
-        assertThat(contract.developerPrompt()).contains(selectionOrder);
+        java.util.regex.Matcher matcher = selectionOrder.matcher(contract.developerPrompt());
+        assertThat(matcher.find()).as("selection order with one step inserted after step 2").isTrue();
+        String inserted = matcher.group().substring(head.length(),
+                matcher.group().indexOf("The first requiredSlots slot whose verdict is not SATISFIED."));
+        assertThat(inserted).as("inserted step").contains("previousAttempt");
     }
 
     @Test

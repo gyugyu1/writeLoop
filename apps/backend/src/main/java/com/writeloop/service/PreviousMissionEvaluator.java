@@ -6,6 +6,7 @@ import com.writeloop.dto.PreviousMissionResultDto;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 // 바로 앞 시도의 미션을 이번 답이 해결했는지 기계적으로 판정한다. LLM을 다시 부르지 않고,
 // 이번 진단(주제·슬롯 판정)과 이번 답 글자만 본다.
@@ -70,11 +71,7 @@ final class PreviousMissionEvaluator {
                 continue;
             }
             total++;
-            // 고친 표현이 있으면 그 표현이 들어 있는지, 지우기만 하는 교정이면 고치기 전 표현이 빠졌는지 본다.
-            boolean reflected = after.isEmpty()
-                    ? !containsWords(normalizedAnswer, before)
-                    : containsWords(normalizedAnswer, after);
-            if (reflected) {
+            if (isReflected(correction, before, after, answer, normalizedAnswer)) {
                 applied++;
             }
         }
@@ -90,6 +87,29 @@ final class PreviousMissionEvaluator {
         return new PreviousMissionResultDto(
                 "LANGUAGE_FIX", previousMove.focus(), null, result, applied, total, message
         );
+    }
+
+    // 교정 줄 하나가 새 답에 반영됐는지. 교정 줄에는 앞뒤 낱말이 붙어 있어, 고친 표현만 찾으면
+    // 고치지 않은 답에서도 찾히는 줄(대소문자·문장부호만 고친 줄, 낱말을 지우는 줄)은 고치기 전 표현이 빠졌는지도 본다.
+    private static boolean isReflected(
+            FeedbackLanguageCorrectionDto correction,
+            String before,
+            String after,
+            String answer,
+            String normalizedAnswer
+    ) {
+        if (after.isEmpty()) {
+            return !containsWords(normalizedAnswer, before);
+        }
+        if (after.equals(before)) {
+            String rawAnswer = collapseSpaces(answer);
+            return containsRaw(rawAnswer, collapseSpaces(correction.after()))
+                    && !containsRaw(rawAnswer, collapseSpaces(correction.before()));
+        }
+        if (containsWords(before, after)) {
+            return containsWords(normalizedAnswer, after) && !containsWords(normalizedAnswer, before);
+        }
+        return containsWords(normalizedAnswer, after);
     }
 
     private static PreviousMissionResultDto taskResetResult(
@@ -122,5 +142,19 @@ final class PreviousMissionEvaluator {
 
     private static boolean containsWords(String normalizedText, String normalizedWords) {
         return (" " + normalizedText + " ").contains(" " + normalizedWords + " ");
+    }
+
+    private static String collapseSpaces(String value) {
+        return value == null ? "" : value.replaceAll("\\s+", " ").trim();
+    }
+
+    // 대소문자와 문장부호까지 그대로 비교하되, 앞뒤가 다른 글자·숫자에 이어지지 않아야 한다(i가 it에 찾히지 않게).
+    private static boolean containsRaw(String text, String words) {
+        if (words.isEmpty()) {
+            return false;
+        }
+        return Pattern.compile("(?<![\\p{L}\\p{N}])" + Pattern.quote(words) + "(?![\\p{L}\\p{N}])")
+                .matcher(text)
+                .find();
     }
 }

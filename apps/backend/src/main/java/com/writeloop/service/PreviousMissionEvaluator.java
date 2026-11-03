@@ -10,7 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 // 바로 앞 시도의 미션을 이번 답이 해결했는지 기계적으로 판정한다. LLM을 다시 부르지 않고,
-// 이번 진단(주제·슬롯 판정)과 이번 답 글자만 본다.
+// 이번 진단(주제·슬롯 판정·교정 유무)과 이번 답 글자, 문장 교정이면 지난 답 글자를 본다.
 final class PreviousMissionEvaluator {
 
     static final String RESOLVED = "RESOLVED";
@@ -32,7 +32,7 @@ final class PreviousMissionEvaluator {
         }
         return switch (previousMove.focusType()) {
             case "SLOT" -> slotResult(previousMove, slotAssessments);
-            case "LANGUAGE_FIX" -> languageFixResult(previousMove, previousAnswer, answer);
+            case "LANGUAGE_FIX" -> languageFixResult(previousMove, previousAnswer, answer, diagnosis);
             case "TASK_RESET" -> taskResetResult(previousMove, diagnosis);
             default -> null;
         };
@@ -65,9 +65,13 @@ final class PreviousMissionEvaluator {
     private static PreviousMissionResultDto languageFixResult(
             FeedbackCoachMoveDto previousMove,
             String previousAnswer,
-            String answer
+            String answer,
+            FeedbackDiagnosisResult diagnosis
     ) {
         String normalizedAnswer = normalize(answer);
+        // 교정 줄은 앞 교정까지 적용한 중간 문장 기준이라 글자 비교가 어긋날 수 있다. 이번 진단에 교정이
+        // 하나도 없으면 줄별 비교와 관계없이 모두 반영한 것으로 본다.
+        boolean noRemainingCorrection = !hasLanguageCorrection(diagnosis);
         int total = 0;
         int applied = 0;
         for (FeedbackLanguageCorrectionDto correction : previousMove.languageCorrections()) {
@@ -77,7 +81,8 @@ final class PreviousMissionEvaluator {
                 continue;
             }
             total++;
-            if (isReflected(correction, before, after, previousAnswer, answer, normalizedAnswer)) {
+            if (noRemainingCorrection
+                    || isReflected(correction, before, after, previousAnswer, answer, normalizedAnswer)) {
                 applied++;
             }
         }
@@ -110,13 +115,19 @@ final class PreviousMissionEvaluator {
         }
         if (after.equals(before)) {
             // 대소문자·문장부호만 고친 줄: 같은 낱말이 답의 다른 곳에 있을 수 있어(문장 첫 The와 가운데 the),
-            // 지난 답보다 고치기 전 표현이 줄고 고친 표현이 늘었는지로 본다.
+            // 지난 답보다 고치기 전 표현이 줄고 고친 표현이 늘었는지로 본다. 고친 표현은 뒤 교정이 문장부호를
+            // 더 붙였을 수 있어(Yesterday → Yesterday,) 앞뒤가 글자·숫자가 아닌 자리에서 센다.
             String rawBefore = rawWords(correction.before());
             String rawAfter = rawWords(correction.after());
             String rawPrevious = rawWords(previousAnswer);
             String rawAnswer = rawWords(answer);
-            return countRaw(rawAnswer, rawBefore) < countRaw(rawPrevious, rawBefore)
-                    && countRaw(rawAnswer, rawAfter) > countRaw(rawPrevious, rawAfter);
+            int previousBeforeCount = countBetweenSpaces(rawPrevious, rawBefore);
+            if (previousBeforeCount == 0) {
+                // 지난 답에 없는 중간 문장의 표현이면 셀 수 없어, 고친 표현이 있고 고치기 전 표현이 없는지로 본다.
+                return countBetweenNonWords(rawAnswer, rawAfter) > 0 && countBetweenSpaces(rawAnswer, rawBefore) == 0;
+            }
+            return countBetweenSpaces(rawAnswer, rawBefore) < previousBeforeCount
+                    && countBetweenNonWords(rawAnswer, rawAfter) > countBetweenNonWords(rawPrevious, rawAfter);
         }
         if (containsWords(before, after)) {
             return containsWords(normalizedAnswer, after) && !containsWords(normalizedAnswer, before);
@@ -156,6 +167,13 @@ final class PreviousMissionEvaluator {
         return (" " + normalizedText + " ").contains(" " + normalizedWords + " ");
     }
 
+    private static boolean hasLanguageCorrection(FeedbackDiagnosisResult diagnosis) {
+        if (diagnosis == null) {
+            return true;
+        }
+        return diagnosis.languageAssessment().revisionSteps().stream().anyMatch(step -> step.kind() != null);
+    }
+
     // 대소문자와 문장부호는 그대로 두고, 공백을 하나로 줄이고 굽은 따옴표만 곧은 따옴표로 맞춘다.
     private static String rawWords(String value) {
         if (value == null) {
@@ -170,11 +188,20 @@ final class PreviousMissionEvaluator {
     }
 
     // 공백으로 나뉜 자리에서만 센다. "Yesterday"가 "Yesterday,"에, "i"가 "it"에 세어지지 않는다.
-    private static int countRaw(String text, String words) {
+    private static int countBetweenSpaces(String text, String words) {
+        return count(text, words, "(?<!\\S)", "(?!\\S)");
+    }
+
+    // 앞뒤가 글자·숫자에 이어지지 않는 자리에서 센다. 뒤에 문장부호가 더 붙어도 세고, "i"가 "it"에는 세어지지 않는다.
+    private static int countBetweenNonWords(String text, String words) {
+        return count(text, words, "(?<![\\p{L}\\p{N}])", "(?![\\p{L}\\p{N}])");
+    }
+
+    private static int count(String text, String words, String leftBoundary, String rightBoundary) {
         if (words.isEmpty()) {
             return 0;
         }
-        Matcher matcher = Pattern.compile("(?<!\\S)" + Pattern.quote(words) + "(?!\\S)").matcher(text);
+        Matcher matcher = Pattern.compile(leftBoundary + Pattern.quote(words) + rightBoundary).matcher(text);
         int count = 0;
         while (matcher.find()) {
             count++;

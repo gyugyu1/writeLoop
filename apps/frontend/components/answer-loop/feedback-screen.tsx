@@ -177,7 +177,7 @@ export function FeedbackSummary({
                           <button
                             type="button"
                             className={styles.languageCorrectionReveal}
-                            aria-label={`${trimNullable(correction.before) ?? `교정 ${index + 1}`}의 고친 표현 보기`}
+                            aria-label={`${index + 1}번째 교정${trimNullable(correction.before) ? ` ${trimNullable(correction.before)}` : ""}의 고친 표현 보기`}
                             onClick={() =>
                               setRevealedLanguageCorrectionIndexes((current) =>
                                 current.includes(index) ? current : [...current, index]

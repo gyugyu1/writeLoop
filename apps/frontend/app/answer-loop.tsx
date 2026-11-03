@@ -40,6 +40,7 @@ import type {
 import { MonthStatusModal } from "../components/answer-loop/month-status-modal";
 import { useMonthStatus } from "../components/answer-loop/use-month-status";
 import { useSavedExpressions } from "../components/answer-loop/use-saved-expressions";
+import { useLanguageFixReveal } from "../components/answer-loop/use-language-fix-reveal";
 import { CoachAssistantModal } from "../components/answer-loop/coach-assistant-modal";
 import { useCoachAssistant, useCoachAssistantDialogEffect } from "../components/answer-loop/use-coach-assistant";
 import { deriveFeedbackView } from "../components/answer-loop/feedback-view";
@@ -136,8 +137,6 @@ export function AnswerLoop() {
   const [showPreviousRewriteAnswer, setShowPreviousRewriteAnswer] = useState(false);
   const [areAllLanguageCorrectionsVisible, setAreAllLanguageCorrectionsVisible] =
     useState(false);
-  const [revealedLanguageCorrectionIndexes, setRevealedLanguageCorrectionIndexes] = useState<number[]>([]);
-  const [isRevisedSentenceRevealed, setIsRevisedSentenceRevealed] = useState(false);
   const [showAnswerTranslation, setShowAnswerTranslation] = useState(false);
   const [showHelpSheet, setShowHelpSheet] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
@@ -761,6 +760,12 @@ export function AnswerLoop() {
 
   const isLoggedIn = Boolean(currentUser);
   const isGuestCycleComplete = Boolean(feedback && guestSessionId && feedback.attemptNo >= 2);
+  const {
+    revealedLanguageCorrectionIndexes,
+    setRevealedLanguageCorrectionIndexes,
+    isRevisedSentenceRevealed,
+    setIsRevisedSentenceRevealed
+  } = useLanguageFixReveal(`${feedback?.sessionId ?? ""}:${feedback?.attemptNo ?? ""}`);
   const feedbackView = deriveFeedbackView({
     feedback,
     areAllLanguageCorrectionsVisible,
@@ -784,12 +789,6 @@ export function AnswerLoop() {
   useEffect(() => {
     setAreAllLanguageCorrectionsVisible(false);
   }, [feedback?.attemptNo]);
-
-  // 새 피드백(다시쓰기 뒤 다음 피드백, 다른 질문)을 받으면 문장 교정 미션의 고친 표현을 다시 가린다.
-  useEffect(() => {
-    setRevealedLanguageCorrectionIndexes([]);
-    setIsRevisedSentenceRevealed(false);
-  }, [feedback?.attemptNo, feedback?.sessionId]);
 
   useEffect(() => {
     if (step !== "complete") {

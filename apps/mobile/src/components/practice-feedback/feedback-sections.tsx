@@ -160,7 +160,6 @@ export function FeedbackHeader({
   );
 }
 
-// 잘한 점 카드
 const PREVIOUS_MISSION_STATUS_MARK: Record<string, string> = {
   RESOLVED: "✓",
   PARTIAL: "△",
@@ -205,6 +204,7 @@ export function PreviousMissionResultCard({ result }: { result?: PreviousMission
   );
 }
 
+// 잘한 점 카드
 export function StrengthCard({
   visibleStrength
 }: StrengthCardProps) {

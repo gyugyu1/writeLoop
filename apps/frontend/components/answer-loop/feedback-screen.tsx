@@ -420,7 +420,6 @@ export function FeedbackSummary({
   return renderVisibleFeedbackSummary();
 }
 
-// 피드백 화면: 진행 상태, 피드백 요약, 다시 써 보기·루프 마치기.
 const PREVIOUS_MISSION_STATUS_CLASS: Record<string, string> = {
   RESOLVED: styles.previousMissionResolved,
   PARTIAL: styles.previousMissionPartial,
@@ -452,6 +451,7 @@ function PreviousMissionResultCard({ result }: { result?: PreviousMissionResult 
   );
 }
 
+// 피드백 화면: 진행 상태, 피드백 요약, 다시 써 보기·루프 마치기.
 export function FeedbackStep({
   summaryProps,
   isFinishingLoop,

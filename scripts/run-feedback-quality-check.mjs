@@ -621,6 +621,7 @@ function buildPayloadSnapshot(payload) {
   return {
     loopComplete: payload?.loopComplete === true,
     completionMessage: limitText(payload?.completionMessage, 500),
+    strengths: sliceArray(payload?.strengths, 3).map((strength) => limitText(strength, 500)),
     summary: limitText(payload?.summary, 800),
     revisedAnswer: limitText(payload?.revisedAnswer, 1200),
     modelAnswer: limitText(payload?.modelAnswer, 1200),
@@ -712,8 +713,9 @@ function buildPayloadSnapshot(payload) {
       : []).map((expression) => compactObject({
       expression: limitText(expression?.expression, 300),
       meaningKo: limitText(expression?.meaningKo, 300),
-      usageTipKo: limitText(expression?.usageTipKo, 500),
-      exampleEn: limitText(expression?.exampleEn, 800),
+      // 응답 JSON의 이름은 guidance·example이다(RefinementExpressionDto). 스냅숏 키는 그대로 둔다.
+      usageTipKo: limitText(expression?.guidance ?? expression?.guidanceKo ?? expression?.usageTipKo, 500),
+      exampleEn: limitText(expression?.example ?? expression?.exampleEn, 800),
       source: expression?.source ?? null
     }))
   };

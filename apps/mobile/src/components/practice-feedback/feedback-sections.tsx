@@ -15,6 +15,7 @@ import {
 } from "./feedback-helpers";
 import { styles } from "./feedback-styles";
 import type { FeedbackScreenValues, SavedExpressionProps } from "./feedback-screen-values";
+import type { PreviousMissionResult } from "@/lib/types";
 
 const completionMascotImage = require("@/assets/images/feedback-completion-mascot.png");
 
@@ -160,6 +161,44 @@ export function FeedbackHeader({
 }
 
 // 잘한 점 카드
+const PREVIOUS_MISSION_STATUS_MARK: Record<string, string> = {
+  RESOLVED: "✓",
+  PARTIAL: "△",
+  UNRESOLVED: "·"
+};
+
+// 다시 쓴 답의 피드백 맨 위에 지난 미션을 이번 답이 해결했는지 한 줄로 보여 준다.
+export function PreviousMissionResultCard({ result }: { result?: PreviousMissionResult | null }) {
+  if (!result?.message) {
+    return null;
+  }
+  const isResolved = result.status === "RESOLVED";
+  const isPartial = result.status === "PARTIAL";
+  return (
+    <View
+      style={[
+        styles.previousMissionCard,
+        isResolved ? styles.previousMissionCardResolved : null,
+        isPartial ? styles.previousMissionCardPartial : null
+      ]}
+      testID={`previous-mission-${result.status}`}
+    >
+      <Text style={styles.previousMissionLabel}>
+        {result.title ? `지난 미션: ${result.title}` : "지난 미션"}
+      </Text>
+      <Text
+        style={[
+          styles.previousMissionMessage,
+          isResolved ? styles.previousMissionMessageResolved : null,
+          isPartial ? styles.previousMissionMessagePartial : null
+        ]}
+      >
+        {`${PREVIOUS_MISSION_STATUS_MARK[result.status] ?? "·"} ${result.message}`}
+      </Text>
+    </View>
+  );
+}
+
 export function StrengthCard({
   visibleStrength
 }: StrengthCardProps) {

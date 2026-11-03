@@ -21,6 +21,7 @@ import {
   FeedbackEmptyState,
   FeedbackHeader,
   InlineRewriteCard,
+  PreviousMissionResultCard,
   StrengthCard
 } from "@/components/practice-feedback/feedback-sections";
 import { styles } from "@/components/practice-feedback/feedback-styles";
@@ -397,6 +398,8 @@ export default function PracticeFeedbackScreen() {
             </View>
           ) : feedbackState ? (
             <>
+              <PreviousMissionResultCard result={feedbackState.feedback.previousMissionResult} />
+
               <StrengthCard
                 visibleStrength={visibleStrength}
               />

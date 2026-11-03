@@ -46,6 +46,41 @@ export const styles = StyleSheet.create({
     width: 42,
     height: 42
   },
+  previousMissionCard: {
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E6DFD6",
+    backgroundColor: "#FBF8F4",
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    gap: 4
+  },
+  previousMissionCardResolved: {
+    borderColor: "#B7DFC2",
+    backgroundColor: "#EEF8F1"
+  },
+  previousMissionCardPartial: {
+    borderColor: "#F0D7A8",
+    backgroundColor: "#FDF6E8"
+  },
+  previousMissionLabel: {
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "700",
+    color: "#7A7672"
+  },
+  previousMissionMessage: {
+    fontSize: 16,
+    lineHeight: 23,
+    fontWeight: "800",
+    color: "#5F5A55"
+  },
+  previousMissionMessageResolved: {
+    color: "#1F7A3D"
+  },
+  previousMissionMessagePartial: {
+    color: "#9A6400"
+  },
   strengthCard: {
     borderRadius: 30,
     borderWidth: 1,

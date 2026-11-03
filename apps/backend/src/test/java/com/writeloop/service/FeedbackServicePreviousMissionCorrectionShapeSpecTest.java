@@ -123,13 +123,18 @@ class FeedbackServicePreviousMissionCorrectionShapeSpecTest {
         );
     }
 
-    private static FeedbackAnalysisSnapshot snapshot() {
+    // 31 결정 1: 고치지 않은 줄이 남는 케이스(미반영·일부를 기대)는 이번 진단에도 문법 교정이 남아 있어야 실제 상황과 맞다.
+    private static final List<LanguageRevisionStep> CORRECTIONS_LEFT = List.of(
+            new LanguageRevisionStep(LanguageIssueKind.GRAMMAR_LOCAL, S6_ALL_FIXED, "남은 교정 이유")
+    );
+
+    private static FeedbackAnalysisSnapshot snapshot(List<LanguageRevisionStep> revisionSteps) {
         Map<String, SlotAssessmentValue> assessments = new LinkedHashMap<>();
         assessments.put("REASON", new SlotAssessmentValue("evidence", SlotAssessmentStatus.SATISFIED));
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 new TopicAssessment(TopicRelevance.ON_TOPIC, "reason"),
                 new StructureAssessment(StructureStatus.COMPLETE),
-                new LanguageAssessment(List.of())
+                new LanguageAssessment(revisionSteps)
         );
         MissionDecision decision = new MissionDecision(MissionKind.SLOT, List.of(), List.of(), "DETAIL", assessments, null, null);
         GeneratedSections sections = new GeneratedSections(
@@ -155,6 +160,15 @@ class FeedbackServicePreviousMissionCorrectionShapeSpecTest {
     // 시도 1(앞 답 S0, 미션은 주어진 교정 줄의 LANGUAGE_FIX)이 저장된 세션에 시도 2를 내고 지난 미션 결과를 받는다.
     private PreviousMissionResultDto resubmit(List<FeedbackLanguageCorrectionDto> previousCorrections, String newAnswer)
             throws Exception {
+        return resubmit(previousCorrections, newAnswer, List.of());
+    }
+
+    // 이번 진단의 교정 단계를 정해 낸다(31 결정 1).
+    private PreviousMissionResultDto resubmit(
+            List<FeedbackLanguageCorrectionDto> previousCorrections,
+            String newAnswer,
+            List<LanguageRevisionStep> revisionSteps
+    ) throws Exception {
         PromptService promptService = mock(PromptService.class);
         LlmFeedbackClient llm = mock(LlmFeedbackClient.class);
         AnswerSessionRepository sessions = mock(AnswerSessionRepository.class);
@@ -167,7 +181,7 @@ class FeedbackServicePreviousMissionCorrectionShapeSpecTest {
         ReflectionTestUtils.setField(service, "feedbackDiagnosisLogRepository", logs);
 
         PromptDto prompt = prompt();
-        FeedbackAnalysisSnapshot snapshot = snapshot();
+        FeedbackAnalysisSnapshot snapshot = snapshot(revisionSteps);
         AnswerSessionEntity session = new AnswerSessionEntity(SESSION_ID, PROMPT_ID, null, 7L, SessionStatus.IN_PROGRESS);
         AnswerAttemptEntity previous = new AnswerAttemptEntity(
                 SESSION_ID, 1, AttemptType.INITIAL, S0_PREVIOUS, "summary",
@@ -253,31 +267,31 @@ class FeedbackServicePreviousMissionCorrectionShapeSpecTest {
     // 15 규칙 2: 정규화하면 같은 줄은 원문으로 비교. 새 답에 고치기 전 원문 "i"가 남아 있다.
     @Test
     void unchanged_caseOnlyLineIIsNotReflected() throws Exception {
-        assertSingleUnresolved(resubmit(List.of(CASE_I), S0_PREVIOUS));
+        assertSingleUnresolved(resubmit(List.of(CASE_I), S0_PREVIOUS, CORRECTIONS_LEFT));
     }
 
     // 15 규칙 2: 새 답에 고친 원문 "Makgeolli."가 없고 고치기 전 원문 "makgeolli."가 있다.
     @Test
     void unchanged_caseOnlyLineMakgeolliIsNotReflected() throws Exception {
-        assertSingleUnresolved(resubmit(List.of(CASE_MAKGEOLLI), S0_PREVIOUS));
+        assertSingleUnresolved(resubmit(List.of(CASE_MAKGEOLLI), S0_PREVIOUS, CORRECTIONS_LEFT));
     }
 
     // 15 규칙 2: 새 답에 고친 원문 "Day because"가 없고 고치기 전 원문 "Day. Because"가 있다.
     @Test
     void unchanged_punctuationOnlyLineIsNotReflected() throws Exception {
-        assertSingleUnresolved(resubmit(List.of(PUNCT_DAY), S0_PREVIOUS));
+        assertSingleUnresolved(resubmit(List.of(PUNCT_DAY), S0_PREVIOUS, CORRECTIONS_LEFT));
     }
 
     // 15 규칙 3: 고친 표현 "very good"이 고치기 전 "very very good" 안에 있다. 새 답에 고치기 전 표현이 남아 있다.
     @Test
     void unchanged_deletionLineIsNotReflected() throws Exception {
-        assertSingleUnresolved(resubmit(List.of(DELETE_VERY), S0_PREVIOUS));
+        assertSingleUnresolved(resubmit(List.of(DELETE_VERY), S0_PREVIOUS, CORRECTIONS_LEFT));
     }
 
     // 여섯 줄 모두: 바꾸기·넣기 줄도 고치지 않았으므로 0/6.
     @Test
     void unchanged_allSixLinesAreNotReflected() throws Exception {
-        assertLanguageFix(resubmit(ALL_SIX, S0_PREVIOUS),
+        assertLanguageFix(resubmit(ALL_SIX, S0_PREVIOUS, CORRECTIONS_LEFT),
                 "문장 6곳 바로잡기", "UNRESOLVED", 0, 6, "아직 반영되지 않았어요");
     }
 
@@ -286,7 +300,7 @@ class FeedbackServicePreviousMissionCorrectionShapeSpecTest {
     void partial_onlyReplacementAndInsertionFixedCountsTwoOfSix() throws Exception {
         String answer =
                 "Yesterday i went to a bar on a rainy Day. Because it is a tradition. I want to try makgeolli. It was very very good.";
-        assertLanguageFix(resubmit(ALL_SIX, answer),
+        assertLanguageFix(resubmit(ALL_SIX, answer, CORRECTIONS_LEFT),
                 "문장 6곳 바로잡기", "PARTIAL", 2, 6, "6곳 중 2곳 반영했어요");
     }
 
@@ -334,13 +348,13 @@ class FeedbackServicePreviousMissionCorrectionShapeSpecTest {
     @Test
     void replacementLine_reflectedOnlyWhenFixedExpressionPresent() throws Exception {
         assertSingleResolved(resubmit(List.of(REPLACE_GO), S6_ALL_FIXED));
-        assertSingleUnresolved(resubmit(List.of(REPLACE_GO), S0_PREVIOUS));
+        assertSingleUnresolved(resubmit(List.of(REPLACE_GO), S0_PREVIOUS, CORRECTIONS_LEFT));
     }
 
     // 15 규칙 4: 고친 표현 "want to try"가 새 답에 있으면 반영.
     @Test
     void insertionLine_reflectedOnlyWhenFixedExpressionPresent() throws Exception {
         assertSingleResolved(resubmit(List.of(INSERT_TO), S6_ALL_FIXED));
-        assertSingleUnresolved(resubmit(List.of(INSERT_TO), S0_PREVIOUS));
+        assertSingleUnresolved(resubmit(List.of(INSERT_TO), S0_PREVIOUS, CORRECTIONS_LEFT));
     }
 }

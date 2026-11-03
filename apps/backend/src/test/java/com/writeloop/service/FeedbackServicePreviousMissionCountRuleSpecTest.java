@@ -123,13 +123,18 @@ class FeedbackServicePreviousMissionCountRuleSpecTest {
         );
     }
 
-    private static FeedbackAnalysisSnapshot snapshot() {
+    // 31 결정 1: 고치지 않은 줄이 남는 케이스(미반영을 기대)는 이번 진단에도 문법 교정이 남아 있어야 실제 상황과 맞다.
+    private static final List<LanguageRevisionStep> CORRECTIONS_LEFT = List.of(
+            new LanguageRevisionStep(LanguageIssueKind.GRAMMAR_LOCAL, P4_ALL_FIXED, "남은 교정 이유")
+    );
+
+    private static FeedbackAnalysisSnapshot snapshot(List<LanguageRevisionStep> revisionSteps) {
         Map<String, SlotAssessmentValue> assessments = new LinkedHashMap<>();
         assessments.put("REASON", new SlotAssessmentValue("evidence", SlotAssessmentStatus.SATISFIED));
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 new TopicAssessment(TopicRelevance.ON_TOPIC, "reason"),
                 new StructureAssessment(StructureStatus.COMPLETE),
-                new LanguageAssessment(List.of())
+                new LanguageAssessment(revisionSteps)
         );
         MissionDecision decision = new MissionDecision(MissionKind.SLOT, List.of(), List.of(), "DETAIL", assessments, null, null);
         GeneratedSections sections = new GeneratedSections(
@@ -156,6 +161,15 @@ class FeedbackServicePreviousMissionCountRuleSpecTest {
     // 시도 1(지난 답 P0, 미션은 주어진 교정 줄의 LANGUAGE_FIX)이 저장된 세션에 시도 2를 내고 지난 미션 결과를 받는다.
     private PreviousMissionResultDto resubmit(List<FeedbackLanguageCorrectionDto> previousCorrections, String newAnswer)
             throws Exception {
+        return resubmit(previousCorrections, newAnswer, List.of());
+    }
+
+    // 이번 진단의 교정 단계를 정해 낸다(31 결정 1).
+    private PreviousMissionResultDto resubmit(
+            List<FeedbackLanguageCorrectionDto> previousCorrections,
+            String newAnswer,
+            List<LanguageRevisionStep> revisionSteps
+    ) throws Exception {
         PromptService promptService = mock(PromptService.class);
         LlmFeedbackClient llm = mock(LlmFeedbackClient.class);
         AnswerSessionRepository sessions = mock(AnswerSessionRepository.class);
@@ -168,7 +182,7 @@ class FeedbackServicePreviousMissionCountRuleSpecTest {
         ReflectionTestUtils.setField(service, "feedbackDiagnosisLogRepository", logs);
 
         PromptDto prompt = prompt();
-        FeedbackAnalysisSnapshot snapshot = snapshot();
+        FeedbackAnalysisSnapshot snapshot = snapshot(revisionSteps);
         AnswerSessionEntity session = new AnswerSessionEntity(SESSION_ID, PROMPT_ID, null, 7L, SessionStatus.IN_PROGRESS);
         AnswerAttemptEntity previous = new AnswerAttemptEntity(
                 SESSION_ID, 1, AttemptType.INITIAL, P0_PREVIOUS, "summary",
@@ -266,13 +280,13 @@ class FeedbackServicePreviousMissionCountRuleSpecTest {
     // 이미 있는 동작(통과가 맞음): 지난 답을 그대로 내면 개수가 같아 미반영.
     @Test
     void commaLine_unchangedIsNotReflected() throws Exception {
-        assertSingleUnresolved(resubmit(List.of(COMMA_YESTERDAY), P0_PREVIOUS));
+        assertSingleUnresolved(resubmit(List.of(COMMA_YESTERDAY), P0_PREVIOUS, CORRECTIONS_LEFT));
     }
 
     // 이미 있는 동작(통과가 맞음): 지난 답을 그대로 내면 개수가 같아 미반영.
     @Test
     void periodLine_unchangedIsNotReflected() throws Exception {
-        assertSingleUnresolved(resubmit(List.of(PERIOD_FUN), P0_PREVIOUS));
+        assertSingleUnresolved(resubmit(List.of(PERIOD_FUN), P0_PREVIOUS, CORRECTIONS_LEFT));
     }
 
     // ---------- 굽은 따옴표(22 결정 2) ----------
@@ -294,7 +308,7 @@ class FeedbackServicePreviousMissionCountRuleSpecTest {
     // 이미 있는 동작(통과가 맞음): 고치지 않으면 "the" 2·"The" 0 그대로라 미반영.
     @Test
     void sentenceStartCapitalLine_unchangedIsNotReflected() throws Exception {
-        assertSingleUnresolved(resubmit(List.of(CAPITAL_THE), P0_PREVIOUS));
+        assertSingleUnresolved(resubmit(List.of(CAPITAL_THE), P0_PREVIOUS, CORRECTIONS_LEFT));
     }
 
     // ---------- 네 줄을 함께(22 결정 1·2·3) ----------

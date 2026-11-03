@@ -180,12 +180,26 @@ class FeedbackServicePreviousMissionSpecTest {
     }
 
     private static FeedbackAnalysisSnapshot snapshot(TopicRelevance topic, Map<String, SlotAssessmentStatus> slots, boolean complete) {
+        return snapshot(topic, slots, complete, List.of());
+    }
+
+    // 31 결정 1: 고치지 않은 줄이 남는 케이스(미반영·일부를 기대)는 이번 진단에도 문법 교정이 남아 있어야 실제 상황과 맞다.
+    private static final List<LanguageRevisionStep> CORRECTIONS_LEFT = List.of(
+            new LanguageRevisionStep(LanguageIssueKind.GRAMMAR_LOCAL, C1_ANSWER, "남은 교정 이유")
+    );
+
+    private static FeedbackAnalysisSnapshot snapshot(
+            TopicRelevance topic,
+            Map<String, SlotAssessmentStatus> slots,
+            boolean complete,
+            List<LanguageRevisionStep> revisionSteps
+    ) {
         Map<String, SlotAssessmentValue> assessments = new LinkedHashMap<>();
         slots.forEach((slot, status) -> assessments.put(slot, new SlotAssessmentValue("evidence " + slot, status)));
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
                 new TopicAssessment(topic, "reason"),
                 new StructureAssessment(StructureStatus.COMPLETE),
-                new LanguageAssessment(List.of())
+                new LanguageAssessment(revisionSteps)
         );
         MissionDecision decision = new MissionDecision(
                 complete ? MissionKind.COMPLETE : MissionKind.SLOT,
@@ -217,6 +231,10 @@ class FeedbackServicePreviousMissionSpecTest {
 
     private static FeedbackAnalysisSnapshot onTopic(Map<String, SlotAssessmentStatus> slots) {
         return snapshot(TopicRelevance.ON_TOPIC, slots, false);
+    }
+
+    private static FeedbackAnalysisSnapshot onTopicWithCorrectionsLeft(Map<String, SlotAssessmentStatus> slots) {
+        return snapshot(TopicRelevance.ON_TOPIC, slots, false, CORRECTIONS_LEFT);
     }
 
     // ---------- 실행 틀 ----------
@@ -340,6 +358,13 @@ class FeedbackServicePreviousMissionSpecTest {
 
     private PreviousMissionResultDto languageFix(FeedbackCoachMoveDto previousMove, String answer) throws Exception {
         return secondAttemptResult(previousMove, answer, onTopic(slots("REASON", SlotAssessmentStatus.MISSING)));
+    }
+
+    // 31 결정 1: 이번 진단에 문법 교정이 남아 있는 다시 쓴 답.
+    private PreviousMissionResultDto languageFixWithCorrectionsLeft(FeedbackCoachMoveDto previousMove, String answer)
+            throws Exception {
+        return secondAttemptResult(previousMove, answer,
+                onTopicWithCorrectionsLeft(slots("REASON", SlotAssessmentStatus.MISSING)));
     }
 
     // 붙지 않는 경우와 같은 기준: 시도 2인데 앞 시도 행이 없다(앞 피드백을 읽을 수 없음).
@@ -591,19 +616,19 @@ class FeedbackServicePreviousMissionSpecTest {
 
     @Test
     void c2_someCorrectionsReflectedIsPartial() throws Exception {
-        assertResult(languageFix(F_LANG2, "Yesterday I went to the market and bought a apple."),
+        assertResult(languageFixWithCorrectionsLeft(F_LANG2, "Yesterday I went to the market and bought a apple."),
                 "LANGUAGE_FIX", "문장 2곳 바로잡기", null, "PARTIAL", 1, 2, "2곳 중 1곳 반영했어요");
     }
 
     @Test
     void c3_noCorrectionReflectedIsUnresolved() throws Exception {
-        assertResult(languageFix(F_LANG2, PREVIOUS_ANSWER),
+        assertResult(languageFixWithCorrectionsLeft(F_LANG2, PREVIOUS_ANSWER),
                 "LANGUAGE_FIX", "문장 2곳 바로잡기", null, "UNRESOLVED", 0, 2, "아직 반영되지 않았어요");
     }
 
     @Test
     void c4_twoOfThreeIsPartial() throws Exception {
-        assertResult(languageFix(F_LANG3, "Yesterday I went to the market and bought an apple. I think it taste good."),
+        assertResult(languageFixWithCorrectionsLeft(F_LANG3, "Yesterday I went to the market and bought an apple. I think it taste good."),
                 "LANGUAGE_FIX", "문장 3곳 바로잡기", null, "PARTIAL", 2, 3, "3곳 중 2곳 반영했어요");
     }
 
@@ -618,7 +643,7 @@ class FeedbackServicePreviousMissionSpecTest {
     @Test
     void c6_punctuationKeepsApostropheByDecision() throws Exception {
         FeedbackCoachMoveDto previous = move("문장 한 곳 바로잡기", "LANGUAGE_FIX", null, List.of(fix("Its fun", "It's fun!")));
-        assertResult(languageFix(previous, "Its fun to swim"),
+        assertResult(languageFixWithCorrectionsLeft(previous, "Its fun to swim"),
                 "LANGUAGE_FIX", "문장 한 곳 바로잡기", null, "UNRESOLVED", 0, 1, "아직 반영되지 않았어요");
     }
 
@@ -645,16 +670,16 @@ class FeedbackServicePreviousMissionSpecTest {
 
     @Test
     void c9_wordBoundaryAfter() throws Exception {
-        assertResult(languageFix(F_LANG2, "Yesterday I went to the market and bought an apples."),
+        assertResult(languageFixWithCorrectionsLeft(F_LANG2, "Yesterday I went to the market and bought an apples."),
                 "LANGUAGE_FIX", "문장 2곳 바로잡기", null, "PARTIAL", 1, 2, "2곳 중 1곳 반영했어요");
     }
 
     @Test
     void c10_wordBoundaryBefore() throws Exception {
         FeedbackCoachMoveDto previous = move("문장 한 곳 바로잡기", "LANGUAGE_FIX", null, List.of(fix("a ant", "an ant")));
-        assertResult(languageFix(previous, "I saw a giant."),
+        assertResult(languageFixWithCorrectionsLeft(previous, "I saw a giant."),
                 "LANGUAGE_FIX", "문장 한 곳 바로잡기", null, "UNRESOLVED", 0, 1, "아직 반영되지 않았어요");
-        assertResult(languageFix(previous, "I saw plan ant."),
+        assertResult(languageFixWithCorrectionsLeft(previous, "I saw plan ant."),
                 "LANGUAGE_FIX", "문장 한 곳 바로잡기", null, "UNRESOLVED", 0, 1, "아직 반영되지 않았어요");
     }
 
@@ -668,7 +693,7 @@ class FeedbackServicePreviousMissionSpecTest {
     @Test
     void c12_deletionNotReflectedWhenBeforeRemains() throws Exception {
         FeedbackCoachMoveDto previous = move("문장 한 곳 바로잡기", "LANGUAGE_FIX", null, List.of(fix("very very", null)));
-        assertResult(languageFix(previous, "It was very very good."),
+        assertResult(languageFixWithCorrectionsLeft(previous, "It was very very good."),
                 "LANGUAGE_FIX", "문장 한 곳 바로잡기", null, "UNRESOLVED", 0, 1, "아직 반영되지 않았어요");
     }
 
@@ -678,7 +703,7 @@ class FeedbackServicePreviousMissionSpecTest {
                 fix("I go", "I went"),
                 fix("very very", null)
         ));
-        assertResult(languageFix(previous, "I went there. It was very very good."),
+        assertResult(languageFixWithCorrectionsLeft(previous, "I went there. It was very very good."),
                 "LANGUAGE_FIX", "문장 2곳 바로잡기", null, "PARTIAL", 1, 2, "2곳 중 1곳 반영했어요");
     }
 
@@ -869,7 +894,7 @@ class FeedbackServicePreviousMissionSpecTest {
 
     @Test
     void f4_languageFixResendKeepsCounts() throws Exception {
-        Harness harness = new Harness(false, 1, newMissionFeedback(), onTopic(slots("REASON", SlotAssessmentStatus.MISSING)))
+        Harness harness = new Harness(false, 1, newMissionFeedback(), onTopicWithCorrectionsLeft(slots("REASON", SlotAssessmentStatus.MISSING)))
                 .withPrevious(attemptWithMove(1, F_LANG2));
         String answer = "Yesterday I went to the market and bought a apple.";
 

@@ -1202,3 +1202,1447 @@ for (const [label, payload, expectedCodes, expectedPassed] of [
     assert.equal(report.failed, 6 - expectedPassed);
   });
 }
+
+// [spec] 056: 피드백 내용 품질 채점 도구. 시나리오 A·B·C·D·X(private 작업 056의 02-qa-scenarios.md)와
+// 결정 04(추천 표현의 응답 이름), 05 Q1~Q15(05-main-decision.md). OpenAI를 부르지 않는다.
+// 가짜 /api/feedback 서버로 run-feedback-quality-check.mjs를 돌린 리포트를 export-content-review.mjs로 내보내고,
+// 그 review-items.json의 id로 만든 가짜 scores.json을 summarize-content-scores.mjs로 모은다.
+const SPEC_CQ_PROMPTS = {
+  "prompt-a-1": {
+    en: "What do you usually do after dinner, and why do you do it?",
+    ko: "저녁 식사 후에 보통 무엇을 하며, 왜 그 일을 하나요?",
+    difficulty: "I"
+  },
+  "prompt-b-1": {
+    en: "What is one challenge you often face at work or school, and how do you deal with it?",
+    ko: "직장이나 학교에서 자주 겪는 어려움 한 가지와 그에 어떻게 대응하는지 말해 주세요.",
+    difficulty: "B"
+  }
+};
+const SPEC_CQ_A_SL = "After dinner I watch TV.";
+const SPEC_CQ_A_LF = "After dinner I usually take walk because it help me relax.";
+const SPEC_CQ_A_CM = "After dinner, I usually read a novel because it calms my mind before bed.";
+const SPEC_CQ_A_CM2 = "One challenge I often face at work is too many meetings. I deal with it by blocking focus time on my calendar, so I can finish my tasks.";
+const SPEC_CQ_A_SL2 = "I have a problem at work. It is hard.";
+const SPEC_CQ_A_FAIL = "I go to bed early after dinner.";
+const SPEC_CQ_A_MIN = "I relax after dinner.";
+const SPEC_CQ_EB = {
+  R1: "이유가 빠졌으니 이유를 더하게 해야 한다. 표현 다듬기만 하면 안 된다.",
+  R2: "take walk와 it help 두 곳만 고치고 나머지는 그대로 둬야 한다.",
+  R3: "완성 답이다. 자연스러운 표현을 문법 오류로 고치지 않아야 한다.",
+  R4: "어떤 어려움인지와 대응 방법을 구체적으로 쓰게 해야 한다.",
+  R5: "요청 실패용"
+};
+const SPEC_CQ_NAMES = {
+  R1: "spec content slot I",
+  R2: "spec content language fix I",
+  R3: "spec content complete B",
+  R4: "spec content slot B graded fail",
+  R5: "spec content request failed"
+};
+const SPEC_CQ_ANSWERS = { R1: SPEC_CQ_A_SL, R2: SPEC_CQ_A_LF, R3: SPEC_CQ_A_CM2, R4: SPEC_CQ_A_SL2, R5: SPEC_CQ_A_FAIL };
+
+function specCqPSL() {
+  return {
+    loopComplete: false, completionMessage: null,
+    summary: "저녁 뒤에 하는 일은 썼지만 이유가 없어요.",
+    strengths: ["저녁 뒤에 하는 일을 분명히 말했어요."],
+    revisedAnswer: null,
+    refinementExpressions: [{ expression: "unwind", meaningKo: "긴장을 풀다", usageTipKo: "쉬는 이유를 말할 때 써요.", exampleEn: "I watch TV to unwind.", source: "MODEL_ANSWER" }],
+    modelAnswer: "After dinner, I watch TV because it helps me unwind.",
+    modelAnswerKo: "저녁을 먹은 뒤에는 긴장을 풀 수 있어서 TV를 봐요.",
+    rewriteChallenge: null, ui: {},
+    coachMove: {
+      focus: "이유 더하기", focusType: "SLOT", targetSlot: "REASON",
+      why: "왜 TV를 보는지가 빠졌어요.", before: null, after: null,
+      instruction: "because로 TV를 보는 이유를 한 문장 더해 보세요.",
+      skeletonEn: "I watch TV after dinner because ____.", skeletonKo: "저녁을 먹고 ____ 때문에 TV를 봐요.",
+      suggestedPhrases: [{ phrase: "it helps me relax", meaningKo: "긴장을 풀어 줘서" }, { phrase: "I like comedy shows", meaningKo: "예능을 좋아해서" }],
+      languageCorrections: []
+    },
+    rewriteWorkspace: { seedText: "After dinner I watch TV.", starterText: "After dinner I watch TV because", enabled: true },
+    completion: null, revealLater: null
+  };
+}
+
+function specCqPLF() {
+  return {
+    promptId: "prompt-a-1", sessionId: "spec-s-1", attemptNo: 1,
+    loopComplete: false, completionMessage: null,
+    summary: "저녁 뒤 활동은 썼지만 문장에 고칠 곳이 있어요.",
+    strengths: ["저녁 뒤에 하는 일과 이유를 함께 말했어요."],
+    inlineFeedback: [],
+    revisedAnswer: "After dinner, I usually take a walk because it helps me relax.",
+    refinementExpressions: [], modelAnswer: null, modelAnswerKo: null, rewriteChallenge: null,
+    ui: { loopStatus: { badge: "다시 써보기 추천", headline: "두 곳만 고쳐 보세요." } },
+    loop: null,
+    coachMove: {
+      focus: "동사 형태 고치기", focusType: "LANGUAGE_FIX", targetSlot: null, why: "",
+      before: "After dinner I usually take walk because it help me relax.",
+      after: "After dinner, I usually take a walk because it helps me relax.",
+      instruction: "표시된 두 곳을 고쳐 다시 써 보세요.",
+      skeletonEn: null, skeletonKo: null, suggestedPhrases: [],
+      languageCorrections: [
+        { kind: "GRAMMAR_LOCAL", label: "관사", before: "take walk", after: "take a walk", reason: "walk 앞에 a가 필요해요." },
+        { kind: "GRAMMAR_BLOCKING", label: "주어와 동사", before: "it help", after: "it helps", reason: "it 뒤에는 helps를 써요." }
+      ]
+    },
+    rewriteWorkspace: { seedText: "After dinner I usually take walk because it help me relax.", starterText: null, enabled: true },
+    completion: null, revealLater: null, visibleFeedback: null
+  };
+}
+
+function specCqPCM() {
+  return {
+    promptId: "prompt-a-1", sessionId: "spec-s-2", attemptNo: 1,
+    loopComplete: true, completionMessage: "질문에 끝까지 답했어요.",
+    summary: "활동과 이유가 모두 분명해요.",
+    strengths: ["calms my mind로 이유를 구체적으로 썼어요."],
+    revisedAnswer: null,
+    refinementExpressions: [{ expression: "wind down", meaningKo: "긴장을 풀다", usageTipKo: "하루를 마무리할 때 써요.", exampleEn: "I read to wind down.", source: "MODEL_ANSWER" }],
+    modelAnswer: "After dinner, I usually read a novel to wind down before bed.",
+    modelAnswerKo: "저녁을 먹은 뒤에는 보통 잠들기 전에 긴장을 풀려고 소설을 읽어요.",
+    rewriteChallenge: null, ui: {}, coachMove: null, rewriteWorkspace: null,
+    completion: {
+      headline: "질문에 끝까지 답했어요",
+      enrichment: {
+        focus: "언제 읽는지 더하기", focusType: "SLOT", targetSlot: "SPECIFIC_TIME",
+        why: "읽는 시간을 쓰면 장면이 그려져요.", instruction: "몇 시쯤 읽는지 덧붙여 보세요.",
+        skeletonEn: "I usually read a novel around ____.", skeletonKo: "나는 보통 ____쯤 소설을 읽어요.",
+        suggestedPhrases: [{ phrase: "around 10 p.m.", meaningKo: "밤 10시쯤" }, { phrase: "right before bed", meaningKo: "자기 바로 전에" }]
+      }
+    },
+    revealLater: null
+  };
+}
+
+function specCqPMIN() {
+  return { loopComplete: true, ui: {} };
+}
+
+function specCqPCM2() {
+  return {
+    loopComplete: true, completionMessage: "질문에 끝까지 답했어요.",
+    summary: "어려움과 대응 방법이 모두 분명해요.",
+    strengths: ["blocking focus time으로 대응 방법을 구체적으로 썼어요."],
+    revisedAnswer: null,
+    refinementExpressions: [
+      { expression: "carve out time", meaningKo: "시간을 따로 떼어 두다", usageTipKo: "일정을 일부러 비워 둘 때 써요.", exampleEn: "I carve out time for deep work.", source: "MODEL_ANSWER" },
+      { expression: "stay on track", meaningKo: "계획대로 해 나가다", usageTipKo: "일이 밀리지 않게 할 때 써요.", exampleEn: "It helps me stay on track.", source: "MODEL_ANSWER" }
+    ],
+    modelAnswer: "One challenge I often face at work is having too many meetings. I deal with it by carving out focus time on my calendar so I can stay on track.",
+    modelAnswerKo: "직장에서 자주 겪는 어려움은 회의가 너무 많다는 거예요. 저는 달력에 집중 시간을 따로 떼어 두는 방법으로 대응해서 일을 계획대로 해 나가요.",
+    ui: {}, coachMove: null, rewriteWorkspace: null,
+    completion: {
+      headline: "질문에 끝까지 답했어요",
+      enrichment: {
+        focus: "결과 더하기", focusType: "SLOT", targetSlot: "RESULT",
+        why: "그렇게 했을 때 무엇이 나아졌는지 쓰면 답이 더 설득력 있어요.",
+        instruction: "집중 시간을 만든 뒤 달라진 점을 한 문장 더해 보세요.",
+        skeletonEn: "As a result, ____.", skeletonKo: "그 결과 ____.",
+        suggestedPhrases: [{ phrase: "I finish my work on time", meaningKo: "제시간에 일을 끝내요" }, { phrase: "I feel less stressed", meaningKo: "스트레스를 덜 받아요" }]
+      }
+    },
+    revealLater: null
+  };
+}
+
+function specCqPSL2() {
+  return {
+    loopComplete: false, completionMessage: null,
+    summary: "어려움이 무엇인지 아직 막연해요.",
+    strengths: ["직장에서 겪는 어려움이 있다는 것부터 말했어요."],
+    revisedAnswer: null, refinementExpressions: [], modelAnswer: null, modelAnswerKo: null, ui: {},
+    coachMove: {
+      focus: "어려움 구체적으로 쓰기", focusType: "SLOT", targetSlot: "PROBLEM",
+      why: "어떤 어려움인지 알 수 없어요.",
+      instruction: "어떤 일이 어려운지 한 가지를 콕 집어 써 보세요.",
+      skeletonEn: "One challenge I often face at work is ____.", skeletonKo: "직장에서 자주 겪는 어려움 하나는 ____예요.",
+      suggestedPhrases: [{ phrase: "too many meetings", meaningKo: "너무 많은 회의" }, { phrase: "tight deadlines", meaningKo: "빠듯한 마감" }]
+    },
+    rewriteWorkspace: { seedText: "I have a problem at work. It is hard.", enabled: true },
+    completion: null, revealLater: null
+  };
+}
+
+// 부록 A: 기준 커밋 ee524ad의 스냅숏(strengths 없음).
+const SPEC_CQ_APPENDIX_KEYS = ["loopComplete", "completionMessage", "summary", "revisedAnswer", "modelAnswer", "modelAnswerKo", "rewriteChallenge", "coachMove", "rewriteWorkspace", "completion", "revealLater", "ui", "refinementExpressions"];
+const SPEC_CQ_APPENDIX = {
+  [SPEC_CQ_A_LF]: {"loopComplete":false,"completionMessage":null,"summary":"저녁 뒤 활동은 썼지만 문장에 고칠 곳이 있어요.","revisedAnswer":"After dinner, I usually take a walk because it helps me relax.","modelAnswer":null,"modelAnswerKo":null,"rewriteChallenge":null,"coachMove":{"focus":"동사 형태 고치기","focusType":"LANGUAGE_FIX","before":"After dinner I usually take walk because it help me relax.","after":"After dinner, I usually take a walk because it helps me relax.","instruction":"표시된 두 곳을 고쳐 다시 써 보세요.","languageCorrections":[{"kind":"GRAMMAR_LOCAL","label":"관사","before":"take walk","after":"take a walk","reason":"walk 앞에 a가 필요해요."},{"kind":"GRAMMAR_BLOCKING","label":"주어와 동사","before":"it help","after":"it helps","reason":"it 뒤에는 helps를 써요."}]},"rewriteWorkspace":{"seedText":"After dinner I usually take walk because it help me relax.","enabled":true},"completion":{},"revealLater":{},"ui":{"loopStatus":{"badge":"다시 써보기 추천","headline":"두 곳만 고쳐 보세요."}},"refinementExpressions":[]},
+  [SPEC_CQ_A_CM]: {"loopComplete":true,"completionMessage":"질문에 끝까지 답했어요.","summary":"활동과 이유가 모두 분명해요.","revisedAnswer":null,"modelAnswer":"After dinner, I usually read a novel to wind down before bed.","modelAnswerKo":"저녁을 먹은 뒤에는 보통 잠들기 전에 긴장을 풀려고 소설을 읽어요.","rewriteChallenge":null,"coachMove":{},"rewriteWorkspace":{},"completion":{"headline":"질문에 끝까지 답했어요","enrichment":{"focus":"언제 읽는지 더하기","focusType":"SLOT","targetSlot":"SPECIFIC_TIME","why":"읽는 시간을 쓰면 장면이 그려져요.","instruction":"몇 시쯤 읽는지 덧붙여 보세요.","skeletonEn":"I usually read a novel around ____.","skeletonKo":"나는 보통 ____쯤 소설을 읽어요.","suggestedPhrases":[{"phrase":"around 10 p.m.","meaningKo":"밤 10시쯤"},{"phrase":"right before bed","meaningKo":"자기 바로 전에"}]}},"revealLater":{},"ui":{},"refinementExpressions":[{"expression":"wind down","meaningKo":"긴장을 풀다","usageTipKo":"하루를 마무리할 때 써요.","exampleEn":"I read to wind down.","source":"MODEL_ANSWER"}]},
+  [SPEC_CQ_A_SL]: {"loopComplete":false,"completionMessage":null,"summary":"저녁 뒤에 하는 일은 썼지만 이유가 없어요.","revisedAnswer":null,"modelAnswer":"After dinner, I watch TV because it helps me unwind.","modelAnswerKo":"저녁을 먹은 뒤에는 긴장을 풀 수 있어서 TV를 봐요.","rewriteChallenge":null,"coachMove":{"focus":"이유 더하기","focusType":"SLOT","targetSlot":"REASON","why":"왜 TV를 보는지가 빠졌어요.","instruction":"because로 TV를 보는 이유를 한 문장 더해 보세요.","skeletonEn":"I watch TV after dinner because ____.","skeletonKo":"저녁을 먹고 ____ 때문에 TV를 봐요.","suggestedPhrases":[{"phrase":"it helps me relax","meaningKo":"긴장을 풀어 줘서"},{"phrase":"I like comedy shows","meaningKo":"예능을 좋아해서"}]},"rewriteWorkspace":{"seedText":"After dinner I watch TV.","starterText":"After dinner I watch TV because","enabled":true},"completion":{},"revealLater":{},"ui":{},"refinementExpressions":[{"expression":"unwind","meaningKo":"긴장을 풀다","usageTipKo":"쉬는 이유를 말할 때 써요.","exampleEn":"I watch TV to unwind.","source":"MODEL_ANSWER"}]},
+  [SPEC_CQ_A_MIN]: {"loopComplete":true,"completionMessage":null,"summary":null,"revisedAnswer":null,"modelAnswer":null,"modelAnswerKo":null,"rewriteChallenge":null,"coachMove":{},"rewriteWorkspace":{},"completion":{},"revealLater":{},"ui":{},"refinementExpressions":[]}
+};
+
+function specCqCase(name, promptId, answer, expectedMissionKinds, expectedBehavior, extra = {}) {
+  const prompt = SPEC_CQ_PROMPTS[promptId];
+  return {
+    name,
+    promptId,
+    answer,
+    expectedMissionKinds,
+    expectedBehavior,
+    promptQuestionEn: prompt.en,
+    promptQuestionKo: prompt.ko,
+    difficulty: prompt.difficulty,
+    ...extra
+  };
+}
+
+// 0.3 가짜 리포트 R-A의 케이스 5건(R1~R5).
+function specCqRaCases() {
+  return [
+    specCqCase(SPEC_CQ_NAMES.R1, "prompt-a-1", SPEC_CQ_A_SL, ["SLOT"], SPEC_CQ_EB.R1),
+    specCqCase(SPEC_CQ_NAMES.R2, "prompt-a-1", SPEC_CQ_A_LF, ["LANGUAGE_FIX"], SPEC_CQ_EB.R2),
+    specCqCase(SPEC_CQ_NAMES.R3, "prompt-b-1", SPEC_CQ_A_CM2, ["COMPLETE"], SPEC_CQ_EB.R3),
+    specCqCase(SPEC_CQ_NAMES.R4, "prompt-b-1", SPEC_CQ_A_SL2, ["LANGUAGE_FIX"], SPEC_CQ_EB.R4),
+    specCqCase(SPEC_CQ_NAMES.R5, "prompt-a-1", SPEC_CQ_A_FAIL, ["SLOT"], SPEC_CQ_EB.R5)
+  ];
+}
+
+const SPEC_CQ_FAIL_500 = { status: 500, json: { error: "boom" } };
+
+function specCqOk(payload) {
+  return { status: 200, json: payload };
+}
+
+// 답으로 응답을 고른다. 없으면 HTTP 500.
+function specCqByAnswer(table) {
+  return (body) => table[body.answer] ?? { status: 500, json: { error: `no fake payload for ${body.answer}` } };
+}
+
+function specCqRaResponder() {
+  return specCqByAnswer({
+    [SPEC_CQ_A_SL]: specCqOk(specCqPSL()),
+    [SPEC_CQ_A_LF]: specCqOk(specCqPLF()),
+    [SPEC_CQ_A_CM2]: specCqOk(specCqPCM2()),
+    [SPEC_CQ_A_SL2]: specCqOk(specCqPSL2()),
+    [SPEC_CQ_A_FAIL]: SPEC_CQ_FAIL_500
+  });
+}
+
+async function specCqPaths() {
+  const pathMod = await import("node:path");
+  const { fileURLToPath } = await import("node:url");
+  const testDir = pathMod.dirname(fileURLToPath(import.meta.url));
+  const repoRoot = pathMod.resolve(testDir, "..", "..");
+  return {
+    pathMod,
+    testDir,
+    repoRoot,
+    checkScript: pathMod.join(repoRoot, "scripts", "run-feedback-quality-check.mjs"),
+    exportScript: pathMod.join(testDir, "export-content-review.mjs"),
+    summarizeScript: pathMod.join(testDir, "summarize-content-scores.mjs")
+  };
+}
+
+function specCqEnv() {
+  const env = { ...process.env };
+  for (const key of Object.keys(env)) {
+    if (key.startsWith("WRITELOOP_FEEDBACK_")) {
+      delete env[key];
+    }
+  }
+  return env;
+}
+
+async function specCqExec(args) {
+  const { execFile } = await import("node:child_process");
+  const { repoRoot } = await specCqPaths();
+  return new Promise((resolve) => {
+    execFile(process.execPath, args, { cwd: repoRoot, env: specCqEnv(), timeout: 120000, maxBuffer: 32 * 1024 * 1024 },
+      (error, stdout, stderr) => resolve({
+        code: error ? (typeof error.code === "number" ? error.code : 1) : 0,
+        stdout,
+        stderr,
+        detail: `exit ${error ? error.code : 0}\nstdout:\n${stdout}\nstderr:\n${stderr}`
+      }));
+  });
+}
+
+// 가짜 서버로 run-feedback-quality-check.mjs를 돌리고 latest.json의 원문과 내용을 돌려준다.
+async function specCqRunCheck(cases, respond, { passPayloads = true, extraArgs = [] } = {}) {
+  const http = await import("node:http");
+  const os = await import("node:os");
+  const fsp = await import("node:fs/promises");
+  const { pathMod, checkScript } = await specCqPaths();
+  const tempDir = await fsp.mkdtemp(pathMod.join(os.tmpdir(), "wl-spec-content-check-"));
+  const requests = [];
+  const server = http.createServer((request, response) => {
+    let raw = "";
+    request.on("data", (chunk) => { raw += chunk; });
+    request.on("end", () => {
+      if (request.method !== "POST" || request.url !== "/api/feedback") {
+        response.writeHead(404, { "content-type": "application/json" });
+        response.end("{}");
+        return;
+      }
+      const body = JSON.parse(raw);
+      requests.push(body);
+      const planned = respond(body);
+      response.writeHead(planned.status ?? 200, { "content-type": "application/json" });
+      response.end(JSON.stringify(planned.json));
+    });
+  });
+  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  const port = server.address().port;
+  try {
+    const casesPath = pathMod.join(tempDir, "cases.spec-content.json");
+    const reportDir = pathMod.join(tempDir, "report");
+    await fsp.writeFile(casesPath, JSON.stringify(cases), "utf8");
+    const run = await specCqExec([
+      checkScript,
+      "--cases", casesPath,
+      "--base-url", `http://127.0.0.1:${port}`,
+      "--report-dir", reportDir,
+      "--skip-prompt-preflight",
+      "--timeout-ms", "10000",
+      ...(passPayloads ? ["--include-pass-payloads"] : []),
+      ...extraArgs
+    ]);
+    let reportText = null;
+    try {
+      reportText = await fsp.readFile(pathMod.join(reportDir, "latest.json"), "utf8");
+    } catch {
+      reportText = null;
+    }
+    return { report: reportText ? JSON.parse(reportText) : null, reportText, run, requests, detail: run.detail };
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+    await fsp.rm(tempDir, { recursive: true, force: true });
+  }
+}
+
+// export-content-review.mjs를 돌린다. cases가 null이면 --cases 없이.
+async function specCqExport({ reportText, cases = null }) {
+  const os = await import("node:os");
+  const fsp = await import("node:fs/promises");
+  const { pathMod, exportScript } = await specCqPaths();
+  const tempDir = await fsp.mkdtemp(pathMod.join(os.tmpdir(), "wl-spec-content-export-"));
+  try {
+    const reportPath = pathMod.join(tempDir, "latest.json");
+    const casesPath = pathMod.join(tempDir, "cases.spec-content.json");
+    const outDir = pathMod.join(tempDir, "review");
+    await fsp.writeFile(reportPath, reportText, "utf8");
+    if (cases) {
+      await fsp.writeFile(casesPath, JSON.stringify(cases), "utf8");
+    }
+    const run = await specCqExec([
+      exportScript,
+      "--report", reportPath,
+      ...(cases ? ["--cases", casesPath] : []),
+      "--out", outDir
+    ]);
+    const read = async (name) => {
+      try {
+        return await fsp.readFile(pathMod.join(outDir, name), "utf8");
+      } catch {
+        return null;
+      }
+    };
+    const jsonText = await read("review-items.json");
+    const md = await read("review-items.md");
+    return { ...run, jsonText, json: jsonText ? JSON.parse(jsonText) : null, md };
+  } finally {
+    await fsp.rm(tempDir, { recursive: true, force: true });
+  }
+}
+
+// summarize-content-scores.mjs를 돌린다. scores·compare는 값(파일에 JSON으로 씀), itemsText는 review-items.json 원문.
+async function specCqSummarize({ scores, itemsText = null, compare = undefined }) {
+  const os = await import("node:os");
+  const fsp = await import("node:fs/promises");
+  const { pathMod, summarizeScript } = await specCqPaths();
+  const tempDir = await fsp.mkdtemp(pathMod.join(os.tmpdir(), "wl-spec-content-sum-"));
+  try {
+    const scoresPath = pathMod.join(tempDir, "scores.json");
+    const itemsPath = pathMod.join(tempDir, "review-items.json");
+    const comparePath = pathMod.join(tempDir, "scores.before.json");
+    await fsp.writeFile(scoresPath, JSON.stringify(scores, null, 2), "utf8");
+    if (itemsText != null) {
+      await fsp.writeFile(itemsPath, itemsText, "utf8");
+    }
+    if (compare !== undefined) {
+      await fsp.writeFile(comparePath, JSON.stringify(compare, null, 2), "utf8");
+    }
+    return await specCqExec([
+      summarizeScript,
+      "--scores", scoresPath,
+      ...(itemsText != null ? ["--items", itemsPath] : []),
+      ...(compare !== undefined ? ["--compare", comparePath] : [])
+    ]);
+  } finally {
+    await fsp.rm(tempDir, { recursive: true, force: true });
+  }
+}
+
+// R-A를 한 번 만들어 B·C 시나리오가 같이 쓴다(시나리오 C: review-items.json은 B의 출력).
+let specCqPipelinePromise = null;
+function specCqPipeline() {
+  specCqPipelinePromise ??= (async () => {
+    const cases = specCqRaCases();
+    const check = await specCqRunCheck(cases, specCqRaResponder());
+    assert.ok(check.reportText, `R-A report was not written\n${check.detail}`);
+    const exported = await specCqExport({ reportText: check.reportText, cases });
+    assert.equal(exported.code, 0, exported.detail);
+    assert.ok(exported.json, `review-items.json was not written\n${exported.detail}`);
+    return { cases, check, exported, ids: specCqIds(exported.json) };
+  })();
+  return specCqPipelinePromise;
+}
+
+function specCqItems(json) {
+  return Array.isArray(json) ? json : json?.items ?? [];
+}
+
+function specCqItemByAnswer(json, answer) {
+  return specCqItems(json).find((item) => item.answer === answer);
+}
+
+// 학생 답으로 R1~R4 항목의 id를 찾는다(시나리오 B).
+function specCqIds(json) {
+  const ids = {};
+  for (const r of ["R1", "R2", "R3", "R4"]) {
+    const item = specCqItemByAnswer(json, SPEC_CQ_ANSWERS[r]);
+    if (item) {
+      ids[r] = item.id;
+    }
+  }
+  return ids;
+}
+
+function specCqBlank(value) {
+  return value == null || value === "" || (Array.isArray(value) && value.length === 0)
+    || (typeof value === "object" && !Array.isArray(value) && Object.values(value).every(specCqBlank));
+}
+
+function specCqEmptyCompletion(completion) {
+  return completion == null || (
+    completion.modelAnswer == null
+    && completion.modelAnswerKo == null
+    && (completion.refinementExpressions ?? []).length === 0
+    && specCqBlank(completion.enrichment)
+  );
+}
+
+function specCqAssertQuestion(item, promptId) {
+  const prompt = SPEC_CQ_PROMPTS[promptId];
+  assert.equal(item.question?.en, prompt.en);
+  assert.equal(item.question?.ko, prompt.ko);
+  assert.equal(item.question?.difficulty, prompt.difficulty);
+}
+
+function specCqPhrasePairs(phrases) {
+  return (phrases ?? []).map((phrase) => [phrase.phrase, phrase.meaningKo]);
+}
+
+// B10: SLOT 미완료 R1
+function specCqAssertR1Item(item) {
+  assert.ok(item, "R1 item is missing");
+  specCqAssertQuestion(item, "prompt-a-1");
+  assert.equal(item.answer, SPEC_CQ_A_SL);
+  assert.equal(item.expectedBehavior, SPEC_CQ_EB.R1);
+  const feedback = item.feedback;
+  assert.deepEqual(feedback.strengths, ["저녁 뒤에 하는 일을 분명히 말했어요."]);
+  assert.equal(feedback.mission?.title, "이유 더하기");
+  assert.equal(feedback.mission?.why, "왜 TV를 보는지가 빠졌어요.");
+  assert.equal(feedback.mission?.instruction, "because로 TV를 보는 이유를 한 문장 더해 보세요.");
+  assert.equal(feedback.mission?.skeletonEn, "I watch TV after dinner because ____.");
+  assert.equal(feedback.mission?.skeletonKo, "저녁을 먹고 ____ 때문에 TV를 봐요.");
+  assert.deepEqual(specCqPhrasePairs(feedback.mission?.suggestedPhrases), [
+    ["it helps me relax", "긴장을 풀어 줘서"],
+    ["I like comedy shows", "예능을 좋아해서"]
+  ]);
+  assert.equal((feedback.languageCorrections ?? []).length, 0);
+  assert.ok(feedback.revisedAnswer == null || feedback.revisedAnswer === "", `revisedAnswer should be empty: ${feedback.revisedAnswer}`);
+  assert.equal(feedback.loopComplete, false);
+}
+
+// B11: LANGUAGE_FIX R2
+function specCqAssertR2Item(item) {
+  assert.ok(item, "R2 item is missing");
+  specCqAssertQuestion(item, "prompt-a-1");
+  assert.equal(item.answer, SPEC_CQ_A_LF);
+  assert.equal(item.expectedBehavior, SPEC_CQ_EB.R2);
+  const feedback = item.feedback;
+  assert.deepEqual(feedback.strengths, ["저녁 뒤에 하는 일과 이유를 함께 말했어요."]);
+  assert.equal(feedback.mission?.title, "동사 형태 고치기");
+  assert.equal(feedback.mission?.instruction, "표시된 두 곳을 고쳐 다시 써 보세요.");
+  assert.ok(feedback.mission?.why == null || feedback.mission.why === "", `why should be empty: ${feedback.mission?.why}`);
+  assert.deepEqual((feedback.languageCorrections ?? []).map((row) => [row.kind, row.before, row.after, row.reason]), [
+    ["GRAMMAR_LOCAL", "take walk", "take a walk", "walk 앞에 a가 필요해요."],
+    ["GRAMMAR_BLOCKING", "it help", "it helps", "it 뒤에는 helps를 써요."]
+  ]);
+  assert.equal(feedback.revisedAnswer, "After dinner, I usually take a walk because it helps me relax.");
+  assert.equal(feedback.loopComplete, false);
+}
+
+// B12: 완료 R3
+function specCqAssertR3Item(item) {
+  assert.ok(item, "R3 item is missing");
+  specCqAssertQuestion(item, "prompt-b-1");
+  assert.equal(item.answer, SPEC_CQ_A_CM2);
+  assert.equal(item.expectedBehavior, SPEC_CQ_EB.R3);
+  const feedback = item.feedback;
+  const expected = specCqPCM2();
+  assert.deepEqual(feedback.strengths, ["blocking focus time으로 대응 방법을 구체적으로 썼어요."]);
+  assert.equal(feedback.loopComplete, true);
+  assert.equal(feedback.completion?.modelAnswer, expected.modelAnswer);
+  assert.equal(feedback.completion?.modelAnswerKo, expected.modelAnswerKo);
+  assert.deepEqual((feedback.completion?.refinementExpressions ?? []).map((row) => [row.expression, row.meaningKo]), [
+    ["carve out time", "시간을 따로 떼어 두다"],
+    ["stay on track", "계획대로 해 나가다"]
+  ]);
+  const enrichment = feedback.completion?.enrichment;
+  assert.equal(enrichment?.focus, "결과 더하기");
+  assert.equal(enrichment?.why, "그렇게 했을 때 무엇이 나아졌는지 쓰면 답이 더 설득력 있어요.");
+  assert.equal(enrichment?.instruction, "집중 시간을 만든 뒤 달라진 점을 한 문장 더해 보세요.");
+  assert.equal(enrichment?.skeletonEn, "As a result, ____.");
+  assert.equal(enrichment?.skeletonKo, "그 결과 ____.");
+  assert.deepEqual(specCqPhrasePairs(enrichment?.suggestedPhrases), [
+    ["I finish my work on time", "제시간에 일을 끝내요"],
+    ["I feel less stressed", "스트레스를 덜 받아요"]
+  ]);
+  assert.ok(specCqBlank(feedback.mission), `mission should be empty: ${JSON.stringify(feedback.mission)}`);
+  assert.equal((feedback.languageCorrections ?? []).length, 0);
+}
+
+// B13: SLOT 미완료 R4
+function specCqAssertR4Item(item) {
+  assert.ok(item, "R4 item is missing");
+  specCqAssertQuestion(item, "prompt-b-1");
+  assert.equal(item.answer, SPEC_CQ_A_SL2);
+  assert.equal(item.expectedBehavior, SPEC_CQ_EB.R4);
+  const feedback = item.feedback;
+  assert.deepEqual(feedback.strengths, ["직장에서 겪는 어려움이 있다는 것부터 말했어요."]);
+  assert.equal(feedback.mission?.title, "어려움 구체적으로 쓰기");
+  assert.equal(feedback.mission?.why, "어떤 어려움인지 알 수 없어요.");
+  assert.equal(feedback.mission?.instruction, "어떤 일이 어려운지 한 가지를 콕 집어 써 보세요.");
+  assert.equal(feedback.mission?.skeletonEn, "One challenge I often face at work is ____.");
+  assert.equal(feedback.mission?.skeletonKo, "직장에서 자주 겪는 어려움 하나는 ____예요.");
+  assert.deepEqual(specCqPhrasePairs(feedback.mission?.suggestedPhrases), [
+    ["too many meetings", "너무 많은 회의"],
+    ["tight deadlines", "빠듯한 마감"]
+  ]);
+  assert.equal(feedback.loopComplete, false);
+}
+
+function specCqSkippedNames(json) {
+  return (json?.skipped ?? []).map((entry) => entry.name);
+}
+
+// ---------------------------------------------------------------- C. 점수 모으기의 준비와 읽기
+
+const SPEC_CQ_KEYS = ["correctionAccuracy", "correctionExplanation", "missionFit", "supportMaterials", "strength", "completionMaterials"];
+const SPEC_CQ_MARKS = ["①", "②", "③", "④", "⑤", "⑥"];
+const SPEC_CQ_S1 = {
+  R1: [null, null, 4, 3, 5, null],
+  R2: [2, 3, 5, 4, 4, null],
+  R3: [null, null, null, null, 3, 4],
+  R4: [null, null, 3, 2, 4, null]
+};
+const SPEC_CQ_S0 = {
+  R1: [null, null, 2, 3, 4, null],
+  R2: [4, 3, 5, 4, 4, null],
+  R3: [null, null, null, null, 3, 1],
+  R4: [null, null, 5, 5, 4, null]
+};
+
+function specCqScores(table, ids) {
+  return Object.entries(table).map(([r, values]) => ({
+    id: ids[r],
+    scores: Object.fromEntries(SPEC_CQ_KEYS.map((key, index) => [key, values[index]])),
+    notes: Object.fromEntries(SPEC_CQ_KEYS.map((key, index) => [key, values[index] == null ? "해당 없음" : `${r} ${key} 근거`]))
+  }));
+}
+
+function specCqWithScore(scores, index, key, value) {
+  const copy = JSON.parse(JSON.stringify(scores));
+  copy[index].scores[key] = value;
+  return copy;
+}
+
+// 표준 출력을 빈 줄로 나눈 묶음(첫 줄이 제목).
+function specCqBlocks(stdout) {
+  return stdout.split(/\r?\n[ \t]*\r?\n/).map((block) => block.split(/\r?\n/).filter((line) => line.trim() !== "")).filter((lines) => lines.length > 0);
+}
+
+function specCqBlock(stdout, keyword) {
+  const block = specCqBlocks(stdout).find((lines) => lines[0].includes(keyword));
+  assert.ok(block, `no "${keyword}" section in:\n${stdout}`);
+  return block;
+}
+
+function specCqKeyOf(line) {
+  const index = SPEC_CQ_KEYS.findIndex((key, keyIndex) => line.includes(SPEC_CQ_MARKS[keyIndex]) || line.includes(key));
+  return index >= 0 ? SPEC_CQ_KEYS[index] : null;
+}
+
+function specCqKeyLine(lines, key) {
+  return lines.find((line) => !/^\s/.test(line) && specCqKeyOf(line) === key);
+}
+
+function specCqIsNumber(token) {
+  return /^[+-]?\d+(\.\d+)?$/.test(token);
+}
+
+// 평균 칸: 값이 있으면 소수 둘째 자리(Q6), 채점 수 0이면 0·NaN이 아닌 "없음".
+function specCqAssertMean(token, expected, context) {
+  if (expected === null) {
+    assert.ok(token != null && !specCqIsNumber(token) && !/nan/i.test(token), `expected no mean, got ${token}: ${context}`);
+  } else {
+    assert.equal(token, expected.toFixed(2), context);
+  }
+}
+
+function specCqOverallLine(stdout, key) {
+  const block = specCqBlock(stdout, "항목별 평균");
+  const line = specCqKeyLine(block.slice(1), key);
+  assert.ok(line, `no ${key} line in:\n${block.join("\n")}`);
+  return line;
+}
+
+function specCqMeanToken(line) {
+  return line.slice(line.indexOf(":") + 1).trim().split(/\s+/)[0];
+}
+
+function specCqCount(line) {
+  const match = line.match(/(\d+)\s*건/);
+  return match ? Number(match[1]) : null;
+}
+
+function specCqDistribution(line) {
+  const tail = line.includes("분포") ? line.slice(line.indexOf("분포")) : line.slice(line.indexOf("건") + 1);
+  const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  for (const match of tail.matchAll(/([1-5])\s*[:=]\s*(\d+)/g)) {
+    distribution[match[1]] = Number(match[2]);
+  }
+  return distribution;
+}
+
+// C2: [채점 수, 평균, 분포]
+const SPEC_CQ_C2 = {
+  correctionAccuracy: [1, 2, { 2: 1 }],
+  correctionExplanation: [1, 3, { 3: 1 }],
+  missionFit: [3, 4, { 3: 1, 4: 1, 5: 1 }],
+  supportMaterials: [3, 3, { 2: 1, 3: 1, 4: 1 }],
+  strength: [4, 4, { 3: 1, 4: 2, 5: 1 }],
+  completionMaterials: [1, 4, { 4: 1 }]
+};
+
+function specCqAssertOverall(stdout, expected) {
+  for (const [key, [count, mean, distribution]] of Object.entries(expected)) {
+    const line = specCqOverallLine(stdout, key);
+    assert.equal(specCqCount(line), count, `${key} count: ${line}`);
+    specCqAssertMean(specCqMeanToken(line), mean, `${key} mean: ${line}`);
+    if (distribution) {
+      assert.deepEqual(specCqDistribution(line), { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, ...distribution }, `${key} distribution: ${line}`);
+    }
+  }
+}
+
+// C3 (Q5: 그룹마다 루브릭 항목별 평균, null은 없음)
+const SPEC_CQ_C3 = {
+  I: [2, 3, 4.5, 3.5, 4.5, null],
+  B: [null, null, 3, 2, 3.5, 4]
+};
+// C4 (Q4: mission.focusType, 완료는 COMPLETE)
+const SPEC_CQ_C4 = {
+  SLOT: [null, null, 3.5, 2.5, 4.5, null],
+  LANGUAGE_FIX: [2, 3, 5, 4, 4, null],
+  COMPLETE: [null, null, null, null, 3, 4]
+};
+
+function specCqAssertGroups(stdout, keyword, expected) {
+  const block = specCqBlock(stdout, keyword);
+  for (const [group, values] of Object.entries(expected)) {
+    const line = block.slice(1).find((candidate) => candidate.startsWith(`${group} `) || candidate.startsWith(`${group}(`) || candidate.startsWith(`${group}:`));
+    assert.ok(line, `no ${group} line in:\n${block.join("\n")}`);
+    SPEC_CQ_KEYS.forEach((key, index) => {
+      const match = line.match(new RegExp(`${SPEC_CQ_MARKS[index]}\\s*(\\S+)`)) ?? line.match(new RegExp(`${key}\\s*[:=]?\\s*(\\S+)`));
+      assert.ok(match, `no ${key} value for ${group}: ${line}`);
+      specCqAssertMean(match[1], values[index], `${keyword} ${group} ${key}: ${line}`);
+    });
+  }
+}
+
+// 낮은 점수 목록: 루브릭 항목마다 그 아래 들여 쓴 줄들.
+function specCqLowLists(stdout) {
+  const block = specCqBlock(stdout, "낮은");
+  const lists = Object.fromEntries(SPEC_CQ_KEYS.map((key) => [key, []]));
+  let current = null;
+  for (const line of block.slice(1)) {
+    if (!/^\s/.test(line)) {
+      current = specCqKeyOf(line);
+      continue;
+    }
+    if (current) {
+      lists[current].push(line);
+    }
+  }
+  return lists;
+}
+
+// C5 (Q7: 2점 이하를 scores.json 순서대로 모두). S1에서는 cA의 R2(2점)와 sM의 R4(2점)만 해당한다.
+const SPEC_CQ_C5_Q7 = {
+  correctionAccuracy: [["R2", "R2 correctionAccuracy 근거"]],
+  supportMaterials: [["R4", "R4 supportMaterials 근거"]]
+};
+
+function specCqAssertLow(stdout, ids, expected) {
+  const lists = specCqLowLists(stdout);
+  for (const key of SPEC_CQ_KEYS) {
+    const expectedRows = expected[key] ?? [];
+    assert.equal(lists[key].length, expectedRows.length, `${key} low list: ${JSON.stringify(lists[key])}\n${stdout}`);
+    expectedRows.forEach(([r, note], index) => {
+      assert.ok(lists[key][index].includes(ids[r]), `${key} low #${index + 1} should be ${r} (${ids[r]}): ${lists[key][index]}`);
+      if (note) {
+        assert.ok(lists[key][index].includes(note), `${key} low #${index + 1} should carry the note "${note}": ${lists[key][index]}`);
+      }
+    });
+  }
+}
+
+// "같은 id에서 2점 이상 달라진 것" 아래 들여 쓴 줄들.
+function specCqChangedLines(stdout) {
+  const lines = stdout.split(/\r?\n/);
+  const start = lines.findIndex((line) => line.includes("2점 이상"));
+  assert.ok(start >= 0, `no "2점 이상" list in:\n${stdout}`);
+  const rows = [];
+  for (const line of lines.slice(start + 1)) {
+    if (line.trim() === "" || !/^\s/.test(line)) {
+      break;
+    }
+    rows.push(line);
+  }
+  return rows;
+}
+
+function specCqChangedMatches(line, id, key, before, after) {
+  const mark = SPEC_CQ_MARKS[SPEC_CQ_KEYS.indexOf(key)];
+  return line.includes(id)
+    && (line.includes(mark) || line.includes(key))
+    && new RegExp(`(^|[^\\d.])${before}\\s*(→|->)\\s*${after}([^\\d.]|$)`).test(line);
+}
+
+function specCqAssertChanged(stdout, ids, expectedTuples) {
+  const rows = specCqChangedLines(stdout);
+  assert.equal(rows.length, expectedTuples.length, `changed rows:\n${rows.join("\n")}\n---\n${stdout}`);
+  for (const [r, key, before, after] of expectedTuples) {
+    const matched = rows.filter((row) => specCqChangedMatches(row, ids[r], key, before, after));
+    assert.equal(matched.length, 1, `expected one row for (${r}, ${key}, ${before}→${after}) in:\n${rows.join("\n")}`);
+  }
+  return rows;
+}
+
+function specCqAssertRejected(out, needle) {
+  assert.notEqual(out.code, 0, out.detail);
+  if (needle) {
+    assert.ok(out.stderr.includes(needle), `stderr should name ${needle}\n${out.detail}`);
+  }
+  assert.doesNotMatch(out.stderr, /\n\s+at .+:\d+:\d+/, `should be a reported format error, not a crash\n${out.detail}`);
+}
+
+// ---------------------------------------------------------------- A. 리포트 스냅숏의 잘한 점
+
+test("[spec] content A1 the report snapshot keeps the response strengths", async () => {
+  const { report, detail } = await specCqRunCheck(
+    [
+      specCqCase("spec content a1 language fix", "prompt-a-1", SPEC_CQ_A_LF, ["LANGUAGE_FIX"], SPEC_CQ_EB.R2),
+      specCqCase("spec content a1 complete", "prompt-a-1", SPEC_CQ_A_CM, ["COMPLETE"], "완성 답")
+    ],
+    specCqByAnswer({ [SPEC_CQ_A_LF]: specCqOk(specCqPLF()), [SPEC_CQ_A_CM]: specCqOk(specCqPCM()) })
+  );
+  assert.ok(report, detail);
+  const byAnswer = Object.fromEntries(report.results.map((result) => [result.answer, result]));
+  assert.equal(byAnswer[SPEC_CQ_A_LF].pass, true, detail);
+  assert.equal(byAnswer[SPEC_CQ_A_CM].pass, true, detail);
+  assert.deepEqual(byAnswer[SPEC_CQ_A_LF].actual.strengths, ["저녁 뒤에 하는 일과 이유를 함께 말했어요."]);
+  assert.deepEqual(byAnswer[SPEC_CQ_A_CM].actual.strengths, ["calms my mind로 이유를 구체적으로 썼어요."]);
+});
+
+test("[spec] content A2 a failed case keeps strengths in its result and failed snapshot", async () => {
+  const { report, detail } = await specCqRunCheck(
+    [specCqCase("spec content a2 slot as language fix", "prompt-a-1", SPEC_CQ_A_SL, ["LANGUAGE_FIX"], SPEC_CQ_EB.R1)],
+    specCqByAnswer({ [SPEC_CQ_A_SL]: specCqOk(specCqPSL()) }),
+    { passPayloads: false }
+  );
+  assert.ok(report, detail);
+  assert.equal(report.results[0].pass, false, detail);
+  assert.deepEqual(report.results[0].actual.strengths, ["저녁 뒤에 하는 일을 분명히 말했어요."]);
+  assert.deepEqual(report.failedSnapshots[0].actual.strengths, ["저녁 뒤에 하는 일을 분명히 말했어요."]);
+});
+
+test("[spec] content A3 a passing case without --include-pass-payloads still has no snapshot", async () => {
+  const { report, detail } = await specCqRunCheck(
+    [specCqCase("spec content a3 language fix", "prompt-a-1", SPEC_CQ_A_LF, ["LANGUAGE_FIX"], SPEC_CQ_EB.R2)],
+    specCqByAnswer({ [SPEC_CQ_A_LF]: specCqOk(specCqPLF()) }),
+    { passPayloads: false }
+  );
+  assert.ok(report, detail);
+  assert.equal(report.results[0].pass, true, detail);
+  assert.equal(report.results[0].actual, null);
+});
+
+test("[spec] content A4 the other snapshot keys and the report keys stay the same", async () => {
+  const { report, detail } = await specCqRunCheck(
+    [
+      specCqCase("spec content a4 language fix", "prompt-a-1", SPEC_CQ_A_LF, ["LANGUAGE_FIX"], SPEC_CQ_EB.R2),
+      specCqCase("spec content a4 complete", "prompt-a-1", SPEC_CQ_A_CM, ["COMPLETE"], "완성 답"),
+      specCqCase("spec content a4 slot", "prompt-a-1", SPEC_CQ_A_SL, ["SLOT"], SPEC_CQ_EB.R1),
+      specCqCase("spec content a4 minimal", "prompt-a-1", SPEC_CQ_A_MIN, ["COMPLETE"], "최소 응답")
+    ],
+    specCqByAnswer({
+      [SPEC_CQ_A_LF]: specCqOk(specCqPLF()),
+      [SPEC_CQ_A_CM]: specCqOk(specCqPCM()),
+      [SPEC_CQ_A_SL]: specCqOk(specCqPSL()),
+      [SPEC_CQ_A_MIN]: specCqOk(specCqPMIN())
+    })
+  );
+  assert.ok(report, detail);
+  assert.deepEqual(Object.keys(report), SPEC_FU_G2_TOP);
+  assert.deepEqual(Object.keys(report.results[0]), SPEC_FU_G2_RESULT);
+  for (const result of report.results) {
+    const { strengths: _strengths, ...withoutStrengths } = result.actual;
+    assert.deepEqual(withoutStrengths, SPEC_CQ_APPENDIX[result.answer], result.answer);
+    assert.deepEqual(Object.keys(result.actual).sort(), [...SPEC_CQ_APPENDIX_KEYS, "strengths"].sort(), result.answer);
+  }
+});
+
+test("[spec] content A5 scoring does not depend on strengths", async () => {
+  const slotCase = [specCqCase("spec content a5 slot", "prompt-a-1", SPEC_CQ_A_SL, ["SLOT"], SPEC_CQ_EB.R1)];
+  const first = await specCqRunCheck(slotCase, specCqByAnswer({ [SPEC_CQ_A_SL]: specCqOk(specCqPSL()) }));
+  const second = await specCqRunCheck(slotCase, specCqByAnswer({ [SPEC_CQ_A_SL]: specCqOk({ ...specCqPSL(), strengths: ["가", "나"] }) }));
+  assert.ok(first.report, first.detail);
+  assert.ok(second.report, second.detail);
+  const pick = (result) => ({
+    pass: result.pass,
+    failures: result.failures.map((failure) => [failure.code, failure.message]),
+    warnings: result.warnings,
+    missionKind: result.missionKind,
+    targetSlot: result.targetSlot,
+    hasScaffold: result.hasScaffold,
+    hasComparison: result.hasComparison,
+    fixPointCount: result.fixPointCount
+  });
+  assert.deepEqual(pick(second.report.results[0]), pick(first.report.results[0]));
+});
+
+test("[spec] content A6 a failed request still has request_failed and no snapshot", async () => {
+  const { report, detail } = await specCqRunCheck(
+    [specCqCase(SPEC_CQ_NAMES.R5, "prompt-a-1", SPEC_CQ_A_FAIL, ["SLOT"], SPEC_CQ_EB.R5)],
+    () => SPEC_CQ_FAIL_500
+  );
+  assert.ok(report, detail);
+  assert.equal(report.results[0].failures[0].code, "request_failed");
+  assert.equal(report.results[0].actual, null);
+});
+
+// 결정 Q11: 배열, 앞 3개까지, 공백 정리·500자(다른 칸과 같은 방식), 없으면 빈 배열, completionMessage 뒤.
+test("[spec] content Q11 snapshot strengths keep the first three, normalized and limited like other fields", async () => {
+  const longText = "a".repeat(5000);
+  const { report, detail } = await specCqRunCheck(
+    [specCqCase("spec content q11 limits", "prompt-a-1", SPEC_CQ_A_LF, ["LANGUAGE_FIX"], SPEC_CQ_EB.R2)],
+    specCqByAnswer({
+      [SPEC_CQ_A_LF]: specCqOk({
+        ...specCqPLF(),
+        completionMessage: longText,
+        strengths: ["  잘   썼어요\n오늘도  ", longText, "셋째", "넷째"]
+      })
+    })
+  );
+  assert.ok(report, detail);
+  const actual = report.results[0].actual;
+  assert.equal(actual.strengths.length, 3);
+  assert.equal(actual.strengths[0], "잘 썼어요 오늘도");
+  assert.equal(actual.strengths[1], actual.completionMessage, "same 500-char limit as completionMessage");
+  assert.ok(actual.strengths[1].length <= 500, `got ${actual.strengths[1].length} chars`);
+  assert.equal(actual.strengths[2], "셋째");
+});
+
+test("[spec] content Q11 missing strengths become an empty array placed after completionMessage", async () => {
+  const answers = ["I relax after dinner.", "I relax after dinner with tea.", "I relax after dinner with music."];
+  const { strengths: _omit, ...withoutStrengths } = specCqPLF();
+  const { report, detail } = await specCqRunCheck(
+    answers.map((answer, index) => specCqCase(`spec content q11 missing ${index + 1}`, "prompt-a-1", answer, ["LANGUAGE_FIX", "SLOT", "COMPLETE"], "빈 잘한 점")),
+    specCqByAnswer({
+      [answers[0]]: specCqOk(withoutStrengths),
+      [answers[1]]: specCqOk({ ...specCqPLF(), strengths: null }),
+      [answers[2]]: specCqOk({ ...specCqPLF(), strengths: [] })
+    })
+  );
+  assert.ok(report, detail);
+  for (const result of report.results) {
+    assert.deepEqual(result.actual.strengths, [], result.answer);
+    const keys = Object.keys(result.actual);
+    assert.equal(keys.indexOf("strengths"), keys.indexOf("completionMessage") + 1, keys.join(","));
+  }
+});
+
+// 결정 04: 추천 표현의 설명·예문은 응답 이름(guidance·example)으로 오고, 스냅숏 키(usageTipKo·exampleEn)는 그대로.
+test("[spec] content 04 refinement guidance and example from the response names reach the snapshot and the review item", async () => {
+  const cases = [specCqCase("spec content 04 complete", "prompt-b-1", SPEC_CQ_A_CM2, ["COMPLETE"], SPEC_CQ_EB.R3)];
+  const payload = {
+    ...specCqPCM2(),
+    refinementExpressions: [
+      { expression: "carve out time", meaningKo: "시간을 따로 떼어 두다", guidance: "일정을 일부러 비워 둘 때 써요.", example: "I carve out time for deep work.", source: "MODEL_ANSWER" }
+    ]
+  };
+  const { report, reportText, detail } = await specCqRunCheck(cases, specCqByAnswer({ [SPEC_CQ_A_CM2]: specCqOk(payload) }));
+  assert.ok(report, detail);
+  assert.deepEqual(report.results[0].actual.refinementExpressions, [
+    { expression: "carve out time", meaningKo: "시간을 따로 떼어 두다", usageTipKo: "일정을 일부러 비워 둘 때 써요.", exampleEn: "I carve out time for deep work.", source: "MODEL_ANSWER" }
+  ]);
+  const exported = await specCqExport({ reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  const completionText = JSON.stringify(specCqItems(exported.json)[0]?.feedback?.completion ?? null);
+  assert.ok(completionText.includes("일정을 일부러 비워 둘 때 써요."), completionText);
+  assert.ok(completionText.includes("I carve out time for deep work."), completionText);
+});
+
+// 결정 Q12: 단계 결과에도 strengths, export는 첫 답만 항목으로.
+test("[spec] content Q12 followUp steps keep strengths and export makes one item from the first answer", async () => {
+  const rewrite = "After dinner I watch TV because it helps me relax.";
+  const cases = [specCqCase("spec content q12 followup", "prompt-a-1", SPEC_CQ_A_SL, ["SLOT"], SPEC_CQ_EB.R1, {
+    followUps: [{ answer: rewrite, expectedMissionKinds: ["COMPLETE"] }]
+  })];
+  const { report, reportText, detail } = await specCqRunCheck(cases, specCqByAnswer({
+    [SPEC_CQ_A_SL]: specCqOk({ ...specCqPSL(), sessionId: "spec-s-q12" }),
+    [rewrite]: specCqOk({ ...specCqPCM(), sessionId: "spec-s-q12", strengths: ["because로 이유를 붙였어요."] })
+  }));
+  assert.ok(report, detail);
+  assert.equal(report.results.length, 1, detail);
+  const steps = report.results[0].steps ?? [];
+  assert.equal(steps.length, 2, detail);
+  assert.deepEqual(steps[0].actual.strengths, ["저녁 뒤에 하는 일을 분명히 말했어요."]);
+  assert.deepEqual(steps[1].actual.strengths, ["because로 이유를 붙였어요."]);
+
+  const exported = await specCqExport({ reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  const items = specCqItems(exported.json);
+  assert.equal(items.length, 1, exported.jsonText);
+  assert.equal(items[0].answer, SPEC_CQ_A_SL);
+  assert.deepEqual(items[0].feedback.strengths, ["저녁 뒤에 하는 일을 분명히 말했어요."]);
+  assert.equal(items[0].feedback.loopComplete, false);
+});
+
+// ---------------------------------------------------------------- B. 채점 묶음 만들기
+
+test("[spec] content B1 export writes review-items.json and review-items.md", async () => {
+  const { exported } = await specCqPipeline();
+  assert.equal(exported.code, 0, exported.detail);
+  assert.ok(exported.json, "review-items.json should be JSON");
+  assert.equal(typeof exported.md, "string");
+  assert.ok(exported.md.length > 0, "review-items.md should not be empty");
+});
+
+test("[spec] content Q2 review-items.json is { source, itemCount, skipped, items }", async () => {
+  const { exported } = await specCqPipeline();
+  assert.deepEqual(Object.keys(exported.json), ["source", "itemCount", "skipped", "items"]);
+  assert.equal(exported.json.itemCount, 4);
+  assert.equal(exported.json.items.length, 4);
+  for (const entry of exported.json.skipped) {
+    assert.deepEqual(Object.keys(entry).sort(), ["name", "reason"]);
+  }
+});
+
+test("[spec] content B2 a failed request is not a review item", async () => {
+  const { exported } = await specCqPipeline();
+  const items = specCqItems(exported.json);
+  assert.equal(items.length, 4);
+  assert.deepEqual(items.map((item) => item.answer).sort(), [SPEC_CQ_A_SL, SPEC_CQ_A_LF, SPEC_CQ_A_CM2, SPEC_CQ_A_SL2].sort());
+  assert.equal(items.some((item) => item.answer === SPEC_CQ_A_FAIL), false);
+});
+
+test("[spec] content B3 a failed request is listed apart from the items", async () => {
+  const { exported } = await specCqPipeline();
+  const skipped = specCqSkippedNames(exported.json);
+  assert.ok(skipped.includes(SPEC_CQ_NAMES.R5), JSON.stringify(exported.json.skipped));
+  for (const r of ["R1", "R2", "R3", "R4"]) {
+    assert.equal(skipped.includes(SPEC_CQ_NAMES[r]), false, `${r} should not be skipped`);
+  }
+});
+
+test("[spec] content B4 B13 a graded failure is still a review item", async () => {
+  const { check, exported } = await specCqPipeline();
+  const r4Result = check.report.results.find((result) => result.answer === SPEC_CQ_A_SL2);
+  assert.equal(r4Result.pass, false);
+  assert.ok(r4Result.failures.some((failure) => failure.code === "wrong_mission_kind"), JSON.stringify(r4Result.failures));
+  specCqAssertR4Item(specCqItemByAnswer(exported.json, SPEC_CQ_A_SL2));
+});
+
+test("[spec] content B5 Q15 ids are the case names, unique and the same on a second export", async () => {
+  const { check, cases, exported, ids } = await specCqPipeline();
+  const items = specCqItems(exported.json);
+  assert.equal(new Set(items.map((item) => item.id)).size, items.length);
+  assert.deepEqual(ids, { R1: SPEC_CQ_NAMES.R1, R2: SPEC_CQ_NAMES.R2, R3: SPEC_CQ_NAMES.R3, R4: SPEC_CQ_NAMES.R4 });
+  const again = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(again.code, 0, again.detail);
+  assert.deepEqual(specCqIds(again.json), ids);
+});
+
+test("[spec] content B6 another run of the same cases gives the same ids", async () => {
+  const { ids } = await specCqPipeline();
+  const cases = specCqRaCases();
+  const other = (payload) => specCqOk({ ...payload, strengths: ["다른 실행"], summary: "다른 실행의 요약" });
+  const check = await specCqRunCheck(cases, specCqByAnswer({
+    [SPEC_CQ_A_SL]: other(specCqPSL()),
+    [SPEC_CQ_A_LF]: SPEC_CQ_FAIL_500,
+    [SPEC_CQ_A_CM2]: other(specCqPCM2()),
+    [SPEC_CQ_A_SL2]: other(specCqPSL2()),
+    [SPEC_CQ_A_FAIL]: SPEC_CQ_FAIL_500
+  }));
+  assert.ok(check.reportText, check.detail);
+  const exported = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  assert.equal(specCqItems(exported.json).length, 3);
+  const otherIds = specCqIds(exported.json);
+  assert.equal(otherIds.R1, ids.R1);
+  assert.equal(otherIds.R3, ids.R3);
+  assert.equal(otherIds.R4, ids.R4);
+  const skipped = specCqSkippedNames(exported.json);
+  assert.ok(skipped.includes(SPEC_CQ_NAMES.R2), JSON.stringify(exported.json.skipped));
+  assert.ok(skipped.includes(SPEC_CQ_NAMES.R5), JSON.stringify(exported.json.skipped));
+});
+
+test("[spec] content B7 Q15 repeated executions of one case get different ids", async () => {
+  const cases = [specCqRaCases()[0]];
+  const check = await specCqRunCheck(cases, specCqRaResponder(), { extraArgs: ["--repeat", "2"] });
+  assert.ok(check.report, check.detail);
+  assert.deepEqual(check.report.results.map((result) => [result.name, result.repetition]), [[SPEC_CQ_NAMES.R1, 1], [SPEC_CQ_NAMES.R1, 2]]);
+  const exported = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  assert.deepEqual(specCqItems(exported.json).map((item) => item.id), [SPEC_CQ_NAMES.R1, `${SPEC_CQ_NAMES.R1} (2)`]);
+});
+
+test("[spec] content B8 Q15 two cases with the same name get different ids", async () => {
+  const cases = [
+    specCqCase("spec same name", "prompt-a-1", SPEC_CQ_A_SL, ["SLOT"], SPEC_CQ_EB.R1),
+    specCqCase("spec same name", "prompt-b-1", SPEC_CQ_A_SL2, ["LANGUAGE_FIX"], SPEC_CQ_EB.R4)
+  ];
+  const check = await specCqRunCheck(cases, specCqRaResponder());
+  assert.ok(check.reportText, check.detail);
+  const exported = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  const items = specCqItems(exported.json);
+  assert.equal(items.length, 2);
+  assert.deepEqual(items.map((item) => item.id), ["spec same name", "spec same name (2)"]);
+});
+
+test("[spec] content B9 names that differ only in symbols and case get different ids", async () => {
+  const cases = [
+    specCqCase("Spec: Case A!", "prompt-a-1", SPEC_CQ_A_SL, ["SLOT"], SPEC_CQ_EB.R1),
+    specCqCase("spec case a", "prompt-a-1", SPEC_CQ_A_LF, ["LANGUAGE_FIX"], SPEC_CQ_EB.R2)
+  ];
+  const check = await specCqRunCheck(cases, specCqRaResponder());
+  assert.ok(check.reportText, check.detail);
+  const exported = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  const ids = specCqItems(exported.json).map((item) => item.id);
+  assert.equal(ids.length, 2);
+  assert.notEqual(ids[0], ids[1]);
+  assert.deepEqual(ids, ["Spec: Case A!", "spec case a"]);
+});
+
+test("[spec] content B10 the slot item R1 shows the question, answer, strength and mission", async () => {
+  const { exported } = await specCqPipeline();
+  specCqAssertR1Item(specCqItemByAnswer(exported.json, SPEC_CQ_A_SL));
+});
+
+test("[spec] content B11 the language fix item R2 shows the correction rows and the revised answer", async () => {
+  const { exported } = await specCqPipeline();
+  specCqAssertR2Item(specCqItemByAnswer(exported.json, SPEC_CQ_A_LF));
+});
+
+test("[spec] content B12 the completed item R3 shows the completion materials", async () => {
+  const { exported } = await specCqPipeline();
+  specCqAssertR3Item(specCqItemByAnswer(exported.json, SPEC_CQ_A_CM2));
+});
+
+test("[spec] content B14 unfinished items carry no completion materials", async () => {
+  const { exported } = await specCqPipeline();
+  const r1 = specCqItemByAnswer(exported.json, SPEC_CQ_A_SL);
+  const r1Text = JSON.stringify(r1);
+  assert.equal(r1Text.includes("After dinner, I watch TV because it helps me unwind."), false, r1Text);
+  assert.equal(r1Text.includes("저녁을 먹은 뒤에는 긴장을 풀 수 있어서 TV를 봐요."), false, r1Text);
+  assert.equal(r1Text.includes("unwind"), false, r1Text);
+  for (const answer of [SPEC_CQ_A_SL, SPEC_CQ_A_LF, SPEC_CQ_A_SL2]) {
+    const item = specCqItemByAnswer(exported.json, answer);
+    assert.ok(specCqEmptyCompletion(item.feedback.completion), `${answer}: ${JSON.stringify(item.feedback.completion)}`);
+  }
+});
+
+test("[spec] content B15 Q2 review-items.md has each item and the skipped cases at the end", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const md = exported.md;
+  const starts = ["R1", "R2", "R3", "R4"].map((r) => [r, md.indexOf(ids[r])]);
+  for (const [r, start] of starts) {
+    assert.ok(start >= 0, `${r} id is not in the md`);
+  }
+  const sorted = [...starts].sort((left, right) => left[1] - right[1]);
+  const section = Object.fromEntries(sorted.map(([r, start], index) => [r, md.slice(start, sorted[index + 1]?.[1] ?? md.length)]));
+  const common = {
+    R1: ["prompt-a-1", SPEC_CQ_A_SL, SPEC_CQ_EB.R1, "저녁 뒤에 하는 일을 분명히 말했어요."],
+    R2: ["prompt-a-1", SPEC_CQ_A_LF, SPEC_CQ_EB.R2, "저녁 뒤에 하는 일과 이유를 함께 말했어요."],
+    R3: ["prompt-b-1", SPEC_CQ_A_CM2, SPEC_CQ_EB.R3, "blocking focus time으로 대응 방법을 구체적으로 썼어요."],
+    R4: ["prompt-b-1", SPEC_CQ_A_SL2, SPEC_CQ_EB.R4, "직장에서 겪는 어려움이 있다는 것부터 말했어요."]
+  };
+  const extra = {
+    R1: ["because로 TV를 보는 이유를 한 문장 더해 보세요.", "I watch TV after dinner because ____.", "it helps me relax"],
+    R2: ["take walk", "take a walk", "walk 앞에 a가 필요해요.", "After dinner, I usually take a walk because it helps me relax."],
+    R3: [specCqPCM2().modelAnswer, specCqPCM2().modelAnswerKo, "carve out time", "결과 더하기"],
+    R4: ["어떤 일이 어려운지 한 가지를 콕 집어 써 보세요."]
+  };
+  for (const r of ["R1", "R2", "R3", "R4"]) {
+    const [promptId, answer, expectedBehavior, strength] = common[r];
+    for (const text of [SPEC_CQ_PROMPTS[promptId].en, answer, expectedBehavior, strength, ...extra[r]]) {
+      assert.ok(section[r].includes(text), `${r} section should include "${text}":\n${section[r]}`);
+    }
+  }
+  const skippedAt = md.indexOf("뺀 케이스");
+  assert.ok(skippedAt >= 0, "md should have the skipped-case section");
+  assert.ok(md.indexOf(SPEC_CQ_NAMES.R5, skippedAt) > skippedAt, "the failed request should be listed in the skipped-case section");
+});
+
+// 결정 Q1: 질문 문장·난이도는 --cases의 케이스 이름으로. 없거나 맞는 케이스가 없으면 null.
+test("[spec] content Q1 without --cases or a matching case the question text and difficulty are null", async () => {
+  const { check } = await specCqPipeline();
+  const withoutCases = await specCqExport({ reportText: check.reportText });
+  assert.equal(withoutCases.code, 0, withoutCases.detail);
+  const unmatched = await specCqExport({
+    reportText: check.reportText,
+    cases: specCqRaCases().map((testCase) => ({ ...testCase, name: `${testCase.name} (other file)` }))
+  });
+  assert.equal(unmatched.code, 0, unmatched.detail);
+  for (const exported of [withoutCases, unmatched]) {
+    const items = specCqItems(exported.json);
+    assert.equal(items.length, 4);
+    for (const item of items) {
+      assert.equal(item.question?.en ?? null, null, JSON.stringify(item.question));
+      assert.equal(item.question?.ko ?? null, null, JSON.stringify(item.question));
+      assert.equal(item.question?.difficulty ?? null, null, JSON.stringify(item.question));
+    }
+  }
+});
+
+// 결정 Q13: --include-pass-payloads 없이 만든 리포트의 통과 케이스는 skipped(reason "no payload snapshot").
+test("[spec] content Q13 passing cases without a snapshot are skipped as no payload snapshot", async () => {
+  const cases = specCqRaCases();
+  const check = await specCqRunCheck(cases, specCqRaResponder(), { passPayloads: false });
+  assert.ok(check.reportText, check.detail);
+  const exported = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  assert.deepEqual(specCqItems(exported.json).map((item) => item.answer), [SPEC_CQ_A_SL2]);
+  const skipped = exported.json.skipped ?? [];
+  for (const r of ["R1", "R2", "R3"]) {
+    const entry = skipped.find((candidate) => candidate.name === SPEC_CQ_NAMES[r]);
+    assert.ok(entry, `${r} should be skipped: ${JSON.stringify(skipped)}`);
+    assert.equal(entry.reason, "no payload snapshot");
+  }
+  assert.ok(skipped.some((candidate) => candidate.name === SPEC_CQ_NAMES.R5), JSON.stringify(skipped));
+});
+
+// ---------------------------------------------------------------- C. 점수 모으기
+
+test("[spec] content C1 C2 well-formed scores with many nulls summarize per rubric item", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const out = await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids), itemsText: exported.jsonText });
+  assert.equal(out.code, 0, out.detail);
+  specCqAssertOverall(out.stdout, SPEC_CQ_C2);
+});
+
+test("[spec] content C3 Q5 averages per difficulty for each rubric item", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const out = await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids), itemsText: exported.jsonText });
+  assert.equal(out.code, 0, out.detail);
+  specCqAssertGroups(out.stdout, "난이도", SPEC_CQ_C3);
+});
+
+test("[spec] content C4 Q4 Q5 averages per mission kind for each rubric item", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const out = await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids), itemsText: exported.jsonText });
+  assert.equal(out.code, 0, out.detail);
+  specCqAssertGroups(out.stdout, "미션 종류", SPEC_CQ_C4);
+});
+
+test("[spec] content C5 Q7 low scores list every score of 2 or less with its id and note", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const out = await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids), itemsText: exported.jsonText });
+  assert.equal(out.code, 0, out.detail);
+  specCqAssertLow(out.stdout, ids, SPEC_CQ_C5_Q7);
+});
+
+test("[spec] content Q7 low scores keep the scores.json order, not the score order", async () => {
+  const { ids } = await specCqPipeline();
+  const scores = specCqScores({
+    R4: [null, null, 2, 3, 4, null],
+    R2: [3, 3, 4, 4, 4, null],
+    R1: [null, null, 1, 3, 4, null],
+    R3: [null, null, null, null, 3, 4]
+  }, ids);
+  const out = await specCqSummarize({ scores });
+  assert.equal(out.code, 0, out.detail);
+  specCqAssertLow(out.stdout, ids, { missionFit: [["R4", "R4 missionFit 근거"], ["R1", "R1 missionFit 근거"]] });
+});
+
+test("[spec] content C6 not applicable is not a low score", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const out = await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids), itemsText: exported.jsonText });
+  assert.equal(out.code, 0, out.detail);
+  const lists = specCqLowLists(out.stdout);
+  const absent = {
+    correctionAccuracy: ["R1", "R3", "R4"],
+    completionMaterials: ["R1", "R2", "R4"],
+    missionFit: ["R3"],
+    supportMaterials: ["R3"]
+  };
+  for (const [key, rows] of Object.entries(absent)) {
+    for (const r of rows) {
+      assert.equal(lists[key].some((line) => line.includes(ids[r])), false, `${key} should not list ${r}: ${lists[key].join(" | ")}`);
+    }
+  }
+});
+
+test("[spec] content C7 without review items the per-item summary is the same", async () => {
+  const { ids } = await specCqPipeline();
+  const out = await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids) });
+  assert.equal(out.code, 0, out.detail);
+  specCqAssertOverall(out.stdout, SPEC_CQ_C2);
+  specCqAssertLow(out.stdout, ids, SPEC_CQ_C5_Q7);
+  const lists = specCqLowLists(out.stdout);
+  assert.equal(lists.correctionAccuracy.some((line) => [ids.R1, ids.R3, ids.R4].some((id) => line.includes(id))), false);
+  assert.equal(lists.completionMaterials.some((line) => [ids.R1, ids.R2, ids.R4].some((id) => line.includes(id))), false);
+});
+
+test("[spec] content C8 a rubric item with no scores shows no mean instead of 0 or NaN", async () => {
+  const { ids } = await specCqPipeline();
+  const { R2: _dropR2, ...withoutR2 } = SPEC_CQ_S1;
+  const out = await specCqSummarize({ scores: specCqScores(withoutR2, ids) });
+  assert.equal(out.code, 0, out.detail);
+  assert.doesNotMatch(out.stdout, /NaN/);
+  specCqAssertOverall(out.stdout, {
+    correctionAccuracy: [0, null, null],
+    correctionExplanation: [0, null, null]
+  });
+  const lists = specCqLowLists(out.stdout);
+  assert.deepEqual(lists.correctionAccuracy, []);
+  assert.deepEqual(lists.correctionExplanation, []);
+});
+
+// C9 (Q10: --compare가 앞, --scores가 뒤, 차이는 뒤 − 앞): [앞 평균, 뒤 평균, 차이]
+const SPEC_CQ_C9 = {
+  correctionAccuracy: [4, 2, -2],
+  correctionExplanation: [3, 3, 0],
+  missionFit: [4, 4, 0],
+  supportMaterials: [4, 3, -1],
+  strength: [3.75, 4, 0.25],
+  completionMaterials: [1, 4, 3]
+};
+
+test("[spec] content C9 Q10 --compare shows each rubric item's mean before, after and the difference", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const out = await specCqSummarize({
+    scores: specCqScores(SPEC_CQ_S1, ids),
+    itemsText: exported.jsonText,
+    compare: specCqScores(SPEC_CQ_S0, ids)
+  });
+  assert.equal(out.code, 0, out.detail);
+  const block = specCqBlock(out.stdout, "비교");
+  for (const [key, [before, after, diff]] of Object.entries(SPEC_CQ_C9)) {
+    const line = specCqKeyLine(block.slice(1), key);
+    assert.ok(line, `no ${key} line in:\n${block.join("\n")}`);
+    const numbers = line.slice(line.indexOf(":") + 1).match(/[+-]?\d+(?:\.\d+)?/g) ?? [];
+    assert.equal(numbers[0], before.toFixed(2), `${key} before: ${line}`);
+    assert.equal(numbers[1], after.toFixed(2), `${key} after: ${line}`);
+    if (diff > 0) {
+      assert.equal(numbers[2], `+${diff.toFixed(2)}`, `${key} diff: ${line}`);
+    } else if (diff < 0) {
+      assert.equal(numbers[2], diff.toFixed(2), `${key} diff: ${line}`);
+    } else {
+      assert.ok(["0.00", "+0.00"].includes(numbers[2]), `${key} diff should be 0: ${line}`);
+    }
+  }
+});
+
+test("[spec] content C10 --compare lists the same-id cells that moved by 2 or more", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const out = await specCqSummarize({
+    scores: specCqScores(SPEC_CQ_S1, ids),
+    itemsText: exported.jsonText,
+    compare: specCqScores(SPEC_CQ_S0, ids)
+  });
+  assert.equal(out.code, 0, out.detail);
+  const rows = specCqAssertChanged(out.stdout, ids, [
+    ["R1", "missionFit", 2, 4],
+    ["R2", "correctionAccuracy", 4, 2],
+    ["R3", "completionMaterials", 1, 4],
+    ["R4", "missionFit", 5, 3],
+    ["R4", "supportMaterials", 5, 2]
+  ]);
+  assert.equal(rows.some((row) => specCqChangedMatches(row, ids.R1, "strength", 4, 5)), false);
+});
+
+test("[spec] content Q10 cells null on one side are left out of the 2-point list", async () => {
+  const { ids } = await specCqPipeline();
+  const before = specCqScores({ ...SPEC_CQ_S0, R1: [5, null, 2, 3, 4, null], R3: [null, null, null, null, 3, null] }, ids);
+  const out = await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids), compare: before });
+  assert.equal(out.code, 0, out.detail);
+  specCqAssertChanged(out.stdout, ids, [
+    ["R1", "missionFit", 2, 4],
+    ["R2", "correctionAccuracy", 4, 2],
+    ["R4", "missionFit", 5, 3],
+    ["R4", "supportMaterials", 5, 2]
+  ]);
+});
+
+test("[spec] content Q8 Q10 an id only on one side of --compare is not an error and not listed", async () => {
+  const { ids } = await specCqPipeline();
+  const { R4: _dropR4, ...withoutR4 } = SPEC_CQ_S0;
+  const out = await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids), compare: specCqScores(withoutR4, ids) });
+  assert.equal(out.code, 0, out.detail);
+  specCqAssertChanged(out.stdout, ids, [
+    ["R1", "missionFit", 2, 4],
+    ["R2", "correctionAccuracy", 4, 2],
+    ["R3", "completionMaterials", 1, 4]
+  ]);
+});
+
+test("[spec] content C11 an unknown key in scores is an error naming it", async () => {
+  const { ids } = await specCqPipeline();
+  const scores = specCqScores(SPEC_CQ_S1, ids);
+  scores[0].scores.grammar = 3;
+  specCqAssertRejected(await specCqSummarize({ scores }), "grammar");
+});
+
+test("[spec] content C12 an unknown key in notes is an error naming it", async () => {
+  const { ids } = await specCqPipeline();
+  const scores = specCqScores(SPEC_CQ_S1, ids);
+  scores[0].notes.overall = "x";
+  specCqAssertRejected(await specCqSummarize({ scores }), "overall");
+});
+
+for (const value of [6, 0, -1]) {
+  test(`[spec] content C13 a score of ${value} is an error naming the rubric key`, async () => {
+    const { ids } = await specCqPipeline();
+    const scores = specCqWithScore(specCqScores(SPEC_CQ_S1, ids), 1, "missionFit", value);
+    specCqAssertRejected(await specCqSummarize({ scores }), "missionFit");
+  });
+}
+
+for (const value of [3.5, "4"]) {
+  test(`[spec] content C14 a non-integer score ${JSON.stringify(value)} is an error naming the rubric key`, async () => {
+    const { ids } = await specCqPipeline();
+    const scores = specCqWithScore(specCqScores(SPEC_CQ_S1, ids), 1, "missionFit", value);
+    specCqAssertRejected(await specCqSummarize({ scores }), "missionFit");
+  });
+}
+
+test("[spec] content C15 Q8 a missing id or an id not in the review items is an error", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const noId = specCqScores(SPEC_CQ_S1, ids);
+  delete noId[0].id;
+  specCqAssertRejected(await specCqSummarize({ scores: noId }));
+
+  const unknownId = specCqScores(SPEC_CQ_S1, ids);
+  unknownId[0].id = "spec-no-such-id";
+  specCqAssertRejected(await specCqSummarize({ scores: unknownId, itemsText: exported.jsonText }), "spec-no-such-id");
+});
+
+test("[spec] content Q8 a review item that was not scored is an error naming it", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const { R2: _dropR2, ...withoutR2 } = SPEC_CQ_S1;
+  specCqAssertRejected(await specCqSummarize({ scores: specCqScores(withoutR2, ids), itemsText: exported.jsonText }), ids.R2);
+});
+
+test("[spec] content C16 scores.json that is not an array is an error", async () => {
+  const { ids } = await specCqPipeline();
+  specCqAssertRejected(await specCqSummarize({ scores: { items: specCqScores(SPEC_CQ_S1, ids) } }));
+});
+
+test("[spec] content C17 the --compare file is checked the same way", async () => {
+  const { ids } = await specCqPipeline();
+  const before = specCqWithScore(specCqScores(SPEC_CQ_S0, ids), 1, "missionFit", 6);
+  specCqAssertRejected(await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids), compare: before }), "missionFit");
+});
+
+// 결정 Q9: 빠진 키, 중복 id, scores 칸 없음은 오류. notes는 선택.
+test("[spec] content Q9 a missing rubric key is an error naming it", async () => {
+  const { ids } = await specCqPipeline();
+  const scores = specCqScores(SPEC_CQ_S1, ids);
+  delete scores[0].scores.completionMaterials;
+  specCqAssertRejected(await specCqSummarize({ scores }), "completionMaterials");
+});
+
+test("[spec] content Q9 a duplicate id is an error naming it", async () => {
+  const { ids } = await specCqPipeline();
+  const scores = specCqScores(SPEC_CQ_S1, ids);
+  scores.push(JSON.parse(JSON.stringify(scores[0])));
+  specCqAssertRejected(await specCqSummarize({ scores }), ids.R1);
+});
+
+test("[spec] content Q9 an entry without scores is an error", async () => {
+  const { ids } = await specCqPipeline();
+  const scores = specCqScores(SPEC_CQ_S1, ids);
+  delete scores[0].scores;
+  specCqAssertRejected(await specCqSummarize({ scores }));
+});
+
+test("[spec] content Q9 notes are optional", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const noNotes = specCqScores(SPEC_CQ_S1, ids).map(({ notes: _notes, ...entry }) => entry);
+  const withoutNotes = await specCqSummarize({ scores: noNotes, itemsText: exported.jsonText });
+  assert.equal(withoutNotes.code, 0, withoutNotes.detail);
+  specCqAssertOverall(withoutNotes.stdout, SPEC_CQ_C2);
+
+  const partialNotes = specCqScores(SPEC_CQ_S1, ids).map((entry) => ({ ...entry, notes: { strength: entry.notes.strength } }));
+  const withPartialNotes = await specCqSummarize({ scores: partialNotes, itemsText: exported.jsonText });
+  assert.equal(withPartialNotes.code, 0, withPartialNotes.detail);
+});
+
+// ---------------------------------------------------------------- D. 루브릭 문서의 채점 출력 형식
+
+test("[spec] content D1 the rubric's output format section names id, scores, notes and the six keys", async () => {
+  const fsp = await import("node:fs/promises");
+  const { pathMod, testDir } = await specCqPaths();
+  const doc = await fsp.readFile(pathMod.join(testDir, "content-rubric.md"), "utf8");
+  const lines = doc.split(/\r?\n/);
+  const start = lines.findIndex((line) => /^#+\s/.test(line) && line.includes("출력 형식"));
+  assert.ok(start >= 0, "no output format section");
+  const level = lines[start].match(/^#+/)[0].length;
+  const endOffset = lines.slice(start + 1).findIndex((line) => {
+    const match = line.match(/^(#+)\s/);
+    return match && match[1].length <= level;
+  });
+  const section = lines.slice(start, endOffset < 0 ? lines.length : start + 1 + endOffset).join("\n");
+  for (const word of ["scores.json", "id", "scores", "notes", "null", ...SPEC_CQ_KEYS]) {
+    assert.ok(section.includes(word), `output format section should mention ${word}`);
+  }
+});
+
+// ---------------------------------------------------------------- X. 끝에서 끝
+
+test("[spec] content X1 report snapshot, export and summarize chain end to end", async () => {
+  const cases = specCqRaCases();
+  const check = await specCqRunCheck(cases, specCqRaResponder());
+  assert.ok(check.reportText, check.detail);
+  const r1Result = check.report.results.find((result) => result.answer === SPEC_CQ_A_SL);
+  assert.deepEqual(r1Result.actual.strengths, ["저녁 뒤에 하는 일을 분명히 말했어요."]);
+
+  const exported = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  const items = specCqItems(exported.json);
+  assert.equal(items.length, 4);
+  assert.ok(specCqSkippedNames(exported.json).includes(SPEC_CQ_NAMES.R5));
+  specCqAssertR1Item(specCqItemByAnswer(exported.json, SPEC_CQ_A_SL));
+  specCqAssertR2Item(specCqItemByAnswer(exported.json, SPEC_CQ_A_LF));
+  specCqAssertR3Item(specCqItemByAnswer(exported.json, SPEC_CQ_A_CM2));
+  specCqAssertR4Item(specCqItemByAnswer(exported.json, SPEC_CQ_A_SL2));
+
+  const ids = specCqIds(exported.json);
+  const out = await specCqSummarize({ scores: specCqScores(SPEC_CQ_S1, ids), itemsText: exported.jsonText });
+  assert.equal(out.code, 0, out.detail);
+  specCqAssertOverall(out.stdout, SPEC_CQ_C2);
+  specCqAssertGroups(out.stdout, "난이도", SPEC_CQ_C3);
+  specCqAssertGroups(out.stdout, "미션 종류", SPEC_CQ_C4);
+  specCqAssertLow(out.stdout, ids, SPEC_CQ_C5_Q7);
+});

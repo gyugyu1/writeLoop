@@ -70,8 +70,11 @@ final class PreviousMissionEvaluator {
     ) {
         String normalizedAnswer = normalize(answer);
         // 교정 줄은 앞 교정까지 적용한 중간 문장 기준이라 글자 비교가 어긋날 수 있다. 이번 진단에 교정이
-        // 하나도 없으면 줄별 비교와 관계없이 모두 반영한 것으로 본다.
-        boolean noRemainingCorrection = !hasLanguageCorrection(diagnosis);
+        // 하나도 없으면 줄별 비교와 관계없이 모두 반영한 것으로 본다. 주제 이탈 진단에는 교정을 쓰지 않으므로
+        // 주제에 맞는 답일 때만 이렇게 본다.
+        boolean noRemainingCorrection = diagnosis != null
+                && diagnosis.topicRelevance() == TopicRelevance.ON_TOPIC
+                && !hasLanguageCorrection(diagnosis);
         int total = 0;
         int applied = 0;
         for (FeedbackLanguageCorrectionDto correction : previousMove.languageCorrections()) {

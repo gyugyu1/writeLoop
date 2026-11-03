@@ -693,11 +693,12 @@ public class FeedbackService {
         if (attemptNo <= 1) {
             return null;
         }
+        AnswerAttemptEntity previousAttempt;
         FeedbackResponseDto previousFeedback;
         try {
-            previousFeedback = answerAttemptRepository.findBySessionIdAndAttemptNo(sessionId, attemptNo - 1)
-                    .map(this::readStoredFeedback)
+            previousAttempt = answerAttemptRepository.findBySessionIdAndAttemptNo(sessionId, attemptNo - 1)
                     .orElse(null);
+            previousFeedback = previousAttempt == null ? null : readStoredFeedback(previousAttempt);
         } catch (RuntimeException exception) {
             return null;
         }
@@ -709,6 +710,7 @@ public class FeedbackService {
                 : snapshot.finalSections().missionDecision();
         return PreviousMissionEvaluator.evaluate(
                 previousFeedback.coachMove(),
+                previousAttempt.getAnswerText(),
                 answer,
                 snapshot.diagnosis(),
                 decision == null ? Map.of() : decision.slotAssessments()

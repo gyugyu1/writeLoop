@@ -753,12 +753,12 @@ function specFuStepPasses(report) {
 
 // ---------------------------------------------------------------- F. 케이스 형식
 
+// git에 있는 케이스 파일만 둔다. .gitignore로 빠진 cases.generated-*.json은 로컬 전용이라 CI에 없다.
 const SPEC_FU_G1 = [
   ["cases.ambiguous-bare-verb-fragments-10.json", 10, 0],
   ["cases.completion-gate-150-v2.json", 150, 0],
   ["cases.completion-gate-150-v3.json", 150, 0],
   ["cases.completion-gate-150.json", 150, 0],
-  ["cases.generated-100-2026-05-07.json", 100, 1],
   ["cases.mixed-errors-100.json", 100, 0],
   ["cases.prompt-refactor-50.json", 50, 0],
   ["cases.question-slot-relations-60.json", 60, 0],

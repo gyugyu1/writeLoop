@@ -1,0 +1,686 @@
+[
+  {
+    "caseId": "content-quality-i01",
+    "name": "content quality I01 - blocking grammar - prompt-intro-v2-0005",
+    "category": "GRAMMAR_BLOCKING",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0005",
+    "promptQuestionEn": "What is your favorite season? Why?",
+    "promptQuestionKo": "가장 좋아하는 계절은 무엇인가요? 왜 그런가요?",
+    "promptQuestionIncludesAny": [
+      "favorite season"
+    ],
+    "answer": "My favorite season is fall. Because the weather is cool and the leaves is change color. I am like walk in the park with my dog in fall.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "심각한 문법 오류. 고칠 것: Because로 시작해 홀로 선 이유절(앞 문장에 잇기), 'the leaves is change color'→'the leaves change color', 'I am like walk'→'I like walking(to walk)'. 계절(가을)과 이유(시원한 날씨·단풍)는 이미 있으므로 내용 슬롯을 다시 묻지 말고 문장 바로잡기에 집중해야 한다. 'in the park with my dog in fall' 같은 사실·표현은 그대로 살린다. 설명은 입문자가 알아들을 쉬운 한국어인지 본다."
+  },
+  {
+    "caseId": "content-quality-i02",
+    "name": "content quality I02 - local grammar - prompt-intro-v2-0022",
+    "category": "GRAMMAR_LOCAL",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0022",
+    "promptQuestionEn": "What is the first thing you do after waking up?",
+    "promptQuestionKo": "일어난 뒤에 가장 먼저 하는 일은 무엇인가요?",
+    "promptQuestionIncludesAny": [
+      "first thing you do after waking up"
+    ],
+    "answer": "After I wake up, I drink a cup of warm water first. Then I check my phone for see the weather.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "가벼운 문법 오류 하나. 고칠 것: 'for see'→'to see'. 이것 말고는 맞는 문장이므로 'a cup of warm water first', 'Then I check my phone' 같은 부분을 고치면 과잉 교정이다. 첫 행동(따뜻한 물 마시기)이 분명하니 잘한 점으로 짚을 만하다."
+  },
+  {
+    "caseId": "content-quality-i03",
+    "name": "content quality I03 - vague content - prompt-intro-v2-0042",
+    "category": "GENERIC",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0042",
+    "promptQuestionEn": "Why do you like your favorite food?",
+    "promptQuestionKo": "가장 좋아하는 음식을 왜 좋아하나요?",
+    "promptQuestionIncludesAny": [
+      "why do you like your favorite food"
+    ],
+    "answer": "I like my favorite food because it is delicious. It is very good, so I like it.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "막연한 답. 이유가 'delicious', 'very good'뿐이고 음식 이름도 없다. 맛·식감·재료처럼 구체적인 이유를 하나 더하게 하는 미션이 맞다. 문장 틀과 넣어볼 표현은 입문 수준이어야 하고, 학생이 말하지 않은 음식을 사실처럼 단정해 넣지 않는지 본다(예시로 제시하는 것은 괜찮다). 문법은 맞으므로 문법 교정을 만들면 과잉 교정이다."
+  },
+  {
+    "caseId": "content-quality-i04",
+    "name": "content quality I04 - complete but plain - prompt-intro-v2-0064",
+    "category": "COMPLETE_PLAIN",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0064",
+    "promptQuestionEn": "What do you do for fun, and why do you enjoy it?",
+    "promptQuestionKo": "재미를 위해 무엇을 하고, 왜 그 활동을 즐기나요?",
+    "promptQuestionIncludesAny": [
+      "what do you do for fun"
+    ],
+    "answer": "I play badminton with my friends on weekends. It's really fun because I can move my body and talk with my friends at the same time. After playing, I feel so refreshed.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "expectedBehavior": "완성 답(자연스럽지만 덜 다듬은 표현). 활동(배드민턴)과 이유(몸을 움직이고 친구와 이야기)가 모두 있고 문법 오류가 없다. 'move my body', 'really fun', 'so refreshed'는 틀린 표현이 아니므로 문법 교정으로 고치면 과잉 교정이다(더 나은 표현은 추천 표현으로만). 완료 화면의 모범 답안이 배드민턴·친구·주말 같은 학생의 사실을 살리는지 본다."
+  },
+  {
+    "caseId": "content-quality-i05",
+    "name": "content quality I05 - required content missing - prompt-intro-v2-0082",
+    "category": "REQUIRED_MISSING",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0082",
+    "promptQuestionEn": "What do you like about your best friend, and why?",
+    "promptQuestionKo": "가장 친한 친구의 어떤 점이 좋고, 그 이유는 무엇인가요?",
+    "promptQuestionIncludesAny": [
+      "what do you like about your best friend"
+    ],
+    "answer": "My best friend is Minji. She is very kind and funny. We met in middle school.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "필수 내용 부족. 좋아하는 점(친절하고 재미있음)은 있지만 왜 그 점이 좋은지(이유)가 없다. 이유를 묻는 미션이 맞다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 잘한 점은 친구 이름과 성격을 분명히 밝힌 것처럼 사실이어야 한다."
+  },
+  {
+    "caseId": "content-quality-i06",
+    "name": "content quality I06 - blocking grammar - prompt-intro-v2-0106",
+    "category": "GRAMMAR_BLOCKING",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0106",
+    "promptQuestionEn": "What is hard about learning English?",
+    "promptQuestionKo": "영어를 배우면서 어려운 점은 무엇인가요?",
+    "promptQuestionIncludesAny": [
+      "hard about learning english"
+    ],
+    "answer": "English is hard for me. Specially listening is very difficult. Native speaker is talk too fast, so I can't understanding.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "심각한 문법 오류. 고칠 것: 'Specially'→'Especially', 'Native speaker is talk'→'Native speakers talk', 'I can't understanding'→'I can't understand (them)'. 어려운 점(듣기)과 원인(빠른 말)이 있으니 내용을 더 요구하기보다 문장을 바로잡게 해야 한다. 'English is hard for me'는 맞는 문장이라 고치면 과잉 교정이다."
+  },
+  {
+    "caseId": "content-quality-i07",
+    "name": "content quality I07 - broken structure - prompt-intro-v2-0162",
+    "category": "STRUCTURE_FRAGMENT",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0162",
+    "promptQuestionEn": "What makes you nervous?",
+    "promptQuestionKo": "무엇이 당신을 긴장하게 하나요?",
+    "promptQuestionIncludesAny": [
+      "makes you nervous"
+    ],
+    "answer": "Presentation in front of class. Many people look me, heart beat fast.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "문장 구조가 깨진 답. 첫 문장에 주어·동사가 없고 둘째 문장은 'look me'(→look at me)와 'heart beat fast'(→my heart beats fast)가 쉼표로만 이어져 있다. 발표가 긴장된다는 뜻은 전해지므로 그 뜻을 살린 완전한 문장(예: Giving a presentation in front of my class makes me nervous.)으로 고쳐야 한다. 학생이 쓰지 않은 내용을 덧붙이지 않는지 본다."
+  },
+  {
+    "caseId": "content-quality-i08",
+    "name": "content quality I08 - vague content - prompt-intro-v2-0221",
+    "category": "GENERIC",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0221",
+    "promptQuestionEn": "What is one happy memory from your childhood?",
+    "promptQuestionKo": "어린 시절의 행복한 기억 한 가지는 무엇인가요?",
+    "promptQuestionIncludesAny": [
+      "happy memory from your childhood"
+    ],
+    "answer": "I have many happy memories from my childhood. My childhood was very happy and fun. I miss that time.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "막연한 답. 어린 시절이 행복했다는 말뿐이고 구체적인 기억 하나(무슨 일이 있었는지)가 없다. 기억 하나를 구체적으로 쓰게 하는 미션이 맞다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 문장 틀은 입문자가 과거 시제로 바로 쓸 수 있는 수준인지 본다."
+  },
+  {
+    "caseId": "content-quality-i09",
+    "name": "content quality I09 - local grammar - prompt-intro-v2-0281",
+    "category": "GRAMMAR_LOCAL",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0281",
+    "promptQuestionEn": "What is one thing you do to stay healthy, and how does it help?",
+    "promptQuestionKo": "건강을 위해 하는 일 하나는 무엇이고, 그 행동이 어떻게 도움이 되나요?",
+    "promptQuestionIncludesAny": [
+      "stay healthy"
+    ],
+    "answer": "I walk 30 minutes everyday after dinner. It help me to sleep better and my body feels more lighter.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "가벼운 문법 오류. 고칠 것: 'everyday'→'every day', 'It help'→'It helps', 'more lighter'→'lighter'. 'help me to sleep'은 맞는 표현이라 고치면 과잉 교정이다. 'walk 30 minutes'도 그대로 둘 수 있다(for를 넣는 것은 선택). 행동(저녁 뒤 걷기)과 효과(잠·몸이 가벼움)는 잘한 점으로 짚을 만하다."
+  },
+  {
+    "caseId": "content-quality-i10",
+    "name": "content quality I10 - complete but plain - prompt-intro-v2-0382",
+    "category": "COMPLETE_PLAIN",
+    "difficulty": "I",
+    "promptId": "prompt-intro-v2-0382",
+    "promptQuestionEn": "If you could be invisible, what would you do, and why?",
+    "promptQuestionKo": "투명 인간이 될 수 있다면 무엇을 하고, 그 이유는 무엇인가요?",
+    "promptQuestionIncludesAny": [
+      "be invisible"
+    ],
+    "answer": "If I could be invisible, I would go to the kitchen of a famous restaurant. I want to see how the chefs make their special dishes, because I love cooking.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "expectedBehavior": "완성 답(덜 다듬은 표현). 할 일(유명 식당 주방에 들어가기)과 이유(요리를 좋아해서 셰프가 만드는 법을 보고 싶음)가 모두 있다. 'I want to see'는 지금 실제로 원하는 것을 말하므로 틀리지 않다. 'I would want to'로 바꾸는 것을 문법 오류로 고치면 과잉 교정이다. 완료 화면 자료가 식당 주방·요리라는 학생의 사실을 살리는지 본다."
+  },
+  {
+    "caseId": "content-quality-a01",
+    "name": "content quality A01 - complete but plain - prompt-preference-1103",
+    "category": "COMPLETE_PLAIN",
+    "difficulty": "A",
+    "promptId": "prompt-preference-1103",
+    "promptQuestionEn": "What drink do you like on a rainy day, and why?",
+    "promptQuestionKo": "비 오는 날에는 어떤 음료를 좋아하나요? 이유도 말해 주세요.",
+    "promptQuestionIncludesAny": [
+      "rainy day"
+    ],
+    "answer": "On rainy days I like hot chocolate. When it rains, it gets chilly and I feel a little down, so a warm and sweet drink makes me feel better.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "expectedBehavior": "완성 답(덜 다듬은 표현). 음료(핫초코)와 이유(쌀쌀하고 기분이 가라앉을 때 따뜻하고 달아서 기분이 나아짐)가 모두 있다. 'a warm and sweet drink', 'feel a little down'은 맞는 표현이므로 문법 교정을 만들면 과잉 교정이다. 'On rainy days' 뒤 쉼표가 없는 것도 오류가 아니다. 모범 답안·추천 표현이 핫초코와 비 오는 날 기분이라는 사실을 살리는지 본다."
+  },
+  {
+    "caseId": "content-quality-a02",
+    "name": "content quality A02 - required content missing - prompt-preference-1106",
+    "category": "REQUIRED_MISSING",
+    "difficulty": "A",
+    "promptId": "prompt-preference-1106",
+    "promptQuestionEn": "Where do you like to read, and why is that place comfortable?",
+    "promptQuestionKo": "어디에서 책 읽는 것을 좋아하나요? 그곳이 왜 편한가요?",
+    "promptQuestionIncludesAny": [
+      "where do you like to read"
+    ],
+    "answer": "I like to read in the cafe near my house. I usually go there on Sundays and read a novel for about two hours.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "필수 내용 부족. 장소(집 근처 카페)는 있지만 그곳이 왜 편한지(이유)가 없다. 조용함·자리·조명처럼 편한 이유를 묻는 미션이 맞다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 시간(일요일, 두 시간)을 이미 말했으니 시간을 다시 묻지 않는지 본다."
+  },
+  {
+    "caseId": "content-quality-a03",
+    "name": "content quality A03 - local grammar - prompt-preference-1110",
+    "category": "GRAMMAR_LOCAL",
+    "difficulty": "A",
+    "promptId": "prompt-preference-1110",
+    "promptQuestionEn": "When do you study vocabulary, and what method helps you remember words?",
+    "promptQuestionKo": "언제 단어를 공부하고, 어떤 방법이 단어를 기억하는 데 도움이 되나요?",
+    "promptQuestionIncludesAny": [
+      "study vocabulary"
+    ],
+    "answer": "I study vocabulary on the subway every morning. I use a flashcard app, and I make a example sentence with each new word. It helps me to remember the words for long time.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "가벼운 문법 오류. 고칠 것: 'a example'→'an example', 'for long time'→'for a long time'. 'helps me to remember', 'on the subway', 'with each new word'는 맞는 표현이라 고치면 과잉 교정이다. 시간(매일 아침 지하철)과 방법(단어 카드 앱, 예문 만들기)이 구체적인 것은 잘한 점으로 짚을 만하다."
+  },
+  {
+    "caseId": "content-quality-a04",
+    "name": "content quality A04 - vague content - prompt-preference-1117",
+    "category": "GENERIC",
+    "difficulty": "A",
+    "promptId": "prompt-preference-1117",
+    "promptQuestionEn": "What kind of online creator do you watch, and why do you watch them?",
+    "promptQuestionKo": "어떤 온라인 크리에이터를 보고, 왜 그 사람의 콘텐츠를 보나요?",
+    "promptQuestionIncludesAny": [
+      "online creator"
+    ],
+    "answer": "I watch many kinds of YouTubers. Their videos are interesting, so I watch them when I have time.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "막연한 답. 어떤 종류의 크리에이터인지(요리·게임·공부 등)가 없고 이유도 'interesting'뿐이다. 크리에이터 종류를 구체적으로 쓰게 하는 미션이 가장 먼저다(이유를 먼저 짚어도 크게 틀리지는 않다). 문법은 맞으므로 교정을 만들면 과잉 교정이다. 넣어볼 표현이 실제로 바로 넣을 수 있는 크리에이터 종류인지 본다."
+  },
+  {
+    "caseId": "content-quality-a05",
+    "name": "content quality A05 - broken structure - prompt-preference-1124",
+    "category": "STRUCTURE_FRAGMENT",
+    "difficulty": "A",
+    "promptId": "prompt-preference-1124",
+    "promptQuestionEn": "How do you organize photos on your phone, and why does it help?",
+    "promptQuestionKo": "휴대폰 사진을 어떻게 정리하나요? 왜 도움이 되나요?",
+    "promptQuestionIncludesAny": [
+      "organize photos"
+    ],
+    "answer": "Photos too many in my phone. So every weekend, delete blurry photo and make album, travel, family, food.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "문장 구조가 깨진 답. 첫 문장에 동사가 없고('There are too many photos on my phone.'), 둘째 문장은 주어가 없으며 'blurry photo'·'make album' 뒤의 나열이 이어지지 않는다(예: I delete blurry photos and make albums for travel, family, and food). 학생의 사실(매주 흐린 사진 삭제, 여행·가족·음식 앨범)을 살려 고쳐야 한다. 왜 도움이 되는지는 아직 없지만 이번 미션은 문장 바로잡기가 먼저다."
+  },
+  {
+    "caseId": "content-quality-a06",
+    "name": "content quality A06 - blocking grammar - prompt-routine-1102",
+    "category": "GRAMMAR_BLOCKING",
+    "difficulty": "A",
+    "promptId": "prompt-routine-1102",
+    "promptQuestionEn": "What do you usually do before an early appointment, and how does that preparation help you?",
+    "promptQuestionKo": "이른 약속 전에 보통 무엇을 준비하고, 그 준비가 어떻게 도움이 되나요?",
+    "promptQuestionIncludesAny": [
+      "early appointment"
+    ],
+    "answer": "Before early appointment, I am prepare my clothes and bag in the night before. Because of this, I don't need hurry in the morning and I can arrive on time not late.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "심각한 문법 오류. 고칠 것: 'Before early appointment'→'Before an early appointment', 'I am prepare'→'I prepare', 'in the night before'→'the night before', 'don't need hurry'→'don't need to hurry', 'arrive on time not late'→'arrive on time'(겹친 말). 준비 행동과 효과가 이미 있으니 내용을 더 묻지 않아야 한다. 'Because of this'는 맞는 연결이라 그대로 둔다."
+  },
+  {
+    "caseId": "content-quality-a07",
+    "name": "content quality A07 - required content missing - prompt-routine-1104",
+    "category": "REQUIRED_MISSING",
+    "difficulty": "A",
+    "promptId": "prompt-routine-1104",
+    "promptQuestionEn": "What do you usually do while waiting for class to begin, and which part of that routine helps you the most?",
+    "promptQuestionKo": "수업이 시작되길 기다릴 때 보통 무엇을 하고, 그 루틴에서 가장 도움이 되는 부분이 무엇인지 설명해 주세요.",
+    "promptQuestionIncludesAny": [
+      "waiting for class to begin"
+    ],
+    "answer": "While I wait for class to start, I look at my notes from last class, and sometimes I talk with my friends next to me. I also check my messages.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "필수 내용 부족. 기다리며 하는 일(지난 수업 노트 보기, 옆 친구와 이야기, 메시지 확인)은 있지만 그중 무엇이 가장 도움이 되는지(선택)가 없다. 셋 가운데 하나를 골라 왜 도움이 되는지 쓰게 하는 미션이 맞다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 문장 틀이 학생이 말한 활동 중에서 고르게 하는지 본다."
+  },
+  {
+    "caseId": "content-quality-a08",
+    "name": "content quality A08 - local grammar - prompt-routine-1108",
+    "category": "GRAMMAR_LOCAL",
+    "difficulty": "A",
+    "promptId": "prompt-routine-1108",
+    "promptQuestionEn": "What do you usually do after finishing a workout, and how does that routine help you?",
+    "promptQuestionKo": "운동을 마친 뒤 보통 무엇을 하고, 그 루틴이 어떻게 도움이 되나요?",
+    "promptQuestionIncludesAny": [
+      "finishing a workout"
+    ],
+    "answer": "After I finish my workout, I always stretch for ten minutes and drink a lot of water. Stretching make my muscles less sore at next day.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "가벼운 문법 오류. 고칠 것: 'Stretching make'→'Stretching makes', 'at next day'→'the next day'. 첫 문장은 맞으므로 고치면 과잉 교정이다. 행동(10분 스트레칭, 물 마시기)과 효과(다음 날 근육이 덜 아픔)가 구체적인 것은 잘한 점으로 짚을 만하다."
+  },
+  {
+    "caseId": "content-quality-a09",
+    "name": "content quality A09 - broken structure - prompt-routine-1109",
+    "category": "STRUCTURE_FRAGMENT",
+    "difficulty": "A",
+    "promptId": "prompt-routine-1109",
+    "promptQuestionEn": "During a long train ride, what do you usually do, and why?",
+    "promptQuestionKo": "긴 기차 이동 중에 보통 무엇을 하는지, 그리고 왜 그렇게 하는지 말해 주세요.",
+    "promptQuestionIncludesAny": [
+      "long train ride"
+    ],
+    "answer": "Long train ride, I sleep or movie. Because boring and tired.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "문장 구조가 깨진 답. 'Long train ride,'가 문장에 붙지 않고, 'or movie'에 동사가 없으며, 'Because boring and tired.'는 주어·동사가 없는 조각이다. 뜻(긴 기차에서 자거나 영화를 봄, 지루하고 피곤해서)을 살린 완전한 문장(예: During a long train ride, I sleep or watch a movie because I get bored and tired.)으로 고쳐야 한다. 학생이 쓰지 않은 활동을 덧붙이지 않는지 본다."
+  },
+  {
+    "caseId": "content-quality-a10",
+    "name": "content quality A10 - complete but plain - prompt-routine-1113",
+    "category": "COMPLETE_PLAIN",
+    "difficulty": "A",
+    "promptId": "prompt-routine-1113",
+    "promptQuestionEn": "What do you usually do when you clean your room, and which part of that routine helps you the most?",
+    "promptQuestionKo": "방을 청소할 때 보통 무엇을 하고, 그 루틴에서 가장 도움이 되는 부분이 무엇인지 설명해 주세요.",
+    "promptQuestionIncludesAny": [
+      "clean your room"
+    ],
+    "answer": "When I clean my room, I pick up my clothes first. Then I wipe my desk and vacuum the floor. Picking up my clothes helps me the most because my room looks much cleaner right away.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "expectedBehavior": "완성 답. 청소 순서(옷 줍기, 책상 닦기, 청소기)와 가장 도움이 되는 부분(옷 줍기)과 그 이유가 모두 있고 문법 오류가 없다. 'helps me the most', 'right away'는 맞는 표현이라 고치면 과잉 교정이다. 완료 화면의 모범 답안과 풍부하게 써 보기 제안이 학생이 고른 '옷 줍기'를 바꾸지 않고 살리는지 본다."
+  },
+  {
+    "caseId": "content-quality-b01",
+    "name": "content quality B01 - complete but plain - prompt-b-2",
+    "category": "COMPLETE_PLAIN",
+    "difficulty": "B",
+    "promptId": "prompt-b-2",
+    "promptQuestionEn": "Describe a city you want to visit and explain what you would like to do there.",
+    "promptQuestionKo": "가 보고 싶은 도시 하나를 설명하고, 그곳에서 무엇을 하고 싶은지 말해 주세요.",
+    "promptQuestionIncludesAny": [
+      "city you want to visit"
+    ],
+    "answer": "I want to visit Barcelona someday. I'd like to see Gaudi's buildings, like the Sagrada Familia, and eat seafood paella near the beach. I think it would be a really special trip for me.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "expectedBehavior": "완성 답(덜 다듬은 표현). 도시(바르셀로나)와 하고 싶은 일(가우디 건축 보기, 해변 근처에서 해산물 파에야)이 모두 있고 문법 오류가 없다. 'a really special trip', 'like the Sagrada Familia'는 맞는 표현이라 고치면 과잉 교정이다. 완료 화면 자료가 바르셀로나·가우디·파에야라는 학생의 사실을 살리고, 학생이 말하지 않은 계획을 사실처럼 넣지 않는지 본다."
+  },
+  {
+    "caseId": "content-quality-b02",
+    "name": "content quality B02 - blocking grammar - prompt-general-11",
+    "category": "GRAMMAR_BLOCKING",
+    "difficulty": "B",
+    "promptId": "prompt-general-11",
+    "promptQuestionEn": "Describe a teacher or mentor who influenced you and explain why that person is important to you.",
+    "promptQuestionKo": "영향을 준 선생님이나 멘토를 설명하고, 왜 의미 있는지 말해 주세요.",
+    "promptQuestionIncludesAny": [
+      "teacher or mentor"
+    ],
+    "answer": "My high school English teacher was very influence to me. She always say to me \"don't afraid to make mistake\". Because of her, I was not shy anymore when I speak English and I decided study English in university.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "심각한 문법 오류. 고칠 것: 'was very influence to me'→'had a big influence on me', 'She always say'→'She always said', 'don't afraid'→'don't be afraid', 'make mistake'→'make mistakes', 'when I speak'→'when I spoke'(시제), 'decided study'→'decided to study'. 선생님이 누구인지와 왜 중요한지는 이미 있으니 내용을 더 묻지 않아야 한다. 각 교정의 한국어 이유가 정확한지(특히 influence의 품사, be동사 명령문) 본다."
+  },
+  {
+    "caseId": "content-quality-b03",
+    "name": "content quality B03 - vague content - prompt-general-36",
+    "category": "GENERIC",
+    "difficulty": "B",
+    "promptId": "prompt-general-36",
+    "promptQuestionEn": "Describe a family tradition you value and explain why it matters to you.",
+    "promptQuestionKo": "소중하게 여기는 가족 전통을 설명하고 왜 중요하게 느끼는지 말해 주세요.",
+    "promptQuestionIncludesAny": [
+      "family tradition"
+    ],
+    "answer": "My family has a special tradition. We do it every year together. It is important to me because family is important.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "막연한 답. 전통이 무엇인지(무엇을 하는지)가 없고 이유도 'family is important'로 되풀이일 뿐이다. 가족이 실제로 하는 전통 행동을 쓰게 하는 미션이 먼저다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 넣어볼 표현이 명절 음식 만들기처럼 바로 넣을 수 있는 구체적인 전통 예시인지 본다."
+  },
+  {
+    "caseId": "content-quality-b04",
+    "name": "content quality B04 - depth content missing - prompt-goal-1102",
+    "category": "DEPTH_MISSING",
+    "difficulty": "B",
+    "promptId": "prompt-goal-1102",
+    "promptQuestionEn": "Describe one plan you have for keeping a daily journal this year and explain how you will stay consistent.",
+    "promptQuestionKo": "올해 매일 짧게 일기를 쓰는 것과 관련해 세운 계획 한 가지와, 어떻게 꾸준히 이어 갈지 설명해 주세요.",
+    "promptQuestionIncludesAny": [
+      "daily journal"
+    ],
+    "answer": "This year I will keep a daily journal. My plan is to write just three sentences every day, so it is not too hard to keep going.",
+    "expectedMissionKinds": [
+      "SLOT",
+      "COMPLETE"
+    ],
+    "expectedBehavior": "깊이 내용 부족. 꾸준히 할 방법(매일 세 문장만 쓰기)은 있지만 언제 쓸지·어디에 쓸지·방해 요인·기대 효과 같은 깊이 내용이 하나도 없다('every day'는 시간 깊이로 치지 않는다). 깊이 슬롯 하나(예: 하루 중 쓰는 때, 예상되는 어려움)를 더하게 하는 미션이 그럴 만하다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 완료로 끝났다면 풍부하게 써 보기 제안이 그 깊이 내용을 짚는지 본다."
+  },
+  {
+    "caseId": "content-quality-b05",
+    "name": "content quality B05 - depth content missing - prompt-goal-1108",
+    "category": "DEPTH_MISSING",
+    "difficulty": "B",
+    "promptId": "prompt-goal-1108",
+    "promptQuestionEn": "Describe one plan you have for preparing weekly meals in advance this year and explain how you will stay consistent.",
+    "promptQuestionKo": "올해 주간 식사를 미리 준비하는 것과 관련해 세운 계획 한 가지와, 어떻게 꾸준히 이어 갈지 설명해 주세요.",
+    "promptQuestionIncludesAny": [
+      "preparing weekly meals"
+    ],
+    "answer": "This year I will prepare my lunches for the whole week at once. To keep it going, I will make a simple menu list and just repeat it every week.",
+    "expectedMissionKinds": [
+      "SLOT",
+      "COMPLETE"
+    ],
+    "expectedBehavior": "깊이 내용 부족. 계획(한 번에 일주일 점심 준비, 간단한 메뉴 목록 반복)은 있지만 무슨 요일·몇 시에 할지, 어디에 보관할지, 어려움, 기대 효과 같은 깊이 내용이 없다('every week'는 시간 깊이로 치지 않는다). 깊이 슬롯 하나를 더하게 하는 미션이 그럴 만하다. 'just repeat it every week', 'To keep it going'은 맞는 표현이라 고치면 과잉 교정이다."
+  },
+  {
+    "caseId": "content-quality-b06",
+    "name": "content quality B06 - required content missing - prompt-goal-36",
+    "category": "REQUIRED_MISSING",
+    "difficulty": "B",
+    "promptId": "prompt-goal-36",
+    "promptQuestionEn": "What is one savings goal you want to reach this year, and how will you work toward it?",
+    "promptQuestionKo": "올해 이루고 싶은 저축 목표 한 가지는 무엇이고, 어떻게 노력할 건가요?",
+    "promptQuestionIncludesAny": [
+      "savings goal"
+    ],
+    "answer": "This year I want to save 3 million won for a trip to Japan with my sister next winter. I really want to go there because we have never traveled abroad together.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "필수 내용 부족. 저축 목표(300만 원, 동생과의 일본 여행)와 이유는 있지만 어떻게 모을지(실행 계획)가 없다. 매달 얼마를 떼어 두기, 지출 줄이기처럼 계획을 묻는 미션이 맞다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 넣어볼 표현이 실제 저축 방법이고 원화 금액 같은 학생의 사실과 어긋나지 않는지 본다."
+  },
+  {
+    "caseId": "content-quality-b07",
+    "name": "content quality B07 - local grammar - prompt-problem-1104",
+    "category": "GRAMMAR_LOCAL",
+    "difficulty": "B",
+    "promptId": "prompt-problem-1104",
+    "promptQuestionEn": "What makes it hard for you to recover after a bad day, and what do you do about it?",
+    "promptQuestionKo": "힘든 하루를 보낸 뒤 회복하기 어렵게 만드는 문제는 무엇이고, 그 문제에 어떻게 대처하나요?",
+    "promptQuestionIncludesAny": [
+      "recover after a bad day"
+    ],
+    "answer": "After a bad day, I keep thinking about the mistakes I made, so it is hard to fall asleep. When this happens, I take a warm shower and write down my worries on a paper. Then my mind become calmer.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "가벼운 문법 오류. 고칠 것: 'on a paper'→'on paper'(또는 'on a piece of paper'), 'my mind become'→'my mind becomes'. 'keep thinking about the mistakes I made', 'write down my worries'는 맞는 표현이라 고치면 과잉 교정이다. 문제(실수를 곱씹어 잠들기 어려움)와 대처(따뜻한 샤워, 걱정 적기)가 구체적인 것은 잘한 점으로 짚을 만하다."
+  },
+  {
+    "caseId": "content-quality-b08",
+    "name": "content quality B08 - broken structure - prompt-problem-1108",
+    "category": "STRUCTURE_FRAGMENT",
+    "difficulty": "B",
+    "promptId": "prompt-problem-1108",
+    "promptQuestionEn": "What commuting delay do you sometimes experience, and what do you do when it happens?",
+    "promptQuestionKo": "통근 중 어떤 지연을 겪을 때가 있고, 그럴 때 어떻게 대처하나요?",
+    "promptQuestionIncludesAny": [
+      "commuting delay"
+    ],
+    "answer": "Sometimes bus late because traffic jam in morning. Then I, take subway instead or text to my boss I will be late maybe 10 minutes.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "문장 구조가 깨진 답. 첫 문장에 동사가 없고('the bus is late because of a traffic jam in the morning'), 둘째 문장은 'I,' 뒤 쉼표, 'take subway'(→take the subway), 'text to my boss'(→text my boss), 전하는 말의 연결(→that I will be about 10 minutes late)이 어긋난다. 학생의 사실(아침 교통 체증으로 버스 지연, 지하철로 바꾸거나 상사에게 10분 늦는다고 문자)을 살려 고쳐야 한다."
+  },
+  {
+    "caseId": "content-quality-b09",
+    "name": "content quality B09 - blocking grammar - prompt-problem-21",
+    "category": "GRAMMAR_BLOCKING",
+    "difficulty": "B",
+    "promptId": "prompt-problem-21",
+    "promptQuestionEn": "What is one challenge you often face when working in a team, and how do you handle it?",
+    "promptQuestionKo": "팀으로 일할 때 자주 겪는 어려움 하나와, 그 문제에 어떻게 대처하는지 말해 주세요.",
+    "promptQuestionIncludesAny": [
+      "working in a team"
+    ],
+    "answer": "When I work in team, some member don't do their part until the deadline. So I am always doing more work than other. To solve this, I make a shared to-do list and divide the work clearly at the first meeting, and it make everyone know what they should doing.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "심각한 문법 오류. 고칠 것: 'in team'→'in a team', 'some member don't'→'some members don't', 'than other'→'than others', 'it make everyone know'→'it helps everyone know'(또는 'lets everyone know'), 'what they should doing'→'what they should do'. 'don't do their part until the deadline'(마감 때까지 자기 몫을 미룸)은 맞는 표현이라 그대로 둔다. 문제와 대처는 이미 있으니 내용을 더 묻지 않아야 한다."
+  },
+  {
+    "caseId": "content-quality-b10",
+    "name": "content quality B10 - complete but plain - prompt-problem-1124",
+    "category": "COMPLETE_PLAIN",
+    "difficulty": "B",
+    "promptId": "prompt-problem-1124",
+    "promptQuestionEn": "When distracting messages interrupt you, what do you do, and how does that help?",
+    "promptQuestionKo": "방해되는 메시지가 집중을 끊을 때 무엇을 하고, 그 방법이 어떻게 도움이 되나요?",
+    "promptQuestionIncludesAny": [
+      "distracting messages"
+    ],
+    "answer": "When messages keep popping up while I'm studying, I turn on focus mode and put my phone in another room. I only check it once an hour. Because of that, I can actually finish my work faster and I don't feel so scattered.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "expectedBehavior": "완성 답(덜 다듬은 표현). 대처(집중 모드, 휴대폰을 다른 방에 두기, 한 시간에 한 번 확인)와 효과(일을 더 빨리 끝내고 덜 산만함)가 모두 있고 문법 오류가 없다. 'keep popping up', 'don't feel so scattered', 'actually'는 맞는 표현이라 고치면 과잉 교정이다. 모범 답안이 학생의 구체적인 방법을 살리는지 본다."
+  },
+  {
+    "caseId": "content-quality-c01",
+    "name": "content quality C01 - required content missing - prompt-balance-06",
+    "category": "REQUIRED_MISSING",
+    "difficulty": "C",
+    "promptId": "prompt-balance-06",
+    "promptQuestionEn": "How has remote work changed daily life, and do you think the change is mostly positive?",
+    "promptQuestionKo": "원격 근무가 일상을 어떻게 바꿨고, 그 변화가 대체로 긍정적인지 말해 주세요.",
+    "promptQuestionIncludesAny": [
+      "remote work changed daily life"
+    ],
+    "answer": "Before remote work became common, most people had to commute to the office every day, sometimes for more than an hour. Now many people work from home a few days a week, so they can use that commuting time for exercise or family.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "필수 내용 부족. 예전 모습(매일 한 시간 넘게 출퇴근)과 지금 모습(일주일에 며칠 재택, 그 시간을 운동·가족에 씀)은 있지만 이 변화가 대체로 긍정적인지에 대한 자기 의견이 없다. 의견을 묻는 미션이 맞다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 문장 틀과 표현이 상급 수준(조건에 따라 다르다는 단서 등)으로 의견을 밝히게 돕는지 본다."
+  },
+  {
+    "caseId": "content-quality-c02",
+    "name": "content quality C02 - vague content - prompt-balance-36",
+    "category": "GENERIC",
+    "difficulty": "C",
+    "promptId": "prompt-balance-36",
+    "promptQuestionEn": "What are the benefits and drawbacks of food delivery apps, and what is your view?",
+    "promptQuestionKo": "배달 앱의 장점과 단점은 무엇이며, 당신의 생각은 어떤가요?",
+    "promptQuestionIncludesAny": [
+      "food delivery apps"
+    ],
+    "answer": "Food delivery apps have good points and bad points. They are convenient, but they also have some problems. I think they are okay.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "막연한 답. 장점이 'convenient'뿐이고(질문 계약상 편리하다는 말만으로는 부족), 단점은 'some problems', 의견도 'okay'로 모두 막연하다. 장점을 구체적으로 쓰게 하는 미션이 먼저다(단점이나 의견을 먼저 짚어도 크게 틀리지는 않다). 문법은 맞으므로 교정을 만들면 과잉 교정이다. 넣어볼 표현이 상급 수준이고 바로 쓸 수 있는 구체적 장점(예: 늦은 밤에도 주문, 작은 식당의 새 손님)인지 본다."
+  },
+  {
+    "caseId": "content-quality-c03",
+    "name": "content quality C03 - local grammar - prompt-balance-1117",
+    "category": "GRAMMAR_LOCAL",
+    "difficulty": "C",
+    "promptId": "prompt-balance-1117",
+    "promptQuestionEn": "Do you think four-day workweeks are more helpful or harmful overall? Explain both sides and give your opinion.",
+    "promptQuestionKo": "주 4일 근무제가 대체로 도움이 된다고 생각하는지, 아니면 해가 된다고 생각하는지 양쪽 입장을 함께 설명해 주세요.",
+    "promptQuestionIncludesAny": [
+      "four-day workweeks"
+    ],
+    "answer": "A four-day workweek can give workers more time to rest, so they can come back on Monday with more energy. However, if the total hours stay same, each workday become longer and people may get more tired. Overall, I think it is more helpful, but only when the workload is really reduced.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "가벼운 문법 오류. 고칠 것: 'stay same'→'stay the same', 'each workday become'→'each workday becomes'. 장점·단점·의견이 모두 있고 조건을 단 의견까지 있으니 내용을 더 묻지 않아야 한다. 'come back on Monday with more energy', 'only when the workload is really reduced'는 맞는 표현이라 고치면 과잉 교정이다. 잘한 점은 양쪽을 다 짚고 조건부 의견을 낸 점처럼 사실이어야 한다."
+  },
+  {
+    "caseId": "content-quality-c04",
+    "name": "content quality C04 - depth content missing - prompt-c-2",
+    "category": "DEPTH_MISSING",
+    "difficulty": "C",
+    "promptId": "prompt-c-2",
+    "promptQuestionEn": "What social responsibilities should successful companies have in modern society?",
+    "promptQuestionKo": "현대 사회에서 성공한 기업이 어떤 사회적 책임을 가져야 하는지 말해 주세요.",
+    "promptQuestionIncludesAny": [
+      "social responsibilities"
+    ],
+    "answer": "I think successful companies should treat their workers fairly and protect the environment.",
+    "expectedMissionKinds": [
+      "SLOT",
+      "COMPLETE"
+    ],
+    "expectedBehavior": "깊이 내용 부족. 책임(직원 공정 대우, 환경 보호)은 밝혔지만 왜 성공한 기업이 그 책임을 져야 하는지, 구체적인 기업 행동 예, 기대 효과 같은 깊이 내용이 없다. 이유나 예 하나를 더하게 하는 미션이 그럴 만하다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 상급 수준에 맞게 문장 틀이 이유와 예를 논리적으로 잇게 돕는지 본다."
+  },
+  {
+    "caseId": "content-quality-c05",
+    "name": "content quality C05 - complete but plain - prompt-opinion-26",
+    "category": "COMPLETE_PLAIN",
+    "difficulty": "C",
+    "promptId": "prompt-opinion-26",
+    "promptQuestionEn": "What is one important role public libraries should play in modern society, and why?",
+    "promptQuestionKo": "공공도서관이 현대 사회에서 해야 할 중요한 역할 하나는 무엇이며, 그 이유는 무엇인가요?",
+    "promptQuestionIncludesAny": [
+      "public libraries"
+    ],
+    "answer": "I think public libraries should be a free learning space for everyone. These days, many things like classes and study cafes cost money, so students and older people with low income can't easily find a place to study. If libraries offer free study rooms and digital classes, more people can keep learning without worrying about money.",
+    "expectedMissionKinds": [
+      "COMPLETE"
+    ],
+    "expectedBehavior": "완성 답(덜 다듬은 표현). 역할(모두를 위한 무료 배움 공간)과 이유(수업·스터디 카페가 비싸 저소득 학생·노인이 공부할 곳을 찾기 어려움)와 예(무료 열람실, 디지털 수업)가 모두 있다. 'study cafes'(한국식 유료 공부 공간)와 'older people with low income'은 틀린 표현이 아니므로 문법 교정으로 고치면 과잉 교정이다. 완료 화면 자료가 학생의 논지를 바꾸지 않고 살리는지 본다."
+  },
+  {
+    "caseId": "content-quality-c06",
+    "name": "content quality C06 - blocking grammar - prompt-opinion-1101",
+    "category": "GRAMMAR_BLOCKING",
+    "difficulty": "C",
+    "promptId": "prompt-opinion-1101",
+    "promptQuestionEn": "What is one important role neighborhood parks should play, and why?",
+    "promptQuestionKo": "동네 공원이 해야 할 중요한 역할 하나는 무엇이며, 그 이유는 무엇인가요?",
+    "promptQuestionIncludesAny": [
+      "neighborhood parks"
+    ],
+    "answer": "I think neighborhood park should be a place for people meet each other. Nowadays many people is living alone and they feel lonely, because they don't know their neighbor. If park have events like small concert or market, people can talking naturally and become close.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "심각한 문법 오류. 고칠 것: 'neighborhood park'→'neighborhood parks', 'for people meet'→'for people to meet', 'many people is living'→'many people live(are living)', 'their neighbor'→'their neighbors', 'If park have'→'If parks have', 'small concert or market'→'small concerts or markets', 'can talking'→'can talk'. 역할(이웃이 만나는 곳)과 이유(혼자 사는 사람의 외로움)는 이미 있으니 내용을 더 묻지 않아야 한다. 'become close'는 맞는 표현이라 그대로 둔다."
+  },
+  {
+    "caseId": "content-quality-c07",
+    "name": "content quality C07 - depth content missing - prompt-reflection-46",
+    "category": "DEPTH_MISSING",
+    "difficulty": "C",
+    "promptId": "prompt-reflection-46",
+    "promptQuestionEn": "Describe how your view of failure has changed over time.",
+    "promptQuestionKo": "실패에 대한 생각이 시간이 지나며 어떻게 바뀌었는지 설명해 주세요.",
+    "promptQuestionIncludesAny": [
+      "view of failure"
+    ],
+    "answer": "When I was younger, I thought failure meant I was not smart enough. Now I think failure is just a normal part of learning.",
+    "expectedMissionKinds": [
+      "SLOT",
+      "COMPLETE"
+    ],
+    "expectedBehavior": "깊이 내용 부족. 예전 생각(실패=똑똑하지 않음)과 지금 생각(배움의 자연스러운 과정)은 있지만 무엇이 계기였는지, 구체적인 실패 경험, 바뀐 생각의 효과 같은 깊이 내용이 없다. 계기나 예 하나를 더하게 하는 미션이 그럴 만하다. 문법은 맞으므로 교정을 만들면 과잉 교정이다. 넣어볼 표현이 상급 수준의 변화 서술(예: what changed my mind was ...)인지 본다."
+  },
+  {
+    "caseId": "content-quality-c08",
+    "name": "content quality C08 - broken structure - prompt-reflection-06",
+    "category": "STRUCTURE_FRAGMENT",
+    "difficulty": "C",
+    "promptId": "prompt-reflection-06",
+    "promptQuestionEn": "Describe how your study habits have changed over time and explain why.",
+    "promptQuestionKo": "공부 습관이 시간이 지나며 어떻게 바뀌었는지와 그 이유를 설명해 주세요.",
+    "promptQuestionIncludesAny": [
+      "study habits"
+    ],
+    "answer": "Before, night study, coffee, cramming before exam. Now, every day little bit, morning. Because health is bad and score also not good.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "문장 구조가 깨진 답. 세 문장 모두 주어·동사가 없는 낱말 나열이다. 뜻(예전엔 밤에 커피 마시며 시험 직전 벼락치기, 지금은 매일 아침 조금씩, 건강과 점수가 나빠서)을 살린 완전한 문장으로 고쳐야 한다(예: I used to study late at night with coffee and cram before exams. Now I study a little every morning because my health got worse and my scores were not good.). 학생이 쓰지 않은 사실을 덧붙이지 않는지, 고친 문장이 상급 질문에 맞게 과거·현재 대비를 살리는지 본다."
+  },
+  {
+    "caseId": "content-quality-c09",
+    "name": "content quality C09 - required content missing - prompt-general-1108",
+    "category": "REQUIRED_MISSING",
+    "difficulty": "C",
+    "promptId": "prompt-general-1108",
+    "promptQuestionEn": "Tell me about a meal you learned to cook yourself and explain why it feels meaningful to you.",
+    "promptQuestionKo": "스스로 배워 만든 요리에 대해 말하고, 왜 의미 있게 느껴지는지 설명해 주세요.",
+    "promptQuestionIncludesAny": [
+      "meal you learned to cook"
+    ],
+    "answer": "When I started living alone in college, I learned to make kimchi fried rice by watching YouTube videos. I use old kimchi, ham, and a fried egg on top, and now I can make it in ten minutes.",
+    "expectedMissionKinds": [
+      "SLOT"
+    ],
+    "expectedBehavior": "필수 내용 부족. 요리(김치볶음밥)와 특징(묵은 김치, 햄, 달걀 프라이, 10분)은 있지만 왜 의미 있는지가 없다. 개인적 의미(혼자 살며 생긴 자신감, 가족 생각 등)를 묻는 미션이 맞다. 'old kimchi'는 묵은지를 뜻하는 이해 가능한 표현이라 문법 오류로 고치면 과잉 교정이다(더 자연스러운 표현은 추천 표현으로만). 언제 배웠는지(대학 때 자취)를 이미 말했으니 시간을 다시 묻지 않는지 본다."
+  },
+  {
+    "caseId": "content-quality-c10",
+    "name": "content quality C10 - local grammar - prompt-general-1109",
+    "category": "GRAMMAR_LOCAL",
+    "difficulty": "C",
+    "promptId": "prompt-general-1109",
+    "promptQuestionEn": "Describe a cafe you often revisit and explain why it is memorable to you.",
+    "promptQuestionKo": "자주 다시 가는 카페를 설명하고, 왜 기억에 남는지 말해 주세요.",
+    "promptQuestionIncludesAny": [
+      "cafe you often revisit"
+    ],
+    "answer": "There is a small cafe called Moonlight near my old university. It has big windows and old wooden tables, and it always plays jazz music. I often go back there because I spent a lot of time to study for my exams there with my best friend, so it remind me of those days.",
+    "expectedMissionKinds": [
+      "LANGUAGE_FIX"
+    ],
+    "expectedBehavior": "가벼운 문법 오류. 고칠 것: 'spent a lot of time to study'→'spent a lot of time studying', 'it remind me'→'it reminds me'. 카페(Moonlight), 특징(큰 창, 오래된 나무 탁자, 재즈), 기억에 남는 이유(친구와 시험공부)가 모두 있어 내용을 더 묻지 않아야 한다. 'jazz music', 'go back there'는 맞는 표현이라 고치면 과잉 교정이다."
+  }
+]

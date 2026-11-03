@@ -291,6 +291,31 @@ test("retired score fields fail the public response contract", () => {
   assert.ok(result.failures.some((failure) => failure.code === "legacy_field_leak"));
 });
 
+// [spec] 가짜 서버 포트(056 4단계 지적, 2026-11-04 사용자 결정): run-feedback-quality-check.mjs는 Node fetch로 부르는데,
+// fetch(undici)는 Fetch 표준의 "bad port"로 가는 요청을 서버에 닿기 전에 막는다(cause "bad port").
+// 동적 포트 범위가 1024부터인 PC에서는 listen(0)이 가끔 그 포트(10080 등)를 받아 테스트가 가끔 실패했다.
+// 그 포트를 받으면 닫고 다시 받는다. 목록은 undici lib/web/fetch/constants.js의 badPorts 그대로다
+// (Node 24.14.0 내장 undici 7.21.0과 npm undici 7.30.1이 같은 82개).
+const SPEC_FETCH_BAD_PORTS = new Set([
+  1, 7, 9, 11, 13, 15, 17, 19, 20, 21, 22, 23, 25, 37, 42, 43, 53, 69, 77, 79,
+  87, 95, 101, 102, 103, 104, 109, 110, 111, 113, 115, 117, 119, 123, 135, 137,
+  139, 143, 161, 179, 389, 427, 465, 512, 513, 514, 515, 526, 530, 531, 532,
+  540, 548, 554, 556, 563, 587, 601, 636, 989, 990, 993, 995, 1719, 1720, 1723,
+  2049, 3659, 4045, 4190, 5060, 5061, 6000, 6566, 6665, 6666, 6667, 6668, 6669, 6679,
+  6697, 10080
+]);
+
+async function specListenOnFetchablePort(server) {
+  for (let attempt = 1; attempt <= 50; attempt += 1) {
+    await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+    if (!SPEC_FETCH_BAD_PORTS.has(server.address().port)) {
+      return;
+    }
+    await new Promise((resolve) => server.close(resolve));
+  }
+  throw new Error("listen(0) kept returning ports that fetch blocks");
+}
+
 // [spec] 050: 회귀 리포트의 completion 줄임이 서버 응답의 실제 필드(FeedbackCompletionDto)를 남기는지.
 // OpenAI를 부르지 않는다. 가짜 /api/feedback 서버로 run-feedback-quality-check.mjs를 돌리고 리포트를 읽는다.
 async function runQualityCheckWithFakeFeedback(payloadByAnswer) {
@@ -326,7 +351,7 @@ async function runQualityCheckWithFakeFeedback(payloadByAnswer) {
       response.end(JSON.stringify(payload));
     });
   });
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await specListenOnFetchablePort(server);
   const port = server.address().port;
 
   try {
@@ -710,7 +735,7 @@ async function runSpecFuCheck(cases, responses, extraArgs = [], options = {}) {
       }
     });
   });
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await specListenOnFetchablePort(server);
   const port = server.address().port;
 
   try {
@@ -1484,7 +1509,7 @@ async function specCqRunCheck(cases, respond, { passPayloads = true, extraArgs =
       response.end(JSON.stringify(planned.json));
     });
   });
-  await new Promise((resolve) => server.listen(0, "127.0.0.1", resolve));
+  await specListenOnFetchablePort(server);
   const port = server.address().port;
   try {
     const casesPath = pathMod.join(tempDir, "cases.spec-content.json");
@@ -2645,4 +2670,97 @@ test("[spec] content X1 report snapshot, export and summarize chain end to end",
   specCqAssertGroups(out.stdout, "난이도", SPEC_CQ_C3);
   specCqAssertGroups(out.stdout, "미션 종류", SPEC_CQ_C4);
   specCqAssertLow(out.stdout, ids, SPEC_CQ_C5_Q7);
+});
+
+// ---------------------------------------------------------------- 4단계 지적(11-qa-verify.md 확실한 문제 3·4)의 겨냥 테스트
+// 12-main-decision.md: 둘 다 버그로 고친다. 고치기 전에는 실패가 맞다.
+
+// 11 확실한 문제 3: review-items.md에 완료 항목의 "풍부하게 써 보기" 이유·문장 틀(영·한)·넣어볼 표현과 뜻이 빠졌다.
+// 명세 3: md는 같은 내용(완료면 "풍부하게 써 보기 제안")을 항목마다 정리한다. 값은 시나리오 B12(P-CM2의 enrichment).
+test("[spec] content 11-3 review-items.md shows the enrichment reason, sentence frame and phrases of a completed item", async () => {
+  const { exported, ids } = await specCqPipeline();
+  const md = exported.md;
+  const r3Start = md.indexOf(ids.R3);
+  assert.ok(r3Start >= 0, "R3 id is not in the md");
+  const laterStarts = ["R1", "R2", "R4"].map((r) => md.indexOf(ids[r])).filter((start) => start > r3Start);
+  const section = md.slice(r3Start, laterStarts.length > 0 ? Math.min(...laterStarts) : md.length);
+  for (const text of [
+    "결과 더하기",
+    "그렇게 했을 때 무엇이 나아졌는지 쓰면 답이 더 설득력 있어요.",
+    "집중 시간을 만든 뒤 달라진 점을 한 문장 더해 보세요.",
+    "As a result, ____.",
+    "그 결과 ____."
+  ]) {
+    assert.ok(section.includes(text), `R3 section should include "${text}":\n${section}`);
+  }
+  const sectionLines = section.split("\n");
+  for (const [phrase, meaningKo] of [
+    ["I finish my work on time", "제시간에 일을 끝내요"],
+    ["I feel less stressed", "스트레스를 덜 받아요"]
+  ]) {
+    assert.ok(
+      sectionLines.some((line) => line.includes(phrase) && line.includes(meaningKo)),
+      `R3 section should have a line with "${phrase}" and its meaning "${meaningKo}":\n${section}`
+    );
+  }
+});
+
+// 11 확실한 문제 4(a): 이름이 foo, foo (2), foo 순서면 셋째 결과의 id가 둘째 이름과 같은 "foo (2)"가 됐다.
+// 명세 3 "id는 실행 안에서 유일", 결정 Q15(같은 이름이 또 나오면 " (2)", " (3)", 리포트 순서), 12 결정(이미 쓴 id면 번호를 올린다).
+test("[spec] content 11-4a ids stay unique when a later name equals an earlier numbered id", async () => {
+  const cases = [
+    specCqCase("spec taken", "prompt-a-1", SPEC_CQ_A_SL, ["SLOT"], SPEC_CQ_EB.R1),
+    specCqCase("spec taken (2)", "prompt-a-1", SPEC_CQ_A_LF, ["LANGUAGE_FIX"], SPEC_CQ_EB.R2),
+    specCqCase("spec taken", "prompt-b-1", SPEC_CQ_A_SL2, ["LANGUAGE_FIX"], SPEC_CQ_EB.R4)
+  ];
+  const check = await specCqRunCheck(cases, specCqRaResponder());
+  assert.ok(check.report, check.detail);
+  assert.deepEqual(check.report.results.map((result) => [result.name, result.answer]), cases.map((testCase) => [testCase.name, testCase.answer]));
+  const exported = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  const items = specCqItems(exported.json);
+  assert.equal(items.length, 3);
+  const ids = items.map((item) => item.id);
+  assert.equal(new Set(ids).size, 3, `ids should all differ: ${JSON.stringify(ids)}`);
+  assert.deepEqual(items.map((item) => [item.answer, item.id]), [
+    [SPEC_CQ_A_SL, "spec taken"],
+    [SPEC_CQ_A_LF, "spec taken (2)"],
+    [SPEC_CQ_A_SL2, "spec taken (3)"]
+  ]);
+});
+
+// 11 확실한 문제 4(b): 같은 이름의 앞 케이스 요청이 실패하면 뒤 케이스가 번호 없는 id를 받아, 실행마다 다른 케이스에 같은 id가 붙었다.
+// 결정 Q15(리포트 순서로 번호), 12 결정(id는 건너뛰기 판단 전에 모든 결과에 매긴다): 실패한 앞 케이스가 이름 그대로의 id를 갖고,
+// 뒤 케이스는 B8처럼 "이름 (2)"다.
+test("[spec] content 11-4b a same-name case after a failed request keeps its report-order id", async () => {
+  const name = "spec same name failed first";
+  const cases = [
+    specCqCase(name, "prompt-a-1", SPEC_CQ_A_FAIL, ["SLOT"], SPEC_CQ_EB.R5),
+    specCqCase(name, "prompt-a-1", SPEC_CQ_A_SL, ["SLOT"], SPEC_CQ_EB.R1)
+  ];
+  const check = await specCqRunCheck(cases, specCqRaResponder());
+  assert.ok(check.report, check.detail);
+  assert.deepEqual(check.report.results.map((result) => result.answer), [SPEC_CQ_A_FAIL, SPEC_CQ_A_SL]);
+  assert.ok(check.report.results[0].failures.some((failure) => failure.code === "request_failed"), JSON.stringify(check.report.results[0].failures));
+  const exported = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  assert.deepEqual(specCqItems(exported.json).map((item) => [item.answer, item.id]), [[SPEC_CQ_A_SL, `${name} (2)`]]);
+  assert.ok(specCqSkippedNames(exported.json).includes(name), JSON.stringify(exported.json.skipped));
+});
+
+// 같은 지적의 --repeat 경우(11 확실한 문제 4(b) 끝): 첫 반복의 요청이 실패해도 둘째 반복의 id는 B7과 같은 "이름 (2)"다.
+test("[spec] content 11-4b with --repeat a failed first repetition leaves the second its report-order id", async () => {
+  const cases = [specCqRaCases()[0]];
+  let requestCount = 0;
+  const respond = () => {
+    requestCount += 1;
+    return requestCount === 1 ? SPEC_CQ_FAIL_500 : specCqOk(specCqPSL());
+  };
+  const check = await specCqRunCheck(cases, respond, { extraArgs: ["--repeat", "2", "--concurrency", "1"] });
+  assert.ok(check.report, check.detail);
+  assert.deepEqual(check.report.results.map((result) => [result.name, result.repetition]), [[SPEC_CQ_NAMES.R1, 1], [SPEC_CQ_NAMES.R1, 2]]);
+  assert.ok(check.report.results[0].failures.some((failure) => failure.code === "request_failed"), JSON.stringify(check.report.results[0].failures));
+  const exported = await specCqExport({ reportText: check.reportText, cases });
+  assert.equal(exported.code, 0, exported.detail);
+  assert.deepEqual(specCqItems(exported.json).map((item) => item.id), [`${SPEC_CQ_NAMES.R1} (2)`]);
 });

@@ -88,9 +88,19 @@ public class OpenAiFeedbackClient {
             List<PromptHintDto> hints,
             int attemptIndex
     ) {
+        return review(prompt, answer, hints, attemptIndex, null);
+    }
+
+    public FeedbackResponseDto review(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptIndex,
+            PreviousAttemptContext previousAttempt
+    ) {
         return LlmRequestDeadline.within(
                 Duration.ofSeconds(requestBudgetSeconds),
-                () -> reviewWithinBudget(prompt, answer, hints, attemptIndex)
+                () -> reviewWithinBudget(prompt, answer, hints, attemptIndex, previousAttempt)
         );
     }
 
@@ -98,7 +108,8 @@ public class OpenAiFeedbackClient {
             PromptDto prompt,
             String answer,
             List<PromptHintDto> hints,
-            int attemptIndex
+            int attemptIndex,
+            PreviousAttemptContext previousAttempt
     ) {
         latestAnalysisSnapshot.remove();
         latestExecutionTrace.remove();
@@ -125,7 +136,8 @@ public class OpenAiFeedbackClient {
             String userPrompt = contract.userPrompt(
                     prompt,
                     answer,
-                    hints
+                    hints,
+                    previousAttempt
             );
             ProviderResponse initialResponse = requestCanonicalFeedback(prompt, userPrompt);
             initialStatusCode = initialResponse.statusCode();
@@ -168,7 +180,7 @@ public class OpenAiFeedbackClient {
             AssembledFeedback assembled;
             try {
                 initialStructuredText = extractCanonicalText(initialResponse.body());
-                assembled = assemble(prompt, answer, attemptIndex, initialStructuredText);
+                assembled = assemble(prompt, answer, attemptIndex, initialStructuredText, previousAttempt);
             } catch (FeedbackContractException exception) {
                 originalContractError = exception;
                 if (!exception.retryable()) {
@@ -222,7 +234,7 @@ public class OpenAiFeedbackClient {
                 }
                 requireSuccessfulResponse(retryResponse);
                 retryStructuredText = extractCanonicalText(retryResponse.body());
-                assembled = assemble(prompt, answer, attemptIndex, retryStructuredText);
+                assembled = assemble(prompt, answer, attemptIndex, retryStructuredText, previousAttempt);
                 retrySucceeded = true;
             }
 
@@ -409,7 +421,8 @@ public class OpenAiFeedbackClient {
             PromptDto prompt,
             String answer,
             int attemptIndex,
-            String structuredText
+            String structuredText,
+            PreviousAttemptContext previousAttempt
     ) {
         CanonicalLlmOutput output;
         try {
@@ -424,7 +437,8 @@ public class OpenAiFeedbackClient {
                 prompt,
                 answer,
                 attemptIndex,
-                output
+                output,
+                previousAttempt
         );
     }
 

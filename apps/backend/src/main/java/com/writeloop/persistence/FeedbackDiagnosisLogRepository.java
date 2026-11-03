@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Optional;
 
 public interface FeedbackDiagnosisLogRepository extends JpaRepository<FeedbackDiagnosisLogEntity, Long> {
 
@@ -14,6 +15,8 @@ public interface FeedbackDiagnosisLogRepository extends JpaRepository<FeedbackDi
     int purgeByUserId(@Param("userId") Long userId);
 
     long countByRetryAttemptedTrueAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(Instant start, Instant end);
+
+    Optional<FeedbackDiagnosisLogEntity> findFirstByAnswerAttemptIdOrderByIdDesc(Long answerAttemptId);
 
     long countByProviderRetryAttemptedTrueAndCreatedAtGreaterThanEqualAndCreatedAtLessThan(Instant start, Instant end);
 }

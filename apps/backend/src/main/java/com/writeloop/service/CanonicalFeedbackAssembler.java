@@ -29,12 +29,24 @@ final class CanonicalFeedbackAssembler {
             int attemptIndex,
         CanonicalLlmOutput output
     ) {
+        return assemble(internalSessionId, prompt, learnerAnswer, attemptIndex, output, null);
+    }
+
+    AssembledFeedback assemble(
+            String internalSessionId,
+            PromptDto prompt,
+            String learnerAnswer,
+            int attemptIndex,
+            CanonicalLlmOutput output,
+            PreviousAttemptContext previousAttempt
+    ) {
         GeneratedContent generated = output.content();
         LearningContractResolution resolution = policy.resolveContract(
                 prompt,
                 learnerAnswer,
                 output.diagnosis(),
-                output.slotAssessments()
+                output.slotAssessments(),
+                previousAttempt
         );
         FeedbackDiagnosisResult diagnosis = resolution.diagnosis();
         MissionDecision decision = resolution.decision();

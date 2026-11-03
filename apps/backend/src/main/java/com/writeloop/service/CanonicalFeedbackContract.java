@@ -23,13 +23,14 @@ final class CanonicalFeedbackContract {
 
             Fill the response in the schema's field order. Each field may rely only on what you have already written:
             1. topicAssessment: write reasonKo first, then decide status from that reason, before grammar or slot assessment.
-            2. structureAssessment.status.
+            2. structureAssessment: write reason first, then decide status from that reason.
             3. languageAssessment.revisionSteps: zero to 25 cumulative steps.
             4. slotAssessments: one item for every slot in questionContract.slotContracts, exactly once each.
-               For each item, write slot first, then evidence, then decide verdict from that evidence.
+               For each item, write slot first, then evidence, then reason, then decide verdict from that evidence and reason.
+               Every reason is one short English sentence of at most 20 words that names the deciding point.
             5. missionSupport: teaching support for at most one slot, chosen by the selection order below.
             6. enrichmentSupport: an optional challenge for at most one depth slot, only when the answer is already complete.
-            7. modelAnswer, then modelAnswerKo, only when the answer is already complete (the selection order below reached step 6).
+            7. modelAnswer, then modelAnswerKo, only when the answer is already complete (the selection order below reached step 7).
                Otherwise return empty strings.
             8. refinementExpressions, only under the same condition, selected by comparing the modelAnswer you already wrote with
                the learner answer. Otherwise return an empty array.
@@ -44,6 +45,9 @@ final class CanonicalFeedbackContract {
               details, and linkers. They are not part of the learner answer and never count as slot evidence.
               Prefer their wording in suggestedPhrases when it fits the target slot, and do not recommend a hint the learner
               already used as a refinementExpression.
+            - previousAttempt appears only when this answer is a rewrite. It holds the learner's previous answer, the mission
+              the learner was given for it (kind and slot), and the slot verdicts with evidence from that attempt. It is context,
+              never slot evidence: judge only the current learnerAnswer.
 
             Authority boundaries:
             - You diagnose topic relevance, sentence structure, cumulative full-answer revision steps,
@@ -147,6 +151,9 @@ final class CanonicalFeedbackContract {
               * BEFORE_STATE: "used to meet differently" is GENERIC; "used to meet in person" is SATISFIED.
             - When the answer provides no information for the slot, return an empty evidence string and verdict MISSING.
             - Do not invent or rename slots. Use only the slots in questionContract.
+            - When previousAttempt is present, keep judgments stable: if the evidence previousAttempt recorded for a slot still appears
+              unchanged in the learner answer and the surrounding words do not change its meaning, keep that slot's previous verdict.
+              Re-judge a slot only when the learner changed, added, or removed the wording for it.
 
             Mission support rules:
             - The learner sees teaching support for one slot only, so write it for exactly the slot the backend will teach.
@@ -154,18 +161,22 @@ final class CanonicalFeedbackContract {
               1. topicAssessment.status is OFF_TOPIC: the first questionContract.requiredSlots slot,
                  or the first depthSlots slot when requiredSlots is empty.
               2. structureAssessment.status is FRAGMENT, or any revision step has kind GRAMMAR_BLOCKING: no slot.
-              3. The first requiredSlots slot whose verdict is not SATISFIED.
-              4. Any revision step has kind GRAMMAR_LOCAL: no slot.
-              5. minimumDepthSlots is greater than 0 and fewer than minimumDepthSlots depthSlots slots are SATISFIED:
+              3. previousAttempt is present and steps 4 to 6 would pick a mission (the answer would not reach step 7):
+                 if previousAttempt.mission.kind is SLOT, its slot is in questionContract, and that slot's verdict is not SATISFIED,
+                 that slot; if previousAttempt.mission.kind is LANGUAGE_FIX and any revision step has kind GRAMMAR_LOCAL, no slot.
+                 Otherwise continue with step 4.
+              4. The first requiredSlots slot whose verdict is not SATISFIED.
+              5. Any revision step has kind GRAMMAR_LOCAL: no slot.
+              6. minimumDepthSlots is greater than 0 and fewer than minimumDepthSlots depthSlots slots are SATISFIED:
                  the first depthSlots slot whose verdict is not SATISFIED.
-              6. Otherwise: no slot.
+              7. Otherwise: no slot.
             - When a slot is picked, return exactly one missionSupport item whose slot is that slot code. When no slot is picked,
               return an empty missionSupport array. Never write support for any other slot.
             - The support must teach that exact slot, not a broader category.
 
             Enrichment support rules:
             - enrichmentSupport is an optional challenge shown only after the learner has a complete answer. It never blocks completion.
-            - Write it only when the selection order above reached step 6. Then pick the first questionContract.depthSlots slot
+            - Write it only when the selection order above reached step 7. Then pick the first questionContract.depthSlots slot
               whose verdict is not SATISFIED and return exactly one item for it. In every other case, and when every depth slot
               is SATISFIED, return an empty enrichmentSupport array.
             - Write it as an invitation to add that one detail to the complete answer, for example the title
@@ -182,7 +193,7 @@ final class CanonicalFeedbackContract {
             Content rules:
             - strengths contains at most one specific, honest strength in Korean.
             - modelAnswer, modelAnswerKo, and refinementExpressions are shown only on the completion screen. Write them only when the
-              selection order above reached step 6 (the answer is complete), the same condition as enrichmentSupport. In every other
+              selection order above reached step 7 (the answer is complete), the same condition as enrichmentSupport. In every other
               case return modelAnswer and modelAnswerKo as empty strings and refinementExpressions as an empty array.
             - modelAnswer is a useful reference answer to the original question. Do not copy it from the learner answer mechanically.
             - modelAnswerKo is the faithful Korean translation of modelAnswer.
@@ -220,6 +231,15 @@ final class CanonicalFeedbackContract {
             String answer,
             List<PromptHintDto> hints
     ) throws JsonProcessingException {
+        return userPrompt(prompt, answer, hints, null);
+    }
+
+    String userPrompt(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            PreviousAttemptContext previousAttempt
+    ) throws JsonProcessingException {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("question", OrderedMaps.of(
                 "id", value(prompt == null ? null : prompt.id()),
@@ -232,8 +252,31 @@ final class CanonicalFeedbackContract {
         payload.put("questionContract", policy.promptContract(prompt));
         // 학습자 답은 사람마다 달라 캐시가 여기서 끊긴다. 맨 뒤에 두어 같은 질문의 힌트까지 캐시되게 한다.
         payload.put("promptHints", promptHints(hints));
+        // 다시 쓴 답일 때만: 바로 앞 시도의 답·미션·판정. 학습자 답보다 앞에 둔다.
+        if (previousAttempt != null) {
+            payload.put("previousAttempt", previousAttemptPayload(previousAttempt));
+        }
         payload.put("learnerAnswer", value(answer));
         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(payload);
+    }
+
+    private Map<String, Object> previousAttemptPayload(PreviousAttemptContext previousAttempt) {
+        List<Map<String, Object>> slotAssessments = new ArrayList<>();
+        for (PreviousAttemptContext.SlotVerdict verdict : previousAttempt.slotAssessments()) {
+            slotAssessments.add(OrderedMaps.of(
+                    "slot", value(verdict.slot()),
+                    "verdict", verdict.verdict() == null ? "" : verdict.verdict().name(),
+                    "evidence", value(verdict.evidence())
+            ));
+        }
+        return OrderedMaps.of(
+                "learnerAnswer", value(previousAttempt.answer()),
+                "mission", OrderedMaps.of(
+                        "kind", previousAttempt.missionKind() == null ? "" : previousAttempt.missionKind().name(),
+                        "slot", value(previousAttempt.targetSlot())
+                ),
+                "slotAssessments", slotAssessments
+        );
     }
 
     // 힌트는 LLM이 읽을 내용(종류, 제목, 표현과 뜻)만 보낸다. id나 표시 순서 같은 내부 필드는 판단에 쓰이지 않는다.
@@ -301,7 +344,9 @@ final class CanonicalFeedbackContract {
                 "reasonKo", stringSchema(),
                 "status", enumString(List.of("ON_TOPIC", "OFF_TOPIC"))
         )));
+        // 판정 앞에 짧은 이유를 먼저 쓰게 해 경계 판정을 덜 흔들리게 한다. 이유는 진단 로그(원문)에만 남는다.
         properties.put("structureAssessment", objectSchema(OrderedMaps.of(
+                "reason", stringSchema(),
                 "status", enumString(List.of("COMPLETE", "FRAGMENT"))
         )));
         properties.put("languageAssessment", objectSchema(OrderedMaps.of(
@@ -318,6 +363,7 @@ final class CanonicalFeedbackContract {
         properties.put("slotAssessments", arraySchema(objectSchema(OrderedMaps.of(
                 "slot", enumString(slots),
                 "evidence", stringSchema(),
+                "reason", stringSchema(),
                 "verdict", enumString(List.of("SATISFIED", "GENERIC", "MISSING"))
         )), 0));
         // 지원 내용은 미션으로 보여 줄 슬롯 하나에만 쓴다. 슬롯마다 쓰게 하면 출력 대부분이 버려진다.

@@ -38,6 +38,17 @@ class OpenAiFeedbackEngine implements FeedbackLlmEngine {
     }
 
     @Override
+    public FeedbackResponseDto review(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptIndex,
+            PreviousAttemptContext previousAttempt
+    ) {
+        return delegate.review(prompt, answer, hints, attemptIndex, previousAttempt);
+    }
+
+    @Override
     public boolean isAuthoritativeFeedback(FeedbackResponseDto feedback) {
         return delegate.isAuthoritativeFeedback(feedback);
     }

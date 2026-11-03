@@ -31,6 +31,16 @@ public class LlmFeedbackClient {
         return engine.review(prompt, answer, hints, attemptIndex);
     }
 
+    FeedbackResponseDto review(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptIndex,
+            PreviousAttemptContext previousAttempt
+    ) {
+        return engine.review(prompt, answer, hints, attemptIndex, previousAttempt);
+    }
+
     public boolean isAuthoritativeFeedback(FeedbackResponseDto feedback) {
         return engine.isAuthoritativeFeedback(feedback);
     }

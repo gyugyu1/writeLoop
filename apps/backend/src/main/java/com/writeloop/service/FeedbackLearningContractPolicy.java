@@ -33,6 +33,16 @@ final class FeedbackLearningContractPolicy {
             FeedbackDiagnosisResult diagnosis,
             SlotAssessments assessments
     ) {
+        return resolveContract(prompt, learnerAnswer, diagnosis, assessments, null);
+    }
+
+    LearningContractResolution resolveContract(
+            PromptDto prompt,
+            String learnerAnswer,
+            FeedbackDiagnosisResult diagnosis,
+            SlotAssessments assessments,
+            PreviousAttemptContext previousAttempt
+    ) {
         if (diagnosis == null) {
             throw new FeedbackContractException("The LLM response did not include a diagnosis");
         }
@@ -104,6 +114,32 @@ final class FeedbackLearningContractPolicy {
                     diagnosis,
                     languageRevision
             );
+        }
+        // 다시 쓴 답: 지난 미션이 아직 풀리지 않았으면 이어 간다. 아래 순서로도 미션이 있는 답에서만 바꾸고,
+        // 완료가 될 답은 완료로 둔다(지난 미션이 깊이 슬롯이어도 다른 깊이 슬롯으로 최소를 채우면 끝난다).
+        boolean wouldComplete = unresolvedRequired.isEmpty()
+                && diagnosis.strongestGrammarImpact() != GrammarImpact.LOCAL
+                && unresolvedDepth.isEmpty();
+        if (previousAttempt != null && !wouldComplete) {
+            String previousSlot = previousAttempt.targetSlot();
+            if (previousAttempt.missionKind() == MissionKind.SLOT
+                    && previousSlot != null
+                    && allowedSlots.contains(previousSlot)
+                    && !presentSlots.contains(previousSlot)) {
+                return resolution(
+                        decision(MissionKind.SLOT, presentSlots, missingSlots, previousSlot, verified),
+                        diagnosis,
+                        languageRevision
+                );
+            }
+            if (previousAttempt.missionKind() == MissionKind.LANGUAGE_FIX
+                    && diagnosis.strongestGrammarImpact() == GrammarImpact.LOCAL) {
+                return resolution(
+                        decision(MissionKind.LANGUAGE_FIX, presentSlots, missingSlots, null, verified),
+                        diagnosis,
+                        languageRevision
+                );
+            }
         }
         if (!unresolvedRequired.isEmpty()) {
             return resolution(

@@ -20,6 +20,15 @@ interface FeedbackLlmEngine {
             int attemptIndex
     );
 
+    // 다시 쓴 답: 바로 앞 시도의 답·미션·판정을 함께 넘긴다.
+    FeedbackResponseDto review(
+            PromptDto prompt,
+            String answer,
+            List<PromptHintDto> hints,
+            int attemptIndex,
+            PreviousAttemptContext previousAttempt
+    );
+
     boolean isAuthoritativeFeedback(FeedbackResponseDto feedback);
 
     FeedbackResponseDto clearInternalMetadata(FeedbackResponseDto feedback);

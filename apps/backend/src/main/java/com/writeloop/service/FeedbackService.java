@@ -1,6 +1,7 @@
 package com.writeloop.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.writeloop.dto.FeedbackCoachMoveDto;
 import com.writeloop.dto.FeedbackCompletionDto;
@@ -35,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -154,13 +156,12 @@ public class FeedbackService {
         beginTiming(currentUserId, request.guestId(), prompt.id(), session.getId(), attemptNo);
         try {
             FeedbackResponseDto internalFeedback;
+            // 다시 쓴 답이면 바로 앞 시도의 답·미션·판정을 LLM과 미션 선택에 넘긴다. 읽지 못하면 첫 답처럼 진단한다.
+            PreviousAttemptContext previousAttempt = findPreviousAttemptContext(session.getId(), attemptNo);
             try {
-                internalFeedback = llmFeedbackClient.review(
-                        prompt,
-                        answer,
-                        hints,
-                        attemptNo
-                );
+                internalFeedback = previousAttempt == null
+                        ? llmFeedbackClient.review(prompt, answer, hints, attemptNo)
+                        : llmFeedbackClient.review(prompt, answer, hints, attemptNo, previousAttempt);
             } catch (RuntimeException exception) {
                 saveFailedDiagnosisLog(
                         session,
@@ -715,6 +716,68 @@ public class FeedbackService {
                 snapshot.diagnosis(),
                 decision == null ? Map.of() : decision.slotAssessments()
         );
+    }
+
+    // 앞 시도의 판정은 그 시도의 진단 로그(final_sections_json의 missionDecision)에 있다. 백엔드가 검증한 판정이다.
+    private PreviousAttemptContext findPreviousAttemptContext(String sessionId, int attemptNo) {
+        if (attemptNo <= 1 || feedbackDiagnosisLogRepository == null) {
+            return null;
+        }
+        try {
+            AnswerAttemptEntity previousAttempt = answerAttemptRepository
+                    .findBySessionIdAndAttemptNo(sessionId, attemptNo - 1)
+                    .orElse(null);
+            if (previousAttempt == null || previousAttempt.getId() == null) {
+                return null;
+            }
+            String finalSectionsJson = feedbackDiagnosisLogRepository
+                    .findFirstByAnswerAttemptIdOrderByIdDesc(previousAttempt.getId())
+                    .map(FeedbackDiagnosisLogEntity::getFinalSectionsJson)
+                    .orElse(null);
+            if (finalSectionsJson == null || finalSectionsJson.isBlank()) {
+                return null;
+            }
+            JsonNode decision = objectMapper.readTree(finalSectionsJson).path("missionDecision");
+            MissionKind missionKind = missionKind(decision.path("missionKind").asText(null));
+            JsonNode assessments = decision.path("slotAssessments");
+            if (missionKind == null || !assessments.isObject()) {
+                return null;
+            }
+            // 저장된 JSON은 키 순서가 바뀔 수 있어 슬롯 코드 순서로 맞춘다(요청이 실행마다 같도록).
+            List<PreviousAttemptContext.SlotVerdict> verdicts = new ArrayList<>();
+            for (String slot : FeedbackSlotCatalog.canonicalSlots()) {
+                JsonNode item = assessments.path(slot);
+                if (item.isMissingNode() || item.isNull()) {
+                    continue;
+                }
+                verdicts.add(new PreviousAttemptContext.SlotVerdict(
+                        slot,
+                        SlotAssessmentStatus.fromCode(item.path("status").asText(null)),
+                        emptyToNull(item.path("evidence").asText(null))
+                ));
+            }
+            String chosenSlot = decision.path("chosenSlot").asText(null);
+            return new PreviousAttemptContext(
+                    previousAttempt.getAnswerText(),
+                    missionKind,
+                    emptyToNull(chosenSlot),
+                    verdicts
+            );
+        } catch (Exception exception) {
+            LOGGER.warn("Failed to read the previous attempt context for session {}", sessionId, exception);
+            return null;
+        }
+    }
+
+    private static MissionKind missionKind(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return MissionKind.valueOf(value.trim());
+        } catch (IllegalArgumentException exception) {
+            return null;
+        }
     }
 
     private String findPreviousAnswer(String sessionId, int attemptNo) {

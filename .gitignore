@@ -39,3 +39,6 @@ tmp_*
 .vscode/*
 !.vscode/extensions.json
 !.vscode/launch.json
+
+# 디자인 검토 도구가 남기는 메모(로컬 전용)
+apps/mobile/.impeccable/

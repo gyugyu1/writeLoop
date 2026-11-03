@@ -13021,3 +13021,48 @@
     padding: 14px 16px;
   }
 }
+
+.previousMissionCard {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  border: 1px solid #e6dfd6;
+  background: #fbf8f4;
+}
+
+.previousMissionLabel {
+  color: #7a7672;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.previousMissionMessage {
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.previousMissionResolved {
+  border-color: #b7dfc2;
+  background: #eef8f1;
+}
+
+.previousMissionResolved .previousMissionMessage {
+  color: #1f7a3d;
+}
+
+.previousMissionPartial {
+  border-color: #f0d7a8;
+  background: #fdf6e8;
+}
+
+.previousMissionPartial .previousMissionMessage {
+  color: #9a6400;
+}
+
+.previousMissionUnresolved .previousMissionMessage {
+  color: #5f5a55;
+}

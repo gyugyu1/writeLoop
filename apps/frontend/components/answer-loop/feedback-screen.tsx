@@ -5,7 +5,7 @@ import styles from "../../app/page.module.css";
 import { canBuildCoachMoveDiff, hasCoachMove } from "../../lib/coach-move";
 import { buildInlineFeedbackSegments, type RenderedInlineFeedbackSegment } from "../../lib/inline-feedback";
 import { trimNullable } from "../../lib/text";
-import type { Feedback } from "../../lib/types";
+import type { Feedback, PreviousMissionResult } from "../../lib/types";
 import type { FeedbackView } from "./feedback-view";
 import type { SavedExpressionsState } from "./use-saved-expressions";
 
@@ -421,6 +421,37 @@ export function FeedbackSummary({
 }
 
 // 피드백 화면: 진행 상태, 피드백 요약, 다시 써 보기·루프 마치기.
+const PREVIOUS_MISSION_STATUS_CLASS: Record<string, string> = {
+  RESOLVED: styles.previousMissionResolved,
+  PARTIAL: styles.previousMissionPartial,
+  UNRESOLVED: styles.previousMissionUnresolved
+};
+
+const PREVIOUS_MISSION_STATUS_MARK: Record<string, string> = {
+  RESOLVED: "✓",
+  PARTIAL: "△",
+  UNRESOLVED: "·"
+};
+
+// 다시 쓴 답의 피드백 맨 위에 지난 미션을 이번 답이 해결했는지 한 줄로 보여 준다.
+function PreviousMissionResultCard({ result }: { result?: PreviousMissionResult | null }) {
+  if (!result?.message) {
+    return null;
+  }
+  const statusClass = PREVIOUS_MISSION_STATUS_CLASS[result.status] ?? styles.previousMissionUnresolved;
+  return (
+    <div className={`${styles.previousMissionCard} ${statusClass}`} data-status={result.status}>
+      <span className={styles.previousMissionLabel}>
+        {result.title ? `지난 미션: ${result.title}` : "지난 미션"}
+      </span>
+      <span className={styles.previousMissionMessage}>
+        <span aria-hidden="true">{PREVIOUS_MISSION_STATUS_MARK[result.status] ?? "·"} </span>
+        {result.message}
+      </span>
+    </div>
+  );
+}
+
 export function FeedbackStep({
   summaryProps,
   isFinishingLoop,
@@ -453,6 +484,7 @@ export function FeedbackStep({
             <div className={styles.feedbackAttemptMetaRow}>
               <span className={styles.feedbackAttemptMetaOnly}>{`${feedback.attemptNo}번째 시도`}</span>
             </div>
+            <PreviousMissionResultCard result={feedback.previousMissionResult} />
             <FeedbackSummary {...summaryProps} />
           </div>
         ) : (

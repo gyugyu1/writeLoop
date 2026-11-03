@@ -397,6 +397,20 @@ export interface Feedback {
   completion?: FeedbackCompletion | null;
   revealLater?: FeedbackRevealLater | null;
   visibleFeedback?: VisibleFeedbackSnapshot | null;
+  /** 다시 쓴 답이면 바로 앞 시도의 미션을 이번 답이 해결했는지. 첫 답이거나 앞이 완료였으면 없다. */
+  previousMissionResult?: PreviousMissionResult | null;
+}
+
+export type PreviousMissionStatus = "RESOLVED" | "PARTIAL" | "UNRESOLVED";
+
+export interface PreviousMissionResult {
+  focusType: "SLOT" | "LANGUAGE_FIX" | "TASK_RESET" | string;
+  title?: string | null;
+  targetSlot?: string | null;
+  status: PreviousMissionStatus | string;
+  appliedCount?: number | null;
+  totalCount?: number | null;
+  message: string;
 }
 
 export interface FeedbackSessionStatus {

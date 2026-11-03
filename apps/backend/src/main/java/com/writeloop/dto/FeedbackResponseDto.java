@@ -1,6 +1,7 @@
 package com.writeloop.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonAlias;
 
@@ -29,7 +30,8 @@ public record FeedbackResponseDto(
         FeedbackRewriteWorkspaceDto rewriteWorkspace,
         FeedbackCompletionDto completion,
         FeedbackRevealLaterDto revealLater,
-        VisibleFeedbackSnapshotDto visibleFeedback
+        VisibleFeedbackSnapshotDto visibleFeedback,
+        @JsonInclude(JsonInclude.Include.NON_NULL) PreviousMissionResultDto previousMissionResult
 ) {
     public FeedbackResponseDto {
         strengths = strengths == null ? List.of() : List.copyOf(strengths);
@@ -84,6 +86,58 @@ public record FeedbackResponseDto(
                 rewriteWorkspace,
                 completion,
                 revealLater,
+                null,
+                null
+        );
+    }
+
+    public FeedbackResponseDto(
+            String promptId,
+            String sessionId,
+            int attemptNo,
+            boolean loopComplete,
+            String completionMessage,
+            String summary,
+            List<String> strengths,
+            List<CorrectionDto> corrections,
+            List<InlineFeedbackSegmentDto> inlineFeedback,
+            List<GrammarFeedbackItemDto> grammarFeedback,
+            String revisedAnswer,
+            List<RefinementExpressionDto> refinementExpressions,
+            String modelAnswer,
+            String modelAnswerKo,
+            String rewriteChallenge,
+            FeedbackUiDto ui,
+            FeedbackLoopDto loop,
+            FeedbackCoachMoveDto coachMove,
+            FeedbackRewriteWorkspaceDto rewriteWorkspace,
+            FeedbackCompletionDto completion,
+            FeedbackRevealLaterDto revealLater,
+            VisibleFeedbackSnapshotDto visibleFeedback
+    ) {
+        this(
+                promptId,
+                sessionId,
+                attemptNo,
+                loopComplete,
+                completionMessage,
+                summary,
+                strengths,
+                corrections,
+                inlineFeedback,
+                grammarFeedback,
+                revisedAnswer,
+                refinementExpressions,
+                modelAnswer,
+                modelAnswerKo,
+                rewriteChallenge,
+                ui,
+                loop,
+                coachMove,
+                rewriteWorkspace,
+                completion,
+                revealLater,
+                visibleFeedback,
                 null
         );
     }
@@ -111,7 +165,8 @@ public record FeedbackResponseDto(
                 rewriteWorkspace,
                 completion,
                 revealLater,
-                visibleFeedback
+                visibleFeedback,
+                previousMissionResult
         );
     }
 
@@ -144,7 +199,8 @@ public record FeedbackResponseDto(
                 nextRewriteWorkspace,
                 nextCompletion,
                 nextRevealLater,
-                visibleFeedback
+                visibleFeedback,
+                previousMissionResult
         );
     }
 
@@ -171,7 +227,36 @@ public record FeedbackResponseDto(
                 rewriteWorkspace,
                 completion,
                 revealLater,
-                nextVisibleFeedback
+                nextVisibleFeedback,
+                previousMissionResult
+        );
+    }
+
+    public FeedbackResponseDto withPreviousMissionResult(PreviousMissionResultDto nextPreviousMissionResult) {
+        return new FeedbackResponseDto(
+                promptId,
+                sessionId,
+                attemptNo,
+                loopComplete,
+                completionMessage,
+                summary,
+                strengths,
+                corrections,
+                inlineFeedback,
+                grammarFeedback,
+                revisedAnswer,
+                refinementExpressions,
+                modelAnswer,
+                modelAnswerKo,
+                rewriteChallenge,
+                ui,
+                loop,
+                coachMove,
+                rewriteWorkspace,
+                completion,
+                revealLater,
+                visibleFeedback,
+                nextPreviousMissionResult
         );
     }
 }

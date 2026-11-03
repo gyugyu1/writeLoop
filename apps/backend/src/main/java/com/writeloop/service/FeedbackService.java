@@ -10,6 +10,7 @@ import com.writeloop.dto.FeedbackRequestDto;
 import com.writeloop.dto.FeedbackResponseDto;
 import com.writeloop.dto.FeedbackRevealLaterDto;
 import com.writeloop.dto.FeedbackSessionStatusDto;
+import com.writeloop.dto.PreviousMissionResultDto;
 import com.writeloop.dto.PromptDto;
 import com.writeloop.dto.PromptHintDto;
 import com.writeloop.dto.VisibleFeedbackSnapshotDto;
@@ -35,6 +36,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -198,7 +200,8 @@ public class FeedbackService {
             FeedbackResponseDto shapedFeedback = attachLoopExperience(
                     llmFeedbackClient.clearInternalMetadata(internalFeedback)
             );
-            shapedFeedback = withSession(shapedFeedback, session.getId(), attemptNo);
+            shapedFeedback = withSession(shapedFeedback, session.getId(), attemptNo)
+                    .withPreviousMissionResult(evaluatePreviousMission(session.getId(), attemptNo, answer, snapshot));
             FeedbackResponseDto feedback = shapedFeedback.withVisibleFeedback(buildVisibleFeedback(shapedFeedback));
             PersistedReview persisted = transactionTemplate.execute(
                     status -> persistReview(preparation, feedback, currentUserId, request.guestId())
@@ -678,6 +681,38 @@ public class FeedbackService {
         } catch (IllegalArgumentException exception) {
             return AttemptType.INITIAL;
         }
+    }
+
+    // 다시 쓴 답이면 바로 앞 시도의 미션을 이번 답이 해결했는지 판정한다. 앞 피드백을 읽지 못하면 붙이지 않는다.
+    private PreviousMissionResultDto evaluatePreviousMission(
+            String sessionId,
+            int attemptNo,
+            String answer,
+            FeedbackAnalysisSnapshot snapshot
+    ) {
+        if (attemptNo <= 1) {
+            return null;
+        }
+        FeedbackResponseDto previousFeedback;
+        try {
+            previousFeedback = answerAttemptRepository.findBySessionIdAndAttemptNo(sessionId, attemptNo - 1)
+                    .map(this::readStoredFeedback)
+                    .orElse(null);
+        } catch (RuntimeException exception) {
+            return null;
+        }
+        if (previousFeedback == null) {
+            return null;
+        }
+        MissionDecision decision = snapshot.finalSections() == null
+                ? null
+                : snapshot.finalSections().missionDecision();
+        return PreviousMissionEvaluator.evaluate(
+                previousFeedback.coachMove(),
+                answer,
+                snapshot.diagnosis(),
+                decision == null ? Map.of() : decision.slotAssessments()
+        );
     }
 
     private String findPreviousAnswer(String sessionId, int attemptNo) {

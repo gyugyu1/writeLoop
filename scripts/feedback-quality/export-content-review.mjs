@@ -26,8 +26,10 @@ if (options.cases) {
 
 const items = [];
 const skipped = [];
-const seenIds = new Map();
+// id는 건너뛰기 전에 리포트 순서대로 모든 결과에 매긴다. 그래야 앞 케이스의 요청이 실패해도 뒤 케이스의 id가 실행마다 같다.
+const usedIds = new Set();
 for (const result of report.results ?? []) {
+  const id = uniqueId(result.name, usedIds);
   const failedRequest = (result.failures ?? []).some((failure) => failure.code === "request_failed");
   if (failedRequest || !result.actual) {
     skipped.push({ name: result.name, reason: failedRequest ? "request_failed" : "no payload snapshot" });
@@ -35,7 +37,7 @@ for (const result of report.results ?? []) {
   }
   const testCase = casesByName.get(result.name) ?? {};
   items.push({
-    id: uniqueId(result.name, seenIds),
+    id,
     name: result.name,
     question: {
       promptId: result.promptId,
@@ -104,8 +106,15 @@ function renderMarkdown(reviewItems, skippedItems) {
       for (const expression of f.completion.refinementExpressions) {
         lines.push(`  - 추천 표현: ${expression.expression} — ${expression.meaningKo ?? ""} (${expression.usageTipKo ?? ""}) 예: ${expression.exampleEn ?? ""}`);
       }
-      if (f.completion.enrichment) {
-        lines.push(`  - 풍부하게 써 보기: ${f.completion.enrichment.focus ?? ""} — ${f.completion.enrichment.instruction ?? ""}`);
+      const enrichment = f.completion.enrichment;
+      if (enrichment) {
+        lines.push(`  - 풍부하게 써 보기: ${enrichment.focus ?? ""}`);
+        if (enrichment.why) lines.push(`    - 이유: ${enrichment.why}`);
+        if (enrichment.instruction) lines.push(`    - 다시 쓸 때: ${enrichment.instruction}`);
+        if (enrichment.skeletonEn) lines.push(`    - 문장 틀: ${enrichment.skeletonEn} / ${enrichment.skeletonKo ?? ""}`);
+        for (const phrase of enrichment.suggestedPhrases ?? []) {
+          lines.push(`    - 넣어볼 표현: ${phrase.phrase} — ${phrase.meaningKo ?? ""}`);
+        }
       }
     } else {
       const m = f.mission;
@@ -129,10 +138,14 @@ function renderMarkdown(reviewItems, skippedItems) {
   return `${lines.join("\n")}\n`;
 }
 
-function uniqueId(name, seen) {
-  const count = (seen.get(name) ?? 0) + 1;
-  seen.set(name, count);
-  return count === 1 ? name : `${name} (${count})`;
+// 처음 나온 이름은 그대로, 이미 쓴 id면 " (2)", " (3)"…에서 아직 안 쓴 것을 쓴다("foo (2)"라는 이름과도 겹치지 않는다).
+function uniqueId(name, used) {
+  let id = name;
+  for (let count = 2; used.has(id); count += 1) {
+    id = `${name} (${count})`;
+  }
+  used.add(id);
+  return id;
 }
 
 function parseArgs(args) {

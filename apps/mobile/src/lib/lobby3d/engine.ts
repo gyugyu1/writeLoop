@@ -450,11 +450,13 @@ export class LobbySim {
     const moving = speed > 0.3 || this.dragging;
     let bubbleText = "";
     let bubbleButton: string | null = null;
-    if (nowMs < this.quipUntilMs) bubbleText = this.quip;
-    else if (!moving && this.arrived) {
+    // 움직이는 동안은 말풍선을 숨긴다(짧은 말도). 서 있으면 짧은 말 → 장소 안내 → 기본 말 순서.
+    if (moving) bubbleText = "";
+    else if (nowMs < this.quipUntilMs) bubbleText = this.quip;
+    else if (this.arrived) {
       bubbleText = MARKS[this.arrived].prompt;
       bubbleButton = MARKS[this.arrived].buttonLabel;
-    } else if (!moving) bubbleText = IDLE_LINE;
+    } else bubbleText = IDLE_LINE;
     return {
       x: this.x,
       z: this.z,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AccessibilityInfo, Pressable, StyleSheet, Text, View } from "react-native";
+import { AccessibilityInfo, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Lobby3dCanvas, { type LobbyPointerPhase, type LobbyProjection, type ToonSettings } from "@/components/lobby3d/lobby3d-canvas";
 import SimpleSlider from "@/components/lobby3d/simple-slider";
@@ -56,6 +56,7 @@ function sameView(a: ViewState, b: ViewState) {
 
 export default function Lobby3dScreen() {
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
   const simRef = useRef<LobbySim | null>(null);
   if (!simRef.current) simRef.current = new LobbySim();
   const sim = simRef.current;
@@ -174,7 +175,7 @@ export default function Lobby3dScreen() {
       {view.bubbleText ? (
         <View
           pointerEvents="box-none"
-          style={[styles.bubbleWrap, { left: Math.max(8, Math.min(bubblePos.x - 120, 9999)), top: Math.max(120, bubblePos.y) }]}
+          style={[styles.bubbleWrap, { left: Math.max(8, Math.min(bubblePos.x - 120, screenWidth - 248)), top: Math.max(120, bubblePos.y) }]}
         >
           <View style={styles.bubble}>
             <Text style={styles.bubbleText}>{view.bubbleText}</Text>

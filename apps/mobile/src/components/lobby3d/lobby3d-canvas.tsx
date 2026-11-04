@@ -187,6 +187,8 @@ interface World {
   markObjects: { id: MarkId; object: THREE.Object3D }[];
   labelPoints: Record<MarkId, THREE.Vector3>;
   floor: THREE.Mesh;
+  /** 장소가 아닌 가구. 누르면 움직이지 않는다. */
+  blockers: THREE.Object3D[];
 }
 
 function buildWorld(): World {
@@ -283,6 +285,9 @@ function buildWorld(): World {
   kit.part(new THREE.SphereGeometry(0.42, 16, 12), 0x4e9f5a, 0.03, plant).position.y = 0.85;
   kit.part(new THREE.SphereGeometry(0.3, 14, 10), 0x5db06a, 0.025, plant).position.set(0.22, 1.1, 0.1);
   plant.position.set(7.4, 0, 3.6);
+  plant.traverse((o) => {
+    o.userData.blocker = true;
+  });
   root.add(plant);
 
   const labelPoints: Record<MarkId, THREE.Vector3> = {
@@ -297,7 +302,7 @@ function buildWorld(): World {
   sun.position.set(-3, 8, 6);
   root.add(sun);
 
-  return { root, kit, rig: buildCharacter(kit, root), markObjects, labelPoints, floor };
+  return { root, kit, rig: buildCharacter(kit, root), markObjects, blockers: [plant], labelPoints, floor };
 }
 
 function buildCharacter(kit: WorldKit, root: THREE.Group): Rig {
@@ -531,13 +536,15 @@ function Scene({
       if (size.width <= 0 || size.height <= 0) return null;
       const ndc = new THREE.Vector2((x / size.width) * 2 - 1, -(y / size.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
-      const objects: THREE.Object3D[] = [world.rig.char, ...world.markObjects.map((m) => m.object)];
+      const objects: THREE.Object3D[] = [world.rig.char, ...world.markObjects.map((m) => m.object), ...world.blockers];
       const hits = raycaster.intersectObjects(objects, true);
       let mark: MarkId | null = null;
       let onCharacter = false;
-      const first = hits[0]?.object.userData as { mark?: MarkId; isCharacter?: boolean } | undefined;
+      const first = hits[0]?.object.userData as { mark?: MarkId; isCharacter?: boolean; blocker?: boolean } | undefined;
       if (first?.isCharacter) onCharacter = true;
       else if (first?.mark) mark = first.mark;
+      // 장소가 아닌 가구(화분)를 누르면 그 뒤 바닥으로 걸어가지 않게 바닥 점을 주지 않는다.
+      if (first?.blocker) return { point: null, mark: null, onCharacter: false };
       const floorHit = new THREE.Vector3();
       const onFloor = raycaster.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), floorHit);
       return { point: onFloor ? { x: floorHit.x, z: floorHit.z } : null, mark, onCharacter };
@@ -565,6 +572,10 @@ function Scene({
     const k = Math.min(1, dt * 4);
     target.current.x += (want.x - target.current.x) * k;
     target.current.z += (want.z - target.current.z) * k;
+    // 따라가는 도중에도(특히 거리를 바꾼 순간) 방 밖이 보이지 않게 다시 제한한다.
+    const held = clampCameraTarget({ x: target.current.x, z: target.current.z }, viewWidth, viewHeight);
+    target.current.x = held.x;
+    target.current.z = held.z;
     const dist = 30;
     camera.position.set(target.current.x, Math.sin(PITCH) * dist, target.current.z + Math.cos(PITCH) * dist);
     camera.lookAt(target.current.x, 0, target.current.z);

@@ -33,7 +33,8 @@ final class CanonicalFeedbackContract {
             6. enrichmentSupport: an optional challenge for at most one depth slot.
             7. modelAnswer, then modelAnswerKo.
             8. refinementExpressions, selected by comparing the modelAnswer you already wrote with the learner answer.
-               Fields 6 to 8 are completion-only output (see Content rules); otherwise return them empty.
+               Fields 6 to 8 are completion-only output: write them only for a complete answer (see Content rules) and
+               otherwise return them empty.
             9. strengths.
 
             Input metadata:
@@ -174,6 +175,8 @@ final class CanonicalFeedbackContract {
               6. minimumDepthSlots is greater than 0 and fewer than minimumDepthSlots depthSlots slots are SATISFIED:
                  the first depthSlots slot whose verdict is not SATISFIED.
               7. Otherwise: no slot.
+                 Only step 7 means the answer is complete. Steps 1 to 6 mean it is not complete, even steps 2, 3, and 5 that
+                 pick no slot.
             - When a slot is picked, return exactly one missionSupport item whose slot is that slot code. When no slot is picked,
               return an empty missionSupport array. Never write support for any other slot.
             - The support must teach that exact slot, not a broader category.
@@ -196,7 +199,7 @@ final class CanonicalFeedbackContract {
             - Each suggestedPhrase must drop straight into the blank of skeletonEn and make correct English. Never repeat words that
               skeletonEn already has right before or after the blank: for "I eat lunch at ____." write "home" or "a cafe near my
               school", not "at home"; for "I ____ with my family." write "have dinner", not "have dinner with my family".
-            - suggestedPhrases are two or three different choices that fit the question difficulty; do not repeat skeletonEn itself as a phrase.
+            - suggestedPhrases are different choices that fit the question difficulty; do not repeat skeletonEn itself as a phrase.
 
             Content rules:
             - strengths contains at most one specific, honest strength in Korean.

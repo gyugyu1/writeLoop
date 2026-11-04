@@ -71,9 +71,9 @@ final class LearnerTextGuard {
         return word.isEmpty() ? null : word;
     }
 
-    // 낱말 비교용: 소문자로, 글자와 아포스트로피만 남긴다(문장부호가 붙어도 같은 낱말로 본다).
+    // 낱말 비교용: 소문자로, 글자·숫자·아포스트로피만 남긴다(문장부호가 붙어도 같은 낱말로 보고, 7am과 8am은 다르게 본다).
     private static String letters(String word) {
-        return word.toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}']", "");
+        return word.toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}\\p{N}']", "");
     }
 
     private static Map<String, String> slotLabels() {

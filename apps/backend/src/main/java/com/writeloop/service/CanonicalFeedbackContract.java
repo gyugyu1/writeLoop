@@ -98,7 +98,8 @@ final class CanonicalFeedbackContract {
             - One step may contain multiple low-level changed spans only when they form one local grammatical construction
               that needs one teaching explanation. Include the unchanged bridge words in that correction group.
             - Example: "I'm like eat" -> "I like eating" is one step even though "like" itself stays unchanged.
-            - Unrelated errors, even inside one sentence, require separate cumulative steps.
+            - Unrelated errors, even inside one sentence, require separate cumulative steps. For example, "She go to school and buyed
+              a book" needs one step for "go -> goes" and another for "buyed -> bought".
             - Order steps by kind: STRUCTURE, then GRAMMAR_BLOCKING, then GRAMMAR_LOCAL.
               Within the same kind, prefer left-to-right order for readability, but never reorder a correction
               in a way that changes or reverts an earlier answerAfter.
@@ -116,7 +117,10 @@ final class CanonicalFeedbackContract {
               as a grammar correction. If useful, offer the latter only as an optional refinementExpression.
             - Real errors such as "Companies should protects workers" -> "Companies should protect workers" and
               "I am live in Seoul" -> "I live in Seoul" use GRAMMAR_LOCAL.
-            - reasonKo must explain every change made by that step in concise Korean.
+            - reasonKo explains only the change made in that step, in one or two short Korean sentences a learner at this level
+              understands: what was wrong, why, and the rule or cue to notice next time, for example "look 뒤에 보는 대상이 오면 at이 필요해요."
+              Do not use vague phrases such as "자연스럽게 연결했어요" or grammar terms such as 동명사 or 존재 구문.
+              If one step would need two unrelated explanations, split it into two steps.
 
             Slot rules:
             - slotAssessments contains exactly one item for every slot listed in questionContract.slotContracts and no other slot.
@@ -189,14 +193,22 @@ final class CanonicalFeedbackContract {
             - skeletonKo must be a Korean-language scaffold containing Hangul, not an English scaffold copied from skeletonEn.
               Translate the fixed wording into Korean and preserve the blank placeholder.
             - suggestedPhrases must contain at least two immediately usable English choices with Korean meanings.
+            - Each suggestedPhrase must drop straight into the blank of skeletonEn and make correct English. Never repeat words that
+              skeletonEn already has right before or after the blank: for "I eat lunch at ____." write "home" or "a cafe near my
+              school", not "at home"; for "I ____ with my family." write "have dinner", not "have dinner with my family".
+            - suggestedPhrases are two or three different choices that fit the question difficulty; do not repeat skeletonEn itself as a phrase.
 
             Content rules:
             - strengths contains at most one specific, honest strength in Korean.
+            - Never write internal slot codes such as ACTION, REASON, or SPECIFIC_TIME in learner-facing Korean text (titles, whyKo,
+              instructionKo, reasonKo, strengths). Use plain Korean words such as 행동, 이유, 언제.
             - Completion-only output: enrichmentSupport, modelAnswer, modelAnswerKo, and refinementExpressions are shown only on the
               completion screen. Write them only when the selection order above reached step 7 (the answer is complete). In every
               other case return modelAnswer and modelAnswerKo as empty strings and enrichmentSupport and refinementExpressions as
               empty arrays.
-            - modelAnswer is a useful reference answer to the original question. Do not copy it from the learner answer mechanically.
+            - modelAnswer rewrites the learner's own answer one step better for this difficulty. Keep every fact and idea the learner
+              wrote, including actions, times, places, reasons, feelings, and emphasis words such as only or really, and improve only
+              the wording, linking, and grammar. Never add facts the learner did not state; new details belong in enrichmentSupport.
             - modelAnswerKo is the faithful Korean translation of modelAnswer.
             - For a complete answer, return two or three refinementExpressions.
               They are optional for the learner to use and never block completion,
@@ -210,8 +222,8 @@ final class CanonicalFeedbackContract {
               Add a third only when it gives a genuinely different, useful way to enrich this answer.
             - Do not recommend wording the learner already used, near-duplicates, an entire model answer, or an expression that requires
               the learner to claim an unstated experience, time, place, reason, feeling, or result.
-            - Keep each expression appropriate for the question difficulty. exampleEn must show how the expression can be used with the
-              learner's existing meaning.
+            - Keep each expression appropriate for the question difficulty. exampleEn uses the expression in a sentence that keeps the
+              learner's own meaning and facts and never contradicts what the learner said.
             - Do not repeat a language revision step in refinementExpressions or describe an optional refinement as a required correction.
             """;
 
@@ -399,7 +411,7 @@ final class CanonicalFeedbackContract {
             revisionSteps.add(new LanguageRevisionStep(
                     text(item, "kind"),
                     text(item, "answerAfter"),
-                    text(item, "reasonKo")
+                    LearnerTextGuard.replaceSlotCodes(text(item, "reasonKo"))
             ));
         }
         FeedbackDiagnosisResult diagnosis = new FeedbackDiagnosisResult(
@@ -434,7 +446,7 @@ final class CanonicalFeedbackContract {
         }
 
         List<String> strengths = new ArrayList<>();
-        root.path("strengths").forEach(item -> strengths.add(item.asText("")));
+        root.path("strengths").forEach(item -> strengths.add(LearnerTextGuard.replaceSlotCodes(item.asText(""))));
         List<RefinementExpressionDto> refinements = new ArrayList<>();
         for (JsonNode item : root.path("refinementExpressions")) {
             refinements.add(new RefinementExpressionDto(
@@ -458,15 +470,20 @@ final class CanonicalFeedbackContract {
     }
 
     private SlotFeedbackSupport parseSlotSupport(JsonNode item) {
+        String skeletonEn = text(item, "skeletonEn");
         List<FeedbackSuggestedPhraseDto> phrases = new ArrayList<>();
         for (JsonNode phrase : item.path("suggestedPhrases")) {
-            phrases.add(new FeedbackSuggestedPhraseDto(text(phrase, "phrase"), text(phrase, "meaningKo")));
+            // 문장 틀의 빈칸 앞뒤 낱말을 다시 담은 표현은 그 낱말을 뗀다(on ____ + "on Sunday" -> "Sunday").
+            phrases.add(new FeedbackSuggestedPhraseDto(
+                    LearnerTextGuard.trimBlankOverlap(skeletonEn, text(phrase, "phrase")),
+                    text(phrase, "meaningKo")
+            ));
         }
         return new SlotFeedbackSupport(
-                text(item, "title"),
-                text(item, "whyKo"),
-                text(item, "instructionKo"),
-                text(item, "skeletonEn"),
+                LearnerTextGuard.replaceSlotCodes(text(item, "title")),
+                LearnerTextGuard.replaceSlotCodes(text(item, "whyKo")),
+                LearnerTextGuard.replaceSlotCodes(text(item, "instructionKo")),
+                skeletonEn,
                 text(item, "skeletonKo"),
                 phrases
         );

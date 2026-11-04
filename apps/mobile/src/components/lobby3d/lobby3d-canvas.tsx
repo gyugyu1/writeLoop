@@ -1,3 +1,5 @@
+// three보다 먼저 불러와야 한다(Hermes에 없는 FinalizationRegistry 대체).
+import "@/lib/lobby3d/hermes-polyfills";
 import { Canvas, useFrame, useThree } from "@react-three/fiber/native";
 import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";

@@ -390,12 +390,15 @@ describe("[spec] 카메라(S50, S51, 결정 10)", () => {
     expect(bad).toEqual([]);
   });
 
-  // 시나리오 S50의 "바닥이면 8×11 안"을 그대로 옮긴 것(앞쪽 바닥 끝 너머가 보이지 않는다).
-  it("S50: 어느 화면·거리·위치에서도 화면 아래가 바닥 앞 끝(z = 11) 너머에 닿지 않는다", () => {
+  // 앞쪽 경계는 결정 07-1(사용자 결정, 명세를 바꿈)을 따른다: 걸을 수 없는 바닥을 앞쪽에 이어 깔아도 되고,
+  // 그린 바닥 끝(z = 24)과 그 너머 빈 곳만 보이지 않으면 된다. 처음에는 시나리오 S50대로 z = 11이었다.
+  const DRAWN_FLOOR_FRONT_Z = 24;
+
+  it("S50(결정 07-1): 어느 화면·거리·위치에서도 화면 아래가 그린 바닥 앞 끝(z = 24) 너머에 닿지 않는다", () => {
     const bad: string[] = [];
     for (const { screen, name, width, p } of cases) {
       for (const hit of screenHits(width, screen, p)) {
-        if (hit.surface === "floor" && (hit.z < 0 || hit.z > ROOM.depth)) {
+        if (hit.surface === "floor" && (hit.z < 0 || hit.z > DRAWN_FLOOR_FRONT_Z)) {
           bad.push(`${screen.join("x")} ${name} (${p.x},${p.z}) → z ${hit.z.toFixed(2)}`);
         }
       }

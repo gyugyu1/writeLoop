@@ -344,7 +344,8 @@ export class LobbySim {
   pointerUp(nowMs: number): "drag-end" | "poke" | "walk" | "none" {
     if (!this.down) return "none";
     const { hit } = this.down;
-    const wasDrag = this.dragging;
+    // 프레임이 끊겨 꾹으로 바뀌지 못했어도, 누른 시간이 길면 톡이 아니다.
+    const wasDrag = this.dragging || nowMs - this.down.t >= HOLD_MS;
     this.down = null;
     this.dragging = false;
     this.dragPoint = null;
@@ -382,7 +383,7 @@ export class LobbySim {
   /** 한 프레임 진행. dt는 초. */
   update(dt: number, nowMs: number): void {
     const step = Math.min(0.05, Math.max(0, dt));
-    if (this.down && !this.dragging && !this.down.hit.onCharacter && nowMs - this.down.t >= HOLD_MS) this.startDrag();
+    if (this.down && !this.dragging && nowMs - this.down.t >= HOLD_MS) this.startDrag();
 
     let desiredX = 0;
     let desiredZ = 0;
@@ -453,7 +454,7 @@ export class LobbySim {
     else if (!moving && this.arrived) {
       bubbleText = MARKS[this.arrived].prompt;
       bubbleButton = MARKS[this.arrived].buttonLabel;
-    } else if (!moving && !this.action) bubbleText = IDLE_LINE;
+    } else if (!moving) bubbleText = IDLE_LINE;
     return {
       x: this.x,
       z: this.z,

@@ -7,7 +7,7 @@ export const LOBBY3D_VIEW_WIDTH_KEY = "writeloop.lobby3d.viewWidth";
 export async function loadLobbyViewWidth(): Promise<number> {
   try {
     const raw = await AsyncStorage.getItem(LOBBY3D_VIEW_WIDTH_KEY);
-    if (raw === null) return VIEW_WIDTH_DEFAULT;
+    if (raw === null || raw.trim() === "") return VIEW_WIDTH_DEFAULT;
     const value = Number(raw);
     return Number.isFinite(value) ? clampViewWidth(value) : VIEW_WIDTH_DEFAULT;
   } catch {

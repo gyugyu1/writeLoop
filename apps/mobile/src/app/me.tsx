@@ -17,6 +17,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
+import DevLobbyEntry from "@/components/lobby3d/dev-lobby-entry";
 import { deleteAccount, updateProfile } from "@/lib/api";
 import { requestHomeTutorialReplay } from "@/lib/home-tutorial";
 import { useSession } from "@/lib/session";
@@ -233,6 +234,7 @@ export default function MeScreen() {
         <View style={styles.screen}>
           <View style={styles.loadingState}>
             <ActivityIndicator color="#E38B12" />
+            <DevLobbyEntry />
           </View>
           <MobileNavBar activeTab="me" />
         </View>
@@ -530,6 +532,7 @@ export default function MeScreen() {
             )}
 
             <Text style={styles.appVersionText}>버전 {APP_VERSION}</Text>
+            <DevLobbyEntry />
           </ScrollView>
         </KeyboardAvoidingView>
 

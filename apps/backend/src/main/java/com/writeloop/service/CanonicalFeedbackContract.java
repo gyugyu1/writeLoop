@@ -22,18 +22,18 @@ final class CanonicalFeedbackContract {
             Return only data that satisfies the supplied JSON schema.
 
             Fill the response in the schema's field order. Each field may rely only on what you have already written:
-            1. topicAssessment: write reasonKo first, then decide status from that reason, before grammar or slot assessment.
+            1. topicAssessment: write reason first, then decide status from that reason, before grammar or slot assessment.
             2. structureAssessment: write reason first, then decide status from that reason.
             3. languageAssessment.revisionSteps: zero to 25 cumulative steps.
             4. slotAssessments: one item for every slot in questionContract.slotContracts, exactly once each.
                For each item, write slot first, then evidence, then reason, then decide verdict from that evidence and reason.
-               Every reason is one short English sentence of at most 20 words that names the deciding point.
+               Every reason in topicAssessment, structureAssessment, and slotAssessments is one short English sentence of at most
+               20 words that names the deciding point. These reasons are never shown to the learner.
             5. missionSupport: teaching support for at most one slot, chosen by the selection order below.
-            6. enrichmentSupport: an optional challenge for at most one depth slot, only when the answer is already complete.
-            7. modelAnswer, then modelAnswerKo, only when the answer is already complete (the selection order below reached step 7).
-               Otherwise return empty strings.
-            8. refinementExpressions, only under the same condition, selected by comparing the modelAnswer you already wrote with
-               the learner answer. Otherwise return an empty array.
+            6. enrichmentSupport: an optional challenge for at most one depth slot.
+            7. modelAnswer, then modelAnswerKo.
+            8. refinementExpressions, selected by comparing the modelAnswer you already wrote with the learner answer.
+               Fields 6 to 8 are completion-only output (see Content rules); otherwise return them empty.
             9. strengths.
 
             Input metadata:
@@ -52,7 +52,8 @@ final class CanonicalFeedbackContract {
             Authority boundaries:
             - You diagnose topic relevance, sentence structure, cumulative full-answer revision steps,
               slot evidence and verdicts, and write teaching support for the one slot the selection order picks.
-            - Do not decide completion, mission type, action type, score, or UI layout.
+            - The backend decides completion and the mission. You only follow the same selection order (Mission support rules)
+              to choose which slot, if any, to write teaching support for. Do not decide scores or UI layout.
             - Do not return a separate revisedAnswer or issues array. The backend derives the final revised answer and
               visible correction cards from revisionSteps.
             - The backend recomputes the mission from your diagnosis and the question metadata, and rejects a missionSupport
@@ -64,7 +65,8 @@ final class CanonicalFeedbackContract {
             - A short but relevant answer is ON_TOPIC. A grammatically broken but relevant answer is ON_TOPIC.
             - When status is OFF_TOPIC, set every configured slot to empty evidence and verdict MISSING.
               Unrelated facts never satisfy question slots.
-            - When status is OFF_TOPIC, return COMPLETE and an empty languageAssessment.revisionSteps array.
+            - When status is OFF_TOPIC, set structureAssessment.status to COMPLETE and return an empty
+              languageAssessment.revisionSteps array: an off-topic answer is redirected to the question, not corrected.
 
             Structure-assessment rules:
             - structureAssessment.status is COMPLETE when every answer-bearing segment forms an independent sentence.
@@ -76,8 +78,8 @@ final class CanonicalFeedbackContract {
             - Diagnose sentence structure only. A complete but short or content-thin sentence is still COMPLETE.
             - For an ON_TOPIC FRAGMENT, at least one revision step must restore the minimum structure needed
               to form complete sentences and use kind STRUCTURE.
-            - Preserve the learner's meaning and facts in every answerAfter. Never invent learner facts.
-            - You may use the question's sentence frame to restore omitted structure, but never invent learner facts.
+            - Preserve the learner's meaning and facts in every answerAfter. You may use the question's sentence frame to restore
+              omitted structure, but never invent learner facts.
             - When structure and grammar changes overlap in the same phrase, include them in one STRUCTURE step.
               When they affect separate phrases, use separate steps.
 
@@ -106,7 +108,7 @@ final class CanonicalFeedbackContract {
             - If one correction group inseparably contains structure and grammar repairs, classify the step as STRUCTURE.
               Otherwise prefer GRAMMAR_BLOCKING over GRAMMAR_LOCAL within one overlapping group.
             - When at least one structural or blocking step exists, include local grammar steps too, up to the 25-step cap.
-            - If only local grammar steps exist, still diagnose them; the backend keeps them below unresolved required content slots.
+            - If only local grammar steps exist, still diagnose them; the selection order decides whether they become the mission.
             - Before returning a step, check whether the original wording can remain unchanged as acceptable English. If it can, do not revise it.
             - A difference in naturalness, idiomatic preference, collocation preference, register, concision, or specificity alone is not a grammar error.
               Put a useful optional alternative in refinementExpressions instead.
@@ -119,11 +121,10 @@ final class CanonicalFeedbackContract {
             Slot rules:
             - slotAssessments contains exactly one item for every slot listed in questionContract.slotContracts and no other slot.
               Do not omit, repeat, add, or rename slots. The schema lists every slot code the service knows; use only this question's.
-            - verdict is SATISFIED, GENERIC, or MISSING. Decide it only from the evidence you just wrote.
+            - verdict is SATISFIED, GENERIC, or MISSING.
             - Judge each slot using the original question together with all three values in questionContract.slotContracts:
               definition is the shared slot meaning, semanticRole is this question's exact relationship, and satisfiedWhen is the
               paraphrase-tolerant fulfillment criterion. All three must be satisfied.
-            - Assess every slot by interpreting the original question and the learner answer together.
             - Fixed context already supplied by the question, including time, place, situation, and referenced people or things, is inherited
               and does not need to be repeated in the learner answer.
             - The learner answer needs to supply only the new slot information requested by the question. Do not inherit question context when
@@ -150,7 +151,6 @@ final class CanonicalFeedbackContract {
               * PLACE: "a nice area" is GENERIC; "western Seoul near a park" is SATISFIED.
               * BEFORE_STATE: "used to meet differently" is GENERIC; "used to meet in person" is SATISFIED.
             - When the answer provides no information for the slot, return an empty evidence string and verdict MISSING.
-            - Do not invent or rename slots. Use only the slots in questionContract.
             - When previousAttempt is present, keep judgments stable: if the evidence previousAttempt recorded for a slot still appears
               unchanged in the learner answer and the surrounding words do not change its meaning, keep that slot's previous verdict.
               Re-judge a slot only when the learner changed, added, or removed the wording for it.
@@ -176,7 +176,7 @@ final class CanonicalFeedbackContract {
 
             Enrichment support rules:
             - enrichmentSupport is an optional challenge shown only after the learner has a complete answer. It never blocks completion.
-            - Write it only when the selection order above reached step 7. Then pick the first questionContract.depthSlots slot
+            - Write it only for a complete answer (completion-only output, see Content rules). Then pick the first questionContract.depthSlots slot
               whose verdict is not SATISFIED and return exactly one item for it. In every other case, and when every depth slot
               is SATISFIED, return an empty enrichmentSupport array.
             - Write it as an invitation to add that one detail to the complete answer, for example the title
@@ -192,12 +192,13 @@ final class CanonicalFeedbackContract {
 
             Content rules:
             - strengths contains at most one specific, honest strength in Korean.
-            - modelAnswer, modelAnswerKo, and refinementExpressions are shown only on the completion screen. Write them only when the
-              selection order above reached step 7 (the answer is complete), the same condition as enrichmentSupport. In every other
-              case return modelAnswer and modelAnswerKo as empty strings and refinementExpressions as an empty array.
+            - Completion-only output: enrichmentSupport, modelAnswer, modelAnswerKo, and refinementExpressions are shown only on the
+              completion screen. Write them only when the selection order above reached step 7 (the answer is complete). In every
+              other case return modelAnswer and modelAnswerKo as empty strings and enrichmentSupport and refinementExpressions as
+              empty arrays.
             - modelAnswer is a useful reference answer to the original question. Do not copy it from the learner answer mechanically.
             - modelAnswerKo is the faithful Korean translation of modelAnswer.
-            - Always return at least two refinementExpressions for a complete answer.
+            - For a complete answer, return two or three refinementExpressions.
               They are optional for the learner to use and never block completion,
               but they are required output so a complete answer still receives useful ways to broaden its expression.
             - modelAnswer is written before refinementExpressions. Compare that modelAnswer with the learner answer and select short,
@@ -206,8 +207,7 @@ final class CanonicalFeedbackContract {
             - The recommendations must cover different purposes. Include at least:
               1. one useful vocabulary, collocation, or phrasal expression;
               2. one sentence frame, connector, emphasis, contrast, reason, result, or detail-building expression.
-              Add further expressions whenever they provide a genuinely different, useful way to enrich this answer; do not stop at two
-              because of an arbitrary count limit.
+              Add a third only when it gives a genuinely different, useful way to enrich this answer.
             - Do not recommend wording the learner already used, near-duplicates, an entire model answer, or an expression that requires
               the learner to claim an unstated experience, time, place, reason, feeling, or result.
             - Keep each expression appropriate for the question difficulty. exampleEn must show how the expression can be used with the
@@ -340,8 +340,9 @@ final class CanonicalFeedbackContract {
         // 구조화 출력은 이 키 순서대로 생성된다. 근거를 쓴 뒤 판정하고, 진단을 마친 뒤 학습 자료를 쓰도록 순서를 정했다.
         // 순서를 바꾸면 모델 동작이 달라지므로 회귀 테스트와 함께 바꾼다.
         Map<String, Object> properties = new LinkedHashMap<>();
+        // 주제 이유는 화면에 쓰지 않는다. 다른 판정 이유처럼 짧은 영어 한 줄이다.
         properties.put("topicAssessment", objectSchema(OrderedMaps.of(
-                "reasonKo", stringSchema(),
+                "reason", stringSchema(),
                 "status", enumString(List.of("ON_TOPIC", "OFF_TOPIC"))
         )));
         // 판정 앞에 짧은 이유를 먼저 쓰게 해 경계 판정을 덜 흔들리게 한다. 이유는 진단 로그(원문)에만 남는다.
@@ -377,7 +378,7 @@ final class CanonicalFeedbackContract {
                 "meaningKo", stringSchema(),
                 "guidanceKo", stringSchema(),
                 "exampleEn", stringSchema()
-        )), 0));
+        )), 0, 3));
         properties.put("strengths", arraySchema(stringSchema(), 0, 1));
         return objectSchema(properties);
     }
@@ -386,7 +387,10 @@ final class CanonicalFeedbackContract {
         JsonNode root = objectMapper.readTree(json);
         TopicAssessment topicAssessment = new TopicAssessment(
                 TopicRelevance.fromCode(text(root.path("topicAssessment"), "status")),
-                text(root.path("topicAssessment"), "reasonKo")
+                // 주제 이유의 이름이 reasonKo에서 reason으로 바뀌었다. 옛 이름으로 온 출력도 읽는다.
+                !text(root.path("topicAssessment"), "reason").isEmpty()
+                        ? text(root.path("topicAssessment"), "reason")
+                        : text(root.path("topicAssessment"), "reasonKo")
         );
         JsonNode structureNode = root.path("structureAssessment");
         JsonNode languageNode = root.path("languageAssessment");

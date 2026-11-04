@@ -64,8 +64,9 @@ class LlmRequestDeterminismTest {
                 "refinementExpressions",
                 "strengths"
         );
+        // 작업 057 결정 1(03-main-decision.md)로 고침: 주제 판정 이유 칸 이름이 reasonKo에서 reason으로 바뀐다.
         assertThat(keys(properties.path("topicAssessment").path("properties")))
-                .containsExactly("reasonKo", "status");
+                .containsExactly("reason", "status");
         assertThat(keys(properties.path("structureAssessment").path("properties")))
                 .containsExactly("reason", "status");
         assertThat(keys(properties.path("languageAssessment").path("properties")
@@ -131,8 +132,9 @@ class LlmRequestDeterminismTest {
         );
         JsonNode schema = objectMapper.readTree(body).path("text").path("format").path("schema");
 
+        // 작업 057 결정 1(03-main-decision.md)로 고침: 주제 판정 이유 칸 이름이 reasonKo에서 reason으로 바뀐다.
         assertThat(keys(schema.path("properties").path("topicAssessment").path("properties")))
-                .containsExactly("reasonKo", "status");
+                .containsExactly("reason", "status");
         assertThat(keys(schema.path("properties").path("structureAssessment").path("properties")))
                 .containsExactly("reason", "status");
         assertThat(keys(schema.path("properties").path("slotAssessments").path("items")

@@ -122,19 +122,20 @@ class CanonicalFeedbackContractTest {
                 .contains("They are optional for the learner to use and never block completion");
     }
 
+    // 작업 057 결정 1(03-main-decision.md)로 고침: 추천 표현은 완료일 때 2~3개(스키마 최대 3), "2개에서 멈추지 말라" 대신 "two or three".
     @Test
-    void schemaAndPromptRequireAtLeastTwoDiverseRefinementExpressionsWithoutMaximum() {
+    void schemaAndPromptRequireTwoOrThreeDiverseRefinementExpressions() {
         JsonNode refinementExpressions = objectMapper.valueToTree(contract.schema(prompt()))
                 .path("properties")
                 .path("refinementExpressions");
 
         assertThat(refinementExpressions.path("minItems").asInt(-1)).isEqualTo(0);
-        assertThat(refinementExpressions.has("maxItems")).isFalse();
+        assertThat(refinementExpressions.path("maxItems").asInt(-1)).isEqualTo(3);
         assertThat(contract.developerPrompt())
-                .contains("Always return at least two refinementExpressions")
+                .contains("two or three")
                 .contains("one useful vocabulary, collocation, or phrasal expression")
                 .contains("one sentence frame, connector, emphasis, contrast, reason, result, or detail-building expression")
-                .contains("do not stop at two")
+                .doesNotContain("do not stop at two")
                 .contains("without adding new facts")
                 .contains("Do not recommend wording the learner already used");
     }

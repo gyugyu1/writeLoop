@@ -129,6 +129,7 @@ class CanonicalFeedbackContractPreviousAttemptSpecTest {
         }
     }
 
+    // 작업 057 결정 1(03-main-decision.md)로 고침: 주제 판정 이유 칸 이름이 reasonKo에서 reason으로 바뀐다(이유 먼저, 판정 뒤 순서는 그대로).
     @Test
     void kept_topicAssessmentAndTopLevelFieldOrderAreUnchanged() {
         JsonNode properties = schema(routinePrompt()).path("properties");
@@ -145,7 +146,7 @@ class CanonicalFeedbackContractPreviousAttemptSpecTest {
                 "refinementExpressions",
                 "strengths"
         );
-        assertThat(keys(properties.path("topicAssessment").path("properties"))).containsExactly("reasonKo", "status");
+        assertThat(keys(properties.path("topicAssessment").path("properties"))).containsExactly("reason", "status");
         assertThat(keys(properties.path("languageAssessment").path("properties")
                 .path("revisionSteps").path("items").path("properties")))
                 .containsExactly("kind", "answerAfter", "reasonKo");

@@ -192,8 +192,8 @@ export function lerpAngle(a: number, b: number, k: number): number {
 
 // ---------- 카메라 ----------
 
-/** 화면 가로에 보이는 바닥 폭(칸). 작을수록 가깝다. */
-export const VIEW_WIDTH_DEFAULT = 5.2;
+/** 화면 가로에 보이는 바닥 폭(칸). 작을수록 가깝다. 3D 모델로 바꾼 뒤 캐릭터가 커 보여 5.2에서 조금 뒤로 뺐다(2026-11-06 사용자 요청). */
+export const VIEW_WIDTH_DEFAULT = 6.0;
 export const VIEW_WIDTH_MIN = 4.0;
 /** 방 너비보다 넓게 보면 방 밖이 보인다. */
 export const VIEW_WIDTH_MAX = ROOM.width - 0.2;

@@ -2,6 +2,7 @@ import { useLoader } from "@react-three/fiber/native";
 import { Component, useEffect, useMemo, type MutableRefObject, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { characterClipState } from "@/lib/lobby3d/character-clips";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 
@@ -69,7 +70,9 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
   // 모델 자산은 require로 받은 번들 자산 번호다. R3F 네이티브가 expo-asset으로 파일을 찾아 읽는다.
   const gltf = useLoader(GLTFLoader, MODEL_ASSET as string) as GLTF;
   const built = useMemo(() => {
-    const model = gltf.scene;
+    // useLoader는 불러온 모델을 앱 전체에서 한 번만 두고 다시 열 때도 같은 것을 준다. 고치기 전에 뼈대째 복제한다
+    // (그대로 고치면 로비를 다시 열 때 앞서 붙인 외곽선 껍질까지 다시 바뀐다).
+    const model = cloneSkinned(gltf.scene);
     const group = new THREE.Group();
     const lift = new THREE.Group();
     group.add(lift);
@@ -84,12 +87,16 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     });
     for (const mesh of skinned) {
       const source = mesh.material as THREE.MeshStandardMaterial;
-      const toon = new THREE.MeshToonMaterial({ map: source.map });
-      source.dispose();
+      // 꼬리 뿌리처럼 면이 접혀 겹친 자리에서 몇 장이 뒤를 보여 틈이 생긴다. 닫힌 몸이라 양면으로 그려도 뒷면은 가려진다.
+      // 원래 재질은 다른 복제본과 함께 쓰므로 지우지 않는다.
+      const toon = new THREE.MeshToonMaterial({ map: source.map, side: THREE.DoubleSide });
       mesh.material = toon;
       materials.push(toon);
       mesh.userData.isCharacter = true;
       mesh.frustumCulled = false;
+      // 누르기 판정은 처음 자세의 경계 구를 쓴다. 점프로 몸이 들려도 귀 끝까지 잡히게 넉넉히 키운다.
+      mesh.computeBoundingSphere();
+      mesh.boundingSphere?.set(mesh.boundingSphere.center, mesh.boundingSphere.radius * 1.5);
       const shell = new THREE.SkinnedMesh(mesh.geometry, shellMaterial);
       shell.bind(mesh.skeleton, mesh.bindMatrix);
       shell.frustumCulled = false;
@@ -133,6 +140,9 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     const upInParent = new THREE.Vector3();
     const parentQuat = new THREE.Quaternion();
     const yawQuat = new THREE.Quaternion();
+    // 지난 프레임에 머리에 더 곱한 두리번 회전. 섞은 값이 바뀌지 않은 프레임에는 클립이 머리를 다시 쓰지 않아,
+    // 되돌리지 않으면 회전이 쌓인다.
+    const appliedYaw = new THREE.Quaternion();
     const headWorld = new THREE.Vector3();
     const hipsWorld = new THREE.Vector3();
     let activeOneShot: string | null = null;
@@ -160,6 +170,8 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
             action.setEffectiveWeight(state.actionWeight);
           }
         }
+        if (built.head) built.head.quaternion.premultiply(appliedYaw.invert());
+        appliedYaw.identity();
         built.mixer.update(dt);
 
         // 가만히 있을 때 가끔 고개를 돌린다(도형 캐릭터와 같은 규칙). 클립 위에 머리 뼈를 더 돌린다.
@@ -176,6 +188,7 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
           upInParent.set(0, 1, 0).applyQuaternion(parentQuat.invert());
           yawQuat.setFromAxisAngle(upInParent, look.yaw);
           built.head.quaternion.premultiply(yawQuat);
+          appliedYaw.copy(yawQuat);
         }
 
         built.group.position.set(sim.x, 0, sim.z);

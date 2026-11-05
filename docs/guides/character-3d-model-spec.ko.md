@@ -137,7 +137,7 @@ flat colors, no texture noise. A-pose or arms slightly away from body.
 
 | 약속 | 앱이 쓰는 곳 |
 |---|---|
-| glTF 2 바이너리, 키 1.0, 원점이 발밑, 앞쪽 +Z | 크기(키 1을 2.84배로 키움), 위치, 방향 |
+| glTF 2 바이너리, 키 1.0(±0.02), 원점이 발밑(바닥 높이 ±0.02), 앞쪽 +Z | 크기(키 1을 2.84배로 키움), 위치, 방향 |
 | 클립 `idle` `walk` `wave` `jump` `hop` `point` `look_around` `poke` | 서 있기·걷기와 동작. 길이는 달라도 된다 |
 | 클립 `sit_down` `sit_idle` `stand_up` | 오래 두면 앉기 |
 | 뼈 `head`, `hips` | 두리번거리기와 말풍선 위치(`head`), 그림자 크기(`hips`) |

@@ -3,7 +3,8 @@
  */
 // [spec] qa 테스트(작업 059, 기능 변경: 3D 로비 캐릭터를 확정 3D 모델로 바꾼다). 바뀔 동작("넣을 모델").
 // 기대값은 명세(private 작업 폴더 01-main-spec.md)의 "넣을 모델"과 그 규격 문서 docs/guides/character-3d-model-spec.ko.md에서 가져온다.
-// - 확정본을 그대로 복사했는지: 확정본 파일(저장소 밖)의 sha256을 1단계에서 재어 적었다(02-qa-tests.md).
+// - 확정본을 그대로 복사했는지: 확정본 파일(저장소 밖)의 sha256을 qa가 재어 적었다. 1단계(02-qa-tests.md)에서 잰 첫 확정본 값을,
+//   꼬리 둘레 외곽선을 고친 새 확정본(2026-11-06 01:35 파일)의 값으로 바꿨다(10-main-decision.md의 3, 11-qa-tests.md).
 // - 규격: 키 1.0, 뼈 17개 + thumb_r(부모는 규격 표), 클립 11개(규격 5절의 클립 중 "(나중)"인 sleep을 뺀 것),
 //   꼭짓점 속성 _OUTLINE_NORMAL·_OUTLINE_BIAS, 앱이 쓰는 클립 길이(규격 5절).
 // - Metro가 .glb를 자산으로 받는지: metro.config.js를 불러 resolver.assetExts를 본다.
@@ -13,7 +14,7 @@ import { join } from "node:path";
 
 const MOBILE = join(__dirname, "..", "..");
 const MODEL = join(MOBILE, "assets", "models", "writeloop.glb");
-const CONFIRMED_SHA256 = "d5ea1cfb967bd1238f39b5ed87c752d82e197f41b02ccb2fa9df04f4de72d385";
+const CONFIRMED_SHA256 = "9d8ad7aeb72c08b88a063c08d0f2d3fe83b8f9341d7e1496f6a8fda9b6eaef75";
 
 type GltfNode = { name?: string; children?: number[]; mesh?: number; skin?: number };
 type Gltf = {

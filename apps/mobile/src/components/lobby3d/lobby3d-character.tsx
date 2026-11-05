@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { clone as cloneSkinned } from "three/examples/jsm/utils/SkeletonUtils.js";
 import { characterClipState } from "@/lib/lobby3d/character-clips";
+import { outlineAttributes, type OutlineAttributeChoice } from "@/lib/lobby3d/outline-attributes";
 import type { LobbySim } from "@/lib/lobby3d/engine";
 
 // 로비의 라이트루프 3D 모델(규격: docs/guides/character-3d-model-spec.ko.md).
@@ -34,22 +35,33 @@ interface OutlineUniforms {
   scale: { value: number };
 }
 
-/** 모델에 구워 넣은 방향(_outline_normal)으로 부풀리고, 구워 넣은 거리(_outline_bias)만큼 카메라에서 뒤로 미는 외곽선 재질. */
-function outlineMaterial(uniforms: OutlineUniforms): THREE.MeshBasicMaterial {
+/**
+ * 외곽선 재질. 모델에 구워 넣은 방향(_outline_normal)으로 부풀리고, 구워 넣은 거리(_outline_bias)만큼 카메라에서 뒤로 민다.
+ * 속성이 없는 모델이면 꼭짓점 법선과 고정 거리로 대신한다(outline-attributes).
+ */
+function outlineMaterial(uniforms: OutlineUniforms, choice: OutlineAttributeChoice): THREE.MeshBasicMaterial {
   const material = new THREE.MeshBasicMaterial({ color: LINE, side: THREE.BackSide });
+  const direction = choice.direction;
+  const bias = choice.bias.source === "attribute" ? choice.bias.attribute : `${choice.bias.value.toFixed(4)}`;
+  const declare =
+    (direction === "_outline_normal" ? "attribute vec3 _outline_normal;\n" : "") +
+    (choice.bias.source === "attribute" ? "attribute float _outline_bias;\n" : "");
   material.onBeforeCompile = (shader) => {
     shader.uniforms.outlineThickness = uniforms.thickness;
     shader.uniforms.outlineScale = uniforms.scale;
     shader.vertexShader =
-      "uniform float outlineThickness;\nuniform float outlineScale;\nattribute vec3 _outline_normal;\nattribute float _outline_bias;\n" +
+      "uniform float outlineThickness;\nuniform float outlineScale;\n" +
+      declare +
       shader.vertexShader
-        .replace("#include <beginnormal_vertex>", "vec3 objectNormal = _outline_normal;")
-        .replace("#include <begin_vertex>", "vec3 transformed = position + normalize(_outline_normal) * outlineThickness;")
+        .replace("#include <beginnormal_vertex>", `vec3 objectNormal = ${direction};`)
+        .replace("#include <begin_vertex>", `vec3 transformed = position + normalize(${direction}) * outlineThickness;`)
         .replace(
           "#include <project_vertex>",
-          "vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);\nmvPosition.z -= _outline_bias * outlineScale;\ngl_Position = projectionMatrix * mvPosition;"
+          `vec4 mvPosition = modelViewMatrix * vec4(transformed, 1.0);\nmvPosition.z -= ${bias} * outlineScale;\ngl_Position = projectionMatrix * mvPosition;`
         );
   };
+  // 고른 속성에 따라 셰이더가 달라지므로, 같은 재질로 묶어 컴파일하지 않게 구별한다.
+  material.customProgramCacheKey = () => `writeloop-outline:${direction}:${bias}`;
   return material;
 }
 
@@ -79,7 +91,7 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     lift.add(model);
     model.scale.setScalar(MODEL_SCALE);
     const uniforms: OutlineUniforms = { thickness: { value: OUTLINE_THICKNESS }, scale: { value: MODEL_SCALE } };
-    const shellMaterial = outlineMaterial(uniforms);
+    const shellMaterials: THREE.Material[] = [];
     const materials: THREE.MeshToonMaterial[] = [];
     const skinned: THREE.SkinnedMesh[] = [];
     model.traverse((o) => {
@@ -97,6 +109,14 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
       // 누르기 판정은 처음 자세의 경계 구를 쓴다. 점프로 몸이 들려도 귀 끝까지 잡히게 넉넉히 키운다.
       mesh.computeBoundingSphere();
       mesh.boundingSphere?.set(mesh.boundingSphere.center, mesh.boundingSphere.radius * 1.5);
+      // 법선이 없는 모델이면 불러올 때 계산한다(명암과, 외곽선 속성이 없을 때의 부풀리는 방향에 쓴다).
+      if (!mesh.geometry.attributes.normal) mesh.geometry.computeVertexNormals();
+      const choice = outlineAttributes({
+        hasOutlineNormal: Boolean(mesh.geometry.attributes._outline_normal),
+        hasOutlineBias: Boolean(mesh.geometry.attributes._outline_bias)
+      });
+      const shellMaterial = outlineMaterial(uniforms, choice);
+      shellMaterials.push(shellMaterial);
       const shell = new THREE.SkinnedMesh(mesh.geometry, shellMaterial);
       shell.bind(mesh.skeleton, mesh.bindMatrix);
       shell.frustumCulled = false;
@@ -113,7 +133,7 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     }
     const head = model.getObjectByName("head") ?? null;
     const hips = model.getObjectByName("hips") ?? null;
-    return { group, lift, model, mixer, actions, materials, shellMaterial, uniforms, head, hips };
+    return { group, lift, model, mixer, actions, materials, shellMaterials, uniforms, head, hips };
   }, [gltf]);
 
   // 카툰 명암 단계·외곽선 굵기 설정을 따른다.
@@ -215,7 +235,7 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
       handleRef.current = null;
       built.mixer.stopAllAction();
       built.materials.forEach((m) => m.dispose());
-      built.shellMaterial.dispose();
+      built.shellMaterials.forEach((m) => m.dispose());
     };
   }, [built, handleRef]);
 

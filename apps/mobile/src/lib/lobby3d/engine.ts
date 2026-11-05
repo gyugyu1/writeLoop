@@ -271,7 +271,8 @@ export class LobbySim {
   vx = 0;
   vz = 0;
   heading = 0;
-  settings: LobbySettings = { speed: 2.6, turn: 10 };
+  // 기본 걷는 속도(칸/초). 3D 모델로 바꾼 뒤 조금 빠르게 했다(2026-11-06 사용자 요청, 2.6에서).
+  settings: LobbySettings = { speed: 3.2, turn: 10 };
   reduceMotion = false;
   action: { type: ActionType; t: number } | null = null;
   arrived: MarkId | null = null;

@@ -130,3 +130,25 @@ flat colors, no texture noise. A-pose or arms slightly away from body.
 결과물은 캐릭터 자료 폴더의 `model3d/` 아래에 날짜 폴더로 둔다(예: `model3d/20261105_tripo_draft/writeloop.glb`). 생성 도구 이름, 넣은 그림, 설명 문구, 손본 내용을 같은 폴더의 `README.md`에 적는다. 앱 저장소에는 검사를 통과한 최종본만 옮긴다.
 
 확정본(2026-11-06 사용자 확정): `model3d/20261105_tripo_api_multiview/v3/final/writeloop.glb`. 만든 과정, 쓴 명령, 이 규격과 다른 점은 같은 폴더 `README.md`에 있고, 다시 만들 때 쓴 스크립트는 `tools/`에 있다.
+
+## 8. 모델만 바꾸기
+
+앱 코드는 모델에 아래 약속만 기댄다. 이 약속을 지키면 앱 코드를 고치지 않고 파일만 바꿔 끼울 수 있다. 모바일 테스트(`tests/lib/lobby3d-character-model-asset.spec.test.ts`)도 이 약속만 본다.
+
+| 약속 | 앱이 쓰는 곳 |
+|---|---|
+| glTF 2 바이너리, 키 1.0, 원점이 발밑, 앞쪽 +Z | 크기(키 1을 2.84배로 키움), 위치, 방향 |
+| 클립 `idle` `walk` `wave` `jump` `hop` `point` `look_around` `poke` | 서 있기·걷기와 동작. 길이는 달라도 된다 |
+| 클립 `sit_down` `sit_idle` `stand_up` | 오래 두면 앉기 |
+| 뼈 `head`, `hips` | 두리번거리기와 말풍선 위치(`head`), 그림자 크기(`hips`) |
+| 외곽선 속성 `_OUTLINE_NORMAL`·`_OUTLINE_BIAS`(5-1) | 있으면 쓴다. 없으면 꼭짓점 법선과 고정 거리 0.008로 대신한다 |
+
+앞쪽 +Z는 테스트로 가리지 못한다. 아래 검사 스크립트나 뷰어로 본다. 꼭짓점 법선이 없는 모델은 앱이 불러올 때 계산한다.
+
+순서:
+1. 캐릭터 자료 폴더의 손질 스크립트로 다시 내보낸다. 확정본 폴더 `tools/`의 `finalize_rig.py`가 외곽선 속성을 굽고 규격 이름으로 맞춘다.
+2. `tools/glb_check.py`로 검사한다(키, 발바닥 높이, 앞쪽, 삼각형 수, 뼈·클립 이름).
+3. `apps/mobile/assets/models/writeloop.glb`를 새 파일로 덮어쓴다.
+4. 모바일 테스트를 돌리고, 개발 빌드에서 로비를 열어 본다.
+
+모델은 앱 안에 들어 있어서, 사용자에게는 새 스토어 빌드를 내야 바뀐다.

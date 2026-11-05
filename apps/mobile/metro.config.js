@@ -11,6 +11,8 @@ const defaultEnhanceMiddleware = config.server?.enhanceMiddleware;
 const defaultResolveRequest = config.resolver?.resolveRequest;
 config.resolver = {
   ...config.resolver,
+  // 3D 로비의 라이트루프 모델(assets/models/writeloop.glb)을 앱 자산으로 싣는다.
+  assetExts: [...(config.resolver?.assetExts ?? []), "glb"],
   resolveRequest: (context, moduleName, platform) => {
     if (moduleName === "three") {
       return { type: "sourceFile", filePath: path.join(__dirname, "node_modules", "three", "build", "three.module.js") };

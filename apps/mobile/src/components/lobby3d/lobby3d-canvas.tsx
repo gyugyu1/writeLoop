@@ -1,11 +1,12 @@
 // three보다 먼저 불러와야 한다(Hermes에 없는 FinalizationRegistry 대체).
 import "@/lib/lobby3d/hermes-polyfills";
 import { Canvas, useFrame, useThree } from "@react-three/fiber/native";
-import { useEffect, useMemo, useRef, type MutableRefObject } from "react";
+import { Suspense, useEffect, useMemo, useRef, type MutableRefObject } from "react";
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { ACTION_SECONDS, LobbySim, MARKS, ROOM, clampCameraTarget, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import { LobbySim, MARKS, ROOM, clampCameraTarget, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import { Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
 
 // 3D 로비 그리기. 동작 규칙은 LobbySim(화면이 가진다)에 있고, 여기서는 매 프레임 그 상태를 그림으로 옮긴다.
 // 테스트에서는 이 모듈을 가짜로 바꾼다(three·expo-gl은 Jest에서 돌지 않는다).
@@ -40,7 +41,6 @@ export interface Lobby3dCanvasProps {
 
 const LINE = 0x3d1b0f;
 const PITCH = (ROOM.pitchDeg * Math.PI) / 180;
-const CHARACTER_SCALE = 1.25;
 
 export default function Lobby3dCanvas(props: Lobby3dCanvasProps) {
   const pickRef = useRef<((x: number, y: number) => PointerHit | null) | null>(null);
@@ -137,13 +137,6 @@ class WorldKit {
   }
 }
 
-function pivot(parent: THREE.Object3D, x: number, y: number, z: number): THREE.Group {
-  const g = new THREE.Group();
-  g.position.set(x, y, z);
-  parent.add(g);
-  return g;
-}
-
 function floorTexture(): THREE.DataTexture {
   const size = 64;
   const data = new Uint8Array(size * size * 4);
@@ -166,26 +159,11 @@ function floorTexture(): THREE.DataTexture {
 
 // ---------- 방과 라이트루프 ----------
 
-interface Rig {
-  char: THREE.Group;
-  shadow: THREE.Mesh;
-  lift: THREE.Group;
-  body: THREE.Group;
-  hipL: THREE.Group;
-  hipR: THREE.Group;
-  shL: THREE.Group;
-  shR: THREE.Group;
-  tailPiv: THREE.Group;
-  head: THREE.Group;
-  earL: THREE.Group;
-  earR: THREE.Group;
-  eyes: THREE.Mesh[];
-}
-
 interface World {
   root: THREE.Group;
   kit: WorldKit;
-  rig: Rig;
+  /** 라이트루프 발밑 그림자. 모델은 따로 불러와 붙인다(lobby3d-character). */
+  shadow: THREE.Mesh;
   markObjects: { id: MarkId; object: THREE.Object3D }[];
   labelPoints: Record<MarkId, THREE.Vector3>;
   floor: THREE.Mesh;
@@ -304,13 +282,6 @@ function buildWorld(): World {
   sun.position.set(-3, 8, 6);
   root.add(sun);
 
-  return { root, kit, rig: buildCharacter(kit, root), markObjects, blockers: [plant], labelPoints, floor };
-}
-
-function buildCharacter(kit: WorldKit, root: THREE.Group): Rig {
-  const WHITE = 0xffffff;
-  const char = new THREE.Group();
-  root.add(char);
   const shadow = new THREE.Mesh(
     new THREE.CircleGeometry(0.42, 24),
     new THREE.MeshBasicMaterial({ color: 0x2b1810, transparent: true, opacity: 0.16 })
@@ -318,180 +289,8 @@ function buildCharacter(kit: WorldKit, root: THREE.Group): Rig {
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = 0.01;
   root.add(shadow);
-  const lift = pivot(char, 0, 0, 0);
-  const body = pivot(lift, 0, 0.42, 0);
-  kit.part(new THREE.CapsuleGeometry(0.3, 0.28, 6, 16), WHITE, 0.03, body).position.y = 0.2;
-  const hipL = pivot(body, -0.15, 0.02, 0);
-  const hipR = pivot(body, 0.15, 0.02, 0);
-  for (const hip of [hipL, hipR]) {
-    kit.part(new THREE.CapsuleGeometry(0.12, 0.16, 6, 12), WHITE, 0.028, hip).position.y = -0.2;
-    const foot = kit.part(new THREE.SphereGeometry(0.14, 14, 10), WHITE, 0.028, hip);
-    foot.scale.set(1, 0.7, 1.25);
-    foot.position.set(0, -0.36, 0.05);
-  }
-  const shL = pivot(body, -0.31, 0.38, 0);
-  const shR = pivot(body, 0.31, 0.38, 0);
-  for (const sh of [shL, shR]) {
-    kit.part(new THREE.CapsuleGeometry(0.1, 0.22, 6, 12), WHITE, 0.026, sh).position.y = -0.18;
-  }
-  const tailPiv = pivot(body, 0, 0.08, -0.3);
-  for (const [x, y, z, r] of [[0, 0.05, -0.08, 0.17], [0.06, 0.2, -0.16, 0.14], [-0.02, 0.32, -0.12, 0.11]]) {
-    kit.part(new THREE.SphereGeometry(r, 14, 10), WHITE, 0.024, tailPiv).position.set(x, y, z);
-  }
-  const head = pivot(body, 0, 0.62, 0.02);
-  const skull = kit.part(new THREE.SphereGeometry(0.56, 32, 24), WHITE, 0.032, head);
-  skull.scale.set(1.18, 0.96, 1.0);
-  skull.position.y = 0.42;
-  const earL = pivot(head, -0.36, 0.86, -0.02);
-  const earR = pivot(head, 0.36, 0.86, -0.02);
-  for (const ear of [earL, earR]) {
-    kit.part(new THREE.ConeGeometry(0.2, 0.42, 16), WHITE, 0.028, ear).position.y = 0.16;
-    kit.part(new THREE.ConeGeometry(0.11, 0.26, 14), 0xff9894, 0, ear).position.set(0, 0.13, 0.08);
-  }
-  const band = kit.part(new THREE.TorusGeometry(0.6, 0.045, 10, 48), 0x252525, 0, head);
-  band.rotation.x = Math.PI / 2;
-  band.scale.set(1.12, 1.0, 1);
-  band.position.y = 0.64;
-  // 정면에서 볼 때 화면 왼쪽 렌즈가 파랑, 오른쪽이 주황.
-  for (const [x, color] of [[-0.2, 0x0a84f0], [0.2, 0xff8400]] as const) {
-    const lens = pivot(head, x, 0.64, 0.62);
-    lens.rotation.x = -0.35;
-    kit.part(new THREE.TorusGeometry(0.17, 0.045, 10, 28), 0x331305, 0, lens);
-    kit.part(new THREE.CircleGeometry(0.16, 28), color, 0, lens).position.z = 0.005;
-  }
-  const eyes: THREE.Mesh[] = [];
-  for (const x of [-0.21, 0.21]) {
-    const eye = kit.part(new THREE.SphereGeometry(0.065, 14, 12), 0x3a1708, 0, head);
-    eye.position.set(x, 0.36, 0.55);
-    eye.scale.set(1, 1.1, 0.6);
-    eyes.push(eye);
-  }
-  const cheekMaterial = new THREE.MeshBasicMaterial({ color: 0xff9f9c });
-  for (const x of [-0.34, 0.34]) {
-    const cheek = new THREE.Mesh(new THREE.CircleGeometry(0.09, 20), cheekMaterial);
-    cheek.position.set(x, 0.24, 0.5);
-    cheek.scale.set(1.5, 0.95, 1);
-    cheek.lookAt(x * 3, 0.24, 3);
-    head.add(cheek);
-  }
-  const nose = kit.part(new THREE.SphereGeometry(0.075, 14, 10), 0x401500, 0, head);
-  nose.position.set(0, 0.27, 0.6);
-  nose.scale.set(1.3, 0.8, 0.8);
-  const mouth = kit.part(new THREE.SphereGeometry(0.08, 14, 10), 0x381207, 0, head);
-  mouth.position.set(0, 0.15, 0.55);
-  mouth.scale.set(1.3, 0.9, 0.5);
-  const tongue = kit.part(new THREE.SphereGeometry(0.05, 12, 10), 0xff8a83, 0, head);
-  tongue.position.set(0, 0.12, 0.585);
-  tongue.scale.set(1.2, 0.9, 0.5);
-  char.scale.setScalar(CHARACTER_SCALE);
-  char.traverse((o) => {
-    o.userData.isCharacter = true;
-  });
-  return { char, shadow, lift, body, hipL, hipR, shL, shR, tailPiv, head, earL, earR, eyes };
-}
 
-// ---------- 동작 ----------
-
-interface AnimState {
-  phase: number;
-  nextBlink: number;
-  nextLook: number;
-  lookYaw: number;
-}
-
-function poseCharacter(rig: Rig, sim: LobbySim, dt: number, now: number, anim: AnimState) {
-  const speed = Math.hypot(sim.vx, sim.vz);
-  const walk = Math.min(1, speed / 1.6);
-  anim.phase += dt * (3 + speed * 3.2);
-  const s = Math.sin(anim.phase);
-  rig.hipL.rotation.x = s * 0.75 * walk;
-  rig.hipR.rotation.x = -s * 0.75 * walk;
-  rig.shL.rotation.set(-s * 0.65 * walk, 0, -0.25);
-  rig.shR.rotation.set(s * 0.65 * walk, 0, 0.25);
-  rig.lift.position.y = Math.abs(Math.cos(anim.phase)) * 0.09 * walk;
-  rig.body.rotation.x = 0.1 * walk;
-  rig.body.rotation.z = Math.sin(anim.phase) * 0.05 * walk;
-  const breath = Math.sin(now * 2.2) * (1 - walk);
-  rig.body.scale.set(1 + breath * 0.012, 1 - breath * 0.015, 1 + breath * 0.012);
-  rig.tailPiv.rotation.set(-0.3, Math.sin(now * (walk > 0.3 ? 14 : 5)) * (walk > 0.3 ? 0.55 : 0.35), 0);
-  rig.earL.rotation.x = Math.sin(now * 3 + 1) * 0.06 + walk * Math.sin(anim.phase * 2) * 0.12;
-  rig.earR.rotation.x = Math.sin(now * 3) * 0.06 + walk * Math.sin(anim.phase * 2 + 0.6) * 0.12;
-  rig.earL.rotation.z = 0.3;
-  rig.earR.rotation.z = -0.3;
-  if (now > anim.nextBlink) anim.nextBlink = now + 2.5 + sim.nextRandom() * 3;
-  const untilBlink = anim.nextBlink - now;
-  const open = untilBlink > 2.35 && untilBlink < 2.5 ? 0.12 : 1;
-  rig.eyes.forEach((e) => {
-    e.scale.y = 1.1 * open;
-  });
-  if (walk < 0.05 && !sim.action && now > anim.nextLook) {
-    anim.lookYaw = (sim.nextRandom() - 0.5) * 1.1;
-    anim.nextLook = now + 3 + sim.nextRandom() * 4;
-  }
-  if (walk > 0.05) anim.lookYaw = 0;
-  rig.head.rotation.y += ((sim.action ? 0 : anim.lookYaw) - rig.head.rotation.y) * Math.min(1, dt * 4);
-  rig.head.rotation.z = Math.sin(now * 0.9) * 0.04 * (1 - walk);
-
-  let extraLift = 0;
-  let spin = 0;
-  if (sim.action) {
-    const a = sim.action.t;
-    const length = ACTION_SECONDS[sim.action.type];
-    const env = Math.min(1, a / 0.2) * Math.min(1, Math.max(0, length - a) / 0.25);
-    switch (sim.action.type) {
-      case "wave":
-        rig.shR.rotation.z = 0.25 + env * (2.3 + Math.sin(a * 12) * 0.35);
-        rig.head.rotation.z = -0.12 * env;
-        break;
-      case "jump": {
-        const k = (a % 0.8) / 0.8;
-        extraLift = Math.sin(Math.PI * k) * 0.75 * env;
-        rig.shL.rotation.z = -0.25 - env * 2.5;
-        rig.shR.rotation.z = 0.25 + env * 2.5;
-        rig.hipL.rotation.x = -0.3 * Math.sin(Math.PI * k) * env;
-        rig.hipR.rotation.x = rig.hipL.rotation.x;
-        rig.tailPiv.rotation.y = Math.sin(now * 18) * 0.6;
-        break;
-      }
-      case "hop": {
-        const k = (a % 0.45) / 0.45;
-        extraLift = Math.sin(Math.PI * k) * 0.32 * env;
-        rig.shL.rotation.z = -0.25 - env * 0.9;
-        rig.shR.rotation.z = 0.25 + env * 0.9;
-        break;
-      }
-      case "point":
-        rig.shR.rotation.x = -1.45 * env;
-        rig.shR.rotation.z = 0.25 + 0.35 * env;
-        rig.head.rotation.z = 0.1 * env;
-        break;
-      case "spin": {
-        const k = Math.min(1, a / length);
-        spin = Math.PI * 2 * k;
-        extraLift = Math.sin(Math.PI * k) * 0.35;
-        break;
-      }
-      case "look":
-        rig.head.rotation.y = Math.sin(a * 2.6) * 0.7 * env;
-        break;
-      case "poke": {
-        const k = Math.min(1, a / length);
-        extraLift = Math.sin(Math.PI * k) * 0.25;
-        rig.body.scale.y *= 1 - 0.08 * Math.sin(Math.PI * k * 2);
-        rig.earL.rotation.z = 0.3 + 0.25 * env;
-        rig.earR.rotation.z = -0.3 - 0.25 * env;
-        break;
-      }
-      default:
-        break;
-    }
-  }
-  rig.lift.position.y += extraLift;
-  rig.char.position.set(sim.x, 0, sim.z);
-  rig.char.rotation.y = sim.heading + spin;
-  rig.shadow.position.set(sim.x, 0.01, sim.z);
-  const shrink = 1 - extraLift * 0.35;
-  rig.shadow.scale.set(1.15 * shrink, 0.8 * shrink, 1);
+  return { root, kit, shadow, markObjects, blockers: [plant], labelPoints, floor };
 }
 
 // ---------- 장면 ----------
@@ -507,7 +306,7 @@ function Scene({
   const world = useMemo(buildWorld, []);
   const { camera, size, scene } = useThree();
   const target = useRef(new THREE.Vector3(sim.x, 0, sim.z));
-  const anim = useRef<AnimState>({ phase: 0, nextBlink: 2, nextLook: 4, lookYaw: 0 });
+  const character = useRef<CharacterHandle | null>(null);
   const fps = useRef({ frames: 0, since: 0, value: 0, lastSent: 0 });
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
 
@@ -538,7 +337,8 @@ function Scene({
       if (size.width <= 0 || size.height <= 0) return null;
       const ndc = new THREE.Vector2((x / size.width) * 2 - 1, -(y / size.height) * 2 + 1);
       raycaster.setFromCamera(ndc, camera);
-      const objects: THREE.Object3D[] = [world.rig.char, ...world.markObjects.map((m) => m.object), ...world.blockers];
+      // 모델을 다 불러오기 전에는 캐릭터를 누를 수 없다(그 자리는 바닥으로 본다).
+      const objects: THREE.Object3D[] = [...(character.current ? [character.current.group] : []), ...world.markObjects.map((m) => m.object), ...world.blockers];
       const hits = raycaster.intersectObjects(objects, true);
       let mark: MarkId | null = null;
       let onCharacter = false;
@@ -560,7 +360,11 @@ function Scene({
     const nowMs = Date.now();
     const dt = Math.min(0.05, delta);
     onFrame(dt, nowMs);
-    poseCharacter(world.rig, sim, dt, nowMs / 1000, anim.current);
+    const lift = character.current?.update(sim, dt, nowMs / 1000) ?? 0;
+    // 도형 캐릭터 때와 같이, 몸이 들리면 그림자가 작아진다(들린 높이를 그때 단위 1.25로 나눠 같은 비율로).
+    const shrink = 1 - (lift / 1.25) * 0.35;
+    world.shadow.position.set(sim.x, 0.01, sim.z);
+    world.shadow.scale.set(1.15 * shrink, 0.8 * shrink, 1);
 
     // 카메라: 화면 가로에 viewWidth 칸이 보이게 하고, 라이트루프를 부드럽게 따라가되 방 밖은 보이지 않게.
     const ortho = camera as THREE.OrthographicCamera;
@@ -601,14 +405,23 @@ function Scene({
       (Object.keys(MARKS) as MarkId[]).forEach((id) => {
         labels[id] = toScreen(world.labelPoints[id]);
       });
-      const bubble = toScreen(new THREE.Vector3(sim.x, 3.2 + world.rig.lift.position.y * CHARACTER_SCALE, sim.z));
+      const bubble = toScreen(character.current?.bubblePoint() ?? new THREE.Vector3(sim.x, 3.2, sim.z));
       onProject({ bubble, labels, fps: f.value });
     }
   });
 
-  // react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다.
-  // eslint-disable-next-line react/no-unknown-property
-  return <primitive object={world.root} />;
+  return (
+    <>
+      {/* react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다. */}
+      {/* eslint-disable-next-line react/no-unknown-property */}
+      <primitive object={world.root} />
+      <CharacterErrorBoundary>
+        <Suspense fallback={null}>
+          <Character kit={world.kit} outline={toon.outline} handleRef={character} />
+        </Suspense>
+      </CharacterErrorBoundary>
+    </>
+  );
 }
 
 const styles = StyleSheet.create({

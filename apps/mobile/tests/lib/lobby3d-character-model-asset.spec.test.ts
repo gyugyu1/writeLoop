@@ -1,33 +1,114 @@
 /**
  * @jest-environment node
  */
-// [spec] qa 테스트(작업 059, 기능 변경: 3D 로비 캐릭터를 확정 3D 모델로 바꾼다). 바뀔 동작("넣을 모델").
-// 기대값은 명세(private 작업 폴더 01-main-spec.md)의 "넣을 모델"과 그 규격 문서 docs/guides/character-3d-model-spec.ko.md에서 가져온다.
-// - 확정본을 그대로 복사했는지: 확정본 파일(저장소 밖)의 sha256을 qa가 재어 적었다. 1단계(02-qa-tests.md)에서 잰 첫 확정본 값을,
-//   꼬리 둘레 외곽선을 고친 새 확정본(2026-11-06 01:35 파일)의 값으로 바꿨다(10-main-decision.md의 3, 11-qa-tests.md).
-// - 규격: 키 1.0, 뼈 17개 + thumb_r(부모는 규격 표), 클립 11개(규격 5절의 클립 중 "(나중)"인 sleep을 뺀 것),
-//   꼭짓점 속성 _OUTLINE_NORMAL·_OUTLINE_BIAS, 앱이 쓰는 클립 길이(규격 5절).
-// - Metro가 .glb를 자산으로 받는지: metro.config.js를 불러 resolver.assetExts를 본다.
-import { createHash } from "node:crypto";
+// [spec] qa 테스트. 처음 쓴 것: 작업 059(3D 로비 캐릭터를 확정 3D 모델로 바꾼다).
+// 작업 060 ①(기능 변경: 모델만 바꿔 끼울 수 있게)에서 명세의 "고칠 기존 테스트"대로 고쳤다.
+// - 확정본 지문(sha256) 테스트를 지웠다(사용자 결정 2026-11-06, 부모 명세).
+// - 모델 파일은 "약속"만 본다. 기대값은 060 ① 명세(private 작업 폴더 02-모델-교체-쉽게/01-main-spec.md)의 약속 목록에서만 가져온다.
+//   - glTF 2 바이너리
+//   - 키 1.0(±0.02), 발밑이 원점(바닥 높이 ±0.02)
+//   - 앱이 쓰는 클립 8개(idle walk wave jump hop point look_around poke), 3단계에서 쓸 클립 3개(sit_down sit_idle stand_up)
+//   - 앱이 쓰는 뼈 head, hips
+//   - 외곽선 속성은 있어도 되고 없어도 된다
+// - 약속보다 좁아 뺀 단언(명세가 뺄 것으로 든 것): 규격 뼈 17개와 thumb_r·부모, 뼈대가 하나뿐임, 클립이 정확히 11개임,
+//   클립 길이, 외곽선 속성이 반드시 있음. 단언별 판단은 02-모델-교체-쉽게/02-qa-tests.md.
+// - "앞쪽 +Z"는 약속의 뼈(head, hips)만으로는 파일에서 가려낼 수 없어 이 테스트가 보지 않는다(02-qa-tests.md).
+// - 검사가 약속보다 좁지도 넓지도 않은지 보려고, 약속을 지키지만 확정본과 다른 가짜 모델과 약속을 어긴 가짜 모델에도 같은 검사를 돌린다.
+// - Metro가 .glb를 자산으로 받는지: metro.config.js를 불러 resolver.assetExts를 본다(059에서 그대로).
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 const MOBILE = join(__dirname, "..", "..");
 const MODEL = join(MOBILE, "assets", "models", "writeloop.glb");
-const CONFIRMED_SHA256 = "9d8ad7aeb72c08b88a063c08d0f2d3fe83b8f9341d7e1496f6a8fda9b6eaef75";
+
+const APP_CLIPS = ["idle", "walk", "wave", "jump", "hop", "point", "look_around", "poke"];
+const SIT_CLIPS = ["sit_down", "sit_idle", "stand_up"];
+const APP_BONES = ["head", "hips"];
+const TOLERANCE = 0.02;
+const EPS = 1e-9;
 
 type GltfNode = { name?: string; children?: number[]; mesh?: number; skin?: number };
 type Gltf = {
-  nodes: GltfNode[];
-  skins: { joints: number[] }[];
-  meshes: { name?: string; primitives: { attributes: Record<string, number> }[] }[];
-  accessors: { min?: number[]; max?: number[] }[];
-  animations: { name: string; samplers: { input: number }[] }[];
+  nodes?: GltfNode[];
+  skins?: { joints: number[] }[];
+  meshes?: { name?: string; primitives: { attributes: Record<string, number> }[] }[];
+  accessors?: { min?: number[]; max?: number[] }[];
+  animations?: { name: string; samplers: { input: number }[] }[];
 };
 
-function readGlbJson(buffer: Buffer): Gltf {
-  const jsonLength = buffer.readUInt32LE(12);
-  return JSON.parse(buffer.toString("utf8", 20, 20 + jsonLength)) as Gltf;
+/** 모델 파일이 앱과의 약속을 어긴 곳. 지키면 빈 목록. */
+function brokenPromises(buffer: Buffer): string[] {
+  if (buffer.length < 20 || buffer.toString("ascii", 0, 4) !== "glTF") return ["glTF 바이너리가 아니다"];
+  const header: string[] = [];
+  if (buffer.readUInt32LE(4) !== 2) header.push("glTF 2가 아니다");
+  if (buffer.readUInt32LE(8) !== buffer.length) header.push("머리의 길이가 파일 크기와 다르다");
+  if (buffer.toString("ascii", 16, 20) !== "JSON") header.push("첫 덩어리가 JSON이 아니다");
+  if (header.length) return header;
+  const gltf = JSON.parse(buffer.toString("utf8", 20, 20 + buffer.readUInt32LE(12))) as Gltf;
+
+  const problems: string[] = [];
+  let minY = Infinity;
+  let maxY = -Infinity;
+  (gltf.meshes ?? []).forEach((mesh) =>
+    mesh.primitives.forEach((primitive) => {
+      const accessor = gltf.accessors?.[primitive.attributes.POSITION];
+      if (accessor?.min && accessor.max) {
+        minY = Math.min(minY, accessor.min[1]);
+        maxY = Math.max(maxY, accessor.max[1]);
+      }
+    })
+  );
+  if (!Number.isFinite(minY)) problems.push("메시가 없다");
+  else {
+    if (Math.abs(maxY - minY - 1) > TOLERANCE + EPS) problems.push("키가 1.0±0.02가 아니다");
+    if (Math.abs(minY) > TOLERANCE + EPS) problems.push("발밑이 원점(바닥 높이 ±0.02)이 아니다");
+  }
+
+  const clips = new Set((gltf.animations ?? []).map((a) => a.name));
+  [...APP_CLIPS, ...SIT_CLIPS].forEach((name) => {
+    if (!clips.has(name)) problems.push(`클립 없음: ${name}`);
+  });
+
+  const joints = new Set((gltf.skins ?? []).flatMap((skin) => skin.joints.map((i) => gltf.nodes?.[i]?.name)));
+  APP_BONES.forEach((name) => {
+    if (!joints.has(name)) problems.push(`뼈 없음: ${name}`);
+  });
+  return problems;
+}
+
+/** 시험용 가짜 glb(JSON 덩어리만). */
+function fakeGlb(gltf: Gltf, override?: { magic?: string; version?: number; length?: number; chunkType?: string }): Buffer {
+  let json = JSON.stringify({ asset: { version: "2.0" }, ...gltf });
+  while (Buffer.byteLength(json) % 4 !== 0) json += " ";
+  const body = Buffer.from(json, "utf8");
+  const buffer = Buffer.alloc(20 + body.length);
+  buffer.write(override?.magic ?? "glTF", 0, "ascii");
+  buffer.writeUInt32LE(override?.version ?? 2, 4);
+  buffer.writeUInt32LE(override?.length ?? buffer.length, 8);
+  buffer.writeUInt32LE(body.length, 12);
+  buffer.write(override?.chunkType ?? "JSON", 16, "ascii");
+  body.copy(buffer, 20);
+  return buffer;
+}
+
+/**
+ * 약속은 지키지만 확정본과 다른 가짜 모델: 뼈는 root·hips·head뿐(뼈대 둘로 나눔), 외곽선 속성 없음,
+ * 규격 밖 클립(sleep, extra)이 더 있고 클립 길이가 다르다.
+ */
+function keepingModel(options?: { minY?: number; maxY?: number; clips?: string[]; bones?: string[] }): Gltf {
+  const bones = options?.bones ?? ["root", "hips", "head"];
+  const clips = options?.clips ?? [...APP_CLIPS, ...SIT_CLIPS, "sleep", "extra"];
+  return {
+    nodes: [{ name: "body", mesh: 0, skin: 0 }, ...bones.map((name) => ({ name }))],
+    skins: bones.length > 1 ? [{ joints: [1] }, { joints: bones.slice(1).map((_, i) => i + 2) }] : [{ joints: bones.map((_, i) => i + 1) }],
+    meshes: [{ primitives: [{ attributes: { POSITION: 0, NORMAL: 1 } }] }],
+    accessors: [
+      { min: [-0.4, options?.minY ?? 0, -0.3], max: [0.4, options?.maxY ?? 1, 0.3] },
+      { min: [-1, -1, -1], max: [1, 1, 1] },
+      { min: [0], max: [5] }
+    ],
+    animations: clips.map((name) => ({ name, samplers: [{ input: 2 }] }))
+  };
 }
 
 describe("[spec] 넣을 모델 파일", () => {
@@ -35,118 +116,57 @@ describe("[spec] 넣을 모델 파일", () => {
     expect(existsSync(MODEL)).toBe(true);
   });
 
-  it("[spec] 확정본을 그대로 복사했다(sha256이 확정본과 같다)", () => {
-    const sha = createHash("sha256").update(readFileSync(MODEL)).digest("hex");
-    expect(sha).toBe(CONFIRMED_SHA256);
+  it("[spec] 앱과의 약속을 지킨다(glTF 2 바이너리, 키 1.0±0.02, 발밑이 원점±0.02, 클립 8+3개, 뼈 head·hips)", () => {
+    expect(brokenPromises(readFileSync(MODEL))).toEqual([]);
+  });
+});
+
+describe("[spec] 약속 검사는 약속만 본다(확정본을 바꿔도 약속을 지키면 통과한다)", () => {
+  it("[spec] 규격 뼈 일부가 없고 뼈대가 둘이며, 외곽선 속성이 없고, 클립이 더 있고 길이가 달라도 통과한다", () => {
+    expect(brokenPromises(fakeGlb(keepingModel()))).toEqual([]);
   });
 
-  describe("[spec] 규격", () => {
-    const load = () => {
-      const buffer = readFileSync(MODEL);
-      return { buffer, gltf: readGlbJson(buffer) };
-    };
+  it.each([
+    ["키 0.98", 0, 0.98],
+    ["키 1.02", 0, 1.02],
+    ["발밑 -0.02(키 1.0)", -0.02, 0.98],
+    ["발밑 +0.02(키 1.0)", 0.02, 1.02]
+  ])("[spec] 경계 안(%s)은 통과한다", (_label, minY, maxY) => {
+    expect(brokenPromises(fakeGlb(keepingModel({ minY, maxY })))).toEqual([]);
+  });
 
-    it("[spec] glTF 2 바이너리이고 머리의 길이가 파일 크기와 같으며, 첫 덩어리가 JSON이다", () => {
-      const { buffer } = load();
-      expect(buffer.toString("ascii", 0, 4)).toBe("glTF");
-      expect(buffer.readUInt32LE(4)).toBe(2);
-      expect(buffer.readUInt32LE(8)).toBe(buffer.length);
-      expect(buffer.toString("ascii", 16, 20)).toBe("JSON");
-    });
+  it.each([
+    ["키 0.97", 0, 0.97, ["키가 1.0±0.02가 아니다"]],
+    ["키 1.03", 0, 1.03, ["키가 1.0±0.02가 아니다"]],
+    ["발밑 +0.03(키 1.0)", 0.03, 1.03, ["발밑이 원점(바닥 높이 ±0.02)이 아니다"]],
+    ["발밑 -0.03(키 1.0)", -0.03, 0.97, ["발밑이 원점(바닥 높이 ±0.02)이 아니다"]]
+  ])("[spec] 경계 밖(%s)은 그 약속을 어긴 것으로 잡는다", (_label, minY, maxY, expected) => {
+    expect(brokenPromises(fakeGlb(keepingModel({ minY, maxY })))).toEqual(expected);
+  });
 
-    it("[spec] 뼈는 규격 17개와 thumb_r, 부모가 규격 표와 같다", () => {
-      const { gltf } = load();
-      expect(gltf.skins).toHaveLength(1);
-      const parentOf = new Map<number, number>();
-      gltf.nodes.forEach((node, index) => node.children?.forEach((child) => parentOf.set(child, index)));
-      const joints = gltf.skins[0].joints;
-      const names = joints.map((i) => gltf.nodes[i].name);
-      expect([...names].sort()).toEqual(
-        [
-          "root", "hips", "spine", "head", "ear_l", "ear_r", "arm_l", "arm_r", "hand_l", "hand_r",
-          "leg_l", "leg_r", "foot_l", "foot_r", "tail_1", "tail_2", "tail_3", "thumb_r"
-        ].sort()
-      );
-      const parent = (name: string) => {
-        const index = joints.find((i) => gltf.nodes[i].name === name)!;
-        const p = parentOf.get(index);
-        return p === undefined ? undefined : gltf.nodes[p].name;
-      };
-      const EXPECTED_PARENT: Record<string, string> = {
-        hips: "root",
-        spine: "hips",
-        head: "spine",
-        ear_l: "head",
-        ear_r: "head",
-        arm_l: "spine",
-        arm_r: "spine",
-        hand_l: "arm_l",
-        hand_r: "arm_r",
-        leg_l: "hips",
-        leg_r: "hips",
-        foot_l: "leg_l",
-        foot_r: "leg_r",
-        tail_1: "hips",
-        tail_2: "tail_1",
-        tail_3: "tail_2",
-        thumb_r: "hand_r"
-      };
-      Object.entries(EXPECTED_PARENT).forEach(([bone, expected]) => {
-        expect({ bone, parent: parent(bone) }).toEqual({ bone, parent: expected });
-      });
-      // root는 뼈 중 부모가 없다(부모가 있어도 뼈가 아니다).
-      const rootParent = parent("root");
-      expect(rootParent === undefined || !names.includes(rootParent)).toBe(true);
-    });
+  it.each([...APP_CLIPS, ...SIT_CLIPS])("[spec] 클립 %s가 없으면 잡는다", (missing) => {
+    const clips = [...APP_CLIPS, ...SIT_CLIPS].filter((c) => c !== missing);
+    expect(brokenPromises(fakeGlb(keepingModel({ clips })))).toEqual([`클립 없음: ${missing}`]);
+  });
 
-    it("[spec] 클립은 11개다(규격 5절의 클립 중 sleep을 뺀 것)", () => {
-      const { gltf } = load();
-      expect(gltf.animations.map((a) => a.name).sort()).toEqual(
-        ["idle", "walk", "wave", "jump", "hop", "point", "look_around", "poke", "sit_down", "sit_idle", "stand_up"].sort()
-      );
-    });
+  it.each(APP_BONES)("[spec] 뼈 %s가 없으면 잡는다", (missing) => {
+    const bones = ["root", "hips", "head"].filter((b) => b !== missing);
+    expect(brokenPromises(fakeGlb(keepingModel({ bones })))).toEqual([`뼈 없음: ${missing}`]);
+  });
 
-    it.each([
-      ["walk", 0.8],
-      ["wave", 2.4],
-      ["jump", 1.6],
-      ["hop", 1.8],
-      ["point", 2.2],
-      ["look_around", 2.6],
-      ["poke", 0.8]
-    ])("[spec] 앱이 쓰는 클립 %s의 길이는 %s초다", (name, seconds) => {
-      const { gltf } = load();
-      const clip = gltf.animations.find((a) => a.name === name);
-      expect(clip).toBeDefined();
-      const end = Math.max(...clip!.samplers.map((s) => gltf.accessors[s.input].max?.[0] ?? 0));
-      expect(end).toBeCloseTo(seconds, 3);
-    });
+  it("[spec] 뼈 이름의 노드가 있어도 뼈대(skin)의 뼈가 아니면 잡는다", () => {
+    const model = keepingModel();
+    model.skins = [{ joints: [1] }]; // root만 뼈, hips·head는 노드로만 있다
+    expect(brokenPromises(fakeGlb(model))).toEqual(["뼈 없음: head", "뼈 없음: hips"]);
+  });
 
-    it("[spec] 키 1.0이고 원점 아래로 내려가지 않는다", () => {
-      const { gltf } = load();
-      let minY = Infinity;
-      let maxY = -Infinity;
-      gltf.meshes.forEach((mesh) =>
-        mesh.primitives.forEach((primitive) => {
-          const accessor = gltf.accessors[primitive.attributes.POSITION];
-          minY = Math.min(minY, accessor.min![1]);
-          maxY = Math.max(maxY, accessor.max![1]);
-        })
-      );
-      expect(maxY).toBeCloseTo(1.0, 3);
-      expect(minY).toBeGreaterThan(-0.001);
-    });
-
-    it("[spec] 뼈대를 쓰는 메시의 모든 조각에 _OUTLINE_NORMAL·_OUTLINE_BIAS가 있다", () => {
-      const { gltf } = load();
-      const skinned = gltf.nodes.filter((n) => n.mesh !== undefined && n.skin !== undefined);
-      expect(skinned.length).toBeGreaterThan(0);
-      skinned.forEach((node) =>
-        gltf.meshes[node.mesh!].primitives.forEach((primitive) => {
-          expect(Object.keys(primitive.attributes)).toEqual(expect.arrayContaining(["_OUTLINE_NORMAL", "_OUTLINE_BIAS"]));
-        })
-      );
-    });
+  it.each([
+    ["glTF 머리가 아니면", { magic: "abcd" }, ["glTF 바이너리가 아니다"]],
+    ["glTF 1이면", { version: 1 }, ["glTF 2가 아니다"]],
+    ["머리의 길이가 파일 크기와 다르면", { length: 12 }, ["머리의 길이가 파일 크기와 다르다"]],
+    ["첫 덩어리가 JSON이 아니면", { chunkType: "BIN\u0000" }, ["첫 덩어리가 JSON이 아니다"]]
+  ])("[spec] %s 잡는다", (_label, override, expected) => {
+    expect(brokenPromises(fakeGlb(keepingModel(), override))).toEqual(expected);
   });
 });
 

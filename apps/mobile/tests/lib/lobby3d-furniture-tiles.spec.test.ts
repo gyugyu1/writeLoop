@@ -200,8 +200,11 @@ describe("[spec] 060-⑤ 그대로 둘 동작(명세 \"그대로여야 할 동�
     expect(tileOf({ x: sim.x, z: sim.z })).toBe("7,2");
   });
 
-  it("G3: 장소 넷의 이름표, 말풍선 문구와 버튼, 들어갈 때 안내와, 게시판·창가의 위치(바라볼 지점)·서는 자리가 그대로다(일기 책상 자리는 F6·결정 15, 밖으로 자리는 F7·결정 29)", () => {
-    expect(Object.keys(MARKS).sort()).toEqual(["board", "desk", "door", "window"]);
+  // 작업 062(책장 장소 "학습 기록"을 더함, 04 결정 1)으로 장소 키를 넷 → 다섯으로 고쳤다. 기존 장소 넷의 값 단언은 그대로다.
+  it("G3(062 04 결정): 장소는 기존 넷에 책장(이름표 '학습 기록')을 더한 다섯이고, 기존 장소 넷의 이름표, 말풍선 문구와 버튼, 들어갈 때 안내와, 게시판·창가의 위치(바라볼 지점)·서는 자리가 그대로다(일기 책상 자리는 F6·결정 15, 밖으로 자리는 F7·결정 29)", () => {
+    const bookcases = (Object.keys(MARKS) as MarkId[]).filter((id) => MARKS[id].label === "학습 기록");
+    expect(bookcases).toHaveLength(1);
+    expect(Object.keys(MARKS).sort()).toEqual(["board", "desk", "door", "window", bookcases[0]].sort());
     const { faceTo: _deskFaceTo, approach: _deskApproach, ...deskRest } = MARKS.desk;
     const { faceTo: _doorFaceTo, approach: _doorApproach, ...doorRest } = MARKS.door;
     expect({ board: MARKS.board, window: MARKS.window, desk: deskRest, door: doorRest }).toEqual({
@@ -240,8 +243,16 @@ describe("[spec] 060-⑤ 그대로 둘 동작(명세 \"그대로여야 할 동�
     });
   });
 
-  it("G4: 장소와 아래 메뉴의 짝이 그대로다", () => {
-    expect(MENU_FOR_MARK).toEqual({ board: "question", desk: "diary", window: "thought" });
+  // 작업 062(04 결정 1)으로 짝 셋 → 넷(책장 ↔ '학습 기록' 메뉴)으로 고쳤다. 기존 셋의 짝은 그대로다.
+  // '학습 기록' 메뉴의 id는 구현이 정하므로 기존 세 메뉴와 다른 메뉴인지만 본다('학습 기록' 버튼이 강조되는지는 lobby3d-bookcase-screen C3·C4가 본다).
+  it("G4(062 04 결정): 장소와 아래 메뉴의 짝은 기존 셋 그대로에 책장(이름표 '학습 기록') ↔ '학습 기록' 메뉴를 더한 넷이다", () => {
+    const bookcases = (Object.keys(MARKS) as MarkId[]).filter((id) => MARKS[id].label === "학습 기록");
+    expect(bookcases).toHaveLength(1);
+    const pairs = MENU_FOR_MARK as Partial<Record<MarkId, string>>;
+    const { [bookcases[0]]: bookMenu, ...oldPairs } = pairs;
+    expect(oldPairs).toEqual({ board: "question", desk: "diary", window: "thought" });
+    expect(typeof bookMenu).toBe("string");
+    expect(["question", "diary", "thought"]).not.toContain(bookMenu);
   });
 
   it.each(MARK_IDS)("G5: 장소(%s)마다 라룹이가 설 수 있는 앞 지점이 있다", (id) => {

@@ -18,6 +18,9 @@ import type { Lobby3dCanvasProps } from "@/components/lobby3d/lobby3d-canvas";
 import Lobby3dScreen, { type Lobby3dScreenProps } from "@/components/lobby3d/lobby3d-screen";
 import type { FloorPoint, MarkId } from "@/lib/lobby3d/engine";
 
+/** 기존 네 장소. 작업 062(책장 장소를 더함) 04 결정 2로, 장소마다 값을 적어 둔 테스트 데이터의 타입만 이 넷으로 좁혔다(값과 단언은 그대로). */
+type PlaceId = "board" | "window" | "desk" | "door";
+
 const mockCanvas: { props: Lobby3dCanvasProps | null } = { props: null };
 
 jest.mock("@/components/lobby3d/lobby3d-canvas", () => {
@@ -37,15 +40,15 @@ jest.mock("@react-native-async-storage/async-storage", () =>
 
 // ---------- 기대 문구(지금 장소 안내 그대로) ----------
 
-const PROMPTS: Record<MarkId, string> = {
+const PROMPTS: Record<PlaceId, string> = {
   board: "오늘의 질문 게시판이야.\n질문에 답하러 갈까?",
   window: "생각 창가야.\n떠오르는 말을 바로 적어 볼까?",
   desk: "일기 책상이야.\n오늘 일기를 써 볼까?",
   door: "밖으로 나가 볼까?\n마을은 다음에 열려."
 };
-const BUTTONS: Record<MarkId, string> = { board: "들어가기", window: "들어가기", desk: "들어가기", door: "나가기" };
+const BUTTONS: Record<PlaceId, string> = { board: "들어가기", window: "들어가기", desk: "들어가기", door: "나가기" };
 /** 장소와 아래 메뉴의 짝(지금 그대로). 밖으로는 짝이 없다. */
-const MENU_LABEL: Record<MarkId, string | null> = {
+const MENU_LABEL: Record<PlaceId, string | null> = {
   board: "질문에 답하기",
   window: "지금 생각나는대로",
   desk: "영어일기",
@@ -58,7 +61,7 @@ const GREETING_LINE = "오늘도 해냈어!";
  * 장소마다 구역 안 바닥 점(서는 자리가 아님). 구역 = 서는 자리들의 가운데를 중심으로 한 반지름 1칸 원(명세 1).
  * 중심: 게시판 (1.9, 1.3), 창가 (4.8, 1.55), 일기 책상 (1.5, 6.75)(03 결정: 서는 곳을 의자 뒤 하나로 옮김), 밖으로 (4.0, 10.5). 아래 점은 모두 중심에서 0.9칸 안이다.
  */
-const INSIDE: Record<MarkId, FloorPoint> = {
+const INSIDE: Record<PlaceId, FloorPoint> = {
   board: { x: 2.5, z: 1.9 },
   window: { x: 5.4, z: 2.0 },
   desk: { x: 2.2, z: 7.2 },
@@ -66,7 +69,7 @@ const INSIDE: Record<MarkId, FloorPoint> = {
 };
 
 /** 구역 중심(명세 1, 03 결정). 위 INSIDE의 설명과 같은 값이다. */
-const ZONE_CENTER: Record<MarkId, FloorPoint> = {
+const ZONE_CENTER: Record<PlaceId, FloorPoint> = {
   board: { x: 1.9, z: 1.3 },
   window: { x: 4.8, z: 1.55 },
   desk: { x: 1.5, z: 6.75 },
@@ -76,7 +79,7 @@ const ZONE_CENTER: Record<MarkId, FloorPoint> = {
 const REMOVED_IDLE_LINE = "오늘은 뭘 해 볼까?\n가고 싶은 곳을 눌러 봐.";
 
 /** 장소마다 구역을 곧게 지나가는 길(엔진 테스트 Z6과 같은 길). 시작과 끝은 어느 구역에도 들지 않는다. */
-const PASS: Record<MarkId, { start: FloorPoint; goal: FloorPoint }> = {
+const PASS: Record<PlaceId, { start: FloorPoint; goal: FloorPoint }> = {
   board: { start: { x: 0.6, z: 1.2 }, goal: { x: 3.3, z: 1.2 } },
   window: { start: { x: 3.3, z: 1.2 }, goal: { x: 6.4, z: 1.2 } },
   desk: { start: { x: 0.6, z: 7.6 }, goal: { x: 3.0, z: 6.5 } },
@@ -178,7 +181,7 @@ afterEach(() => {
   jest.useRealTimers();
 });
 
-const MARK_IDS: MarkId[] = ["board", "window", "desk", "door"];
+const MARK_IDS: PlaceId[] = ["board", "window", "desk", "door"];
 
 describe("[spec] 작업 061 바뀔 동작: 구역 안에서 멈추면 장소 안내·버튼·메뉴 강조(명세 2)", () => {
   it.each(MARK_IDS)("V1: 바닥을 눌러 장소(%s) 구역 안에 멈추면 말풍선에 그 장소 안내와 버튼이 나오고, 짝인 아래 메뉴만 강조된다", async (mark) => {
@@ -269,7 +272,7 @@ const WALL_POINT: Partial<Record<MarkId, FloorPoint>> = {
 };
 
 /** 장소 구역까지의 거리(1 이하면 구역 안). 게시판·창가는 가운데에서 벽 위의 점까지 잇는 선, 일기 책상·밖으로는 가운데까지. */
-function zoneDistance(id: MarkId, p: FloorPoint) {
+function zoneDistance(id: PlaceId, p: FloorPoint) {
   const a = ZONE_CENTER[id];
   const b = WALL_POINT[id];
   if (!b) return distance(p, a);
@@ -280,7 +283,7 @@ function zoneDistance(id: MarkId, p: FloorPoint) {
 }
 
 /** 라이트루프 자리가 확실히 들어 있는 장소 구역. 모든 구역에서 1.05칸 밖이면 null, 경계 근처면 "edge"(보지 않음). */
-function zoneNow(): MarkId | null | "edge" {
+function zoneNow(): PlaceId | null | "edge" {
   const sim = canvas().sim;
   const p = { x: sim.x, z: sim.z };
   for (const id of MARK_IDS) if (zoneDistance(id, p) < 0.95) return id;
@@ -308,7 +311,7 @@ function bubbleShown(line: string) {
 }
 
 /** 이 장소의 보이는 말풍선 안의 보이는 버튼. 없으면 null. */
-function shownButton(mark: MarkId) {
+function shownButton(mark: PlaceId) {
   const bubble = shownBubble(PROMPTS[mark]);
   if (!bubble) return null;
   return within(bubble).queryAllByRole("button", { name: BUTTONS[mark] })[0] ?? null;

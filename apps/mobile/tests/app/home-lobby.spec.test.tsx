@@ -299,7 +299,11 @@ function feedbackState(): PracticeFeedbackState {
 }
 
 // 로비 안내가 짚을 장소 이름표 좌표(테스트 창 750 x 1334 안에서 서로 멀리 떨어뜨림).
-const LABELS: LobbyProjection["labels"] = {
+/** 기존 네 장소. 작업 062(책장 장소를 더함) 04 결정 2로, 장소마다 값을 적어 둔 테스트 데이터의 타입만 이 넷으로 좁혔다(값과 단언은 그대로).
+ * 3D가 보내는 좌표(LobbyProjection)로 넘길 때는 그 타입으로 바꿔 넘긴다(넘기는 값은 그대로). */
+type PlaceId = "board" | "window" | "desk" | "door";
+type PlaceLabels = Record<PlaceId, { x: number; y: number }>;
+const LABELS: PlaceLabels = {
   board: { x: 150, y: 260 },
   window: { x: 560, y: 260 },
   desk: { x: 150, y: 900 },
@@ -441,9 +445,9 @@ async function walkUntilArrived(mark: MarkId) {
   expect(canvas().sim.arrived).toBe(mark);
 }
 
-async function sendProjection(labels: LobbyProjection["labels"] = LABELS) {
+async function sendProjection(labels: PlaceLabels = LABELS) {
   await act(async () => {
-    canvas().onProject({ bubble: { x: 375, y: 600 }, labels, fps: 60 });
+    canvas().onProject({ bubble: { x: 375, y: 600 }, labels: labels as LobbyProjection["labels"], fps: 60 });
   });
   await flushAsync();
 }
@@ -1056,7 +1060,7 @@ describe("[spec] 로비 안내(S25~S28, S31, S32)", () => {
     await sendProjection();
     await advance(180);
 
-    const targets: MarkId[] = ["board", "desk", "window"];
+    const targets: PlaceId[] = ["board", "desk", "window"];
     for (const [index, line] of TUTORIAL_LINES.entries()) {
       expect(screen.getByText(line)).toBeOnTheScreen();
       for (const other of TUTORIAL_LINES.filter((text) => text !== line)) {
@@ -1112,7 +1116,7 @@ describe("[spec] 로비 안내(S25~S28, S31, S32)", () => {
   // 저장하지 않고 닫는다. 테스트 창은 750 x 1334다.
   const WINDOW = { width: 750, height: 1334 };
   // 카메라를 가깝게 해 장소 이름표가 화면 밖에 온 경우(게시판·책상은 왼쪽 밖, 창가는 오른쪽 밖)
-  const OFFSCREEN_LABELS: LobbyProjection["labels"] = {
+  const OFFSCREEN_LABELS: PlaceLabels = {
     board: { x: -39, y: 260 },
     window: { x: 900, y: 260 },
     desk: { x: -102, y: 900 },

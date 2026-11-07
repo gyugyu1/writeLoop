@@ -146,11 +146,14 @@ describe("[spec] 톡·꾹·끌기 판정(S7~S11, 결정 8: 누른 점에서 지�
 });
 
 describe("[spec] 방 데이터와 길 찾기(S12~S16)", () => {
-  it("S12: 바닥이 8×11이고 장소가 게시판·창가·일기 책상·문 네 개이며, 장소마다 서 있을 수 있는 앞 지점이 있다", () => {
+  // 작업 062(책장 장소 "학습 기록"을 더함, 04 결정 1)으로 장소 넷 → 다섯으로 고쳤다. 책장 장소의 id는 구현이 정하므로 이름표 "학습 기록"으로 찾는다.
+  it("S12(062 04 결정): 바닥이 8×11이고 장소가 게시판·창가·일기 책상·문에 책장(이름표 '학습 기록')을 더한 다섯 개이며, 장소마다 서 있을 수 있는 앞 지점이 있다", () => {
     expect(ROOM.width).toBe(8);
     expect(ROOM.depth).toBe(11);
-    expect(Object.keys(MARKS).sort()).toEqual(["board", "desk", "door", "window"]);
-    for (const id of MARK_IDS) {
+    const bookcases = (Object.keys(MARKS) as MarkId[]).filter((id) => MARKS[id].label === "학습 기록");
+    expect(bookcases).toHaveLength(1);
+    expect(Object.keys(MARKS).sort()).toEqual([...MARK_IDS, bookcases[0]].sort());
+    for (const id of [...MARK_IDS, bookcases[0]]) {
       const standable = MARKS[id].approach.filter((p) => inRoomAndNotFurniture(p) && isFree(p.x, p.z));
       expect({ id, standable: standable.length > 0 }).toEqual({ id, standable: true });
     }

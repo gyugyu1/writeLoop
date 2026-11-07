@@ -280,7 +280,11 @@ function nowSummary(): NowInEnglishSummary {
   };
 }
 
-const LABELS: LobbyProjection["labels"] = {
+/** 기존 네 장소. 작업 062(책장 장소를 더함) 04 결정 2로, 장소마다 값을 적어 둔 테스트 데이터의 타입만 이 넷으로 좁혔다(값과 단언은 그대로).
+ * 3D가 보내는 좌표(LobbyProjection)로 넘길 때는 그 타입으로 바꿔 넘긴다(넘기는 값은 그대로). */
+type PlaceId = "board" | "window" | "desk" | "door";
+type PlaceLabels = Record<PlaceId, { x: number; y: number }>;
+const LABELS: PlaceLabels = {
   board: { x: 150, y: 260 },
   window: { x: 560, y: 260 },
   desk: { x: 150, y: 900 },
@@ -1017,7 +1021,7 @@ describe("[spec] 홈에 들어올 때마다 인사(E1~E5)", () => {
 describe("[spec] 처음 방문 안내가 끝난 뒤 인사(T1, T2)", () => {
   async function sendProjection() {
     await act(async () => {
-      canvas().onProject({ bubble: { x: 375, y: 600 }, labels: LABELS, fps: 60 });
+      canvas().onProject({ bubble: { x: 375, y: 600 }, labels: LABELS as LobbyProjection["labels"], fps: 60 });
     });
     await flushAsync();
   }

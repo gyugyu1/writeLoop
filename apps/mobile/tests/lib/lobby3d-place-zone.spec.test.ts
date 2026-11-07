@@ -23,9 +23,12 @@
 // 좌표(구현의 약속): 바닥 한 칸 = 1, x는 왼쪽→오른쪽(0..8), z는 뒷벽→앞(0..11). 바라보는 방향 0 = +z, atan2(dx, dz).
 import { LobbySim, MARKS, isFree, type FloorPoint, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 
+/** 기존 네 장소. 작업 062(책장 장소를 더함) 04 결정 2로, 장소마다 값을 적어 둔 테스트 데이터의 타입만 이 넷으로 좁혔다(값과 단언은 그대로). */
+type PlaceId = "board" | "window" | "desk" | "door";
+
 const STEP_S = 0.05;
 const STEP_MS = 50;
-const MARK_IDS: MarkId[] = ["board", "window", "desk", "door"];
+const MARK_IDS: PlaceId[] = ["board", "window", "desk", "door"];
 /** 말풍선 없음(061-12 결정: 기본 말을 없애고, 짧은 말·인사·장소 안내가 없으면 말풍선이 없다). 걷는 중 숨긴 말풍선과 같은 모양으로 본다. */
 const NO_BUBBLE = { bubbleText: "", bubbleButton: null };
 const GREETING_LINE = "오늘도 해냈어!";
@@ -42,14 +45,14 @@ beforeEach(() => {
  * 구역 중심 = 서는 자리들의 가운데(명세 1). 게시판 (1.6, 1.3)·(2.2, 1.3), 창가 (4.5, 1.55)·(5.1, 1.55), 밖으로 (4.0, 10.5)는 지금 서는 자리 그대로,
  * 일기 책상은 03 결정의 서는 곳 (1.5, 6.75) 하나.
  */
-const ZONE_CENTER: Record<MarkId, FloorPoint> = {
+const ZONE_CENTER: Record<PlaceId, FloorPoint> = {
   board: { x: 1.9, z: 1.3 },
   window: { x: 4.8, z: 1.55 },
   desk: { x: 1.5, z: 6.75 },
   door: { x: 4.0, z: 10.5 }
 };
 
-function zoneCenter(id: MarkId): FloorPoint {
+function zoneCenter(id: PlaceId): FloorPoint {
   return ZONE_CENTER[id];
 }
 
@@ -71,7 +74,7 @@ function distanceToSegment(p: FloorPoint, a: FloorPoint, b: FloorPoint) {
 }
 
 /** 장소 구역까지의 거리(1 이하면 구역 안). 게시판·창가는 가운데에서 벽 위의 점까지 잇는 선, 일기 책상·밖으로는 가운데까지(13 결정). */
-function zoneDistance(id: MarkId, p: FloorPoint) {
+function zoneDistance(id: PlaceId, p: FloorPoint) {
   const wall = WALL_POINT[id];
   return wall ? distanceToSegment(p, zoneCenter(id), wall) : distance(p, zoneCenter(id));
 }
@@ -133,7 +136,7 @@ function walkToMark(sim: LobbySim, id: MarkId) {
 }
 
 /** 그 자리가 확실히 들어 있는 장소 구역(중심에서 0.95칸 안). 모든 구역에서 1.05칸 밖이면 null, 경계 근처면 "edge"(보지 않음). */
-function zoneClearlyAt(p: FloorPoint): MarkId | null | "edge" {
+function zoneClearlyAt(p: FloorPoint): PlaceId | null | "edge" {
   for (const id of MARK_IDS) if (zoneDistance(id, p) < 0.95) return id;
   return MARK_IDS.every((id) => zoneDistance(id, p) > 1.05) ? null : "edge";
 }
@@ -174,7 +177,7 @@ function isSitting(sim: LobbySim) {
 }
 
 /** 장소마다 구역 안 점. 걸어오는 방향과 장소를 바라보는 방향이 30°보다 크게 다르게 출발점을 골랐다(돌아서는지 보려고). */
-const INSIDE: Record<MarkId, { start: FloorPoint; point: FloorPoint }> = {
+const INSIDE: Record<PlaceId, { start: FloorPoint; point: FloorPoint }> = {
   board: { start: { x: 3.5, z: 1.6 }, point: { x: 1.2, z: 1.6 } },
   window: { start: { x: 7.0, z: 1.8 }, point: { x: 5.5, z: 1.9 } },
   desk: { start: { x: 4.2, z: 6.2 }, point: { x: 2.2, z: 7.2 } },
@@ -182,7 +185,7 @@ const INSIDE: Record<MarkId, { start: FloorPoint; point: FloorPoint }> = {
 };
 
 /** 장소마다 구역 밖(중심에서 대각선으로 1.13칸) 점. */
-const OUTSIDE_DIAGONAL: Record<MarkId, { start: FloorPoint; point: FloorPoint }> = {
+const OUTSIDE_DIAGONAL: Record<PlaceId, { start: FloorPoint; point: FloorPoint }> = {
   board: { start: { x: 4.2, z: 6.2 }, point: { x: 2.7, z: 2.1 } },
   window: { start: { x: 4.2, z: 6.2 }, point: { x: 5.6, z: 2.35 } },
   desk: { start: { x: 5.5, z: 8.0 }, point: { x: 2.3, z: 7.55 } },
@@ -384,7 +387,7 @@ describe("[spec] 작업 061 그대로 둘 동작", () => {
 
 describe("[spec] 작업 061 10 결정(바뀔 동작): 구역 안에 있기만 해도 걷거나 끌려 가는 중에도 그 장소 안내, 벗어나면 사라짐", () => {
   // 옛 K2의 길(창가, 일기 책상, 밖으로)에 게시판 길을 더했다. 시작과 끝은 어느 구역에도 들지 않고, 길이 구역 한가운데(0.5칸 안)를 지난다.
-  const PASS_THROUGH: [MarkId, FloorPoint, FloorPoint][] = [
+  const PASS_THROUGH: [PlaceId, FloorPoint, FloorPoint][] = [
     ["board", { x: 0.6, z: 1.2 }, { x: 3.3, z: 1.2 }],
     ["window", { x: 3.3, z: 1.2 }, { x: 6.4, z: 1.2 }],
     ["desk", { x: 0.6, z: 7.6 }, { x: 3.0, z: 6.5 }],
@@ -574,7 +577,7 @@ describe("[spec] 작업 061 10 결정(바뀔 동작): 구역 안에 있기만 �
 
 describe("[spec] 작업 061 13 결정: 벽에 붙은 장소(게시판, 창가)의 구역은 가운데에서 벽 위의 점까지 잇는 선에서 1칸 안", () => {
   // 가운데에서는 1칸 넘게 떨어졌지만(원이었다면 밖) 벽 위의 점까지 잇는 선에서는 1칸 안인, 벽에 붙은 자리
-  const WALL_INSIDE: [MarkId, FloorPoint, FloorPoint][] = [
+  const WALL_INSIDE: [PlaceId, FloorPoint, FloorPoint][] = [
     ["board", { x: 4.2, z: 6.2 }, { x: 0.94, z: 0.78 }],
     ["window", { x: 4.2, z: 6.2 }, { x: 5.6, z: 0.8 }]
   ];

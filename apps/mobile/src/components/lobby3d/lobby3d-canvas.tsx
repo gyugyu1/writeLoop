@@ -6,8 +6,10 @@ import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { LobbySim, MARKS, ROOM, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import type { Daylight } from "@/lib/lobby3d/daylight";
 import { FURNITURE_LAYOUT, type FurniturePiece } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
+import { DaylightRig, createDaylightState } from "./lobby3d-daylight";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
 import { BakedRoom, BakedRoomErrorBoundary } from "./lobby3d-room";
 
@@ -42,6 +44,8 @@ export interface Lobby3dCanvasProps {
   onProject: (projection: LobbyProjection) => void;
   /** 화면이 다른 화면 아래에 깔려 있을 때처럼 그리기를 멈출 때. */
   paused?: boolean;
+  /** 지금 시각의 햇빛·하루의 때·계절(daylightAt). 바뀌면 방 색감·창문 빛·스탠드·창밖이 부드럽게 따라간다. */
+  daylight: Daylight;
 }
 
 const LINE = 0x3d1b0f;
@@ -316,6 +320,9 @@ interface World {
   blockers: THREE.Object3D[];
   /** 코드로 만든 대체 가구. Kenney 가구 묶음(lobby3d-furniture)이 뜨면 숨기지만, 보이지 않는 채로 누르기 판정을 맡는다. */
   furniture: THREE.Group;
+  /** 방 조명. 하루의 때에 따라 색·세기가 바뀐다(lobby3d-daylight). */
+  ambient: THREE.AmbientLight;
+  sun: THREE.DirectionalLight;
 }
 
 function buildWorld(): World {
@@ -478,7 +485,9 @@ function buildWorld(): World {
     desk: new THREE.Vector3(1.25, 2.1, 5.5)
   };
 
-  root.add(new THREE.AmbientLight(0xffffff, 1.35));
+  // 방 조명. 해는 앞쪽 왼편 위에서 가구 앞면을 비춘다(실제 해 방향은 바닥의 창문 빛이 맡는다). 색·세기는 하루의 때를 따른다.
+  const ambient = new THREE.AmbientLight(0xffffff, 1.35);
+  root.add(ambient);
   const sun = new THREE.DirectionalLight(0xffffff, 1.6);
   sun.position.set(-3, 8, 6);
   root.add(sun);
@@ -491,7 +500,7 @@ function buildWorld(): World {
   shadow.position.y = 0.01;
   root.add(shadow);
 
-  return { root, kit, shadow, markObjects, blockers, labelPoints, floor, shell, furniture };
+  return { root, kit, shadow, markObjects, blockers, labelPoints, floor, shell, furniture, ambient, sun };
 }
 
 // ---------- 장면 ----------
@@ -502,9 +511,13 @@ function Scene({
   toon,
   onFrame,
   onProject,
+  daylight,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
   const world = useMemo(buildWorld, []);
+  // 시각에 따른 빛: 지금 보이는 색감(부드럽게 넘어가는 중인 값)과 구운 방에 곱하는 색
+  const daylightState = useMemo(() => createDaylightState(daylight), []); // eslint-disable-line react-hooks/exhaustive-deps
+  const roomTint = useMemo(() => new THREE.Color(0xffffff), []);
   const { camera, size, scene } = useThree();
   const target = useRef(new THREE.Vector3(sim.x, 0, sim.z));
   const character = useRef<CharacterHandle | null>(null);
@@ -615,14 +628,15 @@ function Scene({
       {/* react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다. */}
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={world.root} />
+      <DaylightRig state={daylightState} daylight={daylight} ambient={world.ambient} sun={world.sun} roomTint={roomTint} />
       <BakedFurnitureErrorBoundary>
         <Suspense fallback={null}>
-          <BakedFurniture fallback={world.furniture} />
+          <BakedFurniture fallback={world.furniture} daylight={daylightState} />
         </Suspense>
       </BakedFurnitureErrorBoundary>
       <BakedRoomErrorBoundary>
         <Suspense fallback={null}>
-          <BakedRoom fallback={world.shell} />
+          <BakedRoom fallback={world.shell} tint={roomTint} />
         </Suspense>
       </BakedRoomErrorBoundary>
       <CharacterErrorBoundary>

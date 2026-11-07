@@ -3,6 +3,7 @@ import { Component, useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { FURNITURE_LAYOUT } from "@/lib/lobby3d/furniture-layout";
+import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
 
 // 라룹이 방의 가구. Kenney Furniture Kit(CC0)에서 고른 가구를 scripts/lobby3d/build-furniture.py가 한 glb로 묶는다.
@@ -32,9 +33,11 @@ const VIEW_TEXTURE = { width: 768, height: 680 };
 interface BakedFurnitureProps {
   /** 코드로 만든 대체 가구. 가구 묶음이 뜨는 동안 숨긴다(누르기 판정은 그대로 맡는다). */
   fallback: THREE.Object3D;
+  /** 지금 보이는 하루의 때 색감과 계절(창밖 풍경이 따라간다). */
+  daylight: DaylightState;
 }
 
-export function BakedFurniture({ fallback }: BakedFurnitureProps) {
+export function BakedFurniture({ fallback, daylight }: BakedFurnitureProps) {
   const gltf = useLoader(GLTFLoader, FURNITURE_ASSET as string) as GLTF;
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판
   const outdoor = useMemo(() => {
@@ -105,6 +108,7 @@ export function BakedFurniture({ fallback }: BakedFurnitureProps) {
   useFrame((state, delta) => {
     const view = built.view;
     if (!view) return;
+    outdoor.setDaylight(daylight.ambience, daylight.target.season, daylight.target.phase);
     outdoor.update(state.clock.elapsedTime, delta);
     view.piece.updateWorldMatrix(true, false);
     eye.copy(state.camera.position);

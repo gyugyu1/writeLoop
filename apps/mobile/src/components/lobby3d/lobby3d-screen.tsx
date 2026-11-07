@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccessibilityInfo, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Lobby3dCanvas, { type LobbyPointerPhase, type LobbyProjection, type ToonSettings } from "@/components/lobby3d/lobby3d-canvas";
@@ -16,6 +16,8 @@ import {
   type MarkId,
   type PointerHit
 } from "@/lib/lobby3d/engine";
+import { daylightAt } from "@/lib/lobby3d/daylight";
+import { useLobbyClock, type ClockOverride } from "@/lib/lobby3d/use-lobby-clock";
 import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/lib/lobby3d/view-storage";
 
 // 3D 로비(라이트루프의 방). 3D 그리기(Lobby3dCanvas) 위에 말풍선·이름표·메뉴·설정을 겹친다.
@@ -55,6 +57,13 @@ interface ViewState {
 const HOME_TOON: ToonSettings = { steps: 3, outline: 1 };
 
 const EMPTY_HIT: PointerHit = { point: null, mark: null, onCharacter: false };
+
+/** 시각(0~24시)을 "7:15"처럼 쓴다. */
+function clockText(hours: number) {
+  const whole = Math.floor(hours);
+  const minutes = Math.round((hours - whole) * 60);
+  return `${whole}:${String(minutes).padStart(2, "0")}`;
+}
 
 function sameView(a: ViewState, b: ViewState) {
   return a.bubbleText === b.bubbleText && a.bubbleButton === b.bubbleButton && a.arrived === b.arrived && a.actionType === b.actionType;
@@ -115,6 +124,13 @@ export default function Lobby3dScreen({
   const [cameraOpen, setCameraOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // 방의 시각: 폰의 지금 시각. 시험판에서 시각·달을 고르면 "지금 시각으로"를 누르기 전까지 그 시각으로 본다.
+  const [clockOverride, setClockOverride] = useState<ClockOverride | null>(null);
+  const clock = useLobbyClock(clockOverride);
+  const clockMinute = Math.floor(clock.getTime() / 60_000);
+  const daylight = useMemo(() => daylightAt(new Date(clockMinute * 60_000)), [clockMinute]);
+  const shownHours = clockOverride?.hours ?? Math.round((clock.getHours() + clock.getMinutes() / 60) * 4) / 4;
+  const shownMonth = clockOverride?.month ?? clock.getMonth() + 1;
   // 말풍선 높이(재어 본 값). 꼬리 끝이 머리 위 점에 오도록 이만큼 올린다.
   const [bubbleHeight, setBubbleHeight] = useState(60);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -230,6 +246,7 @@ export default function Lobby3dScreen({
         onPointer={onPointer}
         onProject={handleProjection}
         paused={paused}
+        daylight={daylight}
       />
 
       {(Object.keys(MARKS) as MarkId[]).map((id) => {
@@ -401,6 +418,36 @@ export default function Lobby3dScreen({
               onChange={(outline) => setToon((t) => ({ ...t, outline }))}
               valueText={`${toon.outline.toFixed(1)}배`}
             />
+            <Text style={styles.panelLabel}>
+              시각 {clockText(shownHours)}
+              {clockOverride ? "" : " (지금)"}
+            </Text>
+            <SimpleSlider
+              label="시각"
+              value={shownHours}
+              min={0}
+              max={24}
+              step={0.25}
+              onChange={(hours) => setClockOverride({ hours, month: shownMonth })}
+              valueText={clockText(shownHours)}
+            />
+            <Text style={styles.panelLabel}>달 {shownMonth}월</Text>
+            <SimpleSlider
+              label="달"
+              value={shownMonth}
+              min={1}
+              max={12}
+              step={1}
+              onChange={(month) => setClockOverride({ hours: shownHours, month })}
+              valueText={`${shownMonth}월`}
+            />
+            <Pressable
+              accessibilityRole="button"
+              style={[styles.stepButton, styles.clockButton]}
+              onPress={() => setClockOverride(null)}
+            >
+              <Text style={styles.stepText}>지금 시각으로</Text>
+            </Pressable>
           </View>
         ) : null}
         {devPanel ? (
@@ -563,6 +610,7 @@ const styles = StyleSheet.create({
   },
   stepButtonOn: { borderColor: ACCENT, backgroundColor: "#FFF0E0" },
   stepText: { fontSize: 13, color: "#2B1810" },
+  clockButton: { alignSelf: "flex-start", marginTop: 6 },
   stepTextOn: { fontWeight: "700", color: "#A64B00" },
   panelToggle: {
     alignSelf: "flex-start",

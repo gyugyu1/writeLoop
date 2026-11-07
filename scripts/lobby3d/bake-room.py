@@ -125,14 +125,8 @@ bg = world.node_tree.nodes["Background"]
 bg.inputs[0].default_value = (0.86, 0.9, 1.0, 1)
 bg.inputs[1].default_value = 0.45
 
-sun_data = bpy.data.lights.new("sun", "SUN")
-sun_data.energy = 2.2
-sun_data.angle = math.radians(12)
-sun_data.color = (1.0, 0.95, 0.86)
-sun = bpy.data.objects.new("sun", sun_data)
-scene.collection.objects.link(sun)
-# 앞 왼쪽 위에서 뒤 오른쪽 아래로 비춘다(앱 좌표 방향)
-sun.rotation_euler = Vector(b(0.42, -0.78, -0.46)).normalized().to_track_quat("-Z", "Y").to_euler()
+# 방향이 있는 햇빛은 굽지 않는다. 햇빛(창문 빛)과 하루의 때 색감은 앱이 시각에 맞춰 그린다.
+# 여기서는 하늘빛과 천장 쪽 넓은 빛만으로 구석 어둠과 반사광을 남긴다.
 
 area_data = bpy.data.lights.new("ceiling", "AREA")
 area_data.shape = "RECTANGLE"

@@ -19,6 +19,9 @@ export interface FurniturePlacement {
   blocker?: boolean;
 }
 
+/** 창 안쪽(햇빛이 지나는 곳)의 크기와 창살 굵기. 창문(미닫이 창 두 벌)의 안쪽이다. 바닥의 창문 빛이 이 크기를 따른다. */
+export const WINDOW_OPENING = { z: 0.05, width: 1.87, height: 1.66, bar: 0.08 } as const;
+
 const W = ROOM.width;
 const D = ROOM.depth;
 

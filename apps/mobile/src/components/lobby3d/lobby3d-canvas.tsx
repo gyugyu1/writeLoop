@@ -42,6 +42,8 @@ export interface Lobby3dCanvasProps {
   onFrame: (dt: number, nowMs: number) => void;
   onPointer: (phase: LobbyPointerPhase, hit: PointerHit | null, x: number, y: number) => void;
   onProject: (projection: LobbyProjection) => void;
+  /** 매 프레임 말풍선 꼬리가 닿을 화면 좌표. 말풍선이 라이트루프를 바로 따라가게 화면이 다시 그리지 않고 옮긴다. */
+  onBubbleFrame?: (x: number, y: number) => void;
   /** 화면이 다른 화면 아래에 깔려 있을 때처럼 그리기를 멈출 때. */
   paused?: boolean;
   /** 지금 시각의 햇빛·하루의 때·계절(daylightAt). 바뀌면 방 색감·창문 빛·천장 조명·창밖이 부드럽게 따라간다. */
@@ -506,6 +508,7 @@ function Scene({
   toon,
   onFrame,
   onProject,
+  onBubbleFrame,
   daylight,
   pickRef
 }: Lobby3dCanvasProps & { pickRef: MutableRefObject<((x: number, y: number) => PointerHit | null) | null> }) {
@@ -595,6 +598,13 @@ function Scene({
     camera.lookAt(pose.lookAt.x, pose.lookAt.y, pose.lookAt.z);
     camera.updateMatrixWorld();
 
+    const toScreen = (v: THREE.Vector3) => {
+      const p = v.clone().project(camera);
+      return { x: ((p.x + 1) / 2) * size.width, y: ((1 - p.y) / 2) * size.height };
+    };
+    const bubble = toScreen(character.current?.bubblePoint() ?? new THREE.Vector3(sim.x, BUBBLE_HEIGHT, sim.z));
+    onBubbleFrame?.(bubble.x, bubble.y);
+
     // 초당 프레임 수, 말풍선·이름표 위치(초당 약 15번 보낸다)
     const f = fps.current;
     f.frames += 1;
@@ -605,15 +615,10 @@ function Scene({
     }
     if (nowMs - f.lastSent >= 66) {
       f.lastSent = nowMs;
-      const toScreen = (v: THREE.Vector3) => {
-        const p = v.clone().project(camera);
-        return { x: ((p.x + 1) / 2) * size.width, y: ((1 - p.y) / 2) * size.height };
-      };
       const labels = {} as Record<MarkId, { x: number; y: number }>;
       (Object.keys(MARKS) as MarkId[]).forEach((id) => {
         labels[id] = toScreen(world.labelPoints[id]);
       });
-      const bubble = toScreen(character.current?.bubblePoint() ?? new THREE.Vector3(sim.x, BUBBLE_HEIGHT, sim.z));
       onProject({ bubble, labels, fps: f.value });
     }
   });

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { AccessibilityInfo, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
+import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Lobby3dCanvas, { type LobbyPointerPhase, type LobbyProjection, type ToonSettings } from "@/components/lobby3d/lobby3d-canvas";
 import SimpleSlider from "@/components/lobby3d/simple-slider";
@@ -210,12 +210,29 @@ export default function Lobby3dScreen({
     sim.settings = { speed, turn };
   }, [sim, speed, turn]);
 
+  // 말풍선 자리와 보임. 화면 전체를 다시 그리는 것은 3D가 바쁠 때 늦어져, 말풍선이 라이트루프를 늦게 따라가거나 걷는 동안에도 남았다.
+  // 그래서 자리·보임은 매 프레임 값만 바꾸고(다시 그리지 않음), 글은 바뀔 때만 다시 그린다.
+  const bubbleLeft = useRef(new Animated.Value(0)).current;
+  const bubbleTop = useRef(new Animated.Value(320)).current;
+  const bubbleOpacity = useRef(new Animated.Value(1)).current;
+  const screenWidthRef = useRef(screenWidth);
+  screenWidthRef.current = screenWidth;
+  const onBubbleFrame = useCallback(
+    (x: number, y: number) => {
+      bubbleLeft.setValue(Math.max(8, Math.min(x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8)));
+      bubbleTop.setValue(Math.max(120, y));
+    },
+    [bubbleLeft, bubbleTop]
+  );
+
   const onFrame = useCallback(
     (dt: number, nowMs: number) => {
       sim.update(dt, nowMs);
+      // 걷거나 끄는 동안은 말풍선을 숨긴다(스냅숏의 규칙과 같다)
+      bubbleOpacity.setValue(Math.hypot(sim.vx, sim.vz) > 0.3 || sim.dragging ? 0 : 1);
       syncView();
     },
-    [sim, syncView]
+    [sim, syncView, bubbleOpacity]
   );
 
   const onPointer = useCallback(
@@ -246,7 +263,6 @@ export default function Lobby3dScreen({
   const closeness = VIEW_WIDTH_MAX + VIEW_WIDTH_MIN - viewWidth;
   const closenessPercent = Math.round(((closeness - VIEW_WIDTH_MIN) / (VIEW_WIDTH_MAX - VIEW_WIDTH_MIN)) * 100);
   const litMenu = view.arrived ? MENU_FOR_MARK[view.arrived] ?? null : null;
-  const bubblePos = projection?.bubble ?? { x: 195, y: 320 };
   const handleProjection = useCallback(
     (next: LobbyProjection) => {
       setProjection(next);
@@ -266,6 +282,7 @@ export default function Lobby3dScreen({
         onFrame={onFrame}
         onPointer={onPointer}
         onProject={handleProjection}
+        onBubbleFrame={onBubbleFrame}
         paused={paused}
         daylight={daylight}
       />
@@ -280,7 +297,7 @@ export default function Lobby3dScreen({
       })}
 
       {view.bubbleText ? (
-        <View
+        <Animated.View
           pointerEvents="box-none"
           onLayout={(e) => {
             const h = Math.round(e.nativeEvent.layout.height);
@@ -289,8 +306,9 @@ export default function Lobby3dScreen({
           style={[
             styles.bubbleWrap,
             {
-              left: Math.max(8, Math.min(bubblePos.x - BUBBLE_WIDTH / 2, screenWidth - BUBBLE_WIDTH - 8)),
-              top: Math.max(120, bubblePos.y),
+              left: bubbleLeft,
+              top: bubbleTop,
+              opacity: bubbleOpacity,
               transform: [{ translateY: -bubbleHeight - 12 }]
             }
           ]}
@@ -318,7 +336,7 @@ export default function Lobby3dScreen({
             ) : null}
           </View>
           <View style={styles.bubbleTail} />
-        </View>
+        </Animated.View>
       ) : null}
 
       <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>

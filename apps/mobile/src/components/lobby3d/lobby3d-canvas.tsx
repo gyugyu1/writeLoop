@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { LobbySim, MARKS, ROOM, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 import { Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
+import { BakedRoom, BakedRoomErrorBoundary } from "./lobby3d-room";
 
 // 3D 로비 그리기. 동작 규칙은 LobbySim(화면이 가진다)에 있고, 여기서는 매 프레임 그 상태를 그림으로 옮긴다.
 // 테스트에서는 이 모듈을 가짜로 바꾼다(three·expo-gl은 Jest에서 돌지 않는다).
@@ -274,6 +275,8 @@ interface World {
   markObjects: { id: MarkId; object: THREE.Object3D }[];
   labelPoints: Record<MarkId, THREE.Vector3>;
   floor: THREE.Mesh;
+  /** 코드로 지은 방 껍데기(바닥, 벽, 걸레받이, 바닥판, 입구 발판). 구운 방(lobby3d-room)이 뜨면 숨긴다. */
+  shell: THREE.Group;
   /** 장소가 아닌 가구. 누르면 움직이지 않는다. */
   blockers: THREE.Object3D[];
 }
@@ -292,10 +295,12 @@ function buildWorld(): World {
   floorGeometry.rotateX(-Math.PI / 2);
   floorGeometry.translate(W / 2, 0, D / 2);
   bakeCornerShade(floorGeometry);
+  const shell = new THREE.Group();
+  root.add(shell);
   const floor = new THREE.Mesh(floorGeometry, new THREE.MeshLambertMaterial({ map: floorTexture(), vertexColors: true }));
-  root.add(floor);
+  shell.add(floor);
   // 바닥판의 두께(앞쪽 잘린 면이 보인다). 윗면을 바닥보다 조금 낮춰, 멀리서 둘이 겹쳐 번갈아 그려지지 않게 한다.
-  kit.part(new THREE.BoxGeometry(W + T * 2, 0.22, D + T), 0x8a5230, 0, root).position.set(W / 2, -0.13, (D - T) / 2);
+  kit.part(new THREE.BoxGeometry(W + T * 2, 0.22, D + T), 0x8a5230, 0, shell).position.set(W / 2, -0.13, (D - T) / 2);
   // 벽: 안쪽 면만 벽지, 윗면·잘린 면은 벽 단면 색
   const paper = wallpaperTexture();
   const cut = new THREE.MeshLambertMaterial({ color: 0xc4a47c, vertexColors: true });
@@ -309,14 +314,14 @@ function buildWorld(): World {
     const papered = new THREE.MeshLambertMaterial({ map, vertexColors: true });
     // BoxGeometry 면 순서: +x, -x, +y, -y, +z, -z
     const materials = [0, 1, 2, 3, 4, 5].map((face) => (face === inner ? papered : cut));
-    root.add(new THREE.Mesh(geometry, materials));
+    shell.add(new THREE.Mesh(geometry, materials));
   };
   wall(W + T * 2, H, T, new THREE.Vector3(W / 2, H / 2, -T / 2), 4, W + T * 2);
   wall(T, H, D + T, new THREE.Vector3(-T / 2, H / 2, (D - T) / 2), 0, D + T);
   wall(T, H, D + T, new THREE.Vector3(W + T / 2, H / 2, (D - T) / 2), 1, D + T);
   // 걸레받이
-  kit.part(new RoundedBoxGeometry(W, 0.2, 0.06, 2, 0.02), 0xb57a45, 0, root).position.set(W / 2, 0.1, 0.03);
-  for (const bx of [0.03, W - 0.03]) kit.part(new RoundedBoxGeometry(0.06, 0.2, D, 2, 0.02), 0xb57a45, 0, root).position.set(bx, 0.1, D / 2);
+  kit.part(new RoundedBoxGeometry(W, 0.2, 0.06, 2, 0.02), 0xb57a45, 0, shell).position.set(W / 2, 0.1, 0.03);
+  for (const bx of [0.03, W - 0.03]) kit.part(new RoundedBoxGeometry(0.06, 0.2, D, 2, 0.02), 0xb57a45, 0, shell).position.set(bx, 0.1, D / 2);
   // 옆벽 창문(나무 틀 + 하늘색 유리)
   for (const [wx, face] of [[0.005, 1], [W - 0.005, -1]] as const) {
     const win = new THREE.Group();
@@ -327,7 +332,7 @@ function buildWorld(): World {
     root.add(win);
   }
   // 앞 가운데 입구 발판(바닥보다 조금 낮다)
-  kit.part(new RoundedBoxGeometry(2.0, 0.16, ROOM.stepDepth, 2, 0.04), 0x8a5a3b, 0, root).position.set(W / 2, -0.14, D + ROOM.stepDepth / 2);
+  kit.part(new RoundedBoxGeometry(2.0, 0.16, ROOM.stepDepth, 2, 0.04), 0x8a5a3b, 0, shell).position.set(W / 2, -0.14, D + ROOM.stepDepth / 2);
 
   // 가구 밑의 부드러운 그림자
   const blob = blobTexture();
@@ -443,7 +448,7 @@ function buildWorld(): World {
   shadow.position.y = 0.01;
   root.add(shadow);
 
-  return { root, kit, shadow, markObjects, blockers: [plant], labelPoints, floor };
+  return { root, kit, shadow, markObjects, blockers: [plant], labelPoints, floor, shell };
 }
 
 // ---------- 장면 ----------
@@ -567,6 +572,11 @@ function Scene({
       {/* react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다. */}
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={world.root} />
+      <BakedRoomErrorBoundary>
+        <Suspense fallback={null}>
+          <BakedRoom fallback={world.shell} />
+        </Suspense>
+      </BakedRoomErrorBoundary>
       <CharacterErrorBoundary>
         <Suspense fallback={null}>
           <Character kit={world.kit} outline={toon.outline} handleRef={character} />

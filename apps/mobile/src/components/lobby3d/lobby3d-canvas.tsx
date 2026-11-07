@@ -5,7 +5,7 @@ import { Suspense, useEffect, useMemo, useRef, type MutableRefObject } from "rea
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { LobbySim, MARKS, MARK_ZONE_RADIUS, ROOM, cameraPose, markZoneAt, markZoneCenter, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import { LobbySim, MARKS, ROOM, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 import type { Daylight } from "@/lib/lobby3d/daylight";
 import { FURNITURE_LAYOUT, type FurniturePiece } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
@@ -327,28 +327,6 @@ interface World {
   /** 방 조명. 하루의 때에 따라 색·세기가 바뀐다(lobby3d-daylight). */
   ambient: THREE.AmbientLight;
   sun: THREE.DirectionalLight;
-  /** 장소 구역 바닥의 옅은 빛 원(장소마다 하나). 숨 쉬듯 밝아졌다 어두워지고, 라이트루프가 들어가면 조금 더 밝다. */
-  zoneGlows: { id: MarkId; material: THREE.MeshBasicMaterial }[];
-}
-
-// 장소 구역 빛 원: 가운데는 옅게 차 있고 가장자리 안쪽이 조금 밝으며, 바깥으로 부드럽게 사라진다
-function zoneGlowTexture(): THREE.DataTexture {
-  const size = 64;
-  const data = new Uint8Array(size * size * 4);
-  for (let y = 0; y < size; y += 1) {
-    for (let x = 0; x < size; x += 1) {
-      const r = Math.hypot(x - size / 2 + 0.5, y - size / 2 + 0.5) / (size / 2);
-      const fill = 0.45 * Math.max(0, 1 - r);
-      const rim = Math.exp(-((r - 0.8) ** 2) / 0.012);
-      const fade = r > 1 ? 0 : 1;
-      data.set([255, 255, 255, Math.round(255 * Math.min(1, (fill + 0.6 * rim) * fade))], (y * size + x) * 4);
-    }
-  }
-  const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearFilter;
-  texture.needsUpdate = true;
-  return texture;
 }
 
 function buildWorld(): World {
@@ -522,29 +500,7 @@ function buildWorld(): World {
   shadow.position.y = 0.01;
   root.add(shadow);
 
-  // 장소 구역 빛 원. 방 바닥 앞끝 너머(입구 발판 쪽)는 그리지 않는다.
-  const zoneMap = zoneGlowTexture();
-  const insideFloor = new THREE.Plane(new THREE.Vector3(0, 0, -1), D);
-  const zoneGlows: World["zoneGlows"] = (Object.keys(MARKS) as MarkId[]).map((id) => {
-    const material = new THREE.MeshBasicMaterial({
-      map: zoneMap,
-      color: 0xfff1cf,
-      transparent: true,
-      opacity: 0,
-      depthWrite: false,
-      toneMapped: false,
-      clippingPlanes: [insideFloor]
-    });
-    const glow = new THREE.Mesh(new THREE.PlaneGeometry(MARK_ZONE_RADIUS * 2.2, MARK_ZONE_RADIUS * 2.2), material);
-    const c = markZoneCenter(id);
-    glow.rotation.x = -Math.PI / 2;
-    glow.position.set(c.x, 0.015, c.z);
-    glow.raycast = () => {};
-    root.add(glow);
-    return { id, material };
-  });
-
-  return { root, kit, shadow, markObjects, blockers, labelPoints, floor, shell, furniture, ambient, sun, zoneGlows };
+  return { root, kit, shadow, markObjects, blockers, labelPoints, floor, shell, furniture, ambient, sun };
 }
 
 // ---------- 장면 ----------
@@ -563,7 +519,7 @@ function Scene({
   // 시각에 따른 빛: 지금 보이는 색감(부드럽게 넘어가는 중인 값)과 구운 방에 곱하는 색
   const daylightState = useMemo(() => createDaylightState(daylight), []); // eslint-disable-line react-hooks/exhaustive-deps
   const roomTint = useMemo(() => new THREE.Color(0xffffff), []);
-  const { camera, size, scene, gl } = useThree();
+  const { camera, size, scene } = useThree();
   const target = useRef(new THREE.Vector3(sim.x, 0, sim.z));
   const character = useRef<CharacterHandle | null>(null);
   const fps = useRef({ frames: 0, since: 0, value: 0, lastSent: 0 });
@@ -571,9 +527,7 @@ function Scene({
 
   useEffect(() => {
     scene.background = new THREE.Color(0x000000);
-    // 장소 구역 빛 원이 방 바닥 앞끝에서 잘리게(재질별 자르는 면을 쓴다)
-    gl.localClippingEnabled = true;
-  }, [scene, gl]);
+  }, [scene]);
 
   useEffect(() => {
     world.kit.applyToon(toon);
@@ -628,10 +582,6 @@ function Scene({
     // 도형 캐릭터 때와 같이, 몸이 들리면 그림자가 작아진다(들린 높이를 그때 단위 1.25로 나눠 같은 비율로).
     const shrink = 1 - (lift / 1.25) * 0.35;
     world.shadow.position.set(sim.x, 0.01, sim.z);
-    // 장소 구역 빛 원: 천천히 숨 쉬듯, 라이트루프가 들어가 있는 구역은 조금 더 밝게
-    const breathe = 0.5 + 0.5 * Math.sin((nowMs / 1000) * ((2 * Math.PI) / 3));
-    const inZone = markZoneAt(sim.x, sim.z);
-    for (const glow of world.zoneGlows) glow.material.opacity = glow.id === inZone ? 0.55 + 0.1 * breathe : 0.2 + 0.12 * breathe;
     world.shadow.scale.set(1.15 * shrink, 0.8 * shrink, 1);
 
     // 카메라: 따라갈 점(라룹이 자리)을 부드럽게 옮기고, 그 점으로 cameraPose가 정한 원근 카메라 자리를 그대로 쓴다.

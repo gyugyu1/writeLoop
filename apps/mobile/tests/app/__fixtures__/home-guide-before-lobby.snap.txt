@@ -1,0 +1,442 @@
+// 작업 060-03 qa: 홈을 로비로 바꾸기 전(커밋 d6aabd0) tests/app/__snapshots__/index.spec.test.tsx.snap에서 그대로 떼어 온 학습 가이드 모달 구조.
+// 학습 가이드를 내정보로 옮긴 뒤에도 같은 구조인지 me-guide.spec.test.tsx가 비교한다. 고치지 않는다.
+
+exports[`[spec] 화면 구조 [spec] 학습 가이드 모달 1`] = `
+<Modal
+  animationType="slide"
+  visible={true}
+>
+  <View
+    style={
+      {
+        "backgroundColor": "#F7F2EB",
+        "flex": 1,
+        "paddingBottom": 0,
+        "paddingTop": 0,
+      }
+    }
+  >
+    <View
+      style={
+        {
+          "alignItems": "flex-start",
+          "flexDirection": "row",
+          "gap": 12,
+          "justifyContent": "space-between",
+          "paddingBottom": 14,
+          "paddingHorizontal": 20,
+          "paddingTop": 12,
+        }
+      }
+    >
+      <View
+        style={
+          {
+            "flex": 1,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#232128",
+              "fontSize": 28,
+              "fontWeight": "900",
+              "letterSpacing": -1.2,
+              "lineHeight": 34,
+            }
+          }
+        >
+          바로 보는 학습 가이드
+        </Text>
+      </View>
+      <View
+        accessibilityState={
+          {
+            "busy": undefined,
+            "checked": undefined,
+            "disabled": undefined,
+            "expanded": undefined,
+            "selected": undefined,
+          }
+        }
+        accessible={true}
+        collapsable={false}
+        style={
+          {
+            "borderRadius": 999,
+            "paddingHorizontal": 4,
+            "paddingVertical": 6,
+          }
+        }
+      >
+        <Text
+          style={
+            {
+              "color": "#7C6545",
+              "fontSize": 14,
+              "fontWeight": "800",
+            }
+          }
+        >
+          닫기
+        </Text>
+      </View>
+    </View>
+    <RCTScrollView
+      contentContainerStyle={
+        {
+          "gap": 18,
+          "paddingBottom": 28,
+          "paddingHorizontal": 20,
+          "paddingTop": 20,
+        }
+      }
+      showsVerticalScrollIndicator={false}
+      style={
+        {
+          "backgroundColor": "#FFF9F2",
+          "borderBottomWidth": 0,
+          "borderColor": "#E8DACB",
+          "borderTopLeftRadius": 32,
+          "borderTopRightRadius": 32,
+          "borderWidth": 1,
+          "flex": 1,
+        }
+      }
+    >
+      <View>
+        <Text
+          style={
+            {
+              "color": "#2A2620",
+              "fontSize": 18,
+              "fontWeight": "800",
+              "lineHeight": 26,
+            }
+          }
+        >
+          질문 선택, 코치 도움, 피드백까지 한 흐름으로 이어집니다.
+        </Text>
+        <View
+          style={
+            {
+              "gap": 12,
+            }
+          }
+        >
+          <View
+            style={
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "#E8DACB",
+                "borderRadius": 24,
+                "borderWidth": 1,
+                "flexDirection": "row",
+                "gap": 14,
+                "padding": 16,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#FFF0D9",
+                  "borderRadius": 999,
+                  "height": 34,
+                  "justifyContent": "center",
+                  "width": 34,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#A76518",
+                    "fontSize": 15,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                1
+              </Text>
+            </View>
+            <View
+              style={
+                {
+                  "flex": 1,
+                  "gap": 6,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#2A2620",
+                    "fontSize": 18,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                난이도 고르기
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#6D5E4E",
+                    "fontSize": 15,
+                    "lineHeight": 23,
+                  }
+                }
+              >
+                지금 컨디션에 맞는 난이도를 하나 고르면 오늘 질문 세트가 바로 열려요.
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "#E8DACB",
+                "borderRadius": 24,
+                "borderWidth": 1,
+                "flexDirection": "row",
+                "gap": 14,
+                "padding": 16,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#FFF0D9",
+                  "borderRadius": 999,
+                  "height": 34,
+                  "justifyContent": "center",
+                  "width": 34,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#A76518",
+                    "fontSize": 15,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                2
+              </Text>
+            </View>
+            <View
+              style={
+                {
+                  "flex": 1,
+                  "gap": 6,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#2A2620",
+                    "fontSize": 18,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                질문 하나 선택하기
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#6D5E4E",
+                    "fontSize": 15,
+                    "lineHeight": 23,
+                  }
+                }
+              >
+                마음에 드는 질문을 고른 뒤 2~4문장 정도로 가볍게 먼저 써 보세요.
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "#E8DACB",
+                "borderRadius": 24,
+                "borderWidth": 1,
+                "flexDirection": "row",
+                "gap": 14,
+                "padding": 16,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#FFF0D9",
+                  "borderRadius": 999,
+                  "height": 34,
+                  "justifyContent": "center",
+                  "width": 34,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#A76518",
+                    "fontSize": 15,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                3
+              </Text>
+            </View>
+            <View
+              style={
+                {
+                  "flex": 1,
+                  "gap": 6,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#2A2620",
+                    "fontSize": 18,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                AI 코치 활용하기
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#6D5E4E",
+                    "fontSize": 15,
+                    "lineHeight": 23,
+                  }
+                }
+              >
+                표현이 막히면 작문칸 안의 마스코트를 눌러 코치에게 첫 문장이나 표현을 물어볼 수 있어요.
+              </Text>
+            </View>
+          </View>
+          <View
+            style={
+              {
+                "backgroundColor": "#FFFFFF",
+                "borderColor": "#E8DACB",
+                "borderRadius": 24,
+                "borderWidth": 1,
+                "flexDirection": "row",
+                "gap": 14,
+                "padding": 16,
+              }
+            }
+          >
+            <View
+              style={
+                {
+                  "alignItems": "center",
+                  "backgroundColor": "#FFF0D9",
+                  "borderRadius": 999,
+                  "height": 34,
+                  "justifyContent": "center",
+                  "width": 34,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#A76518",
+                    "fontSize": 15,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                4
+              </Text>
+            </View>
+            <View
+              style={
+                {
+                  "flex": 1,
+                  "gap": 6,
+                }
+              }
+            >
+              <Text
+                style={
+                  {
+                    "color": "#2A2620",
+                    "fontSize": 18,
+                    "fontWeight": "900",
+                  }
+                }
+              >
+                피드백으로 다시 쓰기
+              </Text>
+              <Text
+                style={
+                  {
+                    "color": "#6D5E4E",
+                    "fontSize": 15,
+                    "lineHeight": 23,
+                  }
+                }
+              >
+                피드백에서 잘한 점과 다음 루프 제안을 보고 한 번 더 다듬으면 실력이 훨씬 빨리 붙어요.
+              </Text>
+            </View>
+          </View>
+        </View>
+        <View
+          style={
+            {
+              "backgroundColor": "#FFF1DB",
+              "borderRadius": 26,
+              "gap": 8,
+              "padding": 18,
+            }
+          }
+        >
+          <Text
+            style={
+              {
+                "color": "#7E5215",
+                "fontSize": 18,
+                "fontWeight": "900",
+              }
+            }
+          >
+            작게 시작하는 게 가장 좋아요.
+          </Text>
+          <Text
+            style={
+              {
+                "color": "#6C562F",
+                "fontSize": 15,
+                "lineHeight": 23,
+              }
+            }
+          >
+            완벽하게 길게 쓰려고 하기보다, 짧게 먼저 쓰고 AI 코치와 피드백으로 한 번 더 다듬는 방식이 가장 안정적으로 늘어요.
+          </Text>
+        </View>
+      </View>
+    </RCTScrollView>
+  </View>
+</Modal>
+`;

@@ -455,7 +455,10 @@ async function walkUntilStoppedAt(point: FloorPoint) {
 }
 
 function bubbleOf(line: string) {
-  return screen.getByText(line).parent!;
+  // 말풍선 글이 든 말풍선 판. 글은 누르기를 받지 않는 감싸개(pointerEvents "none") 안에 있으므로 그 감싸개를 건너 올라간다(060-10 19 결정)
+  let node = screen.getByText(line).parent!;
+  while (node.props.pointerEvents === "none") node = node.parent!;
+  return node;
 }
 
 beforeEach(async () => {

@@ -290,12 +290,6 @@ export default function Lobby3dScreen({
     [bubbleLeft, bubbleTop, labelPos, send, lastSent]
   );
 
-  /** 장소 구역 밖에서 걷거나 끄는 중이라 말풍선을 숨긴 때인지(스냅숏 규칙과 같다. 구역 안이면 걷는 중에도 안내를 보인다). */
-  const bubbleHidden = useCallback(
-    () => (Math.hypot(sim.vx, sim.vz) > 0.3 || sim.dragging) && sim.currentPlace() === null,
-    [sim]
-  );
-
   /** 스냅숏대로 장소 안내 말풍선·인사 말풍선·메뉴 강조의 보임을 네이티브 쪽에서 바로 바꾼다. */
   const applyOverlay = useCallback(
     (snap: LobbySnapshot) => {
@@ -462,7 +456,8 @@ export default function Lobby3dScreen({
                 accessibilityRole="button"
                 style={styles.bubbleButton}
                 onPress={() => {
-                  if (!bubbleHidden()) idleButton.onPress();
+                  // 누른 순간 인사 말풍선을 보이는 중일 때만 누른다(걷기 시작해 숨었는데 아직 다시 그리기 전이면 누르지 않은 것으로 본다)
+                  if (sim.snapshot(Date.now()).idleBubble) idleButton.onPress();
                 }}
               >
                 <Text style={styles.bubbleButtonText}>{idleButton.label}</Text>

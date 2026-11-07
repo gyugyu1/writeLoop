@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { LobbySim, MARKS, ROOM, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 import { FURNITURE_LAYOUT, type FurniturePiece } from "@/lib/lobby3d/furniture-layout";
-import { Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
+import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
 import { BakedRoom, BakedRoomErrorBoundary } from "./lobby3d-room";
 
@@ -411,7 +411,7 @@ function buildWorld(): World {
         kit.part(new THREE.BoxGeometry(0.45, 0.4, 0.02), 0xffeb73, 0.012, g).position.set(0.3, -0.07, 0.06);
         break;
       case "window":
-        kit.part(new RoundedBoxGeometry(2.15, 1.8, 0.12, 2, 0.03), 0xe39a64, 0.03, g);
+        kit.part(new RoundedBoxGeometry(2.3, 1.88, 0.12, 2, 0.03), 0xe39a64, 0.03, g);
         kit.part(new THREE.BoxGeometry(1.95, 1.6, 0.04), 0x9fcde6, 0, g).position.z = 0.05;
         kit.part(new THREE.BoxGeometry(1.95, 0.06, 0.05), 0xe39a64, 0, g).position.z = 0.08;
         kit.part(new THREE.BoxGeometry(0.06, 1.6, 0.05), 0xe39a64, 0, g).position.z = 0.08;
@@ -602,7 +602,7 @@ function Scene({
       (Object.keys(MARKS) as MarkId[]).forEach((id) => {
         labels[id] = toScreen(world.labelPoints[id]);
       });
-      const bubble = toScreen(character.current?.bubblePoint() ?? new THREE.Vector3(sim.x, 3.2, sim.z));
+      const bubble = toScreen(character.current?.bubblePoint() ?? new THREE.Vector3(sim.x, BUBBLE_HEIGHT, sim.z));
       onProject({ bubble, labels, fps: f.value });
     }
   });

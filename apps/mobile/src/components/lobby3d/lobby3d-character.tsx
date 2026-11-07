@@ -17,7 +17,7 @@ const LINE = 0x3d1b0f;
 /** 외곽선 껍질을 부풀리는 거리(키 1 기준). 설정의 외곽선 굵기 배율을 곱한다. */
 const OUTLINE_THICKNESS = 0.012;
 /** 말풍선 꼬리가 닿을 높이(바닥에서). 모델 키에 맞춰 도형 캐릭터 때(3.2)에 SIZE를 곱한다. 몸이 들리면 머리를 따라 올라간다. */
-const BUBBLE_HEIGHT = 3.2 * SIZE;
+export const BUBBLE_HEIGHT = 3.2 * SIZE;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const MODEL_ASSET = require("../../../assets/models/writeloop.glb");

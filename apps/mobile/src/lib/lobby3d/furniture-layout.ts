@@ -28,8 +28,8 @@ export const FURNITURE_LAYOUT: readonly FurniturePlacement[] = [
   { piece: "door", x: 7.0, y: 0, z: 0.16, rotY: 0, mark: "door" },
   // 일기 책상은 다른 가구보다 1.2배 커서 칸 "0,5"·"1,5"에 더해 "2,5" 절반까지 나온다
   { piece: "desk", x: 1.25, y: 0, z: 5.5, rotY: 0, mark: "desk" },
-  // 의자는 책상 칸 안에서 책상 밑으로 반쯤 밀어 넣는다(앞면이 책상을 본다)
-  { piece: "chair", x: 1.5, y: 0, z: 6.1, rotY: Math.PI, mark: "desk" },
+  // 의자는 책상 밑으로 대부분 밀어 넣는다(앞면이 책상을 본다). 등받이 쪽만 책상 앞(칸 "1,6")으로 조금 나온다
+  { piece: "chair", x: 1.5, y: 0, z: 5.95, rotY: Math.PI, mark: "desk" },
   { piece: "bookcase", x: 0.44, y: 0, z: 2.5, rotY: Math.PI / 2, blocker: true },
   { piece: "lamp", x: 3.3, y: 0, z: 0.35, rotY: 0, blocker: true },
   { piece: "wardrobe", x: W - 0.44, y: 0, z: 3.5, rotY: -Math.PI / 2, blocker: true },

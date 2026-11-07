@@ -38,12 +38,13 @@ export const ACTION_LABELS: Record<ActionType, string> = {
 };
 const TEST_ACTIONS: ActionType[] = ["wave", "jump", "hop", "point", "spin", "look"];
 
-export type LobbyMenuId = "question" | "diary" | "thought";
+export type LobbyMenuId = "question" | "diary" | "thought" | "records";
 
 const MENU = [
   { id: "question", label: "질문에 답하기", primary: true },
   { id: "diary", label: "영어일기", primary: false },
-  { id: "thought", label: "지금 생각나는대로", primary: false }
+  { id: "thought", label: "지금 생각나는대로", primary: false },
+  { id: "records", label: "학습 기록", primary: false }
 ] as const;
 
 interface ViewState {
@@ -792,7 +793,7 @@ const styles = StyleSheet.create({
     justifyContent: "center"
   },
   panelToggleText: { color: "#FFFFFF", fontSize: 13, fontWeight: "600" },
-  menu: { flexDirection: "row", gap: 8 },
+  menu: { flexDirection: "row", gap: 6 },
   menuButton: {
     flex: 1,
     height: 72,
@@ -801,10 +802,11 @@ const styles = StyleSheet.create({
     borderColor: LINE,
     backgroundColor: "rgba(255,255,255,0.95)",
     justifyContent: "center",
-    paddingHorizontal: 10
+    paddingHorizontal: 6
   },
-  menuPrimary: { flex: 1.3, backgroundColor: ACCENT },
+  menuPrimary: { flex: 1.15, backgroundColor: ACCENT },
   menuLitRing: { position: "absolute", top: -2, left: -2, right: -2, bottom: -2, borderRadius: 20, borderWidth: 4, borderColor: "#FFC23D" },
-  menuText: { fontSize: 15, fontWeight: "700", color: "#2B1810" },
+  // 메뉴 넷이 한 줄에 들어가게 글을 조금 줄이고 가운데 맞춘다
+  menuText: { fontSize: 13, lineHeight: 17, fontWeight: "700", color: "#2B1810", textAlign: "center" },
   menuPrimaryText: { color: "#FFFFFF" }
 });

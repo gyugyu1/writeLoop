@@ -358,12 +358,17 @@ export default function HomeScreen() {
   const lobbyBottomInset = MOBILE_NAV_BOTTOM_SPACING + Math.max(insets.bottom - 24, 0);
   const streakChipLabel = displayedStreakDays > 0 ? `연속 ${displayedStreakDays}일` : "작문 대기 중";
   const closeSheet = () => setOpenSheet(null);
-  // 장소에 도착해 말풍선 버튼을 누르면 그 장소의 판을 연다. 문(밖으로)은 처리하지 않아 로비의 안내가 뜬다.
-  const sheetForMark: Partial<Record<MarkId, LobbyMenuId>> = { board: "question", desk: "diary", window: "thought" };
+  // 아래 메뉴: 학습 기록은 기록 화면(아래 탭바의 "기록"과 같다)으로 가고, 나머지는 그 판을 연다.
+  const handleMenu = (id: LobbyMenuId) => {
+    if (id === "records") router.push(historyRoute);
+    else setOpenSheet(id);
+  };
+  // 장소에 도착해 말풍선 버튼을 누르면 그 장소의 메뉴와 같은 일을 한다. 문(밖으로)은 처리하지 않아 로비의 안내가 뜬다.
+  const menuForMark: Partial<Record<MarkId, LobbyMenuId>> = { board: "question", desk: "diary", window: "thought", bookcase: "records" };
   const handleEnterMark = (mark: MarkId) => {
-    const sheet = sheetForMark[mark];
-    if (!sheet) return false;
-    setOpenSheet(sheet);
+    const menu = menuForMark[mark];
+    if (!menu) return false;
+    handleMenu(menu);
     return true;
   };
 
@@ -376,7 +381,7 @@ export default function HomeScreen() {
           showFps={__DEV__}
           streakLabel={streakChipLabel}
           onStreakPress={() => router.push(historyRoute)}
-          onMenu={setOpenSheet}
+          onMenu={handleMenu}
           onEnterMark={handleEnterMark}
           idleButton={incompleteLoopRoute ? { label: "이어 쓰기", onPress: handleResumeLoop } : null}
           greeting={lobbyGreeting}

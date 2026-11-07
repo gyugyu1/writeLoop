@@ -323,8 +323,13 @@ describe("[spec] 장소 도착과 바라보기(S22, S23, 결정 5)", () => {
     expect(angleDiff(sim.heading, want)).toBeLessThanOrEqual(0.15);
   });
 
-  it("S23(결정 5): 벽에 붙은 장소(게시판, 창가, 문)의 중심은 뒷벽 위(z = 0)에 있다", () => {
-    expect([MARKS.board.faceTo.z, MARKS.window.faceTo.z, MARKS.door.faceTo.z]).toEqual([0, 0, 0]);
+  // 작업 060-⑤ 결정 29(문을 없앰)로 고쳤다: 벽에 붙은 장소는 게시판·창가 둘이고, "밖으로"(door)는 방 앞 입구 발판 가운데로 옮겨졌다.
+  it("S23(결정 5, 060-⑤ 결정 29): 벽에 붙은 장소(게시판, 창가)의 중심은 뒷벽 위(z = 0)에 있고, 밖으로의 중심은 뒷벽이 아니라 입구 발판 가운데(바닥 앞끝 + 발판 깊이의 절반)에 있다", () => {
+    expect({
+      board: MARKS.board.faceTo.z,
+      window: MARKS.window.faceTo.z,
+      doorOnStepCenter: Math.abs(MARKS.door.faceTo.z - (ROOM.depth + ROOM.stepDepth / 2)) < 1e-9
+    }).toEqual({ board: 0, window: 0, doorOnStepCenter: true });
   });
 });
 

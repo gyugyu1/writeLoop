@@ -3,8 +3,6 @@ import { Component, useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { FURNITURE_LAYOUT } from "@/lib/lobby3d/furniture-layout";
-import { outlineAttributes } from "@/lib/lobby3d/outline-attributes";
-import { outlineMaterial, type OutlineUniforms } from "./lobby3d-character";
 import { createOutdoor } from "./lobby3d-outdoor";
 
 // 라룹이 방의 가구. Kenney Furniture Kit(CC0)에서 고른 가구를 scripts/lobby3d/build-furniture.py가 한 glb로 묶는다.
@@ -31,20 +29,13 @@ const OUTDOOR_DROP = 2.05;
 /** 창밖 그림판의 크기(화소). 창 안쪽 비율(가로 2 : 세로 1.78 남짓)에 맞추고, 매끄럽게 보이게 화면에 보이는 크기보다 크게 그린다. */
 const VIEW_TEXTURE = { width: 768, height: 680 };
 
-/** 외곽선 굵기(칸). 라룹이(키 1 기준 0.012 × 2.84 ≈ 0.034)보다 조금 얇다. 설정의 외곽선 굵기 배율을 곱한다. */
-const OUTLINE_THICKNESS = 0.024;
-
 interface BakedFurnitureProps {
   /** 코드로 만든 대체 가구. 가구 묶음이 뜨는 동안 숨긴다(누르기 판정은 그대로 맡는다). */
   fallback: THREE.Object3D;
-  /** 외곽선 굵기 배율(라룹이와 같은 설정). */
-  outline: number;
 }
 
-export function BakedFurniture({ fallback, outline }: BakedFurnitureProps) {
+export function BakedFurniture({ fallback }: BakedFurnitureProps) {
   const gltf = useLoader(GLTFLoader, FURNITURE_ASSET as string) as GLTF;
-  // 가구는 이미 방 크기로 묶여 있어 모델 배율이 1이다.
-  const uniforms = useMemo<OutlineUniforms>(() => ({ thickness: { value: OUTLINE_THICKNESS }, scale: { value: 1 } }), []);
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판
   const outdoor = useMemo(() => {
     const place = FURNITURE_LAYOUT.find((p) => p.piece === "window");
@@ -55,31 +46,20 @@ export function BakedFurniture({ fallback, outline }: BakedFurnitureProps) {
   const eyeCamera = useMemo(() => new THREE.PerspectiveCamera(), []);
   const built = useMemo(() => {
     const root = new THREE.Group();
-    // 외곽선 재질은 속성 조합마다 하나만 만든다(가구 묶음은 모두 _outline_normal을 담고 있다).
-    const shells = new Map<string, THREE.MeshBasicMaterial>();
-    const shellFor = (geometry: THREE.BufferGeometry) => {
-      const choice = outlineAttributes({ hasOutlineNormal: geometry.hasAttribute("_outline_normal"), hasOutlineBias: false });
-      const key = choice.direction;
-      let m = shells.get(key);
-      if (!m) {
-        m = outlineMaterial(uniforms, choice);
-        shells.set(key, m);
-      }
-      return m;
-    };
     // 같은 색의 재질은 하나만 만든다. 방과 같은 부드러운 명암을 쓴다.
     // Kenney 모델은 색을 화면 색(sRGB) 값 그대로 적어 두었다(예: 나무 0.896, 0.602, 0.393 = #E59A64).
     // glTF는 그 값을 선형 값으로 읽으므로 그대로 쓰면 하얗게 바랜다. sRGB 값으로 보고 선형으로 바꾼다.
     const materials = new Map<string, THREE.MeshLambertMaterial>();
     // 유리: 창밖 풍경이 비치게 살짝 하늘빛 도는 반투명으로 한다.
     const glass = new THREE.MeshBasicMaterial({ color: 0xe6f6ff, transparent: true, opacity: 0.18, depthWrite: false, toneMapped: false });
-    const soft = (source: THREE.Material) => {
+    // 가구 묶음에는 구석 어둠이 꼭짓점 색으로 구워져 있다(테두리 없이 명암으로 모양이 보이게). 그 색을 곱해 칠한다.
+    const soft = (source: THREE.Material, shaded: boolean) => {
       if (source.name.startsWith("glass")) return glass;
       const color = (source as THREE.MeshStandardMaterial).color ?? new THREE.Color(0xffffff);
-      const key = color.getHexString();
+      const key = `${color.getHexString()}${shaded ? "-ao" : ""}`;
       let m = materials.get(key);
       if (!m) {
-        m = new THREE.MeshLambertMaterial({ color: color.clone().convertSRGBToLinear() });
+        m = new THREE.MeshLambertMaterial({ color: color.clone().convertSRGBToLinear(), vertexColors: shaded });
         materials.set(key, m);
       }
       return m;
@@ -102,14 +82,9 @@ export function BakedFurniture({ fallback, outline }: BakedFurnitureProps) {
         if (o instanceof THREE.Mesh) meshes.push(o);
       });
       for (const o of meshes) {
-        o.material = Array.isArray(o.material) ? o.material.map(soft) : soft(o.material);
+        const shaded = o.geometry.hasAttribute("color");
+        o.material = Array.isArray(o.material) ? o.material.map((m) => soft(m, shaded)) : soft(o.material, shaded);
         o.raycast = () => {};
-        // 외곽선 껍질: 같은 모양을 뒷면만 그리며 외곽선 방향으로 부풀린다.
-        // 창문의 미닫이 두 짝은 앞뒤로 겹쳐 있어 뒤 짝의 외곽선이 창 가운데 굵은 띠로 비친다. 짝에는 넣지 않고 바깥 창틀에만 넣는다.
-        if (/windowTop|windowBottom/.test(`${o.name} ${o.parent?.name ?? ""}`)) continue;
-        const shell = new THREE.Mesh(o.geometry, shellFor(o.geometry));
-        shell.raycast = () => {};
-        o.add(shell);
       }
       if (place.piece === "window" && viewSource && views.length === 0) {
         // 창 안쪽에 창밖 그림판을 둔다. 매 프레임 창밖 장면을 들여다본 모습을 그린다(아래 useFrame).
@@ -122,12 +97,8 @@ export function BakedFurniture({ fallback, outline }: BakedFurnitureProps) {
       root.add(piece);
     }
     return { root, view: views[0] ?? null };
-  }, [gltf, uniforms, target]);
+  }, [gltf, target]);
   const group = built.root;
-
-  useEffect(() => {
-    uniforms.thickness.value = OUTLINE_THICKNESS * outline;
-  }, [uniforms, outline]);
 
   // 창밖 그리기: 창 정면에서 창 안쪽을 화면 삼아 들여다본다(눈이 창 정면에서 비껴 있어도 창 네 모서리가 그림 네 모서리에 맞는 비스듬한 원근).
   const eye = useMemo(() => new THREE.Vector3(), []);

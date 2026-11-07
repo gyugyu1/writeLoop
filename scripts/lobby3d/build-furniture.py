@@ -1,8 +1,7 @@
 # 라룹이 방의 가구를 Kenney Furniture Kit(CC0)에서 골라 한 glb로 묶는다.
 # 쓰는 법: blender -b -P scripts/lobby3d/build-furniture.py -- <Kenney "Models/GLTF format" 폴더> <출력 glb>
 #   (Blender 5.2에서 확인. 출력은 apps/mobile/assets/models/lobby-furniture.glb로 복사한다)
-# 가구마다 이름 붙은 묶음 하나로 내보낸다. 꼭짓점마다 외곽선 방향(_OUTLINE_NORMAL: 같은 자리 면들의 평균 법선)을 구워 넣는다.
-# Kenney 모델은 모서리마다 꼭짓점이 갈라져 있어 법선으로 부풀리면 모서리에 틈이 생기기 때문이다(라룹이 모델과 같은 방식). 묶음의 기준점은 바닥 가운데(벽에 거는 창문·게시판은 가운데)이고,
+# 가구마다 이름 붙은 묶음 하나로 내보낸다. 모서리를 둥글리고, 구석 어둠을 꼭짓점 색으로 굽는다(테두리 없이 명암으로 모양이 보이게). 묶음의 기준점은 바닥 가운데(벽에 거는 창문·게시판은 가운데)이고,
 # 앞면은 방 앞쪽(앱 +z)을 본다. 어디에 놓을지는 앱(lobby3d-furniture.tsx의 FURNITURE_LAYOUT)이 정한다.
 import math
 import os
@@ -211,31 +210,43 @@ for o in list(scene.objects):
     if o.type == "MESH" and not o.name.startswith("windowView") and not o.name.startswith("rug"):
         round_edges(o)
 
-# ---------- 외곽선 방향 ----------
-def bake_outline_normals(obj):
-    """같은 자리의 꼭짓점들이 같은 방향을 갖게, 그 자리에 닿은 면 법선을 넓이로 가중해 평균한다."""
-    mesh = obj.data
-    acc = {}
-    key = lambda co: (round(co.x, 4), round(co.y, 4), round(co.z, 4))
-    for poly in mesh.polygons:
-        n = poly.normal * poly.area
-        for vi in poly.vertices:
-            k = key(mesh.vertices[vi].co)
-            acc[k] = acc.get(k, Vector((0, 0, 0))) + n
-    attr = mesh.attributes.new("_OUTLINE_NORMAL", "FLOAT_VECTOR", "POINT")
-    for v in mesh.vertices:
-        d = acc.get(key(v.co), Vector((0, 0, 1)))
-        attr.data[v.index].vector = d.normalized() if d.length > 1e-9 else Vector((0, 0, 1))
-
-
-for o in scene.objects:
-    if o.type == "MESH" and not o.name.startswith("windowView"):
-        bake_outline_normals(o)
+# ---------- 구석 어둠 ----------
+# 테두리 대신 명암으로 모양이 보이게, 가구마다 구석·틈(책장 칸 안, 책상 밑, 문틀 안쪽)이 어둡게 지는 정도를 꼭짓점 색으로 굽는다.
+# 가구끼리 서로 가리지 않게 하나씩 떨어뜨려 놓고 굽는다. 너무 어둡지 않게 AO_STRENGTH만큼만 섞는다.
+AO_DISTANCE = 0.5
+AO_STRENGTH = 0.55
+scene.render.engine = "CYCLES"
+scene.cycles.samples = 128
+scene.cycles.device = "CPU"
+if scene.world is None:
+    scene.world = bpy.data.worlds.new("world")
+scene.world.light_settings.distance = AO_DISTANCE
+roots = sorted((o for o in scene.objects if o.type == "EMPTY"), key=lambda o: o.name)
+for i, r in enumerate(roots):
+    r.location.x = i * 10
+bpy.context.view_layer.update()
+meshes = [o for o in scene.objects if o.type == "MESH" and not o.name.startswith("windowView")]
+bpy.ops.object.select_all(action="DESELECT")
+for o in meshes:
+    attr = o.data.color_attributes.new("ao", "BYTE_COLOR", "CORNER")
+    o.data.color_attributes.active_color = attr
+    o.select_set(True)
+bpy.context.view_layer.objects.active = meshes[0]
+bpy.ops.object.bake(type="AO", target="VERTEX_COLORS")
+for o in meshes:
+    data = o.data.color_attributes["ao"].data
+    for c in data:
+        ao = c.color[0]
+        v = 1 - AO_STRENGTH * (1 - ao)
+        c.color = (v, v, v, 1)
+for r in roots:
+    r.location.x = 0
+bpy.context.view_layer.update()
 
 # ---------- 내보내기 ----------
 roots = [o for o in scene.objects if o.type == "EMPTY"]
 for o in scene.objects:
     o.select_set(True)
-kwargs = dict(filepath=out, export_format="GLB", use_selection=True, export_yup=True, export_apply=True, export_attributes=True)
+kwargs = dict(filepath=out, export_format="GLB", use_selection=True, export_yup=True, export_apply=True, export_vertex_color="ACTIVE")
 bpy.ops.export_scene.gltf(**kwargs)
 print("pieces", sorted(r.name for r in roots), "bytes", os.path.getsize(out))

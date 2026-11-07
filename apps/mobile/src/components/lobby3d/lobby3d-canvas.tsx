@@ -614,7 +614,7 @@ function Scene({
       <primitive object={world.root} />
       <BakedFurnitureErrorBoundary>
         <Suspense fallback={null}>
-          <BakedFurniture fallback={world.furniture} outline={toon.outline} />
+          <BakedFurniture fallback={world.furniture} />
         </Suspense>
       </BakedFurnitureErrorBoundary>
       <BakedRoomErrorBoundary>

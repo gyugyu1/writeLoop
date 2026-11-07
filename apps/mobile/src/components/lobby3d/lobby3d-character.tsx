@@ -31,7 +31,7 @@ export interface CharacterHandle {
   bubblePoint(): THREE.Vector3;
 }
 
-export interface OutlineUniforms {
+interface OutlineUniforms {
   thickness: { value: number };
   scale: { value: number };
 }
@@ -40,7 +40,7 @@ export interface OutlineUniforms {
  * 외곽선 재질. 모델에 구워 넣은 방향(_outline_normal)으로 부풀리고, 구워 넣은 거리(_outline_bias)만큼 카메라에서 뒤로 민다.
  * 속성이 없는 모델이면 꼭짓점 법선과 고정 거리로 대신한다(outline-attributes).
  */
-export function outlineMaterial(uniforms: OutlineUniforms, choice: OutlineAttributeChoice): THREE.MeshBasicMaterial {
+function outlineMaterial(uniforms: OutlineUniforms, choice: OutlineAttributeChoice): THREE.MeshBasicMaterial {
   const material = new THREE.MeshBasicMaterial({ color: LINE, side: THREE.BackSide });
   const direction = choice.direction;
   const bias = choice.bias.source === "attribute" ? choice.bias.attribute : `${choice.bias.value.toFixed(4)}`;

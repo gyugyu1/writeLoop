@@ -1,9 +1,10 @@
 // [spec] qa 테스트(작업 060-⑤ 가구·창문 디자인, 기능 변경).
-// 기대값은 명세(private 작업 폴더 07-가구-디자인/01-main-spec.md)와 결정(02: 옷장은 칸 "7,3" 하나만, 06: 창가 안락의자를 빼서 칸 "4,0"·"5,0"이 열림)에서만 가져온다.
+// 기대값은 명세(private 작업 폴더 07-가구-디자인/01-main-spec.md)와 결정(02: 옷장은 칸 "7,3" 하나만, 06: 창가 안락의자를 빼서 칸 "4,0"·"5,0"이 열림,
+// 15: 일기 책상을 1.2배로 키워 칸 "2,5"도 막히고, 일기 책상 장소의 바라볼 곳·서는 곳이 옮겨짐)에서만 가져온다.
 // 그대로 둘 동작(장소 데이터, 메뉴 짝)은 고치기 전 코드의 값을 그대로 기록한다.
-// - 바뀔 동작: 책장 칸 "0,2"와 스탠드 칸 "3,0"이 새로 지나갈 수 없는 칸이 되고, 창가 의자 칸이던 "4,0"·"5,0"은 지나갈 수 있는 칸이 된다
-//   (고치기 전에는 실패해야 한다).
-// - 그대로 둘 동작: 지금 지나갈 수 없는 칸("0,5", "1,5", 옷장 칸이 된 "7,3"), 장소 넷의 데이터와 메뉴 짝,
+// - 바뀔 동작: 책장 칸 "0,2", 스탠드 칸 "3,0", 일기 책상이 넓어진 칸 "2,5"가 새로 지나갈 수 없는 칸이 되고, 창가 의자 칸이던 "4,0"·"5,0"은
+//   지나갈 수 있는 칸이 된다. 일기 책상 장소의 바라볼 곳은 (1.25, 5.5), 서는 곳은 (3.35, 5.2)·(3.35, 5.8)이 된다(고치기 전에는 실패해야 한다).
+// - 그대로 둘 동작: 지금 지나갈 수 없는 칸("0,5", "1,5", 옷장 칸이 된 "7,3"), 일기 책상을 뺀 장소 셋의 데이터, 장소 넷의 문구와 메뉴 짝,
 //   방 안 아무 바닥 칸에서 네 장소로 가는 길(고치기 전에도 통과해야 한다).
 // 좌표(구현의 약속): 바닥 한 칸 = 1, x는 왼쪽→오른쪽(0..8), z는 뒷벽→앞(0..11). 칸 이름은 "열,행" = "floor(x),floor(z)".
 // 3D에서 가구를 눌렀을 때 그 뒤 바닥으로 걷지 않는 판정(그리기 쪽의 누르기 판정)은 이 파일이 보지 않는다(보고에 적음).
@@ -24,10 +25,11 @@ const FRAME_S = 0.05;
 const FRAME_MS = 50;
 const MARK_IDS: MarkId[] = ["board", "window", "desk", "door"];
 
-/** 명세 2(결정 02로 바로잡음): 새로 지나갈 수 없게 되는 칸. */
+/** 명세 2(결정 02로 바로잡음)와 결정 15(일기 책상 1.2배): 새로 지나갈 수 없게 되는 칸. */
 const NEW_SOLID = [
   ["책장 칸 \"0,2\"", "0,2"],
-  ["스탠드 칸 \"3,0\"", "3,0"]
+  ["스탠드 칸 \"3,0\"", "3,0"],
+  ["일기 책상이 넓어진 칸 \"2,5\"", "2,5"]
 ] as const;
 /** 그대로여야 할 동작: 지금 지나갈 수 없는 칸. "7,3"은 화분 칸에서 옷장 칸이 된다. */
 const KEPT_SOLID = [
@@ -94,9 +96,9 @@ function startDrag(sim: LobbySim, finger: FloorPoint) {
   expect(sim.dragging).toBe(true);
 }
 
-describe("[spec] 060-⑤ 지나갈 수 없는 칸이 바뀜(바뀔 동작: 명세 2, 결정 02·06)", () => {
-  it("F1: 지나갈 수 없는 칸은 일기 책상·옷장 칸에 책장 \"0,2\"와 스탠드 \"3,0\"을 더한 다섯 칸이다(\"7,2\"와 창가 의자 칸이던 \"4,0\"·\"5,0\"은 지나갈 수 있다)", () => {
-    expect([...SOLID_TILES].sort()).toEqual(["0,2", "0,5", "1,5", "3,0", "7,3"]);
+describe("[spec] 060-⑤ 지나갈 수 없는 칸과 일기 책상 자리가 바뀜(바뀔 동작: 명세 2, 결정 02·06·15)", () => {
+  it("F1: 지나갈 수 없는 칸은 일기 책상 \"0,5\"·\"1,5\"·옷장 \"7,3\"에 책장 \"0,2\", 스탠드 \"3,0\", 일기 책상이 넓어진 \"2,5\"를 더한 여섯 칸이다(\"7,2\"와 창가 의자 칸이던 \"4,0\"·\"5,0\"은 지나갈 수 있다)", () => {
+    expect([...SOLID_TILES].sort()).toEqual(["0,2", "0,5", "1,5", "2,5", "3,0", "7,3"]);
   });
 
   it.each(NEW_SOLID)("F2: %s 안 어디를 톡 해도 움직이지 않는다", (_name, key) => {
@@ -112,7 +114,8 @@ describe("[spec] 060-⑤ 지나갈 수 없는 칸이 바뀜(바뀔 동작: 명�
 
   it.each([
     ["책장 칸 \"0,2\"를 왼쪽 벽 쪽으로", "0,2", { x: 1.6, z: 2.5 }, { x: -2, z: 2.5 }],
-    ["스탠드 칸 \"3,0\"을 뒷벽 쪽으로", "3,0", { x: 3.5, z: 2.5 }, { x: 3.5, z: -2 }]
+    ["스탠드 칸 \"3,0\"을 뒷벽 쪽으로", "3,0", { x: 3.5, z: 2.5 }, { x: 3.5, z: -2 }],
+    ["일기 책상이 넓어진 칸 \"2,5\"를 왼쪽 벽 쪽으로", "2,5", { x: 3.5, z: 5.5 }, { x: -2, z: 5.5 }]
   ])("F3: %s 끌어도 어느 프레임에서도 그 칸에 들어가지 않는다", (_name, key, start, finger) => {
     const sim = new LobbySim(start);
     startDrag(sim, finger);
@@ -120,19 +123,20 @@ describe("[spec] 060-⑤ 지나갈 수 없는 칸이 바뀜(바뀔 동작: 명�
     expect(positions.filter((p) => tileOf(p) === key).length).toBe(0);
   });
 
-  it("F4: 책장 칸 \"0,2\"를 사이에 둔 위(0,1)·아래(0,3)로 가는 길은 그 칸을 지나지 않고 누른 칸에 닿는다", () => {
-    const from = { x: 0.8, z: 1.5 };
-    const goal = { x: 0.8, z: 3.5 };
+  it.each([
+    ["책장 칸 \"0,2\"를 사이에 둔 위(0,1)·아래(0,3)", "0,2", { x: 0.8, z: 1.5 }, { x: 0.8, z: 3.5 }, "0,3"],
+    ["일기 책상이 넓어진 칸 \"2,5\"를 사이에 둔 위(2,4)·아래(2,6)", "2,5", { x: 2.5, z: 4.5 }, { x: 2.5, z: 6.5 }, "2,6"]
+  ])("F4: %s로 가는 길은 그 칸을 지나지 않고 누른 칸에 닿는다", (_name, key, from, goal, goalTile) => {
     const path = findPath(from, [goal]);
     expect(path).not.toBeNull();
-    expect(tileOf(path![path!.length - 1])).toBe("0,3");
-    expect(samplePath(from, path!).filter((p) => tileOf(p) === "0,2").length).toBe(0);
+    expect(tileOf(path![path!.length - 1])).toBe(goalTile);
+    expect(samplePath(from, path!).filter((p) => tileOf(p) === key).length).toBe(0);
 
     const sim = new LobbySim(from);
     expect(tap(sim, floorHit(goal), 0)).toBe("walk");
     const { positions } = run(sim, 300, 100);
-    expect(positions.filter((p) => tileOf(p) === "0,2").length).toBe(0);
-    expect(tileOf({ x: sim.x, z: sim.z })).toBe("0,3");
+    expect(positions.filter((p) => tileOf(p) === key).length).toBe(0);
+    expect(tileOf({ x: sim.x, z: sim.z })).toBe(goalTile);
   });
 
   it.each([
@@ -144,6 +148,13 @@ describe("[spec] 060-⑤ 지나갈 수 없는 칸이 바뀜(바뀔 동작: 명�
     run(sim, 300, 100);
     expect(tileOf({ x: sim.x, z: sim.z })).toBe(key);
     expect(sim.snapshot(20_000).moving).toBe(false);
+  });
+
+  it("F6: 일기 책상 장소의 바라볼 곳은 (1.25, 5.5), 서는 곳은 (3.35, 5.2)·(3.35, 5.8)이다(결정 15: 책상을 왼쪽 벽에 붙여 키움)", () => {
+    expect({ faceTo: MARKS.desk.faceTo, approach: MARKS.desk.approach }).toEqual({
+      faceTo: { x: 1.25, z: 5.5 },
+      approach: [{ x: 3.35, z: 5.2 }, { x: 3.35, z: 5.8 }]
+    });
   });
 });
 
@@ -166,8 +177,10 @@ describe("[spec] 060-⑤ 그대로 둘 동작(명세 \"그대로여야 할 동�
     expect(tileOf({ x: sim.x, z: sim.z })).toBe("7,2");
   });
 
-  it("G3: 장소 넷의 위치(바라볼 지점), 서는 자리, 말풍선 문구와 버튼, 들어갈 때 안내가 그대로다", () => {
-    expect(MARKS).toEqual({
+  it("G3: 장소 넷의 이름표, 말풍선 문구와 버튼, 들어갈 때 안내와, 일기 책상을 뺀 장소 셋의 위치(바라볼 지점)·서는 자리가 그대로다(일기 책상 자리는 F6, 결정 15)", () => {
+    expect(Object.keys(MARKS).sort()).toEqual(["board", "desk", "door", "window"]);
+    const { faceTo: _deskFaceTo, approach: _deskApproach, ...deskRest } = MARKS.desk;
+    expect({ board: MARKS.board, window: MARKS.window, desk: deskRest, door: MARKS.door }).toEqual({
       board: {
         id: "board",
         label: "오늘의 질문",
@@ -189,8 +202,6 @@ describe("[spec] 060-⑤ 그대로 둘 동작(명세 \"그대로여야 할 동�
       desk: {
         id: "desk",
         label: "일기 책상",
-        faceTo: { x: 1.15, z: 5.5 },
-        approach: [{ x: 2.45, z: 5.2 }, { x: 2.45, z: 5.8 }],
         prompt: "일기 책상이야.\n오늘 일기를 써 볼까?",
         buttonLabel: "들어가기",
         enterMessage: "영어일기로 들어가요"

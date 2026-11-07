@@ -96,6 +96,10 @@ flat colors, no texture noise. A-pose or arms slightly away from body.
 | `look_around` | 2.6초 | 아니오 | 두리번 |
 | `poke` | 0.8초 | 아니오 | 눌렸을 때 깜짝·간지러워하는 반응 |
 | `sit_down`, `sit_idle`, `stand_up` | 0.6초 / 2초 / 0.6초 | 아니오 / 예 / 아니오 | 오래 두면 앉기 |
+| `think_in`, `think_idle`, `think_out` | 0.6초 / 2초 / 0.4초 | 아니오 / 예 / 아니오 | 오른손을 턱에 대고 고개를 살짝 갸웃(게시판·창가에서 '들어가기') |
+| `chair_sit_down`, `chair_sit_idle`, `chair_stand_up` | 0.6초 / 2초 / 0.6초 | 아니오 / 예 / 아니오 | 의자에 앉기(일기 책상에서 '들어가기'). 바닥 앉기와 같은 몸에 두 팔을 앞으로. 앉는 높이는 앱이 몸 전체를 올려 맞춘다 |
+| `book_take` | 1.0초 | 아니오 | 오른손을 앞 위(책장 칸)로 뻗었다가(0.4초) 가슴 앞으로 가져와 두 손으로 든다(책장에서 '들어가기'). 책 모양은 앱이 손 사이에 붙인다 |
+| `book_put` | 0.8초 | 아니오 | 두 손으로 든 자세에서 오른손을 책장 칸으로 뻗어 꽂고 내린다 |
 | `sleep` | 3초 | 예 | (나중) 침대·쿠션에서 졸기 |
 
 걷기는 앱이 걷는 속도에 맞춰 재생 속도를 바꾼다. 발이 바닥에 닿는 프레임이 0.0초와 0.4초 근처에 오게 만든다.
@@ -131,6 +135,13 @@ flat colors, no texture noise. A-pose or arms slightly away from body.
 
 확정본(2026-11-06 사용자 확정): `model3d/20261105_tripo_api_multiview/v3/final/writeloop.glb`. 만든 과정, 쓴 명령, 이 규격과 다른 점은 같은 폴더 `README.md`에 있고, 다시 만들 때 쓴 스크립트는 `tools/`에 있다.
 
+앱에 든 모델(2026-11-08): `model3d/20261105_tripo_api_multiview/v3/final-063/writeloop.glb`.
+- 확정본에 '들어가기' 동작 클립 8개(5절)를 더한 것이다. 몸·뼈대·기존 클립은 확정본과 같다.
+- 클립 계산식은 그 폴더 `tools/finalize_rig.py`에 있다. 자세 숫자는 `THINK_*`·`CHAIR_ARM_X`·`BOOK_*` 상수에 모았다.
+- 확정본은 내보낸 뒤 꼬리 둘레 외곽선 거리를 손봤는데, 그 손질이 스크립트에 없다. 그래서 `tools/copy_outline_bias.py`로 확정본의 값을 옮긴다.
+  - 꼭짓점 위치가 같을 때만 옮길 수 있다.
+  - 몸을 새로 만들면 꼬리 둘레를 다시 손봐야 한다.
+
 ## 8. 모델만 바꾸기
 
 앱 코드는 모델에 아래 약속만 기댄다. 이 약속을 지키면 앱 코드를 고치지 않고 파일만 바꿔 끼울 수 있다. 모바일 테스트(`tests/lib/lobby3d-character-model-asset.spec.test.ts`)도 이 약속만 본다.
@@ -140,13 +151,17 @@ flat colors, no texture noise. A-pose or arms slightly away from body.
 | glTF 2 바이너리, 키 1.0(±0.02), 원점이 발밑(바닥 높이 ±0.02), 앞쪽 +Z | 크기(키 1을 2.84배로 키움), 위치, 방향 |
 | 클립 `idle` `walk` `wave` `jump` `hop` `point` `look_around` `poke` | 서 있기·걷기와 동작. 길이는 달라도 된다 |
 | 클립 `sit_down` `sit_idle` `stand_up` | 오래 두면 앉기 |
+| 클립 `think_in` `think_idle` `think_out` | 게시판·창가에서 '들어가기' |
+| 클립 `chair_sit_down` `chair_sit_idle` `chair_stand_up` | 일기 책상에서 '들어가기'(의자에 앉기) |
+| 클립 `book_take` `book_put` | 책장에서 '들어가기'(책 꺼내 펼치기·다시 꽂기) |
 | 뼈 `head`, `hips` | 두리번거리기와 말풍선 위치(`head`), 그림자 크기(`hips`) |
+| 뼈 `hand_r`, `hand_l` | 책장에서 꺼낸 책을 두 손 사이에 둔다 |
 | 외곽선 속성 `_OUTLINE_NORMAL`·`_OUTLINE_BIAS`(5-1) | 있으면 쓴다. 없으면 꼭짓점 법선과 고정 거리 0.008로 대신한다 |
 
 앞쪽 +Z는 테스트로 가리지 못한다. 아래 검사 스크립트나 뷰어로 본다. 꼭짓점 법선이 없는 모델은 앱이 불러올 때 계산한다.
 
 순서:
-1. 캐릭터 자료 폴더의 손질 스크립트로 다시 내보낸다. 확정본 폴더 `tools/`의 `finalize_rig.py`가 외곽선 속성을 굽고 규격 이름으로 맞춘다.
+1. 캐릭터 자료 폴더의 손질 스크립트로 다시 내보낸다. 앱에 든 모델 폴더(7절) `tools/`의 `finalize_rig.py`가 외곽선 속성을 굽고, 규격 이름으로 맞추고, 동작 클립을 굽는다.
 2. `tools/glb_check.py`로 검사한다(키, 발바닥 높이, 앞쪽, 삼각형 수, 뼈·클립 이름).
 3. `apps/mobile/assets/models/writeloop.glb`를 새 파일로 덮어쓴다.
 4. 모바일 테스트를 돌리고, 개발 빌드에서 로비를 열어 본다.

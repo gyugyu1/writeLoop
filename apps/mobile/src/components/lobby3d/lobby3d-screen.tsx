@@ -115,6 +115,8 @@ export default function Lobby3dScreen({
   const [cameraOpen, setCameraOpen] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  // 말풍선 높이(재어 본 값). 꼬리 끝이 머리 위 점에 오도록 이만큼 올린다.
+  const [bubbleHeight, setBubbleHeight] = useState(60);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const syncView = useCallback(() => {
@@ -242,7 +244,18 @@ export default function Lobby3dScreen({
       {view.bubbleText ? (
         <View
           pointerEvents="box-none"
-          style={[styles.bubbleWrap, { left: Math.max(8, Math.min(bubblePos.x - 120, screenWidth - 248)), top: Math.max(120, bubblePos.y) }]}
+          onLayout={(e) => {
+            const h = Math.round(e.nativeEvent.layout.height);
+            if (h > 0 && h !== bubbleHeight) setBubbleHeight(h);
+          }}
+          style={[
+            styles.bubbleWrap,
+            {
+              left: Math.max(8, Math.min(bubblePos.x - BUBBLE_WIDTH / 2, screenWidth - BUBBLE_WIDTH - 8)),
+              top: Math.max(120, bubblePos.y),
+              transform: [{ translateY: -bubbleHeight - 12 }]
+            }
+          ]}
         >
           <View style={styles.bubble}>
             <Text style={styles.bubbleText}>{view.bubbleText}</Text>
@@ -416,6 +429,9 @@ export default function Lobby3dScreen({
   );
 }
 
+/** 말풍선 폭. 방 전체가 보이는 먼 카메라에서 장소를 덜 가리게 줄였다(2026-11-07). */
+const BUBBLE_WIDTH = 196;
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#E8C79A" },
   label: {
@@ -429,25 +445,25 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF"
   },
   labelText: { fontSize: 11, fontWeight: "700", color: "#2B1810" },
-  bubbleWrap: { position: "absolute", width: 240, alignItems: "center", transform: [{ translateY: -96 }] },
+  bubbleWrap: { position: "absolute", width: BUBBLE_WIDTH, alignItems: "center" },
   bubble: {
-    maxWidth: 240,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 16,
+    maxWidth: BUBBLE_WIDTH,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 13,
     borderWidth: 2,
     borderColor: LINE,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
-    gap: 8
+    gap: 6
   },
-  bubbleText: { fontSize: 15, lineHeight: 22, fontWeight: "500", color: "#2B1810", textAlign: "center" },
-  bubbleButton: { minHeight: 42, paddingHorizontal: 18, borderRadius: 21, backgroundColor: ACCENT, justifyContent: "center" },
-  bubbleButtonText: { color: "#FFFFFF", fontSize: 15, fontWeight: "700" },
+  bubbleText: { fontSize: 13, lineHeight: 18, fontWeight: "500", color: "#2B1810", textAlign: "center" },
+  bubbleButton: { minHeight: 34, paddingHorizontal: 14, borderRadius: 17, backgroundColor: ACCENT, justifyContent: "center" },
+  bubbleButtonText: { color: "#FFFFFF", fontSize: 13, fontWeight: "700" },
   bubbleTail: {
-    width: 12,
-    height: 12,
-    marginTop: -7,
+    width: 10,
+    height: 10,
+    marginTop: -6,
     backgroundColor: "#FFFFFF",
     borderRightWidth: 2,
     borderBottomWidth: 2,

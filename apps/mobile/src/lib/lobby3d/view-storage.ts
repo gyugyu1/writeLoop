@@ -2,7 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { clampViewWidth, VIEW_WIDTH_DEFAULT } from "./engine";
 
 // 3D 로비 카메라 거리(화면 가로에 보이는 바닥 폭)는 이 기기에만 저장한다.
-export const LOBBY3D_VIEW_WIDTH_KEY = "writeloop.lobby3d.viewWidth";
+// 디오라마 방으로 바꾸며 기본값이 멀어져, 전에 저장한 값은 쓰지 않도록 이름을 바꿨다.
+export const LOBBY3D_VIEW_WIDTH_KEY = "writeloop.lobby3d.viewWidth.v2";
 
 export async function loadLobbyViewWidth(): Promise<number> {
   try {

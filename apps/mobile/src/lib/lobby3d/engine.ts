@@ -22,9 +22,14 @@ export const ROOM = {
   width: 8,
   depth: 11,
   wallHeight: 3.2,
+  /** 카메라가 바닥을 내려다보는 기울기(도). */
   pitchDeg: 42,
-  /** 앞쪽 바닥이 이어지는 끝(화면 아래로 바닥 끝이 보이지 않게 넉넉히 깐다). */
-  floorFar: 22
+  /** 카메라 세로 시야각(도). 원근감의 세기. */
+  fovDeg: 30,
+  /** 벽 두께. 벽 바깥면까지가 방이다(그 밖은 검정). */
+  wallThickness: 0.4,
+  /** 앞쪽 가운데 입구 발판이 방 앞끝에서 나온 길이. */
+  stepDepth: 0.7
 } as const;
 
 export interface MarkInfo {
@@ -192,32 +197,88 @@ export function lerpAngle(a: number, b: number, k: number): number {
 
 // ---------- 카메라 ----------
 
-/** 화면 가로에 보이는 바닥 폭(칸). 작을수록 가깝다. 3D 모델로 바꾼 뒤 캐릭터가 커 보여 5.2에서 조금 뒤로 뺐다(2026-11-06 사용자 요청). */
-export const VIEW_WIDTH_DEFAULT = 6.0;
+/**
+ * 보는 점 깊이에서 화면 가로에 보이는 폭(칸). 작을수록 가깝다.
+ * 기본값은 방 전체가 보이는 가장 가까운 쪽 거리다(방이 가로로 다 들어오는 거리는 폰 화면에서 10.6~11.0).
+ * 집을 넓히기 전에는 기본값에서 카메라가 움직이지 않고, 가까이 당기면 라룹이를 따라간다(2026-11-07 사용자 결정).
+ */
+export const VIEW_WIDTH_DEFAULT = 9.4;
 export const VIEW_WIDTH_MIN = 4.0;
-/** 방 너비보다 넓게 보면 방 밖이 보인다. */
-export const VIEW_WIDTH_MAX = ROOM.width - 0.2;
+export const VIEW_WIDTH_MAX = 12.8;
 
 export function clampViewWidth(v: number): number {
   if (!Number.isFinite(v)) return VIEW_WIDTH_DEFAULT;
   return Math.min(VIEW_WIDTH_MAX, Math.max(VIEW_WIDTH_MIN, v));
 }
 
+/** 방 끝을 둘러싼 상자: 양옆 벽 바깥면, 뒷벽 바깥면, 벽 윗면, 앞쪽은 입구 발판 앞, 아래는 입구 발판 밑. 그 밖은 검정이다. */
+export const ROOM_BOUNDS = {
+  minX: -ROOM.wallThickness,
+  maxX: ROOM.width + ROOM.wallThickness,
+  minY: -0.25,
+  maxY: ROOM.wallHeight,
+  minZ: -ROOM.wallThickness,
+  maxZ: ROOM.depth + ROOM.stepDepth
+} as const;
+
+export interface CameraPose {
+  position: { x: number; y: number; z: number };
+  lookAt: { x: number; y: number; z: number };
+  /** 세로 시야각(도) */
+  fovDeg: number;
+}
+
 /**
- * 카메라가 보는 바닥 점(target)을 방 안으로 제한한다. viewHeight는 화면 세로에 보이는 폭(칸)이다.
- * 좌우는 방 양 끝이 화면 밖에 있게, 위쪽은 뒷벽 위 끝이 화면 위보다 높게, 아래쪽은 깔린 바닥 끝이 보이지 않게 한다.
+ * 원근 카메라 자리. follow는 따라갈 바닥 점, viewWidth는 보는 점 깊이에서 화면 가로에 보이는 폭, aspect는 화면 가로/세로다.
+ * 카메라는 옆으로 돌지 않고 앞쪽 위에서 기울기만큼 내려다보며, 보는 점과의 거리는 viewWidth로 정한다.
+ * 세로를 먼저 정한다(화면 세로 자리는 x와 상관없다). 방 상자가 세로로 다 들어오면 위·아래 검은 여백이 같게 고정하고,
+ * 아니면 follow를 따라가되 화면 위·아래 끝이 방 끝 너머로 나가지 않게 막는다. 가로도 같은 규칙이다.
  */
-export function clampCameraTarget(target: FloorPoint, viewWidth: number, viewHeight: number): FloorPoint {
+export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number): CameraPose {
   const pitch = (ROOM.pitchDeg * Math.PI) / 180;
-  const hw = viewWidth / 2;
-  const hh = viewHeight / 2;
-  const zMin = (hh - (ROOM.wallHeight - 0.05) * Math.cos(pitch)) / Math.sin(pitch);
-  const zMax = Math.max(zMin, ROOM.floorFar - hh / Math.sin(pitch));
-  const xMin = Math.min(hw, ROOM.width / 2);
-  const xMax = Math.max(ROOM.width - hw, ROOM.width / 2);
+  const sin = Math.sin(pitch);
+  const cos = Math.cos(pitch);
+  const tanV = Math.tan((ROOM.fovDeg * Math.PI) / 360);
+  const tanH = tanV * Math.max(aspect, 0.01);
+  const dist = viewWidth / (2 * tanH);
+  const b = ROOM_BOUNDS;
+  const corners: { y: number; z: number }[] = [];
+  for (const y of [b.minY, b.maxY]) for (const z of [b.minZ, b.maxZ]) corners.push({ y, z });
+  // 보는 점 z가 cz일 때 모서리의 카메라 앞 깊이와 화면 세로 자리(-1 아래 끝 ~ 1 위 끝)
+  const depthAt = (c: { y: number; z: number }, cz: number) => -sin * (c.y - dist * sin) - cos * (c.z - cz - dist * cos);
+  const screenY = (c: { y: number; z: number }, cz: number) =>
+    (cos * (c.y - dist * sin) - sin * (c.z - cz - dist * cos)) / (depthAt(c, cz) * tanV);
+  const minY = (cz: number) => Math.min(...corners.map((c) => screenY(c, cz)));
+  const maxY = (cz: number) => Math.max(...corners.map((c) => screenY(c, cz)));
+  const NEAR = 0.05;
+  // 모든 모서리가 카메라 앞(NEAR보다 멀리)에 있는 가장 뒤쪽 보는 점
+  const czFront = Math.max(...corners.map((c) => (NEAR + sin * (c.y - dist * sin)) / cos + c.z - dist * cos));
+  // 그보다 앞에서는 보는 점이 앞(+z)으로 갈수록 방이 화면 위로 올라간다. 그래서 아래 식들은 cz에 대해 늘기만 하고, 반으로 나눠 찾는다.
+  const solve = (fn: (cz: number) => number, target: number) => {
+    let lo = czFront;
+    let hi = b.maxZ + dist + 40;
+    for (let i = 0; i < 80; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (fn(mid) < target) lo = mid;
+      else hi = mid;
+    }
+    return (lo + hi) / 2;
+  };
+  const centerZ = solve((cz) => minY(cz) + maxY(cz), 0);
+  const fitsY = centerZ > czFront && maxY(centerZ) <= 1;
+  const cz = fitsY
+    ? centerZ
+    : Math.min(Math.max(follow.z - 0.6, solve(maxY, 1)), Math.max(solve(minY, -1), solve(maxY, 1)));
+  // 가로: 화면 가로 자리 = (x − 보는 점 x) / (깊이 · tanH). 가장 가까운 모서리가 가장 넓게 보인다.
+  const nearest = Math.min(...corners.map((c) => depthAt(c, cz)));
+  const centerX = (b.minX + b.maxX) / 2;
+  const reach = nearest * tanH;
+  const fitsX = nearest > NEAR && (b.maxX - centerX) <= reach;
+  const cx = fitsX ? centerX : Math.min(Math.max(follow.x, b.minX + reach), Math.max(b.maxX - reach, centerX));
   return {
-    x: Math.min(Math.max(target.x, xMin), xMax),
-    z: Math.min(Math.max(target.z, zMin), zMax)
+    position: { x: cx, y: dist * sin, z: cz + dist * cos },
+    lookAt: { x: cx, y: 0, z: cz },
+    fovDeg: ROOM.fovDeg
   };
 }
 

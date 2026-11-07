@@ -5,7 +5,7 @@ import { Suspense, useEffect, useMemo, useRef, type MutableRefObject } from "rea
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { LobbySim, MARKS, ROOM, clampCameraTarget, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import { LobbySim, MARKS, ROOM, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
 import { Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
 
 // 3D 로비 그리기. 동작 규칙은 LobbySim(화면이 가진다)에 있고, 여기서는 매 프레임 그 상태를 그림으로 옮긴다.
@@ -42,7 +42,6 @@ export interface Lobby3dCanvasProps {
 }
 
 const LINE = 0x3d1b0f;
-const PITCH = (ROOM.pitchDeg * Math.PI) / 180;
 
 export default function Lobby3dCanvas(props: Lobby3dCanvasProps) {
   const pickRef = useRef<((x: number, y: number) => PointerHit | null) | null>(null);
@@ -64,9 +63,8 @@ export default function Lobby3dCanvas(props: Lobby3dCanvasProps) {
     >
       <Canvas
         style={styles.fill}
-        orthographic
         frameloop={props.paused ? "never" : "always"}
-        camera={{ position: [4, 20, 26], zoom: 60, near: 0.1, far: 120 }}
+        camera={{ position: [4, 12, 24], fov: ROOM.fovDeg, near: 1, far: 200 }}
         gl={{ antialias: true }}
       >
         <Scene {...props} pickRef={pickRef} />
@@ -95,24 +93,24 @@ interface OutlinePart {
 }
 
 class WorldKit {
-  materials = new Map<number, THREE.MeshToonMaterial>();
+  materials = new Map<number, THREE.MeshLambertMaterial>();
   toonMaterials: THREE.MeshToonMaterial[] = [];
   outlines: OutlinePart[] = [];
   outlineMaterial = new THREE.MeshBasicMaterial({ color: LINE, side: THREE.BackSide });
   gradient = gradientTexture(3);
 
-  toon(color: number): THREE.MeshToonMaterial {
+  /** 방과 가구는 부드러운 명암을 쓴다. 카툰 명암(toonMaterials)은 라룹이만 쓴다. */
+  soft(color: number): THREE.MeshLambertMaterial {
     let material = this.materials.get(color);
     if (!material) {
-      material = new THREE.MeshToonMaterial({ color, gradientMap: this.gradient });
+      material = new THREE.MeshLambertMaterial({ color });
       this.materials.set(color, material);
-      this.toonMaterials.push(material);
     }
     return material;
   }
 
   part(geometry: THREE.BufferGeometry, color: number, outline = 0.03, parent?: THREE.Object3D): THREE.Mesh {
-    const mesh = new THREE.Mesh(geometry, this.toon(color));
+    const mesh = new THREE.Mesh(geometry, this.soft(color));
     if (outline > 0) {
       geometry.computeBoundingBox();
       const size = new THREE.Vector3();
@@ -140,24 +138,130 @@ class WorldKit {
   }
 }
 
+function seeded(seed: number) {
+  let v = seed;
+  return () => {
+    v = (v * 16807) % 2147483647;
+    return v / 2147483647;
+  };
+}
+
+function rgbaTexture(data: Uint8Array, width: number, height: number, srgb: boolean): THREE.DataTexture {
+  const texture = new THREE.DataTexture(data, width, height, THREE.RGBAFormat);
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.magFilter = THREE.LinearFilter;
+  texture.minFilter = THREE.LinearMipmapLinearFilter;
+  texture.generateMipmaps = true;
+  if (srgb) texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+// 나무 널빤지 바닥: 가로로 긴 널빤지를 줄마다 어긋나게 깔고, 널빤지마다 색과 나뭇결을 조금씩 달리한다. 한 장 = 4칸 × 4칸.
 function floorTexture(): THREE.DataTexture {
+  const size = 512;
+  const rowPx = 64; // 한 줄(널빤지 폭) = 0.5칸
+  const data = new Uint8Array(size * size * 4);
+  const base = [0xdc, 0x9c, 0x62];
+  const rand = seeded(7);
+  for (let row = 0; row < size / rowPx; row += 1) {
+    // 이 줄의 널빤지: x마다 몇 번째 널빤지인지, 이음매인지
+    const plankOf = new Int16Array(size);
+    const seamAt = new Uint8Array(size);
+    let next = Math.floor(rand() * 160);
+    let plank = 0;
+    for (let px = 0; px < size; px += 1) {
+      if (px === next) {
+        plank += 1;
+        next += 160 + Math.floor(rand() * 200);
+      }
+      plankOf[px] = plank;
+    }
+    for (let px = 1; px < size; px += 1) {
+      if (plankOf[px] !== plankOf[px - 1]) for (const q of [px - 1, px, px + 1]) if (q < size) seamAt[q] = 1;
+    }
+    const tints = Array.from({ length: plank + 1 }, () => 0.9 + rand() * 0.14);
+    const phases = Array.from({ length: plank + 1 }, () => rand() * 100);
+    for (let y = row * rowPx; y < (row + 1) * rowPx; y += 1) {
+      const ry = y - row * rowPx;
+      const edge = ry < 2 ? 0.74 : ry === 2 ? 1.05 : 1;
+      for (let px = 0; px < size; px += 1) {
+        const pl = plankOf[px];
+        const ph = phases[pl];
+        const grain = 1 + 0.02 * Math.sin(ry * 0.3 + Math.sin(px * 0.02 + ph) * 2.2 + ph) + 0.01 * Math.sin(px * 0.13 + ph);
+        const k = (seamAt[px] ? 0.78 : 1) * edge * tints[pl] * grain;
+        const i = (y * size + px) * 4;
+        data[i] = Math.min(255, Math.round(base[0] * k));
+        data[i + 1] = Math.min(255, Math.round(base[1] * k));
+        data[i + 2] = Math.min(255, Math.round(base[2] * k));
+        data[i + 3] = 255;
+      }
+    }
+  }
+  const texture = rgbaTexture(data, size, size, true);
+  texture.repeat.set(ROOM.width / 4, ROOM.depth / 4);
+  return texture;
+}
+
+// 벽지: 크림색 바탕에 옅은 세로 줄무늬와 작은 점. 가로 한 장 = 1칸, 세로는 벽 높이 전체.
+function wallpaperTexture(): THREE.DataTexture {
+  const w = 128;
+  const h = 256;
+  const data = new Uint8Array(w * h * 4);
+  const base = [0xf4, 0xe6, 0xcf];
+  for (let y = 0; y < h; y += 1) {
+    for (let x = 0; x < w; x += 1) {
+      const stripe = x % 64 < 32 ? 1 : 0.965;
+      const edge = x % 32 === 0 ? 0.95 : 1;
+      const dx = (x % 32) - 16;
+      const dy = (y % 32) - 16;
+      const dot = stripe === 1 && dx * dx + dy * dy < 7 ? 0.93 : 1;
+      const k = stripe * edge * dot;
+      const i = (y * w + x) * 4;
+      data[i] = Math.round(base[0] * k);
+      data[i + 1] = Math.round(base[1] * k);
+      data[i + 2] = Math.round(base[2] * k);
+      data[i + 3] = 255;
+    }
+  }
+  return rgbaTexture(data, w, h, true);
+}
+
+// 가운데가 진하고 둘레로 갈수록 투명해지는 둥근 그림자
+function blobTexture(): THREE.DataTexture {
   const size = 64;
   const data = new Uint8Array(size * size * 4);
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
-      const seam = y % 16 === 0 || (x === (Math.floor(y / 16) * 23) % size && y % 16 !== 0);
-      const shade = seam ? 0.86 : 1;
-      data.set([Math.round(0xe8 * shade), Math.round(0xc7 * shade), Math.round(0x9a * shade), 255], (y * size + x) * 4);
+      const r = Math.hypot(x - size / 2 + 0.5, y - size / 2 + 0.5) / (size / 2);
+      const a = Math.max(0, 1 - r);
+      data.set([255, 255, 255, Math.round(255 * a * a * (3 - 2 * a))], (y * size + x) * 4);
     }
   }
-  const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(ROOM.width / 2, 24 / 2);
-  texture.magFilter = THREE.NearestFilter;
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.needsUpdate = true;
+  const texture = rgbaTexture(data, size, size, false);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
   return texture;
+}
+
+/**
+ * 구석 어둠을 꼭짓점 색으로 굽는다(조명은 그대로라 라룹이 명암이 바뀌지 않는다).
+ * 바닥·뒷벽·양옆 벽에 가까울수록 어둡고, 벽은 위로 갈수록 조금 밝다. 자기가 붙은 면(거리 0 이하)은 빼고 계산한다.
+ */
+function bakeCornerShade(geometry: THREE.BufferGeometry) {
+  const pos = geometry.attributes.position;
+  const colors = new Float32Array(pos.count * 3);
+  const near = (d: number) => (d > 0.01 ? 1 - 0.34 * Math.exp(-d / 0.5) : 1);
+  for (let i = 0; i < pos.count; i += 1) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    let k = near(y) * near(z) * near(x) * near(ROOM.width - x);
+    if (y > 0.01) k *= 0.9 + 0.1 * Math.min(1, y / ROOM.wallHeight);
+    colors.set([k, k, k], i * 3);
+  }
+  geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
 }
 
 // ---------- 방과 라이트루프 ----------
@@ -180,20 +284,66 @@ function buildWorld(): World {
   const W = ROOM.width;
   const H = ROOM.wallHeight;
 
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W + 0.6, 24), new THREE.MeshToonMaterial({ map: floorTexture(), gradientMap: kit.gradient }));
-  kit.toonMaterials.push(floor.material as THREE.MeshToonMaterial);
-  floor.rotation.x = -Math.PI / 2;
-  floor.position.set(W / 2, 0, 12);
+  // 앞이 트인 상자 같은 방(디오라마): 바닥, 뒷벽, 양옆 벽(두께와 윗면), 걸레받이, 옆벽 창문, 앞 가운데 입구 발판. 그 밖은 검정.
+  // 바닥과 벽은 꼭짓점 색으로 구석 어둠을 굽기 위해 잘게 나누고, 모양을 월드 좌표로 옮겨 둔다.
+  const D = ROOM.depth;
+  const T = ROOM.wallThickness;
+  const floorGeometry = new THREE.PlaneGeometry(W, D, 32, 44);
+  floorGeometry.rotateX(-Math.PI / 2);
+  floorGeometry.translate(W / 2, 0, D / 2);
+  bakeCornerShade(floorGeometry);
+  const floor = new THREE.Mesh(floorGeometry, new THREE.MeshLambertMaterial({ map: floorTexture(), vertexColors: true }));
   root.add(floor);
-  kit.part(new THREE.BoxGeometry(W + 0.6, H, 0.3), 0xf4ddb8, 0, root).position.set(W / 2, H / 2, -0.15);
-  kit.part(new THREE.BoxGeometry(W + 0.6, 0.22, 0.06), 0xc9a273, 0, root).position.set(W / 2, 0.11, 0.03);
-  for (const sx of [-0.15, W + 0.15]) kit.part(new THREE.BoxGeometry(0.3, H, 24), 0xebd0a6, 0, root).position.set(sx, H / 2, 12);
-  const stripeMaterial = new THREE.MeshBasicMaterial({ color: 0xf8e7cc });
-  for (let x = 0.25; x < W; x += 0.5) {
-    const stripe = new THREE.Mesh(new THREE.PlaneGeometry(0.22, H - 0.3), stripeMaterial);
-    stripe.position.set(x, H / 2 + 0.15, 0.005);
-    root.add(stripe);
+  // 바닥판의 두께(앞쪽 잘린 면이 보인다). 윗면을 바닥보다 조금 낮춰, 멀리서 둘이 겹쳐 번갈아 그려지지 않게 한다.
+  kit.part(new THREE.BoxGeometry(W + T * 2, 0.22, D + T), 0x8a5230, 0, root).position.set(W / 2, -0.13, (D - T) / 2);
+  // 벽: 안쪽 면만 벽지, 윗면·잘린 면은 벽 단면 색
+  const paper = wallpaperTexture();
+  const cut = new THREE.MeshLambertMaterial({ color: 0xc4a47c, vertexColors: true });
+  const wall = (w: number, h: number, d: number, center: THREE.Vector3, inner: number, length: number) => {
+    const geometry = new THREE.BoxGeometry(w, h, d, Math.max(1, Math.round(w * 4)), 16, Math.max(1, Math.round(d * 4)));
+    geometry.translate(center.x, center.y, center.z);
+    bakeCornerShade(geometry);
+    const map = paper.clone();
+    map.repeat.set(length, 1);
+    map.needsUpdate = true;
+    const papered = new THREE.MeshLambertMaterial({ map, vertexColors: true });
+    // BoxGeometry 면 순서: +x, -x, +y, -y, +z, -z
+    const materials = [0, 1, 2, 3, 4, 5].map((face) => (face === inner ? papered : cut));
+    root.add(new THREE.Mesh(geometry, materials));
+  };
+  wall(W + T * 2, H, T, new THREE.Vector3(W / 2, H / 2, -T / 2), 4, W + T * 2);
+  wall(T, H, D + T, new THREE.Vector3(-T / 2, H / 2, (D - T) / 2), 0, D + T);
+  wall(T, H, D + T, new THREE.Vector3(W + T / 2, H / 2, (D - T) / 2), 1, D + T);
+  // 걸레받이
+  kit.part(new RoundedBoxGeometry(W, 0.2, 0.06, 2, 0.02), 0xb57a45, 0, root).position.set(W / 2, 0.1, 0.03);
+  for (const bx of [0.03, W - 0.03]) kit.part(new RoundedBoxGeometry(0.06, 0.2, D, 2, 0.02), 0xb57a45, 0, root).position.set(bx, 0.1, D / 2);
+  // 옆벽 창문(나무 틀 + 하늘색 유리)
+  for (const [wx, face] of [[0.005, 1], [W - 0.005, -1]] as const) {
+    const win = new THREE.Group();
+    kit.part(new RoundedBoxGeometry(0.08, 1.3, 1.0, 2, 0.03), 0xb57a45, 0, win);
+    kit.part(new THREE.BoxGeometry(0.02, 1.1, 0.8), 0xbfe4fa, 0, win).position.x = face * 0.035;
+    kit.part(new THREE.BoxGeometry(0.03, 1.1, 0.05), 0xb57a45, 0, win).position.x = face * 0.045;
+    win.position.set(wx, 1.8, D * 0.45);
+    root.add(win);
   }
+  // 앞 가운데 입구 발판(바닥보다 조금 낮다)
+  kit.part(new RoundedBoxGeometry(2.0, 0.16, ROOM.stepDepth, 2, 0.04), 0x8a5a3b, 0, root).position.set(W / 2, -0.14, D + ROOM.stepDepth / 2);
+
+  // 가구 밑의 부드러운 그림자
+  const blob = blobTexture();
+  const blobAt = (x: number, z: number, w: number, d: number, opacity: number) => {
+    const m = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, d),
+      new THREE.MeshBasicMaterial({ map: blob, color: 0x3a2214, transparent: true, opacity, depthWrite: false })
+    );
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(x, 0.006, z);
+    m.raycast = () => {};
+    root.add(m);
+  };
+  blobAt(1.15, 5.5, 2.4, 1.7, 0.4);
+  blobAt(4.8, 0.55, 2.3, 1.3, 0.4);
+  blobAt(7.4, 3.6, 1.1, 1.1, 0.45);
 
   const markObjects: World["markObjects"] = [];
   const tagMark = (id: MarkId, object: THREE.Object3D) => {
@@ -286,8 +436,8 @@ function buildWorld(): World {
   root.add(sun);
 
   const shadow = new THREE.Mesh(
-    new THREE.CircleGeometry(0.42, 24),
-    new THREE.MeshBasicMaterial({ color: 0x2b1810, transparent: true, opacity: 0.16 })
+    new THREE.PlaneGeometry(1.15, 1.15),
+    new THREE.MeshBasicMaterial({ map: blob, color: 0x2b1810, transparent: true, opacity: 0.38, depthWrite: false })
   );
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = 0.01;
@@ -314,7 +464,7 @@ function Scene({
   const raycaster = useMemo(() => new THREE.Raycaster(), []);
 
   useEffect(() => {
-    scene.background = new THREE.Color(0xe8c79a);
+    scene.background = new THREE.Color(0x000000);
   }, [scene]);
 
   useEffect(() => {
@@ -369,25 +519,21 @@ function Scene({
     world.shadow.position.set(sim.x, 0.01, sim.z);
     world.shadow.scale.set(1.15 * shrink, 0.8 * shrink, 1);
 
-    // 카메라: 화면 가로에 viewWidth 칸이 보이게 하고, 라이트루프를 부드럽게 따라가되 방 밖은 보이지 않게.
-    const ortho = camera as THREE.OrthographicCamera;
-    const zoom = size.width / viewWidth;
-    if (Math.abs(ortho.zoom - zoom) > 0.001) {
-      ortho.zoom = zoom;
-      ortho.updateProjectionMatrix();
-    }
-    const viewHeight = size.height / zoom;
-    const want = clampCameraTarget({ x: sim.x, z: sim.z - 0.6 }, viewWidth, viewHeight);
+    // 카메라: 따라갈 점(라룹이 자리)을 부드럽게 옮기고, 그 점으로 cameraPose가 정한 원근 카메라 자리를 그대로 쓴다.
+    // 매 프레임 자리를 cameraPose가 정하므로 따라가는 도중에도 방 끝 너머는 보이지 않는다.
+    const persp = camera as THREE.PerspectiveCamera;
+    const aspect = size.width / Math.max(1, size.height);
     const k = Math.min(1, dt * 4);
-    target.current.x += (want.x - target.current.x) * k;
-    target.current.z += (want.z - target.current.z) * k;
-    // 따라가는 도중에도(특히 거리를 바꾼 순간) 방 밖이 보이지 않게 다시 제한한다.
-    const held = clampCameraTarget({ x: target.current.x, z: target.current.z }, viewWidth, viewHeight);
-    target.current.x = held.x;
-    target.current.z = held.z;
-    const dist = 30;
-    camera.position.set(target.current.x, Math.sin(PITCH) * dist, target.current.z + Math.cos(PITCH) * dist);
-    camera.lookAt(target.current.x, 0, target.current.z);
+    target.current.x += (sim.x - target.current.x) * k;
+    target.current.z += (sim.z - target.current.z) * k;
+    const pose = cameraPose(target.current, viewWidth, aspect);
+    if (Math.abs(persp.fov - pose.fovDeg) > 0.01 || Math.abs(persp.aspect - aspect) > 0.001) {
+      persp.fov = pose.fovDeg;
+      persp.aspect = aspect;
+      persp.updateProjectionMatrix();
+    }
+    camera.position.set(pose.position.x, pose.position.y, pose.position.z);
+    camera.lookAt(pose.lookAt.x, pose.lookAt.y, pose.lookAt.z);
     camera.updateMatrixWorld();
 
     // 초당 프레임 수, 말풍선·이름표 위치(초당 약 15번 보낸다)

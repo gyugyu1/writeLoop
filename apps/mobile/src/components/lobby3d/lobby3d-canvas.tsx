@@ -415,8 +415,10 @@ function buildWorld(): World {
         kit.part(new THREE.BoxGeometry(0.06, 1.6, 0.05), 0xe39a64, 0, g).position.z = 0.08;
         break;
       case "exit": {
-        // 입구 발판(폭 2, 깊이 0.7)보다 조금 넓게 덮는 보이지 않는 상자. 보이지 않아도 누르기 판정은 받는다.
-        const hit = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.6, ROOM.stepDepth + 0.3), new THREE.MeshBasicMaterial());
+        // 입구 발판(폭 2, 깊이 0.7, 윗면은 바닥보다 조금 낮다)만 덮는 보이지 않는 상자. 방 앞쪽 바닥은 덮지 않는다.
+        // 보이지 않아도 누르기 판정은 받는다.
+        const hit = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.3, ROOM.stepDepth), new THREE.MeshBasicMaterial());
+        hit.position.y = -0.1;
         hit.visible = false;
         g.add(hit);
         break;

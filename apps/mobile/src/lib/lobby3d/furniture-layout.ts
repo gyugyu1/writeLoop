@@ -25,7 +25,7 @@ const D = ROOM.depth;
 // 가구는 Kenney 크기의 2.8배(라이트루프보다 조금 크게), 창문만 2.5배다.
 export const FURNITURE_LAYOUT: readonly FurniturePlacement[] = [
   { piece: "board", x: 1.8, y: 1.75, z: 0.06, rotY: 0, mark: "board" },
-  // 창문은 뒷벽(문이 있는 벽)에 하나만 둔다. 미닫이 창 두 벌을 나란히 놓은 넓은 창이다.
+  // 창문은 뒷벽에 하나만 둔다. 미닫이 창 두 벌을 나란히 놓은 넓은 창이다.
   { piece: "window", x: 4.8, y: 2.05, z: 0.17, rotY: 0, mark: "window" },
   // 일기 책상은 다른 가구보다 1.2배 커서 칸 "0,5"·"1,5"에 더해 "2,5" 절반까지 나온다
   { piece: "desk", x: 1.25, y: 0, z: 5.5, rotY: 0, mark: "desk" },

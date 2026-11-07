@@ -225,14 +225,17 @@ export default function Lobby3dScreen({
     [bubbleLeft, bubbleTop]
   );
 
+  /** 걷거나 끄는 중이라 말풍선을 숨긴 때인지(스냅숏의 moving 규칙과 같다). */
+  const bubbleHidden = useCallback(() => Math.hypot(sim.vx, sim.vz) > 0.3 || sim.dragging, [sim]);
+
   const onFrame = useCallback(
     (dt: number, nowMs: number) => {
       sim.update(dt, nowMs);
       // 걷거나 끄는 동안은 말풍선을 숨긴다(스냅숏의 규칙과 같다)
-      bubbleOpacity.setValue(Math.hypot(sim.vx, sim.vz) > 0.3 || sim.dragging ? 0 : 1);
+      bubbleOpacity.setValue(bubbleHidden() ? 0 : 1);
       syncView();
     },
-    [sim, syncView, bubbleOpacity]
+    [sim, syncView, bubbleOpacity, bubbleHidden]
   );
 
   const onPointer = useCallback(
@@ -320,6 +323,8 @@ export default function Lobby3dScreen({
                 accessibilityRole="button"
                 style={styles.bubbleButton}
                 onPress={() => {
+                  // 걷기 시작해 말풍선이 투명해졌는데 아직 화면에서 빠지기 전이면 누르지 않은 것으로 본다
+                  if (bubbleHidden()) return;
                   const arrived = sim.arrived;
                   if (arrived && onEnterMark?.(arrived)) return;
                   const message = sim.enterMessage();
@@ -330,7 +335,13 @@ export default function Lobby3dScreen({
               </Pressable>
             ) : null}
             {showIdleButton && idleButton ? (
-              <Pressable accessibilityRole="button" style={styles.bubbleButton} onPress={idleButton.onPress}>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.bubbleButton}
+                onPress={() => {
+                  if (!bubbleHidden()) idleButton.onPress();
+                }}
+              >
                 <Text style={styles.bubbleButtonText}>{idleButton.label}</Text>
               </Pressable>
             ) : null}

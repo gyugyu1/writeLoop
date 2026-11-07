@@ -612,4 +612,101 @@ describe("[spec] 카메라(S50, S51, 결정 10 → 작업 060-④ 디오라마 �
     expect(clampViewWidth(VIEW_WIDTH_MIN - 1)).toBe(VIEW_WIDTH_MIN);
     expect(clampViewWidth(VIEW_WIDTH_DEFAULT)).toBe(VIEW_WIDTH_DEFAULT);
   });
+
+  // ---- 13 결정(사용자 "더한다")으로 더한 테스트 ----
+
+  /**
+   * 방 상자 중 화면 세로 범위(위 끝~아래 끝) 안에 실제로 보이는 부분의 꼭짓점.
+   * 카메라가 옆으로 돌지 않으므로(S51) 화면 위·아래 끝 면은 x축과 나란하다. 그래서 상자의 y·z 단면(사각형)을
+   * 두 면과 카메라 바로 앞 면으로 자른 다각형을 구하고, 그 꼭짓점마다 x = 양옆 벽 바깥면 두 점을 만든다.
+   */
+  function visibleRoomPoints(pose: Pose, box: Box): Vec3[] {
+    const f = norm(sub(pose.lookAt, pose.position));
+    const r = norm(cross(f, { x: 0, y: 1, z: 0 }));
+    const u = cross(r, f);
+    const tanV = Math.tan((pose.fovDeg * Math.PI) / 360);
+    type YZ = { y: number; z: number };
+    const depth = (p: YZ) => f.y * (p.y - pose.position.y) + f.z * (p.z - pose.position.z);
+    const vert = (p: YZ) => u.y * (p.y - pose.position.y) + u.z * (p.z - pose.position.z);
+    const keep: ((p: YZ) => number)[] = [
+      (p) => tanV * depth(p) - vert(p), // 화면 위 끝 아래
+      (p) => tanV * depth(p) + vert(p), // 화면 아래 끝 위
+      (p) => depth(p) - NEAR // 카메라 앞
+    ];
+    let poly: YZ[] = [
+      { y: box.minY, z: box.minZ },
+      { y: box.minY, z: box.maxZ },
+      { y: box.maxY, z: box.maxZ },
+      { y: box.maxY, z: box.minZ }
+    ];
+    for (const g of keep) {
+      const next: YZ[] = [];
+      for (let i = 0; i < poly.length; i += 1) {
+        const a = poly[i];
+        const b = poly[(i + 1) % poly.length];
+        const ga = g(a);
+        const gb = g(b);
+        if (ga >= 0) next.push(a);
+        if ((ga >= 0) !== (gb >= 0)) {
+          const t = ga / (ga - gb);
+          next.push({ y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t });
+        }
+      }
+      poly = next;
+    }
+    return poly.flatMap((p) => [
+      { x: box.minX, y: p.y, z: p.z },
+      { x: box.maxX, y: p.y, z: p.z }
+    ]);
+  }
+
+  // 결정 05-2(가): 화면 끝이 방의 가장 바깥만 넘지 않으면 되고, 위쪽 구석에 뒷벽 옆 검은 곳이 보이는 것은 괜찮다.
+  // 12 확실한 문제 1: 화면 밖(아래)에 있는 방 모서리로 가로 제한을 계산하면, 화면에 보이는 방의 가장 바깥이 화면 끝보다 안쪽이라
+  // 옆 가장자리가 위에서 아래까지 검다. 그래서 "가장 바깥"을 화면 세로 범위 안에 실제로 보이는 부분에서 구한다.
+  it("S50 가로(13 결정 재현): 화면에 보이는 방이 화면 가로보다 넓으면, 보이는 방의 가장 바깥(양옆 벽 바깥면)이 화면 양 끝에 닿거나 넘는다(옆 가장자리가 위에서 아래까지 검지 않다)", () => {
+    const box = roomEnds();
+    const bad: string[] = [];
+    // 가까이 당긴 거리에서 생기는 문제라, 공통 거리 여섯 개에 더해 가장 가까이~가장 멀리를 0.2 간격으로 훑는다.
+    const fine: [string, number][] = [];
+    for (let w = VIEW_WIDTH_MIN; w <= VIEW_WIDTH_MAX + 1e-9; w += 0.2) fine.push([`0.2 간격`, w]);
+    const all = [
+      ...cases(),
+      ...screens.flatMap((screen) => fine.flatMap(([name, width]) => follow.map((p) => ({ screen, name, width, p }))))
+    ];
+    for (const c of all) {
+      const pose = poseFor(c.p, c.width, c.screen);
+      const points = visibleRoomPoints(pose, box);
+      if (points.length === 0) {
+        bad.push(`${caseLabel(c)} → 화면 세로 범위에 방이 보이지 않음`);
+        continue;
+      }
+      const cam = camera(pose, c.screen);
+      const xs = points.map((p) => cam.project(p).x);
+      const left = Math.min(...xs);
+      const right = Math.max(...xs);
+      if (!(right - left > 2 + EPS)) continue;
+      if (!(left <= -1 + EPS && right >= 1 - EPS)) {
+        bad.push(`${caseLabel(c)} → 보이는 방 가로 ${left.toFixed(4)} ~ ${right.toFixed(4)}(화면 -1 ~ 1)`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("S50 세로(13 결정, 05 결정 1): 방 상자가 세로로 다 들어오면 화면에서 방 위·아래 검은 여백의 높이가 같다", () => {
+    const box = roomEnds();
+    const bad: string[] = [];
+    let checked = 0;
+    for (const c of cases()) {
+      const e = roomExtent(poseFor(c.p, c.width, c.screen), c.screen, box);
+      const fits = !e.empty && !e.clipped && e.minY >= -1 - EPS && e.maxY <= 1 + EPS;
+      if (!fits) continue;
+      checked += 1;
+      const top = 1 - e.maxY;
+      const bottom = e.minY + 1;
+      if (Math.abs(top - bottom) > EPS) bad.push(`${caseLabel(c)} → 위 여백 ${top.toFixed(6)}, 아래 여백 ${bottom.toFixed(6)}`);
+    }
+    // 가장 멀리에서는 방 전체가 보이므로(명세 3, T9) 세로로 다 들어오는 경우가 반드시 있다.
+    expect(checked).toBeGreaterThan(0);
+    expect(bad).toEqual([]);
+  });
 });

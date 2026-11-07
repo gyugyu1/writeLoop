@@ -1,7 +1,8 @@
 // [spec] qa 테스트(작업 060-03, 새 기능: 모바일 홈을 라룹이의 방(3D 로비)으로 바꾸기).
 // 기대값은 시나리오(060-03의 02-qa-scenarios.md S1~S28)와 결정(03-main-decision.md: Q1 앱으로 돌아올 때도 다시 읽기 → S29,
 // Q2 일기 판의 일기 연속 배지 → S30, Q4 로비 안내는 옛 튜토리얼과 같은 규칙과 버튼, Q5 장소 말풍선 버튼은 지금 엔진의 이름,
-// Q6 개발 화면 칩은 고정 "연속 1일")에서만 가져온다. 구현 코드는 부르는 방법(속성 이름, 판의 구조)을 알려고만 읽었다.
+// Q6 개발 화면 칩은 고정 "연속 1일"), 09-main-decision.md(사용자 결정 3: S7은 출시 빌드에만 초당 프레임 표시가 없음,
+// "확실 1" 처리: 화면 밖 장소를 짚어도 카드가 나옴 → S31, 3초 안에 장소 좌표가 없으면 저장하지 않고 닫음 → S32)에서만 가져온다. 구현 코드는 부르는 방법(속성 이름, 판의 구조)을 알려고만 읽었다.
 // 이미 있는 홈 테스트(index.spec.test.tsx)가 판 안 칸의 세부 동작을 보므로, 여기서는 로비 자체와 판을 여닫는 길, 칩, 말풍선,
 // 로비 안내, 앱 복귀를 본다.
 // 가짜로 두는 것: index.spec.test.tsx와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내 상태, 라우터, 포커스, 네이티브 모듈).
@@ -436,9 +437,9 @@ async function walkUntilArrived(mark: MarkId) {
   expect(canvas().sim.arrived).toBe(mark);
 }
 
-async function sendProjection() {
+async function sendProjection(labels: LobbyProjection["labels"] = LABELS) {
   await act(async () => {
-    canvas().onProject({ bubble: { x: 375, y: 600 }, labels: LABELS, fps: 60 });
+    canvas().onProject({ bubble: { x: 375, y: 600 }, labels, fps: 60 });
   });
   await flushAsync();
 }
@@ -613,18 +614,34 @@ describe("[spec] 시험판(S7, S8)", () => {
   const PANEL_TEXTS = ["시험판 펴기", "시험판 접기", "손 흔들기", "신나게 점프", "깡충깡충", "가리키기", "한 바퀴", "두리번", "명암 단계", "2단", "3단"];
   const PANEL_SLIDERS = ["걷는 속도", "돌아서는 빠르기", "외곽선 굵기"];
 
-  it("S7: 홈에는 시험판·초당 프레임·동작 표시가 없고, 명암 3단·외곽선 1배로 그린다", async () => {
-    await renderHome();
-
+  // 09 결정(사용자 결정 2·3): 초당 프레임·동작 표시는 출시 빌드의 홈에는 없고 개발 빌드의 홈에는 보인다.
+  // 시험판이 없고 명암 3단·외곽선 1배인 것은 두 경우 모두 그대로다.
+  function expectNoDevPanelAndHomeToon() {
     for (const text of PANEL_TEXTS) {
       expect(screen.queryByText(text)).toBeNull();
     }
-    expect(screen.queryByText(/^FPS/)).toBeNull();
-    expect(screen.queryByText(/^동작:/)).toBeNull();
     for (const name of PANEL_SLIDERS) {
       expect(screen.queryByRole("adjustable", { name })).toBeNull();
     }
     expect(canvas().toon).toEqual({ steps: 3, outline: 1 });
+  }
+
+  it("S7 출시 빌드: 홈에는 시험판·초당 프레임·동작 표시가 없고, 명암 3단·외곽선 1배로 그린다", async () => {
+    devGlobal.__DEV__ = false;
+    await renderHome();
+
+    expect(screen.queryByText(/^FPS/)).toBeNull();
+    expect(screen.queryByText(/^동작:/)).toBeNull();
+    expectNoDevPanelAndHomeToon();
+  });
+
+  it("S7 개발 빌드: 홈에 초당 프레임·동작 표시는 보이고, 시험판은 없으며 명암 3단·외곽선 1배로 그린다", async () => {
+    devGlobal.__DEV__ = true;
+    await renderHome();
+
+    expect(screen.getByText(/^FPS/)).toBeOnTheScreen();
+    expect(screen.getByText(/^동작:/)).toBeOnTheScreen();
+    expectNoDevPanelAndHomeToon();
   });
 
   it("S8: 개발 진입 화면은 지금처럼 시험판을 보이고(칩은 고정 '연속 1일'), 명암을 바꾸면 3D에 넘어간다", async () => {
@@ -1026,7 +1043,7 @@ describe("[spec] 홈에서 뺀 것(S23)", () => {
 
 // ---------- 로비 안내 ----------
 
-describe("[spec] 로비 안내(S25~S28)", () => {
+describe("[spec] 로비 안내(S25~S28, S31, S32)", () => {
   it("S25·S28: 처음이면 질문 게시판 → 일기 책상 → 생각 창가를 한 줄씩 짚고, 끝내면 완료를 저장하고 다시 뜨지 않는다. 옛 튜토리얼 문구는 나오지 않는다", async () => {
     jest.mocked(hasCompletedHomeTutorial).mockResolvedValue(false);
     await renderHome();
@@ -1083,6 +1100,104 @@ describe("[spec] 로비 안내(S25~S28)", () => {
 
     expect(screen.getByText(TUTORIAL_LINES[0])).toBeOnTheScreen();
     expect(hasCompletedHomeTutorial).not.toHaveBeenCalled();
+  });
+
+  // 09 결정 "확실 1" 처리: 짚는 영역을 화면 안으로 끌어오고, 3D가 장소 좌표를 3초 안에 보내지 않으면 옛 튜토리얼처럼
+  // 저장하지 않고 닫는다. 테스트 창은 750 x 1334다.
+  const WINDOW = { width: 750, height: 1334 };
+  // 카메라를 가깝게 해 장소 이름표가 화면 밖에 온 경우(게시판·책상은 왼쪽 밖, 창가는 오른쪽 밖)
+  const OFFSCREEN_LABELS: LobbyProjection["labels"] = {
+    board: { x: -39, y: 260 },
+    window: { x: 900, y: 260 },
+    desk: { x: -102, y: 900 },
+    door: { x: 1000, y: 300 }
+  };
+
+  it("S31: 짚을 장소가 화면 밖이어도 단계마다 카드와 다음·건너뛰기가 나오고, 짚는 영역은 화면 안에 있으며, 끝까지 넘기면 완료를 저장한다", async () => {
+    jest.mocked(hasCompletedHomeTutorial).mockResolvedValue(false);
+    await renderHome();
+    await sendProjection(OFFSCREEN_LABELS);
+    await advance(180);
+
+    for (const [index, line] of TUTORIAL_LINES.entries()) {
+      expect(screen.getByText(line)).toBeOnTheScreen();
+      expect(screen.getByRole("button", { name: SKIP_LABEL })).toBeOnTheScreen();
+      const isLast = index === TUTORIAL_LINES.length - 1;
+      expect(screen.getByRole("button", { name: isLast ? "시작하기" : "다음" })).toBeOnTheScreen();
+      const props = lastTutorialProps();
+      expect(props).toMatchObject({ visible: true, stepIndex: index, isPositioning: false });
+      const spot = props.spotlight;
+      expect(spot).not.toBeNull();
+      expect(spot!.width).toBeGreaterThan(0);
+      expect(spot!.height).toBeGreaterThan(0);
+      expect(spot!.x).toBeGreaterThanOrEqual(0);
+      expect(spot!.y).toBeGreaterThanOrEqual(0);
+      expect(spot!.x + spot!.width).toBeLessThanOrEqual(WINDOW.width);
+      expect(spot!.y + spot!.height).toBeLessThanOrEqual(WINDOW.height);
+      await fireEvent.press(screen.getByRole("button", { name: isLast ? "시작하기" : "다음" }));
+      await flushAsync();
+    }
+
+    expect(completeHomeTutorial).toHaveBeenCalledTimes(1);
+    expect(lastTutorialProps().visible).toBe(false);
+  });
+
+  it("S31: 짚을 장소가 화면 밖인 단계에서도 건너뛰기로 닫히고 완료를 저장한다", async () => {
+    jest.mocked(hasCompletedHomeTutorial).mockResolvedValue(false);
+    await renderHome();
+    await sendProjection(OFFSCREEN_LABELS);
+    await advance(180);
+    await fireEvent.press(screen.getByRole("button", { name: "다음" }));
+    await flushAsync();
+    expect(screen.getByText(TUTORIAL_LINES[1])).toBeOnTheScreen();
+
+    await fireEvent.press(screen.getByRole("button", { name: SKIP_LABEL }));
+    await flushAsync();
+
+    expect(completeHomeTutorial).toHaveBeenCalledTimes(1);
+    expect(lastTutorialProps().visible).toBe(false);
+    expect(screen.queryByText(TUTORIAL_LINES[1])).toBeNull();
+  });
+
+  it("S32: 3D가 장소 좌표를 보내지 않으면 안내가 뜬 뒤 3초 동안 기다리다가, 저장하지 않고 조용히 닫고 다시 띄우지 않는다", async () => {
+    jest.mocked(hasCompletedHomeTutorial).mockResolvedValue(false);
+    await renderHome();
+
+    await advance(180);
+    expect(lastTutorialProps()).toMatchObject({ visible: true, isPositioning: true, spotlight: null });
+
+    await advance(2900);
+    expect(lastTutorialProps()).toMatchObject({ visible: true, isPositioning: true, spotlight: null });
+
+    await advance(200);
+    expect(lastTutorialProps()).toMatchObject({ visible: false, isPositioning: false });
+    expect(completeHomeTutorial).not.toHaveBeenCalled();
+    for (const line of TUTORIAL_LINES) {
+      expect(screen.queryByText(line)).toBeNull();
+    }
+    // 닫힌 뒤에는 홈을 쓸 수 있다(안내 Modal이 남지 않음).
+    expect(findHost(screen.root!, "Modal")).toHaveLength(0);
+    expect(screen.getByRole("button", { name: "질문에 답하기" })).toBeOnTheScreen();
+
+    await advance(2000);
+    expect(lastTutorialProps().visible).toBe(false);
+    expect(completeHomeTutorial).not.toHaveBeenCalled();
+  });
+
+  it("S32: 3초 안에 장소 좌표가 오면 닫지 않고 카드를 보인다", async () => {
+    jest.mocked(hasCompletedHomeTutorial).mockResolvedValue(false);
+    await renderHome();
+    await advance(180);
+    expect(lastTutorialProps()).toMatchObject({ visible: true, isPositioning: true });
+
+    await advance(1000);
+    await sendProjection();
+    expect(screen.getByText(TUTORIAL_LINES[0])).toBeOnTheScreen();
+
+    await advance(3000);
+    expect(lastTutorialProps()).toMatchObject({ visible: true, stepIndex: 0, isPositioning: false });
+    expect(screen.getByText(TUTORIAL_LINES[0])).toBeOnTheScreen();
+    expect(completeHomeTutorial).not.toHaveBeenCalled();
   });
 });
 

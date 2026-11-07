@@ -8,6 +8,8 @@
 // 가짜로 두는 것: index.spec.test.tsx와 같다(API, 기기 저장소, 로그인 상태, 앱 업데이트 안내 상태, 라우터, 포커스, 네이티브 모듈).
 // 3D 그리기(lobby3d-canvas)는 Jest에서 돌지 않으므로 가짜로 바꾸고, 받은 속성(sim, viewWidth, toon, onFrame, onPointer, onProject)을
 // 잡아 장소를 누르고 프레임을 진행한다. 가짜 시계: 2026-11-12T03:00:00Z = 서울 2026-11-12(목) 12:00.
+// 060-10(③ 학습 상태에 따른 말과 동작)의 03-main-decision.md(사용자 결정 2026-11-07 "③ 명세대로 고치기")에 따라 S3, S22 a~g의 말풍선 글만
+// 기본 말에서 들어올 때의 인사 말로 바꿨다(기본 데이터는 오늘 완료라 "오늘도 해냈어!", 이어 쓰기 상태가 있으면 이어 쓰기 인사). 나머지 확인은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -143,7 +145,9 @@ jest.mock("@/lib/writing-drafts", () => ({ getLocalWritingDraft: jest.fn() }));
 const NOW = new Date("2026-11-12T03:00:00.000Z");
 const TODAY_KEY = "2026-11-12";
 const SKIP_LABEL = "홈 사용법 건너뛰기";
-const IDLE_LINE = "오늘은 뭘 해 볼까?\n가고 싶은 곳을 눌러 봐.";
+// 들어올 때의 인사 말(060-10 명세 1의 표). 기본 데이터(오늘 완료)는 DONE_GREETING, 이어 쓰기 상태가 있으면 RESUME_GREETING.
+const DONE_GREETING = "오늘도 해냈어!";
+const RESUME_GREETING = "쓰다 만 답이 있어. 이어서 써 볼까?";
 const TUTORIAL_LINES = [
   "여기서 오늘의 질문에 답해요",
   "영어일기는 이 책상에서 써요",
@@ -452,9 +456,9 @@ function spotlightContains(spot: { x: number; y: number; width: number; height: 
   return point.x >= spot.x && point.x <= spot.x + spot.width && point.y >= spot.y && point.y <= spot.y + spot.height;
 }
 
-function bubbleOfIdleLine() {
+function bubbleOfResumeGreeting() {
   // 말풍선 글의 부모(말풍선 판)
-  return screen.getByText(IDLE_LINE).parent!;
+  return screen.getByText(RESUME_GREETING).parent!;
 }
 
 beforeEach(async () => {
@@ -527,7 +531,7 @@ describe("[spec] 화면 구성(S1~S4)", () => {
     for (const label of ["오늘의 질문", "생각 창가", "일기 책상", "밖으로"]) {
       expect(screen.getByText(label)).toBeOnTheScreen();
     }
-    expect(screen.getByText(IDLE_LINE)).toBeOnTheScreen();
+    expect(screen.getByText(DONE_GREETING)).toBeOnTheScreen();
     for (const menu of ["질문에 답하기", "영어일기", "지금 생각나는대로"]) {
       expect(screen.getByRole("button", { name: menu })).toBeOnTheScreen();
     }
@@ -933,10 +937,10 @@ describe("[spec] 판 여닫기(S19~S21)", () => {
 // ---------- 이어 쓰기 말풍선 ----------
 
 describe("[spec] 이어 쓰기 말풍선(S22)", () => {
-  it("S22 a: 이어 쓰기 상태가 없으면 기본 말풍선에 이어 쓰기 버튼이 없다", async () => {
+  it("S22 a: 이어 쓰기 상태가 없으면 인사 말풍선에 이어 쓰기 버튼이 없다", async () => {
     await renderHome();
 
-    expect(screen.getByText(IDLE_LINE)).toBeOnTheScreen();
+    expect(screen.getByText(DONE_GREETING)).toBeOnTheScreen();
     expect(screen.queryByRole("button", { name: "이어 쓰기" })).toBeNull();
   });
 
@@ -975,12 +979,12 @@ describe("[spec] 이어 쓰기 말풍선(S22)", () => {
     ]
   ];
 
-  it.each(ROUTE_CASES)("S22 %s: 기본 말풍선 글 그대로 이어 쓰기 버튼이 붙고, 누르면 이어 쓰던 곳으로 간다", async (_name, arrange, route) => {
+  it.each(ROUTE_CASES)("S22 %s: 이어 쓰기 인사 말풍선에 이어 쓰기 버튼이 붙고, 누르면 이어 쓰던 곳으로 간다", async (_name, arrange, route) => {
     arrange();
     await renderHome();
 
     const button = screen.getByRole("button", { name: "이어 쓰기" });
-    expect(within(bubbleOfIdleLine()).getByRole("button", { name: "이어 쓰기" })).toBe(button);
+    expect(within(bubbleOfResumeGreeting()).getByRole("button", { name: "이어 쓰기" })).toBe(button);
     expect(clearIncompleteLoop).not.toHaveBeenCalled();
 
     await fireEvent.press(button);
@@ -994,7 +998,7 @@ describe("[spec] 이어 쓰기 말풍선(S22)", () => {
     await renderHome();
     expect(clearIncompleteLoop).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: "이어 쓰기" })).toBeNull();
-    expect(screen.getByText(IDLE_LINE)).toBeOnTheScreen();
+    expect(screen.getByText(DONE_GREETING)).toBeOnTheScreen();
   });
 
   it("S22 f: 답 단계인데 이 기기와 서버에 초안이 없으면 이어 쓰기 상태를 지우고 버튼이 없다", async () => {
@@ -1002,7 +1006,7 @@ describe("[spec] 이어 쓰기 말풍선(S22)", () => {
     await renderHome();
     expect(clearIncompleteLoop).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("button", { name: "이어 쓰기" })).toBeNull();
-    expect(screen.getByText(IDLE_LINE)).toBeOnTheScreen();
+    expect(screen.getByText(DONE_GREETING)).toBeOnTheScreen();
   });
 
   it("S22 h: 들어온 뒤 이어 쓰기 상태가 없어지고 포커스를 다시 받으면 버튼이 사라진다", async () => {

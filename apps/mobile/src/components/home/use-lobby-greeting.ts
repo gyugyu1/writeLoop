@@ -64,8 +64,9 @@ export function useLobbyGreeting(options: UseLobbyGreetingOptions): LobbyGreetin
   const { loggedIn, homeLoadCount, resolvingIncomplete, tutorialPending } = options;
   useEffect(() => {
     if (pendingFrom === null || tutorialPending) return;
-    // 로그인했으면 들어온 뒤의 다시 읽기가 끝나기를 기다린다(로그인하지 않았으면 읽을 것이 없다)
-    if (loggedIn && (homeLoadCount <= pendingFrom || resolvingIncomplete)) return;
+    // 로그인을 확인하고, 들어온 뒤의 다시 읽기가 끝나기를 기다린다. 앱을 막 열면 로그인 정보를 읽는 동안 잠깐 로그인하지 않은 것으로 보여,
+    // 그때 인사하면 기본 말로 끝나 버린다(홈은 로그인해야 보이므로 로그인하지 않은 채로는 인사하지 않는다).
+    if (!loggedIn || homeLoadCount <= pendingFrom || resolvingIncomplete) return;
     let cancelled = false;
     const now = new Date();
     const status: LearningStatus = {

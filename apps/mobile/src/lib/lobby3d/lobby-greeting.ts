@@ -1,5 +1,5 @@
 import type { MonthWritingStatus } from "@/lib/types";
-import { IDLE_LINE, type ActionType } from "./engine";
+import type { ActionType } from "./engine";
 
 // 로비에 들어올 때 라이트루프의 인사(학습 상태에 따른 말과 동작). 어떤 상태인지 고르는 계산만 하고, 언제 인사할지는 홈이 정한다.
 
@@ -25,6 +25,9 @@ export interface LearningStatus {
   /** 오늘("YYYY-MM-DD") */
   today: string;
 }
+
+/** 인사 "그 밖"(그리고 로그인하지 않았거나 정보가 없을 때)의 말. */
+export const AGAIN_LINE = "또 왔네! 반가워.";
 
 export interface LobbyGreeting {
   kind: GreetingKind;
@@ -58,7 +61,7 @@ export function isLongTimeAway(status: Pick<LearningStatus, "answerSessions" | "
  * 받지 못한 정보로만 알 수 있는 상태는 아닌 것으로 본다(예: 작문 수나 일기 수를 모르면 첫 방문이 아니다).
  */
 export function lobbyGreeting(status: LearningStatus): LobbyGreeting {
-  if (!status.ready) return { kind: "default", line: IDLE_LINE, action: "wave" };
+  if (!status.ready) return { kind: "default", line: AGAIN_LINE, action: "wave" };
   if (status.answerSessions === 0 && status.diaryEntries === 0) {
     return { kind: "first", line: "안녕! 게시판에서 오늘의 질문을 골라 봐.", action: "wave" };
   }
@@ -68,7 +71,7 @@ export function lobbyGreeting(status: LearningStatus): LobbyGreeting {
     return { kind: "streak", line: `${status.streakDays}일째 함께하고 있어!`, action: "hop" };
   }
   if (isLongTimeAway(status)) return { kind: "longTime", line: "오랜만이야! 보고 싶었어.", action: "wave" };
-  return { kind: "default", line: IDLE_LINE, action: "wave" };
+  return { kind: "default", line: AGAIN_LINE, action: "wave" };
 }
 
 /** 작문 달력 여러 달에서 작문을 시작했거나 마친 가장 늦은 날. 없으면 null. */

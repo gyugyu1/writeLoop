@@ -52,7 +52,7 @@ def finish(piece, meshes, wall_mounted=False, scale=SCALE, depth=1.0):
     lo, hi = bounds(meshes)
     center = (lo + hi) / 2
     pivot = Vector((center.x, center.y, center.z if wall_mounted else lo.z))
-    # Kenney 안쪽 이름(예: doorway의 "door")과 묶음 이름이 겹치지 않게 메시 이름부터 바꾼다
+    # Kenney 안쪽 이름과 묶음 이름이 겹치지 않게(묶음 이름에 .001이 붙지 않게) 메시 이름부터 바꾼다
     for o in meshes:
         o.name = f"{piece}_{o.name}"
     root = bpy.data.objects.new(piece, None)
@@ -105,7 +105,6 @@ def rotate_z(meshes, deg):
 # ---------- Kenney 가구 ----------
 # 일기 책상은 다른 가구보다 1.2배 크게, 옷장·책장은 벽에서 나온 깊이만 1.25배로 한다(두툼하게)
 for piece, name, scale, depth in [
-    ("door", "doorway", SCALE, 1.0),
     ("desk", "desk", SCALE * 1.2, 1.0),
     ("chair", "chair", SCALE, 1.0),
     ("lamp", "lampRoundFloor", SCALE, 1.0),

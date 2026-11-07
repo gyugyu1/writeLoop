@@ -274,7 +274,6 @@ function softRectTexture(): THREE.DataTexture {
 const FURNITURE_SHADOW: Partial<Record<FurniturePiece, { floor?: [number, number, number]; wall?: [number, number, number] }>> = {
   board: { wall: [2.0, 1.6, 0.3] },
   window: { wall: [2.55, 2.15, 0.3] },
-  door: { floor: [1.7, 0.6, 0.35], wall: [1.6, 3.0, 0.24] },
   desk: { floor: [2.8, 1.65, 0.5] },
   chair: { floor: [0.75, 0.75, 0.42] },
   bookcase: { floor: [1.4, 1.2, 0.52] },
@@ -387,8 +386,7 @@ function buildWorld(): World {
         new THREE.PlaneGeometry(w, h),
         new THREE.MeshBasicMaterial({ map: softRect, color: 0x3a2214, transparent: true, opacity, depthWrite: false })
       );
-      const centerY = place.piece === "door" ? 1.42 : place.y;
-      m.position.set(place.x + 0.07, centerY - 0.1, 0.01);
+      m.position.set(place.x + 0.07, place.y - 0.1, 0.01);
       m.raycast = () => {};
       root.add(m);
     }
@@ -416,10 +414,13 @@ function buildWorld(): World {
         kit.part(new THREE.BoxGeometry(1.95, 0.06, 0.05), 0xe39a64, 0, g).position.z = 0.08;
         kit.part(new THREE.BoxGeometry(0.06, 1.6, 0.05), 0xe39a64, 0, g).position.z = 0.08;
         break;
-      case "door":
-        kit.part(new RoundedBoxGeometry(1.21, 2.52, 0.12, 3, 0.04), 0xe39a64, 0.03, g).position.y = 1.26;
-        kit.part(new THREE.SphereGeometry(0.06, 12, 10), 0xbdd2d6, 0.015, g).position.set(0.42, 1.2, 0.08);
+      case "exit": {
+        // 입구 발판(폭 2, 깊이 0.7)보다 조금 넓게 덮는 보이지 않는 상자. 보이지 않아도 누르기 판정은 받는다.
+        const hit = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.6, ROOM.stepDepth + 0.3), new THREE.MeshBasicMaterial());
+        hit.visible = false;
+        g.add(hit);
         break;
+      }
       case "desk":
         kit.part(new RoundedBoxGeometry(1.84, 0.1, 0.98, 3, 0.03), 0xe39a64, 0.03, g).position.y = 0.91;
         for (const [lx, lz] of [[-0.85, -0.42], [0.85, -0.42], [-0.85, 0.42], [0.85, 0.42]]) {
@@ -447,7 +448,7 @@ function buildWorld(): World {
   for (const place of FURNITURE_LAYOUT) {
     const g = makePiece(place.piece);
     // 대체 모양은 Kenney 2.5배 크기로 지었다. 창문 말고는 가구 묶음(Kenney 2.8배, 책상은 그 1.2배, 옷장·책장은 깊이 1.25배)에 맞춰 키운다.
-    if (place.piece !== "window") g.scale.setScalar(2.8 / 2.5);
+    if (place.piece !== "window" && place.piece !== "exit") g.scale.setScalar(2.8 / 2.5);
     if (place.piece === "desk") g.scale.multiplyScalar(1.2);
     if (place.piece === "bookcase" || place.piece === "wardrobe") g.scale.z *= 1.25;
     g.position.set(place.x, place.y, place.z);
@@ -471,7 +472,7 @@ function buildWorld(): World {
   const labelPoints: Record<MarkId, THREE.Vector3> = {
     board: new THREE.Vector3(1.8, 2.75, 0.3),
     window: new THREE.Vector3(4.8, 3.05, 0.3),
-    door: new THREE.Vector3(7.0, 3.1, 0.3),
+    door: new THREE.Vector3(W / 2, 0.4, D + ROOM.stepDepth / 2),
     desk: new THREE.Vector3(1.25, 2.1, 5.5)
   };
 

@@ -35,7 +35,7 @@ export const ROOM = {
 export interface MarkInfo {
   id: MarkId;
   label: string;
-  /** 바라볼 지점. 벽에 붙은 장소는 z = 0. */
+  /** 바라볼 지점. 벽에 붙은 장소는 z = 0, 밖으로 가는 입구 발판은 바닥 앞끝 너머. */
   faceTo: FloorPoint;
   /** 이 장소를 쓰려고 서는 자리(가까운 곳으로 간다). */
   approach: FloorPoint[];
@@ -75,8 +75,8 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   door: {
     id: "door",
     label: "밖으로",
-    faceTo: { x: 7.0, z: 0 },
-    approach: [{ x: 7.0, z: 1.1 }],
+    faceTo: { x: 4.0, z: 11.35 },
+    approach: [{ x: 4.0, z: 10.5 }],
     prompt: "밖으로 나가 볼까?\n마을은 다음에 열려.",
     buttonLabel: "나가기",
     enterMessage: "마을은 다음 업데이트에서 열려요"

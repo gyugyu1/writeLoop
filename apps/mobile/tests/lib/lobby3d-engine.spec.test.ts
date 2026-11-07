@@ -1,17 +1,19 @@
 // [spec] qa 테스트(작업 058, 새 기능: 개발용 3D 로비 시험 화면의 동작 규칙).
 // 기대값은 시나리오(private 작업 폴더 02-qa-scenarios.md)와 결정(03, 05)에서만 가져온다. 구현은 부르는 방법만 본다.
 // 명세에 숫자가 없는 것(막힌 칸, 장소 앞 지점, 장소 중심, 벽 높이, 카메라 거리 범위)은 구현의 방 데이터를 입력으로 읽고,
-// 명세의 성질(가구·방 밖을 지나지 않는다, 방 밖이 보이지 않는다)을 검사한다.
+// 명세의 성질(가구·방 밖을 지나지 않는다)을 검사한다. 카메라 규칙은 작업 060-④에서 바뀌었다(아래 카메라 describe 머리말).
 // 좌표(구현의 약속): 바닥 한 칸 = 1, x는 왼쪽→오른쪽(0..8), z는 뒷벽→앞(0..11). 바라보는 방향 0 = +z, atan2(dx, dz).
 import {
   LobbySim,
   MARKS,
   ROOM,
+  ROOM_BOUNDS,
   SOLID_TILES,
   VIEW_WIDTH_DEFAULT,
   VIEW_WIDTH_MAX,
   VIEW_WIDTH_MIN,
-  clampCameraTarget,
+  cameraPose,
+  clampViewWidth,
   findPath,
   isFree,
   type FloorPoint,
@@ -327,19 +329,40 @@ describe("[spec] 장소 도착과 바라보기(S22, S23, 결정 5)", () => {
   });
 });
 
-describe("[spec] 카메라(S50, S51, 결정 10)", () => {
-  // 카메라 모형(구현의 약속): 정사영, 화면 가로에 viewWidth 칸, 세로에 viewWidth × 높이/너비 칸이 보이고,
-  // clampCameraTarget이 돌려준 바닥 점을 화면 가운데에 두고 42°로 내려다본다.
-  const pitch = (ROOM.pitchDeg * Math.PI) / 180;
-  const screens: [number, number][] = [
+
+// 작업 060-④(방을 디오라마처럼, 기능 변경)에서 아래 카메라 테스트를 새 규칙으로 바꿨다(명세 "고칠 기존 테스트").
+// 옛 규칙(정사영, 방 밖이 보이지 않는다, 그린 바닥 앞 끝 z = 24, 기울기 42°)은 없어지고, 새 규칙은 이렇다(명세 3. 카메라).
+// - 원근 카메라가 방 앞쪽 위에서 비스듬히 내려다본다. 안쪽이 작게 보인다.
+// - 가로·세로 각각, 방이 화면에 다 들어오면 그 방향은 방 가운데에 고정(남는 곳은 검정), 아니면 라룹이를 따라가되 방 끝 너머는 막는다.
+// - 방 끝: 양옆 벽 바깥면, 뒷벽(바깥면·윗면), 앞쪽은 입구 발판 앞.
+// - 가장 멀리 두면 방 전체와 둘레의 검은 곳이 함께 보인다.
+// 기울기·시야각·거리는 시험판으로 사용자와 맞추므로(명세 3) 숫자로 고정하지 않는다. 구현이 내보낸 카메라 자리로
+// 화면에 무엇이 보이는지를 이 테스트가 직접 계산해(three.js PerspectiveCamera와 같은 약속) 성질만 본다.
+describe("[spec] 카메라(S50, S51, 결정 10 → 작업 060-④ 디오라마 새 규칙)", () => {
+  type Vec3 = { x: number; y: number; z: number };
+  /** 카메라 자리: position에서 lookAt을 보고, 위쪽은 +y, fovDeg는 세로 시야각(도). */
+  type Pose = { position: Vec3; lookAt: Vec3; fovDeg: number };
+  /** 방 끝을 둘러싼 상자(벽 바깥면, 벽 윗면, 앞쪽은 입구 발판 앞, 아래는 입구 발판 밑). */
+  type Box = { minX: number; maxX: number; minY: number; maxY: number; minZ: number; maxZ: number };
+  type Screen = [number, number];
+
+  // ---- 구현을 부르는 곳은 이 둘뿐이다(가정한 이름: cameraPose, ROOM_BOUNDS. 이름이 다르면 여기만 고친다) ----
+  /** follow: 라룹이가 있는 바닥 점, viewWidth: 카메라 거리 설정 값, 화면 가로/세로 비율. */
+  function poseFor(follow: FloorPoint, viewWidth: number, [w, h]: Screen): Pose {
+    return cameraPose(follow, viewWidth, w / h) as Pose;
+  }
+  function roomEnds(): Box {
+    return ROOM_BOUNDS as Box;
+  }
+  // -------------------------------------------------------------------------------------------------
+
+  const EPS = 1e-6;
+  /** 카메라 바로 앞 면. 이보다 가까운 곳은 화면 밖으로 크게 벗어난 것으로 본다. */
+  const NEAR = 0.01;
+  const screens: Screen[] = [
     [360, 640],
     [390, 844],
     [412, 915]
-  ];
-  const widths: [string, number][] = [
-    ["가장 멀리", VIEW_WIDTH_MAX],
-    ["기본값", VIEW_WIDTH_DEFAULT],
-    ["가장 가까이", VIEW_WIDTH_MIN]
   ];
   const follow: FloorPoint[] = [
     { x: 0.6, z: 0.8 },
@@ -349,64 +372,244 @@ describe("[spec] 카메라(S50, S51, 결정 10)", () => {
     { x: 4, z: 5.5 },
     ...MARK_IDS.flatMap((id) => MARKS[id].approach)
   ];
+  const BACK: FloorPoint = { x: 4, z: 0.8 };
+  const FRONT: FloorPoint = { x: 4, z: 10.8 };
 
-  type Hit = { surface: "floor" | "backWall"; x: number; y: number; z: number };
-
-  /** 화면 네 모서리와 네 변 가운데에서 쏜 시선이 처음 닿는 곳(바닥 y=0 또는 뒷벽 z=0). */
-  function screenHits(viewWidth: number, [w, h]: [number, number], follow: FloorPoint): Hit[] {
-    const viewHeight = (viewWidth * h) / w;
-    const t = clampCameraTarget(follow, viewWidth, viewHeight);
-    const hits: Hit[] = [];
-    for (const u of [-1, 0, 1]) {
-      for (const v of [-1, 0, 1]) {
-        if (u === 0 && v === 0) continue;
-        const a = (u * viewWidth) / 2;
-        const b = (v * viewHeight) / 2;
-        // 화면 위 점의 시선: 지나는 점 + s × 앞 방향(0, -sin, -cos)
-        const px = t.x + a;
-        const py = b * Math.cos(pitch);
-        const pz = t.z - b * Math.sin(pitch);
-        const sFloor = py / Math.sin(pitch);
-        const sWall = pz / Math.cos(pitch);
-        if (sFloor <= sWall) hits.push({ surface: "floor", x: px, y: 0, z: pz - sFloor * Math.cos(pitch) });
-        else hits.push({ surface: "backWall", x: px, y: py - sWall * Math.sin(pitch), z: 0 });
-      }
-    }
-    return hits;
+  function viewWidths(): [string, number][] {
+    const list: [string, number][] = [
+      ["가장 멀리", VIEW_WIDTH_MAX],
+      ["기본값", VIEW_WIDTH_DEFAULT],
+      ["가장 가까이", VIEW_WIDTH_MIN]
+    ];
+    for (const k of [0.25, 0.5, 0.75]) list.push([`사이 ${k}`, VIEW_WIDTH_MIN + (VIEW_WIDTH_MAX - VIEW_WIDTH_MIN) * k]);
+    return list;
   }
 
-  const cases = screens.flatMap((screen) =>
-    widths.flatMap(([name, width]) => follow.map((p) => ({ screen, name, width, p })))
-  );
+  function cases() {
+    return screens.flatMap((screen) =>
+      viewWidths().flatMap(([name, width]) => follow.map((p) => ({ screen, name, width, p })))
+    );
+  }
 
-  it("S50: 어느 화면·거리·위치에서도 화면 가장자리가 양옆 벽 너머나 뒷벽 위 빈 곳에 닿지 않는다", () => {
+  function caseLabel(c: { screen: Screen; name: string; width: number; p: FloorPoint }) {
+    return `${c.screen.join("x")} ${c.name}(${c.width.toFixed(2)}) 라룹이(${c.p.x},${c.p.z})`;
+  }
+
+  const sub = (a: Vec3, b: Vec3): Vec3 => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+  const dot = (a: Vec3, b: Vec3) => a.x * b.x + a.y * b.y + a.z * b.z;
+  const cross = (a: Vec3, b: Vec3): Vec3 => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
+  const norm = (a: Vec3): Vec3 => {
+    const l = Math.hypot(a.x, a.y, a.z);
+    return { x: a.x / l, y: a.y / l, z: a.z / l };
+  };
+  const lerp3 = (a: Vec3, b: Vec3, t: number): Vec3 => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t, z: a.z + (b.z - a.z) * t });
+
+  /** 화면 좌표(가운데 0, 왼쪽·아래 끝 -1, 오른쪽·위 끝 +1)와 카메라 앞 깊이. */
+  function camera(pose: Pose, [w, h]: Screen) {
+    const f = norm(sub(pose.lookAt, pose.position));
+    const r = norm(cross(f, { x: 0, y: 1, z: 0 }));
+    const u = cross(r, f);
+    const tanV = Math.tan((pose.fovDeg * Math.PI) / 360);
+    const tanH = tanV * (w / h);
+    const depth = (p: Vec3) => dot(sub(p, pose.position), f);
+    const project = (p: Vec3) => {
+      const d = sub(p, pose.position);
+      const z = dot(d, f);
+      return { x: dot(d, r) / (z * tanH), y: dot(d, u) / (z * tanV), depth: z };
+    };
+    return { f, depth, project };
+  }
+
+  /** 방 상자가 화면에 그려지는 범위. 카메라 뒤로 넘어가는 부분은 카메라 바로 앞 면에서 자른다. */
+  function roomExtent(pose: Pose, screen: Screen, box: Box) {
+    const cam = camera(pose, screen);
+    const xs = [box.minX, box.maxX];
+    const ys = [box.minY, box.maxY];
+    const zs = [box.minZ, box.maxZ];
+    const corners: Vec3[] = [];
+    for (const x of xs) for (const y of ys) for (const z of zs) corners.push({ x, y, z });
+    const edges: [Vec3, Vec3][] = [];
+    for (let i = 0; i < corners.length; i += 1) {
+      for (let j = i + 1; j < corners.length; j += 1) {
+        const a = corners[i];
+        const b = corners[j];
+        const differ = Number(a.x !== b.x) + Number(a.y !== b.y) + Number(a.z !== b.z);
+        if (differ === 1) edges.push([a, b]);
+      }
+    }
+    const points: Vec3[] = corners.filter((p) => cam.depth(p) >= NEAR);
+    for (const [a, b] of edges) {
+      const da = cam.depth(a);
+      const db = cam.depth(b);
+      if ((da < NEAR) !== (db < NEAR)) points.push(lerp3(a, b, (NEAR - da) / (db - da)));
+    }
+    const projected = points.map(cam.project);
+    return {
+      clipped: corners.some((p) => cam.depth(p) < NEAR),
+      empty: projected.length === 0,
+      minX: Math.min(...projected.map((p) => p.x)),
+      maxX: Math.max(...projected.map((p) => p.x)),
+      minY: Math.min(...projected.map((p) => p.y)),
+      maxY: Math.max(...projected.map((p) => p.y))
+    };
+  }
+
+  it("방 끝(명세 1·3): 벽에 두께가 있어 방 끝이 걷는 바닥 바깥이고, 앞쪽 끝은 바닥 앞끝보다 앞(입구 발판)이며 발판은 바닥보다 낮다", () => {
+    const box = roomEnds();
+    expect({
+      leftWallOuterBeyondFloor: box.minX < 0,
+      rightWallOuterBeyondFloor: box.maxX > ROOM.width,
+      backWallOuterBeyondFloor: box.minZ < 0,
+      stepInFrontOfFloor: box.maxZ > ROOM.depth,
+      stepBelowFloor: box.minY < 0,
+      wallTopIncluded: box.maxY >= ROOM.wallHeight
+    }).toEqual({
+      leftWallOuterBeyondFloor: true,
+      rightWallOuterBeyondFloor: true,
+      backWallOuterBeyondFloor: true,
+      stepInFrontOfFloor: true,
+      stepBelowFloor: true,
+      wallTopIncluded: true
+    });
+  });
+
+  it("S51(바뀜): 방 앞쪽 위에서 비스듬히 내려다본다(옆으로 돌지 않고, 아래와 뒷벽 쪽을 본다). 기울기 숫자는 시험판으로 정하므로 보지 않는다", () => {
     const bad: string[] = [];
-    for (const { screen, name, width, p } of cases) {
-      for (const hit of screenHits(width, screen, p)) {
-        const ok = hit.x >= 0 && hit.x <= ROOM.width && (hit.surface === "floor" || (hit.y >= 0 && hit.y <= ROOM.wallHeight));
-        if (!ok) bad.push(`${screen.join("x")} ${name} (${p.x},${p.z}) → ${hit.surface} (${hit.x.toFixed(2)}, ${hit.y.toFixed(2)}, ${hit.z.toFixed(2)})`);
+    for (const c of cases()) {
+      const pose = poseFor(c.p, c.width, c.screen);
+      const f = norm(sub(pose.lookAt, pose.position));
+      const ok = Math.abs(f.x) < 1e-9 && f.y < 0 && f.z < 0 && pose.fovDeg > 0 && pose.fovDeg < 180;
+      if (!ok) bad.push(`${caseLabel(c)} → 보는 방향 (${f.x.toFixed(3)}, ${f.y.toFixed(3)}, ${f.z.toFixed(3)}), 시야각 ${pose.fovDeg}`);
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("원근(바뀜): 안쪽(뒷벽 아래 끝)이 앞쪽(바닥 앞 끝)보다 화면에서 짧게 보인다", () => {
+    const bad: string[] = [];
+    for (const c of cases()) {
+      const cam = camera(poseFor(c.p, c.width, c.screen), c.screen);
+      const len = (z: number) => cam.project({ x: ROOM.width, y: 0, z }).x - cam.project({ x: 0, y: 0, z }).x;
+      const back = len(0);
+      const front = len(ROOM.depth);
+      if (!(back > 0 && front > 0 && back < front)) bad.push(`${caseLabel(c)} → 뒷벽 아래 ${back.toFixed(3)}, 바닥 앞 ${front.toFixed(3)}`);
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("S50 가로(바뀜): 방이 가로로 다 들어오면 좌우 여백이 같게 가운데에 두고, 아니면 화면 양 끝이 방 끝(양옆 벽 바깥면) 너머로 나가지 않는다", () => {
+    const box = roomEnds();
+    const bad: string[] = [];
+    for (const c of cases()) {
+      const e = roomExtent(poseFor(c.p, c.width, c.screen), c.screen, box);
+      if (e.empty) {
+        bad.push(`${caseLabel(c)} → 방이 카메라 뒤에 있음`);
+        continue;
+      }
+      const fits = !e.clipped && e.minX >= -1 - EPS && e.maxX <= 1 + EPS;
+      const centered = Math.abs(e.minX + e.maxX) <= EPS;
+      const covers = e.minX <= -1 + EPS && e.maxX >= 1 - EPS;
+      if (!((fits && centered) || covers)) {
+        bad.push(`${caseLabel(c)} → 방 가로 범위 ${e.minX.toFixed(4)} ~ ${e.maxX.toFixed(4)}(화면 -1 ~ 1)`);
       }
     }
     expect(bad).toEqual([]);
   });
 
-  // 앞쪽 경계는 결정 07-1(사용자 결정, 명세를 바꿈)을 따른다: 걸을 수 없는 바닥을 앞쪽에 이어 깔아도 되고,
-  // 그린 바닥 끝(z = 24)과 그 너머 빈 곳만 보이지 않으면 된다. 처음에는 시나리오 S50대로 z = 11이었다.
-  const DRAWN_FLOOR_FRONT_Z = 24;
-
-  it("S50(결정 07-1): 어느 화면·거리·위치에서도 화면 아래가 그린 바닥 앞 끝(z = 24) 너머에 닿지 않는다", () => {
+  it("S50 세로(바뀜): 방이 세로로 다 들어오면 라룹이가 어디 있든 세로 자리가 고정되고, 아니면 화면 위·아래 끝이 방 끝(뒷벽 윗면, 입구 발판 앞) 너머로 나가지 않는다", () => {
+    const box = roomEnds();
     const bad: string[] = [];
-    for (const { screen, name, width, p } of cases) {
-      for (const hit of screenHits(width, screen, p)) {
-        if (hit.surface === "floor" && (hit.z < 0 || hit.z > DRAWN_FLOOR_FRONT_Z)) {
-          bad.push(`${screen.join("x")} ${name} (${p.x},${p.z}) → z ${hit.z.toFixed(2)}`);
+    const verticalOf = (pose: Pose) => [pose.position.y, pose.position.z, pose.lookAt.y, pose.lookAt.z, pose.fovDeg];
+    const sameVertical = (a: Pose, b: Pose) => verticalOf(a).every((v, i) => Math.abs(v - verticalOf(b)[i]) <= 1e-9);
+    for (const c of cases()) {
+      const pose = poseFor(c.p, c.width, c.screen);
+      const e = roomExtent(pose, c.screen, box);
+      if (e.empty) {
+        bad.push(`${caseLabel(c)} → 방이 카메라 뒤에 있음`);
+        continue;
+      }
+      const fits = !e.clipped && e.minY >= -1 - EPS && e.maxY <= 1 + EPS;
+      const fixed =
+        sameVertical(pose, poseFor(BACK, c.width, c.screen)) && sameVertical(pose, poseFor(FRONT, c.width, c.screen));
+      const covers = e.minY <= -1 + EPS && e.maxY >= 1 - EPS;
+      if (!((fits && fixed) || covers)) {
+        bad.push(
+          `${caseLabel(c)} → 방 세로 범위 ${e.minY.toFixed(4)} ~ ${e.maxY.toFixed(4)}(화면 -1 ~ 1), 세로 자리 고정 ${fixed}`
+        );
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("따라가기: 어느 화면·거리·위치에서도 라룹이(발밑)는 화면 안에 있다", () => {
+    const bad: string[] = [];
+    for (const c of cases()) {
+      const p = camera(poseFor(c.p, c.width, c.screen), c.screen).project({ x: c.p.x, y: 0, z: c.p.z });
+      if (!(p.depth > 0 && Math.abs(p.x) <= 1 + EPS && Math.abs(p.y) <= 1 + EPS)) {
+        bad.push(`${caseLabel(c)} → 화면 (${p.x.toFixed(3)}, ${p.y.toFixed(3)}), 깊이 ${p.depth.toFixed(3)}`);
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("따라가기(가로): 방이 가로로 다 들어오지 않는 거리에서는 라룹이가 왼쪽·가운데·오른쪽에 있을 때 카메라도 그 순서로 옮겨 간다", () => {
+    const box = roomEnds();
+    const checked: string[] = [];
+    const bad: string[] = [];
+    for (const screen of screens) {
+      for (const [name, width] of viewWidths()) {
+        const mid = poseFor({ x: ROOM.width / 2, z: 5.5 }, width, screen);
+        const e = roomExtent(mid, screen, box);
+        if (!(e.maxX - e.minX > 2.05)) continue;
+        checked.push(`${screen.join("x")} ${name}`);
+        const left = poseFor({ x: 0.6, z: 5.5 }, width, screen);
+        const right = poseFor({ x: 7.4, z: 5.5 }, width, screen);
+        if (!(left.position.x < mid.position.x && mid.position.x < right.position.x)) {
+          bad.push(`${screen.join("x")} ${name} → 카메라 x 왼쪽 ${left.position.x}, 가운데 ${mid.position.x}, 오른쪽 ${right.position.x}`);
+        }
+      }
+    }
+    // "가장 멀리 두면 방 전체가 보이게 범위를 넓힌다"(명세 3)이므로 그보다 가까운 거리에는 가로로 다 들어오지 않는 때가 있다.
+    expect(checked.length).toBeGreaterThan(0);
+    expect(bad).toEqual([]);
+  });
+
+  it("따라가기(세로): 방이 세로로 다 들어오지 않는 거리에서는 라룹이가 앞으로 가면 카메라도 앞으로 간다", () => {
+    const box = roomEnds();
+    const bad: string[] = [];
+    for (const screen of screens) {
+      for (const [name, width] of viewWidths()) {
+        const e = roomExtent(poseFor({ x: 4, z: 5.5 }, width, screen), screen, box);
+        if (!(e.maxY - e.minY > 2.05)) continue;
+        const back = poseFor(BACK, width, screen);
+        const front = poseFor(FRONT, width, screen);
+        if (!(back.position.z < front.position.z)) {
+          bad.push(`${screen.join("x")} ${name} → 카메라 z 뒤 ${back.position.z}, 앞 ${front.position.z}`);
         }
       }
     }
     expect(bad).toEqual([]);
   });
 
-  it("S51: 내려다보는 각이 42°다", () => {
-    expect(ROOM.pitchDeg).toBe(42);
+  it("카메라 거리(바뀜): 가장 멀리 두면 어느 화면·위치에서도 방 전체가 화면 안에 있고 네 둘레에 검은 곳이 남는다", () => {
+    const box = roomEnds();
+    const bad: string[] = [];
+    for (const screen of screens) {
+      for (const p of follow) {
+        const e = roomExtent(poseFor(p, VIEW_WIDTH_MAX, screen), screen, box);
+        const inside = !e.empty && !e.clipped && e.minX > -1 + EPS && e.maxX < 1 - EPS && e.minY > -1 + EPS && e.maxY < 1 - EPS;
+        if (!inside) {
+          bad.push(`${screen.join("x")} 라룹이(${p.x},${p.z}) → 가로 ${e.minX.toFixed(4)} ~ ${e.maxX.toFixed(4)}, 세로 ${e.minY.toFixed(4)} ~ ${e.maxY.toFixed(4)}`);
+        }
+      }
+    }
+    expect(bad).toEqual([]);
+  });
+
+  it("카메라 거리 범위: 가장 가까이 < 기본값 < 가장 멀리이고, 범위 밖 값은 새 범위 끝으로 맞춘다", () => {
+    expect(VIEW_WIDTH_MIN).toBeLessThan(VIEW_WIDTH_DEFAULT);
+    expect(VIEW_WIDTH_DEFAULT).toBeLessThan(VIEW_WIDTH_MAX);
+    expect(clampViewWidth(VIEW_WIDTH_MAX + 1)).toBe(VIEW_WIDTH_MAX);
+    expect(clampViewWidth(VIEW_WIDTH_MIN - 1)).toBe(VIEW_WIDTH_MIN);
+    expect(clampViewWidth(VIEW_WIDTH_DEFAULT)).toBe(VIEW_WIDTH_DEFAULT);
   });
 });

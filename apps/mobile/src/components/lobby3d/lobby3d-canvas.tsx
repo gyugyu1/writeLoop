@@ -394,13 +394,18 @@ function buildWorld(): World {
       root.add(m);
     }
     if (shade.wall) {
-      // 벽에 건 것(모두 뒷벽)은 뒷벽 안쪽 면(z = 0) 바로 앞에 둔다
+      // 벽에 건 것은 걸린 벽 안쪽 면 바로 앞에 둔다(뒷벽 z = 0, 왼벽 x = 0, 오른벽 x = 방 폭). 앞면이 방 안쪽을 본다
       const [w, h, opacity] = shade.wall;
       const m = new THREE.Mesh(
         new THREE.PlaneGeometry(w, h),
         new THREE.MeshBasicMaterial({ map: softRect, color: 0x3a2214, transparent: true, opacity, depthWrite: false })
       );
-      m.position.set(place.x + 0.07, place.y - 0.1, 0.01);
+      const inward = { x: Math.sin(place.rotY), z: Math.cos(place.rotY) };
+      const along = { x: Math.cos(place.rotY), z: -Math.sin(place.rotY) };
+      const onWall =
+        Math.abs(inward.z) > 0.5 ? { x: place.x, z: 0 } : inward.x > 0 ? { x: 0, z: place.z } : { x: W, z: place.z };
+      m.rotation.y = place.rotY;
+      m.position.set(onWall.x + inward.x * 0.01 + along.x * 0.07, place.y - 0.1, onWall.z + inward.z * 0.01 + along.z * 0.07);
       m.raycast = () => {};
       root.add(m);
     }
@@ -408,7 +413,7 @@ function buildWorld(): World {
 
   // 가구. Kenney 가구 묶음(lobby3d-furniture)이 뜨기 전이나 불러오지 못했을 때 보이는 간단한 모양이고,
   // 묶음이 뜬 뒤에도 보이지 않는 채로 남아 장소·가구를 누르는 판정을 맡는다(three의 누르기 판정은 보이는지와 상관없다).
-  // 자리는 FURNITURE_LAYOUT과 같고, 크기는 Kenney 가구와 비슷하게 맞춘다.
+  // 자리는 지금 배치(currentFurnitureLayout)를 따르고, 크기는 Kenney 가구와 비슷하게 맞춘다.
   const furniture = new THREE.Group();
   root.add(furniture);
   const markObjects: World["markObjects"] = [];

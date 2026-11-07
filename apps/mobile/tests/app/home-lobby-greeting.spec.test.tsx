@@ -9,6 +9,8 @@
 // 작업 061의 12 결정(사용자 2026-11-07: 기본 말을 없애고 짧은 말·인사·장소 안내가 없으면 말풍선 없음, 인사 "그 밖"은 "또 왔네! 반가워."와 wave,
 // 인사를 거두면 다음에 홈에 들어올 때까지 말풍선 없음, "이어 쓰기" 버튼은 인사 말풍선에만)으로 기본 말을 기대하던 테스트를 고치고 G6·G7을 더했다.
 // 고친 테스트 이름에는 "(061-12 결정)"을 붙였다(E2·E3은 이름은 그대로, 거둔 뒤 기대만 말풍선 없음으로).
+// 작업 063 03 결정(사용자 2026-11-08) 1 "고치기"·2 "동작을 마친 뒤 인사"로 E5를 고쳤다: '들어가기' 뒤 판은 동작(약 1초)이 끝난 뒤 열리고,
+// 판을 연 채 돌아오면 판이 열려 있는 동안은 인사하지 않으며, 판을 닫고 제자리에 선 뒤 인사한다. 돌아온 뒤 인사의 단언(게시판 안내가 아니라 '오늘도 해냈어!'와 jump)은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -351,6 +353,19 @@ async function frames(seconds: number) {
       canvas().onFrame(0.05, Date.now());
     }
   });
+}
+
+/**
+ * 작업 063 03 결정 1: '들어가기'·판 닫기 뒤의 동작(약 1초)이 끝나 그 일이 일어날 때까지(최대 maxSeconds초) 0.05초씩 프레임을 진행한다.
+ * 동작 시간을 타이머로 재도 흐르게 타이머·시계를 함께 옮긴다. 이미 일어났으면 진행하지 않는다.
+ */
+async function waitMotion(done: () => boolean, maxSeconds = 2.5) {
+  for (let elapsed = 0; elapsed < maxSeconds && !done(); elapsed += 0.05) {
+    await act(async () => {
+      jest.advanceTimersByTime(50);
+      canvas().onFrame(0.05, Date.now());
+    });
+  }
 }
 
 async function framesUntil(maxSeconds: number, done: () => boolean) {
@@ -996,12 +1011,13 @@ describe("[spec] 홈에 들어올 때마다 인사(E1~E5)", () => {
     expect(actionType()).toBe("jump");
   });
 
-  it("E5: 게시판에 서서 질문 판으로 연습에 갔다가 마치고 돌아오면 게시판 안내가 아니라 '오늘도 해냈어!'와 jump", async () => {
+  it("E5(063 결정 2): 게시판에 서서 질문 판으로 연습에 갔다가 마치고 돌아오면, 판이 열려 있는 동안은 인사하지 않고, 판을 닫고 제자리에 선 뒤 게시판 안내가 아니라 '오늘도 해냈어!'와 jump", async () => {
     await renderHome();
     await tapMark("board");
     await walkUntilArrived("board");
     await fireEvent.press(screen.getByRole("button", { name: "들어가기" }));
     await flushAsync();
+    await waitMotion(() => screen.queryByText(featuredPrompt.questionEn) !== null);
     await fireEvent.press(screen.getByText(featuredPrompt.questionEn));
     expect(router.push).toHaveBeenCalledTimes(1);
     await frames(1);
@@ -1009,6 +1025,21 @@ describe("[spec] 홈에 들어올 때마다 인사(E1~E5)", () => {
     await setFocused(false);
     jest.mocked(getMobileHomeSnapshot).mockResolvedValue(snapshot({ ...DONE_TODAY, totalAnswerSessions: 6 }));
     await setFocused(true);
+
+    // 판이 열려 있는 동안(2초)은 인사 말도 jump도 없다
+    let greetedWhileOpen = false;
+    for (let index = 0; index < 40; index += 1) {
+      await waitMotion(() => false, 0.05);
+      if (actionType() === "jump" || screen.queryByText(DONE) !== null) greetedWhileOpen = true;
+    }
+    const sheets = screen.root!.queryAll(
+      (instance) => instance.type === "Modal" && instance.props.animationType === "slide" && instance.props.visible === true
+    );
+    expect({ greetedWhileOpen, openSheets: sheets.length }).toEqual({ greetedWhileOpen: false, openSheets: 1 });
+
+    await fireEvent.press(within(sheets[0]).getByRole("button", { name: "닫기" }));
+    await flushAsync();
+    await waitMotion(() => actionType() === "jump", 3);
 
     expect(screen.queryByText(BOARD_PROMPT)).toBeNull();
     expectBubble(DONE);

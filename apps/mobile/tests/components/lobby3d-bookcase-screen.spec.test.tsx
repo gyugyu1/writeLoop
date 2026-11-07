@@ -15,6 +15,7 @@
 // - "보이는지"는 061 화면 테스트(V5~V9)와 같이 Testing Library 기본 질의 기준(접근성에서 숨긴 말풍선은 보이지 않음)으로 본다.
 // - 개발 화면의 짧은 안내 글은 명세에 없어 글 내용은 보지 않고, 짧은 안내(alert)가 뜨고 다른 화면으로 가지 않는 것만 본다.
 //   다만 책장의 '들어가기'는 다른 장소처럼 그 장소의 들어갈 때 안내(enterMessage)가 뜨는지 본다.
+// 작업 063 03 결정 1(사용자 2026-11-08 "고치기"): '들어가기'를 누른 뒤의 확인을 동작(약 1초)이 끝난 뒤로 옮겼다(C3·C5·C8, waitEnterMotion). 단언은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { StyleSheet } from "react-native";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
@@ -191,6 +192,19 @@ async function frames(seconds: number) {
   }
 }
 
+/**
+ * 작업 063 03 결정 1: '들어가기'를 누른 뒤 같은 일이 동작(약 1초)이 끝난 뒤에 일어난다. 그 일이 일어날 때까지(최대 2.5초)
+ * 0.05초씩 프레임을 진행한다(타이머·시계도 함께). 이미 일어났으면 진행하지 않는다.
+ */
+async function waitEnterMotion(done: () => boolean) {
+  for (let elapsed = 0; elapsed < 2.5 && !done(); elapsed += 0.05) {
+    await act(async () => {
+      jest.advanceTimersByTime(50);
+      canvas().onFrame(0.05, Date.now());
+    });
+  }
+}
+
 async function tapFloor(point: FloorPoint) {
   await act(async () => {
     canvas().onPointer("down", { point, mark: null, onCharacter: false }, 200, 300);
@@ -359,6 +373,7 @@ describe("[spec] 작업 062 바뀔 동작: 책장도 다른 장소와 똑같이 
     expect(button).not.toBeNull();
     expect(textOf(button!)).toBe(BOOK_BUTTON);
     await fireEvent.press(button!);
+    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
     expect(onEnterMark).toHaveBeenCalledTimes(1);
     expect(onEnterMark).toHaveBeenCalledWith(book.id);
   });
@@ -409,6 +424,7 @@ describe("[spec] 작업 062 바뀔 동작: 책장도 다른 장소와 똑같이 
     const button = shownButton(book.id);
     expect(button).not.toBeNull();
     await fireEvent.press(button!);
+    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
     expect(onEnterMark).toHaveBeenCalledWith(book.id);
   });
 });
@@ -463,6 +479,7 @@ describe("[spec] 작업 062 바뀔 동작: 개발 화면(/dev/lobby-3d)에서는
     const button = shownButton(book.id);
     expect(button).not.toBeNull();
     await fireEvent.press(button!);
+    await waitEnterMotion(() => alerts().length > 0);
 
     const shown = alerts();
     expect(shown).toHaveLength(1);

@@ -6,6 +6,7 @@
 // 기록 화면으로 가는 방법(push·replace·navigate)은 명세에 없어 셋 다 모으고, 간 곳이 "/records" 한 번인지만 본다
 // (지금 연속 기록 칩은 push("/records"), 아래 탭바 "기록"은 replace("/records")).
 // 로그인하지 않았을 때 로그인으로 가는 것은 홈이 로그인 전에는 로비를 그리지 않고 /login으로 보내므로(home-lobby S2) 화면에서 볼 수 없다(02-qa-tests.md).
+// 작업 063 03 결정 1(사용자 2026-11-08 "고치기"): H2의 '들어가기' 뒤 확인을 동작(약 1초)이 끝난 뒤로 옮겼다(waitEnterMotion). 단언은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -203,6 +204,19 @@ async function frames(count: number) {
   }
 }
 
+/**
+ * 작업 063 03 결정 1: '들어가기'를 누른 뒤 같은 일이 동작(약 1초)이 끝난 뒤에 일어난다. 그 일이 일어날 때까지(최대 2.5초)
+ * 0.05초씩 프레임을 진행한다(타이머·시계도 함께). 이미 일어났으면 진행하지 않는다.
+ */
+async function waitEnterMotion(done: () => boolean) {
+  for (let elapsed = 0; elapsed < 2.5 && !done(); elapsed += 0.05) {
+    await act(async () => {
+      jest.advanceTimersByTime(50);
+      canvas().onFrame(0.05, Date.now());
+    });
+  }
+}
+
 async function tapMark(mark: MarkId) {
   await act(async () => {
     canvas().onPointer("down", { point: null, mark, onCharacter: false }, 200, 300);
@@ -294,6 +308,7 @@ describe("[spec] 작업 062 바뀔 동작: 책장의 '들어가기'와 '학습 �
 
     await fireEvent.press(within(bubbleOf(BOOK_PROMPT)).getByRole("button", { name: BOOK_BUTTON }));
     await flushAsync();
+    await waitEnterMotion(() => navigatedTo().length > 0);
 
     expect(navigatedTo()).toEqual(["/records"]);
     expect(openSheets()).toEqual([]);

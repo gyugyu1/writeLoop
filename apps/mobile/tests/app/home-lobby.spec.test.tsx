@@ -10,6 +10,7 @@
 // 잡아 장소를 누르고 프레임을 진행한다. 가짜 시계: 2026-11-12T03:00:00Z = 서울 2026-11-12(목) 12:00.
 // 060-10(③ 학습 상태에 따른 말과 동작)의 03-main-decision.md(사용자 결정 2026-11-07 "③ 명세대로 고치기")에 따라 S3, S22 a~g의 말풍선 글만
 // 기본 말에서 들어올 때의 인사 말로 바꿨다(기본 데이터는 오늘 완료라 "오늘도 해냈어!", 이어 쓰기 상태가 있으면 이어 쓰기 인사). 나머지 확인은 그대로다.
+// 작업 063 03 결정 1(사용자 2026-11-08 "고치기"): S13 a·b·c의 '들어가기' 뒤 확인을 동작(약 1초)이 끝난 뒤로 옮겼다(waitEnterMotion). 단언은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -437,6 +438,19 @@ async function tapMark(mark: MarkId) {
   });
 }
 
+/**
+ * 작업 063 03 결정 1: '들어가기'를 누른 뒤 같은 일이 동작(약 1초)이 끝난 뒤에 일어난다. 그 일이 일어날 때까지(최대 2.5초)
+ * 0.05초씩 프레임을 진행한다(타이머·시계도 함께). 이미 일어났으면 진행하지 않는다.
+ */
+async function waitEnterMotion(done: () => boolean) {
+  for (let elapsed = 0; elapsed < 2.5 && !done(); elapsed += 0.05) {
+    await act(async () => {
+      jest.advanceTimersByTime(50);
+      canvas().onFrame(0.05, Date.now());
+    });
+  }
+}
+
 async function walkUntilArrived(mark: MarkId) {
   for (let index = 0; index < 400 && canvas().sim.arrived !== mark; index += 1) {
     await frames(1);
@@ -762,6 +776,7 @@ describe("[spec] 메뉴와 장소(S10~S14)", () => {
 
     await fireEvent.press(screen.getByRole("button", { name: "들어가기" }));
     await flushAsync();
+    await waitEnterMotion(() => openSheets().length > 0);
 
     expect(openSheets()).toEqual([kind]);
     expect(router.push).not.toHaveBeenCalled();

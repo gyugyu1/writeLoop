@@ -12,6 +12,7 @@
 //   구역 경계(1칸) 근처는 보지 않는다(안: 구역에서 0.95칸 안, 밖: 모든 구역에서 1.05칸 밖).
 // - 061-13 결정(끄는 중에도 안내·메뉴 강조가 바로 바뀌고 다른 장소 글은 보이지 않음, 게시판·창가 구역은 벽 위의 점까지 잇는 선에서 1칸 안)으로
 //   바뀔 동작: V8, V9. V5~V9의 "보이는지"는 아래 061-10 머리말 참고. V1~V4는 찾는 법을 바꾸지 않았다(14 보고 참고).
+// 작업 063 03 결정 1(사용자 2026-11-08 "고치기"): '들어가기'를 누른 뒤의 확인을 동작(약 1초)이 끝난 뒤로 옮겼다(V2·V4·V6·V7·V8, waitEnterMotion). 단언은 그대로다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import type { Lobby3dCanvasProps } from "@/components/lobby3d/lobby3d-canvas";
@@ -112,6 +113,19 @@ async function frames(seconds: number) {
   }
 }
 
+/**
+ * 작업 063 03 결정 1: '들어가기'를 누른 뒤 같은 일이 동작(약 1초)이 끝난 뒤에 일어난다. 그 일이 일어날 때까지(최대 2.5초)
+ * 0.05초씩 프레임을 진행한다(타이머·시계도 함께). 이미 일어났으면 진행하지 않는다.
+ */
+async function waitEnterMotion(done: () => boolean) {
+  for (let elapsed = 0; elapsed < 2.5 && !done(); elapsed += 0.05) {
+    await act(async () => {
+      jest.advanceTimersByTime(50);
+      canvas().onFrame(0.05, Date.now());
+    });
+  }
+}
+
 async function tapFloor(point: FloorPoint) {
   await act(async () => {
     canvas().onPointer("down", { point, mark: null, onCharacter: false }, 200, 300);
@@ -202,6 +216,7 @@ describe("[spec] 작업 061 바뀔 동작: 구역 안에서 멈추면 장소 안
 
     await walkToFloor(INSIDE[mark]);
     await fireEvent.press(within(bubbleOf(PROMPTS[mark])).getByRole("button", { name: BUTTONS[mark] }));
+    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
 
     expect(onEnterMark).toHaveBeenCalledTimes(1);
     expect(onEnterMark).toHaveBeenCalledWith(mark);
@@ -219,6 +234,7 @@ describe("[spec] 작업 061 그대로 둘 동작: 가구·이름표를 누르면
     const lit = MENU_LABEL[mark];
     expect(selectedMenus()).toEqual(lit ? [lit] : []);
     await fireEvent.press(within(bubbleOf(PROMPTS[mark])).getByRole("button", { name: BUTTONS[mark] }));
+    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
     expect(onEnterMark).toHaveBeenCalledTimes(1);
     expect(onEnterMark).toHaveBeenCalledWith(mark);
   });
@@ -407,6 +423,7 @@ describe("[spec] 작업 061 10 결정(바뀔 동작): 구역 안에 있기만 �
     const button = shownButton(mark);
     expect(button).not.toBeNull();
     await fireEvent.press(button!);
+    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
 
     expect(onEnterMark).toHaveBeenCalledTimes(1);
     expect(onEnterMark).toHaveBeenCalledWith(mark);
@@ -435,6 +452,7 @@ describe("[spec] 작업 061 10 결정(바뀔 동작): 구역 안에 있기만 �
     const button = shownButton("desk");
     expect(button).not.toBeNull();
     await fireEvent.press(button!);
+    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
     expect(onEnterMark).toHaveBeenCalledTimes(1);
     expect(onEnterMark).toHaveBeenCalledWith("desk");
   });
@@ -469,6 +487,7 @@ describe("[spec] 작업 061 13 결정(바뀔 동작): 손을 떼지 않고 끄�
     const button = shownButton("window");
     expect(button).not.toBeNull();
     await fireEvent.press(button!);
+    await waitEnterMotion(() => onEnterMark.mock.calls.length > 0);
     expect(onEnterMark).toHaveBeenCalledTimes(1);
     expect(onEnterMark).toHaveBeenCalledWith("window");
   });

@@ -42,6 +42,11 @@ const BOOK_BUTTON = "들어가기";
 const BOOKCASE_SPOT = { x: 0.44, z: 2.5 };
 /** 지금 도착했을 때 바라보는 정도(작업 058 S23과 같은 허용치). */
 const FACE_TOLERANCE = 0.15;
+/**
+ * 오래 걸리는 테스트의 시간 제한(062 08 결정: 단언과 입력은 그대로 두고 시간 제한만 늘림). 바닥 격자에서 자리를 찾거나 격자 전체를 보는 테스트는
+ * 따로 돌려도 1~4초 걸려, 모바일 테스트 전체와 함께 돌리면 Jest 기본 5초를 넘을 수 있다.
+ */
+const SLOW_TEST_MS = 20_000;
 
 /** 다른 네 장소의 구역(061 명세 1·03·13 결정): 가운데, 벽에 붙은 장소는 벽 위의 점까지. */
 const OLD_ZONE: Record<"board" | "window" | "desk" | "door", { center: FloorPoint; wall: FloorPoint | null }> = {
@@ -370,7 +375,7 @@ describe("[spec] 작업 062 바뀔 동작: 책장도 다른 장소와 똑같이 
       bubbleButton: BOOK_BUTTON,
       enterMessage: book.enterMessage
     });
-  });
+  }, SLOW_TEST_MS);
 
   it("B7: 책장 구역은 벽까지 이어진다. 서는 자리 가운데에서 1.1칸 넘게 떨어진 벽 쪽 자리라도 벽까지 잇는 선에서 0.9칸 안이면, 바닥을 눌러 멈췄을 때 책장 안내와 버튼이 나온다", () => {
     const book = bookcase();
@@ -387,7 +392,7 @@ describe("[spec] 작업 062 바뀔 동작: 책장도 다른 장소와 똑같이 
       bubbleText: BOOK_PROMPT,
       bubbleButton: BOOK_BUTTON
     });
-  });
+  }, SLOW_TEST_MS);
 
   it("B8: 책장을 눌러 걸어가는 동안, 책장 구역에 들어서면 걷는 중에도 책장 안내와 버튼이 보이고, 구역 밖에서는 말풍선이 숨는다(다른 구역을 지나면 그 장소 안내)", () => {
     const book = bookcase();
@@ -442,7 +447,7 @@ describe("[spec] 작업 062 바뀔 동작: 게시판·책장 구역이 겹치는
     const book = bookZone();
     const shared = floorGrid().filter((p) => isFree(p.x, p.z) && distOf(p, "board") < 0.95 && distOf(p, book.id) < 0.95);
     expect(shared.length).toBeGreaterThan(0);
-  });
+  }, SLOW_TEST_MS);
 
   it("B11: 겹치는 곳에서 장소 판정(markZoneAt)은 구역 모양까지의 거리가 더 가까운 장소이고, 책장 구역에만 드는 곳은 책장이다", () => {
     const book = bookZone();
@@ -468,7 +473,7 @@ describe("[spec] 작업 062 바뀔 동작: 게시판·책장 구역이 겹치는
     expect(overlapCount).toBeGreaterThan(0);
     expect(bookOnlyCount).toBeGreaterThan(0);
     expect({ count: wrong.length, first: wrong.slice(0, 8) }).toEqual({ count: 0, first: [] });
-  });
+  }, SLOW_TEST_MS);
 
   const NEARER: ["board" | "book"][] = [["board"], ["book"]];
 
@@ -489,7 +494,7 @@ describe("[spec] 작업 062 바뀔 동작: 게시판·책장 구역이 겹치는
       bubbleButton: MARKS[id].buttonLabel,
       enterMessage: MARKS[id].enterMessage
     });
-  });
+  }, SLOW_TEST_MS);
 
   it("B12 이동: 게시판 서는 자리에서 책장 구역 안 자리로 걸어가는 동안, 프레임마다 더 가까운 장소의 안내가 보인다(겹치는 곳 포함)", () => {
     const book = bookcase();
@@ -513,7 +518,7 @@ describe("[spec] 작업 062 바뀔 동작: 게시판·책장 구역이 겹치는
 
     expect(frame.movingIn[book.id] ?? 0).toBeGreaterThan(0);
     expect(frame.problems).toEqual([]);
-  });
+  }, SLOW_TEST_MS);
 });
 
 // ---------- 그대로 둘 동작 ----------

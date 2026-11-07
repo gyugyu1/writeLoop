@@ -73,6 +73,11 @@ const OLD_ZONE: Record<"board" | "window" | "desk" | "door", { center: FloorPoin
 };
 
 const NOW = new Date("2026-11-12T03:00:00.000Z");
+/**
+ * 오래 걸리는 테스트의 시간 제한(062 08 결정: 단언과 입력은 그대로 두고 시간 제한만 늘림). 바닥 격자에서 자리를 찾거나 격자 전체를 보는 테스트는
+ * 따로 돌려도 1~4초 걸려, 모바일 테스트 전체와 함께 돌리면 Jest 기본 5초를 넘을 수 있다.
+ */
+const SLOW_TEST_MS = 20_000;
 
 // ---------- 도우미 ----------
 
@@ -367,7 +372,7 @@ describe("[spec] 작업 062 바뀔 동작: 책장도 다른 장소와 똑같이 
     expect(shownPrompts()).toEqual([book.id]);
     expect(shownButton(book.id)).not.toBeNull();
     expect(selectedMenus()).toEqual([BOOK_LABEL]);
-  });
+  }, SLOW_TEST_MS);
 
   it("C5: 책장 쪽으로 손을 떼지 않고 끄는 동안, 구역 밖에서는 말풍선·강조가 없고, 책장 구역에 들어서면 책장 안내·버튼이 보이고 '학습 기록'만 강조된다", async () => {
     const book = bookcase();
@@ -419,7 +424,7 @@ describe("[spec] 작업 062 바뀔 동작: 게시판·책장 구역이 겹치는
     await walkToFloor(overlapPoint(nearer));
 
     expect({ prompts: shownPrompts(), menus: selectedMenus() }).toEqual({ prompts: [id], menus: [menuFor(id)] });
-  });
+  }, SLOW_TEST_MS);
 });
 
 describe("[spec] 작업 062 바뀔 동작: 개발 화면(/dev/lobby-3d)에서는 다른 장소·메뉴처럼 짧은 안내만 뜬다(명세 3)", () => {

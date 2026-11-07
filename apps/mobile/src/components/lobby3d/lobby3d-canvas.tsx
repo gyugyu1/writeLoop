@@ -6,7 +6,9 @@ import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 import { LobbySim, MARKS, ROOM, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import { FURNITURE_LAYOUT, type FurniturePiece } from "@/lib/lobby3d/furniture-layout";
 import { Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
+import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
 import { BakedRoom, BakedRoomErrorBoundary } from "./lobby3d-room";
 
 // 3D 로비 그리기. 동작 규칙은 LobbySim(화면이 가진다)에 있고, 여기서는 매 프레임 그 상태를 그림으로 옮긴다.
@@ -246,6 +248,40 @@ function blobTexture(): THREE.DataTexture {
   return texture;
 }
 
+// 모서리가 둥근 네모 그림자. 가운데 60%는 고르게 진하고, 바깥 40%에서 옅어진다(네모난 가구 밑과 벽에 건 것 뒤에 쓴다).
+function softRectTexture(): THREE.DataTexture {
+  const size = 64;
+  const data = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const u = Math.abs((x + 0.5) / size - 0.5) * 2;
+      const v = Math.abs((y + 0.5) / size - 0.5) * 2;
+      const r = Math.hypot(Math.max(0, u - 0.6), Math.max(0, v - 0.6)) / 0.4;
+      const a = Math.max(0, 1 - r);
+      data.set([255, 255, 255, Math.round(255 * a * a * (3 - 2 * a))], (y * size + x) * 4);
+    }
+  }
+  const texture = rgbaTexture(data, size, size, false);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  return texture;
+}
+
+/**
+ * 가구마다 까는 옅은 그림자(실시간 아님). floor는 바닥에 닿은 넓이(가구 앞면 기준 가로·깊이), wall은 벽에 건 것 뒤 벽에 비치는 넓이(가로·세로)다.
+ * 빛이 앞쪽 왼편 위에서 오므로 벽 그림자는 오른쪽 아래로 조금 비껴 둔다.
+ */
+const FURNITURE_SHADOW: Partial<Record<FurniturePiece, { floor?: [number, number, number]; wall?: [number, number, number] }>> = {
+  board: { wall: [2.0, 1.6, 0.3] },
+  window: { wall: [2.55, 2.15, 0.3] },
+  door: { floor: [1.7, 0.6, 0.35], wall: [1.6, 3.0, 0.24] },
+  desk: { floor: [2.8, 1.65, 0.5] },
+  chair: { floor: [0.75, 0.75, 0.42] },
+  bookcase: { floor: [1.4, 1.2, 0.52] },
+  wardrobe: { floor: [1.4, 1.2, 0.52] },
+  lamp: { floor: [0.7, 0.7, 0.4] }
+};
+
 /**
  * 구석 어둠을 꼭짓점 색으로 굽는다(조명은 그대로라 라룹이 명암이 바뀌지 않는다).
  * 바닥·뒷벽·양옆 벽에 가까울수록 어둡고, 벽은 위로 갈수록 조금 밝다. 자기가 붙은 면(거리 0 이하)은 빼고 계산한다.
@@ -279,6 +315,8 @@ interface World {
   shell: THREE.Group;
   /** 장소가 아닌 가구. 누르면 움직이지 않는다. */
   blockers: THREE.Object3D[];
+  /** 코드로 만든 대체 가구. Kenney 가구 묶음(lobby3d-furniture)이 뜨면 숨기지만, 보이지 않는 채로 누르기 판정을 맡는다. */
+  furniture: THREE.Group;
 }
 
 function buildWorld(): World {
@@ -287,7 +325,7 @@ function buildWorld(): World {
   const W = ROOM.width;
   const H = ROOM.wallHeight;
 
-  // 앞이 트인 상자 같은 방(디오라마): 바닥, 뒷벽, 양옆 벽(두께와 윗면), 걸레받이, 옆벽 창문, 앞 가운데 입구 발판. 그 밖은 검정.
+  // 앞이 트인 상자 같은 방(디오라마): 바닥, 뒷벽, 양옆 벽(두께와 윗면), 걸레받이, 앞 가운데 입구 발판. 그 밖은 검정.
   // 바닥과 벽은 꼭짓점 색으로 구석 어둠을 굽기 위해 잘게 나누고, 모양을 월드 좌표로 옮겨 둔다.
   const D = ROOM.depth;
   const T = ROOM.wallThickness;
@@ -322,117 +360,119 @@ function buildWorld(): World {
   // 걸레받이
   kit.part(new RoundedBoxGeometry(W, 0.2, 0.06, 2, 0.02), 0xb57a45, 0, shell).position.set(W / 2, 0.1, 0.03);
   for (const bx of [0.03, W - 0.03]) kit.part(new RoundedBoxGeometry(0.06, 0.2, D, 2, 0.02), 0xb57a45, 0, shell).position.set(bx, 0.1, D / 2);
-  // 옆벽 창문(나무 틀 + 하늘색 유리)
-  for (const [wx, face] of [[0.005, 1], [W - 0.005, -1]] as const) {
-    const win = new THREE.Group();
-    kit.part(new RoundedBoxGeometry(0.08, 1.3, 1.0, 2, 0.03), 0xb57a45, 0, win);
-    kit.part(new THREE.BoxGeometry(0.02, 1.1, 0.8), 0xbfe4fa, 0, win).position.x = face * 0.035;
-    kit.part(new THREE.BoxGeometry(0.03, 1.1, 0.05), 0xb57a45, 0, win).position.x = face * 0.045;
-    win.position.set(wx, 1.8, D * 0.45);
-    root.add(win);
-  }
   // 앞 가운데 입구 발판(바닥보다 조금 낮다)
   kit.part(new RoundedBoxGeometry(2.0, 0.16, ROOM.stepDepth, 2, 0.04), 0x8a5a3b, 0, shell).position.set(W / 2, -0.14, D + ROOM.stepDepth / 2);
 
-  // 가구 밑의 부드러운 그림자
+  // 가구 밑과 벽에 건 것 뒤의 옅은 그림자, 라룹이 발밑 그림자
   const blob = blobTexture();
-  const blobAt = (x: number, z: number, w: number, d: number, opacity: number) => {
-    const m = new THREE.Mesh(
-      new THREE.PlaneGeometry(w, d),
-      new THREE.MeshBasicMaterial({ map: blob, color: 0x3a2214, transparent: true, opacity, depthWrite: false })
-    );
-    m.rotation.x = -Math.PI / 2;
-    m.position.set(x, 0.006, z);
-    m.raycast = () => {};
-    root.add(m);
-  };
-  blobAt(1.15, 5.5, 2.4, 1.7, 0.4);
-  blobAt(4.8, 0.55, 2.3, 1.3, 0.4);
-  blobAt(7.4, 3.6, 1.1, 1.1, 0.45);
-
-  const markObjects: World["markObjects"] = [];
-  const tagMark = (id: MarkId, object: THREE.Object3D) => {
-    object.traverse((o) => {
-      o.userData.mark = id;
-    });
-    markObjects.push({ id, object });
-  };
-
-  // 질문 게시판
-  const board = new THREE.Group();
-  kit.part(new RoundedBoxGeometry(1.7, 1.35, 0.14, 3, 0.05), 0x8a5a3b, 0.03, board);
-  kit.part(new THREE.BoxGeometry(1.45, 1.1, 0.06), 0xd9a866, 0, board).position.z = 0.06;
-  const n1 = kit.part(new THREE.BoxGeometry(0.42, 0.38, 0.02), 0xffffff, 0.012, board);
-  n1.position.set(-0.35, -0.08, 0.1);
-  n1.rotation.z = -0.1;
-  const n2 = kit.part(new THREE.BoxGeometry(0.48, 0.42, 0.02), 0xfff3a8, 0.012, board);
-  n2.position.set(0.32, -0.12, 0.1);
-  n2.rotation.z = 0.08;
-  board.position.set(1.8, 1.75, 0.08);
-  root.add(board);
-  tagMark("board", board);
-
-  // 생각 창가(창문 + 창가 의자)
-  const win = new THREE.Group();
-  kit.part(new RoundedBoxGeometry(1.7, 1.6, 0.12, 3, 0.05), 0xffffff, 0.03, win);
-  kit.part(new THREE.BoxGeometry(1.4, 1.3, 0.04), 0xbfe4fa, 0, win).position.z = 0.05;
-  kit.part(new THREE.BoxGeometry(0.08, 1.3, 0.05), 0xffffff, 0, win).position.z = 0.08;
-  kit.part(new THREE.BoxGeometry(1.4, 0.08, 0.05), 0xffffff, 0, win).position.z = 0.08;
-  win.position.set(4.8, 1.95, 0.07);
-  root.add(win);
-  const seat = new THREE.Group();
-  kit.part(new RoundedBoxGeometry(1.7, 0.45, 0.8, 3, 0.06), 0xb9824f, 0.03, seat).position.y = 0.23;
-  kit.part(new RoundedBoxGeometry(1.55, 0.18, 0.7, 3, 0.07), 0x7fb3e6, 0.025, seat).position.y = 0.53;
-  seat.position.set(4.8, 0, 0.45);
-  root.add(seat);
-  tagMark("window", win);
-  tagMark("window", seat);
-
-  // 문
-  const door = new THREE.Group();
-  kit.part(new RoundedBoxGeometry(1.1, 2.1, 0.12, 3, 0.08), 0x8a5a3b, 0.03, door);
-  kit.part(new THREE.SphereGeometry(0.07, 12, 10), 0xffc23d, 0.015, door).position.set(0.36, -0.05, 0.1);
-  door.position.set(7.0, 1.05, 0.07);
-  root.add(door);
-  tagMark("door", door);
-
-  // 일기 책상
-  const desk = new THREE.Group();
-  kit.part(new RoundedBoxGeometry(1.7, 0.14, 1.0, 3, 0.04), 0xb9824f, 0.03, desk).position.y = 0.78;
-  for (const [lx, lz] of [[-0.72, -0.38], [0.72, -0.38], [-0.72, 0.38], [0.72, 0.38]]) {
-    kit.part(new THREE.BoxGeometry(0.1, 0.72, 0.1), 0x8a5a3b, 0.02, desk).position.set(lx, 0.36, lz);
+  const softRect = softRectTexture();
+  for (const place of FURNITURE_LAYOUT) {
+    const shade = FURNITURE_SHADOW[place.piece];
+    if (!shade) continue;
+    if (shade.floor) {
+      const [w, d, opacity] = shade.floor;
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(w, d),
+        new THREE.MeshBasicMaterial({ map: softRect, color: 0x3a2214, transparent: true, opacity, depthWrite: false })
+      );
+      m.rotation.set(-Math.PI / 2, place.rotY, 0, "YXZ");
+      m.position.set(place.x, 0.006, place.z);
+      m.raycast = () => {};
+      root.add(m);
+    }
+    if (shade.wall) {
+      // 벽에 건 것(모두 뒷벽)은 뒷벽 안쪽 면(z = 0) 바로 앞에 둔다
+      const [w, h, opacity] = shade.wall;
+      const m = new THREE.Mesh(
+        new THREE.PlaneGeometry(w, h),
+        new THREE.MeshBasicMaterial({ map: softRect, color: 0x3a2214, transparent: true, opacity, depthWrite: false })
+      );
+      const centerY = place.piece === "door" ? 1.42 : place.y;
+      m.position.set(place.x + 0.07, centerY - 0.1, 0.01);
+      m.raycast = () => {};
+      root.add(m);
+    }
   }
-  const note = kit.part(new THREE.BoxGeometry(0.7, 0.05, 0.5), 0xffffff, 0.015, desk);
-  note.position.set(-0.1, 0.88, 0.05);
-  note.rotation.y = 0.15;
-  const pencil = kit.part(new THREE.CylinderGeometry(0.025, 0.025, 0.5, 8), 0xffc23d, 0.01, desk);
-  pencil.rotation.set(0, -0.5, Math.PI / 2);
-  pencil.position.set(0.45, 0.88, 0.1);
-  desk.position.set(1.15, 0, 5.5);
-  root.add(desk);
-  tagMark("desk", desk);
 
-  // 러그, 화분
-  kit.part(new THREE.CylinderGeometry(1.45, 1.45, 0.03, 40), 0x9cc8e8, 0, root).position.set(4.6, 0.015, 7.2);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(1.05, 1.13, 40), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 }));
-  ring.rotation.x = -Math.PI / 2;
-  ring.position.set(4.6, 0.035, 7.2);
-  root.add(ring);
-  const plant = new THREE.Group();
-  kit.part(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 16), 0xe36a00, 0.025, plant).position.y = 0.25;
-  kit.part(new THREE.SphereGeometry(0.42, 16, 12), 0x4e9f5a, 0.03, plant).position.y = 0.85;
-  kit.part(new THREE.SphereGeometry(0.3, 14, 10), 0x5db06a, 0.025, plant).position.set(0.22, 1.1, 0.1);
-  plant.position.set(7.4, 0, 3.6);
-  plant.traverse((o) => {
-    o.userData.blocker = true;
-  });
-  root.add(plant);
+  // 가구. Kenney 가구 묶음(lobby3d-furniture)이 뜨기 전이나 불러오지 못했을 때 보이는 간단한 모양이고,
+  // 묶음이 뜬 뒤에도 보이지 않는 채로 남아 장소·가구를 누르는 판정을 맡는다(three의 누르기 판정은 보이는지와 상관없다).
+  // 자리는 FURNITURE_LAYOUT과 같고, 크기는 Kenney 가구와 비슷하게 맞춘다.
+  const furniture = new THREE.Group();
+  root.add(furniture);
+  const markObjects: World["markObjects"] = [];
+  const blockers: THREE.Object3D[] = [];
+  const makePiece = (piece: FurniturePiece): THREE.Group => {
+    const g = new THREE.Group();
+    switch (piece) {
+      case "board":
+        kit.part(new RoundedBoxGeometry(1.6, 1.25, 0.08, 3, 0.03), 0xe39a64, 0.03, g);
+        kit.part(new THREE.BoxGeometry(1.42, 1.07, 0.04), 0xc78c52, 0, g).position.z = 0.03;
+        kit.part(new THREE.BoxGeometry(0.4, 0.37, 0.02), 0xffffff, 0.012, g).position.set(-0.3, 0, 0.06);
+        kit.part(new THREE.BoxGeometry(0.45, 0.4, 0.02), 0xffeb73, 0.012, g).position.set(0.3, -0.07, 0.06);
+        break;
+      case "window":
+        kit.part(new RoundedBoxGeometry(2.15, 1.8, 0.12, 2, 0.03), 0xe39a64, 0.03, g);
+        kit.part(new THREE.BoxGeometry(1.95, 1.6, 0.04), 0x9fcde6, 0, g).position.z = 0.05;
+        kit.part(new THREE.BoxGeometry(1.95, 0.06, 0.05), 0xe39a64, 0, g).position.z = 0.08;
+        kit.part(new THREE.BoxGeometry(0.06, 1.6, 0.05), 0xe39a64, 0, g).position.z = 0.08;
+        break;
+      case "door":
+        kit.part(new RoundedBoxGeometry(1.21, 2.52, 0.12, 3, 0.04), 0xe39a64, 0.03, g).position.y = 1.26;
+        kit.part(new THREE.SphereGeometry(0.06, 12, 10), 0xbdd2d6, 0.015, g).position.set(0.42, 1.2, 0.08);
+        break;
+      case "desk":
+        kit.part(new RoundedBoxGeometry(1.84, 0.1, 0.98, 3, 0.03), 0xe39a64, 0.03, g).position.y = 0.91;
+        for (const [lx, lz] of [[-0.85, -0.42], [0.85, -0.42], [-0.85, 0.42], [0.85, 0.42]]) {
+          kit.part(new THREE.BoxGeometry(0.08, 0.86, 0.08), 0xc78c52, 0.02, g).position.set(lx, 0.43, lz);
+        }
+        break;
+      case "chair":
+        kit.part(new THREE.BoxGeometry(0.5, 0.08, 0.5), 0xe39a64, 0.02, g).position.y = 0.55;
+        kit.part(new THREE.BoxGeometry(0.5, 0.6, 0.06), 0xe39a64, 0.02, g).position.set(0, 0.88, -0.22);
+        break;
+      case "bookcase":
+      case "wardrobe":
+        kit.part(new RoundedBoxGeometry(1.0, 2.15, 0.62, 3, 0.04), 0xe39a64, 0.03, g).position.y = 1.08;
+        break;
+      case "lamp":
+        kit.part(new THREE.CylinderGeometry(0.03, 0.03, 1.8, 8), 0xbdd2d6, 0.01, g).position.y = 0.9;
+        kit.part(new THREE.CylinderGeometry(0.15, 0.2, 0.35, 16), 0xffe996, 0.02, g).position.y = 1.95;
+        break;
+      case "rug":
+        kit.part(new THREE.CylinderGeometry(1.15, 1.15, 0.02, 40), 0xef6157, 0, g).position.y = 0.01;
+        break;
+    }
+    return g;
+  };
+  for (const place of FURNITURE_LAYOUT) {
+    const g = makePiece(place.piece);
+    // 대체 모양은 Kenney 2.5배 크기로 지었다. 창문 말고는 가구 묶음(Kenney 2.8배, 책상은 그 1.2배, 옷장·책장은 깊이 1.25배)에 맞춰 키운다.
+    if (place.piece !== "window") g.scale.setScalar(2.8 / 2.5);
+    if (place.piece === "desk") g.scale.multiplyScalar(1.2);
+    if (place.piece === "bookcase" || place.piece === "wardrobe") g.scale.z *= 1.25;
+    g.position.set(place.x, place.y, place.z);
+    g.rotation.y = place.rotY;
+    furniture.add(g);
+    if (place.mark) {
+      const id = place.mark;
+      g.traverse((o) => {
+        o.userData.mark = id;
+      });
+      markObjects.push({ id, object: g });
+    }
+    if (place.blocker) {
+      g.traverse((o) => {
+        o.userData.blocker = true;
+      });
+      blockers.push(g);
+    }
+  }
 
   const labelPoints: Record<MarkId, THREE.Vector3> = {
-    board: new THREE.Vector3(1.8, 2.65, 0.3),
-    window: new THREE.Vector3(4.8, 2.95, 0.3),
-    door: new THREE.Vector3(7.0, 2.55, 0.3),
-    desk: new THREE.Vector3(1.15, 1.9, 5.5)
+    board: new THREE.Vector3(1.8, 2.75, 0.3),
+    window: new THREE.Vector3(4.8, 3.05, 0.3),
+    door: new THREE.Vector3(7.0, 3.1, 0.3),
+    desk: new THREE.Vector3(1.25, 2.1, 5.5)
   };
 
   root.add(new THREE.AmbientLight(0xffffff, 1.35));
@@ -441,14 +481,14 @@ function buildWorld(): World {
   root.add(sun);
 
   const shadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.15, 1.15),
+    new THREE.PlaneGeometry(1.15 * 0.8, 1.15 * 0.8),
     new THREE.MeshBasicMaterial({ map: blob, color: 0x2b1810, transparent: true, opacity: 0.38, depthWrite: false })
   );
   shadow.rotation.x = -Math.PI / 2;
   shadow.position.y = 0.01;
   root.add(shadow);
 
-  return { root, kit, shadow, markObjects, blockers: [plant], labelPoints, floor, shell };
+  return { root, kit, shadow, markObjects, blockers, labelPoints, floor, shell, furniture };
 }
 
 // ---------- 장면 ----------
@@ -572,6 +612,11 @@ function Scene({
       {/* react-three-fiber의 three 객체 속성(object)이라 RN 린트 규칙이 모르는 속성으로 본다. */}
       {/* eslint-disable-next-line react/no-unknown-property */}
       <primitive object={world.root} />
+      <BakedFurnitureErrorBoundary>
+        <Suspense fallback={null}>
+          <BakedFurniture fallback={world.furniture} outline={toon.outline} />
+        </Suspense>
+      </BakedFurnitureErrorBoundary>
       <BakedRoomErrorBoundary>
         <Suspense fallback={null}>
           <BakedRoom fallback={world.shell} />

@@ -10,13 +10,14 @@ import type { LobbySim } from "@/lib/lobby3d/engine";
 // 로비의 라이트루프 3D 모델(규격: docs/guides/character-3d-model-spec.ko.md).
 // 모델은 키 1, 앞쪽 +Z이고 동작 클립을 담고 있다. 어떤 클립을 얼마나 섞을지는 character-clips가 정하고, 여기서는 그대로 재생한다.
 
-/** 도형 캐릭터(키 약 2.27 × 1.25)와 같은 화면 키가 되게 키 1인 모델을 키우는 배율. */
-export const MODEL_SCALE = 2.27 * 1.25;
+/** 키 1인 모델을 키우는 배율. 도형 캐릭터 때 키(약 2.27 × 1.25)의 0.8이다(가구와 어울리게 줄임). */
+const SIZE = 0.8;
+export const MODEL_SCALE = 2.27 * 1.25 * SIZE;
 const LINE = 0x3d1b0f;
 /** 외곽선 껍질을 부풀리는 거리(키 1 기준). 설정의 외곽선 굵기 배율을 곱한다. */
 const OUTLINE_THICKNESS = 0.012;
-/** 말풍선 꼬리가 닿을 높이(바닥에서). 도형 캐릭터 때와 같다. 몸이 들리면 머리를 따라 올라간다. */
-const BUBBLE_HEIGHT = 3.2;
+/** 말풍선 꼬리가 닿을 높이(바닥에서). 모델 키에 맞춰 도형 캐릭터 때(3.2)에 SIZE를 곱한다. 몸이 들리면 머리를 따라 올라간다. */
+const BUBBLE_HEIGHT = 3.2 * SIZE;
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const MODEL_ASSET = require("../../../assets/models/writeloop.glb");
@@ -30,7 +31,7 @@ export interface CharacterHandle {
   bubblePoint(): THREE.Vector3;
 }
 
-interface OutlineUniforms {
+export interface OutlineUniforms {
   thickness: { value: number };
   scale: { value: number };
 }
@@ -39,7 +40,7 @@ interface OutlineUniforms {
  * 외곽선 재질. 모델에 구워 넣은 방향(_outline_normal)으로 부풀리고, 구워 넣은 거리(_outline_bias)만큼 카메라에서 뒤로 민다.
  * 속성이 없는 모델이면 꼭짓점 법선과 고정 거리로 대신한다(outline-attributes).
  */
-function outlineMaterial(uniforms: OutlineUniforms, choice: OutlineAttributeChoice): THREE.MeshBasicMaterial {
+export function outlineMaterial(uniforms: OutlineUniforms, choice: OutlineAttributeChoice): THREE.MeshBasicMaterial {
   const material = new THREE.MeshBasicMaterial({ color: LINE, side: THREE.BackSide });
   const direction = choice.direction;
   const bias = choice.bias.source === "attribute" ? choice.bias.attribute : `${choice.bias.value.toFixed(4)}`;
@@ -124,9 +125,9 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
     }
     // 누르기 판정용 보이지 않는 통. 라룹이와 함께 움직이고 돈다. 점프로 몸이 들려도 귀 끝까지 들게 키보다 조금 높다.
     // (Raycaster는 보이지 않는 물체도 맞힌다.)
-    const hit = new THREE.Mesh(new THREE.CapsuleGeometry(0.75, 1.9, 4, 12), new THREE.MeshBasicMaterial());
+    const hit = new THREE.Mesh(new THREE.CapsuleGeometry(0.75 * SIZE, 1.9 * SIZE, 4, 12), new THREE.MeshBasicMaterial());
     hit.visible = false;
-    hit.position.y = 0.75 + 1.9 / 2;
+    hit.position.y = (0.75 + 1.9 / 2) * SIZE;
     hit.userData.isCharacter = true;
     group.add(hit);
     const mixer = new THREE.AnimationMixer(model);

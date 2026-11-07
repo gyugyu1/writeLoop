@@ -66,8 +66,8 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   desk: {
     id: "desk",
     label: "일기 책상",
-    faceTo: { x: 1.15, z: 5.5 },
-    approach: [{ x: 2.45, z: 5.2 }, { x: 2.45, z: 5.8 }],
+    faceTo: { x: 1.25, z: 5.5 },
+    approach: [{ x: 3.35, z: 5.2 }, { x: 3.35, z: 5.8 }],
     prompt: "일기 책상이야.\n오늘 일기를 써 볼까?",
     buttonLabel: "들어가기",
     enterMessage: "영어일기로 들어가요"
@@ -93,8 +93,8 @@ export const MENU_FOR_MARK: Partial<Record<MarkId, "question" | "diary" | "thoug
 export const IDLE_LINE = "오늘은 뭘 해 볼까?\n가고 싶은 곳을 눌러 봐.";
 export const POKE_LINES = ["헤헤, 간지러워!", "응? 불렀어?", "오늘도 같이 쓰자!"];
 
-/** 가구가 있어 지나갈 수 없는 칸("열,행"). 창가 의자, 일기 책상, 화분. */
-export const SOLID_TILES: ReadonlySet<string> = new Set(["4,0", "5,0", "0,5", "1,5", "7,3"]);
+/** 가구가 있어 지나갈 수 없는 칸("열,행"). 일기 책상, 옷장, 책장, 스탠드(가구 자리는 furniture-layout). */
+export const SOLID_TILES: ReadonlySet<string> = new Set(["0,5", "1,5", "2,5", "7,3", "0,2", "3,0"]);
 
 const BODY_RADIUS = 0.32;
 const tileKey = (c: number, r: number) => `${c},${r}`;

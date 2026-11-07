@@ -1,0 +1,7 @@
+# 모델 출처
+
+| 파일 | 출처 | 라이선스 |
+|---|---|---|
+| `lobby-furniture.glb` | [Kenney Furniture Kit](https://kenney.nl/assets/furniture-kit) 2.0의 가구(문, 책상, 의자, 스탠드, 책장, 닫힌 책장, 러그, 책, 미닫이 창)를 `scripts/lobby3d/build-furniture.py`로 골라 크기·모서리를 다듬고 한 파일로 묶었다. 게시판과 창틀은 같은 모양새로 새로 만들었다 | CC0 1.0(출처 표기 의무 없음) |
+| `lobby-room.glb` | WriteLoop이 `scripts/lobby3d/bake-room.py`로 만들었다 | 저장소와 같다 |
+| `writeloop.glb` | WriteLoop 캐릭터 모델 | 저장소와 같다 |

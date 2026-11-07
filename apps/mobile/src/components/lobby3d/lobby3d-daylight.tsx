@@ -192,7 +192,8 @@ export function DaylightRig({ state, daylight, ambient, sun, roomTint }: Dayligh
       state.progress = 0;
     }
     if (state.progress < 1) {
-      state.progress = Math.min(1, state.progress + delta / TRANSITION_SECONDS);
+      // 앱을 배경에 두었다 돌아온 첫 프레임은 delta가 배경에 있던 시간 전체라, 한 번에 끝나지 않게 한 프레임 몫을 자른다
+      state.progress = Math.min(1, state.progress + Math.min(delta, 0.1) / TRANSITION_SECONDS);
       const t = smooth(state.progress);
       state.ambience = blendAmbience(state.from, state.target.ambience, t);
       state.ceiling = state.fromCeiling + ((state.target.ceilingLight ? 1 : 0) - state.fromCeiling) * t;

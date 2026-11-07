@@ -6,6 +6,9 @@
 // 가짜로 두는 것: 060-03 홈 테스트(home-lobby.spec.test.tsx)와 같다. 3D 그리기는 받은 속성(sim, onFrame, onPointer, onProject)을 잡아
 // 프레임을 진행하고 누르기를 보낸다. 프레임마다 시계도 0.05초씩 옮긴다(타이머는 돌리지 않는다).
 // 가짜 시계: 2026-11-12T03:00:00Z = 서울 2026-11-12(목) 12:00. 오늘 작문 상태의 date도 같은 날로 둔다.
+// 작업 061의 12 결정(사용자 2026-11-07: 기본 말을 없애고 짧은 말·인사·장소 안내가 없으면 말풍선 없음, 인사 "그 밖"은 "또 왔네! 반가워."와 wave,
+// 인사를 거두면 다음에 홈에 들어올 때까지 말풍선 없음, "이어 쓰기" 버튼은 인사 말풍선에만)으로 기본 말을 기대하던 테스트를 고치고 G6·G7을 더했다.
+// 고친 테스트 이름에는 "(061-12 결정)"을 붙였다(E2·E3은 이름은 그대로, 거둔 뒤 기대만 말풍선 없음으로).
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen, within } from "@testing-library/react-native";
 import { router } from "expo-router";
@@ -124,11 +127,16 @@ const FIRST = "안녕! 게시판에서 오늘의 질문을 골라 봐.";
 const RESUME = "쓰다 만 답이 있어. 이어서 써 볼까?";
 const DONE = "오늘도 해냈어!";
 const LONG_TIME = "오랜만이야! 보고 싶었어.";
-const IDLE_LINE = "오늘은 뭘 해 볼까?\n가고 싶은 곳을 눌러 봐.";
+/** 인사 "그 밖"(061-12 결정: 기본 말을 없애고 이 말과 wave). */
+const AGAIN = "또 왔네! 반가워.";
+/** 061-12 결정으로 없앤 기본 말. 어디에도 나오지 않아야 한다. */
+const REMOVED_IDLE_LINE = "오늘은 뭘 해 볼까?\n가고 싶은 곳을 눌러 봐.";
+/** 라이트루프를 눌렀을 때의 짧은 말(지금 그대로). */
+const POKE_LINES = ["헤헤, 간지러워!", "응? 불렀어?", "오늘도 같이 쓰자!"];
 const streakLine = (days: number) => `${days}일째 함께하고 있어!`;
 const BOARD_PROMPT = "오늘의 질문 게시판이야.\n질문에 답하러 갈까?";
 const SKIP_LABEL = "홈 사용법 건너뛰기";
-const ALL_GREETING_LINES = [FIRST, RESUME, DONE, LONG_TIME, IDLE_LINE];
+const ALL_GREETING_LINES = [FIRST, RESUME, DONE, LONG_TIME, AGAIN, REMOVED_IDLE_LINE];
 
 // ---------- 고정 데이터 ----------
 
@@ -403,6 +411,20 @@ function expectBubble(line: string) {
   }
 }
 
+/**
+ * 말풍선이 없다(061-12 결정: 짧은 말·인사·장소 안내가 없으면 말풍선이 없다). 인사 말(없앤 기본 말 포함), 연속 인사, 게시판 안내,
+ * 짧은 말, '이어 쓰기' 버튼이 모두 보이지 않는 것으로 본다.
+ * Testing Library의 기본 질의라, 화면 구조에 있어도 접근성에서 숨긴 것(061-13 결정으로 미리 만들어 둔 보이지 않는 장소 말풍선 등)은 찾지 않는다.
+ * 투명도는 보지 않는다(네이티브 애니메이션 값은 Jest의 화면 구조에 바로 반영되지 않는다).
+ */
+function expectNoBubble() {
+  for (const line of [...ALL_GREETING_LINES, BOARD_PROMPT, ...POKE_LINES]) {
+    expect(screen.queryByText(line)).toBeNull();
+  }
+  expect(screen.queryByText(/일째 함께하고 있어!$/)).toBeNull();
+  expect(screen.queryByRole("button", { name: "이어 쓰기" })).toBeNull();
+}
+
 function actionType() {
   return sim().action?.type ?? null;
 }
@@ -509,11 +531,11 @@ describe("[spec] 상태 판정(J1~J16)", () => {
     expect(actionType()).toBe("wave");
   });
 
-  it("J2: 작문 0회·일기 2편이면 첫 방문이 아니고, 오랜만도 아니어서 그 밖(기본 말, wave)", async () => {
+  it("J2(061-12 결정): 작문 0회·일기 2편이면 첫 방문이 아니고, 오랜만도 아니어서 그 밖('또 왔네! 반가워.', wave)", async () => {
     setMonths({});
     await renderWithGreetingReady(snapshot({ totalAnswerSessions: 0 }, 2));
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
     expect(actionType()).toBe("wave");
   });
 
@@ -539,11 +561,11 @@ describe("[spec] 상태 판정(J1~J16)", () => {
     expect(router.push).toHaveBeenCalledWith(RESUME_ROUTE);
   });
 
-  it("J5: 이어 쓰기 정보가 있어도 이 기기·서버 초안이 없으면(버튼을 붙이지 않는 조건) 이어 쓰기 말이 아니고 버튼도 없다", async () => {
+  it("J5(061-12 결정): 이어 쓰기 정보가 있어도 이 기기·서버 초안이 없으면(버튼을 붙이지 않는 조건) 이어 쓰기 말이 아니라 그 밖('또 왔네! 반가워.')이고 버튼도 없다", async () => {
     jest.mocked(getIncompleteLoop).mockResolvedValue(loop());
     await renderWithGreetingReady(snapshot());
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
     expect(screen.queryByRole("button", { name: "이어 쓰기" })).toBeNull();
   });
 
@@ -562,10 +584,10 @@ describe("[spec] 상태 판정(J1~J16)", () => {
     expect(screen.getByText("연속 3일")).toBeOnTheScreen();
   });
 
-  it("J8: 연속 2일은 연속 기록이 아니어서 그 밖(기본 말, wave)", async () => {
+  it("J8(061-12 결정): 연속 2일은 연속 기록이 아니어서 그 밖('또 왔네! 반가워.', wave)", async () => {
     await renderWithGreetingReady(snapshot({ streakDays: 2 }));
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
     expect(actionType()).toBe("wave");
   });
 
@@ -584,14 +606,14 @@ describe("[spec] 상태 판정(J1~J16)", () => {
     expect(actionType()).toBe("wave");
   });
 
-  it("J11: 마지막 작문이 2일 전(11-10)이면 그 밖", async () => {
+  it("J11(061-12 결정): 마지막 작문이 2일 전(11-10)이면 그 밖('또 왔네! 반가워.')", async () => {
     setMonths({ "2026-11": [{ date: "2026-11-10", completed: true }] });
     await renderWithGreetingReady(snapshot());
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
   });
 
-  it("J12: 시작만 한 날(11-11)도 작문한 날이어서, 11-01에 마친 기록이 있어도 오랜만이 아니다", async () => {
+  it("J12(061-12 결정): 시작만 한 날(11-11)도 작문한 날이어서, 11-01에 마친 기록이 있어도 오랜만이 아니다(그 밖 '또 왔네! 반가워.')", async () => {
     setMonths({
       "2026-11": [
         { date: "2026-11-01", completed: true },
@@ -600,7 +622,7 @@ describe("[spec] 상태 판정(J1~J16)", () => {
     });
     await renderWithGreetingReady(snapshot());
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
   });
 
   describe("지난달 기록(J13, J14)", () => {
@@ -615,11 +637,11 @@ describe("[spec] 상태 판정(J1~J16)", () => {
       expectBubble(LONG_TIME);
     });
 
-    it("J14: 11월이 비었고 10-31에 작문했으면(2일 전) 그 밖", async () => {
+    it("J14(061-12 결정): 11월이 비었고 10-31에 작문했으면(2일 전) 그 밖('또 왔네! 반가워.')", async () => {
       setMonths({ "2026-10": [{ date: "2026-10-31", completed: true }] });
       await renderWithGreetingReady(snapshot({ date: "2026-11-02" }));
 
-      expectBubble(IDLE_LINE);
+      expectBubble(AGAIN);
     });
   });
 
@@ -630,19 +652,19 @@ describe("[spec] 상태 판정(J1~J16)", () => {
     expectBubble(LONG_TIME);
   });
 
-  it("M3: 오늘은 폰의 날짜로 본다(폰 11-12, 오늘 작문 상태의 date 11-13, 마지막 작문 11-10 → 폰으로 2일 전이라 그 밖)", async () => {
+  it("M3(061-12 결정): 오늘은 폰의 날짜로 본다(폰 11-12, 오늘 작문 상태의 date 11-13, 마지막 작문 11-10 → 폰으로 2일 전이라 그 밖 '또 왔네! 반가워.')", async () => {
     setMonths({ "2026-11": [{ date: "2026-11-10", completed: true }] });
     await renderWithGreetingReady(snapshot({ date: "2026-11-13" }));
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
   });
 
-  it("J16: 1월의 지난달은 지난해 12월이다(2027-01-02에 2026-12-31 작문 → 2일 전, 그 밖)", async () => {
+  it("J16(061-12 결정): 1월의 지난달은 지난해 12월이다(2027-01-02에 2026-12-31 작문 → 2일 전, 그 밖 '또 왔네! 반가워.')", async () => {
     jest.setSystemTime(new Date("2027-01-02T03:00:00.000Z"));
     setMonths({ "2026-12": [{ date: "2026-12-31", completed: true }] });
     await renderWithGreetingReady(snapshot({ date: "2027-01-02" }));
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
   });
 });
 
@@ -687,13 +709,13 @@ describe("[spec] 여럿이 맞으면 표의 위에서부터(P1~P4)", () => {
 // ---------- N. 정보가 없을 때, 결정 M2 ----------
 
 describe("[spec] 정보를 다 받은 뒤 판정(N1, N2), 받은 정보만으로 판정(결정 M2)", () => {
-  it("N1: 홈 정보를 받기 전에는 기본 말이고 '오늘도 해냈어!'가 없다. 받은 뒤 '오늘도 해냈어!'와 jump", async () => {
+  it("N1(061-12 결정): 홈 정보를 받기 전에는 말풍선이 없고(기본 말을 없앰) '오늘도 해냈어!'가 없다. 받은 뒤 '오늘도 해냈어!'와 jump", async () => {
     const pending = deferred<MobileHomeSnapshot>();
     jest.mocked(getMobileHomeSnapshot).mockReturnValue(pending.promise);
     await renderHome();
     await frames(3);
 
-    expect(screen.getByText(IDLE_LINE)).toBeOnTheScreen();
+    expectNoBubble();
     expect(screen.queryByText(DONE)).toBeNull();
 
     await act(async () => {
@@ -704,7 +726,7 @@ describe("[spec] 정보를 다 받은 뒤 판정(N1, N2), 받은 정보만으로
     expect(actionType()).toBe("jump");
   });
 
-  it("N2: 작문 달력을 받기 전에는 기본 말이고 오랜만이 아니다. 두 달 모두 빈 달로 받은 뒤 오랜만", async () => {
+  it("N2(061-12 결정): 작문 달력을 받기 전에는 말풍선이 없고(기본 말을 없앰) 오랜만이 아니다. 두 달 모두 빈 달로 받은 뒤 오랜만", async () => {
     const months = deferred<void>();
     jest.mocked(getMonthWritingStatus).mockImplementation(async (year: number, monthNumber: number) => {
       await months.promise;
@@ -713,7 +735,7 @@ describe("[spec] 정보를 다 받은 뒤 판정(N1, N2), 받은 정보만으로
     await renderHome();
     await frames(1);
 
-    expect(screen.getByText(IDLE_LINE)).toBeOnTheScreen();
+    expectNoBubble();
     expect(screen.queryByText(LONG_TIME)).toBeNull();
 
     await act(async () => {
@@ -723,25 +745,25 @@ describe("[spec] 정보를 다 받은 뒤 판정(N1, N2), 받은 정보만으로
     expectBubble(LONG_TIME);
   });
 
-  it("M2 a: 작문 달력을 받지 못하면(실패) 오랜만이 아니다(작문 5회, 미완료, 연속 0 → 그 밖)", async () => {
+  it("M2 a(061-12 결정): 작문 달력을 받지 못하면(실패) 오랜만이 아니다(작문 5회, 미완료, 연속 0 → 그 밖 '또 왔네! 반가워.')", async () => {
     jest.mocked(getMonthWritingStatus).mockRejectedValue(new Error("네트워크 오류"));
     await renderHome();
     await frames(1);
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
   });
 
-  it("M2 b: 오늘 작문 상태를 받지 못하면(작문 횟수를 모름) 일기 0편이어도 첫 방문이 아니다", async () => {
+  it("M2 b(061-12 결정): 오늘 작문 상태를 받지 못하면(작문 횟수를 모름) 일기 0편이어도 첫 방문이 아니다(그 밖 '또 왔네! 반가워.')", async () => {
     jest.mocked(getMobileHomeSnapshot).mockRejectedValue(new Error("네트워크 오류"));
     jest.mocked(getTodayWritingStatus).mockRejectedValue(new Error("네트워크 오류"));
     jest.mocked(getDiaryCalendarSummary).mockResolvedValue(diary(0));
     await renderHome();
     await frames(1);
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
   });
 
-  it("M2 c: 일기 요약을 받지 못하면(일기 편수를 모름) 작문 0회여도 첫 방문이 아니다", async () => {
+  it("M2 c(061-12 결정): 일기 요약을 받지 못하면(일기 편수를 모름) 작문 0회여도 첫 방문이 아니다(그 밖 '또 왔네! 반가워.')", async () => {
     jest.mocked(getMobileHomeSnapshot).mockRejectedValue(new Error("네트워크 오류"));
     jest.mocked(getTodayWritingStatus).mockResolvedValue(status({ totalAnswerSessions: 0 }));
     jest.mocked(getDiaryCalendarSummary).mockRejectedValue(new Error("네트워크 오류"));
@@ -749,7 +771,7 @@ describe("[spec] 정보를 다 받은 뒤 판정(N1, N2), 받은 정보만으로
     await renderHome();
     await frames(1);
 
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
   });
 });
 
@@ -765,7 +787,7 @@ describe("[spec] 인사 말은 방 안을 누를 때까지 남는다(G1~G5, 결�
     expectBubble(DONE);
   });
 
-  it("G2: 라이트루프를 누르면 '헤헤, 간지러워!', 2초 뒤에는 기본 말이고 '오늘도 해냈어!'로 돌아가지 않는다", async () => {
+  it("G2(061-12 결정): 라이트루프를 누르면 '헤헤, 간지러워!', 2초 뒤에는 말풍선이 없고 '오늘도 해냈어!'로 돌아가지 않는다", async () => {
     jest.mocked(getMobileHomeSnapshot).mockResolvedValue(snapshot(DONE_TODAY));
     await renderHome();
     await frames(1);
@@ -773,10 +795,10 @@ describe("[spec] 인사 말은 방 안을 누를 때까지 남는다(G1~G5, 결�
     await tapCharacter();
     expect(screen.getByText("헤헤, 간지러워!")).toBeOnTheScreen();
     await frames(2);
-    expectBubble(IDLE_LINE);
+    expectNoBubble();
   });
 
-  it("G3: 게시판을 누르면 걷는 동안 말풍선이 없고, 도착하면 게시판 안내, 바닥 점에 멈추면 기본 말. '오늘도 해냈어!'는 다시 나오지 않는다", async () => {
+  it("G3(061-12 결정): 게시판을 누르면 걷는 동안 말풍선이 없고, 도착하면 게시판 안내, 바닥 점(구역 밖)에 멈추면 말풍선이 없다. '오늘도 해냈어!'는 다시 나오지 않는다", async () => {
     jest.mocked(getMobileHomeSnapshot).mockResolvedValue(snapshot(DONE_TODAY));
     await renderHome();
 
@@ -793,21 +815,19 @@ describe("[spec] 인사 말은 방 안을 누를 때까지 남는다(G1~G5, 결�
     const point = { x: 4.5, z: 8.5 };
     await tapFloor(point);
     await walkUntilStoppedAt(point);
-    expectBubble(IDLE_LINE);
+    expectNoBubble();
   });
 
-  it("G4: 이어 쓰기 인사 뒤 라이트루프를 누르고 2초가 지나면 기본 말에 '이어 쓰기' 버튼이 붙고, 누르면 이어 쓰던 곳으로 간다", async () => {
+  it("G4(061-12 결정): 이어 쓰기 인사 뒤 라이트루프를 누르고 2초가 지나면 말풍선이 없고 '이어 쓰기' 버튼도 없다(버튼은 인사 말풍선에만)", async () => {
     arrangeIncomplete();
     await renderHome();
     expectBubble(RESUME);
+    expect(within(bubbleOf(RESUME)).getByRole("button", { name: "이어 쓰기" })).toBeOnTheScreen();
 
     await tapCharacter();
     await frames(2);
-    expectBubble(IDLE_LINE);
-    const button = within(bubbleOf(IDLE_LINE)).getByRole("button", { name: "이어 쓰기" });
-    await fireEvent.press(button);
-    expect(router.push).toHaveBeenCalledTimes(1);
-    expect(router.push).toHaveBeenCalledWith(RESUME_ROUTE);
+    expectNoBubble();
+    expect(router.push).not.toHaveBeenCalled();
   });
 
   it("G5·K11: 오늘 완료 인사 뒤 누르지 않고 25초가 지나면 라이트루프가 앉아 있고, 말풍선은 여전히 '오늘도 해냈어!'", async () => {
@@ -819,7 +839,7 @@ describe("[spec] 인사 말은 방 안을 누를 때까지 남는다(G1~G5, 결�
     expectBubble(DONE);
   });
 
-  it("M1 a: 바닥 빈 곳을 누르면(걷기) 멈춘 뒤 기본 말이다", async () => {
+  it("M1 a(061-12 결정): 바닥 빈 곳(구역 밖)을 누르면(걷기) 멈춘 뒤 말풍선이 없다", async () => {
     jest.mocked(getMobileHomeSnapshot).mockResolvedValue(snapshot(DONE_TODAY));
     await renderHome();
     expectBubble(DONE);
@@ -827,10 +847,10 @@ describe("[spec] 인사 말은 방 안을 누를 때까지 남는다(G1~G5, 결�
     const point = { x: 4.5, z: 8.5 };
     await tapFloor(point);
     await walkUntilStoppedAt(point);
-    expectBubble(IDLE_LINE);
+    expectNoBubble();
   });
 
-  it("M1 b: 방 안을 끌면 끌기를 마치고 멈춘 뒤 기본 말이다", async () => {
+  it("M1 b(061-12 결정): 방 안(구역 밖)을 끌면 끌기를 마치고 멈춘 뒤 말풍선이 없다", async () => {
     jest.mocked(getMobileHomeSnapshot).mockResolvedValue(snapshot(DONE_TODAY));
     await renderHome();
     expectBubble(DONE);
@@ -847,7 +867,7 @@ describe("[spec] 인사 말은 방 안을 누를 때까지 남는다(G1~G5, 결�
       canvas().onPointer("up", { point: { x: start.x, z: start.z + 2 }, mark: null, onCharacter: false }, 200, 360);
     });
     await frames(2);
-    expectBubble(IDLE_LINE);
+    expectNoBubble();
   });
 
   it("M1 c: 아래 메뉴(판을 열고 닫기), 위쪽 연속 칩, 카메라 거리 버튼을 눌러도 '오늘도 해냈어!'가 남는다", async () => {
@@ -887,6 +907,39 @@ describe("[spec] 인사 말은 방 안을 누를 때까지 남는다(G1~G5, 결�
     expectBubble(FIRST);
     expect(within(bubbleOf(FIRST)).getByRole("button", { name: "이어 쓰기" })).toBeOnTheScreen();
   });
+
+  it("G6(061-12 결정): 그 밖 인사 '또 왔네! 반가워.'와 wave도 방 안(라이트루프)을 누르면 거두어, 짧은 말 뒤 10초가 지나도 말풍선이 없고, 다른 화면에 갔다 돌아오면 다시 '또 왔네! 반가워.'와 wave", async () => {
+    await renderHome();
+    expectBubble(AGAIN);
+    expect(actionType()).toBe("wave");
+    await frames(3);
+
+    await tapCharacter();
+    expect(screen.getByText("헤헤, 간지러워!")).toBeOnTheScreen();
+    await frames(2);
+    expectNoBubble();
+    await frames(10);
+    expectNoBubble();
+
+    await setFocused(false);
+    await setFocused(true);
+
+    expectBubble(AGAIN);
+    expect(actionType()).toBe("wave");
+  });
+
+  it("G7(061-12 결정): 첫 방문 말풍선에 붙은 '이어 쓰기' 버튼도 인사를 거두면 사라지고, 짧은 말 뒤 말풍선이 없다", async () => {
+    setMonths({});
+    arrangeIncomplete();
+    jest.mocked(getMobileHomeSnapshot).mockResolvedValue(snapshot({ totalAnswerSessions: 0 }, 0));
+    await renderHome();
+    expectBubble(FIRST);
+    expect(within(bubbleOf(FIRST)).getByRole("button", { name: "이어 쓰기" })).toBeOnTheScreen();
+
+    await tapCharacter();
+    await frames(2);
+    expectNoBubble();
+  });
 });
 
 // ---------- E. 인사하는 때 ----------
@@ -898,7 +951,7 @@ describe("[spec] 홈에 들어올 때마다 인사(E1~E5)", () => {
     expectBubble(DONE);
     await tapCharacter();
     await frames(2);
-    expectBubble(IDLE_LINE);
+    expectNoBubble();
     expect(actionType()).toBeNull();
 
     await setFocused(false);
@@ -916,7 +969,7 @@ describe("[spec] 홈에 들어올 때마다 인사(E1~E5)", () => {
     expect(listeners.length).toBeGreaterThan(0);
     await tapCharacter();
     await frames(2);
-    expectBubble(IDLE_LINE);
+    expectNoBubble();
     expect(actionType()).toBeNull();
 
     await sendAppState(listeners, "background");
@@ -928,7 +981,7 @@ describe("[spec] 홈에 들어올 때마다 인사(E1~E5)", () => {
 
   it("E4: 작문을 마치고 돌아오면(돌아온 뒤 받은 정보가 오늘 완료) '오늘도 해냈어!'와 jump", async () => {
     await renderHome();
-    expectBubble(IDLE_LINE);
+    expectBubble(AGAIN);
     await frames(3);
 
     await setFocused(false);

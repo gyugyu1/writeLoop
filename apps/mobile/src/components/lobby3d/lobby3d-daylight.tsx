@@ -2,7 +2,7 @@ import { useFrame } from "@react-three/fiber/native";
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { ROOM } from "@/lib/lobby3d/engine";
-import { blendAmbience, windowLightPanes, type Ambience, type Daylight } from "@/lib/lobby3d/daylight";
+import { blendAmbience, windowLightPanes, type Ambience, type Daylight, type SunPosition } from "@/lib/lobby3d/daylight";
 import { FURNITURE_LAYOUT, WINDOW_OPENING } from "@/lib/lobby3d/furniture-layout";
 
 // 시각에 따른 방의 빛. 방 조명 색·세기, 구운 방에 곱하는 색, 바닥의 창문 빛, 밤의 천장 조명을 맡는다.
@@ -23,11 +23,33 @@ export interface DaylightState {
   fromCeiling: number;
   progress: number;
   shownTarget: Daylight;
+  /** 지금 창문 빛을 비추는 해 자리. 넘어가는 동안 앞뒤 해 자리 사이를 옮겨 가 창문 빛이 튀지 않는다. */
+  sun: SunPosition;
+  fromSun: SunPosition;
+  /** 창 안쪽 크기. 가구 묶음의 창밖 판(windowView)에서 잰 값이 오면 그것을 쓰고, 그 전에는 WINDOW_OPENING이다. */
+  opening: { width: number; height: number };
 }
 
 export function createDaylightState(daylight: Daylight): DaylightState {
   const ceiling = daylight.ceilingLight ? 1 : 0;
-  return { ambience: daylight.ambience, ceiling, target: daylight, from: daylight.ambience, fromCeiling: ceiling, progress: 1, shownTarget: daylight };
+  return {
+    ambience: daylight.ambience,
+    ceiling,
+    target: daylight,
+    from: daylight.ambience,
+    fromCeiling: ceiling,
+    progress: 1,
+    shownTarget: daylight,
+    sun: daylight.sun,
+    fromSun: daylight.sun,
+    opening: { width: WINDOW_OPENING.width, height: WINDOW_OPENING.height }
+  };
+}
+
+/** 두 해 자리 사이(방향은 짧은 쪽으로 돈다). */
+function mixSun(a: SunPosition, b: SunPosition, t: number): SunPosition {
+  const turn = ((b.azimuth - a.azimuth + 540) % 360) - 180;
+  return { elevation: a.elevation + (b.elevation - a.elevation) * t, azimuth: (a.azimuth + turn * t + 360) % 360 };
 }
 
 interface DaylightRigProps {
@@ -89,7 +111,8 @@ export function DaylightRig({ state, daylight, ambient, sun, roomTint }: Dayligh
       toneMapped: false
     });
     const windowLight = new THREE.Mesh(new THREE.BufferGeometry(), windowMaterial);
-    windowLight.position.y = 0.008;
+    // 러그(윗면 약 0.03)에 가려지지 않게 그보다 조금 위에 그린다
+    windowLight.position.y = 0.04;
     windowLight.raycast = () => {};
     group.add(windowLight);
 
@@ -125,15 +148,16 @@ export function DaylightRig({ state, daylight, ambient, sun, roomTint }: Dayligh
     return { group, windowLight, windowMaterial, paneMap, ceilingLight, edges, floorEdgeMap, wallEdgeMap };
   }, []);
 
-  // 해가 움직이면(1분마다 바뀐다) 창문 빛 모양을 다시 만든다
-  useEffect(() => {
+  // 창문 빛 모양을 해 자리와 창 크기로 다시 만든다(넘어가는 동안은 매 프레임, 그 밖에는 바뀔 때만)
+  const shown = useMemo(() => ({ sun: null as SunPosition | null, width: 0, height: 0 }), []);
+  const buildWindowLight = (sun: SunPosition) => {
+    const { width, height } = state.opening;
+    if (shown.sun && shown.sun.elevation === sun.elevation && shown.sun.azimuth === sun.azimuth && shown.width === width && shown.height === height) return;
+    shown.sun = sun;
+    shown.width = width;
+    shown.height = height;
     const place = FURNITURE_LAYOUT.find((p) => p.piece === "window");
-    const panes = windowLightPanes(
-      daylight.sun,
-      { ...WINDOW_OPENING, x: place?.x ?? 4.8, y: place?.y ?? 2.05 },
-      ROOM.width,
-      ROOM.depth
-    );
+    const panes = windowLightPanes(sun, { ...WINDOW_OPENING, width, height, x: place?.x ?? 4.8, y: place?.y ?? 2.05 }, ROOM.width, ROOM.depth);
     const positions: number[] = [];
     const uvs: number[] = [];
     for (const pane of panes) {
@@ -157,13 +181,14 @@ export function DaylightRig({ state, daylight, ambient, sun, roomTint }: Dayligh
     const old = parts.windowLight.geometry;
     parts.windowLight.geometry = geometry;
     old.dispose();
-  }, [daylight.sun, parts]);
+  };
 
   useFrame((_, delta) => {
     if (state.shownTarget !== state.target) {
       state.shownTarget = state.target;
       state.from = state.ambience;
       state.fromCeiling = state.ceiling;
+      state.fromSun = state.sun;
       state.progress = 0;
     }
     if (state.progress < 1) {
@@ -171,7 +196,9 @@ export function DaylightRig({ state, daylight, ambient, sun, roomTint }: Dayligh
       const t = smooth(state.progress);
       state.ambience = blendAmbience(state.from, state.target.ambience, t);
       state.ceiling = state.fromCeiling + ((state.target.ceilingLight ? 1 : 0) - state.fromCeiling) * t;
+      state.sun = mixSun(state.fromSun, state.target.sun, t);
     }
+    buildWindowLight(state.sun);
     const a = state.ambience;
     ambient.color.setHex(a.ambientColor);
     ambient.intensity = a.ambientIntensity;

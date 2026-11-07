@@ -44,7 +44,7 @@ export interface Lobby3dCanvasProps {
   onProject: (projection: LobbyProjection) => void;
   /** 화면이 다른 화면 아래에 깔려 있을 때처럼 그리기를 멈출 때. */
   paused?: boolean;
-  /** 지금 시각의 햇빛·하루의 때·계절(daylightAt). 바뀌면 방 색감·창문 빛·스탠드·창밖이 부드럽게 따라간다. */
+  /** 지금 시각의 햇빛·하루의 때·계절(daylightAt). 바뀌면 방 색감·창문 빛·천장 조명·창밖이 부드럽게 따라간다. */
   daylight: Daylight;
 }
 

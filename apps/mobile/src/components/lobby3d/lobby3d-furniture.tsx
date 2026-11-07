@@ -72,6 +72,8 @@ export function BakedFurniture({ fallback, daylight }: BakedFurnitureProps) {
     const viewSource = gltf.scene.getObjectByName("windowView");
     if (viewSource) viewBox.setFromObject(viewSource);
     const viewSize = viewBox.getSize(new THREE.Vector3());
+    // 바닥의 창문 빛도 같은 창 안쪽 크기를 따른다(창 모델 크기가 바뀌면 함께 바뀐다)
+    if (viewSource) daylight.opening = { width: viewSize.x, height: viewSize.y };
     const views: { piece: THREE.Object3D; halfWidth: number; halfHeight: number }[] = [];
     for (const place of FURNITURE_LAYOUT) {
       const source = gltf.scene.getObjectByName(place.piece);
@@ -100,7 +102,7 @@ export function BakedFurniture({ fallback, daylight }: BakedFurnitureProps) {
       root.add(piece);
     }
     return { root, view: views[0] ?? null };
-  }, [gltf, target]);
+  }, [gltf, target, daylight]);
   const group = built.root;
 
   // 창밖 그리기: 창 정면에서 창 안쪽을 화면 삼아 들여다본다(눈이 창 정면에서 비껴 있어도 창 네 모서리가 그림 네 모서리에 맞는 비스듬한 원근).

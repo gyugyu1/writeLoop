@@ -51,6 +51,7 @@ interface ViewState {
   bubbleButton: string | null;
   arrived: MarkId | null;
   actionType: ActionType | null;
+  idleBubble: boolean;
 }
 
 /** 홈의 카툰 명암(3단)과 외곽선(1배). 시험판에서만 바꿀 수 있다. */
@@ -66,7 +67,13 @@ function clockText(hours: number) {
 }
 
 function sameView(a: ViewState, b: ViewState) {
-  return a.bubbleText === b.bubbleText && a.bubbleButton === b.bubbleButton && a.arrived === b.arrived && a.actionType === b.actionType;
+  return (
+    a.bubbleText === b.bubbleText &&
+    a.bubbleButton === b.bubbleButton &&
+    a.arrived === b.arrived &&
+    a.actionType === b.actionType &&
+    a.idleBubble === b.idleBubble
+  );
 }
 
 export interface Lobby3dScreenProps {
@@ -81,8 +88,10 @@ export interface Lobby3dScreenProps {
   onMenu?: (id: LobbyMenuId) => void;
   /** 장소에 도착해 말풍선 버튼을 눌렀을 때. true를 돌려주면 처리한 것이고, 아니면 장소 안내(enterMessage)를 띄운다. */
   onEnterMark?: (mark: MarkId) => boolean;
-  /** 기본 말풍선에 붙일 버튼(예: 이어 쓰기). */
+  /** 기본 말풍선(로비 인사 포함)에 붙일 버튼(예: 이어 쓰기). */
   idleButton?: { label: string; onPress: () => void } | null;
+  /** 로비에 들어올 때의 인사. key가 바뀔 때마다 라이트루프가 이 말과 동작으로 인사한다(lobby-greeting). */
+  greeting?: { line: string; action: ActionType; key: number } | null;
   /** 시트를 연 동안처럼 로비 누르기를 막을 때. */
   inputBlocked?: boolean;
   /** 장소 이름표·말풍선의 화면 좌표(로비 안내가 장소를 짚을 때 쓴다). */
@@ -101,6 +110,7 @@ export default function Lobby3dScreen({
   onMenu,
   onEnterMark,
   idleButton = null,
+  greeting = null,
   inputBlocked = false,
   onProjection,
   bottomInset,
@@ -115,7 +125,7 @@ export default function Lobby3dScreen({
   if (!simRef.current) simRef.current = new LobbySim();
   const sim = simRef.current;
 
-  const [view, setView] = useState<ViewState>({ bubbleText: IDLE_LINE, bubbleButton: null, arrived: null, actionType: null });
+  const [view, setView] = useState<ViewState>({ bubbleText: IDLE_LINE, bubbleButton: null, arrived: null, actionType: null, idleBubble: true });
   const [projection, setProjection] = useState<LobbyProjection | null>(null);
   const [viewWidth, setViewWidth] = useState(VIEW_WIDTH_DEFAULT);
   const [toon, setToon] = useState<ToonSettings>(HOME_TOON);
@@ -141,10 +151,21 @@ export default function Lobby3dScreen({
       bubbleText: snap.bubbleText,
       bubbleButton: snap.bubbleButton,
       arrived: snap.moving ? null : snap.arrived,
-      actionType: snap.action?.type ?? null
+      actionType: snap.action?.type ?? null,
+      idleBubble: snap.idleBubble
     };
     setView((prev) => (sameView(prev, next) ? prev : next));
   }, [sim]);
+
+  // 로비 인사: 홈이 새 인사를 줄 때마다(key) 한 번 한다
+  const greetingKey = greeting?.key;
+  useEffect(() => {
+    if (!greeting) return;
+    sim.greet(greeting.line, greeting.action, Date.now());
+    syncView();
+    // 같은 인사를 다시 하지 않게 key가 바뀔 때만 돈다
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [greetingKey, sim, syncView]);
 
   const showToast = useCallback((message: string) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -234,7 +255,7 @@ export default function Lobby3dScreen({
     [onProjection]
   );
   const shownToon = devPanel ? toon : HOME_TOON;
-  const showIdleButton = Boolean(idleButton) && !view.bubbleButton && view.bubbleText === IDLE_LINE;
+  const showIdleButton = Boolean(idleButton) && !view.bubbleButton && view.idleBubble;
 
   return (
     <View style={styles.root}>

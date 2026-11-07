@@ -45,6 +45,8 @@ export function useHomeData({
   const [diaryCalendarError, setDiaryCalendarError] = useState("");
   const [nowInEnglishSummary, setNowInEnglishSummary] = useState<NowInEnglishSummary | null>(null);
   const [isInitialHomeLoadComplete, setIsInitialHomeLoadComplete] = useState(false);
+  // 홈 정보(오늘 작문 상태·일기 요약 등)를 다 읽을 때마다 늘어난다. 로비 인사가 다시 읽기가 끝났는지 볼 때 쓴다.
+  const [homeLoadCount, setHomeLoadCount] = useState(0);
   const featuredRecommendationRequestIdRef = useRef(0);
   const homeSnapshotRequestIdRef = useRef(0);
   const diaryCalendarLoadPromiseRef = useRef<Promise<void> | null>(null);
@@ -205,6 +207,7 @@ export function useHomeData({
           setIsFeaturedRecommendationLoading(false);
           hasCompletedInitialHomeLoadRef.current = true;
           setIsInitialHomeLoadComplete(true);
+          setHomeLoadCount((count) => count + 1);
         }
       }
     },
@@ -375,12 +378,14 @@ export function useHomeData({
     featuredRecommendationItem,
     featuredRecommendationPrompt,
     handleRefresh,
+    homeLoadCount,
     incompleteLoop,
     isDiaryCalendarLoading,
     isFeaturedRecommendationLoading,
     isFeaturedRecommendationTranslationVisible,
     isInitialHomeLoadComplete,
     isRefreshing,
+    isResolvingIncompleteLoop,
     nowInEnglishSummary,
     setIsFeaturedRecommendationTranslationVisible,
     statusError,

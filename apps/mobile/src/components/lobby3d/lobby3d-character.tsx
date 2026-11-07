@@ -177,7 +177,7 @@ export function Character({ kit, outline, handleRef }: CharacterProps) {
       group: built.group,
       update(sim, dt, nowSec) {
         const speed = Math.hypot(sim.vx, sim.vz);
-        const state = characterClipState({ speed, action: sim.action });
+        const state = characterClipState({ speed, action: sim.action, posture: sim.posture });
         const base = 1 - state.actionWeight;
         built.actions.get("idle")?.setEffectiveWeight(state.idleWeight * base);
         const walk = built.actions.get("walk");

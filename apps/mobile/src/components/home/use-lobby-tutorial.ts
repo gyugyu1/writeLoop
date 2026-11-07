@@ -167,6 +167,8 @@ export function useLobbyTutorial({
     homeTutorialStepIndex: stepIndex,
     // 3D가 아직 장소 좌표를 보내지 않았으면 짚을 곳이 없어 기다린다.
     isHomeTutorialPositioning: waitingForPosition,
-    isHomeTutorialVisible: isVisible
+    isHomeTutorialVisible: isVisible,
+    // 안내가 떠 있거나 뜰 참(뜨기를 기다리는 중)인지. 로비 인사는 안내가 끝난 뒤에 한다.
+    isHomeTutorialPending: isRequested || isVisible
   };
 }

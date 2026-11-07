@@ -307,6 +307,15 @@ export const ACTION_SECONDS: Record<ActionType, number> = {
 /** "동작 줄이기"가 켜져 있으면 하지 않는 동작. */
 export const LARGE_MOTIONS: ReadonlySet<ActionType> = new Set(["jump", "hop", "spin", "poke"]);
 
+/** 아무것도 하지 않은 채 이만큼(밀리초) 지나면 앉는다. */
+export const SIT_AFTER_MS = 20_000;
+/** 앉는 데(sit_down)와 일어나는 데(stand_up) 걸리는 시간(초). */
+export const SIT_DOWN_SECONDS = 0.6;
+export const STAND_UP_SECONDS = 0.6;
+
+/** 앉기 자세. 앉는 중 → 앉아 있음(반복) → 일어나는 중. 서 있으면 null. */
+export type PostureKind = "sitting-down" | "sitting" | "standing-up";
+
 export interface LobbySettings {
   /** 걷는 속도(칸/초). */
   speed: number;
@@ -323,8 +332,11 @@ export interface LobbySnapshot {
   dragging: boolean;
   arrived: MarkId | null;
   action: { type: ActionType; t: number } | null;
+  posture: { kind: PostureKind; t: number } | null;
   bubbleText: string;
   bubbleButton: string | null;
+  /** 말풍선이 기본 말이나 로비 인사인지(장소 안내·짧은 말이 아님). 이어 쓰기 버튼을 붙이는 곳이다. */
+  idleBubble: boolean;
 }
 
 interface PointerState {
@@ -346,6 +358,8 @@ export class LobbySim {
   action: { type: ActionType; t: number } | null = null;
   arrived: MarkId | null = null;
   dragging = false;
+  /** 앉기 자세(서 있으면 null). 앉아 있는 동안과 일어나는 동안은 걷기·동작이 기다린다. */
+  posture: { kind: PostureKind; t: number } | null = null;
   private path: FloorPoint[] = [];
   private target: MarkId | null = null;
   private goalHeading: number | null = null;
@@ -354,6 +368,10 @@ export class LobbySim {
   private quip = "";
   private quipUntilMs = 0;
   private pokeIndex = 0;
+  /** 로비에 들어올 때의 인사 말. 누르기 전까지 기본 말 대신 보인다. */
+  private greeting: string | null = null;
+  /** 마지막으로 무언가 한 때(밀리초). 이때부터 SIT_AFTER_MS가 지나면 앉는다. null이면 다음 프레임에 지금으로 잡는다. */
+  private idleSinceMs: number | null = null;
   private random: () => number;
 
   constructor(options?: { x?: number; z?: number; reduceMotion?: boolean; random?: () => number }) {
@@ -370,8 +388,31 @@ export class LobbySim {
     return true;
   }
 
+  /** 앉아 있으면 일어나기 시작한다(일어난 뒤 하려던 일을 이어서 한다). 앉기까지의 시간도 처음부터 다시 잰다. */
+  wake(nowMs?: number): void {
+    if (this.posture && this.posture.kind !== "standing-up") this.posture = { kind: "standing-up", t: 0 };
+    this.idleSinceMs = nowMs ?? null;
+  }
+
+  /**
+   * 로비에 들어올 때의 인사. 그 자리에서 앞을 보고 말과 동작을 한다(장소 안내는 거두고, "동작 줄이기"면 큰 동작은 하지 않는다).
+   * 말은 누르기 전까지 기본 말 대신 남는다.
+   */
+  greet(line: string, action: ActionType, nowMs: number): void {
+    this.wake(nowMs);
+    this.greeting = line;
+    this.quipUntilMs = 0;
+    if (this.path.length || this.dragging) return;
+    this.target = null;
+    this.arrived = null;
+    this.goalHeading = 0;
+    this.startAction(action);
+  }
+
   /** 시험판 동작 버튼: 멈춰서 앞을 보고 동작한다. */
   playAction(type: ActionType): boolean {
+    this.wake();
+    this.greeting = null;
     this.path = [];
     this.vx = 0;
     this.vz = 0;
@@ -389,6 +430,7 @@ export class LobbySim {
     else return false;
     const path = findPath({ x: this.x, z: this.z }, goals);
     if (!path) return false;
+    this.wake();
     this.path = path;
     this.target = mark;
     this.arrived = null;
@@ -399,6 +441,9 @@ export class LobbySim {
   }
 
   pointerDown(hit: PointerHit, screenX: number, screenY: number, nowMs: number): void {
+    // 누르면 인사 말은 거두고, 앉아 있었으면 일어난다
+    this.greeting = null;
+    this.wake(nowMs);
     this.down = { sx: screenX, sy: screenY, t: nowMs, hit };
     this.dragging = false;
     this.dragPoint = hit.point;
@@ -454,6 +499,29 @@ export class LobbySim {
   update(dt: number, nowMs: number): void {
     const step = Math.min(0.05, Math.max(0, dt));
     if (this.down && !this.dragging && nowMs - this.down.t >= HOLD_MS) this.startDrag();
+    // 처음 프레임이거나, 다른 화면·배경에 가 있다 돌아와 프레임 사이가 길면 앉기까지의 시간을 처음부터 잰다(홈을 보는 동안만 센다)
+    if (this.idleSinceMs === null || dt > 1) this.idleSinceMs = nowMs;
+
+    // 앉기: 오래 가만히 두면 앉고, 일어나는 중에는 걷기·동작이 기다린다
+    if (this.posture) {
+      this.posture.t += step;
+      if (this.posture.kind === "sitting-down" && this.posture.t >= SIT_DOWN_SECONDS) this.posture = { kind: "sitting", t: 0 };
+      else if (this.posture.kind === "standing-up" && this.posture.t >= STAND_UP_SECONDS) {
+        this.posture = null;
+        this.idleSinceMs = nowMs;
+      }
+      if (this.posture) {
+        this.vx = 0;
+        this.vz = 0;
+        return;
+      }
+    }
+    const busy = this.path.length > 0 || this.dragging || this.down !== null || this.action !== null || Math.hypot(this.vx, this.vz) > 0.05;
+    if (busy) this.idleSinceMs = nowMs;
+    else if (nowMs - this.idleSinceMs >= SIT_AFTER_MS) {
+      this.posture = { kind: "sitting-down", t: 0 };
+      return;
+    }
 
     let desiredX = 0;
     let desiredZ = 0;
@@ -520,13 +588,17 @@ export class LobbySim {
     const moving = speed > 0.3 || this.dragging;
     let bubbleText = "";
     let bubbleButton: string | null = null;
+    let idleBubble = false;
     // 움직이는 동안은 말풍선을 숨긴다(짧은 말도). 서 있으면 짧은 말 → 장소 안내 → 기본 말 순서.
     if (moving) bubbleText = "";
     else if (nowMs < this.quipUntilMs) bubbleText = this.quip;
     else if (this.arrived) {
       bubbleText = MARKS[this.arrived].prompt;
       bubbleButton = MARKS[this.arrived].buttonLabel;
-    } else bubbleText = IDLE_LINE;
+    } else {
+      bubbleText = this.greeting ?? IDLE_LINE;
+      idleBubble = true;
+    }
     return {
       x: this.x,
       z: this.z,
@@ -536,8 +608,10 @@ export class LobbySim {
       dragging: this.dragging,
       arrived: this.arrived,
       action: this.action ? { ...this.action } : null,
+      posture: this.posture ? { ...this.posture } : null,
       bubbleText,
-      bubbleButton
+      bubbleButton,
+      idleBubble
     };
   }
 

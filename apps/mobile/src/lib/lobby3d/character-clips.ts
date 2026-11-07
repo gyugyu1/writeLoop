@@ -1,4 +1,4 @@
-import { ACTION_SECONDS, type ActionType } from "./engine";
+import { ACTION_SECONDS, SIT_DOWN_SECONDS, STAND_UP_SECONDS, type ActionType, type PostureKind } from "./engine";
 
 // 시뮬레이션 상태(속도, 동작)를 라이트루프 모델의 클립 재생으로 옮기는 규칙.
 // 모델(docs/guides/character-3d-model-spec.ko.md)의 클립을 쓰고, 움직임은 도형 캐릭터 시험본과 같게 맞춘다.
@@ -17,7 +17,18 @@ export interface CharacterClipInput {
   /** 바닥에서 움직이는 속력(칸/초). */
   speed: number;
   action: { type: ActionType; t: number } | null;
+  /** 앉기 자세. 있으면 동작보다 먼저 보인다(일어난 뒤에 동작한다). */
+  posture?: { kind: PostureKind; t: number } | null;
 }
+
+/** 앉기 자세마다 재생할 클립. */
+export const POSTURE_CLIPS: Record<PostureKind, string> = {
+  "sitting-down": "sit_down",
+  sitting: "sit_idle",
+  "standing-up": "stand_up"
+};
+/** sit_idle 클립 길이(초). 반복한다. */
+const SIT_IDLE_SECONDS = 2;
 
 export interface CharacterClipState {
   idleWeight: number;
@@ -40,7 +51,7 @@ const WALK_SECONDS = 0.8;
 /** 도형 캐릭터에서 spin으로 들어 올린 최고 높이(0.35)를 바닥 칸으로(캐릭터 배율 1.25). */
 const SPIN_PEAK = 0.35 * 1.25;
 
-export function characterClipState({ speed, action }: CharacterClipInput): CharacterClipState {
+export function characterClipState({ speed, action, posture }: CharacterClipInput): CharacterClipState {
   const walk = Math.min(1, speed / 1.6);
   const state: CharacterClipState = {
     idleWeight: 1 - walk,
@@ -53,6 +64,19 @@ export function characterClipState({ speed, action }: CharacterClipInput): Chara
     spinAngle: 0,
     spinLift: 0
   };
+  if (posture) {
+    // 앉는 중은 서 있기에서 0.2초 동안 넘어가고, 일어나는 중은 끝나기 0.2초 전부터 서 있기로 돌아간다
+    state.actionClip = POSTURE_CLIPS[posture.kind];
+    state.actionTime = posture.kind === "sitting" ? posture.t % SIT_IDLE_SECONDS : posture.t;
+    state.actionWeight =
+      posture.kind === "sitting-down"
+        ? Math.min(1, posture.t / 0.2)
+        : posture.kind === "standing-up"
+          ? Math.min(1, Math.max(0, STAND_UP_SECONDS - posture.t) / 0.2)
+          : 1;
+    if (posture.kind === "sitting-down") state.actionTime = Math.min(posture.t, SIT_DOWN_SECONDS);
+    return state;
+  }
   if (!action) return state;
   const length = ACTION_SECONDS[action.type];
   if (action.type === "spin") {

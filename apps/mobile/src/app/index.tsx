@@ -32,6 +32,7 @@ import {
 } from "@/components/home/home-helpers";
 import { useHomeData } from "@/components/home/use-home-data";
 import { useHomeMonthCalendar } from "@/components/home/use-home-month-calendar";
+import { useLobbyGreeting } from "@/components/home/use-lobby-greeting";
 import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
 import { trackDailyPromptClick } from "@/lib/api";
 import { getDifficultyMeta } from "@/lib/difficulty";
@@ -54,11 +55,13 @@ export default function HomeScreen() {
     featuredRecommendationError,
     featuredRecommendationItem,
     featuredRecommendationPrompt,
+    homeLoadCount,
     incompleteLoop,
     isDiaryCalendarLoading,
     isFeaturedRecommendationLoading,
     isFeaturedRecommendationTranslationVisible,
     isInitialHomeLoadComplete,
+    isResolvingIncompleteLoop,
     nowInEnglishSummary,
     setIsFeaturedRecommendationTranslationVisible,
     statusError,
@@ -184,6 +187,7 @@ export default function HomeScreen() {
     handleCloseHomeTutorial,
     homeTutorialSpotlight,
     homeTutorialStepIndex,
+    isHomeTutorialPending,
     isHomeTutorialPositioning,
     isHomeTutorialVisible
   } = useLobbyTutorial({
@@ -201,6 +205,19 @@ export default function HomeScreen() {
     tutorialVisibleRef.current = isHomeTutorialVisible;
     if (isHomeTutorialVisible) setTutorialProjection(latestProjectionRef.current);
   }, [isHomeTutorialVisible]);
+
+  // 로비에 들어올 때마다 학습 상태에 맞는 인사(lobby-greeting)
+  const lobbyGreeting = useLobbyGreeting({
+    loggedIn: Boolean(currentUser),
+    homeLoadCount,
+    resolvingIncomplete: isResolvingIncompleteLoop,
+    answerSessions: todayStatus?.totalAnswerSessions ?? 0,
+    diaryEntries: diaryCalendarSummary?.totalEntries ?? 0,
+    hasIncomplete: Boolean(incompleteLoopRoute),
+    completedToday: Boolean(todayStatus?.completed),
+    streakDays: displayedStreakDays,
+    tutorialPending: isHomeTutorialPending
+  });
 
   const {
     calendarError,
@@ -362,6 +379,7 @@ export default function HomeScreen() {
           onMenu={setOpenSheet}
           onEnterMark={handleEnterMark}
           idleButton={incompleteLoopRoute ? { label: "이어 쓰기", onPress: handleResumeLoop } : null}
+          greeting={lobbyGreeting}
           inputBlocked={openSheet !== null || isCalendarOpen}
           onProjection={handleProjection}
           bottomInset={lobbyBottomInset}

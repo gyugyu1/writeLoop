@@ -222,8 +222,11 @@ export default function Lobby3dScreen({
   const lastSent = useRef(new Map<Animated.Value, number>()).current;
   // 네이티브 쪽 값은 그림만 옮기고 화면 구조(누르기 자리를 재는 곳)는 그대로 둔다. 말풍선 자리가 멈추면 한 번 다시 그려
   // 말풍선 버튼을 누르는 자리가 실제 자리와 맞게 한다(누른 채 손가락이 살짝 움직여도 눌림이 취소되지 않게).
+  // 서 있거나 앉아 있을 때도 머리가 숨 쉬듯 1~2픽셀 오르내리므로, 마지막으로 다시 그린 자리에서 4픽셀 넘게 옮겨졌을 때만 다시 그린다
+  // (눌림이 취소되는 여유 20픽셀보다 충분히 작다).
   const [, setBubbleSettled] = useState(0);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settledAt = useRef({ left: Number.NaN, top: Number.NaN });
   useEffect(
     () => () => {
       if (settleTimer.current) clearTimeout(settleTimer.current);
@@ -251,18 +254,26 @@ export default function Lobby3dScreen({
   ).current;
   const onOverlayFrame = useCallback(
     (bubble: { x: number; y: number }, labels: Record<MarkId, { x: number; y: number }>) => {
-      const movedLeft = send(bubbleLeft, Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8)), 0.5);
-      const movedTop = send(bubbleTop, Math.max(120, bubble.y), 0.5);
-      if (movedLeft || movedTop) {
+      const left = Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8));
+      const top = Math.max(120, bubble.y);
+      const movedLeft = send(bubbleLeft, left, 0.5);
+      const movedTop = send(bubbleTop, top, 0.5);
+      const moved = movedLeft || movedTop;
+      const settled = settledAt.current;
+      const farFromSettled = !(Math.abs(left - settled.left) <= 4 && Math.abs(top - settled.top) <= 4);
+      if (moved && farFromSettled) {
         if (settleTimer.current) clearTimeout(settleTimer.current);
-        settleTimer.current = setTimeout(() => setBubbleSettled((n) => n + 1), 150);
+        settleTimer.current = setTimeout(() => {
+          settledAt.current = { left: lastSent.get(bubbleLeft) ?? left, top: lastSent.get(bubbleTop) ?? top };
+          setBubbleSettled((n) => n + 1);
+        }, 150);
       }
       for (const id of Object.keys(labels) as MarkId[]) {
         send(labelPos[id].left, labels[id].x, 0.5);
         send(labelPos[id].top, labels[id].y, 0.5);
       }
     },
-    [bubbleLeft, bubbleTop, labelPos, send]
+    [bubbleLeft, bubbleTop, labelPos, send, lastSent]
   );
 
   /** 걷거나 끄는 중이라 말풍선을 숨긴 때인지(스냅숏의 moving 규칙과 같다). */

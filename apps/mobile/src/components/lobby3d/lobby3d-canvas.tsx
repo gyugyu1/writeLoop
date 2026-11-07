@@ -5,9 +5,10 @@ import { Suspense, useEffect, useMemo, useRef, type MutableRefObject } from "rea
 import { StyleSheet, View, type GestureResponderEvent } from "react-native";
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
-import { CHAIR, LobbySim, MARKS, ROOM, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import { CHAIR, LobbySim, MARKS, ROOM, activeLobbyLayout, cameraPose, type MarkId, type PointerHit } from "@/lib/lobby3d/engine";
+import { layoutGeometry } from "@/lib/lobby3d/lobby-layout";
 import type { Daylight } from "@/lib/lobby3d/daylight";
-import { FURNITURE_LAYOUT, type FurniturePiece } from "@/lib/lobby3d/furniture-layout";
+import { currentFurnitureLayout, type FurniturePiece } from "@/lib/lobby3d/furniture-layout";
 import { BUBBLE_HEIGHT, Character, CharacterErrorBoundary, type CharacterHandle } from "./lobby3d-character";
 import { DaylightRig, createDaylightState } from "./lobby3d-daylight";
 import { BakedFurniture, BakedFurnitureErrorBoundary } from "./lobby3d-furniture";
@@ -330,6 +331,8 @@ interface World {
 }
 
 function buildWorld(): World {
+  // 가구 자리는 지금 배치에서 계산한다
+  const placements = currentFurnitureLayout();
   const kit = new WorldKit();
   const root = new THREE.Group();
   const W = ROOM.width;
@@ -376,7 +379,7 @@ function buildWorld(): World {
   // 가구 밑과 벽에 건 것 뒤의 옅은 그림자, 라룹이 발밑 그림자
   const blob = blobTexture();
   const softRect = softRectTexture();
-  for (const place of FURNITURE_LAYOUT) {
+  for (const place of placements) {
     const shade = FURNITURE_SHADOW[place.piece];
     if (!shade) continue;
     if (shade.floor) {
@@ -454,7 +457,7 @@ function buildWorld(): World {
     }
     return g;
   };
-  for (const place of FURNITURE_LAYOUT) {
+  for (const place of placements) {
     const g = makePiece(place.piece);
     // 대체 모양은 Kenney 2.5배 크기로 지었다. 창문 말고는 가구 묶음(Kenney 2.8배, 책상은 그 1.2배, 옷장·책장은 깊이 1.25배)에 맞춰 키운다.
     if (place.piece !== "window" && place.piece !== "exit") g.scale.setScalar(2.8 / 2.5);
@@ -462,7 +465,7 @@ function buildWorld(): World {
     if (place.piece === "bookcase" || place.piece === "wardrobe") g.scale.z *= 1.25;
     g.position.set(place.x, place.y, place.z);
     g.rotation.y = place.rotY;
-    if (place.piece === "chair") g.userData.chairBaseZ = place.z;
+    if (place.piece === "chair") g.userData.chairBase = { x: place.x, z: place.z };
     furniture.add(g);
     if (place.mark) {
       const id = place.mark;
@@ -479,13 +482,15 @@ function buildWorld(): World {
     }
   }
 
+  // 이름표 자리는 가구를 따라간다(지금 배치에서 계산). 밖으로 가는 입구 발판은 고정이다
+  const places = layoutGeometry(activeLobbyLayout(), ROOM.width).places;
+  const at = (p: { x: number; y: number; z: number }) => new THREE.Vector3(p.x, p.y, p.z);
   const labelPoints: Record<MarkId, THREE.Vector3> = {
-    board: new THREE.Vector3(1.8, 2.75, 0.3),
-    window: new THREE.Vector3(4.8, 3.05, 0.3),
+    board: at(places.board.label),
+    window: at(places.window.label),
     door: new THREE.Vector3(W / 2, 0.4, D + ROOM.stepDepth / 2),
-    desk: new THREE.Vector3(1.25, 2.1, 5.5),
-    // 책장은 왼쪽 벽에 붙어 화면 끝에 가까우므로 이름표를 방 쪽으로 조금 옮긴다
-    bookcase: new THREE.Vector3(0.9, 2.3, 2.5)
+    desk: at(places.desk.label),
+    bookcase: at(places.bookcase.label)
   };
 
   // 방 조명. 해는 앞쪽 왼편 위에서 가구 앞면을 비춘다(실제 해 방향은 바닥의 창문 빛이 맡는다). 색·세기는 하루의 때를 따른다.
@@ -589,12 +594,17 @@ function Scene({
     if (chairs.current.list.length < 2 && nowMs - chairs.current.scannedAt > 1000) {
       const list: THREE.Object3D[] = [];
       scene.traverse((o) => {
-        if (typeof o.userData.chairBaseZ === "number") list.push(o);
+        if (o.userData.chairBase) list.push(o);
       });
       chairs.current = { list, scannedAt: nowMs };
     }
+    // 책상 앞쪽으로 뺀다
     const pull = sim.chairPull() * CHAIR.pull;
-    for (const chair of chairs.current.list) chair.position.z = (chair.userData.chairBaseZ as number) + pull;
+    for (const chair of chairs.current.list) {
+      const base = chair.userData.chairBase as { x: number; z: number };
+      chair.position.x = base.x + CHAIR.pullDir.x * pull;
+      chair.position.z = base.z + CHAIR.pullDir.z * pull;
+    }
     // 도형 캐릭터 때와 같이, 몸이 들리면 그림자가 작아진다(들린 높이를 그때 단위 1.25로 나눠 같은 비율로).
     const shrink = 1 - (lift / 1.25) * 0.35;
     world.shadow.position.set(sim.x, 0.01, sim.z);

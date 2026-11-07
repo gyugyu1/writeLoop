@@ -2,12 +2,12 @@ import { useFrame, useLoader } from "@react-three/fiber/native";
 import { Component, useEffect, useMemo, type ReactNode } from "react";
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
-import { FURNITURE_LAYOUT } from "@/lib/lobby3d/furniture-layout";
+import { currentFurnitureLayout } from "@/lib/lobby3d/furniture-layout";
 import type { DaylightState } from "./lobby3d-daylight";
 import { createOutdoor } from "./lobby3d-outdoor";
 
 // 라룹이 방의 가구. Kenney Furniture Kit(CC0)에서 고른 가구를 scripts/lobby3d/build-furniture.py가 한 glb로 묶는다.
-// 묶음마다 이름(FurniturePiece)이 있고, 놓는 자리는 FURNITURE_LAYOUT이 정한다.
+// 묶음마다 이름(FurniturePiece)이 있고, 놓는 자리는 지금 배치(currentFurnitureLayout)가 정한다.
 // 누르기 판정은 코드로 만든 대체 모양이 보이지 않는 채로 맡으므로, 여기서는 판정을 받지 않는다.
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -41,7 +41,7 @@ export function BakedFurniture({ fallback, daylight }: BakedFurnitureProps) {
   const gltf = useLoader(GLTFLoader, FURNITURE_ASSET as string) as GLTF;
   // 창밖: 방과 따로 둔 장면과, 창문 자리에서 그 장면을 들여다볼 카메라·그림판
   const outdoor = useMemo(() => {
-    const place = FURNITURE_LAYOUT.find((p) => p.piece === "window");
+    const place = currentFurnitureLayout().find((p) => p.piece === "window");
     // 창이 높이 걸려도 창 너머 풀밭과 덤불이 창 아래쪽에 보이게, 바깥 풀밭을 창 가운데보다 OUTDOOR_DROP 아래에 둔다
     return createOutdoor(place?.x ?? 4, (place?.y ?? OUTDOOR_DROP) - OUTDOOR_DROP);
   }, []);
@@ -75,7 +75,7 @@ export function BakedFurniture({ fallback, daylight }: BakedFurnitureProps) {
     // 바닥의 창문 빛도 같은 창 안쪽 크기를 따른다(창 모델 크기가 바뀌면 함께 바뀐다)
     if (viewSource) daylight.opening = { width: viewSize.x, height: viewSize.y };
     const views: { piece: THREE.Object3D; halfWidth: number; halfHeight: number }[] = [];
-    for (const place of FURNITURE_LAYOUT) {
+    for (const place of currentFurnitureLayout()) {
       const source = gltf.scene.getObjectByName(place.piece);
       if (!source) continue;
       // useLoader가 준 장면은 앱 전체에서 함께 쓰므로 복제해서 쓴다(창문처럼 같은 가구를 여러 번 놓기도 한다).
@@ -83,7 +83,7 @@ export function BakedFurniture({ fallback, daylight }: BakedFurnitureProps) {
       piece.position.set(place.x, place.y, place.z);
       piece.rotation.set(0, place.rotY, 0);
       // 일기 책상 의자는 '들어가기' 때 뒤로 뺀다(3D 화면이 이 자리에서 옮긴다)
-      if (place.piece === "chair") piece.userData.chairBaseZ = place.z;
+      if (place.piece === "chair") piece.userData.chairBase = { x: place.x, z: place.z };
       const meshes: THREE.Mesh[] = [];
       piece.traverse((o) => {
         if (o instanceof THREE.Mesh) meshes.push(o);

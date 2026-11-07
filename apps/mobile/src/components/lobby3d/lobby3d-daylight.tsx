@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import * as THREE from "three";
 import { ROOM } from "@/lib/lobby3d/engine";
 import { blendAmbience, windowLightPanes, type Ambience, type Daylight, type SunPosition } from "@/lib/lobby3d/daylight";
-import { FURNITURE_LAYOUT, WINDOW_OPENING } from "@/lib/lobby3d/furniture-layout";
+import { WINDOW_OPENING, currentFurnitureLayout } from "@/lib/lobby3d/furniture-layout";
 
 // 시각에 따른 방의 빛. 방 조명 색·세기, 구운 방에 곱하는 색, 바닥의 창문 빛, 밤의 천장 조명을 맡는다.
 // 시각이 바뀌면 그때 보이던 색감에서 새 색감으로 TRANSITION_SECONDS 동안 부드럽게 넘어간다. 창밖 풍경은 이 상태를 읽어 lobby3d-furniture가 그린다.
@@ -156,7 +156,8 @@ export function DaylightRig({ state, daylight, ambient, sun, roomTint }: Dayligh
     shown.sun = sun;
     shown.width = width;
     shown.height = height;
-    const place = FURNITURE_LAYOUT.find((p) => p.piece === "window");
+    // 창문은 뒷벽에 걸린 것으로 계산한다(옆벽 창문의 빛은 아직 없다)
+    const place = currentFurnitureLayout().find((p) => p.piece === "window");
     const panes = windowLightPanes(sun, { ...WINDOW_OPENING, width, height, x: place?.x ?? 4.8, y: place?.y ?? 2.05 }, ROOM.width, ROOM.depth);
     const positions: number[] = [];
     const uvs: number[] = [];

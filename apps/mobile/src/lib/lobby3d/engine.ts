@@ -84,8 +84,14 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   }
 };
 
-/** 장소 구역의 반지름(칸). 장소마다 서는 자리들의 가운데를 중심으로 한 원이다. */
+/**
+ * 장소 구역의 반지름(칸). 장소마다 서는 자리들의 가운데를 중심으로 한 원이고,
+ * 벽에 붙은 장소(ZONE_REACHES_WALL)는 그 원이 바라볼 지점(벽)까지 이어진 모양이다.
+ */
 export const MARK_ZONE_RADIUS = 1;
+
+/** 장소 구역이 서는 자리에서 바라볼 지점(벽)까지 이어지는 장소. 벽에 바짝 붙어도 구역 안이다. */
+const ZONE_REACHES_WALL: ReadonlySet<MarkId> = new Set<MarkId>(["board", "window"]);
 
 /** 장소 구역의 가운데(서는 자리들의 가운데). */
 export function markZoneCenter(id: MarkId): FloorPoint {
@@ -100,9 +106,19 @@ export function markZoneCenter(id: MarkId): FloorPoint {
 export function markZoneAt(x: number, z: number): MarkId | null {
   for (const id of Object.keys(MARKS) as MarkId[]) {
     const c = markZoneCenter(id);
-    if (Math.hypot(x - c.x, z - c.z) <= MARK_ZONE_RADIUS) return id;
+    const end = ZONE_REACHES_WALL.has(id) ? MARKS[id].faceTo : c;
+    if (distanceToSegment(x, z, c, end) <= MARK_ZONE_RADIUS) return id;
   }
   return null;
+}
+
+/** 점에서 선분 a–b까지의 거리. */
+function distanceToSegment(x: number, z: number, a: FloorPoint, b: FloorPoint): number {
+  const dx = b.x - a.x;
+  const dz = b.z - a.z;
+  const lengthSq = dx * dx + dz * dz;
+  const t = lengthSq === 0 ? 0 : Math.max(0, Math.min(1, ((x - a.x) * dx + (z - a.z) * dz) / lengthSq));
+  return Math.hypot(x - (a.x + t * dx), z - (a.z + t * dz));
 }
 
 /** 아래 메뉴 버튼과 장소의 짝. 도착한 장소의 메뉴 버튼을 강조한다. */
@@ -112,7 +128,6 @@ export const MENU_FOR_MARK: Partial<Record<MarkId, "question" | "diary" | "thoug
   window: "thought"
 };
 
-export const IDLE_LINE = "오늘은 뭘 해 볼까?\n가고 싶은 곳을 눌러 봐.";
 export const POKE_LINES = ["헤헤, 간지러워!", "응? 불렀어?", "오늘도 같이 쓰자!"];
 
 /** 가구가 있어 지나갈 수 없는 칸("열,행"). 일기 책상, 옷장, 책장(가구 자리는 furniture-layout). */
@@ -353,6 +368,8 @@ export interface LobbySnapshot {
   moving: boolean;
   dragging: boolean;
   arrived: MarkId | null;
+  /** 지금 장소 안내(글·버튼)를 보이는 장소. 도착했거나 구역 안이면 걷는 중에도 그 장소다. 아래 메뉴 강조에 쓴다. */
+  place: MarkId | null;
   action: { type: ActionType; t: number } | null;
   posture: { kind: PostureKind; t: number } | null;
   bubbleText: string;
@@ -634,16 +651,19 @@ export class LobbySim {
     let bubbleText = "";
     let bubbleButton: string | null = null;
     let idleBubble = false;
-    // 움직이는 동안은 말풍선을 숨긴다(짧은 말도). 서 있으면 짧은 말 → 장소 안내 → 기본 말 순서.
-    if (moving) bubbleText = "";
+    // 장소 구역 안에 있으면 걷거나 끌리는 중에도 그 장소 안내를 보인다. 구역 밖에서 움직이는 동안은 말풍선을 숨긴다.
+    // 서 있으면 짧은 말 → 로비 인사 → 장소 안내 순서이고, 셋 다 없으면 말풍선이 없다(기본 말은 없앴다).
+    const place = this.currentPlace();
+    if (moving && !place) bubbleText = "";
     else if (nowMs < this.quipUntilMs) bubbleText = this.quip;
-    else if (this.arrived) {
-      bubbleText = MARKS[this.arrived].prompt;
-      bubbleButton = MARKS[this.arrived].buttonLabel;
-    } else {
-      bubbleText = this.greeting ?? IDLE_LINE;
+    else if (!moving && this.greeting) {
+      bubbleText = this.greeting;
       idleBubble = true;
+    } else if (place) {
+      bubbleText = MARKS[place].prompt;
+      bubbleButton = MARKS[place].buttonLabel;
     }
+    const shownPlace = bubbleButton !== null ? place : null;
     return {
       x: this.x,
       z: this.z,
@@ -652,6 +672,7 @@ export class LobbySim {
       moving,
       dragging: this.dragging,
       arrived: this.arrived,
+      place: shownPlace,
       action: this.action ? { ...this.action } : null,
       posture: this.posture ? { ...this.posture } : null,
       bubbleText,
@@ -662,7 +683,13 @@ export class LobbySim {
 
   /** 말풍선 버튼을 눌렀을 때 띄울 안내. 도착한 곳이 없으면 null. */
   enterMessage(): string | null {
-    return this.arrived ? MARKS[this.arrived].enterMessage : null;
+    const place = this.currentPlace();
+    return place ? MARKS[place].enterMessage : null;
+  }
+
+  /** 지금 있는 장소: 도착한 장소, 아니면 지금 서 있거나 지나는 장소 구역. 없으면 null. */
+  currentPlace(): MarkId | null {
+    return this.arrived ?? markZoneAt(this.x, this.z);
   }
 
   /** 시험용으로만 쓰는 무작위(두리번 간격 등). */

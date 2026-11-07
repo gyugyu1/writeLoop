@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Lobby3dCanvas, { type LobbyPointerPhase, type LobbyProjection, type ToonSettings } from "@/components/lobby3d/lobby3d-canvas";
 import SimpleSlider from "@/components/lobby3d/simple-slider";
 import {
-  IDLE_LINE,
   LobbySim,
   MARKS,
   MENU_FOR_MARK,
@@ -13,6 +12,7 @@ import {
   VIEW_WIDTH_MIN,
   clampViewWidth,
   type ActionType,
+  type LobbySnapshot,
   type MarkId,
   type PointerHit
 } from "@/lib/lobby3d/engine";
@@ -49,7 +49,7 @@ const MENU = [
 interface ViewState {
   bubbleText: string;
   bubbleButton: string | null;
-  arrived: MarkId | null;
+  place: MarkId | null;
   actionType: ActionType | null;
   idleBubble: boolean;
 }
@@ -70,7 +70,7 @@ function sameView(a: ViewState, b: ViewState) {
   return (
     a.bubbleText === b.bubbleText &&
     a.bubbleButton === b.bubbleButton &&
-    a.arrived === b.arrived &&
+    a.place === b.place &&
     a.actionType === b.actionType &&
     a.idleBubble === b.idleBubble
   );
@@ -88,7 +88,7 @@ export interface Lobby3dScreenProps {
   onMenu?: (id: LobbyMenuId) => void;
   /** 장소에 도착해 말풍선 버튼을 눌렀을 때. true를 돌려주면 처리한 것이고, 아니면 장소 안내(enterMessage)를 띄운다. */
   onEnterMark?: (mark: MarkId) => boolean;
-  /** 기본 말풍선(로비 인사 포함)에 붙일 버튼(예: 이어 쓰기). */
+  /** 로비 인사 말풍선에 붙일 버튼(예: 이어 쓰기). 인사를 거두면 보이지 않는다. */
   idleButton?: { label: string; onPress: () => void } | null;
   /** 로비에 들어올 때의 인사. key가 바뀔 때마다 라이트루프가 이 말과 동작으로 인사한다(lobby-greeting). */
   greeting?: { line: string; action: ActionType; key: number } | null;
@@ -125,7 +125,7 @@ export default function Lobby3dScreen({
   if (!simRef.current) simRef.current = new LobbySim();
   const sim = simRef.current;
 
-  const [view, setView] = useState<ViewState>({ bubbleText: IDLE_LINE, bubbleButton: null, arrived: null, actionType: null, idleBubble: true });
+  const [view, setView] = useState<ViewState>({ bubbleText: "", bubbleButton: null, place: null, actionType: null, idleBubble: false });
   // 초당 프레임 표시. 값이 바뀔 때만 다시 그린다(이름표·말풍선 자리는 아래 Animated 값으로 옮긴다).
   const [fps, setFps] = useState<number | null>(null);
   const [viewWidth, setViewWidth] = useState(VIEW_WIDTH_DEFAULT);
@@ -146,12 +146,12 @@ export default function Lobby3dScreen({
   const [bubbleHeight, setBubbleHeight] = useState(60);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const syncView = useCallback(() => {
-    const snap = sim.snapshot(Date.now());
+  const syncView = useCallback((given?: LobbySnapshot) => {
+    const snap = given ?? sim.snapshot(Date.now());
     const next: ViewState = {
       bubbleText: snap.bubbleText,
       bubbleButton: snap.bubbleButton,
-      arrived: snap.moving ? null : snap.arrived,
+      place: snap.place,
       actionType: snap.action?.type ?? null,
       idleBubble: snap.idleBubble
     };
@@ -219,6 +219,20 @@ export default function Lobby3dScreen({
   const bubbleLeft = useRef(nativeValue(0)).current;
   const bubbleTop = useRef(nativeValue(320)).current;
   const bubbleOpacity = useRef(nativeValue(1)).current;
+  // 장소 안내 말풍선은 장소마다 미리 만들어 두고, 지금 장소의 것만 네이티브 쪽 투명도로 보인다. 아래 메뉴 강조도 같다.
+  // 손을 떼지 않고 끄는 동안에는 3D 그리기와 누르기 처리가 자바스크립트 일꾼을 차지해 화면 다시 그리기가 밀리므로(손을 떼거나
+  // 몇 초 뒤에야 반영됐다), 다시 그리기를 기다리지 않고 바꿀 수 있게 한다.
+  const placeOpacity = useRef(
+    Object.fromEntries((Object.keys(MARKS) as MarkId[]).map((id) => [id, nativeValue(0)])) as Record<MarkId, Animated.Value>
+  ).current;
+  const menuLitOpacity = useRef(
+    Object.fromEntries(MENU.map((item) => [item.id, nativeValue(0)])) as Record<LobbyMenuId, Animated.Value>
+  ).current;
+  const [placeHeights, setPlaceHeights] = useState<Record<MarkId, number>>(
+    () => Object.fromEntries((Object.keys(MARKS) as MarkId[]).map((id) => [id, 80])) as Record<MarkId, number>
+  );
+  // 화면에 그려 둔 인사·짧은 말 말풍선의 글. 다시 그리기가 밀려 글이 지금 말과 다르면 그 말풍선을 보이지 않는다.
+  const renderedLine = useRef("");
   const lastSent = useRef(new Map<Animated.Value, number>()).current;
   // 네이티브 쪽 값은 그림만 옮기고 화면 구조(누르기 자리를 재는 곳)는 그대로 둔다. 말풍선 자리가 멈추면 한 번 다시 그려
   // 말풍선 버튼을 누르는 자리가 실제 자리와 맞게 한다(누른 채 손가락이 살짝 움직여도 눌림이 취소되지 않게).
@@ -276,17 +290,33 @@ export default function Lobby3dScreen({
     [bubbleLeft, bubbleTop, labelPos, send, lastSent]
   );
 
-  /** 걷거나 끄는 중이라 말풍선을 숨긴 때인지(스냅숏의 moving 규칙과 같다). */
-  const bubbleHidden = useCallback(() => Math.hypot(sim.vx, sim.vz) > 0.3 || sim.dragging, [sim]);
+  /** 장소 구역 밖에서 걷거나 끄는 중이라 말풍선을 숨긴 때인지(스냅숏 규칙과 같다. 구역 안이면 걷는 중에도 안내를 보인다). */
+  const bubbleHidden = useCallback(
+    () => (Math.hypot(sim.vx, sim.vz) > 0.3 || sim.dragging) && sim.currentPlace() === null,
+    [sim]
+  );
+
+  /** 스냅숏대로 장소 안내 말풍선·인사 말풍선·메뉴 강조의 보임을 네이티브 쪽에서 바로 바꾼다. */
+  const applyOverlay = useCallback(
+    (snap: LobbySnapshot) => {
+      const place = snap.place;
+      for (const id of Object.keys(MARKS) as MarkId[]) send(placeOpacity[id], place === id ? 1 : 0, 0);
+      const lineShown = place === null && snap.bubbleText !== "" && snap.bubbleText === renderedLine.current;
+      send(bubbleOpacity, lineShown ? 1 : 0, 0);
+      const lit = place ? MENU_FOR_MARK[place] ?? null : null;
+      for (const item of MENU) send(menuLitOpacity[item.id], lit === item.id ? 1 : 0, 0);
+    },
+    [send, placeOpacity, bubbleOpacity, menuLitOpacity]
+  );
 
   const onFrame = useCallback(
     (dt: number, nowMs: number) => {
       sim.update(dt, nowMs);
-      // 걷거나 끄는 동안은 말풍선을 숨긴다(스냅숏의 규칙과 같다)
-      send(bubbleOpacity, bubbleHidden() ? 0 : 1, 0);
-      syncView();
+      const snap = sim.snapshot(Date.now());
+      applyOverlay(snap);
+      syncView(snap);
     },
-    [sim, syncView, bubbleOpacity, bubbleHidden, send]
+    [sim, syncView, applyOverlay]
   );
 
   const onPointer = useCallback(
@@ -316,7 +346,7 @@ export default function Lobby3dScreen({
   // 슬라이더는 왼쪽이 멀리(넓게 보임), 오른쪽이 가까이다.
   const closeness = VIEW_WIDTH_MAX + VIEW_WIDTH_MIN - viewWidth;
   const closenessPercent = Math.round(((closeness - VIEW_WIDTH_MIN) / (VIEW_WIDTH_MAX - VIEW_WIDTH_MIN)) * 100);
-  const litMenu = view.arrived ? MENU_FOR_MARK[view.arrived] ?? null : null;
+  const litMenu = view.place ? MENU_FOR_MARK[view.place] ?? null : null;
   const handleProjection = useCallback(
     (next: LobbyProjection) => {
       setFps((prev) => (prev === next.fps ? prev : next.fps));
@@ -325,7 +355,14 @@ export default function Lobby3dScreen({
     [onProjection]
   );
   const shownToon = devPanel ? toon : HOME_TOON;
-  const showIdleButton = Boolean(idleButton) && !view.bubbleButton && view.idleBubble;
+  // 장소 안내가 아닌 말(인사·짧은 말). 장소 안내는 아래에서 장소마다 미리 만든 말풍선이 보인다.
+  const lineText = view.place === null ? view.bubbleText : "";
+  const showIdleButton = Boolean(idleButton) && view.idleBubble;
+  // 그린 뒤 그린 글을 적어 두고 보임을 다시 맞춘다(프레임을 기다리지 않게)
+  useLayoutEffect(() => {
+    renderedLine.current = lineText;
+    applyOverlay(sim.snapshot(Date.now()));
+  });
 
   return (
     <View style={styles.root}>
@@ -357,7 +394,50 @@ export default function Lobby3dScreen({
         </Animated.View>
       ))}
 
-      {view.bubbleText ? (
+      {(Object.keys(MARKS) as MarkId[]).map((id) => {
+        const active = view.place === id;
+        return (
+          <Animated.View
+            key={`place-${id}`}
+            // 지금 장소가 아닌 말풍선은 누르기와 화면 읽기에서 뺀다(투명도는 프레임마다 네이티브 쪽에서 바뀐다)
+            pointerEvents={active ? "box-none" : "none"}
+            accessibilityElementsHidden={!active}
+            importantForAccessibility={active ? "auto" : "no-hide-descendants"}
+            onLayout={(e) => {
+              const h = Math.round(e.nativeEvent.layout.height);
+              if (h > 0 && h !== placeHeights[id]) setPlaceHeights((prev) => ({ ...prev, [id]: h }));
+            }}
+            style={[
+              styles.bubbleWrap,
+              {
+                opacity: placeOpacity[id],
+                transform: [{ translateX: bubbleLeft }, { translateY: bubbleTop }, { translateY: -placeHeights[id] - 12 }]
+              }
+            ]}
+          >
+            <View style={styles.bubble} pointerEvents="box-none">
+              <View pointerEvents="none">
+                <Text style={styles.bubbleText}>{MARKS[id].prompt}</Text>
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                style={styles.bubbleButton}
+                onPress={() => {
+                  // 걷기 시작해 이 안내가 사라졌는데 아직 다시 그리기 전이면 누르지 않은 것으로 본다
+                  if (sim.snapshot(Date.now()).place !== id) return;
+                  if (onEnterMark?.(id)) return;
+                  showToast(MARKS[id].enterMessage);
+                }}
+              >
+                <Text style={styles.bubbleButtonText}>{MARKS[id].buttonLabel}</Text>
+              </Pressable>
+            </View>
+            <View style={styles.bubbleTail} pointerEvents="none" />
+          </Animated.View>
+        );
+      })}
+
+      {lineText ? (
         <Animated.View
           pointerEvents="box-none"
           onLayout={(e) => {
@@ -375,24 +455,8 @@ export default function Lobby3dScreen({
           {/* 글 부분은 누르기를 받지 않고(뒤의 방이 받는다) 버튼만 누를 수 있다 */}
           <View style={styles.bubble} pointerEvents="box-none">
             <View pointerEvents="none">
-              <Text style={styles.bubbleText}>{view.bubbleText}</Text>
+              <Text style={styles.bubbleText}>{lineText}</Text>
             </View>
-            {view.bubbleButton ? (
-              <Pressable
-                accessibilityRole="button"
-                style={styles.bubbleButton}
-                onPress={() => {
-                  // 걷기 시작해 말풍선이 투명해졌는데 아직 화면에서 빠지기 전이면 누르지 않은 것으로 본다
-                  if (bubbleHidden()) return;
-                  const arrived = sim.arrived;
-                  if (arrived && onEnterMark?.(arrived)) return;
-                  const message = sim.enterMessage();
-                  if (message) showToast(message);
-                }}
-              >
-                <Text style={styles.bubbleButtonText}>{view.bubbleButton}</Text>
-              </Pressable>
-            ) : null}
             {showIdleButton && idleButton ? (
               <Pressable
                 accessibilityRole="button"
@@ -572,9 +636,11 @@ export default function Lobby3dScreen({
                 key={item.id}
                 accessibilityRole="button"
                 accessibilityState={{ selected: lit }}
-                style={[styles.menuButton, item.primary && styles.menuPrimary, lit && styles.menuLit]}
+                style={[styles.menuButton, item.primary && styles.menuPrimary]}
                 onPress={() => (onMenu ? onMenu(item.id) : showToast(`${item.label} 화면으로 가요`))}
               >
+                {/* 강조 테두리. 끄는 중에도 바로 따라가게 네이티브 쪽 투명도로 보인다 */}
+                <Animated.View pointerEvents="none" style={[styles.menuLitRing, { opacity: menuLitOpacity[item.id] }]} />
                 <Text style={[styles.menuText, item.primary && styles.menuPrimaryText]}>{item.label}</Text>
               </Pressable>
             );
@@ -743,7 +809,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10
   },
   menuPrimary: { flex: 1.3, backgroundColor: ACCENT },
-  menuLit: { borderColor: "#FFC23D", borderWidth: 4 },
+  menuLitRing: { position: "absolute", top: -2, left: -2, right: -2, bottom: -2, borderRadius: 20, borderWidth: 4, borderColor: "#FFC23D" },
   menuText: { fontSize: 15, fontWeight: "700", color: "#2B1810" },
   menuPrimaryText: { color: "#FFFFFF" }
 });

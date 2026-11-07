@@ -34,7 +34,8 @@ export const FURNITURE_LAYOUT: readonly FurniturePlacement[] = [
   { piece: "desk", x: 1.25, y: 0, z: 5.5, rotY: 0, mark: "desk" },
   // 의자는 책상 밑으로 대부분 밀어 넣는다(앞면이 책상을 본다). 등받이 쪽만 책상 앞(칸 "1,6")으로 조금 나온다
   { piece: "chair", x: 1.5, y: 0, z: 5.95, rotY: Math.PI, mark: "desk" },
-  { piece: "bookcase", x: 0.44, y: 0, z: 2.5, rotY: Math.PI / 2, blocker: true },
+  // 책장은 학습 기록 장소다(누르면 그 앞으로 간다). 칸 "0,2"는 그대로 막힌 칸이다
+  { piece: "bookcase", x: 0.44, y: 0, z: 2.5, rotY: Math.PI / 2, mark: "bookcase" },
   { piece: "wardrobe", x: W - 0.44, y: 0, z: 3.5, rotY: -Math.PI / 2, blocker: true },
   { piece: "rug", x: 4.6, y: 0.004, z: 7.2, rotY: 0 },
   // 방에는 문이 없고, 앞 가운데 입구 발판으로 밖에 나간다

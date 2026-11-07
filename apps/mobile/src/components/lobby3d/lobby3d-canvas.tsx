@@ -482,7 +482,9 @@ function buildWorld(): World {
     board: new THREE.Vector3(1.8, 2.75, 0.3),
     window: new THREE.Vector3(4.8, 3.05, 0.3),
     door: new THREE.Vector3(W / 2, 0.4, D + ROOM.stepDepth / 2),
-    desk: new THREE.Vector3(1.25, 2.1, 5.5)
+    desk: new THREE.Vector3(1.25, 2.1, 5.5),
+    // 책장은 왼쪽 벽에 붙어 화면 끝에 가까우므로 이름표를 방 쪽으로 조금 옮긴다
+    bookcase: new THREE.Vector3(0.9, 2.3, 2.5)
   };
 
   // 방 조명. 해는 앞쪽 왼편 위에서 가구 앞면을 비춘다(실제 해 방향은 바닥의 창문 빛이 맡는다). 색·세기는 하루의 때를 따른다.

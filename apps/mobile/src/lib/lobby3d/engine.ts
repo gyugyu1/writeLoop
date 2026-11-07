@@ -1,7 +1,7 @@
 // 3D 로비(라이트루프의 방)의 동작 규칙. 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 // 좌표: 바닥 한 칸 = 1. x는 왼쪽→오른쪽(0..width), z는 뒷벽→앞(0..depth). 높이는 y.
 
-export type MarkId = "board" | "window" | "desk" | "door";
+export type MarkId = "board" | "window" | "desk" | "door" | "bookcase";
 export type ActionType = "wave" | "jump" | "hop" | "point" | "spin" | "look" | "poke";
 
 export interface FloorPoint {
@@ -81,6 +81,16 @@ export const MARKS: Record<MarkId, MarkInfo> = {
     prompt: "밖으로 나가 볼까?\n마을은 다음에 열려.",
     buttonLabel: "나가기",
     enterMessage: "마을은 다음 업데이트에서 열려요"
+  },
+  bookcase: {
+    id: "bookcase",
+    label: "학습 기록",
+    // 왼쪽 벽에 붙은 책장. 그 앞에 서서 벽 쪽을 본다
+    faceTo: { x: 0, z: 2.5 },
+    approach: [{ x: 1.4, z: 2.5 }],
+    prompt: "지금까지 쓴 기록이 모여 있어.\n기록을 볼까?",
+    buttonLabel: "들어가기",
+    enterMessage: "학습 기록으로 들어가요"
   }
 };
 
@@ -91,7 +101,7 @@ export const MARKS: Record<MarkId, MarkInfo> = {
 export const MARK_ZONE_RADIUS = 1;
 
 /** 장소 구역이 서는 자리에서 바라볼 지점(벽)까지 이어지는 장소. 벽에 바짝 붙어도 구역 안이다. */
-const ZONE_REACHES_WALL: ReadonlySet<MarkId> = new Set<MarkId>(["board", "window"]);
+const ZONE_REACHES_WALL: ReadonlySet<MarkId> = new Set<MarkId>(["board", "window", "bookcase"]);
 
 /** 장소 구역의 가운데(서는 자리들의 가운데). */
 export function markZoneCenter(id: MarkId): FloorPoint {
@@ -102,14 +112,20 @@ export function markZoneCenter(id: MarkId): FloorPoint {
   };
 }
 
-/** 이 자리가 들어 있는 장소 구역. 없으면 null(구역은 서로 겹치지 않는다). */
+/** 이 자리가 들어 있는 장소 구역. 없으면 null. 책장과 게시판처럼 구역이 겹치는 곳에서는 구역 모양까지 더 가까운 장소다. */
 export function markZoneAt(x: number, z: number): MarkId | null {
+  let best: MarkId | null = null;
+  let bestDistance = Infinity;
   for (const id of Object.keys(MARKS) as MarkId[]) {
     const c = markZoneCenter(id);
     const end = ZONE_REACHES_WALL.has(id) ? MARKS[id].faceTo : c;
-    if (distanceToSegment(x, z, c, end) <= MARK_ZONE_RADIUS) return id;
+    const distance = distanceToSegment(x, z, c, end);
+    if (distance <= MARK_ZONE_RADIUS && distance < bestDistance) {
+      best = id;
+      bestDistance = distance;
+    }
   }
-  return null;
+  return best;
 }
 
 /** 점에서 선분 a–b까지의 거리. */
@@ -122,10 +138,11 @@ function distanceToSegment(x: number, z: number, a: FloorPoint, b: FloorPoint): 
 }
 
 /** 아래 메뉴 버튼과 장소의 짝. 도착한 장소의 메뉴 버튼을 강조한다. */
-export const MENU_FOR_MARK: Partial<Record<MarkId, "question" | "diary" | "thought">> = {
+export const MENU_FOR_MARK: Partial<Record<MarkId, "question" | "diary" | "thought" | "records">> = {
   board: "question",
   desk: "diary",
-  window: "thought"
+  window: "thought",
+  bookcase: "records"
 };
 
 export const POKE_LINES = ["헤헤, 간지러워!", "응? 불렀어?", "오늘도 같이 쓰자!"];

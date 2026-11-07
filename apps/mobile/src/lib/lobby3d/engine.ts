@@ -67,7 +67,8 @@ export const MARKS: Record<MarkId, MarkInfo> = {
     id: "desk",
     label: "일기 책상",
     faceTo: { x: 1.25, z: 5.5 },
-    approach: [{ x: 3.35, z: 5.2 }, { x: 3.35, z: 5.8 }],
+    // 의자 바로 뒤에 서서 책상을 본다(장소 구역도 여기를 가운데로 한다)
+    approach: [{ x: 1.5, z: 6.75 }],
     prompt: "일기 책상이야.\n오늘 일기를 써 볼까?",
     buttonLabel: "들어가기",
     enterMessage: "영어일기로 들어가요"
@@ -82,6 +83,27 @@ export const MARKS: Record<MarkId, MarkInfo> = {
     enterMessage: "마을은 다음 업데이트에서 열려요"
   }
 };
+
+/** 장소 구역의 반지름(칸). 장소마다 서는 자리들의 가운데를 중심으로 한 원이다. */
+export const MARK_ZONE_RADIUS = 1;
+
+/** 장소 구역의 가운데(서는 자리들의 가운데). */
+export function markZoneCenter(id: MarkId): FloorPoint {
+  const points = MARKS[id].approach;
+  return {
+    x: points.reduce((sum, p) => sum + p.x, 0) / points.length,
+    z: points.reduce((sum, p) => sum + p.z, 0) / points.length
+  };
+}
+
+/** 이 자리가 들어 있는 장소 구역. 없으면 null(구역은 서로 겹치지 않는다). */
+export function markZoneAt(x: number, z: number): MarkId | null {
+  for (const id of Object.keys(MARKS) as MarkId[]) {
+    const c = markZoneCenter(id);
+    if (Math.hypot(x - c.x, z - c.z) <= MARK_ZONE_RADIUS) return id;
+  }
+  return null;
+}
 
 /** 아래 메뉴 버튼과 장소의 짝. 도착한 장소의 메뉴 버튼을 강조한다. */
 export const MENU_FOR_MARK: Partial<Record<MarkId, "question" | "diary" | "thought">> = {
@@ -372,6 +394,8 @@ export class LobbySim {
   private greeting: string | null = null;
   /** 마지막으로 무언가 한 때(밀리초). 이때부터 SIT_AFTER_MS가 지나면 앉는다. null이면 다음 프레임에 지금으로 잡는다. */
   private idleSinceMs: number | null = null;
+  /** 끌기를 마친 뒤 멈추면 장소 구역 안인지 본다. */
+  private checkZoneWhenStopped = false;
   /** 앞 프레임의 시각(밀리초). 그리기가 멈췄다 다시 돌면(다른 화면·배경) 그 사이를 앉기까지의 시간에 넣지 않으려고 본다. */
   private lastUpdateMs: number | null = null;
   private random: () => number;
@@ -466,7 +490,10 @@ export class LobbySim {
     this.down = null;
     this.dragging = false;
     this.dragPoint = null;
-    if (wasDrag) return "drag-end";
+    if (wasDrag) {
+      this.checkZoneWhenStopped = true;
+      return "drag-end";
+    }
     if (hit.onCharacter) {
       this.startAction("poke");
       this.say(POKE_LINES[this.pokeIndex % POKE_LINES.length], nowMs, 1600);
@@ -490,11 +517,18 @@ export class LobbySim {
   private startDrag(): void {
     if (this.dragging) return;
     this.dragging = true;
+    this.checkZoneWhenStopped = false;
     this.path = [];
     this.target = null;
     this.arrived = null;
     this.goalHeading = null;
     this.action = null;
+  }
+
+  /** 장소에 도착한다(그 장소를 바라본다). mark가 null이면 도착이 아니다. */
+  private arrive(mark: MarkId | null): void {
+    this.arrived = mark;
+    this.goalHeading = mark ? headingTo({ x: this.x, z: this.z }, MARKS[mark].faceTo) : null;
   }
 
   /** 한 프레임 진행. dt는 초. */
@@ -542,8 +576,8 @@ export class LobbySim {
           this.z = tgt.z;
           this.vx = 0;
           this.vz = 0;
-          this.arrived = this.target;
-          if (!this.arrived) this.goalHeading = null;
+          // 장소를 눌러 왔으면 그 장소, 바닥을 눌러 왔으면 멈춘 자리의 장소 구역(없으면 도착이 아니다)
+          this.arrive(this.target ?? markZoneAt(this.x, this.z));
         }
       } else if (d > (this.dragging ? 0.25 : 0)) {
         const lastLeg = !this.dragging && this.path.length === 1;
@@ -575,6 +609,12 @@ export class LobbySim {
     } else {
       this.vx = 0;
       this.vz = 0;
+    }
+
+    // 끌기를 마친 뒤 멈추면, 멈춘 자리가 장소 구역 안인지 본다
+    if (this.checkZoneWhenStopped && !this.dragging && !this.path.length && Math.hypot(this.vx, this.vz) <= 0.05) {
+      this.checkZoneWhenStopped = false;
+      this.arrive(markZoneAt(this.x, this.z));
     }
 
     let want: number | null = null;

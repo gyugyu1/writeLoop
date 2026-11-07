@@ -433,7 +433,7 @@ export default function Lobby3dScreen({
 const BUBBLE_WIDTH = 196;
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: "#E8C79A" },
+  root: { flex: 1, backgroundColor: "#000000" },
   label: {
     position: "absolute",
     transform: [{ translateX: -40 }, { translateY: -22 }],

@@ -477,7 +477,10 @@ function Scene({
         if (o instanceof THREE.Mesh) {
           o.geometry.dispose();
           const materials = Array.isArray(o.material) ? o.material : [o.material];
-          materials.forEach((m) => m.dispose());
+          materials.forEach((m) => {
+            (m as THREE.MeshBasicMaterial).map?.dispose();
+            m.dispose();
+          });
         }
       });
       world.kit.gradient.dispose();

@@ -199,8 +199,8 @@ export function lerpAngle(a: number, b: number, k: number): number {
 
 /**
  * 보는 점 깊이에서 화면 가로에 보이는 폭(칸). 작을수록 가깝다.
- * 기본값은 방 전체가 보이는 가장 가까운 쪽 거리다(방이 가로로 다 들어오는 거리는 폰 화면에서 10.6~11.0).
- * 집을 넓히기 전에는 기본값에서 카메라가 움직이지 않고, 가까이 당기면 라룹이를 따라간다(2026-11-07 사용자 결정).
+ * 기본값 9.4에서는 방이 세로로 다 들어오고, 가로는 조금 넘쳐 라룹이가 양옆 끝으로 가면 벽 끝까지만 조금 따라간다
+ * (방이 가로로 다 들어오는 거리는 폰 화면에서 10.6~11.0. 2026-11-07 사용자 결정).
  */
 export const VIEW_WIDTH_DEFAULT = 9.4;
 export const VIEW_WIDTH_MIN = 4.0;
@@ -269,11 +269,19 @@ export function cameraPose(follow: FloorPoint, viewWidth: number, aspect: number
   const cz = fitsY
     ? centerZ
     : Math.min(Math.max(follow.z - 0.6, solve(maxY, 1)), Math.max(solve(minY, -1), solve(maxY, 1)));
-  // 가로: 화면 가로 자리 = (x − 보는 점 x) / (깊이 · tanH). 가장 가까운 모서리가 가장 넓게 보인다.
+  // 가로: 화면 가로 자리 = (x − 보는 점 x) / (깊이 · tanH). 가까운 곳일수록 같은 화면 폭에 좁은 바닥이 보인다.
+  // 다 들어오는지는 방 상자에서 가장 가까운 모서리로 본다.
   const nearest = Math.min(...corners.map((c) => depthAt(c, cz)));
   const centerX = (b.minX + b.maxX) / 2;
-  const reach = nearest * tanH;
-  const fitsX = nearest > NEAR && (b.maxX - centerX) <= reach;
+  const fitsX = nearest > NEAR && b.maxX - centerX <= nearest * tanH;
+  // 따라갈 때는 화면 아래쪽 옆 가장자리도 방 끝 너머를 보지 않게 막는다. 깊이 d에서 화면 옆 끝은 보는 점에서 d·tanH 떨어지므로,
+  // 화면 아래에 보이는 방 바닥의 깊이로 막는다. 화면 아래 끝 줄이 바닥에 닿는 깊이(보는 점 z와 상관없다)가 방 안이면 그 깊이,
+  // 화면 아래 끝 줄이 방 앞보다 앞이면 바닥 앞끝의 깊이다(둘 중 먼 쪽).
+  const bottomRowDepth = (dist * sin) / (sin + cos * tanV);
+  const floorDepth = Math.max(bottomRowDepth, depthAt({ y: 0, z: b.maxZ }, cz));
+  // 화면 아래 줄의 바닥이 화면보다 좁으면(방 상자로는 화면보다 넓은 좁은 틈) 양옆이 어차피 조금 검다. 그때는 아주 조금만 따라간다.
+  const halfWidth = b.maxX - centerX;
+  const reach = Math.max(nearest * tanH, Math.min(Math.max(nearest, floorDepth) * tanH, halfWidth - 0.05));
   const cx = fitsX ? centerX : Math.min(Math.max(follow.x, b.minX + reach), Math.max(b.maxX - reach, centerX));
   return {
     position: { x: cx, y: dist * sin, z: cz + dist * cos },

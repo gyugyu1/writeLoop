@@ -1,5 +1,8 @@
+import { DEFAULT_LOBBY_LAYOUT, layoutGeometry, type LobbyLayout } from "./lobby-layout";
+
 // 3D 로비(라이트루프의 방)의 동작 규칙. 3D 그리기와 떨어져 있어 테스트에서 바로 부를 수 있다.
 // 좌표: 바닥 한 칸 = 1. x는 왼쪽→오른쪽(0..width), z는 뒷벽→앞(0..depth). 높이는 y.
+// 가구에 딸린 값(장소의 서는 자리·바라볼 지점, 막힌 칸, 의자)은 지금 배치(applyLobbyLayout)에서 계산한다.
 
 export type MarkId = "board" | "window" | "desk" | "door" | "bookcase";
 export type ActionType = "wave" | "jump" | "hop" | "point" | "spin" | "look" | "poke";
@@ -44,12 +47,14 @@ export interface MarkInfo {
   enterMessage: string;
 }
 
+/** 가구에 딸린 장소의 서는 자리·바라볼 지점은 지금 배치에서 채운다(applyLobbyLayout, lobby-layout). */
+const PLACED = { faceTo: { x: 0, z: 0 }, approach: [] as FloorPoint[] };
+
 export const MARKS: Record<MarkId, MarkInfo> = {
   board: {
     id: "board",
     label: "오늘의 질문",
-    faceTo: { x: 1.8, z: 0 },
-    approach: [{ x: 1.6, z: 1.3 }, { x: 2.2, z: 1.3 }],
+    ...PLACED,
     prompt: "오늘의 질문 게시판이야.\n질문에 답하러 갈까?",
     buttonLabel: "들어가기",
     enterMessage: "질문에 답하기로 들어가요"
@@ -57,8 +62,7 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   window: {
     id: "window",
     label: "생각 창가",
-    faceTo: { x: 4.8, z: 0 },
-    approach: [{ x: 4.5, z: 1.55 }, { x: 5.1, z: 1.55 }],
+    ...PLACED,
     prompt: "생각 창가야.\n떠오르는 말을 바로 적어 볼까?",
     buttonLabel: "들어가기",
     enterMessage: "지금 생각나는대로로 들어가요"
@@ -66,9 +70,7 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   desk: {
     id: "desk",
     label: "일기 책상",
-    faceTo: { x: 1.25, z: 5.5 },
-    // 의자 바로 뒤에 서서 책상을 본다(장소 구역도 여기를 가운데로 한다)
-    approach: [{ x: 1.5, z: 6.75 }],
+    ...PLACED,
     prompt: "일기 책상이야.\n오늘 일기를 써 볼까?",
     buttonLabel: "들어가기",
     enterMessage: "영어일기로 들어가요"
@@ -85,9 +87,7 @@ export const MARKS: Record<MarkId, MarkInfo> = {
   bookcase: {
     id: "bookcase",
     label: "학습 기록",
-    // 왼쪽 벽에 붙은 책장. 그 앞에 서서 벽 쪽을 본다
-    faceTo: { x: 0, z: 2.5 },
-    approach: [{ x: 1.4, z: 2.5 }],
+    ...PLACED,
     prompt: "지금까지 쓴 기록이 모여 있어.\n기록을 볼까?",
     buttonLabel: "들어가기",
     enterMessage: "학습 기록으로 들어가요"
@@ -147,8 +147,9 @@ export const MENU_FOR_MARK: Partial<Record<MarkId, "question" | "diary" | "thoug
 
 export const POKE_LINES = ["헤헤, 간지러워!", "응? 불렀어?", "오늘도 같이 쓰자!"];
 
-/** 가구가 있어 지나갈 수 없는 칸("열,행"). 일기 책상, 옷장, 책장(가구 자리는 furniture-layout). */
-export const SOLID_TILES: ReadonlySet<string> = new Set(["0,5", "1,5", "2,5", "7,3", "0,2"]);
+/** 가구가 있어 지나갈 수 없는 칸("열,행"). 일기 책상, 옷장, 책장. 지금 배치에서 계산한다(applyLobbyLayout). */
+const solidTiles = new Set<string>();
+export const SOLID_TILES: ReadonlySet<string> = solidTiles;
 
 const BODY_RADIUS = 0.32;
 const tileKey = (c: number, r: number) => `${c},${r}`;
@@ -383,12 +384,43 @@ export const SCENE_IN_SECONDS: Record<SceneKind, number> = { think: 1.0, chair: 
 export const SCENE_OUT_SECONDS: Record<SceneKind, number> = { think: 0.4, chair: 1.0, book: 1.1 };
 
 /** 일기 책상 의자: 책상 밑에서 뒤로 빼는 거리(칸), 앉는 자리(뺀 의자 가운데)와 높이, 앉기 전에 비켜서는 의자 옆 자리. */
-export const CHAIR = {
-  pull: 0.5,
-  seat: { x: 1.5, z: 6.45 },
-  seatHeight: 0.67,
-  side: { x: 2.15, z: 6.55 }
-} as const;
+export const CHAIR: {
+  /** 책상 밑 의자 자리. */
+  home: FloorPoint;
+  /** 빼는 쪽(책상 앞, 단위 벡터)과 거리. */
+  pullDir: FloorPoint;
+  pull: number;
+  seat: FloorPoint;
+  seatHeight: number;
+  side: FloorPoint;
+  /** 앉아서 책상을 보는 방향(heading). */
+  heading: number;
+} = { home: { x: 0, z: 0 }, pullDir: { x: 0, z: 1 }, pull: 0, seat: { x: 0, z: 0 }, seatHeight: 0, side: { x: 0, z: 0 }, heading: 0 };
+
+let activeLayout: LobbyLayout = DEFAULT_LOBBY_LAYOUT;
+
+/**
+ * 가구 배치를 바꾼다. 장소의 서는 자리·바라볼 지점, 막힌 칸, 의자를 이 배치에서 다시 계산한다.
+ * (안내 문구처럼 배치와 관계없는 것은 그대로다.)
+ */
+export function applyLobbyLayout(layout: LobbyLayout): void {
+  activeLayout = layout;
+  const geometry = layoutGeometry(layout, ROOM.width);
+  for (const id of Object.keys(geometry.places) as (keyof typeof geometry.places)[]) {
+    MARKS[id].approach = geometry.places[id].approach;
+    MARKS[id].faceTo = geometry.places[id].faceTo;
+  }
+  solidTiles.clear();
+  for (const key of geometry.solidTiles) solidTiles.add(key);
+  Object.assign(CHAIR, geometry.chair);
+}
+
+/** 지금 가구 배치. */
+export function activeLobbyLayout(): LobbyLayout {
+  return activeLayout;
+}
+
+applyLobbyLayout(DEFAULT_LOBBY_LAYOUT);
 /** 의자: 옆으로 비켜서며 의자를 빼는 시간, 올라앉는 시간(초). 일어날 때도 같다. */
 const CHAIR_STEP_SECONDS = 0.4;
 const CHAIR_SIT_SECONDS = 0.6;
@@ -567,7 +599,7 @@ export class LobbySim {
     this.sceneFrom = { x: this.x, z: this.z };
     this.sceneEntered = null;
     this.scene = { kind, mark, phase: "in", t: 0 };
-    this.goalHeading = kind === "chair" ? Math.PI : headingTo({ x: this.x, z: this.z }, MARKS[mark].faceTo);
+    this.goalHeading = kind === "chair" ? CHAIR.heading : headingTo({ x: this.x, z: this.z }, MARKS[mark].faceTo);
     return true;
   }
 
@@ -681,7 +713,7 @@ export class LobbySim {
       }
       this.x = at.x;
       this.z = at.z;
-      this.goalHeading = Math.PI;
+      this.goalHeading = CHAIR.heading;
     } else if (s.kind === "book") {
       // 책장을 보고 꺼낸 뒤 앞(카메라 쪽)으로 돌아서서 펼친다. 꽂을 때는 다시 책장 쪽으로 돌아선다.
       const facing = headingTo(this.sceneFrom, mark.faceTo);

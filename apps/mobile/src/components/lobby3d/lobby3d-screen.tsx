@@ -213,28 +213,41 @@ export default function Lobby3dScreen({
 
   // 말풍선 자리와 보임. 화면 전체를 다시 그리는 것은 3D가 바쁠 때 늦어져, 말풍선이 라이트루프를 늦게 따라가거나 걷는 동안에도 남았다.
   // 그래서 자리·보임은 매 프레임 값만 바꾸고(다시 그리지 않음), 글은 바뀔 때만 다시 그린다.
-  const bubbleLeft = useRef(new Animated.Value(0)).current;
-  const bubbleTop = useRef(new Animated.Value(320)).current;
-  const bubbleOpacity = useRef(new Animated.Value(1)).current;
+  // 값은 네이티브 애니메이션 쪽에 두어(useNativeDriver) 바꿀 때 화면 구조를 다시 맞추지 않고, 반 픽셀 넘게 바뀔 때만 보낸다.
+  // (자바스크립트 쪽 값으로 매 프레임 열 개 넘게 바꾸면 초당 프레임이 절반쯤으로 떨어졌다.)
+  const nativeValue = (v: number) => new Animated.Value(v, { useNativeDriver: true });
+  const bubbleLeft = useRef(nativeValue(0)).current;
+  const bubbleTop = useRef(nativeValue(320)).current;
+  const bubbleOpacity = useRef(nativeValue(1)).current;
+  const lastSent = useRef(new Map<Animated.Value, number>()).current;
+  const send = useCallback(
+    (value: Animated.Value, next: number, epsilon: number) => {
+      const prev = lastSent.get(value);
+      if (prev !== undefined && Math.abs(prev - next) <= epsilon) return;
+      lastSent.set(value, next);
+      value.setValue(next);
+    },
+    [lastSent]
+  );
   const screenWidthRef = useRef(screenWidth);
   screenWidthRef.current = screenWidth;
   // 장소 이름표 자리도 같은 까닭으로 매 프레임 값만 바꾼다(카메라가 움직여도 화면 전체를 다시 그리지 않는다)
   const labelPos = useRef(
-    Object.fromEntries((Object.keys(MARKS) as MarkId[]).map((id) => [id, { left: new Animated.Value(0), top: new Animated.Value(0) }])) as Record<
+    Object.fromEntries((Object.keys(MARKS) as MarkId[]).map((id) => [id, { left: nativeValue(0), top: nativeValue(0) }])) as Record<
       MarkId,
       { left: Animated.Value; top: Animated.Value }
     >
   ).current;
   const onOverlayFrame = useCallback(
     (bubble: { x: number; y: number }, labels: Record<MarkId, { x: number; y: number }>) => {
-      bubbleLeft.setValue(Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8)));
-      bubbleTop.setValue(Math.max(120, bubble.y));
+      send(bubbleLeft, Math.max(8, Math.min(bubble.x - BUBBLE_WIDTH / 2, screenWidthRef.current - BUBBLE_WIDTH - 8)), 0.5);
+      send(bubbleTop, Math.max(120, bubble.y), 0.5);
       for (const id of Object.keys(labels) as MarkId[]) {
-        labelPos[id].left.setValue(labels[id].x);
-        labelPos[id].top.setValue(labels[id].y);
+        send(labelPos[id].left, labels[id].x, 0.5);
+        send(labelPos[id].top, labels[id].y, 0.5);
       }
     },
-    [bubbleLeft, bubbleTop, labelPos]
+    [bubbleLeft, bubbleTop, labelPos, send]
   );
 
   /** 걷거나 끄는 중이라 말풍선을 숨긴 때인지(스냅숏의 moving 규칙과 같다). */
@@ -244,10 +257,10 @@ export default function Lobby3dScreen({
     (dt: number, nowMs: number) => {
       sim.update(dt, nowMs);
       // 걷거나 끄는 동안은 말풍선을 숨긴다(스냅숏의 규칙과 같다)
-      bubbleOpacity.setValue(bubbleHidden() ? 0 : 1);
+      send(bubbleOpacity, bubbleHidden() ? 0 : 1, 0);
       syncView();
     },
-    [sim, syncView, bubbleOpacity, bubbleHidden]
+    [sim, syncView, bubbleOpacity, bubbleHidden, send]
   );
 
   const onPointer = useCallback(
@@ -303,7 +316,17 @@ export default function Lobby3dScreen({
       />
 
       {(Object.keys(MARKS) as MarkId[]).map((id) => (
-        <Animated.View key={id} pointerEvents="none" style={[styles.label, { left: labelPos[id].left, top: labelPos[id].top }]}>
+        <Animated.View
+          key={id}
+          pointerEvents="none"
+          style={[
+            styles.label,
+            {
+              // 네이티브 애니메이션은 자리를 transform으로만 옮길 수 있다(styles.label의 가운데 맞춤 이동도 여기서 함께 한다)
+              transform: [{ translateX: labelPos[id].left }, { translateY: labelPos[id].top }, { translateX: -40 }, { translateY: -22 }]
+            }
+          ]}
+        >
           <Text style={styles.labelText}>{MARKS[id].label}</Text>
         </Animated.View>
       ))}
@@ -318,10 +341,8 @@ export default function Lobby3dScreen({
           style={[
             styles.bubbleWrap,
             {
-              left: bubbleLeft,
-              top: bubbleTop,
               opacity: bubbleOpacity,
-              transform: [{ translateY: -bubbleHeight - 12 }]
+              transform: [{ translateX: bubbleLeft }, { translateY: bubbleTop }, { translateY: -bubbleHeight - 12 }]
             }
           ]}
         >
@@ -545,7 +566,8 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000000" },
   label: {
     position: "absolute",
-    transform: [{ translateX: -40 }, { translateY: -22 }],
+    left: 0,
+    top: 0,
     paddingHorizontal: 8,
     paddingVertical: 1,
     borderRadius: 8,
@@ -554,7 +576,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF"
   },
   labelText: { fontSize: 11, fontWeight: "700", color: "#2B1810" },
-  bubbleWrap: { position: "absolute", width: BUBBLE_WIDTH, alignItems: "center" },
+  bubbleWrap: { position: "absolute", left: 0, top: 0, width: BUBBLE_WIDTH, alignItems: "center" },
   bubble: {
     maxWidth: BUBBLE_WIDTH,
     paddingHorizontal: 11,

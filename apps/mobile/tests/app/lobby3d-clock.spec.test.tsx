@@ -2,7 +2,8 @@
 // 기대값은 시나리오(060-09의 02-qa-scenarios.md S4, D1~D6)와 결정(03-main-decision.md: 시각 조절은 15분 단위, 달만 고르면
 // 그달 15일, 고른 값은 "지금 시각으로"를 누르기 전까지 유지)에서만 가져온다. 구현 코드는 부르는 방법(속성 이름, 조절의 이름)을
 // 알려고만 읽었다.
-// 3D 그리기(lobby3d-canvas)는 Jest에서 돌지 않으므로 가짜로 바꾸고, 받은 daylight(햇빛·하루의 때·계절·스탠드)를 본다.
+// 3D 그리기(lobby3d-canvas)는 Jest에서 돌지 않으므로 가짜로 바꾸고, 받은 daylight(햇빛·하루의 때·계절·천장 조명)를 본다.
+// 06-main-decision.md: 스탠드를 빼고 보이지 않는 천장 조명을 둔다. 켜지고 꺼지는 때는 스탠드와 같다.
 // 폰 시각은 가짜 시계로 2026-06-21 12:30(폰 시간대)에 고정한다. 홈(D6)은 home-lobby.spec.test.tsx와 같은 가짜를 둔다.
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { act, fireEvent, render, screen } from "@testing-library/react-native";
@@ -220,7 +221,7 @@ function expectWinterNight() {
   expect(d.lamp).toBe(true);
 }
 
-/** 폰 시각 2026-06-21 12:30: 여름, 낮 = 1, 스탠드 꺼짐, 해 방위 180°(남중). */
+/** 폰 시각 2026-06-21 12:30: 여름, 낮 = 1, 천장 조명 꺼짐, 해 방위 180°(남중). */
 function expectPhoneNoonInJune() {
   const d = daylight();
   expect(d.season).toBe("summer");
@@ -321,7 +322,7 @@ describe("[spec] 개발 화면에서 미리 보기(D1~D5)", () => {
     expect(sliderValue("시각").now).toBeCloseTo(before + 0.25, 9);
   });
 
-  it("D2: 21시·12월을 고르면 그 시각·계절(겨울, 밤 = 1, 스탠드 켜짐)로 보인다", async () => {
+  it("D2: 21시·12월을 고르면 그 시각·계절(겨울, 밤 = 1, 천장 조명 켜짐)로 보인다", async () => {
     await renderDev();
     await openPanel();
     await pickNineAtNightInDecember();
@@ -330,7 +331,7 @@ describe("[spec] 개발 화면에서 미리 보기(D1~D5)", () => {
     expect(daylight().sun.elevation).toBeLessThan(-6);
   });
 
-  it("D3: 12:30에 달만 4월로 고르면 봄, 낮 = 1, 스탠드 꺼짐, 해 방위 180°", async () => {
+  it("D3: 12:30에 달만 4월로 고르면 봄, 낮 = 1, 천장 조명 꺼짐, 해 방위 180°", async () => {
     await renderDev();
     await openPanel();
     expect(sliderValue("시각").now).toBe(12.5);

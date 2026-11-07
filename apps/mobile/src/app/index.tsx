@@ -1,29 +1,27 @@
 import { Redirect, router, type Href } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
-import { RefreshControl, ScrollView, useWindowDimensions, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Text, useWindowDimensions, View } from "react-native";
 import HomeFeatureTutorial from "@/components/home-feature-tutorial";
-import MobileNavBar from "@/components/mobile-nav-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
+import LobbySheet from "@/components/home/lobby-sheet";
 import {
   DifficultySectionContent,
   FeaturedRecommendationContent,
   HomeDiarySectionContent,
-  HomeGuideModal,
   HomeLoadingState,
   HomeStatusPanel,
-  HomeUtilityRow,
   MonthCalendarModal,
-  NowInEnglishSectionContent,
-  QuestionSectionHeader
+  NowInEnglishSectionContent
 } from "@/components/home/home-sections";
+import type { LobbyProjection } from "@/components/lobby3d/lobby3d-canvas";
+import Lobby3dScreen, { type LobbyMenuId } from "@/components/lobby3d/lobby3d-screen";
+import type { MarkId } from "@/lib/lobby3d/engine";
 import { styles } from "@/components/home/home-styles";
 import {
   type HomeDiaryCalendarCell,
   toDateKey,
   parseDateKey,
-  getIncompleteLoopCopy,
-  getIncompleteLoopInlineTitle,
-  formatIncompleteLoopSavedAt,
   getMonthStart,
   isSameMonth,
   formatDiaryMonthLabel,
@@ -33,7 +31,7 @@ import {
 } from "@/components/home/home-helpers";
 import { useHomeData } from "@/components/home/use-home-data";
 import { useHomeMonthCalendar } from "@/components/home/use-home-month-calendar";
-import { useHomeTutorial } from "@/components/home/use-home-tutorial";
+import { useLobbyTutorial } from "@/components/home/use-lobby-tutorial";
 import { trackDailyPromptClick } from "@/lib/api";
 import { getDifficultyMeta } from "@/lib/difficulty";
 import { buildLoginHref } from "@/lib/login-redirect";
@@ -45,6 +43,7 @@ import type { DailyDifficulty, DiaryCalendarSummary } from "@/lib/types";
 export default function HomeScreen() {
   const { currentUser, isHydrating, refreshSession } = useSession();
   const { appUpdateNoticePhase } = useAppOverlayStatus();
+  const insets = useSafeAreaInsets();
   const { width: windowWidth, height: windowHeight } = useWindowDimensions();
   const {
     diaryCalendarError,
@@ -54,13 +53,11 @@ export default function HomeScreen() {
     featuredRecommendationError,
     featuredRecommendationItem,
     featuredRecommendationPrompt,
-    handleRefresh,
     incompleteLoop,
     isDiaryCalendarLoading,
     isFeaturedRecommendationLoading,
     isFeaturedRecommendationTranslationVisible,
     isInitialHomeLoadComplete,
-    isRefreshing,
     nowInEnglishSummary,
     setIsFeaturedRecommendationTranslationVisible,
     statusError,
@@ -69,8 +66,9 @@ export default function HomeScreen() {
     currentUser,
     refreshSession
   });
-  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // 로비 위로 올라오는 판(질문·일기·생각). 한 번에 하나만 연다.
+  const [openSheet, setOpenSheet] = useState<LobbyMenuId | null>(null);
   const [diaryMonthCursor, setDiaryMonthCursor] = useState(() => getMonthStart(new Date()));
   const historyRoute: Href = currentUser ? "/records" : buildLoginHref("/records");
   const diaryOverviewRoute: Href = currentUser ? "/diary" : buildLoginHref("/diary");
@@ -85,23 +83,6 @@ export default function HomeScreen() {
   );
 
   const weekChips = useMemo(() => buildWeekChips(todayStatus), [todayStatus]);
-  const incompleteLoopCopy = useMemo(
-    () => (incompleteLoop ? getIncompleteLoopCopy(incompleteLoop.step) : null),
-    [incompleteLoop]
-  );
-  const incompleteLoopSavedAt = useMemo(
-    () => (incompleteLoop ? formatIncompleteLoopSavedAt(incompleteLoop.updatedAt) : ""),
-    [incompleteLoop]
-  );
-  const incompleteLoopInlineNote = useMemo(() => {
-    if (!incompleteLoop) {
-      return "";
-    }
-
-    return [getIncompleteLoopInlineTitle(incompleteLoop.step), incompleteLoopSavedAt]
-      .filter(Boolean)
-      .join(" · ");
-  }, [incompleteLoop, incompleteLoopSavedAt]);
   const diaryTodayKey = useMemo(() => toDateKey(new Date()), []);
   const diaryDaysByDate = useMemo(() => {
     const grouped = new Map<string, DiaryCalendarSummary["days"][number]>();
@@ -177,30 +158,37 @@ export default function HomeScreen() {
     };
   }, [incompleteLoop]);
 
+  // 로비 안내가 장소를 짚으려면 3D가 보낸 장소 좌표가 있어야 한다. 좌표는 초당 15번쯤 오므로, 안내를 띄울 때만 화면 상태로 둔다.
+  const latestProjectionRef = useRef<LobbyProjection | null>(null);
+  const tutorialVisibleRef = useRef(false);
+  const [tutorialProjection, setTutorialProjection] = useState<LobbyProjection | null>(null);
+  const handleProjection = useCallback((projection: LobbyProjection) => {
+    latestProjectionRef.current = projection;
+    if (tutorialVisibleRef.current) setTutorialProjection(projection);
+  }, []);
+
   const {
-    diaryTutorialSectionRef,
-    difficultyTutorialSectionRef,
-    featuredTutorialSectionRef,
     handleAdvanceHomeTutorial,
     handleCloseHomeTutorial,
-    homeScrollOffsetRef,
-    homeScrollRef,
-    homeScrollViewportRef,
     homeTutorialSpotlight,
     homeTutorialStepIndex,
     isHomeTutorialPositioning,
-    isHomeTutorialVisible,
-    nowEnglishTutorialSectionRef
-  } = useHomeTutorial({
+    isHomeTutorialVisible
+  } = useLobbyTutorial({
     appUpdateNoticePhase,
     currentUser,
-    isCalendarOpen,
     isFeaturedRecommendationLoading,
-    isGuideOpen,
     isInitialHomeLoadComplete,
+    isOverlayOpen: isCalendarOpen || openSheet !== null,
+    projection: tutorialProjection,
     windowHeight,
     windowWidth
   });
+
+  useEffect(() => {
+    tutorialVisibleRef.current = isHomeTutorialVisible;
+    if (isHomeTutorialVisible) setTutorialProjection(latestProjectionRef.current);
+  }, [isHomeTutorialVisible]);
 
   const {
     calendarError,
@@ -337,61 +325,52 @@ export default function HomeScreen() {
     return <Redirect href="/login" />;
   }
 
+  // 내비게이션 바는 화면 아래에 떠 있다. 로비 메뉴는 그 위로 올린다(내비게이션 바의 아래 여백 계산과 같게).
+  const lobbyBottomInset = MOBILE_NAV_BOTTOM_SPACING + Math.max(insets.bottom - 24, 0);
+  const streakChipLabel = displayedStreakDays > 0 ? `연속 ${displayedStreakDays}일` : "작문 대기 중";
+  const closeSheet = () => setOpenSheet(null);
+  // 장소에 도착해 말풍선 버튼을 누르면 그 장소의 판을 연다. 문(밖으로)은 처리하지 않아 로비의 안내가 뜬다.
+  const sheetForMark: Partial<Record<MarkId, LobbyMenuId>> = { board: "question", desk: "diary", window: "thought" };
+  const handleEnterMark = (mark: MarkId) => {
+    const sheet = sheetForMark[mark];
+    if (!sheet) return false;
+    setOpenSheet(sheet);
+    return true;
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
-      <View style={styles.screen}>
-        <View ref={homeScrollViewportRef} collapsable={false} style={styles.homeScrollViewport}>
-          <ScrollView
-            ref={homeScrollRef}
-            contentContainerStyle={styles.content}
-            onScroll={(event) => {
-              homeScrollOffsetRef.current = event.nativeEvent.contentOffset.y;
-            }}
-            refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />}
-            removeClippedSubviews={false}
-            scrollEventThrottle={16}
-          >
-        <HomeUtilityRow />
+    <View style={styles.lobbyScreen}>
+      <View style={styles.lobbyArea}>
+        <Lobby3dScreen
+          devPanel={false}
+          streakLabel={streakChipLabel}
+          onStreakPress={() => router.push(historyRoute)}
+          onMenu={setOpenSheet}
+          onEnterMark={handleEnterMark}
+          idleButton={incompleteLoopRoute ? { label: "이어 쓰기", onPress: handleResumeLoop } : null}
+          inputBlocked={openSheet !== null || isCalendarOpen}
+          onProjection={handleProjection}
+          bottomInset={lobbyBottomInset}
+        />
+      </View>
+      <MobileNavBar activeTab="home" />
+
+      <LobbySheet visible={openSheet === "question"} title="질문에 답하기" onClose={closeSheet}>
         <HomeStatusPanel
           diaryStreakBadgeLabel={diaryStreakBadgeLabel}
           handleOpenCalendar={handleOpenCalendar}
           handleResumeLoop={handleResumeLoop}
           historyRoute={historyRoute}
           homeStatusMascot={homeStatusMascot}
-          incompleteLoop={incompleteLoop}
-          incompleteLoopCopy={incompleteLoopCopy}
-          incompleteLoopInlineNote={incompleteLoopInlineNote}
+          incompleteLoop={null}
+          incompleteLoopCopy={null}
+          incompleteLoopInlineNote=""
           statusError={statusError}
           statusMetaLines={statusMetaLines}
           weekChips={weekChips}
           writingStreakBadgeLabel={writingStreakBadgeLabel}
         />
-
-        <View
-          ref={nowEnglishTutorialSectionRef}
-          collapsable={false}
-          style={styles.nowEnglishSection}
-        >
-          <NowInEnglishSectionContent
-            handleOpenNowInEnglish={handleOpenNowInEnglish}
-            handleOpenNowInEnglishRecords={handleOpenNowInEnglishRecords}
-            handleOpenNowInEnglishReminder={handleOpenNowInEnglishReminder}
-            nowInEnglishReminderEnabled={nowInEnglishReminderEnabled}
-            nowInEnglishTodayCount={nowInEnglishTodayCount}
-          />
-        </View>
-
-        <View style={styles.sectionDivider} />
-
-        <QuestionSectionHeader
-          setIsGuideOpen={setIsGuideOpen}
-        />
-
-        <View
-          ref={featuredTutorialSectionRef}
-          collapsable={false}
-          style={styles.featuredRecommendationSection}
-        >
+        <View style={styles.featuredRecommendationSection}>
           <FeaturedRecommendationContent
             featuredDifficultyMeta={featuredDifficultyMeta}
             featuredRecommendationError={featuredRecommendationError}
@@ -403,24 +382,33 @@ export default function HomeScreen() {
             setIsFeaturedRecommendationTranslationVisible={setIsFeaturedRecommendationTranslationVisible}
           />
         </View>
-
-        <View
-          ref={difficultyTutorialSectionRef}
-          collapsable={false}
-          style={styles.difficultyTutorialSection}
-        >
-          <DifficultySectionContent
-            handleStart={handleStart}
-          />
+        <View style={styles.difficultyTutorialSection}>
+          <DifficultySectionContent handleStart={handleStart} />
         </View>
+        {/* 판 안에서 여는 창이라 판 안에 둔다(판과 나란히 두면 iOS에서 겹쳐 열리지 않는다). */}
+        <MonthCalendarModal
+          calendarError={calendarError}
+          calendarFooterLabel={calendarFooterLabel}
+          calendarSummaryText={calendarSummaryText}
+          canGoToNextCalendarMonth={canGoToNextCalendarMonth}
+          diaryEntryDateKeys={diaryEntryDateKeys}
+          handleChangeCalendarMonth={handleChangeCalendarMonth}
+          handleCloseCalendar={handleCloseCalendar}
+          handleOpenCalendarDate={handleOpenCalendarDate}
+          isCalendarLoading={isCalendarLoading}
+          isCalendarOpen={isCalendarOpen}
+          monthCalendar={monthCalendar}
+          nowInEnglishDateKeys={nowInEnglishDateKeys}
+        />
+      </LobbySheet>
 
-        <View style={styles.sectionDivider} />
-
-        <View
-          ref={diaryTutorialSectionRef}
-          collapsable={false}
-          style={styles.homeDiarySection}
-        >
+      <LobbySheet visible={openSheet === "diary"} title="영어일기" onClose={closeSheet}>
+        <View style={styles.statusBadgeRow}>
+          <View style={[styles.statusBadge, styles.statusBadgeSecondary]}>
+            <Text style={styles.statusBadgeText}>{diaryStreakBadgeLabel}</Text>
+          </View>
+        </View>
+        <View style={styles.homeDiarySection}>
           <HomeDiarySectionContent
             canGoToNextDiaryMonth={canGoToNextDiaryMonth}
             diaryCalendarError={diaryCalendarError}
@@ -434,30 +422,19 @@ export default function HomeScreen() {
             todayDiaryEntry={todayDiaryEntry}
           />
         </View>
-          </ScrollView>
+      </LobbySheet>
+
+      <LobbySheet visible={openSheet === "thought"} title="지금 생각나는대로" onClose={closeSheet}>
+        <View style={styles.nowEnglishSection}>
+          <NowInEnglishSectionContent
+            handleOpenNowInEnglish={handleOpenNowInEnglish}
+            handleOpenNowInEnglishRecords={handleOpenNowInEnglishRecords}
+            handleOpenNowInEnglishReminder={handleOpenNowInEnglishReminder}
+            nowInEnglishReminderEnabled={nowInEnglishReminderEnabled}
+            nowInEnglishTodayCount={nowInEnglishTodayCount}
+          />
         </View>
-        <MobileNavBar activeTab="home" />
-      </View>
-
-      <MonthCalendarModal
-        calendarError={calendarError}
-        calendarFooterLabel={calendarFooterLabel}
-        calendarSummaryText={calendarSummaryText}
-        canGoToNextCalendarMonth={canGoToNextCalendarMonth}
-        diaryEntryDateKeys={diaryEntryDateKeys}
-        handleChangeCalendarMonth={handleChangeCalendarMonth}
-        handleCloseCalendar={handleCloseCalendar}
-        handleOpenCalendarDate={handleOpenCalendarDate}
-        isCalendarLoading={isCalendarLoading}
-        isCalendarOpen={isCalendarOpen}
-        monthCalendar={monthCalendar}
-        nowInEnglishDateKeys={nowInEnglishDateKeys}
-      />
-
-      <HomeGuideModal
-        isGuideOpen={isGuideOpen}
-        setIsGuideOpen={setIsGuideOpen}
-      />
+      </LobbySheet>
 
       <HomeFeatureTutorial
         visible={isHomeTutorialVisible}
@@ -467,7 +444,7 @@ export default function HomeScreen() {
         onNext={handleAdvanceHomeTutorial}
         onSkip={handleCloseHomeTutorial}
       />
-    </SafeAreaView>
+    </View>
   );
 }
 

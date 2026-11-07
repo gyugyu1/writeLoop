@@ -1,12 +1,11 @@
 import { router } from "expo-router";
-import { SymbolView } from "expo-symbols";
-import { ActivityIndicator, Image, Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { ActivityIndicator, Image, Modal, Pressable, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import ModalSafeAreaView from "@/components/modal-safe-area-view";
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import { difficultyDeck } from "@/lib/difficulty";
 import { NOW_IN_ENGLISH_NOTIFICATION_BODY } from "@/lib/now-in-english";
-import { WEEKDAY_LABELS, HOME_GUIDE_STEPS } from "./home-helpers";
+import { WEEKDAY_LABELS } from "./home-helpers";
 import type { HomeScreenValues } from "./home-screen-values";
 import { styles } from "./home-styles";
 
@@ -33,7 +32,6 @@ type NowInEnglishSectionContentProps = Pick<
   | "nowInEnglishReminderEnabled"
   | "nowInEnglishTodayCount"
 >;
-type QuestionSectionHeaderProps = Pick<HomeScreenValues, "setIsGuideOpen">;
 type FeaturedRecommendationContentProps = Pick<
   HomeScreenValues,
   | "featuredDifficultyMeta"
@@ -74,12 +72,6 @@ type MonthCalendarModalProps = Pick<
   | "monthCalendar"
   | "nowInEnglishDateKeys"
 >;
-type HomeGuideModalProps = Pick<
-  HomeScreenValues,
-  | "isGuideOpen"
-  | "setIsGuideOpen"
->;
-
 // 세션 확인 중 표시
 export function HomeLoadingState() {
   return (
@@ -94,32 +86,6 @@ export function HomeLoadingState() {
 }
 
 // 머리 줄: 의견 보내기
-export function HomeUtilityRow() {
-  return (
-    <View style={styles.homeUtilityRow}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="라이트루프에 의견 보내기"
-        onPress={() =>
-          router.push({
-            pathname: "/support-feedback",
-            params: { source: "home" }
-          } as never)
-        }
-        style={styles.feedbackEntryButton}
-      >
-        <SymbolView
-          name={{ ios: "bubble.left", android: "chat_bubble", web: "chat_bubble" }}
-          size={17}
-          weight="semibold"
-          tintColor="#352D26"
-        />
-        <Text style={styles.feedbackEntryButtonText}>의견 보내기</Text>
-      </Pressable>
-    </View>
-  );
-}
-
 // 학습 일지 카드: 마스코트·연속 배지·통계, 요일 줄, 이어 쓰기 줄
 export function HomeStatusPanel({
   diaryStreakBadgeLabel,
@@ -244,23 +210,6 @@ export function NowInEnglishSectionContent({
 }
 
 // 질문 답하기 머리와 가이드 보기
-export function QuestionSectionHeader({
-  setIsGuideOpen
-}: QuestionSectionHeaderProps) {
-  return (
-    <View style={styles.difficultySectionHeader}>
-      <MobileScreenHeader
-        title="질문 답하기"
-        rightAccessory={
-          <Pressable style={styles.guideButton} onPress={() => setIsGuideOpen(true)}>
-            <Text style={styles.guideButtonText}>가이드 보기</Text>
-          </Pressable>
-        }
-      />
-    </View>
-  );
-}
-
 // 오늘의 추천 질문 안쪽(바깥 View는 튜토리얼 측정 대상)
 export function FeaturedRecommendationContent({
   featuredDifficultyMeta,
@@ -656,51 +605,3 @@ export function MonthCalendarModal({
 }
 
 // 학습 가이드 창
-export function HomeGuideModal({
-  isGuideOpen,
-  setIsGuideOpen
-}: HomeGuideModalProps) {
-  return (
-    <Modal visible={isGuideOpen} animationType="slide" onRequestClose={() => setIsGuideOpen(false)}>
-      <ModalSafeAreaView style={styles.guideModalRoot}>
-        <View style={styles.guideModalHeader}>
-          <View style={styles.guideModalHeaderText}>
-            <Text style={styles.guideModalTitle}>바로 보는 학습 가이드</Text>
-          </View>
-          <Pressable style={styles.guideModalCloseButton} onPress={() => setIsGuideOpen(false)}>
-            <Text style={styles.guideModalCloseText}>닫기</Text>
-          </Pressable>
-        </View>
-
-        <ScrollView
-          style={styles.guideModalScroll}
-          contentContainerStyle={styles.guideModalScrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <Text style={styles.guideLeadText}>질문 선택, 코치 도움, 피드백까지 한 흐름으로 이어집니다.</Text>
-
-          <View style={styles.guideStepList}>
-            {HOME_GUIDE_STEPS.map((step, index) => (
-              <View key={step.title} style={styles.guideStepCard}>
-                <View style={styles.guideStepIndex}>
-                  <Text style={styles.guideStepIndexText}>{index + 1}</Text>
-                </View>
-                <View style={styles.guideStepCopy}>
-                  <Text style={styles.guideStepTitle}>{step.title}</Text>
-                  <Text style={styles.guideStepBody}>{step.body}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.guideTipCard}>
-            <Text style={styles.guideTipTitle}>작게 시작하는 게 가장 좋아요.</Text>
-            <Text style={styles.guideTipBody}>
-              완벽하게 길게 쓰려고 하기보다, 짧게 먼저 쓰고 AI 코치와 피드백으로 한 번 더 다듬는 방식이 가장 안정적으로 늘어요.
-            </Text>
-          </View>
-        </ScrollView>
-      </ModalSafeAreaView>
-    </Modal>
-  );
-}

@@ -18,6 +18,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import MobileNavBar, { MOBILE_NAV_BOTTOM_SPACING } from "@/components/mobile-nav-bar";
 import MobileScreenHeader from "@/components/mobile-screen-header";
 import DevLobbyEntry from "@/components/lobby3d/dev-lobby-entry";
+import { HomeGuideModal } from "@/components/home/home-guide-modal";
 import { deleteAccount, updateProfile } from "@/lib/api";
 import { requestHomeTutorialReplay } from "@/lib/home-tutorial";
 import { useSession } from "@/lib/session";
@@ -58,6 +59,8 @@ export default function MeScreen() {
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isOpeningHomeTutorial, setIsOpeningHomeTutorial] = useState(false);
   const [homeTutorialError, setHomeTutorialError] = useState("");
+  // 학습 가이드(옛 홈의 "가이드 보기")는 홈이 로비로 바뀐 뒤 여기서 연다.
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
 
   useEffect(() => {
     setProfileDisplayName(currentUser?.displayName ?? "");
@@ -403,6 +406,9 @@ export default function MeScreen() {
                     )}
                   </Pressable>
                   {homeTutorialError ? <Text style={styles.errorText}>{homeTutorialError}</Text> : null}
+                  <Pressable accessibilityRole="button" onPress={() => setIsGuideOpen(true)} style={styles.supportButton}>
+                    <Text style={styles.supportButtonText}>학습 가이드</Text>
+                  </Pressable>
                   <View style={styles.supportDivider} />
                   <Text style={styles.supportLead}>불편한 점이나 바라는 기능이 있나요?</Text>
                   <Pressable
@@ -538,6 +544,7 @@ export default function MeScreen() {
 
         <MobileNavBar activeTab="me" />
       </View>
+      <HomeGuideModal isGuideOpen={isGuideOpen} setIsGuideOpen={setIsGuideOpen} />
     </SafeAreaView>
   );
 }

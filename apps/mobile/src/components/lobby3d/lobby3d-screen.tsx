@@ -18,7 +18,8 @@ import {
 } from "@/lib/lobby3d/engine";
 import { loadLobbyViewWidth, resetLobbyViewWidth, saveLobbyViewWidth } from "@/lib/lobby3d/view-storage";
 
-// 개발용 3D 로비 시험 화면. 3D 그리기(Lobby3dCanvas) 위에 말풍선·이름표·메뉴·설정을 겹친다.
+// 3D 로비(라이트루프의 방). 3D 그리기(Lobby3dCanvas) 위에 말풍선·이름표·메뉴·설정을 겹친다.
+// 홈은 시험판 없이 쓰고(devPanel=false), 개발 진입 화면(/dev/lobby-3d)은 시험판을 켠 기본값 그대로 쓴다.
 
 const ACCENT = "#E36A00";
 const LINE = "#3D1B0F";
@@ -35,6 +36,8 @@ export const ACTION_LABELS: Record<ActionType, string> = {
 };
 const TEST_ACTIONS: ActionType[] = ["wave", "jump", "hop", "point", "spin", "look"];
 
+export type LobbyMenuId = "question" | "diary" | "thought";
+
 const MENU = [
   { id: "question", label: "질문에 답하기", primary: true },
   { id: "diary", label: "영어일기", primary: false },
@@ -48,14 +51,50 @@ interface ViewState {
   actionType: ActionType | null;
 }
 
+/** 홈의 카툰 명암(3단)과 외곽선(1배). 시험판에서만 바꿀 수 있다. */
+const HOME_TOON: ToonSettings = { steps: 3, outline: 1 };
+
 const EMPTY_HIT: PointerHit = { point: null, mark: null, onCharacter: false };
 
 function sameView(a: ViewState, b: ViewState) {
   return a.bubbleText === b.bubbleText && a.bubbleButton === b.bubbleButton && a.arrived === b.arrived && a.actionType === b.actionType;
 }
 
-export default function Lobby3dScreen() {
+export interface Lobby3dScreenProps {
+  /** 시험판(동작 버튼·속도·명암·외곽선 조절)과 초당 프레임·동작 표시. 기본은 켬(개발 화면). */
+  devPanel?: boolean;
+  /** 머리 줄 왼쪽 칩 글. 기본은 시험판의 고정 글. */
+  streakLabel?: string;
+  onStreakPress?: () => void;
+  /** 아래 메뉴를 눌렀을 때. 없으면 시험판처럼 짧은 안내만 띄운다. */
+  onMenu?: (id: LobbyMenuId) => void;
+  /** 장소에 도착해 말풍선 버튼을 눌렀을 때. true를 돌려주면 처리한 것이고, 아니면 장소 안내(enterMessage)를 띄운다. */
+  onEnterMark?: (mark: MarkId) => boolean;
+  /** 기본 말풍선에 붙일 버튼(예: 이어 쓰기). */
+  idleButton?: { label: string; onPress: () => void } | null;
+  /** 시트를 연 동안처럼 로비 누르기를 막을 때. */
+  inputBlocked?: boolean;
+  /** 장소 이름표·말풍선의 화면 좌표(로비 안내가 장소를 짚을 때 쓴다). */
+  onProjection?: (projection: LobbyProjection) => void;
+  /** 아래 여백. 기본은 기기 아래 안전 영역(홈은 내비게이션 바가 맡아 0). */
+  bottomInset?: number;
+}
+
+export default function Lobby3dScreen({
+  devPanel = true,
+  streakLabel = "연속 1일",
+  onStreakPress,
+  onMenu,
+  onEnterMark,
+  idleButton = null,
+  inputBlocked = false,
+  onProjection,
+  bottomInset
+}: Lobby3dScreenProps = {}) {
   const insets = useSafeAreaInsets();
+  const bottomPad = bottomInset ?? insets.bottom;
+  const inputBlockedRef = useRef(inputBlocked);
+  inputBlockedRef.current = inputBlocked;
   const { width: screenWidth } = useWindowDimensions();
   const simRef = useRef<LobbySim | null>(null);
   if (!simRef.current) simRef.current = new LobbySim();
@@ -64,7 +103,7 @@ export default function Lobby3dScreen() {
   const [view, setView] = useState<ViewState>({ bubbleText: IDLE_LINE, bubbleButton: null, arrived: null, actionType: null });
   const [projection, setProjection] = useState<LobbyProjection | null>(null);
   const [viewWidth, setViewWidth] = useState(VIEW_WIDTH_DEFAULT);
-  const [toon, setToon] = useState<ToonSettings>({ steps: 3, outline: 1 });
+  const [toon, setToon] = useState<ToonSettings>(HOME_TOON);
   const [speed, setSpeed] = useState(sim.settings.speed);
   const [turn, setTurn] = useState(sim.settings.turn);
   const [cameraOpen, setCameraOpen] = useState(false);
@@ -136,6 +175,11 @@ export default function Lobby3dScreen() {
 
   const onPointer = useCallback(
     (phase: LobbyPointerPhase, hit: PointerHit | null, x: number, y: number) => {
+      // 시트를 연 동안에는 로비를 누르지 못한다. 막는 중에 누른 것이 남지 않게 지금 누르기도 거둔다.
+      if (inputBlockedRef.current) {
+        if (phase !== "move") sim.pointerCancel();
+        return;
+      }
       const now = Date.now();
       if (phase === "down") {
         setCameraOpen(false);
@@ -158,10 +202,19 @@ export default function Lobby3dScreen() {
   const closenessPercent = Math.round(((closeness - VIEW_WIDTH_MIN) / (VIEW_WIDTH_MAX - VIEW_WIDTH_MIN)) * 100);
   const litMenu = view.arrived ? MENU_FOR_MARK[view.arrived] ?? null : null;
   const bubblePos = projection?.bubble ?? { x: 195, y: 320 };
+  const handleProjection = useCallback(
+    (next: LobbyProjection) => {
+      setProjection(next);
+      onProjection?.(next);
+    },
+    [onProjection]
+  );
+  const shownToon = devPanel ? toon : HOME_TOON;
+  const showIdleButton = Boolean(idleButton) && !view.bubbleButton && view.bubbleText === IDLE_LINE;
 
   return (
     <View style={styles.root}>
-      <Lobby3dCanvas sim={sim} viewWidth={viewWidth} toon={toon} onFrame={onFrame} onPointer={onPointer} onProject={setProjection} />
+      <Lobby3dCanvas sim={sim} viewWidth={viewWidth} toon={shownToon} onFrame={onFrame} onPointer={onPointer} onProject={handleProjection} />
 
       {(Object.keys(MARKS) as MarkId[]).map((id) => {
         const pos = projection?.labels[id] ?? { x: 0, y: 0 };
@@ -184,11 +237,18 @@ export default function Lobby3dScreen() {
                 accessibilityRole="button"
                 style={styles.bubbleButton}
                 onPress={() => {
+                  const arrived = sim.arrived;
+                  if (arrived && onEnterMark?.(arrived)) return;
                   const message = sim.enterMessage();
                   if (message) showToast(message);
                 }}
               >
                 <Text style={styles.bubbleButtonText}>{view.bubbleButton}</Text>
+              </Pressable>
+            ) : null}
+            {showIdleButton && idleButton ? (
+              <Pressable accessibilityRole="button" style={styles.bubbleButton} onPress={idleButton.onPress}>
+                <Text style={styles.bubbleButtonText}>{idleButton.label}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -197,9 +257,15 @@ export default function Lobby3dScreen() {
       ) : null}
 
       <View pointerEvents="box-none" style={[styles.header, { top: insets.top + 10 }]}>
-        <View style={styles.chip}>
-          <Text style={styles.chipText}>연속 1일</Text>
-        </View>
+        {onStreakPress ? (
+          <Pressable accessibilityRole="button" style={styles.chip} onPress={onStreakPress}>
+            <Text style={styles.chipText}>{streakLabel}</Text>
+          </Pressable>
+        ) : (
+          <View style={styles.chip}>
+            <Text style={styles.chipText}>{streakLabel}</Text>
+          </View>
+        )}
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="카메라 거리 설정"
@@ -249,10 +315,12 @@ export default function Lobby3dScreen() {
         </View>
       ) : null}
 
-      <View pointerEvents="none" style={[styles.fps, { top: insets.top + 60 }]}>
-        <Text style={styles.fpsText}>FPS {projection?.fps ?? "-"}</Text>
-        <Text style={styles.fpsText}>동작: {view.actionType ? ACTION_LABELS[view.actionType] : "없음"}</Text>
-      </View>
+      {devPanel ? (
+        <View pointerEvents="none" style={[styles.fps, { top: insets.top + 60 }]}>
+          <Text style={styles.fpsText}>FPS {projection?.fps ?? "-"}</Text>
+          <Text style={styles.fpsText}>동작: {view.actionType ? ACTION_LABELS[view.actionType] : "없음"}</Text>
+        </View>
+      ) : null}
 
       {toast ? (
         <View accessibilityRole="alert" pointerEvents="none" style={[styles.toast, { top: insets.top + 62 }]}>
@@ -260,8 +328,8 @@ export default function Lobby3dScreen() {
         </View>
       ) : null}
 
-      <View pointerEvents="box-none" style={[styles.bottom, { bottom: insets.bottom + 12 }]}>
-        {panelOpen ? (
+      <View pointerEvents="box-none" style={[styles.bottom, { bottom: bottomPad + 12 }]}>
+        {devPanel && panelOpen ? (
           <View style={styles.panel}>
             <View style={styles.actionGrid}>
               {TEST_ACTIONS.map((type) => (
@@ -308,9 +376,11 @@ export default function Lobby3dScreen() {
             />
           </View>
         ) : null}
-        <Pressable accessibilityRole="button" style={styles.panelToggle} onPress={() => setPanelOpen((open) => !open)}>
-          <Text style={styles.panelToggleText}>{panelOpen ? "시험판 접기" : "시험판 펴기"}</Text>
-        </Pressable>
+        {devPanel ? (
+          <Pressable accessibilityRole="button" style={styles.panelToggle} onPress={() => setPanelOpen((open) => !open)}>
+            <Text style={styles.panelToggleText}>{panelOpen ? "시험판 접기" : "시험판 펴기"}</Text>
+          </Pressable>
+        ) : null}
         <View style={styles.menu}>
           {MENU.map((item) => {
             const lit = litMenu === item.id;
@@ -320,7 +390,7 @@ export default function Lobby3dScreen() {
                 accessibilityRole="button"
                 accessibilityState={{ selected: lit }}
                 style={[styles.menuButton, item.primary && styles.menuPrimary, lit && styles.menuLit]}
-                onPress={() => showToast(`${item.label} 화면으로 가요`)}
+                onPress={() => (onMenu ? onMenu(item.id) : showToast(`${item.label} 화면으로 가요`))}
               >
                 <Text style={[styles.menuText, item.primary && styles.menuPrimaryText]}>{item.label}</Text>
               </Pressable>

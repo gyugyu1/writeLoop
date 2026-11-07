@@ -98,8 +98,13 @@ export function useLobbyGreeting(options: UseLobbyGreetingOptions): LobbyGreetin
     if (!needsHistory) finish(status);
     else
       void loadRecentMonths(now).then((months) =>
-        // 한 달이라도 받지 못했으면 마지막 작문 날짜를 모른다(오랜만이 아니다)
-        finish({ ...status, lastWritingDate: lastWritingDateOf(months), historyKnown: months.every((m) => m !== null) })
+        // 마지막 작문 날짜를 아는 경우: 두 달 다 받았거나, 이번 달을 받았고 그 달에 작문한 날이 있음(지난달 기록은 그보다 늦을 수 없다).
+        // 그 밖에는 모르므로 오랜만이 아니다(받은 것만으로 판정)
+        finish({
+          ...status,
+          lastWritingDate: lastWritingDateOf(months),
+          historyKnown: months.every((m) => m !== null) || lastWritingDateOf(months.slice(0, 1)) !== null
+        })
       );
     return () => {
       cancelled = true;

@@ -69,6 +69,8 @@ export function useLobbyTutorial({
   windowWidth: number;
 }) {
   const [isRequested, setIsRequested] = useState(false);
+  // 안내를 띄울지 기기 저장소에서 확인하는 중인지. 그동안 로비 인사가 먼저 나가지 않게 기다리게 한다.
+  const [isChecking, setIsChecking] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
   const closedRef = useRef(false);
@@ -80,6 +82,7 @@ export function useLobbyTutorial({
       }
 
       let cancelled = false;
+      setIsChecking(true);
       const resolveTutorialRequest = async () => {
         try {
           const shouldReplay = await consumeHomeTutorialReplay();
@@ -89,6 +92,8 @@ export function useLobbyTutorial({
           }
         } catch {
           // 저장소를 읽지 못해도 홈 진입 자체는 막지 않습니다.
+        } finally {
+          if (!cancelled) setIsChecking(false);
         }
       };
 
@@ -96,6 +101,7 @@ export function useLobbyTutorial({
 
       return () => {
         cancelled = true;
+        setIsChecking(false);
       };
     }, [currentUser])
   );
@@ -169,6 +175,6 @@ export function useLobbyTutorial({
     isHomeTutorialPositioning: waitingForPosition,
     isHomeTutorialVisible: isVisible,
     // 안내가 떠 있거나 뜰 참(뜨기를 기다리는 중)인지. 로비 인사는 안내가 끝난 뒤에 한다.
-    isHomeTutorialPending: isRequested || isVisible
+    isHomeTutorialPending: isChecking || isRequested || isVisible
   };
 }
